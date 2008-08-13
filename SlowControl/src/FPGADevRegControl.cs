@@ -1298,22 +1298,22 @@ namespace MinervaUserControls
             get
             {
                 UInt32[] InjectCount = new UInt32[6];
-                InjectCount[0] = (byte)FPGALogicalReg[(int)LogicalRegisters.InjectCount0];
-                InjectCount[1] = (byte)FPGALogicalReg[(int)LogicalRegisters.InjectCount1];
-                InjectCount[2] = (byte)FPGALogicalReg[(int)LogicalRegisters.InjectCount2];
-                InjectCount[3] = (byte)FPGALogicalReg[(int)LogicalRegisters.InjectCount3];
-                InjectCount[4] = (byte)FPGALogicalReg[(int)LogicalRegisters.InjectCount4];
-                InjectCount[5] = (byte)FPGALogicalReg[(int)LogicalRegisters.InjectCount5];
+                InjectCount[0] = (byte)(FPGALogicalReg[(int)LogicalRegisters.InjectCount0] & 0x7F);
+                InjectCount[1] = (byte)(FPGALogicalReg[(int)LogicalRegisters.InjectCount1] & 0x7F);
+                InjectCount[2] = (byte)(FPGALogicalReg[(int)LogicalRegisters.InjectCount2] & 0x7F);
+                InjectCount[3] = (byte)(FPGALogicalReg[(int)LogicalRegisters.InjectCount3] & 0x7F);
+                InjectCount[4] = (byte)(FPGALogicalReg[(int)LogicalRegisters.InjectCount4] & 0x7F);
+                InjectCount[5] = (byte)(FPGALogicalReg[(int)LogicalRegisters.InjectCount5] & 0x7F);
                 return InjectCount;
             }
             set
             {
-                FPGALogicalReg[(int)LogicalRegisters.InjectCount0] = value[0];
-                FPGALogicalReg[(int)LogicalRegisters.InjectCount1] = value[1];
-                FPGALogicalReg[(int)LogicalRegisters.InjectCount2] = value[2];
-                FPGALogicalReg[(int)LogicalRegisters.InjectCount3] = value[3];
-                FPGALogicalReg[(int)LogicalRegisters.InjectCount4] = value[4];
-                FPGALogicalReg[(int)LogicalRegisters.InjectCount5] = value[5];
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount0] = (value[0] & 0x7F) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount0] & 0x80);
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount1] = (value[1] & 0x7F) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount1] & 0x80);
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount2] = (value[2] & 0x7F) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount2] & 0x80);
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount3] = (value[3] & 0x7F) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount3] & 0x80);
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount4] = (value[4] & 0x7F) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount4] & 0x80);
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount5] = (value[5] & 0x7F) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount5] & 0x80);
             }
         }
         public UInt32 RegisterInjectEnable
@@ -1321,22 +1321,22 @@ namespace MinervaUserControls
             get
             {
                 uint InjectEnable = 0;
-                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectEnable0] << 0);
-                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectEnable1] << 1);
-                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectEnable2] << 2);
-                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectEnable3] << 3);
-                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectEnable4] << 4);
-                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectEnable5] << 5);
+                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectCount0] & 0x80) >> 7;
+                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectCount1] & 0x80) >> 6;
+                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectCount2] & 0x80) >> 5;
+                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectCount3] & 0x80) >> 4;
+                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectCount4] & 0x80) >> 3;
+                InjectEnable += (FPGALogicalReg[(int)LogicalRegisters.InjectCount5] & 0x80) >> 2;
                 return InjectEnable;
             }
             set
             {
-                FPGALogicalReg[(int)LogicalRegisters.InjectEnable0] = value & 0x1;
-                FPGALogicalReg[(int)LogicalRegisters.InjectEnable1] = value & 0x2;
-                FPGALogicalReg[(int)LogicalRegisters.InjectEnable2] = value & 0x4;
-                FPGALogicalReg[(int)LogicalRegisters.InjectEnable3] = value & 0x8;
-                FPGALogicalReg[(int)LogicalRegisters.InjectEnable4] = value & 0x10;
-                FPGALogicalReg[(int)LogicalRegisters.InjectEnable5] = value & 0x20;
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount0] = ((value & 0x1) << 7) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount0] & 0x7F);
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount1] = ((value & 0x2) << 6) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount1] & 0x7F);
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount2] = ((value & 0x4) << 5) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount2] & 0x7F);
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount3] = ((value & 0x8) << 4) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount3] & 0x7F);
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount4] = ((value & 0x10) << 3) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount4] & 0x7F);
+                FPGALogicalReg[(int)LogicalRegisters.InjectCount5] = ((value & 0x20) << 2) | (FPGALogicalReg[(int)LogicalRegisters.InjectCount5] & 0x7F);
             }
         }
         public UInt32 RegisterInjectRange
@@ -1545,7 +1545,8 @@ namespace MinervaUserControls
                         case (int)LogicalRegisters.InjectCount3:
                         case (int)LogicalRegisters.InjectCount4:
                         case (int)LogicalRegisters.InjectCount5:
-                            CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0x7F, 0, "Value must be 7 bits");
+                            //cg+gnp//CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0x7F, 0, "Value must be 7 bits");
+                            CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0xFF, 0, "Value must be 8 bits");
                             break;
                         case (int)LogicalRegisters.TripPowerOff:
                         case (int)LogicalRegisters.TripXComparators:
