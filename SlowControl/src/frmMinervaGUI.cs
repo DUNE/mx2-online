@@ -10,7 +10,7 @@ using System.Xml.Serialization;
 using VMEInterfaces;
 using MinervaUserControls;
 using System.Collections.Specialized; // For BitVector32
-using MinervaDAQ; // For FebSlave class
+//using MinervaDAQ; // For FebSlave class //gnp: FEBSlave now part of the Readout lib.
 
 namespace MinervaGUI
 {
