@@ -1,18 +1,15 @@
 package SlowControl
-version v1r0
+version v1r1
 author Aaron Mislivec and Cristian Gingu
 
 use MinervaPolicy      v*
 use Readout            v*  MinervaOnline
 use CAEN2718           v*  MinervaOnline
-use MinervaDAQ           v* MinervaOnline
 
 macro_append SlowControllinkopts " $(SlowControlcsopts) "
-macro_append SlowControllinkopts " $(MinervaDAQcsopts) "
 macro_append SlowControllinkopts " $(CAEN2718csopts) "
 macro_append SlowControllinkopts " $(Readoutcsopts) "
 macro_append SlowControllinkopts " /r:Readout.dll "
-macro_append SlowControllinkopts " /r:MinervaDAQ.dll "
 macro_remove cslinkflags "/t:exe"
 macro_append cslinkflags " /t:winexe "
 
