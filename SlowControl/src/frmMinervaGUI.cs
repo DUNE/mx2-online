@@ -10,7 +10,7 @@ using System.Xml.Serialization;
 using VMEInterfaces;
 using MinervaUserControls;
 using System.Collections.Specialized; // For BitVector32
-//using MinervaDAQ; // For FebSlave class //gnp: FEBSlave now part of the Readout lib.
+using MinervaDAQ; // For FebSlave class
 
 namespace MinervaGUI
 {
@@ -348,21 +348,40 @@ namespace MinervaGUI
         private void LoadHardwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.Cursor = Cursors.WaitCursor;
-            saveConfigXmlToolStripMenuItem.Enabled = false;
+            ResetGUI();
             FindCROCandCRIMModules();
             Initialize(CRIMModules);    //not needed...
             Initialize(CROCModules);    //need it to see what FEs are in each channel
             UpdateTree();
             //Initialize(FEBSlaves);      //not needed...  
             Initialize(FEnodes);        //not needed...
+            if (CROCModules.Count != 0)
+            {
+                readVoltagesToolStripMenuItem.Enabled = true;
+                zeroHVAllToolStripMenuItem.Enabled = true;
+            }
             if (CRIMModules.Count != 0 | CROCModules.Count != 0)
             {
                 saveConfigXmlToolStripMenuItem.Enabled = true;
                 GetMinervaDevicesInfo();
-                if (xmlInfo.CRIMs.Count != 0 | xmlInfo.CROCs.Count != 0) 
+                if (xmlInfo.CRIMs.Count != 0 | xmlInfo.CROCs.Count != 0)
                     WriteXMLToHardwareToolStripMenuItem.Enabled = true;
             }
             this.Cursor = Cursors.Arrow;
+        }
+
+        private void ResetGUI()
+        {
+            saveConfigXmlToolStripMenuItem.Enabled = false;
+            WriteXMLToHardwareToolStripMenuItem.Enabled = false;
+
+            //For Read HV
+            readVoltagesToolStripMenuItem.Enabled = false;
+            richTextBoxHVRead.Clear();
+            textBoxADCThreshold.Enabled = false;
+            btnReadHV.Enabled = false;
+
+            zeroHVAllToolStripMenuItem.Enabled = false;
         }
 
         private void FindCROCandCRIMModules()
@@ -1208,6 +1227,119 @@ namespace MinervaGUI
                 btn_TRIPAdvancedGUI.Text = "Show Advanced GUI";
                 return;
             }
+        }
+
+        #endregion
+
+        #region Methods for reading HVActual on FEBs
+
+        private void readVoltagesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            richTextBoxHVRead.Text = "Displays FEBs with HVActual differing from HVTarget \nby an amount greater than that specified below";
+            tabControl1.SelectTab("tabReadHV");
+            textBoxADCThreshold.Enabled = true;
+            btnReadHV.Enabled = true; 
+        }
+
+        private void tabReadHV_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        ushort adcThreshold;
+        string outputText;
+
+        private void btnReadHV_Click(object sender, EventArgs e)
+        {
+            if (btnReadHV.Text == "Read")
+            {
+                try { adcThreshold = Convert.ToUInt16(textBoxADCThreshold.Text); }
+                catch (Exception exe)
+                {
+                    richTextBoxHVRead.Text = exe.Message;
+                    return;
+                }
+                readVoltagesToolStripMenuItem.Enabled = false;
+                textBoxADCThreshold.Enabled = false;
+                btnReadHV.Text = "Stop";
+                backgroundWorker1.RunWorkerAsync();
+            }
+            else backgroundWorker1.CancelAsync();
+        }
+
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (true)
+            {
+                ReadHVChannelFEBs();
+                backgroundWorker1.ReportProgress(100);
+                if (backgroundWorker1.CancellationPending) return;
+                System.Threading.Thread.Sleep(1000);
+            }
+        }
+
+        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            richTextBoxHVRead.Clear();
+            richTextBoxHVRead.Text = outputText;
+        }
+
+        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            btnReadHV.Text = "Read";
+            readVoltagesToolStripMenuItem.Enabled = true;
+            textBoxADCThreshold.Enabled = true;
+        }
+
+        private void ReadHVChannelFEBs()
+        {
+            outputText = "Croc:CH:FE: HVActual, HVTarget, HVActual - HVTarget\n\n";
+            foreach (CROC croc in CROCModules)
+            {
+                foreach (IFrontEndChannel channel in croc.ChannelList)
+                {
+                    foreach (Frame.Addresses feb in channel.ChainBoards)
+                    {
+                        FPGAFrame frame = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
+                        frame.Send(channel);
+                        frame.Receive();
+                        if (Math.Abs(frame.HVActual - frame.HVTarget) < adcThreshold) continue;
+                        outputText += channel.Description + ":" + feb + ": " +
+                                      frame.HVActual.ToString() + ", " + frame.HVTarget.ToString() + ", " +
+                                      Convert.ToString(frame.HVActual - frame.HVTarget) + "\n";
+                    }
+                    outputText += "\n";
+                }
+            }
+        }
+
+        private void zeroHVAllToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DialogResult answer = MessageBox.Show("WARNING \n You are about to set HVTarget on all FEBs to zero. \n Do you wish to continue?", "Confirm Zero HVTarget on all FEBs", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+            if (answer != DialogResult.Yes) return;
+            tabControl1.SelectTab("tabDescription");
+            richTextBoxDescription.Text = "Setting HVTarget on FEBs to zero\n\n";
+            foreach (CROC croc in CROCModules)
+            {
+                foreach (IFrontEndChannel channel in croc.ChannelList)
+                {
+                    foreach (Frame.Addresses feb in channel.ChainBoards)
+                    {
+                        FPGAFrame frame = new FPGAFrame(feb, Frame.FPGAFunctions.Write, new FrameID());
+                        frame.HVTarget = 0;
+                        frame.Send(channel);
+                        frame.Receive();
+                        richTextBoxDescription.Text += channel.Description + ":" + feb + ": HVTarget set to " +
+                                                       frame.HVTarget.ToString() + "\n";
+                    }
+                    richTextBoxDescription.Text += "\n";
+                }
+            }
+        }
+
+        private void frmMinervaGUI_Load(object sender, EventArgs e)
+        {
+
         }
 
         #endregion

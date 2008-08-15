@@ -61,6 +61,11 @@ namespace MinervaGUI
             this.btn_TRIPRegWrite = new System.Windows.Forms.Button();
             this.label9 = new System.Windows.Forms.Label();
             this.tabFLASH = new System.Windows.Forms.TabPage();
+            this.tabReadHV = new System.Windows.Forms.TabPage();
+            this.textBoxADCThreshold = new System.Windows.Forms.TextBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.btnReadHV = new System.Windows.Forms.Button();
+            this.richTextBoxHVRead = new System.Windows.Forms.RichTextBox();
             this.errMain = new System.Windows.Forms.ErrorProvider(this.components);
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -79,15 +84,20 @@ namespace MinervaGUI
             this.redPathsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.bluePathsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.greenPathsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.actionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.readVoltagesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.zeroHVAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.prgStatus = new System.Windows.Forms.ToolStripProgressBar();
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
+            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.tabControl1.SuspendLayout();
             this.tabDescription.SuspendLayout();
             this.tabCRIM.SuspendLayout();
             this.tabCROC.SuspendLayout();
             this.tabFPGARegs.SuspendLayout();
             this.tabTRIPRegs.SuspendLayout();
+            this.tabReadHV.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errMain)).BeginInit();
             this.contextMenuStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
@@ -106,6 +116,7 @@ namespace MinervaGUI
             this.tabControl1.Controls.Add(this.tabFPGARegs);
             this.tabControl1.Controls.Add(this.tabTRIPRegs);
             this.tabControl1.Controls.Add(this.tabFLASH);
+            this.tabControl1.Controls.Add(this.tabReadHV);
             this.tabControl1.Location = new System.Drawing.Point(316, 27);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
@@ -568,6 +579,55 @@ namespace MinervaGUI
             this.tabFLASH.Text = "FLASH";
             this.tabFLASH.UseVisualStyleBackColor = true;
             // 
+            // tabReadHV
+            // 
+            this.tabReadHV.Controls.Add(this.textBoxADCThreshold);
+            this.tabReadHV.Controls.Add(this.label2);
+            this.tabReadHV.Controls.Add(this.btnReadHV);
+            this.tabReadHV.Controls.Add(this.richTextBoxHVRead);
+            this.tabReadHV.Location = new System.Drawing.Point(4, 22);
+            this.tabReadHV.Name = "tabReadHV";
+            this.tabReadHV.Size = new System.Drawing.Size(387, 435);
+            this.tabReadHV.TabIndex = 8;
+            this.tabReadHV.Text = "Read HV";
+            this.tabReadHV.UseVisualStyleBackColor = true;
+            // 
+            // textBoxADCThreshold
+            // 
+            this.textBoxADCThreshold.Enabled = false;
+            this.textBoxADCThreshold.Location = new System.Drawing.Point(13, 403);
+            this.textBoxADCThreshold.Name = "textBoxADCThreshold";
+            this.textBoxADCThreshold.Size = new System.Drawing.Size(68, 20);
+            this.textBoxADCThreshold.TabIndex = 6;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(87, 406);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(65, 13);
+            this.label2.TabIndex = 5;
+            this.label2.Text = "ADC Counts";
+            // 
+            // btnReadHV
+            // 
+            this.btnReadHV.Enabled = false;
+            this.btnReadHV.Location = new System.Drawing.Point(287, 403);
+            this.btnReadHV.Name = "btnReadHV";
+            this.btnReadHV.Size = new System.Drawing.Size(76, 20);
+            this.btnReadHV.TabIndex = 3;
+            this.btnReadHV.Text = "Read";
+            this.btnReadHV.UseVisualStyleBackColor = true;
+            this.btnReadHV.Click += new System.EventHandler(this.btnReadHV_Click);
+            // 
+            // richTextBoxHVRead
+            // 
+            this.richTextBoxHVRead.Location = new System.Drawing.Point(0, 3);
+            this.richTextBoxHVRead.Name = "richTextBoxHVRead";
+            this.richTextBoxHVRead.Size = new System.Drawing.Size(384, 394);
+            this.richTextBoxHVRead.TabIndex = 0;
+            this.richTextBoxHVRead.Text = "";
+            // 
             // errMain
             // 
             this.errMain.ContainerControl = this;
@@ -593,25 +653,26 @@ namespace MinervaGUI
             this.toolStripMenuItemUpdateStatusString,
             this.toolStripSeparator2});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(175, 32);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(186, 32);
             // 
             // toolStripMenuItemUpdateStatusString
             // 
             this.toolStripMenuItemUpdateStatusString.Name = "toolStripMenuItemUpdateStatusString";
-            this.toolStripMenuItemUpdateStatusString.Size = new System.Drawing.Size(174, 22);
+            this.toolStripMenuItemUpdateStatusString.Size = new System.Drawing.Size(185, 22);
             this.toolStripMenuItemUpdateStatusString.Text = "Update Status String";
             this.toolStripMenuItemUpdateStatusString.Click += new System.EventHandler(this.toolStripMenuItemUpdateStatusString_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(171, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(182, 6);
             // 
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripMenuItemFile,
-            this.showToolStripMenuItem});
+            this.showToolStripMenuItem,
+            this.actionsToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(723, 24);
@@ -633,14 +694,14 @@ namespace MinervaGUI
             // LoadHardwareToolStripMenuItem
             // 
             this.LoadHardwareToolStripMenuItem.Name = "LoadHardwareToolStripMenuItem";
-            this.LoadHardwareToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.LoadHardwareToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
             this.LoadHardwareToolStripMenuItem.Text = "Load Hardware";
             this.LoadHardwareToolStripMenuItem.Click += new System.EventHandler(this.LoadHardwareToolStripMenuItem_Click);
             // 
             // loadConfigXmlToolStripMenuItem
             // 
             this.loadConfigXmlToolStripMenuItem.Name = "loadConfigXmlToolStripMenuItem";
-            this.loadConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.loadConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
             this.loadConfigXmlToolStripMenuItem.Text = "Load Config Xml";
             this.loadConfigXmlToolStripMenuItem.Click += new System.EventHandler(this.loadConfigXmlToolStripMenuItem_Click);
             // 
@@ -648,7 +709,7 @@ namespace MinervaGUI
             // 
             this.saveConfigXmlToolStripMenuItem.Enabled = false;
             this.saveConfigXmlToolStripMenuItem.Name = "saveConfigXmlToolStripMenuItem";
-            this.saveConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.saveConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
             this.saveConfigXmlToolStripMenuItem.Text = "Save Config Xml";
             this.saveConfigXmlToolStripMenuItem.Click += new System.EventHandler(this.saveConfigXmlToolStripMenuItem_Click);
             // 
@@ -656,7 +717,7 @@ namespace MinervaGUI
             // 
             this.WriteXMLToHardwareToolStripMenuItem.Enabled = false;
             this.WriteXMLToHardwareToolStripMenuItem.Name = "WriteXMLToHardwareToolStripMenuItem";
-            this.WriteXMLToHardwareToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.WriteXMLToHardwareToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
             this.WriteXMLToHardwareToolStripMenuItem.Text = "Write XML to Hardware";
             this.WriteXMLToHardwareToolStripMenuItem.Click += new System.EventHandler(this.WriteXMLToHardwareToolStripMenuItem_Click);
             // 
@@ -676,42 +737,67 @@ namespace MinervaGUI
             // expandAllToolStripMenuItem
             // 
             this.expandAllToolStripMenuItem.Name = "expandAllToolStripMenuItem";
-            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(133, 22);
+            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.expandAllToolStripMenuItem.Text = "Expand All";
             this.expandAllToolStripMenuItem.Click += new System.EventHandler(this.expandAllToolStripMenuItem_Click);
             // 
             // collapseAllToolStripMenuItem
             // 
             this.collapseAllToolStripMenuItem.Name = "collapseAllToolStripMenuItem";
-            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(133, 22);
+            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.collapseAllToolStripMenuItem.Text = "Collapse All";
             this.collapseAllToolStripMenuItem.Click += new System.EventHandler(this.collapseAllToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(130, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(141, 6);
             // 
             // redPathsToolStripMenuItem
             // 
             this.redPathsToolStripMenuItem.Name = "redPathsToolStripMenuItem";
-            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(133, 22);
+            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.redPathsToolStripMenuItem.Text = "Red paths";
             this.redPathsToolStripMenuItem.Click += new System.EventHandler(this.redPathsToolStripMenuItem_Click);
             // 
             // bluePathsToolStripMenuItem
             // 
             this.bluePathsToolStripMenuItem.Name = "bluePathsToolStripMenuItem";
-            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(133, 22);
+            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.bluePathsToolStripMenuItem.Text = "Blue paths";
             this.bluePathsToolStripMenuItem.Click += new System.EventHandler(this.bluePathsToolStripMenuItem_Click);
             // 
             // greenPathsToolStripMenuItem
             // 
             this.greenPathsToolStripMenuItem.Name = "greenPathsToolStripMenuItem";
-            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(133, 22);
+            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.greenPathsToolStripMenuItem.Text = "Green paths";
             this.greenPathsToolStripMenuItem.Click += new System.EventHandler(this.greenPathsToolStripMenuItem_Click);
+            // 
+            // actionsToolStripMenuItem
+            // 
+            this.actionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.readVoltagesToolStripMenuItem,
+            this.zeroHVAllToolStripMenuItem});
+            this.actionsToolStripMenuItem.Name = "actionsToolStripMenuItem";
+            this.actionsToolStripMenuItem.Size = new System.Drawing.Size(54, 20);
+            this.actionsToolStripMenuItem.Text = "Actions";
+            // 
+            // readVoltagesToolStripMenuItem
+            // 
+            this.readVoltagesToolStripMenuItem.Enabled = false;
+            this.readVoltagesToolStripMenuItem.Name = "readVoltagesToolStripMenuItem";
+            this.readVoltagesToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.readVoltagesToolStripMenuItem.Text = "Read Voltages";
+            this.readVoltagesToolStripMenuItem.Click += new System.EventHandler(this.readVoltagesToolStripMenuItem_Click);
+            // 
+            // zeroHVAllToolStripMenuItem
+            // 
+            this.zeroHVAllToolStripMenuItem.Enabled = false;
+            this.zeroHVAllToolStripMenuItem.Name = "zeroHVAllToolStripMenuItem";
+            this.zeroHVAllToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.zeroHVAllToolStripMenuItem.Text = "Zero HV All";
+            this.zeroHVAllToolStripMenuItem.Click += new System.EventHandler(this.zeroHVAllToolStripMenuItem_Click);
             // 
             // statusStrip1
             // 
@@ -736,6 +822,14 @@ namespace MinervaGUI
             this.lblStatus.Spring = true;
             this.lblStatus.Text = "lblStatus";
             // 
+            // backgroundWorker1
+            // 
+            this.backgroundWorker1.WorkerReportsProgress = true;
+            this.backgroundWorker1.WorkerSupportsCancellation = true;
+            this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
+            this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
+            this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
+            // 
             // frmMinervaGUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -748,12 +842,15 @@ namespace MinervaGUI
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "frmMinervaGUI";
             this.Text = "Minerva Slow Control";
+            this.Load += new System.EventHandler(this.frmMinervaGUI_Load);
             this.tabControl1.ResumeLayout(false);
             this.tabDescription.ResumeLayout(false);
             this.tabCRIM.ResumeLayout(false);
             this.tabCROC.ResumeLayout(false);
             this.tabFPGARegs.ResumeLayout(false);
             this.tabTRIPRegs.ResumeLayout(false);
+            this.tabReadHV.ResumeLayout(false);
+            this.tabReadHV.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errMain)).EndInit();
             this.contextMenuStrip1.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
@@ -820,7 +917,15 @@ namespace MinervaGUI
         private System.Windows.Forms.Button btn_FPGARegWrite;
         private System.Windows.Forms.Label label1;
         private MinervaUserControls.FPGADevRegControl fpgaDevRegControl1;
+        private System.Windows.Forms.TabPage tabReadHV;
+        private System.Windows.Forms.RichTextBox richTextBoxHVRead;
+        private System.Windows.Forms.Button btnReadHV;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.Windows.Forms.ToolStripMenuItem actionsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem readVoltagesToolStripMenuItem;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.ToolStripMenuItem zeroHVAllToolStripMenuItem;
+        private System.Windows.Forms.TextBox textBoxADCThreshold;
 
     }
 }
-
