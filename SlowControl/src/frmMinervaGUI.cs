@@ -10,7 +10,7 @@ using System.Xml.Serialization;
 using VMEInterfaces;
 using MinervaUserControls;
 using System.Collections.Specialized; // For BitVector32
-using MinervaDAQ; // For FebSlave class
+//using MinervaDAQ; // For FebSlave class
 
 namespace MinervaGUI
 {
@@ -40,6 +40,7 @@ namespace MinervaGUI
         public frmMinervaGUI()
         {
             InitializeComponent();
+
             if (fpgaDevRegControl1.IsAdvancedGUI == true)
                 btn_FPGAAdvancedGUI.Text = "Show Default GUI";
             else
@@ -89,32 +90,29 @@ namespace MinervaGUI
             if (e.Node is CRIMnode)
             {
                 richTextBoxDescription.Text += ((CRIM)(e.Node.Tag)).Description;
-                //richTextBoxCrim.Text += "\nInterruptMask=" + ((CRIM)(e.Node.Tag)).InterruptMask;
-                //richTextBoxCrim.Text += "\nTimingMode=" + ((CRIM)(e.Node.Tag)).TimingMode;
-                //tabControl1.SelectTab(4);
-                tabControl1.SelectTab("tabCRIM");
+                //tabControl1.SelectTab("tabCRIM");
+                tabControl1.SelectTab("tabDescription");
             }
             if (e.Node is CROCnode)
             {
                 richTextBoxDescription.Text += ((CROC)(e.Node.Tag)).Description;
-                //richTextBoxCroc.Text += "\nClockMode=" + ((CROC)(e.Node.Tag)).ClockMode;
-                //richTextBoxCroc.Text += "\nChannelList=" + ((CROC)(e.Node.Tag)).ChannelList;
-                tabControl1.SelectTab("tabCROC");
+                //tabControl1.SelectTab("tabCROC");
+                tabControl1.SelectTab("tabDescription");
             }
             if (e.Node is CHnode)
             {
                 richTextBoxDescription.Text += ((CROCFrontEndChannel)(e.Node.Tag)).Description;
-                tabControl1.SelectTab("tabCH");
+                //tabControl1.SelectTab("tabCH");
+                tabControl1.SelectTab("tabDescription");
             }
             if (e.Node is FEnode)
             {
-                lblFPGA_FEID.Text = ((FEnode)(e.Node)).BoardID.ToString();
-                lblFPGA_CHID.Text = ((CROCFrontEndChannel)(((CHnode)(e.Node.Parent)).Tag)).ChannelNumber.ToString();
-                lblFPGA_CROCID.Text = ((((CROC)(((CROCnode)(e.Node.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString();
-                //btnFPGARegRead_Click(null, null);
-                //tabControl1.SelectTab("tabFPGARegs");
-                richTextBoxDescription.Text += "FEid=" + lblFPGA_FEID.Text + ", CHid=" + lblFPGA_CHID.Text + ", CROCid=" + lblFPGA_CROCID.Text;
-                tabControl1.SelectTab("tabFE");
+                richTextBoxDescription.Text += 
+                    "FEid=" + ((FEnode)(e.Node)).BoardID.ToString() +
+                    ", CHid=" + ((CROCFrontEndChannel)(((CHnode)(e.Node.Parent)).Tag)).ChannelNumber.ToString() +
+                    ", CROCid=" + ((((CROC)(((CROCnode)(e.Node.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString();
+                //tabControl1.SelectTab("tabFE");
+                tabControl1.SelectTab("tabDescription");
             }
             if (e.Node is FPGAnode)
             {
@@ -129,6 +127,7 @@ namespace MinervaGUI
                 lblTRIP_FEID.Text = ((FEnode)(e.Node.Parent)).BoardID.ToString();
                 lblTRIP_CHID.Text = ((CROCFrontEndChannel)(((CHnode)(e.Node.Parent.Parent)).Tag)).ChannelNumber.ToString();
                 lblTRIP_CROCID.Text = ((((CROC)(((CROCnode)(e.Node.Parent.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString();
+                cmb_TripID.SelectedIndex = 0;
                 btn_TRIPRegRead_Click(null, null);
                 tabControl1.SelectTab("tabTRIPRegs");
             }
@@ -154,6 +153,7 @@ namespace MinervaGUI
                     xmlFileR = System.IO.File.OpenText(myOFD.FileName);
                     richTextBoxDescription.Text = "Loading file " + myOFD.FileName + "\n";
                     richTextBoxDescription.Text += xmlFileR.ReadToEnd();
+                    WriteXMLToHardwareToolStripMenuItem.Enabled = true;
                 }
                 catch (Exception ex)
                 {
@@ -162,14 +162,7 @@ namespace MinervaGUI
                     richTextBoxDescription.Text += "\n" + ex.Message;
                     richTextBoxDescription.Text += "\n" + ex.InnerException.Message;
                 }
-                finally
-                {
-                    xmlFileR.Close();
-                }
-
-                if ((xmlInfo.CRIMs.Count != 0 | xmlInfo.CROCs.Count != 0) &
-                    (CRIMModules.Count != 0 | CROCModules.Count != 0))
-                    WriteXMLToHardwareToolStripMenuItem.Enabled = true;
+                finally { xmlFileR.Close(); }
             }
         }
         
@@ -246,7 +239,6 @@ namespace MinervaGUI
                     richTextBoxDescription.SelectionColor = Color.Red;
                     richTextBoxDescription.Text += "\n" + xmlCRIM.Description + " in XML file not found";
                     richTextBoxDescription.SelectionColor = Color.Black;
-                    //// break.....//
                 }
             }
             if (crimsMatch) richTextBoxDescription.Text += "\n\nMatched CRIMs in XML file to CRIMs loaded";
@@ -348,29 +340,22 @@ namespace MinervaGUI
         private void LoadHardwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.Cursor = Cursors.WaitCursor;
-            ResetGUI();
+            ResetActions();
             FindCROCandCRIMModules();
             Initialize(CRIMModules);    //not needed...
             Initialize(CROCModules);    //need it to see what FEs are in each channel
             UpdateTree();
             //Initialize(FEBSlaves);      //not needed...  
             Initialize(FEnodes);        //not needed...
-            if (CROCModules.Count != 0)
-            {
-                readVoltagesToolStripMenuItem.Enabled = true;
-                zeroHVAllToolStripMenuItem.Enabled = true;
-            }
-            if (CRIMModules.Count != 0 | CROCModules.Count != 0)
-            {
-                saveConfigXmlToolStripMenuItem.Enabled = true;
-                GetMinervaDevicesInfo();
-                if (xmlInfo.CRIMs.Count != 0 | xmlInfo.CROCs.Count != 0)
-                    WriteXMLToHardwareToolStripMenuItem.Enabled = true;
-            }
+
+            readVoltagesToolStripMenuItem.Enabled = true;
+            zeroHVAllToolStripMenuItem.Enabled = true;
+            saveConfigXmlToolStripMenuItem.Enabled = true;
+
             this.Cursor = Cursors.Arrow;
         }
 
-        private void ResetGUI()
+        private void ResetActions()
         {
             saveConfigXmlToolStripMenuItem.Enabled = false;
             WriteXMLToHardwareToolStripMenuItem.Enabled = false;
@@ -380,7 +365,6 @@ namespace MinervaGUI
             richTextBoxHVRead.Clear();
             textBoxADCThreshold.Enabled = false;
             btnReadHV.Enabled = false;
-
             zeroHVAllToolStripMenuItem.Enabled = false;
         }
 
@@ -484,32 +468,8 @@ namespace MinervaGUI
             foreach (FEnode theFEnode in FEnodes)
             {
                 ((FEBSlave)(theFEnode.Tag)).Initialize();
-                //FPGAFrame theFrame = new FPGAFrame((Frame.Addresses)theFEnode.BoardID, Frame.FPGAFunctions.Read, new FrameID());
-                //theFrame.Send((CROCFrontEndChannel)(theFEnode.Parent.Tag));
-                //theFrame.Receive();
                 FEBSlaves.Add((FEBSlave)(theFEnode.Tag));
             }
-
-            ////FEBSlave.MaxHits = maxHits;
-            //febList = new List<FEBSlave>();
-            //frameList = new List<FPGAFrame>();
-            //foreach (CROC croc in CROCModules)
-            //{
-            //    foreach (IFrontEndChannel channel in croc.ChannelList)
-            //    {
-            //        foreach (Frame.Addresses boardID in channel.ChainBoards)
-            //        {
-            //            FEBSlave theFEB = new FEBSlave(channel, boardID);
-            //            theFEB.Initialize();
-            //            febList.Add(theFEB);
-
-            //            FPGAFrame theFrame = new FPGAFrame(boardID, Frame.FPGAFunctions.Read, new FrameID());
-            //            theFrame.Send(channel);
-            //            theFrame.Receive();
-            //            frameList.Add(theFrame);
-            //        }
-            //    }
-            //}
         }
 
         private void UpdateTree()
@@ -560,6 +520,7 @@ namespace MinervaGUI
 
         private void ExpandFENodePaths(Color nodeColor)
         {
+            MessageBox.Show("Under construction...");
             //treeView1.CollapseAll();
             //AppendDescription = true;
             //richTextBoxDescription.Clear();
@@ -591,14 +552,15 @@ namespace MinervaGUI
 
         private void toolStripMenuItemUpdateStatusString_Click(object sender, EventArgs e)
         {
-            if (treeView1.Nodes.Count != 0)
-            {
-                //if (treeView1.SelectedNode is FENode)
-                //{
-                //    ((FEdev)treeView1.SelectedNode.Tag).StatusString = richTextBoxDescription.Text;
+            MessageBox.Show("Under construction...");
+            //if (treeView1.Nodes.Count != 0)
+            //{
+            //    if (treeView1.SelectedNode is FENode)
+            //    {
+            //        ((FEdev)treeView1.SelectedNode.Tag).StatusString = richTextBoxDescription.Text;
 
-                //}
-            }
+            //    }
+            //}
         }
 
         #region Methods for filling info classes before they are serialized
@@ -707,11 +669,20 @@ namespace MinervaGUI
         {
             chainBoardInfo.BoardAddress = febAddress;
             GetFPGAFrameInfo(chainBoardInfo.fpgaFrameInfo, crocChannel, febAddress);
-            //GetTripFrameInfo();
+            //TRIPFrameInfo tripFrameInfo = new TRIPFrameInfo();
+            foreach (Frame.TRiPFunctions tripFunction in Enum.GetValues(typeof(Frame.TRiPFunctions)))
+            {
+                if (tripFunction == Frame.TRiPFunctions.All | tripFunction == Frame.TRiPFunctions.None) continue;
+                TRIPFrameInfo tripFrameInfo = new TRIPFrameInfo();
+                GetTRIPFrameInfo(tripFrameInfo, crocChannel, febAddress, tripFunction);
+                chainBoardInfo.tripFrameInfoList.Add(tripFrameInfo);
+            }
         }
 
         private void GetFrameInfo(FrameInfo frameInfo, Frame frame)
         {
+            // These Frame class memeber are read only.  No SetFrameInfo function since members are read only
+
             //frameInfo.CheckResponseHeaderFlags = frame.CheckResponseHeaderFlags;
             frameInfo.Device = frame.Device;
             frameInfo.Function = frame.Function;
@@ -735,15 +706,12 @@ namespace MinervaGUI
 
         private void GetFPGAFrameInfo(FPGAFrameInfo fpgaFrameInfo, CROCFrontEndChannel crocChannel, Frame.Addresses febAddress)
         {
-            ushort frameID = (ushort)(
-                Convert.ToUInt16(febAddress.ToString().Substring(2)) << 12 |
-                Convert.ToUInt16(crocChannel.ChannelNumber) << 10 | 
-                Convert.ToUInt16((crocChannel.BaseAddress >> 16) << 2));
+            ushort frameID = ConstructFrameID(crocChannel, febAddress);
             FPGAFrame fpgaFrame = new FPGAFrame(febAddress, Frame.FPGAFunctions.Read, new FrameID(frameID));
             fpgaFrame.Send(crocChannel);
             fpgaFrame.Receive();
 
-            GetFrameInfo(fpgaFrameInfo, fpgaFrame);
+            // GetFrameInfo(fpgaFrameInfo, fpgaFrame); // Uncomment to include FrameInfo
             fpgaFrameInfo.BoardID = fpgaFrame.BoardID;
             fpgaFrameInfo.CosmicTrig = fpgaFrame.CosmicTrig;
             fpgaFrameInfo.DCM1Lock = fpgaFrame.DCM1Lock;
@@ -764,12 +732,12 @@ namespace MinervaGUI
             fpgaFrameInfo.HVPeriodManual = fpgaFrame.HVPeriodManual;
             fpgaFrameInfo.HVPulseWidth = fpgaFrame.HVPulseWidth;
             fpgaFrameInfo.HVTarget = fpgaFrame.HVTarget;
-            // fpgaFrameInfo.InjectCount = fpgaFrame.InjectCount; // Serialization of byte array needs to be resolved
+            fpgaFrameInfo.InjectCount = fpgaFrame.InjectCount;
             fpgaFrameInfo.InjectDACDone = fpgaFrame.InjectDACDone;
             fpgaFrameInfo.InjectDACMode = fpgaFrame.InjectDACMode;
             fpgaFrameInfo.InjectDACStart = fpgaFrame.InjectDACStart;
             fpgaFrameInfo.InjectDACValue = fpgaFrame.InjectDACValue;
-            fpgaFrameInfo.InjectEnable = fpgaFrame.InjectEnable;
+            fpgaFrameInfo.InjectEnable = Convert.ToByte(fpgaFrame.InjectEnable.Data);
             fpgaFrameInfo.InjectPhase = fpgaFrame.InjectPhase;
             fpgaFrameInfo.InjectRange = fpgaFrame.InjectRange;
             fpgaFrameInfo.PhaseCount = fpgaFrame.PhaseCount;
@@ -784,6 +752,45 @@ namespace MinervaGUI
             fpgaFrameInfo.TripPowerOff = fpgaFrame.TripPowerOff;
             fpgaFrameInfo.TripXCompEnc = fpgaFrame.TripXCompEnc;
             fpgaFrameInfo.VXOMuxXilinx = fpgaFrame.VXOMuxXilinx;
+        }
+
+        private void GetTRIPFrameInfo(TRIPFrameInfo tripFrameInfo, CROCFrontEndChannel crocChannel, Frame.Addresses febAddress, TripTFrame.TRiPFunctions tripFunction)
+        {
+            ushort frameID = ConstructFrameID(crocChannel, febAddress);
+            TripTFrame tripFrame = new TripTFrame(febAddress, tripFunction, new FrameID(frameID));
+            tripFrame.Send(crocChannel);
+            tripFrame.Receive();
+
+            // GetFrameInfo(tripFrameInfo, tripFrame); // Uncomment to include FrameInfo
+            tripFrameInfo.TripID = (byte)(tripFunction - 2);
+            tripFrameInfo.RegisterIBP = (uint)tripFrame[TripTFrame.LogicalRegisters.IBP];
+            tripFrameInfo.RegisterIBBNFALL = (uint)tripFrame[TripTFrame.LogicalRegisters.IBBNFoll];
+            tripFrameInfo.RegisterIFF = (uint)tripFrame[TripTFrame.LogicalRegisters.IFF];
+            tripFrameInfo.RegisterIBPIFF1REF = (uint)tripFrame[TripTFrame.LogicalRegisters.IBPIFF1REF];
+            tripFrameInfo.RegisterIBPOPAMP = (uint)tripFrame[TripTFrame.LogicalRegisters.IBPOPAMP];
+            tripFrameInfo.RegisterIB_T = (uint)tripFrame[TripTFrame.LogicalRegisters.IBPFoll2];
+            tripFrameInfo.RegisterIFFP2 = (uint)tripFrame[TripTFrame.LogicalRegisters.IFF2];
+            tripFrameInfo.RegisterIBCOMP = (uint)tripFrame[TripTFrame.LogicalRegisters.IBCOMP];
+            tripFrameInfo.RegisterVREF = (uint)tripFrame[TripTFrame.LogicalRegisters.VREF];
+            tripFrameInfo.RegisterVTH = (uint)tripFrame[TripTFrame.LogicalRegisters.VTH];
+            tripFrameInfo.RegisterGAIN = (uint)tripFrame[TripTFrame.LogicalRegisters.GAIN];
+            tripFrameInfo.RegisterPIPEDEL = (uint)tripFrame[TripTFrame.LogicalRegisters.PIPEDEL];
+            tripFrameInfo.RegisterIRSEL = (uint)tripFrame[TripTFrame.LogicalRegisters.IRSEL];
+            tripFrameInfo.RegisterIWSEL = (uint)tripFrame[TripTFrame.LogicalRegisters.IWSEL];
+            tripFrameInfo.RegisterINJEX0 = (uint)(tripFrame[TripTFrame.LogicalRegisters.INJECT] & 0x1);
+            tripFrameInfo.RegisterINJB0 = (uint)(tripFrame[TripTFrame.LogicalRegisters.INJECT] & 0x1FE) >> 1;
+            tripFrameInfo.RegisterINJB1 = (uint)(tripFrame[TripTFrame.LogicalRegisters.INJECT] & 0x1FE00) >> 9;
+            tripFrameInfo.RegisterINJB2 = (uint)(tripFrame[TripTFrame.LogicalRegisters.INJECT] & 0x1FE0000) >> 17;
+            tripFrameInfo.RegisterINJB3 = (uint)(tripFrame[TripTFrame.LogicalRegisters.INJECT] & 0x1FE000000) >> 25;
+            tripFrameInfo.RegisterINJEX33 = (uint)(tripFrame[TripTFrame.LogicalRegisters.INJECT] & 0x200000000) >> 33;
+        }
+
+        private ushort ConstructFrameID(CROCFrontEndChannel crocChannel, Frame.Addresses febAddress)
+        {
+            return (ushort)(
+                Convert.ToUInt16(febAddress.ToString().Substring(2)) << 12 |
+                Convert.ToUInt16(crocChannel.ChannelNumber) << 10 |
+                Convert.ToUInt16((crocChannel.BaseAddress >> 16) << 2));
         }
 
         #endregion
@@ -872,22 +879,27 @@ namespace MinervaGUI
                     if (chainBoardInfo.BoardAddress == febAddress)
                     {
                         Console.WriteLine("Updating " + febAddress + " on " + crocChannel.Description);
-                        SetFPGAFrameInfo(chainBoardInfo.fpgaFrameInfo, crocChannel, febAddress);
+                        SetChainBoardInfo(chainBoardInfo, crocChannel, febAddress);
                         break;
                     }
                 }
             }
         }
 
+        private void SetChainBoardInfo(ChainBoardInfo chainBoardInfo, CROCFrontEndChannel crocChannel, Frame.Addresses febAddress)
+        {
+            SetFPGAFrameInfo(chainBoardInfo.fpgaFrameInfo, crocChannel, febAddress);
+            foreach (TRIPFrameInfo tripFrameInfo in chainBoardInfo.tripFrameInfoList)
+            {
+                Frame.TRiPFunctions tripFunction = (Frame.TRiPFunctions)(tripFrameInfo.TripID + 2);
+                SetTRIPFrameInfo(tripFrameInfo, crocChannel, febAddress, tripFunction);
+            }
+        }
+
         private void SetFPGAFrameInfo(FPGAFrameInfo fpgaFrameInfo, CROCFrontEndChannel crocChannel, Frame.Addresses febAddress)
         {
-            ushort frameID = (ushort)(
-                Convert.ToUInt16(febAddress.ToString().Substring(2)) << 12 |
-                Convert.ToUInt16(crocChannel.ChannelNumber) << 10 |
-                Convert.ToUInt16((crocChannel.BaseAddress >> 16) << 2));
+            ushort frameID = ConstructFrameID(crocChannel, febAddress);
             FPGAFrame fpgaFrame = new FPGAFrame(febAddress, Frame.FPGAFunctions.Write, new FrameID(frameID));
-            //fpgaFrame.Send(crocChannel);
-            //fpgaFrame.Receive();
 
             // Read/Write members only
             fpgaFrame.CosmicTrig = fpgaFrameInfo.CosmicTrig;
@@ -899,11 +911,11 @@ namespace MinervaGUI
             fpgaFrame.HVPeriodManual = fpgaFrameInfo.HVPeriodManual;
             fpgaFrame.HVPulseWidth = fpgaFrameInfo.HVPulseWidth;
             fpgaFrame.HVTarget = fpgaFrameInfo.HVTarget;
-            // fpgaFrame.InjectCount = fpgaFrameInfo.InjectCount; // Serialization of byte array needs to be resolved
+            fpgaFrame.InjectCount = fpgaFrameInfo.InjectCount; // Serialization of byte array needs to be resolved
             fpgaFrame.InjectDACMode = fpgaFrameInfo.InjectDACMode;
             fpgaFrame.InjectDACStart = fpgaFrameInfo.InjectDACStart;
             fpgaFrame.InjectDACValue = fpgaFrameInfo.InjectDACValue;
-            fpgaFrame.InjectEnable = fpgaFrameInfo.InjectEnable;
+            fpgaFrame.InjectEnable = new BitVector32((Int32)fpgaFrameInfo.InjectEnable);
             fpgaFrame.InjectPhase = fpgaFrameInfo.InjectPhase;
             fpgaFrame.InjectRange = fpgaFrameInfo.InjectRange;
             fpgaFrame.PhaseCount = fpgaFrameInfo.PhaseCount;
@@ -916,20 +928,40 @@ namespace MinervaGUI
 
             fpgaFrame.Send(crocChannel);
             fpgaFrame.Receive();
+        }
 
-            //AssignFPGARegsDaveToCristian(fpgaFrame, fpgaDevRegControl1);
-            //fpgaDevRegControl1.UpdateFormControls();
+        private void SetTRIPFrameInfo(TRIPFrameInfo tripFrameInfo, CROCFrontEndChannel crocChannel, Frame.Addresses febAddress, TripTFrame.TRiPFunctions tripFunction)
+        {
+            ushort frameID = ConstructFrameID(crocChannel, febAddress);
+            TripTFrame tripFrame = new TripTFrame(febAddress, tripFunction, new FrameID(frameID));
 
-            //lblFPGA_FEID.Text = febAddress.ToString().Substring(2);
-            //lblFPGA_CHID.Text = crocChannel.ChannelNumber.ToString();
-            //lblFPGA_CROCID.Text = (crocChannel.BaseAddress >> 16).ToString();
+            tripFrame[TripTFrame.LogicalRegisters.IBP] = tripFrameInfo.RegisterIBP;
+            tripFrame[TripTFrame.LogicalRegisters.IBBNFoll] = tripFrameInfo.RegisterIBBNFALL;
+            tripFrame[TripTFrame.LogicalRegisters.IFF] = tripFrameInfo.RegisterIFF;
+            tripFrame[TripTFrame.LogicalRegisters.IBPIFF1REF] = tripFrameInfo.RegisterIBPIFF1REF;
+            tripFrame[TripTFrame.LogicalRegisters.IBPOPAMP] = tripFrameInfo.RegisterIBPOPAMP;
+            tripFrame[TripTFrame.LogicalRegisters.IBPFoll2] = tripFrameInfo.RegisterIB_T;
+            tripFrame[TripTFrame.LogicalRegisters.IFF2] = tripFrameInfo.RegisterIFFP2;
+            tripFrame[TripTFrame.LogicalRegisters.IBCOMP] = tripFrameInfo.RegisterIBCOMP;
+            tripFrame[TripTFrame.LogicalRegisters.VREF] = tripFrameInfo.RegisterVREF;
+            tripFrame[TripTFrame.LogicalRegisters.VTH] = tripFrameInfo.RegisterVTH;
+            tripFrame[TripTFrame.LogicalRegisters.GAIN] = tripFrameInfo.RegisterGAIN;
+            tripFrame[TripTFrame.LogicalRegisters.PIPEDEL] = tripFrameInfo.RegisterPIPEDEL;
+            tripFrame[TripTFrame.LogicalRegisters.IRSEL] = tripFrameInfo.RegisterIRSEL;
+            tripFrame[TripTFrame.LogicalRegisters.IWSEL] = tripFrameInfo.RegisterIWSEL;
+            tripFrame[TripTFrame.LogicalRegisters.INJECT] = (tripFrameInfo.RegisterINJEX33 << 33) |
+                (tripFrameInfo.RegisterINJB3 << 25) | (tripFrameInfo.RegisterINJB2 << 17) |
+                (tripFrameInfo.RegisterINJB1 << 9) | (tripFrameInfo.RegisterINJB0 << 1) |
+                tripFrameInfo.RegisterINJEX0;
 
-
+            tripFrame.Send(crocChannel);
+            tripFrame.Receive();
         }
 
         #endregion
 
         #region Methods for Write/Read to/from FPGA Registers
+        
         private void btn_FPGARegWrite_Click(object sender, EventArgs e)
         {
             lock (this)
@@ -1104,113 +1136,111 @@ namespace MinervaGUI
         #endregion
 
         #region Methods for Write/Read to/from TRIP Registers
+
         private void btn_TRIPRegWrite_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("under construction...");
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    Frame.Addresses theBoard = (Frame.Addresses)(((FEnode)(theNode.Parent)).BoardID);
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Parent.Parent.Tag));
+                    theChannel.Reset();
+                    Frame.TRiPFunctions tf = (Frame.TRiPFunctions)(cmb_TripID.SelectedIndex) + 2;
+                    TripTFrame theFrame = new TripTFrame(theBoard, tf, new FrameID());
+
+                    tripDevRegControl1.UpdateTRIPLogicalRegArray();
+                    AssignTRIPRegsCristianToDave(tripDevRegControl1, theFrame);
+                    theFrame.Send(theChannel);
+                    theFrame.Receive();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
         }
 
         private void btn_TRIPRegRead_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("under construction...");
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    Frame.Addresses theBoard = (Frame.Addresses)(((FEnode)(theNode.Parent)).BoardID);
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Parent.Parent.Tag));
+                    theChannel.Reset();
+
+                    Frame.TRiPFunctions tf = (Frame.TRiPFunctions)(cmb_TripID.SelectedIndex) + 2;
+                    TripTFrame theFrame = new TripTFrame(theBoard, tf, new FrameID());
+                    theFrame.Send(theChannel);
+                    theFrame.Receive();
+                    AssignTRIPRegsDaveToCristian(theFrame, tripDevRegControl1);
+                    tripDevRegControl1.UpdateFormControls();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
         }
 
         private void AssignTRIPRegsDaveToCristian(TripTFrame theFrame, MinervaUserControls.TripDevRegControl theTRIPControl)
         {
-            MessageBox.Show("under construction...");
-
-            //theFPGAControl.RegisterTimer = theFrame.Timer;
-            //theFPGAControl.RegisterGateStart = theFrame.GateStart;
-            //theFPGAControl.RegisterGateLength = theFrame.GateLength;
-            //theFPGAControl.RegisterTripPowerOff = (uint)theFrame.TripPowerOff.Data;
-            //UInt32[] temp = new UInt32[6];
-            //for (int i = 0; i < 6; i++)
-            //    temp[i] = (uint)theFrame.InjectCount[i];
-            //theFPGAControl.RegisterInjectCount = temp;
-            //theFPGAControl.RegisterInjectEnable = (uint)theFrame.InjectEnable.Data;
-            //theFPGAControl.RegisterInjectRange = theFrame.InjectRange;
-            //theFPGAControl.RegisterInjectPhase = theFrame.InjectPhase;
-            //theFPGAControl.RegisterInjectDACValue = theFrame.InjectDACValue;
-            //theFPGAControl.RegisterInjectDACMode = theFrame.InjectDACMode;
-            //theFPGAControl.RegisterInjectDACStart = Convert.ToUInt32(theFrame.InjectDACStart);
-            //theFPGAControl.RegisterInjectDACDone = Convert.ToUInt32(theFrame.InjectDACDone);
-            //theFPGAControl.RegisterHVEnabled = Convert.ToUInt32(theFrame.HVEnabled);
-            //theFPGAControl.RegisterHVTarget = theFrame.HVTarget;
-            //theFPGAControl.RegisterHVActual = theFrame.HVActual;
-            //theFPGAControl.RegisterHVControl = theFrame.HVControl;
-            //theFPGAControl.RegisterHVAutoManual = Convert.ToUInt32(theFrame.HVManual);
-            //theFPGAControl.RegisterVXOMuxSelect = Convert.ToUInt32(theFrame.VXOMuxXilinx);
-            //theFPGAControl.RegisterPhaseStart = Convert.ToUInt32(theFrame.PhaseStart);
-            //theFPGAControl.RegisterPhaseIncrement = Convert.ToUInt32(theFrame.PhaseIncrement);
-            //theFPGAControl.RegisterPhaseSpare = theFrame.PhaseSpare;
-            //theFPGAControl.RegisterPhaseTicks = theFrame.PhaseCount;
-            //theFPGAControl.RegisterDCM1Lock = Convert.ToUInt32(theFrame.DCM1Lock);
-            //theFPGAControl.RegisterDCM2Lock = Convert.ToUInt32(theFrame.DCM2Lock);
-            //theFPGAControl.RegisterDCM1NoClock = Convert.ToUInt32(theFrame.DCM1NoClock);
-            //theFPGAControl.RegisterDCM2NoClock = Convert.ToUInt32(theFrame.DCM2NoClock);
-            //theFPGAControl.RegisterDCM2PhaseDone = Convert.ToUInt32(theFrame.DCM2PhaseDone);
-            //theFPGAControl.RegisterDCM2PhaseTotal = theFrame.DCM2PhaseTotal;
-            //theFPGAControl.RegisterTestPulse2Bit = theFrame.TestPulse2Bit;
-            //theFPGAControl.RegisterTestPulseCount = theFrame.TestPulseCount;
-            //theFPGAControl.RegisterBoardID = theFrame.BoardID;
-            //theFPGAControl.RegisterFirmwareVersion = theFrame.FirmwareVersion;
-            //theFPGAControl.RegisterHVNumAvg = theFrame.HVNumAvg;
-            //theFPGAControl.RegisterHVPeriodManual = theFrame.HVPeriodManual;
-            //theFPGAControl.RegisterHVPeriodAuto = theFrame.HVPeriodAuto;
-            //theFPGAControl.RegisterHVPulseWidth = theFrame.HVPulseWidth;
-            //theFPGAControl.RegisterTemperature = theFrame.Temperature;
-            //theFPGAControl.RegisterTripXThreshold = theFrame.CosmicTrig;
-            //theFPGAControl.RegisterTripXComparators = theFrame.TripXCompEnc;
+            theTRIPControl.RegisterIBP = (uint)theFrame[TripTFrame.LogicalRegisters.IBP];
+            theTRIPControl.RegisterIBBNFALL = (uint)theFrame[TripTFrame.LogicalRegisters.IBBNFoll];
+            theTRIPControl.RegisterIFF = (uint)theFrame[TripTFrame.LogicalRegisters.IFF];
+            theTRIPControl.RegisterIBPIFF1REF = (uint)theFrame[TripTFrame.LogicalRegisters.IBPIFF1REF];
+            theTRIPControl.RegisterIBPOPAMP = (uint)theFrame[TripTFrame.LogicalRegisters.IBPOPAMP];
+            theTRIPControl.RegisterIB_T = (uint)theFrame[TripTFrame.LogicalRegisters.IBPFoll2];
+            theTRIPControl.RegisterIFFP2 = (uint)theFrame[TripTFrame.LogicalRegisters.IFF2];
+            theTRIPControl.RegisterIBCOMP = (uint)theFrame[TripTFrame.LogicalRegisters.IBCOMP];
+            theTRIPControl.RegisterVREF = (uint)theFrame[TripTFrame.LogicalRegisters.VREF];
+            theTRIPControl.RegisterVTH = (uint)theFrame[TripTFrame.LogicalRegisters.VTH];
+            theTRIPControl.RegisterGAIN = (uint)theFrame[TripTFrame.LogicalRegisters.GAIN];
+            theTRIPControl.RegisterPIPEDEL = (uint)theFrame[TripTFrame.LogicalRegisters.PIPEDEL];
+            theTRIPControl.RegisterIRSEL = (uint)theFrame[TripTFrame.LogicalRegisters.IRSEL];
+            theTRIPControl.RegisterIWSEL = (uint)theFrame[TripTFrame.LogicalRegisters.IWSEL];
+            theTRIPControl.RegisterINJEX0 = (uint)(theFrame[TripTFrame.LogicalRegisters.INJECT] & 0x1);
+            theTRIPControl.RegisterINJB0 = (uint)(theFrame[TripTFrame.LogicalRegisters.INJECT] & 0x1FE) >> 1;
+            theTRIPControl.RegisterINJB1 = (uint)(theFrame[TripTFrame.LogicalRegisters.INJECT] & 0x1FE00) >> 9;
+            theTRIPControl.RegisterINJB2 = (uint)(theFrame[TripTFrame.LogicalRegisters.INJECT] & 0x1FE0000) >> 17;
+            theTRIPControl.RegisterINJB3 = (uint)(theFrame[TripTFrame.LogicalRegisters.INJECT] & 0x1FE000000) >> 25;
+            theTRIPControl.RegisterINJEX33 = (uint)(theFrame[TripTFrame.LogicalRegisters.INJECT] & 0x200000000) >> 33;
         }
 
         private void AssignTRIPRegsCristianToDave(MinervaUserControls.TripDevRegControl theTRIPControl, TripTFrame theFrame)
         {
-            MessageBox.Show("under construction...");
-
-            //theFrame.Timer = theFPGAControl.RegisterTimer;
-            //theFrame.GateStart = (ushort)theFPGAControl.RegisterGateStart;
-            //theFrame.GateLength = (ushort)theFPGAControl.RegisterGateLength;
-            //theFrame.TripPowerOff = new BitVector32((int)theFPGAControl.RegisterTripPowerOff);
-            //byte[] tempbyte = new byte[6];
-            //uint[] tempuint = new uint[6];
-            //tempuint = theFPGAControl.RegisterInjectCount;
-            //for (int i = 0; i < 6; i++)
-            //    tempbyte[i] = (byte)tempuint[i];
-            //theFrame.InjectCount = tempbyte;
-            //theFrame.InjectEnable = new BitVector32((int)theFPGAControl.RegisterInjectEnable);
-            //theFrame.InjectRange = (byte)theFPGAControl.RegisterInjectRange;
-            //theFrame.InjectPhase = (byte)theFPGAControl.RegisterInjectPhase;
-
-            //theFrame.InjectDACValue = (ushort)theFPGAControl.RegisterInjectDACValue;
-            //theFrame.InjectDACMode = (byte)theFPGAControl.RegisterInjectDACMode;
-            //theFrame.InjectDACStart = Convert.ToBoolean(theFPGAControl.RegisterInjectDACStart);
-            ////theFrame.InjectDACDone = theFPGAControl.RegisterInjectDACDone;            READ ONLY
-            //theFrame.HVEnabled = Convert.ToBoolean(theFPGAControl.RegisterHVEnabled);
-            //theFrame.HVTarget = (ushort)theFPGAControl.RegisterHVTarget;
-            ////theFrame.HVActual = theFPGAControl.RegisterHVActual;                      READ ONLY
-            ////theFrame.HVControl = theFPGAControl.RegisterHVControl;                    READ ONLY
-            //theFrame.HVManual = Convert.ToBoolean(theFPGAControl.RegisterHVAutoManual);
-            //theFrame.VXOMuxXilinx = Convert.ToBoolean(theFPGAControl.RegisterVXOMuxSelect);
-            //theFrame.PhaseStart = Convert.ToBoolean(theFPGAControl.RegisterPhaseStart);
-            //theFrame.PhaseIncrement = Convert.ToBoolean(theFPGAControl.RegisterPhaseIncrement);
-            //theFrame.PhaseSpare = (byte)theFPGAControl.RegisterPhaseSpare;
-            //theFrame.PhaseCount = (byte)theFPGAControl.RegisterPhaseTicks;
-            ////theFrame.DCM1Lock = theFPGAControl.RegisterDCM1Lock;                      READ ONLY
-            ////theFrame.DCM2Lock = theFPGAControl.RegisterDCM2Lock;                      READ ONLY
-            ////theFrame.DCM1NoClock = theFPGAControl.RegisterDCM1NoClock;                READ ONLY
-            ////theFrame.DCM2NoClock = theFPGAControl.RegisterDCM2NoClock;                READ ONLY
-            ////theFrame.DCM2PhaseDone = theFPGAControl.RegisterDCM2PhaseDone;            READ ONLY
-            ////theFrame.DCM2PhaseTotal = theFPGAControl.RegisterDCM2PhaseTotal;          READ ONLY
-            ////theFrame.TestPulse2Bit = theFPGAControl.RegisterTestPulse2Bit;            READ ONLY
-            ////theFrame.TestPulseCount = theFPGAControl.RegisterTestPulseCount;          READ ONLY
-            ////theFrame.BoardID = (byte)theFPGAControl.RegisterBoardID;                  READ ONLY
-            ////theFrame.FirmwareVersion = theFPGAControl.RegisterFirmwareVersion;        READ ONLY
-            //theFrame.HVNumAvg = (byte)theFPGAControl.RegisterHVNumAvg;
-            //theFrame.HVPeriodManual = (ushort)theFPGAControl.RegisterHVPeriodManual;
-            ////theFrame.HVPeriodAuto = (ushort)theFPGAControl.RegisterHVPeriodAuto;      READ ONLY
-            //theFrame.HVPulseWidth = (byte)theFPGAControl.RegisterHVPulseWidth;
-            ////theFrame.Temperature = (ushort)theFPGAControl.RegisterTemperature;        READ ONLY
-            //theFrame.CosmicTrig = (byte)theFPGAControl.RegisterTripXThreshold;
-            ////theFrame.TripXCompEnc = (byte)theFPGAControl.RegisterTripXComparators;    READ ONLY
+            theFrame[TripTFrame.LogicalRegisters.IBP] = theTRIPControl.RegisterIBP;
+            theFrame[TripTFrame.LogicalRegisters.IBBNFoll] = theTRIPControl.RegisterIBBNFALL;
+            theFrame[TripTFrame.LogicalRegisters.IFF] = theTRIPControl.RegisterIFF;
+            theFrame[TripTFrame.LogicalRegisters.IBPIFF1REF] = theTRIPControl.RegisterIBPIFF1REF;
+            theFrame[TripTFrame.LogicalRegisters.IBPOPAMP] = theTRIPControl.RegisterIBPOPAMP;
+            theFrame[TripTFrame.LogicalRegisters.IBPFoll2] = theTRIPControl.RegisterIB_T;
+            theFrame[TripTFrame.LogicalRegisters.IFF2] = theTRIPControl.RegisterIFFP2;
+            theFrame[TripTFrame.LogicalRegisters.IBCOMP] = theTRIPControl.RegisterIBCOMP;
+            theFrame[TripTFrame.LogicalRegisters.VREF] = theTRIPControl.RegisterVREF;
+            theFrame[TripTFrame.LogicalRegisters.VTH] = theTRIPControl.RegisterVTH;
+            theFrame[TripTFrame.LogicalRegisters.GAIN] = theTRIPControl.RegisterGAIN;
+            theFrame[TripTFrame.LogicalRegisters.PIPEDEL] = theTRIPControl.RegisterPIPEDEL;
+            theFrame[TripTFrame.LogicalRegisters.IRSEL] = theTRIPControl.RegisterIRSEL;
+            theFrame[TripTFrame.LogicalRegisters.IWSEL] = theTRIPControl.RegisterIWSEL;
+            theFrame[TripTFrame.LogicalRegisters.INJECT] = (theTRIPControl.RegisterINJEX33 << 33) |
+                (theTRIPControl.RegisterINJB3 << 25) | (theTRIPControl.RegisterINJB2 << 17) |
+                (theTRIPControl.RegisterINJB1 << 9) | (theTRIPControl.RegisterINJB0 << 1) |
+                theTRIPControl.RegisterINJEX0;
         }
 
         private void btn_TRIPAdvancedGUI_Click(object sender, EventArgs e)
@@ -1229,6 +1259,11 @@ namespace MinervaGUI
             }
         }
 
+        private void cmb_TripID_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            btn_TRIPRegRead_Click(null, null);
+        }
+
         #endregion
 
         #region Methods for reading HVActual on FEBs
@@ -1239,11 +1274,6 @@ namespace MinervaGUI
             tabControl1.SelectTab("tabReadHV");
             textBoxADCThreshold.Enabled = true;
             btnReadHV.Enabled = true; 
-        }
-
-        private void tabReadHV_Click(object sender, EventArgs e)
-        {
-
         }
 
         ushort adcThreshold;
@@ -1315,7 +1345,8 @@ namespace MinervaGUI
 
         private void zeroHVAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            DialogResult answer = MessageBox.Show("WARNING \n You are about to set HVTarget on all FEBs to zero. \n Do you wish to continue?", "Confirm Zero HVTarget on all FEBs", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+            DialogResult answer = MessageBox.Show("WARNING \n You are about to set HVTarget on all FEBs to zero. \n Do you wish to continue?", "Confirm Zero HVTarget on all FEBs", 
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
             if (answer != DialogResult.Yes) return;
             tabControl1.SelectTab("tabDescription");
             richTextBoxDescription.Text = "Setting HVTarget on FEBs to zero\n\n";
@@ -1325,27 +1356,30 @@ namespace MinervaGUI
                 {
                     foreach (Frame.Addresses feb in channel.ChainBoards)
                     {
-                        FPGAFrame frame = new FPGAFrame(feb, Frame.FPGAFunctions.Write, new FrameID());
-                        frame.HVTarget = 0;
-                        frame.Send(channel);
-                        frame.Receive();
-                        richTextBoxDescription.Text += channel.Description + ":" + feb + ": HVTarget set to " +
-                                                       frame.HVTarget.ToString() + "\n";
+                        FPGAFrame frameRead = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
+                        frameRead.Send(channel);
+                        frameRead.Receive();
+
+                        FPGAFrame frameWrite = new FPGAFrame(feb, Frame.FPGAFunctions.Write, new FrameID());
+
+                        frameWrite.Registers = frameRead.Registers;
+
+                        frameWrite.HVTarget = 0;
+                        frameWrite.Send(channel);
+                        frameWrite.Receive();
+                        richTextBoxDescription.Text += channel.Description + ":" + 
+                            feb + ": HVTarget set to " + frameWrite.HVTarget.ToString() + "\n";
                     }
                     richTextBoxDescription.Text += "\n";
                 }
             }
         }
 
-        private void frmMinervaGUI_Load(object sender, EventArgs e)
-        {
-
-        }
-
         #endregion
 
     }
 
+    #region Tree Nodes
 
     /// <summary>
     /// Encapsulates a CRIM object into Tag property of the TreeNode
@@ -1442,11 +1476,12 @@ namespace MinervaGUI
     {
         public List<CRIMnode> CRIMnodes = null;
         public List<CROCnode> CROCnodes = null;
-        ////public List<CHnode> CHnodes = null;
-        ////public List<FEnode> FEnodes = null;
     }
 
+    #endregion
+
     #region Info classes that are serialized
+    
     public class MinervaDevicesInfo
     {
         public List<CRIMInfo> CRIMs = new List<CRIMInfo>();
@@ -1467,31 +1502,31 @@ namespace MinervaGUI
 
     public class CRIMInfo : VMEDeviceInfo
     {
-        public bool CRCEnabled; //Control = 0x2070
-        public bool Enabled; //InterruptConfig = 0xF040
-        public ushort Frequency; //TimingSetup = 0xC010
-        public ushort GateWidth; //SGATEWidth = 0xC020
-        public byte InterruptMask; //InterruptMask = 0xF000
-        public byte InterruptStatus; //InterruptStatus = 0xF010
-        public IRQLevels IRQLevel; //InterruptConfig = 0xF040
-        public bool RetransmitEnabled; //Control = 0x2070
-        public bool SendMessageEnabled; //Control = 0x2070
+        public bool CRCEnabled;
+        public bool Enabled;
+        public ushort Frequency;
+        public ushort GateWidth;
+        public byte InterruptMask;
+        public byte InterruptStatus;
+        public IRQLevels IRQLevel;
+        public bool RetransmitEnabled;
+        public bool SendMessageEnabled;
         public ushort TCALBDelay;
         //public ushort Register;
-        public byte TimingCommandReceived; //DecodedCommand = 0x2060
-        public CRIM.TimingModes TimingMode; //TimingSetup = 0xC010
+        public byte TimingCommandReceived;
+        public CRIM.TimingModes TimingMode;
         public ChannelInfo CRIMChannelInfo = new ChannelInfo();
     }
 
     public class CROCInfo : VMEDeviceInfo
     {
-        //public ushort ChannelResetRegister;
+        //public ushort ChannelResetRegister; // Write Only
         public CROC.ClockModes ClockMode;
-        //public ushort FastCommandRegister;
+        //public ushort FastCommandRegister; // Write Only
         public ushort ResetAndTestMaskRegister;
         public bool TestPulseDelayEnabled;
         public ushort TestPulseDelayValue;
-        //public ushort TestPulseRegister;
+        //public ushort TestPulseRegister; // Write Only
         public ushort TimingSetupRegister;
         public List<CROCChannelInfo> CROCChannels = new List<CROCChannelInfo>();
     }
@@ -1525,19 +1560,15 @@ namespace MinervaGUI
     {
         public Frame.Addresses BoardAddress;
         public FPGAFrameInfo fpgaFrameInfo = new FPGAFrameInfo();
-        //public TripTFrameInfo 
+        public List<TRIPFrameInfo> tripFrameInfoList = new List<TRIPFrameInfo>();
     }
 
-    public class FrameInfo
+    public class FrameInfo  // All members are read only
     {
-
-        // All members are read only
-
         //public bool CheckResponseHeaderFlags;
         public Frame.Devices Device;
         public byte Function;
         public FrameID ID;
-        // public byte[] test = new byte[4] { 1, 2, 3, 4 };
         // public byte[] Message; // Serialization of byte array needs to be resolved
         public bool MessageSent;
         public Frame.Addresses Recipient;
@@ -1555,51 +1586,77 @@ namespace MinervaGUI
         public uint Timestamp;
     }
 
-    public class FPGAFrameInfo : FrameInfo
+    public class FPGAFrameInfo // : FrameInfo // Uncomment to include FrameInfo
     {
-        public byte BoardID; // Keep
-        public byte CosmicTrig; // Keep
-        public bool DCM1Lock; // Keep
-        public bool DCM1NoClock; // Keep
-        public bool DCM2Lock; // Keep
-        public bool DCM2NoClock; // Keep
-        public bool DCM2PhaseDone; // Keep
-        public ushort DCM2PhaseTotal; // Keep
-        //private int ExpectedResponseLength;
-        public byte FirmwareVersion; // Keep
-        public ushort GateLength; // Keep
-        public ushort GateStart; // Keep
-        public ushort HVActual; // Keep
-        public byte HVControl; // Keep
-        public bool HVEnabled; // Keep
-        public bool HVManual; // Keep
-        public byte HVNumAvg; // Keep
-        public ushort HVPeriodAuto; // Keep
-        public ushort HVPeriodManual; // Keep
-        public byte HVPulseWidth; // Keep
-        public ushort HVTarget; // Keep
-        // public byte[] InjectCount; // Keep // Serialization of byte array needs to be resolved
-        public bool InjectDACDone; // Keep
-        public byte InjectDACMode; // Keep
-        public bool InjectDACStart; // Keep
-        public ushort InjectDACValue; // Keep
-        public BitVector32 InjectEnable; // Keep
-        public byte InjectPhase; // Keep
-        public byte InjectRange; // Keep
-        public byte PhaseCount; // Keep
-        public bool PhaseIncrement; // Keep
-        public byte PhaseSpare; // Keep
-        public bool PhaseStart; // Keep
+        public byte BoardID;
+        public byte CosmicTrig;
+        public bool DCM1Lock;
+        public bool DCM1NoClock;
+        public bool DCM2Lock;
+        public bool DCM2NoClock;
+        public bool DCM2PhaseDone;
+        public ushort DCM2PhaseTotal;
+        public byte FirmwareVersion;
+        public ushort GateLength;
+        public ushort GateStart;
+        public ushort HVActual;
+        public byte HVControl;
+        public bool HVEnabled;
+        public bool HVManual;
+        public byte HVNumAvg;
+        public ushort HVPeriodAuto;
+        public ushort HVPeriodManual;
+        public byte HVPulseWidth;
+        public ushort HVTarget;
+        public byte[] InjectCount;
+        public bool InjectDACDone;
+        public byte InjectDACMode;
+        public bool InjectDACStart;
+        public ushort InjectDACValue;
+        public byte InjectEnable;
+        public byte InjectPhase;
+        public byte InjectRange;
+        public byte PhaseCount;
+        public bool PhaseIncrement;
+        public byte PhaseSpare;
+        public bool PhaseStart;
         // public byte[] PhysicalRegisters; // Serialization of byte array needs to be resolved
         // public Dictionary<LogicalRegisters, BitVector32> Registers; // Get accessor only.  Dictionary<> cannot be serialized
-        public ushort Temperature; // Keep
-        public byte TestPulse2Bit; // Keep
-        public uint TestPulseCount; // Keep
-        public uint Timer; // Keep
-        public BitVector32 TripPowerOff; // Keep
-        public byte TripXCompEnc; // Keep
-        public bool VXOMuxXilinx; // Keep
-        // public bool VXOOff; // Not needed
+        public ushort Temperature;
+        public byte TestPulse2Bit;
+        public uint TestPulseCount;
+        public uint Timer;
+        public BitVector32 TripPowerOff;
+        public byte TripXCompEnc;
+        public bool VXOMuxXilinx;
+        // public bool VXOOff; // Not needed 
+    }
+
+    public class TRIPFrameInfo // : FrameInfo // Uncomment to include FrameInfo
+    {
+        public byte TripID;
+        public uint RegisterIBP;
+        public uint RegisterIBBNFALL;
+        public uint RegisterIFF;
+        public uint RegisterIBPIFF1REF;
+        public uint RegisterIBPOPAMP;
+        public uint RegisterIB_T;
+        public uint RegisterIFFP2;
+        public uint RegisterIBCOMP;
+        public uint RegisterVREF;
+        public uint RegisterVTH;
+        public uint RegisterGAIN;
+        public uint RegisterPIPEDEL;
+        public uint RegisterIRSEL;
+        public uint RegisterIWSEL;
+        
+        // ATTENTION: Reading the inject register is not possible.  TripTFrame will set these members to zero
+        public uint RegisterINJEX0;
+        public uint RegisterINJB0;
+        public uint RegisterINJB1;
+        public uint RegisterINJB2;
+        public uint RegisterINJB3;
+        public uint RegisterINJEX33;
     }
 
     #endregion

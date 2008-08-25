@@ -33,9 +33,7 @@ namespace MinervaGUI
             this.tabDescription = new System.Windows.Forms.TabPage();
             this.richTextBoxDescription = new System.Windows.Forms.RichTextBox();
             this.tabCRIM = new System.Windows.Forms.TabPage();
-            this.richTextBoxCrim = new System.Windows.Forms.RichTextBox();
             this.tabCROC = new System.Windows.Forms.TabPage();
-            this.richTextBoxCroc = new System.Windows.Forms.RichTextBox();
             this.tabCH = new System.Windows.Forms.TabPage();
             this.tabFE = new System.Windows.Forms.TabPage();
             this.tabFPGARegs = new System.Windows.Forms.TabPage();
@@ -50,6 +48,7 @@ namespace MinervaGUI
             this.label1 = new System.Windows.Forms.Label();
             this.fpgaDevRegControl1 = new MinervaUserControls.FPGADevRegControl();
             this.tabTRIPRegs = new System.Windows.Forms.TabPage();
+            this.cmb_TripID = new System.Windows.Forms.ComboBox();
             this.tripDevRegControl1 = new MinervaUserControls.TripDevRegControl();
             this.btn_TRIPAdvancedGUI = new System.Windows.Forms.Button();
             this.lblTRIP_CROCID = new System.Windows.Forms.Label();
@@ -93,8 +92,6 @@ namespace MinervaGUI
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.tabControl1.SuspendLayout();
             this.tabDescription.SuspendLayout();
-            this.tabCRIM.SuspendLayout();
-            this.tabCROC.SuspendLayout();
             this.tabFPGARegs.SuspendLayout();
             this.tabTRIPRegs.SuspendLayout();
             this.tabReadHV.SuspendLayout();
@@ -146,7 +143,6 @@ namespace MinervaGUI
             // 
             // tabCRIM
             // 
-            this.tabCRIM.Controls.Add(this.richTextBoxCrim);
             this.tabCRIM.Location = new System.Drawing.Point(4, 22);
             this.tabCRIM.Name = "tabCRIM";
             this.tabCRIM.Size = new System.Drawing.Size(387, 435);
@@ -154,31 +150,14 @@ namespace MinervaGUI
             this.tabCRIM.Text = "CRIM";
             this.tabCRIM.UseVisualStyleBackColor = true;
             // 
-            // richTextBoxCrim
-            // 
-            this.richTextBoxCrim.Location = new System.Drawing.Point(25, 48);
-            this.richTextBoxCrim.Name = "richTextBoxCrim";
-            this.richTextBoxCrim.Size = new System.Drawing.Size(179, 240);
-            this.richTextBoxCrim.TabIndex = 0;
-            this.richTextBoxCrim.Text = "";
-            // 
             // tabCROC
             // 
-            this.tabCROC.Controls.Add(this.richTextBoxCroc);
             this.tabCROC.Location = new System.Drawing.Point(4, 22);
             this.tabCROC.Name = "tabCROC";
             this.tabCROC.Size = new System.Drawing.Size(387, 435);
             this.tabCROC.TabIndex = 5;
             this.tabCROC.Text = "CROC";
             this.tabCROC.UseVisualStyleBackColor = true;
-            // 
-            // richTextBoxCroc
-            // 
-            this.richTextBoxCroc.Location = new System.Drawing.Point(16, 42);
-            this.richTextBoxCroc.Name = "richTextBoxCroc";
-            this.richTextBoxCroc.Size = new System.Drawing.Size(352, 182);
-            this.richTextBoxCroc.TabIndex = 2;
-            this.richTextBoxCroc.Text = "";
             // 
             // tabCH
             // 
@@ -413,6 +392,7 @@ namespace MinervaGUI
             // 
             // tabTRIPRegs
             // 
+            this.tabTRIPRegs.Controls.Add(this.cmb_TripID);
             this.tabTRIPRegs.Controls.Add(this.tripDevRegControl1);
             this.tabTRIPRegs.Controls.Add(this.btn_TRIPAdvancedGUI);
             this.tabTRIPRegs.Controls.Add(this.lblTRIP_CROCID);
@@ -431,8 +411,25 @@ namespace MinervaGUI
             this.tabTRIPRegs.Text = "TRIP Regs";
             this.tabTRIPRegs.UseVisualStyleBackColor = true;
             // 
+            // cmb_TripID
+            // 
+            this.cmb_TripID.FormattingEnabled = true;
+            this.cmb_TripID.Items.AddRange(new object[] {
+            "T0",
+            "T1",
+            "T2",
+            "T3",
+            "T4",
+            "T5"});
+            this.cmb_TripID.Location = new System.Drawing.Point(286, 92);
+            this.cmb_TripID.Name = "cmb_TripID";
+            this.cmb_TripID.Size = new System.Drawing.Size(55, 21);
+            this.cmb_TripID.TabIndex = 36;
+            this.cmb_TripID.SelectedIndexChanged += new System.EventHandler(this.cmb_TripID_SelectedIndexChanged);
+            // 
             // tripDevRegControl1
             // 
+            this.tripDevRegControl1.AutoScroll = true;
             this.tripDevRegControl1.Location = new System.Drawing.Point(6, 37);
             this.tripDevRegControl1.Name = "tripDevRegControl1";
             this.tripDevRegControl1.RegisterGAIN = ((uint)(5u));
@@ -842,11 +839,8 @@ namespace MinervaGUI
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "frmMinervaGUI";
             this.Text = "Minerva Slow Control";
-            this.Load += new System.EventHandler(this.frmMinervaGUI_Load);
             this.tabControl1.ResumeLayout(false);
             this.tabDescription.ResumeLayout(false);
-            this.tabCRIM.ResumeLayout(false);
-            this.tabCROC.ResumeLayout(false);
             this.tabFPGARegs.ResumeLayout(false);
             this.tabTRIPRegs.ResumeLayout(false);
             this.tabReadHV.ResumeLayout(false);
@@ -891,8 +885,6 @@ namespace MinervaGUI
         private System.Windows.Forms.ToolStripStatusLabel lblStatus;
         private System.Windows.Forms.TabPage tabCRIM;
         private System.Windows.Forms.TabPage tabCROC;
-        private System.Windows.Forms.RichTextBox richTextBoxCrim;
-        private System.Windows.Forms.RichTextBox richTextBoxCroc;
         private System.Windows.Forms.TabPage tabCH;
         private System.Windows.Forms.TabPage tabFE;
         private MinervaUserControls.TripDevRegControl tripDevRegControl1;
@@ -926,6 +918,7 @@ namespace MinervaGUI
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ToolStripMenuItem zeroHVAllToolStripMenuItem;
         private System.Windows.Forms.TextBox textBoxADCThreshold;
+        private System.Windows.Forms.ComboBox cmb_TripID;
 
     }
 }
