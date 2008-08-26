@@ -352,6 +352,7 @@ namespace MinervaGUI
             //Initialize(FEBSlaves);      //not needed...  
             Initialize(FEnodes);        //not needed...
 
+            GetMinervaDevicesInfo(); 
             readVoltagesToolStripMenuItem.Enabled = true;
             zeroHVAllToolStripMenuItem.Enabled = true;
             saveConfigXmlToolStripMenuItem.Enabled = true;
