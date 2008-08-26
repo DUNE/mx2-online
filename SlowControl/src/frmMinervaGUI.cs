@@ -90,12 +90,16 @@ namespace MinervaGUI
             if (e.Node is CRIMnode)
             {
                 richTextBoxDescription.Text += ((CRIM)(e.Node.Tag)).Description;
+                //richTextBoxCrim.Text += "\nInterruptMask=" + ((CRIM)(e.Node.Tag)).InterruptMask;
+                //richTextBoxCrim.Text += "\nTimingMode=" + ((CRIM)(e.Node.Tag)).TimingMode;
                 //tabControl1.SelectTab("tabCRIM");
                 tabControl1.SelectTab("tabDescription");
             }
             if (e.Node is CROCnode)
             {
                 richTextBoxDescription.Text += ((CROC)(e.Node.Tag)).Description;
+                //richTextBoxCroc.Text += "\nClockMode=" + ((CROC)(e.Node.Tag)).ClockMode;
+                //richTextBoxCroc.Text += "\nChannelList=" + ((CROC)(e.Node.Tag)).ChannelList;
                 //tabControl1.SelectTab("tabCROC");
                 tabControl1.SelectTab("tabDescription");
             }
