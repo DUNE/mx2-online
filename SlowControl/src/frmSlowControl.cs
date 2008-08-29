@@ -14,7 +14,7 @@ using System.Collections.Specialized; // For BitVector32
 
 namespace MinervaGUI
 {
-    public partial class frmMinervaGUI : Form
+    public partial class frmSlowControl : Form
     {
         bool AppendDescription = false;
 
@@ -32,12 +32,12 @@ namespace MinervaGUI
 
         private static EventWaitHandle vmeDone = null;
 
-        static frmMinervaGUI()
+        static frmSlowControl()
         {
             vmeDone = new EventWaitHandle(true, EventResetMode.AutoReset, "MinervaVMEDone");
         }
         
-        public frmMinervaGUI()
+        public frmSlowControl()
         {
             InitializeComponent();
 
@@ -82,6 +82,12 @@ namespace MinervaGUI
                     vmeDone.Set();
                 }
             }
+        }
+
+        private void frmSlowControl_Load(object sender, EventArgs e)
+        {
+            LoadHardwareToolStripMenuItem_Click(null, null);
+            treeView1.ExpandAll();
         }
 
         private void treeView1_AfterSelect(object sender, TreeViewEventArgs e)
@@ -966,6 +972,54 @@ namespace MinervaGUI
         #endregion
 
         #region Methods for Write/Read to/from FPGA Registers
+
+        private void btn_AllFEsFPGARegWrite_Click(object sender, EventArgs e)
+        {
+            FPGAFrame frameWriteAll = new FPGAFrame(Frame.Addresses.FE15, Frame.FPGAFunctions.Write, new FrameID());
+            fpgaDevRegControl1.UpdateFPGALogicalRegArray();
+            AssignFPGARegsCristianToDave(fpgaDevRegControl1, frameWriteAll);
+            tabControl1.SelectTab(tabDescription.Name);
+            richTextBoxDescription.Text = "Writing ALL FPGADevRegs with same data...\n\n";
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    foreach (CROC croc in CROCModules)
+                    {
+                        foreach (IFrontEndChannel channel in croc.ChannelList)
+                        {
+                            foreach (Frame.Addresses feb in channel.ChainBoards)
+                            {
+                                try
+                                {
+                                   FPGAFrame theFrame = new FPGAFrame(feb, Frame.FPGAFunctions.Write, new FrameID());
+                                    theFrame.Registers = frameWriteAll.Registers;
+                                    theFrame.Send(channel);
+                                    theFrame.Receive();
+                                    richTextBoxDescription.Text += channel.Description + ":" + feb +
+                                        ": FPGADevRegs Write Success\n";
+                                }
+                                catch (Exception ex)
+                                {
+                                    richTextBoxDescription.Text += channel.Description + ":" + feb + ": Error: " + ex.Message + "\n";
+                                }
+                            }
+                            richTextBoxDescription.Text += "\n";
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                    richTextBoxDescription.Text += "...Done\n";
+                }
+            }
+        }
         
         private void btn_FPGARegWrite_Click(object sender, EventArgs e)
         {
@@ -1138,9 +1192,63 @@ namespace MinervaGUI
                 return;
             }
         }
+       
         #endregion
 
         #region Methods for Write/Read to/from TRIP Registers
+
+        private void btn_AllFEsTRIPRegWrite_Click(object sender, EventArgs e)
+        {
+            tripDevRegControl1.UpdateTRIPLogicalRegArray();
+            tabControl1.SelectTab(tabDescription.Name);
+            richTextBoxDescription.Text = "Writing ALL Trips on ALL FEs with same data...\n\n";
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    foreach (CROC croc in CROCModules)
+                    {
+                        foreach (IFrontEndChannel channel in croc.ChannelList)
+                        {
+                            foreach (Frame.Addresses feb in channel.ChainBoards)
+                            {
+                                foreach (Frame.TRiPFunctions function in Enum.GetValues(typeof(Frame.TRiPFunctions)))
+                                {
+                                    try
+                                    {
+
+                                        if (function == Frame.TRiPFunctions.All || function == Frame.TRiPFunctions.None) continue;
+                                        TripTFrame theFrame = new TripTFrame(feb, function, new FrameID());
+                                        AssignTRIPRegsCristianToDave(tripDevRegControl1, theFrame);
+                                        theFrame.Send(channel);
+                                        theFrame.Receive();
+                                        richTextBoxDescription.Text += channel.Description + ":" + feb +
+                                            ":" + function + ": TripTDevRegs Write Success\n";
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        richTextBoxDescription.Text += channel.Description + ":" + feb +
+                                            ":" + function + ": Error: " + ex.Message + "\n";
+                                    }
+                                }
+                                richTextBoxDescription.Text += "\n";
+                            }
+                            richTextBoxDescription.Text += "\n";
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                    richTextBoxDescription.Text += "...Done\n";
+                }
+            }
+        }
 
         private void btn_TRIPRegWrite_Click(object sender, EventArgs e)
         {
@@ -1273,16 +1381,16 @@ namespace MinervaGUI
 
         #region Methods for reading HVActual on FEBs
 
+        ushort adcThreshold;
+        string outputText;
+
         private void readVoltagesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             richTextBoxHVRead.Text = "Displays FEBs with HVActual differing from HVTarget \nby an amount greater than that specified below";
-            tabControl1.SelectTab("tabReadHV");
+            tabControl1.SelectTab(tabReadHV);
             textBoxADCThreshold.Enabled = true;
-            btnReadHV.Enabled = true; 
+            btnReadHV.Enabled = true;
         }
-
-        ushort adcThreshold;
-        string outputText;
 
         private void btnReadHV_Click(object sender, EventArgs e)
         {
@@ -1315,7 +1423,6 @@ namespace MinervaGUI
 
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            richTextBoxHVRead.Clear();
             richTextBoxHVRead.Text = outputText;
         }
 
@@ -1335,13 +1442,20 @@ namespace MinervaGUI
                 {
                     foreach (Frame.Addresses feb in channel.ChainBoards)
                     {
-                        FPGAFrame frame = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
-                        frame.Send(channel);
-                        frame.Receive();
-                        if (Math.Abs(frame.HVActual - frame.HVTarget) < adcThreshold) continue;
-                        outputText += channel.Description + ":" + feb + ": " +
-                                      frame.HVActual.ToString() + ", " + frame.HVTarget.ToString() + ", " +
-                                      Convert.ToString(frame.HVActual - frame.HVTarget) + "\n";
+                        try
+                        {
+                            FPGAFrame frame = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
+                            frame.Send(channel);
+                            frame.Receive();
+                            if (Math.Abs(frame.HVActual - frame.HVTarget) < adcThreshold) continue;
+                            outputText += channel.Description + ":" + feb + ": " +
+                                          frame.HVActual.ToString() + ", " + frame.HVTarget.ToString() + ", " +
+                                          Convert.ToString(frame.HVActual - frame.HVTarget) + "\n";
+                        }
+                        catch (Exception e)
+                        {
+                            outputText += channel.Description + ":" + feb + ": Error: " + e.Message + "\n";
+                        }
                     }
                     outputText += "\n";
                 }
@@ -1350,32 +1464,133 @@ namespace MinervaGUI
 
         private void zeroHVAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            DialogResult answer = MessageBox.Show("WARNING \n You are about to set HVTarget on all FEBs to zero. \n Do you wish to continue?", "Confirm Zero HVTarget on all FEBs", 
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
-            if (answer != DialogResult.Yes) return;
-            tabControl1.SelectTab("tabDescription");
-            richTextBoxDescription.Text = "Setting HVTarget on FEBs to zero\n\n";
-            foreach (CROC croc in CROCModules)
+            lock (this)
             {
-                foreach (IFrontEndChannel channel in croc.ChannelList)
+                vmeDone.WaitOne();
+                try
                 {
-                    foreach (Frame.Addresses feb in channel.ChainBoards)
+                    DialogResult answer = MessageBox.Show("WARNING \n You are about to set HVTarget on all FEBs to zero. \n Do you wish to continue?", "Confirm Zero HVTarget on all FEBs",
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+                    if (answer != DialogResult.Yes) return;
+                    tabControl1.SelectTab(tabReadHV);
+                    richTextBoxHVRead.Text = "Setting HVTarget on FEBs to zero\n\n";
+                    foreach (CROC croc in CROCModules)
                     {
-                        FPGAFrame frameRead = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
-                        frameRead.Send(channel);
-                        frameRead.Receive();
+                        foreach (IFrontEndChannel channel in croc.ChannelList)
+                        {
+                            foreach (Frame.Addresses feb in channel.ChainBoards)
+                            {
+                                try
+                                {
+                                    FPGAFrame frameRead = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
+                                    frameRead.Send(channel);
+                                    frameRead.Receive();
 
-                        FPGAFrame frameWrite = new FPGAFrame(feb, Frame.FPGAFunctions.Write, new FrameID());
+                                    FPGAFrame frameWrite = new FPGAFrame(feb, Frame.FPGAFunctions.Write, new FrameID());
 
-                        frameWrite.Registers = frameRead.Registers;
+                                    frameWrite.Registers = frameRead.Registers;
 
-                        frameWrite.HVTarget = 0;
-                        frameWrite.Send(channel);
-                        frameWrite.Receive();
-                        richTextBoxDescription.Text += channel.Description + ":" + 
-                            feb + ": HVTarget set to " + frameWrite.HVTarget.ToString() + "\n";
+                                    frameWrite.HVTarget = 0;
+                                    frameWrite.Send(channel);
+                                    frameWrite.Receive();
+                                    richTextBoxHVRead.Text += channel.Description + ":" + feb +
+                                        ": HVTarget set to " + frameWrite.HVTarget.ToString() + "\n";
+                                }
+                                catch (Exception ez)
+                                {
+                                    richTextBoxHVRead.Text += channel.Description + ":" + feb + ": Error: " + ez.Message + "\n";
+                                }
+                            }
+                            richTextBoxHVRead.Text += "\n";
+                        }
                     }
-                    richTextBoxDescription.Text += "\n";
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                    richTextBoxHVRead.Text += "...Done\n";
+                }
+            }
+        }
+
+        private void btnSwitchToAuto_Click(object sender, EventArgs e)
+        {
+            if (btnSwitchToAuto.Text == "Switch to Auto")
+            {
+                HVSwitchToAuto(true);
+                btnSwitchToAuto.Text = "Switch to Man";
+                return;
+            }
+            if (btnSwitchToAuto.Text == "Switch to Man")
+            {
+                HVSwitchToAuto(false);
+                btnSwitchToAuto.Text = "Switch to Auto";
+                return;
+            }
+        }
+
+        private void HVSwitchToAuto(bool SwitchToAuto)
+        {
+            richTextBoxHVRead.Text = "Switching HV to ";
+            if (SwitchToAuto) richTextBoxHVRead.Text += "Auto mode...\n\n";
+            else richTextBoxHVRead.Text += "Manual mode...\n\n";
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    foreach (CROC croc in CROCModules)
+                    {
+                        foreach (IFrontEndChannel channel in croc.ChannelList)
+                        {
+                            foreach (Frame.Addresses feb in channel.ChainBoards)
+                            {
+                                try
+                                {
+                                    FPGAFrame frameRead = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
+                                    frameRead.Send(channel);
+                                    frameRead.Receive();
+
+                                    FPGAFrame frameWrite = new FPGAFrame(feb, Frame.FPGAFunctions.Write, new FrameID());
+                                    frameWrite.Registers = frameRead.Registers;
+                                    if (SwitchToAuto) frameWrite.HVManual = false;
+                                    else frameWrite.HVManual = true;
+                                    frameWrite.Send(channel);
+                                    frameWrite.Receive();
+
+                                    if (frameWrite.HVManual == SwitchToAuto)
+                                    {
+                                        richTextBoxHVRead.Text += channel.Description + ":" + feb + "  unable to set to ";
+                                        if (SwitchToAuto) richTextBoxHVRead.Text += "Auto mode\n";
+                                        else richTextBoxHVRead.Text += "Manual mode\n";
+                                    }
+                                    else
+                                    {
+                                        richTextBoxHVRead.Text += channel.Description + ":" + feb +
+                                            ": HVManual set to " + frameWrite.HVManual.ToString() + "\n";
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    richTextBoxHVRead.Text += channel.Description + ":" + feb + ": Error: " + e.Message + "\n";
+                                }
+                            }
+                            richTextBoxHVRead.Text += "\n";
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                    richTextBoxHVRead.Text += "...Done\n";
                 }
             }
         }
@@ -1454,7 +1669,7 @@ namespace MinervaGUI
             ID = (byte)boardID;
             base.Tag = theFEB;
             base.Text = boardID.ToString();
-            frmMinervaGUI.FEBSlaves.Add(theFEB);
+            frmSlowControl.FEBSlaves.Add(theFEB);
             FPGARegs.Text = "FPGA";
             TripRegs.Text = "TRIP";
             this.Nodes.Add(FPGARegs);

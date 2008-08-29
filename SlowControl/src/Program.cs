@@ -14,7 +14,7 @@ namespace MinervaGUI
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new frmMinervaGUI());
+            Application.Run(new frmSlowControl());
         }
     }
 }

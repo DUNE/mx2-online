@@ -1,6 +1,6 @@
 namespace MinervaGUI
 {
-    partial class frmMinervaGUI
+    partial class frmSlowControl
     {
         /// <summary>
         /// Required designer variable.
@@ -37,6 +37,7 @@ namespace MinervaGUI
             this.tabCH = new System.Windows.Forms.TabPage();
             this.tabFE = new System.Windows.Forms.TabPage();
             this.tabFPGARegs = new System.Windows.Forms.TabPage();
+            this.btn_AllFEsFPGARegWrite = new System.Windows.Forms.Button();
             this.btn_FPGAAdvancedGUI = new System.Windows.Forms.Button();
             this.lblFPGA_CROCID = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
@@ -48,8 +49,8 @@ namespace MinervaGUI
             this.label1 = new System.Windows.Forms.Label();
             this.fpgaDevRegControl1 = new MinervaUserControls.FPGADevRegControl();
             this.tabTRIPRegs = new System.Windows.Forms.TabPage();
+            this.btn_AllFEsTRIPRegWrite = new System.Windows.Forms.Button();
             this.cmb_TripID = new System.Windows.Forms.ComboBox();
-            this.tripDevRegControl1 = new MinervaUserControls.TripDevRegControl();
             this.btn_TRIPAdvancedGUI = new System.Windows.Forms.Button();
             this.lblTRIP_CROCID = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -59,8 +60,10 @@ namespace MinervaGUI
             this.btn_TRIPRegRead = new System.Windows.Forms.Button();
             this.btn_TRIPRegWrite = new System.Windows.Forms.Button();
             this.label9 = new System.Windows.Forms.Label();
+            this.tripDevRegControl1 = new MinervaUserControls.TripDevRegControl();
             this.tabFLASH = new System.Windows.Forms.TabPage();
             this.tabReadHV = new System.Windows.Forms.TabPage();
+            this.btnSwitchToAuto = new System.Windows.Forms.Button();
             this.textBoxADCThreshold = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.btnReadHV = new System.Windows.Forms.Button();
@@ -179,6 +182,7 @@ namespace MinervaGUI
             // 
             // tabFPGARegs
             // 
+            this.tabFPGARegs.Controls.Add(this.btn_AllFEsFPGARegWrite);
             this.tabFPGARegs.Controls.Add(this.btn_FPGAAdvancedGUI);
             this.tabFPGARegs.Controls.Add(this.lblFPGA_CROCID);
             this.tabFPGARegs.Controls.Add(this.label7);
@@ -196,6 +200,17 @@ namespace MinervaGUI
             this.tabFPGARegs.TabIndex = 0;
             this.tabFPGARegs.Text = "FPGA Regs";
             this.tabFPGARegs.UseVisualStyleBackColor = true;
+            // 
+            // btn_AllFEsFPGARegWrite
+            // 
+            this.btn_AllFEsFPGARegWrite.BackColor = System.Drawing.Color.Coral;
+            this.btn_AllFEsFPGARegWrite.Location = new System.Drawing.Point(286, 92);
+            this.btn_AllFEsFPGARegWrite.Name = "btn_AllFEsFPGARegWrite";
+            this.btn_AllFEsFPGARegWrite.Size = new System.Drawing.Size(55, 35);
+            this.btn_AllFEsFPGARegWrite.TabIndex = 25;
+            this.btn_AllFEsFPGARegWrite.Text = "WRITE ALL FEs";
+            this.btn_AllFEsFPGARegWrite.UseVisualStyleBackColor = false;
+            this.btn_AllFEsFPGARegWrite.Click += new System.EventHandler(this.btn_AllFEsFPGARegWrite_Click);
             // 
             // btn_FPGAAdvancedGUI
             // 
@@ -392,8 +407,8 @@ namespace MinervaGUI
             // 
             // tabTRIPRegs
             // 
+            this.tabTRIPRegs.Controls.Add(this.btn_AllFEsTRIPRegWrite);
             this.tabTRIPRegs.Controls.Add(this.cmb_TripID);
-            this.tabTRIPRegs.Controls.Add(this.tripDevRegControl1);
             this.tabTRIPRegs.Controls.Add(this.btn_TRIPAdvancedGUI);
             this.tabTRIPRegs.Controls.Add(this.lblTRIP_CROCID);
             this.tabTRIPRegs.Controls.Add(this.label3);
@@ -403,6 +418,7 @@ namespace MinervaGUI
             this.tabTRIPRegs.Controls.Add(this.btn_TRIPRegRead);
             this.tabTRIPRegs.Controls.Add(this.btn_TRIPRegWrite);
             this.tabTRIPRegs.Controls.Add(this.label9);
+            this.tabTRIPRegs.Controls.Add(this.tripDevRegControl1);
             this.tabTRIPRegs.Location = new System.Drawing.Point(4, 22);
             this.tabTRIPRegs.Name = "tabTRIPRegs";
             this.tabTRIPRegs.Padding = new System.Windows.Forms.Padding(3);
@@ -410,6 +426,17 @@ namespace MinervaGUI
             this.tabTRIPRegs.TabIndex = 1;
             this.tabTRIPRegs.Text = "TRIP Regs";
             this.tabTRIPRegs.UseVisualStyleBackColor = true;
+            // 
+            // btn_AllFEsTRIPRegWrite
+            // 
+            this.btn_AllFEsTRIPRegWrite.BackColor = System.Drawing.Color.Coral;
+            this.btn_AllFEsTRIPRegWrite.Location = new System.Drawing.Point(286, 119);
+            this.btn_AllFEsTRIPRegWrite.Name = "btn_AllFEsTRIPRegWrite";
+            this.btn_AllFEsTRIPRegWrite.Size = new System.Drawing.Size(55, 35);
+            this.btn_AllFEsTRIPRegWrite.TabIndex = 38;
+            this.btn_AllFEsTRIPRegWrite.Text = "WRITE ALL FEs";
+            this.btn_AllFEsTRIPRegWrite.UseVisualStyleBackColor = false;
+            this.btn_AllFEsTRIPRegWrite.Click += new System.EventHandler(this.btn_AllFEsTRIPRegWrite_Click);
             // 
             // cmb_TripID
             // 
@@ -426,55 +453,6 @@ namespace MinervaGUI
             this.cmb_TripID.Size = new System.Drawing.Size(55, 21);
             this.cmb_TripID.TabIndex = 36;
             this.cmb_TripID.SelectedIndexChanged += new System.EventHandler(this.cmb_TripID_SelectedIndexChanged);
-            // 
-            // tripDevRegControl1
-            // 
-            this.tripDevRegControl1.AutoScroll = true;
-            this.tripDevRegControl1.Location = new System.Drawing.Point(6, 37);
-            this.tripDevRegControl1.Name = "tripDevRegControl1";
-            this.tripDevRegControl1.RegisterGAIN = ((uint)(5u));
-            this.tripDevRegControl1.RegisterIB_T = ((uint)(0u));
-            this.tripDevRegControl1.RegisterIBBNFALL = ((uint)(120u));
-            this.tripDevRegControl1.RegisterIBCOMP = ((uint)(20u));
-            this.tripDevRegControl1.RegisterIBP = ((uint)(100u));
-            this.tripDevRegControl1.RegisterIBPIFF1REF = ((uint)(160u));
-            this.tripDevRegControl1.RegisterIBPOPAMP = ((uint)(40u));
-            this.tripDevRegControl1.RegisterIFF = ((uint)(0u));
-            this.tripDevRegControl1.RegisterIFFP2 = ((uint)(0u));
-            this.tripDevRegControl1.RegisterINJB0 = ((uint)(0u));
-            this.tripDevRegControl1.RegisterINJB1 = ((uint)(0u));
-            this.tripDevRegControl1.RegisterINJB2 = ((uint)(0u));
-            this.tripDevRegControl1.RegisterINJB3 = ((uint)(0u));
-            this.tripDevRegControl1.RegisterINJEX0 = ((uint)(0u));
-            this.tripDevRegControl1.RegisterINJEX33 = ((uint)(0u));
-            this.tripDevRegControl1.RegisterIRSEL = ((uint)(3u));
-            this.tripDevRegControl1.RegisterIWSEL = ((uint)(3u));
-            this.tripDevRegControl1.RegisterPIPEDEL = ((uint)(1u));
-            this.tripDevRegControl1.RegisterVREF = ((uint)(20u));
-            this.tripDevRegControl1.RegisterVTH = ((uint)(0u));
-            this.tripDevRegControl1.Size = new System.Drawing.Size(265, 390);
-            this.tripDevRegControl1.TabIndex = 35;
-            this.tripDevRegControl1.TRIPRegValues = new uint[] {
-        ((uint)(100u)),
-        ((uint)(120u)),
-        ((uint)(0u)),
-        ((uint)(160u)),
-        ((uint)(40u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(20u)),
-        ((uint)(20u)),
-        ((uint)(0u)),
-        ((uint)(5u)),
-        ((uint)(1u)),
-        ((uint)(3u)),
-        ((uint)(3u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u))};
             // 
             // btn_TRIPAdvancedGUI
             // 
@@ -566,6 +544,55 @@ namespace MinervaGUI
             this.label9.TabIndex = 25;
             this.label9.Text = "FE";
             // 
+            // tripDevRegControl1
+            // 
+            this.tripDevRegControl1.AutoScroll = true;
+            this.tripDevRegControl1.Location = new System.Drawing.Point(6, 37);
+            this.tripDevRegControl1.Name = "tripDevRegControl1";
+            this.tripDevRegControl1.RegisterGAIN = ((uint)(5u));
+            this.tripDevRegControl1.RegisterIB_T = ((uint)(0u));
+            this.tripDevRegControl1.RegisterIBBNFALL = ((uint)(120u));
+            this.tripDevRegControl1.RegisterIBCOMP = ((uint)(20u));
+            this.tripDevRegControl1.RegisterIBP = ((uint)(100u));
+            this.tripDevRegControl1.RegisterIBPIFF1REF = ((uint)(160u));
+            this.tripDevRegControl1.RegisterIBPOPAMP = ((uint)(40u));
+            this.tripDevRegControl1.RegisterIFF = ((uint)(0u));
+            this.tripDevRegControl1.RegisterIFFP2 = ((uint)(0u));
+            this.tripDevRegControl1.RegisterINJB0 = ((uint)(0u));
+            this.tripDevRegControl1.RegisterINJB1 = ((uint)(0u));
+            this.tripDevRegControl1.RegisterINJB2 = ((uint)(0u));
+            this.tripDevRegControl1.RegisterINJB3 = ((uint)(0u));
+            this.tripDevRegControl1.RegisterINJEX0 = ((uint)(0u));
+            this.tripDevRegControl1.RegisterINJEX33 = ((uint)(0u));
+            this.tripDevRegControl1.RegisterIRSEL = ((uint)(3u));
+            this.tripDevRegControl1.RegisterIWSEL = ((uint)(3u));
+            this.tripDevRegControl1.RegisterPIPEDEL = ((uint)(1u));
+            this.tripDevRegControl1.RegisterVREF = ((uint)(20u));
+            this.tripDevRegControl1.RegisterVTH = ((uint)(0u));
+            this.tripDevRegControl1.Size = new System.Drawing.Size(265, 390);
+            this.tripDevRegControl1.TabIndex = 35;
+            this.tripDevRegControl1.TRIPRegValues = new uint[] {
+        ((uint)(100u)),
+        ((uint)(120u)),
+        ((uint)(0u)),
+        ((uint)(160u)),
+        ((uint)(40u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(20u)),
+        ((uint)(20u)),
+        ((uint)(0u)),
+        ((uint)(5u)),
+        ((uint)(1u)),
+        ((uint)(3u)),
+        ((uint)(3u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u))};
+            // 
             // tabFLASH
             // 
             this.tabFLASH.Location = new System.Drawing.Point(4, 22);
@@ -578,6 +605,7 @@ namespace MinervaGUI
             // 
             // tabReadHV
             // 
+            this.tabReadHV.Controls.Add(this.btnSwitchToAuto);
             this.tabReadHV.Controls.Add(this.textBoxADCThreshold);
             this.tabReadHV.Controls.Add(this.label2);
             this.tabReadHV.Controls.Add(this.btnReadHV);
@@ -588,6 +616,16 @@ namespace MinervaGUI
             this.tabReadHV.TabIndex = 8;
             this.tabReadHV.Text = "Read HV";
             this.tabReadHV.UseVisualStyleBackColor = true;
+            // 
+            // btnSwitchToAuto
+            // 
+            this.btnSwitchToAuto.Location = new System.Drawing.Point(240, 403);
+            this.btnSwitchToAuto.Name = "btnSwitchToAuto";
+            this.btnSwitchToAuto.Size = new System.Drawing.Size(102, 20);
+            this.btnSwitchToAuto.TabIndex = 7;
+            this.btnSwitchToAuto.Text = "Switch to Auto";
+            this.btnSwitchToAuto.UseVisualStyleBackColor = true;
+            this.btnSwitchToAuto.Click += new System.EventHandler(this.btnSwitchToAuto_Click);
             // 
             // textBoxADCThreshold
             // 
@@ -609,7 +647,7 @@ namespace MinervaGUI
             // btnReadHV
             // 
             this.btnReadHV.Enabled = false;
-            this.btnReadHV.Location = new System.Drawing.Point(287, 403);
+            this.btnReadHV.Location = new System.Drawing.Point(158, 403);
             this.btnReadHV.Name = "btnReadHV";
             this.btnReadHV.Size = new System.Drawing.Size(76, 20);
             this.btnReadHV.TabIndex = 3;
@@ -827,7 +865,7 @@ namespace MinervaGUI
             this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
             this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
             // 
-            // frmMinervaGUI
+            // frmSlowControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -837,8 +875,9 @@ namespace MinervaGUI
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
-            this.Name = "frmMinervaGUI";
+            this.Name = "frmSlowControl";
             this.Text = "Minerva Slow Control";
+            this.Load += new System.EventHandler(this.frmSlowControl_Load);
             this.tabControl1.ResumeLayout(false);
             this.tabDescription.ResumeLayout(false);
             this.tabFPGARegs.ResumeLayout(false);
@@ -919,6 +958,9 @@ namespace MinervaGUI
         private System.Windows.Forms.ToolStripMenuItem zeroHVAllToolStripMenuItem;
         private System.Windows.Forms.TextBox textBoxADCThreshold;
         private System.Windows.Forms.ComboBox cmb_TripID;
+        private System.Windows.Forms.Button btnSwitchToAuto;
+        private System.Windows.Forms.Button btn_AllFEsFPGARegWrite;
+        private System.Windows.Forms.Button btn_AllFEsTRIPRegWrite;
 
     }
 }
