@@ -99,21 +99,19 @@ namespace MinervaGUI
                 //richTextBoxCrim.Text += "\nInterruptMask=" + ((CRIM)(e.Node.Tag)).InterruptMask;
                 //richTextBoxCrim.Text += "\nTimingMode=" + ((CRIM)(e.Node.Tag)).TimingMode;
                 //tabControl1.SelectTab("tabCRIM");
-                tabControl1.SelectTab("tabDescription");
+                tabControl1.SelectTab(tabDescription);
             }
             if (e.Node is CROCnode)
             {
-                richTextBoxDescription.Text += ((CROC)(e.Node.Tag)).Description;
-                //richTextBoxCroc.Text += "\nClockMode=" + ((CROC)(e.Node.Tag)).ClockMode;
-                //richTextBoxCroc.Text += "\nChannelList=" + ((CROC)(e.Node.Tag)).ChannelList;
-                //tabControl1.SelectTab("tabCROC");
-                tabControl1.SelectTab("tabDescription");
+                //richTextBoxDescription.Text += ((CROC)(e.Node.Tag)).Description;
+                lblCROC_CROCID.Text = Convert.ToString(((CROC)e.Node.Tag).BaseAddress >> 16);
+                tabControl1.SelectTab(tabCROC);
             }
             if (e.Node is CHnode)
             {
-                richTextBoxDescription.Text += ((CROCFrontEndChannel)(e.Node.Tag)).Description;
-                //tabControl1.SelectTab("tabCH");
-                tabControl1.SelectTab("tabDescription");
+                lblCH_CHID.Text = ((CROCFrontEndChannel)(e.Node.Tag)).ChannelNumber.ToString();
+                lblCH_CROCID.Text = ((((CROC)(((CROCnode)(e.Node.Parent)).Tag)).BaseAddress) >> 16).ToString();
+                tabControl1.SelectTab(tabCH);
             }
             if (e.Node is FEnode)
             {
@@ -122,7 +120,7 @@ namespace MinervaGUI
                     ", CHid=" + ((CROCFrontEndChannel)(((CHnode)(e.Node.Parent)).Tag)).ChannelNumber.ToString() +
                     ", CROCid=" + ((((CROC)(((CROCnode)(e.Node.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString();
                 //tabControl1.SelectTab("tabFE");
-                tabControl1.SelectTab("tabDescription");
+                tabControl1.SelectTab(tabDescription);
             }
             if (e.Node is FPGAnode)
             {
@@ -130,7 +128,7 @@ namespace MinervaGUI
                 lblFPGA_CHID.Text = ((CROCFrontEndChannel)(((CHnode)(e.Node.Parent.Parent)).Tag)).ChannelNumber.ToString();
                 lblFPGA_CROCID.Text = ((((CROC)(((CROCnode)(e.Node.Parent.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString();
                 btn_FPGARegRead_Click(null, null);
-                tabControl1.SelectTab("tabFPGARegs");
+                tabControl1.SelectTab(tabFPGARegs);
             }
             if (e.Node is TRIPnode)
             {
@@ -139,8 +137,18 @@ namespace MinervaGUI
                 lblTRIP_CROCID.Text = ((((CROC)(((CROCnode)(e.Node.Parent.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString();
                 cmb_TripID.SelectedIndex = 0;
                 btn_TRIPRegRead_Click(null, null);
-                tabControl1.SelectTab("tabTRIPRegs");
+                tabControl1.SelectTab(tabTRIPRegs);
             }
+
+            if (e.Node is FLASHnode)
+            {
+                lblFLASH_FEID.Text = ((FEnode)(e.Node.Parent)).BoardID.ToString();
+                lblFLASH_CHID.Text = ((CROCFrontEndChannel)(((CHnode)(e.Node.Parent.Parent)).Tag)).ChannelNumber.ToString();
+                lblFLASH_CROCID.Text = ((((CROC)(((CROCnode)(e.Node.Parent.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString();
+                tabControl1.SelectTab(tabFLASHPages);
+            }
+
+
         }
 
         private void loadConfigXmlToolStripMenuItem_Click(object sender, EventArgs e)
@@ -572,6 +580,24 @@ namespace MinervaGUI
 
             //    }
             //}
+        }
+
+        private void AdvancedGUI(Button sender, params Control[] slaves)
+        {
+            if (sender.Text == "Show Advanced GUI")
+            {
+                sender.Text = "Show Default GUI";
+                foreach (Control cntrl in slaves)
+                    cntrl.Visible = true;
+                return;
+            }
+            if (sender.Text == "Show Default GUI")
+            {
+                sender.Text = "Show Advanced GUI";
+                foreach (Control cntrl in slaves)
+                    cntrl.Visible = false;
+                return;
+            }
         }
 
         #region Methods for filling info classes before they are serialized
@@ -1435,7 +1461,7 @@ namespace MinervaGUI
 
         private void ReadHVChannelFEBs()
         {
-            outputText = "Croc:CH:FE: HVActual, HVTarget, HVActual - HVTarget\n\n";
+            outputText = "Croc:CH:FE: HVActual, HVTarget, HVActual - HVTarget, HVPeriodAuto\n\n";
             foreach (CROC croc in CROCModules)
             {
                 foreach (IFrontEndChannel channel in croc.ChannelList)
@@ -1450,7 +1476,8 @@ namespace MinervaGUI
                             if (Math.Abs(frame.HVActual - frame.HVTarget) < adcThreshold) continue;
                             outputText += channel.Description + ":" + feb + ": " +
                                           frame.HVActual.ToString() + ", " + frame.HVTarget.ToString() + ", " +
-                                          Convert.ToString(frame.HVActual - frame.HVTarget) + "\n";
+                                          Convert.ToString(frame.HVActual - frame.HVTarget) + ", " + 
+                                          Convert.ToString(frame.HVPeriodAuto) + "\n";
                         }
                         catch (Exception e)
                         {
@@ -1597,6 +1624,322 @@ namespace MinervaGUI
 
         #endregion
 
+        #region Methods for Write/Read to/from FLASH Memory
+
+        private void btn_FLASHAdvancedGUI_Click(object sender, EventArgs e)
+        {
+            AdvancedGUI((Button)sender, btn_FLASHReadSPIToFile, btn_FLASHWriteFileToSPI);
+        }
+
+        private void btn_FLASHReadSPIToFile_Click(object sender, EventArgs e)
+        {
+            this.Cursor = Cursors.WaitCursor;
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    SaveFileDialog mySFD = new SaveFileDialog();
+                    mySFD.Filter = "spi files (*.spidata)|*.spidata|All files (*.*)|*.*";
+                    mySFD.FilterIndex = 1;
+                    mySFD.RestoreDirectory = true;
+                    if (mySFD.ShowDialog() == DialogResult.OK)
+                    {
+                        TreeNode theNode = treeView1.SelectedNode;
+                        Frame.Addresses theBoard = (Frame.Addresses)(((FEnode)(theNode.Parent)).BoardID);
+                        IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Parent.Parent.Tag));
+                        theChannel.Reset();
+                        FlashFrame.ReadMemoryToFile(theChannel, theBoard, mySFD.FileName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+            this.Cursor = Cursors.Arrow;
+        }
+
+        private void btn_FLASHWriteFileToSPI_Click(object sender, EventArgs e)
+        {
+            this.Cursor = Cursors.WaitCursor;
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    OpenFileDialog myOFD = new OpenFileDialog();
+                    myOFD.Filter = "spi files (*.spidata)|*.spidata|All files (*.*)|*.*";
+                    myOFD.FilterIndex = 1;
+                    myOFD.RestoreDirectory = true;
+                    if (myOFD.ShowDialog() == DialogResult.OK)
+                    {
+                        TreeNode theNode = treeView1.SelectedNode;
+                        Frame.Addresses theBoard = (Frame.Addresses)(((FEnode)(theNode.Parent)).BoardID);
+                        IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Parent.Parent.Tag));
+                        theChannel.Reset();
+                        FlashFrame.WriteMemoryFromFile(theChannel, theBoard, myOFD.FileName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+            this.Cursor = Cursors.Arrow;
+        }
+
+        #endregion
+
+        #region Methods for Write/Read to/from CHANNEL
+
+        private void btn_CHAdvancedGUI_Click(object sender, EventArgs e)
+        {
+            AdvancedGUI((Button)sender, groupBoxCH_FLASH, groupBoxCH_StatusRegister, 
+                groupBoxCH_DPM, groupBoxCH_LoopDelay);
+        }
+
+        private void btn_CHWriteFileToSPI_Click(object sender, EventArgs e)
+        {
+            this.Cursor = Cursors.WaitCursor;
+            OpenFileDialog myOFD = new OpenFileDialog();
+            myOFD.Filter = "spi files (*.spidata)|*.spidata|All files (*.*)|*.*";
+            myOFD.FilterIndex = 1;
+            myOFD.RestoreDirectory = true;
+            if (myOFD.ShowDialog() == DialogResult.OK)
+            {
+                lock (this)
+                {
+                    vmeDone.WaitOne();
+                    try
+                    {
+                        TreeNode theNode = treeView1.SelectedNode;
+                        IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                        theChannel.Reset();
+                        ChannelWriteFileToFEsFlash(myOFD, theChannel);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                    }
+                    finally
+                    {
+                        vmeDone.Set();
+                        richTextBoxDescription.Text += "\n...Done " + DateTime.Now.ToString() + "\n";
+                    }
+                }
+            }
+            this.Cursor = Cursors.Arrow;
+        }
+
+        private void btn_CHReBootFEs_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                    CROC theCroc = (CROC)(theNode.Parent.Tag);
+                    ChannelReBootFEs(theChannel, theCroc, true);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void ChannelWriteFileToFEsFlash(OpenFileDialog myOFD, IFrontEndChannel theChannel)
+        {
+
+            tabControl1.SelectTab(tabDescription);
+            richTextBoxDescription.Text += "Writing ALL FEBs FLASH on " + theChannel.Description +
+                " with the following data file :\n\n" + myOFD.FileName + "\n\n";
+            tabControl1.SelectedTab.Refresh();
+
+            foreach (Frame.Addresses feb in theChannel.ChainBoards)
+            {
+                try
+                {
+                    richTextBoxDescription.Text += theChannel.Description + ":" + feb +
+                        ": FLASH Write      Begin " + DateTime.Now.ToString() + "\n";
+                    tabControl1.SelectedTab.Refresh();
+                    FlashFrame.WriteMemoryFromFile(theChannel, feb, myOFD.FileName);
+                    richTextBoxDescription.Text += theChannel.Description + ":" + feb +
+                        ": FLASH Write Success " + DateTime.Now.ToString() + "\n";
+                    tabControl1.SelectedTab.Refresh();
+                    //this is not quite safe... but for window's screen update is necessary...
+                    Application.DoEvents();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.Text += theChannel.Description + ":" + feb + ": Error: " + ex.Message + "\n";
+                }
+            }
+        }
+
+        private void ChannelReBootFEs(IFrontEndChannel theChannel, CROC theCroc, bool withChannelReset)
+        {
+            //Dave's code in CROCFrontEndChannel.cs defines SendReset() as private, so I can't call it...
+            //The following is Cristian's adaptation...
+            ushort ResetMask = (ushort)(((ushort)0x0001) << ((ushort)(8 + theChannel.ChannelNumber - 1)));
+            // Enable reset on this channel
+            controller.Write(theCroc.BaseAddress + (uint)CROC.Registers.ResetAndTestMask, controller.AddressModifier,
+                controller.DataWidth, BitConverter.GetBytes(ResetMask));
+            // Send the command
+            controller.Write(theCroc.BaseAddress + (uint)CROC.Registers.ChannelReset, controller.AddressModifier,
+                controller.DataWidth, CROC.ChannelResetRegisterValue);
+            // Clear the enable register
+            controller.Write(theCroc.BaseAddress + (uint)CROC.Registers.ResetAndTestMask, controller.AddressModifier,
+                controller.DataWidth, CROC.NullValue);
+
+            //Cristian's note: I need to call the theChannel.Reset() to turn off ANY reminded RED LEDs on CROC...
+            if (withChannelReset)
+            {
+                Thread.Sleep(3000);
+                theChannel.Reset();
+            }
+        }
+
+        private void ChannelUpdateStatusColors(CROCFrontEndChannel.StatusBits chStatus)
+        {
+            //lblCH_StatMsgSent.Text = (int)chStatus & CROCFrontEndChannel.StatusBits.MessageSent;
+        }
+
+        private void btn_CHStatusRegRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                    CROCFrontEndChannel.StatusBits chStatus = theChannel.StatusRegister;
+
+                    lblCH_StatusValue.Text = "0x" + chStatus.ToString("X");
+
+                    
+                    
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CHStatusRegClear_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        #endregion
+            
+        #region Methods for Write/Read to/from CROC
+
+        private void btn_CROCAdvancedGUI_Click(object sender, EventArgs e)
+        {
+            AdvancedGUI((Button)sender,groupBoxCROC_FLASH);
+        }
+
+        private void btn_CROCWriteFileToSPI_Click(object sender, EventArgs e)
+        {
+            this.Cursor = Cursors.WaitCursor;
+            OpenFileDialog myOFD = new OpenFileDialog();
+            myOFD.Filter = "spi files (*.spidata)|*.spidata|All files (*.*)|*.*";
+            myOFD.FilterIndex = 1;
+            myOFD.RestoreDirectory = true;
+            if (myOFD.ShowDialog() == DialogResult.OK)
+            {
+                lock (this)
+                {
+                    vmeDone.WaitOne();
+                    try
+                    {
+                        TreeNode theNode = treeView1.SelectedNode;
+                        CROC theCROC = ((CROC)(theNode.Tag));
+                        foreach (CROCFrontEndChannel theChannel in theCROC.ChannelList)
+                        {
+                            theChannel.Reset();
+                            ChannelWriteFileToFEsFlash(myOFD, theChannel);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                    }
+                    finally
+                    {
+                        vmeDone.Set();
+                        richTextBoxDescription.Text += "\n...Done " + DateTime.Now.ToString() + "\n";
+                    }
+                }
+            }
+            this.Cursor = Cursors.Arrow;
+        }
+
+        private void btn_CROCReBootFEs_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCROC = ((CROC)(theNode.Tag));
+                    foreach (CROCFrontEndChannel theChannel in theCROC.ChannelList)
+                        ChannelReBootFEs(theChannel, theCROC, false);
+                    //Cristian's note: I need to call the theCROC.Reset() to turn off ANY reminded RED LEDs on CROC...
+                    Thread.Sleep(3000); //let all FEs reboot and send any garbage to CROC...
+                    theCROC.Reset();
+                    //UInt32 status = 0;
+                    //foreach (CROCFrontEndChannel theChannel in theCROC.ChannelList)
+                    //{
+                    //    theChannel.Reset();
+                    //    status = Convert.ToUInt32(theChannel.StatusRegister);
+                    //    while (status != 0x3700)
+                    //    {
+                    //        Thread.Sleep(1000); //just wait more... 
+                    //        theChannel.Reset();
+                    //        status = Convert.ToUInt32(theChannel.StatusRegister);
+                    //    }
+                    //}
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        #endregion
+
+
+
+
     }
 
     #region Tree Nodes
@@ -1663,6 +2006,7 @@ namespace MinervaGUI
         private byte ID = 0;
         private FPGAnode FPGARegs = new FPGAnode();
         private TRIPnode TripRegs = new TRIPnode();
+        private FLASHnode FlashPages = new FLASHnode();
         public FEnode(IFrontEndChannel channel, Frame.Addresses boardID)
         {
             FEBSlave theFEB = new FEBSlave(channel, boardID);
@@ -1672,8 +2016,10 @@ namespace MinervaGUI
             frmSlowControl.FEBSlaves.Add(theFEB);
             FPGARegs.Text = "FPGA";
             TripRegs.Text = "TRIP";
+            FlashPages.Text = "FLAH";
             this.Nodes.Add(FPGARegs);
             this.Nodes.Add(TripRegs);
+            this.Nodes.Add(FlashPages);
         }
         /// <summary>
         /// Get the Frame.Addresses boardID
@@ -1684,8 +2030,10 @@ namespace MinervaGUI
     public class FPGAnode : TreeNode
     {
     }
-
     public class TRIPnode : TreeNode
+    {
+    }
+    public class FLASHnode : TreeNode
     {
     }
 
