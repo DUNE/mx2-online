@@ -412,8 +412,8 @@ namespace MinervaGUI
                     {
                         try
                         {
-                            wData[0] = (byte)r.Next(1, 255);
-                            wData[1] = (byte)r.Next(1, 255);
+                            wData[0] = (byte)1;
+                            wData[1] = (byte)1;
                             #region Version#1 to find out CROCs and CRIMs using Write/Read through "controller" object
                             controller.Write((VMEDevsBaseAddr << 16) + 0xF000, controller.AddressModifier,
                                     controller.DataWidth, wData);
