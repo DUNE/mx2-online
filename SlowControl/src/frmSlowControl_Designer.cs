@@ -34,6 +34,40 @@ namespace MinervaGUI
             this.richTextBoxDescription = new System.Windows.Forms.RichTextBox();
             this.tabCRIM = new System.Windows.Forms.TabPage();
             this.tabCROC = new System.Windows.Forms.TabPage();
+            this.groupBoxCROC_LoopDelay = new System.Windows.Forms.GroupBox();
+            this.lbl_CROCLoopDelayCh4 = new System.Windows.Forms.Label();
+            this.label43 = new System.Windows.Forms.Label();
+            this.lbl_CROCLoopDelayCh3 = new System.Windows.Forms.Label();
+            this.label39 = new System.Windows.Forms.Label();
+            this.lbl_CROCLoopDelayCh2 = new System.Windows.Forms.Label();
+            this.label35 = new System.Windows.Forms.Label();
+            this.lbl_CROCLoopDelayCh1 = new System.Windows.Forms.Label();
+            this.label23 = new System.Windows.Forms.Label();
+            this.btn_CROCLoopDelay = new System.Windows.Forms.Button();
+            this.groupBoxCROC_FastCommand = new System.Windows.Forms.GroupBox();
+            this.cmb_CROCFastCommand = new System.Windows.Forms.ComboBox();
+            this.btn_CROCFastCommand = new System.Windows.Forms.Button();
+            this.groupBoxCROC_ResetTPMaskReg = new System.Windows.Forms.GroupBox();
+            this.btn_CROCTPSend = new System.Windows.Forms.Button();
+            this.btn_CROCResetSend = new System.Windows.Forms.Button();
+            this.btn_CROCResetTPWrite = new System.Windows.Forms.Button();
+            this.lbl_CROCResetTPRead = new System.Windows.Forms.Label();
+            this.btn_CROCResetTPRead = new System.Windows.Forms.Button();
+            this.chk_CROCTPulseCh4 = new System.Windows.Forms.CheckBox();
+            this.chk_CROCResetCh4 = new System.Windows.Forms.CheckBox();
+            this.chk_CROCTPulseCh3 = new System.Windows.Forms.CheckBox();
+            this.chk_CROCResetCh3 = new System.Windows.Forms.CheckBox();
+            this.chk_CROCTPulseCh2 = new System.Windows.Forms.CheckBox();
+            this.chk_CROCResetCh2 = new System.Windows.Forms.CheckBox();
+            this.chk_CROCTPulseCh1 = new System.Windows.Forms.CheckBox();
+            this.chk_CROCResetCh1 = new System.Windows.Forms.CheckBox();
+            this.groupBoxCROC_TimingSetup = new System.Windows.Forms.GroupBox();
+            this.lbl_CROCTimingSetupRead = new System.Windows.Forms.Label();
+            this.label20 = new System.Windows.Forms.Label();
+            this.btn_CROCTimingSetupRead = new System.Windows.Forms.Button();
+            this.txt_CROCTimingSetupTPDelay = new System.Windows.Forms.TextBox();
+            this.cmb_CROCTimingSetupTPDelay = new System.Windows.Forms.ComboBox();
+            this.cmb_CROCTimingSetupClock = new System.Windows.Forms.ComboBox();
             this.groupBoxCROC_FLASH = new System.Windows.Forms.GroupBox();
             this.btn_CROCWriteFileToSPI = new System.Windows.Forms.Button();
             this.btn_CROCReBootFEs = new System.Windows.Forms.Button();
@@ -45,7 +79,23 @@ namespace MinervaGUI
             this.label18 = new System.Windows.Forms.Label();
             this.label19 = new System.Windows.Forms.Label();
             this.tabCH = new System.Windows.Forms.TabPage();
+            this.groupBoxCH_Frame = new System.Windows.Forms.GroupBox();
+            this.btn_CHFIFOWriteMessage = new System.Windows.Forms.Button();
+            this.rtb_CHDPMRead = new System.Windows.Forms.RichTextBox();
+            this.txt_CHDPMReadLength = new System.Windows.Forms.TextBox();
+            this.txt_CHFIFORegWrite = new System.Windows.Forms.TextBox();
+            this.btn_CHDPMRead = new System.Windows.Forms.Button();
+            this.btn_CHSendMessage = new System.Windows.Forms.Button();
+            this.btn_CHFIFOAppendMessage = new System.Windows.Forms.Button();
             this.groupBoxCH_StatusRegister = new System.Windows.Forms.GroupBox();
+            this.lblCH_StatUnusedBit4 = new System.Windows.Forms.Label();
+            this.label33 = new System.Windows.Forms.Label();
+            this.lblCH_StatUnusedBit3 = new System.Windows.Forms.Label();
+            this.label29 = new System.Windows.Forms.Label();
+            this.lblCH_StatUnusedBit2 = new System.Windows.Forms.Label();
+            this.label25 = new System.Windows.Forms.Label();
+            this.lblCH_StatUnusedBit1 = new System.Windows.Forms.Label();
+            this.label21 = new System.Windows.Forms.Label();
             this.btn_CHStatusRegClear = new System.Windows.Forms.Button();
             this.btn_CHStatusRegRead = new System.Windows.Forms.Button();
             this.lblCH_StatusValue = new System.Windows.Forms.Label();
@@ -63,7 +113,7 @@ namespace MinervaGUI
             this.label28 = new System.Windows.Forms.Label();
             this.label42 = new System.Windows.Forms.Label();
             this.lblCH_StatTimeoutError = new System.Windows.Forms.Label();
-            this.lblCH_StatFFONotEmpty = new System.Windows.Forms.Label();
+            this.lblCH_StatFIFONotEmpty = new System.Windows.Forms.Label();
             this.label36 = new System.Windows.Forms.Label();
             this.label44 = new System.Windows.Forms.Label();
             this.lblCH_StatSerializerSYNC = new System.Windows.Forms.Label();
@@ -76,12 +126,9 @@ namespace MinervaGUI
             this.groupBoxCH_FLASH = new System.Windows.Forms.GroupBox();
             this.btn_CHWriteFileToSPI = new System.Windows.Forms.Button();
             this.btn_CHReBootFEs = new System.Windows.Forms.Button();
-            this.groupBoxCH_LoopDelay = new System.Windows.Forms.GroupBox();
-            this.btn_CHReadLoopDelay = new System.Windows.Forms.Button();
-            this.lblCH_LoopDelayValue = new System.Windows.Forms.Label();
             this.groupBoxCH_DPM = new System.Windows.Forms.GroupBox();
-            this.btn_CHResetDPMPointer = new System.Windows.Forms.Button();
-            this.btn_CHReadDPMPointer = new System.Windows.Forms.Button();
+            this.btn_CHDPMPointerReset = new System.Windows.Forms.Button();
+            this.btn_CHDPMPointerRead = new System.Windows.Forms.Button();
             this.lblCH_DPMPointerValue = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.btn_CHAdvancedGUI = new System.Windows.Forms.Button();
@@ -127,6 +174,9 @@ namespace MinervaGUI
             this.label13 = new System.Windows.Forms.Label();
             this.btn_FLASHReadSPIToFile = new System.Windows.Forms.Button();
             this.tabReadHV = new System.Windows.Forms.TabPage();
+            this.btnMonitorHV = new System.Windows.Forms.Button();
+            this.label27 = new System.Windows.Forms.Label();
+            this.textBoxMonitorTimer = new System.Windows.Forms.TextBox();
             this.btnSwitchToAuto = new System.Windows.Forms.Button();
             this.textBoxADCThreshold = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
@@ -153,26 +203,24 @@ namespace MinervaGUI
             this.actionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.readVoltagesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.zeroHVAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.monitorVoltagesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.prgStatus = new System.Windows.Forms.ToolStripProgressBar();
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.label20 = new System.Windows.Forms.Label();
-            this.label21 = new System.Windows.Forms.Label();
-            this.label23 = new System.Windows.Forms.Label();
-            this.label25 = new System.Windows.Forms.Label();
-            this.label27 = new System.Windows.Forms.Label();
-            this.label29 = new System.Windows.Forms.Label();
-            this.label31 = new System.Windows.Forms.Label();
-            this.label33 = new System.Windows.Forms.Label();
+            this.timerMonitorHV = new System.Windows.Forms.Timer(this.components);
             this.tabControl1.SuspendLayout();
             this.tabDescription.SuspendLayout();
             this.tabCROC.SuspendLayout();
+            this.groupBoxCROC_LoopDelay.SuspendLayout();
+            this.groupBoxCROC_FastCommand.SuspendLayout();
+            this.groupBoxCROC_ResetTPMaskReg.SuspendLayout();
+            this.groupBoxCROC_TimingSetup.SuspendLayout();
             this.groupBoxCROC_FLASH.SuspendLayout();
             this.tabCH.SuspendLayout();
+            this.groupBoxCH_Frame.SuspendLayout();
             this.groupBoxCH_StatusRegister.SuspendLayout();
             this.groupBoxCH_FLASH.SuspendLayout();
-            this.groupBoxCH_LoopDelay.SuspendLayout();
             this.groupBoxCH_DPM.SuspendLayout();
             this.tabFPGARegs.SuspendLayout();
             this.tabTRIPRegs.SuspendLayout();
@@ -197,10 +245,10 @@ namespace MinervaGUI
             this.tabControl1.Controls.Add(this.tabTRIPRegs);
             this.tabControl1.Controls.Add(this.tabFLASHPages);
             this.tabControl1.Controls.Add(this.tabReadHV);
-            this.tabControl1.Location = new System.Drawing.Point(324, 27);
+            this.tabControl1.Location = new System.Drawing.Point(317, 27);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(395, 497);
+            this.tabControl1.Size = new System.Drawing.Size(395, 477);
             this.tabControl1.TabIndex = 0;
             // 
             // tabDescription
@@ -209,7 +257,7 @@ namespace MinervaGUI
             this.tabDescription.Location = new System.Drawing.Point(4, 22);
             this.tabDescription.Name = "tabDescription";
             this.tabDescription.Padding = new System.Windows.Forms.Padding(3);
-            this.tabDescription.Size = new System.Drawing.Size(387, 404);
+            this.tabDescription.Size = new System.Drawing.Size(387, 451);
             this.tabDescription.TabIndex = 3;
             this.tabDescription.Text = "Description";
             this.tabDescription.UseVisualStyleBackColor = true;
@@ -220,7 +268,7 @@ namespace MinervaGUI
             this.richTextBoxDescription.Dock = System.Windows.Forms.DockStyle.Fill;
             this.richTextBoxDescription.Location = new System.Drawing.Point(3, 3);
             this.richTextBoxDescription.Name = "richTextBoxDescription";
-            this.richTextBoxDescription.Size = new System.Drawing.Size(381, 398);
+            this.richTextBoxDescription.Size = new System.Drawing.Size(381, 445);
             this.richTextBoxDescription.TabIndex = 0;
             this.richTextBoxDescription.Text = "";
             // 
@@ -228,13 +276,17 @@ namespace MinervaGUI
             // 
             this.tabCRIM.Location = new System.Drawing.Point(4, 22);
             this.tabCRIM.Name = "tabCRIM";
-            this.tabCRIM.Size = new System.Drawing.Size(387, 404);
+            this.tabCRIM.Size = new System.Drawing.Size(387, 451);
             this.tabCRIM.TabIndex = 4;
             this.tabCRIM.Text = "CRIM";
             this.tabCRIM.UseVisualStyleBackColor = true;
             // 
             // tabCROC
             // 
+            this.tabCROC.Controls.Add(this.groupBoxCROC_LoopDelay);
+            this.tabCROC.Controls.Add(this.groupBoxCROC_FastCommand);
+            this.tabCROC.Controls.Add(this.groupBoxCROC_ResetTPMaskReg);
+            this.tabCROC.Controls.Add(this.groupBoxCROC_TimingSetup);
             this.tabCROC.Controls.Add(this.groupBoxCROC_FLASH);
             this.tabCROC.Controls.Add(this.btn_CROCAdvancedGUI);
             this.tabCROC.Controls.Add(this.lblCROC_CROCID);
@@ -245,10 +297,391 @@ namespace MinervaGUI
             this.tabCROC.Controls.Add(this.label19);
             this.tabCROC.Location = new System.Drawing.Point(4, 22);
             this.tabCROC.Name = "tabCROC";
-            this.tabCROC.Size = new System.Drawing.Size(387, 404);
+            this.tabCROC.Size = new System.Drawing.Size(387, 451);
             this.tabCROC.TabIndex = 5;
             this.tabCROC.Text = "CROC";
             this.tabCROC.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxCROC_LoopDelay
+            // 
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.lbl_CROCLoopDelayCh4);
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.label43);
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.lbl_CROCLoopDelayCh3);
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.label39);
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.lbl_CROCLoopDelayCh2);
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.label35);
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.lbl_CROCLoopDelayCh1);
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.label23);
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.btn_CROCLoopDelay);
+            this.groupBoxCROC_LoopDelay.Location = new System.Drawing.Point(16, 299);
+            this.groupBoxCROC_LoopDelay.Name = "groupBoxCROC_LoopDelay";
+            this.groupBoxCROC_LoopDelay.Size = new System.Drawing.Size(114, 126);
+            this.groupBoxCROC_LoopDelay.TabIndex = 63;
+            this.groupBoxCROC_LoopDelay.TabStop = false;
+            this.groupBoxCROC_LoopDelay.Text = "Loop Delay";
+            this.groupBoxCROC_LoopDelay.Visible = false;
+            // 
+            // lbl_CROCLoopDelayCh4
+            // 
+            this.lbl_CROCLoopDelayCh4.BackColor = System.Drawing.Color.White;
+            this.lbl_CROCLoopDelayCh4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lbl_CROCLoopDelayCh4.Location = new System.Drawing.Point(37, 98);
+            this.lbl_CROCLoopDelayCh4.Name = "lbl_CROCLoopDelayCh4";
+            this.lbl_CROCLoopDelayCh4.Size = new System.Drawing.Size(70, 18);
+            this.lbl_CROCLoopDelayCh4.TabIndex = 85;
+            // 
+            // label43
+            // 
+            this.label43.BackColor = System.Drawing.Color.Coral;
+            this.label43.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label43.Location = new System.Drawing.Point(8, 99);
+            this.label43.Name = "label43";
+            this.label43.Size = new System.Drawing.Size(30, 16);
+            this.label43.TabIndex = 84;
+            this.label43.Text = "Ch4";
+            // 
+            // lbl_CROCLoopDelayCh3
+            // 
+            this.lbl_CROCLoopDelayCh3.BackColor = System.Drawing.Color.White;
+            this.lbl_CROCLoopDelayCh3.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lbl_CROCLoopDelayCh3.Location = new System.Drawing.Point(37, 79);
+            this.lbl_CROCLoopDelayCh3.Name = "lbl_CROCLoopDelayCh3";
+            this.lbl_CROCLoopDelayCh3.Size = new System.Drawing.Size(70, 18);
+            this.lbl_CROCLoopDelayCh3.TabIndex = 83;
+            // 
+            // label39
+            // 
+            this.label39.BackColor = System.Drawing.Color.Coral;
+            this.label39.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label39.Location = new System.Drawing.Point(8, 80);
+            this.label39.Name = "label39";
+            this.label39.Size = new System.Drawing.Size(30, 16);
+            this.label39.TabIndex = 82;
+            this.label39.Text = "Ch3";
+            // 
+            // lbl_CROCLoopDelayCh2
+            // 
+            this.lbl_CROCLoopDelayCh2.BackColor = System.Drawing.Color.White;
+            this.lbl_CROCLoopDelayCh2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lbl_CROCLoopDelayCh2.Location = new System.Drawing.Point(37, 60);
+            this.lbl_CROCLoopDelayCh2.Name = "lbl_CROCLoopDelayCh2";
+            this.lbl_CROCLoopDelayCh2.Size = new System.Drawing.Size(70, 18);
+            this.lbl_CROCLoopDelayCh2.TabIndex = 81;
+            // 
+            // label35
+            // 
+            this.label35.BackColor = System.Drawing.Color.Coral;
+            this.label35.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label35.Location = new System.Drawing.Point(8, 61);
+            this.label35.Name = "label35";
+            this.label35.Size = new System.Drawing.Size(30, 16);
+            this.label35.TabIndex = 80;
+            this.label35.Text = "Ch2";
+            // 
+            // lbl_CROCLoopDelayCh1
+            // 
+            this.lbl_CROCLoopDelayCh1.BackColor = System.Drawing.Color.White;
+            this.lbl_CROCLoopDelayCh1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lbl_CROCLoopDelayCh1.Location = new System.Drawing.Point(36, 41);
+            this.lbl_CROCLoopDelayCh1.Name = "lbl_CROCLoopDelayCh1";
+            this.lbl_CROCLoopDelayCh1.Size = new System.Drawing.Size(70, 18);
+            this.lbl_CROCLoopDelayCh1.TabIndex = 79;
+            // 
+            // label23
+            // 
+            this.label23.BackColor = System.Drawing.Color.Coral;
+            this.label23.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label23.Location = new System.Drawing.Point(7, 42);
+            this.label23.Name = "label23";
+            this.label23.Size = new System.Drawing.Size(30, 16);
+            this.label23.TabIndex = 64;
+            this.label23.Text = "Ch1";
+            // 
+            // btn_CROCLoopDelay
+            // 
+            this.btn_CROCLoopDelay.BackColor = System.Drawing.Color.Coral;
+            this.btn_CROCLoopDelay.Location = new System.Drawing.Point(7, 19);
+            this.btn_CROCLoopDelay.Name = "btn_CROCLoopDelay";
+            this.btn_CROCLoopDelay.Size = new System.Drawing.Size(101, 20);
+            this.btn_CROCLoopDelay.TabIndex = 78;
+            this.btn_CROCLoopDelay.Text = "Read Loop Delay";
+            this.btn_CROCLoopDelay.UseVisualStyleBackColor = false;
+            this.btn_CROCLoopDelay.Click += new System.EventHandler(this.btn_CROCLoopDelay_Click);
+            // 
+            // groupBoxCROC_FastCommand
+            // 
+            this.groupBoxCROC_FastCommand.Controls.Add(this.cmb_CROCFastCommand);
+            this.groupBoxCROC_FastCommand.Controls.Add(this.btn_CROCFastCommand);
+            this.groupBoxCROC_FastCommand.Location = new System.Drawing.Point(16, 231);
+            this.groupBoxCROC_FastCommand.Name = "groupBoxCROC_FastCommand";
+            this.groupBoxCROC_FastCommand.Size = new System.Drawing.Size(114, 67);
+            this.groupBoxCROC_FastCommand.TabIndex = 62;
+            this.groupBoxCROC_FastCommand.TabStop = false;
+            this.groupBoxCROC_FastCommand.Text = "Fast Command";
+            this.groupBoxCROC_FastCommand.Visible = false;
+            // 
+            // cmb_CROCFastCommand
+            // 
+            this.cmb_CROCFastCommand.FormattingEnabled = true;
+            this.cmb_CROCFastCommand.Items.AddRange(new object[] {
+            "OpenGate",
+            "ResetFPGA",
+            "ResetTimer",
+            "LoadTimer",
+            "TrigFound",
+            "TrigRearm"});
+            this.cmb_CROCFastCommand.Location = new System.Drawing.Point(7, 19);
+            this.cmb_CROCFastCommand.Name = "cmb_CROCFastCommand";
+            this.cmb_CROCFastCommand.Size = new System.Drawing.Size(101, 21);
+            this.cmb_CROCFastCommand.TabIndex = 63;
+            this.cmb_CROCFastCommand.Text = "Fast Command";
+            // 
+            // btn_CROCFastCommand
+            // 
+            this.btn_CROCFastCommand.BackColor = System.Drawing.Color.Coral;
+            this.btn_CROCFastCommand.Location = new System.Drawing.Point(6, 42);
+            this.btn_CROCFastCommand.Name = "btn_CROCFastCommand";
+            this.btn_CROCFastCommand.Size = new System.Drawing.Size(102, 20);
+            this.btn_CROCFastCommand.TabIndex = 77;
+            this.btn_CROCFastCommand.Text = "Send Fast Cmd";
+            this.btn_CROCFastCommand.UseVisualStyleBackColor = false;
+            this.btn_CROCFastCommand.Click += new System.EventHandler(this.btn_CROCFastCommand_Click);
+            // 
+            // groupBoxCROC_ResetTPMaskReg
+            // 
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.btn_CROCTPSend);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.btn_CROCResetSend);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.btn_CROCResetTPWrite);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.lbl_CROCResetTPRead);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.btn_CROCResetTPRead);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.chk_CROCTPulseCh4);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.chk_CROCResetCh4);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.chk_CROCTPulseCh3);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.chk_CROCResetCh3);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.chk_CROCTPulseCh2);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.chk_CROCResetCh2);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.chk_CROCTPulseCh1);
+            this.groupBoxCROC_ResetTPMaskReg.Controls.Add(this.chk_CROCResetCh1);
+            this.groupBoxCROC_ResetTPMaskReg.Location = new System.Drawing.Point(136, 120);
+            this.groupBoxCROC_ResetTPMaskReg.Name = "groupBoxCROC_ResetTPMaskReg";
+            this.groupBoxCROC_ResetTPMaskReg.Size = new System.Drawing.Size(188, 167);
+            this.groupBoxCROC_ResetTPMaskReg.TabIndex = 61;
+            this.groupBoxCROC_ResetTPMaskReg.TabStop = false;
+            this.groupBoxCROC_ResetTPMaskReg.Text = "Reset and Test Pulse";
+            this.groupBoxCROC_ResetTPMaskReg.Visible = false;
+            // 
+            // btn_CROCTPSend
+            // 
+            this.btn_CROCTPSend.BackColor = System.Drawing.Color.Coral;
+            this.btn_CROCTPSend.Location = new System.Drawing.Point(7, 140);
+            this.btn_CROCTPSend.Name = "btn_CROCTPSend";
+            this.btn_CROCTPSend.Size = new System.Drawing.Size(173, 20);
+            this.btn_CROCTPSend.TabIndex = 76;
+            this.btn_CROCTPSend.Text = "Send Test Pulse";
+            this.btn_CROCTPSend.UseVisualStyleBackColor = false;
+            this.btn_CROCTPSend.Click += new System.EventHandler(this.btn_CROCTPSend_Click);
+            // 
+            // btn_CROCResetSend
+            // 
+            this.btn_CROCResetSend.BackColor = System.Drawing.Color.Coral;
+            this.btn_CROCResetSend.Location = new System.Drawing.Point(6, 119);
+            this.btn_CROCResetSend.Name = "btn_CROCResetSend";
+            this.btn_CROCResetSend.Size = new System.Drawing.Size(173, 20);
+            this.btn_CROCResetSend.TabIndex = 75;
+            this.btn_CROCResetSend.Text = "Send Reset (reload FPGA)";
+            this.btn_CROCResetSend.UseVisualStyleBackColor = false;
+            this.btn_CROCResetSend.Click += new System.EventHandler(this.btn_CROCResetSend_Click);
+            // 
+            // btn_CROCResetTPWrite
+            // 
+            this.btn_CROCResetTPWrite.BackColor = System.Drawing.Color.Coral;
+            this.btn_CROCResetTPWrite.Location = new System.Drawing.Point(6, 98);
+            this.btn_CROCResetTPWrite.Name = "btn_CROCResetTPWrite";
+            this.btn_CROCResetTPWrite.Size = new System.Drawing.Size(60, 20);
+            this.btn_CROCResetTPWrite.TabIndex = 74;
+            this.btn_CROCResetTPWrite.Text = "Write";
+            this.btn_CROCResetTPWrite.UseVisualStyleBackColor = false;
+            this.btn_CROCResetTPWrite.Click += new System.EventHandler(this.btn_CROCResetTPWrite_Click);
+            // 
+            // lbl_CROCResetTPRead
+            // 
+            this.lbl_CROCResetTPRead.BackColor = System.Drawing.Color.White;
+            this.lbl_CROCResetTPRead.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lbl_CROCResetTPRead.Location = new System.Drawing.Point(123, 99);
+            this.lbl_CROCResetTPRead.Name = "lbl_CROCResetTPRead";
+            this.lbl_CROCResetTPRead.Size = new System.Drawing.Size(57, 18);
+            this.lbl_CROCResetTPRead.TabIndex = 73;
+            // 
+            // btn_CROCResetTPRead
+            // 
+            this.btn_CROCResetTPRead.BackColor = System.Drawing.Color.Coral;
+            this.btn_CROCResetTPRead.Location = new System.Drawing.Point(68, 98);
+            this.btn_CROCResetTPRead.Name = "btn_CROCResetTPRead";
+            this.btn_CROCResetTPRead.Size = new System.Drawing.Size(58, 20);
+            this.btn_CROCResetTPRead.TabIndex = 72;
+            this.btn_CROCResetTPRead.Text = "Read";
+            this.btn_CROCResetTPRead.UseVisualStyleBackColor = false;
+            this.btn_CROCResetTPRead.Click += new System.EventHandler(this.btn_CROCResetTPRead_Click);
+            // 
+            // chk_CROCTPulseCh4
+            // 
+            this.chk_CROCTPulseCh4.BackColor = System.Drawing.Color.Coral;
+            this.chk_CROCTPulseCh4.Location = new System.Drawing.Point(94, 79);
+            this.chk_CROCTPulseCh4.Name = "chk_CROCTPulseCh4";
+            this.chk_CROCTPulseCh4.Size = new System.Drawing.Size(85, 17);
+            this.chk_CROCTPulseCh4.TabIndex = 71;
+            this.chk_CROCTPulseCh4.Text = "TPulse Ch4";
+            this.chk_CROCTPulseCh4.UseVisualStyleBackColor = false;
+            // 
+            // chk_CROCResetCh4
+            // 
+            this.chk_CROCResetCh4.BackColor = System.Drawing.Color.Coral;
+            this.chk_CROCResetCh4.Location = new System.Drawing.Point(6, 79);
+            this.chk_CROCResetCh4.Name = "chk_CROCResetCh4";
+            this.chk_CROCResetCh4.Size = new System.Drawing.Size(85, 17);
+            this.chk_CROCResetCh4.TabIndex = 70;
+            this.chk_CROCResetCh4.Text = "Reset Ch4";
+            this.chk_CROCResetCh4.UseVisualStyleBackColor = false;
+            // 
+            // chk_CROCTPulseCh3
+            // 
+            this.chk_CROCTPulseCh3.BackColor = System.Drawing.Color.Coral;
+            this.chk_CROCTPulseCh3.Location = new System.Drawing.Point(94, 59);
+            this.chk_CROCTPulseCh3.Name = "chk_CROCTPulseCh3";
+            this.chk_CROCTPulseCh3.Size = new System.Drawing.Size(85, 17);
+            this.chk_CROCTPulseCh3.TabIndex = 69;
+            this.chk_CROCTPulseCh3.Text = "TPulse Ch3";
+            this.chk_CROCTPulseCh3.UseVisualStyleBackColor = false;
+            // 
+            // chk_CROCResetCh3
+            // 
+            this.chk_CROCResetCh3.BackColor = System.Drawing.Color.Coral;
+            this.chk_CROCResetCh3.Location = new System.Drawing.Point(6, 59);
+            this.chk_CROCResetCh3.Name = "chk_CROCResetCh3";
+            this.chk_CROCResetCh3.Size = new System.Drawing.Size(85, 17);
+            this.chk_CROCResetCh3.TabIndex = 68;
+            this.chk_CROCResetCh3.Text = "Reset Ch3";
+            this.chk_CROCResetCh3.UseVisualStyleBackColor = false;
+            // 
+            // chk_CROCTPulseCh2
+            // 
+            this.chk_CROCTPulseCh2.BackColor = System.Drawing.Color.Coral;
+            this.chk_CROCTPulseCh2.Location = new System.Drawing.Point(94, 39);
+            this.chk_CROCTPulseCh2.Name = "chk_CROCTPulseCh2";
+            this.chk_CROCTPulseCh2.Size = new System.Drawing.Size(85, 17);
+            this.chk_CROCTPulseCh2.TabIndex = 67;
+            this.chk_CROCTPulseCh2.Text = "TPulse Ch2";
+            this.chk_CROCTPulseCh2.UseVisualStyleBackColor = false;
+            // 
+            // chk_CROCResetCh2
+            // 
+            this.chk_CROCResetCh2.BackColor = System.Drawing.Color.Coral;
+            this.chk_CROCResetCh2.Location = new System.Drawing.Point(6, 39);
+            this.chk_CROCResetCh2.Name = "chk_CROCResetCh2";
+            this.chk_CROCResetCh2.Size = new System.Drawing.Size(85, 17);
+            this.chk_CROCResetCh2.TabIndex = 66;
+            this.chk_CROCResetCh2.Text = "Reset Ch2";
+            this.chk_CROCResetCh2.UseVisualStyleBackColor = false;
+            // 
+            // chk_CROCTPulseCh1
+            // 
+            this.chk_CROCTPulseCh1.BackColor = System.Drawing.Color.Coral;
+            this.chk_CROCTPulseCh1.Location = new System.Drawing.Point(94, 19);
+            this.chk_CROCTPulseCh1.Name = "chk_CROCTPulseCh1";
+            this.chk_CROCTPulseCh1.Size = new System.Drawing.Size(85, 17);
+            this.chk_CROCTPulseCh1.TabIndex = 65;
+            this.chk_CROCTPulseCh1.Text = "TPulse Ch1";
+            this.chk_CROCTPulseCh1.UseVisualStyleBackColor = false;
+            // 
+            // chk_CROCResetCh1
+            // 
+            this.chk_CROCResetCh1.BackColor = System.Drawing.Color.Coral;
+            this.chk_CROCResetCh1.Location = new System.Drawing.Point(6, 19);
+            this.chk_CROCResetCh1.Name = "chk_CROCResetCh1";
+            this.chk_CROCResetCh1.Size = new System.Drawing.Size(85, 17);
+            this.chk_CROCResetCh1.TabIndex = 64;
+            this.chk_CROCResetCh1.Text = "Reset Ch1";
+            this.chk_CROCResetCh1.UseVisualStyleBackColor = false;
+            // 
+            // groupBoxCROC_TimingSetup
+            // 
+            this.groupBoxCROC_TimingSetup.Controls.Add(this.lbl_CROCTimingSetupRead);
+            this.groupBoxCROC_TimingSetup.Controls.Add(this.label20);
+            this.groupBoxCROC_TimingSetup.Controls.Add(this.btn_CROCTimingSetupRead);
+            this.groupBoxCROC_TimingSetup.Controls.Add(this.txt_CROCTimingSetupTPDelay);
+            this.groupBoxCROC_TimingSetup.Controls.Add(this.cmb_CROCTimingSetupTPDelay);
+            this.groupBoxCROC_TimingSetup.Controls.Add(this.cmb_CROCTimingSetupClock);
+            this.groupBoxCROC_TimingSetup.Location = new System.Drawing.Point(16, 120);
+            this.groupBoxCROC_TimingSetup.Name = "groupBoxCROC_TimingSetup";
+            this.groupBoxCROC_TimingSetup.Size = new System.Drawing.Size(114, 108);
+            this.groupBoxCROC_TimingSetup.TabIndex = 60;
+            this.groupBoxCROC_TimingSetup.TabStop = false;
+            this.groupBoxCROC_TimingSetup.Text = "Timing Setup";
+            this.groupBoxCROC_TimingSetup.Visible = false;
+            // 
+            // lbl_CROCTimingSetupRead
+            // 
+            this.lbl_CROCTimingSetupRead.BackColor = System.Drawing.Color.White;
+            this.lbl_CROCTimingSetupRead.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lbl_CROCTimingSetupRead.Location = new System.Drawing.Point(50, 86);
+            this.lbl_CROCTimingSetupRead.Name = "lbl_CROCTimingSetupRead";
+            this.lbl_CROCTimingSetupRead.Size = new System.Drawing.Size(57, 18);
+            this.lbl_CROCTimingSetupRead.TabIndex = 62;
+            // 
+            // label20
+            // 
+            this.label20.BackColor = System.Drawing.Color.Coral;
+            this.label20.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label20.Location = new System.Drawing.Point(7, 67);
+            this.label20.Name = "label20";
+            this.label20.Size = new System.Drawing.Size(64, 16);
+            this.label20.TabIndex = 61;
+            this.label20.Text = "TP Delay";
+            // 
+            // btn_CROCTimingSetupRead
+            // 
+            this.btn_CROCTimingSetupRead.BackColor = System.Drawing.Color.Coral;
+            this.btn_CROCTimingSetupRead.Location = new System.Drawing.Point(7, 85);
+            this.btn_CROCTimingSetupRead.Name = "btn_CROCTimingSetupRead";
+            this.btn_CROCTimingSetupRead.Size = new System.Drawing.Size(46, 20);
+            this.btn_CROCTimingSetupRead.TabIndex = 60;
+            this.btn_CROCTimingSetupRead.Text = "Read";
+            this.btn_CROCTimingSetupRead.UseVisualStyleBackColor = false;
+            this.btn_CROCTimingSetupRead.Click += new System.EventHandler(this.btn_CROCTimingSetupRead_Click);
+            // 
+            // txt_CROCTimingSetupTPDelay
+            // 
+            this.txt_CROCTimingSetupTPDelay.Location = new System.Drawing.Point(70, 65);
+            this.txt_CROCTimingSetupTPDelay.Name = "txt_CROCTimingSetupTPDelay";
+            this.txt_CROCTimingSetupTPDelay.Size = new System.Drawing.Size(37, 20);
+            this.txt_CROCTimingSetupTPDelay.TabIndex = 2;
+            this.txt_CROCTimingSetupTPDelay.TextChanged += new System.EventHandler(this.txt_CROCTimingSetupTPDelay_TextChanged);
+            // 
+            // cmb_CROCTimingSetupTPDelay
+            // 
+            this.cmb_CROCTimingSetupTPDelay.FormattingEnabled = true;
+            this.cmb_CROCTimingSetupTPDelay.Items.AddRange(new object[] {
+            "TP Disabled",
+            "TP Enabled"});
+            this.cmb_CROCTimingSetupTPDelay.Location = new System.Drawing.Point(7, 43);
+            this.cmb_CROCTimingSetupTPDelay.Name = "cmb_CROCTimingSetupTPDelay";
+            this.cmb_CROCTimingSetupTPDelay.Size = new System.Drawing.Size(101, 21);
+            this.cmb_CROCTimingSetupTPDelay.TabIndex = 1;
+            this.cmb_CROCTimingSetupTPDelay.Text = "Test Pulse";
+            this.cmb_CROCTimingSetupTPDelay.SelectedIndexChanged += new System.EventHandler(this.cmb_CROCTimingSetupTPDelay_SelectedIndexChanged);
+            // 
+            // cmb_CROCTimingSetupClock
+            // 
+            this.cmb_CROCTimingSetupClock.FormattingEnabled = true;
+            this.cmb_CROCTimingSetupClock.Items.AddRange(new object[] {
+            "CLK Internal",
+            "CLK External"});
+            this.cmb_CROCTimingSetupClock.Location = new System.Drawing.Point(7, 19);
+            this.cmb_CROCTimingSetupClock.Name = "cmb_CROCTimingSetupClock";
+            this.cmb_CROCTimingSetupClock.Size = new System.Drawing.Size(101, 21);
+            this.cmb_CROCTimingSetupClock.TabIndex = 0;
+            this.cmb_CROCTimingSetupClock.Text = "CLK Source";
+            this.cmb_CROCTimingSetupClock.SelectedIndexChanged += new System.EventHandler(this.cmb_CROCTimingSetupClock_SelectedIndexChanged);
             // 
             // groupBoxCROC_FLASH
             // 
@@ -356,9 +789,9 @@ namespace MinervaGUI
             // 
             // tabCH
             // 
+            this.tabCH.Controls.Add(this.groupBoxCH_Frame);
             this.tabCH.Controls.Add(this.groupBoxCH_StatusRegister);
             this.tabCH.Controls.Add(this.groupBoxCH_FLASH);
-            this.tabCH.Controls.Add(this.groupBoxCH_LoopDelay);
             this.tabCH.Controls.Add(this.groupBoxCH_DPM);
             this.tabCH.Controls.Add(this.label4);
             this.tabCH.Controls.Add(this.btn_CHAdvancedGUI);
@@ -369,20 +802,107 @@ namespace MinervaGUI
             this.tabCH.Controls.Add(this.label16);
             this.tabCH.Location = new System.Drawing.Point(4, 22);
             this.tabCH.Name = "tabCH";
-            this.tabCH.Size = new System.Drawing.Size(387, 471);
+            this.tabCH.Size = new System.Drawing.Size(387, 451);
             this.tabCH.TabIndex = 6;
             this.tabCH.Text = "CH";
             this.tabCH.UseVisualStyleBackColor = true;
             // 
+            // groupBoxCH_Frame
+            // 
+            this.groupBoxCH_Frame.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.groupBoxCH_Frame.Controls.Add(this.btn_CHFIFOWriteMessage);
+            this.groupBoxCH_Frame.Controls.Add(this.rtb_CHDPMRead);
+            this.groupBoxCH_Frame.Controls.Add(this.txt_CHDPMReadLength);
+            this.groupBoxCH_Frame.Controls.Add(this.txt_CHFIFORegWrite);
+            this.groupBoxCH_Frame.Controls.Add(this.btn_CHDPMRead);
+            this.groupBoxCH_Frame.Controls.Add(this.btn_CHSendMessage);
+            this.groupBoxCH_Frame.Controls.Add(this.btn_CHFIFOAppendMessage);
+            this.groupBoxCH_Frame.Location = new System.Drawing.Point(164, 206);
+            this.groupBoxCH_Frame.Name = "groupBoxCH_Frame";
+            this.groupBoxCH_Frame.Size = new System.Drawing.Size(193, 235);
+            this.groupBoxCH_Frame.TabIndex = 89;
+            this.groupBoxCH_Frame.TabStop = false;
+            this.groupBoxCH_Frame.Text = "Frame Registers";
+            this.groupBoxCH_Frame.Visible = false;
+            // 
+            // btn_CHFIFOWriteMessage
+            // 
+            this.btn_CHFIFOWriteMessage.BackColor = System.Drawing.Color.Coral;
+            this.btn_CHFIFOWriteMessage.Location = new System.Drawing.Point(11, 39);
+            this.btn_CHFIFOWriteMessage.Name = "btn_CHFIFOWriteMessage";
+            this.btn_CHFIFOWriteMessage.Size = new System.Drawing.Size(85, 20);
+            this.btn_CHFIFOWriteMessage.TabIndex = 94;
+            this.btn_CHFIFOWriteMessage.Text = "Write FIFO";
+            this.btn_CHFIFOWriteMessage.UseVisualStyleBackColor = false;
+            this.btn_CHFIFOWriteMessage.Click += new System.EventHandler(this.btn_CHFIFOWriteMessage_Click);
+            // 
+            // rtb_CHDPMRead
+            // 
+            this.rtb_CHDPMRead.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.rtb_CHDPMRead.Location = new System.Drawing.Point(10, 85);
+            this.rtb_CHDPMRead.Name = "rtb_CHDPMRead";
+            this.rtb_CHDPMRead.Size = new System.Drawing.Size(171, 143);
+            this.rtb_CHDPMRead.TabIndex = 93;
+            this.rtb_CHDPMRead.Text = "";
+            // 
+            // txt_CHDPMReadLength
+            // 
+            this.txt_CHDPMReadLength.Location = new System.Drawing.Point(124, 60);
+            this.txt_CHDPMReadLength.Name = "txt_CHDPMReadLength";
+            this.txt_CHDPMReadLength.Size = new System.Drawing.Size(57, 20);
+            this.txt_CHDPMReadLength.TabIndex = 92;
+            // 
+            // txt_CHFIFORegWrite
+            // 
+            this.txt_CHFIFORegWrite.Location = new System.Drawing.Point(124, 18);
+            this.txt_CHFIFORegWrite.Name = "txt_CHFIFORegWrite";
+            this.txt_CHFIFORegWrite.Size = new System.Drawing.Size(57, 20);
+            this.txt_CHFIFORegWrite.TabIndex = 91;
+            // 
+            // btn_CHDPMRead
+            // 
+            this.btn_CHDPMRead.BackColor = System.Drawing.Color.Coral;
+            this.btn_CHDPMRead.Location = new System.Drawing.Point(11, 60);
+            this.btn_CHDPMRead.Name = "btn_CHDPMRead";
+            this.btn_CHDPMRead.Size = new System.Drawing.Size(115, 20);
+            this.btn_CHDPMRead.TabIndex = 88;
+            this.btn_CHDPMRead.Text = "Read DPM length->";
+            this.btn_CHDPMRead.UseVisualStyleBackColor = false;
+            this.btn_CHDPMRead.Click += new System.EventHandler(this.btn_CHDPMRead_Click);
+            // 
+            // btn_CHSendMessage
+            // 
+            this.btn_CHSendMessage.BackColor = System.Drawing.Color.Coral;
+            this.btn_CHSendMessage.Location = new System.Drawing.Point(96, 39);
+            this.btn_CHSendMessage.Name = "btn_CHSendMessage";
+            this.btn_CHSendMessage.Size = new System.Drawing.Size(85, 20);
+            this.btn_CHSendMessage.TabIndex = 87;
+            this.btn_CHSendMessage.Text = "Send Frame";
+            this.btn_CHSendMessage.UseVisualStyleBackColor = false;
+            this.btn_CHSendMessage.Click += new System.EventHandler(this.btn_CHSendMessage_Click);
+            // 
+            // btn_CHFIFOAppendMessage
+            // 
+            this.btn_CHFIFOAppendMessage.BackColor = System.Drawing.Color.Coral;
+            this.btn_CHFIFOAppendMessage.Location = new System.Drawing.Point(10, 18);
+            this.btn_CHFIFOAppendMessage.Name = "btn_CHFIFOAppendMessage";
+            this.btn_CHFIFOAppendMessage.Size = new System.Drawing.Size(115, 20);
+            this.btn_CHFIFOAppendMessage.TabIndex = 85;
+            this.btn_CHFIFOAppendMessage.Text = "Append Message";
+            this.btn_CHFIFOAppendMessage.UseVisualStyleBackColor = false;
+            this.btn_CHFIFOAppendMessage.Click += new System.EventHandler(this.btn_CHFIFOAppendMessage_Click);
+            // 
             // groupBoxCH_StatusRegister
             // 
-            this.groupBoxCH_StatusRegister.Controls.Add(this.label31);
+            this.groupBoxCH_StatusRegister.Controls.Add(this.lblCH_StatUnusedBit4);
             this.groupBoxCH_StatusRegister.Controls.Add(this.label33);
-            this.groupBoxCH_StatusRegister.Controls.Add(this.label27);
+            this.groupBoxCH_StatusRegister.Controls.Add(this.lblCH_StatUnusedBit3);
             this.groupBoxCH_StatusRegister.Controls.Add(this.label29);
-            this.groupBoxCH_StatusRegister.Controls.Add(this.label23);
+            this.groupBoxCH_StatusRegister.Controls.Add(this.lblCH_StatUnusedBit2);
             this.groupBoxCH_StatusRegister.Controls.Add(this.label25);
-            this.groupBoxCH_StatusRegister.Controls.Add(this.label20);
+            this.groupBoxCH_StatusRegister.Controls.Add(this.lblCH_StatUnusedBit1);
             this.groupBoxCH_StatusRegister.Controls.Add(this.label21);
             this.groupBoxCH_StatusRegister.Controls.Add(this.btn_CHStatusRegClear);
             this.groupBoxCH_StatusRegister.Controls.Add(this.btn_CHStatusRegRead);
@@ -401,7 +921,7 @@ namespace MinervaGUI
             this.groupBoxCH_StatusRegister.Controls.Add(this.label28);
             this.groupBoxCH_StatusRegister.Controls.Add(this.label42);
             this.groupBoxCH_StatusRegister.Controls.Add(this.lblCH_StatTimeoutError);
-            this.groupBoxCH_StatusRegister.Controls.Add(this.lblCH_StatFFONotEmpty);
+            this.groupBoxCH_StatusRegister.Controls.Add(this.lblCH_StatFIFONotEmpty);
             this.groupBoxCH_StatusRegister.Controls.Add(this.label36);
             this.groupBoxCH_StatusRegister.Controls.Add(this.label44);
             this.groupBoxCH_StatusRegister.Controls.Add(this.lblCH_StatSerializerSYNC);
@@ -418,6 +938,82 @@ namespace MinervaGUI
             this.groupBoxCH_StatusRegister.TabStop = false;
             this.groupBoxCH_StatusRegister.Text = "Status Register";
             this.groupBoxCH_StatusRegister.Visible = false;
+            // 
+            // lblCH_StatUnusedBit4
+            // 
+            this.lblCH_StatUnusedBit4.BackColor = System.Drawing.Color.White;
+            this.lblCH_StatUnusedBit4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lblCH_StatUnusedBit4.Location = new System.Drawing.Point(117, 298);
+            this.lblCH_StatUnusedBit4.Name = "lblCH_StatUnusedBit4";
+            this.lblCH_StatUnusedBit4.Size = new System.Drawing.Size(15, 15);
+            this.lblCH_StatUnusedBit4.TabIndex = 87;
+            // 
+            // label33
+            // 
+            this.label33.BackColor = System.Drawing.Color.Coral;
+            this.label33.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label33.Location = new System.Drawing.Point(10, 298);
+            this.label33.Name = "label33";
+            this.label33.Size = new System.Drawing.Size(107, 15);
+            this.label33.TabIndex = 86;
+            this.label33.Text = "Unused";
+            // 
+            // lblCH_StatUnusedBit3
+            // 
+            this.lblCH_StatUnusedBit3.BackColor = System.Drawing.Color.White;
+            this.lblCH_StatUnusedBit3.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lblCH_StatUnusedBit3.Location = new System.Drawing.Point(117, 283);
+            this.lblCH_StatUnusedBit3.Name = "lblCH_StatUnusedBit3";
+            this.lblCH_StatUnusedBit3.Size = new System.Drawing.Size(15, 15);
+            this.lblCH_StatUnusedBit3.TabIndex = 85;
+            // 
+            // label29
+            // 
+            this.label29.BackColor = System.Drawing.Color.Coral;
+            this.label29.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label29.Location = new System.Drawing.Point(10, 283);
+            this.label29.Name = "label29";
+            this.label29.Size = new System.Drawing.Size(107, 15);
+            this.label29.TabIndex = 84;
+            this.label29.Text = "Unused";
+            // 
+            // lblCH_StatUnusedBit2
+            // 
+            this.lblCH_StatUnusedBit2.BackColor = System.Drawing.Color.White;
+            this.lblCH_StatUnusedBit2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lblCH_StatUnusedBit2.Location = new System.Drawing.Point(117, 235);
+            this.lblCH_StatUnusedBit2.Name = "lblCH_StatUnusedBit2";
+            this.lblCH_StatUnusedBit2.Size = new System.Drawing.Size(15, 15);
+            this.lblCH_StatUnusedBit2.TabIndex = 83;
+            // 
+            // label25
+            // 
+            this.label25.BackColor = System.Drawing.Color.Coral;
+            this.label25.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label25.Location = new System.Drawing.Point(10, 235);
+            this.label25.Name = "label25";
+            this.label25.Size = new System.Drawing.Size(107, 15);
+            this.label25.TabIndex = 82;
+            this.label25.Text = "Unused";
+            // 
+            // lblCH_StatUnusedBit1
+            // 
+            this.lblCH_StatUnusedBit1.BackColor = System.Drawing.Color.White;
+            this.lblCH_StatUnusedBit1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lblCH_StatUnusedBit1.Location = new System.Drawing.Point(117, 172);
+            this.lblCH_StatUnusedBit1.Name = "lblCH_StatUnusedBit1";
+            this.lblCH_StatUnusedBit1.Size = new System.Drawing.Size(15, 15);
+            this.lblCH_StatUnusedBit1.TabIndex = 81;
+            // 
+            // label21
+            // 
+            this.label21.BackColor = System.Drawing.Color.Coral;
+            this.label21.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label21.Location = new System.Drawing.Point(10, 172);
+            this.label21.Name = "label21";
+            this.label21.Size = new System.Drawing.Size(107, 15);
+            this.label21.TabIndex = 80;
+            this.label21.Text = "Unused";
             // 
             // btn_CHStatusRegClear
             // 
@@ -584,14 +1180,14 @@ namespace MinervaGUI
             this.lblCH_StatTimeoutError.Size = new System.Drawing.Size(15, 15);
             this.lblCH_StatTimeoutError.TabIndex = 62;
             // 
-            // lblCH_StatFFONotEmpty
+            // lblCH_StatFIFONotEmpty
             // 
-            this.lblCH_StatFFONotEmpty.BackColor = System.Drawing.Color.White;
-            this.lblCH_StatFFONotEmpty.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.lblCH_StatFFONotEmpty.Location = new System.Drawing.Point(117, 127);
-            this.lblCH_StatFFONotEmpty.Name = "lblCH_StatFFONotEmpty";
-            this.lblCH_StatFFONotEmpty.Size = new System.Drawing.Size(15, 15);
-            this.lblCH_StatFFONotEmpty.TabIndex = 72;
+            this.lblCH_StatFIFONotEmpty.BackColor = System.Drawing.Color.White;
+            this.lblCH_StatFIFONotEmpty.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lblCH_StatFIFONotEmpty.Location = new System.Drawing.Point(117, 127);
+            this.lblCH_StatFIFONotEmpty.Name = "lblCH_StatFIFONotEmpty";
+            this.lblCH_StatFIFONotEmpty.Size = new System.Drawing.Size(15, 15);
+            this.lblCH_StatFIFONotEmpty.TabIndex = 72;
             // 
             // label36
             // 
@@ -713,45 +1309,12 @@ namespace MinervaGUI
             this.btn_CHReBootFEs.UseVisualStyleBackColor = false;
             this.btn_CHReBootFEs.Click += new System.EventHandler(this.btn_CHReBootFEs_Click);
             // 
-            // groupBoxCH_LoopDelay
-            // 
-            this.groupBoxCH_LoopDelay.Controls.Add(this.btn_CHReadLoopDelay);
-            this.groupBoxCH_LoopDelay.Controls.Add(this.lblCH_LoopDelayValue);
-            this.groupBoxCH_LoopDelay.Location = new System.Drawing.Point(164, 119);
-            this.groupBoxCH_LoopDelay.Name = "groupBoxCH_LoopDelay";
-            this.groupBoxCH_LoopDelay.Size = new System.Drawing.Size(193, 59);
-            this.groupBoxCH_LoopDelay.TabIndex = 86;
-            this.groupBoxCH_LoopDelay.TabStop = false;
-            this.groupBoxCH_LoopDelay.Text = "Loop Delay Register";
-            this.groupBoxCH_LoopDelay.Visible = false;
-            // 
-            // btn_CHReadLoopDelay
-            // 
-            this.btn_CHReadLoopDelay.BackColor = System.Drawing.Color.Coral;
-            this.btn_CHReadLoopDelay.Location = new System.Drawing.Point(10, 20);
-            this.btn_CHReadLoopDelay.Name = "btn_CHReadLoopDelay";
-            this.btn_CHReadLoopDelay.Size = new System.Drawing.Size(115, 20);
-            this.btn_CHReadLoopDelay.TabIndex = 83;
-            this.btn_CHReadLoopDelay.Text = "Read Loop Delay";
-            this.btn_CHReadLoopDelay.UseVisualStyleBackColor = false;
-            // 
-            // lblCH_LoopDelayValue
-            // 
-            this.lblCH_LoopDelayValue.BackColor = System.Drawing.Color.White;
-            this.lblCH_LoopDelayValue.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.lblCH_LoopDelayValue.Location = new System.Drawing.Point(122, 21);
-            this.lblCH_LoopDelayValue.Name = "lblCH_LoopDelayValue";
-            this.lblCH_LoopDelayValue.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.lblCH_LoopDelayValue.Size = new System.Drawing.Size(44, 18);
-            this.lblCH_LoopDelayValue.TabIndex = 84;
-            this.lblCH_LoopDelayValue.Text = "0xFFFF";
-            // 
             // groupBoxCH_DPM
             // 
-            this.groupBoxCH_DPM.Controls.Add(this.btn_CHResetDPMPointer);
-            this.groupBoxCH_DPM.Controls.Add(this.btn_CHReadDPMPointer);
+            this.groupBoxCH_DPM.Controls.Add(this.btn_CHDPMPointerReset);
+            this.groupBoxCH_DPM.Controls.Add(this.btn_CHDPMPointerRead);
             this.groupBoxCH_DPM.Controls.Add(this.lblCH_DPMPointerValue);
-            this.groupBoxCH_DPM.Location = new System.Drawing.Point(164, 183);
+            this.groupBoxCH_DPM.Location = new System.Drawing.Point(164, 120);
             this.groupBoxCH_DPM.Name = "groupBoxCH_DPM";
             this.groupBoxCH_DPM.Size = new System.Drawing.Size(193, 78);
             this.groupBoxCH_DPM.TabIndex = 85;
@@ -759,25 +1322,27 @@ namespace MinervaGUI
             this.groupBoxCH_DPM.Text = "DPM Register";
             this.groupBoxCH_DPM.Visible = false;
             // 
-            // btn_CHResetDPMPointer
+            // btn_CHDPMPointerReset
             // 
-            this.btn_CHResetDPMPointer.BackColor = System.Drawing.Color.Coral;
-            this.btn_CHResetDPMPointer.Location = new System.Drawing.Point(10, 20);
-            this.btn_CHResetDPMPointer.Name = "btn_CHResetDPMPointer";
-            this.btn_CHResetDPMPointer.Size = new System.Drawing.Size(114, 20);
-            this.btn_CHResetDPMPointer.TabIndex = 82;
-            this.btn_CHResetDPMPointer.Text = "Reset DPM Pointer";
-            this.btn_CHResetDPMPointer.UseVisualStyleBackColor = false;
+            this.btn_CHDPMPointerReset.BackColor = System.Drawing.Color.Coral;
+            this.btn_CHDPMPointerReset.Location = new System.Drawing.Point(10, 20);
+            this.btn_CHDPMPointerReset.Name = "btn_CHDPMPointerReset";
+            this.btn_CHDPMPointerReset.Size = new System.Drawing.Size(114, 20);
+            this.btn_CHDPMPointerReset.TabIndex = 82;
+            this.btn_CHDPMPointerReset.Text = "Reset DPM Pointer";
+            this.btn_CHDPMPointerReset.UseVisualStyleBackColor = false;
+            this.btn_CHDPMPointerReset.Click += new System.EventHandler(this.btn_CHDPMPointerReset_Click);
             // 
-            // btn_CHReadDPMPointer
+            // btn_CHDPMPointerRead
             // 
-            this.btn_CHReadDPMPointer.BackColor = System.Drawing.Color.Coral;
-            this.btn_CHReadDPMPointer.Location = new System.Drawing.Point(10, 42);
-            this.btn_CHReadDPMPointer.Name = "btn_CHReadDPMPointer";
-            this.btn_CHReadDPMPointer.Size = new System.Drawing.Size(115, 20);
-            this.btn_CHReadDPMPointer.TabIndex = 80;
-            this.btn_CHReadDPMPointer.Text = "Read  DPM Pointer";
-            this.btn_CHReadDPMPointer.UseVisualStyleBackColor = false;
+            this.btn_CHDPMPointerRead.BackColor = System.Drawing.Color.Coral;
+            this.btn_CHDPMPointerRead.Location = new System.Drawing.Point(10, 42);
+            this.btn_CHDPMPointerRead.Name = "btn_CHDPMPointerRead";
+            this.btn_CHDPMPointerRead.Size = new System.Drawing.Size(115, 20);
+            this.btn_CHDPMPointerRead.TabIndex = 80;
+            this.btn_CHDPMPointerRead.Text = "Read  DPM Pointer";
+            this.btn_CHDPMPointerRead.UseVisualStyleBackColor = false;
+            this.btn_CHDPMPointerRead.Click += new System.EventHandler(this.btn_CHDPMPointerRead_Click);
             // 
             // lblCH_DPMPointerValue
             // 
@@ -786,9 +1351,8 @@ namespace MinervaGUI
             this.lblCH_DPMPointerValue.Location = new System.Drawing.Point(122, 43);
             this.lblCH_DPMPointerValue.Name = "lblCH_DPMPointerValue";
             this.lblCH_DPMPointerValue.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.lblCH_DPMPointerValue.Size = new System.Drawing.Size(44, 18);
+            this.lblCH_DPMPointerValue.Size = new System.Drawing.Size(57, 18);
             this.lblCH_DPMPointerValue.TabIndex = 81;
-            this.lblCH_DPMPointerValue.Text = "0xFFFF";
             // 
             // label4
             // 
@@ -863,7 +1427,7 @@ namespace MinervaGUI
             // 
             this.tabFE.Location = new System.Drawing.Point(4, 22);
             this.tabFE.Name = "tabFE";
-            this.tabFE.Size = new System.Drawing.Size(387, 404);
+            this.tabFE.Size = new System.Drawing.Size(387, 451);
             this.tabFE.TabIndex = 7;
             this.tabFE.Text = "FE";
             this.tabFE.UseVisualStyleBackColor = true;
@@ -884,7 +1448,7 @@ namespace MinervaGUI
             this.tabFPGARegs.Location = new System.Drawing.Point(4, 22);
             this.tabFPGARegs.Name = "tabFPGARegs";
             this.tabFPGARegs.Padding = new System.Windows.Forms.Padding(3);
-            this.tabFPGARegs.Size = new System.Drawing.Size(387, 404);
+            this.tabFPGARegs.Size = new System.Drawing.Size(387, 451);
             this.tabFPGARegs.TabIndex = 0;
             this.tabFPGARegs.Text = "FPGA Regs";
             this.tabFPGARegs.UseVisualStyleBackColor = true;
@@ -1093,7 +1657,7 @@ namespace MinervaGUI
             this.fpgaDevRegControl1.RegisterTripXComparators = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterTripXThreshold = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterVXOMuxSelect = ((uint)(1u));
-            this.fpgaDevRegControl1.Size = new System.Drawing.Size(265, 390);
+            this.fpgaDevRegControl1.Size = new System.Drawing.Size(265, 408);
             this.fpgaDevRegControl1.TabIndex = 23;
             // 
             // tabTRIPRegs
@@ -1113,7 +1677,7 @@ namespace MinervaGUI
             this.tabTRIPRegs.Location = new System.Drawing.Point(4, 22);
             this.tabTRIPRegs.Name = "tabTRIPRegs";
             this.tabTRIPRegs.Padding = new System.Windows.Forms.Padding(3);
-            this.tabTRIPRegs.Size = new System.Drawing.Size(387, 404);
+            this.tabTRIPRegs.Size = new System.Drawing.Size(387, 451);
             this.tabTRIPRegs.TabIndex = 1;
             this.tabTRIPRegs.Text = "TRIP Regs";
             this.tabTRIPRegs.UseVisualStyleBackColor = true;
@@ -1263,7 +1827,7 @@ namespace MinervaGUI
             this.tripDevRegControl1.RegisterPIPEDEL = ((uint)(1u));
             this.tripDevRegControl1.RegisterVREF = ((uint)(20u));
             this.tripDevRegControl1.RegisterVTH = ((uint)(0u));
-            this.tripDevRegControl1.Size = new System.Drawing.Size(265, 390);
+            this.tripDevRegControl1.Size = new System.Drawing.Size(265, 408);
             this.tripDevRegControl1.TabIndex = 35;
             this.tripDevRegControl1.TRIPRegValues = new uint[] {
         ((uint)(100u)),
@@ -1301,7 +1865,7 @@ namespace MinervaGUI
             this.tabFLASHPages.Location = new System.Drawing.Point(4, 22);
             this.tabFLASHPages.Name = "tabFLASHPages";
             this.tabFLASHPages.Padding = new System.Windows.Forms.Padding(3);
-            this.tabFLASHPages.Size = new System.Drawing.Size(387, 404);
+            this.tabFLASHPages.Size = new System.Drawing.Size(387, 451);
             this.tabFLASHPages.TabIndex = 2;
             this.tabFLASHPages.Text = "FLASH";
             this.tabFLASHPages.UseVisualStyleBackColor = true;
@@ -1400,6 +1964,9 @@ namespace MinervaGUI
             // 
             // tabReadHV
             // 
+            this.tabReadHV.Controls.Add(this.btnMonitorHV);
+            this.tabReadHV.Controls.Add(this.label27);
+            this.tabReadHV.Controls.Add(this.textBoxMonitorTimer);
             this.tabReadHV.Controls.Add(this.btnSwitchToAuto);
             this.tabReadHV.Controls.Add(this.textBoxADCThreshold);
             this.tabReadHV.Controls.Add(this.label2);
@@ -1407,13 +1974,43 @@ namespace MinervaGUI
             this.tabReadHV.Controls.Add(this.richTextBoxHVRead);
             this.tabReadHV.Location = new System.Drawing.Point(4, 22);
             this.tabReadHV.Name = "tabReadHV";
-            this.tabReadHV.Size = new System.Drawing.Size(387, 404);
+            this.tabReadHV.Size = new System.Drawing.Size(387, 451);
             this.tabReadHV.TabIndex = 8;
             this.tabReadHV.Text = "Read HV";
             this.tabReadHV.UseVisualStyleBackColor = true;
             // 
+            // btnMonitorHV
+            // 
+            this.btnMonitorHV.Enabled = false;
+            this.btnMonitorHV.Location = new System.Drawing.Point(158, 427);
+            this.btnMonitorHV.Name = "btnMonitorHV";
+            this.btnMonitorHV.Size = new System.Drawing.Size(76, 20);
+            this.btnMonitorHV.TabIndex = 10;
+            this.btnMonitorHV.Text = "Monitor";
+            this.btnMonitorHV.UseVisualStyleBackColor = true;
+            this.btnMonitorHV.Click += new System.EventHandler(this.btnMonitorHV_Click);
+            // 
+            // label27
+            // 
+            this.label27.AutoSize = true;
+            this.label27.Location = new System.Drawing.Point(56, 431);
+            this.label27.Name = "label27";
+            this.label27.Size = new System.Drawing.Size(97, 13);
+            this.label27.TabIndex = 9;
+            this.label27.Text = "Monitor Timer (sec)";
+            // 
+            // textBoxMonitorTimer
+            // 
+            this.textBoxMonitorTimer.Enabled = false;
+            this.textBoxMonitorTimer.Location = new System.Drawing.Point(13, 428);
+            this.textBoxMonitorTimer.Name = "textBoxMonitorTimer";
+            this.textBoxMonitorTimer.Size = new System.Drawing.Size(37, 20);
+            this.textBoxMonitorTimer.TabIndex = 8;
+            this.textBoxMonitorTimer.TextChanged += new System.EventHandler(this.textBoxMonitorTimer_TextChanged);
+            // 
             // btnSwitchToAuto
             // 
+            this.btnSwitchToAuto.Enabled = false;
             this.btnSwitchToAuto.Location = new System.Drawing.Point(240, 403);
             this.btnSwitchToAuto.Name = "btnSwitchToAuto";
             this.btnSwitchToAuto.Size = new System.Drawing.Size(102, 20);
@@ -1473,7 +2070,7 @@ namespace MinervaGUI
             this.treeView1.Location = new System.Drawing.Point(5, 27);
             this.treeView1.Name = "treeView1";
             this.treeView1.ShowNodeToolTips = true;
-            this.treeView1.Size = new System.Drawing.Size(313, 497);
+            this.treeView1.Size = new System.Drawing.Size(306, 477);
             this.treeView1.TabIndex = 1;
             this.treeView1.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView1_AfterSelect);
             // 
@@ -1505,7 +2102,7 @@ namespace MinervaGUI
             this.actionsToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(731, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(724, 24);
             this.menuStrip1.TabIndex = 2;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -1608,7 +2205,8 @@ namespace MinervaGUI
             // 
             this.actionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.readVoltagesToolStripMenuItem,
-            this.zeroHVAllToolStripMenuItem});
+            this.zeroHVAllToolStripMenuItem,
+            this.monitorVoltagesToolStripMenuItem});
             this.actionsToolStripMenuItem.Name = "actionsToolStripMenuItem";
             this.actionsToolStripMenuItem.Size = new System.Drawing.Size(54, 20);
             this.actionsToolStripMenuItem.Text = "Actions";
@@ -1617,7 +2215,7 @@ namespace MinervaGUI
             // 
             this.readVoltagesToolStripMenuItem.Enabled = false;
             this.readVoltagesToolStripMenuItem.Name = "readVoltagesToolStripMenuItem";
-            this.readVoltagesToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.readVoltagesToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
             this.readVoltagesToolStripMenuItem.Text = "Read Voltages";
             this.readVoltagesToolStripMenuItem.Click += new System.EventHandler(this.readVoltagesToolStripMenuItem_Click);
             // 
@@ -1625,18 +2223,26 @@ namespace MinervaGUI
             // 
             this.zeroHVAllToolStripMenuItem.Enabled = false;
             this.zeroHVAllToolStripMenuItem.Name = "zeroHVAllToolStripMenuItem";
-            this.zeroHVAllToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.zeroHVAllToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
             this.zeroHVAllToolStripMenuItem.Text = "Zero HV All";
             this.zeroHVAllToolStripMenuItem.Click += new System.EventHandler(this.zeroHVAllToolStripMenuItem_Click);
+            // 
+            // monitorVoltagesToolStripMenuItem
+            // 
+            this.monitorVoltagesToolStripMenuItem.Enabled = false;
+            this.monitorVoltagesToolStripMenuItem.Name = "monitorVoltagesToolStripMenuItem";
+            this.monitorVoltagesToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
+            this.monitorVoltagesToolStripMenuItem.Text = "Monitor Voltages";
+            this.monitorVoltagesToolStripMenuItem.Click += new System.EventHandler(this.monitorVoltagesToolStripMenuItem_Click);
             // 
             // statusStrip1
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.prgStatus,
             this.lblStatus});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 530);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 510);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(731, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(724, 22);
             this.statusStrip1.TabIndex = 3;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -1648,7 +2254,7 @@ namespace MinervaGUI
             // lblStatus
             // 
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(614, 17);
+            this.lblStatus.Size = new System.Drawing.Size(607, 17);
             this.lblStatus.Spring = true;
             this.lblStatus.Text = "lblStatus";
             // 
@@ -1660,87 +2266,15 @@ namespace MinervaGUI
             this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
             this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
             // 
-            // label20
+            // timerMonitorHV
             // 
-            this.label20.BackColor = System.Drawing.Color.White;
-            this.label20.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label20.Location = new System.Drawing.Point(117, 172);
-            this.label20.Name = "label20";
-            this.label20.Size = new System.Drawing.Size(15, 15);
-            this.label20.TabIndex = 81;
-            // 
-            // label21
-            // 
-            this.label21.BackColor = System.Drawing.Color.Coral;
-            this.label21.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label21.Location = new System.Drawing.Point(10, 172);
-            this.label21.Name = "label21";
-            this.label21.Size = new System.Drawing.Size(107, 15);
-            this.label21.TabIndex = 80;
-            this.label21.Text = "Unused";
-            // 
-            // label23
-            // 
-            this.label23.BackColor = System.Drawing.Color.White;
-            this.label23.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label23.Location = new System.Drawing.Point(117, 235);
-            this.label23.Name = "label23";
-            this.label23.Size = new System.Drawing.Size(15, 15);
-            this.label23.TabIndex = 83;
-            // 
-            // label25
-            // 
-            this.label25.BackColor = System.Drawing.Color.Coral;
-            this.label25.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label25.Location = new System.Drawing.Point(10, 235);
-            this.label25.Name = "label25";
-            this.label25.Size = new System.Drawing.Size(107, 15);
-            this.label25.TabIndex = 82;
-            this.label25.Text = "Unused";
-            // 
-            // label27
-            // 
-            this.label27.BackColor = System.Drawing.Color.White;
-            this.label27.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label27.Location = new System.Drawing.Point(117, 283);
-            this.label27.Name = "label27";
-            this.label27.Size = new System.Drawing.Size(15, 15);
-            this.label27.TabIndex = 85;
-            // 
-            // label29
-            // 
-            this.label29.BackColor = System.Drawing.Color.Coral;
-            this.label29.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label29.Location = new System.Drawing.Point(10, 283);
-            this.label29.Name = "label29";
-            this.label29.Size = new System.Drawing.Size(107, 15);
-            this.label29.TabIndex = 84;
-            this.label29.Text = "Unused";
-            // 
-            // label31
-            // 
-            this.label31.BackColor = System.Drawing.Color.White;
-            this.label31.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label31.Location = new System.Drawing.Point(117, 298);
-            this.label31.Name = "label31";
-            this.label31.Size = new System.Drawing.Size(15, 15);
-            this.label31.TabIndex = 87;
-            // 
-            // label33
-            // 
-            this.label33.BackColor = System.Drawing.Color.Coral;
-            this.label33.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label33.Location = new System.Drawing.Point(10, 298);
-            this.label33.Name = "label33";
-            this.label33.Size = new System.Drawing.Size(107, 15);
-            this.label33.TabIndex = 86;
-            this.label33.Text = "Unused";
+            this.timerMonitorHV.Tick += new System.EventHandler(this.timerMonitorHV_Tick);
             // 
             // frmSlowControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(731, 552);
+            this.ClientSize = new System.Drawing.Size(724, 532);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.treeView1);
             this.Controls.Add(this.tabControl1);
@@ -1752,11 +2286,17 @@ namespace MinervaGUI
             this.tabControl1.ResumeLayout(false);
             this.tabDescription.ResumeLayout(false);
             this.tabCROC.ResumeLayout(false);
+            this.groupBoxCROC_LoopDelay.ResumeLayout(false);
+            this.groupBoxCROC_FastCommand.ResumeLayout(false);
+            this.groupBoxCROC_ResetTPMaskReg.ResumeLayout(false);
+            this.groupBoxCROC_TimingSetup.ResumeLayout(false);
+            this.groupBoxCROC_TimingSetup.PerformLayout();
             this.groupBoxCROC_FLASH.ResumeLayout(false);
             this.tabCH.ResumeLayout(false);
+            this.groupBoxCH_Frame.ResumeLayout(false);
+            this.groupBoxCH_Frame.PerformLayout();
             this.groupBoxCH_StatusRegister.ResumeLayout(false);
             this.groupBoxCH_FLASH.ResumeLayout(false);
-            this.groupBoxCH_LoopDelay.ResumeLayout(false);
             this.groupBoxCH_DPM.ResumeLayout(false);
             this.tabFPGARegs.ResumeLayout(false);
             this.tabTRIPRegs.ResumeLayout(false);
@@ -1877,7 +2417,7 @@ namespace MinervaGUI
         private System.Windows.Forms.Label label40;
         private System.Windows.Forms.Label lblCH_StatFIFOFull;
         private System.Windows.Forms.Label label42;
-        private System.Windows.Forms.Label lblCH_StatFFONotEmpty;
+        private System.Windows.Forms.Label lblCH_StatFIFONotEmpty;
         private System.Windows.Forms.Label label44;
         private System.Windows.Forms.Label lblCH_StatPLL1LOCK;
         private System.Windows.Forms.Label label30;
@@ -1894,24 +2434,68 @@ namespace MinervaGUI
         private System.Windows.Forms.Label lblCH_StatMsgReceived;
         private System.Windows.Forms.Label label24;
         private System.Windows.Forms.Button btn_CHStatusRegClear;
-        private System.Windows.Forms.Button btn_CHResetDPMPointer;
+        private System.Windows.Forms.Button btn_CHDPMPointerReset;
         private System.Windows.Forms.Label lblCH_DPMPointerValue;
-        private System.Windows.Forms.Button btn_CHReadDPMPointer;
-        private System.Windows.Forms.Label lblCH_LoopDelayValue;
-        private System.Windows.Forms.Button btn_CHReadLoopDelay;
-        private System.Windows.Forms.GroupBox groupBoxCH_LoopDelay;
+        private System.Windows.Forms.Button btn_CHDPMPointerRead;
         private System.Windows.Forms.GroupBox groupBoxCH_DPM;
         private System.Windows.Forms.GroupBox groupBoxCH_StatusRegister;
         private System.Windows.Forms.GroupBox groupBoxCH_FLASH;
         private System.Windows.Forms.GroupBox groupBoxCROC_FLASH;
-        private System.Windows.Forms.Label label23;
+        private System.Windows.Forms.Label lblCH_StatUnusedBit2;
         private System.Windows.Forms.Label label25;
-        private System.Windows.Forms.Label label20;
+        private System.Windows.Forms.Label lblCH_StatUnusedBit1;
         private System.Windows.Forms.Label label21;
-        private System.Windows.Forms.Label label31;
+        private System.Windows.Forms.Label lblCH_StatUnusedBit4;
         private System.Windows.Forms.Label label33;
-        private System.Windows.Forms.Label label27;
+        private System.Windows.Forms.Label lblCH_StatUnusedBit3;
         private System.Windows.Forms.Label label29;
+        private System.Windows.Forms.GroupBox groupBoxCH_Frame;
+        private System.Windows.Forms.Button btn_CHDPMRead;
+        private System.Windows.Forms.Button btn_CHSendMessage;
+        private System.Windows.Forms.Button btn_CHFIFOAppendMessage;
+        private System.Windows.Forms.TextBox txt_CHDPMReadLength;
+        private System.Windows.Forms.TextBox txt_CHFIFORegWrite;
+        private System.Windows.Forms.RichTextBox rtb_CHDPMRead;
+        private System.Windows.Forms.Button btn_CHFIFOWriteMessage;
+        private System.Windows.Forms.GroupBox groupBoxCROC_TimingSetup;
+        private System.Windows.Forms.TextBox txt_CROCTimingSetupTPDelay;
+        private System.Windows.Forms.ComboBox cmb_CROCTimingSetupTPDelay;
+        private System.Windows.Forms.ComboBox cmb_CROCTimingSetupClock;
+        private System.Windows.Forms.Button btn_CROCTimingSetupRead;
+        private System.Windows.Forms.Label label20;
+        private System.Windows.Forms.Label lbl_CROCTimingSetupRead;
+        private System.Windows.Forms.GroupBox groupBoxCROC_ResetTPMaskReg;
+        private System.Windows.Forms.CheckBox chk_CROCResetCh1;
+        private System.Windows.Forms.CheckBox chk_CROCTPulseCh1;
+        private System.Windows.Forms.CheckBox chk_CROCTPulseCh4;
+        private System.Windows.Forms.CheckBox chk_CROCResetCh4;
+        private System.Windows.Forms.CheckBox chk_CROCTPulseCh3;
+        private System.Windows.Forms.CheckBox chk_CROCResetCh3;
+        private System.Windows.Forms.CheckBox chk_CROCTPulseCh2;
+        private System.Windows.Forms.CheckBox chk_CROCResetCh2;
+        private System.Windows.Forms.Button btn_CROCResetTPWrite;
+        private System.Windows.Forms.Label lbl_CROCResetTPRead;
+        private System.Windows.Forms.Button btn_CROCResetTPRead;
+        private System.Windows.Forms.Button btn_CROCTPSend;
+        private System.Windows.Forms.Button btn_CROCResetSend;
+        private System.Windows.Forms.GroupBox groupBoxCROC_FastCommand;
+        private System.Windows.Forms.ComboBox cmb_CROCFastCommand;
+        private System.Windows.Forms.Button btn_CROCFastCommand;
+        private System.Windows.Forms.GroupBox groupBoxCROC_LoopDelay;
+        private System.Windows.Forms.Button btn_CROCLoopDelay;
+        private System.Windows.Forms.Label label23;
+        private System.Windows.Forms.Label lbl_CROCLoopDelayCh4;
+        private System.Windows.Forms.Label label43;
+        private System.Windows.Forms.Label lbl_CROCLoopDelayCh3;
+        private System.Windows.Forms.Label label39;
+        private System.Windows.Forms.Label lbl_CROCLoopDelayCh2;
+        private System.Windows.Forms.Label label35;
+        private System.Windows.Forms.Label lbl_CROCLoopDelayCh1;
+        private System.Windows.Forms.Label label27;
+        private System.Windows.Forms.TextBox textBoxMonitorTimer;
+        private System.Windows.Forms.ToolStripMenuItem monitorVoltagesToolStripMenuItem;
+        private System.Windows.Forms.Button btnMonitorHV;
+        private System.Windows.Forms.Timer timerMonitorHV;
 
     }
 }

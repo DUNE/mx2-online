@@ -87,7 +87,7 @@ namespace MinervaGUI
         private void frmSlowControl_Load(object sender, EventArgs e)
         {
             LoadHardwareToolStripMenuItem_Click(null, null);
-            treeView1.ExpandAll();
+            //treeView1.ExpandAll();
         }
 
         private void treeView1_AfterSelect(object sender, TreeViewEventArgs e)
@@ -105,12 +105,14 @@ namespace MinervaGUI
             {
                 //richTextBoxDescription.Text += ((CROC)(e.Node.Tag)).Description;
                 lblCROC_CROCID.Text = Convert.ToString(((CROC)e.Node.Tag).BaseAddress >> 16);
+                CrocClearLabels();
                 tabControl1.SelectTab(tabCROC);
             }
             if (e.Node is CHnode)
             {
                 lblCH_CHID.Text = ((CROCFrontEndChannel)(e.Node.Tag)).ChannelNumber.ToString();
                 lblCH_CROCID.Text = ((((CROC)(((CROCnode)(e.Node.Parent)).Tag)).BaseAddress) >> 16).ToString();
+                ChannelClearLabels();
                 tabControl1.SelectTab(tabCH);
             }
             if (e.Node is FEnode)
@@ -369,6 +371,7 @@ namespace MinervaGUI
             GetMinervaDevicesInfo(); 
             readVoltagesToolStripMenuItem.Enabled = true;
             zeroHVAllToolStripMenuItem.Enabled = true;
+            monitorVoltagesToolStripMenuItem.Enabled = true;
             saveConfigXmlToolStripMenuItem.Enabled = true;
 
             this.Cursor = Cursors.Arrow;
@@ -380,11 +383,15 @@ namespace MinervaGUI
             WriteXMLToHardwareToolStripMenuItem.Enabled = false;
 
             //For Read HV
-            readVoltagesToolStripMenuItem.Enabled = false;
             richTextBoxHVRead.Clear();
+            readVoltagesToolStripMenuItem.Enabled = false;
+            zeroHVAllToolStripMenuItem.Enabled = false;
+            monitorVoltagesToolStripMenuItem.Enabled = false;
             textBoxADCThreshold.Enabled = false;
             btnReadHV.Enabled = false;
-            zeroHVAllToolStripMenuItem.Enabled = false;
+            btnSwitchToAuto.Enabled = false;
+            textBoxMonitorTimer.Enabled = false;
+            btnMonitorHV.Enabled = false;
         }
 
         private void FindCROCandCRIMModules()
@@ -1416,6 +1423,9 @@ namespace MinervaGUI
             tabControl1.SelectTab(tabReadHV);
             textBoxADCThreshold.Enabled = true;
             btnReadHV.Enabled = true;
+            btnSwitchToAuto.Enabled = true;
+            textBoxMonitorTimer.Enabled = false;
+            btnMonitorHV.Enabled = false;
         }
 
         private void btnReadHV_Click(object sender, EventArgs e)
@@ -1622,6 +1632,73 @@ namespace MinervaGUI
             }
         }
 
+        private void monitorVoltagesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            richTextBoxHVRead.Text = "Monitor FEBs' HV at time interval defined by Monitor Timer (sec) ";
+            tabControl1.SelectTab(tabReadHV);
+            textBoxMonitorTimer.Enabled = true;
+            btnMonitorHV.Enabled = true;
+            textBoxADCThreshold.Enabled = false;
+            btnReadHV.Enabled = false;
+            btnSwitchToAuto.Enabled = false;
+        }
+
+        private void textBoxMonitorTimer_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                timerMonitorHV.Interval = 1000 * Convert.ToInt16(textBoxMonitorTimer.Text);
+            }
+            catch (Exception em)
+            {
+                MessageBox.Show(em.Message);
+                textBoxMonitorTimer.Text = timerMonitorHV.Interval.ToString();
+            }
+        }
+
+        private void btnMonitorHV_Click(object sender, EventArgs e)
+        {
+            if (btnMonitorHV.Text == "Monitor")
+            {
+                richTextBoxHVRead.Clear();
+                timerMonitorHV.Start();
+                btnMonitorHV.Text = "Stop";
+                return;
+            }
+            if (btnMonitorHV.Text == "Stop")
+            {
+                timerMonitorHV.Stop();
+                btnMonitorHV.Text = "Monitor";
+                return;
+            }
+        }
+
+        private void timerMonitorHV_Tick(object sender, EventArgs e)
+        {
+
+
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    ReadHVChannelFEBs();
+                    richTextBoxHVRead.Text = DateTime.Now + "\n" + outputText;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }        
+        
+        }
+
+
+
         #endregion
 
         #region Methods for Write/Read to/from FLASH Memory
@@ -1704,7 +1781,7 @@ namespace MinervaGUI
         private void btn_CHAdvancedGUI_Click(object sender, EventArgs e)
         {
             AdvancedGUI((Button)sender, groupBoxCH_FLASH, groupBoxCH_StatusRegister, 
-                groupBoxCH_DPM, groupBoxCH_LoopDelay);
+                groupBoxCH_DPM, groupBoxCH_Frame);
         }
 
         private void btn_CHWriteFileToSPI_Click(object sender, EventArgs e)
@@ -1815,9 +1892,69 @@ namespace MinervaGUI
             }
         }
 
-        private void ChannelUpdateStatusColors(CROCFrontEndChannel.StatusBits chStatus)
+        private void ChannelUpdateStatusLabels(CROCFrontEndChannel.StatusBits chStatus)
         {
-            //lblCH_StatMsgSent.Text = (int)chStatus & CROCFrontEndChannel.StatusBits.MessageSent;
+            if ((chStatus & CROCFrontEndChannel.StatusBits.CRCError) == CROCFrontEndChannel.StatusBits.CRCError)
+                lblCH_StatCRCError.Text = "1";
+            else lblCH_StatCRCError.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.DeserializerLock) == CROCFrontEndChannel.StatusBits.DeserializerLock)
+                lblCH_StatDeserializerLOCK.Text = "1";
+            else lblCH_StatDeserializerLOCK.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.DPMFull) == CROCFrontEndChannel.StatusBits.DPMFull)
+                lblCH_StatDPMFull.Text = "1";
+            else lblCH_StatDPMFull.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.FIFOFull) == CROCFrontEndChannel.StatusBits.FIFOFull)
+                lblCH_StatFIFOFull.Text = "1";
+            else lblCH_StatFIFOFull.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.FIFONotEmpty) == CROCFrontEndChannel.StatusBits.FIFONotEmpty)
+                lblCH_StatFIFONotEmpty.Text = "1";
+            else lblCH_StatFIFONotEmpty.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.MessageReceived) == CROCFrontEndChannel.StatusBits.MessageReceived)
+                lblCH_StatMsgReceived.Text = "1";
+            else lblCH_StatMsgReceived.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.MessageSent) == CROCFrontEndChannel.StatusBits.MessageSent)
+                lblCH_StatMsgSent.Text = "1";
+            else lblCH_StatMsgSent.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.PLLLocked) == CROCFrontEndChannel.StatusBits.PLLLocked)
+                lblCH_StatPLL0LOCK.Text = "1";
+            else lblCH_StatPLL0LOCK.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.RFPresent) == CROCFrontEndChannel.StatusBits.RFPresent)
+                lblCH_StatRFPresent.Text = "1";
+            else lblCH_StatRFPresent.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.SerializerSynch) == CROCFrontEndChannel.StatusBits.SerializerSynch)
+                lblCH_StatSerializerSYNC.Text = "1";
+            else lblCH_StatSerializerSYNC.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.TimeoutError) == CROCFrontEndChannel.StatusBits.TimeoutError)
+                lblCH_StatTimeoutError.Text = "1";
+            else lblCH_StatTimeoutError.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.UnusedBit1) == CROCFrontEndChannel.StatusBits.UnusedBit1)
+                lblCH_StatUnusedBit1.Text = "1";
+            else lblCH_StatUnusedBit1.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.UnusedBit2) == CROCFrontEndChannel.StatusBits.UnusedBit2)
+                lblCH_StatUnusedBit2.Text = "1";
+            else lblCH_StatUnusedBit2.Text = "0";
+            //some litle abuse here... these (CRIM bits) should NOT be defined as CROCFrontEndChannel.StatusBits ....... 
+            if ((chStatus & CROCFrontEndChannel.StatusBits.TestPulseReceived) == CROCFrontEndChannel.StatusBits.TestPulseReceived)
+                lblCH_StatPLL1LOCK.Text = "1";
+            else lblCH_StatPLL1LOCK.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.ResetReceived) == CROCFrontEndChannel.StatusBits.ResetReceived)
+                lblCH_StatUnusedBit3.Text = "1";
+            else lblCH_StatUnusedBit3.Text = "0";
+            if ((chStatus & CROCFrontEndChannel.StatusBits.EncodedCommandReceived) == CROCFrontEndChannel.StatusBits.EncodedCommandReceived)
+                lblCH_StatUnusedBit4.Text = "1";
+            else lblCH_StatUnusedBit4.Text = "0";
+        }
+
+        private void ChannelClearLabels()
+        {
+            CROCFrontEndChannel.StatusBits chStatusZero = (CROCFrontEndChannel.StatusBits)0;
+            ChannelUpdateStatusLabels(chStatusZero);
+            lblCH_StatusValue.Text = "";
+            lblCH_DPMPointerValue.Text = "";
+            txt_CHFIFORegWrite.Text = "";
+            txt_CHFIFORegWrite.Text = "";
+            txt_CHDPMReadLength.Text = "";
+            rtb_CHDPMRead.Clear();
         }
 
         private void btn_CHStatusRegRead_Click(object sender, EventArgs e)
@@ -1830,11 +1967,8 @@ namespace MinervaGUI
                     TreeNode theNode = treeView1.SelectedNode;
                     IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
                     CROCFrontEndChannel.StatusBits chStatus = theChannel.StatusRegister;
-
                     lblCH_StatusValue.Text = "0x" + chStatus.ToString("X");
-
-                    
-                    
+                    ChannelUpdateStatusLabels(chStatus);
                 }
                 catch (Exception ex)
                 {
@@ -1849,7 +1983,201 @@ namespace MinervaGUI
 
         private void btn_CHStatusRegClear_Click(object sender, EventArgs e)
         {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                    theChannel.ClearStatus();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
 
+        private void btn_CHDPMPointerRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                    bool messageSent = false;
+                    bool messageReceived = false;
+                    bool crcError = false;
+                    bool timeoutError = false;
+                    bool sendBufferEmpty = false;
+                    bool sendBufferFull = false;
+                    bool receiveBufferFull = false;
+                    bool rfPresent = false;
+                    bool serializerSynch = false;
+                    bool deserializerLock = false;
+                    bool pllOk = false;
+                    ushort pointer = 0;
+                    theChannel.ReadStatusAndPointer(out messageSent, out messageReceived, out crcError, out timeoutError,
+                        out sendBufferEmpty, out sendBufferFull, out receiveBufferFull, out rfPresent, out serializerSynch,
+                        out deserializerLock, out pllOk, out pointer);
+                    lblCH_DPMPointerValue.Text = "0x" + pointer.ToString("X");
+                    //ChannelUpdateStatusLabels(theChannel.StatusRegister);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CHDPMPointerReset_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                    theChannel.ResetPointer();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CHFIFOAppendMessage_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                    if ((txt_CHFIFORegWrite.Text.Length % 2) == 0) 
+                    {
+                        byte[] message = new byte[txt_CHFIFORegWrite.Text.Length / 2];
+                        for (int i = 0; i < message.Length; i++)
+                            message[i] = Convert.ToByte(txt_CHFIFORegWrite.Text.Substring(2 * i, 2), 16);
+                        theChannel.FillMessage(message.Length, message);
+                    }
+                    else MessageBox.Show("The number of hex characters must be even\nOperation aborted");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CHFIFOWriteMessage_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                    theChannel.WriteMessage();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CHSendMessage_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                    theChannel.SendMessage();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CHDPMRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                    int responseLength = Convert.ToInt32(txt_CHDPMReadLength.Text);
+                    if ((2 <= responseLength) & (responseLength <= CROCFrontEndChannel.MemoryMaxSize))
+                    {
+                        byte[] response = new byte[responseLength];
+                        theChannel.ReadMemory(responseLength, response);
+                        rtb_CHDPMRead.Clear();
+                        rtb_CHDPMRead.Text += "0000" + "  " +
+                                response[0].ToString("X").PadLeft(2, '0') +
+                                response[1].ToString("X").PadLeft(2, '0') +
+                                " -> dec=" + (response[1] * 256 + response[0]) + "\n";
+                        for (int i = 2; i < responseLength; i += 8)
+                        {
+                            rtb_CHDPMRead.Text += i.ToString("X").PadLeft(4, '0') + "  ";
+                            for (int j = 0; j < 8; j++)
+                                if (i + j < responseLength)
+                                    rtb_CHDPMRead.Text += (response[i + j].ToString("X")).PadLeft(2, '0');
+                            rtb_CHDPMRead.Text += "\n";
+                        }
+
+                    }
+                    else
+                        MessageBox.Show("attempt to read more than maximum DPM depth = " +
+                            CROCFrontEndChannel.MemoryMaxSize + "or less than 2\nOperation aborted");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
         }
 
         #endregion
@@ -1858,7 +2186,8 @@ namespace MinervaGUI
 
         private void btn_CROCAdvancedGUI_Click(object sender, EventArgs e)
         {
-            AdvancedGUI((Button)sender,groupBoxCROC_FLASH);
+            AdvancedGUI((Button)sender, groupBoxCROC_FLASH, groupBoxCROC_TimingSetup,
+                groupBoxCROC_ResetTPMaskReg, groupBoxCROC_FastCommand, groupBoxCROC_LoopDelay);
         }
 
         private void btn_CROCWriteFileToSPI_Click(object sender, EventArgs e)
@@ -1935,9 +2264,292 @@ namespace MinervaGUI
             }
         }
 
+        private void CrocClearLabels()
+        {
+            cmb_CROCTimingSetupClock.SelectedIndex = -1;
+            cmb_CROCTimingSetupTPDelay.SelectedIndex = -1;
+            txt_CROCTimingSetupTPDelay.Text = "";
+            lbl_CROCTimingSetupRead.Text = "";
+            chk_CROCResetCh4.Checked = false; chk_CROCTPulseCh4.Checked = false;
+            chk_CROCResetCh3.Checked = false; chk_CROCTPulseCh3.Checked = false;
+            chk_CROCResetCh2.Checked = false; chk_CROCTPulseCh2.Checked = false;
+            chk_CROCResetCh1.Checked = false; chk_CROCTPulseCh1.Checked = false;
+            lbl_CROCResetTPRead.Text = "";
+            cmb_CROCFastCommand.SelectedIndex = -1;
+        }
+
+        private void cmb_CROCTimingSetupClock_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    if (cmb_CROCTimingSetupClock.SelectedIndex == 0)
+                        theCroc.ClockMode = CROC.ClockModes.Internal;
+                    if (cmb_CROCTimingSetupClock.SelectedIndex == 1)
+                        theCroc.ClockMode = CROC.ClockModes.External;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void cmb_CROCTimingSetupTPDelay_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    if (cmb_CROCTimingSetupTPDelay.SelectedIndex == 0)
+                        theCroc.TestPulseDelayEnabled = false;
+                    if (cmb_CROCTimingSetupTPDelay.SelectedIndex == 1)
+                        theCroc.TestPulseDelayEnabled = true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void txt_CROCTimingSetupTPDelay_TextChanged(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    theCroc.TestPulseDelayValue = Convert.ToUInt16(txt_CROCTimingSetupTPDelay.Text, 16);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CROCTimingSetupRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                   lbl_CROCTimingSetupRead.Text = "0x" + (theCroc.TimingSetupRegister & 0x93FF).ToString("X");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CROCResetTPWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    ushort ResetAndTestMask = (ushort)
+                        (Convert.ToUInt16(chk_CROCResetCh4.Checked) << 11 |
+                        Convert.ToUInt16(chk_CROCResetCh3.Checked) << 10 |
+                        Convert.ToUInt16(chk_CROCResetCh2.Checked) << 9 |
+                        Convert.ToUInt16(chk_CROCResetCh1.Checked) << 8 |
+                        Convert.ToUInt16(chk_CROCTPulseCh4.Checked) << 3 |
+                        Convert.ToUInt16(chk_CROCTPulseCh3.Checked) << 2 |
+                        Convert.ToUInt16(chk_CROCTPulseCh2.Checked) << 1 |
+                        Convert.ToUInt16(chk_CROCTPulseCh1.Checked) << 0);
+                    theCroc.ResetAndTestMaskRegister = ResetAndTestMask;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CROCResetTPRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    lbl_CROCResetTPRead.Text = "0x" + theCroc.ResetAndTestMaskRegister.ToString("X");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CROCResetSend_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    theCroc.ChannelResetRegister = BitConverter.ToUInt16(CROC.ChannelResetRegisterValue, 0);
+                    //Cristian's note: I need to call the theChannel.Reset() to turn off ANY reminded RED LEDs on CROC...
+                    //see also private void ChannelReBootFEs()
+                    Thread.Sleep(3000);
+                    foreach (CROCFrontEndChannel theChannel in theCroc.ChannelList)
+                        theChannel.Reset();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CROCTPSend_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    theCroc.TestPulseRegister = BitConverter.ToUInt16(CROC.TestPulseRegisterValue, 0);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CROCFastCommand_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    switch (cmb_CROCFastCommand.SelectedIndex)
+                    {
+                        case 0: //OpenGate
+                            theCroc.FastCommandRegister = 0xB1;
+                            break;
+                        case 1: //ResetFPGA
+                            theCroc.FastCommandRegister = 0x8D;
+                            break;
+                        case 2: //ResetTimer
+                            theCroc.FastCommandRegister = 0xC5;
+                            break;
+                        case 3: //LoadTimer
+                            theCroc.FastCommandRegister = 0xC9;
+                            break;
+                        case 4: //TriggerFound
+                            theCroc.FastCommandRegister = 0x89;
+                            break;
+                        case 5: //TriggerRearm
+                            theCroc.FastCommandRegister = 0x85;
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CROCLoopDelay_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    byte[] loopDelay = new byte[2];
+                    Label[] loopDelayLabels = { lbl_CROCLoopDelayCh1, lbl_CROCLoopDelayCh2, lbl_CROCLoopDelayCh3, lbl_CROCLoopDelayCh4 };
+                    foreach (CROCFrontEndChannel theChannel in theCroc.ChannelList)
+                    {
+                        loopDelay = BitConverter.GetBytes(0);
+                        controller.Read(theCroc.BaseAddress + (uint)CROCFrontEndChannel.Registers.LoopDelay +
+                            ((uint)0x4000 * (uint)(theChannel.ChannelNumber - 1)),
+                            controller.AddressModifier, controller.DataWidth, loopDelay);
+                        loopDelayLabels[(uint)(theChannel.ChannelNumber-1)].Text = 
+                            (loopDelay[0] & 0x7F).ToString(); 
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
         #endregion
-
-
 
 
     }
