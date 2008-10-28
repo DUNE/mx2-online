@@ -182,6 +182,42 @@ namespace MinervaGUI
             this.label2 = new System.Windows.Forms.Label();
             this.btnReadHV = new System.Windows.Forms.Button();
             this.richTextBoxHVRead = new System.Windows.Forms.RichTextBox();
+            this.tabLIBox = new System.Windows.Forms.TabPage();
+            this.btn_LIBoxAdvancedGUI = new System.Windows.Forms.Button();
+            this.groupBoxLIBox_LICommands = new System.Windows.Forms.GroupBox();
+            this.btn_LIBoxIsActive = new System.Windows.Forms.Button();
+            this.cmb_LIBoxLEDPulseWidth = new System.Windows.Forms.ComboBox();
+            this.cmb_LIBoxLEDSlot = new System.Windows.Forms.ComboBox();
+            this.btn_LIBoxSendFile = new System.Windows.Forms.Button();
+            this.richTextBoxLIBox = new System.Windows.Forms.RichTextBox();
+            this.txt_LIBoxLEDTriggerRate = new System.Windows.Forms.TextBox();
+            this.btn_LIBoxLEDTriggerRate = new System.Windows.Forms.Button();
+            this.txt_LIBoxLEDPulseHeight = new System.Windows.Forms.TextBox();
+            this.btn_LIBoxLEDPulseHeight = new System.Windows.Forms.Button();
+            this.btn_LIBoxTriggerExternal = new System.Windows.Forms.Button();
+            this.btn_LIBoxTriggerInternal = new System.Windows.Forms.Button();
+            this.btn_LIBoxLEDPulseWidth = new System.Windows.Forms.Button();
+            this.btn_LIBoxLEDSlot = new System.Windows.Forms.Button();
+            this.btn_LIBoxInitBox = new System.Windows.Forms.Button();
+            this.groupBoxLIBox_RS232Commands = new System.Windows.Forms.GroupBox();
+            this.btn_LIBoxClearRX = new System.Windows.Forms.Button();
+            this.btn_LIBoxClearTX = new System.Windows.Forms.Button();
+            this.richTextBoxLIWrite = new System.Windows.Forms.RichTextBox();
+            this.btn_LIBoxRead = new System.Windows.Forms.Button();
+            this.richTextBoxLIRead = new System.Windows.Forms.RichTextBox();
+            this.btn_LIBoxWrite = new System.Windows.Forms.Button();
+            this.groupBoxLIBox_RS232Settings = new System.Windows.Forms.GroupBox();
+            this.txt_LIBoxReadTimeout = new System.Windows.Forms.TextBox();
+            this.txt_LIBoxWriteTimeout = new System.Windows.Forms.TextBox();
+            this.label37 = new System.Windows.Forms.Label();
+            this.cmb_LIBoxHandshake = new System.Windows.Forms.ComboBox();
+            this.cmb_LIBoxStopBits = new System.Windows.Forms.ComboBox();
+            this.cmb_LIBoxDataBits = new System.Windows.Forms.ComboBox();
+            this.cmb_LIBoxParity = new System.Windows.Forms.ComboBox();
+            this.cmb_LIBoxBaudRate = new System.Windows.Forms.ComboBox();
+            this.cmb_LIBoxPortName = new System.Windows.Forms.ComboBox();
+            this.btn_LIBoxFindSerialPorts = new System.Windows.Forms.Button();
+            this.btn_LIBoxConfigureSerialPort = new System.Windows.Forms.Button();
             this.errMain = new System.Windows.Forms.ErrorProvider(this.components);
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -204,11 +240,20 @@ namespace MinervaGUI
             this.readVoltagesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.zeroHVAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.monitorVoltagesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.lightInjectionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.prgStatus = new System.Windows.Forms.ToolStripProgressBar();
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.timerMonitorHV = new System.Windows.Forms.Timer(this.components);
+            this.groupBoxLIBox_LICommandsHardcoded = new System.Windows.Forms.GroupBox();
+            this.cmb_LIBoxHardcodedLEDSlot = new System.Windows.Forms.ComboBox();
+            this.btn_LIBoxHardcodedInitLEDSlot = new System.Windows.Forms.Button();
+            this.btn_LIBoxHardcodedZeroPE = new System.Windows.Forms.Button();
+            this.btn_LIBoxHardcodedOnePE = new System.Windows.Forms.Button();
+            this.btn_LIBoxHardcodedMaxPE = new System.Windows.Forms.Button();
+            this.btn_LIBoxHardcoded_X = new System.Windows.Forms.Button();
+            this.btn_LIBoxHardcodedInitALLSlots = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabDescription.SuspendLayout();
             this.tabCROC.SuspendLayout();
@@ -226,10 +271,15 @@ namespace MinervaGUI
             this.tabTRIPRegs.SuspendLayout();
             this.tabFLASHPages.SuspendLayout();
             this.tabReadHV.SuspendLayout();
+            this.tabLIBox.SuspendLayout();
+            this.groupBoxLIBox_LICommands.SuspendLayout();
+            this.groupBoxLIBox_RS232Commands.SuspendLayout();
+            this.groupBoxLIBox_RS232Settings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errMain)).BeginInit();
             this.contextMenuStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
+            this.groupBoxLIBox_LICommandsHardcoded.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -245,6 +295,7 @@ namespace MinervaGUI
             this.tabControl1.Controls.Add(this.tabTRIPRegs);
             this.tabControl1.Controls.Add(this.tabFLASHPages);
             this.tabControl1.Controls.Add(this.tabReadHV);
+            this.tabControl1.Controls.Add(this.tabLIBox);
             this.tabControl1.Location = new System.Drawing.Point(317, 27);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
@@ -1885,7 +1936,7 @@ namespace MinervaGUI
             // btn_FLASHAdvancedGUI
             // 
             this.btn_FLASHAdvancedGUI.BackColor = System.Drawing.Color.Coral;
-            this.btn_FLASHAdvancedGUI.Location = new System.Drawing.Point(238, 16);
+            this.btn_FLASHAdvancedGUI.Location = new System.Drawing.Point(238, 14);
             this.btn_FLASHAdvancedGUI.Name = "btn_FLASHAdvancedGUI";
             this.btn_FLASHAdvancedGUI.Size = new System.Drawing.Size(120, 20);
             this.btn_FLASHAdvancedGUI.TabIndex = 42;
@@ -2055,6 +2106,426 @@ namespace MinervaGUI
             this.richTextBoxHVRead.TabIndex = 0;
             this.richTextBoxHVRead.Text = "";
             // 
+            // tabLIBox
+            // 
+            this.tabLIBox.Controls.Add(this.btn_LIBoxAdvancedGUI);
+            this.tabLIBox.Controls.Add(this.groupBoxLIBox_LICommands);
+            this.tabLIBox.Controls.Add(this.groupBoxLIBox_RS232Commands);
+            this.tabLIBox.Controls.Add(this.groupBoxLIBox_RS232Settings);
+            this.tabLIBox.Location = new System.Drawing.Point(4, 22);
+            this.tabLIBox.Name = "tabLIBox";
+            this.tabLIBox.Size = new System.Drawing.Size(387, 451);
+            this.tabLIBox.TabIndex = 9;
+            this.tabLIBox.Text = "LI Box";
+            this.tabLIBox.UseVisualStyleBackColor = true;
+            // 
+            // btn_LIBoxAdvancedGUI
+            // 
+            this.btn_LIBoxAdvancedGUI.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxAdvancedGUI.Location = new System.Drawing.Point(238, 14);
+            this.btn_LIBoxAdvancedGUI.Name = "btn_LIBoxAdvancedGUI";
+            this.btn_LIBoxAdvancedGUI.Size = new System.Drawing.Size(120, 20);
+            this.btn_LIBoxAdvancedGUI.TabIndex = 77;
+            this.btn_LIBoxAdvancedGUI.Text = "Show Advanced GUI";
+            this.btn_LIBoxAdvancedGUI.UseVisualStyleBackColor = false;
+            this.btn_LIBoxAdvancedGUI.Click += new System.EventHandler(this.btn_LIBoxAdvancedGUI_Click);
+            // 
+            // groupBoxLIBox_LICommands
+            // 
+            this.groupBoxLIBox_LICommands.Controls.Add(this.groupBoxLIBox_LICommandsHardcoded);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.btn_LIBoxIsActive);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.cmb_LIBoxLEDPulseWidth);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.cmb_LIBoxLEDSlot);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.btn_LIBoxSendFile);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.richTextBoxLIBox);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.txt_LIBoxLEDTriggerRate);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.btn_LIBoxLEDTriggerRate);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.txt_LIBoxLEDPulseHeight);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.btn_LIBoxLEDPulseHeight);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.btn_LIBoxTriggerExternal);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.btn_LIBoxTriggerInternal);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.btn_LIBoxLEDPulseWidth);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.btn_LIBoxLEDSlot);
+            this.groupBoxLIBox_LICommands.Controls.Add(this.btn_LIBoxInitBox);
+            this.groupBoxLIBox_LICommands.Location = new System.Drawing.Point(3, 37);
+            this.groupBoxLIBox_LICommands.Name = "groupBoxLIBox_LICommands";
+            this.groupBoxLIBox_LICommands.Size = new System.Drawing.Size(381, 204);
+            this.groupBoxLIBox_LICommands.TabIndex = 76;
+            this.groupBoxLIBox_LICommands.TabStop = false;
+            this.groupBoxLIBox_LICommands.Text = "LI Commands (hex values)";
+            // 
+            // btn_LIBoxIsActive
+            // 
+            this.btn_LIBoxIsActive.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxIsActive.Location = new System.Drawing.Point(132, 57);
+            this.btn_LIBoxIsActive.Name = "btn_LIBoxIsActive";
+            this.btn_LIBoxIsActive.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxIsActive.TabIndex = 91;
+            this.btn_LIBoxIsActive.Text = "LI Active Is OFF";
+            this.btn_LIBoxIsActive.UseVisualStyleBackColor = false;
+            this.btn_LIBoxIsActive.Click += new System.EventHandler(this.btn_LIBoxIsActive_Click);
+            // 
+            // cmb_LIBoxLEDPulseWidth
+            // 
+            this.cmb_LIBoxLEDPulseWidth.AutoCompleteCustomSource.AddRange(new string[] {
+            "0",
+            "1",
+            "2"});
+            this.cmb_LIBoxLEDPulseWidth.FormattingEnabled = true;
+            this.cmb_LIBoxLEDPulseWidth.Items.AddRange(new object[] {
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"});
+            this.cmb_LIBoxLEDPulseWidth.Location = new System.Drawing.Point(96, 57);
+            this.cmb_LIBoxLEDPulseWidth.Name = "cmb_LIBoxLEDPulseWidth";
+            this.cmb_LIBoxLEDPulseWidth.Size = new System.Drawing.Size(32, 21);
+            this.cmb_LIBoxLEDPulseWidth.TabIndex = 90;
+            // 
+            // cmb_LIBoxLEDSlot
+            // 
+            this.cmb_LIBoxLEDSlot.AutoCompleteCustomSource.AddRange(new string[] {
+            "0",
+            "1",
+            "2"});
+            this.cmb_LIBoxLEDSlot.FormattingEnabled = true;
+            this.cmb_LIBoxLEDSlot.Items.AddRange(new object[] {
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "f",
+            "g",
+            "h",
+            "i",
+            "j",
+            "k",
+            "l",
+            "m",
+            "n",
+            "o",
+            "q",
+            "r",
+            "s",
+            "t",
+            "u",
+            "v"});
+            this.cmb_LIBoxLEDSlot.Location = new System.Drawing.Point(96, 36);
+            this.cmb_LIBoxLEDSlot.Name = "cmb_LIBoxLEDSlot";
+            this.cmb_LIBoxLEDSlot.Size = new System.Drawing.Size(32, 21);
+            this.cmb_LIBoxLEDSlot.TabIndex = 89;
+            // 
+            // btn_LIBoxSendFile
+            // 
+            this.btn_LIBoxSendFile.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxSendFile.Location = new System.Drawing.Point(131, 77);
+            this.btn_LIBoxSendFile.Name = "btn_LIBoxSendFile";
+            this.btn_LIBoxSendFile.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxSendFile.TabIndex = 88;
+            this.btn_LIBoxSendFile.Text = "Send File";
+            this.btn_LIBoxSendFile.UseVisualStyleBackColor = false;
+            this.btn_LIBoxSendFile.Click += new System.EventHandler(this.btn_LIBoxSendFile_Click);
+            // 
+            // richTextBoxLIBox
+            // 
+            this.richTextBoxLIBox.Location = new System.Drawing.Point(229, 19);
+            this.richTextBoxLIBox.Name = "richTextBoxLIBox";
+            this.richTextBoxLIBox.Size = new System.Drawing.Size(146, 179);
+            this.richTextBoxLIBox.TabIndex = 1;
+            this.richTextBoxLIBox.Text = "";
+            // 
+            // txt_LIBoxLEDTriggerRate
+            // 
+            this.txt_LIBoxLEDTriggerRate.Location = new System.Drawing.Point(96, 98);
+            this.txt_LIBoxLEDTriggerRate.Name = "txt_LIBoxLEDTriggerRate";
+            this.txt_LIBoxLEDTriggerRate.Size = new System.Drawing.Size(32, 20);
+            this.txt_LIBoxLEDTriggerRate.TabIndex = 87;
+            this.txt_LIBoxLEDTriggerRate.Text = "FFFF";
+            // 
+            // btn_LIBoxLEDTriggerRate
+            // 
+            this.btn_LIBoxLEDTriggerRate.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxLEDTriggerRate.Location = new System.Drawing.Point(6, 97);
+            this.btn_LIBoxLEDTriggerRate.Name = "btn_LIBoxLEDTriggerRate";
+            this.btn_LIBoxLEDTriggerRate.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxLEDTriggerRate.TabIndex = 86;
+            this.btn_LIBoxLEDTriggerRate.Text = "Trigger Rate";
+            this.btn_LIBoxLEDTriggerRate.UseVisualStyleBackColor = false;
+            this.btn_LIBoxLEDTriggerRate.Click += new System.EventHandler(this.btn_LIBoxLEDTriggerRate_Click);
+            // 
+            // txt_LIBoxLEDPulseHeight
+            // 
+            this.txt_LIBoxLEDPulseHeight.Location = new System.Drawing.Point(96, 78);
+            this.txt_LIBoxLEDPulseHeight.Name = "txt_LIBoxLEDPulseHeight";
+            this.txt_LIBoxLEDPulseHeight.Size = new System.Drawing.Size(32, 20);
+            this.txt_LIBoxLEDPulseHeight.TabIndex = 85;
+            this.txt_LIBoxLEDPulseHeight.Text = "3FF";
+            // 
+            // btn_LIBoxLEDPulseHeight
+            // 
+            this.btn_LIBoxLEDPulseHeight.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxLEDPulseHeight.Location = new System.Drawing.Point(6, 77);
+            this.btn_LIBoxLEDPulseHeight.Name = "btn_LIBoxLEDPulseHeight";
+            this.btn_LIBoxLEDPulseHeight.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxLEDPulseHeight.TabIndex = 84;
+            this.btn_LIBoxLEDPulseHeight.Text = "Pulse Height";
+            this.btn_LIBoxLEDPulseHeight.UseVisualStyleBackColor = false;
+            this.btn_LIBoxLEDPulseHeight.Click += new System.EventHandler(this.btn_LIBoxLEDPulseHeight_Click);
+            // 
+            // btn_LIBoxTriggerExternal
+            // 
+            this.btn_LIBoxTriggerExternal.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxTriggerExternal.Location = new System.Drawing.Point(132, 37);
+            this.btn_LIBoxTriggerExternal.Name = "btn_LIBoxTriggerExternal";
+            this.btn_LIBoxTriggerExternal.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxTriggerExternal.TabIndex = 83;
+            this.btn_LIBoxTriggerExternal.Text = "Trigger External";
+            this.btn_LIBoxTriggerExternal.UseVisualStyleBackColor = false;
+            this.btn_LIBoxTriggerExternal.Click += new System.EventHandler(this.btn_LIBoxTriggerExternal_Click);
+            // 
+            // btn_LIBoxTriggerInternal
+            // 
+            this.btn_LIBoxTriggerInternal.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxTriggerInternal.Location = new System.Drawing.Point(132, 17);
+            this.btn_LIBoxTriggerInternal.Name = "btn_LIBoxTriggerInternal";
+            this.btn_LIBoxTriggerInternal.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxTriggerInternal.TabIndex = 82;
+            this.btn_LIBoxTriggerInternal.Text = "Trigger Internal";
+            this.btn_LIBoxTriggerInternal.UseVisualStyleBackColor = false;
+            this.btn_LIBoxTriggerInternal.Click += new System.EventHandler(this.btn_LIBoxTriggerInternal_Click);
+            // 
+            // btn_LIBoxLEDPulseWidth
+            // 
+            this.btn_LIBoxLEDPulseWidth.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxLEDPulseWidth.Location = new System.Drawing.Point(6, 57);
+            this.btn_LIBoxLEDPulseWidth.Name = "btn_LIBoxLEDPulseWidth";
+            this.btn_LIBoxLEDPulseWidth.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxLEDPulseWidth.TabIndex = 80;
+            this.btn_LIBoxLEDPulseWidth.Text = "Pulse Width";
+            this.btn_LIBoxLEDPulseWidth.UseVisualStyleBackColor = false;
+            this.btn_LIBoxLEDPulseWidth.Click += new System.EventHandler(this.btn_LIBoxLEDPulseWidth_Click);
+            // 
+            // btn_LIBoxLEDSlot
+            // 
+            this.btn_LIBoxLEDSlot.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxLEDSlot.Location = new System.Drawing.Point(6, 37);
+            this.btn_LIBoxLEDSlot.Name = "btn_LIBoxLEDSlot";
+            this.btn_LIBoxLEDSlot.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxLEDSlot.TabIndex = 78;
+            this.btn_LIBoxLEDSlot.Text = "Select LED Slot";
+            this.btn_LIBoxLEDSlot.UseVisualStyleBackColor = false;
+            this.btn_LIBoxLEDSlot.Click += new System.EventHandler(this.btn_LIBoxLEDSlot_Click);
+            // 
+            // btn_LIBoxInitBox
+            // 
+            this.btn_LIBoxInitBox.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxInitBox.Location = new System.Drawing.Point(6, 17);
+            this.btn_LIBoxInitBox.Name = "btn_LIBoxInitBox";
+            this.btn_LIBoxInitBox.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxInitBox.TabIndex = 77;
+            this.btn_LIBoxInitBox.Text = "Initialize LI Box";
+            this.btn_LIBoxInitBox.UseVisualStyleBackColor = false;
+            this.btn_LIBoxInitBox.Click += new System.EventHandler(this.btn_LIBoxInitBox_Click);
+            // 
+            // groupBoxLIBox_RS232Commands
+            // 
+            this.groupBoxLIBox_RS232Commands.Controls.Add(this.btn_LIBoxClearRX);
+            this.groupBoxLIBox_RS232Commands.Controls.Add(this.btn_LIBoxClearTX);
+            this.groupBoxLIBox_RS232Commands.Controls.Add(this.richTextBoxLIWrite);
+            this.groupBoxLIBox_RS232Commands.Controls.Add(this.btn_LIBoxRead);
+            this.groupBoxLIBox_RS232Commands.Controls.Add(this.richTextBoxLIRead);
+            this.groupBoxLIBox_RS232Commands.Controls.Add(this.btn_LIBoxWrite);
+            this.groupBoxLIBox_RS232Commands.Location = new System.Drawing.Point(3, 247);
+            this.groupBoxLIBox_RS232Commands.Name = "groupBoxLIBox_RS232Commands";
+            this.groupBoxLIBox_RS232Commands.Size = new System.Drawing.Size(381, 122);
+            this.groupBoxLIBox_RS232Commands.TabIndex = 75;
+            this.groupBoxLIBox_RS232Commands.TabStop = false;
+            this.groupBoxLIBox_RS232Commands.Text = "RS-232 ASCII message";
+            this.groupBoxLIBox_RS232Commands.Visible = false;
+            // 
+            // btn_LIBoxClearRX
+            // 
+            this.btn_LIBoxClearRX.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxClearRX.Location = new System.Drawing.Point(6, 91);
+            this.btn_LIBoxClearRX.Name = "btn_LIBoxClearRX";
+            this.btn_LIBoxClearRX.Size = new System.Drawing.Size(63, 20);
+            this.btn_LIBoxClearRX.TabIndex = 76;
+            this.btn_LIBoxClearRX.Text = "Clear RX";
+            this.btn_LIBoxClearRX.UseVisualStyleBackColor = false;
+            this.btn_LIBoxClearRX.Click += new System.EventHandler(this.btn_LIBoxClearRX_Click);
+            // 
+            // btn_LIBoxClearTX
+            // 
+            this.btn_LIBoxClearTX.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxClearTX.Location = new System.Drawing.Point(6, 38);
+            this.btn_LIBoxClearTX.Name = "btn_LIBoxClearTX";
+            this.btn_LIBoxClearTX.Size = new System.Drawing.Size(63, 20);
+            this.btn_LIBoxClearTX.TabIndex = 75;
+            this.btn_LIBoxClearTX.Text = "Clear TX";
+            this.btn_LIBoxClearTX.UseVisualStyleBackColor = false;
+            this.btn_LIBoxClearTX.Click += new System.EventHandler(this.btn_LIBoxClearTX_Click);
+            // 
+            // richTextBoxLIWrite
+            // 
+            this.richTextBoxLIWrite.Location = new System.Drawing.Point(70, 14);
+            this.richTextBoxLIWrite.Name = "richTextBoxLIWrite";
+            this.richTextBoxLIWrite.Size = new System.Drawing.Size(305, 50);
+            this.richTextBoxLIWrite.TabIndex = 73;
+            this.richTextBoxLIWrite.Text = "";
+            // 
+            // btn_LIBoxRead
+            // 
+            this.btn_LIBoxRead.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxRead.Location = new System.Drawing.Point(6, 71);
+            this.btn_LIBoxRead.Name = "btn_LIBoxRead";
+            this.btn_LIBoxRead.Size = new System.Drawing.Size(63, 20);
+            this.btn_LIBoxRead.TabIndex = 71;
+            this.btn_LIBoxRead.Text = "Read";
+            this.btn_LIBoxRead.UseVisualStyleBackColor = false;
+            this.btn_LIBoxRead.Click += new System.EventHandler(this.btn_LIBoxRead_Click);
+            // 
+            // richTextBoxLIRead
+            // 
+            this.richTextBoxLIRead.Location = new System.Drawing.Point(70, 66);
+            this.richTextBoxLIRead.Name = "richTextBoxLIRead";
+            this.richTextBoxLIRead.Size = new System.Drawing.Size(305, 50);
+            this.richTextBoxLIRead.TabIndex = 74;
+            this.richTextBoxLIRead.Text = "";
+            // 
+            // btn_LIBoxWrite
+            // 
+            this.btn_LIBoxWrite.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxWrite.Location = new System.Drawing.Point(6, 18);
+            this.btn_LIBoxWrite.Name = "btn_LIBoxWrite";
+            this.btn_LIBoxWrite.Size = new System.Drawing.Size(63, 20);
+            this.btn_LIBoxWrite.TabIndex = 70;
+            this.btn_LIBoxWrite.Text = "Write";
+            this.btn_LIBoxWrite.UseVisualStyleBackColor = false;
+            this.btn_LIBoxWrite.Click += new System.EventHandler(this.btn_LIBoxWrite_Click);
+            // 
+            // groupBoxLIBox_RS232Settings
+            // 
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.txt_LIBoxReadTimeout);
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.txt_LIBoxWriteTimeout);
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.label37);
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.cmb_LIBoxHandshake);
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.cmb_LIBoxStopBits);
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.cmb_LIBoxDataBits);
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.cmb_LIBoxParity);
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.cmb_LIBoxBaudRate);
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.cmb_LIBoxPortName);
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.btn_LIBoxFindSerialPorts);
+            this.groupBoxLIBox_RS232Settings.Controls.Add(this.btn_LIBoxConfigureSerialPort);
+            this.groupBoxLIBox_RS232Settings.Location = new System.Drawing.Point(6, 375);
+            this.groupBoxLIBox_RS232Settings.Name = "groupBoxLIBox_RS232Settings";
+            this.groupBoxLIBox_RS232Settings.Size = new System.Drawing.Size(381, 73);
+            this.groupBoxLIBox_RS232Settings.TabIndex = 60;
+            this.groupBoxLIBox_RS232Settings.TabStop = false;
+            this.groupBoxLIBox_RS232Settings.Text = "RS-232 Settings";
+            this.groupBoxLIBox_RS232Settings.Visible = false;
+            // 
+            // txt_LIBoxReadTimeout
+            // 
+            this.txt_LIBoxReadTimeout.Location = new System.Drawing.Point(297, 19);
+            this.txt_LIBoxReadTimeout.Name = "txt_LIBoxReadTimeout";
+            this.txt_LIBoxReadTimeout.Size = new System.Drawing.Size(38, 20);
+            this.txt_LIBoxReadTimeout.TabIndex = 69;
+            this.txt_LIBoxReadTimeout.Text = "100";
+            // 
+            // txt_LIBoxWriteTimeout
+            // 
+            this.txt_LIBoxWriteTimeout.Location = new System.Drawing.Point(336, 19);
+            this.txt_LIBoxWriteTimeout.Name = "txt_LIBoxWriteTimeout";
+            this.txt_LIBoxWriteTimeout.Size = new System.Drawing.Size(38, 20);
+            this.txt_LIBoxWriteTimeout.TabIndex = 68;
+            this.txt_LIBoxWriteTimeout.Text = "100";
+            // 
+            // label37
+            // 
+            this.label37.BackColor = System.Drawing.Color.Coral;
+            this.label37.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label37.Location = new System.Drawing.Point(196, 20);
+            this.label37.Name = "label37";
+            this.label37.Size = new System.Drawing.Size(100, 18);
+            this.label37.TabIndex = 65;
+            this.label37.Text = "Timeout(ms): R,W";
+            // 
+            // cmb_LIBoxHandshake
+            // 
+            this.cmb_LIBoxHandshake.FormattingEnabled = true;
+            this.cmb_LIBoxHandshake.Location = new System.Drawing.Point(286, 44);
+            this.cmb_LIBoxHandshake.Name = "cmb_LIBoxHandshake";
+            this.cmb_LIBoxHandshake.Size = new System.Drawing.Size(89, 21);
+            this.cmb_LIBoxHandshake.TabIndex = 64;
+            // 
+            // cmb_LIBoxStopBits
+            // 
+            this.cmb_LIBoxStopBits.FormattingEnabled = true;
+            this.cmb_LIBoxStopBits.Location = new System.Drawing.Point(228, 44);
+            this.cmb_LIBoxStopBits.Name = "cmb_LIBoxStopBits";
+            this.cmb_LIBoxStopBits.Size = new System.Drawing.Size(52, 21);
+            this.cmb_LIBoxStopBits.TabIndex = 63;
+            // 
+            // cmb_LIBoxDataBits
+            // 
+            this.cmb_LIBoxDataBits.FormattingEnabled = true;
+            this.cmb_LIBoxDataBits.Location = new System.Drawing.Point(189, 44);
+            this.cmb_LIBoxDataBits.Name = "cmb_LIBoxDataBits";
+            this.cmb_LIBoxDataBits.Size = new System.Drawing.Size(33, 21);
+            this.cmb_LIBoxDataBits.TabIndex = 62;
+            // 
+            // cmb_LIBoxParity
+            // 
+            this.cmb_LIBoxParity.FormattingEnabled = true;
+            this.cmb_LIBoxParity.Location = new System.Drawing.Point(132, 44);
+            this.cmb_LIBoxParity.Name = "cmb_LIBoxParity";
+            this.cmb_LIBoxParity.Size = new System.Drawing.Size(51, 21);
+            this.cmb_LIBoxParity.TabIndex = 61;
+            // 
+            // cmb_LIBoxBaudRate
+            // 
+            this.cmb_LIBoxBaudRate.FormattingEnabled = true;
+            this.cmb_LIBoxBaudRate.Location = new System.Drawing.Point(69, 44);
+            this.cmb_LIBoxBaudRate.Name = "cmb_LIBoxBaudRate";
+            this.cmb_LIBoxBaudRate.Size = new System.Drawing.Size(57, 21);
+            this.cmb_LIBoxBaudRate.TabIndex = 60;
+            // 
+            // cmb_LIBoxPortName
+            // 
+            this.cmb_LIBoxPortName.FormattingEnabled = true;
+            this.cmb_LIBoxPortName.Location = new System.Drawing.Point(6, 44);
+            this.cmb_LIBoxPortName.Name = "cmb_LIBoxPortName";
+            this.cmb_LIBoxPortName.Size = new System.Drawing.Size(57, 21);
+            this.cmb_LIBoxPortName.TabIndex = 59;
+            // 
+            // btn_LIBoxFindSerialPorts
+            // 
+            this.btn_LIBoxFindSerialPorts.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxFindSerialPorts.Location = new System.Drawing.Point(6, 19);
+            this.btn_LIBoxFindSerialPorts.Name = "btn_LIBoxFindSerialPorts";
+            this.btn_LIBoxFindSerialPorts.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxFindSerialPorts.TabIndex = 57;
+            this.btn_LIBoxFindSerialPorts.Text = "Find Serial Ports";
+            this.btn_LIBoxFindSerialPorts.UseVisualStyleBackColor = false;
+            this.btn_LIBoxFindSerialPorts.Click += new System.EventHandler(this.btn_LIBoxFindSerialPorts_Click);
+            // 
+            // btn_LIBoxConfigureSerialPort
+            // 
+            this.btn_LIBoxConfigureSerialPort.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxConfigureSerialPort.Location = new System.Drawing.Point(98, 19);
+            this.btn_LIBoxConfigureSerialPort.Name = "btn_LIBoxConfigureSerialPort";
+            this.btn_LIBoxConfigureSerialPort.Size = new System.Drawing.Size(97, 20);
+            this.btn_LIBoxConfigureSerialPort.TabIndex = 58;
+            this.btn_LIBoxConfigureSerialPort.TabStop = false;
+            this.btn_LIBoxConfigureSerialPort.Text = "Config Serial Port";
+            this.btn_LIBoxConfigureSerialPort.UseVisualStyleBackColor = false;
+            this.btn_LIBoxConfigureSerialPort.Click += new System.EventHandler(this.btn_LIBoxConfigureSerialPort_Click);
+            // 
             // errMain
             // 
             this.errMain.ContainerControl = this;
@@ -2206,7 +2677,8 @@ namespace MinervaGUI
             this.actionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.readVoltagesToolStripMenuItem,
             this.zeroHVAllToolStripMenuItem,
-            this.monitorVoltagesToolStripMenuItem});
+            this.monitorVoltagesToolStripMenuItem,
+            this.lightInjectionToolStripMenuItem});
             this.actionsToolStripMenuItem.Name = "actionsToolStripMenuItem";
             this.actionsToolStripMenuItem.Size = new System.Drawing.Size(54, 20);
             this.actionsToolStripMenuItem.Text = "Actions";
@@ -2234,6 +2706,13 @@ namespace MinervaGUI
             this.monitorVoltagesToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
             this.monitorVoltagesToolStripMenuItem.Text = "Monitor Voltages";
             this.monitorVoltagesToolStripMenuItem.Click += new System.EventHandler(this.monitorVoltagesToolStripMenuItem_Click);
+            // 
+            // lightInjectionToolStripMenuItem
+            // 
+            this.lightInjectionToolStripMenuItem.Name = "lightInjectionToolStripMenuItem";
+            this.lightInjectionToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
+            this.lightInjectionToolStripMenuItem.Text = "Light Injection";
+            this.lightInjectionToolStripMenuItem.Click += new System.EventHandler(this.lightInjectionToolStripMenuItem_Click);
             // 
             // statusStrip1
             // 
@@ -2270,6 +2749,122 @@ namespace MinervaGUI
             // 
             this.timerMonitorHV.Tick += new System.EventHandler(this.timerMonitorHV_Tick);
             // 
+            // groupBoxLIBox_LICommandsHardcoded
+            // 
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedInitALLSlots);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcoded_X);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedMaxPE);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedOnePE);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedZeroPE);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.cmb_LIBoxHardcodedLEDSlot);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedInitLEDSlot);
+            this.groupBoxLIBox_LICommandsHardcoded.Location = new System.Drawing.Point(3, 120);
+            this.groupBoxLIBox_LICommandsHardcoded.Name = "groupBoxLIBox_LICommandsHardcoded";
+            this.groupBoxLIBox_LICommandsHardcoded.Size = new System.Drawing.Size(222, 78);
+            this.groupBoxLIBox_LICommandsHardcoded.TabIndex = 92;
+            this.groupBoxLIBox_LICommandsHardcoded.TabStop = false;
+            this.groupBoxLIBox_LICommandsHardcoded.Text = "LI Commands Hardcoded";
+            // 
+            // cmb_LIBoxHardcodedLEDSlot
+            // 
+            this.cmb_LIBoxHardcodedLEDSlot.AutoCompleteCustomSource.AddRange(new string[] {
+            "0",
+            "1",
+            "2"});
+            this.cmb_LIBoxHardcodedLEDSlot.FormattingEnabled = true;
+            this.cmb_LIBoxHardcodedLEDSlot.Items.AddRange(new object[] {
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "f",
+            "g",
+            "h",
+            "i",
+            "j",
+            "k",
+            "l",
+            "m",
+            "n",
+            "o",
+            "q",
+            "r",
+            "s",
+            "t",
+            "u",
+            "v"});
+            this.cmb_LIBoxHardcodedLEDSlot.Location = new System.Drawing.Point(96, 15);
+            this.cmb_LIBoxHardcodedLEDSlot.Name = "cmb_LIBoxHardcodedLEDSlot";
+            this.cmb_LIBoxHardcodedLEDSlot.Size = new System.Drawing.Size(32, 21);
+            this.cmb_LIBoxHardcodedLEDSlot.TabIndex = 94;
+            // 
+            // btn_LIBoxHardcodedInitLEDSlot
+            // 
+            this.btn_LIBoxHardcodedInitLEDSlot.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcodedInitLEDSlot.Location = new System.Drawing.Point(6, 17);
+            this.btn_LIBoxHardcodedInitLEDSlot.Name = "btn_LIBoxHardcodedInitLEDSlot";
+            this.btn_LIBoxHardcodedInitLEDSlot.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxHardcodedInitLEDSlot.TabIndex = 93;
+            this.btn_LIBoxHardcodedInitLEDSlot.Text = "Init LED Slot";
+            this.btn_LIBoxHardcodedInitLEDSlot.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcodedInitLEDSlot.Click += new System.EventHandler(this.btn_LIBoxHardcodedInitLEDSlot_Click);
+            // 
+            // btn_LIBoxHardcodedZeroPE
+            // 
+            this.btn_LIBoxHardcodedZeroPE.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcodedZeroPE.Location = new System.Drawing.Point(6, 37);
+            this.btn_LIBoxHardcodedZeroPE.Name = "btn_LIBoxHardcodedZeroPE";
+            this.btn_LIBoxHardcodedZeroPE.Size = new System.Drawing.Size(70, 20);
+            this.btn_LIBoxHardcodedZeroPE.TabIndex = 95;
+            this.btn_LIBoxHardcodedZeroPE.Text = "Zero PE";
+            this.btn_LIBoxHardcodedZeroPE.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcodedZeroPE.Click += new System.EventHandler(this.btn_LIBoxHardcodedZeroPE_Click);
+            // 
+            // btn_LIBoxHardcodedOnePE
+            // 
+            this.btn_LIBoxHardcodedOnePE.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcodedOnePE.Location = new System.Drawing.Point(77, 37);
+            this.btn_LIBoxHardcodedOnePE.Name = "btn_LIBoxHardcodedOnePE";
+            this.btn_LIBoxHardcodedOnePE.Size = new System.Drawing.Size(70, 20);
+            this.btn_LIBoxHardcodedOnePE.TabIndex = 96;
+            this.btn_LIBoxHardcodedOnePE.Text = "One PE";
+            this.btn_LIBoxHardcodedOnePE.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcodedOnePE.Click += new System.EventHandler(this.btn_LIBoxHardcodedOnePE_Click);
+            // 
+            // btn_LIBoxHardcodedMaxPE
+            // 
+            this.btn_LIBoxHardcodedMaxPE.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcodedMaxPE.Location = new System.Drawing.Point(148, 37);
+            this.btn_LIBoxHardcodedMaxPE.Name = "btn_LIBoxHardcodedMaxPE";
+            this.btn_LIBoxHardcodedMaxPE.Size = new System.Drawing.Size(70, 20);
+            this.btn_LIBoxHardcodedMaxPE.TabIndex = 97;
+            this.btn_LIBoxHardcodedMaxPE.Text = "Max PE";
+            this.btn_LIBoxHardcodedMaxPE.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcodedMaxPE.Click += new System.EventHandler(this.btn_LIBoxHardcodedMaxPE_Click);
+            // 
+            // btn_LIBoxHardcoded_X
+            // 
+            this.btn_LIBoxHardcoded_X.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcoded_X.Location = new System.Drawing.Point(6, 58);
+            this.btn_LIBoxHardcoded_X.Name = "btn_LIBoxHardcoded_X";
+            this.btn_LIBoxHardcoded_X.Size = new System.Drawing.Size(70, 20);
+            this.btn_LIBoxHardcoded_X.TabIndex = 98;
+            this.btn_LIBoxHardcoded_X.Text = "-X";
+            this.btn_LIBoxHardcoded_X.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcoded_X.Click += new System.EventHandler(this.btn_LIBoxHardcoded_X_Click);
+            // 
+            // btn_LIBoxHardcodedInitALLSlots
+            // 
+            this.btn_LIBoxHardcodedInitALLSlots.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcodedInitALLSlots.Location = new System.Drawing.Point(129, 17);
+            this.btn_LIBoxHardcodedInitALLSlots.Name = "btn_LIBoxHardcodedInitALLSlots";
+            this.btn_LIBoxHardcodedInitALLSlots.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxHardcodedInitALLSlots.TabIndex = 99;
+            this.btn_LIBoxHardcodedInitALLSlots.Text = "Init ALL Slots";
+            this.btn_LIBoxHardcodedInitALLSlots.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcodedInitALLSlots.Click += new System.EventHandler(this.btn_LIBoxHardcodedInitALLSlots_Click);
+            // 
             // frmSlowControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2303,12 +2898,19 @@ namespace MinervaGUI
             this.tabFLASHPages.ResumeLayout(false);
             this.tabReadHV.ResumeLayout(false);
             this.tabReadHV.PerformLayout();
+            this.tabLIBox.ResumeLayout(false);
+            this.groupBoxLIBox_LICommands.ResumeLayout(false);
+            this.groupBoxLIBox_LICommands.PerformLayout();
+            this.groupBoxLIBox_RS232Commands.ResumeLayout(false);
+            this.groupBoxLIBox_RS232Settings.ResumeLayout(false);
+            this.groupBoxLIBox_RS232Settings.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errMain)).EndInit();
             this.contextMenuStrip1.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
+            this.groupBoxLIBox_LICommandsHardcoded.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -2496,6 +3098,51 @@ namespace MinervaGUI
         private System.Windows.Forms.ToolStripMenuItem monitorVoltagesToolStripMenuItem;
         private System.Windows.Forms.Button btnMonitorHV;
         private System.Windows.Forms.Timer timerMonitorHV;
+        private System.Windows.Forms.TabPage tabLIBox;
+        private System.Windows.Forms.ToolStripMenuItem lightInjectionToolStripMenuItem;
+        private System.Windows.Forms.RichTextBox richTextBoxLIBox;
+        private System.Windows.Forms.GroupBox groupBoxLIBox_RS232Settings;
+        private System.Windows.Forms.Button btn_LIBoxFindSerialPorts;
+        private System.Windows.Forms.Button btn_LIBoxConfigureSerialPort;
+        private System.Windows.Forms.ComboBox cmb_LIBoxDataBits;
+        private System.Windows.Forms.ComboBox cmb_LIBoxParity;
+        private System.Windows.Forms.ComboBox cmb_LIBoxBaudRate;
+        private System.Windows.Forms.ComboBox cmb_LIBoxPortName;
+        private System.Windows.Forms.ComboBox cmb_LIBoxHandshake;
+        private System.Windows.Forms.ComboBox cmb_LIBoxStopBits;
+        private System.Windows.Forms.TextBox txt_LIBoxReadTimeout;
+        private System.Windows.Forms.TextBox txt_LIBoxWriteTimeout;
+        private System.Windows.Forms.Label label37;
+        private System.Windows.Forms.Button btn_LIBoxRead;
+        private System.Windows.Forms.Button btn_LIBoxWrite;
+        private System.Windows.Forms.RichTextBox richTextBoxLIRead;
+        private System.Windows.Forms.RichTextBox richTextBoxLIWrite;
+        private System.Windows.Forms.GroupBox groupBoxLIBox_RS232Commands;
+        private System.Windows.Forms.Button btn_LIBoxClearRX;
+        private System.Windows.Forms.Button btn_LIBoxClearTX;
+        private System.Windows.Forms.GroupBox groupBoxLIBox_LICommands;
+        private System.Windows.Forms.Button btn_LIBoxInitBox;
+        private System.Windows.Forms.Button btn_LIBoxLEDSlot;
+        private System.Windows.Forms.Button btn_LIBoxLEDPulseWidth;
+        private System.Windows.Forms.Button btn_LIBoxTriggerExternal;
+        private System.Windows.Forms.Button btn_LIBoxTriggerInternal;
+        private System.Windows.Forms.TextBox txt_LIBoxLEDPulseHeight;
+        private System.Windows.Forms.Button btn_LIBoxLEDPulseHeight;
+        private System.Windows.Forms.TextBox txt_LIBoxLEDTriggerRate;
+        private System.Windows.Forms.Button btn_LIBoxLEDTriggerRate;
+        private System.Windows.Forms.Button btn_LIBoxSendFile;
+        private System.Windows.Forms.ComboBox cmb_LIBoxLEDSlot;
+        private System.Windows.Forms.ComboBox cmb_LIBoxLEDPulseWidth;
+        private System.Windows.Forms.Button btn_LIBoxIsActive;
+        private System.Windows.Forms.Button btn_LIBoxAdvancedGUI;
+        private System.Windows.Forms.GroupBox groupBoxLIBox_LICommandsHardcoded;
+        private System.Windows.Forms.Button btn_LIBoxHardcodedMaxPE;
+        private System.Windows.Forms.Button btn_LIBoxHardcodedOnePE;
+        private System.Windows.Forms.Button btn_LIBoxHardcodedZeroPE;
+        private System.Windows.Forms.ComboBox cmb_LIBoxHardcodedLEDSlot;
+        private System.Windows.Forms.Button btn_LIBoxHardcodedInitLEDSlot;
+        private System.Windows.Forms.Button btn_LIBoxHardcoded_X;
+        private System.Windows.Forms.Button btn_LIBoxHardcodedInitALLSlots;
 
     }
 }

@@ -11,7 +11,7 @@ namespace MinervaUserControls
 {
     public partial class FPGADevRegControl : UserControl
     {
-        private const int NLogicalRgisters = 49;
+        private const int NLogicalRgisters = 51;
         private UInt32[] FPGALogicalReg = new UInt32[NLogicalRgisters];
         private bool isAdvancedGUI = false;
 
@@ -48,7 +48,7 @@ namespace MinervaUserControls
             VXOMuxSelect = 27,      //  1 bit           27
             PhaseStart = 28,        //  1 bit           28
             PhaseIncrement = 29,    //  1 bit           29
-            PhaseSpare = 30,        //  4 bits          30
+            PhaseSpare = 30,        //  4 bits          30 was 4 bit, now is 2 bits -> 08.08.2008
             PhaseTicks = 31,        //  8 bits          31
             DCM1Lock = 32,          //  1 bit, readonly 32
             DCM2Lock = 33,          //  1 bit, readonly 33
@@ -66,7 +66,9 @@ namespace MinervaUserControls
             HVPulseWidth = 45,      //  8 bits          45
             Temperature = 46,       // 16 bits          46
             TripXThreshold = 47,    //  8 bits          47
-            TripXComparators = 48   //  6 bits          48
+            TripXComparators = 48,  //  6 bits          48
+            ExtTriggFound = 49,     //  1 bit           49  ExtTriggFound, 1 bit ->  08.08.2008
+            ExtTriggRearm = 50      //  1 bit           50  ExtTriggRearm, 1 bit ->  08.08.2008
         }
         #endregion
 
@@ -111,6 +113,8 @@ namespace MinervaUserControls
         private const UInt32 TemperatureDefaultValue = 0;
         private const UInt32 TripXThresholdDefaultValue = 0;
         private const UInt32 TripXComparatorsDefaultValue = 0;
+        private const UInt32 ExtTriggFoundDefaultValue = 0; // 08.08.2008
+        private const UInt32 ExtTriggRearmDefaultValue = 0; // 08.08.2008
         #endregion 
         
         #region Define Control-type members (TextBox, ComboBox and Label)
@@ -164,6 +168,8 @@ namespace MinervaUserControls
         private TextBox txt_LRTemperature = new TextBox(); private Label lbl_Temperature = new Label();
         private TextBox txt_LWRTripXThreshold = new TextBox(); private Label lbl_TripXThreshold = new Label();
         private TextBox txt_LRTripXComparators = new TextBox(); private Label lbl_TripXComparators = new Label();
+        private TextBox txt_LRExtTriggFound = new TextBox(); private Label lbl_ExtTriggFound = new Label(); // 08.08.2008
+        private TextBox txt_LWRExtTriggRearm = new TextBox(); private Label lbl_ExtTriggRearm = new Label(); // 08.08.2008
         #endregion        
         
         public int NRegs
@@ -248,6 +254,8 @@ namespace MinervaUserControls
             FPGALogicalReg[(int)LogicalRegisters.Temperature] = TemperatureDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.TripXThreshold] = TripXThresholdDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.TripXComparators] = TripXComparatorsDefaultValue;
+            FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound] = ExtTriggFoundDefaultValue;    // 08.08.2008
+            FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm] = ExtTriggRearmDefaultValue;    // 08.08.2008
         }
 
         private void myInitializeComponent()
@@ -1253,7 +1261,7 @@ namespace MinervaUserControls
             Xoffset = lbl_TripXThreshold.Left;
             Yoffset = lbl_TripXThreshold.Top + lbl_TripXThreshold.Height + 5;
             //Label lbl_TripXComparators = new Label();
-            //TripXComparators.Location = new Point(Xoffset, Yoffset);
+            //lbl_TripXComparators.Location = new Point(Xoffset, Yoffset);
             lbl_TripXComparators.Width = Xwidth;
             lbl_TripXComparators.Height = Yheight;
             lbl_TripXComparators.Text = "R TripXComparators";
@@ -1270,6 +1278,50 @@ namespace MinervaUserControls
             txt_LRTripXComparators.TabIndex = (int)LogicalRegisters.TripXComparators;
             txt_LRTripXComparators.Validating += new CancelEventHandler(control_Validating);
             this.Controls.Add(txt_LRTripXComparators);
+
+            //Create Register_ExtTriggFound Controls    // 08.08.2008
+            Xoffset = lbl_TripXComparators.Left;
+            Yoffset = lbl_TripXComparators.Top + lbl_TripXComparators.Height + 5;
+            //Label lbl_ExtTriggFound = new Label();
+            //lbl_ExtTriggFound.Location = new Point(Xoffset, Yoffset);
+            lbl_ExtTriggFound.Width = Xwidth;
+            lbl_ExtTriggFound.Height = Yheight;
+            lbl_ExtTriggFound.Text = "R ExtTriggFound";
+            lbl_ExtTriggFound.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
+            lbl_ExtTriggFound.BackColor = Color.Coral;
+            this.Controls.Add(lbl_ExtTriggFound);
+            //txt_LRTripXComparators.Location = new Point(lbl_ExtTriggFound.Left + lbl_ExtTriggFound.Width + 5, lbl_ExtTriggFound.Top);
+            txt_LRExtTriggFound.Width = Xwidth;
+            txt_LRExtTriggFound.Height = Yheight;
+            txt_LRExtTriggFound.Enabled = true;
+            txt_LRExtTriggFound.BackColor = Color.White;
+            txt_LRExtTriggFound.Name = "ExtTriggFound";
+            txt_LRExtTriggFound.Text = ExtTriggFoundDefaultValue.ToString();
+            txt_LRExtTriggFound.TabIndex = (int)LogicalRegisters.ExtTriggFound;
+            txt_LRExtTriggFound.Validating += new CancelEventHandler(control_Validating);
+            this.Controls.Add(txt_LRExtTriggFound);
+
+            //Create Register_ExtTriggRearm Controls    // 08.08.2008
+            Xoffset = lbl_ExtTriggFound.Left;
+            Yoffset = lbl_ExtTriggFound.Top + lbl_ExtTriggFound.Height + 5;
+            //Label lbl_ExtTriggRearm = new Label();
+            //lbl_ExtTriggRearm.Location = new Point(Xoffset, Yoffset);
+            lbl_ExtTriggRearm.Width = Xwidth;
+            lbl_ExtTriggRearm.Height = Yheight;
+            lbl_ExtTriggRearm.Text = "WR ExtTriggRearm";
+            lbl_ExtTriggRearm.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
+            lbl_ExtTriggRearm.BackColor = Color.Coral;
+            this.Controls.Add(lbl_ExtTriggRearm);
+            //txt_LRExtTriggRearm.Location = new Point(lbl_ExtTriggRearm.Left + lbl_ExtTriggRearm.Width + 5, lbl_ExtTriggRearm.Top);
+            txt_LWRExtTriggRearm.Width = Xwidth;
+            txt_LWRExtTriggRearm.Height = Yheight;
+            txt_LWRExtTriggRearm.Enabled = true;
+            txt_LWRExtTriggRearm.BackColor = Color.White;
+            txt_LWRExtTriggRearm.Name = "ExtTriggRearm";
+            txt_LWRExtTriggRearm.Text = ExtTriggFoundDefaultValue.ToString();
+            txt_LWRExtTriggRearm.TabIndex = (int)LogicalRegisters.ExtTriggRearm;
+            txt_LWRExtTriggRearm.Validating += new CancelEventHandler(control_Validating);
+            this.Controls.Add(txt_LWRExtTriggRearm);
         }
 
         public bool IsAdvancedGUI { get { return isAdvancedGUI; } }
@@ -1504,6 +1556,17 @@ namespace MinervaUserControls
             get { return FPGALogicalReg[(int)LogicalRegisters.TripXComparators]; }
             set { FPGALogicalReg[(int)LogicalRegisters.TripXComparators] = value; }
         }
+        public UInt32 RegisterExtTriggFound // 08.08.2008
+        {
+            get { return FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound]; }
+            set { FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound] = value; }
+        }
+        public UInt32 RegisterExtTriggRearm // 08.08.2008
+        {
+            get { return FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm]; }
+            set { FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm] = value; }
+        }
+
 
         private void control_Validating(object sender, CancelEventArgs e)
         {
@@ -1553,11 +1616,12 @@ namespace MinervaUserControls
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0x3F, 0, "Value must be 6 bits");
                             break;
                         case (int)LogicalRegisters.InjectRange:
-                        case (int)LogicalRegisters.PhaseSpare:
+                        //case (int)LogicalRegisters.PhaseSpare:    // 08.08.2008
                         case (int)LogicalRegisters.BoardID:
                         case (int)LogicalRegisters.HVNumAvg:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0xF, 0, "Value must be 4 bits");
                             break;
+                        case (int)LogicalRegisters.PhaseSpare:
                         case (int)LogicalRegisters.TestPulse2Bit:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0x3, 0, "Value must be 2 bits");
                             break;
@@ -1567,6 +1631,8 @@ namespace MinervaUserControls
                         case (int)LogicalRegisters.DCM1NoClock:
                         case (int)LogicalRegisters.DCM2NoClock:
                         case (int)LogicalRegisters.DCM2PhaseDone:
+                        case (int)LogicalRegisters.ExtTriggFound:   // 08.08.2008
+                        case (int)LogicalRegisters.ExtTriggRearm:   // 08.08.2008
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0x1, 0, "Value must be 1 bit");
                             break;
                     }
@@ -1770,6 +1836,8 @@ namespace MinervaUserControls
                 CreateLocations(lbl_HVPulseWidth, lbl_Temperature, txt_LRTemperature, true, true);
                 CreateLocations(lbl_Temperature, lbl_TripXThreshold, txt_LWRTripXThreshold, true, true);
                 CreateLocations(lbl_TripXThreshold, lbl_TripXComparators, txt_LRTripXComparators, true, true);
+                CreateLocations(lbl_TripXComparators, lbl_ExtTriggFound, txt_LRExtTriggFound, true, true);  // 08.08.2008
+                CreateLocations(lbl_ExtTriggFound, lbl_ExtTriggRearm, txt_LWRExtTriggRearm, true, true);    // 08.08.2008
             }
         }
 

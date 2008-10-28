@@ -6,6 +6,8 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.Threading;
+using System.IO;
+using System.IO.Ports;
 using System.Xml.Serialization;
 using VMEInterfaces;
 using MinervaUserControls;
@@ -73,9 +75,9 @@ namespace MinervaGUI
                 catch
                 {
                     prgStatus.Value = 0;
-                    MessageBox.Show("Unable to initialize crate controller");
+                    MessageBox.Show("Unable to initialize crate controller\nApplication will be closed.");
                     lblStatus.Text = "VME Controller NOT initialized.";
-                    //this.Close();
+                    this.Close();
                 }
                 finally
                 {
@@ -86,7 +88,7 @@ namespace MinervaGUI
 
         private void frmSlowControl_Load(object sender, EventArgs e)
         {
-            LoadHardwareToolStripMenuItem_Click(null, null);
+            //LoadHardwareToolStripMenuItem_Click(null, null);
             //treeView1.ExpandAll();
         }
 
@@ -412,8 +414,8 @@ namespace MinervaGUI
                     {
                         try
                         {
-                            wData[0] = (byte)1;
-                            wData[1] = (byte)1;
+                            wData[0] = (byte)r.Next(1, 255);
+                            wData[1] = (byte)r.Next(1, 255);
                             #region Version#1 to find out CROCs and CRIMs using Write/Read through "controller" object
                             controller.Write((VMEDevsBaseAddr << 16) + 0xF000, controller.AddressModifier,
                                     controller.DataWidth, wData);
@@ -1159,6 +1161,8 @@ namespace MinervaGUI
             theFPGAControl.RegisterTemperature = theFrame.Temperature;
             theFPGAControl.RegisterTripXThreshold = theFrame.CosmicTrig;
             theFPGAControl.RegisterTripXComparators = theFrame.TripXCompEnc;
+            theFPGAControl.RegisterExtTriggFound = theFrame.ExtTriggFound;  // 08.08.2008 Cristian
+            theFPGAControl.RegisterExtTriggRearm = theFrame.ExtTriggRearm;  // 08.08.2008 Cristian
         }
 
         private void AssignFPGARegsCristianToDave(MinervaUserControls.FPGADevRegControl theFPGAControl, FPGAFrame theFrame)
@@ -1208,6 +1212,8 @@ namespace MinervaGUI
             //theFrame.Temperature = (ushort)theFPGAControl.RegisterTemperature;        READ ONLY
             theFrame.CosmicTrig = (byte)theFPGAControl.RegisterTripXThreshold;
             //theFrame.TripXCompEnc = (byte)theFPGAControl.RegisterTripXComparators;    READ ONLY
+            //theFrame.ExtTriggFound = (byte)theFPGAControl.RegisterExtTriggFound;      READ ONLY   // 08.08.2008 Cristian
+            theFrame.ExtTriggRearm = (byte)theFPGAControl.RegisterExtTriggRearm;                    // 08.08.2008 Cristian
         }
 
         private void btn_FPGAAdvancedGUI_Click(object sender, EventArgs e)
@@ -1675,8 +1681,6 @@ namespace MinervaGUI
 
         private void timerMonitorHV_Tick(object sender, EventArgs e)
         {
-
-
             lock (this)
             {
                 vmeDone.WaitOne();
@@ -1694,10 +1698,7 @@ namespace MinervaGUI
                     vmeDone.Set();
                 }
             }        
-        
         }
-
-
 
         #endregion
 
@@ -2551,6 +2552,496 @@ namespace MinervaGUI
 
         #endregion
 
+        #region Methods for Light Injection Box
+        SerialPort LISerialPort = new SerialPort();
+        bool LIBoxIsActive = false;
+
+        private void btn_LIBoxAdvancedGUI_Click(object sender, EventArgs e)
+        {
+            AdvancedGUI((Button)sender, groupBoxLIBox_RS232Commands, 
+                groupBoxLIBox_RS232Settings);
+        }
+
+        private void lightInjectionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            tabControl1.SelectTab(tabLIBox);
+            LI_FindSerialPorts();
+            LI_ConfigureSerialPort(LISerialPort);
+            if (!LISerialPort.IsOpen) LISerialPort.Open();
+        }
+
+        private void LI_FindSerialPorts()
+        {
+            try
+            {
+                //PortName
+                string[] ports = SerialPort.GetPortNames();
+                ////cmb_LIBoxPortName.Items.Clear();
+                if (ports.Length > 0)
+                    //foreach (string port in ports)
+                    //    cmb_LIBoxPortName.Items.Add(port);
+                    cmb_LIBoxPortName.DataSource = ports;
+                cmb_LIBoxPortName.SelectedIndex = 0;
+                // BaudRate
+                int[] baudRate = { 300, 600, 1200, 2400, 9600, 14400, 19200, 38400, 57600, 115200, 128000 };
+                cmb_LIBoxBaudRate.DataSource = baudRate;
+                cmb_LIBoxBaudRate.SelectedIndex = 4;
+                // Parity
+                string[] parity = Enum.GetNames(typeof(Parity));
+                cmb_LIBoxParity.DataSource = parity;
+                cmb_LIBoxParity.SelectedIndex = Convert.ToInt16(Parity.None);
+                // DataBits
+                int[] dataBits = { 8 };
+                cmb_LIBoxDataBits.DataSource = dataBits;
+                // StopBits
+                string[] stopBits = Enum.GetNames(typeof(StopBits));
+                cmb_LIBoxStopBits.DataSource = stopBits;
+                cmb_LIBoxStopBits.SelectedIndex = Convert.ToInt16(StopBits.One);
+                // Handshake
+                string[] handshake = Enum.GetNames(typeof(Handshake));
+                cmb_LIBoxHandshake.DataSource = handshake;
+                cmb_LIBoxHandshake.SelectedIndex = Convert.ToInt16(Handshake.None);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+
+        private void LI_ConfigureSerialPort(SerialPort LISerialPort)
+        {
+            try
+            {
+                if (LISerialPort.IsOpen) LISerialPort.Close();
+                LISerialPort.PortName = (string)cmb_LIBoxPortName.SelectedItem;
+                LISerialPort.BaudRate = (int)cmb_LIBoxBaudRate.SelectedItem;
+                LISerialPort.Parity = (Parity)cmb_LIBoxParity.SelectedIndex;
+                LISerialPort.DataBits = (int)cmb_LIBoxDataBits.SelectedItem;
+                LISerialPort.StopBits = (StopBits)cmb_LIBoxStopBits.SelectedIndex;
+                LISerialPort.Handshake = (Handshake)cmb_LIBoxHandshake.SelectedIndex;
+                LISerialPort.ReadTimeout = int.Parse(txt_LIBoxReadTimeout.Text);
+                LISerialPort.WriteTimeout = int.Parse(txt_LIBoxWriteTimeout.Text);
+                LISerialPort.Open();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+
+        private void btn_LIBoxConfigureSerialPort_Click(object sender, EventArgs e)
+        {
+            LI_ConfigureSerialPort(LISerialPort);
+        }
+
+        private void btn_LIBoxFindSerialPorts_Click(object sender, EventArgs e)
+        {
+            LI_FindSerialPorts();
+        }
+
+        public bool LI_ReadLine(SerialPort LISerialPort, ref string message)
+        {
+            try
+            {
+                char[] charBuffer = new char[10];
+                //message = LISerialPort.ReadLine();
+                //message = LISerialPort.ReadTo(readto);
+                System.Threading.Thread.Sleep(100);
+                LISerialPort.Read(charBuffer, 0, 10);
+                foreach (char c in charBuffer)
+                    if (c != '\0') message += c;
+                return true;
+            }
+            catch (Exception e) 
+            {
+                MessageBox.Show(e.Message);
+                return false; 
+            }
+        }
+
+        public bool LI_WriteLine(SerialPort LISerialPort, string message)
+        {
+            try
+            {
+                LISerialPort.WriteLine(message);
+                return true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+                return false;
+            }
+        }
+
+        private void btn_LIBoxRead_Click(object sender, EventArgs e)
+        {
+            string message = "";
+            LI_ReadLine(LISerialPort, ref message);
+            richTextBoxLIRead.Text += "RX:" + message + "\n";
+        }
+
+        private void btn_LIBoxWrite_Click(object sender, EventArgs e)
+        {
+            LI_WriteLine(LISerialPort, richTextBoxLIWrite.Text);
+        }
+
+        private void btn_LIBoxClearRX_Click(object sender, EventArgs e)
+        {
+            try { LISerialPort.DiscardInBuffer(); richTextBoxLIRead.Clear(); }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
+        }
+
+        private void btn_LIBoxClearTX_Click(object sender, EventArgs e)
+        {
+            try { LISerialPort.DiscardOutBuffer(); richTextBoxLIWrite.Clear(); }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
+        }
+
+        private void btn_LIBoxInitBox_Click(object sender, EventArgs e)
+        {
+            string msgRX = "";
+            richTextBoxLIBox.Clear();
+            LI_WriteReadBack(LISerialPort, "aA", ref msgRX, 1, richTextBoxLIBox);
+        }
+
+        private void btn_LIBoxTriggerInternal_Click(object sender, EventArgs e)
+        {
+            //exit the "active" mode, if any...
+            LIBoxActiveOFF();
+            //set trigger internal
+            string msgTX = "aK";
+            string msgRX = "";
+            if (LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 1, richTextBoxLIBox))
+                LIBoxActiveON();
+        }
+
+        private void btn_LIBoxTriggerExternal_Click(object sender, EventArgs e)
+        {
+            //exit the "active" mode, if any...
+            LIBoxActiveOFF();
+            //set trigger external
+            string msgTX = "aQ";
+            string msgRX = "";
+            if (LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 1, richTextBoxLIBox))
+                LIBoxActiveON();
+        }
+
+        private void btn_LIBoxSendFile_Click(object sender, EventArgs e)
+        {
+            if (LIBoxIsActive)
+            {
+                if (MessageBox.Show("LI LED Active is ON." + 
+                    "\nIn order to execute a script file, the Active LED will be turned OFF" +
+                    "\nDo you want to continue?",
+                    "WARNING!", MessageBoxButtons.YesNo) == DialogResult.No) return;
+                LIBoxActiveOFF();
+            }
+            OpenFileDialog myOFD = new OpenFileDialog();
+            StreamReader mySR = null;
+            myOFD.Filter = "LI files (*.txt)|*.txt|All files (*.*)|*.*";
+            myOFD.FilterIndex = 1;
+            myOFD.RestoreDirectory = true;
+            if (myOFD.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    mySR = File.OpenText(myOFD.FileName);
+                    string msgTX = "";
+                    string msgRX = "";
+                    richTextBoxLIBox.Clear();
+                    while (!mySR.EndOfStream)
+                    {
+                        msgTX = mySR.ReadLine();
+                        msgRX = "";
+                        switch (msgTX.Substring(0, 2))
+                        {
+                            case "aA":
+                            case "aE":
+                            case "aD":
+                            case "aO":
+                            case "aB":
+                                LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 1, richTextBoxLIBox);
+                                break;
+                            case "aK":
+                            case "aQ":
+                                if (LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 1, richTextBoxLIBox))
+                                    LIBoxActiveON();
+                                break;
+                            case "_X":
+                                if (LIBoxIsActive)
+                                    LIBoxActiveOFF();
+                                break;
+                            case "aC":
+                            case "aH":
+                            case "aI":
+                                LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 2, richTextBoxLIBox);
+                                break;
+                            default:
+                                MessageBox.Show("Unknown number of 'K's in response to " + msgTX + " message.");
+                                break;
+                        }
+                    }
+                }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
+                finally { mySR.Close(); }
+            }
+        }
+
+        private void btn_LIBoxLEDSlot_Click(object sender, EventArgs e)
+        {
+            if (cmb_LIBoxLEDSlot.SelectedIndex < 0 || cmb_LIBoxLEDSlot.SelectedIndex > 21)
+            {
+                MessageBox.Show("Invalid LED Slot\nOperation aborted");
+                return;
+            }
+            richTextBoxLIBox.Clear();
+            string msgRX = "";
+            string msgTX = "aE" + (string)cmb_LIBoxLEDSlot.SelectedItem;
+            LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 1, richTextBoxLIBox);
+        }
+
+        private void btn_LIBoxLEDPulseWidth_Click(object sender, EventArgs e)
+        {
+            if (cmb_LIBoxLEDPulseWidth.SelectedIndex < 0 || cmb_LIBoxLEDPulseWidth.SelectedIndex > 7)
+            {
+                MessageBox.Show("Invalid LED PulseWidth\nOperation aborted"); 
+                return;
+            }
+            richTextBoxLIBox.Clear();
+            string msgRX = "";
+            string msgTX = "aD" + cmb_LIBoxLEDPulseWidth.SelectedIndex;
+            LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 1, richTextBoxLIBox);
+        }
+
+        private void btn_LIBoxLEDPulseHeight_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string msgRX = "";
+                string msgTX = "";
+                if (Convert.ToUInt16(txt_LIBoxLEDPulseHeight.Text, 16) < 0 | Convert.ToUInt16(txt_LIBoxLEDPulseHeight.Text, 16) > 0x3FF)
+                {
+                    MessageBox.Show("Invalid LED PulseHeight\nOperation aborted");
+                    return;
+                }
+                richTextBoxLIBox.Clear();
+                string PulseHeight = txt_LIBoxLEDPulseHeight.Text.PadLeft(3, '0').ToLower();
+                //sending first command...
+                msgRX = "";
+                msgTX = "aB" + PulseHeight[0];
+                LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 1, richTextBoxLIBox);
+                //sending second command...
+                msgRX = "";
+                msgTX = "aC" + PulseHeight[1] + "_" + PulseHeight[2];
+                LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 2, richTextBoxLIBox);
+                //sending third command...
+                msgRX = "";
+                msgTX = "aO";
+                LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 1, richTextBoxLIBox);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void btn_LIBoxLEDTriggerRate_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string msgRX = "";
+                string msgTX = "";
+                if (Convert.ToUInt32(txt_LIBoxLEDTriggerRate.Text, 16) < 0 || Convert.ToUInt32(txt_LIBoxLEDTriggerRate.Text, 16) > 0xFFFF)
+                {
+                    MessageBox.Show("Invalid LED TriggerRate\nOperation aborted");
+                    return;
+                }
+                if (Convert.ToUInt32(txt_LIBoxLEDTriggerRate.Text, 16) >= 0 && Convert.ToUInt32(txt_LIBoxLEDTriggerRate.Text, 16) <= 0x01FF)
+                {
+                    if (MessageBox.Show("Setting TriggerRate < 0x1FF can burn the LED\nAre you sure you want to continue?",
+                        "WARNING!", MessageBoxButtons.YesNo) == DialogResult.No) return;
+                }
+                richTextBoxLIBox.Clear();
+                string TriggerRate = txt_LIBoxLEDTriggerRate.Text.PadLeft(4, '0').ToLower();
+                //sending first command...
+                msgRX = "";
+                msgTX = "aH" + TriggerRate[0] + "_" + TriggerRate[1];
+                LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 1, richTextBoxLIBox);
+                //sending second command...
+                msgRX = "";
+                msgTX = "aI" + TriggerRate[2] + "_" + TriggerRate[3];
+                LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 2, richTextBoxLIBox);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private bool LI_WriteReadBack(SerialPort serialPort, string msgTX, 
+            ref string msgRX, int msgRXNKs, RichTextBox rtbDiplay)
+        {
+            rtbDiplay.Text += "TX:" + msgTX + "\n";
+            if (!LI_WriteLine(serialPort, msgTX))
+            {
+                rtbDiplay.Text += "ERROR : Write method failed for " + msgTX + " command\n";
+                return false;
+            }
+            if (!LI_ReadLine(LISerialPort, ref msgRX))
+            {
+                rtbDiplay.Text += "ERROR : Read method failed RX:" + msgRX + "\n";
+                return false;
+            }
+            rtbDiplay.Text += "RX:" + msgRX + "\n";
+            if (CneckNKsExpected(msgRX, msgRXNKs)) return true;
+            else return false;
+        }
+
+        private void btn_LIBoxIsActive_Click(object sender, EventArgs e)
+        {
+            //can only turn OFF the "active" LED
+            LIBoxActiveOFF();
+        }
+
+        private void LIBoxActiveOFF()
+        {
+            richTextBoxLIBox.Clear();
+            if (LIBoxIsActive)
+            {
+                //deactivate it!
+                string msgRX = "";
+                string msgTX = "_X";
+                if (LI_WriteReadBack(LISerialPort, msgTX, ref msgRX, 1, richTextBoxLIBox))
+                {
+                    LIBoxIsActive = false;
+                    LIBoxIsActiveChanged();
+                }
+                return;
+            }
+        }
+
+        private void LIBoxActiveON()
+        {
+            LIBoxIsActive = true;
+            LIBoxIsActiveChanged();
+        }
+
+        private void LIBoxIsActiveChanged()
+        {
+            if (LIBoxIsActive)
+            {
+                btn_LIBoxIsActive.Text = "LI Active Is ON";
+                btn_LIBoxIsActive.BackColor = Color.LightBlue;
+                btn_LIBoxInitBox.Enabled = false;
+                btn_LIBoxLEDSlot.Enabled = false;
+                btn_LIBoxLEDPulseWidth.Enabled = false;
+                btn_LIBoxLEDPulseHeight.Enabled = false;
+                btn_LIBoxLEDTriggerRate.Enabled = false;
+                return;
+            }
+            else
+            {
+                btn_LIBoxIsActive.Text = "LI Active Is OFF";
+                btn_LIBoxIsActive.BackColor = Color.Coral;
+                btn_LIBoxInitBox.Enabled = true;
+                btn_LIBoxLEDSlot.Enabled = true;
+                btn_LIBoxLEDPulseWidth.Enabled = true;
+                btn_LIBoxLEDPulseHeight.Enabled = true;
+                btn_LIBoxLEDTriggerRate.Enabled = true;
+                return;
+            }
+        }
+
+        private bool CneckNKsExpected(string msgRX, int nks)
+        {
+            try
+            {
+                StringBuilder str = new StringBuilder("KKKKKKK", 0, nks, nks);
+                if (msgRX.CompareTo(str.ToString()) == 0) return true;
+                MessageBox.Show("Icorect number of 'K's in response message...");
+                return false;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+                return false;
+            }
+        }
+
+        #region LI Box Harcoded buttons
+
+        private void btn_LIBoxHardcodedInitLEDSlot_Click(object sender, EventArgs e)
+        {
+            if (cmb_LIBoxHardcodedLEDSlot.SelectedIndex < 0 || cmb_LIBoxHardcodedLEDSlot.SelectedIndex > 21)
+            {
+                MessageBox.Show("Invalid LED Slot\nOperation aborted");
+                return;
+            }
+            richTextBoxLIBox.Clear();
+            string msgRX = "";
+            //string[] msgTX = { "aA", "aE" + (string)cmb_LIBoxHardcodedLEDSlot.SelectedItem, "aD7", "aH0_2", "aI2_0" };
+            //int[] msgRXNKs ={ 1, 1, 1, 2, 2 };
+            //for(int i=0; i<5;i++)
+            //{
+            //    msgRX = "";
+            //    if (LI_WriteReadBack(LISerialPort, msgTX[i], ref msgRX, richTextBoxLIBox))
+            //        CneckNKsExpected(msgRX, msgRXNKs[i]);
+            //}
+            // brutal way...
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aA", ref msgRX, 1, richTextBoxLIBox);
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aE" + (string)cmb_LIBoxHardcodedLEDSlot.SelectedItem, ref msgRX, 1, richTextBoxLIBox);
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aD7", ref msgRX, 1, richTextBoxLIBox);
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aH0_2", ref msgRX, 2, richTextBoxLIBox);
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aI2_0", ref msgRX, 2, richTextBoxLIBox);
+        }
+
+        private void btn_LIBoxHardcodedInitALLSlots_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < cmb_LIBoxHardcodedLEDSlot.Items.Count; i++)
+            {
+                cmb_LIBoxHardcodedLEDSlot.SelectedIndex = i;
+                btn_LIBoxHardcodedInitLEDSlot_Click(null, null);
+            }
+        }
+
+        private void btn_LIBoxHardcodedZeroPE_Click(object sender, EventArgs e)
+        {
+            richTextBoxLIBox.Clear();
+            string msgRX = ""; if (LIBoxIsActive) LIBoxActiveOFF();
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aB0", ref msgRX, 1, richTextBoxLIBox);
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aC0_0", ref msgRX, 2, richTextBoxLIBox);
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aO", ref msgRX, 1, richTextBoxLIBox);
+            msgRX = ""; if (LI_WriteReadBack(LISerialPort, "aQ", ref msgRX, 1, richTextBoxLIBox)) LIBoxActiveON();
+        }
+
+        private void btn_LIBoxHardcodedOnePE_Click(object sender, EventArgs e)
+        {
+            richTextBoxLIBox.Clear();
+            string msgRX = ""; if (LIBoxIsActive) LIBoxActiveOFF();
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aB0", ref msgRX, 1, richTextBoxLIBox);
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aC3_8", ref msgRX, 2, richTextBoxLIBox);
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aO", ref msgRX, 1, richTextBoxLIBox);
+            msgRX = ""; if (LI_WriteReadBack(LISerialPort, "aQ", ref msgRX, 1, richTextBoxLIBox)) LIBoxActiveON();
+        }
+
+        private void btn_LIBoxHardcodedMaxPE_Click(object sender, EventArgs e)
+        {
+            richTextBoxLIBox.Clear();
+            string msgRX = ""; if (LIBoxIsActive) LIBoxActiveOFF();
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aB3", ref msgRX, 1, richTextBoxLIBox);
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aCf_f", ref msgRX, 2, richTextBoxLIBox);
+            msgRX = ""; LI_WriteReadBack(LISerialPort, "aO", ref msgRX, 1, richTextBoxLIBox);
+            msgRX = ""; if (LI_WriteReadBack(LISerialPort, "aQ", ref msgRX, 1, richTextBoxLIBox)) LIBoxActiveON();
+        }
+
+        private void btn_LIBoxHardcoded_X_Click(object sender, EventArgs e)
+        {
+            if (LIBoxIsActive) LIBoxActiveOFF();
+        }
+
+        #endregion
+
+        #endregion
 
     }
 
