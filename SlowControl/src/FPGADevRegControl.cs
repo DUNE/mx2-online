@@ -11,7 +11,8 @@ namespace MinervaUserControls
 {
     public partial class FPGADevRegControl : UserControl
     {
-        private const int NLogicalRgisters = 51;
+        private const int NLogicalRgisters = 56;
+
         private UInt32[] FPGALogicalReg = new UInt32[NLogicalRgisters];
         private bool isAdvancedGUI = false;
 
@@ -68,7 +69,12 @@ namespace MinervaUserControls
             TripXThreshold = 47,    //  8 bits          47
             TripXComparators = 48,  //  6 bits          48
             ExtTriggFound = 49,     //  1 bit           49  ExtTriggFound, 1 bit ->  08.08.2008
-            ExtTriggRearm = 50      //  1 bit           50  ExtTriggRearm, 1 bit ->  08.08.2008
+            ExtTriggRearm = 50,     //  1 bit           50  ExtTriggRearm, 1 bit ->  08.08.2008
+            DiscrimEnableMaskTrip0 = 51,    // 16 bits  51  DiscrimEnableMaskTrip0 -> 10.30.2008
+            DiscrimEnableMaskTrip1 = 52,    // 16 bits  52  DiscrimEnableMaskTrip1 -> 10.30.2008
+            DiscrimEnableMaskTrip2 = 53,    // 16 bits  53  DiscrimEnableMaskTrip2 -> 10.30.2008
+            DiscrimEnableMaskTrip3 = 54,    // 16 bits  54  DiscrimEnableMaskTrip3 -> 10.30.2008
+            GateTimeStamp = 55              // 32 bits  55  GateTimeStamp, 32 bits -> 12.22.2008
         }
         #endregion
 
@@ -115,6 +121,11 @@ namespace MinervaUserControls
         private const UInt32 TripXComparatorsDefaultValue = 0;
         private const UInt32 ExtTriggFoundDefaultValue = 0; // 08.08.2008
         private const UInt32 ExtTriggRearmDefaultValue = 0; // 08.08.2008
+        private const UInt32 DiscrimEnableMaskTrip0DefaultValue = 0xFFFF;   // 10.30.2008
+        private const UInt32 DiscrimEnableMaskTrip1DefaultValue = 0xFFFF;   // 10.30.2008
+        private const UInt32 DiscrimEnableMaskTrip2DefaultValue = 0xFFFF;   // 10.30.2008
+        private const UInt32 DiscrimEnableMaskTrip3DefaultValue = 0xFFFF;   // 10.30.2008
+        private const UInt32 GateTimeStampDefaultValue = 0;                 // 12.22.2008
         #endregion 
         
         #region Define Control-type members (TextBox, ComboBox and Label)
@@ -170,6 +181,12 @@ namespace MinervaUserControls
         private TextBox txt_LRTripXComparators = new TextBox(); private Label lbl_TripXComparators = new Label();
         private TextBox txt_LRExtTriggFound = new TextBox(); private Label lbl_ExtTriggFound = new Label(); // 08.08.2008
         private TextBox txt_LWRExtTriggRearm = new TextBox(); private Label lbl_ExtTriggRearm = new Label(); // 08.08.2008
+        private TextBox txt_LWRDiscrimEnableMaskTrip0 = new TextBox(); private Label lbl_DiscrimEnableMaskTrip0 = new Label(); // 10.30.2008
+        private TextBox txt_LWRDiscrimEnableMaskTrip1 = new TextBox(); private Label lbl_DiscrimEnableMaskTrip1 = new Label(); // 10.30.2008
+        private TextBox txt_LWRDiscrimEnableMaskTrip2 = new TextBox(); private Label lbl_DiscrimEnableMaskTrip2 = new Label(); // 10.30.2008
+        private TextBox txt_LWRDiscrimEnableMaskTrip3 = new TextBox(); private Label lbl_DiscrimEnableMaskTrip3 = new Label(); // 10.30.2008
+        private TextBox txt_LRGateTimeStamp = new TextBox(); private Label lbl_GateTimeStamp = new Label(); // 12.22.2008
+
         #endregion        
         
         public int NRegs
@@ -256,6 +273,12 @@ namespace MinervaUserControls
             FPGALogicalReg[(int)LogicalRegisters.TripXComparators] = TripXComparatorsDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound] = ExtTriggFoundDefaultValue;    // 08.08.2008
             FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm] = ExtTriggRearmDefaultValue;    // 08.08.2008
+            FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip0] = DiscrimEnableMaskTrip0DefaultValue;  // 10.30.2008
+            FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip1] = DiscrimEnableMaskTrip1DefaultValue;  // 10.30.2008
+            FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip2] = DiscrimEnableMaskTrip2DefaultValue;  // 10.30.2008
+            FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip3] = DiscrimEnableMaskTrip3DefaultValue;  // 10.30.2008
+            FPGALogicalReg[(int)LogicalRegisters.GateTimeStamp] = GateTimeStampDefaultValue;    // 12.22.2008
+
         }
 
         private void myInitializeComponent()
@@ -1312,7 +1335,7 @@ namespace MinervaUserControls
             lbl_ExtTriggRearm.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_ExtTriggRearm.BackColor = Color.Coral;
             this.Controls.Add(lbl_ExtTriggRearm);
-            //txt_LRExtTriggRearm.Location = new Point(lbl_ExtTriggRearm.Left + lbl_ExtTriggRearm.Width + 5, lbl_ExtTriggRearm.Top);
+            //txt_LWRExtTriggRearm.Location = new Point(lbl_ExtTriggRearm.Left + lbl_ExtTriggRearm.Width + 5, lbl_ExtTriggRearm.Top);
             txt_LWRExtTriggRearm.Width = Xwidth;
             txt_LWRExtTriggRearm.Height = Yheight;
             txt_LWRExtTriggRearm.Enabled = true;
@@ -1322,6 +1345,117 @@ namespace MinervaUserControls
             txt_LWRExtTriggRearm.TabIndex = (int)LogicalRegisters.ExtTriggRearm;
             txt_LWRExtTriggRearm.Validating += new CancelEventHandler(control_Validating);
             this.Controls.Add(txt_LWRExtTriggRearm);
+
+            //Create Register_DiscrimEnableMaskTrip0 Controls    // 10.30.2008
+            Xoffset = lbl_ExtTriggRearm.Left;
+            Yoffset = lbl_ExtTriggRearm.Top + lbl_ExtTriggRearm.Height + 5;
+            //Label lbl_DiscrimEnableMaskTrip0 = new Label();
+            //lbl_DiscrimEnableMaskTrip0.Location = new Point(Xoffset, Yoffset);
+            lbl_DiscrimEnableMaskTrip0.Width = Xwidth;
+            lbl_DiscrimEnableMaskTrip0.Height = Yheight;
+            lbl_DiscrimEnableMaskTrip0.Text = "WR DM_T0 0x";
+            lbl_DiscrimEnableMaskTrip0.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
+            lbl_DiscrimEnableMaskTrip0.BackColor = Color.Coral;
+            this.Controls.Add(lbl_DiscrimEnableMaskTrip0);
+            //txt_LWRDiscrimEnableMaskTrip0.Location = new Point(lbl_DiscrimEnableMaskTrip0.Left + lbl_DiscrimEnableMaskTrip0.Width + 5, lbl_DiscrimEnableMaskTrip0.Top);
+            txt_LWRDiscrimEnableMaskTrip0.Width = Xwidth;
+            txt_LWRDiscrimEnableMaskTrip0.Height = Yheight;
+            txt_LWRDiscrimEnableMaskTrip0.Enabled = true;
+            txt_LWRDiscrimEnableMaskTrip0.BackColor = Color.White;
+            txt_LWRDiscrimEnableMaskTrip0.Name = "DiscrimEnableMaskTrip0";
+            txt_LWRDiscrimEnableMaskTrip0.Text = DiscrimEnableMaskTrip0DefaultValue.ToString();
+            txt_LWRDiscrimEnableMaskTrip0.TabIndex = (int)LogicalRegisters.DiscrimEnableMaskTrip0;
+            txt_LWRDiscrimEnableMaskTrip0.Validating += new CancelEventHandler(control_Validating);
+            this.Controls.Add(txt_LWRDiscrimEnableMaskTrip0);
+
+            //Create Register_DiscrimEnableMaskTrip1 Controls    // 10.30.2008
+            Xoffset = lbl_DiscrimEnableMaskTrip0.Left;
+            Yoffset = lbl_DiscrimEnableMaskTrip0.Top + lbl_DiscrimEnableMaskTrip0.Height + 5;
+            //Label lbl_DiscrimEnableMaskTrip1 = new Label();
+            //lbl_DiscrimEnableMaskTrip1.Location = new Point(Xoffset, Yoffset);
+            lbl_DiscrimEnableMaskTrip1.Width = Xwidth;
+            lbl_DiscrimEnableMaskTrip1.Height = Yheight;
+            lbl_DiscrimEnableMaskTrip1.Text = "WR DM_T1 0x";
+            lbl_DiscrimEnableMaskTrip1.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
+            lbl_DiscrimEnableMaskTrip1.BackColor = Color.Coral;
+            this.Controls.Add(lbl_DiscrimEnableMaskTrip1);
+            //txt_LWRDiscrimEnableMaskTrip1.Location = new Point(lbl_DiscrimEnableMaskTrip1.Left + lbl_DiscrimEnableMaskTrip1.Width + 5, lbl_DiscrimEnableMaskTrip1.Top);
+            txt_LWRDiscrimEnableMaskTrip1.Width = Xwidth;
+            txt_LWRDiscrimEnableMaskTrip1.Height = Yheight;
+            txt_LWRDiscrimEnableMaskTrip1.Enabled = true;
+            txt_LWRDiscrimEnableMaskTrip1.BackColor = Color.White;
+            txt_LWRDiscrimEnableMaskTrip1.Name = "DiscrimEnableMaskTrip1";
+            txt_LWRDiscrimEnableMaskTrip1.Text = DiscrimEnableMaskTrip1DefaultValue.ToString();
+            txt_LWRDiscrimEnableMaskTrip1.TabIndex = (int)LogicalRegisters.DiscrimEnableMaskTrip1;
+            txt_LWRDiscrimEnableMaskTrip1.Validating += new CancelEventHandler(control_Validating);
+            this.Controls.Add(txt_LWRDiscrimEnableMaskTrip1);
+
+            //Create Register_DiscrimEnableMaskTrip2 Controls    // 10.30.2008
+            Xoffset = lbl_DiscrimEnableMaskTrip1.Left;
+            Yoffset = lbl_DiscrimEnableMaskTrip1.Top + lbl_DiscrimEnableMaskTrip1.Height + 5;
+            //Label lbl_DiscrimEnableMaskTrip2 = new Label();
+            //lbl_DiscrimEnableMaskTrip2.Location = new Point(Xoffset, Yoffset);
+            lbl_DiscrimEnableMaskTrip2.Width = Xwidth;
+            lbl_DiscrimEnableMaskTrip2.Height = Yheight;
+            lbl_DiscrimEnableMaskTrip2.Text = "WR DM_T2 0x";
+            lbl_DiscrimEnableMaskTrip2.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
+            lbl_DiscrimEnableMaskTrip2.BackColor = Color.Coral;
+            this.Controls.Add(lbl_DiscrimEnableMaskTrip2);
+            //txt_LWRDiscrimEnableMaskTrip2.Location = new Point(lbl_DiscrimEnableMaskTrip2.Left + lbl_DiscrimEnableMaskTrip2.Width + 5, lbl_DiscrimEnableMaskTrip2.Top);
+            txt_LWRDiscrimEnableMaskTrip2.Width = Xwidth;
+            txt_LWRDiscrimEnableMaskTrip2.Height = Yheight;
+            txt_LWRDiscrimEnableMaskTrip2.Enabled = true;
+            txt_LWRDiscrimEnableMaskTrip2.BackColor = Color.White;
+            txt_LWRDiscrimEnableMaskTrip2.Name = "DiscrimEnableMaskTrip2";
+            txt_LWRDiscrimEnableMaskTrip2.Text = DiscrimEnableMaskTrip2DefaultValue.ToString();
+            txt_LWRDiscrimEnableMaskTrip2.TabIndex = (int)LogicalRegisters.DiscrimEnableMaskTrip2;
+            txt_LWRDiscrimEnableMaskTrip2.Validating += new CancelEventHandler(control_Validating);
+            this.Controls.Add(txt_LWRDiscrimEnableMaskTrip2);
+
+            //Create Register_DiscrimEnableMaskTrip3 Controls    // 10.30.2008
+            Xoffset = lbl_DiscrimEnableMaskTrip2.Left;
+            Yoffset = lbl_DiscrimEnableMaskTrip2.Top + lbl_DiscrimEnableMaskTrip2.Height + 5;
+            //Label lbl_DiscrimEnableMaskTrip3 = new Label();
+            //lbl_DiscrimEnableMaskTrip3.Location = new Point(Xoffset, Yoffset);
+            lbl_DiscrimEnableMaskTrip3.Width = Xwidth;
+            lbl_DiscrimEnableMaskTrip3.Height = Yheight;
+            lbl_DiscrimEnableMaskTrip3.Text = "WR DM_T3 0x";
+            lbl_DiscrimEnableMaskTrip3.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
+            lbl_DiscrimEnableMaskTrip3.BackColor = Color.Coral;
+            this.Controls.Add(lbl_DiscrimEnableMaskTrip3);
+            //txt_LWRDiscrimEnableMaskTrip3.Location = new Point(lbl_DiscrimEnableMaskTrip3.Left + lbl_DiscrimEnableMaskTrip3.Width + 5, lbl_DiscrimEnableMaskTrip3.Top);
+            txt_LWRDiscrimEnableMaskTrip3.Width = Xwidth;
+            txt_LWRDiscrimEnableMaskTrip3.Height = Yheight;
+            txt_LWRDiscrimEnableMaskTrip3.Enabled = true;
+            txt_LWRDiscrimEnableMaskTrip3.BackColor = Color.White;
+            txt_LWRDiscrimEnableMaskTrip3.Name = "DiscrimEnableMaskTrip3";
+            txt_LWRDiscrimEnableMaskTrip3.Text = DiscrimEnableMaskTrip3DefaultValue.ToString();
+            txt_LWRDiscrimEnableMaskTrip3.TabIndex = (int)LogicalRegisters.DiscrimEnableMaskTrip3;
+            txt_LWRDiscrimEnableMaskTrip1.Validating += new CancelEventHandler(control_Validating);
+            this.Controls.Add(txt_LWRDiscrimEnableMaskTrip3);
+
+            //Create Register_GateTimeStamp Controls    // 12.22.2008
+            Xoffset = lbl_DiscrimEnableMaskTrip3.Left;
+            Yoffset = lbl_DiscrimEnableMaskTrip3.Top + lbl_DiscrimEnableMaskTrip3.Height + 5;
+            //Label lbl_GateTimeStamp = new Label();
+            //lbl_GateTimeStamp.Location = new Point(Xoffset, Yoffset);
+            lbl_GateTimeStamp.Width = Xwidth;
+            lbl_GateTimeStamp.Height = Yheight;
+            lbl_GateTimeStamp.Text = "R GateTimeStamp";
+            lbl_GateTimeStamp.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
+            lbl_GateTimeStamp.BackColor = Color.Coral;
+            this.Controls.Add(lbl_GateTimeStamp);
+            //txt_LRGateTimeStamp.Location = new Point(lbl_GateTimeStamp.Left + lbl_GateTimeStamp.Width + 5, lbl_GateTimeStamp.Top);
+            txt_LRGateTimeStamp.Width = Xwidth;
+            txt_LRGateTimeStamp.Height = Yheight;
+            txt_LRGateTimeStamp.Enabled = true;
+            txt_LRGateTimeStamp.BackColor = Color.White;
+            txt_LRGateTimeStamp.Name = "GateTimeStamp";
+            txt_LRGateTimeStamp.Text = GateTimeStampDefaultValue.ToString();
+            txt_LRGateTimeStamp.TabIndex = (int)LogicalRegisters.GateTimeStamp;
+            txt_LRGateTimeStamp.Validating += new CancelEventHandler(control_Validating);
+            this.Controls.Add(txt_LRGateTimeStamp);
+
         }
 
         public bool IsAdvancedGUI { get { return isAdvancedGUI; } }
@@ -1556,17 +1690,41 @@ namespace MinervaUserControls
             get { return FPGALogicalReg[(int)LogicalRegisters.TripXComparators]; }
             set { FPGALogicalReg[(int)LogicalRegisters.TripXComparators] = value; }
         }
-        public UInt32 RegisterExtTriggFound // 08.08.2008
+        public UInt32 RegisterExtTriggFound         // 08.08.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound]; }
             set { FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound] = value; }
         }
-        public UInt32 RegisterExtTriggRearm // 08.08.2008
+        public UInt32 RegisterExtTriggRearm         // 08.08.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm]; }
             set { FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm] = value; }
         }
-
+        public UInt32 RegisterDiscrimEnableMaskTrip0 // 10.30.2008
+        {
+            get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip0]; }
+            set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip0] = value; }
+        }
+        public UInt32 RegisterDiscrimEnableMaskTrip1 // 10.30.2008
+        {
+            get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip1]; }
+            set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip1] = value; }
+        }
+        public UInt32 RegisterDiscrimEnableMaskTrip2 // 10.30.2008
+        {
+            get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip2]; }
+            set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip2] = value; }
+        }
+        public UInt32 RegisterDiscrimEnableMaskTrip3 // 10.30.2008
+        {
+            get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip3]; }
+            set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip3] = value; }
+        }
+        public UInt32 RegisterGateTimeStamp         // 12.22.2008
+        {
+            get { return FPGALogicalReg[(int)LogicalRegisters.GateTimeStamp]; }
+            set { FPGALogicalReg[(int)LogicalRegisters.GateTimeStamp] = value; }
+        }
 
         private void control_Validating(object sender, CancelEventArgs e)
         {
@@ -1578,6 +1736,7 @@ namespace MinervaUserControls
                     {
                         case (int)LogicalRegisters.Timer:
                         case (int)LogicalRegisters.TestPulseCount:
+                        case (int)LogicalRegisters.GateTimeStamp:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0xFFFFFFFF, 0, "Value must be 32 bits");
                             break;
                         case (int)LogicalRegisters.GateStart:
@@ -1588,6 +1747,12 @@ namespace MinervaUserControls
                         case (int)LogicalRegisters.HVPeriodAuto:
                         case (int)LogicalRegisters.Temperature:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0xFFFF, 0, "Value must be 16 bits");
+                            break;
+                        case (int)LogicalRegisters.DiscrimEnableMaskTrip0:
+                        case (int)LogicalRegisters.DiscrimEnableMaskTrip1:
+                        case (int)LogicalRegisters.DiscrimEnableMaskTrip2:
+                        case (int)LogicalRegisters.DiscrimEnableMaskTrip3:
+                            CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text, 16), 0xFFFF, 0, "Value must be 16 bits");
                             break;
                         case (int)LogicalRegisters.InjectDACValue:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0xFFF, 0, "Value must be 12 bits");
@@ -1676,14 +1841,23 @@ namespace MinervaUserControls
                     try
                     {
                         if (ctrl is TextBox)
+                        {
                             if (ctrl.TabIndex == (int)LogicalRegisters.Temperature)
                             {
                                 //this is special update for Temperature register
                                 FPGALogicalReg[ctrl.TabIndex] = Convert.ToUInt32((((TextBox)ctrl).Text).Split(',')[0]);
                             }
+                            else if ((ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip0) |
+                                (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip1) |
+                                (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip2) |
+                                (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip3))
+                            {
+                                //this is special update for DiscrimEnableMaskTripX registers
+                                FPGALogicalReg[ctrl.TabIndex] = Convert.ToUInt32((((TextBox)ctrl).Text), 16);
+                            }
                             else
                                 FPGALogicalReg[ctrl.TabIndex] = Convert.ToUInt32(((TextBox)ctrl).Text);
-
+                        }
                         if (ctrl is ComboBox)
                             //"TripXInjectCntPhase" needs special treatment...
                             if (((ComboBox)ctrl).TabIndex == (int)LogicalRegisters.InjectPhase)
@@ -1716,7 +1890,16 @@ namespace MinervaUserControls
                 {
                     if (ctrl is TextBox)
                     {
-                        ((TextBox)ctrl).Text = FPGALogicalReg[ctrl.TabIndex].ToString();
+                        if ((ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip0) |
+                            (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip1) |
+                            (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip2) |
+                            (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip3))
+                        {
+                            //this is special update for DiscrimEnableMaskTripX registers
+                            ((TextBox)ctrl).Text = FPGALogicalReg[ctrl.TabIndex].ToString("X");
+                        }
+                        else
+                            ((TextBox)ctrl).Text = FPGALogicalReg[ctrl.TabIndex].ToString();
                         control_Validating(ctrl, null);
                     }
                     if (ctrl is ComboBox)
@@ -1836,8 +2019,13 @@ namespace MinervaUserControls
                 CreateLocations(lbl_HVPulseWidth, lbl_Temperature, txt_LRTemperature, true, true);
                 CreateLocations(lbl_Temperature, lbl_TripXThreshold, txt_LWRTripXThreshold, true, true);
                 CreateLocations(lbl_TripXThreshold, lbl_TripXComparators, txt_LRTripXComparators, true, true);
-                CreateLocations(lbl_TripXComparators, lbl_ExtTriggFound, txt_LRExtTriggFound, true, true);  // 08.08.2008
-                CreateLocations(lbl_ExtTriggFound, lbl_ExtTriggRearm, txt_LWRExtTriggRearm, true, true);    // 08.08.2008
+                CreateLocations(lbl_TripXComparators, lbl_ExtTriggFound, txt_LRExtTriggFound, true, true);                          // 08.08.2008
+                CreateLocations(lbl_ExtTriggFound, lbl_ExtTriggRearm, txt_LWRExtTriggRearm, true, true);                            // 08.08.2008
+                CreateLocations(lbl_ExtTriggRearm, lbl_DiscrimEnableMaskTrip0, txt_LWRDiscrimEnableMaskTrip0, true, true);          // 10.30.2008
+                CreateLocations(lbl_DiscrimEnableMaskTrip0, lbl_DiscrimEnableMaskTrip1, txt_LWRDiscrimEnableMaskTrip1, true, true); // 10.30.2008
+                CreateLocations(lbl_DiscrimEnableMaskTrip1, lbl_DiscrimEnableMaskTrip2, txt_LWRDiscrimEnableMaskTrip2, true, true); // 10.30.2008
+                CreateLocations(lbl_DiscrimEnableMaskTrip2, lbl_DiscrimEnableMaskTrip3, txt_LWRDiscrimEnableMaskTrip3, true, true); // 10.30.2008
+                CreateLocations(lbl_DiscrimEnableMaskTrip3, lbl_GateTimeStamp, txt_LRGateTimeStamp, true, true);                    // 12.22.2008
             }
         }
 

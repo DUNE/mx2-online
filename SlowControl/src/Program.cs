@@ -14,8 +14,8 @@ namespace MinervaGUI
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            try { Application.Run(new frmSlowControl());  }
-            catch { }
+            try { Application.Run(new frmSlowControl()); }
+            catch (Exception e) { MessageBox.Show(e.Message); }
         }
     }
 }

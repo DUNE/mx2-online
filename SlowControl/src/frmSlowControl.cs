@@ -28,9 +28,20 @@ namespace MinervaGUI
         List<CHnode> CHnodes = new List<CHnode>();
         List<FEnode> FEnodes = new List<FEnode>();
         public static List<FEBSlave> FEBSlaves = new List<FEBSlave>();
-
+        List<FEB_TPDelay> FEBTPDelayList = new List<FEB_TPDelay>();
+        
         MinervaDevicesInfo minervaDevicesInfo = new MinervaDevicesInfo();
         MinervaDevicesInfo xmlInfo = new MinervaDevicesInfo();
+
+        public enum FastCommands : byte
+        {
+            OpenGate = 0xB1,
+            ResetFPGA = 0x8D,
+            ResetTimer = 0xC5,
+            LoadTimer = 0xC9,
+            TriggerFound = 0x89,
+            TriggerRearm = 0x85
+        }
 
         private static EventWaitHandle vmeDone = null;
 
@@ -88,13 +99,13 @@ namespace MinervaGUI
 
         private void frmSlowControl_Load(object sender, EventArgs e)
         {
-            //LoadHardwareToolStripMenuItem_Click(null, null);
-            //treeView1.ExpandAll();
+            LoadHardwareToolStripMenuItem_Click(null, null);
+            treeView1.ExpandAll();
         }
 
         private void treeView1_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            if (!AppendDescription) richTextBoxDescription.Clear();
+            //////if (!AppendDescription) richTextBoxDescription.Clear();
             if (e.Node is CRIMnode)
             {
                 richTextBoxDescription.Text += ((CRIM)(e.Node.Tag)).Description;
@@ -120,7 +131,7 @@ namespace MinervaGUI
             if (e.Node is FEnode)
             {
                 richTextBoxDescription.Text += 
-                    "FEid=" + ((FEnode)(e.Node)).BoardID.ToString() +
+                    "\nFEid=" + ((FEnode)(e.Node)).BoardID.ToString() +
                     ", CHid=" + ((CROCFrontEndChannel)(((CHnode)(e.Node.Parent)).Tag)).ChannelNumber.ToString() +
                     ", CROCid=" + ((((CROC)(((CROCnode)(e.Node.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString();
                 //tabControl1.SelectTab("tabFE");
@@ -1161,8 +1172,13 @@ namespace MinervaGUI
             theFPGAControl.RegisterTemperature = theFrame.Temperature;
             theFPGAControl.RegisterTripXThreshold = theFrame.CosmicTrig;
             theFPGAControl.RegisterTripXComparators = theFrame.TripXCompEnc;
-            theFPGAControl.RegisterExtTriggFound = theFrame.ExtTriggFound;  // 08.08.2008 Cristian
-            theFPGAControl.RegisterExtTriggRearm = theFrame.ExtTriggRearm;  // 08.08.2008 Cristian
+            theFPGAControl.RegisterExtTriggFound = theFrame.ExtTriggFound;                  // 08.08.2008 Cristian
+            theFPGAControl.RegisterExtTriggRearm = theFrame.ExtTriggRearm;                  // 08.08.2008 Cristian
+            theFPGAControl.RegisterDiscrimEnableMaskTrip0 = theFrame.DiscrimEnableMaskTrip0;// 10.30.2008 Cristian
+            theFPGAControl.RegisterDiscrimEnableMaskTrip1 = theFrame.DiscrimEnableMaskTrip1;// 10.30.2008 Cristian
+            theFPGAControl.RegisterDiscrimEnableMaskTrip2 = theFrame.DiscrimEnableMaskTrip2;// 10.30.2008 Cristian
+            theFPGAControl.RegisterDiscrimEnableMaskTrip3 = theFrame.DiscrimEnableMaskTrip3;// 10.30.2008 Cristian
+            theFPGAControl.RegisterGateTimeStamp = theFrame.GateTimeStamp;                  // 12.22.2008 Cristian
         }
 
         private void AssignFPGARegsCristianToDave(MinervaUserControls.FPGADevRegControl theFPGAControl, FPGAFrame theFrame)
@@ -1214,6 +1230,11 @@ namespace MinervaGUI
             //theFrame.TripXCompEnc = (byte)theFPGAControl.RegisterTripXComparators;    READ ONLY
             //theFrame.ExtTriggFound = (byte)theFPGAControl.RegisterExtTriggFound;      READ ONLY   // 08.08.2008 Cristian
             theFrame.ExtTriggRearm = (byte)theFPGAControl.RegisterExtTriggRearm;                    // 08.08.2008 Cristian
+            theFrame.DiscrimEnableMaskTrip0 = (ushort)theFPGAControl.RegisterDiscrimEnableMaskTrip0;// 10.30.2008 Cristian
+            theFrame.DiscrimEnableMaskTrip1 = (ushort)theFPGAControl.RegisterDiscrimEnableMaskTrip1;// 10.30.2008 Cristian
+            theFrame.DiscrimEnableMaskTrip2 = (ushort)theFPGAControl.RegisterDiscrimEnableMaskTrip2;// 10.30.2008 Cristian
+            theFrame.DiscrimEnableMaskTrip3 = (ushort)theFPGAControl.RegisterDiscrimEnableMaskTrip3;// 10.30.2008 Cristian
+            //theFrame.GateTimeStamp = theFPGAControl.RegisterGateTimeStamp;            READ ONLY   // 12.22.2008 Cristian  
         }
 
         private void btn_FPGAAdvancedGUI_Click(object sender, EventArgs e)
@@ -2188,7 +2209,8 @@ namespace MinervaGUI
         private void btn_CROCAdvancedGUI_Click(object sender, EventArgs e)
         {
             AdvancedGUI((Button)sender, groupBoxCROC_FLASH, groupBoxCROC_TimingSetup,
-                groupBoxCROC_ResetTPMaskReg, groupBoxCROC_FastCommand, groupBoxCROC_LoopDelay);
+                groupBoxCROC_ResetTPMaskReg, groupBoxCROC_FastCommand, groupBoxCROC_LoopDelay, 
+                groupBoxCROC_FEBGateDelays);
         }
 
         private void btn_CROCWriteFileToSPI_Click(object sender, EventArgs e)
@@ -2473,6 +2495,7 @@ namespace MinervaGUI
                     vmeDone.Set();
                 }
             }
+            btn_CROCLoopDelayRead_Click(null, null);
         }
 
         private void btn_CROCFastCommand_Click(object sender, EventArgs e)
@@ -2487,22 +2510,22 @@ namespace MinervaGUI
                     switch (cmb_CROCFastCommand.SelectedIndex)
                     {
                         case 0: //OpenGate
-                            theCroc.FastCommandRegister = 0xB1;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.OpenGate;// 0xB1;
                             break;
                         case 1: //ResetFPGA
-                            theCroc.FastCommandRegister = 0x8D;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.ResetFPGA;// 0x8D;
                             break;
                         case 2: //ResetTimer
-                            theCroc.FastCommandRegister = 0xC5;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.ResetTimer;// 0xC5;
                             break;
                         case 3: //LoadTimer
-                            theCroc.FastCommandRegister = 0xC9;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.LoadTimer;// 0xC9;
                             break;
                         case 4: //TriggerFound
-                            theCroc.FastCommandRegister = 0x89;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.TriggerFound;// 0x89;
                             break;
                         case 5: //TriggerRearm
-                            theCroc.FastCommandRegister = 0x85;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.TriggerRearm;// 0x85;
                             break;
                     }
                 }
@@ -2517,7 +2540,7 @@ namespace MinervaGUI
             }
         }
 
-        private void btn_CROCLoopDelay_Click(object sender, EventArgs e)
+        private void btn_CROCLoopDelayRead_Click(object sender, EventArgs e)
         {
             lock (this)
             {
@@ -2548,6 +2571,30 @@ namespace MinervaGUI
                     vmeDone.Set();
                 }
             }
+        }
+
+        private void btn_CROCLoopDelayClear_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    foreach (CROCFrontEndChannel theChannel in theCroc.ChannelList)
+                        theChannel.ClearStatus();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+            btn_CROCLoopDelayRead_Click(null, null);
         }
 
         #endregion
@@ -3043,6 +3090,253 @@ namespace MinervaGUI
 
         #endregion
 
+        #region Methods for Gate Alignment
+        
+        private struct FEB_TPDelay
+        {
+            private uint _CrocAddress;
+            private uint _ChannelNumber;
+            private Frame.Addresses _FEBAddr;
+            private double _TPDelay;
+            public double TPDelayRelative;
+
+            public FEB_TPDelay(uint CrocAddress, uint ChannelNumber, Frame.Addresses FEBAddr, double TPDelay)
+            {
+                _CrocAddress = CrocAddress;
+                _ChannelNumber = ChannelNumber;
+                _FEBAddr = FEBAddr;
+                _TPDelay = TPDelay;
+                this.TPDelayRelative = 0;
+            }
+
+            public uint CrocAddress { get { return _CrocAddress; } }
+            public uint ChannelNumber { get { return _ChannelNumber; } }
+            public Frame.Addresses FEBAddr { get { return _FEBAddr; } }
+            public double TPDelay { get { return _TPDelay; } }
+            public override string ToString()
+            {
+                return "CROC" + (_CrocAddress >> 16) + " CH" + _ChannelNumber + " " + _FEBAddr.ToString() +
+                    " TPDelAbs: " + _TPDelay.ToString("0000000.00") + " TPDelRel: " + TPDelayRelative.ToString("00.00");
+            }
+        }
+        
+        private List<FEB_TPDelay> FEBTPDelayListUpdateRelatives(List<FEB_TPDelay> FEBTPDelayList)
+        {
+            List<FEB_TPDelay> returnlist = new List<FEB_TPDelay>();
+            FEB_TPDelay newfebtpdelay;
+            try
+            {
+                //Find the minimum test point delay time. This is the last feb in the physical chain.
+                double TPDelayMin = double.MaxValue;
+                foreach (FEB_TPDelay fe in FEBTPDelayList)
+                    if (fe.TPDelay < TPDelayMin) TPDelayMin = fe.TPDelay;
+                //UpdateRelatives
+                foreach (FEB_TPDelay fe in FEBTPDelayList)
+                {
+                    //newfebtpdelay = new FEB_TPDelay(fe.CrocAddress, fe.ChannelNumber, fe.FEBAddr, fe.TPDelay);
+                    newfebtpdelay = fe;
+                    newfebtpdelay.TPDelayRelative = fe.TPDelay - TPDelayMin;
+                    returnlist.Add(newfebtpdelay);
+                }
+            }
+            catch (Exception e)
+            {
+                richTextBoxDescription.Text += e.Message + "\n";
+                richTextBoxDescription.Text += e.Source + "\n";
+            }
+            return returnlist;
+        }
+
+        private void PrintDelayList(List<FEB_TPDelay> FEBTPDelayList)
+        {
+        //    foreach (FEB_TPDelay fe in FEBTPDelayList)
+        //        richTextBoxDescription.Text += fe.ToString() + "\n";
+        }
+
+        private void PrintDelayList(FEB_TPDelay[] FEBTPDelayList)
+        {
+            foreach (FEB_TPDelay fe in FEBTPDelayList)
+                richTextBoxDescription.Text += fe.ToString() + "\n";
+        }
+
+        private void SetLoadTimersGateStarts(uint LoadTimer, ushort GateStart, CROC theCroc, CROCFrontEndChannel theChannel)
+        {
+            foreach (Frame.Addresses feb in theChannel.ChainBoards)
+            {
+                try
+                {
+                    FPGAFrame rFrame = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
+                    rFrame.Send(theChannel);
+                    rFrame.Receive();
+                    //write new values
+                    FPGAFrame wFrame = new FPGAFrame(feb, Frame.FPGAFunctions.Write, new FrameID());
+                    wFrame.Registers = rFrame.Registers;
+                    wFrame.Timer = LoadTimer;
+                    wFrame.GateStart = GateStart;
+                    wFrame.Send(theChannel);
+                    wFrame.Receive();
+                }
+                catch (Exception e)
+                {
+                    richTextBoxDescription.Text += theChannel.Description + ":" + feb + ": Error: " + e.Message + "\n";
+                }
+            }
+        }
+
+        private void SetLoadTimersGateStarts(FEB_TPDelay[] FEB_TPDelayArray, CROC theCroc, CROCFrontEndChannel theChannel)
+        {
+            foreach (FEB_TPDelay tpdelay in FEB_TPDelayArray)
+            {
+                try
+                {
+                    FPGAFrame rFrame = new FPGAFrame(tpdelay.FEBAddr, Frame.FPGAFunctions.Read, new FrameID());
+                    rFrame.Send(theChannel);
+                    rFrame.Receive();
+                    //write new values
+                    FPGAFrame wFrame = new FPGAFrame(tpdelay.FEBAddr, Frame.FPGAFunctions.Write, new FrameID());
+                    wFrame.Registers = rFrame.Registers;
+                    wFrame.Timer -= Convert.ToUInt32(tpdelay.TPDelayRelative / 2);
+                    wFrame.GateStart -= Convert.ToUInt16(tpdelay.TPDelayRelative / 2);
+                    wFrame.Send(theChannel);
+                    wFrame.Receive();
+                }
+                catch (Exception e)
+                {
+                    richTextBoxDescription.Text += theChannel.Description + ":" + tpdelay.FEBAddr + ": Error: " + e.Message + "\n";
+                }
+            }
+        }
+
+        private void btn_CROCReportGateDelays_Click(object sender, EventArgs e)
+        {
+            AlignGateDelays();
+        }
+
+        private void AlignGateDelays()
+        {
+            tabControl1.SelectTab(tabDescription);
+            richTextBoxDescription.Text =
+                " Reporting FEBs' gate alignment based on Test Pulse measurements:\n\n";
+            tabControl1.SelectedTab.Refresh();
+
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    int NGateDelayLoop = Convert.ToInt16(txt_CROCGateDelayLoopN.Text);
+                    TreeNode theNode = treeView1.SelectedNode;
+                    CROC theCroc = ((CROC)(theNode.Tag));
+                    CROCFrontEndChannel theChannel = (CROCFrontEndChannel)theCroc.ChannelList[Convert.ToUInt16(txt_CROCGateDelayLoopChannel.Text) - 1];
+                    List<FEB_TPDelay>[] FEBTPDelayListArray = new List<FEB_TPDelay>[NGateDelayLoop];
+                    List<FEB_TPDelay> FEBTPDelayList = new List<FEB_TPDelay>();
+
+                    //Set LoadTimerValue and GateStartValue equal for ALL boards in this channel
+                    SetLoadTimersGateStarts(Convert.ToUInt32(txt_CROCGateDelayLoopLoadTimerValue.Text),
+                        Convert.ToUInt16(txt_CROCGateDelayLoopGateStartValue.Text), theCroc, theChannel);
+                    for (int i = 0; i < NGateDelayLoop; i++)
+                    {
+                        FEBTPDelayList.Clear();
+                        //LoadTimer
+                        theCroc.FastCommandRegister = (ushort)FastCommands.LoadTimer;
+                        //Write TP
+                        theCroc.ResetAndTestMaskRegister = Convert.ToUInt16(1 << (int)(theChannel.ChannelNumber - 1));
+                        //Send TP
+                        theCroc.TestPulseRegister = BitConverter.ToUInt16(CROC.TestPulseRegisterValue, 0);
+                        //
+                        if (MeasureTPDelays(ref FEBTPDelayList, theCroc, theChannel))
+                            (List<FEB_TPDelay>)FEBTPDelayListArray[i] = FEBTPDelayList;
+                    }
+                    //Write TP=0
+                    theCroc.ResetAndTestMaskRegister = 0;
+                    //Calculate relative delays and their average value for ALL measurements
+                    FEB_TPDelay[] FEB_TPDelayArray = CalculateTPDelasy(FEBTPDelayListArray);
+                    //Update new values of FPGAs' Timer and GateStart based on previous calculated delays 
+                    SetLoadTimersGateStarts(FEB_TPDelayArray, theCroc, theChannel);
+                    //LoadTimer with new settings
+                    theCroc.FastCommandRegister = (ushort)FastCommands.LoadTimer;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private FEB_TPDelay[] CalculateTPDelasy(List<FEB_TPDelay>[] FEBTPDelayListArray)
+        {
+            //Print ALL measurements: array of lists of FEB_TPDelay structures
+            for (int i = 0; i < FEBTPDelayListArray.GetLength(0); i++)
+            {
+                richTextBoxDescription.Text += "Measurements #" + i.ToString("000") + "\n";
+                FEBTPDelayListArray[i] = FEBTPDelayListUpdateRelatives(FEBTPDelayListArray[i]);
+                PrintDelayList(FEBTPDelayListArray[i].ToArray());
+            }
+            //Calculate Average Values
+            //1. Create an array of FEB_TPDelay structures
+            FEB_TPDelay[] arr = new FEB_TPDelay[FEBTPDelayListArray[0].Count];
+            //2. Initialize FEBTPDelayListAveraged with first measurement of FEBTPDelayListArray
+            //arr = FEBTPDelayListArray[0].ToArray();
+            for (int j = 0; j < FEBTPDelayListArray[0].Count; j++)
+            {
+                arr[j] = new FEB_TPDelay(FEBTPDelayListArray[0][j].CrocAddress,
+                    FEBTPDelayListArray[0][j].ChannelNumber, FEBTPDelayListArray[0][j].FEBAddr, 0);
+                arr[j].TPDelayRelative = FEBTPDelayListArray[0][j].TPDelayRelative;
+            }
+
+            //3. Sum the TPDelayRelative values over ALL measurements
+            for (int i = 1; i < FEBTPDelayListArray.GetLength(0); i++)
+                for (int j = 0; j < FEBTPDelayListArray[0].Count; j++)
+                {
+                    if ((arr[j].CrocAddress == FEBTPDelayListArray[i][j].CrocAddress) &
+                        (arr[j].ChannelNumber == FEBTPDelayListArray[i][j].ChannelNumber) &
+                        (arr[j].FEBAddr == FEBTPDelayListArray[i][j].FEBAddr))
+                        arr[j].TPDelayRelative += FEBTPDelayListArray[i][j].TPDelayRelative;
+                    else
+                        richTextBoxDescription.Text += "i=" + i.ToString("000") + "j=" + j.ToString("000") +
+                            " statistic calculation error for arr \n";
+                }
+            //4. Divide the TPDelayRelative with the number of measurements
+            for (int j = 0; j < arr.GetLength(0); j++)
+                arr[j].TPDelayRelative /= FEBTPDelayListArray.GetLength(0);
+            //5. Print results
+            richTextBoxDescription.Text += "Averaged delays\n";
+            PrintDelayList(arr);
+            //
+            return arr;
+        }
+
+        private bool MeasureTPDelays(ref List<FEB_TPDelay> FEBTPDelayList, CROC theCroc, CROCFrontEndChannel theChannel)
+        {
+            foreach (Frame.Addresses feb in theChannel.ChainBoards)
+            {
+                try
+                {
+                    FPGAFrame theFrame = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
+                    theFrame.Send(theChannel);
+                    theFrame.Receive();
+                    if (theFrame.TestPulse2Bit == 0) FEBTPDelayList.Add(new FEB_TPDelay(
+                        theCroc.BaseAddress, theChannel.ChannelNumber, feb, theFrame.TestPulseCount + 1));
+                    else FEBTPDelayList.Add(new FEB_TPDelay(
+                        theCroc.BaseAddress, theChannel.ChannelNumber, feb, theFrame.TestPulseCount + 0.25 * theFrame.TestPulse2Bit));                    
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.Text += theChannel.Description + ":" + feb + ": Error: " + ex.Message + "\n";
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        #endregion
+
+        
+
     }
 
     #region Tree Nodes
@@ -3110,6 +3404,14 @@ namespace MinervaGUI
         private FPGAnode FPGARegs = new FPGAnode();
         private TRIPnode TripRegs = new TRIPnode();
         private FLASHnode FlashPages = new FLASHnode();
+
+        //private double TPDelay = -1;
+        //public double TPDelay
+        //{
+        //    get { return this.TPDelay; }
+        //    set { this.TPDelay = value; }
+        //}
+
         public FEnode(IFrontEndChannel channel, Frame.Addresses boardID)
         {
             FEBSlave theFEB = new FEBSlave(channel, boardID);
@@ -3132,6 +3434,7 @@ namespace MinervaGUI
 
     public class FPGAnode : TreeNode
     {
+      
     }
     public class TRIPnode : TreeNode
     {

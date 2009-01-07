@@ -34,7 +34,17 @@ namespace MinervaGUI
             this.richTextBoxDescription = new System.Windows.Forms.RichTextBox();
             this.tabCRIM = new System.Windows.Forms.TabPage();
             this.tabCROC = new System.Windows.Forms.TabPage();
+            this.groupBoxCROC_FEBGateDelays = new System.Windows.Forms.GroupBox();
+            this.txt_CROCGateDelayLoopChannel = new System.Windows.Forms.TextBox();
+            this.txt_CROCGateDelayLoopGateStartValue = new System.Windows.Forms.TextBox();
+            this.label45 = new System.Windows.Forms.Label();
+            this.txt_CROCGateDelayLoopLoadTimerValue = new System.Windows.Forms.TextBox();
+            this.label31 = new System.Windows.Forms.Label();
+            this.txt_CROCGateDelayLoopN = new System.Windows.Forms.TextBox();
+            this.label41 = new System.Windows.Forms.Label();
+            this.btn_CROCReportGateAlignments = new System.Windows.Forms.Button();
             this.groupBoxCROC_LoopDelay = new System.Windows.Forms.GroupBox();
+            this.btn_CROCLoopDelayClear = new System.Windows.Forms.Button();
             this.lbl_CROCLoopDelayCh4 = new System.Windows.Forms.Label();
             this.label43 = new System.Windows.Forms.Label();
             this.lbl_CROCLoopDelayCh3 = new System.Windows.Forms.Label();
@@ -43,7 +53,7 @@ namespace MinervaGUI
             this.label35 = new System.Windows.Forms.Label();
             this.lbl_CROCLoopDelayCh1 = new System.Windows.Forms.Label();
             this.label23 = new System.Windows.Forms.Label();
-            this.btn_CROCLoopDelay = new System.Windows.Forms.Button();
+            this.btn_CROCLoopDelayRead = new System.Windows.Forms.Button();
             this.groupBoxCROC_FastCommand = new System.Windows.Forms.GroupBox();
             this.cmb_CROCFastCommand = new System.Windows.Forms.ComboBox();
             this.btn_CROCFastCommand = new System.Windows.Forms.Button();
@@ -185,6 +195,14 @@ namespace MinervaGUI
             this.tabLIBox = new System.Windows.Forms.TabPage();
             this.btn_LIBoxAdvancedGUI = new System.Windows.Forms.Button();
             this.groupBoxLIBox_LICommands = new System.Windows.Forms.GroupBox();
+            this.groupBoxLIBox_LICommandsHardcoded = new System.Windows.Forms.GroupBox();
+            this.btn_LIBoxHardcodedInitALLSlots = new System.Windows.Forms.Button();
+            this.btn_LIBoxHardcoded_X = new System.Windows.Forms.Button();
+            this.btn_LIBoxHardcodedMaxPE = new System.Windows.Forms.Button();
+            this.btn_LIBoxHardcodedOnePE = new System.Windows.Forms.Button();
+            this.btn_LIBoxHardcodedZeroPE = new System.Windows.Forms.Button();
+            this.cmb_LIBoxHardcodedLEDSlot = new System.Windows.Forms.ComboBox();
+            this.btn_LIBoxHardcodedInitLEDSlot = new System.Windows.Forms.Button();
             this.btn_LIBoxIsActive = new System.Windows.Forms.Button();
             this.cmb_LIBoxLEDPulseWidth = new System.Windows.Forms.ComboBox();
             this.cmb_LIBoxLEDSlot = new System.Windows.Forms.ComboBox();
@@ -246,17 +264,10 @@ namespace MinervaGUI
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.timerMonitorHV = new System.Windows.Forms.Timer(this.components);
-            this.groupBoxLIBox_LICommandsHardcoded = new System.Windows.Forms.GroupBox();
-            this.cmb_LIBoxHardcodedLEDSlot = new System.Windows.Forms.ComboBox();
-            this.btn_LIBoxHardcodedInitLEDSlot = new System.Windows.Forms.Button();
-            this.btn_LIBoxHardcodedZeroPE = new System.Windows.Forms.Button();
-            this.btn_LIBoxHardcodedOnePE = new System.Windows.Forms.Button();
-            this.btn_LIBoxHardcodedMaxPE = new System.Windows.Forms.Button();
-            this.btn_LIBoxHardcoded_X = new System.Windows.Forms.Button();
-            this.btn_LIBoxHardcodedInitALLSlots = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabDescription.SuspendLayout();
             this.tabCROC.SuspendLayout();
+            this.groupBoxCROC_FEBGateDelays.SuspendLayout();
             this.groupBoxCROC_LoopDelay.SuspendLayout();
             this.groupBoxCROC_FastCommand.SuspendLayout();
             this.groupBoxCROC_ResetTPMaskReg.SuspendLayout();
@@ -273,13 +284,13 @@ namespace MinervaGUI
             this.tabReadHV.SuspendLayout();
             this.tabLIBox.SuspendLayout();
             this.groupBoxLIBox_LICommands.SuspendLayout();
+            this.groupBoxLIBox_LICommandsHardcoded.SuspendLayout();
             this.groupBoxLIBox_RS232Commands.SuspendLayout();
             this.groupBoxLIBox_RS232Settings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errMain)).BeginInit();
             this.contextMenuStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
-            this.groupBoxLIBox_LICommandsHardcoded.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -334,6 +345,7 @@ namespace MinervaGUI
             // 
             // tabCROC
             // 
+            this.tabCROC.Controls.Add(this.groupBoxCROC_FEBGateDelays);
             this.tabCROC.Controls.Add(this.groupBoxCROC_LoopDelay);
             this.tabCROC.Controls.Add(this.groupBoxCROC_FastCommand);
             this.tabCROC.Controls.Add(this.groupBoxCROC_ResetTPMaskReg);
@@ -353,8 +365,100 @@ namespace MinervaGUI
             this.tabCROC.Text = "CROC";
             this.tabCROC.UseVisualStyleBackColor = true;
             // 
+            // groupBoxCROC_FEBGateDelays
+            // 
+            this.groupBoxCROC_FEBGateDelays.Controls.Add(this.txt_CROCGateDelayLoopChannel);
+            this.groupBoxCROC_FEBGateDelays.Controls.Add(this.txt_CROCGateDelayLoopGateStartValue);
+            this.groupBoxCROC_FEBGateDelays.Controls.Add(this.label45);
+            this.groupBoxCROC_FEBGateDelays.Controls.Add(this.txt_CROCGateDelayLoopLoadTimerValue);
+            this.groupBoxCROC_FEBGateDelays.Controls.Add(this.label31);
+            this.groupBoxCROC_FEBGateDelays.Controls.Add(this.txt_CROCGateDelayLoopN);
+            this.groupBoxCROC_FEBGateDelays.Controls.Add(this.label41);
+            this.groupBoxCROC_FEBGateDelays.Controls.Add(this.btn_CROCReportGateAlignments);
+            this.groupBoxCROC_FEBGateDelays.Location = new System.Drawing.Point(136, 293);
+            this.groupBoxCROC_FEBGateDelays.Name = "groupBoxCROC_FEBGateDelays";
+            this.groupBoxCROC_FEBGateDelays.Size = new System.Drawing.Size(188, 126);
+            this.groupBoxCROC_FEBGateDelays.TabIndex = 86;
+            this.groupBoxCROC_FEBGateDelays.TabStop = false;
+            this.groupBoxCROC_FEBGateDelays.Text = "Channel FEB Gate Delays  ";
+            this.groupBoxCROC_FEBGateDelays.Visible = false;
+            // 
+            // txt_CROCGateDelayLoopChannel
+            // 
+            this.txt_CROCGateDelayLoopChannel.Location = new System.Drawing.Point(143, 14);
+            this.txt_CROCGateDelayLoopChannel.Name = "txt_CROCGateDelayLoopChannel";
+            this.txt_CROCGateDelayLoopChannel.Size = new System.Drawing.Size(36, 20);
+            this.txt_CROCGateDelayLoopChannel.TabIndex = 85;
+            this.txt_CROCGateDelayLoopChannel.Text = "1";
+            // 
+            // txt_CROCGateDelayLoopGateStartValue
+            // 
+            this.txt_CROCGateDelayLoopGateStartValue.Location = new System.Drawing.Point(123, 71);
+            this.txt_CROCGateDelayLoopGateStartValue.Name = "txt_CROCGateDelayLoopGateStartValue";
+            this.txt_CROCGateDelayLoopGateStartValue.Size = new System.Drawing.Size(56, 20);
+            this.txt_CROCGateDelayLoopGateStartValue.TabIndex = 83;
+            this.txt_CROCGateDelayLoopGateStartValue.Text = "63500";
+            // 
+            // label45
+            // 
+            this.label45.BackColor = System.Drawing.Color.Coral;
+            this.label45.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label45.Location = new System.Drawing.Point(9, 73);
+            this.label45.Name = "label45";
+            this.label45.Size = new System.Drawing.Size(117, 16);
+            this.label45.TabIndex = 84;
+            this.label45.Text = "Gate Start Value";
+            // 
+            // txt_CROCGateDelayLoopLoadTimerValue
+            // 
+            this.txt_CROCGateDelayLoopLoadTimerValue.Location = new System.Drawing.Point(123, 53);
+            this.txt_CROCGateDelayLoopLoadTimerValue.Name = "txt_CROCGateDelayLoopLoadTimerValue";
+            this.txt_CROCGateDelayLoopLoadTimerValue.Size = new System.Drawing.Size(56, 20);
+            this.txt_CROCGateDelayLoopLoadTimerValue.TabIndex = 81;
+            this.txt_CROCGateDelayLoopLoadTimerValue.Text = "15";
+            // 
+            // label31
+            // 
+            this.label31.BackColor = System.Drawing.Color.Coral;
+            this.label31.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label31.Location = new System.Drawing.Point(9, 55);
+            this.label31.Name = "label31";
+            this.label31.Size = new System.Drawing.Size(117, 16);
+            this.label31.TabIndex = 82;
+            this.label31.Text = "Load Timer Value";
+            // 
+            // txt_CROCGateDelayLoopN
+            // 
+            this.txt_CROCGateDelayLoopN.Location = new System.Drawing.Point(123, 35);
+            this.txt_CROCGateDelayLoopN.Name = "txt_CROCGateDelayLoopN";
+            this.txt_CROCGateDelayLoopN.Size = new System.Drawing.Size(56, 20);
+            this.txt_CROCGateDelayLoopN.TabIndex = 63;
+            this.txt_CROCGateDelayLoopN.Text = "5";
+            // 
+            // label41
+            // 
+            this.label41.BackColor = System.Drawing.Color.Coral;
+            this.label41.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label41.Location = new System.Drawing.Point(8, 37);
+            this.label41.Name = "label41";
+            this.label41.Size = new System.Drawing.Size(118, 16);
+            this.label41.TabIndex = 80;
+            this.label41.Text = "N of Measurements";
+            // 
+            // btn_CROCReportGateAlignments
+            // 
+            this.btn_CROCReportGateAlignments.BackColor = System.Drawing.Color.Coral;
+            this.btn_CROCReportGateAlignments.Location = new System.Drawing.Point(7, 14);
+            this.btn_CROCReportGateAlignments.Name = "btn_CROCReportGateAlignments";
+            this.btn_CROCReportGateAlignments.Size = new System.Drawing.Size(130, 20);
+            this.btn_CROCReportGateAlignments.TabIndex = 78;
+            this.btn_CROCReportGateAlignments.Text = "Report Alignments Ch#";
+            this.btn_CROCReportGateAlignments.UseVisualStyleBackColor = false;
+            this.btn_CROCReportGateAlignments.Click += new System.EventHandler(this.btn_CROCReportGateDelays_Click);
+            // 
             // groupBoxCROC_LoopDelay
             // 
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.btn_CROCLoopDelayClear);
             this.groupBoxCROC_LoopDelay.Controls.Add(this.lbl_CROCLoopDelayCh4);
             this.groupBoxCROC_LoopDelay.Controls.Add(this.label43);
             this.groupBoxCROC_LoopDelay.Controls.Add(this.lbl_CROCLoopDelayCh3);
@@ -363,20 +467,31 @@ namespace MinervaGUI
             this.groupBoxCROC_LoopDelay.Controls.Add(this.label35);
             this.groupBoxCROC_LoopDelay.Controls.Add(this.lbl_CROCLoopDelayCh1);
             this.groupBoxCROC_LoopDelay.Controls.Add(this.label23);
-            this.groupBoxCROC_LoopDelay.Controls.Add(this.btn_CROCLoopDelay);
+            this.groupBoxCROC_LoopDelay.Controls.Add(this.btn_CROCLoopDelayRead);
             this.groupBoxCROC_LoopDelay.Location = new System.Drawing.Point(16, 299);
             this.groupBoxCROC_LoopDelay.Name = "groupBoxCROC_LoopDelay";
-            this.groupBoxCROC_LoopDelay.Size = new System.Drawing.Size(114, 126);
+            this.groupBoxCROC_LoopDelay.Size = new System.Drawing.Size(114, 138);
             this.groupBoxCROC_LoopDelay.TabIndex = 63;
             this.groupBoxCROC_LoopDelay.TabStop = false;
             this.groupBoxCROC_LoopDelay.Text = "Loop Delay";
             this.groupBoxCROC_LoopDelay.Visible = false;
             // 
+            // btn_CROCLoopDelayClear
+            // 
+            this.btn_CROCLoopDelayClear.BackColor = System.Drawing.Color.Coral;
+            this.btn_CROCLoopDelayClear.Location = new System.Drawing.Point(7, 115);
+            this.btn_CROCLoopDelayClear.Name = "btn_CROCLoopDelayClear";
+            this.btn_CROCLoopDelayClear.Size = new System.Drawing.Size(101, 20);
+            this.btn_CROCLoopDelayClear.TabIndex = 86;
+            this.btn_CROCLoopDelayClear.Text = "Clear Loop Delay";
+            this.btn_CROCLoopDelayClear.UseVisualStyleBackColor = false;
+            this.btn_CROCLoopDelayClear.Click += new System.EventHandler(this.btn_CROCLoopDelayClear_Click);
+            // 
             // lbl_CROCLoopDelayCh4
             // 
             this.lbl_CROCLoopDelayCh4.BackColor = System.Drawing.Color.White;
             this.lbl_CROCLoopDelayCh4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.lbl_CROCLoopDelayCh4.Location = new System.Drawing.Point(37, 98);
+            this.lbl_CROCLoopDelayCh4.Location = new System.Drawing.Point(37, 94);
             this.lbl_CROCLoopDelayCh4.Name = "lbl_CROCLoopDelayCh4";
             this.lbl_CROCLoopDelayCh4.Size = new System.Drawing.Size(70, 18);
             this.lbl_CROCLoopDelayCh4.TabIndex = 85;
@@ -385,7 +500,7 @@ namespace MinervaGUI
             // 
             this.label43.BackColor = System.Drawing.Color.Coral;
             this.label43.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label43.Location = new System.Drawing.Point(8, 99);
+            this.label43.Location = new System.Drawing.Point(8, 95);
             this.label43.Name = "label43";
             this.label43.Size = new System.Drawing.Size(30, 16);
             this.label43.TabIndex = 84;
@@ -395,7 +510,7 @@ namespace MinervaGUI
             // 
             this.lbl_CROCLoopDelayCh3.BackColor = System.Drawing.Color.White;
             this.lbl_CROCLoopDelayCh3.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.lbl_CROCLoopDelayCh3.Location = new System.Drawing.Point(37, 79);
+            this.lbl_CROCLoopDelayCh3.Location = new System.Drawing.Point(37, 75);
             this.lbl_CROCLoopDelayCh3.Name = "lbl_CROCLoopDelayCh3";
             this.lbl_CROCLoopDelayCh3.Size = new System.Drawing.Size(70, 18);
             this.lbl_CROCLoopDelayCh3.TabIndex = 83;
@@ -404,7 +519,7 @@ namespace MinervaGUI
             // 
             this.label39.BackColor = System.Drawing.Color.Coral;
             this.label39.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label39.Location = new System.Drawing.Point(8, 80);
+            this.label39.Location = new System.Drawing.Point(8, 76);
             this.label39.Name = "label39";
             this.label39.Size = new System.Drawing.Size(30, 16);
             this.label39.TabIndex = 82;
@@ -414,7 +529,7 @@ namespace MinervaGUI
             // 
             this.lbl_CROCLoopDelayCh2.BackColor = System.Drawing.Color.White;
             this.lbl_CROCLoopDelayCh2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.lbl_CROCLoopDelayCh2.Location = new System.Drawing.Point(37, 60);
+            this.lbl_CROCLoopDelayCh2.Location = new System.Drawing.Point(37, 56);
             this.lbl_CROCLoopDelayCh2.Name = "lbl_CROCLoopDelayCh2";
             this.lbl_CROCLoopDelayCh2.Size = new System.Drawing.Size(70, 18);
             this.lbl_CROCLoopDelayCh2.TabIndex = 81;
@@ -423,7 +538,7 @@ namespace MinervaGUI
             // 
             this.label35.BackColor = System.Drawing.Color.Coral;
             this.label35.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label35.Location = new System.Drawing.Point(8, 61);
+            this.label35.Location = new System.Drawing.Point(8, 57);
             this.label35.Name = "label35";
             this.label35.Size = new System.Drawing.Size(30, 16);
             this.label35.TabIndex = 80;
@@ -433,7 +548,7 @@ namespace MinervaGUI
             // 
             this.lbl_CROCLoopDelayCh1.BackColor = System.Drawing.Color.White;
             this.lbl_CROCLoopDelayCh1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.lbl_CROCLoopDelayCh1.Location = new System.Drawing.Point(36, 41);
+            this.lbl_CROCLoopDelayCh1.Location = new System.Drawing.Point(36, 37);
             this.lbl_CROCLoopDelayCh1.Name = "lbl_CROCLoopDelayCh1";
             this.lbl_CROCLoopDelayCh1.Size = new System.Drawing.Size(70, 18);
             this.lbl_CROCLoopDelayCh1.TabIndex = 79;
@@ -442,22 +557,22 @@ namespace MinervaGUI
             // 
             this.label23.BackColor = System.Drawing.Color.Coral;
             this.label23.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label23.Location = new System.Drawing.Point(7, 42);
+            this.label23.Location = new System.Drawing.Point(7, 38);
             this.label23.Name = "label23";
             this.label23.Size = new System.Drawing.Size(30, 16);
             this.label23.TabIndex = 64;
             this.label23.Text = "Ch1";
             // 
-            // btn_CROCLoopDelay
+            // btn_CROCLoopDelayRead
             // 
-            this.btn_CROCLoopDelay.BackColor = System.Drawing.Color.Coral;
-            this.btn_CROCLoopDelay.Location = new System.Drawing.Point(7, 19);
-            this.btn_CROCLoopDelay.Name = "btn_CROCLoopDelay";
-            this.btn_CROCLoopDelay.Size = new System.Drawing.Size(101, 20);
-            this.btn_CROCLoopDelay.TabIndex = 78;
-            this.btn_CROCLoopDelay.Text = "Read Loop Delay";
-            this.btn_CROCLoopDelay.UseVisualStyleBackColor = false;
-            this.btn_CROCLoopDelay.Click += new System.EventHandler(this.btn_CROCLoopDelay_Click);
+            this.btn_CROCLoopDelayRead.BackColor = System.Drawing.Color.Coral;
+            this.btn_CROCLoopDelayRead.Location = new System.Drawing.Point(7, 15);
+            this.btn_CROCLoopDelayRead.Name = "btn_CROCLoopDelayRead";
+            this.btn_CROCLoopDelayRead.Size = new System.Drawing.Size(101, 20);
+            this.btn_CROCLoopDelayRead.TabIndex = 78;
+            this.btn_CROCLoopDelayRead.Text = "Read Loop Delay";
+            this.btn_CROCLoopDelayRead.UseVisualStyleBackColor = false;
+            this.btn_CROCLoopDelayRead.Click += new System.EventHandler(this.btn_CROCLoopDelayRead_Click);
             // 
             // groupBoxCROC_FastCommand
             // 
@@ -1660,6 +1775,13 @@ namespace MinervaGUI
         ((uint)(0u)),
         ((uint)(0u)),
         ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
         ((uint)(0u))};
             this.fpgaDevRegControl1.Location = new System.Drawing.Point(6, 37);
             this.fpgaDevRegControl1.Name = "fpgaDevRegControl1";
@@ -1670,9 +1792,16 @@ namespace MinervaGUI
             this.fpgaDevRegControl1.RegisterDCM2NoClock = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterDCM2PhaseDone = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterDCM2PhaseTotal = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip0 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip1 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip2 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip3 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterExtTriggFound = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterExtTriggRearm = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterFirmwareVersion = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterGateLength = ((uint)(1024u));
             this.fpgaDevRegControl1.RegisterGateStart = ((uint)(65488u));
+            this.fpgaDevRegControl1.RegisterGateTimeStamp = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterHVActual = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterHVAutoManual = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterHVControl = ((uint)(0u));
@@ -2153,6 +2282,122 @@ namespace MinervaGUI
             this.groupBoxLIBox_LICommands.TabIndex = 76;
             this.groupBoxLIBox_LICommands.TabStop = false;
             this.groupBoxLIBox_LICommands.Text = "LI Commands (hex values)";
+            // 
+            // groupBoxLIBox_LICommandsHardcoded
+            // 
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedInitALLSlots);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcoded_X);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedMaxPE);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedOnePE);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedZeroPE);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.cmb_LIBoxHardcodedLEDSlot);
+            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedInitLEDSlot);
+            this.groupBoxLIBox_LICommandsHardcoded.Location = new System.Drawing.Point(3, 120);
+            this.groupBoxLIBox_LICommandsHardcoded.Name = "groupBoxLIBox_LICommandsHardcoded";
+            this.groupBoxLIBox_LICommandsHardcoded.Size = new System.Drawing.Size(222, 78);
+            this.groupBoxLIBox_LICommandsHardcoded.TabIndex = 92;
+            this.groupBoxLIBox_LICommandsHardcoded.TabStop = false;
+            this.groupBoxLIBox_LICommandsHardcoded.Text = "LI Commands Hardcoded";
+            // 
+            // btn_LIBoxHardcodedInitALLSlots
+            // 
+            this.btn_LIBoxHardcodedInitALLSlots.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcodedInitALLSlots.Location = new System.Drawing.Point(129, 17);
+            this.btn_LIBoxHardcodedInitALLSlots.Name = "btn_LIBoxHardcodedInitALLSlots";
+            this.btn_LIBoxHardcodedInitALLSlots.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxHardcodedInitALLSlots.TabIndex = 99;
+            this.btn_LIBoxHardcodedInitALLSlots.Text = "Init ALL Slots";
+            this.btn_LIBoxHardcodedInitALLSlots.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcodedInitALLSlots.Click += new System.EventHandler(this.btn_LIBoxHardcodedInitALLSlots_Click);
+            // 
+            // btn_LIBoxHardcoded_X
+            // 
+            this.btn_LIBoxHardcoded_X.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcoded_X.Location = new System.Drawing.Point(6, 58);
+            this.btn_LIBoxHardcoded_X.Name = "btn_LIBoxHardcoded_X";
+            this.btn_LIBoxHardcoded_X.Size = new System.Drawing.Size(70, 20);
+            this.btn_LIBoxHardcoded_X.TabIndex = 98;
+            this.btn_LIBoxHardcoded_X.Text = "-X";
+            this.btn_LIBoxHardcoded_X.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcoded_X.Click += new System.EventHandler(this.btn_LIBoxHardcoded_X_Click);
+            // 
+            // btn_LIBoxHardcodedMaxPE
+            // 
+            this.btn_LIBoxHardcodedMaxPE.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcodedMaxPE.Location = new System.Drawing.Point(148, 37);
+            this.btn_LIBoxHardcodedMaxPE.Name = "btn_LIBoxHardcodedMaxPE";
+            this.btn_LIBoxHardcodedMaxPE.Size = new System.Drawing.Size(70, 20);
+            this.btn_LIBoxHardcodedMaxPE.TabIndex = 97;
+            this.btn_LIBoxHardcodedMaxPE.Text = "Max PE";
+            this.btn_LIBoxHardcodedMaxPE.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcodedMaxPE.Click += new System.EventHandler(this.btn_LIBoxHardcodedMaxPE_Click);
+            // 
+            // btn_LIBoxHardcodedOnePE
+            // 
+            this.btn_LIBoxHardcodedOnePE.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcodedOnePE.Location = new System.Drawing.Point(77, 37);
+            this.btn_LIBoxHardcodedOnePE.Name = "btn_LIBoxHardcodedOnePE";
+            this.btn_LIBoxHardcodedOnePE.Size = new System.Drawing.Size(70, 20);
+            this.btn_LIBoxHardcodedOnePE.TabIndex = 96;
+            this.btn_LIBoxHardcodedOnePE.Text = "One PE";
+            this.btn_LIBoxHardcodedOnePE.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcodedOnePE.Click += new System.EventHandler(this.btn_LIBoxHardcodedOnePE_Click);
+            // 
+            // btn_LIBoxHardcodedZeroPE
+            // 
+            this.btn_LIBoxHardcodedZeroPE.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcodedZeroPE.Location = new System.Drawing.Point(6, 37);
+            this.btn_LIBoxHardcodedZeroPE.Name = "btn_LIBoxHardcodedZeroPE";
+            this.btn_LIBoxHardcodedZeroPE.Size = new System.Drawing.Size(70, 20);
+            this.btn_LIBoxHardcodedZeroPE.TabIndex = 95;
+            this.btn_LIBoxHardcodedZeroPE.Text = "Zero PE";
+            this.btn_LIBoxHardcodedZeroPE.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcodedZeroPE.Click += new System.EventHandler(this.btn_LIBoxHardcodedZeroPE_Click);
+            // 
+            // cmb_LIBoxHardcodedLEDSlot
+            // 
+            this.cmb_LIBoxHardcodedLEDSlot.AutoCompleteCustomSource.AddRange(new string[] {
+            "0",
+            "1",
+            "2"});
+            this.cmb_LIBoxHardcodedLEDSlot.FormattingEnabled = true;
+            this.cmb_LIBoxHardcodedLEDSlot.Items.AddRange(new object[] {
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "f",
+            "g",
+            "h",
+            "i",
+            "j",
+            "k",
+            "l",
+            "m",
+            "n",
+            "o",
+            "q",
+            "r",
+            "s",
+            "t",
+            "u",
+            "v"});
+            this.cmb_LIBoxHardcodedLEDSlot.Location = new System.Drawing.Point(96, 15);
+            this.cmb_LIBoxHardcodedLEDSlot.Name = "cmb_LIBoxHardcodedLEDSlot";
+            this.cmb_LIBoxHardcodedLEDSlot.Size = new System.Drawing.Size(32, 21);
+            this.cmb_LIBoxHardcodedLEDSlot.TabIndex = 94;
+            // 
+            // btn_LIBoxHardcodedInitLEDSlot
+            // 
+            this.btn_LIBoxHardcodedInitLEDSlot.BackColor = System.Drawing.Color.Coral;
+            this.btn_LIBoxHardcodedInitLEDSlot.Location = new System.Drawing.Point(6, 17);
+            this.btn_LIBoxHardcodedInitLEDSlot.Name = "btn_LIBoxHardcodedInitLEDSlot";
+            this.btn_LIBoxHardcodedInitLEDSlot.Size = new System.Drawing.Size(91, 20);
+            this.btn_LIBoxHardcodedInitLEDSlot.TabIndex = 93;
+            this.btn_LIBoxHardcodedInitLEDSlot.Text = "Init LED Slot";
+            this.btn_LIBoxHardcodedInitLEDSlot.UseVisualStyleBackColor = false;
+            this.btn_LIBoxHardcodedInitLEDSlot.Click += new System.EventHandler(this.btn_LIBoxHardcodedInitLEDSlot_Click);
             // 
             // btn_LIBoxIsActive
             // 
@@ -2733,7 +2978,7 @@ namespace MinervaGUI
             // lblStatus
             // 
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(607, 17);
+            this.lblStatus.Size = new System.Drawing.Size(576, 17);
             this.lblStatus.Spring = true;
             this.lblStatus.Text = "lblStatus";
             // 
@@ -2748,122 +2993,6 @@ namespace MinervaGUI
             // timerMonitorHV
             // 
             this.timerMonitorHV.Tick += new System.EventHandler(this.timerMonitorHV_Tick);
-            // 
-            // groupBoxLIBox_LICommandsHardcoded
-            // 
-            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedInitALLSlots);
-            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcoded_X);
-            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedMaxPE);
-            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedOnePE);
-            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedZeroPE);
-            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.cmb_LIBoxHardcodedLEDSlot);
-            this.groupBoxLIBox_LICommandsHardcoded.Controls.Add(this.btn_LIBoxHardcodedInitLEDSlot);
-            this.groupBoxLIBox_LICommandsHardcoded.Location = new System.Drawing.Point(3, 120);
-            this.groupBoxLIBox_LICommandsHardcoded.Name = "groupBoxLIBox_LICommandsHardcoded";
-            this.groupBoxLIBox_LICommandsHardcoded.Size = new System.Drawing.Size(222, 78);
-            this.groupBoxLIBox_LICommandsHardcoded.TabIndex = 92;
-            this.groupBoxLIBox_LICommandsHardcoded.TabStop = false;
-            this.groupBoxLIBox_LICommandsHardcoded.Text = "LI Commands Hardcoded";
-            // 
-            // cmb_LIBoxHardcodedLEDSlot
-            // 
-            this.cmb_LIBoxHardcodedLEDSlot.AutoCompleteCustomSource.AddRange(new string[] {
-            "0",
-            "1",
-            "2"});
-            this.cmb_LIBoxHardcodedLEDSlot.FormattingEnabled = true;
-            this.cmb_LIBoxHardcodedLEDSlot.Items.AddRange(new object[] {
-            "a",
-            "b",
-            "c",
-            "d",
-            "e",
-            "f",
-            "g",
-            "h",
-            "i",
-            "j",
-            "k",
-            "l",
-            "m",
-            "n",
-            "o",
-            "q",
-            "r",
-            "s",
-            "t",
-            "u",
-            "v"});
-            this.cmb_LIBoxHardcodedLEDSlot.Location = new System.Drawing.Point(96, 15);
-            this.cmb_LIBoxHardcodedLEDSlot.Name = "cmb_LIBoxHardcodedLEDSlot";
-            this.cmb_LIBoxHardcodedLEDSlot.Size = new System.Drawing.Size(32, 21);
-            this.cmb_LIBoxHardcodedLEDSlot.TabIndex = 94;
-            // 
-            // btn_LIBoxHardcodedInitLEDSlot
-            // 
-            this.btn_LIBoxHardcodedInitLEDSlot.BackColor = System.Drawing.Color.Coral;
-            this.btn_LIBoxHardcodedInitLEDSlot.Location = new System.Drawing.Point(6, 17);
-            this.btn_LIBoxHardcodedInitLEDSlot.Name = "btn_LIBoxHardcodedInitLEDSlot";
-            this.btn_LIBoxHardcodedInitLEDSlot.Size = new System.Drawing.Size(91, 20);
-            this.btn_LIBoxHardcodedInitLEDSlot.TabIndex = 93;
-            this.btn_LIBoxHardcodedInitLEDSlot.Text = "Init LED Slot";
-            this.btn_LIBoxHardcodedInitLEDSlot.UseVisualStyleBackColor = false;
-            this.btn_LIBoxHardcodedInitLEDSlot.Click += new System.EventHandler(this.btn_LIBoxHardcodedInitLEDSlot_Click);
-            // 
-            // btn_LIBoxHardcodedZeroPE
-            // 
-            this.btn_LIBoxHardcodedZeroPE.BackColor = System.Drawing.Color.Coral;
-            this.btn_LIBoxHardcodedZeroPE.Location = new System.Drawing.Point(6, 37);
-            this.btn_LIBoxHardcodedZeroPE.Name = "btn_LIBoxHardcodedZeroPE";
-            this.btn_LIBoxHardcodedZeroPE.Size = new System.Drawing.Size(70, 20);
-            this.btn_LIBoxHardcodedZeroPE.TabIndex = 95;
-            this.btn_LIBoxHardcodedZeroPE.Text = "Zero PE";
-            this.btn_LIBoxHardcodedZeroPE.UseVisualStyleBackColor = false;
-            this.btn_LIBoxHardcodedZeroPE.Click += new System.EventHandler(this.btn_LIBoxHardcodedZeroPE_Click);
-            // 
-            // btn_LIBoxHardcodedOnePE
-            // 
-            this.btn_LIBoxHardcodedOnePE.BackColor = System.Drawing.Color.Coral;
-            this.btn_LIBoxHardcodedOnePE.Location = new System.Drawing.Point(77, 37);
-            this.btn_LIBoxHardcodedOnePE.Name = "btn_LIBoxHardcodedOnePE";
-            this.btn_LIBoxHardcodedOnePE.Size = new System.Drawing.Size(70, 20);
-            this.btn_LIBoxHardcodedOnePE.TabIndex = 96;
-            this.btn_LIBoxHardcodedOnePE.Text = "One PE";
-            this.btn_LIBoxHardcodedOnePE.UseVisualStyleBackColor = false;
-            this.btn_LIBoxHardcodedOnePE.Click += new System.EventHandler(this.btn_LIBoxHardcodedOnePE_Click);
-            // 
-            // btn_LIBoxHardcodedMaxPE
-            // 
-            this.btn_LIBoxHardcodedMaxPE.BackColor = System.Drawing.Color.Coral;
-            this.btn_LIBoxHardcodedMaxPE.Location = new System.Drawing.Point(148, 37);
-            this.btn_LIBoxHardcodedMaxPE.Name = "btn_LIBoxHardcodedMaxPE";
-            this.btn_LIBoxHardcodedMaxPE.Size = new System.Drawing.Size(70, 20);
-            this.btn_LIBoxHardcodedMaxPE.TabIndex = 97;
-            this.btn_LIBoxHardcodedMaxPE.Text = "Max PE";
-            this.btn_LIBoxHardcodedMaxPE.UseVisualStyleBackColor = false;
-            this.btn_LIBoxHardcodedMaxPE.Click += new System.EventHandler(this.btn_LIBoxHardcodedMaxPE_Click);
-            // 
-            // btn_LIBoxHardcoded_X
-            // 
-            this.btn_LIBoxHardcoded_X.BackColor = System.Drawing.Color.Coral;
-            this.btn_LIBoxHardcoded_X.Location = new System.Drawing.Point(6, 58);
-            this.btn_LIBoxHardcoded_X.Name = "btn_LIBoxHardcoded_X";
-            this.btn_LIBoxHardcoded_X.Size = new System.Drawing.Size(70, 20);
-            this.btn_LIBoxHardcoded_X.TabIndex = 98;
-            this.btn_LIBoxHardcoded_X.Text = "-X";
-            this.btn_LIBoxHardcoded_X.UseVisualStyleBackColor = false;
-            this.btn_LIBoxHardcoded_X.Click += new System.EventHandler(this.btn_LIBoxHardcoded_X_Click);
-            // 
-            // btn_LIBoxHardcodedInitALLSlots
-            // 
-            this.btn_LIBoxHardcodedInitALLSlots.BackColor = System.Drawing.Color.Coral;
-            this.btn_LIBoxHardcodedInitALLSlots.Location = new System.Drawing.Point(129, 17);
-            this.btn_LIBoxHardcodedInitALLSlots.Name = "btn_LIBoxHardcodedInitALLSlots";
-            this.btn_LIBoxHardcodedInitALLSlots.Size = new System.Drawing.Size(91, 20);
-            this.btn_LIBoxHardcodedInitALLSlots.TabIndex = 99;
-            this.btn_LIBoxHardcodedInitALLSlots.Text = "Init ALL Slots";
-            this.btn_LIBoxHardcodedInitALLSlots.UseVisualStyleBackColor = false;
-            this.btn_LIBoxHardcodedInitALLSlots.Click += new System.EventHandler(this.btn_LIBoxHardcodedInitALLSlots_Click);
             // 
             // frmSlowControl
             // 
@@ -2881,6 +3010,8 @@ namespace MinervaGUI
             this.tabControl1.ResumeLayout(false);
             this.tabDescription.ResumeLayout(false);
             this.tabCROC.ResumeLayout(false);
+            this.groupBoxCROC_FEBGateDelays.ResumeLayout(false);
+            this.groupBoxCROC_FEBGateDelays.PerformLayout();
             this.groupBoxCROC_LoopDelay.ResumeLayout(false);
             this.groupBoxCROC_FastCommand.ResumeLayout(false);
             this.groupBoxCROC_ResetTPMaskReg.ResumeLayout(false);
@@ -2901,6 +3032,7 @@ namespace MinervaGUI
             this.tabLIBox.ResumeLayout(false);
             this.groupBoxLIBox_LICommands.ResumeLayout(false);
             this.groupBoxLIBox_LICommands.PerformLayout();
+            this.groupBoxLIBox_LICommandsHardcoded.ResumeLayout(false);
             this.groupBoxLIBox_RS232Commands.ResumeLayout(false);
             this.groupBoxLIBox_RS232Settings.ResumeLayout(false);
             this.groupBoxLIBox_RS232Settings.PerformLayout();
@@ -2910,7 +3042,6 @@ namespace MinervaGUI
             this.menuStrip1.PerformLayout();
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
-            this.groupBoxLIBox_LICommandsHardcoded.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -3084,7 +3215,7 @@ namespace MinervaGUI
         private System.Windows.Forms.ComboBox cmb_CROCFastCommand;
         private System.Windows.Forms.Button btn_CROCFastCommand;
         private System.Windows.Forms.GroupBox groupBoxCROC_LoopDelay;
-        private System.Windows.Forms.Button btn_CROCLoopDelay;
+        private System.Windows.Forms.Button btn_CROCLoopDelayRead;
         private System.Windows.Forms.Label label23;
         private System.Windows.Forms.Label lbl_CROCLoopDelayCh4;
         private System.Windows.Forms.Label label43;
@@ -3143,6 +3274,16 @@ namespace MinervaGUI
         private System.Windows.Forms.Button btn_LIBoxHardcodedInitLEDSlot;
         private System.Windows.Forms.Button btn_LIBoxHardcoded_X;
         private System.Windows.Forms.Button btn_LIBoxHardcodedInitALLSlots;
+        private System.Windows.Forms.GroupBox groupBoxCROC_FEBGateDelays;
+        private System.Windows.Forms.Button btn_CROCReportGateAlignments;
+        private System.Windows.Forms.Label label41;
+        private System.Windows.Forms.TextBox txt_CROCGateDelayLoopN;
+        private System.Windows.Forms.TextBox txt_CROCGateDelayLoopGateStartValue;
+        private System.Windows.Forms.Label label45;
+        private System.Windows.Forms.TextBox txt_CROCGateDelayLoopLoadTimerValue;
+        private System.Windows.Forms.Label label31;
+        private System.Windows.Forms.TextBox txt_CROCGateDelayLoopChannel;
+        private System.Windows.Forms.Button btn_CROCLoopDelayClear;
 
     }
 }
