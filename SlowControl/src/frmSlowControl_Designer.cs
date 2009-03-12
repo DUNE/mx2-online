@@ -2978,7 +2978,7 @@ namespace MinervaGUI
             // lblStatus
             // 
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(576, 17);
+            this.lblStatus.Size = new System.Drawing.Size(607, 17);
             this.lblStatus.Spring = true;
             this.lblStatus.Text = "lblStatus";
             // 

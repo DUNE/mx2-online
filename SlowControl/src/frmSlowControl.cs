@@ -37,8 +37,10 @@ namespace MinervaGUI
         {
             OpenGate = 0xB1,
             ResetFPGA = 0x8D,
-            ResetTimer = 0xC5,
-            LoadTimer = 0xC9,
+            //ResetTimer = 0xC5,
+            //LoadTimer = 0xC9,
+            ResetTimer = 0xC9,  // 03.12.2009 to make Minos CNTRST 0xC5 act as a LoadTimer
+            LoadTimer = 0xC5,   // 03.12.2009 to make Minos CNTRST 0xC5 act as a LoadTimer
             TriggerFound = 0x89,
             TriggerRearm = 0x85
         }
@@ -2516,10 +2518,10 @@ namespace MinervaGUI
                             theCroc.FastCommandRegister = (ushort)FastCommands.ResetFPGA;// 0x8D;
                             break;
                         case 2: //ResetTimer
-                            theCroc.FastCommandRegister = (ushort)FastCommands.ResetTimer;// 0xC5;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.ResetTimer;// 0xC9;
                             break;
                         case 3: //LoadTimer
-                            theCroc.FastCommandRegister = (ushort)FastCommands.LoadTimer;// 0xC9;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.LoadTimer;// 0xC5;
                             break;
                         case 4: //TriggerFound
                             theCroc.FastCommandRegister = (ushort)FastCommands.TriggerFound;// 0x89;
@@ -3195,8 +3197,8 @@ namespace MinervaGUI
                     //write new values
                     FPGAFrame wFrame = new FPGAFrame(tpdelay.FEBAddr, Frame.FPGAFunctions.Write, new FrameID());
                     wFrame.Registers = rFrame.Registers;
-                    wFrame.Timer -= Convert.ToUInt32(tpdelay.TPDelayRelative / 2);
-                    wFrame.GateStart -= Convert.ToUInt16(tpdelay.TPDelayRelative / 2);
+                    wFrame.Timer -= Convert.ToUInt32(tpdelay.TPDelayRelative / 2.0);
+                    wFrame.GateStart -= Convert.ToUInt16(tpdelay.TPDelayRelative / 2.0);
                     wFrame.Send(theChannel);
                     wFrame.Receive();
                 }
@@ -3334,6 +3336,71 @@ namespace MinervaGUI
         }
 
         #endregion
+
+        //private void button1_Click(object sender, EventArgs e)
+        //{
+        //    //WINDOWS / LINUX comparison speed test
+        //    CAENVMElib.CVErrorCodes myErrorCode;
+        //    uint myAddress = 0;
+        //    AddressModifiers myModifier = AddressModifiers.A24;
+        //    DataWidths myWidth = DataWidths.D16;
+        //    byte[] myData = new byte[2];
+ 
+        //    //WRITE - to clear status and reset DPM register
+        //    myAddress = 0x012030;
+        //    myData[0] = 0x0A;
+        //    myData[1] = 0x0A;
+        //    //controller.Write(myAddress, myModifier, myWidth, myData);
+        //    myErrorCode = CAENInterface.CAENVME.WriteCycle(0, myAddress, myData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
+
+        //    //READ - to check the status register
+        //    myAddress = 0x012020;
+        //    myData[0] = 0x0;
+        //    myData[1] = 0x0;
+        //    //controller.Read(myAddress, myModifier, myWidth, myData);
+        //    myErrorCode = CAENInterface.CAENVME.ReadCycle(0, myAddress, myData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
+        //    //if ((myData[0]!=0x00)|(myData[1]!=0x37)) Console.WriteLine("status register error - 1");
+
+        //    //WRITE - to DPM register
+        //    myAddress = 0x012000;
+        //    myData[0] = 0x01;
+        //    myData[1] = 0x31;
+        //    //controller.Write(myAddress, myModifier, myWidth, myData);
+        //    myErrorCode = CAENInterface.CAENVME.WriteCycle(0, myAddress, myData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
+        //    myData[0] = 0x00;
+        //    myData[1] = 0x00;
+        //    for (int i = 0; i < 3; i++)
+        //    {
+        //        //controller.Write(myAddress, myModifier, myWidth, myData);
+        //        myErrorCode = CAENInterface.CAENVME.WriteCycle(0, myAddress, myData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
+        //    }
+
+        //    //READ - to check the status register
+        //    myAddress = 0x012020;
+        //    myData[0] = 0x0;
+        //    myData[1] = 0x0;
+        //    for (int i = 0; i < 3; i++)
+        //    {
+        //        //controller.Read(myAddress, myModifier, myWidth, myData);
+        //        myErrorCode = CAENInterface.CAENVME.ReadCycle(0, myAddress, myData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
+        //        //if ((myData[0] != 0x10) | (myData[1] != 0x37)) Console.WriteLine("status register error - 2");
+        //    }
+
+        //    //WRITE - to SEND MESSAGE register
+        //    myAddress = 0x012010;
+        //    myData[0] = 0x01;
+        //    myData[1] = 0x01;
+        //    //controller.Write(myAddress, myModifier, myWidth, myData);
+        //    myErrorCode = CAENInterface.CAENVME.WriteCycle(0, myAddress, myData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
+
+        //    //READ - to check the status register
+        //    myAddress = 0x012020;
+        //    myData[0] = 0x0;
+        //    myData[1] = 0x0;
+        //    //controller.Read(myAddress, myModifier, myWidth, myData);
+        //    myErrorCode = CAENInterface.CAENVME.ReadCycle(0, myAddress, myData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
+        //    //if ((myData[0] != 0x03) | (myData[1] != 0x37)) Console.WriteLine("status register error - 3");
+        //}
 
         
 
