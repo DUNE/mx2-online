@@ -1,9 +1,9 @@
 package SlowControl
-version v1r1
+version v4r0
 author Aaron Mislivec and Cristian Gingu
 
 use MinervaPolicy      v*
-use Readout            v*  MinervaOnline
+use Readout            v4r6  MinervaOnline
 use CAEN2718           v*  MinervaOnline
 
 macro_append SlowControllinkopts " $(SlowControlcsopts) "
