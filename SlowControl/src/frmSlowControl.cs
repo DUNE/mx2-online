@@ -11,14 +11,13 @@ using System.IO.Ports;
 using System.Xml.Serialization;
 using VMEInterfaces;
 using MinervaUserControls;
-using System.Collections.Specialized; // For BitVector32
-//using MinervaDAQ; // For FebSlave class
+using System.Collections.Specialized;
 
 namespace MinervaGUI
 {
     public partial class frmSlowControl : Form
     {
-        bool AppendDescription = false;
+        //bool AppendDescription = false;
 
         CAEN2718 controller;
         List<CRIM> CRIMModules = new List<CRIM>();
@@ -29,11 +28,12 @@ namespace MinervaGUI
         List<FEnode> FEnodes = new List<FEnode>();
         public static List<FEBSlave> FEBSlaves = new List<FEBSlave>();
         List<FEB_TPDelay> FEBTPDelayList = new List<FEB_TPDelay>();
-        
+        List<CRIMtoCROCCable> CRIMtoCROCCables = new List<CRIMtoCROCCable>();
+
         MinervaDevicesInfo minervaDevicesInfo = new MinervaDevicesInfo();
         MinervaDevicesInfo xmlInfo = new MinervaDevicesInfo();
 
-        public enum FastCommands : byte
+        private enum FastCommands : byte
         {
             OpenGate = 0xB1,
             ResetFPGA = 0x8D,
@@ -42,7 +42,20 @@ namespace MinervaGUI
             ResetTimer = 0xC9,  // 03.12.2009 to make Minos CNTRST 0xC5 act as a LoadTimer
             LoadTimer = 0xC5,   // 03.12.2009 to make Minos CNTRST 0xC5 act as a LoadTimer
             TriggerFound = 0x89,
-            TriggerRearm = 0x85
+            TriggerRearm = 0x85,
+            QueryFPGA = 0x91    // 04.14.2009 to make FEBs respond with NAHeader(01=2bits)+TripComp(4bits)+FEAddress(4bits)
+        }
+
+        private struct CRIMtoCROCCable
+        {
+            private uint CRIMAddr;
+            public List<uint> CROCAddresses;
+            public CRIMtoCROCCable(uint CRIMAddress)
+            {
+                CRIMAddr = CRIMAddress;
+                CROCAddresses = new List<uint>(4);
+            }
+            public uint CRIMAddress { get { return CRIMAddr; } }
         }
 
         private static EventWaitHandle vmeDone = null;
@@ -51,7 +64,7 @@ namespace MinervaGUI
         {
             vmeDone = new EventWaitHandle(true, EventResetMode.AutoReset, "MinervaVMEDone");
         }
-        
+
         public frmSlowControl()
         {
             InitializeComponent();
@@ -80,7 +93,7 @@ namespace MinervaGUI
                     richTextBoxDescription.Text = String.Format("Controller Firmware: {0}", sb.ToString());
                     StringBuilder sw = new StringBuilder();
                     CAENInterface.CAENVME.SWRelease(sw);
-                    richTextBoxDescription.Text += String.Format("\nDriver Library: {0}", sw.ToString());
+                    richTextBoxDescription.AppendText(String.Format("\nDriver Library: {0}", sw.ToString()));
                     //prgStatus.Value = 100;
                     Refresh();
                     lblStatus.Text = "VME Controller initialized.";
@@ -99,10 +112,26 @@ namespace MinervaGUI
             }
         }
 
+        private void ProgressReport(object sender, ProgressChangedEventArgs e)
+        {
+            Application.DoEvents();
+            //if ((e.ProgressPercentage % 25 == 0) || (e.ProgressPercentage == 1))
+            {
+                prgStatus.Value = e.ProgressPercentage;
+                lblStatus.Text = e.UserState.ToString() + "  " + e.ProgressPercentage;
+            }
+        }
+
         private void frmSlowControl_Load(object sender, EventArgs e)
         {
+            Metadata.MetaData.log.WriteToFirstLine("SlowControl Started at " + DateTime.Now);
+            Metadata.MetaData.log.AddToLog();
+            FlashFrame.PageCompleted += new ProgressChangedEventHandler(ProgressReport);
             LoadHardwareToolStripMenuItem_Click(null, null);
-            treeView1.ExpandAll();
+            cmb_CRIMTimingMode.Items.Clear();
+            cmb_CRIMTimingMode.Items.AddRange(Enum.GetNames(typeof(CRIM.TimingModes)));
+            cmb_CRIMTimingFrequency.Items.Clear();
+            cmb_CRIMTimingFrequency.Items.AddRange(Enum.GetNames(typeof(CRIM.TimingFrequencies)));
         }
 
         private void treeView1_AfterSelect(object sender, TreeViewEventArgs e)
@@ -110,15 +139,12 @@ namespace MinervaGUI
             //////if (!AppendDescription) richTextBoxDescription.Clear();
             if (e.Node is CRIMnode)
             {
-                richTextBoxDescription.Text += ((CRIM)(e.Node.Tag)).Description;
-                //richTextBoxCrim.Text += "\nInterruptMask=" + ((CRIM)(e.Node.Tag)).InterruptMask;
-                //richTextBoxCrim.Text += "\nTimingMode=" + ((CRIM)(e.Node.Tag)).TimingMode;
-                //tabControl1.SelectTab("tabCRIM");
-                tabControl1.SelectTab(tabDescription);
+                lblCRIM_CRIMID.Text = Convert.ToString(((CRIM)e.Node.Tag).BaseAddress >> 16);
+                CrimClearLabels();
+                tabControl1.SelectTab(tabCRIM);
             }
             if (e.Node is CROCnode)
             {
-                //richTextBoxDescription.Text += ((CROC)(e.Node.Tag)).Description;
                 lblCROC_CROCID.Text = Convert.ToString(((CROC)e.Node.Tag).BaseAddress >> 16);
                 CrocClearLabels();
                 tabControl1.SelectTab(tabCROC);
@@ -132,10 +158,10 @@ namespace MinervaGUI
             }
             if (e.Node is FEnode)
             {
-                richTextBoxDescription.Text += 
+                richTextBoxDescription.AppendText(
                     "\nFEid=" + ((FEnode)(e.Node)).BoardID.ToString() +
                     ", CHid=" + ((CROCFrontEndChannel)(((CHnode)(e.Node.Parent)).Tag)).ChannelNumber.ToString() +
-                    ", CROCid=" + ((((CROC)(((CROCnode)(e.Node.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString();
+                    ", CROCid=" + ((((CROC)(((CROCnode)(e.Node.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString());
                 //tabControl1.SelectTab("tabFE");
                 tabControl1.SelectTab(tabDescription);
             }
@@ -187,20 +213,20 @@ namespace MinervaGUI
                     //
                     xmlFileR = System.IO.File.OpenText(myOFD.FileName);
                     richTextBoxDescription.Text = "Loading file " + myOFD.FileName + "\n";
-                    richTextBoxDescription.Text += xmlFileR.ReadToEnd();
+                    richTextBoxDescription.AppendText(xmlFileR.ReadToEnd());
                     WriteXMLToHardwareToolStripMenuItem.Enabled = true;
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
                     Console.WriteLine(ex.InnerException.Message);
-                    richTextBoxDescription.Text += "\n" + ex.Message;
-                    richTextBoxDescription.Text += "\n" + ex.InnerException.Message;
+                    richTextBoxDescription.AppendText("\n" + ex.Message);
+                    richTextBoxDescription.AppendText("\n" + ex.InnerException.Message);
                 }
                 finally { xmlFileR.Close(); }
             }
         }
-        
+
         private void saveConfigXmlToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveFileDialog mySFD = new SaveFileDialog();
@@ -221,15 +247,15 @@ namespace MinervaGUI
                     //
                     System.IO.StreamReader xmlFileR = System.IO.File.OpenText(mySFD.FileName);
                     richTextBoxDescription.Text = "Saving file " + mySFD.FileName + "\n";
-                    richTextBoxDescription.Text += xmlFileR.ReadToEnd();
+                    richTextBoxDescription.AppendText(xmlFileR.ReadToEnd());
                     xmlFileR.Close();
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
                     Console.WriteLine(ex.InnerException.Message);
-                    richTextBoxDescription.Text += "\n" + ex.Message;
-                    richTextBoxDescription.Text += "\n" + ex.InnerException.Message;
+                    richTextBoxDescription.AppendText("\n" + ex.Message);
+                    richTextBoxDescription.AppendText("\n" + ex.InnerException.Message);
                 }
                 finally
                 {
@@ -241,7 +267,7 @@ namespace MinervaGUI
         private void WriteXMLToHardwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
             richTextBoxDescription.Clear();
-            tabControl1.SelectTab("tabDescription");
+            tabControl1.SelectTab(tabDescription); //"tabDescription");
             bool crimsMatch = true; // ... false....
             bool crocsMatch = true;
             bool febsMatch = true;
@@ -253,7 +279,7 @@ namespace MinervaGUI
             {
                 crimsMatch = false;
                 richTextBoxDescription.SelectionColor = Color.Red;
-                richTextBoxDescription.Text += "\nNumber of CRIMs in XML file is different from the Number of CRIMs loaded\n";
+                richTextBoxDescription.AppendText("\nNumber of CRIMs in XML file is different from the Number of CRIMs loaded\n");
                 richTextBoxDescription.SelectionColor = Color.Black;
             }
             foreach (CRIMInfo xmlCRIM in xmlInfo.CRIMs)
@@ -264,7 +290,7 @@ namespace MinervaGUI
                     if (xmlCRIM.BaseAddress == minervaCRIM.BaseAddress)
                     {
                         crimFound = true;
-                        richTextBoxDescription.Text += "\n" + xmlCRIM.Description + " in XML file found";
+                        richTextBoxDescription.AppendText("\n" + xmlCRIM.Description + " in XML file found");
                         break;
                     }
                 }
@@ -272,22 +298,22 @@ namespace MinervaGUI
                 {
                     crimsMatch = false;
                     richTextBoxDescription.SelectionColor = Color.Red;
-                    richTextBoxDescription.Text += "\n" + xmlCRIM.Description + " in XML file not found";
+                    richTextBoxDescription.AppendText("\n" + xmlCRIM.Description + " in XML file not found");
                     richTextBoxDescription.SelectionColor = Color.Black;
                 }
             }
-            if (crimsMatch) richTextBoxDescription.Text += "\n\nMatched CRIMs in XML file to CRIMs loaded";
+            if (crimsMatch) richTextBoxDescription.AppendText("\n\nMatched CRIMs in XML file to CRIMs loaded");
 
             #endregion
 
             #region Compare CROCs in XML file to CROCs loaded
 
-            richTextBoxDescription.Text += "\n\nComparing CROCs in XML file to CROCs loaded\n";
+            richTextBoxDescription.AppendText("\n\nComparing CROCs in XML file to CROCs loaded\n");
             if (xmlInfo.CROCs.Count != minervaDevicesInfo.CROCs.Count)
             {
                 crocsMatch = false;
                 richTextBoxDescription.SelectionColor = Color.Red;
-                richTextBoxDescription.Text += "\nNumber of CROCs in XML file is different from the Number of CROCs loaded\n";
+                richTextBoxDescription.AppendText("\nNumber of CROCs in XML file is different from the Number of CROCs loaded\n");
                 richTextBoxDescription.SelectionColor = Color.Black;
             }
             foreach (CROCInfo xmlCROC in xmlInfo.CROCs)
@@ -298,7 +324,7 @@ namespace MinervaGUI
                     if (xmlCROC.BaseAddress == minervaCROC.BaseAddress)
                     {
                         crocFound = true;
-                        richTextBoxDescription.Text += "\n" + xmlCROC.Description + " in XML file found";
+                        richTextBoxDescription.AppendText("\n" + xmlCROC.Description + " in XML file found");
                         break;
                     }
                 }
@@ -306,17 +332,17 @@ namespace MinervaGUI
                 {
                     crocsMatch = false;
                     richTextBoxDescription.SelectionColor = Color.Red;
-                    richTextBoxDescription.Text += "\n" + xmlCROC.Description + " in XML file not found";
+                    richTextBoxDescription.AppendText("\n" + xmlCROC.Description + " in XML file not found");
                     richTextBoxDescription.SelectionColor = Color.Black;
                 }
             }
-            if (crocsMatch) richTextBoxDescription.Text += "\n\nMatched CROCs in XML file to CROCs loaded";
+            if (crocsMatch) richTextBoxDescription.AppendText("\n\nMatched CROCs in XML file to CROCs loaded");
 
             #endregion
 
             #region Compare FEBs in XML file to FEBs loaded
 
-            richTextBoxDescription.Text += "\n\nComparing FEBs in XML file to FEBs loaded\n";
+            richTextBoxDescription.AppendText("\n\nComparing FEBs in XML file to FEBs loaded\n");
 
             foreach (CROCInfo xmlCROC in xmlInfo.CROCs)
             {
@@ -334,7 +360,7 @@ namespace MinervaGUI
                                     {
                                         febsMatch = false;
                                         richTextBoxDescription.SelectionColor = Color.Red;
-                                        richTextBoxDescription.Text += "\n" + xmlCROCChannelInfo.Description + ": Number of FEBs in XML file is different from the Number of FEBs loaded\n";
+                                        richTextBoxDescription.AppendText("\n" + xmlCROCChannelInfo.Description + ": Number of FEBs in XML file is different from the Number of FEBs loaded\n");
                                         richTextBoxDescription.SelectionColor = Color.Black;
                                     }
                                     foreach (ChainBoardInfo xmlChainBoard in xmlCROCChannelInfo.ChainBoards)
@@ -345,7 +371,7 @@ namespace MinervaGUI
                                             if (xmlChainBoard.BoardAddress == minervaChainBoard.BoardAddress)
                                             {
                                                 febFound = true;
-                                                richTextBoxDescription.Text += "\n" + xmlCROCChannelInfo.Description + ":" + xmlChainBoard.BoardAddress + " in XML file found";
+                                                richTextBoxDescription.AppendText("\n" + xmlCROCChannelInfo.Description + ":" + xmlChainBoard.BoardAddress + " in XML file found");
                                                 break;
                                             }
                                         }
@@ -353,7 +379,7 @@ namespace MinervaGUI
                                         {
                                             febsMatch = false;
                                             richTextBoxDescription.SelectionColor = Color.White;
-                                            richTextBoxDescription.Text += "\n" + xmlCROCChannelInfo.Description + ":" + xmlChainBoard.BoardAddress + " in XML file not found";
+                                            richTextBoxDescription.AppendText("\n" + xmlCROCChannelInfo.Description + ":" + xmlChainBoard.BoardAddress + " in XML file not found");
                                             richTextBoxDescription.SelectionColor = Color.Black;
                                         }
                                     }
@@ -365,7 +391,7 @@ namespace MinervaGUI
                     }
                 }
             }
-            if (febsMatch) richTextBoxDescription.Text += "\nMatched FEBs in XML file to FEBs loaded";
+            if (febsMatch) richTextBoxDescription.AppendText("\nMatched FEBs in XML file to FEBs loaded");
 
             #endregion
 
@@ -374,22 +400,28 @@ namespace MinervaGUI
 
         private void LoadHardwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            Metadata.MetaData.log.AddToLog(string.Format("LoadHardware Started at {0}", DateTime.Now));
+            richTextBoxDescription.Clear();
+            tabControl1.SelectTab(tabDescription);
+
             this.Cursor = Cursors.WaitCursor;
             ResetActions();
             FindCROCandCRIMModules();
             Initialize(CRIMModules);    //not needed...
             Initialize(CROCModules);    //need it to see what FEs are in each channel
             UpdateTree();
-            //Initialize(FEBSlaves);      //not needed...  
-            Initialize(FEnodes);        //not needed...
-
-            GetMinervaDevicesInfo(); 
+            //Initialize(FEBSlaves);      //either one is used to call FEBSlave.Initialize() 
+            Initialize(FEnodes);        //either one is used to call FEBSlave.Initialize() 
+            GetMinervaDevicesInfo();
+            //FindCRIMtoCROCCables(CRIMModules, CROCModules, CRIMtoCROCCables);
             readVoltagesToolStripMenuItem.Enabled = true;
             zeroHVAllToolStripMenuItem.Enabled = true;
             monitorVoltagesToolStripMenuItem.Enabled = true;
             saveConfigXmlToolStripMenuItem.Enabled = true;
 
             this.Cursor = Cursors.Arrow;
+
+            treeView1.ExpandAll();
         }
 
         private void ResetActions()
@@ -423,8 +455,12 @@ namespace MinervaGUI
                     //find any CROCs and CRIMs present on VME crate
                     CROCModules.Clear();
                     CRIMModules.Clear();
+                    prgStatus.Minimum = 0;
+                    prgStatus.Maximum = 255;
+                    prgStatus.Value = 0;
                     for (VMEDevsBaseAddr = 0; VMEDevsBaseAddr <= 255; VMEDevsBaseAddr++)
                     {
+                        ProgressReport(null, new ProgressChangedEventArgs((int)VMEDevsBaseAddr, string.Format("Finding CROC and CRIM Modules")));
                         try
                         {
                             wData[0] = (byte)r.Next(1, 255);
@@ -437,12 +473,14 @@ namespace MinervaGUI
 
                             if ((rData[0] == wData[0]) && (rData[1] == wData[1]))
                             {
-                                richTextBoxDescription.Text += "\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CROC VME module";
+                                richTextBoxDescription.AppendText("\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CROC VME module");
+                                Metadata.MetaData.log.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CROC VME module");
                                 CROCModules.Add(new CROC((uint)(VMEDevsBaseAddr << 16), controller, String.Format("Croc {0}", VMEDevsBaseAddr)));
                             }
                             if ((rData[0] == wData[0]) && (rData[1] == 0))
                             {
-                                richTextBoxDescription.Text += "\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CRIM VME module";
+                                richTextBoxDescription.AppendText("\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CRIM VME module");
+                                Metadata.MetaData.log.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CRIM VME module");
                                 CRIMModules.Add(new CRIM((uint)(VMEDevsBaseAddr << 16), controller, String.Format("Crim {0}", VMEDevsBaseAddr)));
                             }
                             #endregion
@@ -455,28 +493,28 @@ namespace MinervaGUI
                             //if ((rData[0] == wData[0]) && (rData[1] == wData[1]))
                             //{
                             //    //CROCs_VMEBaseAddress.Add(VMEBaseAddress);
-                            //    richTextBoxDescription.Text += "\nThis is a CROC VME module";
+                            //    richTextBoxDescription.AppendText( "\nThis is a CROC VME module");
                             //}
                             //if ((rData[0] == wData[0]) && (rData[1] == 0))
                             //{
                             //    //CRIMs_VMEBaseAddress.Add(VMEBaseAddress);
-                            //    richTextBoxDescription.Text += "\nThis is a CRIM VME module";
+                            //    richTextBoxDescription.AppendText( "\nThis is a CRIM VME module");
                             //}
                             #endregion
-
                         }
                         catch (Exception e)
                         {
-                            //richTextBoxDescription.Text += "\n\tVMEDevsBaseAddr=" + VMEDevsBaseAddr;
                             if (e.Message == "Bus error") continue;
-                            //throw new VMEException("CROCs can not be found....");
+                            richTextBoxDescription.AppendText("\n\tError VMEDevsBaseAddr=" + VMEDevsBaseAddr + ", " + e.Message);
+                            Metadata.MetaData.log.AddToLog("Error VMEDevsBaseAddr=" + VMEDevsBaseAddr + ", " + e.Message);
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    richTextBoxDescription.Text += "\n" + e.Message;
                     lblStatus.Text = "Error while finding CROC and CRIM devices...";
+                    richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
+                    Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
                 }
                 finally
                 {
@@ -487,31 +525,187 @@ namespace MinervaGUI
 
         private void Initialize(List<CRIM> CRIMs)
         {
-            foreach (CRIM crim in CRIMs)
-                crim.Initialize();
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    prgStatus.Maximum = CRIMs.Count;
+                    int prg = 0;
+                    foreach (CRIM crim in CRIMs)
+                    {
+                        crim.Initialize();
+                        ProgressReport(null, new ProgressChangedEventArgs(++prg, string.Format("{0} Initialized", crim.Description)));
+                    }
+                }
+                catch (Exception e)
+                {
+                    lblStatus.Text = "\nError while Initializing CRIM devices...";
+                    richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
+                    Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
         }
 
         private void Initialize(List<CROC> CROCs)
         {
-            foreach (CROC croc in CROCs)
-                croc.Initialize();
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    prgStatus.Maximum = CROCs.Count;
+                    int prg = 0;
+                    foreach (CROC croc in CROCs)
+                    {
+                        croc.Initialize();
+                        ProgressReport(null, new ProgressChangedEventArgs(++prg, string.Format("{0} Initialized", croc.Description)));
+                    }
+                }
+                catch (Exception e)
+                {
+                    lblStatus.Text = "\nError while Initializing CROC devices...";
+                    richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
+                    Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
         }
 
-        private void Initialize(List<FEBSlave> FEBSlaves)
-        {
-            foreach (FEBSlave febs in FEBSlaves)
-                febs.Initialize();
-        }
+        //private void Initialize(List<FEBSlave> FEBSlaves)
+        //{
+        //    lock (this)
+        //    {
+        //        vmeDone.WaitOne();
+        //        try
+        //        {
+        //            prgStatus.Maximum = FEBSlaves.Count;
+        //            int prg = 0;
+        //            foreach (FEBSlave febs in FEBSlaves)
+        //            {
+        //                febs.Initialize();
+        //                ProgressReport(null, new ProgressChangedEventArgs(++prg, (object)string.Format("{0} Initialized", febs.ToString())));
+        //            }
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            lblStatus.Text = "\nError while Initializing FEBSlaves devices...";
+        //            richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
+        //            Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
+        //        }
+        //        finally
+        //        {
+        //            vmeDone.Set();
+        //        }
+        //    }
+        //}
 
         private void Initialize(List<FEnode> FEnodes)
         {
-            FEBSlaves.Clear();
-            foreach (FEnode theFEnode in FEnodes)
+            lock (this)
             {
-                ((FEBSlave)(theFEnode.Tag)).Initialize();
-                FEBSlaves.Add((FEBSlave)(theFEnode.Tag));
+                vmeDone.WaitOne();
+                try
+                {
+                    prgStatus.Maximum = FEnodes.Count;
+                    int prg = 0;
+                    FEBSlaves.Clear();
+                    foreach (FEnode theFEnode in FEnodes)
+                    {
+                        ((FEBSlave)(theFEnode.Tag)).Initialize();
+                        FEBSlaves.Add((FEBSlave)(theFEnode.Tag));
+                        ProgressReport(null, new ProgressChangedEventArgs(++prg, string.Format("{0}:{1} Initialized",
+                            ((IFrontEndChannel)(theFEnode.Parent.Tag)).Description, (Frame.Addresses)(theFEnode.BoardID))));
+                    }
+                }
+                catch (Exception e)
+                {
+                    lblStatus.Text = "\nError while Initializing FEnodes devices...";
+                    richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
+                    Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
             }
         }
+
+        //private void FindCRIMtoCROCCables(List<CRIM> CRIMs, List<CROC> CROCs, List<CRIMtoCROCCable> CRIMtoCROCCables)
+        //{
+        //    CRIMtoCROCCables.Clear();
+        //    lock (this)
+        //    {
+        //        vmeDone.WaitOne();
+        //        try
+        //        {
+        //            foreach (CRIM theCrim in CRIMs)
+        //            {
+        //                CRIM.TimingModes theCrimTimingMode = theCrim.TimingMode;
+        //                theCrim.TimingMode = CRIM.TimingModes.External;
+        //                bool foundCable = false;
+        //                CRIMtoCROCCable theCRIMtoCROCCable = new CRIMtoCROCCable(theCrim.BaseAddress);
+        //                foreach (CROC theCROC in CROCs)
+        //                {
+        //                    CROC.ClockModes theCrocClockMode = theCROC.ClockMode;
+        //                    theCROC.ClockMode = CROC.ClockModes.External;
+        //                    foreach (CROCFrontEndChannel theChannel in theCROC.ChannelList)
+        //                    {
+        //                        foundCable = false;
+        //                        if (theChannel.ChainBoards.Count != 0)
+        //                        {
+        //                            //found one channel with some FEs in the loop
+        //                            FPGAFrame theFrame = new FPGAFrame(theChannel.ChainBoards[0], Frame.FPGAFunctions.Read, new FrameID());
+
+        //                            theFrame.Send(theChannel);
+        //                            theFrame.Receive();
+        //                            uint currentGateTimeStamp = theFrame.GateTimeStamp;
+
+        //                            theCrim.StartGate();
+        //                            theCrim.EndGate();
+
+        //                            theFrame.Send(theChannel);
+        //                            theFrame.Receive();
+        //                            uint newGateTimeStamp = theFrame.GateTimeStamp;
+
+        //                            if (currentGateTimeStamp != newGateTimeStamp)
+        //                            {
+        //                                foundCable = true;
+        //                                theCRIMtoCROCCable.CROCAddresses.Add(theCROC.BaseAddress);
+        //                                lblStatus.Text = string.Format("\nFound CRIM to CROC cable from {0} to {1}", theCrim.Description, theCROC.Description);
+        //                                richTextBoxDescription.AppendText(lblStatus.Text + "\n");
+        //                                Metadata.MetaData.log.AddToLog(lblStatus.Text);
+        //                                break;
+        //                            }
+        //                        }
+        //                    }
+        //                    //restore the original CROC settings
+        //                    theCROC.ClockMode = theCrocClockMode;
+        //                }
+        //                if (foundCable) CRIMtoCROCCables.Add(theCRIMtoCROCCable);
+        //                //restore the original CRIM settings
+        //                theCrim.TimingMode = theCrimTimingMode;
+        //            }
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            lblStatus.Text = "\nError while finding CRIM to CROC cables...";
+        //            richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
+        //            Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
+        //        }
+        //        finally
+        //        {
+        //            vmeDone.Set();
+        //        }
+        //    }
+        //}
 
         private void UpdateTree()
         {
@@ -542,6 +736,20 @@ namespace MinervaGUI
                     }
                 }
             }
+        }
+
+        private void ClearControl(Control c)
+        {
+            if (c is TextBox)
+                ((TextBox)c).Text = "";
+            if ((c is Label) & (c.Name.Substring(0, 3) == "lbl"))
+                ((Label)c).Text = "";
+            if (c is ComboBox)
+                ((ComboBox)c).SelectedIndex = -1;
+            if (c is CheckBox)
+                ((CheckBox)c).Checked = false;
+            if (c is RichTextBox)
+                ((RichTextBox)c).Clear();
         }
 
         private void greenPathsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -626,19 +834,35 @@ namespace MinervaGUI
 
         private void GetMinervaDevicesInfo()
         {
-            minervaDevicesInfo.CRIMs.Clear();
-            minervaDevicesInfo.CROCs.Clear();
-            foreach (CRIM crim in CRIMModules)
+            lock (this)
             {
-                CRIMInfo crimInfo = new CRIMInfo();
-                GetCRIMInfo(crimInfo, crim);
-                minervaDevicesInfo.CRIMs.Add(crimInfo);
-            }
-            foreach (CROC croc in CROCModules)
-            {
-                CROCInfo crocInfo = new CROCInfo();
-                GetCROCInfo(crocInfo, croc);
-                minervaDevicesInfo.CROCs.Add(crocInfo);
+                vmeDone.WaitOne();
+                try
+                {
+                    minervaDevicesInfo.CRIMs.Clear();
+                    minervaDevicesInfo.CROCs.Clear();
+                    foreach (CRIM crim in CRIMModules)
+                    {
+                        CRIMInfo crimInfo = new CRIMInfo();
+                        GetCRIMInfo(crimInfo, crim);
+                        minervaDevicesInfo.CRIMs.Add(crimInfo);
+                    }
+                    foreach (CROC croc in CROCModules)
+                    {
+                        CROCInfo crocInfo = new CROCInfo();
+                        GetCROCInfo(crocInfo, croc);
+                        minervaDevicesInfo.CROCs.Add(crocInfo);
+                    }
+                }
+                catch (Exception e)
+                {
+                    lblStatus.Text = "\nError while GetMinervaDevicesInfo()...";
+                    richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
             }
         }
 
@@ -672,7 +896,7 @@ namespace MinervaGUI
             crimInfo.TimingCommandReceived = crim.TimingCommandReceived;
             crimInfo.TimingMode = crim.TimingMode;
             GetChannelInfo(crimInfo.CRIMChannelInfo, (IFrontEndChannel)crim.Channel);
-        }   
+        }
 
         private void GetCROCInfo(CROCInfo crocInfo, CROC croc)
         {
@@ -716,7 +940,7 @@ namespace MinervaGUI
             GetChannelInfo(crocChannelInfo, crocChannel);
             crocChannelInfo.ResetEnabled = crocChannel.ResetEnabled;
             crocChannelInfo.TestPulseEnabled = crocChannel.TestPulseEnabled;
-            foreach(Frame.Addresses febAddress in crocChannel.ChainBoards)
+            foreach (Frame.Addresses febAddress in crocChannel.ChainBoards)
             {
                 ChainBoardInfo chainBoardInfo = new ChainBoardInfo();
                 GetChainBoardInfo(chainBoardInfo, crocChannel, febAddress);
@@ -858,28 +1082,44 @@ namespace MinervaGUI
 
         private void SetMinervaDevicesInfo()
         {
-            foreach (CRIMInfo crimInfo in xmlInfo.CRIMs)
+            lock (this)
             {
-                foreach (CRIM crim in CRIMModules)
+                vmeDone.WaitOne();
+                try
                 {
-                    if (crimInfo.BaseAddress == crim.BaseAddress)
+                    foreach (CRIMInfo crimInfo in xmlInfo.CRIMs)
                     {
-                        Console.WriteLine("Updating " + crim.Description); 
-                        SetCRIMInfo(crim, crimInfo);
-                        break;
+                        foreach (CRIM crim in CRIMModules)
+                        {
+                            if (crimInfo.BaseAddress == crim.BaseAddress)
+                            {
+                                richTextBoxDescription.AppendText("Updating " + crim.Description);
+                                SetCRIMInfo(crim, crimInfo);
+                                break;
+                            }
+                        }
+                    }
+                    foreach (CROCInfo crocInfo in xmlInfo.CROCs)
+                    {
+                        foreach (CROC croc in CROCModules)
+                        {
+                            if (crocInfo.BaseAddress == croc.BaseAddress)
+                            {
+                                richTextBoxDescription.AppendText("Updating " + croc.Description);
+                                SetCROCInfo(croc, crocInfo);
+                                break;
+                            }
+                        }
                     }
                 }
-            }
-            foreach (CROCInfo crocInfo in xmlInfo.CROCs)
-            {
-                foreach (CROC croc in CROCModules)
+                catch (Exception e)
                 {
-                    if (crocInfo.BaseAddress == croc.BaseAddress)
-                    {
-                        Console.WriteLine("Updating " + croc.Description);
-                        SetCROCInfo(croc, crocInfo);
-                        break;
-                    }
+                    lblStatus.Text = "\nError while SetMinervaDevicesInfo()...";
+                    richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
                 }
             }
         }
@@ -1041,34 +1281,35 @@ namespace MinervaGUI
                             {
                                 try
                                 {
-                                   FPGAFrame theFrame = new FPGAFrame(feb, Frame.FPGAFunctions.Write, new FrameID());
+                                    FPGAFrame theFrame = new FPGAFrame(feb, Frame.FPGAFunctions.Write, new FrameID());
                                     theFrame.Registers = frameWriteAll.Registers;
                                     theFrame.Send(channel);
                                     theFrame.Receive();
-                                    richTextBoxDescription.Text += channel.Description + ":" + feb +
-                                        ": FPGADevRegs Write Success\n";
+                                    richTextBoxDescription.AppendText(channel.Description + ":" + feb +
+                                        ": FPGADevRegs Write Success\n");
                                 }
                                 catch (Exception ex)
                                 {
-                                    richTextBoxDescription.Text += channel.Description + ":" + feb + ": Error: " + ex.Message + "\n";
+                                    richTextBoxDescription.AppendText(channel.Description + ":" + feb + ": Error: " + ex.Message + "\n");
                                 }
                             }
-                            richTextBoxDescription.Text += "\n";
+                            richTextBoxDescription.AppendText("\n");
                         }
                     }
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
                 {
                     vmeDone.Set();
-                    richTextBoxDescription.Text += "...Done\n";
+                    richTextBoxDescription.AppendText("...Done\n");
                 }
             }
         }
-        
+
         private void btn_FPGARegWrite_Click(object sender, EventArgs e)
         {
             lock (this)
@@ -1092,6 +1333,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -1121,6 +1363,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -1152,7 +1395,7 @@ namespace MinervaGUI
             theFPGAControl.RegisterHVActual = theFrame.HVActual;
             theFPGAControl.RegisterHVControl = theFrame.HVControl;
             theFPGAControl.RegisterHVAutoManual = Convert.ToUInt32(theFrame.HVManual);
-            theFPGAControl.RegisterVXOMuxSelect= Convert.ToUInt32(theFrame.VXOMuxXilinx);
+            theFPGAControl.RegisterVXOMuxSelect = Convert.ToUInt32(theFrame.VXOMuxXilinx);
             theFPGAControl.RegisterPhaseStart = Convert.ToUInt32(theFrame.PhaseStart);
             theFPGAControl.RegisterPhaseIncrement = Convert.ToUInt32(theFrame.PhaseIncrement);
             theFPGAControl.RegisterPhaseSpare = theFrame.PhaseSpare;
@@ -1254,7 +1497,7 @@ namespace MinervaGUI
                 return;
             }
         }
-       
+
         #endregion
 
         #region Methods for Write/Read to/from TRIP Registers
@@ -1285,29 +1528,30 @@ namespace MinervaGUI
                                         AssignTRIPRegsCristianToDave(tripDevRegControl1, theFrame);
                                         theFrame.Send(channel);
                                         theFrame.Receive();
-                                        richTextBoxDescription.Text += channel.Description + ":" + feb +
-                                            ":" + function + ": TripTDevRegs Write Success\n";
+                                        richTextBoxDescription.AppendText(channel.Description + ":" + feb +
+                                            ":" + function + ": TripTDevRegs Write Success\n");
                                     }
                                     catch (Exception ex)
                                     {
-                                        richTextBoxDescription.Text += channel.Description + ":" + feb +
-                                            ":" + function + ": Error: " + ex.Message + "\n";
+                                        richTextBoxDescription.AppendText(channel.Description + ":" + feb +
+                                            ":" + function + ": Error: " + ex.Message + "\n");
                                     }
                                 }
-                                richTextBoxDescription.Text += "\n";
+                                richTextBoxDescription.AppendText("\n");
                             }
-                            richTextBoxDescription.Text += "\n";
+                            richTextBoxDescription.AppendText("\n");
                         }
                     }
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
                 {
                     vmeDone.Set();
-                    richTextBoxDescription.Text += "...Done\n";
+                    richTextBoxDescription.AppendText("...Done\n");
                 }
             }
         }
@@ -1333,6 +1577,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -1363,6 +1608,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -1500,30 +1746,46 @@ namespace MinervaGUI
 
         private void ReadHVChannelFEBs()
         {
-            outputText = "Croc:CH:FE: HVActual, HVTarget, HVActual - HVTarget, HVPeriodAuto\n\n";
-            foreach (CROC croc in CROCModules)
+            lock (this)
             {
-                foreach (IFrontEndChannel channel in croc.ChannelList)
+                vmeDone.WaitOne();
+                try
                 {
-                    foreach (Frame.Addresses feb in channel.ChainBoards)
+                    outputText = "Croc:CH:FE: HVActual, HVTarget, HVActual - HVTarget, HVPeriodAuto\n\n";
+                    foreach (CROC croc in CROCModules)
                     {
-                        try
+                        foreach (IFrontEndChannel channel in croc.ChannelList)
                         {
-                            FPGAFrame frame = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
-                            frame.Send(channel);
-                            frame.Receive();
-                            if (Math.Abs(frame.HVActual - frame.HVTarget) < adcThreshold) continue;
-                            outputText += channel.Description + ":" + feb + ": " +
-                                          frame.HVActual.ToString() + ", " + frame.HVTarget.ToString() + ", " +
-                                          Convert.ToString(frame.HVActual - frame.HVTarget) + ", " + 
-                                          Convert.ToString(frame.HVPeriodAuto) + "\n";
-                        }
-                        catch (Exception e)
-                        {
-                            outputText += channel.Description + ":" + feb + ": Error: " + e.Message + "\n";
+                            foreach (Frame.Addresses feb in channel.ChainBoards)
+                            {
+                                try
+                                {
+                                    FPGAFrame frame = new FPGAFrame(feb, Frame.FPGAFunctions.Read, new FrameID());
+                                    frame.Send(channel);
+                                    frame.Receive();
+                                    if (Math.Abs(frame.HVActual - frame.HVTarget) < adcThreshold) continue;
+                                    outputText += channel.Description + ":" + feb + ": " +
+                                                  frame.HVActual.ToString() + ", " + frame.HVTarget.ToString() + ", " +
+                                                  Convert.ToString(frame.HVActual - frame.HVTarget) + ", " +
+                                                  Convert.ToString(frame.HVPeriodAuto) + "\n";
+                                }
+                                catch (Exception e)
+                                {
+                                    outputText += channel.Description + ":" + feb + ": Error: " + e.Message + "\n";
+                                }
+                            }
+                            outputText += "\n";
                         }
                     }
-                    outputText += "\n";
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                    richTextBoxHVRead.Text += "...Done\n";
                 }
             }
         }
@@ -1704,23 +1966,23 @@ namespace MinervaGUI
 
         private void timerMonitorHV_Tick(object sender, EventArgs e)
         {
-            lock (this)
-            {
-                vmeDone.WaitOne();
-                try
-                {
-                    ReadHVChannelFEBs();
-                    richTextBoxHVRead.Text = DateTime.Now + "\n" + outputText;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
-                finally
-                {
-                    vmeDone.Set();
-                }
-            }        
+            //lock (this)
+            //{
+            //    vmeDone.WaitOne();
+            //    try
+            //    {
+            ReadHVChannelFEBs();
+            richTextBoxHVRead.Text = DateTime.Now + "\n" + outputText;
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        MessageBox.Show(ex.Message);
+            //    }
+            //    finally
+            //    {
+            //        vmeDone.Set();
+            //    }
+            //}        
         }
 
         #endregion
@@ -1734,6 +1996,8 @@ namespace MinervaGUI
 
         private void btn_FLASHReadSPIToFile_Click(object sender, EventArgs e)
         {
+            tabControl1.SelectTab(tabDescription);
+            richTextBoxDescription.Clear();
             this.Cursor = Cursors.WaitCursor;
             lock (this)
             {
@@ -1749,12 +2013,12 @@ namespace MinervaGUI
                         TreeNode theNode = treeView1.SelectedNode;
                         Frame.Addresses theBoard = (Frame.Addresses)(((FEnode)(theNode.Parent)).BoardID);
                         IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Parent.Parent.Tag));
-                        theChannel.Reset();
-                        FlashFrame.ReadMemoryToFile(theChannel, theBoard, mySFD.FileName);
+                        FlashFrameReadMemoryToFile(mySFD, theBoard, theChannel);
                     }
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -1767,6 +2031,8 @@ namespace MinervaGUI
 
         private void btn_FLASHWriteFileToSPI_Click(object sender, EventArgs e)
         {
+            tabControl1.SelectTab(tabDescription);
+            richTextBoxDescription.Clear();
             this.Cursor = Cursors.WaitCursor;
             lock (this)
             {
@@ -1782,12 +2048,12 @@ namespace MinervaGUI
                         TreeNode theNode = treeView1.SelectedNode;
                         Frame.Addresses theBoard = (Frame.Addresses)(((FEnode)(theNode.Parent)).BoardID);
                         IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Parent.Parent.Tag));
-                        theChannel.Reset();
-                        FlashFrame.WriteMemoryFromFile(theChannel, theBoard, myOFD.FileName);
+                        FlashFrameWriteMemoryFromFile(myOFD, theBoard, theChannel);
                     }
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -1798,44 +2064,78 @@ namespace MinervaGUI
             this.Cursor = Cursors.Arrow;
         }
 
+        private void FlashFrameWriteMemoryFromFile(OpenFileDialog OFD, Frame.Addresses theBoard, IFrontEndChannel theChannel)
+        {
+            StringBuilder msg = new StringBuilder();
+            prgStatus.Minimum = 0;
+            prgStatus.Maximum = FlashFrame.Spartan_3E_Npages;
+            prgStatus.Value = 0;
+            richTextBoxDescription.AppendText(theChannel.Description + ":" + theBoard +
+            ": FLASH Write Begin " + DateTime.Now.ToString() + "\n");
+            theChannel.Reset();
+            //FlashFrame.WriteMemoryFromFile(theChannel, theBoard, OFD.FileName);         //Dave's original                         
+            FlashFrame.WriteMemoryFromFile(theChannel, theBoard, OFD.FileName, out msg);  //04.14.2009 CG patch
+            richTextBoxDescription.AppendText(msg.ToString());
+            richTextBoxDescription.AppendText(theChannel.Description + ":" + theBoard +
+            ": FLASH Write   End " + DateTime.Now.ToString() + "\n");
+        }
+
+        private void FlashFrameReadMemoryToFile(SaveFileDialog SFD, Frame.Addresses theBoard, IFrontEndChannel theChannel)
+        {
+            StringBuilder msg = new StringBuilder();
+            prgStatus.Minimum = 0;
+            prgStatus.Maximum = FlashFrame.Spartan_3E_Npages;
+            prgStatus.Value = 0;
+            richTextBoxDescription.AppendText(theChannel.Description + ":" + theBoard +
+            ": FLASH Read Begin " + DateTime.Now.ToString() + "\n");
+            theChannel.Reset();
+            //FlashFrame.ReadMemoryToFile(theChannel, theBoard, SFD.FileName);        //Dave's original    
+            FlashFrame.ReadMemoryToFile(theChannel, theBoard, SFD.FileName, out msg); //04.14.2009 CG
+            richTextBoxDescription.AppendText(msg.ToString());
+            richTextBoxDescription.AppendText(theChannel.Description + ":" + theBoard +
+            ": FLASH Read   End " + DateTime.Now.ToString() + "\n");
+        }
+
         #endregion
 
         #region Methods for Write/Read to/from CHANNEL
 
         private void btn_CHAdvancedGUI_Click(object sender, EventArgs e)
         {
-            AdvancedGUI((Button)sender, groupBoxCH_FLASH, groupBoxCH_StatusRegister, 
+            AdvancedGUI((Button)sender, groupBoxCH_FLASH, groupBoxCH_StatusRegister,
                 groupBoxCH_DPM, groupBoxCH_Frame);
         }
 
         private void btn_CHWriteFileToSPI_Click(object sender, EventArgs e)
         {
+            tabControl1.SelectTab(tabDescription);
+            richTextBoxDescription.Clear();
             this.Cursor = Cursors.WaitCursor;
-            OpenFileDialog myOFD = new OpenFileDialog();
-            myOFD.Filter = "spi files (*.spidata)|*.spidata|All files (*.*)|*.*";
-            myOFD.FilterIndex = 1;
-            myOFD.RestoreDirectory = true;
-            if (myOFD.ShowDialog() == DialogResult.OK)
+            lock (this)
             {
-                lock (this)
+                vmeDone.WaitOne();
+                try
                 {
-                    vmeDone.WaitOne();
-                    try
+                    OpenFileDialog myOFD = new OpenFileDialog();
+                    myOFD.Filter = "spi files (*.spidata)|*.spidata|All files (*.*)|*.*";
+                    myOFD.FilterIndex = 1;
+                    myOFD.RestoreDirectory = true;
+                    if (myOFD.ShowDialog() == DialogResult.OK)
                     {
                         TreeNode theNode = treeView1.SelectedNode;
                         IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
                         theChannel.Reset();
                         ChannelWriteFileToFEsFlash(myOFD, theChannel);
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
-                    finally
-                    {
-                        vmeDone.Set();
-                        richTextBoxDescription.Text += "\n...Done " + DateTime.Now.ToString() + "\n";
-                    }
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
                 }
             }
             this.Cursor = Cursors.Arrow;
@@ -1855,6 +2155,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -1866,31 +2167,11 @@ namespace MinervaGUI
 
         private void ChannelWriteFileToFEsFlash(OpenFileDialog myOFD, IFrontEndChannel theChannel)
         {
-
-            tabControl1.SelectTab(tabDescription);
-            richTextBoxDescription.Text += "Writing ALL FEBs FLASH on " + theChannel.Description +
-                " with the following data file :\n\n" + myOFD.FileName + "\n\n";
-            tabControl1.SelectedTab.Refresh();
-
+            richTextBoxDescription.AppendText("\nWriting ALL FEBs FLASH on " + theChannel.Description +
+                " with the following data file :\n\n" + myOFD.FileName + "\n\n");
             foreach (Frame.Addresses feb in theChannel.ChainBoards)
-            {
-                try
-                {
-                    richTextBoxDescription.Text += theChannel.Description + ":" + feb +
-                        ": FLASH Write      Begin " + DateTime.Now.ToString() + "\n";
-                    tabControl1.SelectedTab.Refresh();
-                    FlashFrame.WriteMemoryFromFile(theChannel, feb, myOFD.FileName);
-                    richTextBoxDescription.Text += theChannel.Description + ":" + feb +
-                        ": FLASH Write Success " + DateTime.Now.ToString() + "\n";
-                    tabControl1.SelectedTab.Refresh();
-                    //this is not quite safe... but for window's screen update is necessary...
-                    Application.DoEvents();
-                }
-                catch (Exception ex)
-                {
-                    richTextBoxDescription.Text += theChannel.Description + ":" + feb + ": Error: " + ex.Message + "\n";
-                }
-            }
+                FlashFrameWriteMemoryFromFile(myOFD, feb, theChannel);
+            richTextBoxDescription.AppendText("\n...Done " + DateTime.Now.ToString() + "\n");
         }
 
         private void ChannelReBootFEs(IFrontEndChannel theChannel, CROC theCroc, bool withChannelReset)
@@ -1918,67 +2199,36 @@ namespace MinervaGUI
 
         private void ChannelUpdateStatusLabels(CROCFrontEndChannel.StatusBits chStatus)
         {
-            if ((chStatus & CROCFrontEndChannel.StatusBits.CRCError) == CROCFrontEndChannel.StatusBits.CRCError)
-                lblCH_StatCRCError.Text = "1";
-            else lblCH_StatCRCError.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.DeserializerLock) == CROCFrontEndChannel.StatusBits.DeserializerLock)
-                lblCH_StatDeserializerLOCK.Text = "1";
-            else lblCH_StatDeserializerLOCK.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.DPMFull) == CROCFrontEndChannel.StatusBits.DPMFull)
-                lblCH_StatDPMFull.Text = "1";
-            else lblCH_StatDPMFull.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.FIFOFull) == CROCFrontEndChannel.StatusBits.FIFOFull)
-                lblCH_StatFIFOFull.Text = "1";
-            else lblCH_StatFIFOFull.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.FIFONotEmpty) == CROCFrontEndChannel.StatusBits.FIFONotEmpty)
-                lblCH_StatFIFONotEmpty.Text = "1";
-            else lblCH_StatFIFONotEmpty.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.MessageReceived) == CROCFrontEndChannel.StatusBits.MessageReceived)
-                lblCH_StatMsgReceived.Text = "1";
-            else lblCH_StatMsgReceived.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.MessageSent) == CROCFrontEndChannel.StatusBits.MessageSent)
-                lblCH_StatMsgSent.Text = "1";
-            else lblCH_StatMsgSent.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.PLLLocked) == CROCFrontEndChannel.StatusBits.PLLLocked)
-                lblCH_StatPLL0LOCK.Text = "1";
-            else lblCH_StatPLL0LOCK.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.RFPresent) == CROCFrontEndChannel.StatusBits.RFPresent)
-                lblCH_StatRFPresent.Text = "1";
-            else lblCH_StatRFPresent.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.SerializerSynch) == CROCFrontEndChannel.StatusBits.SerializerSynch)
-                lblCH_StatSerializerSYNC.Text = "1";
-            else lblCH_StatSerializerSYNC.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.TimeoutError) == CROCFrontEndChannel.StatusBits.TimeoutError)
-                lblCH_StatTimeoutError.Text = "1";
-            else lblCH_StatTimeoutError.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.UnusedBit1) == CROCFrontEndChannel.StatusBits.UnusedBit1)
-                lblCH_StatUnusedBit1.Text = "1";
-            else lblCH_StatUnusedBit1.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.UnusedBit2) == CROCFrontEndChannel.StatusBits.UnusedBit2)
-                lblCH_StatUnusedBit2.Text = "1";
-            else lblCH_StatUnusedBit2.Text = "0";
-            //some litle abuse here... these (CRIM bits) should NOT be defined as CROCFrontEndChannel.StatusBits ....... 
-            if ((chStatus & CROCFrontEndChannel.StatusBits.TestPulseReceived) == CROCFrontEndChannel.StatusBits.TestPulseReceived)
-                lblCH_StatPLL1LOCK.Text = "1";
-            else lblCH_StatPLL1LOCK.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.ResetReceived) == CROCFrontEndChannel.StatusBits.ResetReceived)
-                lblCH_StatUnusedBit3.Text = "1";
-            else lblCH_StatUnusedBit3.Text = "0";
-            if ((chStatus & CROCFrontEndChannel.StatusBits.EncodedCommandReceived) == CROCFrontEndChannel.StatusBits.EncodedCommandReceived)
-                lblCH_StatUnusedBit4.Text = "1";
-            else lblCH_StatUnusedBit4.Text = "0";
+            lblCH_StatMsgSent.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.MessageSent);
+            lblCH_StatMsgReceived.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.MessageReceived);
+            lblCH_StatCRCError.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.CRCError);
+            lblCH_StatTimeoutError.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.TimeoutError);
+            lblCH_StatFIFONotEmpty.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.FIFONotEmpty);
+            lblCH_StatFIFOFull.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.FIFOFull);
+            lblCH_StatDPMFull.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.DPMFull);
+            lblCH_StatUnusedBit7.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.UnusedBit7);
+            lblCH_StatRFPresent.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.RFPresent);
+            lblCH_StatSerializerSYNC.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.SerializerSynch);
+            lblCH_StatDeserializerLOCK.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.DeserializerLock);
+            lblCH_StatUnusedBit11.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.UnusedBit11);
+            lblCH_StatPLL0LOCK.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.PLLLocked);
+            //some little abuse here from Dave... these CRIM bits should NOT be defined as CROCFrontEndChannel.StatusBits ...
+            lblCH_StatPLL1LOCK.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.TestPulseReceived);
+            lblCH_StatUnusedBit14.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.ResetReceived);
+            lblCH_StatUnusedBit15.Text = CheckStatusBit(chStatus, CROCFrontEndChannel.StatusBits.EncodedCommandReceived);
+        }
+
+        private string CheckStatusBit(CROCFrontEndChannel.StatusBits status, CROCFrontEndChannel.StatusBits bit)
+        {
+            return (bit == (status & bit)) ? "1" : "0";
         }
 
         private void ChannelClearLabels()
         {
-            CROCFrontEndChannel.StatusBits chStatusZero = (CROCFrontEndChannel.StatusBits)0;
-            ChannelUpdateStatusLabels(chStatusZero);
-            lblCH_StatusValue.Text = "";
-            lblCH_DPMPointerValue.Text = "";
-            txt_CHFIFORegWrite.Text = "";
-            txt_CHFIFORegWrite.Text = "";
-            txt_CHDPMReadLength.Text = "";
-            rtb_CHDPMRead.Clear();
+            foreach (Control c in tabCH.Controls)
+                if (c is GroupBox)
+                    foreach (Control cc in c.Controls)
+                        ClearControl(cc);
         }
 
         private void btn_CHStatusRegRead_Click(object sender, EventArgs e)
@@ -1996,6 +2246,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -2018,6 +2269,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -2056,6 +2308,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -2078,6 +2331,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -2096,17 +2350,12 @@ namespace MinervaGUI
                 {
                     TreeNode theNode = treeView1.SelectedNode;
                     IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
-                    if ((txt_CHFIFORegWrite.Text.Length % 2) == 0) 
-                    {
-                        byte[] message = new byte[txt_CHFIFORegWrite.Text.Length / 2];
-                        for (int i = 0; i < message.Length; i++)
-                            message[i] = Convert.ToByte(txt_CHFIFORegWrite.Text.Substring(2 * i, 2), 16);
-                        theChannel.FillMessage(message.Length, message);
-                    }
-                    else MessageBox.Show("The number of hex characters must be even\nOperation aborted");
+                    txt_CHFIFORegWrite.Text = txt_CHFIFORegWrite.Text.ToUpper();
+                    AppendMessage(txt_CHFIFORegWrite.Text, theChannel);
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -2114,6 +2363,18 @@ namespace MinervaGUI
                     vmeDone.Set();
                 }
             }
+        }
+
+        private void AppendMessage(string theMessage, IFrontEndChannel theChannel)
+        {
+            if ((theMessage.Length % 2) == 0)
+            {
+                byte[] message = new byte[theMessage.Length / 2];
+                for (int i = 0; i < message.Length; i++)
+                    message[i] = Convert.ToByte(theMessage.Substring(2 * i, 2), 16);
+                theChannel.FillMessage(message.Length, message);
+            }
+            else MessageBox.Show("The number of hex characters must be even\nOperation aborted");
         }
 
         private void btn_CHFIFOWriteMessage_Click(object sender, EventArgs e)
@@ -2126,9 +2387,11 @@ namespace MinervaGUI
                     TreeNode theNode = treeView1.SelectedNode;
                     IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
                     theChannel.WriteMessage();
+                    //theChannel.WriteMessageCRIM();
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -2151,6 +2414,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -2171,30 +2435,14 @@ namespace MinervaGUI
                     IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
                     int responseLength = Convert.ToInt32(txt_CHDPMReadLength.Text);
                     if ((2 <= responseLength) & (responseLength <= CROCFrontEndChannel.MemoryMaxSize))
-                    {
-                        byte[] response = new byte[responseLength];
-                        theChannel.ReadMemory(responseLength, response);
-                        rtb_CHDPMRead.Clear();
-                        rtb_CHDPMRead.Text += "0000" + "  " +
-                                response[0].ToString("X").PadLeft(2, '0') +
-                                response[1].ToString("X").PadLeft(2, '0') +
-                                " -> dec=" + (response[1] * 256 + response[0]) + "\n";
-                        for (int i = 2; i < responseLength; i += 8)
-                        {
-                            rtb_CHDPMRead.Text += i.ToString("X").PadLeft(4, '0') + "  ";
-                            for (int j = 0; j < 8; j++)
-                                if (i + j < responseLength)
-                                    rtb_CHDPMRead.Text += (response[i + j].ToString("X")).PadLeft(2, '0');
-                            rtb_CHDPMRead.Text += "\n";
-                        }
-
-                    }
+                        rtb_CHDPMRead.Text = DisplayMessage(theChannel.ReadMemoryCRIM(responseLength), responseLength);
                     else
                         MessageBox.Show("attempt to read more than maximum DPM depth = " +
                             CROCFrontEndChannel.MemoryMaxSize + "or less than 2\nOperation aborted");
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -2204,30 +2452,50 @@ namespace MinervaGUI
             }
         }
 
+        private string DisplayMessage(byte[] response, int responseLength)
+        {
+            StringBuilder readMessage = new StringBuilder();
+            readMessage.Append("0000" + "  " +
+                response[0].ToString("X2") +
+                response[1].ToString("X2") +
+                " -> dec=" + (response[1] * 256 + response[0]) + "\n");
+            for (int i = 2; i < responseLength; i += 8)
+            {
+                readMessage.Append(i.ToString("X4") + "  ");
+                for (int j = 0; j < 8; j++)
+                    if (i + j < responseLength)
+                        readMessage.Append(response[i + j].ToString("X2"));
+                readMessage.Append("\n");
+            }
+            return readMessage.ToString();
+        }
+
         #endregion
-            
+
         #region Methods for Write/Read to/from CROC
 
         private void btn_CROCAdvancedGUI_Click(object sender, EventArgs e)
         {
             AdvancedGUI((Button)sender, groupBoxCROC_FLASH, groupBoxCROC_TimingSetup,
-                groupBoxCROC_ResetTPMaskReg, groupBoxCROC_FastCommand, groupBoxCROC_LoopDelay, 
+                groupBoxCROC_ResetTPMaskReg, groupBoxCROC_FastCommand, groupBoxCROC_LoopDelay,
                 groupBoxCROC_FEBGateDelays);
         }
 
         private void btn_CROCWriteFileToSPI_Click(object sender, EventArgs e)
         {
+            tabControl1.SelectTab(tabDescription);
+            richTextBoxDescription.Clear();
             this.Cursor = Cursors.WaitCursor;
-            OpenFileDialog myOFD = new OpenFileDialog();
-            myOFD.Filter = "spi files (*.spidata)|*.spidata|All files (*.*)|*.*";
-            myOFD.FilterIndex = 1;
-            myOFD.RestoreDirectory = true;
-            if (myOFD.ShowDialog() == DialogResult.OK)
+            lock (this)
             {
-                lock (this)
+                vmeDone.WaitOne();
+                try
                 {
-                    vmeDone.WaitOne();
-                    try
+                    OpenFileDialog myOFD = new OpenFileDialog();
+                    myOFD.Filter = "spi files (*.spidata)|*.spidata|All files (*.*)|*.*";
+                    myOFD.FilterIndex = 1;
+                    myOFD.RestoreDirectory = true;
+                    if (myOFD.ShowDialog() == DialogResult.OK)
                     {
                         TreeNode theNode = treeView1.SelectedNode;
                         CROC theCROC = ((CROC)(theNode.Tag));
@@ -2237,15 +2505,15 @@ namespace MinervaGUI
                             ChannelWriteFileToFEsFlash(myOFD, theChannel);
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
-                    finally
-                    {
-                        vmeDone.Set();
-                        richTextBoxDescription.Text += "\n...Done " + DateTime.Now.ToString() + "\n";
-                    }
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
                 }
             }
             this.Cursor = Cursors.Arrow;
@@ -2291,16 +2559,10 @@ namespace MinervaGUI
 
         private void CrocClearLabels()
         {
-            cmb_CROCTimingSetupClock.SelectedIndex = -1;
-            cmb_CROCTimingSetupTPDelay.SelectedIndex = -1;
-            txt_CROCTimingSetupTPDelay.Text = "";
-            lbl_CROCTimingSetupRead.Text = "";
-            chk_CROCResetCh4.Checked = false; chk_CROCTPulseCh4.Checked = false;
-            chk_CROCResetCh3.Checked = false; chk_CROCTPulseCh3.Checked = false;
-            chk_CROCResetCh2.Checked = false; chk_CROCTPulseCh2.Checked = false;
-            chk_CROCResetCh1.Checked = false; chk_CROCTPulseCh1.Checked = false;
-            lbl_CROCResetTPRead.Text = "";
-            cmb_CROCFastCommand.SelectedIndex = -1;
+            foreach (Control c in tabCROC.Controls)
+                if (c is GroupBox)
+                    foreach (Control cc in c.Controls)
+                        ClearControl(cc);
         }
 
         private void cmb_CROCTimingSetupClock_SelectedIndexChanged(object sender, EventArgs e)
@@ -2355,6 +2617,7 @@ namespace MinervaGUI
 
         private void txt_CROCTimingSetupTPDelay_TextChanged(object sender, EventArgs e)
         {
+            if (txt_CROCTimingSetupTPDelay.Text == "") return;
             lock (this)
             {
                 vmeDone.WaitOne();
@@ -2384,7 +2647,7 @@ namespace MinervaGUI
                 {
                     TreeNode theNode = treeView1.SelectedNode;
                     CROC theCroc = ((CROC)(theNode.Tag));
-                   lbl_CROCTimingSetupRead.Text = "0x" + (theCroc.TimingSetupRegister & 0x93FF).ToString("X");
+                    lbl_CROCTimingSetupRead.Text = "0x" + (theCroc.TimingSetupRegister & 0x93FF).ToString("X");
                 }
                 catch (Exception ex)
                 {
@@ -2512,22 +2775,25 @@ namespace MinervaGUI
                     switch (cmb_CROCFastCommand.SelectedIndex)
                     {
                         case 0: //OpenGate
-                            theCroc.FastCommandRegister = (ushort)FastCommands.OpenGate;// 0xB1;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.OpenGate;    // 0xB1;
                             break;
                         case 1: //ResetFPGA
-                            theCroc.FastCommandRegister = (ushort)FastCommands.ResetFPGA;// 0x8D;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.ResetFPGA;   // 0x8D;
                             break;
                         case 2: //ResetTimer
-                            theCroc.FastCommandRegister = (ushort)FastCommands.ResetTimer;// 0xC9;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.ResetTimer;  // 0xC9;
                             break;
                         case 3: //LoadTimer
-                            theCroc.FastCommandRegister = (ushort)FastCommands.LoadTimer;// 0xC5;
+                            theCroc.FastCommandRegister = (ushort)FastCommands.LoadTimer;   // 0xC5;
                             break;
                         case 4: //TriggerFound
                             theCroc.FastCommandRegister = (ushort)FastCommands.TriggerFound;// 0x89;
                             break;
                         case 5: //TriggerRearm
                             theCroc.FastCommandRegister = (ushort)FastCommands.TriggerRearm;// 0x85;
+                            break;
+                        case 6: //QueryFPGA
+                            theCroc.FastCommandRegister = (ushort)FastCommands.QueryFPGA;  // 0x91;
                             break;
                     }
                 }
@@ -2559,8 +2825,8 @@ namespace MinervaGUI
                         controller.Read(theCroc.BaseAddress + (uint)CROCFrontEndChannel.Registers.LoopDelay +
                             ((uint)0x4000 * (uint)(theChannel.ChannelNumber - 1)),
                             controller.AddressModifier, controller.DataWidth, loopDelay);
-                        loopDelayLabels[(uint)(theChannel.ChannelNumber-1)].Text = 
-                            (loopDelay[0] & 0x7F).ToString(); 
+                        loopDelayLabels[(uint)(theChannel.ChannelNumber - 1)].Text =
+                            (loopDelay[0] & 0x7F).ToString();
                     }
 
                 }
@@ -2607,7 +2873,7 @@ namespace MinervaGUI
 
         private void btn_LIBoxAdvancedGUI_Click(object sender, EventArgs e)
         {
-            AdvancedGUI((Button)sender, groupBoxLIBox_RS232Commands, 
+            AdvancedGUI((Button)sender, groupBoxLIBox_RS232Commands,
                 groupBoxLIBox_RS232Settings);
         }
 
@@ -2701,10 +2967,10 @@ namespace MinervaGUI
                     if (c != '\0') message += c;
                 return true;
             }
-            catch (Exception e) 
+            catch (Exception e)
             {
                 MessageBox.Show(e.Message);
-                return false; 
+                return false;
             }
         }
 
@@ -2779,7 +3045,7 @@ namespace MinervaGUI
         {
             if (LIBoxIsActive)
             {
-                if (MessageBox.Show("LI LED Active is ON." + 
+                if (MessageBox.Show("LI LED Active is ON." +
                     "\nIn order to execute a script file, the Active LED will be turned OFF" +
                     "\nDo you want to continue?",
                     "WARNING!", MessageBoxButtons.YesNo) == DialogResult.No) return;
@@ -2853,7 +3119,7 @@ namespace MinervaGUI
         {
             if (cmb_LIBoxLEDPulseWidth.SelectedIndex < 0 || cmb_LIBoxLEDPulseWidth.SelectedIndex > 7)
             {
-                MessageBox.Show("Invalid LED PulseWidth\nOperation aborted"); 
+                MessageBox.Show("Invalid LED PulseWidth\nOperation aborted");
                 return;
             }
             richTextBoxLIBox.Clear();
@@ -2927,7 +3193,7 @@ namespace MinervaGUI
             }
         }
 
-        private bool LI_WriteReadBack(SerialPort serialPort, string msgTX, 
+        private bool LI_WriteReadBack(SerialPort serialPort, string msgTX,
             ref string msgRX, int msgRXNKs, RichTextBox rtbDiplay)
         {
             rtbDiplay.Text += "TX:" + msgTX + "\n";
@@ -3092,8 +3358,8 @@ namespace MinervaGUI
 
         #endregion
 
-        #region Methods for Gate Alignment
-        
+        #region Methods for Gate Alignment using CROC
+
         private struct FEB_TPDelay
         {
             private uint _CrocAddress;
@@ -3121,7 +3387,7 @@ namespace MinervaGUI
                     " TPDelAbs: " + _TPDelay.ToString("0000000.00") + " TPDelRel: " + TPDelayRelative.ToString("00.00");
             }
         }
-        
+
         private List<FEB_TPDelay> FEBTPDelayListUpdateRelatives(List<FEB_TPDelay> FEBTPDelayList)
         {
             List<FEB_TPDelay> returnlist = new List<FEB_TPDelay>();
@@ -3143,22 +3409,16 @@ namespace MinervaGUI
             }
             catch (Exception e)
             {
-                richTextBoxDescription.Text += e.Message + "\n";
-                richTextBoxDescription.Text += e.Source + "\n";
+                richTextBoxDescription.AppendText(e.Message + "\n");
+                richTextBoxDescription.AppendText(e.Source + "\n");
             }
             return returnlist;
-        }
-
-        private void PrintDelayList(List<FEB_TPDelay> FEBTPDelayList)
-        {
-        //    foreach (FEB_TPDelay fe in FEBTPDelayList)
-        //        richTextBoxDescription.Text += fe.ToString() + "\n";
         }
 
         private void PrintDelayList(FEB_TPDelay[] FEBTPDelayList)
         {
             foreach (FEB_TPDelay fe in FEBTPDelayList)
-                richTextBoxDescription.Text += fe.ToString() + "\n";
+                richTextBoxDescription.AppendText(fe.ToString() + "\n");
         }
 
         private void SetLoadTimersGateStarts(uint LoadTimer, ushort GateStart, CROC theCroc, CROCFrontEndChannel theChannel)
@@ -3180,7 +3440,7 @@ namespace MinervaGUI
                 }
                 catch (Exception e)
                 {
-                    richTextBoxDescription.Text += theChannel.Description + ":" + feb + ": Error: " + e.Message + "\n";
+                    richTextBoxDescription.AppendText(theChannel.Description + ":" + feb + ": Error: " + e.Message + "\n");
                 }
             }
         }
@@ -3204,7 +3464,7 @@ namespace MinervaGUI
                 }
                 catch (Exception e)
                 {
-                    richTextBoxDescription.Text += theChannel.Description + ":" + tpdelay.FEBAddr + ": Error: " + e.Message + "\n";
+                    richTextBoxDescription.AppendText(theChannel.Description + ":" + tpdelay.FEBAddr + ": Error: " + e.Message + "\n");
                 }
             }
         }
@@ -3214,11 +3474,23 @@ namespace MinervaGUI
             AlignGateDelays();
         }
 
+        private void btn_CROCReportGateAlignmentsAllCROCsAndChains_Click(object sender, EventArgs e)
+        {
+            foreach (CROC theCroc in CROCModules)
+            {
+                foreach (CROCFrontEndChannel theChannel in theCroc.ChannelList)
+                {
+                    txt_CROCGateDelayLoopChannel.Text = theChannel.ChannelNumber.ToString();
+                    AlignGateDelays();
+                }
+            }
+        }
+
         private void AlignGateDelays()
         {
             tabControl1.SelectTab(tabDescription);
             richTextBoxDescription.Text =
-                " Reporting FEBs' gate alignment based on Test Pulse measurements:\n\n";
+                "\nReporting FEBs' gate alignment based on Test Pulse measurements:\n\n";
             tabControl1.SelectedTab.Refresh();
 
             lock (this)
@@ -3231,14 +3503,13 @@ namespace MinervaGUI
                     CROC theCroc = ((CROC)(theNode.Tag));
                     CROCFrontEndChannel theChannel = (CROCFrontEndChannel)theCroc.ChannelList[Convert.ToUInt16(txt_CROCGateDelayLoopChannel.Text) - 1];
                     List<FEB_TPDelay>[] FEBTPDelayListArray = new List<FEB_TPDelay>[NGateDelayLoop];
-                    List<FEB_TPDelay> FEBTPDelayList = new List<FEB_TPDelay>();
 
                     //Set LoadTimerValue and GateStartValue equal for ALL boards in this channel
                     SetLoadTimersGateStarts(Convert.ToUInt32(txt_CROCGateDelayLoopLoadTimerValue.Text),
                         Convert.ToUInt16(txt_CROCGateDelayLoopGateStartValue.Text), theCroc, theChannel);
                     for (int i = 0; i < NGateDelayLoop; i++)
                     {
-                        FEBTPDelayList.Clear();
+                        List<FEB_TPDelay> FEBTPDelayList = new List<FEB_TPDelay>();
                         //LoadTimer
                         theCroc.FastCommandRegister = (ushort)FastCommands.LoadTimer;
                         //Write TP
@@ -3247,7 +3518,8 @@ namespace MinervaGUI
                         theCroc.TestPulseRegister = BitConverter.ToUInt16(CROC.TestPulseRegisterValue, 0);
                         //
                         if (MeasureTPDelays(ref FEBTPDelayList, theCroc, theChannel))
-                            (List<FEB_TPDelay>)FEBTPDelayListArray[i] = FEBTPDelayList;
+                            FEBTPDelayListArray[i] = FEBTPDelayList;
+                        else throw new Exception(string.Format(theChannel.Description + " MeasureTPDelays#{0} FAIL. Please try again.", i));
                     }
                     //Write TP=0
                     theCroc.ResetAndTestMaskRegister = 0;
@@ -3260,6 +3532,7 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
                     MessageBox.Show(ex.Message);
                 }
                 finally
@@ -3274,7 +3547,7 @@ namespace MinervaGUI
             //Print ALL measurements: array of lists of FEB_TPDelay structures
             for (int i = 0; i < FEBTPDelayListArray.GetLength(0); i++)
             {
-                richTextBoxDescription.Text += "Measurements #" + i.ToString("000") + "\n";
+                richTextBoxDescription.AppendText("Measurements #" + i.ToString("000") + "\n");
                 FEBTPDelayListArray[i] = FEBTPDelayListUpdateRelatives(FEBTPDelayListArray[i]);
                 PrintDelayList(FEBTPDelayListArray[i].ToArray());
             }
@@ -3299,14 +3572,14 @@ namespace MinervaGUI
                         (arr[j].FEBAddr == FEBTPDelayListArray[i][j].FEBAddr))
                         arr[j].TPDelayRelative += FEBTPDelayListArray[i][j].TPDelayRelative;
                     else
-                        richTextBoxDescription.Text += "i=" + i.ToString("000") + "j=" + j.ToString("000") +
-                            " statistic calculation error for arr \n";
+                        richTextBoxDescription.AppendText("i=" + i.ToString("000") + "j=" + j.ToString("000") +
+                            " statistic calculation error for arr \n");
                 }
             //4. Divide the TPDelayRelative with the number of measurements
             for (int j = 0; j < arr.GetLength(0); j++)
                 arr[j].TPDelayRelative /= FEBTPDelayListArray.GetLength(0);
             //5. Print results
-            richTextBoxDescription.Text += "Averaged delays\n";
+            richTextBoxDescription.AppendText("Averaged delays\n");
             PrintDelayList(arr);
             //
             return arr;
@@ -3324,11 +3597,11 @@ namespace MinervaGUI
                     if (theFrame.TestPulse2Bit == 0) FEBTPDelayList.Add(new FEB_TPDelay(
                         theCroc.BaseAddress, theChannel.ChannelNumber, feb, theFrame.TestPulseCount + 1));
                     else FEBTPDelayList.Add(new FEB_TPDelay(
-                        theCroc.BaseAddress, theChannel.ChannelNumber, feb, theFrame.TestPulseCount + 0.25 * theFrame.TestPulse2Bit));                    
+                        theCroc.BaseAddress, theChannel.ChannelNumber, feb, theFrame.TestPulseCount + 0.25 * theFrame.TestPulse2Bit));
                 }
                 catch (Exception ex)
                 {
-                    richTextBoxDescription.Text += theChannel.Description + ":" + feb + ": Error: " + ex.Message + "\n";
+                    richTextBoxDescription.AppendText(theChannel.Description + ":" + feb + ": Error: " + ex.Message + "\n");
                     return false;
                 }
             }
@@ -3336,6 +3609,1302 @@ namespace MinervaGUI
         }
 
         #endregion
+
+        #region Methods for Gate Alignment using CRIM
+
+        private void btn_CRIMReportGateAlignmentsAllCROCs_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Under Construction..."); return;
+            //try
+            //{
+            //    TreeNode theNode = treeView1.SelectedNode;
+            //    CRIM theCrim = ((CRIM)(theNode.Tag));
+
+            //    tabControl1.SelectTab(tabDescription);
+            //    richTextBoxDescription.Text = string.Format(
+            //        "\nReporting FEBs' gate alignment based on {0} Test Pulse measurements:\n\n", theCrim.Description);
+            //    tabControl1.SelectedTab.Refresh();
+
+            //    if (!ConfigureCRIMForGateAlignment(theCrim, 100, 50)) return;
+
+            //    theCrim.SingleSeqStart();
+
+
+            //}
+            //catch (Exception ex)
+            //{
+            //    richTextBoxDescription.AppendText(ex.Message + "\n");
+            //    MessageBox.Show(ex.Message);
+            //}
+        }
+
+        public bool ConfigureCRIMForGateAlignment(CRIM theCrim, ushort GateWidth, ushort TCALBDelay)
+        {
+            bool success = false;
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    theCrim.TimingMode = CRIM.TimingModes.Internal;
+                    theCrim.Frequency = 0; //no frequency selected
+                    theCrim.GateWidth = GateWidth;
+                    theCrim.TCALBDelay = TCALBDelay;
+                    success = true;
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+            return success;
+        }
+
+        #endregion
+
+        #region Methods for Write/Read to/from CRIM
+
+        private void btn_CRIMAdvancedGUI_Click(object sender, EventArgs e)
+        {
+            AdvancedGUI((Button)sender, tabControlCRIMModules);
+        }
+
+        private void CrimClearLabels()
+        {
+            foreach (TabPage tabpage in tabControlCRIMModules.TabPages)
+            {
+                foreach (Control c in tabpage.Controls)
+                {
+                    ClearControl(c);
+                    if (c is GroupBox)
+                        foreach (Control cc in c.Controls)
+                            ClearControl(cc);
+                }
+            }
+        }
+
+        #region Timing Module
+
+        private void btn_CRIMTimingModeWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.TimingMode = (CRIM.TimingModes)Enum.Parse(typeof(CRIM.TimingModes), cmb_CRIMTimingMode.SelectedItem.ToString());
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingModeRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    cmb_CRIMTimingMode.SelectedIndex = cmb_CRIMTimingMode.FindString(theCrim.TimingMode.ToString());
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingFrequencyWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.TimingFrequency = (CRIM.TimingFrequencies)Enum.Parse(typeof(CRIM.TimingFrequencies), cmb_CRIMTimingFrequency.SelectedItem.ToString());
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingFrequencyRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    cmb_CRIMTimingFrequency.SelectedIndex = cmb_CRIMTimingFrequency.FindString(theCrim.TimingFrequency.ToString());
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingGateWidthWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    if (theCrim.TimingMode == CRIM.TimingModes.Internal)
+                    {
+                        theCrim.GateWidth = ushort.Parse(txt_CRIMTimingGateWidth.Text);
+                        theCrim.CounterResetEnableInINTMode = chk_CRIMTimingCNTRSTEnableInINTMode.Checked;
+                    }
+                    else
+                    {
+                        if (MessageBox.Show("CRIM must be switched to \"Internal\" mode. Do you want to continue?",
+                            "CRIM", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                        {
+                            theCrim.TimingMode = CRIM.TimingModes.Internal;
+                            theCrim.GateWidth = ushort.Parse(txt_CRIMTimingGateWidth.Text);
+                            theCrim.CounterResetEnableInINTMode = chk_CRIMTimingCNTRSTEnableInINTMode.Checked;
+                        }
+                    }
+                    cmb_CRIMTimingMode.SelectedIndex = cmb_CRIMTimingMode.FindString(theCrim.TimingMode.ToString());
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingGateWidthRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    txt_CRIMTimingGateWidth.Text = theCrim.GateWidth.ToString();
+                    chk_CRIMTimingCNTRSTEnableInINTMode.Checked = theCrim.CounterResetEnableInINTMode;
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingTCALBWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    if (theCrim.TimingMode == CRIM.TimingModes.Internal)
+                        theCrim.TCALBDelay = ushort.Parse(txt_CRIMTimingTCALB.Text);
+                    else
+                    {
+                        if (MessageBox.Show("CRIM must be switched to \"Internal\" mode. Do you want to continue?",
+                            "CRIM", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                        {
+                            theCrim.TimingMode = CRIM.TimingModes.Internal;
+                            theCrim.TCALBDelay = ushort.Parse(txt_CRIMTimingTCALB.Text);
+                        }
+                    }
+                    cmb_CRIMTimingMode.SelectedIndex = cmb_CRIMTimingMode.FindString(theCrim.TimingMode.ToString());
+
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingTCALBRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    txt_CRIMTimingTCALB.Text = theCrim.TCALBDelay.ToString();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingSendTrigger_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.TriggerPulse();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingSendTCALB_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    if (theCrim.TimingMode == CRIM.TimingModes.External)
+                        theCrim.TCALBPulse();
+                    else
+                    {
+                        if (MessageBox.Show("CRIM must be switched to \"External\" mode. Do you want to continue?",
+                            "CRIM", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                        {
+                            theCrim.TimingMode = CRIM.TimingModes.External;
+                            theCrim.TCALBPulse();
+                        }
+                    }
+                    cmb_CRIMTimingMode.SelectedIndex = cmb_CRIMTimingMode.FindString(theCrim.TimingMode.ToString());
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingSendStartGate_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    if (theCrim.TimingMode == CRIM.TimingModes.External)
+                        theCrim.StartGate();
+                    else
+                    {
+                        if (MessageBox.Show("CRIM must be switched to \"External\" mode. Do you want to continue?",
+                            "CRIM", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                        {
+                            theCrim.TimingMode = CRIM.TimingModes.External;
+                            theCrim.StartGate();
+                        }
+                    }
+                    cmb_CRIMTimingMode.SelectedIndex = cmb_CRIMTimingMode.FindString(theCrim.TimingMode.ToString());
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingSendStopGate_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    if (theCrim.TimingMode == CRIM.TimingModes.External)
+                        theCrim.EndGate();
+                    else
+                    {
+                        if (MessageBox.Show("CRIM must be switched to \"External\" mode. Do you want to continue?",
+                            "CRIM", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                        {
+                            theCrim.TimingMode = CRIM.TimingModes.External;
+                            theCrim.EndGate();
+                        }
+                    }
+                    cmb_CRIMTimingMode.SelectedIndex = cmb_CRIMTimingMode.FindString(theCrim.TimingMode.ToString());
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingSS_CNTRST_SGATE_TCALB_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    if ((theCrim.TimingMode == CRIM.TimingModes.Internal) && (theCrim.TimingFrequency == CRIM.TimingFrequencies.None))
+                        theCrim.SingleSeqStart();
+                    else
+                    {
+                        if (MessageBox.Show(string.Format("CRIM must be switched to \"{0}\" mode and Frequency set to \n{1}\". Do you want to continue?",
+                            CRIM.TimingModes.Internal, CRIM.TimingFrequencies.None), "CRIM", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                        {
+                            theCrim.TimingMode = CRIM.TimingModes.Internal;
+                            theCrim.TimingFrequency = CRIM.TimingFrequencies.None;
+                            theCrim.SingleSeqStart();
+                        }
+                    }
+                    cmb_CRIMTimingMode.SelectedIndex = cmb_CRIMTimingMode.FindString(theCrim.TimingMode.ToString());
+                    cmb_CRIMTimingFrequency.SelectedIndex = cmb_CRIMTimingFrequency.FindString(theCrim.TimingFrequency.ToString());
+
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingSS_CNTRST_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    if (theCrim.TimingMode == CRIM.TimingModes.External)
+                        theCrim.CounterReset();
+                    else
+                    {
+                        if (MessageBox.Show("CRIM must be switched to \"External\" mode. Do you want to continue?",
+                            "CRIM", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                        {
+                            theCrim.TimingMode = CRIM.TimingModes.External;
+                            theCrim.CounterReset();
+                        }
+                    }
+                    cmb_CRIMTimingMode.SelectedIndex = cmb_CRIMTimingMode.FindString(theCrim.TimingMode.ToString());
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingSeqControlLatchReset_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.SequencerControlLatchReset();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingTestRegisterWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.TestRegister = ushort.Parse(txt_CRIMTimingTestRegister.Text);
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingTestRegisterRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    txt_CRIMTimingTestRegister.Text = theCrim.TestRegister.ToString();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMTimingGateTimeRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    lbl_CRIMTimingGateTimeRead.Text =string.Format("{0}, 0x{1}", theCrim.GateTime.ToString().Trim(), theCrim.GateTime.ToString("X8"));
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        #endregion Timing Module
+
+        #region DAQ Module
+
+        private void btn_CRIMDAQModeRegisterWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.RetransmitEnabled = chk_CRIMDAQModeRegisterRetransmitEn.Checked;
+                    theCrim.SendMessageEnabled = chk_CRIMDAQModeRegisterSendEn.Checked;
+                    theCrim.CRCEnabled = chk_CRIMDAQModeRegisterCRCEn.Checked;
+                    theCrim.FETriggerEnabled = chk_CRIMDAQModeRegisterFETriggEn.Checked;
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQModeRegisterRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    chk_CRIMDAQModeRegisterRetransmitEn.Checked = theCrim.RetransmitEnabled;
+                    chk_CRIMDAQModeRegisterSendEn.Checked = theCrim.SendMessageEnabled;
+                    chk_CRIMDAQModeRegisterCRCEn.Checked = theCrim.CRCEnabled;
+                    chk_CRIMDAQModeRegisterFETriggEn.Checked = theCrim.FETriggerEnabled;
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQDPMRegisterResetPointer_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.Channel.ResetPointer();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQDPMRegisterReadPointer_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    lbl_CRIMDAQDPMRegisterReadPointer.Text = theCrim.Channel.Pointer.ToString();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQResetFIFORegister_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    ((CRIMFrontEndChannel)(theCrim.Channel)).ResetFIFO();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQReadTimingCommandRegister_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    lbl_CRIMDAQReadTimingCommandRegister.Text = string.Format("0x{0:X2}", theCrim.TimingCommandReceived);
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQSendSyncRegister_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    ((CRIMFrontEndChannel)(theCrim.Channel)).SendSynch();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQStatusRegisterClear_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.Channel.ClearStatus();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQStatusRegisterRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    CROCFrontEndChannel.StatusBits theStatus = theCrim.Channel.StatusRegister;
+                    lbl_CRIMDAQStatusRegisterRead.Text = "0x" + ((short)theStatus).ToString("X4");
+                    lbl_CRIMDAQStatusMsgSent.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.MessageSent);
+                    lbl_CRIMDAQStatusMsgRcv.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.MessageReceived);
+                    lbl_CRIMDAQStatusCRCErr.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.CRCError);
+                    lbl_CRIMDAQStatusTimeoutErr.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.TimeoutError);
+                    lbl_CRIMDAQStatusFIFONotEmpty.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.FIFONotEmpty);
+                    lbl_CRIMDAQStatusFIFOFull.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.FIFOFull);
+                    lbl_CRIMDAQStatusDPMFull.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.DPMFull);
+                    lbl_CRIMDAQStatusUnusedBit7.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.UnusedBit7);
+                    lbl_CRIMDAQStatusRFPresent.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.RFPresent);
+                    lbl_CRIMDAQStatusSerializerSync.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.SerializerSynch);
+                    lbl_CRIMDAQStatusDeserializerLock.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.DeserializerLock);
+                    lbl_CRIMDAQStatusUnusedBit11.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.UnusedBit11);
+                    lbl_CRIMDAQStatusPLLLock.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.PLLLocked);
+                    lbl_CRIMDAQStatusTestPulseRcv.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.TestPulseReceived);
+                    lbl_CRIMDAQStatusFERebootRcv.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.ResetReceived);
+                    lbl_CRIMDAQStatusEncodedCmdRcv.Text = CheckStatusBit(theStatus, CROCFrontEndChannel.StatusBits.EncodedCommandReceived);
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQFrameFIFORegisterAppendMessage_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    txt_CRIMDAQFrameFIFORegisterAppendMessage.Text = txt_CRIMDAQFrameFIFORegisterAppendMessage.Text.ToUpper();
+                    AppendMessage(txt_CRIMDAQFrameFIFORegisterAppendMessage.Text, theCrim.Channel);
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQFrameFIFORegisterWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.Channel.WriteMessageCRIM();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQFrameSendRegister_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.Channel.SendMessage();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMDAQFrameReadDPMBytes_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    int responseLength = Convert.ToInt32(txt_CRIMDAQFrameReadDPMBytes.Text);
+                    if ((2 <= responseLength) & (responseLength <= CROCFrontEndChannel.MemoryMaxSize))
+                        rtb_CRIMDAQFrameReadDPMBytes.Text = DisplayMessage(theCrim.Channel.ReadMemoryCRIM(responseLength), responseLength);
+                    else
+                        MessageBox.Show("attempt to read more than maximum DPM depth = " +
+                            CROCFrontEndChannel.MemoryMaxSize + "or less than 2\nOperation aborted");
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        #endregion DAQ Module
+
+        #region Interrupter Module
+
+        private void btn_CRIMInterrupterMaskWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    txt_CRIMInterrupterMask.Text = txt_CRIMInterrupterMask.Text.PadLeft(2, '0');
+                    theCrim.InterruptMask = byte.Parse(txt_CRIMInterrupterMask.Text, System.Globalization.NumberStyles.HexNumber);
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+        
+        private void btn_CRIMInterrupterMaskRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    txt_CRIMInterrupterMask.Text = theCrim.InterruptMask.ToString("X2");
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMInterrupterStatusWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    txt_CRIMInterrupterStatus.Text = txt_CRIMInterrupterStatus.Text.PadLeft(2, '0');
+                    theCrim.InterruptStatus = byte.Parse(txt_CRIMInterrupterStatus.Text, System.Globalization.NumberStyles.HexNumber);
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMInterrupterStatusRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    txt_CRIMInterrupterStatus.Text = theCrim.InterruptStatus.ToString("X2");
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMInterrupterConfigWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    txt_CRIMInterrupterLevels.Text = txt_CRIMInterrupterLevels.Text.PadLeft(2, '0');
+                    byte IRQLevel = Convert.ToByte(txt_CRIMInterrupterLevels.Text, 16);
+                    if (IRQLevel < 1 | IRQLevel > 7) throw new ArgumentOutOfRangeException("IRQ Level must be integer from 1 to 7");
+                    theCrim.InterruptConfig = (byte)(Convert.ToByte(chk_CRIMInterrupterGIE.Checked) << 7 | IRQLevel);
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMInterrupterConfigRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    byte InterruptConfig = theCrim.InterruptConfig;
+                    txt_CRIMInterrupterLevels.Text = Convert.ToString(InterruptConfig & 0x07, 16).PadLeft(2, '0');
+                    chk_CRIMInterrupterGIE.Checked = Convert.ToBoolean(InterruptConfig >> 7);
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMInterrupterClearInterrupts_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    theCrim.InterruptClear();
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMInterrupterVectInpWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    byte[] VectInpValues = new byte[8];
+                    VectInpValues[0] = Convert.ToByte(txt_CRIMInterrupterVectInp0.Text, 16);
+                    VectInpValues[1] = Convert.ToByte(txt_CRIMInterrupterVectInp1.Text, 16);
+                    VectInpValues[2] = Convert.ToByte(txt_CRIMInterrupterVectInp2.Text, 16);
+                    VectInpValues[3] = Convert.ToByte(txt_CRIMInterrupterVectInp3.Text, 16);
+                    VectInpValues[4] = Convert.ToByte(txt_CRIMInterrupterVectInp4.Text, 16);
+                    VectInpValues[5] = Convert.ToByte(txt_CRIMInterrupterVectInp5.Text, 16);
+                    VectInpValues[6] = Convert.ToByte(txt_CRIMInterrupterVectInp6.Text, 16);
+                    VectInpValues[7] = Convert.ToByte(txt_CRIMInterrupterVectInp7.Text, 16);
+                    theCrim.InterruptVectors = VectInpValues;
+                    txt_CRIMInterrupterVectInp0.Text = txt_CRIMInterrupterVectInp0.Text.PadLeft(2, '0');
+                    txt_CRIMInterrupterVectInp1.Text = txt_CRIMInterrupterVectInp1.Text.PadLeft(2, '0');
+                    txt_CRIMInterrupterVectInp2.Text = txt_CRIMInterrupterVectInp2.Text.PadLeft(2, '0');
+                    txt_CRIMInterrupterVectInp3.Text = txt_CRIMInterrupterVectInp3.Text.PadLeft(2, '0');
+                    txt_CRIMInterrupterVectInp4.Text = txt_CRIMInterrupterVectInp4.Text.PadLeft(2, '0');
+                    txt_CRIMInterrupterVectInp5.Text = txt_CRIMInterrupterVectInp5.Text.PadLeft(2, '0');
+                    txt_CRIMInterrupterVectInp6.Text = txt_CRIMInterrupterVectInp6.Text.PadLeft(2, '0');
+                    txt_CRIMInterrupterVectInp7.Text = txt_CRIMInterrupterVectInp7.Text.PadLeft(2, '0');
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_CRIMInterrupterVectInpRead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    byte[] VectInpValues = theCrim.InterruptVectors;
+                    txt_CRIMInterrupterVectInp0.Text = VectInpValues[0].ToString("X2");
+                    txt_CRIMInterrupterVectInp1.Text = VectInpValues[1].ToString("X2");
+                    txt_CRIMInterrupterVectInp2.Text = VectInpValues[2].ToString("X2");
+                    txt_CRIMInterrupterVectInp3.Text = VectInpValues[3].ToString("X2");
+                    txt_CRIMInterrupterVectInp4.Text = VectInpValues[4].ToString("X2");
+                    txt_CRIMInterrupterVectInp5.Text = VectInpValues[5].ToString("X2");
+                    txt_CRIMInterrupterVectInp6.Text = VectInpValues[6].ToString("X2");
+                    txt_CRIMInterrupterVectInp7.Text = VectInpValues[7].ToString("X2");
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        #endregion Interrupter Module
+
+        # region LoopQuery
+
+        private void btn_CRIMFELoopQueryConfigure_Click(object sender, EventArgs e)
+        {
+            cmb_CRIMTimingMode.SelectedIndex = cmb_CRIMTimingMode.FindString(CRIM.TimingModes.DAQ.ToString(), 0);
+            cmb_CRIMTimingFrequency.SelectedIndex = cmb_CRIMTimingFrequency.FindString(CRIM.TimingFrequencies.None.ToString(), 0);
+            btn_CRIMTimingModeWrite_Click(sender, e);
+            btn_CRIMTimingFrequencyWrite_Click(sender, e);
+            chk_CRIMDAQModeRegisterRetransmitEn.Checked = true;
+            chk_CRIMDAQModeRegisterSendEn.Checked = false;
+            chk_CRIMDAQModeRegisterCRCEn.Checked = false;
+            chk_CRIMDAQModeRegisterFETriggEn.Checked = true;
+            btn_CRIMDAQModeRegisterWrite_Click(sender, e);
+        }
+        
+        private bool MatchCROC(CROC croc)
+        {
+            return croc.BaseAddress == uint.Parse(txt_CRIMFELoopQueryCrocBaseAddr.Text) << 16;
+        }
+
+        private void btn_CRIMFELoopQueryDoQuery_Click(object sender, EventArgs e)
+        {
+            if (btn_CRIMFELoopQueryDoQuery.Text == "START Querry FEs (N times)")
+            {
+                btn_CRIMFELoopQueryDoQuery.Text = "STOP Querry FEs (N times)";
+                btn_CRIMFELoopQueryDoQuery.BackColor = Color.LightBlue;
+                CRIMFELoopQuerry();
+                btn_CRIMFELoopQueryDoQuery.Text = "START Querry FEs (N times)";
+                btn_CRIMFELoopQueryDoQuery.BackColor = Color.Coral;
+                return;
+            }
+            else
+            {
+                btn_CRIMFELoopQueryDoQuery.Text = "START Querry FEs (N times)";
+                return;
+            }
+        }
+
+        private void CRIMFELoopQuerry()
+        {
+            this.Cursor = Cursors.WaitCursor;
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    rtb_CRIMFELoopQueryDisplay.Clear();
+                    CRIM theCrim = ((CRIM)(treeView1.SelectedNode.Tag));
+                    //CROC theCroc = CROCModules.Find(delegate(CROC croc) 
+                    //    { return croc.BaseAddress == uint.Parse(txt_CRIMFELoopQueryCrocBaseAddr.Text) << 16; });
+                    CROC theCroc = CROCModules.Find(MatchCROC);
+                    if (theCroc == null)
+                        throw new ArgumentNullException(string.Format("CROC {0} is not present in the hardware. Operation abborted\n", txt_CRIMFELoopQueryCrocBaseAddr.Text));
+                    uint NTry = uint.Parse(txt_CRIMFELoopQueryNTimes.Text);
+                    prgStatus.Maximum = (int)NTry;
+                    //Cursors.
+                    for (uint iTry = 0; iTry < NTry; iTry++)
+                    {
+                        //clear the status of CRIM_DAQ 
+                        theCrim.Channel.ClearStatus();
+                        //check the status of CRIM_DAQ 
+                        if (theCrim.Channel.StatusRegister != (CROCFrontEndChannel.StatusBits.PLLLocked |
+                            CROCFrontEndChannel.StatusBits.DeserializerLock |
+                            CROCFrontEndChannel.StatusBits.SerializerSynch |
+                            CROCFrontEndChannel.StatusBits.RFPresent))
+                            rtb_CRIMFELoopQueryDisplay.Text = (string.Format("{0} DAQ status register can not be cleared properly : {1}\n",
+                                iTry, theCrim.Channel.StatusRegister));
+                        //reset DPM Pointer of CRIM_DAQ 
+                        theCrim.Channel.ResetPointer();
+                        //check DPM Pointer of CRIM_DAQ
+                        if (theCrim.Channel.Pointer != 0)
+                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ pointer register can not be reset properly : {1}\n",
+                                iTry, theCrim.Channel.Pointer));
+                        //send the fast command QueryFPGA from the CROC that owns the FE Boards' Loop 
+                        theCroc.FastCommandRegister = (ushort)FastCommands.QueryFPGA;
+                        //check the status of CRIM_DAQ 
+                        if (theCrim.Channel.StatusRegister != (CROCFrontEndChannel.StatusBits.EncodedCommandReceived |
+                            CROCFrontEndChannel.StatusBits.PLLLocked |
+                            CROCFrontEndChannel.StatusBits.DeserializerLock |
+                            CROCFrontEndChannel.StatusBits.SerializerSynch |
+                            CROCFrontEndChannel.StatusBits.RFPresent))
+                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ status register ERROR after FastCommands.QueryFPGA  : {1}\n",
+                                iTry, theCrim.Channel.StatusRegister));
+                        //read the decoded timing command register of CRIM_DAQ 
+                        if (theCrim.TimingCommandReceived != (byte)FastCommands.QueryFPGA)
+                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ fast cmd register ERROR unexpected value : 0x{1}\n",
+                                iTry, theCrim.TimingCommandReceived.ToString("X")));
+                        //read DPM Pointer of CRIM_DAQ
+                        ushort nFEs = theCrim.Channel.Pointer;
+                        if (nFEs == 0)
+                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} NO FEs present on loop\n", iTry));
+                        else
+                        {
+                            //read DPM content
+                            byte[] response = theCrim.Channel.ReadMemoryCRIM(nFEs);
+                            StringBuilder FEsFound = new StringBuilder();
+                            for (int iFE = 0; iFE < nFEs; iFE++) FEsFound.Append(string.Format("{0} ", (Frame.Addresses)response[iFE]));
+                            if ((!chk_CRIMFELoopQueryMatch.Checked) || (FEsFound.ToString().Trim() != txt_CRIMFELoopQueryMatch.Text.Trim()))
+                                rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} Found : {1}\n", iTry, FEsFound.ToString()));
+                        }
+                        ProgressReport(null, new ProgressChangedEventArgs((int)iTry, string.Format("Loop Query")));
+                        if (btn_CRIMFELoopQueryDoQuery.Text == "START Querry FEs (N times)") throw new Exception("User aborted operation");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    rtb_CRIMFELoopQueryDisplay.AppendText("\n" + ex.Message + "\n");
+                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    //MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+            this.Cursor = Cursors.Arrow;
+        }
+        
+        #endregion
+
+        #endregion
+
+        #region VME
+
+        private void btn_VMERead_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    txt_VMEReadAddress.Text = txt_VMEReadAddress.Text.ToUpper();
+                    uint theAddress = Convert.ToUInt32(txt_VMEReadAddress.Text, 16);
+                    byte[] theData = new byte[2];
+                    controller.Read(theAddress, controller.AddressModifier, controller.DataWidth, theData);
+                    lbl_VMEReadData.Text = BitConverter.ToUInt16(theData, 0).ToString("X4");
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        private void btn_VMEWrite_Click(object sender, EventArgs e)
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    txt_VMEWriteAddress.Text = txt_VMEWriteAddress.Text.ToUpper();
+                    txt_VMEWriteData.Text = txt_VMEWriteData.Text.ToUpper();
+                    uint theAddress = Convert.ToUInt32(txt_VMEWriteAddress.Text, 16);
+                    byte[] theData = BitConverter.GetBytes(Convert.ToUInt16(txt_VMEWriteData.Text, 16));
+                    controller.Write(theAddress, controller.AddressModifier, controller.DataWidth, theData);
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxDescription.AppendText(ex.Message + "\n");
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
+
+        #endregion VME
+
+        
+
 
         //private void button1_Click(object sender, EventArgs e)
         //{
@@ -3345,7 +4914,7 @@ namespace MinervaGUI
         //    AddressModifiers myModifier = AddressModifiers.A24;
         //    DataWidths myWidth = DataWidths.D16;
         //    byte[] myData = new byte[2];
- 
+
         //    //WRITE - to clear status and reset DPM register
         //    myAddress = 0x012030;
         //    myData[0] = 0x0A;
@@ -3402,7 +4971,7 @@ namespace MinervaGUI
         //    //if ((myData[0] != 0x03) | (myData[1] != 0x37)) Console.WriteLine("status register error - 3");
         //}
 
-        
+
 
     }
 
@@ -3472,13 +5041,6 @@ namespace MinervaGUI
         private TRIPnode TripRegs = new TRIPnode();
         private FLASHnode FlashPages = new FLASHnode();
 
-        //private double TPDelay = -1;
-        //public double TPDelay
-        //{
-        //    get { return this.TPDelay; }
-        //    set { this.TPDelay = value; }
-        //}
-
         public FEnode(IFrontEndChannel channel, Frame.Addresses boardID)
         {
             FEBSlave theFEB = new FEBSlave(channel, boardID);
@@ -3497,11 +5059,12 @@ namespace MinervaGUI
         /// Get the Frame.Addresses boardID
         /// </summary>
         public byte BoardID { get { return ID; } }
+
     }
 
     public class FPGAnode : TreeNode
     {
-      
+
     }
     public class TRIPnode : TreeNode
     {
@@ -3522,7 +5085,7 @@ namespace MinervaGUI
     #endregion
 
     #region Info classes that are serialized
-    
+
     public class MinervaDevicesInfo
     {
         public List<CRIMInfo> CRIMs = new List<CRIMInfo>();
@@ -3690,7 +5253,7 @@ namespace MinervaGUI
         public uint RegisterPIPEDEL;
         public uint RegisterIRSEL;
         public uint RegisterIWSEL;
-        
+
         // ATTENTION: Reading the inject register is not possible.  TripTFrame will set these members to zero
         public uint RegisterINJEX0;
         public uint RegisterINJB0;
