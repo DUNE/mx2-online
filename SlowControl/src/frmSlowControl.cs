@@ -69,7 +69,7 @@ namespace MinervaGUI
         public frmSlowControl()
         {
             InitializeComponent();
-            Metadata.MetaData.slowLog.FileName = "SlowControl";
+            Metadata.MetaData.log.FileName = "SlowControl";
 
             if (fpgaDevRegControl1.IsAdvancedGUI == true)
                 btn_FPGAAdvancedGUI.Text = "Show Default GUI";
@@ -126,8 +126,8 @@ namespace MinervaGUI
 
         private void frmSlowControl_Load(object sender, EventArgs e)
         {
-            Metadata.MetaData.slowLog.WriteToFirstLine("SlowControl Started at " + DateTime.Now);
-            Metadata.MetaData.slowLog.AddToLog();
+            Metadata.MetaData.log.WriteToFirstLine("SlowControl Started at " + DateTime.Now);
+            Metadata.MetaData.log.AddToLog();
             FlashFrame.PageCompleted += new ProgressChangedEventHandler(ProgressReport);
             LoadHardwareToolStripMenuItem_Click(null, null);
             cmb_CRIMTimingMode.Items.Clear();
@@ -402,7 +402,7 @@ namespace MinervaGUI
 
         private void LoadHardwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Metadata.MetaData.slowLog.AddToLog(string.Format("LoadHardware Started at {0}", DateTime.Now));
+            Metadata.MetaData.log.AddToLog(string.Format("LoadHardware Started at {0}", DateTime.Now));
             richTextBoxDescription.Clear();
             tabControl1.SelectTab(tabDescription);
 
@@ -476,13 +476,13 @@ namespace MinervaGUI
                             if ((rData[0] == wData[0]) && (rData[1] == wData[1]))
                             {
                                 richTextBoxDescription.AppendText("\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CROC VME module");
-                                Metadata.MetaData.slowLog.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CROC VME module");
+                                Metadata.MetaData.log.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CROC VME module");
                                 CROCModules.Add(new CROC((uint)(VMEDevsBaseAddr << 16), controller, String.Format("Croc {0}", VMEDevsBaseAddr)));
                             }
                             if ((rData[0] == wData[0]) && (rData[1] == 0))
                             {
                                 richTextBoxDescription.AppendText("\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CRIM VME module");
-                                Metadata.MetaData.slowLog.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CRIM VME module");
+                                Metadata.MetaData.log.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CRIM VME module");
                                 CRIMModules.Add(new CRIM((uint)(VMEDevsBaseAddr << 16), controller, String.Format("Crim {0}", VMEDevsBaseAddr)));
                             }
                             #endregion
@@ -508,7 +508,7 @@ namespace MinervaGUI
                         {
                             if (e.Message == "Bus error") continue;
                             richTextBoxDescription.AppendText("\n\tError VMEDevsBaseAddr=" + VMEDevsBaseAddr + ", " + e.Message);
-                            Metadata.MetaData.slowLog.AddToLog("Error VMEDevsBaseAddr=" + VMEDevsBaseAddr + ", " + e.Message);
+                            Metadata.MetaData.log.AddToLog("Error VMEDevsBaseAddr=" + VMEDevsBaseAddr + ", " + e.Message);
                         }
                     }
                 }
@@ -516,7 +516,7 @@ namespace MinervaGUI
                 {
                     lblStatus.Text = "Error while finding CROC and CRIM devices...";
                     richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
-                    Metadata.MetaData.slowLog.AddToLog(lblStatus.Text + "\n" + e.Message);
+                    Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
                 }
                 finally
                 {
@@ -544,7 +544,7 @@ namespace MinervaGUI
                 {
                     lblStatus.Text = "\nError while Initializing CRIM devices...";
                     richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
-                    Metadata.MetaData.slowLog.AddToLog(lblStatus.Text + "\n" + e.Message);
+                    Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
                 }
                 finally
                 {
@@ -572,7 +572,7 @@ namespace MinervaGUI
                 {
                     lblStatus.Text = "\nError while Initializing CROC devices...";
                     richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
-                    Metadata.MetaData.slowLog.AddToLog(lblStatus.Text + "\n" + e.Message);
+                    Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
                 }
                 finally
                 {
@@ -600,7 +600,7 @@ namespace MinervaGUI
         //        {
         //            lblStatus.Text = "\nError while Initializing FEBSlaves devices...";
         //            richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
-        //            Metadata.MetaData.slowLog.AddToLog(lblStatus.Text + "\n" + e.Message);
+        //            Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
         //        }
         //        finally
         //        {
@@ -631,7 +631,7 @@ namespace MinervaGUI
                 {
                     lblStatus.Text = "\nError while Initializing FEnodes devices...";
                     richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
-                    Metadata.MetaData.slowLog.AddToLog(lblStatus.Text + "\n" + e.Message);
+                    Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
                 }
                 finally
                 {
@@ -683,7 +683,7 @@ namespace MinervaGUI
         //                                theCRIMtoCROCCable.CROCAddresses.Add(theCROC.BaseAddress);
         //                                lblStatus.Text = string.Format("\nFound CRIM to CROC cable from {0} to {1}", theCrim.Description, theCROC.Description);
         //                                richTextBoxDescription.AppendText(lblStatus.Text + "\n");
-        //                                Metadata.MetaData.slowLog.AddToLog(lblStatus.Text);
+        //                                Metadata.MetaData.log.AddToLog(lblStatus.Text);
         //                                break;
         //                            }
         //                        }
@@ -700,7 +700,7 @@ namespace MinervaGUI
         //        {
         //            lblStatus.Text = "\nError while finding CRIM to CROC cables...";
         //            richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
-        //            Metadata.MetaData.slowLog.AddToLog(lblStatus.Text + "\n" + e.Message);
+        //            Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
         //        }
         //        finally
         //        {
