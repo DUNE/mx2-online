@@ -12,7 +12,6 @@ using System.Xml.Serialization;
 using VMEInterfaces;
 using MinervaUserControls;
 using System.Collections.Specialized;
-using Metadata;
 
 namespace MinervaGUI
 {
@@ -858,8 +857,8 @@ namespace MinervaGUI
                 }
                 catch (Exception e)
                 {
-                    lblStatus.Text = "\nError while GetMinervaDevicesInfo()...";
-                    richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
+                    lblStatus.Text = "Error while GetMinervaDevicesInfo()...";
+                    richTextBoxDescription.AppendText("\n" + lblStatus.Text + "\n" + e.Message);
                 }
                 finally
                 {
@@ -4751,23 +4750,23 @@ namespace MinervaGUI
 
         private void btn_CRIMFELoopQueryDoQuery_Click(object sender, EventArgs e)
         {
-            if (btn_CRIMFELoopQueryDoQuery.Text == "START Querry FEs (N times)")
+            if (btn_CRIMFELoopQueryDoQuery.Text == "START Query FEs (N times)")
             {
-                btn_CRIMFELoopQueryDoQuery.Text = "STOP Querry FEs (N times)";
+                btn_CRIMFELoopQueryDoQuery.Text = "STOP Query FEs (N times)";
                 btn_CRIMFELoopQueryDoQuery.BackColor = Color.LightBlue;
-                CRIMFELoopQuerry();
-                btn_CRIMFELoopQueryDoQuery.Text = "START Querry FEs (N times)";
+                CRIMFELoopQuery();
+                btn_CRIMFELoopQueryDoQuery.Text = "START Query FEs (N times)";
                 btn_CRIMFELoopQueryDoQuery.BackColor = Color.Coral;
                 return;
             }
             else
             {
-                btn_CRIMFELoopQueryDoQuery.Text = "START Querry FEs (N times)";
+                btn_CRIMFELoopQueryDoQuery.Text = "START Query FEs (N times)";
                 return;
             }
         }
 
-        private void CRIMFELoopQuerry()
+        private void CRIMFELoopQuery()
         {
             this.Cursor = Cursors.WaitCursor;
             lock (this)
@@ -4789,29 +4788,36 @@ namespace MinervaGUI
                     {
                         //clear the status of CRIM_DAQ 
                         theCrim.Channel.ClearStatus();
-                        //check the status of CRIM_DAQ 
-                        if (theCrim.Channel.StatusRegister != (CROCFrontEndChannel.StatusBits.PLLLocked |
+                        //check the status of CRIM_DAQ
+                        CROCFrontEndChannel.StatusBits crimStatus = theCrim.Channel.StatusRegister;
+                        if (crimStatus != (CROCFrontEndChannel.StatusBits.PLLLocked |
                             CROCFrontEndChannel.StatusBits.DeserializerLock |
                             CROCFrontEndChannel.StatusBits.SerializerSynch |
                             CROCFrontEndChannel.StatusBits.RFPresent))
-                            rtb_CRIMFELoopQueryDisplay.Text = (string.Format("{0} DAQ status register can not be cleared properly : {1}\n",
-                                iTry, theCrim.Channel.StatusRegister));
+                        {
+                            rtb_CRIMFELoopQueryDisplay.Text = (string.Format("{0} DAQ status register can not be cleared properly : {1}\n", 
+                                iTry, crimStatus));
+                            if ((crimStatus & CROCFrontEndChannel.StatusBits.EncodedCommandReceived) == CROCFrontEndChannel.StatusBits.EncodedCommandReceived)
+                                rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} TimingCommandReceived = 0x{1}", 
+                                    iTry, theCrim.TimingCommandReceived.ToString("X2")));
+                        }
                         //reset DPM Pointer of CRIM_DAQ 
                         theCrim.Channel.ResetPointer();
                         //check DPM Pointer of CRIM_DAQ
                         if (theCrim.Channel.Pointer != 0)
-                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ pointer register can not be reset properly : {1}\n",
+                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ pointer register can not be reset properly : {1}\n", 
                                 iTry, theCrim.Channel.Pointer));
                         //send the fast command QueryFPGA from the CROC that owns the FE Boards' Loop 
                         theCroc.FastCommandRegister = (ushort)FastCommands.QueryFPGA;
                         //check the status of CRIM_DAQ 
-                        if (theCrim.Channel.StatusRegister != (CROCFrontEndChannel.StatusBits.EncodedCommandReceived |
+                        crimStatus = theCrim.Channel.StatusRegister;
+                        if (crimStatus != (CROCFrontEndChannel.StatusBits.EncodedCommandReceived |
                             CROCFrontEndChannel.StatusBits.PLLLocked |
                             CROCFrontEndChannel.StatusBits.DeserializerLock |
                             CROCFrontEndChannel.StatusBits.SerializerSynch |
                             CROCFrontEndChannel.StatusBits.RFPresent))
-                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ status register ERROR after FastCommands.QueryFPGA  : {1}\n",
-                                iTry, theCrim.Channel.StatusRegister));
+                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ status register ERROR after FastCommands.QueryFPGA  : {1}\n", 
+                                iTry, crimStatus));
                         //read the decoded timing command register of CRIM_DAQ 
                         if (theCrim.TimingCommandReceived != (byte)FastCommands.QueryFPGA)
                             rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ fast cmd register ERROR unexpected value : 0x{1}\n",
@@ -4830,7 +4836,7 @@ namespace MinervaGUI
                                 rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} Found : {1}\n", iTry, FEsFound.ToString()));
                         }
                         ProgressReport(null, new ProgressChangedEventArgs((int)iTry, string.Format("Loop Query")));
-                        if (btn_CRIMFELoopQueryDoQuery.Text == "START Querry FEs (N times)") throw new Exception("User aborted operation");
+                        if (btn_CRIMFELoopQueryDoQuery.Text == "START Query FEs (N times)") throw new Exception("User aborted operation");
                     }
                 }
                 catch (Exception ex)
