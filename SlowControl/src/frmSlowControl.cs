@@ -10,7 +10,6 @@ using System.IO;
 using System.IO.Ports;
 using System.Xml.Serialization;
 using VMEInterfaces;
-using MinervaUserControls;
 using System.Collections.Specialized;
 
 namespace MinervaGUI
@@ -128,7 +127,7 @@ namespace MinervaGUI
             Metadata.MetaData.log.WriteToFirstLine("SlowControl Started at " + DateTime.Now);
             Metadata.MetaData.log.AddToLog();
             FlashFrame.PageCompleted += new ProgressChangedEventHandler(ProgressReport);
-            LoadHardwareToolStripMenuItem_Click(null, null);
+            loadHardwareToolStripMenuItem_Click(null, null);
             cmb_CRIMTimingMode.Items.Clear();
             cmb_CRIMTimingMode.Items.AddRange(Enum.GetNames(typeof(CRIM.TimingModes)));
             cmb_CRIMTimingFrequency.Items.Clear();
@@ -195,6 +194,14 @@ namespace MinervaGUI
 
         }
 
+        private void UserAlert(string errMsg)
+        {
+            MessageBox.Show(errMsg);
+            richTextBoxDescription.SelectionColor = Color.Red;
+            richTextBoxDescription.AppendText(errMsg);
+            richTextBoxDescription.SelectionColor = Color.Black;
+        }
+
         private void loadConfigXmlToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog myOFD = new OpenFileDialog();
@@ -214,17 +221,19 @@ namespace MinervaGUI
                     //
                     xmlFileR = System.IO.File.OpenText(myOFD.FileName);
                     richTextBoxDescription.Text = "Loading file " + myOFD.FileName + "\n";
-                    richTextBoxDescription.AppendText(xmlFileR.ReadToEnd());
-                    WriteXMLToHardwareToolStripMenuItem.Enabled = true;
+                    richTextBoxDescription.AppendText(xmlFileR.ReadToEnd() + "\n");
+                    writeXMLToHardwareToolStripMenuItem.Enabled = true;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine(ex.InnerException.Message);
-                    richTextBoxDescription.AppendText("\n" + ex.Message);
-                    richTextBoxDescription.AppendText("\n" + ex.InnerException.Message);
+                    UserAlert(ex.Message + "\n" + ex.InnerException.Message + "\n");
                 }
-                finally { xmlFileR.Close(); }
+                finally 
+                { 
+                    xmlFileR.Close();
+                    prgStatus.Maximum = 100;
+                    ProgressReport(null, new ProgressChangedEventArgs(100, string.Format("Load Configuration")));
+                }
             }
         }
 
@@ -248,163 +257,169 @@ namespace MinervaGUI
                     //
                     System.IO.StreamReader xmlFileR = System.IO.File.OpenText(mySFD.FileName);
                     richTextBoxDescription.Text = "Saving file " + mySFD.FileName + "\n";
-                    richTextBoxDescription.AppendText(xmlFileR.ReadToEnd());
+                    richTextBoxDescription.AppendText(xmlFileR.ReadToEnd() + "\n");
                     xmlFileR.Close();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine(ex.InnerException.Message);
-                    richTextBoxDescription.AppendText("\n" + ex.Message);
-                    richTextBoxDescription.AppendText("\n" + ex.InnerException.Message);
+                    UserAlert(ex.Message + "\n" + ex.InnerException.Message + "\n");
                 }
                 finally
                 {
                     xmlFileW.Close();
+                    prgStatus.Maximum = 100;
+                    ProgressReport(null, new ProgressChangedEventArgs(100, string.Format("Save Configuration")));
                 }
             }
         }
 
-        private void WriteXMLToHardwareToolStripMenuItem_Click(object sender, EventArgs e)
+        private void writeXMLToHardwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
             richTextBoxDescription.Clear();
-            tabControl1.SelectTab(tabDescription); //"tabDescription");
-            bool crimsMatch = true; // ... false....
+            tabControl1.SelectTab(tabDescription);
+            bool crimsMatch = true;
             bool crocsMatch = true;
             bool febsMatch = true;
-
-            #region Compare CRIMs in XML file to CRIMs loaded
-
-            richTextBoxDescription.Text = "Comparing CRIMs in XML file to CRIMs loaded\n";
-            if (xmlInfo.CRIMs.Count != minervaDevicesInfo.CRIMs.Count)
+            try
             {
-                crimsMatch = false;
-                richTextBoxDescription.SelectionColor = Color.Red;
-                richTextBoxDescription.AppendText("\nNumber of CRIMs in XML file is different from the Number of CRIMs loaded\n");
-                richTextBoxDescription.SelectionColor = Color.Black;
-            }
-            foreach (CRIMInfo xmlCRIM in xmlInfo.CRIMs)
-            {
-                bool crimFound = false;
-                foreach (CRIMInfo minervaCRIM in minervaDevicesInfo.CRIMs)
-                {
-                    if (xmlCRIM.BaseAddress == minervaCRIM.BaseAddress)
-                    {
-                        crimFound = true;
-                        richTextBoxDescription.AppendText("\n" + xmlCRIM.Description + " in XML file found");
-                        break;
-                    }
-                }
-                if (!crimFound)
+                #region Compare CRIMs in XML file to CRIMs loaded
+                richTextBoxDescription.AppendText("\nComparing CRIMs in XML file to CRIMs loaded\n");
+                if (xmlInfo.CRIMs.Count != minervaDevicesInfo.CRIMs.Count)
                 {
                     crimsMatch = false;
-                    richTextBoxDescription.SelectionColor = Color.Red;
-                    richTextBoxDescription.AppendText("\n" + xmlCRIM.Description + " in XML file not found");
-                    richTextBoxDescription.SelectionColor = Color.Black;
+                    UserAlert("Number of CRIMs in XML file is different from the Number of CRIMs loaded\nOperation aborted\n");
+                    return;
                 }
-            }
-            if (crimsMatch) richTextBoxDescription.AppendText("\n\nMatched CRIMs in XML file to CRIMs loaded");
-
-            #endregion
-
-            #region Compare CROCs in XML file to CROCs loaded
-
-            richTextBoxDescription.AppendText("\n\nComparing CROCs in XML file to CROCs loaded\n");
-            if (xmlInfo.CROCs.Count != minervaDevicesInfo.CROCs.Count)
-            {
-                crocsMatch = false;
-                richTextBoxDescription.SelectionColor = Color.Red;
-                richTextBoxDescription.AppendText("\nNumber of CROCs in XML file is different from the Number of CROCs loaded\n");
-                richTextBoxDescription.SelectionColor = Color.Black;
-            }
-            foreach (CROCInfo xmlCROC in xmlInfo.CROCs)
-            {
-                bool crocFound = false;
-                foreach (CROCInfo minervaCROC in minervaDevicesInfo.CROCs)
+                foreach (CRIMInfo xmlCRIM in xmlInfo.CRIMs)
                 {
-                    if (xmlCROC.BaseAddress == minervaCROC.BaseAddress)
+                    bool crimFound = false;
+                    foreach (CRIMInfo minervaCRIM in minervaDevicesInfo.CRIMs)
                     {
-                        crocFound = true;
-                        richTextBoxDescription.AppendText("\n" + xmlCROC.Description + " in XML file found");
-                        break;
+                        if (xmlCRIM.BaseAddress == minervaCRIM.BaseAddress)
+                        {
+                            crimFound = true;
+                            richTextBoxDescription.AppendText(xmlCRIM.Description + " in XML file found\n");
+                            break;
+                        }
+                    }
+                    if (!crimFound)
+                    {
+                        crimsMatch = false;
+                        UserAlert(xmlCRIM.Description + " in XML file not found\n");
                     }
                 }
-                if (!crocFound)
+                if (crimsMatch) richTextBoxDescription.AppendText("Matched CRIMs in XML file to CRIMs loaded\n");
+                else 
+                {
+                    UserAlert("ERROR : Not Matched CRIMs in XML file to CRIMs loaded\nOperation aborted\n");
+                    return;
+                }
+                #endregion
+
+                #region Compare CROCs in XML file to CROCs loaded
+                richTextBoxDescription.AppendText("\nComparing CROCs in XML file to CROCs loaded\n");
+                if (xmlInfo.CROCs.Count != minervaDevicesInfo.CROCs.Count)
                 {
                     crocsMatch = false;
-                    richTextBoxDescription.SelectionColor = Color.Red;
-                    richTextBoxDescription.AppendText("\n" + xmlCROC.Description + " in XML file not found");
-                    richTextBoxDescription.SelectionColor = Color.Black;
+                    UserAlert("Number of CROCs in XML file is different from the Number of CROCs loaded\nOperation aborted\n");
+                    return;
                 }
-            }
-            if (crocsMatch) richTextBoxDescription.AppendText("\n\nMatched CROCs in XML file to CROCs loaded");
-
-            #endregion
-
-            #region Compare FEBs in XML file to FEBs loaded
-
-            richTextBoxDescription.AppendText("\n\nComparing FEBs in XML file to FEBs loaded\n");
-
-            foreach (CROCInfo xmlCROC in xmlInfo.CROCs)
-            {
-                foreach (CROCInfo minervaCROC in minervaDevicesInfo.CROCs)
+                foreach (CROCInfo xmlCROC in xmlInfo.CROCs)
                 {
-                    if (xmlCROC.BaseAddress == minervaCROC.BaseAddress)
+                    bool crocFound = false;
+                    foreach (CROCInfo minervaCROC in minervaDevicesInfo.CROCs)
                     {
-                        foreach (CROCChannelInfo xmlCROCChannelInfo in xmlCROC.CROCChannels)
+                        if (xmlCROC.BaseAddress == minervaCROC.BaseAddress)
                         {
-                            foreach (CROCChannelInfo minervaCROCChannelInfo in minervaCROC.CROCChannels)
-                            {
-                                if (xmlCROCChannelInfo.BaseAddress == minervaCROCChannelInfo.BaseAddress)
-                                {
-                                    if (xmlCROCChannelInfo.ChainBoards.Count != minervaCROCChannelInfo.ChainBoards.Count)
-                                    {
-                                        febsMatch = false;
-                                        richTextBoxDescription.SelectionColor = Color.Red;
-                                        richTextBoxDescription.AppendText("\n" + xmlCROCChannelInfo.Description + ": Number of FEBs in XML file is different from the Number of FEBs loaded\n");
-                                        richTextBoxDescription.SelectionColor = Color.Black;
-                                    }
-                                    foreach (ChainBoardInfo xmlChainBoard in xmlCROCChannelInfo.ChainBoards)
-                                    {
-                                        bool febFound = false;
-                                        foreach (ChainBoardInfo minervaChainBoard in minervaCROCChannelInfo.ChainBoards)
-                                        {
-                                            if (xmlChainBoard.BoardAddress == minervaChainBoard.BoardAddress)
-                                            {
-                                                febFound = true;
-                                                richTextBoxDescription.AppendText("\n" + xmlCROCChannelInfo.Description + ":" + xmlChainBoard.BoardAddress + " in XML file found");
-                                                break;
-                                            }
-                                        }
-                                        if (!febFound)
-                                        {
-                                            febsMatch = false;
-                                            richTextBoxDescription.SelectionColor = Color.White;
-                                            richTextBoxDescription.AppendText("\n" + xmlCROCChannelInfo.Description + ":" + xmlChainBoard.BoardAddress + " in XML file not found");
-                                            richTextBoxDescription.SelectionColor = Color.Black;
-                                        }
-                                    }
-                                    break; // xmlCROCChannelInfo.BaseAddress == minervaCROCChannelInfo.BaseAddress
-                                }
-                            }
+                            crocFound = true;
+                            richTextBoxDescription.AppendText(xmlCROC.Description + " in XML file found\n");
+                            break;
                         }
-                        break; // xmlCROC.BaseAddress == minervaCROC.BaseAddress
+                    }
+                    if (!crocFound)
+                    {
+                        crocsMatch = false;
+                        UserAlert(xmlCROC.Description + " in XML file not found\n");
                     }
                 }
+                if (crocsMatch) richTextBoxDescription.AppendText("Matched CROCs in XML file to CROCs loaded\n");
+                else
+                {
+                    UserAlert("ERROR : Not Matched CROCs in XML file to CROCs loaded\nOperation aborted\n");
+                    return;
+                }
+                #endregion
+
+                #region Compare FEBs in XML file to FEBs loaded
+                richTextBoxDescription.AppendText("\nComparing FEBs in XML file to FEBs loaded\n");
+                foreach (CROCInfo xmlCROC in xmlInfo.CROCs)
+                {
+                    foreach (CROCInfo minervaCROC in minervaDevicesInfo.CROCs)
+                    {
+                        if (xmlCROC.BaseAddress == minervaCROC.BaseAddress)
+                        {
+                            foreach (CROCChannelInfo xmlCROCChannelInfo in xmlCROC.CROCChannels)
+                            {
+                                foreach (CROCChannelInfo minervaCROCChannelInfo in minervaCROC.CROCChannels)
+                                {
+                                    if (xmlCROCChannelInfo.BaseAddress == minervaCROCChannelInfo.BaseAddress)
+                                    {
+                                        if (xmlCROCChannelInfo.ChainBoards.Count != minervaCROCChannelInfo.ChainBoards.Count)
+                                        {
+                                            febsMatch = false;
+                                            UserAlert(xmlCROCChannelInfo.Description + ": Number of FEBs in XML file is different from the Number of FEBs loaded\nOperation aborted\n");
+                                            return;
+                                        }
+                                        foreach (ChainBoardInfo xmlChainBoard in xmlCROCChannelInfo.ChainBoards)
+                                        {
+                                            bool febFound = false;
+                                            foreach (ChainBoardInfo minervaChainBoard in minervaCROCChannelInfo.ChainBoards)
+                                            {
+                                                if (xmlChainBoard.BoardAddress == minervaChainBoard.BoardAddress)
+                                                {
+                                                    febFound = true;
+                                                    richTextBoxDescription.AppendText(xmlCROCChannelInfo.Description + ":" + xmlChainBoard.BoardAddress + " in XML file found\n");
+                                                    break;
+                                                }
+                                            }
+                                            if (!febFound)
+                                            {
+                                                febsMatch = false;
+                                                UserAlert(xmlCROCChannelInfo.Description + ":" + xmlChainBoard.BoardAddress + " in XML file not found\n");
+                                            }
+                                        }
+                                        break; // xmlCROCChannelInfo.BaseAddress == minervaCROCChannelInfo.BaseAddress
+                                    }
+                                }
+                            }
+                            break; // xmlCROC.BaseAddress == minervaCROC.BaseAddress
+                        }
+                    }
+                }
+                if (febsMatch) richTextBoxDescription.AppendText("Matched FEBs in XML file to FEBs loaded\n");
+                else
+                {
+                    UserAlert("ERROR : Not Matched FEBs in XML file to FEBs loaded\nOperation aborted\n");
+                    return;
+                }
+                #endregion
+
+                //if here, we succeed crimsMatch & crocsMatch & febsMatch == true, so let's call SetMinervaDevicesInfo();
+                SetMinervaDevicesInfo();
             }
-            if (febsMatch) richTextBoxDescription.AppendText("\nMatched FEBs in XML file to FEBs loaded");
-
-            #endregion
-
-            if (crimsMatch & crocsMatch & febsMatch) SetMinervaDevicesInfo();
+            catch (Exception ex)
+            {
+                UserAlert(ex.Message + "\n" + ex.InnerException.Message +
+                    "\nCRIMs match=" + crimsMatch + "\nCROCs match=" + crocsMatch + "\nFEBs match=" + febsMatch +
+                    "\nCheck the current report window for RED messages and/or try again...\n");
+            }
         }
 
-        private void LoadHardwareToolStripMenuItem_Click(object sender, EventArgs e)
+        private void loadHardwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Metadata.MetaData.log.AddToLog(string.Format("LoadHardware Started at {0}", DateTime.Now));
             richTextBoxDescription.Clear();
             tabControl1.SelectTab(tabDescription);
-
             this.Cursor = Cursors.WaitCursor;
             ResetActions();
             FindCROCandCRIMModules();
@@ -419,16 +434,14 @@ namespace MinervaGUI
             zeroHVAllToolStripMenuItem.Enabled = true;
             monitorVoltagesToolStripMenuItem.Enabled = true;
             saveConfigXmlToolStripMenuItem.Enabled = true;
-
             this.Cursor = Cursors.Arrow;
-
             treeView1.ExpandAll();
         }
 
         private void ResetActions()
         {
             saveConfigXmlToolStripMenuItem.Enabled = false;
-            WriteXMLToHardwareToolStripMenuItem.Enabled = false;
+            writeXMLToHardwareToolStripMenuItem.Enabled = false;
 
             //For Read HV
             richTextBoxHVRead.Clear();
@@ -1088,26 +1101,35 @@ namespace MinervaGUI
                 vmeDone.WaitOne();
                 try
                 {
+                    richTextBoxDescription.AppendText("\nUpdating hardware\n"); 
+                    prgStatus.Maximum = CRIMModules.Count;
+                    int prg = 0;
                     foreach (CRIMInfo crimInfo in xmlInfo.CRIMs)
                     {
                         foreach (CRIM crim in CRIMModules)
                         {
                             if (crimInfo.BaseAddress == crim.BaseAddress)
                             {
-                                richTextBoxDescription.AppendText("Updating " + crim.Description);
+                                richTextBoxDescription.AppendText(crim.Description + " ...");
+                                ProgressReport(null, new ProgressChangedEventArgs(++prg, string.Format("{0} Updating", crim.Description)));
                                 SetCRIMInfo(crim, crimInfo);
+                                richTextBoxDescription.AppendText("done\n");
                                 break;
                             }
                         }
                     }
+                    prgStatus.Maximum = CROCModules.Count;
+                    prg = 0;
                     foreach (CROCInfo crocInfo in xmlInfo.CROCs)
                     {
                         foreach (CROC croc in CROCModules)
                         {
                             if (crocInfo.BaseAddress == croc.BaseAddress)
                             {
-                                richTextBoxDescription.AppendText("Updating " + croc.Description);
+                                richTextBoxDescription.AppendText(croc.Description + " ...");
+                                ProgressReport(null, new ProgressChangedEventArgs(++prg, string.Format("{0} Updating", croc.Description)));
                                 SetCROCInfo(croc, crocInfo);
+                                richTextBoxDescription.AppendText("\ndone\n");
                                 break;
                             }
                         }
@@ -1115,8 +1137,8 @@ namespace MinervaGUI
                 }
                 catch (Exception e)
                 {
-                    lblStatus.Text = "\nError while SetMinervaDevicesInfo()...";
-                    richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
+                    lblStatus.Text = "Error in SetMinervaDevicesInfo()...";
+                    UserAlert(lblStatus.Text + "\n" + e.Message + "\nOperation aborted\nPLEASE TRY AGAIN...\n");
                 }
                 finally
                 {
@@ -1134,33 +1156,46 @@ namespace MinervaGUI
 
         private void SetCRIMInfo(CRIM crim, CRIMInfo crimInfo)
         {
-            SetVMEDeviceInfo(crim, crimInfo);
-            crim.CRCEnabled = crimInfo.CRCEnabled;
-            crim.Enabled = crimInfo.Enabled;
-            crim.Frequency = crimInfo.Frequency;
-            crim.GateWidth = crimInfo.GateWidth;
-            crim.InterruptMask = crimInfo.InterruptMask;
-            crim.InterruptStatus = crimInfo.InterruptStatus;
-            crim.IRQLevel = crimInfo.IRQLevel;
-            crim.RetransmitEnabled = crimInfo.RetransmitEnabled;
-            crim.SendMessageEnabled = crimInfo.SendMessageEnabled;
-            crim.TCALBDelay = crimInfo.TCALBDelay;
-            crim.TimingMode = crimInfo.TimingMode;
-            //SetChannelInfo((IFrontEndChannel)crim.Channel, crimInfo.CRIMChannelInfo); Cannot set the value of any members in the CRIMFrontEndChannel class
+            try
+            {
+                SetVMEDeviceInfo(crim, crimInfo);
+                crim.CRCEnabled = crimInfo.CRCEnabled;
+                crim.Enabled = crimInfo.Enabled;
+                crim.Frequency = crimInfo.Frequency;
+                crim.GateWidth = crimInfo.GateWidth;
+                crim.InterruptMask = crimInfo.InterruptMask;
+                crim.InterruptStatus = crimInfo.InterruptStatus;
+                crim.IRQLevel = crimInfo.IRQLevel;
+                crim.RetransmitEnabled = crimInfo.RetransmitEnabled;
+                crim.SendMessageEnabled = crimInfo.SendMessageEnabled;
+                crim.TCALBDelay = crimInfo.TCALBDelay;
+                crim.TimingMode = crimInfo.TimingMode;
+                //SetChannelInfo((IFrontEndChannel)crim.Channel, crimInfo.CRIMChannelInfo); Cannot set the value of any members in the CRIMFrontEndChannel class
+            }
+            catch (Exception e)
+            {
+                throw new Exception(crim.Description + " thrown the following exception :\n" + e.Message);
+            }
         }
 
         private void SetCROCInfo(CROC croc, CROCInfo crocInfo)
         {
-            SetVMEDeviceInfo(croc, crocInfo);
-            croc.ClockMode = crocInfo.ClockMode;
-            croc.ResetAndTestMaskRegister = crocInfo.ResetAndTestMaskRegister;
-            croc.TestPulseDelayEnabled = crocInfo.TestPulseDelayEnabled;
-            croc.TestPulseDelayValue = crocInfo.TestPulseDelayValue;
-            croc.TimingSetupRegister = crocInfo.TimingSetupRegister;
-            //croc.ChannelResetRegister = ?
-            //croc.FastCommandRegister = ?
-            //croc.TestPulseRegister = ?
-
+            try
+            {
+                SetVMEDeviceInfo(croc, crocInfo);
+                croc.ClockMode = crocInfo.ClockMode;
+                croc.ResetAndTestMaskRegister = crocInfo.ResetAndTestMaskRegister;
+                croc.TestPulseDelayEnabled = crocInfo.TestPulseDelayEnabled;
+                croc.TestPulseDelayValue = crocInfo.TestPulseDelayValue;
+                croc.TimingSetupRegister = crocInfo.TimingSetupRegister;
+                //croc.ChannelResetRegister = ?
+                //croc.FastCommandRegister = ?
+                //croc.TestPulseRegister = ?
+            }
+            catch (Exception e)
+            {
+                throw new Exception(croc.Description + " thrown the following exception :\n" + e.Message);
+            }
             foreach (CROCFrontEndChannel channel in croc.ChannelList)
             {
                 SetCROCChannelInfo(channel, crocInfo.CROCChannels[(int)channel.ChannelNumber - 1]);
@@ -1169,17 +1204,26 @@ namespace MinervaGUI
 
         private void SetCROCChannelInfo(CROCFrontEndChannel crocChannel, CROCChannelInfo crocChannelInfo)
         {
-            SetVMEDeviceInfo((VMEDevice)crocChannel, crocChannelInfo);
-            crocChannel.ResetEnabled = crocChannelInfo.ResetEnabled;
-            crocChannel.TestPulseEnabled = crocChannelInfo.TestPulseEnabled;
+            try
+            {
+                SetVMEDeviceInfo((VMEDevice)crocChannel, crocChannelInfo);
+                crocChannel.ResetEnabled = crocChannelInfo.ResetEnabled;
+                crocChannel.TestPulseEnabled = crocChannelInfo.TestPulseEnabled;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(crocChannel.Description + " thrown the following exception :\n" +
+                    e.Message + e.InnerException.Message);
+            }
             foreach (ChainBoardInfo chainBoardInfo in crocChannelInfo.ChainBoards)
             {
                 foreach (Frame.Addresses febAddress in crocChannel.ChainBoards)
                 {
                     if (chainBoardInfo.BoardAddress == febAddress)
                     {
-                        Console.WriteLine("Updating " + febAddress + " on " + crocChannel.Description);
+                        richTextBoxDescription.AppendText("\n" + febAddress + " on " + crocChannel.Description + " ...");
                         SetChainBoardInfo(chainBoardInfo, crocChannel, febAddress);
+                        richTextBoxDescription.AppendText("done");
                         break;
                     }
                 }
@@ -1188,11 +1232,18 @@ namespace MinervaGUI
 
         private void SetChainBoardInfo(ChainBoardInfo chainBoardInfo, CROCFrontEndChannel crocChannel, Frame.Addresses febAddress)
         {
-            SetFPGAFrameInfo(chainBoardInfo.fpgaFrameInfo, crocChannel, febAddress);
-            foreach (TRIPFrameInfo tripFrameInfo in chainBoardInfo.tripFrameInfoList)
+            try
             {
-                Frame.TRiPFunctions tripFunction = (Frame.TRiPFunctions)(tripFrameInfo.TripID + 2);
-                SetTRIPFrameInfo(tripFrameInfo, crocChannel, febAddress, tripFunction);
+                SetFPGAFrameInfo(chainBoardInfo.fpgaFrameInfo, crocChannel, febAddress);
+                foreach (TRIPFrameInfo tripFrameInfo in chainBoardInfo.tripFrameInfoList)
+                {
+                    Frame.TRiPFunctions tripFunction = (Frame.TRiPFunctions)(tripFrameInfo.TripID + 2);
+                    SetTRIPFrameInfo(tripFrameInfo, crocChannel, febAddress, tripFunction);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new Exception(crocChannel.Description + " : " + febAddress + " thrown the following exception :\n" + e.Message);
             }
         }
 
@@ -4783,7 +4834,7 @@ namespace MinervaGUI
                         throw new ArgumentNullException(string.Format("CROC {0} is not present in the hardware. Operation abborted\n", txt_CRIMFELoopQueryCrocBaseAddr.Text));
                     uint NTry = uint.Parse(txt_CRIMFELoopQueryNTimes.Text);
                     prgStatus.Maximum = (int)NTry;
-                    //Cursors.
+                    rtb_CRIMFELoopQueryDisplay.Text = string.Format("FE Query : Begin {0}\n", DateTime.Now);
                     for (uint iTry = 0; iTry < NTry; iTry++)
                     {
                         //clear the status of CRIM_DAQ 
@@ -4795,7 +4846,7 @@ namespace MinervaGUI
                             CROCFrontEndChannel.StatusBits.SerializerSynch |
                             CROCFrontEndChannel.StatusBits.RFPresent))
                         {
-                            rtb_CRIMFELoopQueryDisplay.Text = (string.Format("{0} DAQ status register can not be cleared properly : {1}\n", 
+                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ status register can not be cleared properly : {1}\n", 
                                 iTry, crimStatus));
                             if ((crimStatus & CROCFrontEndChannel.StatusBits.EncodedCommandReceived) == CROCFrontEndChannel.StatusBits.EncodedCommandReceived)
                                 rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} TimingCommandReceived = 0x{1}", 
@@ -4821,7 +4872,7 @@ namespace MinervaGUI
                         //read the decoded timing command register of CRIM_DAQ 
                         if (theCrim.TimingCommandReceived != (byte)FastCommands.QueryFPGA)
                             rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ fast cmd register ERROR unexpected value : 0x{1}\n",
-                                iTry, theCrim.TimingCommandReceived.ToString("X")));
+                                iTry, theCrim.TimingCommandReceived.ToString("X2")));
                         //read DPM Pointer of CRIM_DAQ
                         ushort nFEs = theCrim.Channel.Pointer;
                         if (nFEs == 0)
@@ -4847,6 +4898,7 @@ namespace MinervaGUI
                 }
                 finally
                 {
+                    rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("FE Query : End {0}", DateTime.Now));
                     vmeDone.Set();
                 }
             }
@@ -4910,6 +4962,7 @@ namespace MinervaGUI
         }
 
         #endregion VME
+
 
         
 

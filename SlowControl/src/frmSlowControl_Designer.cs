@@ -398,10 +398,10 @@ namespace MinervaGUI
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolStripMenuItemFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.LoadHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.loadHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadConfigXmlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveConfigXmlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.WriteXMLToHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.writeXMLToHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.expandAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.collapseAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -2124,7 +2124,7 @@ namespace MinervaGUI
             this.btn_CRIMFELoopQueryDoQuery.Name = "btn_CRIMFELoopQueryDoQuery";
             this.btn_CRIMFELoopQueryDoQuery.Size = new System.Drawing.Size(160, 20);
             this.btn_CRIMFELoopQueryDoQuery.TabIndex = 104;
-            this.btn_CRIMFELoopQueryDoQuery.Text = "START Querry FEs (N times)";
+            this.btn_CRIMFELoopQueryDoQuery.Text = "START Query FEs (N times)";
             this.btn_CRIMFELoopQueryDoQuery.UseVisualStyleBackColor = false;
             this.btn_CRIMFELoopQueryDoQuery.Click += new System.EventHandler(this.btn_CRIMFELoopQueryDoQuery_Click);
             // 
@@ -4674,21 +4674,21 @@ namespace MinervaGUI
             // toolStripMenuItemFile
             // 
             this.toolStripMenuItemFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.LoadHardwareToolStripMenuItem,
+            this.loadHardwareToolStripMenuItem,
             this.loadConfigXmlToolStripMenuItem,
             this.saveConfigXmlToolStripMenuItem,
-            this.WriteXMLToHardwareToolStripMenuItem});
+            this.writeXMLToHardwareToolStripMenuItem});
             this.toolStripMenuItemFile.Name = "toolStripMenuItemFile";
             this.toolStripMenuItemFile.ShowShortcutKeys = false;
             this.toolStripMenuItemFile.Size = new System.Drawing.Size(35, 20);
             this.toolStripMenuItemFile.Text = "File";
             // 
-            // LoadHardwareToolStripMenuItem
+            // loadHardwareToolStripMenuItem
             // 
-            this.LoadHardwareToolStripMenuItem.Name = "LoadHardwareToolStripMenuItem";
-            this.LoadHardwareToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
-            this.LoadHardwareToolStripMenuItem.Text = "Load Hardware";
-            this.LoadHardwareToolStripMenuItem.Click += new System.EventHandler(this.LoadHardwareToolStripMenuItem_Click);
+            this.loadHardwareToolStripMenuItem.Name = "loadHardwareToolStripMenuItem";
+            this.loadHardwareToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.loadHardwareToolStripMenuItem.Text = "Load Hardware";
+            this.loadHardwareToolStripMenuItem.Click += new System.EventHandler(this.loadHardwareToolStripMenuItem_Click);
             // 
             // loadConfigXmlToolStripMenuItem
             // 
@@ -4705,13 +4705,13 @@ namespace MinervaGUI
             this.saveConfigXmlToolStripMenuItem.Text = "Save Config Xml";
             this.saveConfigXmlToolStripMenuItem.Click += new System.EventHandler(this.saveConfigXmlToolStripMenuItem_Click);
             // 
-            // WriteXMLToHardwareToolStripMenuItem
+            // writeXMLToHardwareToolStripMenuItem
             // 
-            this.WriteXMLToHardwareToolStripMenuItem.Enabled = false;
-            this.WriteXMLToHardwareToolStripMenuItem.Name = "WriteXMLToHardwareToolStripMenuItem";
-            this.WriteXMLToHardwareToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
-            this.WriteXMLToHardwareToolStripMenuItem.Text = "Write XML to Hardware";
-            this.WriteXMLToHardwareToolStripMenuItem.Click += new System.EventHandler(this.WriteXMLToHardwareToolStripMenuItem_Click);
+            this.writeXMLToHardwareToolStripMenuItem.Enabled = false;
+            this.writeXMLToHardwareToolStripMenuItem.Name = "writeXMLToHardwareToolStripMenuItem";
+            this.writeXMLToHardwareToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.writeXMLToHardwareToolStripMenuItem.Text = "Write XML to Hardware";
+            this.writeXMLToHardwareToolStripMenuItem.Click += new System.EventHandler(this.writeXMLToHardwareToolStripMenuItem_Click);
             // 
             // showToolStripMenuItem
             // 
@@ -4926,7 +4926,8 @@ namespace MinervaGUI
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemFile;
         private System.Windows.Forms.ToolStripMenuItem loadConfigXmlToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveConfigXmlToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem LoadHardwareToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem loadHardwareToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem writeXMLToHardwareToolStripMenuItem;
         private System.Windows.Forms.TabPage tabFLASHPages;
         private System.Windows.Forms.TabPage tabDescription;
         private System.Windows.Forms.RichTextBox richTextBoxDescription;
@@ -4957,7 +4958,6 @@ namespace MinervaGUI
         private System.Windows.Forms.Button btn_TRIPRegRead;
         private System.Windows.Forms.Button btn_TRIPRegWrite;
         private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.ToolStripMenuItem WriteXMLToHardwareToolStripMenuItem;
         private System.Windows.Forms.TabPage tabFPGARegs;
         private System.Windows.Forms.Button btn_FPGAAdvancedGUI;
         private System.Windows.Forms.Label lblFPGA_CROCID;
