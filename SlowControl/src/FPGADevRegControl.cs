@@ -1690,37 +1690,37 @@ namespace MinervaUserControls
             get { return FPGALogicalReg[(int)LogicalRegisters.TripXComparators]; }
             set { FPGALogicalReg[(int)LogicalRegisters.TripXComparators] = value; }
         }
-        public UInt32 RegisterExtTriggFound         // 08.08.2008
+        public UInt32 RegisterExtTriggFound             // 08.08.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound]; }
             set { FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound] = value; }
         }
-        public UInt32 RegisterExtTriggRearm         // 08.08.2008
+        public UInt32 RegisterExtTriggRearm             // 08.08.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm]; }
             set { FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm] = value; }
         }
-        public UInt32 RegisterDiscrimEnableMaskTrip0 // 10.30.2008
+        public UInt32 RegisterDiscrimEnableMaskTrip0    // 10.30.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip0]; }
             set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip0] = value; }
         }
-        public UInt32 RegisterDiscrimEnableMaskTrip1 // 10.30.2008
+        public UInt32 RegisterDiscrimEnableMaskTrip1    // 10.30.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip1]; }
             set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip1] = value; }
         }
-        public UInt32 RegisterDiscrimEnableMaskTrip2 // 10.30.2008
+        public UInt32 RegisterDiscrimEnableMaskTrip2    // 10.30.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip2]; }
             set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip2] = value; }
         }
-        public UInt32 RegisterDiscrimEnableMaskTrip3 // 10.30.2008
+        public UInt32 RegisterDiscrimEnableMaskTrip3    // 10.30.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip3]; }
             set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip3] = value; }
         }
-        public UInt32 RegisterGateTimeStamp         // 12.22.2008
+        public UInt32 RegisterGateTimeStamp             // 12.22.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.GateTimeStamp]; }
             set { FPGALogicalReg[(int)LogicalRegisters.GateTimeStamp] = value; }
@@ -1796,8 +1796,8 @@ namespace MinervaUserControls
                         case (int)LogicalRegisters.DCM1NoClock:
                         case (int)LogicalRegisters.DCM2NoClock:
                         case (int)LogicalRegisters.DCM2PhaseDone:
-                        case (int)LogicalRegisters.ExtTriggFound:   // 08.08.2008
-                        case (int)LogicalRegisters.ExtTriggRearm:   // 08.08.2008
+                        case (int)LogicalRegisters.ExtTriggFound:
+                        case (int)LogicalRegisters.ExtTriggRearm:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0x1, 0, "Value must be 1 bit");
                             break;
                     }
@@ -1896,7 +1896,7 @@ namespace MinervaUserControls
                             (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip3))
                         {
                             //this is special update for DiscrimEnableMaskTripX registers
-                            ((TextBox)ctrl).Text = FPGALogicalReg[ctrl.TabIndex].ToString("X");
+                            ((TextBox)ctrl).Text = FPGALogicalReg[ctrl.TabIndex].ToString("X4");
                         }
                         else
                             ((TextBox)ctrl).Text = FPGALogicalReg[ctrl.TabIndex].ToString();
@@ -1956,8 +1956,9 @@ namespace MinervaUserControls
                 txt_LWRTripXPowerDown.Location = new Point(lbl_TripXPowerDown.Left + lbl_TripXPowerDown.Width + 5, lbl_TripXPowerDown.Top);
                 lbl_TripXPowerDown.Visible = true;
                 txt_LWRTripXPowerDown.Visible = true;
-
-                CreateLocations(lbl_TripXPowerDown, lbl_HVEnable, cmb_LWRHVEnable, true, true);
+                CreateLocations(lbl_TripXPowerDown, lbl_GateStart, txt_LWRGateStart, true, true);
+                CreateLocations(lbl_GateStart, lbl_GateLength, txt_LWRGateLength, true, true);
+                CreateLocations(lbl_GateLength, lbl_HVEnable, cmb_LWRHVEnable, true, true);
                 CreateLocations(lbl_HVEnable, lbl_HVTarget, txt_LWRHVTarget, true, true);
                 CreateLocations(lbl_HVTarget, lbl_HVActual, txt_LRHVActual, true, true);
                 CreateLocations(lbl_HVActual, lbl_HVAutoMan, cmb_LWRHVAutoMan, true, true);
