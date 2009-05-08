@@ -401,7 +401,7 @@ namespace MinervaGUI
             this.loadHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadConfigXmlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveConfigXmlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.writeXMLToHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.writeXmlToHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.expandAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.collapseAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -497,7 +497,7 @@ namespace MinervaGUI
             // richTextBoxDescription
             // 
             this.richTextBoxDescription.AutoWordSelection = true;
-            this.richTextBoxDescription.BackColor = System.Drawing.SystemColors.InactiveCaptionText;
+            this.richTextBoxDescription.BackColor = System.Drawing.Color.LightSteelBlue;
             this.richTextBoxDescription.Dock = System.Windows.Forms.DockStyle.Fill;
             this.richTextBoxDescription.Location = new System.Drawing.Point(3, 3);
             this.richTextBoxDescription.Name = "richTextBoxDescription";
@@ -3686,7 +3686,7 @@ namespace MinervaGUI
             this.fpgaDevRegControl1.RegisterTripXComparators = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterTripXThreshold = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterVXOMuxSelect = ((uint)(1u));
-            this.fpgaDevRegControl1.Size = new System.Drawing.Size(291, 418);
+            this.fpgaDevRegControl1.Size = new System.Drawing.Size(291, 464);
             this.fpgaDevRegControl1.TabIndex = 23;
             // 
             // tabTRIPRegs
@@ -3856,7 +3856,7 @@ namespace MinervaGUI
             this.tripDevRegControl1.RegisterPIPEDEL = ((uint)(1u));
             this.tripDevRegControl1.RegisterVREF = ((uint)(20u));
             this.tripDevRegControl1.RegisterVTH = ((uint)(0u));
-            this.tripDevRegControl1.Size = new System.Drawing.Size(265, 244);
+            this.tripDevRegControl1.Size = new System.Drawing.Size(265, 464);
             this.tripDevRegControl1.TabIndex = 35;
             this.tripDevRegControl1.TRIPRegValues = new uint[] {
         ((uint)(100u)),
@@ -4677,7 +4677,7 @@ namespace MinervaGUI
             this.loadHardwareToolStripMenuItem,
             this.loadConfigXmlToolStripMenuItem,
             this.saveConfigXmlToolStripMenuItem,
-            this.writeXMLToHardwareToolStripMenuItem});
+            this.writeXmlToHardwareToolStripMenuItem});
             this.toolStripMenuItemFile.Name = "toolStripMenuItemFile";
             this.toolStripMenuItemFile.ShowShortcutKeys = false;
             this.toolStripMenuItemFile.Size = new System.Drawing.Size(35, 20);
@@ -4686,14 +4686,14 @@ namespace MinervaGUI
             // loadHardwareToolStripMenuItem
             // 
             this.loadHardwareToolStripMenuItem.Name = "loadHardwareToolStripMenuItem";
-            this.loadHardwareToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.loadHardwareToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
             this.loadHardwareToolStripMenuItem.Text = "Load Hardware";
             this.loadHardwareToolStripMenuItem.Click += new System.EventHandler(this.loadHardwareToolStripMenuItem_Click);
             // 
             // loadConfigXmlToolStripMenuItem
             // 
             this.loadConfigXmlToolStripMenuItem.Name = "loadConfigXmlToolStripMenuItem";
-            this.loadConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.loadConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
             this.loadConfigXmlToolStripMenuItem.Text = "Load Config Xml";
             this.loadConfigXmlToolStripMenuItem.Click += new System.EventHandler(this.loadConfigXmlToolStripMenuItem_Click);
             // 
@@ -4701,17 +4701,17 @@ namespace MinervaGUI
             // 
             this.saveConfigXmlToolStripMenuItem.Enabled = false;
             this.saveConfigXmlToolStripMenuItem.Name = "saveConfigXmlToolStripMenuItem";
-            this.saveConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.saveConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
             this.saveConfigXmlToolStripMenuItem.Text = "Save Config Xml";
             this.saveConfigXmlToolStripMenuItem.Click += new System.EventHandler(this.saveConfigXmlToolStripMenuItem_Click);
             // 
-            // writeXMLToHardwareToolStripMenuItem
+            // writeXmlToHardwareToolStripMenuItem
             // 
-            this.writeXMLToHardwareToolStripMenuItem.Enabled = false;
-            this.writeXMLToHardwareToolStripMenuItem.Name = "writeXMLToHardwareToolStripMenuItem";
-            this.writeXMLToHardwareToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
-            this.writeXMLToHardwareToolStripMenuItem.Text = "Write XML to Hardware";
-            this.writeXMLToHardwareToolStripMenuItem.Click += new System.EventHandler(this.writeXMLToHardwareToolStripMenuItem_Click);
+            this.writeXmlToHardwareToolStripMenuItem.Enabled = false;
+            this.writeXmlToHardwareToolStripMenuItem.Name = "writeXmlToHardwareToolStripMenuItem";
+            this.writeXmlToHardwareToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.writeXmlToHardwareToolStripMenuItem.Text = "Write Xml To Hardware";
+            this.writeXmlToHardwareToolStripMenuItem.Click += new System.EventHandler(this.writeXmlToHardwareToolStripMenuItem_Click);
             // 
             // showToolStripMenuItem
             // 
@@ -4748,22 +4748,25 @@ namespace MinervaGUI
             // redPathsToolStripMenuItem
             // 
             this.redPathsToolStripMenuItem.Name = "redPathsToolStripMenuItem";
-            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
+            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.redPathsToolStripMenuItem.Text = "Red paths";
+            this.redPathsToolStripMenuItem.Visible = false;
             this.redPathsToolStripMenuItem.Click += new System.EventHandler(this.redPathsToolStripMenuItem_Click);
             // 
             // bluePathsToolStripMenuItem
             // 
             this.bluePathsToolStripMenuItem.Name = "bluePathsToolStripMenuItem";
-            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
+            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.bluePathsToolStripMenuItem.Text = "Blue paths";
+            this.bluePathsToolStripMenuItem.Visible = false;
             this.bluePathsToolStripMenuItem.Click += new System.EventHandler(this.bluePathsToolStripMenuItem_Click);
             // 
             // greenPathsToolStripMenuItem
             // 
             this.greenPathsToolStripMenuItem.Name = "greenPathsToolStripMenuItem";
-            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
+            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.greenPathsToolStripMenuItem.Text = "Green paths";
+            this.greenPathsToolStripMenuItem.Visible = false;
             this.greenPathsToolStripMenuItem.Click += new System.EventHandler(this.greenPathsToolStripMenuItem_Click);
             // 
             // actionsToolStripMenuItem
@@ -4927,7 +4930,6 @@ namespace MinervaGUI
         private System.Windows.Forms.ToolStripMenuItem loadConfigXmlToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveConfigXmlToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem loadHardwareToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem writeXMLToHardwareToolStripMenuItem;
         private System.Windows.Forms.TabPage tabFLASHPages;
         private System.Windows.Forms.TabPage tabDescription;
         private System.Windows.Forms.RichTextBox richTextBoxDescription;
@@ -5308,6 +5310,7 @@ namespace MinervaGUI
         private System.Windows.Forms.Button btn_CRIMTimingGateTimeRead;
         private System.Windows.Forms.Label label68;
         private System.Windows.Forms.Label lbl_CRIMTimingGateTimeRead;
+        private System.Windows.Forms.ToolStripMenuItem writeXmlToHardwareToolStripMenuItem;
 
     }
 }

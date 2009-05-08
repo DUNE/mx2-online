@@ -115,7 +115,6 @@ namespace MinervaGUI
         private void ProgressReport(object sender, ProgressChangedEventArgs e)
         {
             Application.DoEvents();
-            //if ((e.ProgressPercentage % 25 == 0) || (e.ProgressPercentage == 1))
             {
                 prgStatus.Value = e.ProgressPercentage;
                 lblStatus.Text = e.UserState.ToString() + "  " + e.ProgressPercentage;
@@ -220,13 +219,13 @@ namespace MinervaGUI
                     xmlFileR.Close();
                     //
                     xmlFileR = System.IO.File.OpenText(myOFD.FileName);
-                    richTextBoxDescription.Text = "Loading file " + myOFD.FileName + "\n";
-                    richTextBoxDescription.AppendText(xmlFileR.ReadToEnd() + "\n");
-                    writeXMLToHardwareToolStripMenuItem.Enabled = true;
+                    richTextBoxDescription.AppendText("Loading file " + myOFD.FileName + "\n");
+                    richTextBoxDescription.AppendText("\n" + xmlFileR.ReadToEnd() + "\n");
+                    writeXmlToHardwareToolStripMenuItem.Enabled = true;
                 }
                 catch (Exception ex)
                 {
-                    UserAlert(ex.Message + "\n" + ex.InnerException.Message + "\n");
+                    UserAlert(ex.Message + "\n");
                 }
                 finally 
                 { 
@@ -256,13 +255,13 @@ namespace MinervaGUI
                     xmlFileW.Close();
                     //
                     System.IO.StreamReader xmlFileR = System.IO.File.OpenText(mySFD.FileName);
-                    richTextBoxDescription.Text = "Saving file " + mySFD.FileName + "\n";
-                    richTextBoxDescription.AppendText(xmlFileR.ReadToEnd() + "\n");
+                    richTextBoxDescription.AppendText("\nSaving file " + mySFD.FileName + "\n");
+                    richTextBoxDescription.AppendText("\n" + xmlFileR.ReadToEnd() + "\n");
                     xmlFileR.Close();
                 }
                 catch (Exception ex)
                 {
-                    UserAlert(ex.Message + "\n" + ex.InnerException.Message + "\n");
+                    UserAlert(ex.Message + "\n");
                 }
                 finally
                 {
@@ -273,7 +272,7 @@ namespace MinervaGUI
             }
         }
 
-        private void writeXMLToHardwareToolStripMenuItem_Click(object sender, EventArgs e)
+        private void writeXmlToHardwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
             richTextBoxDescription.Clear();
             tabControl1.SelectTab(tabDescription);
@@ -409,7 +408,7 @@ namespace MinervaGUI
             }
             catch (Exception ex)
             {
-                UserAlert(ex.Message + "\n" + ex.InnerException.Message +
+                UserAlert(ex.Message + "\n" +
                     "\nCRIMs match=" + crimsMatch + "\nCROCs match=" + crocsMatch + "\nFEBs match=" + febsMatch +
                     "\nCheck the current report window for RED messages and/or try again...\n");
             }
@@ -441,7 +440,7 @@ namespace MinervaGUI
         private void ResetActions()
         {
             saveConfigXmlToolStripMenuItem.Enabled = false;
-            writeXMLToHardwareToolStripMenuItem.Enabled = false;
+            writeXmlToHardwareToolStripMenuItem.Enabled = false;
 
             //For Read HV
             richTextBoxHVRead.Clear();
@@ -855,23 +854,34 @@ namespace MinervaGUI
                 {
                     minervaDevicesInfo.CRIMs.Clear();
                     minervaDevicesInfo.CROCs.Clear();
+                    richTextBoxDescription.AppendText("\nGetting hardware\n");
+                    prgStatus.Maximum = CRIMModules.Count;
+                    int prg = 0;
                     foreach (CRIM crim in CRIMModules)
                     {
+                        richTextBoxDescription.AppendText(crim.Description + " ...");
+                        ProgressReport(null, new ProgressChangedEventArgs(++prg, string.Format("{0} Getting", crim.Description)));
                         CRIMInfo crimInfo = new CRIMInfo();
                         GetCRIMInfo(crimInfo, crim);
                         minervaDevicesInfo.CRIMs.Add(crimInfo);
+                        richTextBoxDescription.AppendText("done\n");
                     }
+                    prgStatus.Maximum = CROCModules.Count;
+                    prg = 0;
                     foreach (CROC croc in CROCModules)
                     {
+                        richTextBoxDescription.AppendText(croc.Description + " ...");
+                        ProgressReport(null, new ProgressChangedEventArgs(++prg, string.Format("{0} Getting", croc.Description)));
                         CROCInfo crocInfo = new CROCInfo();
                         GetCROCInfo(crocInfo, croc);
                         minervaDevicesInfo.CROCs.Add(crocInfo);
+                        richTextBoxDescription.AppendText("\ndone\n");
                     }
                 }
                 catch (Exception e)
                 {
                     lblStatus.Text = "Error while GetMinervaDevicesInfo()...";
-                    richTextBoxDescription.AppendText("\n" + lblStatus.Text + "\n" + e.Message);
+                    UserAlert(lblStatus.Text + "\n" + e.Message + "\nOperation aborted\nPLEASE TRY AGAIN...\n");
                 }
                 finally
                 {
@@ -895,32 +905,45 @@ namespace MinervaGUI
 
         private void GetCRIMInfo(CRIMInfo crimInfo, CRIM crim)
         {
-            GetVMEDeviceInfo(crimInfo, crim);
-            crimInfo.CRCEnabled = crim.CRCEnabled;
-            crimInfo.Enabled = crim.Enabled;
-            crimInfo.Frequency = crim.Frequency;
-            crimInfo.GateWidth = crim.GateWidth;
-            crimInfo.InterruptMask = crim.InterruptMask;
-            crimInfo.InterruptStatus = crim.InterruptStatus;
-            crimInfo.IRQLevel = crim.IRQLevel;
-            crimInfo.RetransmitEnabled = crim.RetransmitEnabled;
-            crimInfo.SendMessageEnabled = crim.SendMessageEnabled;
-            crimInfo.TCALBDelay = crim.TCALBDelay;
-            //crimInfo.Register = crim.this
-            crimInfo.TimingCommandReceived = crim.TimingCommandReceived;
-            crimInfo.TimingMode = crim.TimingMode;
-            GetChannelInfo(crimInfo.CRIMChannelInfo, (IFrontEndChannel)crim.Channel);
+            try
+            {
+                GetVMEDeviceInfo(crimInfo, crim);
+                crimInfo.CRCEnabled = crim.CRCEnabled;
+                crimInfo.Enabled = crim.Enabled;
+                crimInfo.Frequency = crim.Frequency;
+                crimInfo.GateWidth = crim.GateWidth;
+                crimInfo.InterruptMask = crim.InterruptMask;
+                crimInfo.InterruptStatus = crim.InterruptStatus;
+                crimInfo.IRQLevel = crim.IRQLevel;
+                crimInfo.RetransmitEnabled = crim.RetransmitEnabled;
+                crimInfo.SendMessageEnabled = crim.SendMessageEnabled;
+                crimInfo.TCALBDelay = crim.TCALBDelay;
+                //crimInfo.Register = crim.this
+                crimInfo.TimingCommandReceived = crim.TimingCommandReceived;
+                crimInfo.TimingMode = crim.TimingMode;
+                GetChannelInfo(crimInfo.CRIMChannelInfo, (IFrontEndChannel)crim.Channel);
+            }
+            catch (Exception e)
+            {
+                throw new Exception(crim.Description + " thrown the following exception :\n" + e.Message);
+            }
         }
 
         private void GetCROCInfo(CROCInfo crocInfo, CROC croc)
         {
-            GetVMEDeviceInfo(crocInfo, croc);
-            crocInfo.ClockMode = croc.ClockMode;
-            crocInfo.ResetAndTestMaskRegister = croc.ResetAndTestMaskRegister;
-            crocInfo.TestPulseDelayEnabled = croc.TestPulseDelayEnabled;
-            crocInfo.TestPulseDelayValue = croc.TestPulseDelayValue;
-            crocInfo.TimingSetupRegister = croc.TimingSetupRegister;
-
+            try
+            {
+                GetVMEDeviceInfo(crocInfo, croc);
+                crocInfo.ClockMode = croc.ClockMode;
+                crocInfo.ResetAndTestMaskRegister = croc.ResetAndTestMaskRegister;
+                crocInfo.TestPulseDelayEnabled = croc.TestPulseDelayEnabled;
+                crocInfo.TestPulseDelayValue = croc.TestPulseDelayValue;
+                crocInfo.TimingSetupRegister = croc.TimingSetupRegister;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(croc.Description + " thrown the following exception :\n" + e.Message);
+            }
             foreach (CROCFrontEndChannel channel in croc.ChannelList)
             {
                 CROCChannelInfo crocChannelInfo = new CROCChannelInfo();
@@ -951,28 +974,44 @@ namespace MinervaGUI
 
         private void GetCROCChannelInfo(CROCChannelInfo crocChannelInfo, CROCFrontEndChannel crocChannel)
         {
-            GetChannelInfo(crocChannelInfo, crocChannel);
-            crocChannelInfo.ResetEnabled = crocChannel.ResetEnabled;
-            crocChannelInfo.TestPulseEnabled = crocChannel.TestPulseEnabled;
+            try
+            {
+                GetChannelInfo(crocChannelInfo, crocChannel);
+                crocChannelInfo.ResetEnabled = crocChannel.ResetEnabled;
+                crocChannelInfo.TestPulseEnabled = crocChannel.TestPulseEnabled;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(crocChannel.Description + " thrown the following exception :\n" + e.Message);
+            }
             foreach (Frame.Addresses febAddress in crocChannel.ChainBoards)
             {
+                richTextBoxDescription.AppendText("\n" + febAddress + " on " + crocChannel.Description + " ...");
                 ChainBoardInfo chainBoardInfo = new ChainBoardInfo();
                 GetChainBoardInfo(chainBoardInfo, crocChannel, febAddress);
                 crocChannelInfo.ChainBoards.Add(chainBoardInfo);
+                richTextBoxDescription.AppendText("done");
             }
         }
 
         private void GetChainBoardInfo(ChainBoardInfo chainBoardInfo, CROCFrontEndChannel crocChannel, Frame.Addresses febAddress)
         {
-            chainBoardInfo.BoardAddress = febAddress;
-            GetFPGAFrameInfo(chainBoardInfo.fpgaFrameInfo, crocChannel, febAddress);
-            //TRIPFrameInfo tripFrameInfo = new TRIPFrameInfo();
-            foreach (Frame.TRiPFunctions tripFunction in Enum.GetValues(typeof(Frame.TRiPFunctions)))
+            try
             {
-                if (tripFunction == Frame.TRiPFunctions.All | tripFunction == Frame.TRiPFunctions.None) continue;
-                TRIPFrameInfo tripFrameInfo = new TRIPFrameInfo();
-                GetTRIPFrameInfo(tripFrameInfo, crocChannel, febAddress, tripFunction);
-                chainBoardInfo.tripFrameInfoList.Add(tripFrameInfo);
+                chainBoardInfo.BoardAddress = febAddress;
+                GetFPGAFrameInfo(chainBoardInfo.fpgaFrameInfo, crocChannel, febAddress);
+                //TRIPFrameInfo tripFrameInfo = new TRIPFrameInfo();
+                foreach (Frame.TRiPFunctions tripFunction in Enum.GetValues(typeof(Frame.TRiPFunctions)))
+                {
+                    if (tripFunction == Frame.TRiPFunctions.All | tripFunction == Frame.TRiPFunctions.None) continue;
+                    TRIPFrameInfo tripFrameInfo = new TRIPFrameInfo();
+                    GetTRIPFrameInfo(tripFrameInfo, crocChannel, febAddress, tripFunction);
+                    chainBoardInfo.tripFrameInfoList.Add(tripFrameInfo);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new Exception(crocChannel.Description + " : " + febAddress + " thrown the following exception :\n" + e.Message);
             }
         }
 
@@ -1017,9 +1056,16 @@ namespace MinervaGUI
             fpgaFrameInfo.DCM2NoClock = fpgaFrame.DCM2NoClock;
             fpgaFrameInfo.DCM2PhaseDone = fpgaFrame.DCM2PhaseDone;
             fpgaFrameInfo.DCM2PhaseTotal = fpgaFrame.DCM2PhaseTotal;
+            fpgaFrameInfo.DiscrimEnableMaskTrip0 = fpgaFrame.DiscrimEnableMaskTrip0;
+            fpgaFrameInfo.DiscrimEnableMaskTrip1 = fpgaFrame.DiscrimEnableMaskTrip1;
+            fpgaFrameInfo.DiscrimEnableMaskTrip2 = fpgaFrame.DiscrimEnableMaskTrip2;
+            fpgaFrameInfo.DiscrimEnableMaskTrip3 = fpgaFrame.DiscrimEnableMaskTrip3;
+            fpgaFrameInfo.ExtTriggFound = fpgaFrame.ExtTriggFound;    //get only
+            fpgaFrameInfo.ExtTriggRearm = fpgaFrame.ExtTriggRearm;
             fpgaFrameInfo.FirmwareVersion = fpgaFrame.FirmwareVersion;
             fpgaFrameInfo.GateLength = fpgaFrame.GateLength;
             fpgaFrameInfo.GateStart = fpgaFrame.GateStart;
+            fpgaFrameInfo.GateTimeStamp = fpgaFrame.GateTimeStamp;
             fpgaFrameInfo.HVActual = fpgaFrame.HVActual;
             fpgaFrameInfo.HVControl = fpgaFrame.HVControl;
             fpgaFrameInfo.HVEnabled = fpgaFrame.HVEnabled;
@@ -1212,8 +1258,7 @@ namespace MinervaGUI
             }
             catch (Exception e)
             {
-                throw new Exception(crocChannel.Description + " thrown the following exception :\n" +
-                    e.Message + e.InnerException.Message);
+                throw new Exception(crocChannel.Description + " thrown the following exception :\n" + e.Message);
             }
             foreach (ChainBoardInfo chainBoardInfo in crocChannelInfo.ChainBoards)
             {
@@ -1254,6 +1299,11 @@ namespace MinervaGUI
 
             // Read/Write members only
             fpgaFrame.CosmicTrig = fpgaFrameInfo.CosmicTrig;
+            fpgaFrame.DiscrimEnableMaskTrip0 = fpgaFrameInfo.DiscrimEnableMaskTrip0;
+            fpgaFrame.DiscrimEnableMaskTrip1 = fpgaFrameInfo.DiscrimEnableMaskTrip1;
+            fpgaFrame.DiscrimEnableMaskTrip2 = fpgaFrameInfo.DiscrimEnableMaskTrip2;
+            fpgaFrame.DiscrimEnableMaskTrip3 = fpgaFrameInfo.DiscrimEnableMaskTrip3;
+            fpgaFrame.ExtTriggRearm = fpgaFrameInfo.ExtTriggRearm;
             fpgaFrame.GateLength = fpgaFrameInfo.GateLength;
             fpgaFrame.GateStart = fpgaFrameInfo.GateStart;
             fpgaFrame.HVEnabled = fpgaFrameInfo.HVEnabled;
@@ -4964,7 +5014,9 @@ namespace MinervaGUI
         #endregion VME
 
 
-        
+
+
+
 
 
         //private void button1_Click(object sender, EventArgs e)
@@ -5261,9 +5313,16 @@ namespace MinervaGUI
         public bool DCM2NoClock;
         public bool DCM2PhaseDone;
         public ushort DCM2PhaseTotal;
+        public ushort DiscrimEnableMaskTrip0;
+        public ushort DiscrimEnableMaskTrip1;
+        public ushort DiscrimEnableMaskTrip2;
+        public ushort DiscrimEnableMaskTrip3;
+        public ushort ExtTriggFound;
+        public byte ExtTriggRearm;
         public byte FirmwareVersion;
         public ushort GateLength;
         public ushort GateStart;
+        public uint GateTimeStamp;
         public ushort HVActual;
         public byte HVControl;
         public bool HVEnabled;
