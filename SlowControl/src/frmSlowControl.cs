@@ -11,23 +11,25 @@ using System.IO.Ports;
 using System.Xml.Serialization;
 using VMEInterfaces;
 using System.Collections.Specialized;
+using ConfigFiles;
 
-namespace MinervaGUI
+namespace SlowControl
 {
     public partial class frmSlowControl : Form
     {
         //bool AppendDescription = false;
 
-        CAEN2718 controller;
+        public CAEN2718 controller;
         List<CRIM> CRIMModules = new List<CRIM>();
         List<CROC> CROCModules = new List<CROC>();
+        List<V1720> V1720Modules = new List<V1720>();
         List<CRIMnode> CRIMnodes = new List<CRIMnode>();
         List<CROCnode> CROCnodes = new List<CROCnode>();
         List<CHnode> CHnodes = new List<CHnode>();
         List<FEnode> FEnodes = new List<FEnode>();
         public static List<FEBSlave> FEBSlaves = new List<FEBSlave>();
         List<FEB_TPDelay> FEBTPDelayList = new List<FEB_TPDelay>();
-        List<CRIMtoCROCCable> CRIMtoCROCCables = new List<CRIMtoCROCCable>();
+        List<V1720node> V1720nodes = new List<V1720node>();
 
         MinervaDevicesInfo minervaDevicesInfo = new MinervaDevicesInfo();
         MinervaDevicesInfo xmlInfo = new MinervaDevicesInfo();
@@ -45,18 +47,6 @@ namespace MinervaGUI
             QueryFPGA = 0x91    // 04.14.2009 to make FEBs respond with NAHeader(01=2bits)+TripComp(4bits)+FEAddress(4bits)
         }
 
-        private struct CRIMtoCROCCable
-        {
-            private uint CRIMAddr;
-            public List<uint> CROCAddresses;
-            public CRIMtoCROCCable(uint CRIMAddress)
-            {
-                CRIMAddr = CRIMAddress;
-                CROCAddresses = new List<uint>(4);
-            }
-            public uint CRIMAddress { get { return CRIMAddr; } }
-        }
-
         private static EventWaitHandle vmeDone = null;
 
         static frmSlowControl()
@@ -64,10 +54,10 @@ namespace MinervaGUI
             vmeDone = new EventWaitHandle(true, EventResetMode.AutoReset, "MinervaVMEDone");
         }
 
-        public frmSlowControl()
+        public frmSlowControl(int linkNumber, int boardNumber, out bool success)
         {
             InitializeComponent();
-            Metadata.MetaData.log.FileName = "SlowControl";
+            Metadata.MetaData.log.FileName = "SlowControl"; // "SlowControl_L" + linkNumber + "B" + boardNumber;
 
             if (fpgaDevRegControl1.IsAdvancedGUI == true)
                 btn_FPGAAdvancedGUI.Text = "Show Default GUI";
@@ -83,7 +73,8 @@ namespace MinervaGUI
                 vmeDone.WaitOne();
                 try
                 {
-                    controller = new CAEN2718("CAEN VME", 0, 0);
+                    controller = new CAEN2718("CAEN VME", linkNumber, boardNumber);
+                    this.Text = string.Format("Slow Control - LINK={0}, CRATE={1}", linkNumber, boardNumber);
                     StringBuilder sb = new StringBuilder();
                     //if (txtDelay.Text != String.Empty) CAEN2718.GlobalDelayMs = Convert.ToInt32(txtDelay.Text);
                     //prgStatus.Value = 50;
@@ -97,6 +88,7 @@ namespace MinervaGUI
                     //prgStatus.Value = 100;
                     Refresh();
                     lblStatus.Text = "VME Controller initialized.";
+                    success = true;
                 }
                 catch
                 {
@@ -104,20 +96,12 @@ namespace MinervaGUI
                     MessageBox.Show("Unable to initialize crate controller\nApplication will be closed.");
                     lblStatus.Text = "VME Controller NOT initialized.";
                     this.Close();
+                    success = false;
                 }
                 finally
                 {
                     vmeDone.Set();
                 }
-            }
-        }
-
-        private void ProgressReport(object sender, ProgressChangedEventArgs e)
-        {
-            Application.DoEvents();
-            {
-                prgStatus.Value = e.ProgressPercentage;
-                lblStatus.Text = e.UserState.ToString() + "  " + e.ProgressPercentage;
             }
         }
 
@@ -131,6 +115,21 @@ namespace MinervaGUI
             cmb_CRIMTimingMode.Items.AddRange(Enum.GetNames(typeof(CRIM.TimingModes)));
             cmb_CRIMTimingFrequency.Items.Clear();
             cmb_CRIMTimingFrequency.Items.AddRange(Enum.GetNames(typeof(CRIM.TimingFrequencies)));
+        }
+
+        private void frmSlowControl_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            controller.Dispose();
+        }
+
+        private void ProgressReport(object sender, ProgressChangedEventArgs e)
+        {
+            //Application.DoEvents();
+            {
+                prgStatus.Value = e.ProgressPercentage;
+                lblStatus.Text = e.UserState.ToString() + "  " + e.ProgressPercentage;
+                Refresh();
+            }
         }
 
         private void treeView1_AfterSelect(object sender, TreeViewEventArgs e)
@@ -189,8 +188,11 @@ namespace MinervaGUI
                 lblFLASH_CROCID.Text = ((((CROC)(((CROCnode)(e.Node.Parent.Parent.Parent)).Tag)).BaseAddress) >> 16).ToString();
                 tabControl1.SelectTab(tabFLASHPages);
             }
-
-
+            if (e.Node is V1720node)
+            {
+                lblV1720_V1720ID.Text = Convert.ToString( ((V1720)(e.Node.Tag)).BaseAddress >> 16);
+                tabControl1.SelectTab(tabV1720);
+            }
         }
 
         private void UserAlert(string errMsg)
@@ -417,11 +419,11 @@ namespace MinervaGUI
         private void loadHardwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Metadata.MetaData.log.AddToLog(string.Format("LoadHardware Started at {0}", DateTime.Now));
-            richTextBoxDescription.Clear();
+            //richTextBoxDescription.Clear();
             tabControl1.SelectTab(tabDescription);
             this.Cursor = Cursors.WaitCursor;
             ResetActions();
-            FindCROCandCRIMModules();
+            FindVMEModules();
             Initialize(CRIMModules);    //not needed...
             Initialize(CROCModules);    //need it to see what FEs are in each channel
             UpdateTree();
@@ -434,7 +436,8 @@ namespace MinervaGUI
             monitorVoltagesToolStripMenuItem.Enabled = true;
             saveConfigXmlToolStripMenuItem.Enabled = true;
             this.Cursor = Cursors.Arrow;
-            treeView1.ExpandAll();
+            //treeView1.ExpandAll();
+            treeView1.CollapseAll();
         }
 
         private void ResetActions()
@@ -452,9 +455,11 @@ namespace MinervaGUI
             btnSwitchToAuto.Enabled = false;
             textBoxMonitorTimer.Enabled = false;
             btnMonitorHV.Enabled = false;
+
+            richTextBoxV1720.Clear();
         }
 
-        private void FindCROCandCRIMModules()
+        private void FindVMEModules()
         {
             lock (this)
             {
@@ -468,56 +473,25 @@ namespace MinervaGUI
                     //find any CROCs and CRIMs present on VME crate
                     CROCModules.Clear();
                     CRIMModules.Clear();
+                    V1720Modules.Clear();
                     prgStatus.Minimum = 0;
                     prgStatus.Maximum = 255;
                     prgStatus.Value = 0;
                     for (VMEDevsBaseAddr = 0; VMEDevsBaseAddr <= 255; VMEDevsBaseAddr++)
                     {
-                        ProgressReport(null, new ProgressChangedEventArgs((int)VMEDevsBaseAddr, string.Format("Finding CROC and CRIM Modules")));
+                        ProgressReport(null, new ProgressChangedEventArgs((int)VMEDevsBaseAddr, string.Format("Finding VME Modules")));
+                        Refresh();
                         try
                         {
                             wData[0] = (byte)r.Next(1, 255);
                             wData[1] = (byte)r.Next(1, 255);
-                            #region Version#1 to find out CROCs and CRIMs using Write/Read through "controller" object
-                            controller.Write((VMEDevsBaseAddr << 16) + 0xF000, controller.AddressModifier,
-                                    controller.DataWidth, wData);
-                            controller.Read((VMEDevsBaseAddr << 16) + 0xF000, controller.AddressModifier,
-                                controller.DataWidth, rData);
-
-                            if ((rData[0] == wData[0]) && (rData[1] == wData[1]))
-                            {
-                                richTextBoxDescription.AppendText("\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CROC VME module");
-                                Metadata.MetaData.log.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CROC VME module");
-                                CROCModules.Add(new CROC((uint)(VMEDevsBaseAddr << 16), controller, String.Format("Croc {0}", VMEDevsBaseAddr)));
-                            }
-                            if ((rData[0] == wData[0]) && (rData[1] == 0))
-                            {
-                                richTextBoxDescription.AppendText("\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CRIM VME module");
-                                Metadata.MetaData.log.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CRIM VME module");
-                                CRIMModules.Add(new CRIM((uint)(VMEDevsBaseAddr << 16), controller, String.Format("Crim {0}", VMEDevsBaseAddr)));
-                            }
-                            #endregion
-                            #region Version#2 to find out CROCs and CRIMs using Write/Read directly through CAENVMElib
-                            //CAENVMElib.CVErrorCodes wResult = CAENInterface.CAENVME.WriteCycle(0, (VMEDevsBaseAddr << 16) + 0xF000, 
-                            //    wData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
-                            //CAENVMElib.CVErrorCodes rResult = CAENInterface.CAENVME.ReadCycle(0, (VMEDevsBaseAddr << 16) + 0xF000, 
-                            //    rData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
-
-                            //if ((rData[0] == wData[0]) && (rData[1] == wData[1]))
-                            //{
-                            //    //CROCs_VMEBaseAddress.Add(VMEBaseAddress);
-                            //    richTextBoxDescription.AppendText( "\nThis is a CROC VME module");
-                            //}
-                            //if ((rData[0] == wData[0]) && (rData[1] == 0))
-                            //{
-                            //    //CRIMs_VMEBaseAddress.Add(VMEBaseAddress);
-                            //    richTextBoxDescription.AppendText( "\nThis is a CRIM VME module");
-                            //}
-                            #endregion
+                            FindCrocCrimModules(VMEDevsBaseAddr, wData, rData);
+                            FindDigitizerModules(VMEDevsBaseAddr, wData, rData);
                         }
                         catch (Exception e)
                         {
                             if (e.Message == "Bus error") continue;
+                            if (e.Message == "Communication error") throw e;
                             richTextBoxDescription.AppendText("\n\tError VMEDevsBaseAddr=" + VMEDevsBaseAddr + ", " + e.Message);
                             Metadata.MetaData.log.AddToLog("Error VMEDevsBaseAddr=" + VMEDevsBaseAddr + ", " + e.Message);
                         }
@@ -525,7 +499,7 @@ namespace MinervaGUI
                 }
                 catch (Exception e)
                 {
-                    lblStatus.Text = "Error while finding CROC and CRIM devices...";
+                    lblStatus.Text = "Error while finding VME Modules...";
                     richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
                     Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
                 }
@@ -533,6 +507,75 @@ namespace MinervaGUI
                 {
                     vmeDone.Set();
                 }
+            }
+        }
+
+        private void FindCrocCrimModules(uint VMEDevsBaseAddr, byte[] wData, byte[] rData)
+        {
+            #region Version#1 to find out CROCs and CRIMs using Write/Read through "controller" object
+            try
+            {
+                controller.Write((VMEDevsBaseAddr << 16) + 0xF000, controller.AddressModifier,
+                        controller.DataWidth, wData);
+                controller.Read((VMEDevsBaseAddr << 16) + 0xF000, controller.AddressModifier,
+                    controller.DataWidth, rData);
+            }
+            catch (Exception e)
+            {
+                if (e.Message == "Bus error") return;
+                else throw e;
+            }
+            if ((rData[0] == wData[0]) && (rData[1] == wData[1]))
+            {
+                richTextBoxDescription.AppendText("\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CROC VME module");
+                Metadata.MetaData.log.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CROC VME module");
+                CROCModules.Add(new CROC((uint)(VMEDevsBaseAddr << 16), controller, String.Format("Croc {0}", VMEDevsBaseAddr)));
+            }
+            if ((rData[0] == wData[0]) && (rData[1] == 0))
+            {
+                richTextBoxDescription.AppendText("\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CRIM VME module");
+                Metadata.MetaData.log.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a CRIM VME module");
+                CRIMModules.Add(new CRIM((uint)(VMEDevsBaseAddr << 16), controller, String.Format("Crim {0}", VMEDevsBaseAddr)));
+            }
+            #endregion
+            #region Version#2 to find out CROCs and CRIMs using Write/Read directly through CAENVMElib
+            //CAENVMElib.CVErrorCodes wResult = CAENInterface.CAENVME.WriteCycle(0, (VMEDevsBaseAddr << 16) + 0xF000, 
+            //    wData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
+            //CAENVMElib.CVErrorCodes rResult = CAENInterface.CAENVME.ReadCycle(0, (VMEDevsBaseAddr << 16) + 0xF000, 
+            //    rData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
+
+            //if ((rData[0] == wData[0]) && (rData[1] == wData[1]))
+            //{
+            //    //CROCs_VMEBaseAddress.Add(VMEBaseAddress);
+            //    richTextBoxDescription.AppendText( "\nThis is a CROC VME module");
+            //}
+            //if ((rData[0] == wData[0]) && (rData[1] == 0))
+            //{
+            //    //CRIMs_VMEBaseAddress.Add(VMEBaseAddress);
+            //    richTextBoxDescription.AppendText( "\nThis is a CRIM VME module");
+            //}
+            #endregion
+        }
+
+        private void FindDigitizerModules(uint VMEDevsBaseAddr, byte[] wData, byte[] rData)
+        {
+            try
+            {
+                controller.Write((VMEDevsBaseAddr << 16) + (uint)V1720.Registers.VMEScratch, controller.AddressModifier,
+                        controller.DataWidth, wData);
+                controller.Read((VMEDevsBaseAddr << 16) + (uint)V1720.Registers.VMEScratch, controller.AddressModifier,
+                    controller.DataWidth, rData);
+            }
+            catch (Exception e)
+            {
+                if (e.Message == "Bus error") return;
+                else throw e;
+            }
+            if ((rData[0] == wData[0]) && (rData[1] == wData[1]))
+            {
+                richTextBoxDescription.AppendText("\nVMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a DIGITIZER V1720 VME module");
+                Metadata.MetaData.log.AddToLog("VMEDevsBaseAddr = " + VMEDevsBaseAddr + " Found a DIGITIZER V1720 VME module");
+                V1720Modules.Add(new V1720((uint)(VMEDevsBaseAddr << 16), controller, String.Format("V1720 {0}", VMEDevsBaseAddr)));
             }
         }
 
@@ -651,8 +694,20 @@ namespace MinervaGUI
             }
         }
 
-        //private void FindCRIMtoCROCCables(List<CRIM> CRIMs, List<CROC> CROCs, List<CRIMtoCROCCable> CRIMtoCROCCables)
-        //{
+        //List<CRIMtoCROCCable> CRIMtoCROCCables = new List<CRIMtoCROCCable>();
+        private struct CRIMtoCROCCable
+        {
+        //    private uint CRIMAddr;
+        //    public List<uint> CROCAddresses;
+        //    public CRIMtoCROCCable(uint CRIMAddress)
+        //    {
+        //        CRIMAddr = CRIMAddress;
+        //        CROCAddresses = new List<uint>(4);
+        //    }
+        //    public uint CRIMAddress { get { return CRIMAddr; } }
+        }
+        private void FindCRIMtoCROCCables(List<CRIM> CRIMs, List<CROC> CROCs, List<CRIMtoCROCCable> CRIMtoCROCCables)
+        {
         //    CRIMtoCROCCables.Clear();
         //    lock (this)
         //    {
@@ -718,7 +773,7 @@ namespace MinervaGUI
         //            vmeDone.Set();
         //        }
         //    }
-        //}
+        }
 
         private void UpdateTree()
         {
@@ -727,6 +782,7 @@ namespace MinervaGUI
             CROCnodes.Clear();
             CHnodes.Clear();
             FEnodes.Clear();
+            V1720nodes.Clear();
             //create (new) root CRIM nodes
             foreach (CRIM crim in CRIMModules)
             {
@@ -748,6 +804,13 @@ namespace MinervaGUI
                         FEnodes.Add(fen);               //add to the list
                     }
                 }
+            }
+            //create (new) root V1720 nodes
+            foreach (V1720 digitizer in V1720Modules)
+            {
+                V1720node v1720n = new V1720node(digitizer);    //create new V1720node : TreeNode
+                V1720nodes.Add(v1720n);                         //add to the list
+                treeView1.Nodes.Add(v1720n);                    //add to the tree
             }
         }
 
@@ -854,7 +917,7 @@ namespace MinervaGUI
                 {
                     minervaDevicesInfo.CRIMs.Clear();
                     minervaDevicesInfo.CROCs.Clear();
-                    richTextBoxDescription.AppendText("\nGetting hardware\n");
+                    richTextBoxDescription.AppendText("\nGetting hardware...\n");
                     prgStatus.Maximum = CRIMModules.Count;
                     int prg = 0;
                     foreach (CRIM crim in CRIMModules)
@@ -1457,7 +1520,6 @@ namespace MinervaGUI
                     IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Parent.Parent.Tag));
                     theChannel.Reset();
                     FPGAFrame theFrame = new FPGAFrame(theBoard, Frame.FPGAFunctions.Read, new FrameID());
-
                     theFrame.Send(theChannel);
                     theFrame.Receive();
                     AssignFPGARegsDaveToCristian(theFrame, fpgaDevRegControl1);
@@ -1887,7 +1949,7 @@ namespace MinervaGUI
                 finally
                 {
                     vmeDone.Set();
-                    richTextBoxHVRead.Text += "...Done\n";
+                    //richTextBoxHVRead.Text += "...Done\n"; reported error in VisualStudio 2008...
                 }
             }
         }
@@ -4869,10 +4931,12 @@ namespace MinervaGUI
 
         private void CRIMFELoopQuery()
         {
+            uint iTry=0;
             this.Cursor = Cursors.WaitCursor;
             lock (this)
             {
                 vmeDone.WaitOne();
+                string msg = "";
                 try
                 {
                     rtb_CRIMFELoopQueryDisplay.Clear();
@@ -4884,9 +4948,11 @@ namespace MinervaGUI
                         throw new ArgumentNullException(string.Format("CROC {0} is not present in the hardware. Operation abborted\n", txt_CRIMFELoopQueryCrocBaseAddr.Text));
                     uint NTry = uint.Parse(txt_CRIMFELoopQueryNTimes.Text);
                     prgStatus.Maximum = (int)NTry;
-                    rtb_CRIMFELoopQueryDisplay.Text = string.Format("FE Query : Begin {0}\n", DateTime.Now);
-                    for (uint iTry = 0; iTry < NTry; iTry++)
+                    msg = string.Format("FE Query : Begin {0}\n", DateTime.Now);
+                    rtb_CRIMFELoopQueryDisplay.Text = msg; Metadata.MetaData.log.AddToLog(msg);
+                    for (iTry = 0; iTry < NTry; iTry++)
                     {
+                        //msg = TestCodeForAllFastCommandCombinations(iTry, msg, theCroc);
                         //clear the status of CRIM_DAQ 
                         theCrim.Channel.ClearStatus();
                         //check the status of CRIM_DAQ
@@ -4896,18 +4962,22 @@ namespace MinervaGUI
                             CROCFrontEndChannel.StatusBits.SerializerSynch |
                             CROCFrontEndChannel.StatusBits.RFPresent))
                         {
-                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ status register can not be cleared properly : {1}\n", 
-                                iTry, crimStatus));
+                            msg = string.Format("{0} {1} DAQ status register can not be cleared properly : {2}\n", iTry, DateTime.Now, crimStatus); 
+                            rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
                             if ((crimStatus & CROCFrontEndChannel.StatusBits.EncodedCommandReceived) == CROCFrontEndChannel.StatusBits.EncodedCommandReceived)
-                                rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} TimingCommandReceived = 0x{1}", 
-                                    iTry, theCrim.TimingCommandReceived.ToString("X2")));
+                            {
+                                msg = string.Format("TimingCommandReceived = 0x{0}\n", theCrim.TimingCommandReceived.ToString("X2"));
+                                rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
+                            }
                         }
                         //reset DPM Pointer of CRIM_DAQ 
                         theCrim.Channel.ResetPointer();
                         //check DPM Pointer of CRIM_DAQ
                         if (theCrim.Channel.Pointer != 0)
-                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ pointer register can not be reset properly : {1}\n", 
-                                iTry, theCrim.Channel.Pointer));
+                        {
+                            msg = string.Format("{0} {1} DAQ pointer register can not be reset properly : {2}\n", iTry, DateTime.Now, theCrim.Channel.Pointer);
+                            rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
+                        }
                         //send the fast command QueryFPGA from the CROC that owns the FE Boards' Loop 
                         theCroc.FastCommandRegister = (ushort)FastCommands.QueryFPGA;
                         //check the status of CRIM_DAQ 
@@ -4917,16 +4987,25 @@ namespace MinervaGUI
                             CROCFrontEndChannel.StatusBits.DeserializerLock |
                             CROCFrontEndChannel.StatusBits.SerializerSynch |
                             CROCFrontEndChannel.StatusBits.RFPresent))
-                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ status register ERROR after FastCommands.QueryFPGA  : {1}\n", 
-                                iTry, crimStatus));
+                        {
+                            msg = string.Format("{0} {1} DAQ status register ERROR after FastCommands.QueryFPGA  : {2}\n", iTry, DateTime.Now, crimStatus);
+                            rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
+                        }
                         //read the decoded timing command register of CRIM_DAQ 
-                        if (theCrim.TimingCommandReceived != (byte)FastCommands.QueryFPGA)
-                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} DAQ fast cmd register ERROR unexpected value : 0x{1}\n",
-                                iTry, theCrim.TimingCommandReceived.ToString("X2")));
+                        byte theTimingCommandReceived = theCrim.TimingCommandReceived;
+                        if (theTimingCommandReceived != (byte)FastCommands.QueryFPGA)
+                        {
+                            msg = string.Format("{0} {1} DAQ fast cmd register ERROR unexpected value : 0x{2}\n",
+                                iTry, DateTime.Now, theTimingCommandReceived.ToString("X2"));
+                            rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
+                        }
                         //read DPM Pointer of CRIM_DAQ
                         ushort nFEs = theCrim.Channel.Pointer;
                         if (nFEs == 0)
-                            rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} NO FEs present on loop\n", iTry));
+                        {
+                            msg = string.Format("{0} {1} NO FEs present on loop\n", iTry, DateTime.Now);
+                            rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
+                        }
                         else
                         {
                             //read DPM content
@@ -4934,7 +5013,10 @@ namespace MinervaGUI
                             StringBuilder FEsFound = new StringBuilder();
                             for (int iFE = 0; iFE < nFEs; iFE++) FEsFound.Append(string.Format("{0} ", (Frame.Addresses)response[iFE]));
                             if ((!chk_CRIMFELoopQueryMatch.Checked) || (FEsFound.ToString().Trim() != txt_CRIMFELoopQueryMatch.Text.Trim()))
-                                rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("{0} Found : {1}\n", iTry, FEsFound.ToString()));
+                            {
+                                msg = string.Format("{0} {1} Found : {2}\n", iTry, DateTime.Now, FEsFound.ToString());
+                                rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
+                            }
                         }
                         ProgressReport(null, new ProgressChangedEventArgs((int)iTry, string.Format("Loop Query")));
                         if (btn_CRIMFELoopQueryDoQuery.Text == "START Query FEs (N times)") throw new Exception("User aborted operation");
@@ -4942,17 +5024,63 @@ namespace MinervaGUI
                 }
                 catch (Exception ex)
                 {
-                    rtb_CRIMFELoopQueryDisplay.AppendText("\n" + ex.Message + "\n");
-                    richTextBoxDescription.AppendText("\n" + ex.Message + "\n");
+                    msg = "\ni=" + iTry + " " +  ex.Message + "\n";
+
+                    //msg = "\n" + ex.Message + "\n";
+                    rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
+                    richTextBoxDescription.AppendText(msg);
                     //MessageBox.Show(ex.Message);
                 }
                 finally
                 {
-                    rtb_CRIMFELoopQueryDisplay.AppendText(string.Format("FE Query : End {0}", DateTime.Now));
+                    msg = string.Format("FE Query : End {0}", DateTime.Now);
+                    rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
                     vmeDone.Set();
                 }
             }
             this.Cursor = Cursors.Arrow;
+        }
+        
+        private string TestCodeForAllFastCommandCombinations(uint iTry, string msg, CROC theCroc)
+        {
+            ////TEST CODE FOR ALL FAST COMMANDS COMBINATIONS
+            CROCFrontEndChannel.StatusBits crocStatus;
+            CROCFrontEndChannel.StatusBits crocStatusOK = CROCFrontEndChannel.StatusBits.RFPresent |
+                    CROCFrontEndChannel.StatusBits.SerializerSynch |
+                    CROCFrontEndChannel.StatusBits.DeserializerLock |
+                    CROCFrontEndChannel.StatusBits.PLLLocked |
+                    CROCFrontEndChannel.StatusBits.TestPulseReceived |
+                    CROCFrontEndChannel.StatusBits.MessageSent |
+                    CROCFrontEndChannel.StatusBits.MessageReceived;
+            Frame.Addresses theFEBoard = Frame.Addresses.FE12;
+            IFrontEndChannel theCROCChannel = theCroc.Channel(CROC.Channels.Ch1);
+            FPGAFrame theFrame = new FPGAFrame(theFEBoard, Frame.FPGAFunctions.Read, new FrameID());
+            int msWait = 100;
+            ushort iFastCmd;
+            //1. Send a FAST CMD and check STATUS
+            iFastCmd = (ushort)((ushort)iTry | 0x81);
+            theCroc.FastCommandRegister = iFastCmd;
+            System.Threading.Thread.Sleep(msWait);
+            crocStatus = theCROCChannel.StatusRegister;
+            if (crocStatus != crocStatusOK)
+            {
+                msg = string.Format("{0} CROC stat after FAST CMD: \n{1}\n0x{2}\n", iTry, crocStatus, iFastCmd.ToString("X").PadLeft(2, '0'));
+                rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
+            }
+            //2. Wait for FEBs to recover after CLK PLL distorsion
+            //System.Threading.Thread.Sleep(msWait);
+            //3. Do the usual READ FPGA FRAME and check STATUS
+            theCROCChannel.Reset();
+            theFrame.Send(theCROCChannel);
+            System.Threading.Thread.Sleep(1);
+            crocStatus = theCROCChannel.StatusRegister;
+            if (crocStatus != crocStatusOK)
+            {
+                msg = string.Format("{0} CROC stat after SEND: \n{1}\n", iTry, crocStatus);
+                rtb_CRIMFELoopQueryDisplay.AppendText(msg); Metadata.MetaData.log.AddToLog(msg);
+            }
+            ////TEST CODE FOR ALL FAST COMMANDS COMBINATIONS
+            return msg;
         }
         
         #endregion
@@ -5013,11 +5141,294 @@ namespace MinervaGUI
 
         #endregion VME
 
+        #region Methods for Write/Read to/from V1720
 
+        private ConfigV1720 ConfigFileV1720;
 
+        private void btn_V1720AdvancedGUI_Click(object sender, EventArgs e)
+        {
+            AdvancedGUI((Button)sender, btn_V1720ReadAllRegisters);
+        }
 
+        private void btn_V1720ReadAllRegisters_Click(object sender, EventArgs e)
+        {
+            if (ConfigFileV1720 != null)
+            {
+                richTextBoxV1720.Text += ConfigFileV1720.Digitizer.ReadContentOfAllRegistersV1720();
+                richTextBoxV1720.Text += ConfigFileV1720.Digitizer.ReadContentOfAllRegistersV1720Channels();
+            }
+            else
+                richTextBoxV1720.Text += "\nERROR: There is NO Configuration File loaded.";
+        }
 
+        private void btn_V1720LoadConfigFile_Click(object sender, EventArgs e)
+        {
+            if (V1720Modules.Count == 0)
+            {
+                richTextBoxV1720.Text = string.Format("\nNo V1720 module present. Operation aborted.");
+                return;
+            }
+            OpenFileDialog OFD = new System.Windows.Forms.OpenFileDialog();
+            OFD.Title = "Open a V1720 Configuration File";
+            if (OFD.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    ConfigFileV1720 = new ConfigFiles.ConfigV1720(OFD.FileName, controller, (V1720)(treeView1.SelectedNode.Tag));
+                    richTextBoxV1720.Text = string.Format("\nOpening Configuration File : \n{0}\n", OFD.FileName);
+                    //richTextBoxV1720.Text += ConfigFileV1720.ConfigFileContent;
+                    richTextBoxV1720.Text += string.Format("\nExecuting Configuration File ...\n");
+                    ConfigFileV1720.ExecuteConfigurationFile();
+                    richTextBoxV1720.Text += string.Format("\n... Configuration File Execution : Success\n", OFD.FileName);
+                    UpdateBufferSize8bit(true);
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxV1720.Text += string.Format("\nERROR : {0}\n", ex.Message);
+                    richTextBoxV1720.Text += string.Format("\n... Configuration File Execution : Aborted\n", OFD.FileName);
+                    if (ConfigFileV1720 != null && ConfigFileV1720.StreamWriterEvent != null) ConfigFileV1720.StreamWriterEvent.Close();
+                }
+                finally
+                {
+                    vmeDone.Set();
+                }
+            }
+        }
 
+        private void btn_V1720TakeNEvents_Click(object sender, EventArgs e)
+        {
+            if (btn_V1720TakeNEvents.Text == "START Take N Events")
+            {
+                btn_V1720TakeNEvents.Text = "STOP Take N Events)";
+                btn_V1720TakeNEvents.BackColor = Color.LightBlue;
+                TakeNEvents();
+                btn_V1720TakeNEvents.Text = "START Take N Events";
+                btn_V1720TakeNEvents.BackColor = Color.Coral;
+                return;
+            }
+            else
+            {
+                btn_V1720TakeNEvents.Text = "START Take N Events";
+                return;
+            }
+        }
+
+        private void TakeNEvents()
+        {
+            lock (this)
+            {
+                vmeDone.WaitOne();
+                try
+                {
+                    if (ConfigFileV1720.ReadoutMode == ConfigV1720.READOUT_MODE.D32)
+                    {
+                        richTextBoxV1720.Text += string.Format("Readout Mode {0} not implemented yet", ConfigV1720.READOUT_MODE.D32.ToString());
+                    }
+                    if (ConfigFileV1720.ReadoutMode == ConfigV1720.READOUT_MODE.BLT32)
+                    {
+                        ConfigFileV1720.Digitizer.AcquisitionCtrlRunStop = V1720.AcqCtrlRunStop.Run;
+                        ReadoutBLT32();
+                    }
+                    if (ConfigFileV1720.ReadoutMode == ConfigV1720.READOUT_MODE.MBLT64)
+                        richTextBoxV1720.Text += string.Format("Readout Mode {0} not implemented yet", ConfigV1720.READOUT_MODE.MBLT64.ToString());
+                }
+                catch (Exception ex)
+                {
+                    richTextBoxV1720.Text += string.Format("\nERROR : {0}\n", ex.Message);
+                }
+                finally
+                {
+                    try
+                    {
+                        ConfigFileV1720.Digitizer.AcquisitionCtrlRunStop = V1720.AcqCtrlRunStop.Stop;
+                        ConfigFileV1720.StreamWriterEvent.Flush();
+                    }
+                    catch (Exception ex)
+                    {
+                        richTextBoxV1720.Text += string.Format("\nERROR : {0}\n", ex.Message);
+                    }
+                    //if (ConfigFileV1720 != null)
+                    //{
+                    //    ConfigFileV1720.Digitizer.AcquisitionCtrlRunStop = V1720.AcqCtrlRunStop.Stop;
+                    //    if (ConfigFileV1720.StreamWriterEvent != null) ConfigFileV1720.StreamWriterEvent.Flush();
+                    //}
+                    vmeDone.Set();
+                }
+            }
+        }
+        /// <summary>Updates the VME readout Buffer Size, in bytes.</summary>
+        private uint UpdateBufferSize8bit(bool displayResults)
+        {
+            byte MemorySizeMBperChannel; 
+            string BoardType;
+            ConfigFileV1720.Digitizer.BoardInfo(out MemorySizeMBperChannel, out BoardType);
+            V1720.BufferCode BufferCode = ConfigFileV1720.Digitizer.BufferOrganization;
+            V1720.ChannelsEnabled ChannelEnableMask = ConfigFileV1720.Digitizer.ChannelEnableMask;
+            // Calculate Expected Event Size in 32bit Words (including Header) IN STANDARD MODE
+            uint ExpectedEventSize32 = (uint)(((MemorySizeMBperChannel * Math.Pow(2, 20)) / (int)Math.Pow(2, (int)BufferCode))
+                * Multiplicity((int)ChannelEnableMask) + 16) / 4;  //the +16 bytes are for the Event Header
+            // Calculate the BufferSize in bytes
+            uint BufferSize8bit = (ConfigFileV1720.Digitizer.VMEControlBusError == V1720.VMECtrlBusError.Enabled)
+                & (ConfigFileV1720.Digitizer.BLTEventNumber != 0) ?
+                (ExpectedEventSize32 * ConfigFileV1720.Digitizer.BLTEventNumber * 4) : (ExpectedEventSize32 * 4); // Bytes
+            // Add BLTSize more bytes as instructed by Configuration File ????? WHY????
+            BufferSize8bit += ConfigFileV1720.BLTSize;
+            //BufferData32 = new BitVector32[BufferSize8bit / 4];
+            if (displayResults)
+            {
+                richTextBoxV1720.Text += string.Format("\nBoard Info Register :" +
+                    "\n\tBoard Type : {0}\n\tMemory Size : {1} MByte per channel", BoardType, MemorySizeMBperChannel);
+                richTextBoxV1720.Text += string.Format("\nChannel Enable Mask Register : 0x{0}", ((uint)ChannelEnableMask).ToString("X"));
+                richTextBoxV1720.Text += string.Format("\nBuffer Organization Register :" +
+                    "\n\tBuffers : {0}\n\tExpected Event Size : {1} 32-bit words (including header)", BufferCode, ExpectedEventSize32);
+                richTextBoxV1720.Text += string.Format("\nReadout Buffer Size = {0} (bytes)", BufferSize8bit);
+            }
+            return BufferSize8bit;
+        }
+        /// <summary>Multiplicity: calculate the number of channels that partecipate to one event</summary>
+        /// <param name="mask">Channel Mask</param>
+        /// <returns>number of channels</returns>
+        private int Multiplicity(int mask)
+        {
+            int i, m = 0;
+            for (i = 0; i < 8; i++)
+                if (((mask >> i) & 1) == 1) m++;
+            return m;
+        }
+
+        private void ReadoutBLT32()
+        {
+            double[] iPedestalAvg = new double[8]; //new int[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] iPulseIntegral = new double[8]; //new int[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] iPulseAvg = new double[8]; //new int[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] SumPedestalAvg = new double[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] SumPulseIntegral = new double[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] SumPulseAvg = new double[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] Sum2PedestalAvg = new double[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] Sum2PulseIntegral = new double[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] Sum2PulseAvg = new double[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] MeanPedestalAvg = new double[8]; //new int[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] MeanPulseIntegral = new double[8]; //new int[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] MeanPulseAvg = new double[8]; //new int[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] StDevPedestalAvg = new double[8]; //new int[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] StDevPulseIntegral = new double[8]; //new int[Enum.GetValues(typeof(V1720.Channels)).Length];
+            double[] StDevPulseAvg = new double[8]; //new int[Enum.GetValues(typeof(V1720.Channels)).Length];
+            Event theEvent;
+            string msg = string.Empty;
+            richTextBoxV1720.Text = msg;
+            uint iEvent = 0;
+            uint nEvent = 0;
+            uint.TryParse(txt_V1720TakeNEvents.Text, out nEvent);
+            byte[] first32BitWord = new byte[4];
+            uint firstWord;
+            uint eventSize8;
+            prgStatus.Minimum = 0;
+            prgStatus.Maximum = (int)nEvent;
+            prgStatus.Value = 0;
+            try
+            {
+                msg = string.Format("\nBEGIN Taking Events : {0}", DateTime.Now);
+                richTextBoxV1720.Text = "\n" + msg; ConfigFileV1720.StreamWriterEvent.WriteLine(msg);
+                while (iEvent < nEvent)
+                {
+                    //Console.WriteLine("_digitizer.EventStored = " + ConfigFileV1720.Digitizer.EventStored);
+                    //byte[] first32BitWord = new byte[4];
+                    //uint firstWord; uint eventSize8;
+                    controller.Reads(ConfigFileV1720.Digitizer.BaseAddress, AddressModifiers.A24, DataWidths.D32, first32BitWord);
+                    firstWord = BitConverter.ToUInt32(first32BitWord, 0);
+                    if (firstWord != 0xFFFFFFFF)
+                    {
+                        eventSize8 = (firstWord & 0x0FFFFFFF) * 4;
+                        BitVector32[] eventData = new BitVector32[eventSize8 / 4];
+                        int itmp = 0;
+                        eventData[itmp++] = new BitVector32((int)firstWord);
+                        int Count;
+                        byte[] Data = new byte[4000];
+                        do
+                        {
+                            controller.ReadBlocks(ConfigFileV1720.Digitizer.BaseAddress, AddressModifiers.A24, DataWidths.D32,
+                            4000, Data, out Count);
+                            for (int i = 0; i < Count; i += 4)
+                                eventData[itmp++] = new BitVector32((int)BitConverter.ToUInt32(Data, i));
+                        }
+                        while (Count == 4000);
+
+                        theEvent = new Event(eventData, ConfigFileV1720.Digitizer.ConfigurationPack25);
+                        iEvent++;
+
+                        if (chk_V1720PrintEventData.Checked || chk_V1720PrintEventStat.Checked)
+                        {
+                            msg = string.Format("\niEvent={0} Date={1}", iEvent, DateTime.Now);
+                            richTextBoxV1720.Text += "\n" + msg; ConfigFileV1720.StreamWriterEvent.WriteLine(msg);
+                        }
+                        if (chk_V1720PrintEventData.Checked)
+                        {
+                            msg = theEvent.ToString(ConfigFileV1720.OutputFormat);
+                            richTextBoxV1720.Text += "\n" + msg; ConfigFileV1720.StreamWriterEvent.WriteLine(msg);
+                        }
+                        msg = theEvent.ToStringUVModel(0, 0.45, 0.45, 0.55, 0.55, 1, out iPedestalAvg, out iPulseIntegral, out iPulseAvg);
+                        if (chk_V1720PrintEventStat.Checked)
+                        {
+                            richTextBoxV1720.Text += "\n" + msg; ConfigFileV1720.StreamWriterEvent.WriteLine(msg);
+                        }
+                        
+                        for (int i = 0; i < 7; i++)
+                        {
+                            SumPedestalAvg[i] += iPedestalAvg[i];
+                            SumPulseIntegral[i] += iPulseIntegral[i];
+                            SumPulseAvg[i] += iPulseAvg[i];
+                            Sum2PedestalAvg[i] += Math.Pow(iPedestalAvg[i], 2);
+                            Sum2PulseIntegral[i] += Math.Pow(iPulseIntegral[i], 2);
+                            Sum2PulseAvg[i] += Math.Pow(iPulseAvg[i], 2);
+                        }
+                        if (iEvent >= nEvent)
+                        {
+                            msg = string.Format("\n{0} Found {1} events, and the average of averages are: ", DateTime.Now, iEvent);
+                            richTextBoxV1720.Text += "\n" + msg; ConfigFileV1720.StreamWriterEvent.WriteLine(msg);
+                            for (int i = 0; i < 8; i++)
+                            {
+                                MeanPedestalAvg[i] = SumPedestalAvg[i] / iEvent;
+                                MeanPulseIntegral[i] = SumPulseIntegral[i] / iEvent;
+                                MeanPulseAvg[i] = SumPulseAvg[i] / iEvent;
+                                StDevPedestalAvg[i] = Math.Sqrt(Sum2PedestalAvg[i] / iEvent - Math.Pow(MeanPedestalAvg[i], 2));
+                                StDevPulseIntegral[i] = Math.Sqrt(Sum2PulseIntegral[i] / iEvent - Math.Pow(MeanPulseIntegral[i], 2));
+                                StDevPulseAvg[i] = Math.Sqrt(Sum2PulseAvg[i] / iEvent - Math.Pow(MeanPulseAvg[i], 2));
+                                if (MeanPedestalAvg[i] != 0)
+                                {
+                                    msg = string.Format("Ch{0} Ped = {1} +- {2}, PulseIntegral = {3} +- {4}, PulseAvg = {5} +- {6}",
+                                        i, MeanPedestalAvg[i].ToString("0000.0000"), StDevPedestalAvg[i].ToString("0.0000"),
+                                        MeanPulseIntegral[i].ToString("0000.0000"), StDevPulseIntegral[i].ToString("0.0000"),
+                                        MeanPulseAvg[i].ToString("0.0000"), StDevPulseAvg[i].ToString("0.0000"));
+                                    richTextBoxV1720.Text += "\n" + msg; ConfigFileV1720.StreamWriterEvent.WriteLine(msg);
+                                }
+                            }
+                            for (int i = 0; i < 8; i++)
+                            {
+                                SumPedestalAvg[i] = 0;
+                                SumPulseIntegral[i] = 0;
+                                SumPulseAvg[i] = 0;
+                                Sum2PedestalAvg[i] = 0;
+                                Sum2PulseIntegral[i] = 0;
+                                Sum2PulseAvg[i] = 0;
+                            }
+                        }
+                        ProgressReport(null, new ProgressChangedEventArgs((int)iEvent, "Readout Event"));
+                        if (btn_V1720TakeNEvents.Text == "START Take N Events") throw new Exception("User aborted operation");
+                    }
+                }
+                msg = string.Format("\nEND Taking Events : {0}", DateTime.Now);
+                richTextBoxV1720.Text += "\n" + msg; ConfigFileV1720.StreamWriterEvent.WriteLine(msg);
+            }
+            catch (Exception e)
+            {
+                richTextBoxV1720.Text += string.Format("\nERROR : {0}\n", e.Message);
+            }
+
+        }
+
+        #endregion
 
         //private void button1_Click(object sender, EventArgs e)
         //{
@@ -5083,8 +5494,6 @@ namespace MinervaGUI
         //    myErrorCode = CAENInterface.CAENVME.ReadCycle(0, myAddress, myData, CAENVMElib.CVAddressModifier.cvA24_U_DATA, CAENVMElib.CVDataWidth.cvD16);
         //    //if ((myData[0] != 0x03) | (myData[1] != 0x37)) Console.WriteLine("status register error - 3");
         //}
-
-
 
     }
 
@@ -5172,12 +5581,10 @@ namespace MinervaGUI
         /// Get the Frame.Addresses boardID
         /// </summary>
         public byte BoardID { get { return ID; } }
-
     }
 
     public class FPGAnode : TreeNode
     {
-
     }
     public class TRIPnode : TreeNode
     {
@@ -5186,13 +5593,84 @@ namespace MinervaGUI
     {
     }
 
-    /// <summary>
-    /// Contains two lists of TreeNode objects: CRIMnodes and CROCnodes
-    /// </summary>
-    public class MinervaTreeeNodes
+    ///// <summary>
+    ///// Contains two lists of TreeNode objects: CRIMnodes and CROCnodes
+    ///// </summary>
+    //public class MinervaTreeeNodes
+    //{
+    //    public List<CRIMnode> CRIMnodes = null;
+    //    public List<CROCnode> CROCnodes = null;
+    //}
+
+    /// <summary>Encapsulates a IV1720 object into Tag property of the TreeNode</summary>
+    public class V1720node : TreeNode
     {
-        public List<CRIMnode> CRIMnodes = null;
-        public List<CROCnode> CROCnodes = null;
+        private TreeNode registers = new TreeNode();
+        private TreeNode channels = new TreeNode();
+        private List<V1720CHnode> chnodes = new List<V1720CHnode>();
+        private List<V1720REGnode> regnodes = new List<V1720REGnode>();
+        public V1720node(IV1720 digitizer)
+        {
+            base.Tag = digitizer;
+            base.Text = digitizer.Description;
+            registers.Text = "Registers";
+            base.Nodes.Add(registers);
+            foreach (V1720.Registers register in Enum.GetValues(typeof(V1720.Registers)))
+            {
+                //create the V1720REGnode : TreeNode for this TreeNode registers
+                V1720REGnode regnode = new V1720REGnode(register.ToString(), (ushort)register);
+                regnodes.Add(regnode);
+                registers.Nodes.Add(regnode);
+            }
+            channels.Text = "Channels";
+            base.Nodes.Add(channels);
+            foreach (V1720.Channels ch in Enum.GetValues(typeof(V1720.Channels)))
+            {
+                //create the V1720CHnode : TreeNode for this V1720node : TreeNode
+                V1720CHnode chn = new V1720CHnode(digitizer[ch]);
+                chnodes.Add(chn);
+                channels.Nodes.Add(chn);
+            }
+        }
+        //public TreeNode V1720REGnode { get { return registers; } }
+        //public TreeNode V1720CHnode { get { return channels; } }
+        //public List<V1720REGnode> V1720REGnodes { get { return regnodes; } }
+        //public List<V1720CHnode> V1720CHnodes { get { return chnodes; } }
+    }
+    /// <summary>Encapsulates an IV1720Channel object into Tag property of the TreeNode</summary>
+    public class V1720CHnode : TreeNode
+    {
+        private TreeNode registers = new TreeNode();
+        private List<V1720REGnode> regnodes = new List<V1720REGnode>();
+        public V1720CHnode(IV1720Channel ch)
+        {
+            base.Tag = ch;
+            base.Text = ch.Description;
+            registers.Text = "Registers";
+            base.Nodes.Add(registers);
+            foreach (string register in ch.ChannelRegisters.Keys)
+            {
+                //create the V1720REGnode : TreeNode for this V1720CHnode : TreeNode
+                V1720REGnode regnode = new V1720REGnode(register, ch.ChannelRegisters[register]);
+                regnodes.Add(regnode);
+                registers.Nodes.Add(regnode);
+            }
+        }
+        //public TreeNode V1720CHREGnode { get { return registers; } }
+        //public List<V1720REGnode> V1720CHREGnodes { get { return regnodes; } }
+    }
+    public class V1720REGnode : TreeNode
+    {
+        private string name;
+        private ushort address;
+        public V1720REGnode(string name, ushort address)
+        {
+            this.name = name;
+            this.address = address;
+            base.Text = string.Format("{0} : 0x{1}", name, address.ToString("X").PadLeft(4,'0'));
+        }
+        public string REGname { get { return name; } }
+        public ushort REGaddr { get { return address; } }
     }
 
     #endregion

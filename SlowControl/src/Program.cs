@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace MinervaGUI
+namespace SlowControl
 {
     static class Program
     {
@@ -14,7 +14,10 @@ namespace MinervaGUI
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            try { Application.Run(new frmSlowControl()); }
+            try 
+            {
+                Application.Run(new frmMain());
+            }
             catch (Exception e) { MessageBox.Show(e.Message); }
         }
     }

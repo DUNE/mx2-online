@@ -1,4 +1,4 @@
-namespace MinervaGUI
+namespace SlowControl
 {
     partial class frmSlowControl
     {
@@ -391,6 +391,17 @@ namespace MinervaGUI
             this.cmb_LIBoxPortName = new System.Windows.Forms.ComboBox();
             this.btn_LIBoxFindSerialPorts = new System.Windows.Forms.Button();
             this.btn_LIBoxConfigureSerialPort = new System.Windows.Forms.Button();
+            this.tabV1720 = new System.Windows.Forms.TabPage();
+            this.btn_V1720ReadAllRegisters = new System.Windows.Forms.Button();
+            this.chk_V1720PrintEventStat = new System.Windows.Forms.CheckBox();
+            this.chk_V1720PrintEventData = new System.Windows.Forms.CheckBox();
+            this.txt_V1720TakeNEvents = new System.Windows.Forms.TextBox();
+            this.btn_V1720TakeNEvents = new System.Windows.Forms.Button();
+            this.richTextBoxV1720 = new System.Windows.Forms.RichTextBox();
+            this.lblV1720_V1720ID = new System.Windows.Forms.Label();
+            this.label72 = new System.Windows.Forms.Label();
+            this.btn_V1720AdvancedGUI = new System.Windows.Forms.Button();
+            this.btn_V1720LoadConfigFile = new System.Windows.Forms.Button();
             this.errMain = new System.Windows.Forms.ErrorProvider(this.components);
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -456,6 +467,7 @@ namespace MinervaGUI
             this.groupBoxLIBox_LICommandsHardcoded.SuspendLayout();
             this.groupBoxLIBox_RS232Commands.SuspendLayout();
             this.groupBoxLIBox_RS232Settings.SuspendLayout();
+            this.tabV1720.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errMain)).BeginInit();
             this.contextMenuStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
@@ -464,7 +476,8 @@ namespace MinervaGUI
             // 
             // tabControl1
             // 
-            this.tabControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.tabControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.tabControl1.Controls.Add(this.tabDescription);
             this.tabControl1.Controls.Add(this.tabVME);
@@ -477,10 +490,11 @@ namespace MinervaGUI
             this.tabControl1.Controls.Add(this.tabFLASHPages);
             this.tabControl1.Controls.Add(this.tabReadHV);
             this.tabControl1.Controls.Add(this.tabLIBox);
-            this.tabControl1.Location = new System.Drawing.Point(282, 27);
+            this.tabControl1.Controls.Add(this.tabV1720);
+            this.tabControl1.Location = new System.Drawing.Point(211, 27);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(395, 533);
+            this.tabControl1.Size = new System.Drawing.Size(466, 536);
             this.tabControl1.TabIndex = 0;
             // 
             // tabDescription
@@ -489,7 +503,7 @@ namespace MinervaGUI
             this.tabDescription.Location = new System.Drawing.Point(4, 22);
             this.tabDescription.Name = "tabDescription";
             this.tabDescription.Padding = new System.Windows.Forms.Padding(3);
-            this.tabDescription.Size = new System.Drawing.Size(387, 507);
+            this.tabDescription.Size = new System.Drawing.Size(458, 510);
             this.tabDescription.TabIndex = 3;
             this.tabDescription.Text = "Description";
             this.tabDescription.UseVisualStyleBackColor = true;
@@ -501,7 +515,7 @@ namespace MinervaGUI
             this.richTextBoxDescription.Dock = System.Windows.Forms.DockStyle.Fill;
             this.richTextBoxDescription.Location = new System.Drawing.Point(3, 3);
             this.richTextBoxDescription.Name = "richTextBoxDescription";
-            this.richTextBoxDescription.Size = new System.Drawing.Size(381, 501);
+            this.richTextBoxDescription.Size = new System.Drawing.Size(452, 504);
             this.richTextBoxDescription.TabIndex = 0;
             this.richTextBoxDescription.Text = "";
             // 
@@ -510,7 +524,7 @@ namespace MinervaGUI
             this.tabVME.Controls.Add(this.groupBoxVME_WriteRead);
             this.tabVME.Location = new System.Drawing.Point(4, 22);
             this.tabVME.Name = "tabVME";
-            this.tabVME.Size = new System.Drawing.Size(387, 507);
+            this.tabVME.Size = new System.Drawing.Size(458, 510);
             this.tabVME.TabIndex = 10;
             this.tabVME.Text = "VME";
             this.tabVME.UseVisualStyleBackColor = true;
@@ -618,7 +632,7 @@ namespace MinervaGUI
             this.tabCRIM.Controls.Add(this.btn_CRIMReportGateAlignmentsAllCROCs);
             this.tabCRIM.Location = new System.Drawing.Point(4, 22);
             this.tabCRIM.Name = "tabCRIM";
-            this.tabCRIM.Size = new System.Drawing.Size(387, 507);
+            this.tabCRIM.Size = new System.Drawing.Size(458, 510);
             this.tabCRIM.TabIndex = 4;
             this.tabCRIM.Text = "CRIM";
             this.tabCRIM.UseVisualStyleBackColor = true;
@@ -2113,7 +2127,7 @@ namespace MinervaGUI
                         | System.Windows.Forms.AnchorStyles.Left)));
             this.rtb_CRIMFELoopQueryDisplay.Location = new System.Drawing.Point(9, 106);
             this.rtb_CRIMFELoopQueryDisplay.Name = "rtb_CRIMFELoopQueryDisplay";
-            this.rtb_CRIMFELoopQueryDisplay.Size = new System.Drawing.Size(352, 136);
+            this.rtb_CRIMFELoopQueryDisplay.Size = new System.Drawing.Size(352, 312);
             this.rtb_CRIMFELoopQueryDisplay.TabIndex = 106;
             this.rtb_CRIMFELoopQueryDisplay.Text = "";
             // 
@@ -2198,7 +2212,7 @@ namespace MinervaGUI
             this.tabCROC.Controls.Add(this.label19);
             this.tabCROC.Location = new System.Drawing.Point(4, 22);
             this.tabCROC.Name = "tabCROC";
-            this.tabCROC.Size = new System.Drawing.Size(387, 507);
+            this.tabCROC.Size = new System.Drawing.Size(458, 510);
             this.tabCROC.TabIndex = 5;
             this.tabCROC.Text = "CROC";
             this.tabCROC.UseVisualStyleBackColor = true;
@@ -2819,7 +2833,7 @@ namespace MinervaGUI
             this.tabCH.Controls.Add(this.label16);
             this.tabCH.Location = new System.Drawing.Point(4, 22);
             this.tabCH.Name = "tabCH";
-            this.tabCH.Size = new System.Drawing.Size(387, 507);
+            this.tabCH.Size = new System.Drawing.Size(458, 510);
             this.tabCH.TabIndex = 6;
             this.tabCH.Text = "CH";
             this.tabCH.UseVisualStyleBackColor = true;
@@ -3442,7 +3456,7 @@ namespace MinervaGUI
             // 
             this.tabFE.Location = new System.Drawing.Point(4, 22);
             this.tabFE.Name = "tabFE";
-            this.tabFE.Size = new System.Drawing.Size(387, 507);
+            this.tabFE.Size = new System.Drawing.Size(458, 510);
             this.tabFE.TabIndex = 7;
             this.tabFE.Text = "FE";
             this.tabFE.UseVisualStyleBackColor = true;
@@ -3463,7 +3477,7 @@ namespace MinervaGUI
             this.tabFPGARegs.Location = new System.Drawing.Point(4, 22);
             this.tabFPGARegs.Name = "tabFPGARegs";
             this.tabFPGARegs.Padding = new System.Windows.Forms.Padding(3);
-            this.tabFPGARegs.Size = new System.Drawing.Size(387, 507);
+            this.tabFPGARegs.Size = new System.Drawing.Size(458, 510);
             this.tabFPGARegs.TabIndex = 0;
             this.tabFPGARegs.Text = "FPGA Regs";
             this.tabFPGARegs.UseVisualStyleBackColor = true;
@@ -3571,9 +3585,8 @@ namespace MinervaGUI
             // 
             // fpgaDevRegControl1
             // 
-            this.fpgaDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.fpgaDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
             this.fpgaDevRegControl1.AutoScroll = true;
             this.fpgaDevRegControl1.FPGARegValues = new uint[] {
         ((uint)(12u)),
@@ -3686,7 +3699,7 @@ namespace MinervaGUI
             this.fpgaDevRegControl1.RegisterTripXComparators = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterTripXThreshold = ((uint)(0u));
             this.fpgaDevRegControl1.RegisterVXOMuxSelect = ((uint)(1u));
-            this.fpgaDevRegControl1.Size = new System.Drawing.Size(291, 464);
+            this.fpgaDevRegControl1.Size = new System.Drawing.Size(250, 467);
             this.fpgaDevRegControl1.TabIndex = 23;
             // 
             // tabTRIPRegs
@@ -3706,7 +3719,7 @@ namespace MinervaGUI
             this.tabTRIPRegs.Location = new System.Drawing.Point(4, 22);
             this.tabTRIPRegs.Name = "tabTRIPRegs";
             this.tabTRIPRegs.Padding = new System.Windows.Forms.Padding(3);
-            this.tabTRIPRegs.Size = new System.Drawing.Size(387, 507);
+            this.tabTRIPRegs.Size = new System.Drawing.Size(458, 510);
             this.tabTRIPRegs.TabIndex = 1;
             this.tabTRIPRegs.Text = "TRIP Regs";
             this.tabTRIPRegs.UseVisualStyleBackColor = true;
@@ -3830,9 +3843,8 @@ namespace MinervaGUI
             // 
             // tripDevRegControl1
             // 
-            this.tripDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.tripDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
             this.tripDevRegControl1.AutoScroll = true;
             this.tripDevRegControl1.Location = new System.Drawing.Point(6, 37);
             this.tripDevRegControl1.Name = "tripDevRegControl1";
@@ -3856,7 +3868,7 @@ namespace MinervaGUI
             this.tripDevRegControl1.RegisterPIPEDEL = ((uint)(1u));
             this.tripDevRegControl1.RegisterVREF = ((uint)(20u));
             this.tripDevRegControl1.RegisterVTH = ((uint)(0u));
-            this.tripDevRegControl1.Size = new System.Drawing.Size(265, 464);
+            this.tripDevRegControl1.Size = new System.Drawing.Size(250, 467);
             this.tripDevRegControl1.TabIndex = 35;
             this.tripDevRegControl1.TRIPRegValues = new uint[] {
         ((uint)(100u)),
@@ -3894,7 +3906,7 @@ namespace MinervaGUI
             this.tabFLASHPages.Location = new System.Drawing.Point(4, 22);
             this.tabFLASHPages.Name = "tabFLASHPages";
             this.tabFLASHPages.Padding = new System.Windows.Forms.Padding(3);
-            this.tabFLASHPages.Size = new System.Drawing.Size(387, 507);
+            this.tabFLASHPages.Size = new System.Drawing.Size(458, 510);
             this.tabFLASHPages.TabIndex = 2;
             this.tabFLASHPages.Text = "FLASH";
             this.tabFLASHPages.UseVisualStyleBackColor = true;
@@ -4003,15 +4015,16 @@ namespace MinervaGUI
             this.tabReadHV.Controls.Add(this.richTextBoxHVRead);
             this.tabReadHV.Location = new System.Drawing.Point(4, 22);
             this.tabReadHV.Name = "tabReadHV";
-            this.tabReadHV.Size = new System.Drawing.Size(387, 507);
+            this.tabReadHV.Size = new System.Drawing.Size(458, 510);
             this.tabReadHV.TabIndex = 8;
             this.tabReadHV.Text = "Read HV";
             this.tabReadHV.UseVisualStyleBackColor = true;
             // 
             // btnMonitorHV
             // 
+            this.btnMonitorHV.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnMonitorHV.Enabled = false;
-            this.btnMonitorHV.Location = new System.Drawing.Point(158, 427);
+            this.btnMonitorHV.Location = new System.Drawing.Point(158, 479);
             this.btnMonitorHV.Name = "btnMonitorHV";
             this.btnMonitorHV.Size = new System.Drawing.Size(76, 20);
             this.btnMonitorHV.TabIndex = 10;
@@ -4021,8 +4034,9 @@ namespace MinervaGUI
             // 
             // label27
             // 
+            this.label27.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label27.AutoSize = true;
-            this.label27.Location = new System.Drawing.Point(56, 431);
+            this.label27.Location = new System.Drawing.Point(56, 483);
             this.label27.Name = "label27";
             this.label27.Size = new System.Drawing.Size(97, 13);
             this.label27.TabIndex = 9;
@@ -4030,8 +4044,9 @@ namespace MinervaGUI
             // 
             // textBoxMonitorTimer
             // 
+            this.textBoxMonitorTimer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.textBoxMonitorTimer.Enabled = false;
-            this.textBoxMonitorTimer.Location = new System.Drawing.Point(13, 428);
+            this.textBoxMonitorTimer.Location = new System.Drawing.Point(13, 480);
             this.textBoxMonitorTimer.Name = "textBoxMonitorTimer";
             this.textBoxMonitorTimer.Size = new System.Drawing.Size(37, 20);
             this.textBoxMonitorTimer.TabIndex = 8;
@@ -4039,8 +4054,9 @@ namespace MinervaGUI
             // 
             // btnSwitchToAuto
             // 
+            this.btnSwitchToAuto.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnSwitchToAuto.Enabled = false;
-            this.btnSwitchToAuto.Location = new System.Drawing.Point(240, 403);
+            this.btnSwitchToAuto.Location = new System.Drawing.Point(240, 455);
             this.btnSwitchToAuto.Name = "btnSwitchToAuto";
             this.btnSwitchToAuto.Size = new System.Drawing.Size(102, 20);
             this.btnSwitchToAuto.TabIndex = 7;
@@ -4050,16 +4066,18 @@ namespace MinervaGUI
             // 
             // textBoxADCThreshold
             // 
+            this.textBoxADCThreshold.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.textBoxADCThreshold.Enabled = false;
-            this.textBoxADCThreshold.Location = new System.Drawing.Point(13, 403);
+            this.textBoxADCThreshold.Location = new System.Drawing.Point(13, 455);
             this.textBoxADCThreshold.Name = "textBoxADCThreshold";
             this.textBoxADCThreshold.Size = new System.Drawing.Size(68, 20);
             this.textBoxADCThreshold.TabIndex = 6;
             // 
             // label2
             // 
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(87, 406);
+            this.label2.Location = new System.Drawing.Point(87, 458);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(65, 13);
             this.label2.TabIndex = 5;
@@ -4067,8 +4085,9 @@ namespace MinervaGUI
             // 
             // btnReadHV
             // 
+            this.btnReadHV.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnReadHV.Enabled = false;
-            this.btnReadHV.Location = new System.Drawing.Point(158, 403);
+            this.btnReadHV.Location = new System.Drawing.Point(158, 455);
             this.btnReadHV.Name = "btnReadHV";
             this.btnReadHV.Size = new System.Drawing.Size(76, 20);
             this.btnReadHV.TabIndex = 3;
@@ -4078,9 +4097,12 @@ namespace MinervaGUI
             // 
             // richTextBoxHVRead
             // 
+            this.richTextBoxHVRead.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
             this.richTextBoxHVRead.Location = new System.Drawing.Point(0, 3);
             this.richTextBoxHVRead.Name = "richTextBoxHVRead";
-            this.richTextBoxHVRead.Size = new System.Drawing.Size(384, 394);
+            this.richTextBoxHVRead.Size = new System.Drawing.Size(455, 446);
             this.richTextBoxHVRead.TabIndex = 0;
             this.richTextBoxHVRead.Text = "";
             // 
@@ -4092,7 +4114,7 @@ namespace MinervaGUI
             this.tabLIBox.Controls.Add(this.groupBoxLIBox_RS232Settings);
             this.tabLIBox.Location = new System.Drawing.Point(4, 22);
             this.tabLIBox.Name = "tabLIBox";
-            this.tabLIBox.Size = new System.Drawing.Size(387, 507);
+            this.tabLIBox.Size = new System.Drawing.Size(458, 510);
             this.tabLIBox.TabIndex = 9;
             this.tabLIBox.Text = "LI Box";
             this.tabLIBox.UseVisualStyleBackColor = true;
@@ -4620,6 +4642,132 @@ namespace MinervaGUI
             this.btn_LIBoxConfigureSerialPort.UseVisualStyleBackColor = false;
             this.btn_LIBoxConfigureSerialPort.Click += new System.EventHandler(this.btn_LIBoxConfigureSerialPort_Click);
             // 
+            // tabV1720
+            // 
+            this.tabV1720.Controls.Add(this.btn_V1720ReadAllRegisters);
+            this.tabV1720.Controls.Add(this.chk_V1720PrintEventStat);
+            this.tabV1720.Controls.Add(this.chk_V1720PrintEventData);
+            this.tabV1720.Controls.Add(this.txt_V1720TakeNEvents);
+            this.tabV1720.Controls.Add(this.btn_V1720TakeNEvents);
+            this.tabV1720.Controls.Add(this.richTextBoxV1720);
+            this.tabV1720.Controls.Add(this.lblV1720_V1720ID);
+            this.tabV1720.Controls.Add(this.label72);
+            this.tabV1720.Controls.Add(this.btn_V1720AdvancedGUI);
+            this.tabV1720.Controls.Add(this.btn_V1720LoadConfigFile);
+            this.tabV1720.Location = new System.Drawing.Point(4, 22);
+            this.tabV1720.Name = "tabV1720";
+            this.tabV1720.Size = new System.Drawing.Size(458, 510);
+            this.tabV1720.TabIndex = 11;
+            this.tabV1720.Text = "V1720";
+            this.tabV1720.UseVisualStyleBackColor = true;
+            // 
+            // btn_V1720ReadAllRegisters
+            // 
+            this.btn_V1720ReadAllRegisters.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btn_V1720ReadAllRegisters.BackColor = System.Drawing.Color.Coral;
+            this.btn_V1720ReadAllRegisters.Location = new System.Drawing.Point(16, 477);
+            this.btn_V1720ReadAllRegisters.Name = "btn_V1720ReadAllRegisters";
+            this.btn_V1720ReadAllRegisters.Size = new System.Drawing.Size(106, 20);
+            this.btn_V1720ReadAllRegisters.TabIndex = 104;
+            this.btn_V1720ReadAllRegisters.Text = "Read All Registers";
+            this.btn_V1720ReadAllRegisters.UseVisualStyleBackColor = false;
+            this.btn_V1720ReadAllRegisters.Visible = false;
+            this.btn_V1720ReadAllRegisters.Click += new System.EventHandler(this.btn_V1720ReadAllRegisters_Click);
+            // 
+            // chk_V1720PrintEventStat
+            // 
+            this.chk_V1720PrintEventStat.AutoSize = true;
+            this.chk_V1720PrintEventStat.Location = new System.Drawing.Point(292, 39);
+            this.chk_V1720PrintEventStat.Name = "chk_V1720PrintEventStat";
+            this.chk_V1720PrintEventStat.Size = new System.Drawing.Size(73, 17);
+            this.chk_V1720PrintEventStat.TabIndex = 103;
+            this.chk_V1720PrintEventStat.Text = "event stat";
+            this.chk_V1720PrintEventStat.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.chk_V1720PrintEventStat.UseVisualStyleBackColor = true;
+            // 
+            // chk_V1720PrintEventData
+            // 
+            this.chk_V1720PrintEventData.AutoSize = true;
+            this.chk_V1720PrintEventData.Location = new System.Drawing.Point(201, 39);
+            this.chk_V1720PrintEventData.Name = "chk_V1720PrintEventData";
+            this.chk_V1720PrintEventData.Size = new System.Drawing.Size(77, 17);
+            this.chk_V1720PrintEventData.TabIndex = 102;
+            this.chk_V1720PrintEventData.Text = "event data";
+            this.chk_V1720PrintEventData.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.chk_V1720PrintEventData.UseVisualStyleBackColor = true;
+            // 
+            // txt_V1720TakeNEvents
+            // 
+            this.txt_V1720TakeNEvents.Location = new System.Drawing.Point(145, 37);
+            this.txt_V1720TakeNEvents.Name = "txt_V1720TakeNEvents";
+            this.txt_V1720TakeNEvents.Size = new System.Drawing.Size(45, 20);
+            this.txt_V1720TakeNEvents.TabIndex = 97;
+            this.txt_V1720TakeNEvents.Text = "10";
+            // 
+            // btn_V1720TakeNEvents
+            // 
+            this.btn_V1720TakeNEvents.BackColor = System.Drawing.Color.Coral;
+            this.btn_V1720TakeNEvents.Location = new System.Drawing.Point(16, 37);
+            this.btn_V1720TakeNEvents.Name = "btn_V1720TakeNEvents";
+            this.btn_V1720TakeNEvents.Size = new System.Drawing.Size(130, 20);
+            this.btn_V1720TakeNEvents.TabIndex = 96;
+            this.btn_V1720TakeNEvents.Text = "START Take N Events";
+            this.btn_V1720TakeNEvents.UseVisualStyleBackColor = false;
+            this.btn_V1720TakeNEvents.Click += new System.EventHandler(this.btn_V1720TakeNEvents_Click);
+            // 
+            // richTextBoxV1720
+            // 
+            this.richTextBoxV1720.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.richTextBoxV1720.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.richTextBoxV1720.Location = new System.Drawing.Point(1, 63);
+            this.richTextBoxV1720.Name = "richTextBoxV1720";
+            this.richTextBoxV1720.Size = new System.Drawing.Size(455, 398);
+            this.richTextBoxV1720.TabIndex = 95;
+            this.richTextBoxV1720.Text = "";
+            // 
+            // lblV1720_V1720ID
+            // 
+            this.lblV1720_V1720ID.BackColor = System.Drawing.Color.White;
+            this.lblV1720_V1720ID.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lblV1720_V1720ID.Location = new System.Drawing.Point(54, 16);
+            this.lblV1720_V1720ID.Name = "lblV1720_V1720ID";
+            this.lblV1720_V1720ID.Size = new System.Drawing.Size(30, 18);
+            this.lblV1720_V1720ID.TabIndex = 94;
+            // 
+            // label72
+            // 
+            this.label72.BackColor = System.Drawing.Color.Coral;
+            this.label72.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label72.Location = new System.Drawing.Point(16, 16);
+            this.label72.Name = "label72";
+            this.label72.Size = new System.Drawing.Size(40, 18);
+            this.label72.TabIndex = 93;
+            this.label72.Text = "V1720";
+            // 
+            // btn_V1720AdvancedGUI
+            // 
+            this.btn_V1720AdvancedGUI.BackColor = System.Drawing.Color.Coral;
+            this.btn_V1720AdvancedGUI.Location = new System.Drawing.Point(248, 16);
+            this.btn_V1720AdvancedGUI.Name = "btn_V1720AdvancedGUI";
+            this.btn_V1720AdvancedGUI.Size = new System.Drawing.Size(120, 20);
+            this.btn_V1720AdvancedGUI.TabIndex = 92;
+            this.btn_V1720AdvancedGUI.Text = "Show Advanced GUI";
+            this.btn_V1720AdvancedGUI.UseVisualStyleBackColor = false;
+            this.btn_V1720AdvancedGUI.Click += new System.EventHandler(this.btn_V1720AdvancedGUI_Click);
+            // 
+            // btn_V1720LoadConfigFile
+            // 
+            this.btn_V1720LoadConfigFile.BackColor = System.Drawing.Color.Coral;
+            this.btn_V1720LoadConfigFile.Location = new System.Drawing.Point(87, 16);
+            this.btn_V1720LoadConfigFile.Name = "btn_V1720LoadConfigFile";
+            this.btn_V1720LoadConfigFile.Size = new System.Drawing.Size(155, 20);
+            this.btn_V1720LoadConfigFile.TabIndex = 91;
+            this.btn_V1720LoadConfigFile.Text = "Load Configuration File";
+            this.btn_V1720LoadConfigFile.UseVisualStyleBackColor = false;
+            this.btn_V1720LoadConfigFile.Click += new System.EventHandler(this.btn_V1720LoadConfigFile_Click);
+            // 
             // errMain
             // 
             this.errMain.ContainerControl = this;
@@ -4627,15 +4775,14 @@ namespace MinervaGUI
             // treeView1
             // 
             this.treeView1.AccessibleDescription = "";
-            this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
             this.treeView1.ContextMenuStrip = this.contextMenuStrip1;
             this.treeView1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.treeView1.Location = new System.Drawing.Point(5, 27);
             this.treeView1.Name = "treeView1";
             this.treeView1.ShowNodeToolTips = true;
-            this.treeView1.Size = new System.Drawing.Size(271, 533);
+            this.treeView1.Size = new System.Drawing.Size(200, 536);
             this.treeView1.TabIndex = 1;
             this.treeView1.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView1_AfterSelect);
             // 
@@ -4645,19 +4792,19 @@ namespace MinervaGUI
             this.toolStripMenuItemUpdateStatusString,
             this.toolStripSeparator2});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(186, 32);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(182, 32);
             // 
             // toolStripMenuItemUpdateStatusString
             // 
             this.toolStripMenuItemUpdateStatusString.Name = "toolStripMenuItemUpdateStatusString";
-            this.toolStripMenuItemUpdateStatusString.Size = new System.Drawing.Size(185, 22);
+            this.toolStripMenuItemUpdateStatusString.Size = new System.Drawing.Size(181, 22);
             this.toolStripMenuItemUpdateStatusString.Text = "Update Status String";
             this.toolStripMenuItemUpdateStatusString.Click += new System.EventHandler(this.toolStripMenuItemUpdateStatusString_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(182, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(178, 6);
             // 
             // menuStrip1
             // 
@@ -4680,20 +4827,20 @@ namespace MinervaGUI
             this.writeXmlToHardwareToolStripMenuItem});
             this.toolStripMenuItemFile.Name = "toolStripMenuItemFile";
             this.toolStripMenuItemFile.ShowShortcutKeys = false;
-            this.toolStripMenuItemFile.Size = new System.Drawing.Size(35, 20);
+            this.toolStripMenuItemFile.Size = new System.Drawing.Size(37, 20);
             this.toolStripMenuItemFile.Text = "File";
             // 
             // loadHardwareToolStripMenuItem
             // 
             this.loadHardwareToolStripMenuItem.Name = "loadHardwareToolStripMenuItem";
-            this.loadHardwareToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.loadHardwareToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.loadHardwareToolStripMenuItem.Text = "Load Hardware";
             this.loadHardwareToolStripMenuItem.Click += new System.EventHandler(this.loadHardwareToolStripMenuItem_Click);
             // 
             // loadConfigXmlToolStripMenuItem
             // 
             this.loadConfigXmlToolStripMenuItem.Name = "loadConfigXmlToolStripMenuItem";
-            this.loadConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.loadConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.loadConfigXmlToolStripMenuItem.Text = "Load Config Xml";
             this.loadConfigXmlToolStripMenuItem.Click += new System.EventHandler(this.loadConfigXmlToolStripMenuItem_Click);
             // 
@@ -4701,7 +4848,7 @@ namespace MinervaGUI
             // 
             this.saveConfigXmlToolStripMenuItem.Enabled = false;
             this.saveConfigXmlToolStripMenuItem.Name = "saveConfigXmlToolStripMenuItem";
-            this.saveConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.saveConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.saveConfigXmlToolStripMenuItem.Text = "Save Config Xml";
             this.saveConfigXmlToolStripMenuItem.Click += new System.EventHandler(this.saveConfigXmlToolStripMenuItem_Click);
             // 
@@ -4709,7 +4856,7 @@ namespace MinervaGUI
             // 
             this.writeXmlToHardwareToolStripMenuItem.Enabled = false;
             this.writeXmlToHardwareToolStripMenuItem.Name = "writeXmlToHardwareToolStripMenuItem";
-            this.writeXmlToHardwareToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.writeXmlToHardwareToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.writeXmlToHardwareToolStripMenuItem.Text = "Write Xml To Hardware";
             this.writeXmlToHardwareToolStripMenuItem.Click += new System.EventHandler(this.writeXmlToHardwareToolStripMenuItem_Click);
             // 
@@ -4723,32 +4870,32 @@ namespace MinervaGUI
             this.bluePathsToolStripMenuItem,
             this.greenPathsToolStripMenuItem});
             this.showToolStripMenuItem.Name = "showToolStripMenuItem";
-            this.showToolStripMenuItem.Size = new System.Drawing.Size(45, 20);
+            this.showToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             this.showToolStripMenuItem.Text = "Show";
             // 
             // expandAllToolStripMenuItem
             // 
             this.expandAllToolStripMenuItem.Name = "expandAllToolStripMenuItem";
-            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
+            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.expandAllToolStripMenuItem.Text = "Expand All";
             this.expandAllToolStripMenuItem.Click += new System.EventHandler(this.expandAllToolStripMenuItem_Click);
             // 
             // collapseAllToolStripMenuItem
             // 
             this.collapseAllToolStripMenuItem.Name = "collapseAllToolStripMenuItem";
-            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
+            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.collapseAllToolStripMenuItem.Text = "Collapse All";
             this.collapseAllToolStripMenuItem.Click += new System.EventHandler(this.collapseAllToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(141, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(134, 6);
             // 
             // redPathsToolStripMenuItem
             // 
             this.redPathsToolStripMenuItem.Name = "redPathsToolStripMenuItem";
-            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.redPathsToolStripMenuItem.Text = "Red paths";
             this.redPathsToolStripMenuItem.Visible = false;
             this.redPathsToolStripMenuItem.Click += new System.EventHandler(this.redPathsToolStripMenuItem_Click);
@@ -4756,7 +4903,7 @@ namespace MinervaGUI
             // bluePathsToolStripMenuItem
             // 
             this.bluePathsToolStripMenuItem.Name = "bluePathsToolStripMenuItem";
-            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.bluePathsToolStripMenuItem.Text = "Blue paths";
             this.bluePathsToolStripMenuItem.Visible = false;
             this.bluePathsToolStripMenuItem.Click += new System.EventHandler(this.bluePathsToolStripMenuItem_Click);
@@ -4764,7 +4911,7 @@ namespace MinervaGUI
             // greenPathsToolStripMenuItem
             // 
             this.greenPathsToolStripMenuItem.Name = "greenPathsToolStripMenuItem";
-            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.greenPathsToolStripMenuItem.Text = "Green paths";
             this.greenPathsToolStripMenuItem.Visible = false;
             this.greenPathsToolStripMenuItem.Click += new System.EventHandler(this.greenPathsToolStripMenuItem_Click);
@@ -4777,7 +4924,7 @@ namespace MinervaGUI
             this.monitorVoltagesToolStripMenuItem,
             this.lightInjectionToolStripMenuItem});
             this.actionsToolStripMenuItem.Name = "actionsToolStripMenuItem";
-            this.actionsToolStripMenuItem.Size = new System.Drawing.Size(54, 20);
+            this.actionsToolStripMenuItem.Size = new System.Drawing.Size(59, 20);
             this.actionsToolStripMenuItem.Text = "Actions";
             // 
             // readVoltagesToolStripMenuItem
@@ -4853,12 +5000,13 @@ namespace MinervaGUI
             this.ClientSize = new System.Drawing.Size(689, 588);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.treeView1);
-            this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.menuStrip1);
+            this.Controls.Add(this.tabControl1);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "frmSlowControl";
             this.Text = "Minerva Slow Control";
             this.Load += new System.EventHandler(this.frmSlowControl_Load);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.frmSlowControl_FormClosing);
             this.tabControl1.ResumeLayout(false);
             this.tabDescription.ResumeLayout(false);
             this.tabVME.ResumeLayout(false);
@@ -4908,6 +5056,8 @@ namespace MinervaGUI
             this.groupBoxLIBox_RS232Commands.ResumeLayout(false);
             this.groupBoxLIBox_RS232Settings.ResumeLayout(false);
             this.groupBoxLIBox_RS232Settings.PerformLayout();
+            this.tabV1720.ResumeLayout(false);
+            this.tabV1720.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errMain)).EndInit();
             this.contextMenuStrip1.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
@@ -5311,6 +5461,17 @@ namespace MinervaGUI
         private System.Windows.Forms.Label label68;
         private System.Windows.Forms.Label lbl_CRIMTimingGateTimeRead;
         private System.Windows.Forms.ToolStripMenuItem writeXmlToHardwareToolStripMenuItem;
+        private System.Windows.Forms.TabPage tabV1720;
+        private System.Windows.Forms.Label lblV1720_V1720ID;
+        private System.Windows.Forms.Label label72;
+        private System.Windows.Forms.Button btn_V1720AdvancedGUI;
+        private System.Windows.Forms.Button btn_V1720LoadConfigFile;
+        private System.Windows.Forms.RichTextBox richTextBoxV1720;
+        private System.Windows.Forms.TextBox txt_V1720TakeNEvents;
+        private System.Windows.Forms.Button btn_V1720TakeNEvents;
+        private System.Windows.Forms.CheckBox chk_V1720PrintEventStat;
+        private System.Windows.Forms.CheckBox chk_V1720PrintEventData;
+        private System.Windows.Forms.Button btn_V1720ReadAllRegisters;
 
     }
 }
