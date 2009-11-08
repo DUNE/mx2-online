@@ -20,6 +20,7 @@ namespace SlowControl
         //bool AppendDescription = false;
 
         public CAEN2718 controller;
+        int linkN; int boardN;
         List<CRIM> CRIMModules = new List<CRIM>();
         List<CROC> CROCModules = new List<CROC>();
         List<V1720> V1720Modules = new List<V1720>();
@@ -76,8 +77,6 @@ namespace SlowControl
                     controller = new CAEN2718("CAEN VME", linkNumber, boardNumber);
                     this.Text = string.Format("Slow Control - LINK={0}, CRATE={1}", linkNumber, boardNumber);
                     StringBuilder sb = new StringBuilder();
-                    //if (txtDelay.Text != String.Empty) CAEN2718.GlobalDelayMs = Convert.ToInt32(txtDelay.Text);
-                    //prgStatus.Value = 50;
                     Refresh();
                     controller.Initialize();
                     CAENInterface.CAENVME.BoardFWRelease(0, sb);
@@ -85,9 +84,9 @@ namespace SlowControl
                     StringBuilder sw = new StringBuilder();
                     CAENInterface.CAENVME.SWRelease(sw);
                     richTextBoxDescription.AppendText(String.Format("\nDriver Library: {0}", sw.ToString()));
-                    //prgStatus.Value = 100;
                     Refresh();
                     lblStatus.Text = "VME Controller initialized.";
+                    linkN = linkNumber; boardN = boardNumber;
                     success = true;
                 }
                 catch
@@ -109,7 +108,7 @@ namespace SlowControl
         {
             Metadata.MetaData.log.WriteToFirstLine("SlowControl Started at " + DateTime.Now);
             Metadata.MetaData.log.AddToLog();
-            FlashFrame.PageCompleted += new ProgressChangedEventHandler(ProgressReport);
+            //FlashFrame.PageCompleted += new ProgressChangedEventHandler(ProgressReport); //10.05.2009 CG commented out because of two crates!!!
             loadHardwareToolStripMenuItem_Click(null, null);
             cmb_CRIMTimingMode.Items.Clear();
             cmb_CRIMTimingMode.Items.AddRange(Enum.GetNames(typeof(CRIM.TimingModes)));
@@ -124,7 +123,7 @@ namespace SlowControl
 
         private void ProgressReport(object sender, ProgressChangedEventArgs e)
         {
-            //Application.DoEvents();
+            Application.DoEvents();
             {
                 prgStatus.Value = e.ProgressPercentage;
                 lblStatus.Text = e.UserState.ToString() + "  " + e.ProgressPercentage;
@@ -2237,8 +2236,10 @@ namespace SlowControl
             richTextBoxDescription.AppendText(theChannel.Description + ":" + theBoard +
             ": FLASH Write Begin " + DateTime.Now.ToString() + "\n");
             theChannel.Reset();
-            //FlashFrame.WriteMemoryFromFile(theChannel, theBoard, OFD.FileName);         //Dave's original                         
-            FlashFrame.WriteMemoryFromFile(theChannel, theBoard, OFD.FileName, out msg);  //04.14.2009 CG patch
+            //FlashFrame.WriteMemoryFromFile(theChannel, theBoard, OFD.FileName);   //Dave's original  
+            FlashFrame.PageCompleted += new ProgressChangedEventHandler(ProgressReport);    //10.05.2009 CG           
+            FlashFrame.WriteMemoryFromFile(theChannel, theBoard, OFD.FileName, out msg);    //04.14.2009 CG patch
+            FlashFrame.PageCompleted -= new ProgressChangedEventHandler(ProgressReport);    //10.05.2009 CG
             richTextBoxDescription.AppendText(msg.ToString());
             richTextBoxDescription.AppendText(theChannel.Description + ":" + theBoard +
             ": FLASH Write   End " + DateTime.Now.ToString() + "\n");
@@ -2253,8 +2254,10 @@ namespace SlowControl
             richTextBoxDescription.AppendText(theChannel.Description + ":" + theBoard +
             ": FLASH Read Begin " + DateTime.Now.ToString() + "\n");
             theChannel.Reset();
-            //FlashFrame.ReadMemoryToFile(theChannel, theBoard, SFD.FileName);        //Dave's original    
-            FlashFrame.ReadMemoryToFile(theChannel, theBoard, SFD.FileName, out msg); //04.14.2009 CG
+            //FlashFrame.ReadMemoryToFile(theChannel, theBoard, SFD.FileName);        //Dave's original
+            FlashFrame.PageCompleted += new ProgressChangedEventHandler(ProgressReport);    //10.05.2009 CG
+            FlashFrame.ReadMemoryToFile(theChannel, theBoard, SFD.FileName, out msg);       //04.14.2009 CG
+            FlashFrame.PageCompleted -= new ProgressChangedEventHandler(ProgressReport);    //10.05.2009 CG
             richTextBoxDescription.AppendText(msg.ToString());
             richTextBoxDescription.AppendText(theChannel.Description + ":" + theBoard +
             ": FLASH Read   End " + DateTime.Now.ToString() + "\n");
@@ -2267,7 +2270,7 @@ namespace SlowControl
         private void btn_CHAdvancedGUI_Click(object sender, EventArgs e)
         {
             AdvancedGUI((Button)sender, groupBoxCH_FLASH, groupBoxCH_StatusRegister,
-                groupBoxCH_DPM, groupBoxCH_Frame);
+                groupBoxCH_DPM, groupBoxCH_Frame, groupBoxCH_DEBUG);
         }
 
         private void btn_CHWriteFileToSPI_Click(object sender, EventArgs e)
@@ -2391,8 +2394,11 @@ namespace SlowControl
         {
             foreach (Control c in tabCH.Controls)
                 if (c is GroupBox)
-                    foreach (Control cc in c.Controls)
-                        ClearControl(cc);
+                {
+                    if (c == groupBoxCH_DEBUG) continue;
+                        foreach (Control cc in c.Controls)
+                            ClearControl(cc);
+                }
         }
 
         private void btn_CHStatusRegRead_Click(object sender, EventArgs e)
@@ -2590,6 +2596,11 @@ namespace SlowControl
 
         private void btn_CHDPMRead_Click(object sender, EventArgs e)
         {
+            CHDPMRead();
+        }
+        private byte[] CHDPMRead()
+        {
+            byte[] response = null;
             lock (this)
             {
                 vmeDone.WaitOne();
@@ -2599,7 +2610,10 @@ namespace SlowControl
                     IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
                     int responseLength = Convert.ToInt32(txt_CHDPMReadLength.Text);
                     if ((2 <= responseLength) & (responseLength <= CROCFrontEndChannel.MemoryMaxSize))
+                    {
+                        response = theChannel.ReadMemoryCRIM(responseLength);
                         rtb_CHDPMRead.Text = DisplayMessage(theChannel.ReadMemoryCRIM(responseLength), responseLength);
+                    }
                     else
                         MessageBox.Show("attempt to read more than maximum DPM depth = " +
                             CROCFrontEndChannel.MemoryMaxSize + "or less than 2\nOperation aborted");
@@ -2614,6 +2628,7 @@ namespace SlowControl
                     vmeDone.Set();
                 }
             }
+            return response;
         }
 
         private string DisplayMessage(byte[] response, int responseLength)
@@ -5429,6 +5444,266 @@ namespace SlowControl
         }
 
         #endregion
+
+        #region Methods for DEBUG on CHANNEL tab
+
+        private void btn_CHDebugInitializeCROCs_Click(object sender, EventArgs e)
+        {
+            string testCaption = "FEsEnumeration";
+            if (((Button)sender).Text == "START " + testCaption)
+            {
+                ((Button)sender).Text = "STOP " + testCaption;
+                ((Button)sender).BackColor = Color.LightBlue;
+                Refresh();
+                FEsEnumeration();
+                ((Button)sender).Text = "START " + testCaption;
+                ((Button)sender).BackColor = Color.Coral;
+                return;
+            }
+            else
+            {
+                ((Button)sender).Text = "START " + testCaption;
+                return;
+            }
+        }
+        private void FEsEnumeration()
+        {
+            this.Cursor = Cursors.WaitCursor;
+            try
+            {
+                int nTimes;
+                int.TryParse(txt_CHDebugNTests.Text, out nTimes);
+                string referenceList = GetAllFEs(CROCModules);
+                string currentList ="";
+                rtb_CHDebug.AppendText(string.Format("\n{0} Refernce list of ALL FEs:\n{1}", DateTime.Now, referenceList));
+                for (int i = 1; i <= nTimes; i++)
+                {
+                    Initialize(CROCModules);    //need it to see what FEs are in each channel
+                    currentList = GetAllFEs(CROCModules);
+                    if (currentList != referenceList)
+                        throw new Exception(string.Format("\n{0} i={1} Found a different list:\n{2}", DateTime.Now, i, currentList));
+                    prgStatus.Maximum = nTimes;
+                    ProgressReport(null, new ProgressChangedEventArgs(i, "ReInitializing CROCs..."));
+                    if (btn_CHDebugInitializeCROCs.Text == "START FEsEnumeration")
+                        throw new Exception(string.Format("\n{0} i = {1} User aborted operation", DateTime.Now, i));
+                }
+            }
+            catch (Exception ex)
+            {
+                rtb_CHDebug.AppendText("\n!!!!!" + ex.Message + "\n!!!!!");
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                vmeDone.Set();
+            }
+            this.Cursor = Cursors.Arrow;
+        }
+        private string GetAllFEs(List<CROC> CROCModules)
+        {
+            StringBuilder listAllFEs = new StringBuilder();
+            foreach (CROC croc in CROCModules)
+                foreach (IFrontEndChannel channel in croc.ChannelList)
+                {
+                    if (channel.ChainBoards.Count != 0)
+                    {
+                        listAllFEs.Append(channel.Description + ":");
+                        foreach (Frame.Addresses feb in channel.ChainBoards)
+                            listAllFEs.Append(" " + feb);
+                    }
+                }
+            return listAllFEs.ToString();
+        }
+
+        private void btn_CHDebugFillDPM_Click(object sender, EventArgs e)
+        {
+            string testCaption = "FillDPM";
+            if (((Button)sender).Text == "START " + testCaption)
+            {
+                ((Button)sender).Text = "STOP " + testCaption;
+                ((Button)sender).BackColor = Color.LightBlue;
+                Refresh();
+                FillDPM();
+                ((Button)sender).Text = "START " + testCaption;
+                ((Button)sender).BackColor = Color.Coral;
+                return;
+            }
+            else
+            {
+                ((Button)sender).Text = "START " + testCaption;
+                return;
+            }
+        }
+        private void FillDPM()
+        {
+            this.Cursor = Cursors.WaitCursor;
+            try
+            {
+                int nTimes; StringBuilder dpmPattern; int dpmRepeat;
+                int.TryParse(txt_CHDebugNTests.Text, out nTimes);
+                int.TryParse(txt_CHDebugFillDPMPRepeat.Text, out dpmRepeat);
+                dpmPattern = new StringBuilder(txt_CHDebugFillDPMPattern.Text.Trim());
+                //repeat the dpmPattern dpmRepeat times
+                dpmPattern = dpmPattern.Insert(dpmPattern.Length, dpmPattern.ToString(), dpmRepeat);
+                //check for even number of bytes
+                int nchar = dpmPattern.Length;
+                if (nchar % 4 != 0) dpmPattern.Append('0', 4 - (nchar % 4));
+
+                string msgSent = dpmPattern.ToString().ToUpper();
+                StringBuilder msgReceived = new StringBuilder();
+                byte[] bytesReceived = null;
+                string err = string.Empty;
+                rtb_CHDebug.Text = string.Empty;
+
+                prgStatus.Minimum = 0; prgStatus.Maximum = nTimes - 1; prgStatus.Value = 0;
+                for (int i = 0; i < nTimes; i++)
+                {
+                    //Clear and check DPM Pointer
+                    btn_CHDPMPointerReset_Click(null, null);
+                    btn_CHDPMPointerRead_Click(null, null);
+                    if (lblCH_DPMPointerValue.Text != "0x2")
+                        throw new Exception(string.Format("\n{0} i={1} DPM pointer not cleared -> {2}", 
+                            DateTime.Now, i, lblCH_DPMPointerValue.Text));
+                    
+                    //Clear and check Status
+                    btn_CHStatusRegClear_Click(null, null);
+                    btn_CHStatusRegRead_Click(null, null);
+                    if (lblCH_StatusValue.Text != "0x3700")
+                        throw new Exception(string.Format("\n{0} i={1} Status register not cleared -> {2}", 
+                            DateTime.Now, i, lblCH_StatusValue.Text));
+                    
+                    //Fill readout library message buffer
+                    TreeNode theNode = treeView1.SelectedNode;
+                    IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                    AppendMessage(msgSent, theChannel);
+                    
+                    //Write the message into CROC's FIFO and check status for FIFO flags
+                    btn_CHFIFOWriteMessage_Click(null, null);
+                    btn_CHStatusRegRead_Click(null, null);
+                    if (lblCH_StatusValue.Text != "0x3710")
+                        throw new Exception(string.Format("\n{0} i={1} Status register not 0x3710 -> {2}",
+                            DateTime.Now, i, lblCH_StatusValue.Text));
+
+                    //Send the message and check status(null, null);
+                    btn_CHSendMessage_Click(null, null);
+                    btn_CHStatusRegRead_Click(null, null);
+                    if (lblCH_StatusValue.Text != "0x3703")
+                        throw new Exception(string.Format("\n{0} i={1} Status register not 0x3703 -> {2}",
+                             DateTime.Now, i, lblCH_StatusValue.Text));
+
+                    //Read the message received
+                    txt_CHDPMReadLength.Text = Convert.ToString(msgSent.Length / 2 + 2); //one byte is two hex characters plus two bytes for message length
+                    bytesReceived = CHDPMRead();
+
+                    //Check that message sent and received are identical
+                    msgReceived = new StringBuilder();
+                    for (int j = 0; j < bytesReceived.Length; j++)
+                        msgReceived.Append(Convert.ToString(bytesReceived[j], 16).ToUpper().PadLeft(2, '0'));  // Convert.ToByte(theMessage.Substring(2 * i, 2), 16);
+                    if (msgReceived.ToString().Substring(4) != msgSent)
+                        throw new Exception(string.Format("\n{0} i={1} Message sent <> Message received:\nSent:\n{2}\nReceived: Length=0x{3}\n{4}",
+                             DateTime.Now, i, msgSent, msgReceived.ToString().Substring(0, 4), msgReceived.ToString().Substring(4)));
+
+                    ProgressReport(null, new ProgressChangedEventArgs(i, "Message..."));
+                    //Exit loop test
+                    if (btn_CHDebugFillDPM.Text == "START FillDPM")
+                        throw new Exception(DateTime.Now + " i = " + i + " User aborted operation");
+                }
+            }
+            catch (Exception ex)
+            {
+                rtb_CHDebug.AppendText("\n!!!!!" + ex.Message + "\n!!!!!");
+                MessageBox.Show(ex.Message);
+            }
+            this.Cursor = Cursors.Arrow;
+        }
+
+        private void cmb_CHDebugDeviceID_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (cmb_CHDebugDeviceID.SelectedIndex)
+            {
+                case 1:     //TRIPs
+                    cmb_CHDebugFunctionID.Items.Clear();
+                    cmb_CHDebugFunctionID.Items.Add("0 NA");
+                    cmb_CHDebugFunctionID.Items.Add("1 WR ALL");
+                    for (int i = 2; i <= 7; i++)
+                        cmb_CHDebugFunctionID.Items.Add(i + " WR T" + (i - 2));
+                    for (int i = 8; i <= 15; i++)
+                        cmb_CHDebugFunctionID.Items.Add(i + " NA");
+                    break;
+                case 2:     //Registers 
+                    cmb_CHDebugFunctionID.Items.Clear();
+                    cmb_CHDebugFunctionID.Items.Add("0 NA");
+                    cmb_CHDebugFunctionID.Items.Add("1 W");
+                    cmb_CHDebugFunctionID.Items.Add("2 R");
+                    for (int i = 3; i <= 15; i++)
+                        cmb_CHDebugFunctionID.Items.Add(i + " NA");
+                    break;
+                case 3:     //BRAMs
+                    cmb_CHDebugFunctionID.Items.Clear();
+                    cmb_CHDebugFunctionID.Items.Add("0 NA");
+                    for (int i = 1; i <= 6; i++)
+                        cmb_CHDebugFunctionID.Items.Add(i + " RHit" + (i - 1));
+                    cmb_CHDebugFunctionID.Items.Add("7 RDiscr");
+                    for (int i = 8; i <= 13; i++)
+                        cmb_CHDebugFunctionID.Items.Add(i + " RBRAM" + (i - 8));
+                    for (int i = 14; i <= 15; i++)
+                        cmb_CHDebugFunctionID.Items.Add(i + " RHit" + (i - 8));
+                    break;
+                case 4:     //FLASH
+                    cmb_CHDebugFunctionID.Items.Clear();
+                    cmb_CHDebugFunctionID.Items.Add("0 NA");
+                    cmb_CHDebugFunctionID.Items.Add("1 Command");
+                    cmb_CHDebugFunctionID.Items.Add("2 SetReset");
+                    for (int i = 3; i <= 15; i++)
+                        cmb_CHDebugFunctionID.Items.Add(i + " NA");
+                    break;
+                default:
+                    cmb_CHDebugFunctionID.Items.Clear();
+                    for (int i = 0; i <= 15; i++)
+                        cmb_CHDebugFunctionID.Items.Add(i + " NA");
+                    break;
+            }
+            cmb_CHDebugFunctionID.SelectedIndex = 0;
+        }
+        private void btn_CHDebugUpdatePattern_Click(object sender, EventArgs e)
+        {
+            StringBuilder newPattern = new StringBuilder();
+            byte b0 = (byte)((cmb_CHDebugDirection.SelectedIndex << 7) |
+                        (cmb_CHDebugBroadcastCMD.SelectedIndex << 4) |
+                        (cmb_CHDebugFEID.SelectedIndex));
+            byte b1 = (byte)((cmb_CHDebugDeviceID.SelectedIndex << 4) |
+                        (cmb_CHDebugFunctionID.SelectedIndex));
+            newPattern.Append(Convert.ToString(b0, 16).ToUpper().PadLeft(2, '0'));
+            newPattern.Append(Convert.ToString(b1, 16).ToUpper().PadLeft(2, '0'));
+            newPattern.Append(txt_CHDebugFrameStatusID.Text.ToUpper().PadLeft(2, '0').Substring(0,2));
+            newPattern.Append(txt_CHDebugFrameIDByte0.Text.ToUpper().PadLeft(2, '0').Substring(0, 2));
+            newPattern.Append(txt_CHDebugFrameIDByte1.Text.ToUpper().PadLeft(2, '0').Substring(0, 2));
+            txt_CHDebugFillDPMPattern.Text = newPattern.ToString();
+        }
+        /* TOOL TIPS content - deleted because compatibility issues...???
+        The number of times you want to loop through when you click a button that embeds a loop test.  
+        Starts enumerating the FEBs on this VME Crate. This includes ALL Chains of ALL CROCs that were previously detected. If you want to update CROCs and CRIMs, do a "File->LoadHardware". 
+        Starts the following sequence of processes:
+            1. Creates a message frame using the content of the "Pattern" field (in hex) repeated "Repeat" times (in decimal).
+            2. Do "Clear Status Register", then "Read Status Register". If its content is not 0x3700 raise an error.
+            3. Do "Reset DPM Pointer", then "Read DPM Pointer". If it is not 0x02 raise an error.
+            3. Fill the CROC FIFO with the message created at (1). Do "Read Status Register". If its content is not 0x3710 raise an error.
+            4. Do "Send Frame", then "Read Status Register". If its content is not 0x3703 raise an error.
+            5. Read N+2 bytes from CROC's DPM, where N=the number of bytes in the sent message. 
+               Compare the last N bytes of the received message with the sent message. If not identical raise an error. 
+         Select the "Frame.Direction" bit.
+         Select the "Frame.BroadcastCommand" (3bits).
+         Select the "Frame.FEAddress" (4bits).
+         Select the "Frame.Device" (4bits).
+         Select the "Frame.DeviceFunction" (4bits).
+         Hex value of the "Frame.FrameStatusBits" (8bits).
+         Hex value of the "Frame.FrameIDByte0" (8bits).
+         Hex value of the "Frame.FrameIDByte1" (8bits).
+         Clears and Updates the content of "Pattern (0x)" TextBox with a new value according to the content of "Byte0" to "Byte4" fields.
+        */
+        #endregion
+
+
 
         //private void button1_Click(object sender, EventArgs e)
         //{
