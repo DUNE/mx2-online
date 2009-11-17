@@ -478,7 +478,8 @@ namespace SlowControl
                     prgStatus.Value = 0;
                     for (VMEDevsBaseAddr = 0; VMEDevsBaseAddr <= 255; VMEDevsBaseAddr++)
                     {
-                        ProgressReport(null, new ProgressChangedEventArgs((int)VMEDevsBaseAddr, string.Format("Finding VME Modules")));
+                        if (VMEDevsBaseAddr%5==0)
+                            ProgressReport(null, new ProgressChangedEventArgs((int)VMEDevsBaseAddr, string.Format("Finding VME Modules")));
                         Refresh();
                         try
                         {
@@ -626,6 +627,7 @@ namespace SlowControl
                     lblStatus.Text = "\nError while Initializing CROC devices...";
                     richTextBoxDescription.AppendText(lblStatus.Text + "\n" + e.Message);
                     Metadata.MetaData.log.AddToLog(lblStatus.Text + "\n" + e.Message);
+                    throw new Exception(lblStatus.Text + "\n" + e.Message);
                 }
                 finally
                 {
@@ -1137,7 +1139,7 @@ namespace SlowControl
             fpgaFrameInfo.HVPeriodManual = fpgaFrame.HVPeriodManual;
             fpgaFrameInfo.HVPulseWidth = fpgaFrame.HVPulseWidth;
             fpgaFrameInfo.HVTarget = fpgaFrame.HVTarget;
-            fpgaFrameInfo.InjectCount = fpgaFrame.InjectCount;
+            fpgaFrameInfo.InjectCount = fpgaFrame.InjectCount;      
             fpgaFrameInfo.InjectDACDone = fpgaFrame.InjectDACDone;
             fpgaFrameInfo.InjectDACMode = fpgaFrame.InjectDACMode;
             fpgaFrameInfo.InjectDACStart = fpgaFrame.InjectDACStart;
@@ -1147,16 +1149,18 @@ namespace SlowControl
             fpgaFrameInfo.InjectRange = fpgaFrame.InjectRange;
             fpgaFrameInfo.PhaseCount = fpgaFrame.PhaseCount;
             fpgaFrameInfo.PhaseIncrement = fpgaFrame.PhaseIncrement;
-            fpgaFrameInfo.PhaseSpare = fpgaFrame.PhaseSpare;
             fpgaFrameInfo.PhaseStart = fpgaFrame.PhaseStart;
             // fpgaFrameInfo.PhysicalRegisters = fpgaFrame.PhysicalRegisters; // Serialization of byte array needs to be resolved
+            fpgaFrameInfo.StatusFCMDErr = fpgaFrame.StatusFCMDErr;
+            fpgaFrameInfo.StatusRXLockErr = fpgaFrame.StatusRXLockErr;
+            fpgaFrameInfo.StatusSCMDErr = fpgaFrame.StatusSCMDErr;
+            fpgaFrameInfo.StatusTXSyncLockErr = fpgaFrame.StatusTXSyncLockErr;
             fpgaFrameInfo.Temperature = fpgaFrame.Temperature;
             fpgaFrameInfo.TestPulse2Bit = fpgaFrame.TestPulse2Bit;
             fpgaFrameInfo.TestPulseCount = fpgaFrame.TestPulseCount;
             fpgaFrameInfo.Timer = fpgaFrame.Timer;
             fpgaFrameInfo.TripPowerOff = fpgaFrame.TripPowerOff;
             fpgaFrameInfo.TripXCompEnc = fpgaFrame.TripXCompEnc;
-            fpgaFrameInfo.VXOMuxXilinx = fpgaFrame.VXOMuxXilinx;
         }
 
         private void GetTRIPFrameInfo(TRIPFrameInfo tripFrameInfo, CROCFrontEndChannel crocChannel, Frame.Addresses febAddress, TripTFrame.TRiPFunctions tripFunction)
@@ -1383,11 +1387,9 @@ namespace SlowControl
             fpgaFrame.InjectRange = fpgaFrameInfo.InjectRange;
             fpgaFrame.PhaseCount = fpgaFrameInfo.PhaseCount;
             fpgaFrame.PhaseIncrement = fpgaFrameInfo.PhaseIncrement;
-            fpgaFrame.PhaseSpare = fpgaFrameInfo.PhaseSpare;
             fpgaFrame.PhaseStart = fpgaFrameInfo.PhaseStart;
             fpgaFrame.Timer = fpgaFrameInfo.Timer;
             fpgaFrame.TripPowerOff = fpgaFrameInfo.TripPowerOff;
-            fpgaFrame.VXOMuxXilinx = fpgaFrameInfo.VXOMuxXilinx;
 
             fpgaFrame.Send(crocChannel);
             fpgaFrame.Receive();
@@ -1558,10 +1560,8 @@ namespace SlowControl
             theFPGAControl.RegisterHVActual = theFrame.HVActual;
             theFPGAControl.RegisterHVControl = theFrame.HVControl;
             theFPGAControl.RegisterHVAutoManual = Convert.ToUInt32(theFrame.HVManual);
-            theFPGAControl.RegisterVXOMuxSelect = Convert.ToUInt32(theFrame.VXOMuxXilinx);
             theFPGAControl.RegisterPhaseStart = Convert.ToUInt32(theFrame.PhaseStart);
             theFPGAControl.RegisterPhaseIncrement = Convert.ToUInt32(theFrame.PhaseIncrement);
-            theFPGAControl.RegisterPhaseSpare = theFrame.PhaseSpare;
             theFPGAControl.RegisterPhaseTicks = theFrame.PhaseCount;
             theFPGAControl.RegisterDCM1Lock = Convert.ToUInt32(theFrame.DCM1Lock);
             theFPGAControl.RegisterDCM2Lock = Convert.ToUInt32(theFrame.DCM2Lock);
@@ -1587,6 +1587,10 @@ namespace SlowControl
             theFPGAControl.RegisterDiscrimEnableMaskTrip2 = theFrame.DiscrimEnableMaskTrip2;// 10.30.2008 Cristian
             theFPGAControl.RegisterDiscrimEnableMaskTrip3 = theFrame.DiscrimEnableMaskTrip3;// 10.30.2008 Cristian
             theFPGAControl.RegisterGateTimeStamp = theFrame.GateTimeStamp;                  // 12.22.2008 Cristian
+            theFPGAControl.RegisterStatusSCMDUnknown = Convert.ToUInt32(theFrame.StatusSCMDErr);        // 11.13.2009
+            theFPGAControl.RegisterStatusFCMDUnknown = Convert.ToUInt32(theFrame.StatusFCMDErr);        // 11.13.2009
+            theFPGAControl.RegisterStatusRXLock = Convert.ToUInt32(theFrame.StatusRXLockErr);           // 11.13.2009
+            theFPGAControl.RegisterStatusTXSyncLock = Convert.ToUInt32(theFrame.StatusTXSyncLockErr);    // 11.13.2009
         }
 
         private void AssignFPGARegsCristianToDave(MinervaUserControls.FPGADevRegControl theFPGAControl, FPGAFrame theFrame)
@@ -1604,7 +1608,6 @@ namespace SlowControl
             theFrame.InjectEnable = new BitVector32((int)theFPGAControl.RegisterInjectEnable);
             theFrame.InjectRange = (byte)theFPGAControl.RegisterInjectRange;
             theFrame.InjectPhase = (byte)theFPGAControl.RegisterInjectPhase;
-
             theFrame.InjectDACValue = (ushort)theFPGAControl.RegisterInjectDACValue;
             theFrame.InjectDACMode = (byte)theFPGAControl.RegisterInjectDACMode;
             theFrame.InjectDACStart = Convert.ToBoolean(theFPGAControl.RegisterInjectDACStart);
@@ -1614,10 +1617,10 @@ namespace SlowControl
             //theFrame.HVActual = theFPGAControl.RegisterHVActual;                      READ ONLY
             //theFrame.HVControl = theFPGAControl.RegisterHVControl;                    READ ONLY
             theFrame.HVManual = Convert.ToBoolean(theFPGAControl.RegisterHVAutoManual);
-            theFrame.VXOMuxXilinx = Convert.ToBoolean(theFPGAControl.RegisterVXOMuxSelect);
+            ///////theFrame.VXOMuxXilinx = Convert.ToBoolean(theFPGAControl.RegisterVXOMuxSelect);
             theFrame.PhaseStart = Convert.ToBoolean(theFPGAControl.RegisterPhaseStart);
             theFrame.PhaseIncrement = Convert.ToBoolean(theFPGAControl.RegisterPhaseIncrement);
-            theFrame.PhaseSpare = (byte)theFPGAControl.RegisterPhaseSpare;
+            ////////theFrame.PhaseSpare = (byte)theFPGAControl.RegisterPhaseSpare;
             theFrame.PhaseCount = (byte)theFPGAControl.RegisterPhaseTicks;
             //theFrame.DCM1Lock = theFPGAControl.RegisterDCM1Lock;                      READ ONLY
             //theFrame.DCM2Lock = theFPGAControl.RegisterDCM2Lock;                      READ ONLY
@@ -1643,6 +1646,10 @@ namespace SlowControl
             theFrame.DiscrimEnableMaskTrip2 = (ushort)theFPGAControl.RegisterDiscrimEnableMaskTrip2;// 10.30.2008 Cristian
             theFrame.DiscrimEnableMaskTrip3 = (ushort)theFPGAControl.RegisterDiscrimEnableMaskTrip3;// 10.30.2008 Cristian
             //theFrame.GateTimeStamp = theFPGAControl.RegisterGateTimeStamp;            READ ONLY   // 12.22.2008 Cristian  
+            //theFrame.StatusSCMDErr = Convert.ToBoolean(theFPGAControl.RegisterStatusSCMDUnknown);     READ ONLY // 11.13.2009
+            //theFrame.StatusFCMDErr = Convert.ToBoolean(theFPGAControl.RegisterStatusFCMDUnknown);     READ ONLY // 11.13.2009
+            //theFrame.StatusRXLockErr = Convert.ToBoolean(theFPGAControl.RegisterStatusRXLock);        READ ONLY // 11.13.2009
+            //theFrame.StatusTXSyncLockErr = Convert.ToBoolean(theFPGAControl.RegisterStatusTXSyncLock);READ ONLY // 11.13.2009        
         }
 
         private void btn_FPGAAdvancedGUI_Click(object sender, EventArgs e)
@@ -5558,19 +5565,19 @@ namespace SlowControl
                 prgStatus.Minimum = 0; prgStatus.Maximum = nTimes - 1; prgStatus.Value = 0;
                 for (int i = 0; i < nTimes; i++)
                 {
-                    //Clear and check DPM Pointer
-                    btn_CHDPMPointerReset_Click(null, null);
-                    btn_CHDPMPointerRead_Click(null, null);
-                    if (lblCH_DPMPointerValue.Text != "0x2")
-                        throw new Exception(string.Format("\n{0} i={1} DPM pointer not cleared -> {2}", 
-                            DateTime.Now, i, lblCH_DPMPointerValue.Text));
-                    
                     //Clear and check Status
                     btn_CHStatusRegClear_Click(null, null);
                     btn_CHStatusRegRead_Click(null, null);
                     if (lblCH_StatusValue.Text != "0x3700")
                         throw new Exception(string.Format("\n{0} i={1} Status register not cleared -> {2}", 
                             DateTime.Now, i, lblCH_StatusValue.Text));
+                    
+                    //Clear and check DPM Pointer
+                    btn_CHDPMPointerReset_Click(null, null);
+                    btn_CHDPMPointerRead_Click(null, null);
+                    if (lblCH_DPMPointerValue.Text != "0x2")
+                        throw new Exception(string.Format("\n{0} i={1} DPM pointer not cleared -> {2}",
+                            DateTime.Now, i, lblCH_DPMPointerValue.Text));
                     
                     //Fill readout library message buffer
                     TreeNode theNode = treeView1.SelectedNode;
@@ -5679,6 +5686,81 @@ namespace SlowControl
             newPattern.Append(txt_CHDebugFrameIDByte0.Text.ToUpper().PadLeft(2, '0').Substring(0, 2));
             newPattern.Append(txt_CHDebugFrameIDByte1.Text.ToUpper().PadLeft(2, '0').Substring(0, 2));
             txt_CHDebugFillDPMPattern.Text = newPattern.ToString();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            this.Cursor = Cursors.WaitCursor;
+            rtb_CHDebug.Text = string.Empty;
+            try
+            {
+                
+                TreeNode theNode = treeView1.SelectedNode;
+                CROC theCroc = (CROC)(theNode.Parent.Tag);
+                IFrontEndChannel theChannel = ((IFrontEndChannel)(theNode.Tag));
+                Frame.Addresses theBoard = Frame.Addresses.FE10;
+                FPGAFrame theFrame;
+                for (int i = 0; i < 128; i++)
+                {
+                    //CG 11.16.2009 ->Boris' fcmd register MUST have first and last bits 1 or else 
+                    //there is no guarantee of what encoded sequence will be sent on clk lines
+                    ushort fcmd = (ushort)(0x81 | i); 
+                    lock (this)
+                    {
+                        vmeDone.WaitOne();
+                        try
+                        {
+                            //SOFT RESET FPGA to clear new status bits...
+                            theCroc.FastCommandRegister = (ushort)FastCommands.ResetFPGA;   // 0x8D;
+                            //Read FPGA Dev Reg and check  new status bits...                          
+                            theFrame = FPGAFrameSendReceive(theChannel, theBoard);
+                            FPGAFrameCheckNewStatusBits(i, fcmd, theFrame);
+                            
+                            //Write 'next' FCMD code...
+                            theCroc.FastCommandRegister = (ushort)fcmd;
+                            //Read FPGA Dev Reg and check new status bits...                          
+                            theFrame = FPGAFrameSendReceive(theChannel, theBoard);
+                            FPGAFrameCheckNewStatusBits(i, fcmd, theFrame);
+                            rtb_CHDebug.AppendText(string.Format("\ni={0}=0x{1}->fcmd=0x{2} Status bits ALL good...", 
+                                i, i.ToString("X"), fcmd.ToString("X")));
+                        }
+                        catch (Exception ex)
+                        {
+                            rtb_CHDebug.AppendText(ex.Message);
+                        }
+                        finally
+                        {
+                            vmeDone.Set();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                rtb_CHDebug.AppendText("\n!!!!!" + ex.Message + "\n!!!!!");
+                MessageBox.Show(ex.Message);
+            }
+            this.Cursor = Cursors.Arrow;
+        }
+        private void FPGAFrameCheckNewStatusBits(int i, uint fcmd, FPGAFrame theFrame)
+        {
+            bool StatusSCMDUnknownErr = theFrame.StatusSCMDErr;
+            bool StatusFCMDUnknownErr = theFrame.StatusFCMDErr;
+            bool StatusRXLockErr = theFrame.StatusRXLockErr;
+            bool StatusTXSyncLockErr = theFrame.StatusTXSyncLockErr;
+            if (StatusSCMDUnknownErr | StatusFCMDUnknownErr | StatusRXLockErr | StatusTXSyncLockErr)
+                throw new Exception(string.Format("\ni={0}=0x{1}->fcmd=0x{2} Status bits ERROR : {3}{4}{5}{6}",
+                    i, i.ToString("X"), fcmd.ToString("X"),
+                    Convert.ToInt16(StatusSCMDUnknownErr), Convert.ToInt16(StatusFCMDUnknownErr), 
+                    Convert.ToInt16(StatusRXLockErr), Convert.ToInt16(StatusTXSyncLockErr)));
+        }
+        private static FPGAFrame FPGAFrameSendReceive(IFrontEndChannel theChannel, Frame.Addresses theBoard)
+        {
+            theChannel.Reset();
+            FPGAFrame theFrame = new FPGAFrame(theBoard, Frame.FPGAFunctions.Read, new FrameID());
+            theFrame.Send(theChannel);
+            theFrame.Receive();
+            return theFrame;
         }
         /* TOOL TIPS content - deleted because compatibility issues...???
         The number of times you want to loop through when you click a button that embeds a loop test.  
@@ -6095,18 +6177,20 @@ namespace SlowControl
         public byte InjectRange;
         public byte PhaseCount;
         public bool PhaseIncrement;
-        public byte PhaseSpare;
+        /////////public byte PhaseSpare;
         public bool PhaseStart;
         // public byte[] PhysicalRegisters; // Serialization of byte array needs to be resolved
         // public Dictionary<LogicalRegisters, BitVector32> Registers; // Get accessor only.  Dictionary<> cannot be serialized
+        public bool StatusSCMDErr;
+        public bool StatusFCMDErr;
+        public bool StatusRXLockErr;
+        public bool StatusTXSyncLockErr;
         public ushort Temperature;
         public byte TestPulse2Bit;
         public uint TestPulseCount;
         public uint Timer;
         public BitVector32 TripPowerOff;
         public byte TripXCompEnc;
-        public bool VXOMuxXilinx;
-        // public bool VXOOff; // Not needed 
     }
 
     public class TRIPFrameInfo // : FrameInfo // Uncomment to include FrameInfo
