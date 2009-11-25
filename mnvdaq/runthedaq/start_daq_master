@@ -1,0 +1,9 @@
+#!/bin/bash
+
+xterm -hold -e ./start_et_system $1 1000 &
+sleep 2s
+xterm -hold -e ./start_et_monitor $1 &
+sleep 2s
+xterm -hold -e ./start_eb_service $1 &
+sleep 30s
+nice ${DAQROOT}/bin/daq_master $1 1 &

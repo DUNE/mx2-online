@@ -1,0 +1,18 @@
+#!/bin/bash
+
+source $DAQROOT/setup_daqbuild.sh
+EVENT_SIZE=2048  #a kilobyte
+FEBS=4 #how many total FEB's need to be serviced
+FRAMES=8
+EVENTS=$(($2*$FRAMES*$FEBS))
+
+if [ $LOCALE == 'RUT' ]
+then
+	$ET_HOME/Linux-x86_64-64/bin/et_start -v -f ./$1 -n $EVENTS -s $EVENT_SIZE
+fi
+
+if [ $LOCALE == 'FNAL' ]
+then
+	$ET_HOME/Linux-x86_64-64/bin/et_start -v -f ./$1 -n $EVENTS -s $EVENT_SIZE
+fi
+
