@@ -45,6 +45,10 @@ main-clean: FORCE
 	cd ../;
 	cd daq_server; gmake clean;
 	cd ../;
+	cd bin; rm minervadaq;
+	cd ../;
+	cd lib; rm *.so;
+	cd ../;
 
 hardware-clean: FORCE
 	cd fermihardware/src; make clean;
