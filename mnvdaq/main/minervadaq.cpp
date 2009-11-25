@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
       if (hostinfo == NULL) return 1;
       else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
       daq_service.sin_port = htons (port);
-      if (connect(socket_handle[i], (struct sockaddr*) &daq_client[i], sizeof (struct sockaddr_in)) == -1) {
+      if (connect(socket_handle, (struct sockaddr*) &daq_service, sizeof (struct sockaddr_in)) == -1) {
         perror ("connect");
         exit(EXIT_FAILURE) ;
       }
