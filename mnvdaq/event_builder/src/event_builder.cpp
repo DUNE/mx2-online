@@ -221,7 +221,7 @@ int event_builder(event_handler *evt) {
      thread_log<<"FIRMWARE: "<<evt->feb_info[7]<<std::endl;
      thread_log<<"FRAME DATA: "<<std::endl;
      for (unsigned int index=0;index<evt->feb_info[5];index++) {
-       thread_log<<"byte: "<<index<<" "<<evt->event_data[index]<<std::endl;
+       thread_log<<"byte: "<<index<<" "<<(int)evt->event_data[index]<<std::endl;
      }
   #endif
 
