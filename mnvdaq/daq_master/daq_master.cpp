@@ -27,7 +27,10 @@ int main(int argc, char* argv[]) {
     cout<<"Usage:  daq_master <et_filename> <gates-to-acquire>"<<endl;
     return -1;
   }
-  gates[i] = atoi(argv[2]); //collect 1000 gates from the DAQ
+  for (int i=0;i<daq_slaves;i++) {
+    gates[i] = atoi(argv[2]); 
+    cout<<"gates: "<<gates[i]<<endl;
+  }
   
   sprintf(et_file,argv[1]);
 
