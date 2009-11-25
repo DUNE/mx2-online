@@ -1,0 +1,14 @@
+#!/bin/bash
+
+source $DAQROOT/setup_daqbuild.sh
+
+if [ $LOCALE == 'RUT' ]
+then
+	$ET_HOME/Linux-x86_64-64/bin/et_monitor -f $1 
+fi
+
+if [ $LOCALE == 'FNAL' ]
+then
+	$ET_HOME/Linux-x86_64-64/bin/et_monitor -f $1 
+fi
+

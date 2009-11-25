@@ -1,0 +1,4 @@
+#!/bin/bash
+
+source $DAQROOT/setup_daqbuild.sh
+nice ${DAQROOT}/bin/event_builder $1  

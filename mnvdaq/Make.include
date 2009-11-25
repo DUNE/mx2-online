@@ -1,0 +1,46 @@
+# For the build to work, you need to first source the setup_daqbuild.sh script to set your
+#       DAQROOT
+#	CAEN_DIR
+# environment variables.
+
+CPPFLAGS += -g -Wall 
+LDLIBS += -L/usr/lib64 -ldl
+
+#CAEN libraries & drivers needed
+INCLUDE += -I$(CAEN_DIR)/include
+LDLIBS += -L$(CAEN_DIR)/lib/x86_64 -lCAENVME
+
+#BOOST libraries for the threading
+ifeq ($(LOCALE),FNAL)
+#FNAL
+	LDLIBS += -L/usr/lib64 -lboost_thread
+else
+#Rutgers
+	LDLIBS += -L/usr/lib64 -lboost_thread-mt
+endif
+
+INCLUDE += /usr/include/boost/thread /usr/include/boost
+
+#MINERvA DAQ Libraries
+#Electronics drive code
+INCLUDE += -I$(DAQROOT)/fermihardware/include 
+
+#Acquire Functions (manipulate CAEN)
+INCLUDE += -I$(DAQROOT)/caeninterface/include 
+
+#Data Acquire functions (control acquire loop)
+INCLUDE += -I$(DAQROOT)/acquire_data/include 
+
+#Run Information functions
+INCLUDE += -I$(DAQROOT)/daq_run/include
+
+#Event Structure Information
+INCLUDE += -I$(DAQROOT)/event_structure/include
+
+#Event Builder
+INCLUDE += -I$(DAQROOT)/event_builder/include
+
+#Event Transver
+INCLUDE += -I$(DAQROOT)/et_9.0/src/libsrc
+
+CPPFLAGS += $(INCLUDE)
