@@ -580,7 +580,10 @@ int main(int argc, char *argv[]) {
     #endif
     #if (!MASTER)&&(!SINGLE_PC)
       gate_done[0]=true;
-      write(socket_handle,gate_done,1); //we're done!
+      if (write(socket_handle,gate_done,1)==-1) { //we're done!
+         perror("server read error: done"); //read in the number of gates to process
+         exit(EXIT_FAILURE);
+      }
     #endif
     
   } //end of gates loop
