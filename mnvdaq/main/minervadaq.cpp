@@ -586,7 +586,7 @@ int main(int argc, char *argv[]) {
     #if (!MASTER)&&(!SINGLE_PC)
       std::cout<<"writing true to master"<<std::endl;
       gate_done[0]=true;
-      if (connect(socket_handle[i], (struct sockaddr*) &daq_client[i], sizeof (struct sockaddr_in)) == -1) {
+      if (connect(socket_handle, (struct sockaddr*) &daq_service, sizeof (struct sockaddr_in)) == -1) {
         perror ("connect");
         exit(EXIT_FAILURE) ;
       }
