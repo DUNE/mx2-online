@@ -526,7 +526,7 @@ int main(int argc, char *argv[]) {
       event_data.gate_info[3]=trig_time; event_data.gate_info[3]=error; event_data.gate_info[4]=minos;
 
       #if DEBUG_ME
-       cout<<"Contactint the EventBuilder from Main"<<std::endl;
+       cout<<"Contacting the EventBuilder from Main"<<std::endl;
       #endif
 
       #if MASTER
@@ -550,6 +550,7 @@ int main(int argc, char *argv[]) {
             perror("server read error: done"); //read in the number of gates to process
             exit(EXIT_FAILURE);
           }
+          std::cout<<"gate_done: "<<gate_done[0]<<std::endl;
         }
       #endif
       /* contact event builder service */
@@ -579,6 +580,7 @@ int main(int argc, char *argv[]) {
       #endif
     #endif
     #if (!MASTER)&&(!SINGLE_PC)
+      std::cout<<"writing true to master"<<std::endl;
       gate_done[0]=true;
       if (write(socket_handle,gate_done,1)==-1) { //we're done!
          perror("server read error: done"); //read in the number of gates to process
