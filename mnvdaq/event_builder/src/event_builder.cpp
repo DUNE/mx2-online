@@ -321,9 +321,10 @@ int event_builder(event_handler *evt) {
         info_length = FEB_INFO_SIZE-8;
         CheckBufferLength(evt->feb_info[5], info_length);
         try {
-          if (info_length != dummy_feb->GetIncomingMessageLength()) throw info_length;
+          if (info_length != dummy_feb->GetExpectedIncomingMessageLength()) throw info_length;
         } catch (int e) {
            cout<<"Message Length Mismatch: "<<info_length<<" should be: "<<dummy_feb->GetIncomingMessageLength()<<endl;
+	   dummy_feb->DecodeRegisterValues(dummy_feb->GetIncomingMessageLength());
            exit(-3);
         }
         for (unsigned int i=0;i<evt->feb_info[5];i+=info_length) {
