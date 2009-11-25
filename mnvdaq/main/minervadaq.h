@@ -36,5 +36,6 @@ const static unsigned short port=1095; //the port number for our TCP service
 /* minervadaq client for "slave" DAQ */
 struct sockaddr_in daq_service;
 int socket_handle;
+struct hostent *hostinfo;
 const static unsigned short port=1095; //the port number for our TCP service
 #endif

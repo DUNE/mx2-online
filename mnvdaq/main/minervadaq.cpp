@@ -24,7 +24,7 @@
 #define THREAD_COUNT 4  /*!< a thread count variable if we aren't finding the number of threads needed any other way */
 #if MASTER||SINGLE_PC
 #define CONTROLLER_ID 0
-#elif
+#elif (!MASTER)&&(!SINGLE_PC)
 #define CONTROLLER_ID 1
 #endif
 
@@ -194,15 +194,15 @@ int main(int argc, char *argv[]) {
 #endif
 
 #if (!MASTER)&&(!SINGLE_PC)
-      socket_handle[0] = socket (PF_INET, SOCK_STREAM, 0);
+      socket_handle = socket (PF_INET, SOCK_STREAM, 0);
       /* Store the server’s name in the socket address. */
-      daq_client[0].sin_family = AF_INET;
+      daq_service.sin_family = AF_INET;
       /* Convert from strings to numbers. */
       string hostname="minervatest03.fnal.gov"; //this needs to be changed for the appropriate machine
       hostinfo = gethostbyname(hostname.c_str());
       if (hostinfo == NULL) return 1;
-      else daq_client[0].sin_addr = *((struct in_addr *) hostinfo->h_addr);
-      daq_client[0].sin_port = htons (port);
+      else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
+      daq_service.sin_port = htons (port);
 #endif
 
 
@@ -580,7 +580,7 @@ int main(int argc, char *argv[]) {
     #endif
     #if (!MASTER)&&(!SINGLE_PC)
       gate_done[0]=true;
-      write(connection,done,1); //we're done!
+      write(socket_handle,gate_done,1); //we're done!
     #endif
     
   } //end of gates loop
