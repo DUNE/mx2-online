@@ -549,8 +549,8 @@ int acquire_data::BuildFEBList(int i, int croc_id) {
  *   the address numbers run from 1 to 15 so we'll loop
  *   over all possible address numbers */
  
-  //for (int j=1;j<16;j++) { //loop over possible feb's
-  for (int j=1;j<2;j++) { //loop over possible feb's
+  for (int j=1;j<16;j++) { //loop over possible feb's
+  //for (int j=1;j<2;j++) { //loop over possible feb's
     #if DEBUG_ME
       std::cout<<"Making FEB: "<<j<<std::endl;
     #endif
