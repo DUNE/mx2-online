@@ -1,4 +1,12 @@
 /* header file for minervadaq main. */
+/*! The include files needed for the network
+ *  sockets 
+ */
+#include <netinet/in.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 
 boost::mutex main_mutex; /*!< A BOOST multiple exclusion for use in threaded operation */
 
@@ -16,11 +24,11 @@ std::ofstream take_data_extime_log; /*!<an output file for tiing data */
 std::ofstream trigger_log; /*!<an output file for trigger debuggin */
 
 bool gate_done[1];
+struct in_addr socket_address;
 #if MASTER&&(!SINGLE_PC)
 /* minervadaq server for "master" DAQ */
 struct sockaddr_in daq_service;
 int socket_handle;
-bool done[1];
 const static unsigned short port=1095; //the port number for our TCP service
 #endif
 
@@ -28,6 +36,5 @@ const static unsigned short port=1095; //the port number for our TCP service
 /* minervadaq client for "slave" DAQ */
 struct sockaddr_in daq_service;
 int socket_handle;
-bool done[1];
 const static unsigned short port=1095; //the port number for our TCP service
 #endif

@@ -546,7 +546,7 @@ int main(int argc, char *argv[]) {
               perror("accept");
               exit(EXIT_FAILURE);
           }
-          if ((read (connection, done, sizeof (done)))!=sizeof(done)) { //read "done" from the master
+          if ((read (connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { //read "done" from the master
             perror("server read error: done"); //read in the number of gates to process
             exit(EXIT_FAILURE);
           }
