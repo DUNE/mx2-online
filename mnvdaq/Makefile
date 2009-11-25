@@ -31,7 +31,7 @@ main: FORCE
 	cd ../;
 	cd daq_master; gmake
 	cd ../;
-	cd daq_service; gmake
+	cd daq_server; gmake
 	cd ../;
 
 event_builder-clean: FORCE

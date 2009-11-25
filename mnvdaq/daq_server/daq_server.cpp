@@ -87,7 +87,7 @@ int server() {
     int master_connection, minervadaq_connection;
     address_length = sizeof (remote_address);
     master_connection = accept (socket_handle, (sockaddr*)&remote_address, &address_length);
-    if (connection == -1) {
+    if (master_connection == -1) {
       /* The call to accept failed. */
       if (errno == EINTR)
         /* The call was interrupted by a signal. Try again. */
