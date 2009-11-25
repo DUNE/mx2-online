@@ -170,6 +170,7 @@ int main(int argc, char *argv[]) {
 #if MASTER&&(!SINGLE_PC)
   /* create a TCP socket */
   socket_handle = socket (PF_INET, SOCK_STREAM, 0);
+  std::cout<<"socket_handle: "<<socket_handle<<std::endl;
   if (socket_handle == -1) {
     perror("socket");
     exit(EXIT_FAILURE);
@@ -531,11 +532,14 @@ int main(int argc, char *argv[]) {
 
       #if MASTER
         while (!gate_done[0]) {
+          std::cout<<"waiting..."<<std::endl;
           struct sockaddr_in remote_address;
           socklen_t address_length;
           int connection;
           address_length = sizeof (remote_address);
-          connection = accept (socket_handle, (sockaddr*)&remote_address, &address_length);
+          std::cout<<"ready to connect: "<<socket_handle<<std::endl;
+          connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
+	  std::cout<<"still waiting..."<<std::endl;
           if (connection == -1) {
             /* The call to accept failed. */
             if (errno == EINTR)
@@ -546,7 +550,7 @@ int main(int argc, char *argv[]) {
               perror("accept");
               exit(EXIT_FAILURE);
           }
-          if ((read (connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { //read "done" from the master
+          if ((read(connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { //read "done" from the master
             perror("server read error: done"); //read in the number of gates to process
             exit(EXIT_FAILURE);
           }
@@ -582,9 +586,14 @@ int main(int argc, char *argv[]) {
     #if (!MASTER)&&(!SINGLE_PC)
       std::cout<<"writing true to master"<<std::endl;
       gate_done[0]=true;
+      if (connect(socket_handle[i], (struct sockaddr*) &daq_client[i], sizeof (struct sockaddr_in)) == -1) {
+        perror ("connect");
+        exit(EXIT_FAILURE) ;
+      }
+
       if (write(socket_handle,gate_done,1)==-1) { //we're done!
-         perror("server read error: done"); //read in the number of gates to process
-         exit(EXIT_FAILURE);
+        perror("server read error: done"); //read in the number of gates to process
+        exit(EXIT_FAILURE);
       }
     #endif
     
