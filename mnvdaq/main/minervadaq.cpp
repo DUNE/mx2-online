@@ -204,6 +204,10 @@ int main(int argc, char *argv[]) {
       if (hostinfo == NULL) return 1;
       else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
       daq_service.sin_port = htons (port);
+      if (connect(socket_handle[i], (struct sockaddr*) &daq_client[i], sizeof (struct sockaddr_in)) == -1) {
+        perror ("connect");
+        exit(EXIT_FAILURE) ;
+      }
 #endif
 
 
@@ -531,6 +535,7 @@ int main(int argc, char *argv[]) {
       #endif
 
       #if MASTER
+        std::cout<<"gate_done: "<<gate_done[0]<<std::endl;
         while (!gate_done[0]) {
           std::cout<<"waiting..."<<std::endl;
           struct sockaddr_in remote_address;
@@ -586,11 +591,6 @@ int main(int argc, char *argv[]) {
     #if (!MASTER)&&(!SINGLE_PC)
       std::cout<<"writing true to master"<<std::endl;
       gate_done[0]=true;
-      if (connect(socket_handle, (struct sockaddr*) &daq_service, sizeof (struct sockaddr_in)) == -1) {
-        perror ("connect");
-        exit(EXIT_FAILURE) ;
-      }
-
       if (write(socket_handle,gate_done,1)==-1) { //we're done!
         perror("server read error: done"); //read in the number of gates to process
         exit(EXIT_FAILURE);
@@ -598,6 +598,9 @@ int main(int argc, char *argv[]) {
     #endif
     
   } //end of gates loop
+  #if !SINGLE_PC
+     close(socket_handle);
+  #endif
 #endif //TAKE_DATA
 
 /**********************************************************************************/
