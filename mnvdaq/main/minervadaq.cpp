@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
   et_system_setdebug(sys_id, ET_DEBUG_INFO);
 
  /*now set up the heartbeat to make sure ET starts up correctly */
-  unsigned int oldheartbeat, newheartbeat;
+/*  unsigned int oldheartbeat, newheartbeat;
   id = (et_id *) sys_id;
   oldheartbeat = id->sys->heartbeat;
   int counter = 0; 
@@ -149,12 +149,12 @@ int main(int argc, char *argv[]) {
    }
    counter++;
   } while ((newheartbeat==oldheartbeat)&&(counter!=50)); 
-
+ */
 /* Notify the user if ET did not start properly & exit */
-  if (counter==50) {
+/*  if (counter==50) {
     std::cout<<"ET System did not start properly!"<<std::endl;
     exit(-5);
-  }  
+  }   */
 
 /* attach to GRANDCENTRAL station since we are producing events */
   if (et_station_attach(sys_id, ET_GRANDCENTRAL, &attach) < 0) {
