@@ -23,10 +23,11 @@
 using namespace std;
 
 int main(int argc, char* argv[]) {
-  if (argc<2) {
-    cout<<"Usage:  daq_master <et_filename>"<<endl;
+  if (argc<3) {
+    cout<<"Usage:  daq_master <et_filename> <gates-to-acquire>"<<endl;
     return -1;
   }
+  gates[i] = atoi(argv[2]); //collect 1000 gates from the DAQ
   
   sprintf(et_file,argv[1]);
 
@@ -80,7 +81,6 @@ int make_socket() {
 int write_setup_data() {
   for (int i=0;i<daq_slaves;i++) {
     done[i] = false; //we are not yet ready to stop the DAQ
-    gates[i] = 1000; //collect 1000 gates from the DAQ
 
     cout<<"socket_handle: "<<socket_handle[i]<<endl;
     write(socket_handle[i],&gates[i], sizeof(gates[i])); //send the number of gates
