@@ -34,6 +34,7 @@ class feb : public Frames {
     febAddresses boardNumber; /*!< the FEB board number (1-15) */
     unsigned char firmwareVersion[1]; /*!< the firmware version on this board */
     int maxHits; /*!< the maximum number of hits a discriminator can take */
+    int TrueIncomingMessageLength; /*!< true FEB incoming message length */
     bool initialized;  /*!< a flag for the initialization state of this FEB */
     trips *tripChips[6]; /*!< the trip objects for this FEB */
     adc *adcHits[6]; //we can have as many as 6 hits (for now) /*!< The ADC objects for this FEB */

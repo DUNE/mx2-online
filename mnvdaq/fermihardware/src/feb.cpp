@@ -37,9 +37,9 @@
   
   /* the header + information part of the message */
   OutgoingMessageLength = MinHeaderLength + NRegisters; //length of the outgoing message message
-  IncomingMessageLength = 2 + MinHeaderLength + NRegisters + (NRegisters + 1) % 2; //the length of the incoming message
+  TrueIncomingMessageLength = 2 + MinHeaderLength + NRegisters + (NRegisters + 1) % 2; //the length of the incoming message
   std::cout<<"Outgoing: "<<OutgoingMessageLength<<std::endl;
-  std::cout<<"Incoming: "<<IncomingMessageLength<<std::endl;
+  std::cout<<"Incoming: "<<TrueIncomingMessageLength<<std::endl;
   /* note above: incoming messages are ALWAYS 2 bytes LARGER than outgoing messages */
 
   /* make up the frames for each of the trip chips on the board.
@@ -396,17 +396,17 @@ void feb::DecodeRegisterValues(int buffersize) {
   #if DEBUG_FEB
     std::cout<<"BoardNumber--Decode: "<<boardNumber<<std::endl;
   #endif
-  if ((buffersize < IncomingMessageLength)&&(initialized)) { //check for errors
+  if ((buffersize < TrueIncomingMessageLength)&&(initialized)) { //check for errors
     /* the buffer is too short, so we need to stop execution, and notify the user */
     std::cout<<"The FPGA buffer for this FEB "<<(int)febNumber[0]
         <<" is too short"<<std::endl;
-    std::cout<<"Expected: "<<IncomingMessageLength<<std::endl;
+    std::cout<<"Expected: "<<TrueIncomingMessageLength<<std::endl;
     std::cout<<"Had: "<<buffersize<<std::endl;
     exit(1);
-  } else if ((!initialized)&&(buffersize<IncomingMessageLength)) {
+  } else if ((!initialized)&&(buffersize<TrueIncomingMessageLength)) {
     std::cout<<"FEB: "<<(int) febNumber[0]<<" is not available on this channel."<<std::endl;
     initialized = false;
-  } else if ((!initialized)&&(buffersize==IncomingMessageLength)) {
+  } else if ((!initialized)&&(buffersize==TrueIncomingMessageLength)) {
     std::cout<<"FEB: "<<(int)febNumber[0]<<" is available on this channel."<<std::endl;
     initialized = true;
   }
