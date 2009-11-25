@@ -92,6 +92,7 @@ class feb : public Frames {
     void ShowValues();
     void MakeMessage();
     void DecodeRegisterValues(int);
+    int inline GetExpectedIncomingMessageLength() {return TrueIncomingMessageLength;};
 
     /*! Get functions for FPGA read */
     unsigned int inline GetTimer() {return Timer;};

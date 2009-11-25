@@ -81,7 +81,7 @@ class trips : public Frames {
     trips(febAddresses a, TRiPFunctions f, int a, std::ofstream &log_file);
    //trips(febAddresses a, TRiPFunctions f, int a);
    /*! default destructor */
-   ~trips() { };
+   ~trips() {DeleteOutgoingMessage(); };
    /*! Function to assign a value to a logical trip_value entry */
    void inline SetRegisterValue(int index, int value) {trip_values[index]=value;};
    /*! Function to decode the register values (inherited from Frames) */
