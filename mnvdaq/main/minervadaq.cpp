@@ -101,16 +101,18 @@ int main(int argc, char *argv[])
 	et_open_config_init(&openconfig);
 
 	/* set remote host */
-	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE);
+	// et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // remote only?
 
 	/* set this ET client for remote */
-	et_open_config_sethost(openconfig, "minervatest01.fnal.gov"); //set to the current IP number for minervatest01 (19 Nov 2009)
+	// et_open_config_sethost(openconfig, "minervatest02.fnal.gov");  // remote only?
+	// Set to the current machine name. 
+	// Currently (2009.November.26), setting IP addresses explicitly doesn't work quite right.
 
 	/* set direct connection */
-	et_open_config_setcast(openconfig, ET_DIRECT);
+	// et_open_config_setcast(openconfig, ET_DIRECT);  // remote only?
 
 	/* set the server port */
-	et_open_config_setserverport(openconfig, 1091);
+	// et_open_config_setserverport(openconfig, 1091); // multi-pc only?
 
 	/* then we must open it */
 	if (et_open(&sys_id, et_filename.c_str(), openconfig) != ET_OK) {
@@ -128,26 +130,28 @@ int main(int argc, char *argv[])
 	// Leave this commented out when working on networked running.  It can be 
 	// commented back in for local running.  Overall, should be debugged...
 	//------
-	// // Set up the heartbeat to make sure ET starts correctly.
-	// unsigned int oldheartbeat, newheartbeat;
-	// id = (et_id *) sys_id;
-	// oldheartbeat = id->sys->heartbeat;
-	// int counter = 0; 
-	// do {
-	// 	system("sleep 1s");
-	// 	if (!counter) {
-	// 		newheartbeat = id->sys->heartbeat;
-	// 	} else {
-	// 		oldheartbeat=newheartbeat;
-	// 		newheartbeat = id->sys->heartbeat;
-	// 	}
-	// 	counter++;
-	// } while ((newheartbeat==oldheartbeat)&&(counter!=50)); 
-	// // Notify the user if ET did not start properly & exit.
-	// if (counter==50) {
-	// 	std::cout<<"ET System did not start properly!"<<std::endl;
-	// 	exit(-5);
-	// }   
+#if SINGLE_PC
+	// Set up the heartbeat to make sure ET starts correctly.
+	unsigned int oldheartbeat, newheartbeat;
+	id = (et_id *) sys_id;
+	oldheartbeat = id->sys->heartbeat;
+	int counter = 0; 
+	do {
+		system("sleep 1s");
+		if (!counter) {
+			newheartbeat = id->sys->heartbeat;
+		} else {
+			oldheartbeat=newheartbeat;
+			newheartbeat = id->sys->heartbeat;
+		}
+		counter++;
+	} while ((newheartbeat==oldheartbeat)&&(counter!=50)); 
+	// Notify the user if ET did not start properly & exit.
+	if (counter==50) {
+		std::cout<<"ET System did not start properly!"<<std::endl;
+		exit(-5);
+	}   
+#endif 
 	//------
 
 	/* attach to GRANDCENTRAL station since we are producing events */
@@ -161,6 +165,7 @@ int main(int argc, char *argv[])
 	/*  Now we need to synch up the "master" and "slave" DAQ's                       */
 	/*********************************************************************************/
 #if MASTER&&(!SINGLE_PC)
+// #if MASTER
 	/* create a TCP socket */
 	socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 	std::cout<<"socket_handle: "<<socket_handle<<std::endl;
@@ -192,7 +197,7 @@ int main(int argc, char *argv[])
 	/* Store the server’s name in the socket address. */
 	daq_service.sin_family = AF_INET;
 	/* Convert from strings to numbers. */
-	string hostname="minervatest03.fnal.gov"; //this needs to be changed for the appropriate machine
+	string hostname="minervatest02.fnal.gov"; //this needs to be changed for the appropriate machine
 	hostinfo = gethostbyname(hostname.c_str());
 	if (hostinfo == NULL) return 1;
 	else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
