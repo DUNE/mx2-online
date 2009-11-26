@@ -53,12 +53,12 @@ int main(int argc, char* argv[]) {
 
 int make_socket() {
   /*********************************************************************************/
-  /* Create the socket for minervatest03. */
+  /* Create the socket for minervatest02. */
   socket_handle[0] = socket (PF_INET, SOCK_STREAM, 0);
   /* Store the server’s name in the socket address. */
   daq_client[0].sin_family = AF_INET;
   /* Convert from strings to numbers. */
-  string hostname="minervatest03.fnal.gov"; //this needs to be changed for the appropriate machine
+  string hostname="minervatest02.fnal.gov"; //this needs to be changed for the appropriate machine
   hostinfo = gethostbyname(hostname.c_str());
   if (hostinfo == NULL) return 1;
   else daq_client[0].sin_addr = *((struct in_addr *) hostinfo->h_addr);
