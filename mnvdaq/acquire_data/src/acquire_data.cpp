@@ -620,7 +620,7 @@ int acquire_data::BuildFEBList(int i, int croc_id) {
       tmpChan->SetHasFebs(true);
      
       /* initialize the FEB's trips */
-      InitializeTrips(tmpFEB, tmpCroc, tmpChan);
+      //InitializeTrips(tmpFEB, tmpCroc, tmpChan);
 
       /* clean up the memory */
       delete tmpFEB;  
@@ -749,6 +749,7 @@ int acquire_data::InitializeTrips(feb *tmpFEB, croc *tmpCroc, channels *tmpChan)
              <<" on channel: "<<tmpChan->GetChannelNumber()<<std::endl;
       exit(-11);
     }
+    tmpFEB->GetTrip(qq)->DeleteOutgoingMessage();
   }
   tmpFEB->SetInitialized(true); //now the FEB is intitialzed and we're ready to go!
   
