@@ -8,18 +8,20 @@
 #include "daq_server.h"
 
 /*! \fn
- *  The MINERvA DAQ server
+ *  The MINERvA DAQ Server.
+ *
  *  The client-server model for DAQ acquisition across machines 
  *  uses internet sockets to transfer data from the "master" 
  *  node to two "slave" nodes.  The "slave" nodes will be
  *  executing the acquisition sequence.
  *  
- *  This is the server.  It executes the data acquisition sequence on
- *  its own node.   Then it sends a signal back to the master to 
+ *  This is the server.  It executes the data acquisition sequence 
+ *  on its own node.   Then it sends a signal back to the master to 
  *  inform it that the acquisition has completed.
  *
  *  This is modeled after client-server operation outlined in 
- *  Advanced Linux Programming by CodeSourcery LLC, published by New Riders Publishing.
+ *  Advanced Linux Programming by CodeSourcery LLC, published by 
+ *  New Riders Publishing.
  *  http://www.advancedlinuxprogramming.com/
  *
  */
@@ -36,18 +38,20 @@ int main() {
 int make_socket() {
    
   /* create a TCP socket */
-  socket_handle = socket (PF_INET, SOCK_STREAM, 0);
+  socket_handle = socket (PF_INET, SOCK_STREAM, 0); // address domain, type, protocol
+                                                    // types are basically TCP (STREAM) an UDP (DGRAM)
   if (socket_handle == -1) {
     perror("socket");
     exit(EXIT_FAILURE);
   }
 
   socket_address.s_addr = htonl(INADDR_ANY); //bind to the local address
-  
+ 
+  // build the daq_service address information 
   memset (&daq_service, 0, sizeof (daq_service));
-  daq_service.sin_family = AF_INET;
-  daq_service.sin_port = htons(port);
-  daq_service.sin_addr = socket_address;
+  daq_service.sin_family = AF_INET;  // indicate that this is an Internet namespace address
+  daq_service.sin_port = htons(port); // convert port number to network byte order (see ip man page)
+  daq_service.sin_addr = socket_address; // internet address as a 32-bit IP number
 
   /* Bind the socket to that address. */
   if ((bind (socket_handle, (const sockaddr*)&daq_service, sizeof (daq_service)))) {
@@ -58,6 +62,7 @@ int make_socket() {
   return 0; //success
 }
 
+/* Write setup information to the command line - this starts a run */
 int launch_minervadaq() {
   stringstream process_gates;
   process_gates<<gates[0];
@@ -82,9 +87,9 @@ int server() {
     exit(EXIT_FAILURE);
   }
   while (!done[0]) {
-    struct sockaddr_in remote_address;
+    struct sockaddr_in remote_address; // internet socket address, contains machine and port number
     socklen_t address_length;
-    int master_connection, minervadaq_connection;
+    int master_connection, minervadaq_connection; // file descriptors ("handles")
     address_length = sizeof (remote_address);
     master_connection = accept (socket_handle, (sockaddr*)&remote_address, &address_length);
     if (master_connection == -1) {
