@@ -101,18 +101,18 @@ int main(int argc, char *argv[])
 	et_open_config_init(&openconfig);
 
 	/* set remote host */
-	// et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // remote only?
+	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // remote only?
 
 	/* set this ET client for remote */
-	// et_open_config_sethost(openconfig, "minervatest02.fnal.gov");  // remote only?
-	// Set to the current machine name. 
+	et_open_config_sethost(openconfig, "minervatest01.fnal.gov");  // remote only?
+	// Set to the current host machine name. 
 	// Currently (2009.November.26), setting IP addresses explicitly doesn't work quite right.
 
 	/* set direct connection */
-	// et_open_config_setcast(openconfig, ET_DIRECT);  // remote only?
+	et_open_config_setcast(openconfig, ET_DIRECT);  // remote only?
 
 	/* set the server port */
-	// et_open_config_setserverport(openconfig, 1091); // multi-pc only?
+	et_open_config_setserverport(openconfig, 1091); // multi-pc only?
 
 	/* then we must open it */
 	if (et_open(&sys_id, et_filename.c_str(), openconfig) != ET_OK) {

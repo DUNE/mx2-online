@@ -31,7 +31,6 @@ int main(int argc, char **argv) {
   et_id      *id;
 
   /* The station which will attach event headers to the buffers in an event handler structure */
-
   et_station_config_init(&sconfig);
   et_station_config_setblock(sconfig,ET_STATION_BLOCKING);
   et_station_config_setselect(sconfig,ET_STATION_SELECT_ALL);
@@ -43,8 +42,8 @@ int main(int argc, char **argv) {
   et_open_config_init(&openconfig);
   et_open_config_setmode(&openconfig, ET_HOST_AS_REMOTE);
   et_open_config_setcast(openconfig, ET_DIRECT);
-  et_open_config_sethost(openconfig, "minervatest02.fnal.gov");
-  // et_open_config_setserverport(openconfig, 1091); // multi-pc & remote mode...
+  et_open_config_sethost(openconfig, "minervatest01.fnal.gov");
+  et_open_config_setserverport(openconfig, 1091); // multi-pc & remote mode?...
 
   if (et_open(&sys_id, argv[1], openconfig) != ET_OK) {
     printf("et_producer: et_open problems\n");
