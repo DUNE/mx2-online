@@ -197,7 +197,8 @@ int main(int argc, char *argv[])
 	/* Store the server’s name in the socket address. */
 	daq_service.sin_family = AF_INET;
 	/* Convert from strings to numbers. */
-	string hostname="minervatest02.fnal.gov"; //this needs to be changed for the appropriate machine
+	string hostname="minervatest03.fnal.gov"; //this needs to be changed for the appropriate machine
+	// should point from worker to soldier node
 	hostinfo = gethostbyname(hostname.c_str());
 	if (hostinfo == NULL) return 1;
 	else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
