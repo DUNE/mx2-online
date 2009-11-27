@@ -39,7 +39,7 @@ int make_socket() {
 
 	/* create a TCP socket */
 	socket_handle = socket (PF_INET, SOCK_STREAM, 0); // address domain, type, protocol
-													// types are basically TCP (STREAM) an UDP (DGRAM)
+                                                      // types are basically TCP (STREAM) an UDP (DGRAM)
 	if (socket_handle == -1) {
 		perror("socket");
 		exit(EXIT_FAILURE);
