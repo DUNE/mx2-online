@@ -4,6 +4,19 @@
 #include "MinervaEvent.h"
 #include "MinervaEvent_templates.h"
 
+// "LHCb" Header structure:
+//    [ Bank Length - 2 bytes ][ Magic Pattern - 2 bytes (0xCBCB) ]
+//    [  Source ID - 2 bytes  ][ Version  1 byte ][ Type  1 byte  ]
+// Or, in byte array form:
+//  h[0] = Magic Pattern LSByte
+//  h[1] = Magic Pattern MSByte
+//  h[2] = Bank Length LSByte
+//  h[3] = Bank Length MSByte
+//  h[4] = Type (Bank Type - FPGA, ADC, TDC, DAQ, etc.)
+//  h[5] = Version (FEB firmware version or DAQ Header Version (needed for unpacking)
+//  h[6] = Source ID LSByte
+//  h[7] = Source ID MSByte
+
 /**************************MinervaHeader Class*******************************************/
 
 MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID, 
@@ -38,8 +51,7 @@ MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID,
     std::cout<<"length: "<<length<<std::endl;
   #endif
 
-  int magic_pattern = 0;
-  //whatever it is we need to do to get the magic pattern
+  unsigned short magic_pattern = 0xCBCB; 
   data_bank_header[0] =  magic_pattern; //put the magic pattern for this event into the header
   data_bank_header[1] = length; //put the buffer length into this event header
   data_bank_header[2] = ((firmware) << 0x08) | (bank&0xFF); //load up the firmware version for the feb
@@ -54,14 +66,13 @@ MinervaHeader::MinervaHeader(unsigned char crate) {
  * Makes data header for the End-of-Event Record (DAQ header)
  *
  */
-  unsigned short source_id = crate; //2 bits for the crate id number
-  unsigned int magic_pattern = 0xCDCD; //right?
-  //whatever it is we need to do to get the magic pattern
+  unsigned short source_id = crate; //2 bits for the crate id number? WinDAQ DAQHeader source ID?...
+  unsigned short magic_pattern = 0xCBCB; 
 
   DAQ_event_header[0] =  magic_pattern; //put the magic pattern for this event into the header
   DAQ_event_header[1] = 48; //the length in bytes of the DAQ event header
-  DAQ_event_header[2] = 0xFFFF; //load up the firmware version for the feb
-  DAQ_event_header[2] |= (3 & 0xFF)<<0x10; //put in the bank type 
+  DAQ_event_header[2] = (4 & 0xFF); // DAQ Header version (4 as of 2009.Nov.27)
+  DAQ_event_header[2] |= (3 & 0xFF)<<0x8; //put in the bank type 
   DAQ_event_header[3] = source_id; //and the source information
 }
 
