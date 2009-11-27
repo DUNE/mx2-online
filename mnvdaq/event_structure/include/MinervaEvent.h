@@ -1,9 +1,6 @@
 #ifndef MinervaEvent_h
 #define MinervaEvent_h
 
-#define MAX_FEB 6 //obviously this will have to change
-#define MAX_PER_CHAIN 12 //I think the number of FEB's on a chain
-#define MAX_HITS 6 //the most hits we can take
 #if v65
 #define FEB_INFO_SIZE 62 //number of bytes in an FEB FPGA Frame with the event header
 #elif v81
@@ -37,23 +34,23 @@
  *
  */
 class MinervaHeader {
-  private:
-    unsigned short data_bank_header[4]; /*!<The data bank header for all data other than EOE */
-    unsigned short DAQ_event_header[4]; /*!<The End-of-Event (EOE) Record header */
-    unsigned short chan_number; /*!<the channel number for data having a header attached */
-    boost::mutex mutex; /*!<A BOOST mutual exclusion for threaded operation */
+	private:
+		unsigned short data_bank_header[4]; /*!<The data bank header for all data other than EOE */
+		unsigned short DAQ_event_header[4]; /*!<The End-of-Event (EOE) Record header */
+		unsigned short chan_number; /*!<the channel number for data having a header attached */
+		boost::mutex mutex; /*!<A BOOST mutual exclusion for threaded operation */
 
-  public:
-    /*! the constructor */
-    MinervaHeader(int crateID, int crocID, int chanID, 
-                  int bank, int feb_number, int firmware, int hit, int length);
-    /*! default constructor */
-    MinervaHeader(unsigned char crate);
-    /*! default destructor */
-    ~MinervaHeader() { };
-    unsigned short inline *GetDataBankHeader() {return data_bank_header;};
-    unsigned short inline *GetDAQEvtHeader() {return DAQ_event_header;};
-    unsigned short inline GetChanNo() {return chan_number;};
+	public:
+		/*! the constructor */
+		MinervaHeader(int crateID, int crocID, int chanID, 
+			int bank, int feb_number, int firmware, int hit, int length);
+		/*! default constructor */
+		MinervaHeader(unsigned char crate);
+		/*! default destructor */
+		~MinervaHeader() { };
+		unsigned short inline *GetDataBankHeader() {return data_bank_header;};
+		unsigned short inline *GetDAQEvtHeader() {return DAQ_event_header;};
+		unsigned short inline GetChanNo() {return chan_number;};
 };
 
 /*! \class MinervaEvent 
@@ -61,24 +58,24 @@ class MinervaHeader {
  *  displayed and stuff.
  */
 class MinervaEvent {
-  private:
-//    unsigned char buffer[MAX_BUFFER_SIZE]; //all of the FEB's & DAQ headers + the EVENT DAQ INFO
-    boost::mutex mutex; /*!<A BOOST mutual exclusion for threaded operation*/
-    unsigned char *data_block; /*!<what to put the data into */
-    unsigned char event_block[DAQ_HEADER]; /*!<a special buffer to hold onto the event info while we process
-                                           everything else. */
-  public:
-    /*! the default constructor */
-    MinervaEvent() { };
-    /*! the constructor */
-    MinervaEvent(int det, int config, int run, int sub_run, int trig,
-                 unsigned int g_gate, unsigned int gate, unsigned long int trig_time, 
-                 unsigned short int error, unsigned int minos, MinervaHeader *header);
-    /*! the default destructor */
-    ~MinervaEvent() { };
-    template <class X> void MakeDataBlock(X *frame, MinervaHeader *header);
-    inline unsigned char* GetDataBlock() {return data_block;};
-    unsigned char inline GetEventBlock(int i) {return event_block[i];};
+	private:
+		// unsigned char buffer[MAX_BUFFER_SIZE]; //all of the FEB's & DAQ headers + the EVENT DAQ INFO
+		boost::mutex mutex; /*!<A BOOST mutual exclusion for threaded operation*/
+		unsigned char *data_block; /*!<what to put the data into */
+		unsigned char event_block[DAQ_HEADER]; /*!<a special buffer to hold onto the event info while we process
+		everything else. */
+	public:
+		/*! the default constructor */
+		MinervaEvent() { };
+		/*! the constructor */
+		MinervaEvent(int det, int config, int run, int sub_run, int trig,
+			unsigned int g_gate, unsigned int gate, unsigned long int trig_time, 
+			unsigned short int error, unsigned int minos, MinervaHeader *header);
+		/*! the default destructor */
+		~MinervaEvent() { };
+		template <class X> void MakeDataBlock(X *frame, MinervaHeader *header);
+		inline unsigned char* GetDataBlock() {return data_block;};
+		unsigned char inline GetEventBlock(int i) {return event_block[i];};
 };
 
 #endif
