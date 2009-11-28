@@ -7,6 +7,8 @@ COMPILE_OPTIONS += -DREPORT_EVENT
 COMPILE_OPTIONS += -DNO_THREAD
 #COMPILE_OPTIONS += -DDEBUG_ME
 #COMPILE_OPTIONS += -DTIME_ME
+COMPILE_OPTIONS += -DMULTIPC
+
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
