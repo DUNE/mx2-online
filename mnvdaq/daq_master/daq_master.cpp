@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	cou t<< "writing data to socket..." << endl;
+	cout << "writing data to socket..." << endl;
 	write_setup_data(); //write setup data to the "slave" 
 
 	read_server_response(); //read the "slave" response
