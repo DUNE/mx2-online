@@ -1,15 +1,23 @@
 #!/bin/bash
 
+# Argument List:
+#  $1 == et_system file name
+#  $2 == number of gates to process
+if [ $# -ne 2 ]; then
+	echo Please supply et_system file name and number of gates.
+	exit 1
+fi
+
 source $DAQROOT/setup_daqbuild.sh
-EVENT_SIZE=2048  #a kilobyte
-FEBS=4 #how many total FEB's need to be serviced
-FRAMES=8
-EVENTS=$(($2*$FRAMES*$FEBS))
+EVENT_SIZE=2048  # two kilobytes - this is the *frame* size ("events"==frames in ET)
+FEBS=4           # how many total FEB's need to be serviced
+FRAMES=8         # this is anticipating 1 FPGA & 1 TDC & 6 ADC Frames.
+EVENTS=$(($2*$FRAMES*$FEBS))  # create space in the memory-mapped file for all events.
 
 if [ "$LOCALE" == "" ]
 then
-  echo No LOCALE defined!  Please source setup_daqbuild.sh!
-  return 1
+	echo No LOCALE defined!  Please source setup_daqbuild.sh!
+	exit 1
 fi
 
 if [ $LOCALE == 'FNAL' ]

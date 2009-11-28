@@ -1,4 +1,11 @@
 #!/bin/bash
 
+# Argument List:
+#  $1 == et_system file name
+if [ $# -ne 1 ]; then
+	echo Please supply et_system file name.
+	exit 1
+fi
+
 source $DAQROOT/setup_daqbuild.sh
 nice ${DAQROOT}/bin/event_builder $1  
