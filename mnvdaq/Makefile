@@ -45,7 +45,7 @@ main-clean: FORCE
 	cd ../;
 	cd daq_server; gmake clean;
 	cd ../;
-	cd bin; rm minervadaq;
+	cd bin; rm minervadaq; rm daq_master; rm daq_slave_service; rm event_builder;
 	cd ../;
 	cd lib; rm *.so;
 	cd ../;
