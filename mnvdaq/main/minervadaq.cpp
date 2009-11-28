@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
 	/* configuring the ET system is the first thing we must do */
 	et_open_config_init(&openconfig);
 
+#if MULTI_PC
 	/* set remote host */
 	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // remote only?
 
@@ -113,6 +114,7 @@ int main(int argc, char *argv[])
 
 	/* set the server port */
 	et_open_config_setserverport(openconfig, 1091); // multi-pc only?
+#endif
 
 	/* then we must open it */
 	if (et_open(&sys_id, et_filename.c_str(), openconfig) != ET_OK) {
