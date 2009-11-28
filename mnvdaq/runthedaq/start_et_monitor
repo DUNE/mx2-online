@@ -2,9 +2,10 @@
 
 source $DAQROOT/setup_daqbuild.sh
 
-if [ $LOCALE == 'RUT' ]
+if [ "$LOCALE" == "" ]
 then
-	$ET_HOME/Linux-x86_64-64/bin/et_monitor -f $1 
+  echo No LOCALE defined!  Please source setup_daqbuild.sh!
+  return 1
 fi
 
 if [ $LOCALE == 'FNAL' ]

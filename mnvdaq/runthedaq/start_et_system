@@ -6,9 +6,10 @@ FEBS=4 #how many total FEB's need to be serviced
 FRAMES=8
 EVENTS=$(($2*$FRAMES*$FEBS))
 
-if [ $LOCALE == 'RUT' ]
+if [ "$LOCALE" == "" ]
 then
-	$ET_HOME/Linux-x86_64-64/bin/et_start -v -f ./$1 -n $EVENTS -s $EVENT_SIZE
+  echo No LOCALE defined!  Please source setup_daqbuild.sh!
+  return 1
 fi
 
 if [ $LOCALE == 'FNAL' ]
