@@ -21,7 +21,7 @@ fi
 
 if [ $LOCALE == 'FNAL' ]
 then
-	source /work/software/mnvonline/mnvdaq/setup_daqbuild.sh
+	source /work/software/mnvsingle/mnvdaq/single_daqbuild.sh
 	$ET_HOME/Linux-x86_64-64/bin/et_start -v -f ./$1 -n $EVENTS -s $EVENT_SIZE
 fi
 

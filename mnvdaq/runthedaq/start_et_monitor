@@ -7,16 +7,15 @@ if [ $# -ne 1 ]; then
 	exit 1
 fi
 
-source $DAQROOT/setup_daqbuild.sh
-
 if [ "$LOCALE" == "" ]
 then
-	echo No LOCALE defined!  Please source setup_daqbuild.sh!
+	echo No LOCALE defined!  It is impossible to configure the MINERvA DAQ Environment!"
 	exit 1
 fi
 
 if [ $LOCALE == 'FNAL' ]
 then
+	source /work/software/mnvonline/mnvdaq/setup_daqbuild.sh
 	$ET_HOME/Linux-x86_64-64/bin/et_monitor -f $1 
 fi
 
