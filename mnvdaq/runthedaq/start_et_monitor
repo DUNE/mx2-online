@@ -9,7 +9,7 @@ fi
 
 if [ "$LOCALE" == "" ]
 then
-	echo No LOCALE defined!  It is impossible to configure the MINERvA DAQ Environment!"
+	echo No LOCALE defined!  It is impossible to configure the MINERvA DAQ Environment!
 	exit 1
 fi
 
