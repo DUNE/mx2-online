@@ -65,7 +65,7 @@ class feb : public Frames {
     /*! The destructor */
     ~feb() {
        for (int i=0;i<6;i++) delete tripChips[i]; 
-       for (int i=0;i<6;i++) delete adcHits[i]; 
+       for (int i=0;i<maxHits;i++) delete adcHits[i]; 
        delete hits_n_timing;
     };    
 		// Must clean up FEB outoingMessage arrays manually on a use-by-use basis!
