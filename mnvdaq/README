@@ -28,6 +28,10 @@ be slightly different at different development locations.  The location is set b
 variable.  Set your own $LOCALE variable or mimic the directory structure of another $LOCALE and use that
 value for your own $LOCALE.  
 
+As of 2009.November.28, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
+operation on the minervatest0X machines.  For set-up in a different environment, the default scripts will 
+need to be edited carefully.
+
 Before you build the DAQ, it is important to understand the possible architectures.  The DAQ can be run 
 either on a single PC or on a network of PC's.  Currently, we support the following options:
 1) Single PC
@@ -64,16 +68,17 @@ MINERvA DAQ uses the following set of ports:
 	1090 : Queen-Soldier port (on Soldier)
 	1091 : et port (on Queen)
 	1095 : Soldier-Worker communication port
-Beginning with the Production DAQ, we always run ET in remote mode even when using only one PC, so this 
-step is always necessary.
 
 5) Go to et_9.0 and untar BMS.tar.gz.  Then type "gmake install"
 
 6) Check ${ET_LIBROOT}/lib and make sure you have libet.a, libet_remote.so, and libet.so.
 
-7) Return to $DAQROOT and type "gmake all"
+7) By default, the DAQ will build in single PC mode.  To build in multi-PC mode, you need to edit the 
+Makefiles in the event_builder and main packages.
 
-8) Check ${DAQROOT}/bin/ for 
+8) Return to $DAQROOT and type "gmake all"
+
+9) Check ${DAQROOT}/bin/ for 
 	daq_master
 	daq_slave_service
 	event_builder
@@ -84,7 +89,7 @@ And check ${DAQROOT}/lib/ for
 	libhardware.so
 	libminerva_acquire.so
 
-9) If you are missing any of these, read the Makefile and try building each package one at a time and check 
+10) If you are missing any of these, read the Makefile and try building each package one at a time and check 
 for errors.  Most likely, an environment variable has been incorrectly set.
 
 
