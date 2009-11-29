@@ -1,11 +1,7 @@
 #ifndef MinervaEvent_h
 #define MinervaEvent_h
 
-#if v65
-#define FEB_INFO_SIZE 62 //number of bytes in an FEB FPGA Frame with the event header
-#elif v81
 #define FEB_INFO_SIZE 76 //number of bytes in an FEB FPGA Frame with the event header
-#endif
 #define FEB_DISC_SIZE 982 //number of bytes in the discriminator buffer with event header
 #define FEB_HITS_SIZE 885 //number of bytes in an ADC buffer with event header (per hit)
 #define DAQ_HEADER 56 //number of bytes for the event header with the DAQ header attached.
