@@ -1,12 +1,12 @@
 /*! \file minervadaq.cpp
-* \brief  Main routine: minervadaq for acquiring data from the MINERvA 
-* detector 
-*
-* Elaine Schulte
-* Rutgers University
-* August 4, 2009 
-*
-* */
+ * \brief  Main routine: minervadaq for acquiring data from the MINERvA detector. 
+ *
+ * Elaine Schulte
+ * Rutgers University
+ * August 4, 2009 
+ *
+ * 
+ */
 
 #include "acquire_data.h"
 #include "eb_service.h"
@@ -743,39 +743,21 @@ void TriggerMe(acquire_data *daq)
 	/**********************************************************************************/
 	/* let the hardware tell us when the trigger has completed                        */
 	/**********************************************************************************/
-/*! \note The trigger can be set up to use either the CRIM's interrupt 
-* or just to set the software gate via the fast-command register on the CRIM 
-*
-*/
+    /*! \note The trigger can be set up to use either the CRIM's interrupt 
+     * or just to set the software gate via the fast-command register on the CRIM  
+     */
 
-#if CRIM
 	daq->TriggerDAQ(0); //send the one-shot trigger
 	daq->WaitOnIRQ(); //wait for the trigger to be set (only returns if successful)
 
 	/**********************************************************************************/
 	/*  Let the interrupt handler deal with an asserted interrupt                     */
 	/**********************************************************************************/
-/*! \note  This uses the interrupt handler to handle an asserted interrupt 
-*
-* */
+    /*! \note  This uses the interrupt handler to handle an asserted interrupt 
+     *
+     */
 #if ASSERT_INTERRUPT
 	daq->AcknowledgeIRQ(); //acknowledge the IRQ (only returns if successful)
-#endif
-	/**********************************************************************************/
-	/*        Set the software gate                                                   */
-	/**********************************************************************************/
-#else
-	daq->GetController()->GetCroc(1)->SetFastCommandRegister(0xB1); //software trigger gate
-	unsigned int software_trigger = daq->GetController()->GetCroc(1)->GetFastCommandAddress();
-	unsigned short trigger = daq->GetController()->GetCroc(1)->GetFastCommandRegister();
-	unsigned char trig_byte[2];
-	trig_byte[0]=trigger&0xFF;
-	trig_byte[1]=trigger&0xFF00;
-	daq->GetDaqAcquire()->WriteCycle(daq->GetController()->handle,2,
-		trig_byte,software_trigger,
-		daq->GetController()->GetAddressModifier(),
-		daq->GetController()->GetDataWidth());
-	system("sleep 2e-4s"); //wait 200us
 #endif
 
 #if DEBUG_ME
