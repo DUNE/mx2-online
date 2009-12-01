@@ -75,8 +75,8 @@
      tripChips[i] = new trips(boardNumber,chipFunction,maxHits,log_file); //make up the trip object
     //tripChips[i] = new trips(boardNumber,chipFunction,maxHits); //make up the trip object
   }
-   hits_n_timing = new disc(a,log_file); //doesn't really do anything just yet
-  //hits_n_timing = new disc(a); //doesn't really do anything just yet
+   hits_n_timing = new disc(a,log_file); 
+  //hits_n_timing = new disc(a); 
   for (int i=0;i<maxHits;i++) { //we're going to make up maxHits worth of outgoing frames
     RAMFunctionsHit nhit;
     switch ((i+1)) {

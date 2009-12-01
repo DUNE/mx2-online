@@ -16,7 +16,7 @@
 const int acquire_data::dpmMax = 1024*6; //we have only 6 Kb of space in the DPM Memory per channel
 
 
-void acquire_data::InitializeDaq(int id) 
+void acquire_data::InitializeDaq(int id, RunningModes runningMode) 
 {
 /*! \fn void acquire_data::InitializeDaq()
  *
@@ -24,7 +24,8 @@ void acquire_data::InitializeDaq(int id)
  * CRIM's, CROC's, and FEB's which will need to be serviced during the
  * acquisition cycle.
  *
- * No parameters (id is dummy).
+ * \param int id is the controller ID (used to build the sourceID later).
+ * \param RunningModes runningMode describes the run mode and therfore sets CRIM timing mode.
  *
  */
 
@@ -55,13 +56,13 @@ void acquire_data::InitializeDaq(int id)
 	hard coded in.  This should be changed at some point, but for 
 	the next few weeks, hard coding is the name of the game.} */
 #if THREAD_ME
-	boost::thread crim_thread(boost::bind(&acquire_data::InitializeCrim, this,0xE00000)); 
+	boost::thread crim_thread(boost::bind(&acquire_data::InitializeCrim, this,0xE00000,1,runningMode)); 
 	boost::thread croc_thread(boost::bind(&acquire_data::InitializeCroc,this, 0x010000,1)); 
 #endif
 
 	// Add look-up functions here - one for file content look-up and one by address scanning 
 #if NO_THREAD
-	InitializeCrim(0xE00000);
+	InitializeCrim(0xE00000,1,runningMode);
 	InitializeCroc(0x010000,1);
 #endif
 
@@ -105,7 +106,7 @@ void acquire_data::InitializeDaq(int id)
 }
 
 
-void acquire_data::InitializeCrim(int address) 
+void acquire_data::InitializeCrim(int address, int index, RunningModes runningMode) 
 {
 /*! \fn void acquire_data::InitializeCrim(int address)
  *
@@ -127,27 +128,33 @@ void acquire_data::InitializeCrim(int address)
 #endif
 
 	// Make a CRIM object on this controller.
-	daqController->MakeCrim(address); 
+	daqController->MakeCrim(address, index); 
 
 	// Make sure that we can actually talk to the cards.
     // Actually using the timing register at the moment!  This is a bad register to use!
 	try {
-		int status = daqController->GetCardStatus(); 
+		int status = daqController->GetCrimStatus(index); 
 		if (status) throw status;
 	} catch (int e)  {
 		exit(-3);
 	} 
 
+	// Check running mode and perform appropriate initialization.
+	if (runningMode == (RunningModes)Pedestal) {
+		std::cout << "Running Mode is Pedestal." << std::endl;
+		// Initialize CRIM here.
+	}
+
 	// Now set up the IRQ handler, initializing the global enable bit for the first go-around.
 	SetupIRQ();
 
 #if DEBUG_THREAD
-	crim_thread<<"In InitializeCrim, Done"<<std::endl;
+	crim_thread << "In InitializeCrim, Done" << std::endl;
 	crim_thread.close();
 #endif
 
 #if DEBUG_ME
-	std::cout<<"Finished Setting up CRIM"<<std::endl;
+	std::cout << "Finished Setting up CRIM" << std::endl;
 #endif
 }
 

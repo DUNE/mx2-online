@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	bool success = false; //initialize the success state of the DAQ on exit
 	int record_gates = -1;
+	RunningModes runningMode = Pedestal;
 
 	/*********************************************************************************/
 	/*  Make sure that an output filename and a number of events to record           */
@@ -73,6 +74,10 @@ int main(int argc, char *argv[])
 	/*                                                                               */
 	/*  If they were not, then ask the user to input them now.                       */
 	/*********************************************************************************/
+	// we need to add a lot here:
+	//  running mode - for now assume pedestal. 
+	//  log file name (same as et name)
+	//  li box config
 	if (argc!=3) {
 		cout<<"You forgot to give me the number of gates you want recorded! No "<<endl;
 		cout<<"matter how hard I try, I can't record any data if you don't tell "<<endl;
@@ -90,10 +95,10 @@ int main(int argc, char *argv[])
 	/* now set up ET for use in writing the first-pass memory mapped data file       */
 	/* Setting up ET for use in remote mode for multi-PC operation                   */
 	/*********************************************************************************/
-	et_att_id  attach;
-	et_sys_id  sys_id;
-	et_id      *id;
-	et_openconfig   openconfig;
+	et_att_id      attach;
+	et_sys_id      sys_id;
+	et_id          *id;
+	et_openconfig  openconfig;
 
 	// Configuring the ET system is the first thing we must do.
 	et_open_config_init(&openconfig);
@@ -148,13 +153,13 @@ int main(int argc, char *argv[])
 	} while ((newheartbeat==oldheartbeat)&&(counter!=50)); 
 	// Notify the user if ET did not start properly & exit.
 	if (counter==50) {
-		std::cout<<"ET System did not start properly!"<<std::endl;
+		std::cout << "ET System did not start properly!" << std::endl;
 		exit(-5);
 	}   
 #endif 
 	//------
 
-	/* attach to GRANDCENTRAL station since we are producing events */
+	// Attach to GRANDCENTRAL station since we are producing events.
 	if (et_station_attach(sys_id, ET_GRANDCENTRAL, &attach) < 0) {
 		printf("et_producer: error in station attach\n");
 		system("sleep 10s");
@@ -223,7 +228,7 @@ int main(int argc, char *argv[])
 #if THREAD_ME
 	boost::thread electronics_init_thread(boost::bind(&acquire_data::InitializeDaq,daq)); 
 #else
-	daq->InitializeDaq(CONTROLLER_ID);
+	daq->InitializeDaq(CONTROLLER_ID, runningMode);
 #endif
 // endif THREAD_ME
 
