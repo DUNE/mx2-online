@@ -20,8 +20,8 @@ using namespace std;
 #define BLOCKRAMREADLEVEL 5 // using same for adc & discr
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs on WH14NXO now.
-const int maxHits    = 1;
-const int ramFunc    = 0;
+const int maxHits    = 6;
+const int adcHit     = 0;
 
 // Note, indices are distinct from addresses!
 const unsigned int crocCardAddress = 1 << 16;
@@ -41,7 +41,7 @@ const int tripRegIFFP2      =   0;
 const int tripRegIBCOMP     =  20;
 const int tripRegVREF       = 165;
 const int tripRegVTH        =   0;
-// const int tripRegPIPEDEL    =  11; // maxHits*2-1
+// const int tripRegPIPEDEL    =  2*maxHits - 1;
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
@@ -189,7 +189,7 @@ int main()
 					}
 					// Read the ADC Blocks
 					{
-						error = ReadADCTest(myController, myAcquire, myCroc, crocChannel, *p, ramFunc);
+						error = ReadADCTest(myController, myAcquire, myCroc, crocChannel, *p, adcHit);
 						if (error!=0) { cout<<"Error in FEB TRiPT Test Write!\n"; exit(error); }	
 					}
 				}		  				
