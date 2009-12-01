@@ -21,7 +21,7 @@
 #include <ctime>
 #include <sys/time.h>
 
-#define THREAD_COUNT 4  /*!< a thread count variable if we aren't finding the number of threads needed any other way */
+#define THREAD_COUNT 4  /*!< a thread count var if we aren't finding the # of threads needed */
 #if MASTER||SINGLE_PC
 #define CONTROLLER_ID 0
 #elif (!MASTER)&&(!SINGLE_PC)
@@ -217,13 +217,13 @@ int main(int argc, char *argv[])
 	/*   Make an acquire data object which contains the functions for                */
 	/*   performing initialization and the acquisition sequence                      */
 	/*********************************************************************************/
-	acquire_data *daq = new acquire_data(et_filename); //get functions that manipulate data to & from electronics
+	acquire_data *daq = new acquire_data(et_filename); 
 
 	/*********************************************************************************/
 	/*      Now initialize the DAQ electronics                                       */
 	/*********************************************************************************/
 #if THREAD_ME
-	boost::thread electronics_init_thread(boost::bind(&acquire_data::InitializeDaq,daq)); //initialize the electronics
+	boost::thread electronics_init_thread(boost::bind(&acquire_data::InitializeDaq,daq)); 
 #else
 	daq->InitializeDaq(CONTROLLER_ID);
 #endif
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
 #endif
 #if RECORD_EVENT
 		if (!(gate%100)) {
-			cout<<"********************************************************************************"<<endl;
+			cout<<"********************************************************************"<<endl;
 			cout<<"Acquiring Gate: "<<gate<<endl;
 		}
 #endif
@@ -418,9 +418,9 @@ int main(int argc, char *argv[])
 			croc *tmpCroc = currentController->GetCroc(croc_id);
 			for (int j=0;j<4;j++) {
 				if ((tmpCroc->GetChannelAvailable(j))&&(tmpCroc->GetChannel(j)->GetHasFebs())) {
-					/**********************************************************************************/
-					/*      Threaded Option                                                           */
-					/**********************************************************************************/
+					//
+					// Threaded Option
+					//
 #if DEBUG_THREAD
 					cout<<"launching data thread: "<<croc_id<<" "<<j<<endl;
 #endif
@@ -449,9 +449,9 @@ int main(int argc, char *argv[])
 #endif
 					thread_count++;
 
-					/**********************************************************************************/
-					/*  Unthreaded option                                                             */
-					/**********************************************************************************/
+					//
+					//  Unthreaded option
+					//
 #elif NO_THREAD
 #if DEBUG_ME
 					cout<<"CROC: "<<croc_id<<" channel: "<<j<<std::endl;
@@ -532,7 +532,8 @@ int main(int argc, char *argv[])
 					perror("accept");
 					exit(EXIT_FAILURE);
 			}
-			if ((read(connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { //read "done" from the master
+			//read "done" from the master
+			if ((read(connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
 				perror("server read error: done"); //read in the number of gates to process
 				exit(EXIT_FAILURE);
 			}
@@ -594,7 +595,8 @@ int main(int argc, char *argv[])
 
 #if TIME_ME
 	gettimeofday(&stop_time,NULL);
-	double duration =(double) (stop_time.tv_sec*1e6+stop_time.tv_usec)-(start_time.tv_sec*1e6+start_time.tv_usec);
+	double duration = (double) (stop_time.tv_sec*1e6+stop_time.tv_usec)-
+		(start_time.tv_sec*1e6+start_time.tv_usec);
 	cout<<"Start Time: "<<(start_time.tv_sec*1e6+start_time.tv_usec)<<" Stop Time: "
 		<<(stop_time.tv_sec*1e6+stop_time.tv_usec)<<" Run Time: "<<(duration/1e6)<<endl;
 #endif
@@ -701,9 +703,11 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 #if TIME_ME
 		boost::mutex::scoped_lock lock(main_mutex); 
 		gettimeofday(&stop_time,NULL);
-		double duration = (double) (stop_time.tv_sec*1e6+stop_time.tv_usec)-(start_time.tv_sec*1e6+start_time.tv_usec);
-		take_data_extime_log<<evt->gate_info[1]<<"\t"<<thread<<"\t"<<(start_time.tv_sec*1000000+start_time.tv_usec)
-			<<"\t"<<(stop_time.tv_sec*1000000+stop_time.tv_usec)<<endl;
+		double duration = (double) (stop_time.tv_sec*1e6+stop_time.tv_usec) - 
+			(start_time.tv_sec*1e6+start_time.tv_usec);
+		take_data_extime_log << evt->gate_info[1] << "\t" << thread << "\t" << 
+			(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
+			(stop_time.tv_sec*1000000+stop_time.tv_usec) << endl;
 #endif
 
 		if (!data_taken) return; //we're done processing this channel
