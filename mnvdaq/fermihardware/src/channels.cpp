@@ -59,13 +59,8 @@ void channels::SetFEBs(int a) {
  * \param a the FEB number
  *********************************************************************************/
   //if we found this feb on this channel, put it into the list 
-  #if v65
-    // febs.push_back(new feb(1,false,(febAddresses)a,42,log_file)); 
-	febs.push_back(new feb(1,false,(febAddresses)a,42)); 
-  #else 
-     febs.push_back(new feb(1,false,(febAddresses)a,54,log_file)); 
-    //febs.push_back(new feb(1,false,(febAddresses)a,54)); 
-  #endif
+  febs.push_back(new feb(1,false,(febAddresses)a,54,log_file)); 
+  //febs.push_back(new feb(1,false,(febAddresses)a,54)); 
   return;
 }
 

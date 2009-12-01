@@ -14,7 +14,7 @@ bool data_ready, evt_record_available;   /*!<data status variables */
 /*! a function for setting the high voltage on FEB's */
 void SetHV(acquire_data *daq, int i, int j); 
 /*! a function for selecting a trigger and waiting on it */
-void TriggerMe(acquire_data *daq); //the triggering functions
+void TriggerDAQ(acquire_data *daq); // The triggering functions.
 /*! the function which governs the entire data acquisition sequence */
 void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,int thread, 
               et_att_id  attach, et_sys_id  sys_id); //the data taking routine

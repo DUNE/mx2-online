@@ -241,9 +241,6 @@ int event_builder(event_handler *evt) {
   #endif
 
   MinervaHeader *tmp_header;
-  #if v65
-    feb *dummy_feb = new feb(6,1,(febAddresses)0,42,thread_log); //make up a dummy feb to have access to the header decoding functions  (v65)
-  #endif
   #if v81
     feb *dummy_feb = new feb(6,1,(febAddresses)0,56,thread_log); //make up a dummy feb to have access to the header decoding functions  (v81)
   #endif

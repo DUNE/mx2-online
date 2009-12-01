@@ -37,9 +37,7 @@ using namespace std;
 int main(int argc, char *argv[]) 
 {
 
-	/****************************************************************************
-	some loging files for the main routine                               
-	***************************************************************************/
+	// Log files for the main routine.  
 	string et_filename;
 	ofstream gate_time_log;
 	ofstream thread_launch_log;
@@ -97,35 +95,35 @@ int main(int argc, char *argv[])
 	et_id      *id;
 	et_openconfig   openconfig;
 
-	/* configuring the ET system is the first thing we must do */
+	// Configuring the ET system is the first thing we must do.
 	et_open_config_init(&openconfig);
 
 #if MULTI_PC
-	/* set remote host */
-	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // remote only?
+	// Set the remote host.
+	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // Remote (multi-pc) mode only.
 
-	/* set this ET client for remote */
-	et_open_config_sethost(openconfig, "minervatest01.fnal.gov");  // remote only?
+	// Set this ET client for remote operation.
+	et_open_config_sethost(openconfig, "minervatest01.fnal.gov");  // Remote (multi-pc) mode only.
 	// Set to the current host machine name. 
 	// Currently (2009.November.26), setting IP addresses explicitly doesn't work quite right.
 
-	/* set direct connection */
-	et_open_config_setcast(openconfig, ET_DIRECT);  // remote only?
+	// Set direct connection.
+	et_open_config_setcast(openconfig, ET_DIRECT);  // Remote (multi-pc) mode only.
 
-	/* set the server port */
-	et_open_config_setserverport(openconfig, 1091); // multi-pc only?
+	// Set the server port.
+	et_open_config_setserverport(openconfig, 1091); // Remote (multi-pc) mode only.
 #endif
 
-	/* then we must open it */
+	// Open it.
 	if (et_open(&sys_id, et_filename.c_str(), openconfig) != ET_OK) {
 		printf("et_producer: et_open problems\n");
 		exit(1);
 	}
 
-	/* clean up after yourself */
+	// Clean up.
 	et_open_config_destroy(openconfig);
 
-	/* set the level of debug output that we want (everything) */
+	// Set the debug level for output (everything).
 	et_system_setdebug(sys_id, ET_DEBUG_INFO);
 
 	// This only works for local operation, not over the network for some reason!
@@ -167,8 +165,7 @@ int main(int argc, char *argv[])
 	/*  Now we need to synch up the "master" and "slave" DAQ's                       */
 	/*********************************************************************************/
 #if MASTER&&(!SINGLE_PC)
-// #if MASTER
-	/* create a TCP socket */
+	// Create a TCP socket.
 	socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 	std::cout<<"socket_handle: "<<socket_handle<<std::endl;
 	if (socket_handle == -1) {
@@ -182,7 +179,7 @@ int main(int argc, char *argv[])
 	daq_service.sin_port = htons(port);
 	daq_service.sin_addr = socket_address;
 
-	/* Bind the socket to that address. */
+	// Bind the socket to that address.
 	if ((bind (socket_handle, (const sockaddr*)&daq_service, sizeof (daq_service)))) {
 		perror ("bind");
 		exit(EXIT_FAILURE);
@@ -196,11 +193,12 @@ int main(int argc, char *argv[])
 
 #if (!MASTER)&&(!SINGLE_PC)
 	socket_handle = socket (PF_INET, SOCK_STREAM, 0);
-	/* Store the server’s name in the socket address. */
+	// Store the server’s name in the socket address. 
 	daq_service.sin_family = AF_INET;
-	/* Convert from strings to numbers. */
-	string hostname="minervatest03.fnal.gov"; //this needs to be changed for the appropriate machine
-	// should point from worker to soldier node
+	// Set hostname - this needs to be changed for the appropriate machine.
+	// (Should point from worker to soldier node.)
+	// Eventually want to use IP numbers.
+	string hostname="minervatest03.fnal.gov"; 
 	hostinfo = gethostbyname(hostname.c_str());
 	if (hostinfo == NULL) return 1;
 	else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
@@ -230,11 +228,10 @@ int main(int argc, char *argv[])
 // endif THREAD_ME
 
 	/*********************************************************************************/
-	/*  while the electronics are being initialized, we can get                      */
-	/*       the event builder ready.                                                */
+	/*  During electronics initialization, we can prepare the event builder.         */
 	/*                                                                               */
-	/*  first thing's first:  Read in the event status file which contains things    */
-	/*  like the global event number and run number to be used                       */
+	/*  First thing's first:  Read in the event status file which contains things    */
+	/*  like the global event number and run number to be used.                      */
 	/*********************************************************************************/
 	ifstream run_status("run_status.dat");
 	try {
@@ -255,71 +252,16 @@ int main(int argc, char *argv[])
 	electronics_init_thread.join(); //wait for the electronics initialization to finish 
 #endif
 
-	/*********************************************************************************/
-	/*  for now we need to set the HV & a few other FEB settings here.  Ultimately,  */
-	/*  these settings would be kept in a setup file and set using slow controls,    */
-	/*  but I have neither the setup file nor the slow controls                      */
-	/*********************************************************************************/
-	controller *currentController = daq->GetController(); //get the controller object
-
-	/*********************************************************************************/
-	/*  Now, if we're going to set the high voltage using the main routine           */
-	/*  we will let it tell us how many threads, if multi-threaded operation,        */
-	/*  we will need to execute.  We will also set & monitor the high voltage        */
-	/*  setting procedure here.                                                      */
-	/*********************************************************************************/
-#if DAQ_SET_HV&&THREAD_ME
-#if DEBUG_THREAD
-	cout<<"starting to set HV via threads"<<endl;
-#endif
-	/* make up enough threads to survice all of the croc channels on this controller */
-	boost::thread *setup_threads[(currentController->GetCrocVectorLength()*4)]; 
-	int thread_count=0;
-	/*set the high voltage*/
-	for (int i=1;i<=currentController->GetCrocVectorLength();i++) { //crocs start with 1
-		croc *tmpCroc = currentController->GetCroc(i);
-#if DEBUG_THREAD
-		cout<<"got the croc!"<<endl;
-#endif
-		for (int j=0;j<4;j++) {
-			if ((tmpCroc->GetChannelAvailable(j))&&(tmpCroc->GetChannel(j)->GetHasFebs())) {
-#if DEBUG_TRHEAD
-				cout<<"Launching thread on channel: "<<j<<endl;
-#endif
-				setup_threads[thread_count] = new boost::thread(boost::bind(&SetHV,boost::ref(daq),i,j));
-				thread_count++; //figure out how many threads we actually need to service
-			} 
-		} 
-	} 
-
-	/*wait for the HV to finish setting*/
-	for (int i=0;i<thread_count;i++) {
-		setup_threads[i]->join();
-	}   
-#endif
-// endif DAQ_SET_HV&&THREAD_ME
-
-	/*********************************************************************************/
-	/*       Monitor the high voltage setting                                        */
-	/*********************************************************************************/
-#if DAQ_SET_HV&&NO_THREAD
-	for (int i=1;i<=currentController->GetCrocVectorLength();i++) { //crocs start with 1
-		croc *tmpCroc = currentController->GetCroc(i);
-		cout<<"got the croc!"<<endl;
-		for (int j=0;j<4;j++) {
-			if ((tmpCroc->GetChannelAvailable(j))&&(tmpCroc->GetChannel(j)->GetHasFebs())) {
-				SetHV(daq,i,j);
-			} 
-		} 
-	} 
-#endif
+	// Get the controller object created during InitializeDaq.
+	// --> Should be keyed by controller id!
+	controller *currentController = daq->GetController(); 
 
 	/*********************************************************************************/
 	/*  At this point we are now set up and are ready to start the event acquiring   */
 	/*  procedures.                                                                  */
 	/*********************************************************************************/
 #if DEBUG_ME
-	cout<<"Getting ready to start taking data!"<<endl;
+	cout << "Getting ready to start taking data!" << endl;
 #endif
 
 	/*********************************************************************************/
@@ -332,7 +274,7 @@ int main(int argc, char *argv[])
 
 #if TAKE_DATA
 #if DEBUG_ME
-	cout<<"record gates: "<<record_gates<<endl;
+	cout << " Attempting to record " << record_gates << " gates." << endl;
 #endif
 
 	/*********************************************************************************/
@@ -344,12 +286,12 @@ int main(int argc, char *argv[])
 		gettimeofday(&gate_start_time, NULL);
 #endif
 #if DEBUG_ME
-		cout<<"Got the gate: "<<gate<<endl;
+		cout << "Got the gate: " << gate << endl;
 #endif
 #if RECORD_EVENT
 		if (!(gate%100)) {
-			cout<<"********************************************************************"<<endl;
-			cout<<"Acquiring Gate: "<<gate<<endl;
+			cout << "******************************************************************" << endl;
+			cout << "   Acquiring Gate: " << gate << endl;
 		}
 #endif
 		/**********************************************************************************/
@@ -375,22 +317,22 @@ int main(int argc, char *argv[])
 		data_ready = false; //no data is ready to be processed
 
 		/**********************************************************************************/
-		/*   reset the thread count if in threaded operation                              */
+		/*   Reset the thread count if in threaded operation.                             */
 		/**********************************************************************************/
 #if THREAD_ME
 		thread_count = 0;
 #endif
 #if DEBUG_THREAD
-		cout<<"Launching the trigger thread"<<endl;
+		cout << "Launching the trigger thread." << endl;
 #endif
 
 		/**********************************************************************************/
-		/*    Trigger the DAQ, either mode                                                */
+		/*    Trigger the DAQ, either mode.                                               */
 		/**********************************************************************************/
 #if THREAD_ME
-		boost::thread trigger_thread(boost::bind(&TriggerMe,daq));
+		boost::thread trigger_thread(boost::bind(&TriggerDAQ,daq));
 #elif NO_THREAD
-		TriggerMe(daq);
+		TriggerDAQ(daq);
 #endif 
 
 		/**********************************************************************************/
@@ -463,7 +405,7 @@ int main(int argc, char *argv[])
 		} //croc
 
 		/**********************************************************************************/
-		/*   wait for trigger thread to join in threaded operation                        */
+		/*   Wait for trigger thread to join in threaded operation.                       */
 		/**********************************************************************************/
 #if THREAD_ME
 		trigger_thread.join();
@@ -508,47 +450,49 @@ int main(int argc, char *argv[])
 		event_data.gate_info[3]=trig_time; event_data.gate_info[3]=error; event_data.gate_info[4]=minos;
 
 #if DEBUG_ME
-		cout<<"Contacting the EventBuilder from Main"<<std::endl;
+		cout << "Contacting the EventBuilder from Main." << endl;
 #endif
 
+		// Here the soldier node must wait for a "done" signal from the worker node 
+		// before attaching the end-of-event header bank.
 #if MASTER
-		std::cout<<"gate_done: "<<gate_done[0]<<std::endl;
+		std << "gate_done: " << gate_done[0] << endl;
 		while (!gate_done[0]) {
-			std::cout<<"waiting..."<<std::endl;
+			cout << "waiting..." << endl;
 			struct sockaddr_in remote_address;
 			socklen_t address_length;
 			int connection;
 			address_length = sizeof (remote_address);
-			std::cout<<"ready to connect: "<<socket_handle<<std::endl;
+			cout << "ready to connect: " << socket_handle << endl;
 			connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
-			std::cout<<"still waiting..."<<std::endl;
+			cout << "still waiting..." << endl;
 			if (connection == -1) {
-				/* The call to accept failed. */
+				// The call to accept failed. 
 				if (errno == EINTR)
-				/* The call was interrupted by a signal. Try again. */
+					// The call was interrupted by a signal. Try again.
 					continue;
 				else
-				/* Something else went wrong. */
+				// Something else went wrong. 
 					perror("accept");
 					exit(EXIT_FAILURE);
 			}
-			//read "done" from the master
+			// Read "done" from the master
 			if ((read(connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
 				perror("server read error: done"); //read in the number of gates to process
 				exit(EXIT_FAILURE);
 			}
-			std::cout<<"gate_done: "<<gate_done[0]<<std::endl;
+			cout << "gate_done: " << gate_done[0] << endl;
 		}
 #endif
-		/* contact event builder service */
+		// Contact event builder service.
 #if KEEP_DATA
 		daq->ContactEventBuilder(&event_data,-1,attach, sys_id);
 #endif
 
 #if RECORD_EVENT
 		if (!(gate%100)) {
-			cout<<"********************************************************************************"<<endl;
-			cout<<"Completed Gate: "<<gate<<endl;
+			cout << "******************************************************************************" << endl;
+			cout << "   Completed Gate: " << gate << endl;
 		}
 
 #if TIME_ME
@@ -612,22 +556,22 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 	et_att_id  attach, et_sys_id  sys_id) 
 {
 /*!
-*  \fn void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread,
-*                et_att_id  attach, et_sys_id  sys_id)
-*
-*  This function executes the necessary commands to complete an acquisition sequence.
-*
-*  Code is available for threaded and unthreaded operating modes.
-*  
-*  \param *daq, a pointer to the acquire_data object governing this DAQ acquisition
-*  \param *evt, a pointer to the event_handler structure containing information
-*               about the data being handled.
-*  \param croc_id, an integer with the CROC being serviced in this call
-*  \param channel_id, an integer with the channel number being serviced in this cal
-*  \param thread, the thread number of this call
-*  \param attach, the ET attachemnt to which data will be stored
-*  \param sys_id, the ET system handle
-*/
+ *  \fn void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread,
+ *                et_att_id  attach, et_sys_id  sys_id)
+ *
+ *  This function executes the necessary commands to complete an acquisition sequence.
+ *
+ *  Code is available for threaded and unthreaded operating modes.
+ *  
+ *  \param *daq, a pointer to the acquire_data object governing this DAQ acquisition
+ *  \param *evt, a pointer to the event_handler structure containing information
+ *               about the data being handled.
+ *  \param croc_id, an integer with the CROC being serviced in this call
+ *  \param channel_id, an integer with the channel number being serviced in this cal
+ *  \param thread, the thread number of this call
+ *  \param attach, the ET attachemnt to which data will be stored
+ *  \param sys_id, the ET system handle
+ */
 
 	/**********************************************************************************/
 	/*  the function which interfaces with the data acquire functions to              */
@@ -715,18 +659,18 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 } // end void TakeData
 
 
-void TriggerMe(acquire_data *daq) 
+void TriggerDAQ(acquire_data *daq) 
 {
-/*! \fn void TriggerMe(acquire_data *data)
-*
-*  The function which arms and sets the trigger for each gate.  
-*
-*  This version currently is only has "One-Shot" set up for the 
-*  trigger type. 
-*
-*  \param *daq a pointer to the acquire_data object which governs this DAQ Execution.
-*
-*/
+/*! \fn void TriggerDAQ(acquire_data *data)
+ *
+ *  The function which arms and sets the trigger for each gate.  
+ *
+ *  This version currently is only has "One-Shot" set up for the 
+ *  trigger type. 
+ *
+ *  \param *daq a pointer to the acquire_data object which governs this DAQ Execution.
+ *
+ */
 	/**********************************************************************************/
 	/*   The function which governs the triggering of the DAQ                         */
 	/**********************************************************************************/
@@ -780,25 +724,26 @@ void TriggerMe(acquire_data *daq)
 	trigger_log<<(start_time.tv_sec*1000000+start_time.tv_usec)<<"\t"
 		<<(stop_time.tv_sec*1000000+stop_time.tv_usec)<<"\t"<<(duration/1000000)<<endl;
 #endif
-} // end void TriggerMe
+} // end void TriggerDAQ
 
 
 void SetHV(acquire_data *daq, int i, int j) 
 {
 /*! \fn void SetHV(acquire_data *daq, int i, int j)
-* Sets and monitors the HV on an FEB until the HV comes to the set-point.
-* 
-* This function loops over each FEB in the list belonging to channel j and 
-* sets the high voltage via an FPGA frame.  
-*
-* It then monitors that voltage via MonitorHV, belonging to *daq, until
-* the return value is within 15 counts of the set point.
-*
-* Code is available for both threaded and unthreaded execution.
-*
-* \param *daq a pointer to the acquire_data object which governs this DAQ execution
-* \param i an integer, the CROC ID being set
-* \param j an integer, the Channel ID on croc i  */
+ * Sets and monitors the HV on an FEB until the HV comes to the set-point.
+ * 
+ * This function loops over each FEB in the list belonging to channel j and 
+ * sets the high voltage via an FPGA frame.  
+ *
+ * It then monitors that voltage via MonitorHV, belonging to *daq, until
+ * the return value is within 15 counts of the set point.
+ *
+ * Code is available for both threaded and unthreaded execution.
+ *
+ * \param *daq a pointer to the acquire_data object which governs this DAQ execution
+ * \param i an integer, the CROC ID being set
+ * \param j an integer, the Channel ID on croc i  
+ */
 
 	/**********************************************************************************/
 	/*   A function which sets the HV on FEB's                                        */
