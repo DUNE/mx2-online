@@ -241,9 +241,8 @@ int event_builder(event_handler *evt) {
   #endif
 
   MinervaHeader *tmp_header;
-  #if v81
-    feb *dummy_feb = new feb(6,1,(febAddresses)0,56,thread_log); //make up a dummy feb to have access to the header decoding functions  (v81)
-  #endif
+  // 56?  54 registers in modern feb firmware, should replace with variable argument anyway...
+  feb *dummy_feb = new feb(6,1,(febAddresses)0,56,thread_log); //make up a dummy feb to have access to the header decoding functions 
   if (evt->feb_info[4]==3) {
     //build the "DAQ" header
     tmp_header = new MinervaHeader(evt->feb_info[1]); //the special constructor for the DAQ bank

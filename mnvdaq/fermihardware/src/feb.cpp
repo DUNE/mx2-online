@@ -150,9 +150,9 @@ void feb::MakeMessage() {
     VXOMuxXilinx,   //  1 bit \n
     PhaseStart,     //  1 bit \n
     PhaseIncrement, //  1 bit \n
-    ExtTriggFound,      //  1 bit, readonly --> v78-80; ignored by FPGA in v65 \n
-    ExtTriggRearm,      //  1 bit           --> v78-80; ignored by FPGA in v65 \n
-    PhaseSpare,     //  2 bits (4 bits in v65, but "spare" & ignored) --> also ignored in v78-80  \n
+    ExtTriggFound,      //  1 bit, readonly --> v78+; \n 
+    ExtTriggRearm,      //  1 bit           --> v78+; \n
+    PhaseSpare,     //  2 bits ignored in v78+ \n
     PhaseCount,     //  8 bits \n
     DCM1Lock,       //  1 bit, readonly \n
     DCM2Lock,       //  1 bit, readonly \n
@@ -334,8 +334,7 @@ void feb::MakeMessage() {
     /* message word 41: whatever this is...TripXCompEnc, 8 bits */
     message[41] = (TripXCompEnc[0] & 0xFF); //mask off bits 0-7
 
-    #if v81
-//    if (NRegisters==54) { // Firmware versions 78-80
+//    if (NRegisters==54) { // Firmware versions 78-84
        /* message word 42-43 Discriminator Enable Mask Trip 0, 16 bits */
        message[42] = (DiscrimEnableMask[0] & 0xFF); //mask off bits 0-7
        message[43] = (DiscrimEnableMask[0] >> 0x08); // shift right 8 bits and mask is redundant here
@@ -358,7 +357,6 @@ void feb::MakeMessage() {
        message[52] = (GateTimeStamp >> 0x10) & 0xFF; // shift right 16 bits and mask 
        message[53] = (GateTimeStamp >> 0x18) & 0xFF; // shift right 24 bits and mask 
 //    }
-    #endif
 
     outgoingMessage = new unsigned char [OutgoingMessageLength];  //make up the out-going message buffer
                                                  //of suitable size
@@ -771,10 +769,8 @@ void feb::ShowValues() {
   std::cout<<"VXOMuxXilinx: "<<(int)VXOMuxXilinx[0]<<std::endl;
   std::cout<<"PhaseStart: "<<(int)PhaseStart[0]<<std::endl;
   std::cout<<"PhaseIncrement: "<<(int)PhaseIncrement[0]<<std::endl;
-  #if v81
-    std::cout<<"ExtTriggerFound: "<<(int)ExtTriggerFound[0]<<std::endl; // only meaningful for 78+ firmware 
-    std::cout<<"ExtTriggerRearm: "<<(int)ExtTriggerRearm[0]<<std::endl; // only meaningful for 78+ firmware 
-  #endif
+  std::cout<<"ExtTriggerFound: "<<(int)ExtTriggerFound[0]<<std::endl; // only meaningful for 78+ firmware 
+  std::cout<<"ExtTriggerRearm: "<<(int)ExtTriggerRearm[0]<<std::endl; // only meaningful for 78+ firmware 
   std::cout<<"PhaseSpare: "<<(int)PhaseSpare[0]<<std::endl;
   std::cout<<"PhaseCount: "<<(int)PhaseCount[0]<<std::endl;
   std::cout<<"DCM1Lock: "<<(int)DCM1Lock[0]<<std::endl;
@@ -794,14 +790,12 @@ void feb::ShowValues() {
   std::cout<<"Temperature: "<<(int)Temperature<<std::endl;
   std::cout<<"CosmicTrig: "<<(int)CosmicTrig[0]<<std::endl;
   std::cout<<"TripXCompEnc: "<<(int)TripXCompEnc[0]<<std::endl;
-  #if v81
     for (int i=0; i<4; i++) {
         // definitely easiest to parse in hex...
         // only meaningful for 78+ firmware 
         std::cout<<"DiscrimEnableMask["<<i<<"]: "<<(int)DiscrimEnableMask[i]<<std::endl;        
     }
     std::cout<<"GateTimeStamp: "<<(unsigned int)GateTimeStamp<<std::endl; // only meaningful for 78+ firmware 
-  #endif
   std::cout<<"***************************End FEB Current Values*************************************"<<std::endl; 
 }
 // All of the Set functions that take unsigned char* need to be overloaded to take

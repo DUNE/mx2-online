@@ -72,13 +72,8 @@ feb *channels::MakeTrialFEB(int a) {
  * \param a the FEB number
  *********************************************************************************/
   febAddresses f = (febAddresses)a; //store the trial feb address
-  #if v65
-    // feb *trialFeb = new feb(1, false, f, 42, log_file); //make up the trial feb
-    feb *trialFeb = new feb(1, false, f, 42); //make up the trial feb
-  #else
-     feb *trialFeb = new feb(1, false, f, 54, log_file); //make up the trial feb
-    //feb *trialFeb = new feb(1, false, f, 54); //make up the trial feb
-  #endif
+  feb *trialFeb = new feb(1, false, f, 54, log_file); //make up the trial feb
+  //feb *trialFeb = new feb(1, false, f, 54); //make up the trial feb
   trialFeb->SetFEBDefaultValues(); //set up the default values
   return trialFeb;
 }
