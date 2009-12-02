@@ -113,8 +113,9 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
  * This function checks the CRIM addressed by "address" is available by reading a register.  
  * Then the interrupt handler is set up.
  *
- * \param address an integer VME addres for the CRIM
- *
+ * \param address an integer VME addres for the CRIM.
+ * \param index an integer index used for internal bookkeeping.
+ * \param runningMode an integer specifying what sort of run the DAQ is taking.
  */
 
 #if DEBUG_THREAD
@@ -131,18 +132,24 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	daqController->MakeCrim(address, index); 
 
 	// Make sure that we can actually talk to the cards.
-    // Actually using the timing register at the moment!  This is a bad register to use!
 	try {
 		int status = daqController->GetCrimStatus(index); 
 		if (status) throw status;
 	} catch (int e)  {
+		std::cout << "Unable to read the status register for CRIM " << 
+			((daqController->GetCrim(index)->GetCrimAddress())>>16) << std::endl;
 		exit(-3);
 	} 
 
 	// Check running mode and perform appropriate initialization.
-	if (runningMode == (RunningModes)Pedestal) {
-		std::cout << "Running Mode is Pedestal." << std::endl;
-		// Initialize CRIM here.
+	switch (runningMode) {
+		case Pedestal:
+			std::cout << "Running Mode is Pedestal." << std::endl;
+			// Initialize CRIM here.
+			break;
+		default:
+			std::cout << "ERROR! No Running Mode defined!" << std::endl;
+			exit(-4);
 	}
 
 	// Now set up the IRQ handler, initializing the global enable bit for the first go-around.
@@ -154,7 +161,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 #endif
 
 #if DEBUG_ME
-	std::cout << "Finished Setting up CRIM" << std::endl;
+	std::cout << "Finished initializing CRIM " << 
+		daqController->GetCrim(index)->GetCrimAddress() << std::endl;
 #endif
 }
 
