@@ -7,14 +7,12 @@
 * MINERvA data acquisition system and associated software projects.
 *
 * Elaine Schulte, Rutgers University
-* April 22, 2009
+* Gabriel Perdue, The University of Rochester
 *
 **********************************************************************************/
 
-feb::feb(int mh, bool init, febAddresses a, int reg, std::ofstream &log_file):
-	NRegisters(reg),Frames(log_file) 
+feb::feb(int mh, bool init, febAddresses a,int reg):NRegisters(reg) 
 {
-//feb::feb(int mh, bool init, febAddresses a,int reg):NRegisters(reg) {
 /*! \fn********************************************************************************
  * constructor takes the following arguments:
  * \param mh: maximum number of hits per tdc
@@ -55,8 +53,6 @@ feb::feb(int mh, bool init, febAddresses a, int reg, std::ofstream &log_file):
 	OutgoingMessageLength = MinHeaderLength + NRegisters; //length of the outgoing message message
 	TrueIncomingMessageLength = 
 		2 + MinHeaderLength + NRegisters + (NRegisters + 1) % 2; //the length of the incoming message
-	// std::cout << "Outgoing: " << OutgoingMessageLength << std::endl;
-	// std::cout << "Incoming: " << TrueIncomingMessageLength << std::endl;
 	// Note above: incoming messages are ALWAYS 2 bytes LARGER than outgoing messages!
 
 	// Instantiate objects for the trip chips on the board - loop over possible trips.
@@ -86,25 +82,23 @@ feb::feb(int mh, bool init, febAddresses a, int reg, std::ofstream &log_file):
 				std::cout << "Invalid TriP ChipID at instantiation!" << std::endl;
 				exit(1);
 		}
-		tripChips[i] = new trips(boardNumber,chipFunction,maxHits,log_file); //make up the trip object
-		//tripChips[i] = new trips(boardNumber,chipFunction,maxHits); //make up the trip object
+		tripChips[i] = new trips(boardNumber,chipFunction,maxHits); 
 	}
 
 	// Instantiate a discriminator.  
-	hits_n_timing = new disc(a,log_file); 
-	//hits_n_timing = new disc(a); 
+	hits_n_timing = new disc(a); 
 	
 	// Instantiate objects for the ADC's
 	// We read the RAMFunctions in "reverse" order: 5,4,3,2,1,0.
 	if (maxHits == 1) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0, log_file); 
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0 ); 
 	} else if (maxHits == 6) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit5, log_file); 
-		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit4, log_file); 
-		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit3, log_file); 
-		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit2, log_file); 
-		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit1, log_file); 
-		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit0, log_file); 
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit5 );
+		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit4 );
+		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit3 );
+		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit2 );
+		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit1 );
+		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit0 );
 	} else {
 		std::cout << "Invalid number of maximum hits!  Only 1 or 6 are accepted right now!" << std::endl;
 		exit(-1);		

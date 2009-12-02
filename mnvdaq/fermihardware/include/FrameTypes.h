@@ -9,8 +9,8 @@
  * make up the FPGA frames 
  * 
  * Elaine Schulte, Rutgers University
- * April 22, 2009
-********************************************************************************/
+ * Gabriel Perdue, The University of Rochester
+ ********************************************************************************/
 
 /*! \file FrameTypes
  *
@@ -76,7 +76,7 @@ typedef enum FPGAFunctions { //typecast to unsigned char
  *
  */
 typedef enum RAMFunctionsHit { //typecast to unsigned char
-    NoRAM = 0x00,
+	NoRAM = 0x00,
     ReadHit0     = 0x01,
     ReadHit1     = 0x02,
     ReadHit2     = 0x03,

@@ -7,7 +7,7 @@
  * bit masks for various status & register settings easier.
  *
  * Elaine Schulte, Rutgers University
- * April 22, 2009
+ * Gabriel Perdue, The University of Rochester
 ********************************************************************************/
 
 #include <cmath>

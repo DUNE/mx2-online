@@ -45,15 +45,14 @@ class controller {
 			clearOutput, inputMux, inputMuxClear, outPutMux;
 		char firmware[1];
 		int transferBytes, crocVectorLength, crimVectorLength, controller_id;
-		std::ofstream &log_file; /*!<a log file fo debugging output */
+		// std::ofstream &log_file; /*!<a log file for debugging output */
 
 	public: 
 		unsigned short *shortBuffer; /*!<a short buffer for registers*/
 		int handle; /*!<a device handle returned by the initialization function*/
 
 		/*! the specialty constructor */
-		controller(int a, int id, std::ofstream &lf):log_file(lf) { 
-			// really we should pass the boardNumber; address is not much used
+		controller(int a, int id) { 
 			address = a;
 			addressModifier = cvA24_U_DATA; //default address modifier
 			dataWidth = cvD16; //default data width
@@ -71,10 +70,10 @@ class controller {
 		/*! the specialty destructor */
 		~controller() {
 			for (std::vector<crim*>::iterator p=interfaceModule.begin();
-			p!=interfaceModule.end();p++) delete (*p);
+				p!=interfaceModule.end();p++) delete (*p);
 			interfaceModule.clear();
 			for (std::vector<croc*>::iterator p=readOutController.begin();
-			p!=readOutController.end();p++) delete (*p);
+				p!=readOutController.end();p++) delete (*p);
 			readOutController.clear();
 		};
 

@@ -16,7 +16,7 @@
 * MINERvA data acquisition system and associated software projects.
 *
 * Elaine Schulte, Rutgers University
-* April 22, 2009
+* Gabriel Perdue, The University of Rochester
 *
 **********************************************************************************/
 
@@ -59,9 +59,8 @@ class feb : public Frames {
 			ExtTriggerFound[1], ExtTriggerRearm[1];
 
 	public:
-		feb(int, bool, febAddresses, int reg, std::ofstream &log_file);
 		/*! The constructor */
-		//feb(int, bool, febAddresses, int reg); // allocate new space for trips, adc's, discriminators
+		feb(int, bool, febAddresses, int reg); 
 		/*! The destructor */
 		~feb() {
 			for (int i=0;i<6;i++) delete tripChips[i]; 

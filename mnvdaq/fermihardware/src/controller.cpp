@@ -56,11 +56,11 @@ int controller::ContactController()
 		if (error) throw error;
 	} catch (int e) {
 		ReportError(e);
-		log_file << "Unable to contact the v2718 VME controller" << std::endl; 
-		log_file << "The error code was: " << e << std::endl;
+		std::cout << "Unable to contact the v2718 VME controller" << std::endl; 
+		std::cout << "The error code was: " << e << std::endl;
 		return e;
 	} 
-	log_file << "The controller is now initialized." << std::endl; 
+	std::cout << "The controller is now initialized." << std::endl; 
 
 	// Get the firmware version of the controller card.
 	try {
@@ -68,11 +68,11 @@ int controller::ContactController()
 		if (error) throw error;
 	} catch (int e) {
 		ReportError(e);
-		log_file << "Unable to obtain the firmware version" << std::endl;
-		log_file << "The error code was: " << e << std::endl;
+		std::cout << "Unable to obtain the firmware version" << std::endl;
+		std::cout << "The error code was: " << e << std::endl;
 		return e;
 	}
-	log_file<<"The controller firmware version is: "<<firmware<<std::endl; 
+	std::cout<<"The controller firmware version is: "<<firmware<<std::endl; 
 
 	// Get the status of the controller.
 	CVRegisters registerAddress = cvStatusReg; 
@@ -82,8 +82,8 @@ int controller::ContactController()
 		if (error) throw error;
 	} catch (int e) {
 		ReportError(e);
-		log_file << "Unable to obtain status register: " << std::endl;
-		log_file << "The error code was: " << e << std::endl;
+		std::cout << "Unable to obtain status register: " << std::endl;
+		std::cout << "The error code was: " << e << std::endl;
 		delete shortBuffer;
 		return e;
 	} 
@@ -113,8 +113,8 @@ int controller::GetCardStatus()
 		if (error) throw error;
 	} catch (int e) {
 		ReportError(e);
-		log_file << "Unable to obtain status register: " << std::endl;
-		log_file << "The error code was: " << e << std::endl;
+		std::cout << "Unable to obtain status register: " << std::endl;
+		std::cout << "The error code was: " << e << std::endl;
 		delete shortBuffer; //clean up 
 		return e;
 	}
@@ -146,8 +146,8 @@ int controller::GetCrimStatus(int a)
 				if (error)  throw error;
 			} catch (int e) {
 				ReportError(e);
-				log_file << "Unable to obtain status register: " << std::endl;
-				log_file << "The errror code was: " << e << std::endl;
+				std::cout << "Unable to obtain status register: " << std::endl;
+				std::cout << "The errror code was: " << e << std::endl;
 				foundModule = false;
 				delete shortBuffer; //clean up 
 				continue;
@@ -199,9 +199,9 @@ int controller::GetCrocStatus(int a)
 					(*p)->GetChannel(i)->SetChannelStatus((*shortBuffer)); 
 				} catch (int e) {
 					ReportError(e);
-					log_file << "Unable to read status register on CROC " << (*p)->GetCrocAddress() 
+					std::cout << "Unable to read status register on CROC " << (*p)->GetCrocAddress() 
 						<< " CHANNEL " << (i+1) << std::endl;
-					log_file << "The errror code was: " << e << std::endl;
+					std::cout << "The errror code was: " << e << std::endl;
 					foundModule = false;
 					delete shortBuffer; //clean up 
 					continue;

@@ -55,6 +55,7 @@ class acquire_data {
 		static const int dpmMax; /*!<Maximum number of bytes the DPM can hold */
 		std::ofstream frame_acquire_log; /*!< log file streamer for timing output */
 		std::string et_filename; /*!< A string object for the Event Transfer output filename */
+		static const int numberOfHits;
 
 	public:
 		/*! Specialized constructor which takes a string for the et filesystem. */

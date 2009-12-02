@@ -8,7 +8,7 @@
 * MINERvA data acquisition system and associated software projects.
 *
 * Elaine Schulte, Rutgers University
-* April 22, 2009
+* Gabriel Perdue, The University of Rochester
 *
 **********************************************************************************/
 
@@ -20,9 +20,8 @@ const int Frames::MinBroadcastLength=2; //I'm not sure this is ever used in our 
 const int Frames::ADCFrameLength=875; //bytes of course (dpm pointer should be this +2)
 const int Frames::NDiscrChPerTrip=16;
 
-Frames::Frames(std::ofstream &lf): log_file(lf) 
+Frames::Frames() 
 { 
-//Frames::Frames() { 
 /*! \fn 
  * The constructor sets the FrameID bytes and then moves on.
  */

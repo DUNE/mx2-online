@@ -19,7 +19,7 @@
 * MINERvA data acquisition system and associated software projects.
 *
 * Elaine Schulte, Rutgers University
-* April 22, 2009
+* Gabriel Perdue, The University of Rochester
 *
 **********************************************************************************/
 
@@ -50,10 +50,9 @@ class Frames {
 			messageDirection[1], targetDevice[1], 
 			deviceFunction[1];
 		int IncomingMessageLength, OutgoingMessageLength;
-		std::ofstream  &log_file;
+		// std::ofstream  &log_file;
 	public:
-		Frames(std::ofstream &lf); //send the feb number for this frame
-		//Frames() { }; 
+		Frames(); 
 		virtual ~Frames() { };
 
 		unsigned char *message; //the message that will be sent or received.
