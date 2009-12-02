@@ -21,7 +21,7 @@ using namespace std;
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs on WH14NXO now.
 const int maxHits    = 6;
-const int adcHit     = 0;
+const int adcHit     = 1;
 
 // Note, indices are distinct from addresses!
 const unsigned int crocCardAddress = 1 << 16;
@@ -40,7 +40,7 @@ const int tripRegIB_T       =   0;
 const int tripRegIFFP2      =   0;
 const int tripRegIBCOMP     =  20;
 const int tripRegVREF       = 165;
-const int tripRegVTH        =   0;
+const int tripRegVTH        = 240;
 // const int tripRegPIPEDEL    =  2*maxHits - 1;
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
@@ -649,7 +649,8 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 		myFeb->message = testarr;
 		myFeb->DecodeRegisterValues(dpmPointer);
 #if DEBUGLEVEL > FPGAWRITELEVEL
-		cout << "We read fpga's for feb " << (int)myFeb->GetBoardNumber() << endl; 
+		cout << "We wrote fpga's for feb " << (int)myFeb->GetBoardNumber() << endl; 
+		cout << "-> We started the set-up...\n";
 		myFeb->ShowValues();
 		cout << endl;
 #endif
@@ -757,7 +758,8 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 		myFeb->message = testarr;
 		myFeb->DecodeRegisterValues(dpmPointer);
 #if DEBUGLEVEL > FPGAWRITELEVEL
-		cout << "We read fpga's for feb " << (int)myFeb->GetBoardNumber() << endl; 
+		cout << "We wrote fpga's for feb " << (int)myFeb->GetBoardNumber() << endl; 
+		cout << "-> We set the DAC start...\n";
 		myFeb->ShowValues();
 		cout << endl;
 #endif
@@ -865,7 +867,8 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 		myFeb->message = testarr;
 		myFeb->DecodeRegisterValues(dpmPointer);
 #if DEBUGLEVEL > FPGAWRITELEVEL
-		cout << "We read fpga's for feb " << (int)myFeb->GetBoardNumber() << endl; 
+		cout << "We wrote fpga's for feb " << (int)myFeb->GetBoardNumber() << endl; 
+		cout << "-> We REset the DAC start...\n";
 		myFeb->ShowValues();
 		cout << endl;
 #endif
