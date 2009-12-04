@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 	/*  procedures.                                                                  */
 	/*********************************************************************************/
 #if DEBUG_ME
-	cout << "Getting ready to start taking data!" << endl;
+	cout << "\nGetting ready to start taking data!\n" << endl;
 #endif
 
 	/*********************************************************************************/
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 
 #if TAKE_DATA
 #if DEBUG_ME
-	cout << " Attempting to record " << record_gates << " gates." << endl;
+	cout << " Attempting to record " << record_gates << " gates.\n" << endl;
 #endif
 
 	/*********************************************************************************/
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
 		gettimeofday(&gate_start_time, NULL);
 #endif
 #if DEBUG_ME
-		cout << "Got the gate: " << gate << endl;
+		cout << " Got the gate: " << gate << endl;
 #endif
 #if RECORD_EVENT
 		if (!(gate%100)) {
@@ -316,14 +316,10 @@ int main(int argc, char *argv[])
 			event_data.feb_info[i] = 0; //initialize feb information block 
 		}
 
-		/**********************************************************************************/
-		/*  Set the data_ready flag to false, we have not yet taken any data              */
-		/**********************************************************************************/
+		// Set the data_ready flag to false, we have not yet taken any data
 		data_ready = false; //no data is ready to be processed
 
-		/**********************************************************************************/
-		/*   Reset the thread count if in threaded operation.                             */
-		/**********************************************************************************/
+		// Reset the thread count if in threaded operation.
 #if THREAD_ME
 		thread_count = 0;
 #endif
@@ -369,7 +365,7 @@ int main(int argc, char *argv[])
 					// Threaded Option
 					//
 #if DEBUG_THREAD
-					cout<<"launching data thread: "<<croc_id<<" "<<j<<endl;
+					cout << " Launching data thread: " << croc_id << " " << j <<endl;
 #endif
 #if THREAD_ME
 #if TIME_ME
@@ -386,7 +382,7 @@ int main(int argc, char *argv[])
 						new boost::thread((boost::bind(&TakeData,boost::ref(daq),boost::ref(evt),croc_id,j,
 						thread_count, attach, sys_id)));
 #if DEBUG_THREAD
-					cout<<"Success."<<endl;
+					cout << "Success." << endl;
 #endif 
 #if TIME_ME
 					gettimeofday(&dummy,NULL);
@@ -401,7 +397,7 @@ int main(int argc, char *argv[])
 					//
 #elif NO_THREAD
 #if DEBUG_ME
-					cout<<"CROC: "<<croc_id<<" channel: "<<j<<std::endl;
+					cout << " Reading CROC: " << croc_id << " channel: " << j << std::endl;
 #endif
 					TakeData(daq,evt,croc_id,j,0,attach,sys_id);
 #endif
@@ -676,9 +672,6 @@ void TriggerDAQ(acquire_data *daq)
  *  \param *daq a pointer to the acquire_data object which governs this DAQ Execution.
  *
  */
-	/**********************************************************************************/
-	/*   The function which governs the triggering of the DAQ                         */
-	/**********************************************************************************/
 #if TIME_ME
 	struct timeval start_time, stop_time;
 	gettimeofday(&start_time, NULL);
@@ -689,16 +682,13 @@ void TriggerDAQ(acquire_data *daq)
 
 #if DEBUG_ME
 	time_t currentTime; time(&currentTime);
-	std::cout<<"Trigger Time: "<<ctime(&currentTime);
-	std::cout<<"Setting Trigger"<<std::endl;
+	std::cout << " Trigger Time:   " << ctime(&currentTime);
+	std::cout << " Setting Trigger " << std::endl;
 #endif
 
 	/**********************************************************************************/
 	/* let the hardware tell us when the trigger has completed                        */
 	/**********************************************************************************/
-    /*! \note The trigger can be set up to use either the CRIM's interrupt 
-     * or just to set the software gate via the fast-command register on the CRIM  
-     */
 
 	daq->TriggerDAQ(0); //send the one-shot trigger
 	daq->WaitOnIRQ(); //wait for the trigger to be set (only returns if successful)
@@ -714,13 +704,11 @@ void TriggerDAQ(acquire_data *daq)
 #endif
 
 #if DEBUG_ME
-	std::cout<<"Data Ready"<<std::endl;
+	std::cout << " Data Ready! " << std::endl;
 #endif
 
-	/**********************************************************************************/
-	/*  Set Data Ready                                                                */
-	/**********************************************************************************/
-	data_ready = true; //tell the data acquiring threads that data is available for processing.
+	// Tell the data acquiring threads that data is available for processing.	
+	data_ready = true; 
 
 #if TIME_ME
 	gettimeofday(&stop_time,NULL);
