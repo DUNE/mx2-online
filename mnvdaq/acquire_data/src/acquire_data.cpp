@@ -29,7 +29,10 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
  * \param RunningModes runningMode describes the run mode and therfore sets CRIM timing mode.
  *
  */
-
+#if DEBUG_ME
+	std::cout << "\n\n\n" << std::endl;
+	std::cout << "~~~~~ ENTERING InitializeDaq() ~~~~~~~~~~" << std::endl;
+#endif
 #if TIME_ME
 	struct timeval start_time, stop_time;
 	gettimeofday(&start_time, NULL);
@@ -114,7 +117,9 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
  * \param index an integer index used for internal bookkeeping.
  * \param runningMode an integer specifying what sort of run the DAQ is taking.
  */
-
+#if DEBUG_ME
+	std::cout << "\nInitializing CRIM " << (address>>16) << " for running mode " << runningMode << std::endl;
+#endif
 #if DEBUG_THREAD
 	std::ofstream crim_thread;
 	std::stringstream thread_number;
@@ -122,7 +127,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	std::string filename;
 	filename = "crim_thread_"+thread_number.str();
 	crim_thread.open(filename.c_str());
-	crim_thread<<"Initializing CRIM, Start"<<std::endl;
+	crim_thread << "Initializing CRIM, Start" << std::endl;
 #endif
 
 	// Make a CRIM object on this controller.
@@ -159,7 +164,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 
 #if DEBUG_ME
 	std::cout << "Finished initializing CRIM " << 
-		daqController->GetCrim(index)->GetCrimAddress() << std::endl;
+		(daqController->GetCrim(index)->GetCrimAddress()>>16) << std::endl;
 #endif
 }
 
@@ -181,7 +186,7 @@ void acquire_data::InitializeCroc(int address, int crocNo)
  */
 
 #if DEBUG_ME
-	std::cout<<"Initializing CROC"<<std::endl;
+	std::cout << "\nInitializing CROC " << (address>>16) << std::endl;
 #endif
 
 #if DEBUG_THREAD
@@ -198,7 +203,6 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 	daqController->MakeCroc(address,crocNo); 
 
 	// Make sure that we can actually talk to the cards.
-	// Probably using the timing register...need to fix that.
 	try {
 		int status = daqController->GetCardStatus(crocNo);  
 		if (status) throw status;
@@ -222,7 +226,6 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 		bool avail = false;
 		avail = tmpCroc->GetChannelAvailable(i);
 		if (avail) {
-			// channels *tmpChan = tmpCroc->GetChannel(i); // unneeded?
 #if THREAD_ME
 #if DEBUG_THREAD
 			croc_thread<<"Launching build FEB list thread "<<i<<std::endl;
@@ -389,20 +392,21 @@ int acquire_data::SetupIRQ()
 	crim_send[0] = (daqController->GetCrim()->GetInterruptMask()) & 0xff;
 	crim_send[1] = ((daqController->GetCrim()->GetInterruptMask())>>0x08) & 0xff;
 	try {
-		error=daqAcquire->WriteCycle( daqController->handle, 2, crim_send,
+		error = daqAcquire->WriteCycle( daqController->handle, 2, crim_send,
 			daqController->GetCrim()->GetInterruptMaskAddress(), 
 			daqController->GetAddressModifier(),
 			daqController->GetDataWidth() );
 		if (error) throw error;
 	} catch (int e) {
-		std::cout<<"Error setting crim IRQ mask"<<std::endl;
+		std::cout << "Error setting crim IRQ mask in acquire_data::SetupIRQ!" << std::endl;
+		daqController->ReportError(e);
 		exit(-4);
 	}
 
 	// Check the interrupt status.
 	try {
 		crim_send[0] = 0; crim_send[1] = 0; 
-		error=daqAcquire->ReadCycle( daqController->handle, crim_send,
+		error = daqAcquire->ReadCycle( daqController->handle, crim_send,
 			daqController->GetCrim()->GetInterruptStatusAddress(), daqController->GetAddressModifier(),
 			daqController->GetDataWidth() ); 
 		if (error) throw error;
@@ -421,12 +425,14 @@ int acquire_data::SetupIRQ()
 					daqController->GetDataWidth() ); 
 				if (error) throw error;
 			} catch (int e) {
-				std::cout << "Error clearing crim interrupts: " << e << std::endl;
+				std::cout << "Error clearing crim interrupts in acquire_data::SetupIRQ: " << e << std::endl;
+				daqController->ReportError(e);
 				exit(-6);
 			}
 		}
 	} catch (int e) {
-		std::cout << "Error getting crim interrupt status!" << std::endl;
+		std::cout << "Error getting crim interrupt status in acquire_data::SetupIRQ!" << std::endl;
+		daqController->ReportError(e);
 		exit(-5);
 	}
 
@@ -436,17 +442,19 @@ int acquire_data::SetupIRQ()
 	crim_send[1] = ((daqController->GetCrim()->GetInterruptConfig())>>0x08) & 0xff;
 #if DEBUG_ME
 	std::cout.setf(std::ios::hex,std::ios::basefield);
-	std::cout<<"IRQ LEVEL: "<<daqController->GetCrim()->GetInterruptConfig()<<std::endl;
-	std::cout<<"IRQ LEVEL: "<<daqController->GetCrim()->GetInterruptsConfigAddress()<<std::endl;
+	std::cout << "IRQ CONFIG = 0x" << daqController->GetCrim()->GetInterruptConfig() << std::endl;
+	std::cout << "IRQ ADDR   = 0x" << daqController->GetCrim()->GetInterruptsConfigAddress() << std::endl;
+	std::cout.setf(std::ios::dec,std::ios::basefield);
 #endif
 	try {
-		error=daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
+		error = daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
 			daqController->GetCrim()->GetInterruptsConfigAddress(), 
 			daqController->GetAddressModifier(),
 			daqController->GetDataWidth() ); 
 		if (error) throw error;
 	} catch (int e) {
-		std::cout<<"Error setting crim IRQ mask"<<std::endl;
+		std::cout << "Error setting crim IRQ mask in acquire_data::SetupIRQ!" << std::endl;
+		daqController->ReportError(e);
 		exit(-4);
 	}
 
@@ -506,16 +514,16 @@ int acquire_data::BuildFEBList(int i, int croc_id)
  *
  */
 #if DEBUG_ME
-	std::cout << "Entering BuildFEBList" << std::endl;
+	std::cout << "\nEntering BuildFEBList for Channel " << i << std::endl;
 #endif
 #if DEBUG_THREAD
 	std::ofstream build_feb_thread;
 	std::stringstream thread_number;
-	thread_number<<i<<"_"<<croc_id;
+	thread_number << i << "_" << croc_id;
 	std::string filename;
 	filename = "FEB_list_"+thread_number.str();
 	build_feb_thread.open(filename.c_str());
-	build_feb_thread<<"Called BuildFEBList"<<std::endl;
+	build_feb_thread << "Called BuildFEBList" << std::endl;
 #endif
 
 	// Exract the CROC object and Channel object from the controller 
@@ -529,10 +537,10 @@ int acquire_data::BuildFEBList(int i, int croc_id)
 	for (int j=1;j<16;j++) { 
 		{ // Debug messages:
 #if DEBUG_ME
-			std::cout<<"Making FEB: "<<j<<std::endl;
+			std::cout << " Making FEB: " << j << std::endl;
 #endif
 #if DEBUG_THREAD
-			build_feb_thread<<"Making FEB: "<<j<<std::endl;
+			build_feb_thread << " Making FEB: " << j << std::endl;
 #endif
 		}
 
@@ -540,13 +548,13 @@ int acquire_data::BuildFEBList(int i, int croc_id)
 		feb *tmpFEB = tmpChan->MakeTrialFEB(j, numberOfHits); 
 		{ // Debug messages:
 #if DEBUG_ME
-			std::cout<<"Made FEB: "<<i<<std::endl;
-			std::cout<<"Making Message: "<<i<<std::endl;
+			std::cout << "  Made FEB:        " << i << std::endl;
+			std::cout << "  Making Message:  " << i << std::endl;
 #endif
 #if DEBUG_THREAD
-			build_feb_thread<<"Made FEB: "<<i<<std::endl;
-			build_feb_thread<<"Making Message: "<<i<<std::endl;
-			build_feb_thread<<"New FEB Number: "<<tmpFEB->GetBoardNumber()<<std::endl;
+			build_feb_thread << "  Made FEB      : " << i << std::endl;
+			build_feb_thread << "  Making Message: " << i << std::endl;
+			build_feb_thread << "  New FEB Number: " << tmpFEB->GetBoardNumber() << std::endl;
 #endif
 		}
 		
@@ -554,12 +562,12 @@ int acquire_data::BuildFEBList(int i, int croc_id)
 		tmpFEB->MakeMessage(); 
 		{ // Debug messages:
 #if DEBUG_ME
-			std::cout<<"Made Message: "<<i<<std::endl;
-			std::cout<<"Sending Message: "<<i<<std::endl;
+			std::cout << "  Made Message:     " << i << std::endl;
+			std::cout << "  Sending Message:  " << i << std::endl;
 #endif
 #if DEBUG_THREAD
-			build_feb_thread<<"Made Message: "<<i<<std::endl;
-			build_feb_thread<<"Sending Message: "<<i<<std::endl;
+			build_feb_thread << "  Made Message:     " << i << std::endl;
+			build_feb_thread << "  Sending Message:  " << i << std::endl;
 #endif
 		}
 
@@ -572,9 +580,9 @@ int acquire_data::BuildFEBList(int i, int croc_id)
 		delete [] tmpFEB->message;
 		{ // Debug messages:
 #if DEBUG_THREAD
-			build_feb_thread<<"BoardNumber--Receive: "<<tmpFEB->GetBoardNumber()<<std::endl;
-			build_feb_thread<<"FEBNumber--Receive: "<<(int)tmpFEB->GetFEBNumber()<<std::endl;
-			build_feb_thread<<"HV? "<<tmpFEB->GetHVActual()<<std::endl;
+			build_feb_thread << "  BoardNumber--Receive: " << tmpFEB->GetBoardNumber() << std::endl;
+			build_feb_thread << "  FEBNumber--Receive:   " << (int)tmpFEB->GetFEBNumber() << std::endl;
+			build_feb_thread << "  HV?                   " << tmpFEB->GetHVActual() << std::endl;
 #endif
 		}
 
@@ -748,18 +756,26 @@ int acquire_data::GetBlockRAM(croc *crocTrial, channels *channelTrial)
  *
  */
 #if DEBUG_ME
-	std::cout << "Getting Block RAM." << std::endl;
+	std::cout << "   Entering acquire_data::GetBlockRAM." << std::endl;
 #endif
-	CVAddressModifier AM = daqController->GetAddressModifier();
+	CVAddressModifier AM     = daqController->GetAddressModifier();
 	CVAddressModifier AM_BLT = channelTrial->GetBLTModifier(); 
-	CVDataWidth DWS = crocTrial->GetDataWidthSwapped();
+	CVDataWidth DWS          = crocTrial->GetDataWidthSwapped();
 
 	unsigned short dpmPointer;
 	unsigned char status[2];
-	daqAcquire->ReadCycle(daqController->handle,status,channelTrial->GetDPMPointerAddress(), AM,DWS);
+	try {
+		int error = daqAcquire->ReadCycle(daqController->handle, status, 
+			channelTrial->GetDPMPointerAddress(), AM, DWS);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << " Error reading DPM pointer in acquire_data::GetBlockRAM!" << std::endl;
+		daqController->ReportError(e);
+		return (-e);
+	} 
 	dpmPointer = (int) (status[0] | status[1]<<0x08);
 #if DEBUG_ME
-	std::cout<<"dpmPointer: "<<dpmPointer<<std::endl;
+	std::cout << "    dpmPointer: " << dpmPointer << std::endl;
 #endif
 	if (dpmPointer%2) { // Must read an even number of bytes.
 		DPMData = new unsigned char [dpmPointer+1];
@@ -772,25 +788,21 @@ int acquire_data::GetBlockRAM(croc *crocTrial, channels *channelTrial)
 			channelTrial->GetDPMAddress(), AM_BLT, DWS);
 		if (success) throw success;
 	} catch (int e) {
-		daqController->ReportError(e);
 		std::cout << "Error in acquire_data::GetBlockRAM!" << std::endl;
+		daqController->ReportError(e);
 		exit(-12);
 	}
-	
 #if DEBUG_ME
-	std::cout << "Moving to SetBuffer..." << std::endl;
+	std::cout << "    Moving to SetBuffer..." << std::endl;
 #endif
 	channelTrial->SetDPMPointer(dpmPointer);
 	channelTrial->SetBuffer(DPMData);
 #if DEBUG_ME
-	std::cout<<"What gives?"<<std::endl;
-#endif
-#if DEBUG_ME
-	std::cout << "Returned from SetBuffer." << std::endl;
-	for (int index=0;index<12;index++) {
-		std::cout << "data: " << DPMData[index] << std::endl;
+	std::cout << "    Returned from SetBuffer." << std::endl;
+	for (int index = 0; index < dpmPointer; index++) {
+		printf("      Data Byte %02d = 0x%02X\n", index, DPMData[index]);
 	}
-	std::cout << "Returning from acquiring DPM." << std::endl;
+	std::cout << "    Returning from acquire_data::GetBlockRAM." << std::endl;
 #endif
 	// Clean-up and return.
 	delete [] DPMData;
@@ -821,11 +833,19 @@ template <class X> bool acquire_data::FillDPM(croc *crocTrial, channels *channel
  *
  */
 	CVAddressModifier AM = daqController->GetAddressModifier();
-	CVDataWidth DWS = crocTrial->GetDataWidthSwapped();
+	CVDataWidth DWS      = crocTrial->GetDataWidthSwapped();
 	unsigned short dpmPointer;
 	unsigned char status[2];
-	
-	daqAcquire->ReadCycle(daqController->handle, status, channelTrial->GetDPMAddress(), AM, DWS);
+
+	try {
+		int error = daqAcquire->ReadCycle(daqController->handle, status, 
+			channelTrial->GetDPMAddress(), AM, DWS);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Unable to read DPM Pointer in acquire_data::FillDPM!" << std::cout;
+		daqController->ReportError(e);
+		return false;
+	}
 	dpmPointer = (unsigned short) (status[0] | (status[1]<<0x08));
 
 	if ( (dpmPointer<dpmMax) && ((dpmMax-incoming_length)>incoming_length) ) {
@@ -871,7 +891,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 	lock.unlock();
 #endif
 #if DEBUG_ME
-	std::cout << "-----------------------Entering TakeAllData---------------------------" << std::endl;
+	std::cout << "\n----------------Entering acquire_data::TakeAllData----------------------" << std::endl;
 #endif
 #if THREAD_ME
 	// Set up some threads for using the event builder.
@@ -879,23 +899,20 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 #endif
 
 	// Execution Status Vars.
-	bool success = false;
+	int success       = 0;
 	bool memory_reset = false;
-	int hits=-1;
+	int hits          = -1;
 
 	// Fill entries in the event_handler structure for this event -> The sourceID.
-	evt->new_event = false; // We are always processing an existing event with this function!!!
-	evt->feb_info[0]=0; // We need to sort this out later (link number) -> *Probably* ALWAYS 0.
-	evt->feb_info[1]=0; // Crate number (make later).
-	evt->feb_info[2]=crocTrial->GetCrocID();
-	evt->feb_info[3]=channelTrial->GetChannelNumber();
-	evt->feb_info[6]=febTrial->GetFEBNumber();
+	evt->new_event   = false; // We are always processing an existing event with this function!!!
+	evt->feb_info[0] = 0;     // We need to sort this out later (link number) -> *Probably* ALWAYS 0.
+	evt->feb_info[1] = 0;     // Crate number (make later).
+	evt->feb_info[2] = crocTrial->GetCrocID();
+	evt->feb_info[3] = channelTrial->GetChannelNumber();
+	evt->feb_info[6] = febTrial->GetFEBNumber();
 
 	// Make sure the DPM is reset for taking the FEB INFO Frames.
 	memory_reset = ResetDPM(crocTrial, channelTrial);
-#if DEBUG_ME
-	std::cout << "Memory Reset  FEB INFO: " << memory_reset << std::endl;
-#endif
 
 	// Begin reading FEB frame information.
 	try {
@@ -939,16 +956,16 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			lock.unlock();
 #endif
 #if DEBUG_ME
-			std::cout << "Acquired FEB data for" << std::endl;
-			std::cout << "CROC: " << crocTrial->GetCrocID() << std::endl;
-			std::cout << "Channel: " << channelTrial->GetChannelNumber() << std::endl;
-			std::cout << "FEB: " << febTrial->GetBoardNumber() << std::endl;
+			std::cout << "  Acquired FEB data for" << std::endl;
+			std::cout << "    CROC:    " << (crocTrial->GetCrocAddress()>>16) << std::endl;
+			std::cout << "    Channel: " << channelTrial->GetChannelNumber() << std::endl;
+			std::cout << "    FEB:     " << febTrial->GetBoardNumber() << std::endl;
 			std::cout << "--------------------------------------------------------------------" << std::endl;
 #endif
 #if TIME_ME
 			gettimeofday(&start_time, NULL);
 #endif
-			// Fill the event_handler structure with the newly acquired data                                                       */
+			// Fill the event_handler structure with the newly acquired data
 			FillEventStructure(evt, 2, febTrial, channelTrial);
 #if TIME_ME
 			lock.lock();
@@ -967,9 +984,9 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			evt->feb_info[7]=(int)febTrial->GetFirmwareVersion();
 
 #if DEBUG_ME
-			std::cout<<"firmware version: "<<(int)evt->feb_info[7]<<std::endl;
-			std::cout<<"length: "<<evt->feb_info[5]<<std::endl;
-			std::cout<<"bank: "<<evt->feb_info[4]<<std::endl;
+			std::cout << "  Firmware Version (header val): " << (int)evt->feb_info[7] << std::endl;
+			std::cout << "  Data Length (header val)     : " << evt->feb_info[5] << std::endl;
+			std::cout << "  Bank Type (header val)       : " << evt->feb_info[4] << std::endl;
 #endif
 			if (success) throw success;
 		} catch (bool e) {
@@ -979,8 +996,9 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 
 		// Send the data to the EB via ET.
 #if DEBUG_ME
-		std::cout<<"Contacting the Event Builder Service"<<std::endl;
-		std::cout<<"bank: "<<evt->feb_info[4]<<std::endl;
+		std::cout << " Contacting the Event Builder Service" << std::endl;
+		std::cout << " Bank  : " << evt->feb_info[4] << std::endl;
+		std::cout << " Thread: " << thread << std::endl;
 #endif
 #if TIME_ME
 		gettimeofday(&start_time, NULL);
@@ -1008,7 +1026,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		lock.unlock();
 #endif 
 #if DEBUG_ME
-		std::cout<<"Back from EB?"<<std::endl;
+		std::cout << "Back from EB..." << std::endl;
 #endif
 
 		// Read a discriminator frame.
@@ -1081,8 +1099,8 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 
 			// Now figure out how many hits we have & get ready to read them out.
 #if DEBUG_ME
-			std::cout << "Contacting the Event Builder Service" << std::endl;
-			std::cout << "bank: " << evt->feb_info[4] < <std::endl;
+			std::cout << " Contacting the Event Builder Service" << std::endl;
+			std::cout << " Bank: " << evt->feb_info[4] << std::endl;
 #endif
 #if NO_THREAD
 			// Contact the EB via ET.
@@ -1154,8 +1172,8 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 				lock.unlock();
 #endif
 #if DEBUG_ME
-				std::cout << "Contacting the Event Builder Service" << std::endl;
-				std::cout << "bank: " << evt->feb_info[4] << std::endl;
+				std::cout << " Contacting the Event Builder Service" << std::endl;
+				std::cout << " Bank: " << evt->feb_info[4] << std::endl;
 #endif
 				// Contact the EB via ET.
 #if NO_THREAD
@@ -1209,7 +1227,7 @@ bool acquire_data::ResetDPM(croc *crocTrial, channels *channelTrial)
  * Returns a status bit.
  */
 #if DEBUG_ME
-	std::cout << "Resetting DPM" << std::endl;
+	std::cout << "  acquire_data::ResetDPM for CROC " << (crocTrial->GetCrocAddress()>>16) << " Channel " << channelTrial->GetChannelNumber() << std::endl;
 #endif
 	bool reset = false;
 	CVAddressModifier AM = daqController->GetAddressModifier();
@@ -1225,14 +1243,14 @@ bool acquire_data::ResetDPM(croc *crocTrial, channels *channelTrial)
 		channelTrial->GetDPMPointerAddress(), AM, DWS); 
 	unsigned short dpmPointer = (unsigned short) (message[0] | (message[1]<<0x08));
 #if DEBUG_ME
-	std::cout << "dpmPointer after reset: " << dpmPointer << std::endl;
-	std::cout << "  message[0]: " << (int) message[0] <<std::endl;
-	std::cout << "  message[1]: " << (int) message[1] <<std::endl;
+	std::cout << "  dpmPointer after reset: " << dpmPointer << std::endl;
+	// std::cout << "  message[0]: " << (int) message[0] <<std::endl;
+	// std::cout << "  message[1]: " << (int) message[1] <<std::endl;
 #endif
-	if (dpmPointer==2) reset = true; //reset successful?
 	// Need to check status register too!!
+	if (dpmPointer==2) reset = true; // Not enough!
 #if DEBUG_ME
-	std::cout << "Exiting ResetDPM." << std::endl;
+	std::cout << "  Exiting ResetDPM." << std::endl;
 #endif
 	return reset;
 }
@@ -1256,13 +1274,14 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
  */
 	int success = 1; // Flag for finding an feb on the channel.
 	CVAddressModifier AM = daqController->GetAddressModifier();
-	CVDataWidth DW = daqController->GetDataWidth();
-	CVDataWidth DWS = crocTrial->GetDataWidthSwapped();
+	CVDataWidth DW       = daqController->GetDataWidth();
+	CVDataWidth DWS      = crocTrial->GetDataWidthSwapped();
 
 	unsigned char send_message[2] ={0x01, 0x01}; // Send message mask.
 	unsigned short status;
 	unsigned char reset_status[2];
 	if (singleton) {
+		int error;
 		unsigned char reset_message[2] ={0x0A, 0x0A}; // Clear status & Reset DPM Pointer mask.
 		// Read the status register... why?... This seems like an uneeded step...
 		/*
@@ -1278,7 +1297,7 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 		*/
 		// Clear status & Reset DPM Pointer
 		try {
-			int error = daqAcquire->WriteCycle(daqController->handle, 2, reset_message, 
+			error = daqAcquire->WriteCycle(daqController->handle, 2, reset_message, 
 				channelTrial->GetClearStatusAddress(), AM, DW);
 			if (error) throw error;
 		} catch (int e) {
@@ -1288,7 +1307,7 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 		}
 		// Read the status register.
 		try {
-			int error = daqAcquire->ReadCycle(daqController->handle, reset_status, 
+			error = daqAcquire->ReadCycle(daqController->handle, reset_status, 
 				channelTrial->GetStatusAddress(), AM, DW);
 			if (error) throw error;
 		} catch (int e) {
@@ -1298,7 +1317,7 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 		status = (unsigned short) (reset_status[0] | reset_status[1]<<0x08);
 #if DEBUG_ME
 		std::cout.setf(std::ios::hex,std::ios::basefield);
-		std::cout << "Channel status: " << status << " " << testme << std::endl;
+		std::cout << " Channel " << channelTrial->GetChannelNumber() << " Status: 0x" << status << std::endl;
 		std::cout.setf(std::ios::dec,std::ios::basefield);
 #endif
 		channelTrial->SetChannelStatus(status);
@@ -1307,10 +1326,10 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 			if (status!=0x3700) throw (1);
 		} catch (int e) {
 			std::cout.setf(std::ios::hex,std::ios::basefield);
-			std::cout<<"Unable to reset channel "<<status<<std::endl;
-			std::cout<<"Channel Number: "<<channelTrial->GetChannelNumber()<<std::endl;
+			std::cout << "Unable to reset!  Status = 0x" << status << std::endl;
+			std::cout << " Channel Number: " << channelTrial->GetChannelNumber() << std::endl;
 #if DEBUG_ME
-			std::cout<<"Checked the status from an error condition"<<std::endl;
+			std::cout << " Checked the status from an error condition!" << std::endl;
 #endif
 			channelTrial->DecodeStatusMessage();
 			exit(-103);
@@ -1319,11 +1338,18 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 
 	int synch, deserializer;
 	deserializer = status & 0x0400;
-	synch = status & 0x0200;
+	synch        = status & 0x0200;
 	if ((deserializer) && (synch)) {
 		// Write the message to the channel FIFO.
-		daqAcquire->WriteCycle(daqController->handle, device->GetOutgoingMessageLength(), 
-			device->GetOutgoingMessage(), channelTrial->GetFIFOAddress(), AM, DWS); 
+		try {
+			int error = daqAcquire->WriteCycle(daqController->handle, device->GetOutgoingMessageLength(), 
+				device->GetOutgoingMessage(), channelTrial->GetFIFOAddress(), AM, DWS);
+			if (error) throw error; 
+		} catch (int e) {
+			std::cout << " Error in acquire_data::SendMessage while writing to the FIFO!" << std::endl;
+			daqController->ReportError(e);
+			exit(-e);
+		}
 		//
 		// // FIFO BLT is a bit funky for a general class function...
 		// int count;
@@ -1410,19 +1436,19 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 	lock lock_send(send_lock);
 #endif
 #if DEBUG_ME
-	std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-	std::cout << "Acquiring Device Data" << std::endl;
-	std::cout << "CROC Number: " << crocTrial->GetCrocID() << std::endl;
-	std::cout << "Channel Number: " << channelTrial->GetChannelNumber() << std::endl;
+	std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+	std::cout << " Entering acquire_data::AcquireDeviceData" << std::endl;
+	std::cout << "  CROC Address:   " << (crocTrial->GetCrocAddress()>>16) << std::endl;
+	std::cout << "  Channel Number: " << channelTrial->GetChannelNumber() << std::endl;
 	std::cout.setf(std::ios::hex,std::ios::basefield);
-	std::cout << "Device: " << frame->GetDeviceType() << std::endl;
+	std::cout << "  Device:         0x" << frame->GetDeviceType() << std::endl;
 	std::cout.setf(std::ios::dec,std::ios::basefield);
 #endif
 	CVAddressModifier AM = daqController->GetAddressModifier();
-	CVDataWidth DWS = crocTrial->GetDataWidthSwapped();
-	int success = 0;
+	CVDataWidth DWS      = crocTrial->GetDataWidthSwapped();
+	int success          = 0;
 	try { //try to add this frame's data to the DPM
-		success=FillDPM(crocTrial, channelTrial, frame, frame->GetIncomingMessageLength(), length);
+		success = FillDPM(crocTrial, channelTrial, frame, frame->GetIncomingMessageLength(), length);
 		if (!success) throw success; 
 		unsigned short dpmPointer;
 		unsigned char status[2];
@@ -1431,9 +1457,9 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 		dpmPointer = (unsigned short)(status[0] | status[1]<<0x08);
 		frame->SetIncomingMessageLength(dpmPointer-2);
 #if DEBUG_ME
-		std::cout << "AcquireDeviceData, dpmPointer: " << dpmPointer << std::endl;
-		std::cout << "Message Length: " << frame->GetIncomingMessageLength() << std::endl;
-		std::cout << "status[0]: " << (int)status[0] << " status[1]: " << (int)status[1] << std::endl;
+		std::cout << "  acquire_data::AcquireDeviceData dpmPointer = " << dpmPointer << std::endl;
+		std::cout << "  Message Length: " << frame->GetIncomingMessageLength() << std::endl;
+		// std::cout << "  status[0]: " << (int)status[0] << " status[1]: " << (int)status[1] << std::endl;
 #endif 
 		success = GetBlockRAM(crocTrial, channelTrial); 
 		frame->message = new unsigned char [frame->GetIncomingMessageLength()];
@@ -1442,10 +1468,6 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 		}
 		frame->DecodeRegisterValues(frame->GetIncomingMessageLength());
 		delete [] frame->message;
-#if DEBUG_ME
-		std::cout << "Reurned from GetBlockRAM." << std::endl;
-		std::cout << "AcquireDeviceData success: " << success << std::endl;
-#endif
 		if (success) throw success; 
 	} catch (bool e) { 
 		// If unsuccessful, the DPM doesn't have enough memory, and we need to process what is there (?)
@@ -1453,7 +1475,7 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 		exit(-4001);
 	}
 #if DEBUG_ME
-	std::cout << "AcquireDeviceData success: " << success << std::endl;
+	std::cout << "  AcquireDeviceData success: " << success << std::endl;
 	std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 #endif
 	return success;
@@ -1476,7 +1498,7 @@ void acquire_data::TriggerDAQ(int a)
 	int error=-1;
 	switch (a) { //which type of trigger are we using
 		case 0: //the one-shot trigger
-			daqController->GetCrim()->SetupOneShot(); // Issue a Shot.
+			daqController->GetCrim()->SetupOneShot(); // Prep a shot (software only).
 			unsigned char crim_send[2];
 			// Send the timing setup request.
 			crim_send[0] = daqController->GetCrim()->GetTimingSetup() & 0xff;
@@ -1486,11 +1508,12 @@ void acquire_data::TriggerDAQ(int a)
 					daqController->GetCrim()->GetTimingRegister(), AM, DW); 
 				if (error) throw error;
 			} catch (int e) {
-				std::cout<<"Unable to set timing register"<<std::endl;
+				std::cout << "Unable to set the CRIM Timing Mode!" << std::endl;
+				daqController->ReportError(e);
 				exit(-2002);
 			}
 #if DEBUG_ME
-			std::cout<<"Sent Timing Request"<<std::endl;
+			std::cout<<"  Sent Timing Request"<<std::endl;
 #endif
 			// Send the gate width!  NONONONONO not here!
 			crim_send[0] = daqController->GetCrim()->GetGateWidth() & 0xff;
@@ -1500,11 +1523,12 @@ void acquire_data::TriggerDAQ(int a)
 					daqController->GetCrim()->GetGateRegister(), AM,DW); //send it
 				if (error) throw error;
 			} catch (int e) {
-				std::cout<<"Unable to set trigger width register"<<std::endl;
+				std::cout << "Unable to set trigger width register!" << std::endl;
+				daqController->ReportError(e);
 				exit(-2003);
 			}
 #if DEBUG_ME
-			std::cout << "Sent Gate Width" << std::endl;
+			std::cout << "  Sent Gate Width" << std::endl;
 #endif
 			// Pulse delay! Also not here!
 			crim_send[0] = daqController->GetCrim()->GetTcalbPulse() & 0xff;
@@ -1514,11 +1538,12 @@ void acquire_data::TriggerDAQ(int a)
 					daqController->GetCrim()->GetTCalbRegister(), AM, DW);
 				if (error) throw error;
 			} catch (int e) {
-				std::cout<<"Unable to set pulse delay register"<<std::endl;
+				std::cout << "Unable to set pulse delay register!" << std::endl;
+				daqController->ReportError(e);
 				exit(-2004);
 			}
 #if DEBUG_ME
-			std::cout << "Sent TCALB Delay" << std::endl;
+			std::cout << "  Sent TCALB Delay" << std::endl;
 #endif
 			// Start the sequencer (trigger CNRST software pulse)
 			try {
@@ -1532,12 +1557,12 @@ void acquire_data::TriggerDAQ(int a)
 				std::cout<<"Unable to set pulse delay register"<<std::endl;
 				exit(-2005);
 			}
-			break;
 #if DEBUG_ME
-			std::cout << "Sent Sequencer Init. Signal." << std::endl;
+			std::cout << "-->Sent Sequencer Init. Signal!" << std::endl;
 #endif
+			break;
 		default:
-			std::cout<<"We don't have that trigger yet!"<<std::endl;
+			std::cout << "We don't have that trigger mode coded up yet!" << std::endl;
 			exit(-2001);
 	}  
 }
@@ -1555,9 +1580,12 @@ void acquire_data::WaitOnIRQ()
  */
 	int error;
 #if DEBUG_ME
-	std::cout << "Level: " << daqController->GetCrim()->GetIRQLevel() << std::endl;
+	std::cout << "  Entering acquire_data::WaitOnIRQ: IRQLevel = " << daqController->GetCrim()->GetIRQLevel() << std::endl;
 #endif
 #if ASSERT_INTERRUPT
+#if DEBUG_ME
+	std::cout << "  Asserting Interrupt!" << std::endl;
+#endif
 	try {
 		// A 1000 ms timeout.
 		error = CAENVME_IRQWait(daqController->handle, daqController->GetCrim()->GetIRQLevel(), 1); 
@@ -1574,6 +1602,9 @@ void acquire_data::WaitOnIRQ()
 #endif
 
 #if POLL_INTERRUPT
+#if DEBUG_ME
+	std::cout << "  Polling Interrupt!" << std::endl;
+#endif
 	unsigned short interrupt_status = 0;
 	unsigned char crim_send[2];
 	while (!(interrupt_status&0x04)) { //0x04 is the IRQ Line of interest
@@ -1586,7 +1617,8 @@ void acquire_data::WaitOnIRQ()
 			if (error) throw error;
 			interrupt_status =  (crim_send[0]|(crim_send[1]<<0x08));
 		} catch (int e) {
-			std::cout<<"Error getting crim interrupt status"<<std::endl;
+			std::cout << "Error getting crim interrupt status!" << std::endl;
+			daqController->ReportError(e);
 			exit(-5);
 		}
 	}
@@ -1600,7 +1632,8 @@ void acquire_data::WaitOnIRQ()
 			daqController->GetDataWidth()); 
 		if (error) throw error;
 	} catch (int e) {
-		std::cout<<"Error clearing crim interrupts "<<e<<std::endl;
+		std::cout << "Error clearing crim interrupts!" << std::endl;
+		daqController->ReportError(e);
 		exit(-6);
 	}
 #endif
@@ -1869,27 +1902,27 @@ template <class X> void acquire_data::FillEventStructure(event_handler *evt, int
  *
  */
 #if DEBUG_ME
-	std::cout << "Filling event structure: " << bank << " " << frame->GetIncomingMessageLength() << std::endl;
+	std::cout << "  Entering acquire_data::FillEventStructure with bank type " << bank << " and message length " << frame->GetIncomingMessageLength() << std::endl;
 #endif
-	evt->feb_info[1]=daqController->GetID();
-	evt->feb_info[4]=bank; //the bank type
-	evt->feb_info[5]=frame->GetIncomingMessageLength(); //buffer length
-	unsigned char tmp_buffer[(const unsigned int)evt->feb_info[5]]; //set the buffer size
+	// Build sourceID
+	evt->feb_info[1] = daqController->GetID(); // Crate ID
+	evt->feb_info[4] = bank;                   // 0==ADC, 1==TDC, 2==FPGA, 3==DAQ Header, 4==TriP-T
+	evt->feb_info[5] = frame->GetIncomingMessageLength(); // Buffer length
+	unsigned char tmp_buffer[(const unsigned int)evt->feb_info[5]]; // Set the buffer size.
 #if DEBUG_ME
-	std::cout<<"Getting Data"<<std::endl;
+	std::cout << "   Getting Data..." << std::endl;
 #endif
 	for (unsigned int index=0;index<(evt->feb_info[5]);index++) {
 		tmp_buffer[index] = channelTrial->GetBuffer()[index];
 	}
 	for (unsigned int i=0; i<evt->feb_info[5]; i++) {
-		evt->event_data[i] = tmp_buffer[i]; //load the event data
+		evt->event_data[i] = tmp_buffer[i]; // Load the event data.
 	}
 #if DEBUG_ME
-	std::cout << "Got Data" << std::endl;
-	std::cout << "Length: " << frame->GetIncomingMessageLength() << std::endl;
-	std::cout << "Length: " << evt->feb_info[5] << std::endl;
+	std::cout << "   Got Data" << std::endl;
+	std::cout << "    IncomingMessageLength: " << frame->GetIncomingMessageLength() << std::endl;
 	for (int index=0; index<(frame->GetIncomingMessageLength()); index++) {
-		std::cout << "FillStructure data: " << (unsigned int)evt->event_data[index] << std::endl;
+		printf("     FillStructure data byte %02d = 0x%02X\n",index,(unsigned int)evt->event_data[index]); 
 	}
 #endif
 }
