@@ -92,7 +92,9 @@ int channels::DecodeStatusMessage()
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
+#if DEBUG_VERBOSE
 		std::cout << "Message was not sent." << std::endl;
+#endif
 		return -103; //if the message was not send, stop execution
 	}
 	
@@ -104,7 +106,9 @@ int channels::DecodeStatusMessage()
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
+#if DEBUG_VERBOSE
 		std::cout << "Message was not received." << std::endl;
+#endif
 		return -104; 
 	}
 
@@ -116,7 +120,7 @@ int channels::DecodeStatusMessage()
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
-		std::cout << "CRC Error." << std::endl;
+		std::cout << "CRC Error!" << std::endl;
 		exit(-105); 
 	}
 	
@@ -128,7 +132,7 @@ int channels::DecodeStatusMessage()
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
-		std::cout << "Timeout Error." << std::endl;
+		std::cout << "Timeout Error!" << std::endl;
 		exit(-106); 
 	}
 	

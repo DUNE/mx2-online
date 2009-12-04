@@ -407,7 +407,10 @@ void feb::DecodeRegisterValues(int buffersize)
 		std::cout<<"FEB: "<<(int) febNumber[0]<<" is not available on this channel."<<std::endl;
 		initialized = false;
 	} else if ((!initialized)&&(buffersize==TrueIncomingMessageLength)) {
+#if DEBUG_FEB 
+		// Need a better mechanism for this...
 		std::cout<<"FEB: "<<(int)febNumber[0]<<" is available on this channel."<<std::endl;
+#endif
 		initialized = true;
 	}
 
@@ -539,7 +542,7 @@ if (initialized) {
 		InjectDACValue = (message[startByte] & 0xFF); //mask off bits 0-7
 		startByte++;
 		InjectDACValue |= (message[startByte] & 0x0F) << 0x08; //shift bits 8-11 to bits 0-3
-														//and mask off bits 0-3
+									//and mask off bits 0-3
 
 		/* message word 29, bits 4-7: InjectDACMode, 2 bits; InjectDACDone, 1 bit, 
 		*     InjectDACStart, 1 bit */
@@ -582,7 +585,7 @@ if (initialized) {
 		Temperature = (message[startByte] & 0xFF); //mask off bits 0-7
 		startByte++;
 		Temperature |= (message[startByte] & 0xFF) << 0x08;  //shift bits 8-15 to bits 0-7
-													//and mask off ibt 0-7
+									//and mask off ibt 0-7
 
 		/* message word 40: cosmics trigger , 8 bits */
 		startByte++;
