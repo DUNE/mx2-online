@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 
 	// Opening the ET system is the first thing we must do...
 	et_open_config_init(&openconfig);
-#if MULTIPC
+#if MULTI_PC
 	et_open_config_setmode(&openconfig, ET_HOST_AS_REMOTE);
 	et_open_config_setcast(openconfig, ET_DIRECT);
 	et_open_config_sethost(openconfig, "minervatest01.fnal.gov"); // Adjust, etc.

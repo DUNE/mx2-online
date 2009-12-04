@@ -47,7 +47,7 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
 		std::cout<<"bank: "<<evt->feb_info[4]<<std::endl;
 		std::cout<<"feb_number (from frame header): "<<feb_number<<std::endl;
 		std::cout<<"firmware: "<<evt->feb_info[7]<<std::endl;
-		std::cout<<"hit: "<<evt->feb_info[h]<<std::endl;
+		std::cout<<"hit: "<<evt->feb_info[8]<<std::endl;
 		std::cout<<"length: "<<length<<std::endl;
 #endif
 		tmp_header = new MinervaHeader(evt->feb_info[1], evt->feb_info[2], evt->feb_info[3],
