@@ -4,4 +4,4 @@ rm *.txt
 #rm channel*
 #rm controller*
 rm data_monitor*
-rm contact_eb*
+#rm contact_eb*

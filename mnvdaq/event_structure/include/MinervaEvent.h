@@ -1,10 +1,21 @@
 #ifndef MinervaEvent_h
 #define MinervaEvent_h
 
-#define FEB_INFO_SIZE 76 //number of bytes in an FEB FPGA Frame with the event header
-#define FEB_DISC_SIZE 982 //number of bytes in the discriminator buffer with event header
-#define FEB_HITS_SIZE 885 //number of bytes in an ADC buffer with event header (per hit)
-#define DAQ_HEADER 56 //number of bytes for the event header with the DAQ header attached.
+#define FEB_INFO_SIZE 76  // number of bytes in an FEB FPGA Frame with the event header
+/* This assumes we keep the CRC: 76 = 54 registers + 11 header + 2 CRC + 1 dummy (even) + 8 "LHCb". */ 
+
+#define FEB_DISC_SIZE 1146 // number of bytes in the discriminator buffer with event header
+/* The Discriminator blocks are of variable size:
+	15 header + 2 CRC + 1 dummy + 40 per hit per trip
+The prescription then must be to prodive the maximum possible space, but trim the buffer before
+passing it to the event builder in order to ensure the frame length matches the buffer length. */
+/* 15 header + 2 CRC + 1 dummy + 40*4*7 +8 == 1146 */
+
+#define FEB_HITS_SIZE 886 // number of bytes in an ADC buffer with event header (per hit)
+/* 885 != 876 data bytes + 2 CRC + 8 "LHCb" Header. */ 
+
+#define DAQ_HEADER 56     // number of bytes for the event header with the DAQ header attached.
+/* 48 bytes in v4 + 8 "LHCb" Header */
 
 //This offset value defines where in the output buffer we need to begin
 //inserting data for a given FEB's worth of information
@@ -55,7 +66,6 @@ class MinervaHeader {
  */
 class MinervaEvent {
 	private:
-		// unsigned char buffer[MAX_BUFFER_SIZE]; //all of the FEB's & DAQ headers + the EVENT DAQ INFO
 		boost::mutex mutex; /*!<A BOOST mutual exclusion for threaded operation*/
 		unsigned char *data_block; /*!<what to put the data into */
 		unsigned char event_block[DAQ_HEADER]; /*!<a special buffer to hold onto the event info while we process

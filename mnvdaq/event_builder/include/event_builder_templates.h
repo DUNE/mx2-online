@@ -40,15 +40,15 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
 		}
 
 #if DEBUG_ME
-		std::cout<<"--------Event Builder--------"<<std::endl;
-		std::cout<<"crateID: "<<evt->feb_info[1]<<std::endl;
-		std::cout<<"crocID: "<<evt->feb_info[2]<<std::endl;
-		std::cout<<"chanID: "<<evt->feb_info[3]<<std::endl;
-		std::cout<<"bank: "<<evt->feb_info[4]<<std::endl;
-		std::cout<<"feb_number (from frame header): "<<feb_number<<std::endl;
-		std::cout<<"firmware: "<<evt->feb_info[7]<<std::endl;
-		std::cout<<"hit: "<<evt->feb_info[8]<<std::endl;
-		std::cout<<"length: "<<length<<std::endl;
+		std::cout << "--------Event Builder--------" << std::endl;
+		std::cout << " crateID : " << evt->feb_info[1] << std::endl;
+		std::cout << " crocID  : " << evt->feb_info[2] << std::endl;
+		std::cout << " chanID  : " << evt->feb_info[3] << std::endl;
+		std::cout << " bank    : " << evt->feb_info[4] << std::endl;
+		std::cout << " feb_number (from frame header): " << feb_number << std::endl;
+		std::cout << " firmware: " << evt->feb_info[7] << std::endl;
+		std::cout << " hit     : " << evt->feb_info[8] << std::endl;
+		std::cout << " length  : " << length << std::endl;
 #endif
 		tmp_header = new MinervaHeader(evt->feb_info[1], evt->feb_info[2], evt->feb_info[3],
 			evt->feb_info[4], feb_number, evt->feb_info[7],

@@ -875,7 +875,6 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
  *  \param et_sys_id  sys_id the system ID for ET which will handle the data
  *
  *  Returns a status bit.
- *
  */
 
 #if TIME_ME
@@ -906,7 +905,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 	// Fill entries in the event_handler structure for this event -> The sourceID.
 	evt->new_event   = false; // We are always processing an existing event with this function!!!
 	evt->feb_info[0] = 0;     // We need to sort this out later (link number) -> *Probably* ALWAYS 0.
-	evt->feb_info[1] = 0;     // Crate number (make later).
+	evt->feb_info[1] = 0;     // Crate number (make later). TODO, give this the CONTROLLER_ID
 	evt->feb_info[2] = crocTrial->GetCrocID();
 	evt->feb_info[3] = channelTrial->GetChannelNumber();
 	evt->feb_info[6] = febTrial->GetFEBNumber();
@@ -931,74 +930,73 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		febTrial->MakeMessage();
 		try {
 			success = AcquireDeviceData(febTrial, crocTrial, channelTrial, FEB_INFO_SIZE);
-#if SHOW_REGISTERS
-			febTrial->message = new unsigned char [FEB_INFO_SIZE];
-			for (int debug_index=0; debug_index<febTrial->GetIncomingMessageLength(); debug_index++) {
-				febTrial->message[debug_index] = channelTrial->GetBuffer()[debug_index];
-			}
-			febTrial->DecodeRegisterValues(febTrial->GetIncomingMessageLength());
-			febTrial->ShowValues();
-			febTrial->DeleteOutgoingMessage();
-			delete [] febTrial->message;
-#endif
-#if TIME_ME
-			lock.lock();
-			gettimeofday(&stop_time,NULL);
-			duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
-				(start_time.tv_sec*1e6+start_time.tv_usec);
-			take_data_log << "******************FEB FRAMES*********************************" << std::endl; 
-			take_data_log << "Start Time: "<<(start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
-				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
-			take_data_log << "*************************************************************" << std::endl; 
-			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "2" << "\t" << 
-				(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
-				(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
-			lock.unlock();
-#endif
-#if DEBUG_ME
-			std::cout << "  Acquired FEB data for" << std::endl;
-			std::cout << "    CROC:    " << (crocTrial->GetCrocAddress()>>16) << std::endl;
-			std::cout << "    Channel: " << channelTrial->GetChannelNumber() << std::endl;
-			std::cout << "    FEB:     " << febTrial->GetBoardNumber() << std::endl;
-			std::cout << "--------------------------------------------------------------------" << std::endl;
-#endif
-#if TIME_ME
-			gettimeofday(&start_time, NULL);
-#endif
-			// Fill the event_handler structure with the newly acquired data
-			FillEventStructure(evt, 2, febTrial, channelTrial);
-#if TIME_ME
-			lock.lock();
-			gettimeofday(&stop_time,NULL);
-			duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
-				(start_time.tv_sec*1e6+start_time.tv_usec);
-			take_data_log << "******************FEB FILL EVENT STRUCTURE********************" << std::endl; 
-			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
-				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
-			take_data_log << "**************************************************************" << std::endl; 
-			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "10" << "\t"
-				<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
-				<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
-			lock.unlock();
-#endif
-			evt->feb_info[7]=(int)febTrial->GetFirmwareVersion();
-
-#if DEBUG_ME
-			std::cout << "  Firmware Version (header val): " << (int)evt->feb_info[7] << std::endl;
-			std::cout << "  Data Length (header val)     : " << evt->feb_info[5] << std::endl;
-			std::cout << "  Bank Type (header val)       : " << evt->feb_info[4] << std::endl;
-#endif
 			if (success) throw success;
 		} catch (bool e) {
 			std::cout << "Error adding FEB Information to DPM." << std::endl;
 			exit(-1001);
 		}
+#if SHOW_REGISTERS
+		febTrial->message = new unsigned char [FEB_INFO_SIZE];
+		for (int debug_index=0; debug_index<febTrial->GetIncomingMessageLength(); debug_index++) {
+			febTrial->message[debug_index] = channelTrial->GetBuffer()[debug_index];
+		}
+		febTrial->DecodeRegisterValues(febTrial->GetIncomingMessageLength());
+		febTrial->ShowValues();
+		febTrial->DeleteOutgoingMessage(); // Required after MakeMessage()
+		delete [] febTrial->message;
+#endif
+#if TIME_ME
+		lock.lock();
+		gettimeofday(&stop_time,NULL);
+		duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
+			(start_time.tv_sec*1e6+start_time.tv_usec);
+		take_data_log << "******************FEB FRAMES*********************************" << std::endl; 
+		take_data_log << "Start Time: "<<(start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
+			<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
+		take_data_log << "*************************************************************" << std::endl; 
+		frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "2" << "\t" << 
+			(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
+			(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
+		lock.unlock();
+#endif
+#if DEBUG_ME
+		std::cout << "  Acquired FEB data for" << std::endl;
+		std::cout << "    CROC:    " << (crocTrial->GetCrocAddress()>>16) << std::endl;
+		std::cout << "    Channel: " << channelTrial->GetChannelNumber() << std::endl;
+		std::cout << "    FEB:     " << febTrial->GetBoardNumber() << std::endl;
+		std::cout << "------------------------------------------------------------" << std::endl;
+#endif
+#if TIME_ME
+		gettimeofday(&start_time, NULL);
+#endif
+		// Fill the event_handler structure with the newly acquired data
+		FillEventStructure(evt, 2, febTrial, channelTrial);
+#if TIME_ME
+		lock.lock();
+		gettimeofday(&stop_time,NULL);
+		duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
+			(start_time.tv_sec*1e6+start_time.tv_usec);
+		take_data_log << "******************FEB FILL EVENT STRUCTURE********************" << std::endl; 
+		take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
+			<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
+		take_data_log << "**************************************************************" << std::endl; 
+		frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "10" << "\t"
+			<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
+			<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
+		lock.unlock();
+#endif
+		evt->feb_info[7]=(int)febTrial->GetFirmwareVersion();
+#if DEBUG_ME
+		std::cout << "  Firmware Version (header val): " << (int)evt->feb_info[7] << std::endl;
+		std::cout << "  Data Length (header val)     : " << evt->feb_info[5] << std::endl;
+		std::cout << "  Bank Type (header val)       : " << evt->feb_info[4] << std::endl;
+#endif
 
 		// Send the data to the EB via ET.
 #if DEBUG_ME
 		std::cout << " Contacting the Event Builder Service" << std::endl;
-		std::cout << " Bank  : " << evt->feb_info[4] << std::endl;
-		std::cout << " Thread: " << thread << std::endl;
+		std::cout << "  Bank  : " << evt->feb_info[4] << std::endl;
+		std::cout << "  Thread: " << thread << std::endl;
 #endif
 #if TIME_ME
 		gettimeofday(&start_time, NULL);
@@ -1034,10 +1032,17 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		std::cout << "---------------------------------------------------------------------" << std::endl;
 		std::cout << "  DISC FRAMES" << std::endl;
 #endif
+		// TODO, Probably want to just leave this on by default, the DAQ won't have read the 
+		// actual TriP programming registers at this point unless we decide to for a special 
+		// first event (or zeroth) event readout.
+		// ----
 		// First, decide if the discriminators are on.
 		bool disc_set = false;
 		for (int trip_index = 0; trip_index < 6; trip_index++) {
-			int vth = febTrial->GetTrip(trip_index)->GetTripValue(9); 
+			int vth = febTrial->GetTrip(trip_index)->GetTripValue(9);
+#if DEBUG_ME
+			std::cout << "   febTrial vth == " << vth << std::endl;
+#endif 
 			if (vth) {
 				disc_set=true;
 				break;
@@ -1050,57 +1055,49 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			gettimeofday(&start_time, NULL);
 #endif
 			try {
-				success=AcquireDeviceData(febTrial->GetDisc(), crocTrial, channelTrial, FEB_DISC_SIZE);
-#if TIME_ME
-				lock.lock();
-				gettimeofday(&stop_time,NULL);
-				duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
-					(start_time.tv_sec*1e6+start_time.tv_usec);
-				take_data_log << "*************************DISC FRAMES**************************" << std::endl; 
-				take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
-					<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
-				take_data_log << "**************************************************************" << std::endl; 
-				frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "1" << "\t" << 
-					(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
-					(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
-				lock.unlock();
-#endif
-#if TIME_ME
-				gettimeofday(&start_time, NULL);
-#endif
-				// Fill the event_handler structure.
-				FillEventStructure(evt, 1, febTrial->GetDisc(), channelTrial);
-#if TIME_ME
-				lock.lock();
-				gettimeofday(&stop_time,NULL);
-				duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
-					(start_time.tv_sec*1e6+start_time.tv_usec);
-				take_data_log << "*************************DISC FILL EVENT STRUCTURE*****************" << std::endl; 
-				take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
-					<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
-				take_data_log << "*******************************************************************" < <std::endl; 
-				frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "11" << "\t"
-					<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
-					<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
-				lock.unlock();
-#endif
+				success = AcquireDeviceData(febTrial->GetDisc(), crocTrial, channelTrial, FEB_DISC_SIZE);
 				if ((success)||(!memory_reset)) throw success;
-#if DEBUG_ME
-				std::cout << "Acquired DISC data for " << std::endl;
-				std::cout << "CROC: " << crocTrial->GetCrocID() << std::endl;
-				std::cout << "Channel: " << channelTrial->GetChannelNumber() << std::endl;
-				std::cout << "FEB: " << febTrial->GetBoardNumber() << std::endl;
-				std::cout << "-------------------------------------------------------------------" << std::endl;
-#endif
 			} catch (bool e) {
 				std::cout<<"Error adding DISC Information to DPM"<<std::endl;
 				exit(-1002);
 			}
-
-			// Now figure out how many hits we have & get ready to read them out.
+#if TIME_ME
+			lock.lock();
+			gettimeofday(&stop_time,NULL);
+			duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
+				(start_time.tv_sec*1e6+start_time.tv_usec);
+			take_data_log << "*************************DISC FRAMES**************************" << std::endl; 
+			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
+				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
+			take_data_log << "**************************************************************" << std::endl; 
+			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "1" << "\t" << 
+				(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
+				(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
+			lock.unlock();
+			gettimeofday(&start_time, NULL);
+#endif
+			// Fill the event_handler structure.
+			FillEventStructure(evt, 1, febTrial->GetDisc(), channelTrial);
+#if TIME_ME
+			lock.lock();
+			gettimeofday(&stop_time,NULL);
+			duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
+				(start_time.tv_sec*1e6+start_time.tv_usec);
+			take_data_log << "*************************DISC FILL EVENT STRUCTURE*****************" << std::endl; 
+			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
+				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
+			take_data_log << "*******************************************************************" < <std::endl; 
+			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "11" << "\t"
+				<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
+				<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
+			lock.unlock();
+#endif
 #if DEBUG_ME
-			std::cout << " Contacting the Event Builder Service" << std::endl;
-			std::cout << " Bank: " << evt->feb_info[4] << std::endl;
+			std::cout << "  Acquired DISC data for " << std::endl;
+			std::cout << "    CROC:    " << crocTrial->GetCrocID() << std::endl;
+			std::cout << "    Channel: " << channelTrial->GetChannelNumber() << std::endl;
+			std::cout << "    FEB:     " << febTrial->GetBoardNumber() << std::endl;
+			std::cout << "-------------------------------------------------------------------" << std::endl;
 #endif
 #if NO_THREAD
 			// Contact the EB via ET.
@@ -1111,13 +1108,18 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 				boost::ref(evt),thread,attach,sys_id)));
 			channelTrial->DeleteBuffer();
 #endif
-
 			// Calculate the hits variable so we can read the correct number of ADC Frames. 
-			hits = evt->feb_info[8]; 
+			hits = evt->feb_info[8];
+			// We need to add a readout for the end-of-gate "hit."
+			hits++; 
 			// Should add a check here on equality of pairs?
 		} // End discriminators-on check.
 
 		// Now read the ADC Frames.
+#if DEBUG_ME
+		std::cout << "------------------------------------------------------------" << std::endl;
+		std::cout << "     ADC FRAMES  " << std::endl;
+#endif
 		if (hits == -1) hits = 1; 
 		// Actually want to do ReadHit5 first, need to fix this...
 		for (int i=0; i<hits; i++) {
@@ -1126,75 +1128,63 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 				exit(-1004);
 			} //reset the DPM
 			try {
-#if TIME_ME
-				gettimeofday(&start_time, NULL);
-#endif
-#if DEBUG_ME
-				std::cout << "------------------------------------------------------------" << std::endl;
-				std::cout << "     ADC FRAMES  " << std::endl;
-#endif
-				success=AcquireDeviceData(febTrial->GetADC(i), crocTrial, channelTrial,FEB_HITS_SIZE);
-#if TIME_ME
-				lock.lock();
-				gettimeofday(&stop_time,NULL);
-				duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
-					(start_time.tv_sec*1e6+start_time.tv_usec);
-				take_data_log << "********************ADC FRAMES****************************" << std::endl; 
-				take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << 
-					" Stop Time: " << (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << 
-					(duration/1e6) << std::endl;
-				take_data_log << "**********************************************************" << std::endl; 
-				frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "0" << "\t" << 
-					(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
-					(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
-				lock.unlock();
-#endif
-#if DEBUG_ME
-				std::cout << "------------------------------------------------------------" << std::endl;
-#endif
-#if TIME_ME
-				gettimeofday(&start_time, NULL);
-#endif
-				// Fill the event_handler structure with data.
-				FillEventStructure(evt, 0, febTrial->GetADC(i), channelTrial);
-#if TIME_ME
-				lock.lock();
-				gettimeofday(&stop_time,NULL);
-				duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
-					(start_time.tv_sec*1e6+start_time.tv_usec);
-				take_data_log << "********************ADC FILL EVENT STRUCTURE********************" < <std::endl; 
-				take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
-					<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
-				take_data_log << "****************************************************************" << std::endl; 
-				frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "12" << "\t"
-					<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
-					<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
-				lock.unlock();
-#endif
-#if DEBUG_ME
-				std::cout << " Contacting the Event Builder Service" << std::endl;
-				std::cout << " Bank: " << evt->feb_info[4] << std::endl;
-#endif
-				// Contact the EB via ET.
-#if NO_THREAD
-				ContactEventBuilder(evt, thread, attach, sys_id); 
-				channelTrial->DeleteBuffer();
-#elif THREAD_ME
-				eb_threads[2] = new boost::thread((boost::bind(&acquire_data::ContactEventBuilder,this,
-					boost::ref(evt),thread,attach,sys_id)));
-				channelTrial->DeleteBuffer();
-#endif
+				success = AcquireDeviceData(febTrial->GetADC(i), crocTrial, channelTrial,FEB_HITS_SIZE);
 				if (success) throw success;
-#if DEBUG_ME
-				std::cout << "Acquired ADC data for" << std::endl;
-				std::cout << "CROC: " << crocTrial->GetCrocID() << std::endl;
-				std::cout << "Channel: " << channelTrial->GetChannelNumber() << std::endl;
-				std::cout << "FEB: " << febTrial->GetBoardNumber() << std::endl;
-#endif
 			} catch (bool e) {
 				std::cout<<"Error adding ADC Information to the DPM"<<std::endl;
 				exit(-1003);
 			}
+#if TIME_ME
+			gettimeofday(&start_time, NULL);
+			lock.lock();
+			gettimeofday(&stop_time,NULL);
+			duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
+				(start_time.tv_sec*1e6+start_time.tv_usec);
+			take_data_log << "********************ADC FRAMES****************************" << std::endl; 
+			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << 
+				" Stop Time: " << (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << 
+				(duration/1e6) << std::endl;
+			take_data_log << "**********************************************************" << std::endl; 
+			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "0" << "\t" << 
+				(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
+				(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
+			lock.unlock();
+			gettimeofday(&start_time, NULL);
+#endif
+#if DEBUG_ME
+			std::cout << "------------------------------------------------------------" << std::endl;
+#endif
+			// Fill the event_handler structure with data.
+			FillEventStructure(evt, 0, febTrial->GetADC(i), channelTrial);
+#if TIME_ME
+			lock.lock();
+			gettimeofday(&stop_time,NULL);
+			duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
+				(start_time.tv_sec*1e6+start_time.tv_usec);
+			take_data_log << "********************ADC FILL EVENT STRUCTURE********************" < <std::endl; 
+			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
+				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
+			take_data_log << "****************************************************************" << std::endl; 
+			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "12" << "\t"
+				<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
+				<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
+			lock.unlock();
+#endif
+			// Contact the EB via ET.
+#if NO_THREAD
+			ContactEventBuilder(evt, thread, attach, sys_id); 
+			channelTrial->DeleteBuffer();
+#elif THREAD_ME
+			eb_threads[2] = new boost::thread((boost::bind(&acquire_data::ContactEventBuilder,this,
+				boost::ref(evt),thread,attach,sys_id)));
+			channelTrial->DeleteBuffer();
+#endif
+#if DEBUG_ME
+			std::cout << "  Acquired ADC data for" << std::endl;
+			std::cout << "    CROC:    " << crocTrial->GetCrocID() << std::endl;
+			std::cout << "    Channel: " << channelTrial->GetChannelNumber() << std::endl;
+			std::cout << "    FEB:     " << febTrial->GetBoardNumber() << std::endl;
+#endif
 		} //end of hits loop
 
 	} catch (bool e)  {
@@ -1227,7 +1217,7 @@ bool acquire_data::ResetDPM(croc *crocTrial, channels *channelTrial)
  * Returns a status bit.
  */
 #if DEBUG_ME
-	std::cout << "  acquire_data::ResetDPM for CROC " << (crocTrial->GetCrocAddress()>>16) << " Channel " << channelTrial->GetChannelNumber() << std::endl;
+	std::cout << "    acquire_data::ResetDPM for CROC " << (crocTrial->GetCrocAddress()>>16) << " Channel " << channelTrial->GetChannelNumber() << std::endl;
 #endif
 	bool reset = false;
 	CVAddressModifier AM = daqController->GetAddressModifier();
@@ -1243,14 +1233,14 @@ bool acquire_data::ResetDPM(croc *crocTrial, channels *channelTrial)
 		channelTrial->GetDPMPointerAddress(), AM, DWS); 
 	unsigned short dpmPointer = (unsigned short) (message[0] | (message[1]<<0x08));
 #if DEBUG_ME
-	std::cout << "  dpmPointer after reset: " << dpmPointer << std::endl;
+	std::cout << "     dpmPointer after reset: " << dpmPointer << std::endl;
 	// std::cout << "  message[0]: " << (int) message[0] <<std::endl;
 	// std::cout << "  message[1]: " << (int) message[1] <<std::endl;
 #endif
 	// Need to check status register too!!
 	if (dpmPointer==2) reset = true; // Not enough!
 #if DEBUG_ME
-	std::cout << "  Exiting ResetDPM." << std::endl;
+	std::cout << "     Exiting ResetDPM." << std::endl;
 #endif
 	return reset;
 }
@@ -1447,7 +1437,8 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 	CVAddressModifier AM = daqController->GetAddressModifier();
 	CVDataWidth DWS      = crocTrial->GetDataWidthSwapped();
 	int success          = 0;
-	try { //try to add this frame's data to the DPM
+	// Try to add this frame's data to the DPM.
+	try { 
 		success = FillDPM(crocTrial, channelTrial, frame, frame->GetIncomingMessageLength(), length);
 		if (!success) throw success; 
 		unsigned short dpmPointer;
@@ -1459,7 +1450,6 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 #if DEBUG_ME
 		std::cout << "  acquire_data::AcquireDeviceData dpmPointer = " << dpmPointer << std::endl;
 		std::cout << "  Message Length: " << frame->GetIncomingMessageLength() << std::endl;
-		// std::cout << "  status[0]: " << (int)status[0] << " status[1]: " << (int)status[1] << std::endl;
 #endif 
 		success = GetBlockRAM(crocTrial, channelTrial); 
 		frame->message = new unsigned char [frame->GetIncomingMessageLength()];

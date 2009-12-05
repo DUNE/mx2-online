@@ -73,8 +73,8 @@ MinervaHeader::MinervaHeader(unsigned char crate)
 
 	DAQ_event_header[0] =  magic_pattern; //put the magic pattern for this event into the header
 	DAQ_event_header[1] = 48; //the length in bytes of the DAQ event header
-	DAQ_event_header[2] = (4 & 0xFF); // DAQ Header version (4 as of 2009.Nov.27)
-	DAQ_event_header[2] |= (3 & 0xFF)<<0x8; //put in the bank type 
+	DAQ_event_header[2] = (3 & 0xFF); // Bank Type (3 for DAQ Header)
+	DAQ_event_header[2] |= (4 & 0xFF)<<0x8; // Version (4 as of 2009.Dec.05)
 	DAQ_event_header[3] = source_id; //and the source information
 }
 
