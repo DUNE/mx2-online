@@ -1732,27 +1732,31 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
  *  \param et_sys_id  sys_id the ET system id for data handling
  *
  */
-	std::ofstream contact_thread;
-	std::string filename;
-	std::stringstream thread_no;
-	thread_no<<thread;
-	filename = "contact_eb_"+thread_no.str();
-	contact_thread.open(filename.c_str());
-#if DEBUG_ME
-	contact_thread << "Contacting the Event Builder" << std::endl;
-	contact_thread << "In Event Builder the Bank Being Sent Is: " << evt->feb_info[4] << std::endl;
+	{ // Debug statements
+#if DEBUG_THREAD
+		std::ofstream contact_thread;
+		std::string filename;
+		std::stringstream thread_no;
+		thread_no<<thread;
+		filename = "contact_eb_"+thread_no.str();
+		contact_thread.open(filename.c_str());
+		contact_thread << "Entering acquire_data::ContactEventBuilder..." << std::endl;
+		contact_thread << " In Event Builder the bank tpye is: " << evt->feb_info[4] << std::endl;
+		contact_thread << " The bank length is:                " << evt->feb_info[5] << std::endl;
 #endif
+#if DEBUG_ME
+		std::cout << "Entering acquire_data::ContactEventBuilder..." << std::endl;
+		std::cout << " In Event Builder the bank type is: " << evt->feb_info[4] << std::endl;
+		std::cout << " The bank length is:                " << evt->feb_info[5] << std::endl;
+#endif
+	}
 
 	// Now for the data buffer.
-#if DEBUG_ME
-	contact_thread << "bank? " << evt->feb_info[4] << std::endl;
-	contact_thread << "Length: " << evt->feb_info[5] << std::endl;
-#endif
 	int length = 0;
 	switch (evt->feb_info[4]) {
 		case 0:
-			length = (int)(FEB_HITS_SIZE - 8);
-			break;
+			length = (int)(FEB_HITS_SIZE - 8);	
+			break;	
 		case 1:
 			length = (int)(FEB_DISC_SIZE - 8);
 			break;
@@ -1761,19 +1765,22 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 			break;
 		case 3:
 			length = (int)(DAQ_HEADER);
-			//break;//?
-		// default:
-		// 	// throw some error
-		// 	break;
+			break;
+		case 4:
+			std::cout << "TriP-T Programming Frames not supported for writing to disk!" << std::endl;
+			exit(-100);
+		default:
+			std::cout << "Invalid Frame Type in acquire_data::ContactEventBuilder!" << std::endl;
+			exit(-100);
 	}
 #if REPORT_EVENT
 	std::cout << "************************************************************************" << std::endl;
-	std::cout << "Sending Data to ET System:" << std::endl;
+	std::cout << "  Sending Data to ET System:" << std::endl;
 #endif
 	// Send event to ET for storage.
 	while (et_alive(sys_id)) {
 #if DEBUG_ME
-		std::cout << "ET Alive?" << std::endl;
+		std::cout << "->ET is Alive!" << std::endl;
 #endif
 		et_event *pe; // The event.
 		event_handler *pdata; // The data for the event.
@@ -1809,10 +1816,10 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 		} 
 		// Put data into the event.
 		if (status == ET_OK) {
-		#if REPORT_EVENT
+#if REPORT_EVENT
 			std::cout << "******************************************************************" << std::endl;
-			std::cout << "Putting Event on ET System:" << std::endl;
-		#endif
+			std::cout << "    Putting Event on ET System:" << std::endl;
+#endif
 			switch (evt->feb_info[4]) {
 				case 0:
 					length = FEB_HITS_SIZE;
@@ -1826,37 +1833,52 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 				case 3:
 					length = DAQ_HEADER;
 					break;
-				// default: throw some error?
+				case 4:
+					std::cout << "TriP-T Programming Frames not supported for writing to disk!" << std::endl;
+					exit(-100);
+				default:
+					std::cout << "Invalid Frame Type in acquire_data::ContactEventBuilder!" << std::endl;
+					exit(-100);
 			}
 #if THREAD_ME
 			eb_lock.lock();
 #endif
 			et_event_getdata(pe, (void **)&pdata); // Get the event ready.
-			// Add some suppression to these prints...
-			std::cout << "event_handler_size: " << sizeof(struct event_handler) << std::endl;
-			std::cout << "evt_size: " << sizeof(evt) << std::endl;
+#if DEBUG_ME
+			std::cout << " event_handler_size: " << sizeof(struct event_handler) << std::endl;
+			std::cout << " evt_size:           " << sizeof(evt) << std::endl;
+#endif
 #if REPORT_EVENT
 			{ // Report_event print statements...
 				std::cout << "*******************************************************************" << std::endl; 
 				std::cout << "Finished Processing Event Data:" << std::endl;
-				std::cout << "GATE: " <<evt->gate_info[1] << std::endl;
-				std::cout << "CROC: " <<evt->feb_info[2] << std::endl;
-				std::cout << "CHAN: " <<evt->feb_info[3] << std::endl;
-				std::cout << "BANK: " <<evt->feb_info[4] << std::endl;
-				std::cout << "DETECT: " <<evt->run_info[0] << std::endl; 
-				std::cout << "CONFIG: " <<evt->run_info[1] << std::endl; 
-				std::cout << "RUN: " <<evt->run_info[2] << std::endl;
-				std::cout << "SUB-RUN: " <<evt->run_info[3] << std::endl;
-				std::cout << "TRIGGER: " << evt->run_info[4] << std::endl;
-				std::cout << "GLOBAL GATE: " <<evt->gate_info[0] << std::endl;
-				std::cout << "TRIG TIME: " <<evt->gate_info[2] << std::endl;
-				std::cout << "ERROR: " <<evt->gate_info[3] << std::endl;
-				std::cout << "MINOS: " <<evt->gate_info[4] << std::endl;
-				std::cout << "BUFFER_LENGTH: " <<evt->feb_info[5] << std::endl;
-				std::cout << "FIRMWARE: " <<evt->feb_info[7] << std::endl;
-				std::cout << "FRAME DATA: " << std::endl;
-				for (int index=0; index<length; index++) {
-					std::cout << "byte: " << index << " " << (unsigned int)evt->event_data[index] << std::endl;
+				std::cout << " GATE---------: " << evt->gate_info[1] << std::endl;
+				std::cout << " CROC---------: " << evt->feb_info[2] << std::endl;
+				std::cout << " CHANNEL------: " << evt->feb_info[3] << std::endl;
+				std::cout << " BANK---------: " << evt->feb_info[4] << std::endl;
+				std::cout << " DETECT-------: " << evt->run_info[0] << std::endl; 
+				std::cout << " CONFIG-------: " << evt->run_info[1] << std::endl; 
+				std::cout << " RUN----------: " << evt->run_info[2] << std::endl;
+				std::cout << " SUB-RUN------: " << evt->run_info[3] << std::endl;
+				std::cout << " TRIGGER------: " << evt->run_info[4] << std::endl;
+				std::cout << " GLOBAL GATE--: " << evt->gate_info[0] << std::endl;
+				std::cout << " TRIG TIME----: " << evt->gate_info[2] << std::endl;
+				std::cout << " ERROR--------: " << evt->gate_info[3] << std::endl;
+				std::cout << " MINOS--------: " << evt->gate_info[4] << std::endl;
+				std::cout << " BUFFER_LENGTH: " << evt->feb_info[5] << std::endl;
+				std::cout << " FIRMWARE-----: " << evt->feb_info[7] << std::endl;
+				std::cout << " FRAME DATA---: " << std::endl;
+				// Print Bank Header? No...
+				// printf("     Bytes: 3 2 1 0 = (0x) %02X %02X %02X %02X\n",
+				// 	(unsigned int)evt->event_data[3], (unsigned int)evt->event_data[2],
+				// 	(unsigned int)evt->event_data[1], (unsigned int)evt->event_data[0]
+				// 	); 					
+				// printf("     Bytes: 7 6 5 4 = (0x) %02X %02X %02X %02X\n",
+				// 	(unsigned int)evt->event_data[7], (unsigned int)evt->event_data[6],
+				// 	(unsigned int)evt->event_data[5], (unsigned int)evt->event_data[4]
+				// 	); 					
+				for (int index = 0; index < length; index++) {
+					printf("     Data Byte %02d = 0x%02X\n",index,(unsigned int)evt->event_data[index]); 
 				}
 			}
 #endif
@@ -1883,6 +1905,10 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 		}
 		break; // Done processing the event. 
 	} // while alive 
+#if DEBUG_ME
+		std::cout << "Exiting acquire_data::ContactEventBuilder..." << std::endl;
+#endif
+
 }
 
 
@@ -1907,22 +1933,27 @@ template <class X> void acquire_data::FillEventStructure(event_handler *evt, int
 	// Build sourceID
 	evt->feb_info[1] = daqController->GetID(); // Crate ID
 	evt->feb_info[4] = bank;                   // 0==ADC, 1==TDC, 2==FPGA, 3==DAQ Header, 4==TriP-T
-	evt->feb_info[5] = frame->GetIncomingMessageLength(); // Buffer length
+	evt->feb_info[5] = frame->GetIncomingMessageLength();           // Buffer length
 	unsigned char tmp_buffer[(const unsigned int)evt->feb_info[5]]; // Set the buffer size.
 #if DEBUG_ME
 	std::cout << "   Getting Data..." << std::endl;
+	for (int i = 0; i < 9; i++) {
+		std::cout << "     evt->feb_info[" << i << "] = " <<  
+			(unsigned int)evt->feb_info[i] << std::endl;
+	}
 #endif
-	for (unsigned int index=0;index<(evt->feb_info[5]);index++) {
+	for (unsigned int index = 0; index < (evt->feb_info[5]); index++) {
 		tmp_buffer[index] = channelTrial->GetBuffer()[index];
 	}
-	for (unsigned int i=0; i<evt->feb_info[5]; i++) {
+	for (unsigned int i = 0; i < evt->feb_info[5]; i++) {
 		evt->event_data[i] = tmp_buffer[i]; // Load the event data.
 	}
 #if DEBUG_ME
 	std::cout << "   Got Data" << std::endl;
 	std::cout << "    IncomingMessageLength: " << frame->GetIncomingMessageLength() << std::endl;
-	for (int index=0; index<(frame->GetIncomingMessageLength()); index++) {
-		printf("     FillStructure data byte %02d = 0x%02X\n",index,(unsigned int)evt->event_data[index]); 
+	for (int index = 0; index < (frame->GetIncomingMessageLength()); index++) {
+		printf("     FillStructure data byte %02d = 0x%02X\n", index, 
+			(unsigned int)evt->event_data[index]); 
 	}
 #endif
 }
