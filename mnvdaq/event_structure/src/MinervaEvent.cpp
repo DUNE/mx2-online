@@ -71,11 +71,11 @@ MinervaHeader::MinervaHeader(unsigned char crate)
 	unsigned short source_id = crate; //2 bits for the crate id number? WinDAQ DAQHeader source ID?...
 	unsigned short magic_pattern = 0xCBCB; 
 
-	DAQ_event_header[0] =  magic_pattern; //put the magic pattern for this event into the header
-	DAQ_event_header[1] = 48; //the length in bytes of the DAQ event header
-	DAQ_event_header[2] = (3 & 0xFF); // Bank Type (3 for DAQ Header)
-	DAQ_event_header[2] |= (4 & 0xFF)<<0x8; // Version (4 as of 2009.Dec.05)
-	DAQ_event_header[3] = source_id; //and the source information
+	DAQ_event_header[0] =  magic_pattern;   // add: the magic pattern to the header,
+	DAQ_event_header[1] = 48;               // the length in bytes of the DAQ header,
+	DAQ_event_header[2] = (3 & 0xFF);       // Bank Type (3 for DAQ Header),
+	DAQ_event_header[2] |= (4 & 0xFF)<<0x8; // Version (4 as of 2009.Dec.05), and
+	DAQ_event_header[3] = source_id;        // the source information.
 }
 
 
@@ -103,42 +103,40 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
  * \param MinervaHeader *header data bank header
  *
  */
-
 	int buffer_index = 0;
 	unsigned int event_info_block[12]; //piece up the event information
 
 	event_info_block[0] = det & 0xFF;
 	event_info_block[0] |= 0 <<0x08; //a reserved byte
 	event_info_block[0] |= (config & 0xFFFF)<<0x10;
-
 	event_info_block[1] = run & 0xFFFFFFFF;
 	event_info_block[2] = sub_run & 0xFFFFFFFF;
 	event_info_block[3] = trig & 0xFFFFFFFF;
 	event_info_block[4] = g_gate & 0xFFFFFFFF; //the "global gate"
-	event_info_block[5] = 0xFFFFFFFF; //This is the extra, unused 4 bytes of the global gate number
+	event_info_block[5] = 0; // TODO, Fix this!  Global gate is 64 bits!
 	event_info_block[6] = gate & 0xFFFFFFFF; //the gate number
-	event_info_block[7] = 0xFFFFFFFF; //the extra 4 bytes we don't use
+	event_info_block[7] = 0; // TODO, Fix this!  Gate is also 64 bits!  (Well, maybe don't fix this, ha.)
 	event_info_block[8] = trig_time & 0xFFFFFFFF; //the gate time
-	event_info_block[9] = 0xFFFFFFFF; //the extra 4 bytes
+	event_info_block[9] = 0; // TODO, Fix this!  GPS Time Stamp is 64 bits!
 	event_info_block[10] =  error & 0xFFFF; //the error bytes
 	event_info_block[10] |= 0<<0x10; //2 reserved bytes
 	event_info_block[11] = minos & 0xFFFFFFFF; //the minos gate
 
 	for (int i=0;i<12;i++) {
-		buffer_index=i+8; //where should we store this data?  We need to allow room for the event 
-							//header we haven't added yet
-		event_block[buffer_index]=event_info_block[i]&0xFF;
-		event_block[buffer_index+1]=event_info_block[i]&0xFF00;
-		event_block[buffer_index+2]=event_info_block[i]&0xFF0000;
-		event_block[buffer_index+3]=event_info_block[i]&0xFF000000;
+		buffer_index = i+8; // 8 bytes for the MINERvA Header.  
+                // We need to allow room for the event header we haven't added yet.
+		event_block[buffer_index]   = event_info_block[i] & 0xFF;
+		event_block[buffer_index+1] = event_info_block[i] & 0xFF00;
+		event_block[buffer_index+2] = event_info_block[i] & 0xFF0000;
+		event_block[buffer_index+3] = event_info_block[i] & 0xFF000000;
 	}
 
 	unsigned short *tmpDAQHeader = header->GetDAQEvtHeader();
-	buffer_index=0; 
-	for (int i=0;i<4;i++) {
-		event_block[buffer_index]=tmpDAQHeader[i]&0xFF;
+	buffer_index = 0; 
+	for (int i = 0; i < 4 ;i++) {
+		event_block[buffer_index] = tmpDAQHeader[i]&0xFF;
 		buffer_index++;
-		event_block[buffer_index]=(tmpDAQHeader[i]&0xFF00)>>0x08;
+		event_block[buffer_index] = (tmpDAQHeader[i]&0xFF00)>>0x08;
 		buffer_index++;
 	}
 	//InsertData(event_block);

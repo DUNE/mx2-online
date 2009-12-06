@@ -827,7 +827,7 @@ template <class X> bool acquire_data::FillDPM(croc *crocTrial, channels *channel
  *  \param channels *channelTrial a pointer to the CROC channel object being accessed
  *  \param  X *frame a pointer to the genaric "frame" or device being read
  *  \param int outgoing_length an integer value for the outoing message length
- *  \param int incoming_length an integer value for the incoming message length
+ *  \param int incoming_length an integer value for the maximum incoming message length
  *
  *  Returns a status bit.
  *
@@ -848,6 +848,9 @@ template <class X> bool acquire_data::FillDPM(croc *crocTrial, channels *channel
 	}
 	dpmPointer = (unsigned short) (status[0] | (status[1]<<0x08));
 
+	// We have to check and see if the message could exceed the amount of space available 
+	// in memory.  If it doesn't, it is safe to write the send-message command and add 
+	// a new frame to the DPM.
 	if ( (dpmPointer<dpmMax) && ((dpmMax-incoming_length)>incoming_length) ) {
 		SendMessage(frame, crocTrial, channelTrial, true);
 		return true; 
@@ -1038,6 +1041,10 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		// ----
 		// First, decide if the discriminators are on.
 		bool disc_set = false;
+#if READ_DISC
+		disc_set = true;
+#endif
+		/*
 		for (int trip_index = 0; trip_index < 6; trip_index++) {
 			int vth = febTrial->GetTrip(trip_index)->GetTripValue(9);
 #if DEBUG_ME
@@ -1048,6 +1055,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 				break;
 			}
 		}
+		*/
 
 		if (disc_set) { 
 			memory_reset = ResetDPM(crocTrial, channelTrial); 
@@ -1120,8 +1128,11 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		std::cout << "------------------------------------------------------------" << std::endl;
 		std::cout << "     ADC FRAMES  " << std::endl;
 #endif
+#if READ_ADC
 		if (hits == -1) hits = 1; 
-		// Actually want to do ReadHit5 first, need to fix this...
+#else
+		hits = -1; // Don't read the ADC's...
+#endif		
 		for (int i=0; i<hits; i++) {
 			if (!(memory_reset = ResetDPM(crocTrial, channelTrial))) {
 				std::cout<<"Unable to reset DPM!"<<std::endl;
@@ -1417,7 +1428,7 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
  *  \param X *frame a pointer to the generic frame being processed
  *  \param croc *crocTrial a pointer to a croc object
  *  \param channels *channelTrial a pointer to the croc channel object
- *  \param int length an integer which tells the size of the data block in bytes
+ *  \param int length an integer which tells the maximum size of the data block in bytes
  *
  *  Returns a status integer.
  *
@@ -1858,15 +1869,6 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 				std::cout << " BUFFER_LENGTH: " << evt->feb_info[5] << std::endl;
 				std::cout << " FIRMWARE-----: " << evt->feb_info[7] << std::endl;
 				std::cout << " FRAME DATA---: " << std::endl;
-				// Print Bank Header? No...
-				// printf("     Bytes: 3 2 1 0 = (0x) %02X %02X %02X %02X\n",
-				// 	(unsigned int)evt->event_data[3], (unsigned int)evt->event_data[2],
-				// 	(unsigned int)evt->event_data[1], (unsigned int)evt->event_data[0]
-				// 	); 					
-				// printf("     Bytes: 7 6 5 4 = (0x) %02X %02X %02X %02X\n",
-				// 	(unsigned int)evt->event_data[7], (unsigned int)evt->event_data[6],
-				// 	(unsigned int)evt->event_data[5], (unsigned int)evt->event_data[4]
-				// 	); 					
 				for (int index = 0; index < length; index++) {
 					printf("     Data Byte %02d = 0x%02X\n",index,(unsigned int)evt->event_data[index]); 
 				}
@@ -1927,10 +1929,15 @@ template <class X> void acquire_data::FillEventStructure(event_handler *evt, int
 	unsigned char tmp_buffer[(const unsigned int)evt->feb_info[5]]; // Set the buffer size.
 #if DEBUG_ME
 	std::cout << "   Getting Data..." << std::endl;
-	for (int i = 0; i < 9; i++) {
-		std::cout << "     evt->feb_info[" << i << "] = " <<  
-			(unsigned int)evt->feb_info[i] << std::endl;
-	}
+	std::cout << "     Link      (evt->feb_info[0]) = " << evt->feb_info[0] << std::endl;
+	std::cout << "     Crate     (evt->feb_info[1]) = " << evt->feb_info[1] << std::endl;
+	std::cout << "     CROC      (evt->feb_info[2]) = " << evt->feb_info[2] << std::endl;
+	std::cout << "     Channel   (evt->feb_info[3]) = " << evt->feb_info[3] << std::endl;
+	std::cout << "     Bank Type (evt->feb_info[4]) = " << evt->feb_info[4] << std::endl;
+	std::cout << "     Buff. L.  (evt->feb_info[5]) = " << evt->feb_info[5] << std::endl;
+	std::cout << "     FEB Num.  (evt->feb_info[6]) = " << evt->feb_info[6] << std::endl;
+	std::cout << "     Firmware  (evt->feb_info[7]) = " << evt->feb_info[7] << std::endl;
+	std::cout << "     Hits      (evt->feb_info[8]) = " << evt->feb_info[8] << std::endl;
 #endif
 	for (unsigned int index = 0; index < (evt->feb_info[5]); index++) {
 		tmp_buffer[index] = channelTrial->GetBuffer()[index];
@@ -1940,7 +1947,7 @@ template <class X> void acquire_data::FillEventStructure(event_handler *evt, int
 	}
 #if DEBUG_ME
 	std::cout << "   Got Data" << std::endl;
-	std::cout << "    IncomingMessageLength: " << frame->GetIncomingMessageLength() << std::endl;
+	std::cout << "    frame->IncomingMessageLength: " << frame->GetIncomingMessageLength() << std::endl;
 	for (int index = 0; index < (frame->GetIncomingMessageLength()); index++) {
 		printf("     FillStructure data byte %02d = 0x%02X\n", index, 
 			(unsigned int)evt->event_data[index]); 

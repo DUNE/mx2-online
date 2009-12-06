@@ -2,20 +2,27 @@
 #define MinervaEvent_h
 
 #define FEB_INFO_SIZE 76  // number of bytes in an FEB FPGA Frame with the event header
-/* This assumes we keep the CRC: 76 = 54 registers + 11 header + 2 CRC + 1 dummy (even) + 8 "LHCb". */ 
+/* This assumes we keep the CRC: 
+	76 = 8 MINERvA Header + 2 length + 9 header + 1 dummy (even) + 54 registers + 2 CRC 
+The framework set is 74 -> no CRC == 8 + Length value embedded in the frame?  Probably not. 
+The length in the old DAQ was defined as the embedded length + 2.  So, for whatever reason, 
+the CRC was explicitly kept.  This is essentially junk data. -> So, keep an eye on this while 
+checking decoding! */
 
 #define FEB_DISC_SIZE 1146 // number of bytes in the discriminator buffer with event header
 /* The Discriminator blocks are of variable size:
 	15 header + 2 CRC + 1 dummy + 40 per hit per trip
 The prescription then must be to prodive the maximum possible space, but trim the buffer before
 passing it to the event builder in order to ensure the frame length matches the buffer length. */
-/* 15 header + 2 CRC + 1 dummy + 40*4*7 +8 == 1146 */
+/* 8 MINERvA Header + 2 Length + 13 header + 1 dummy + 40*4*7 + 2 CRC == 1146 */
+/* The framework set is 1144 -> no CRC. */
 
-#define FEB_HITS_SIZE 886 // number of bytes in an ADC buffer with event header (per hit)
-/* 885 != 876 data bytes + 2 CRC + 8 "LHCb" Header. */ 
+#define FEB_HITS_SIZE 885 // number of bytes in an ADC buffer with event header (per hit)
+/* 885 = 8 MINERvA Header + 2 Length + 9 Header + 864 data bytes + 2 CRC (no dummy?) */ 
+/* The framework set is 883 -> no CRC. */
 
 #define DAQ_HEADER 56     // number of bytes for the event header with the DAQ header attached.
-/* 48 bytes in v4 + 8 "LHCb" Header */
+/* 8 MINERvA Header + 48 bytes in v4.  This is the framework set. */
 
 //This offset value defines where in the output buffer we need to begin
 //inserting data for a given FEB's worth of information
@@ -25,7 +32,7 @@ passing it to the event builder in order to ensure the frame length matches the 
 //and so on until the end of the DAQ Event Info block in the last DAQ_HEADER bytes of the buffer.
 
 #define MIN_CHAN_ID 0x0004 //crate 0, croc 1, channel 0
-#define FEB_MIN_NUMBER 1 //decided more-or-less by fiat
+#define FEB_MIN_NUMBER 1   //decided more-or-less by fiat
 
 #include "feb.h"
 
