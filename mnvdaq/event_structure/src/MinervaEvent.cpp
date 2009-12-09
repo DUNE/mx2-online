@@ -42,14 +42,15 @@ MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID,
 	source_id |= hit&0x07; //the hit number
 
 #if DEBUG_ME
-	std::cout<<"crateID: "<<crateID<<std::endl;
-	std::cout<<"crocID: "<<crocID<<std::endl;
-	std::cout<<"chanID: "<<chanID<<std::endl;
-	std::cout<<"bank: "<<bank<<std::endl;
-	std::cout<<"feb_number: "<<feb_no<<std::endl;
-	std::cout<<"firmware: "<<firmware<<std::endl;
-	std::cout<<"hit: "<<hit<<std::endl;
-	std::cout<<"length: "<<length<<std::endl;
+	std::cout << "\n->Entering MinervaHeader::Minervaheader..." << std::endl;
+	std::cout << " crateID:    "<<crateID<<std::endl;
+	std::cout << " crocID:     "<<crocID<<std::endl;
+	std::cout << " chanID:     "<<chanID<<std::endl;
+	std::cout << " bank:       "<<bank<<std::endl;
+	std::cout << " feb_number: "<<feb_no<<std::endl;
+	std::cout << " firmware:   "<<firmware<<std::endl;
+	std::cout << " hit:        "<<hit<<std::endl;
+	std::cout << " length:     "<<length<<std::endl;
 #endif
 
 	unsigned short magic_pattern = 0xCBCB; 

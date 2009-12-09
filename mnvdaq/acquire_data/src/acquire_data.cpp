@@ -1749,11 +1749,17 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 		std::cout << "Entering acquire_data::ContactEventBuilder..." << std::endl;
 		std::cout << " In Event Builder the bank type is: " << evt->feb_info[4] << std::endl;
 		std::cout << " The bank length is:                " << evt->feb_info[5] << std::endl;
+		std::cout << " Event Data Length is:              " << (unsigned int)evt->event_data[0] + 
+			(unsigned int)(evt->event_data[1]<<8) << std::endl;
+		for (int i = 0; i < 12; i++) {
+			std::cout << "  evt->event_data[" << i << "] = " << (unsigned int)evt->event_data[i] << std::endl;
+		}
 #endif
 	}
 
 	// Now for the data buffer.
-	int length = 0;
+	int length = evt->event_data[0] + (evt->event_data[1]<<8);
+	/*
 	switch (evt->feb_info[4]) {
 		case 0:
 			length = (int)(FEB_HITS_SIZE - 8);	
@@ -1774,6 +1780,7 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 			std::cout << "Invalid Frame Type in acquire_data::ContactEventBuilder!" << std::endl;
 			exit(-100);
 	}
+	*/
 #if REPORT_EVENT
 	std::cout << "************************************************************************" << std::endl;
 	std::cout << "  Sending Data to ET System:" << std::endl;
@@ -1783,7 +1790,7 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 #if DEBUG_ME
 		std::cout << "->ET is Alive!" << std::endl;
 #endif
-		et_event *pe; // The event.
+		et_event *pe;         // The event.
 		event_handler *pdata; // The data for the event.
 #if THREAD_ME
 		lock eb_lock(eb_mutex);
@@ -1821,6 +1828,7 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 			std::cout << "******************************************************************" << std::endl;
 			std::cout << "    Putting Event on ET System:" << std::endl;
 #endif
+			/*
 			switch (evt->feb_info[4]) {
 				case 0:
 					length = FEB_HITS_SIZE;
@@ -1841,6 +1849,7 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 					std::cout << "Invalid Frame Type in acquire_data::ContactEventBuilder!" << std::endl;
 					exit(-100);
 			}
+			*/
 #if THREAD_ME
 			eb_lock.lock();
 #endif
@@ -1898,7 +1907,7 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 		break; // Done processing the event. 
 	} // while alive 
 #if DEBUG_ME
-		std::cout << "Exiting acquire_data::ContactEventBuilder..." << std::endl;
+	std::cout << "Exiting acquire_data::ContactEventBuilder..." << std::endl;
 #endif
 
 }
@@ -1938,6 +1947,8 @@ template <class X> void acquire_data::FillEventStructure(event_handler *evt, int
 	std::cout << "     FEB Num.  (evt->feb_info[6]) = " << evt->feb_info[6] << std::endl;
 	std::cout << "     Firmware  (evt->feb_info[7]) = " << evt->feb_info[7] << std::endl;
 	std::cout << "     Hits      (evt->feb_info[8]) = " << evt->feb_info[8] << std::endl;
+	std::cout << "     Embedded Length              = " << (int)evt->event_data[0] + 
+		(int)(evt->event_data[1]<<8) << std::endl;
 #endif
 	for (unsigned int index = 0; index < (evt->feb_info[5]); index++) {
 		tmp_buffer[index] = channelTrial->GetBuffer()[index];

@@ -16,7 +16,7 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
  */
 	int feb_number = frame->GetFEBNumber(); //get the feb number from which this frame came
 	int index = -1; //the index which holds this feb's firmware
-	int length = 0;
+	int length = evt->event_data[0] + (evt->event_data[1]<<8);
 
 	//now we've got everything we need to make up the event headers
 	MinervaHeader *tmp_header; //declare a new data bank header
@@ -24,6 +24,7 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
 		std::cout << "Should not have passed DAQ block to BuildBlockHeader!" << std::endl;
 		exit (-1);
 	} else {
+		/*
 		switch (evt->feb_info[4]) {
 			case 0:
 				length = FEB_HITS_SIZE-8;
@@ -38,17 +39,17 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
 				std::cout << "Something went wrong in BuildBankHeader!" << std::endl;
 				exit(-1);
 		}
-
+		*/
 #if DEBUG_ME
 		std::cout << "--------Event Builder--------" << std::endl;
-		std::cout << " crateID : " << evt->feb_info[1] << std::endl;
-		std::cout << " crocID  : " << evt->feb_info[2] << std::endl;
-		std::cout << " chanID  : " << evt->feb_info[3] << std::endl;
-		std::cout << " bank    : " << evt->feb_info[4] << std::endl;
-		std::cout << " feb_number (from frame header): " << feb_number << std::endl;
-		std::cout << " firmware: " << evt->feb_info[7] << std::endl;
-		std::cout << " hit     : " << evt->feb_info[8] << std::endl;
-		std::cout << " length  : " << length << std::endl;
+		std::cout << "  crateID                       : " << evt->feb_info[1] << std::endl;
+		std::cout << "  crocID                        : " << evt->feb_info[2] << std::endl;
+		std::cout << "  chanID                        : " << evt->feb_info[3] << std::endl;
+		std::cout << "  bank                          : " << evt->feb_info[4] << std::endl;
+		std::cout << "  feb_number (from frame header): " << feb_number << std::endl;
+		std::cout << "  firmware                      : " << evt->feb_info[7] << std::endl;
+		std::cout << "  hit                           : " << evt->feb_info[8] << std::endl;
+		std::cout << "  length                        : " << length << std::endl;
 #endif
 		tmp_header = new MinervaHeader(evt->feb_info[1], evt->feb_info[2], evt->feb_info[3],
 			evt->feb_info[4], feb_number, evt->feb_info[7],
