@@ -1,6 +1,10 @@
 #ifndef MinervaEvent_h
 #define MinervaEvent_h
 
+/* Note: When using these to check the status of space in the DPM, we are actually being 
+too conservative because the 8 bytes we are using for the MINERvA header are not in use 
+at that stage. */
+
 #define FEB_INFO_SIZE 76  // number of bytes in an FEB FPGA Frame with the event header
 /* This assumes we keep the CRC: 
 	76 = 8 MINERvA Header + 2 length + 9 header + 1 dummy (even) + 54 registers + 2 CRC 

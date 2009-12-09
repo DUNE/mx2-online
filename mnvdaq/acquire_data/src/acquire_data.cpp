@@ -15,7 +15,7 @@
 
 const int acquire_data::dpmMax = 1024*6; //we have only 6 Kb of space in the DPM Memory per channel
 
-const int acquire_data::numberOfHits = 1;
+const int acquire_data::numberOfHits = 6;
 
 void acquire_data::InitializeDaq(int id, RunningModes runningMode) 
 {
