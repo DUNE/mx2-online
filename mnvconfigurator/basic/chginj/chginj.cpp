@@ -13,10 +13,10 @@ using namespace std;
 
 #define DEBUGLEVEL 10
 #define CLEARANDRESETLEVEL 50
-#define FPGAREADLEVEL 5
-#define FPGAWRITELEVEL 5
-#define TRIPTREADLEVEL 5
-#define TRIPTWRITELEVEL 5
+#define FPGAREADLEVEL 50
+#define FPGAWRITELEVEL 50
+#define TRIPTREADLEVEL 50
+#define TRIPTWRITELEVEL 50
 #define BLOCKRAMREADLEVEL 5 // using same for adc & discr
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs on WH14NXO now.
@@ -546,7 +546,7 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 		myFeb->SetGateStart(43000);  //count to 65535 in clock ticks, 43000 => 211.8 us
 		myFeb->SetGateLength(1702);  //gate length for MINERvA in NuMI is 1702
 		for (int i=0; i<4; i++) {    // inject registers, DON'T WRITE TO THE LOW GAIN TRIPS!
-			unsigned char inj[] = {0x64}; //100
+			unsigned char inj[] = { 1 + (unsigned char)i*40 };   // 15 integration ticks + ~20 reset ticks...
 			unsigned char enable[] = {0x1}; // never enable low gain, or things get very confusing...
 			myFeb->SetInjectCount(inj,i);
 			myFeb->SetInjectEnable(enable,i);
