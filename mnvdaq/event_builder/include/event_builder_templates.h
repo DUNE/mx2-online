@@ -15,7 +15,7 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
  */
 	int feb_number = frame->GetFEBNumber(); //get the feb number from which this frame came
 	int index      = -1; //the index which holds this feb's firmware
-	int length     = evt->event_data[0] + (evt->event_data[1]<<8);
+	int length     = evt->event_data[0] + (evt->event_data[1]<<8) + 2; // Data + CRC
 
 	//now we've got everything we need to make up the event headers
 	MinervaHeader *tmp_header; //declare a new data bank header

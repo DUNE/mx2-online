@@ -30,30 +30,28 @@ template <class X> void MinervaEvent::MakeDataBlock(X *frame, MinervaHeader *hea
 			std::cout << "Making ADC buffer" << std::endl;
 			std::cout << " Hardcoded size : " << FEB_HITS_SIZE << std::endl;
 			std::cout << " Embedded length: " << frame->message[0] + (frame->message[1]<<8) << std::endl;
-			std::cout << " Total length:    " << 8 + frame->message[0] + (frame->message[1]<<8) << std::endl;
+			std::cout << " Total length:    " << 8 + frame->message[0] + (frame->message[1]<<8) + 2 << std::endl;
 #endif
-			// buffer_size = FEB_HITS_SIZE;
-			buffer_size = 8 + frame->message[0] + (frame->message[1]<<8) + 2; // keep CRC?
+			buffer_size = 8 + frame->message[0] + (frame->message[1]<<8) + 2; // MINERvA Header + Data + CRC 
 			break;
 		case 1: //DISC Buffer
 #if DEBUG_ME
 			std::cout << "Making DISC buffer" << std::endl;
 			std::cout << " Hardcoded size : " << FEB_DISC_SIZE << std::endl;
 			std::cout << " Embedded length: " << frame->message[0] + (frame->message[1]<<8) << std::endl;
-			std::cout << " Total length:    " << 8 + frame->message[0] + (frame->message[1]<<8) << std::endl;
+			std::cout << " Total length:    " << 8 + frame->message[0] + (frame->message[1]<<8) + 2 << std::endl;
 #endif
 			// buffer_size = FEB_DISC_SIZE;
-			buffer_size = 8 + frame->message[0] + (frame->message[1]<<8);
+			buffer_size = 8 + frame->message[0] + (frame->message[1]<<8) + 2; // MINERvA Header + Data + CRC 
 			break;
 		case 2: //FEB Buffer
 #if DEBUG_ME
 			std::cout << "Making FPGA buffer" << std::endl;
 			std::cout << " Hardcoded size : " << FEB_INFO_SIZE << std::endl;
 			std::cout << " Embedded length: " << frame->message[0] + (frame->message[1]<<8) << std::endl;
-			std::cout << " Total length:    " << 8 + frame->message[0] + (frame->message[1]<<8) << std::endl;
+			std::cout << " Total length:    " << 8 + frame->message[0] + (frame->message[1]<<8) + 2 << std::endl;
 #endif
-			// buffer_size = FEB_INFO_SIZE;
-			buffer_size = 8 + frame->message[0] + (frame->message[1]<<8); 
+			buffer_size = 8 + frame->message[0] + (frame->message[1]<<8) + 2; // MINERvA Header + Data + CRC  
 			break;
 		case 3:
 			std::cout<<"Should not have sent a DAQ bank here!"<<std::endl;

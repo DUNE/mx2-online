@@ -5,15 +5,14 @@
 too conservative because the 8 bytes we are using for the MINERvA header are not in use 
 at that stage (and so we can ignore the 2 bytes of "real" CRC). */
 
-#define FEB_INFO_SIZE 74  // number of bytes in an FEB FPGA Frame with the event header
+#define FEB_INFO_SIZE 76  // number of bytes in an FEB FPGA Frame with the event header
 /* Not completely clear how we should handle the frame CRC: 
 	76 = 8 MINERvA Header + 2 length + 9 header + 1 dummy (even) + 54 registers + 2 CRC 
 The framework set is 74? -> no CRC == 8 + Length value embedded in the frame?  Probably not. 
 The length in the old DAQ was defined as the embedded length + 2.  So, for whatever reason, 
-the CRC was explicitly kept.  The CRC is essentially junk data, so we will experiment with 
-dropping it, but this is potentially a change. -> So, keep an eye on this while decoding! */
+the CRC was explicitly kept.  -> So, keep an eye on this while decoding! */
 
-#define FEB_DISC_SIZE 1144 // number of bytes in the discriminator buffer with event header
+#define FEB_DISC_SIZE 1146 // number of bytes in the discriminator buffer with event header
 /* The Discriminator blocks are of variable size:
 	15 header + 2 CRC + 1 dummy + 40 per hit per trip
 The prescription then must be to prodive the maximum possible space, but trim the buffer before

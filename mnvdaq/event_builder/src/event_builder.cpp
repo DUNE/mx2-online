@@ -252,30 +252,29 @@ int event_builder(event_handler *evt)
 
 		// Sort the event data
 		// Should use the embedded length!
-		int info_length = (int)( evt->event_data[0] + (evt->event_data[1]<<8) ); 
+		int info_length = (int)( evt->event_data[0] + (evt->event_data[1]<<8) + 2); // Data + Frame CRC
 		switch (evt->feb_info[4]) {
 			case 0: // ADC Data
 #if DEBUG_ME
-				thread_log << "ADC Values" << std::endl;
+				thread_log << "\nADC Values" << std::endl;
 #endif
-				// info_length = FEB_HITS_SIZE-8;
-				info_length+=2; // keep CRC?
-				CheckBufferLength(evt->feb_info[5]+2, info_length);
+				// Compare embedded length (data) + CRC to info_length		
+				CheckBufferLength(evt->feb_info[5]+2, info_length); 
 				for (unsigned int i=0; i<evt->feb_info[5]; i+=info_length) {
 #if DEBUG_ME
-					thread_log<<"Decoding Buffer"<<std::endl;
+					thread_log << "Decoding Buffer" << std::endl;
 					for (int ii=0; ii<info_length; ii++) {
-						thread_log << " data: " << (int)evt->event_data[ii] << endl;
+						thread_log << "   data: " << (int)evt->event_data[ii] << endl;
 					} 
 #endif
 					DecodeBuffer(evt, dummy_feb->GetADC(0), i, info_length);
 #if DEBUG_ME
-					thread_log<<"Building Bank Header"<<std::endl;
+					thread_log << "Building Bank Header" << std::endl;
 #endif
 					// Build the data block header.
 					tmp_header = BuildBankHeader(evt, dummy_feb->GetADC(0));
 #if DEBUG_ME
-					thread_log<<"Making Data Block"<<std::endl;
+					thread_log << "Making Data Block" << std::endl;
 #endif
 					// Build event.
 					event->MakeDataBlock(dummy_feb->GetADC(0), tmp_header);
@@ -283,10 +282,10 @@ int event_builder(event_handler *evt)
 				break;
 			case 1: // Discriminator Data
 #if DEBUG_ME
-				thread_log << "DISC Values" << std::endl;
+				thread_log << "\nDISC Values" << std::endl;
 #endif
-				// info_length = FEB_DISC_SIZE-8;
-				CheckBufferLength(evt->feb_info[5], info_length);
+				// Compare embedded length (data) + CRC to info_length	
+				CheckBufferLength(evt->feb_info[5]+2, info_length);
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
 					DecodeBuffer(evt,dummy_feb->GetDisc(), i, info_length);
 					// Build the data block header.
@@ -299,18 +298,8 @@ int event_builder(event_handler *evt)
 #if DEBUG_ME
 				std::cout << "--FEB Values--" << std::endl;
 #endif
-				// info_length = FEB_INFO_SIZE-8;
-				CheckBufferLength(evt->feb_info[5], info_length);
-				/*
-				try {
-					if (info_length != dummy_feb->GetExpectedIncomingMessageLength()) throw info_length;
-				} catch (int e) {
-					thread_log << "Message Length Mismatch: " << info_length << " should be: " << 
-						dummy_feb->GetIncomingMessageLength() << endl;
-					dummy_feb->DecodeRegisterValues(dummy_feb->GetIncomingMessageLength());
-					exit(-3);
-				}
-				*/
+				// Compare embedded length (data) + CRC to info_length				
+				CheckBufferLength(evt->feb_info[5]+2, info_length);
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
 #if DEBUG_ME
 					std::cout << "Decoding Buffer..." << std::endl;

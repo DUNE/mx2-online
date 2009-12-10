@@ -129,7 +129,7 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
 	event_info_block[5] = 0; // TODO, Fix this!  Global gate is 64 bits!
 	event_info_block[6] = gate & 0xFFFFFFFF; //the gate number
 	event_info_block[7] = 0; // TODO, Fix this!  Gate is also 64 bits! 
-	event_info_block[8] = trig_time & 0xFFFFFFFF; //the gate time
+	event_info_block[8] = trig_time & 0xFFFFFFFF; //the gate time, TODO - fill trig_time!
 	event_info_block[9] = 0; // TODO, Fix this!  GPS Time Stamp is 64 bits!
 	event_info_block[10] =  error & 0xFFFF; //the error bytes
 	event_info_block[10] |= 0<<0x10; //2 reserved bytes
