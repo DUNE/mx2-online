@@ -767,7 +767,7 @@ void SetHV(acquire_data *daq, int i, int j)
 #else
 	cout<<"Preparing to set HV"<<endl;
 #endif
-	bool hv_set = false;
+	// bool hv_set = false; // unused...
 	int hvdiff = -1;
 	std::list<feb*> *feblist = daq->GetController()->GetCroc(i)->GetChannel(j)->GetFebList();
 	std::list<feb*>::iterator p,q;

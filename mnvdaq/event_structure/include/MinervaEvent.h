@@ -18,11 +18,9 @@ the CRC was explicitly kept.  -> So, keep an eye on this while decoding! */
 The prescription then must be to prodive the maximum possible space, but trim the buffer before
 passing it to the event builder in order to ensure the frame length matches the buffer length. */
 /* 8 MINERvA Header + 2 Length + 13 header + 1 dummy + 40*4*7 + 2 CRC == 1146 */
-/* The framework set is 1144 -> no CRC. */
 
 #define FEB_HITS_SIZE 885 // number of bytes in an ADC buffer with event header (per hit)
 /* 885 = 8 MINERvA Header + 2 Length + 9 Header + 864 data bytes + 2 CRC (no dummy?) */ 
-/* The framework set is 883? -> Appears to keep CRC..., so 885? */
 
 #define DAQ_HEADER 56     // number of bytes for the event header with the DAQ header attached.
 /* 8 MINERvA Header + 48 bytes in v4.  This is the framework set. */

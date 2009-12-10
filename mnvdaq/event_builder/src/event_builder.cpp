@@ -21,7 +21,8 @@ int main(int argc, char **argv)
 	output_filename+=".dat";
 	ofstream binary_outputfile(output_filename.c_str(),ios::out|ios::app|ios::binary); 
 																
-	int event_size, status;
+	// int            event_size; // unused...
+	int            status;
 	et_openconfig  openconfig;
 	et_att_id      attach;
 	et_sys_id      sys_id;
@@ -130,34 +131,49 @@ int main(int argc, char **argv)
 
 		void *pdata;
 		int length;
-		// BIG TIME TODO - Fix the length handling for variable size discr. frames!
+#if DEBUG_BUFFERS
+		printf(" Building final data buffers...\n");
+		printf("  Frame Data Type           = %d\n",evt->feb_info[4]);
+		printf("  Frame Length (header val) = %d\n",evt->feb_info[5]);
+#endif
 		switch (evt->feb_info[4]) {
 			case 0:
-				length = FEB_HITS_SIZE;
+				length = 8 + evt->feb_info[5] + 2; // MINERvA Header + Data + CRC 
 				break;
 			case 1:
-				length = FEB_DISC_SIZE;
+				length = 8 + evt->feb_info[5] + 2; // MINERvA Header + Data + CRC 
 				break;
 			case 2:
-				length = FEB_INFO_SIZE;
+				length = 8 + evt->feb_info[5] + 2; // MINERvA Header + Data + CRC 
 				break;
 			case 3:
 				length = DAQ_HEADER;
 				break;
+			case 4:
+				length = evt->feb_info[5] + 2; // Data + CRC 
+			 	std::cout << "WARNING!  TriP programming frames not supported by EventBuilder yet!" << std::endl;
+				length = 0;
+				break;
+			default:
+				std::cout << "WARNING!  Unknown frame type in EventBuilder main!" << std::endl;
+				break;	
 		}
 		et_event_getdata(pe, &pdata); //get the event ready
 		unsigned char final_buffer[length];
 		unsigned char *tmp_buffer; 
+#if DEBUG_BUFFERS
+		printf("   Final data buffer length = %d\n",length);
+#endif
 		if (evt->feb_info[4]!=3) {
 			tmp_buffer = event->GetDataBlock();
-#if DEBUG_ME
+#if DEBUG_BUFFERS
 			printf(" Copying Data Header data into final buffer...\n");
 #endif
 			for (int data_index = 0; data_index < length; data_index++) {
 				final_buffer[data_index] = tmp_buffer[data_index];
 			}
 		} else { 
-#if DEBUG_ME
+#if DEBUG_BUFFERS
 			printf(" Copying DAQ Header data into final buffer...\n");
 #endif
 			for (int data_index = 0; data_index < length; data_index++) {
@@ -174,7 +190,7 @@ int main(int argc, char **argv)
 		// Now write the event to the binary output file.
 		binary_outputfile.write((char *) final_buffer, length);  
 		binary_outputfile.flush();
-		if (!(evt_counter%1)) {
+		if ( !( evt_counter%10 ) ) {
 			thread_log << "*****************************************************************************"<<endl; 
 			thread_log << "      Event Processed: "<<evt_counter<<endl;
 			thread_log << "*****************************************************************************"<<endl; 
@@ -210,7 +226,7 @@ int main(int argc, char **argv)
 
 int event_builder(event_handler *evt) 
 {
-#if REPORT_EVENT
+#if DEBUG_REPORT_EVENT
 	thread_log << "*************************************************************************" << std::endl; 
 	thread_log << "Processing Event Data:"<< std::endl;
 	thread_log << "  GATE : "<< evt->gate_info[1] << std::endl;
@@ -251,29 +267,25 @@ int event_builder(event_handler *evt)
 		event = new MinervaEvent();
 
 		// Sort the event data
-		// Should use the embedded length!
 		int info_length = (int)( evt->event_data[0] + (evt->event_data[1]<<8) + 2); // Data + Frame CRC
 		switch (evt->feb_info[4]) {
 			case 0: // ADC Data
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 				thread_log << "\nADC Values" << std::endl;
 #endif
 				// Compare embedded length (data) + CRC to info_length		
 				CheckBufferLength(evt->feb_info[5]+2, info_length); 
 				for (unsigned int i=0; i<evt->feb_info[5]; i+=info_length) {
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 					thread_log << "Decoding Buffer" << std::endl;
-					for (int ii=0; ii<info_length; ii++) {
-						thread_log << "   data: " << (int)evt->event_data[ii] << endl;
-					} 
 #endif
 					DecodeBuffer(evt, dummy_feb->GetADC(0), i, info_length);
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 					thread_log << "Building Bank Header" << std::endl;
 #endif
 					// Build the data block header.
 					tmp_header = BuildBankHeader(evt, dummy_feb->GetADC(0));
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 					thread_log << "Making Data Block" << std::endl;
 #endif
 					// Build event.
@@ -281,7 +293,7 @@ int event_builder(event_handler *evt)
 				}
 				break;
 			case 1: // Discriminator Data
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 				thread_log << "\nDISC Values" << std::endl;
 #endif
 				// Compare embedded length (data) + CRC to info_length	
@@ -295,24 +307,24 @@ int event_builder(event_handler *evt)
 				}
 				break;
 			case 2: // FEB Data
-#if DEBUG_ME
-				std::cout << "--FEB Values--" << std::endl;
+#if DEBUG_VERBOSE
+				thread_log << "--FEB Values--" << std::endl;
 #endif
 				// Compare embedded length (data) + CRC to info_length				
 				CheckBufferLength(evt->feb_info[5]+2, info_length);
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
-#if DEBUG_ME
-					std::cout << "Decoding Buffer..." << std::endl;
+#if DEBUG_VERBOSE
+					thread_log << "Decoding Buffer..." << std::endl;
 #endif
 					DecodeBuffer(evt, dummy_feb, i, info_length);
 					//?// dummy_feb->ShowValues();
-#if DEBUG_ME
-					std::cout << "Building Bank Header..." << std::endl;
+#if DEBUG_VERBOSE
+					thread_log << "Building Bank Header..." << std::endl;
 #endif
 					// Build the data block header
 					tmp_header = BuildBankHeader(evt, dummy_feb);
-#if DEBUG_ME
-					std::cout << "Making Data Block..." << std::endl;
+#if DEBUG_VERBOSE
+					thread_log << "Making Data Block..." << std::endl;
 #endif
 					// Build event  
 					event->MakeDataBlock(dummy_feb, tmp_header);
@@ -331,7 +343,7 @@ int event_builder(event_handler *evt)
 		}
 	}
 
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 	thread_log << "Completed! Processed Event Data!" << std::endl;
 #endif
 	// Clean up memory.

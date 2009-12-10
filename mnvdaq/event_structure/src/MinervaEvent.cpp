@@ -41,7 +41,7 @@ MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID,
 	source_id |= (feb_no&0x0F) << 0x03; //4 bits for the feb id number
 	source_id |= hit&0x07; //the hit number
 
-#if DEBUG_ME
+#if DEBUG_HEADERS
 	std::cout << "\n->Entering MinervaHeader::Minervaheader for a Data Header..." << std::endl;
 	std::cout << " crateID:    " << crateID << std::endl;
 	std::cout << " crocID:     " << crocID << std::endl;
@@ -59,7 +59,7 @@ MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID,
 	data_bank_header[2] = ((firmware) << 0x08) | (bank&0xFF); //load up the firmware version for the feb
 	data_bank_header[3] = source_id; //and the source information
 	chan_number = (source_id & 0xFF8)>>0x07; //register the "feb number"
-#if DEBUG_ME
+#if DEBUG_HEADERS
 	printf("\tHeader Words:\n");
 	printf("\t  [1]0x%04X [0]0x%04X\n",data_bank_header[1],data_bank_header[0]);
 	printf("\t  [3]0x%04X [2]0x%04X\n",data_bank_header[3],data_bank_header[2]);
@@ -73,7 +73,7 @@ MinervaHeader::MinervaHeader(unsigned char crate)
  *
  * Makes data header for the End-of-Event Record (DAQ header).
  */
-#if DEBUG_ME
+#if DEBUG_HEADERS
 	std::cout << "\n->Entering MinervaHeader::Minervaheader for the DAQ Header..." << std::endl;
 #endif
 	unsigned short source_id = crate; //2 bits for the crate id number? WinDAQ DAQHeader source ID?...
@@ -84,7 +84,7 @@ MinervaHeader::MinervaHeader(unsigned char crate)
 	DAQ_event_header[2] = (3 & 0xFF);       // Bank Type (3 for DAQ Header),
 	DAQ_event_header[2] |= (4 & 0xFF)<<0x8; // Version (4 as of 2009.Dec.05), and
 	DAQ_event_header[3] = source_id;        // the source information.
-#if DEBUG_ME
+#if DEBUG_HEADERS
 	printf("\tHeader Words:\n");
 	printf("\t  [1]0x%04X [0]0x%04X\n",DAQ_event_header[1],DAQ_event_header[0]);
 	printf("\t  [3]0x%04X [2]0x%04X\n",DAQ_event_header[3],DAQ_event_header[2]);
@@ -114,8 +114,8 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
  * \param unsigned int minos minos trigger time
  * \param MinervaHeader *header data bank header
  */
-#if DEBUG_ME
-	std::cout << "Entering MinervaEvent::MinervaEvent..." << std::endl;
+#if DEBUG_HEADERS
+	std::cout << "->Entering MinervaEvent::MinervaEvent... Building a DAQ Header." << std::endl;
 #endif
 	unsigned int event_info_block[12]; //piece up the event information
 
@@ -154,7 +154,7 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
 		buffer_index++;
 	}
 	//InsertData(event_block);
-// #if DEBUG_ME
+// #if DEBUG_HEADERS
 //	std::cout << " DAQ Header Data..." << std::endl;
 //	for (int i = 0; i < 12; i++) {
 //		std::cout << "   event_block[" << i << "] = " << (int)event_block[i] << std::endl;  

@@ -14,7 +14,7 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
  * \param X *frame the data frame
  */
 	int feb_number = frame->GetFEBNumber(); //get the feb number from which this frame came
-	int index      = -1; //the index which holds this feb's firmware
+	// int index      = -1; //the index which holds this feb's firmware  // unused...
 	int length     = evt->event_data[0] + (evt->event_data[1]<<8) + 2; // Data + CRC
 
 	//now we've got everything we need to make up the event headers
@@ -23,8 +23,8 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
 		std::cout << "Should not have passed DAQ block to BuildBlockHeader!" << std::endl;
 		exit (-1);
 	} else {
-#if DEBUG_ME
-		std::cout << "--------BuildBankHeader--------" << std::endl;
+#if DEBUG_VERBOSE
+		std::cout << "  ----------BuildBankHeader----------" << std::endl;
 		std::cout << "  crateID                       : " << evt->feb_info[1] << std::endl;
 		std::cout << "  crocID                        : " << evt->feb_info[2] << std::endl;
 		std::cout << "  chanID                        : " << evt->feb_info[3] << std::endl;
@@ -53,7 +53,7 @@ template <class X> void DecodeBuffer(event_handler *evt, X *frame, int i, int le
  * \param int i byte offset
  * \param int length the message length 
  */
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 	std::cout << "  DecodeBuffer Parameters: " << std::endl;
 	std::cout << "   byte offset: " << i << std::endl;
 	std::cout << "   msg length:  " << length << std::endl;
@@ -63,25 +63,25 @@ template <class X> void DecodeBuffer(event_handler *evt, X *frame, int i, int le
 		frame->message[j] = 0;
 	}
 	for (int j = 0; j < length; j++) {
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 		std::cout << "    byte: " << j+i << std::endl;
 #endif
 		unsigned char tmp = evt->event_data[(j+i)];
 		frame->message[j]=tmp; //copy to a local buffer for processing */
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 		std::cout << "    frame->message: " << (int)frame->message[j] << std::endl;
 		std::cout << "              data? " << (int)tmp << std::endl;
 #endif 
 	}
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 	std::cout << "    Loaded Message" << std::endl;
 #endif
 	frame->CheckForErrors(); //check for header errors
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 	std::cout << "    Checked for Errors, going to DecodeHeader" << std::endl;
 #endif
 	frame->DecodeHeader(); //find feb number in header
-#if DEBUG_ME
+#if DEBUG_VERBOSE
 	std::cout << "  Done Decoding the Buffer" << std::endl;
 	//Need to set initialized for FPGA's...//frame->DecodeRegisterValues(length);
 #endif

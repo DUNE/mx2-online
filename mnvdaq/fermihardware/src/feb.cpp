@@ -380,6 +380,9 @@ void feb::MakeMessage()
 	// This finishes the outgoing message.
 }
 
+
+// TODO - ? Maybe... it isn't consistent that the FPGA frame function does not print the 
+// register values while the discr and adc frame decode functions do... 
 void feb::DecodeRegisterValues(int buffersize) 
 {
 /*! \fn********************************************************************************
@@ -417,6 +420,9 @@ void feb::DecodeRegisterValues(int buffersize)
 if (initialized) {
 	/* have the frame check for status errors */
 	int frameError = this->CheckForErrors();
+#if DEBUG_VERBOSE
+	std::cout << "\tfeb::DecodeRegisterValues CheckForErrors value = " << frameError << std::endl;
+#endif
 
 	if (!frameError) {
 		int startByte = 2 + MinHeaderLength; //this should be byte 11

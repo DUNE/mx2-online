@@ -115,7 +115,7 @@ bool Frames::CheckForErrors()
 	word = FrameStart; flag = Direction; //check direction
 	errors[0] = !(message[word] & flag); 
 #if DEBUG_VERBOSE
-	std::cout<<"\tCheckForErrors: Direction: "<<errors[0]<<std::endl;
+	std::cout << "\tCheckForErrors: Direction: " << errors[0] << std::endl;
 #endif
 	if (errors[0]) {
 		error = true; std::cout<<"CheckForErrors: Direction: "<<errors[0]<<std::endl;
@@ -124,7 +124,7 @@ bool Frames::CheckForErrors()
 	word = DeviceStatus; flag = DeviceOK; //check status
 	errors[1] = !(message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"\tCheckForErrors: DeviceOK: "<<errors[1]<<std::endl;
+	std::cout << "\tCheckForErrors: DeviceOK: " << errors[1] << std::endl;
 #endif
 	if (errors[1]) {
 		error = true; std::cout<<"CheckForErrors: DeviceOK: "<<errors[1]<<std::endl;
@@ -133,7 +133,7 @@ bool Frames::CheckForErrors()
 	word = DeviceStatus; flag = FunctionOK; //check execution status
 	errors[2] = !(message[word]&flag);
 #if DEBUG_VERBOSE
-	std::cout<<"\tCheckForErrors: FunctionOK: "<<errors[2]<<std::endl;
+	std::cout << "\tCheckForErrors: FunctionOK: " << errors[2] << std::endl;
 #endif
 	if (errors[2]) {
 		error = true; std::cout<<"CheckForErrors: FunctionOK: "<<errors[2]<<std::endl;
@@ -142,7 +142,7 @@ bool Frames::CheckForErrors()
 	word = FrameStatus; flag = CRCOK; //check CRC error bit
 	errors[3] = !(message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"\tCheckForErrors: CRCOK: "<<errors[3]<<std::endl;
+	std::cout << "\tCheckForErrors: CRCOK: " << errors[3] << std::endl;
 #endif
 	if (errors[3]) {
 		error = true; std::cout<<"CheckForErrors: CRCOK: "<<errors[3]<<std::endl;
@@ -151,7 +151,7 @@ bool Frames::CheckForErrors()
 	word = FrameStatus; flag = EndHeader; //message ended properly
 	errors[4] = !(message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"\tCheckForErrors: EndHeader: "<<errors[4]<<std::endl;
+	std::cout << "\tCheckForErrors: EndHeader: " << errors[4] << std::endl;
 #endif
 	if (errors[4]) {
 		error = true; std::cout<<"CheckForErrors: EndHeader: "<<errors[4]<<std::endl;
@@ -160,7 +160,7 @@ bool Frames::CheckForErrors()
 	word = FrameStatus; flag = MaxLen; //message exceeded maximum message length
 	errors[5] = (message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"\tCheckForErrors: MaxLen: "<<errors[5]<<std::endl;
+	std::cout << "\tCheckForErrors: MaxLen: " << errors[5] << std::endl;
 #endif
 	if (errors[5]) {
 		error = true; std::cout<<"CheckForErrors: MaxLen: "<<errors[5]<<std::endl;
@@ -169,7 +169,7 @@ bool Frames::CheckForErrors()
 	word = FrameStatus; flag = SecondStart;
 	errors[6] = (message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"\tCheckForErrors: SecondStart: "<<errors[6]<<std::endl;
+	std::cout << "\tCheckForErrors: SecondStart: " << errors[6] << std::endl;
 #endif
 	if (errors[6]) {
 		error = true; std::cout<<"CheckForErrors: SecondStart: "<<errors[6]<<std::endl;
@@ -178,13 +178,13 @@ bool Frames::CheckForErrors()
 	word = FrameStatus; flag = NAHeader;
 	errors[7] = (message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"\tCheckForErrors: NAHeader: "<<errors[7]<<std::endl;
+	std::cout << "\tCheckForErrors: NAHeader: " << errors[7] << std::endl;
 #endif
 	if (errors[7]) {
 		error = true; std::cout<<"CheckForErrors: NAHeader: "<<errors[7]<<std::endl;
 	}
 
-	return error; //return the error value
+	return error; // true if *any* error was found!
 }
 
 
