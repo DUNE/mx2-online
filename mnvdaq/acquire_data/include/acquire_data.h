@@ -1,5 +1,6 @@
 #ifndef acquire_data_h
 #define acquire_data_h
+#include "MinervaDAQtypes.h"
 #include "controller.h" 
 #include "adctdc.h" // This class isn't included in the contoller, but we need it for reads & writes.
 #include "acquire.h" 

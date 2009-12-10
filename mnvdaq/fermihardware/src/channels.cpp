@@ -82,93 +82,95 @@ int channels::DecodeStatusMessage()
 /*! \fn 
  * This function decodes the status message for this channel.
  */
+	// TODO - Actually, we don't want this function returning anything or exiting.  Error 
+	// handling decisions should be made in the function that calls this one...
 	bool error = false;
 
 	StatusBits checkValue = MessageSent; 
-	error = ( (channelStatus & checkValue)!=0 ); //bit should be HIGH
+	error = ( (channelStatus & checkValue)!=0 ); // bit should be HIGH
 	try {
 #if DEBUG_VERBOSE
-		std::cout << "Message Sent? " << error << std::endl; 
+		std::cout << "\tMessage Sent? " << error << std::endl; 
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
 #if DEBUG_VERBOSE
-		std::cout << "Message was not sent." << std::endl;
+		std::cout << "\tMessage was not sent." << std::endl;
 #endif
-		return -103; //if the message was not send, stop execution
+		// return -103; // Do not want to return on 0x3700...
 	}
 	
 	checkValue = MessageReceived;
-	error = ( (channelStatus & checkValue)!=0 ); //bit should be HIGH
+	error = ( (channelStatus & checkValue)!=0 ); // bit should be HIGH
 	try {
 #if DEBUG_VERBOSE
-		std::cout << "Message Received? " << error << std::endl; 
+		std::cout << "\tMessage Received? " << error << std::endl; 
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
 #if DEBUG_VERBOSE
-		std::cout << "Message was not received." << std::endl;
+		std::cout << "\tMessage was not received." << std::endl;
 #endif
-		return -104; 
+		// return -104; // Do not want to return on 0x3700...
 	}
 
 	checkValue = CRCError;
-	error = ( (channelStatus & checkValue)==0 ); //bit should be LOW
+	error = ( (channelStatus & checkValue)==0 ); // bit should be LOW
 	try  {
 #if DEBUG_VERBOSE
-		std::cout << "CRC Error? " << error << std::endl; 
+		std::cout << "\tCRC Error? " << !error << std::endl; 
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
-		std::cout << "CRC Error!" << std::endl;
+		std::cout << "\tCRC Error!" << std::endl;
 		exit(-105); 
 	}
 	
 	checkValue = TimeoutError;
-	error = ( (channelStatus & checkValue)==0 ); //bit should be LOW
+	error = ( (channelStatus & checkValue)==0 ); // bit should be LOW
 	try  {
 #if DEBUG_VERBOSE
-		std::cout << "Timeout Error? " << error << std::endl;
+		std::cout << "\tTimeout Error? " << !error << std::endl;
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
-		std::cout << "Timeout Error!" << std::endl;
+		std::cout << "\tTimeout Error!" << std::endl;
 		exit(-106); 
 	}
 	
 	checkValue = FIFONotEmpty;
-	error = ( (channelStatus & checkValue)==0 ); //Check FIFO buffer status; bit should be LOW
+	error = ( (channelStatus & checkValue)==0 ); // Check FIFO buffer status; bit should be LOW
 	try  {
 #if DEBUG_VERBOSE
-		std::cout << "FIFO Empty? " << error << std::endl;
+		std::cout << "\tFIFO Empty? " << !error << std::endl;
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
-		std::cout << "FIFO Not Empty!" << std::endl;
+		std::cout << "\tFIFO Not Empty!" << std::endl;
 		exit(-107); 
 	}
 
 	checkValue = FIFOFull;
-	error = ( (channelStatus & checkValue)==0 ); //Check FIFO buffer status; bit should be LOW
+	error = ( (channelStatus & checkValue)==0 ); // Check FIFO buffer status; bit should be LOW
 	try  {
 #if DEBUG_VERBOSE
-		std::cout << "FIFO Full? " << error << std::endl;
+		std::cout << "\tFIFO Full? " << !error << std::endl;
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
-		std::cout << "FIFO Full!" << std::endl;
+		std::cout << "\tFIFO Full!" << std::endl;
 		exit(-108); 
 	}
 
 	checkValue = DPMFull;
-	error = ( (channelStatus & checkValue)==0 ); //Check DPM status; bit should be LOW
+	error = ( (channelStatus & checkValue)==0 ); // Check DPM status; bit should be LOW
 	try  {
 #if DEBUG_VERBOSE
-		std::cout << "DPM Full? " << error << std::endl;
+		std::cout << "\tDPM Full? " << !error << std::endl;
 #endif
 		if (!error) throw error;
 	} catch (bool e) {
-		std::cout << "DPM Full!" << std::endl;
+		std::cout << "\tDPM Full!" << std::endl;
 		exit(-109); 
 	}
 	
@@ -185,17 +187,17 @@ void channels::SetBuffer(unsigned char *b) {
  */
 
 #if DEBUG_VERBOSE
-	std::cout << "Setting Buffer for Channel " << this->GetChannelNumber() << std::endl;
+	std::cout << "     Setting Buffer for Channel " << this->GetChannelNumber() << std::endl;
 #endif
 	buffer = new unsigned char [(int)dpmPointer];
 	for (int i=0;i<(int)dpmPointer;i++) {
 		buffer[i]=b[i];
 #if DEBUG_VERBOSE
-		std::cout << "  SetBuffer: " << buffer[i] << " i: " << i << std::endl;
+		printf("       SetBuffer: buffer[%03d] = 0x%02X\n",i,buffer[i]);
 #endif
 	}
 #if DEBUG_VERBOSE
-	std::cout << "Done with SetBuffer... Returning..." << std::endl;
+	std::cout << "     Done with SetBuffer... Returning..." << std::endl;
 #endif
 	return; 
 }

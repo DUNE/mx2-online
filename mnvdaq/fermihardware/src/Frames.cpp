@@ -115,7 +115,7 @@ bool Frames::CheckForErrors()
 	word = FrameStart; flag = Direction; //check direction
 	errors[0] = !(message[word] & flag); 
 #if DEBUG_VERBOSE
-	std::cout<<"CheckForErrors: Direction: "<<errors[0]<<std::endl;
+	std::cout<<"\tCheckForErrors: Direction: "<<errors[0]<<std::endl;
 #endif
 	if (errors[0]) {
 		error = true; std::cout<<"CheckForErrors: Direction: "<<errors[0]<<std::endl;
@@ -124,7 +124,7 @@ bool Frames::CheckForErrors()
 	word = DeviceStatus; flag = DeviceOK; //check status
 	errors[1] = !(message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"CheckForErrors: DeviceOK: "<<errors[1]<<std::endl;
+	std::cout<<"\tCheckForErrors: DeviceOK: "<<errors[1]<<std::endl;
 #endif
 	if (errors[1]) {
 		error = true; std::cout<<"CheckForErrors: DeviceOK: "<<errors[1]<<std::endl;
@@ -133,7 +133,7 @@ bool Frames::CheckForErrors()
 	word = DeviceStatus; flag = FunctionOK; //check execution status
 	errors[2] = !(message[word]&flag);
 #if DEBUG_VERBOSE
-	std::cout<<"CheckForErrors: FunctionOK: "<<errors[2]<<std::endl;
+	std::cout<<"\tCheckForErrors: FunctionOK: "<<errors[2]<<std::endl;
 #endif
 	if (errors[2]) {
 		error = true; std::cout<<"CheckForErrors: FunctionOK: "<<errors[2]<<std::endl;
@@ -142,7 +142,7 @@ bool Frames::CheckForErrors()
 	word = FrameStatus; flag = CRCOK; //check CRC error bit
 	errors[3] = !(message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"CheckForErrors: CRCOK: "<<errors[3]<<std::endl;
+	std::cout<<"\tCheckForErrors: CRCOK: "<<errors[3]<<std::endl;
 #endif
 	if (errors[3]) {
 		error = true; std::cout<<"CheckForErrors: CRCOK: "<<errors[3]<<std::endl;
@@ -151,7 +151,7 @@ bool Frames::CheckForErrors()
 	word = FrameStatus; flag = EndHeader; //message ended properly
 	errors[4] = !(message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"CheckForErrors: EndHeader: "<<errors[4]<<std::endl;
+	std::cout<<"\tCheckForErrors: EndHeader: "<<errors[4]<<std::endl;
 #endif
 	if (errors[4]) {
 		error = true; std::cout<<"CheckForErrors: EndHeader: "<<errors[4]<<std::endl;
@@ -160,7 +160,7 @@ bool Frames::CheckForErrors()
 	word = FrameStatus; flag = MaxLen; //message exceeded maximum message length
 	errors[5] = (message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"CheckForErrors: MaxLen: "<<errors[5]<<std::endl;
+	std::cout<<"\tCheckForErrors: MaxLen: "<<errors[5]<<std::endl;
 #endif
 	if (errors[5]) {
 		error = true; std::cout<<"CheckForErrors: MaxLen: "<<errors[5]<<std::endl;
@@ -169,7 +169,7 @@ bool Frames::CheckForErrors()
 	word = FrameStatus; flag = SecondStart;
 	errors[6] = (message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"CheckForErrors: SecondStart: "<<errors[6]<<std::endl;
+	std::cout<<"\tCheckForErrors: SecondStart: "<<errors[6]<<std::endl;
 #endif
 	if (errors[6]) {
 		error = true; std::cout<<"CheckForErrors: SecondStart: "<<errors[6]<<std::endl;
@@ -178,7 +178,7 @@ bool Frames::CheckForErrors()
 	word = FrameStatus; flag = NAHeader;
 	errors[7] = (message[word] & flag);
 #if DEBUG_VERBOSE
-	std::cout<<"CheckForErrors: NAHeader: "<<errors[7]<<std::endl;
+	std::cout<<"\tCheckForErrors: NAHeader: "<<errors[7]<<std::endl;
 #endif
 	if (errors[7]) {
 		error = true; std::cout<<"CheckForErrors: NAHeader: "<<errors[7]<<std::endl;
@@ -197,27 +197,26 @@ void Frames::DecodeHeader()
  * note:  these should be decoded using the enumerated types in 
  * FrameTypes.h 
  */
-
+#if DEBUG_VERBOSE
+	std::cout << " Entering Frames::DecodeHeader..." << std::endl;
+#endif
 	ResponseWords word;
 
 	word = FrameStart; 
-	febNumber[0]=(message[word]&0x0F); //extract the feb board number from which this message came
+	febNumber[0] = (message[word]&0x0F); //extract the feb board number from which this message came
 #if DEBUG_VERBOSE
-	// log_file.setf(std::ios::hex,std::ios::basefield);
-	std::cout<<"message at framestart: "<<(int)message[word]<<std::endl;
-	// log_file.setf(std::ios::dec,std::ios::basefield);
+	std::cout << "  message at framestart: " << (int)message[word] << std::endl;
 #endif
-	broadcastCommand[0]=(message[word]&0xF0); //extract the broadcast command
-	messageDirection[0]=(message[word]&0x80); //get the message direction
+	broadcastCommand[0] = (message[word]&0xF0); //extract the broadcast command
+	messageDirection[0] = (message[word]&0x80); //get the message direction
 #if DEBUG_VERBOSE
-	// log_file.setf(std::ios::hex,std::ios::basefield);
-	std::cout<<"direction: "<<(int)(message[word]&0x80)<<std::endl;
-	// log_file.setf(std::ios::dec,std::ios::basefield);
+	std::cout << "  direction: " << (int)(message[word]&0x80) << std::endl;
 #endif
 	word = DeviceStatus;
-	deviceFunction[0]=(message[word]&0x0F); //extract the device function executed 
-	targetDevice[0]=(message[word]&0xF0); //extract the device which responded
+	deviceFunction[0] = (message[word]&0x0F); // extract the device function executed 
+	targetDevice[0]   = (message[word]&0xF0); // extract the device which responded
 }
+
 
 void Frames::DecodeRegisterValues(int a) 
 {

@@ -39,9 +39,9 @@ struct event_handler { //the structure to hold the data
 	bool quit, new_event, done; /*!<we need some status info */
 	unsigned int run_info[5]; /*!<0: detector, 1: configuration, 2: run number, 3: sub-run number, 4: trigger type */
 	unsigned int gate_info[5];  /*!< 0: g_gate, 1: gate, 2: trig_time, 3: error, 4: minos; gate information */
-	unsigned int feb_info[9]; /*!<0: link_no, 1: crate_no, 2: croc_no, 3: chan_no, 4: bank 
-	5: buffer length, 6: feb number, 7: feb firmware, 8: hits; //hardware info & data type */
-	unsigned char event_data[FEB_HITS_SIZE]; /*!<the data we're going to process */
+	unsigned int feb_info[9]; /*!<0: link_no, 1: crate_no, 2: croc_no, 3: chan_no, 4: bank, 5: buffer length, 
+                                      6: feb number, 7: feb firmware, 8: hits; //hardware info & data type */
+	unsigned char event_data[FEB_DISC_SIZE]; /*!<the data we're going to process - largest possible frame? */
 }; 
 
 /*! a helper function which sorts data into the event */

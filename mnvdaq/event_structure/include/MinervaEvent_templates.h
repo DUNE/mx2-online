@@ -33,7 +33,7 @@ template <class X> void MinervaEvent::MakeDataBlock(X *frame, MinervaHeader *hea
 			std::cout << " Total length:    " << 8 + frame->message[0] + (frame->message[1]<<8) << std::endl;
 #endif
 			// buffer_size = FEB_HITS_SIZE;
-			buffer_size = 8 + frame->message[0] + (frame->message[1]<<8);
+			buffer_size = 8 + frame->message[0] + (frame->message[1]<<8) + 2; // keep CRC?
 			break;
 		case 1: //DISC Buffer
 #if DEBUG_ME
@@ -52,11 +52,14 @@ template <class X> void MinervaEvent::MakeDataBlock(X *frame, MinervaHeader *hea
 			std::cout << " Embedded length: " << frame->message[0] + (frame->message[1]<<8) << std::endl;
 			std::cout << " Total length:    " << 8 + frame->message[0] + (frame->message[1]<<8) << std::endl;
 #endif
-			buffer_size = FEB_INFO_SIZE;
-			// buffer_size = 8 + frame->message[0] + (frame->message[1]<<8); // TODO, test this!
+			// buffer_size = FEB_INFO_SIZE;
+			buffer_size = 8 + frame->message[0] + (frame->message[1]<<8); 
 			break;
 		case 3:
 			std::cout<<"Should not have sent a DAQ bank here!"<<std::endl;
+			exit (-1);
+		case 4:
+			std::cout << "TriP programming frames not supported in the data stream yet!" << std::endl;
 			exit (-1);
 	}
 

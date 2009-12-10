@@ -75,7 +75,7 @@ void adc::DecodeRegisterValues(int a)
 			// -> Throw exception here.
 		return;
 	}
-	if ( ml != ADCFrameLength ) {
+	if ( ml != ADCFrameLength ) { 
 		std::cout << "ADC Frame length mismatch!" << std::endl;
 		// -> Throw exception here.
 		return;		

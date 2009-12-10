@@ -64,8 +64,8 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/*      Initialize some execution status variables                               */
 	/*********************************************************************************/
-	bool success = false; //initialize the success state of the DAQ on exit
-	int record_gates = -1;
+	bool success             = false; //initialize the success state of the DAQ on exit
+	int record_gates         = -1;
 	RunningModes runningMode = Pedestal;
 
 	/*********************************************************************************/
@@ -237,9 +237,25 @@ int main(int argc, char *argv[])
 	/*                                                                               */
 	/*  First thing's first:  Read in the event status file which contains things    */
 	/*  like the global event number and run number to be used.                      */
+	/*  Recall the event_handler definition...
+		run_info: 
+			0: detector, 
+			1: configuration, 
+			2: run number, 
+			3: sub-run number, 
+			4: trigger type 
+ 		gate_info: 
+ 			0: g_gate, 
+			1: gate, 
+			2: trig_time, 
+			3: error, 
+			4: minos gate information                                        */
 	/*********************************************************************************/
 	ifstream run_status("run_status.dat");
 	try {
+		// We assume the run_status is formatted as: gate run-number sub-run-number
+		// TODO - Format run_status appropriately and/or pass the missing data via 
+		//        the command line.
 		if (!run_status) throw (!run_status);
 		run_status>>event_data.gate_info[0]>>event_data.run_info[2]>>event_data.run_info[3];
 		event_data.run_info[0]=event_data.run_info[1]=event_data.run_info[4]=0;
@@ -250,20 +266,18 @@ int main(int argc, char *argv[])
 	}
 
 	/*********************************************************************************/
-	/*  now that we know the run number and global event number                      */
-	/*  we can set about starting up an event builder.                               */
+	/*  With run metadata in hand we can set about starting up an event builder...   */
 	/*********************************************************************************/
 #if THREAD_ME
 	electronics_init_thread.join(); //wait for the electronics initialization to finish 
 #endif
 
 	// Get the controller object created during InitializeDaq.
-	// --> Should be keyed by controller id!
+	// TODO - Should be keyed by controller id?  May not matter...
 	controller *currentController = daq->GetController(); 
 
 	/*********************************************************************************/
-	/*  At this point we are now set up and are ready to start the event acquiring   */
-	/*  procedures.                                                                  */
+	/*  At this point we are now set up and are ready to start event acquistion.     */
 	/*********************************************************************************/
 #if DEBUG_ME
 	cout << "\nGetting ready to start taking data!\n" << endl;
@@ -310,8 +324,8 @@ int main(int argc, char *argv[])
 		/*                                  3: chan_no, 4: bank 5: buffer length          */
 		/*                                  6: feb number, 7: feb firmware, 8: hits       */
 		/**********************************************************************************/
-		event_data.gate_info[1]=gate; //record gate number
-		event_data.gate_info[2]=event_data.gate_info[3]=event_data.gate_info[4]=0;
+		event_data.gate_info[1] = gate; //record gate number
+		event_data.gate_info[2] = event_data.gate_info[3] = event_data.gate_info[4] = 0;
 		for (int i=0;i<9;i++) {
 			event_data.feb_info[i] = 0; //initialize feb information block 
 		}
@@ -415,15 +429,15 @@ int main(int argc, char *argv[])
 		/*   And the data taking threads                                                  */
 		/**********************************************************************************/
 #if DEBUG_THREAD
-		cout<<"Getting ready to join threads"<<endl;
+		cout << "Getting ready to join threads..." << endl;
 #endif
 		for (int i=0;i<thread_count;i++) {
 #if DEBUG_THREAD
-			std::cout<<i<<endl;
+			std::cout << i << endl;
 #endif
 			data_threads[i]->join();
 #if DEBUG_THREAD
-			cout<<"thread joined"<<endl;
+			cout << "Thread joined!" << endl;
 #endif
 		}
 #endif
@@ -432,7 +446,7 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		/*  re-enable the IRQ for the next trigger                                        */
 		/**********************************************************************************/
-		daq->ResetGlobalIRQEnable(); //re-enable the IRQ for the next gate
+		daq->ResetGlobalIRQEnable(); // TODO - Consider moving this to the top of the loop.
 
 #if SINGLE_PC||MASTER
 		/**********************************************************************************/
@@ -443,12 +457,17 @@ int main(int argc, char *argv[])
 		//Build DAQ event bank--we should have collected up all of the signals by now
 		//Get Trigger Time, Timing Violation Error (obsolete), MINOS SGATE
 		int bank = 3; //DAQ Data Bank
-		int error, minos, trig_time; error=minos=trig_time=0; //hold that thought...
+		int error, minos, trig_time; error = minos = trig_time = 0; //hold that thought...
 		int detector, configuration, trigger; detector = configuration = trigger = 0;
 
-		event_data.run_info[0]=detector; event_data.run_info[1]=configuration; event_data.run_info[4]=trigger;
-		event_data.feb_info[4]=bank; event_data.feb_info[1]=daq->GetController()->GetID();
-		event_data.gate_info[3]=trig_time; event_data.gate_info[3]=error; event_data.gate_info[4]=minos;
+		event_data.run_info[0]  = detector; 
+		event_data.run_info[1]  = configuration; 
+		event_data.run_info[4]  = trigger;
+		event_data.feb_info[1]  = daq->GetController()->GetID();
+		event_data.feb_info[4]  = bank; 
+		event_data.gate_info[3] = trig_time; 
+		event_data.gate_info[3] = error; 
+		event_data.gate_info[4] = minos;
 
 #if DEBUG_ME
 		cout << "Contacting the EventBuilder from Main." << endl;
@@ -487,7 +506,7 @@ int main(int argc, char *argv[])
 #endif
 		// Contact event builder service.
 #if KEEP_DATA
-		daq->ContactEventBuilder(&event_data,-1,attach, sys_id);
+		daq->ContactEventBuilder(&event_data, -1, attach, sys_id);
 #endif
 
 #if RECORD_EVENT
@@ -573,16 +592,13 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
  *  \param attach, the ET attachemnt to which data will be stored
  *  \param sys_id, the ET system handle
  */
-
-	/**********************************************************************************/
-	/*  the function which interfaces with the data acquire functions to              */
-	/*  execute the data acquisition loop                                             */
-	/**********************************************************************************/
+	/****************************************************************************************/
+	/* This function interfaces with the acquire functions to execute the acquisition loop. */
+	/****************************************************************************************/
 #if TIME_ME
 	struct timeval start_time, stop_time;
 	gettimeofday(&start_time, NULL);
 #endif
-
 	/**********************************************************************************/
 	/*      Files for monitoring acquisition                                          */
 	/**********************************************************************************/
@@ -605,7 +621,7 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 	/*   a flag for data acquisition status                                           */
 	/**********************************************************************************/
 	bool data_taken = true; //a flag to let us know that we have successfully
-							//serviced this channel (the functions return "0" if they are successful...)
+				//serviced this channel (the functions return "0" if they are successful...)
 
 	/**********************************************************************************/
 	/*   get the FEB list which belongs to this channel                               */
@@ -615,8 +631,8 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 	list<feb*>::iterator feb; //we want to loop over them when we get the chance...
 
 #if DEBUG_ME
-	data_monitor<<"is data ready? "<<data_ready<<std::endl;
-	data_monitor<<"bank? "<<evt->feb_info[4]<<std::endl;
+	data_monitor << "Is data ready? " << data_ready << std::endl;
+	data_monitor << " Bank Type?    " << evt->feb_info[4] << std::endl;
 #endif
 
 	/**********************************************************************************/

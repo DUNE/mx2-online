@@ -12,11 +12,10 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
  *
  * \param event_handler *evt a copy of the event handler structure
  * \param X *frame the data frame
- *
  */
 	int feb_number = frame->GetFEBNumber(); //get the feb number from which this frame came
-	int index = -1; //the index which holds this feb's firmware
-	int length = evt->event_data[0] + (evt->event_data[1]<<8);
+	int index      = -1; //the index which holds this feb's firmware
+	int length     = evt->event_data[0] + (evt->event_data[1]<<8);
 
 	//now we've got everything we need to make up the event headers
 	MinervaHeader *tmp_header; //declare a new data bank header
@@ -24,24 +23,8 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
 		std::cout << "Should not have passed DAQ block to BuildBlockHeader!" << std::endl;
 		exit (-1);
 	} else {
-		/*
-		switch (evt->feb_info[4]) {
-			case 0:
-				length = FEB_HITS_SIZE-8;
-				break;
-			case 1:
-				length = FEB_DISC_SIZE-8;
-				break;
-			case 2:
-				length = FEB_INFO_SIZE-8;
-				break;
-			default:
-				std::cout << "Something went wrong in BuildBankHeader!" << std::endl;
-				exit(-1);
-		}
-		*/
 #if DEBUG_ME
-		std::cout << "--------Event Builder--------" << std::endl;
+		std::cout << "--------BuildBankHeader--------" << std::endl;
 		std::cout << "  crateID                       : " << evt->feb_info[1] << std::endl;
 		std::cout << "  crocID                        : " << evt->feb_info[2] << std::endl;
 		std::cout << "  chanID                        : " << evt->feb_info[3] << std::endl;
@@ -53,7 +36,7 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
 #endif
 		tmp_header = new MinervaHeader(evt->feb_info[1], evt->feb_info[2], evt->feb_info[3],
 			evt->feb_info[4], feb_number, evt->feb_info[7],
-			evt->feb_info[8], length); //make up a regular data block header
+			evt->feb_info[8], length); // Compose a regular data block header.
 	}
 	return tmp_header; //return the header
 };
@@ -71,36 +54,36 @@ template <class X> void DecodeBuffer(event_handler *evt, X *frame, int i, int le
  * \param int length the message length 
  */
 #if DEBUG_ME
-	std::cout << "DecodeBuffer Parameters: " << std::endl;
-	std::cout << " i: " << i << std::endl;
-	std::cout << " length: " << length << std::endl;
+	std::cout << "  DecodeBuffer Parameters: " << std::endl;
+	std::cout << "   byte offset: " << i << std::endl;
+	std::cout << "   msg length:  " << length << std::endl;
 #endif
 	frame->message = new unsigned char [length];
-	for (int j=0;j<length;j++) {
-		frame->message[j]=0;
+	for (int j = 0; j < length;j ++) {
+		frame->message[j] = 0;
 	}
-	for (int j=0;j<length;j++) {
+	for (int j = 0; j < length; j++) {
 #if DEBUG_ME
-		std::cout << "byte: " << j+i << std::endl;
+		std::cout << "    byte: " << j+i << std::endl;
 #endif
 		unsigned char tmp = evt->event_data[(j+i)];
 		frame->message[j]=tmp; //copy to a local buffer for processing */
 #if DEBUG_ME
-		std::cout << "frame->message: " << (int)frame->message[j] << std::endl;
-		std::cout << "data? " << (int)tmp << std::endl;
+		std::cout << "    frame->message: " << (int)frame->message[j] << std::endl;
+		std::cout << "              data? " << (int)tmp << std::endl;
 #endif 
 	}
 #if DEBUG_ME
-	std::cout << "Loaded Message" << std::endl;
+	std::cout << "    Loaded Message" << std::endl;
 #endif
 	frame->CheckForErrors(); //check for header errors
 #if DEBUG_ME
-	std::cout << "Checked for Errors, going to DecodeHeader" << std::endl;
+	std::cout << "    Checked for Errors, going to DecodeHeader" << std::endl;
 #endif
 	frame->DecodeHeader(); //find feb number in header
 #if DEBUG_ME
-	std::cout << "Done Decoding the Buffer" << std::endl;
-	frame->DecodeRegisterValues(length);
+	std::cout << "  Done Decoding the Buffer" << std::endl;
+	//Need to set initialized for FPGA's...//frame->DecodeRegisterValues(length);
 #endif
 };
 

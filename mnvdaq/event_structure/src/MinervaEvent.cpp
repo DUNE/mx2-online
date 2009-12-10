@@ -42,15 +42,15 @@ MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID,
 	source_id |= hit&0x07; //the hit number
 
 #if DEBUG_ME
-	std::cout << "\n->Entering MinervaHeader::Minervaheader..." << std::endl;
-	std::cout << " crateID:    "<<crateID<<std::endl;
-	std::cout << " crocID:     "<<crocID<<std::endl;
-	std::cout << " chanID:     "<<chanID<<std::endl;
-	std::cout << " bank:       "<<bank<<std::endl;
-	std::cout << " feb_number: "<<feb_no<<std::endl;
-	std::cout << " firmware:   "<<firmware<<std::endl;
-	std::cout << " hit:        "<<hit<<std::endl;
-	std::cout << " length:     "<<length<<std::endl;
+	std::cout << "\n->Entering MinervaHeader::Minervaheader for a Data Header..." << std::endl;
+	std::cout << " crateID:    " << crateID << std::endl;
+	std::cout << " crocID:     " << crocID << std::endl;
+	std::cout << " chanID:     " << chanID << std::endl;
+	std::cout << " bank:       " << bank << std::endl;
+	std::cout << " feb_number: " << feb_no << std::endl;
+	std::cout << " firmware:   " << firmware << std::endl;
+	std::cout << " hit:        " << hit << std::endl;
+	std::cout << " length:     " << length << std::endl;
 #endif
 
 	unsigned short magic_pattern = 0xCBCB; 
@@ -59,6 +59,11 @@ MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID,
 	data_bank_header[2] = ((firmware) << 0x08) | (bank&0xFF); //load up the firmware version for the feb
 	data_bank_header[3] = source_id; //and the source information
 	chan_number = (source_id & 0xFF8)>>0x07; //register the "feb number"
+#if DEBUG_ME
+	printf("\tHeader Words:\n");
+	printf("\t  [1]0x%04X [0]0x%04X\n",data_bank_header[1],data_bank_header[0]);
+	printf("\t  [3]0x%04X [2]0x%04X\n",data_bank_header[3],data_bank_header[2]);
+#endif
 }
 
 
@@ -66,17 +71,24 @@ MinervaHeader::MinervaHeader(unsigned char crate)
 {
 /*! \fn 
  *
- * Makes data header for the End-of-Event Record (DAQ header)
- *
+ * Makes data header for the End-of-Event Record (DAQ header).
  */
+#if DEBUG_ME
+	std::cout << "\n->Entering MinervaHeader::Minervaheader for the DAQ Header..." << std::endl;
+#endif
 	unsigned short source_id = crate; //2 bits for the crate id number? WinDAQ DAQHeader source ID?...
 	unsigned short magic_pattern = 0xCBCB; 
 
-	DAQ_event_header[0] =  magic_pattern;   // add: the magic pattern to the header,
+	DAQ_event_header[0] = magic_pattern;    // add: the magic pattern to the header,
 	DAQ_event_header[1] = 48;               // the length in bytes of the DAQ header,
 	DAQ_event_header[2] = (3 & 0xFF);       // Bank Type (3 for DAQ Header),
 	DAQ_event_header[2] |= (4 & 0xFF)<<0x8; // Version (4 as of 2009.Dec.05), and
 	DAQ_event_header[3] = source_id;        // the source information.
+#if DEBUG_ME
+	printf("\tHeader Words:\n");
+	printf("\t  [1]0x%04X [0]0x%04X\n",DAQ_event_header[1],DAQ_event_header[0]);
+	printf("\t  [3]0x%04X [2]0x%04X\n",DAQ_event_header[3],DAQ_event_header[2]);
+#endif
 }
 
 
@@ -88,8 +100,7 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
 {
 /*! \fn 
  *
- * Constructor for MinervaEvent event model data block 
- * This is the "DAQ Header."
+ * Constructor for MinervaEvent event model data block.  This is the "DAQ Header."
  *
  * \param int det detector type
  * \param int config detector configuration
@@ -102,9 +113,10 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
  * \param unsigned short error error flag
  * \param unsigned int minos minos trigger time
  * \param MinervaHeader *header data bank header
- *
  */
-	int buffer_index = 0;
+#if DEBUG_ME
+	std::cout << "Entering MinervaEvent::MinervaEvent..." << std::endl;
+#endif
 	unsigned int event_info_block[12]; //piece up the event information
 
 	event_info_block[0] = det & 0xFF;
@@ -113,19 +125,20 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
 	event_info_block[1] = run & 0xFFFFFFFF;
 	event_info_block[2] = sub_run & 0xFFFFFFFF;
 	event_info_block[3] = trig & 0xFFFFFFFF;
-	event_info_block[4] = g_gate & 0xFFFFFFFF; //the "global gate"
+	event_info_block[4] = g_gate & 0xFFFFFFFF; // the "global gate"; TODO - fix this!... doesn't incrememnt!
 	event_info_block[5] = 0; // TODO, Fix this!  Global gate is 64 bits!
 	event_info_block[6] = gate & 0xFFFFFFFF; //the gate number
-	event_info_block[7] = 0; // TODO, Fix this!  Gate is also 64 bits!  (Well, maybe don't fix this, ha.)
+	event_info_block[7] = 0; // TODO, Fix this!  Gate is also 64 bits! 
 	event_info_block[8] = trig_time & 0xFFFFFFFF; //the gate time
 	event_info_block[9] = 0; // TODO, Fix this!  GPS Time Stamp is 64 bits!
 	event_info_block[10] =  error & 0xFFFF; //the error bytes
 	event_info_block[10] |= 0<<0x10; //2 reserved bytes
 	event_info_block[11] = minos & 0xFFFFFFFF; //the minos gate
-
-	for (int i=0;i<12;i++) {
-		buffer_index = i+8; // 8 bytes for the MINERvA Header.  
-                // We need to allow room for the event header we haven't added yet.
+	
+	// We need to allow room for the event header we haven't added yet.
+	int buffer_index = 4; // 4+4=8 bytes for the MINERvA Header.
+	for (int i = 0; i < 12; i++) {
+		buffer_index += 4;   
 		event_block[buffer_index]   = event_info_block[i] & 0xFF;
 		event_block[buffer_index+1] = event_info_block[i] & 0xFF00;
 		event_block[buffer_index+2] = event_info_block[i] & 0xFF0000;
@@ -141,6 +154,12 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
 		buffer_index++;
 	}
 	//InsertData(event_block);
+// #if DEBUG_ME
+//	std::cout << " DAQ Header Data..." << std::endl;
+//	for (int i = 0; i < 12; i++) {
+//		std::cout << "   event_block[" << i << "] = " << (int)event_block[i] << std::endl;  
+//	}
+// #endif
 }
 
 #endif
