@@ -2,16 +2,17 @@
 
 # Argument List:
 #  $1 == et_system file name
-#  $2 == number of gates to process
-if [ $# -ne 2 ]; then
-	echo Please supply et_system file name and number of gates.
+#  $2 == number of febs
+#  $3 == number of gates to process
+if [ $# -ne 3 ]; then
+	echo Please supply et_system file name, number of febs, and number of gates.
 	exit 1
 fi
 
 EVENT_SIZE=2048  # two kilobytes - this is the *frame* size ("events"==frames in ET)
-FEBS=4           # how many total FEB's need to be serviced
+FEBS=$2          # how many total FEB's need to be serviced
 FRAMES=8         # this is anticipating 1 FPGA & 1 TDC & 6 ADC Frames.
-EVENTS=$(($2*$FRAMES*$FEBS))  # create space in the memory-mapped file for all events.
+EVENTS=$(($3*$FRAMES*$FEBS))  # create space in the memory-mapped file for all events.
 
 if [ "$LOCALE" == "" ]
 then
