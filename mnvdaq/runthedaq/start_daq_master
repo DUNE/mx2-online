@@ -4,7 +4,7 @@
 #  $1 == et_system file name
 #  $2 == number of febs
 #  $3 == number of gates to process
-if [ $# -ne 2 ]; then
+if [ $# -ne 3 ]; then
 	echo Please supply et_system file name, number of febs, and number of gates.
 	exit 1
 fi
