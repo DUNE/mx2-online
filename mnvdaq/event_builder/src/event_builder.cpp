@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 #if MULTI_PC
 	et_open_config_setmode(&openconfig, ET_HOST_AS_REMOTE);
 	et_open_config_setcast(openconfig, ET_DIRECT);
-	et_open_config_sethost(openconfig, "minervatest01.fnal.gov"); // Adjust, etc.
+	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov"); // Adjust, etc.
 	et_open_config_setserverport(openconfig, 1091); 
 #endif
 	if (et_open(&sys_id, argv[1], openconfig) != ET_OK) {

@@ -1,4 +1,4 @@
-This file is current as of 2009.November.26 - GNP
+This file is current as of 2009.December.12 - GNP
 
 To build the MINERvA Production DAQ (mnvdaq) you need to first install and build CAEN driver libraries 
 to interface with the CAEN v2718 VME Controller and a2818 PCI Interface Card.  These drivers are available
@@ -28,8 +28,8 @@ be slightly different at different development locations.  The location is set b
 variable.  Set your own $LOCALE variable or mimic the directory structure of another $LOCALE and use that
 value for your own $LOCALE.  
 
-As of 2009.November.28, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
-operation on the minervatest0X machines.  For set-up in a different environment, the default scripts will 
+As of 2009.December.12, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
+operation on the mnvonline machines.  For set-up in a different environment, the default scripts will 
 need to be edited carefully.
 
 Before you build the DAQ, it is important to understand the possible architectures.  The DAQ can be run 

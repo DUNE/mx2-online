@@ -53,12 +53,12 @@ int main(int argc, char* argv[]) {
 
 int make_socket() {
 	/*********************************************************************************/
-	/* Create the socket for minervatest03 (the "soldier" node). */
+	/* Create the socket for mnvonline0 (the "soldier" node). */
 	socket_handle[0] = socket (PF_INET, SOCK_STREAM, 0);
 	/* Store the server’s name in the socket address. */
 	daq_client[0].sin_family = AF_INET;
 	/* Convert from strings to numbers. */
-	string hostname="minervatest03.fnal.gov"; //this needs to be changed for the appropriate machine
+	string hostname="mnvonline0.fnal.gov"; //this needs to be changed for the appropriate machine
 	hostinfo = gethostbyname(hostname.c_str()); // we'd like to do this with ip's directly eventually...
 	if (hostinfo == NULL) return 1;
 	else daq_client[0].sin_addr = *((struct in_addr *) hostinfo->h_addr);
@@ -67,12 +67,12 @@ int make_socket() {
 	/*********************************************************************************/
 
 	/*********************************************************************************/
-	/* Create the socket for minervatest02 (the "worker" node). */
+	/* Create the socket for mnvonline1 (the "worker" node). */
 	socket_handle[1] = socket (PF_INET, SOCK_STREAM, 0);
 	/* Store the server’s name in the socket address. */
 	daq_client[1].sin_family = AF_INET;
 	/* Convert from strings to numbers. */
-	hostname="minervatest02.fnal.gov"; //this needs to be changed for the appropriate machine
+	hostname="mnvonline1.fnal.gov"; //this needs to be changed for the appropriate machine
 	hostinfo = gethostbyname(hostname.c_str());
 	if (hostinfo == NULL) return 1;
 	else daq_client[1].sin_addr = *((struct in_addr *) hostinfo->h_addr);

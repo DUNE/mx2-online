@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // Remote (multi-pc) mode only.
 
 	// Set this ET client for remote operation.
-	et_open_config_sethost(openconfig, "minervatest01.fnal.gov");  // Remote (multi-pc) mode only.
+	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote (multi-pc) mode only.
 	// Set to the current host machine name. 
 	// Currently (2009.November.26), setting IP addresses explicitly doesn't work quite right.
 
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 	// Set hostname - this needs to be changed for the appropriate machine.
 	// (Should point from worker to soldier node.)
 	// Eventually want to use IP numbers.
-	string hostname="minervatest03.fnal.gov"; 
+	string hostname="mnvonline0.fnal.gov"; 
 	hostinfo = gethostbyname(hostname.c_str());
 	if (hostinfo == NULL) return 1;
 	else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
