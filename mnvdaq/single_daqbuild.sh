@@ -1,6 +1,6 @@
 # Note, to compile the DAQ, after you pull the package down from CVS, you need to untar the ET code first!
 # Set your LOCALE.  One Valid choice right now: "FNAL" for Fermilab.  Currently on the FNAL mnvonline
-# machines, the LOCALE is set in the minerva .bash_profile.
+# machines, the LOCALE is set in the mnvonline user .bash_profile.
 if [ "$LOCALE" == "" ]
 then
   echo No default LOCALE defined!  Assigning your LOCALE to FNAL...
