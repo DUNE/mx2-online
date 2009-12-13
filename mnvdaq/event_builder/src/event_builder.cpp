@@ -190,7 +190,7 @@ int main(int argc, char **argv)
 		// Now write the event to the binary output file.
 		binary_outputfile.write((char *) final_buffer, length);  
 		binary_outputfile.flush();
-		if ( !( evt_counter%10 ) ) {
+		if ( !( evt_counter%100 ) ) {
 			thread_log << "*****************************************************************************"<<endl; 
 			thread_log << "      Event Processed: "<<evt_counter<<endl;
 			thread_log << "*****************************************************************************"<<endl; 

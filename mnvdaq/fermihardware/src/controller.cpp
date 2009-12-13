@@ -56,7 +56,8 @@ int controller::ContactController()
 		if (error) throw error;
 	} catch (int e) {
 		ReportError(e);
-		std::cout << "Unable to contact the v2718 VME controller" << std::endl; 
+		std::cout << "Unable to contact the v2718 VME controller!" << std::endl; 
+		std::cout << "Are you sure the a2818 module is loaded?  Check /proc/a2818..." << std::endl;
 		std::cout << "The error code was: " << e << std::endl;
 		return e;
 	} 

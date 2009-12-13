@@ -1,5 +1,6 @@
 CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 LDFLAGS += -shared -Wl,-soname
+#--DEBUG FLAGS--
 #COMPILE_OPTIONS += -DDEBUG_HEADERS
 #COMPILE_OPTIONS += -DDEBUG_VERBOSE
 CXX = g++

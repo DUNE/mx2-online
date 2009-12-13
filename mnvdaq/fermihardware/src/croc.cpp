@@ -60,7 +60,7 @@ croc::croc(unsigned int a, int crocid, CVAddressModifier b, CVDataWidth c, CVDat
 
 	// initialize the CROC register data, for now, the test pulse is not set 
 	bool timing_init;
-	InitializeRegisters((crocRegisters) 0xF000, 0x0, 0x0, timing_init);
+	InitializeRegisters((crocRegisters) 0x1, 0x0, 0x0, timing_init);
 }
 
 
@@ -70,13 +70,24 @@ void croc::SetTimingRegister(unsigned short cm, unsigned short tpde, unsigned sh
  * This function sets up the timing register data for the croc object.  (It does not write 
  * to the registers.)  
  *
- * \param cm the clock mode
+ * \param cm the clock mode - 1 for external, 0 for internal
  * \param tpde test pulse enable bit
  * \param tpdv test pulse delay value
  */
-	timingRegister = cm & 0x8000; //the clock mode  (0x8000 is the bitmask for bit 15 high)
-	timingRegister |= tpde & 0x1000; //test pulse delay enable bit (bit 12)
-	timingRegister |= tpdv & 0x3FF; //test pules delay values (in 18.9 ns units) bits 0-9
+// TODO - Fix the SetTimingRegister function to behave for some interface choice...
+#if (DEBUG_VERBOSE)&&(DEBUG_CROC)
+	std::cout << "  Entering croc::SetTimingRegister..." << std::endl;
+	std::cout << "    Clock Mode        = " << cm << std::endl;
+	std::cout << "    Test Pulse Enable = " << tpde << std::endl;
+	std::cout << "    Test Pulse Delay  = " << tpdv << std::endl;
+#endif
+	timingRegister = (cm & 0x1)<<15 ;   // the clock mode  (0x8000 is the bitmask for bit 15 high)
+	timingRegister |= (tpde & 0x1)<<12; // test pulse delay enable bit (bit 12)
+	timingRegister |= tpdv & 0x3FF;     // test pules delay values (in 18.9 ns units) bits 0-9
+	timingRegister &= 0xFFFF;
+#if (DEBUG_VERBOSE)&&(DEBUG_CROC)
+	printf("    Timing Register = 0x%04X\n",timingRegister);
+#endif
 }
 
 

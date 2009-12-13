@@ -1,7 +1,12 @@
 CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 LDFLAGS += -shared -Wl,-soname
-COMPILE_OPTIONS = #-DDEBUG -DDEBUG_FEB
+
+#--DEBUG FLAGS--
+#COMPILE_OPTIONS += -DDEBUG 
+#COMPILE_OPTIONS += -DDEBUG_FEB
+#COMPILE_OPTIONS += -DDEBUG_CROC
 #COMPILE_OPTIONS += -DDEBUG_VERBOSE
+
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
