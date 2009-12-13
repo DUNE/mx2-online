@@ -125,7 +125,7 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
 	event_info_block[1] = run & 0xFFFFFFFF;
 	event_info_block[2] = sub_run & 0xFFFFFFFF;
 	event_info_block[3] = trig & 0xFFFFFFFF;
-	event_info_block[4] = g_gate & 0xFFFFFFFF; // the "global gate"; TODO - fix this!... doesn't incrememnt!
+	event_info_block[4] = g_gate & 0xFFFFFFFF; // the "global gate"; 
 	event_info_block[5] = 0; // TODO, Fix this!  Global gate is 64 bits!
 	event_info_block[6] = gate & 0xFFFFFFFF; //the gate number
 	event_info_block[7] = 0; // TODO, Fix this!  Gate is also 64 bits! 

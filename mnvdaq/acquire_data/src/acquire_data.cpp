@@ -30,7 +30,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
  */
 #if DEBUG_INIT
 	std::cout << "\n\n" << std::endl;
-	std::cout << "~~~~~ ENTERING InitializeDaq() ~~~~~~~~~~" << std::endl;
+	std::cout << "~~~~~ ENTERING acquire_data::InitializeDaq() ~~~~~~~~~~" << std::endl;
 #endif
 #if TIME_ME
 	struct timeval start_time, stop_time;
@@ -46,7 +46,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 		if (error) throw error;
 	} catch (int e) {
 		std::cout << "Error contacting the VME controller!" << std::endl;
-		exit(-1);
+		exit(e);
 	} 
 
 	// Then we need the cards which can read the data - hardcoded for now....

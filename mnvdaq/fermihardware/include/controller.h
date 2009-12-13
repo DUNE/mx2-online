@@ -53,18 +53,17 @@ class controller {
 
 		/*! the specialty constructor */
 		controller(int a, int id) { 
-			address = a;
-			addressModifier = cvA24_U_DATA; //default address modifier
-			dataWidth = cvD16; //default data width
-			controllerType = cvV2718;  //this is the only controller board we have
-			bridgeType = cvA2818;  //this is the only PCI card we have
-			slotNumber=0; //by construction 
-			pciSlotNumber=0; //don't really know at the moment, will have to check & fix (link)
-			boardNumber = 0;
-			handle = -1;
-			firmware[0]=0;
-			controller_id = id; //an internal ID used for sorting data 
-
+			address         = a;
+			addressModifier = cvA24_U_DATA; // default address modifier
+			dataWidth       = cvD16;    // default data width
+			controllerType  = cvV2718;  // this is the only controller board we have
+			bridgeType      = cvA2818;  // this is the only PCI card we have
+			slotNumber      = 0; // by construction 
+			pciSlotNumber   = 0; // link - probably always 0.
+			boardNumber     = 0; // we basically use controller_id for this...
+			handle          = -1;
+			firmware[0]     = 0;
+			controller_id   = id; //an internal ID used for sorting data 
 		};
 
 		/*! the specialty destructor */

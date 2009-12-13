@@ -255,13 +255,15 @@ int main(int argc, char *argv[])
 	try {
 		// We assume the run_status is formatted as: gate run-number sub-run-number
 		// TODO - Format run_status appropriately and/or pass the missing data via 
-		//        the command line.
+		//	the command line.
+		// TODO - Read in global gate from a file for single PC mode, get global gate 
+		//	from master node gate-by-gate (?) in multi-PC mode?	
 		if (!run_status) throw (!run_status);
 		run_status>>event_data.gate_info[0]>>event_data.run_info[2]>>event_data.run_info[3];
 		event_data.run_info[0]=event_data.run_info[1]=event_data.run_info[4]=0;
 	} catch (bool e) {
-		cout<<"Error opening run_status.dat.  "<<endl;
-		cout<<"You know, the one that tells me what the run number is!"<<endl;
+		cout << "Error opening run_status.dat.  " << endl;
+		cout << "You know, the one that tells me what the run number is!" << endl;
 		exit(-2000);
 	}
 
@@ -299,7 +301,7 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/*      The top of the Event Loop.  Events here are referred to as GATES.        */
 	/*********************************************************************************/
-	for (int gate=1;gate<=record_gates;gate++) {
+	for (int gate = 1; gate <= record_gates; gate++) {
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
 		gettimeofday(&gate_start_time, NULL);
@@ -329,6 +331,17 @@ int main(int argc, char *argv[])
 		for (int i=0;i<9;i++) {
 			event_data.feb_info[i] = 0; //initialize feb information block 
 		}
+#if SINGLE_PC
+		fstream global_gate("global_gate.dat");
+		try {
+			if (!global_gate) throw (!global_gate);
+			global_gate >> event_data.gate_info[0];
+		} catch (bool e) {
+			cout << "Error in minervadaq::main opening global gate data!" << endl;
+			exit(-2000);
+		}
+		global_gate.close();
+#endif
 
 		// Set the data_ready flag to false, we have not yet taken any data
 		data_ready = false; //no data is ready to be processed
@@ -538,6 +551,18 @@ int main(int argc, char *argv[])
 			perror("server read error: done"); //read in the number of gates to process
 			exit(EXIT_FAILURE);
 		}
+#endif
+#if SINGLE_PC
+		global_gate.open("global_gate.dat");
+		try {
+			if (!global_gate) throw (!global_gate);
+			event_data.gate_info[0]++;
+			global_gate << event_data.gate_info[0];
+		} catch (bool e) {
+			cout << "Error in minervadaq::main opening global gate data!" << endl;
+			exit(-2000);
+		}
+		global_gate.close();
 #endif
 
 	} //end of gates loop

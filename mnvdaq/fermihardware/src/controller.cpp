@@ -58,7 +58,6 @@ int controller::ContactController()
 		ReportError(e);
 		std::cout << "Unable to contact the v2718 VME controller!" << std::endl; 
 		std::cout << "Are you sure the a2818 module is loaded?  Check /proc/a2818..." << std::endl;
-		std::cout << "The error code was: " << e << std::endl;
 		return e;
 	} 
 	std::cout << "The controller is now initialized." << std::endl; 
@@ -73,7 +72,7 @@ int controller::ContactController()
 		std::cout << "The error code was: " << e << std::endl;
 		return e;
 	}
-	std::cout<<"The controller firmware version is: "<<firmware<<std::endl; 
+	std::cout << "The controller firmware version is: " << firmware << std::endl; 
 
 	// Get the status of the controller.
 	CVRegisters registerAddress = cvStatusReg; 
