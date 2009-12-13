@@ -126,8 +126,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	crim_thread << "Initializing CRIM, Start" << std::endl;
 #endif
 
-        CVAddressModifier AM = daqController->GetAddressModifier();
-        CVDataWidth       DW = daqController->GetDataWidth();
+	CVAddressModifier AM = daqController->GetAddressModifier();
+	CVDataWidth       DW = daqController->GetDataWidth();
 
 	// Make a CRIM object on this controller.
 	daqController->MakeCrim(address, index); 
@@ -142,12 +142,11 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		exit(-3);
 	} 
 
-	// TODO - move crim init value setup into CRIM class?
-	unsigned short int GateWidth    = 0x1;  // GetWidth must never be zero!
-	unsigned short int TCALBDelay   = 0x1;  // Delay should also be non-zero.
-	unsigned short int FrequencyBit = 0;    // Used to set ONE frequency bit!
-	unsigned short int TimingMode   = 0x8;  // Default to MTM.
-	unsigned short int TCALBEnable  = 0x1;  // Enable pulse delay.
+	unsigned short GateWidth    = 0x1;       // GetWidth must never be zero!
+	unsigned short TCALBDelay   = 0x1;       // Delay should also be non-zero.
+	unsigned short TCALBEnable  = 0x1;       // Enable pulse delay.
+	crimTimingFrequencies Frequency  = ZeroFreq; // Used to set ONE frequency bit!
+	crimTimingModes       TimingMode = MTM;      // Default to MTM.
 
 	// Check running mode and perform appropriate initialization.
 	switch (runningMode) {
@@ -155,8 +154,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			std::cout << "Running Mode is Pedestal." << std::endl;
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
-			FrequencyBit = 0;
-			TimingMode   = 0x4;   // Internal.
+			Frequency    = ZeroFreq;
+			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
 			break;
 		default:
@@ -165,25 +164,23 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	}
 
 	// Build Register Settings.
-	unsigned short int Frequency = 0x0;
-	if (FrequencyBit) { Frequency = 0x1<<FrequencyBit; }
-	unsigned short int TimingSetup     = ( ((TimingMode & 0xF)<<12) | (Frequency & 0xFFF) ); 
-	unsigned short int GateWidthSetup  = ( ((TCALBEnable & 0x1)<<15) | (GateWidth & 0x7F) );
-	unsigned short int TCALBSetup      = ( (TCALBDelay & 0x3FF) );
+	daqController->GetCrim(index)->SetupTiming(TimingMode, Frequency);
+	daqController->GetCrim(index)->SetupGateWidth(TCALBEnable, GateWidth);
+	daqController->GetCrim(index)->SetupTCALBPulse(TCALBDelay);
 #if DEBUG_INIT
-	printf("  CRIM Timing Setup    = 0x%04X\n",TimingSetup);
-	printf("  CRIM GateWidth Setup = 0x%04X\n",GateWidthSetup);
-	printf("  CRIM TCALB Setup     = 0x%04X\n",TCALBSetup);
+	printf("  CRIM Timing Setup    = 0x%04X\n", daqController->GetCrim(index)->GetTimingSetup());
+	printf("  CRIM GateWidth Setup = 0x%04X\n", daqController->GetCrim(index)->GetGateWidthSetup());
+	printf("  CRIM TCALB Setup     = 0x%04X\n", daqController->GetCrim(index)->GetTCALBPulse());
 #endif
 
 	unsigned char crim_message[2];
 
 	// Set GateWidth.
 	try {
-		crim_message[0] = GateWidthSetup & 0xFF;
-		crim_message[1] = (GateWidthSetup>>8) & 0xFF;
+		crim_message[0] = daqController->GetCrim(index)->GetGateWidthSetup() & 0xFF;
+		crim_message[1] = (daqController->GetCrim(index)->GetGateWidthSetup()>>8) & 0xFF;
 		int error = daqAcquire->WriteCycle(daqController->handle, 2, crim_message,
-			daqController->GetCrim()->GetGateRegister(), AM, DW); 
+			daqController->GetCrim()->GetSGATEWidthRegister(), AM, DW); 
 		if (error) throw error;
 	} catch (int e) {
 		std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the Gate Width register!" << std::endl;
@@ -191,12 +188,12 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		exit (e);
 	}
 
-	// Setup TCALB.
+	// Setup TCALB Delay.
 	try {
-		crim_message[0] = TCALBSetup & 0xFF;
-		crim_message[1] = (TCALBSetup>>8) & 0xFF;
+		crim_message[0] = daqController->GetCrim(index)->GetTCALBPulse() & 0xFF;
+		crim_message[1] = (daqController->GetCrim(index)->GetTCALBPulse()>>8) & 0xFF;
 		int error = daqAcquire->WriteCycle(daqController->handle, 2, crim_message,
-			daqController->GetCrim()->GetTCalbRegister(), AM, DW); 
+			daqController->GetCrim()->GetTCALBRegister(), AM, DW); 
 		if (error) throw error;
 	} catch (int e) {
 		std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the TCALB register!" << std::endl;
@@ -206,8 +203,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 
 	// Setup Timing register.
 	try {
-		crim_message[0] = TimingSetup & 0xFF;
-		crim_message[1] = (TimingSetup>>8) & 0xFF;
+		crim_message[0] = daqController->GetCrim(index)->GetTimingSetup() & 0xFF;
+		crim_message[1] = (daqController->GetCrim(index)->GetTimingSetup()>>8) & 0xFF;
 		int error = daqAcquire->WriteCycle(daqController->handle, 2, crim_message,
 			daqController->GetCrim()->GetTimingRegister(), AM, DW); 
 		if (error) throw error;
@@ -216,7 +213,6 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		daqController->ReportError(e);
 		exit (e);
 	}
-
 
 	// Now set up the IRQ handler, initializing the global enable bit for the first go-around.
 	SetupIRQ();
@@ -258,8 +254,8 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 	croc_thread.open(filename.c_str());
 	croc_thread<<"In InitializeCrroc, Starting"<<std::endl;
 #endif
-        CVAddressModifier AM = daqController->GetAddressModifier();
-        CVDataWidth       DW = daqController->GetDataWidth();
+	CVAddressModifier AM = daqController->GetAddressModifier();
+	CVDataWidth       DW = daqController->GetDataWidth();
 
 	// Make a CROC object on this controller.
 	daqController->MakeCroc(address,crocNo); 
@@ -278,7 +274,6 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 
 	// Set the timing mode to EXTERNAL: clock mode, test pulse enable, test pulse delay
 	// Clock Mode set to External in CROC constructor.
-	// daqController->GetCroc(crocNo)->SetTimingRegister((unsigned short)1, (unsigned short)0, (unsigned short)0);
 	unsigned char croc_message[2];
 	croc_message[0] = (unsigned char)(daqController->GetCroc(crocNo)->GetTimingRegister() & 0xFF);
 	croc_message[1] = (unsigned char)( (daqController->GetCroc(crocNo)->GetTimingRegister()>>8) & 0xFF);
@@ -1649,7 +1644,7 @@ void acquire_data::TriggerDAQ(int a)
 	int error=-1;
 	switch (a) { //which type of trigger are we using
 		case 0: //the one-shot trigger
-			daqController->GetCrim()->SetupOneShot(); // Prep a shot (software only).
+			//Obsolete// daqController->GetCrim()->SetupOneShot(); // Prep a shot (software only).
 			/*
 			unsigned char crim_send[2];
 			// Send the timing setup request.
@@ -1709,13 +1704,13 @@ void acquire_data::TriggerDAQ(int a)
 #endif
 			try {
 				unsigned char send_pulse[2];
-				send_pulse[0] = daqController->GetCrim()->GetSoftCNRST() & 0xff;
-				send_pulse[1] = (daqController->GetCrim()->GetSoftCNRST()>>0x08)&0xff;
+				send_pulse[0] = daqController->GetCrim()->GetSoftCNRSTSeq() & 0xFF;
+				send_pulse[1] = (daqController->GetCrim()->GetSoftCNRSTSeq()>>0x08) & 0xFF;
 #if DEBUG_TRIGGER
 				printf("    send_pulse msg = 0x%02X%02X\n",send_pulse[1],send_pulse[0]);
 #endif
 				error = daqAcquire->WriteCycle(daqController->handle, 2, send_pulse,
-					daqController->GetCrim()->GetCNRSTRegister(), AM, DW); //send it
+					daqController->GetCrim()->GetSoftCNRSTRegister(), AM, DW); //send it
 				if (error) throw error;
 			} catch (int e) {
 				std::cout<<"Unable to set pulse delay register"<<std::endl;
