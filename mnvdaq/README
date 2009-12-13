@@ -93,6 +93,18 @@ And check ${DAQROOT}/lib/ for
 for errors.  Most likely, an environment variable has been incorrectly set.
 
 
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Note about data sizes!  If you run the DAQ on an OS besides 64-bit SLF5.3, be sure to check the data sizes 
+your compiler uses for variables.  The code currently assumes the following (check with sizeOfTest in the 
+misc/ folder):
+
+size of unsigned char      = 1
+size of unsigned short int = 2
+size of unsigned int       = 4
+size of unsigned long      = 8
+size of unsigned long long = 8
+
+(Size is shown in bytes.)
 
 
 
