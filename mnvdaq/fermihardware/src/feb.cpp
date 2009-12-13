@@ -8,7 +8,6 @@
 *
 * Elaine Schulte, Rutgers University
 * Gabriel Perdue, The University of Rochester
-*
 **********************************************************************************/
 
 feb::feb(int mh, bool init, febAddresses a,int reg):NRegisters(reg) 
@@ -417,221 +416,222 @@ void feb::DecodeRegisterValues(int buffersize)
 		initialized = true;
 	}
 
-if (initialized) {
-	/* have the frame check for status errors */
-	int frameError = this->CheckForErrors();
+	if (initialized) {
+		/* have the frame check for status errors */
+		int frameError = this->CheckForErrors();
 #if DEBUG_VERBOSE
-	std::cout << "\tfeb::DecodeRegisterValues CheckForErrors value = " << frameError << std::endl;
+		std::cout << "\tfeb::DecodeRegisterValues CheckForErrors value = " << frameError << std::endl;
 #endif
 
-	if (!frameError) {
-		int startByte = 2 + MinHeaderLength; //this should be byte 11
+		if (!frameError) {
+			int startByte = 2 + MinHeaderLength; //this should be byte 11
 		
-		/* message word 0 - 3:  The timer information, 32 bits for the timer */
-		Timer = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		Timer |= (message[startByte] & 0xFF) << 0x08; //mask off and shift to bits 8-15 
-		startByte++;
-		Timer |= (message[startByte] & 0xFF) << 0x10; //mask off and shift to bits 16-23
-		startByte++;
-		Timer |= (message[startByte] & 0xFF) << 0x18; //mask off and shift to bits 24-31 
+			/* message word 0 - 3:  The timer information, 32 bits for the timer */
+			Timer = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			Timer |= (message[startByte] & 0xFF) << 0x08; //mask off and shift to bits 8-15 
+			startByte++;
+			Timer |= (message[startByte] & 0xFF) << 0x10; //mask off and shift to bits 16-23
+			startByte++;
+			Timer |= (message[startByte] & 0xFF) << 0x18; //mask off and shift to bits 24-31 
 
-		/* message word 4 - 5:  The gate start value, 16 bits */
-		startByte++;
-		GateStart = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		GateStart |= (message[startByte] & 0xFF) << 0x08; //maks of and shift to bits 8-15  
+			/* message word 4 - 5:  The gate start value, 16 bits */
+			startByte++;
+			GateStart = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			GateStart |= (message[startByte] & 0xFF) << 0x08; //maks of and shift to bits 8-15  
 
-		/* message word 6 - 7:  The gate length value, 16 bits */
-		startByte++;
-		GateLength = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		GateLength |= (message[startByte] & 0xFF) << 0x08; //mask of and shift to bits 8-15
+			/* message word 6 - 7:  The gate length value, 16 bits */
+			startByte++;
+			GateLength = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			GateLength |= (message[startByte] & 0xFF) << 0x08; //mask of and shift to bits 8-15
 
-		/* message word 8 - 9, bit 0: DCM2 phase total, 9 bits */
-		startByte++;
-		DCM2PhaseTotal = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		DCM2PhaseTotal |= (message[startByte] & 0x01) << 0x08; //mask of and shift to bits 8-15 
+			/* message word 8 - 9, bit 0: DCM2 phase total, 9 bits */
+			startByte++;
+			DCM2PhaseTotal = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			DCM2PhaseTotal |= (message[startByte] & 0x01) << 0x08; //mask of and shift to bits 8-15 
 
-		/* message word 9, bit 1: DCM2 phase done, 1 bit */
-		DCM2PhaseDone[0] = (message[startByte] & 0x02); //mask off bit 1
+			/* message word 9, bit 1: DCM2 phase done, 1 bit */
+			DCM2PhaseDone[0] = (message[startByte] & 0x02); //mask off bit 1
 
-		/* message word 9, bit 2: DCM1 no clock, 1 bit */
-		DCM1NoClock[0] = (message[startByte] & 0x04) >> 0x02; //mask off bit 2
+			/* message word 9, bit 2: DCM1 no clock, 1 bit */
+			DCM1NoClock[0] = (message[startByte] & 0x04) >> 0x02; //mask off bit 2
 
-		/* message word 9, bit 3: DCM2 no clock, 1 bit */
-		DCM2NoClock[0] = (message[startByte] & 0x08) >> 0x03; //mask off bit 3
+			/* message word 9, bit 3: DCM2 no clock, 1 bit */
+			DCM2NoClock[0] = (message[startByte] & 0x08) >> 0x03; //mask off bit 3
 
-		/* message word 9, bit 4: DCM1 lock, 1 bit */
-		DCM1Lock[0] = (message[startByte] & 0x10) >> 0x04; //mask off bit 4 
+			/* message word 9, bit 4: DCM1 lock, 1 bit */
+			DCM1Lock[0] = (message[startByte] & 0x10) >> 0x04; //mask off bit 4 
 
-		/* message word 9, bit 5: DCM1 lock, 1 bit */
-		DCM2Lock[0] = (message[startByte] & 0x20) >> 0x05; //mask off bit 5
+			/* message word 9, bit 5: DCM1 lock, 1 bit */
+			DCM2Lock[0] = (message[startByte] & 0x20) >> 0x05; //mask off bit 5
 
-		/* message word 9, bit 6 - 7: Test Pules 2 Bit, 2 bits */
-		TestPulse2Bit[0] = (message[startByte] & 0xC0) >> 0x06; //mask off bit 6 & 7 
+			/* message word 9, bit 6 - 7: Test Pules 2 Bit, 2 bits */
+			TestPulse2Bit[0] = (message[startByte] & 0xC0) >> 0x06; //mask off bit 6 & 7 
 
-		/* message word 10: Phase count, 8 bits */
-		startByte++;
-		PhaseCount[0]= message[startByte];
+			/* message word 10: Phase count, 8 bits */
+			startByte++;
+			PhaseCount[0]= message[startByte];
 
-		/* message word 11, bit 0: Ext. Trigger Found, 1 bit */
-		startByte++;
-		ExtTriggerFound[0] = (message[startByte] & 0x01); //mask off bit 0
+			/* message word 11, bit 0: Ext. Trigger Found, 1 bit */
+			startByte++;
+			ExtTriggerFound[0] = (message[startByte] & 0x01); //mask off bit 0
 
-		/* message word 11, bit 1: Ext. Trigger Rearm, 1 bit */
-		ExtTriggerRearm[0] = (message[startByte] & 0x02) >> 0x01; //mask off bit 1
+			/* message word 11, bit 1: Ext. Trigger Rearm, 1 bit */
+			ExtTriggerRearm[0] = (message[startByte] & 0x02) >> 0x01; //mask off bit 1
 
-		/* message word 11, bits 2 - 3: Phase spare, 2 bits */
-		PhaseSpare[0] = (message[startByte] & 0x0C) >> 0x02; //mask off bits 2-3
+			/* message word 11, bits 2 - 3: Phase spare, 2 bits */
+			PhaseSpare[0] = (message[startByte] & 0x0C) >> 0x02; //mask off bits 2-3
 
-		/* message word 11, bit 4: Phase increment, 1 bits */
-		PhaseIncrement[0] = (message[startByte]  & 0x10) >> 0x04; //mask off bit 4 
+			/* message word 11, bit 4: Phase increment, 1 bits */
+			PhaseIncrement[0] = (message[startByte]  & 0x10) >> 0x04; //mask off bit 4 
 
-		/* message word 11, bit 5: Phase start, 1 bits */
-		PhaseStart[0] = (message[startByte] & 0x20) >> 0x05; //mask off bit 5
+			/* message word 11, bit 5: Phase start, 1 bits */
+			PhaseStart[0] = (message[startByte] & 0x20) >> 0x05; //mask off bit 5
 
-		/* message word 11, bit 6: VXOMuxXilinx, 1 bits */
-		VXOMuxXilinx[0] = (message[startByte] & 0x40) >> 0x06; //mask off bit 6
+			/* message word 11, bit 6: VXOMuxXilinx, 1 bits */
+			VXOMuxXilinx[0] = (message[startByte] & 0x40) >> 0x06; //mask off bit 6
 
-		/* message word 11, bit 7: VXOOff, 1 bits */
-		VXOOff[0] = (message[startByte] & 0x80) >> 0x07; //mask off bit 7
+			/* message word 11, bit 7: VXOOff, 1 bits */
+			VXOOff[0] = (message[startByte] & 0x80) >> 0x07; //mask off bit 7
 
-		/* message word 12 - 15: test pules count */
-		startByte++;
-		TestPulseCount = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		TestPulseCount |= (message[startByte] & 0xFF) << 0x08; //mask off and shift to bits 8-15
-		startByte++;
-		TestPulseCount |= (message[startByte] & 0xFF) << 0x10; //mask off and shift to bits 15-23
-		startByte++;
-		TestPulseCount |= (message[startByte] & 0xFF) << 0x18; //mask off and shift to bits 24-31
+			/* message word 12 - 15: test pules count */
+			startByte++;
+			TestPulseCount = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			TestPulseCount |= (message[startByte] & 0xFF) << 0x08; //mask off and shift to bits 8-15
+			startByte++;
+			TestPulseCount |= (message[startByte] & 0xFF) << 0x10; //mask off and shift to bits 15-23
+			startByte++;
+			TestPulseCount |= (message[startByte] & 0xFF) << 0x18; //mask off and shift to bits 24-31
 
-		/* message word 16 - 21 (bits 0-1): 
-			The Injector counts 6 at 7 bits each, and the 8th bit of each word is the enable status */
-		int tmp=0;
-		int tmp1=startByte+1; int tmp2 = startByte+6; //we need to sort out the injector bits
-		for (int i=tmp1;i<=tmp2;i++ ) {
-			InjectCount[tmp][0] = (message[i] & 0x7F); //mask off bits 0-6 (InjectCount)
-			InjectEnable[tmp][0] = (message[i] & 0x80) >> 0x07;  //mask off bit 7 (InjectEnable)
-			tmp++;
-			startByte = i;
-		}
+			/* message word 16 - 21 (bits 0-1): 
+				The Injector counts 6 at 7 bits each, and the 8th bit of each word is the enable status */
+			int tmp=0;
+			int tmp1=startByte+1; int tmp2 = startByte+6; //we need to sort out the injector bits
+			for (int i=tmp1;i<=tmp2;i++ ) {
+				InjectCount[tmp][0] = (message[i] & 0x7F); //mask off bits 0-6 (InjectCount)
+				InjectEnable[tmp][0] = (message[i] & 0x80) >> 0x07;  //mask off bit 7 (InjectEnable)
+				tmp++;
+				startByte = i;
+			}
 
-		/* message word 22, bits 0-5:  trip power off, 1 bit for each trip 
-		*     message word 22, bit 6: HV manual
-		*     message word 22, bit 7: HV enabled*/
-		startByte++;
-		TripPowerOff[0] = (message[startByte] & 0x3F); //mask off bits 0-5;
-		HVManual[0] = (message[startByte] & 0x40) >> 0x06; //mask off bits 6
-		HVEnabled[0] = (message[startByte] & 0x80) >> 0x07; //mask off bits 7
+			/* message word 22, bits 0-5:  trip power off, 1 bit for each trip 
+			*     message word 22, bit 6: HV manual
+			*     message word 22, bit 7: HV enabled*/
+			startByte++;
+			TripPowerOff[0] = (message[startByte] & 0x3F); //mask off bits 0-5;
+			HVManual[0] = (message[startByte] & 0x40) >> 0x06; //mask off bits 6
+			HVEnabled[0] = (message[startByte] & 0x80) >> 0x07; //mask off bits 7
 
-		/* message word 23-24: HV target value, 16 bits */
-		startByte++;
-		HVTarget = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		HVTarget |= (message[startByte] & 0xFF) << 0x08; //mask & shift bits to 8-15  
+			/* message word 23-24: HV target value, 16 bits */
+			startByte++;
+			HVTarget = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			HVTarget |= (message[startByte] & 0xFF) << 0x08; //mask & shift bits to 8-15  
 
-		/* message word 25-26: HV actual value, 16 bits */
-		startByte++;
-		HVActual = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		HVActual |= (message[startByte] & 0xFF) << 0x08; //mask & shift bits to 8-15. 
+			/* message word 25-26: HV actual value, 16 bits */
+			startByte++;
+			HVActual = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			HVActual |= (message[startByte] & 0xFF) << 0x08; //mask & shift bits to 8-15. 
 
-		/* message word 27: HV control value, 8 bits */
-		startByte++;
-		HVControl[0] = (message[startByte] & 0xFF); //mask off bits 0-7
+			/* message word 27: HV control value, 8 bits */
+			startByte++;
+			HVControl[0] = (message[startByte] & 0xFF); //mask off bits 0-7
 
-		/* message word 28-29, bits 0-3: Inject DAC value, 12 bits */
-		startByte++;
-		InjectDACValue = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		InjectDACValue |= (message[startByte] & 0x0F) << 0x08; //shift bits 8-11 to bits 0-3
-									//and mask off bits 0-3
+			/* message word 28-29, bits 0-3: Inject DAC value, 12 bits */
+			startByte++;
+			InjectDACValue = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			InjectDACValue |= (message[startByte] & 0x0F) << 0x08; //shift bits 8-11 to bits 0-3
+										//and mask off bits 0-3
 
-		/* message word 29, bits 4-7: InjectDACMode, 2 bits; InjectDACDone, 1 bit, 
-		*     InjectDACStart, 1 bit */
-		InjectDACMode[0] = (message[startByte] & 0x30) >> 0x04; //mask off bits 4 & 5 
-		InjectDACDone[0] = (message[startByte] & 0x40) >> 0x06; //mask off bits 6 
-		InjectDACStart[0] = (message[startByte] & 0x80) >> 0x07; //mask off bits 7 
+			/* message word 29, bits 4-7: InjectDACMode, 2 bits; InjectDACDone, 1 bit, 
+			*     InjectDACStart, 1 bit */
+			InjectDACMode[0] = (message[startByte] & 0x30) >> 0x04; //mask off bits 4 & 5 
+			InjectDACDone[0] = (message[startByte] & 0x40) >> 0x06; //mask off bits 6 
+			InjectDACStart[0] = (message[startByte] & 0x80) >> 0x07; //mask off bits 7 
 
-		/* message word 30: Inject range (bits 0-3), Inject phase (bits 4-7) */
-		startByte++;
-		InjectRange[0] = (message[startByte] & 0x0F); //mask off bits 0-3
-		InjectPhase[0] = (message[startByte] & 0xF0) >> 0x04; //mask off bits 4-7 
+			/* message word 30: Inject range (bits 0-3), Inject phase (bits 4-7) */
+			startByte++;
+			InjectRange[0] = (message[startByte] & 0x0F); //mask off bits 0-3
+			InjectPhase[0] = (message[startByte] & 0xF0) >> 0x04; //mask off bits 4-7 
 
-		/* message word 31: BoardID (bits 0-3) and HVNumAve (bits 4-7) */
-		startByte++;
-		boardID[0] = (message[startByte] & 0x0F); //mask off bits 0-3
-		HVNumAve[0] = (message[startByte] & 0xF0) >> 0x04; //mask off bits 4-7 and
+			/* message word 31: BoardID (bits 0-3) and HVNumAve (bits 4-7) */
+			startByte++;
+			boardID[0] = (message[startByte] & 0x0F); //mask off bits 0-3
+			HVNumAve[0] = (message[startByte] & 0xF0) >> 0x04; //mask off bits 4-7 and
 
-		/* message word 32:  Firmware version */
-		startByte++;
-		FirmwareVersion[0] = (message[startByte] & 0xFF); //the firmware version is 8 bits
+			/* message word 32:  Firmware version */
+			startByte++;
+			FirmwareVersion[0] = (message[startByte] & 0xFF); //the firmware version is 8 bits
 
-		/* message word 33 - 34: HV period manual, 16 bits */
-		startByte++;
-		HVPeriodManual = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		HVPeriodManual |= (message[startByte] & 0xFF) << 0x08;  //shift bits to 8-15
+			/* message word 33 - 34: HV period manual, 16 bits */
+			startByte++;
+			HVPeriodManual = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			HVPeriodManual |= (message[startByte] & 0xFF) << 0x08;  //shift bits to 8-15
 
-		/* message word 35 - 36: HV period auto, 16 bits */
-		startByte++;
-		HVPeriodAuto = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		HVPeriodAuto |= (message[startByte] & 0xFF) << 0x08;  //shift bits to 8-15 
+			/* message word 35 - 36: HV period auto, 16 bits */
+			startByte++;
+			HVPeriodAuto = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			HVPeriodAuto |= (message[startByte] & 0xFF) << 0x08;  //shift bits to 8-15 
 
-		/* message word 37: HV pulse width, 8 bits */
-		startByte++;
-		HVPulseWidth[0] = (message[startByte] & 0xFF); //mask off bits 0-7
+			/* message word 37: HV pulse width, 8 bits */
+			startByte++;
+			HVPulseWidth[0] = (message[startByte] & 0xFF); //mask off bits 0-7
 
-		/* message word 38 - 39: Temperature, 16 bits */
-		startByte++;
-		Temperature = (message[startByte] & 0xFF); //mask off bits 0-7
-		startByte++;
-		Temperature |= (message[startByte] & 0xFF) << 0x08;  //shift bits 8-15 to bits 0-7
-									//and mask off ibt 0-7
+			/* message word 38 - 39: Temperature, 16 bits */
+			startByte++;
+			Temperature = (message[startByte] & 0xFF); //mask off bits 0-7
+			startByte++;
+			Temperature |= (message[startByte] & 0xFF) << 0x08;  //shift bits 8-15 to bits 0-7
+										//and mask off ibt 0-7
 
-		/* message word 40: cosmics trigger , 8 bits */
-		startByte++;
-		CosmicTrig[0] = (message[startByte] & 0xFF); //mask off bits 0-7
+			/* message word 40: cosmics trigger , 8 bits */
+			startByte++;
+			CosmicTrig[0] = (message[startByte] & 0xFF); //mask off bits 0-7
 
-		/* message word 41: whatever this is...TripXCompEnc, 8 bits */
-		startByte++;
-		TripXCompEnc[0] = (message[startByte] & 0xFF); //mask off bits 0-7
+			/* message word 41: whatever this is...TripXCompEnc, 8 bits */
+			startByte++;
+			TripXCompEnc[0] = (message[startByte] & 0xFF); //mask off bits 0-7
 
 	
-		/* message word 42-43 Discriminator Enable Mask Trip 0, 16 bits */
-		/* message word 44-45 Discriminator Enable Mask Trip 1, 16 bits */
-		/* message word 46-47 Discriminator Enable Mask Trip 2, 16 bits */
-		/* message word 48-49 Discriminator Enable Mask Trip 3, 16 bits */
-		for (int i=0; i<4; i++) {
+			/* message word 42-43 Discriminator Enable Mask Trip 0, 16 bits */
+			/* message word 44-45 Discriminator Enable Mask Trip 1, 16 bits */
+			/* message word 46-47 Discriminator Enable Mask Trip 2, 16 bits */
+			/* message word 48-49 Discriminator Enable Mask Trip 3, 16 bits */
+			for (int i=0; i<4; i++) {
+				startByte++;
+				DiscrimEnableMask[i] = (message[startByte] & 0xFF);
+				startByte++;
+				DiscrimEnableMask[i] |= (message[startByte] & 0xFF) << 0x08;                        
+			}
+		
+			/* message word 50-53 Gate Time Stamp, 32 bits */
 			startByte++;
-			DiscrimEnableMask[i] = (message[startByte] & 0xFF);
+			GateTimeStamp = (message[startByte] & 0xFF);                        
 			startByte++;
-			DiscrimEnableMask[i] |= (message[startByte] & 0xFF) << 0x08;                        
+			GateTimeStamp |= (message[startByte] & 0xFF) << 0x08;                        
+			startByte++;
+			GateTimeStamp |= (message[startByte] & 0xFF) << 0x10;                        
+			startByte++;
+			GateTimeStamp |= (message[startByte] & 0xFF) << 0x18;                        
+		
+		} else { // frame error check
+			std::cout<<"The frame had errors."<<std::endl;
+			exit(1); 
 		}
-		
-		/* message word 50-53 Gate Time Stamp, 32 bits */
-		startByte++;
-		GateTimeStamp = (message[startByte] & 0xFF);                        
-		startByte++;
-		GateTimeStamp |= (message[startByte] & 0xFF) << 0x08;                        
-		startByte++;
-		GateTimeStamp |= (message[startByte] & 0xFF) << 0x10;                        
-		startByte++;
-		GateTimeStamp |= (message[startByte] & 0xFF) << 0x18;                        
-		
-	} else { // frame error check
-		std::cout<<"The frame had errors."<<std::endl;
-		exit(1); 
-	}
 
-}
+	} // end if initialized
 
 	// This finishes the incoming message.
 }
+
 
 void feb::SetFEBDefaultValues() 
 {
@@ -692,6 +692,7 @@ void feb::SetFEBDefaultValues()
 	ShowValues();
 #endif
 }
+
 
 void feb::ShowValues() 
 {

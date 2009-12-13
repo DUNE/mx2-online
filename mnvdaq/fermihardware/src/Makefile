@@ -6,6 +6,7 @@ LDFLAGS += -shared -Wl,-soname
 #COMPILE_OPTIONS += -DDEBUG_FEB
 #COMPILE_OPTIONS += -DDEBUG_CROC
 #COMPILE_OPTIONS += -DDEBUG_VERBOSE
+COMPILE_OPTIONS += -DDEBUG_CRIM
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
