@@ -176,9 +176,8 @@ void acquire_data::InitializeCroc(int address, int crocNo)
  * \param address an integer VME addres for the CROC
  * \param crocNo an integer given this CROC for ID
  */
-
 #if DEBUG_INIT
-	std::cout << "\nInitializing CROC " << (address>>16) << std::endl;
+	std::cout << "\nEntering acquire_data::InitializeCroc for CROC " << (address>>16) << std::endl;
 #endif
 #if DEBUG_THREAD
 	std::ofstream croc_thread;
@@ -189,6 +188,8 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 	croc_thread.open(filename.c_str());
 	croc_thread<<"In InitializeCrroc, Starting"<<std::endl;
 #endif
+        CVAddressModifier AM = daqController->GetAddressModifier();
+        CVDataWidth       DW = daqController->GetDataWidth();
 
 	// Make a CROC object on this controller.
 	daqController->MakeCroc(address,crocNo); 
@@ -200,6 +201,30 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 		if (status) throw status;
 	} catch (int e)  {
 		exit(-2);
+	}
+#if DEBUG_INIT
+	std::cout << "  Read the status..." << std::endl;
+#endif 
+
+	// Set the timing mode to EXTERNAL: clock mode, test pulse enable, test pulse delay
+	// Clock Mode set to External in CROC constructor.
+	// daqController->GetCroc(crocNo)->SetTimingRegister((unsigned short)1, (unsigned short)0, (unsigned short)0);
+	unsigned char croc_message[2];
+	croc_message[0] = (unsigned char)(daqController->GetCroc(crocNo)->GetTimingRegister() & 0xFF);
+	croc_message[1] = (unsigned char)( (daqController->GetCroc(crocNo)->GetTimingRegister()>>8) & 0xFF);
+#if DEBUG_INIT
+	printf("  Timing Register Address  = 0x%X\n",daqController->GetCroc(crocNo)->GetTimingAddress());
+	printf("  Timing Register Message  = 0x%X\n",daqController->GetCroc(crocNo)->GetTimingRegister());
+	printf("  Timing Message (Sending) = 0x%02X%02X\n",croc_message[1],croc_message[0]);
+#endif
+	try {
+		int error = daqAcquire->WriteCycle(daqController->handle, 2, croc_message, 
+			daqController->GetCroc(crocNo)->GetTimingAddress(), AM, DW);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Unable to set the CROC timing mode!" << std::endl;
+		daqController->ReportError(e);
+		exit (e);
 	}
 
 	// Now make threads which will search all channels on the croc to 
@@ -1604,10 +1629,16 @@ void acquire_data::TriggerDAQ(int a)
 			std::cout << "  Sent TCALB Delay" << std::endl;
 #endif
 			// Start the sequencer (trigger CNRST software pulse)
+#if DEBUG_TRIGGER
+			std::cout << "   Preparing to start the sequencer..." << std::endl;
+#endif
 			try {
 				unsigned char send_pulse[2];
 				send_pulse[0] = daqController->GetCrim()->GetSoftCNRST() & 0xff;
 				send_pulse[1] = (daqController->GetCrim()->GetSoftCNRST()>>0x08)&0xff;
+#if DEBUG_TRIGGER
+				printf("    send_pulse msg = 0x%02X%02X\n",send_pulse[1],send_pulse[0]);
+#endif
 				error = daqAcquire->WriteCycle(daqController->handle, 2, send_pulse,
 					daqController->GetCrim()->GetCNRSTRegister(), AM, DW); //send it
 				if (error) throw error;
@@ -1666,13 +1697,17 @@ void acquire_data::WaitOnIRQ()
 #endif
 	unsigned short interrupt_status = 0;
 	unsigned char crim_send[2];
+	// TODO - Add a break condition to get out of the interrupt polling...
 	while (!(interrupt_status&0x04)) { //0x04 is the IRQ Line of interest
 		try {
 			crim_send[0] = 0; crim_send[1] = 0;
-			error=daqAcquire->ReadCycle(daqController->handle, crim_send,
+			error = daqAcquire->ReadCycle(daqController->handle, crim_send,
 				daqController->GetCrim()->GetInterruptStatusAddress(), 
 				daqController->GetAddressModifier(),
-				daqController->GetDataWidth()); //send it 
+				daqController->GetDataWidth());  
+#if DEBUG_IRQ
+			printf(" Interrrupt status = 0x%02X\n", (crim_send[0] + (crim_send[1]<<8)));  
+#endif
 			if (error) throw error;
 			interrupt_status =  (crim_send[0]|(crim_send[1]<<0x08));
 		} catch (int e) {
@@ -1707,6 +1742,9 @@ void acquire_data::AcknowledgeIRQ()
  * A function which acknowledges and resets the interrupt handler.
  *
  */
+#if DEBUG_IRQ
+	std::cout << "  Entering acquire_data::AcknowledgeIRQ..." << std::endl;
+#endif
 	CVDataWidth DW = daqController->GetDataWidth();
 	int error;
 	try {
