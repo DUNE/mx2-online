@@ -1,4 +1,4 @@
-This file is current as of 2009.December.12 - GNP
+This file is current as of 2009.December.15 - GNP
 
 To build the MINERvA Production DAQ (mnvdaq) you need to first install and build CAEN driver libraries 
 to interface with the CAEN v2718 VME Controller and a2818 PCI Interface Card.  These drivers are available
@@ -12,11 +12,13 @@ investigated.
 
 Store the CAEN libraries in a directory named ${WORKROOT}/CAENVMElib/lib, where $WORKROOT is a directory 
 of your choosing.  If you attempt to install the CAEN drivers by untarring the packages and following the 
-contained instructions in $WORKROOT you will end up with the correct structure.  Note that even if you do 
-not intend to run the DAQ for acquisition, you still need the CAEN libraries to build the code.
+contained instructions in $WORKROOT you will end up with the correct structure for the 2.11 version of the
+libraries.  v2.7 requires some fiddling to get things clean afterwards because the packages also contains 
+the libraries for Windows.  Note that even if you do not intend to run the DAQ for acquisition, you still 
+need the CAEN libraries to build the code.
 
 Once the CAEN libraries are installed, go to $WORKROOT and create a mnvonline/ directory to hold the DAQ 
-and (eventually) SlowControl code.  Within mnvonline/ run a CVS checkout on the package devdaq.  Make sure 
+and (eventually) SlowControl code.  Within mnvonline/ run a CVS checkout on the package mnvdaq.  Make sure 
 you have the following environment variables set and a valid kerberos ticket to access the MINERvA CVS 
 repository:
 	CVSROOT=minervacvs@cdcvs.fnal.gov:/cvs/minervasw
@@ -28,7 +30,7 @@ be slightly different at different development locations.  The location is set b
 variable.  Set your own $LOCALE variable or mimic the directory structure of another $LOCALE and use that
 value for your own $LOCALE.  
 
-As of 2009.December.12, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
+As of 2009.December.15, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
 operation on the mnvonline machines.  For set-up in a different environment, the default scripts will 
 need to be edited carefully.
 
@@ -49,8 +51,12 @@ not currently supported (and would require some significant re-engineering of th
 
 By default the DAQ will build in Single PC mode.  If you want to build in multi-PC mode, several options 
 need to be set in the Makefiles on the different PC's (currently, the code supports any of the roles 
-mentioned above, and the DAQ is built into one or another at compile time).  More details on this will 
-follow in future versions of this document. 
+mentioned above, and the DAQ is built into one or another at compile time).  In particular, the 
+event_builder package requires the MULTI_PC flag to be set in the Makefile for all nodes.  The main 
+Makefile must also be configured as follows:
+	Queen  : COMPILE_OPTIONS += -DMULTI_PC -DMASTER 
+	Soldier: COMPILE_OPTIONS += -DMULTI_PC -DMASTER 
+	Worker : COMPILE_OPTIONS += -DMULTI_PC  
 
 Once you have configured your setup scripts, build the DAQ with the following steps:
 
@@ -68,13 +74,16 @@ MINERvA DAQ uses the following set of ports:
 	1090 : Queen-Soldier port (on Soldier)
 	1091 : et port (on Queen)
 	1095 : Soldier-Worker communication port
+It is a good idea to configure your firewall such that these ports are kept open if you want to run in 
+networked mode.  Note that you don't need to worry about this step if you only plan on running the DAQ 
+on one PC and don't need a networked version of ET.
 
 5) Go to et_9.0 and untar BMS.tar.gz.  Then type "gmake install"
 
 6) Check ${ET_LIBROOT}/lib and make sure you have libet.a, libet_remote.so, and libet.so.
 
 7) By default, the DAQ will build in single PC mode.  To build in multi-PC mode, you need to edit the 
-Makefiles in the event_builder and main packages.
+Makefiles in the event_builder and main packages (see above).
 
 8) Return to $DAQROOT and type "gmake all"
 
