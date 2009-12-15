@@ -301,13 +301,16 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/*      The top of the Event Loop.  Events here are referred to as GATES.        */
 	/*********************************************************************************/
+	struct timeval runstart, runend;
+	gettimeofday(&runstart, NULL);
+	//
 	for (int gate = 1; gate <= record_gates; gate++) {
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
 		gettimeofday(&gate_start_time, NULL);
 #endif
 #if DEBUG_ME
-		cout << " Got the gate: " << gate << endl;
+		cout << "\n\n->Top of the Event Loop, starting Gate: " << gate << endl;
 #endif
 #if RECORD_EVENT
 		if (!(gate%100)) {
@@ -341,6 +344,9 @@ int main(int argc, char *argv[])
 			exit(-2000);
 		}
 		global_gate.close();
+#if DEBUG_ME
+		cout << "    Global Gate: " << event_data.gate_info[0] << endl;
+#endif
 #endif
 
 		// Set the data_ready flag to false, we have not yet taken any data
@@ -569,6 +575,10 @@ int main(int argc, char *argv[])
 #if !SINGLE_PC
 	close(socket_handle);
 #endif
+	gettimeofday(&runend, NULL);
+	int diffsec  = runend.tv_sec - runstart.tv_sec; 
+	int diffusec = runend.tv_usec - runstart.tv_usec; 
+	printf(" Total acquisition time was %d.%06d seconds.\n",diffsec,diffusec);
 #endif 
 //TAKE_DATA
 
@@ -720,19 +730,18 @@ void TriggerDAQ(acquire_data *daq)
 		trigger_log.open("trigger_thread_log.csv");
 	}
 #endif
-
 #if DEBUG_ME
 	time_t currentTime; time(&currentTime);
 	std::cout << " Trigger Time:   " << ctime(&currentTime);
-	std::cout << " Setting Trigger " << std::endl;
+	std::cout << " ->Setting Trigger: TODO - pass trigger id here!" << std::endl;
 #endif
 
 	/**********************************************************************************/
 	/* let the hardware tell us when the trigger has completed                        */
 	/**********************************************************************************/
 
-	daq->TriggerDAQ(0); //send the one-shot trigger
-	daq->WaitOnIRQ(); //wait for the trigger to be set (only returns if successful)
+	daq->TriggerDAQ(0);  // send the one-shot trigger
+	daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
 
 	/**********************************************************************************/
 	/*  Let the interrupt handler deal with an asserted interrupt                     */
@@ -747,9 +756,23 @@ void TriggerDAQ(acquire_data *daq)
 #if DEBUG_ME
 	std::cout << " Data Ready! " << std::endl;
 #endif
+#if RUN_SLEEPY
+	// Smallest possible time with "sleep" command is probably something like ~1 ms
+	// TODO - Put in a more clever wait function so we don't step on digitization on the FEBs.
+	system("sleep 1e-3");
+#endif
 
 	// Tell the data acquiring threads that data is available for processing.	
 	data_ready = true; 
+	
+	struct timeval triggerNow;
+	gettimeofday(&triggerNow, NULL);
+	unsigned long long totaluseconds = ((unsigned long long)(triggerNow.tv_sec))*1000000 + 
+		(unsigned long long)(triggerNow.tv_usec);
+	// TODO - fix DAQ header to accept 64 bit time (2 32's) and add this data to header...
+#if DEBUG_ME
+	std::cout << " ->Trigger Time (gpsTime) = " << totaluseconds << std::endl;
+#endif
 
 #if TIME_ME
 	gettimeofday(&stop_time,NULL);
