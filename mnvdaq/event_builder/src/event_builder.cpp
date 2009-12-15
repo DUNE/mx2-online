@@ -190,12 +190,12 @@ int main(int argc, char **argv)
 		// Now write the event to the binary output file.
 		binary_outputfile.write((char *) final_buffer, length);  
 		binary_outputfile.flush();
-		if ( !( evt_counter%100 ) ) {
+		if ( !( evt_counter%10000 ) ) {
 			thread_log << "*****************************************************************************"<<endl; 
-			thread_log << "      Event Processed: "<<evt_counter<<endl;
+			thread_log << "      Event (Frame) Processed: "<<evt_counter<<endl;
 			thread_log << "*****************************************************************************"<<endl; 
 			cout << "*****************************************************************************"<<endl; 
-			cout << "      Event Processed: "<<evt_counter<<endl;
+			cout << "      Event (Frame) Processed: "<<evt_counter<<endl;
 			cout << "*****************************************************************************"<<endl; 
 		}
 		delete event;
