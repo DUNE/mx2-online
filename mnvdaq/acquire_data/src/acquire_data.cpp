@@ -1179,7 +1179,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			take_data_log << "*************************DISC FILL EVENT STRUCTURE*****************" << std::endl; 
 			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
 				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
-			take_data_log << "*******************************************************************" < <std::endl; 
+			take_data_log << "*******************************************************************" << std::endl; 
 			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "11" << "\t"
 				<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
 				<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
@@ -1276,7 +1276,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			gettimeofday(&stop_time,NULL);
 			duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
 				(start_time.tv_sec*1e6+start_time.tv_usec);
-			take_data_log << "********************ADC FILL EVENT STRUCTURE********************" < <std::endl; 
+			take_data_log << "********************ADC FILL EVENT STRUCTURE********************" << std::endl; 
 			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
 				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
 			take_data_log << "****************************************************************" << std::endl; 
