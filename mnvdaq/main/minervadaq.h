@@ -11,8 +11,6 @@
 boost::mutex main_mutex; /*!< A BOOST multiple exclusion for use in threaded operation */
 
 bool data_ready, evt_record_available;   /*!<data status variables */
-/*! a function for setting the high voltage on FEB's */
-void SetHV(acquire_data *daq, int i, int j); 
 /*! a function for selecting a trigger and waiting on it */
 void TriggerDAQ(acquire_data *daq, unsigned short int triggerType); // The triggering functions.
 /*! the function which governs the entire data acquisition sequence */

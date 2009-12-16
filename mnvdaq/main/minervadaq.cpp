@@ -1,11 +1,8 @@
 /*! \file minervadaq.cpp
  * \brief  Main routine: minervadaq for acquiring data from the MINERvA detector. 
  *
- * Elaine Schulte
- * Rutgers University
- * August 4, 2009 
- *
- * 
+ * Elaine Schulte, Rutgers University
+ * Gabriel Perdue, The University of Rochester
  */
 
 #include "acquire_data.h"
@@ -36,7 +33,6 @@ using namespace std;
 
 int main(int argc, char *argv[]) 
 {
-
 	// Log files for the main routine.  
 	string et_filename;
 	ofstream gate_time_log;
@@ -64,18 +60,21 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	bool success             = false; //initialize the success state of the DAQ on exit
 	int record_gates         = -1;
-	RunningModes runningMode = Pedestal;
+	RunningModes runningMode = OneShot;
 
 	/*********************************************************************************/
-	/*  Make sure that an output filename and a number of events to record           */
-	/*  were given on the command line.                                              */
-	/*                                                                               */
-	/*  If they were not, then ask the user to input them now.                       */
+	/* Process the command line argument set.                                        */
 	/*********************************************************************************/
-	// we need to add a lot here:
+	// TODO - We need to add a lot here to the command line argument set...
 	//  running mode - for now assume pedestal. 
 	//  log file name (same as et name)
-	//  li box config
+	//  run number
+	//  subrun number
+	//  run length in gates
+	//  run length in seconds?
+	//  detector
+	//  li box config - led groups activated
+	//  li box config - pulse height
 	if (argc!=3) {
 		cout<<"You forgot to give me the number of gates you want recorded! No "<<endl;
 		cout<<"matter how hard I try, I can't record any data if you don't tell "<<endl;
@@ -208,6 +207,25 @@ int main(int argc, char *argv[])
 #endif
 // endif (!MASTER)&&(!SINGLE_PC)
 
+	/*********************************************************************************/
+	/*  First thing's first:  Read in the event status file which contains things    */
+	/*  like the run & subrun numbers, and the trigger type to be used.              */
+	/*  TODO - Phase out run_status.dat and pass everything via the command line...  */
+	/*  TODO - Need a python script to format data passed to the command line.       */
+	/*********************************************************************************/
+	ifstream run_status("run_status.dat");
+	try {
+		// We assume the run_status is formatted as: run-number sub-run-number
+		if (!run_status) throw (!run_status);
+		run_status >> event_data.runNumber >> event_data.subRunNumber;
+		event_data.detectorType   = (unsigned char)0;
+		event_data.detectorConfig = (unsigned short)0;
+		event_data.triggerType    = (unsigned short)0;
+	} catch (bool e) {
+		cout << "Error opening run_status.dat.  " << endl;
+		cout << "You know, the one that tells me what the run number is!" << endl;
+		exit(-2000);
+	}
 
 	/*********************************************************************************/
 	/*   Make an acquire data object which contains the functions for                */
@@ -224,29 +242,6 @@ int main(int argc, char *argv[])
 	daq->InitializeDaq(CONTROLLER_ID, runningMode);
 #endif
 // endif THREAD_ME
-
-	/*********************************************************************************/
-	/*  During electronics initialization, we can prepare the event builder.         */
-	/*                                                                               */
-	/*  First thing's first:  Read in the event status file which contains things    */
-	/*  like the run & subrun numbers, and the trigger type to be used.              */
-	/*  TODO - Phase out run_status.dat and pass everything via the command line...  */
-	/*  TODO - Need a python script to format data passed to the command line.       */
-	/*********************************************************************************/
-	ifstream run_status("run_status.dat");
-	try {
-		// We assume the run_status is formatted as: run-number sub-run-number trigger-type.
-		// TODO - We don't really want to pass a "trigger type," but rather a "run type."
-		// TODO - We want to set trigger type dynamically (static is okay for now).
-		if (!run_status) throw (!run_status);
-		run_status >> event_data.runNumber >> event_data.subRunNumber >> event_data.triggerType;
-		event_data.detectorType   = (unsigned char)0;
-		event_data.detectorConfig = (unsigned short)0;
-	} catch (bool e) {
-		cout << "Error opening run_status.dat.  " << endl;
-		cout << "You know, the one that tells me what the run number is!" << endl;
-		exit(-2000);
-	}
 
 	/*********************************************************************************/
 	/*  With run metadata in hand we can set about starting up an event builder...   */
@@ -281,6 +276,7 @@ int main(int argc, char *argv[])
 
 	/*********************************************************************************/
 	/*      The top of the Event Loop.  Events here are referred to as GATES.        */
+	/*      Be mindful of this jargon - in ET, "events" are actually FRAMES.         */
 	/*********************************************************************************/
 	struct timeval runstart, runend;
 	gettimeofday(&runstart, NULL);
@@ -306,14 +302,15 @@ int main(int argc, char *argv[])
 		/*                                  3: chan_no, 4: bank 5: buffer length          */
 		/*                                  6: feb number, 7: feb firmware, 8: hits       */
 		/**********************************************************************************/
-		event_data.gate        = gate; //record gate number
-		event_data.triggerTime = 0;
-		event_data.readoutInfo = 0;
+		event_data.gate        = gate; // Record gate number.
+		event_data.triggerTime = 0;    // Set after returning from the Trigger function.
+		event_data.readoutInfo = 0;    // Error bits.
 		event_data.minosSGATE  = 0;
 		for (int i=0;i<9;i++) {
-			event_data.feb_info[i] = 0; //initialize feb information block 
+			event_data.feb_info[i] = 0; // Initialize the FEB information block. 
 		}
 #if SINGLE_PC
+		// TODO - Add a method for getting the global gate in multi-PC mode!
 		fstream global_gate("global_gate.dat");
 		try {
 			if (!global_gate) throw (!global_gate);
@@ -327,8 +324,8 @@ int main(int argc, char *argv[])
 		cout << "    Global Gate: " << event_data.globalGate << endl;
 #endif
 #endif
-		// Set the data_ready flag to false, we have not yet taken any data
-		data_ready = false; //no data is ready to be processed
+		// Set the data_ready flag to false, we have not yet taken any data.
+		data_ready = false; 
 
 		// Reset the thread count if in threaded operation.
 #if THREAD_ME
@@ -339,23 +336,46 @@ int main(int argc, char *argv[])
 #endif
 
 		/**********************************************************************************/
-		/*    Trigger the DAQ, either mode.                                               */
+		/* Trigger the DAQ, threaded or unthreaded.                                       */
 		/**********************************************************************************/
-		// TODO - Add dynamic trigger typing here - want to switch between beam & X.
-		unsigned short int triggerType = event_data.triggerType;  // TEMP (This backwards.)
+		// TODO - Add dynamic trigger typing here - want to switch between beam & X, etc.
+		unsigned short int triggerType;
+		switch (runningMode) {
+			case OneShot:
+				triggerType = Pedestal;
+                        	break;
+			case NuMIBeam:
+				triggerType = NuMI;
+				break;
+			case Cosmics:
+				triggerType = Cosmic;
+				break;
+			case PureLightInjection:
+				triggerType = LightInjection;
+				break;
+			case MixedBeamPedestal:
+				std::cout << "No multimode trigger logic defined yet!" << std::endl;
+				exit(-4);
+			case MixedBeamLightInjection:
+				std::cout << "No multimode trigger logic defined yet!" << std::endl;
+				exit(-4); 
+			default:
+                        	std::cout << "ERROR! Improper Running Mode defined!" << std::endl;
+                        	exit(-4);
+        	}
+		event_data.triggerType = triggerType;
 #if THREAD_ME
-		boost::thread trigger_thread(boost::bind(&TriggerDAQ,daq)); // Careful about arguments!
+		// Careul about arguments with the threaded functions!  They are not exercised regularly.
+		boost::thread trigger_thread(boost::bind(&TriggerDAQ,daq,triggerType));
 #elif NO_THREAD
 		TriggerDAQ(daq, triggerType);
 #endif 
 
 		/**********************************************************************************/
-		/*   Execute TakeData or launch appropriate threads as appropriate                */
-		/*   for the current running mode                                                 */
+		/* Execute TakeData or launch threads as needed for the current running mode      */
 		/**********************************************************************************/
 		/**********************************************************************************/
-		/*   Make the an event_handler pointer for passing to functions which             */
-		/*   require a pointer passed to them                                             */
+		/* Make the event_handler pointer.                                                */
 		/**********************************************************************************/
 		event_handler *evt = &event_data;
 
@@ -463,14 +483,13 @@ int main(int argc, char *argv[])
 		/*   event builder.                                                               */
 		/**********************************************************************************/
 
-		//Build DAQ event bank--we should have collected up all of the signals by now
-		//Get Trigger Time, Timing Violation Error (obsolete), MINOS SGATE
+		// Build DAQ Header bank.
+		// Get Trigger Time, Timing Violation Error (obsolete), MINOS SGATE
 		int bank = 3; //DAQ Data Bank
 		// TODO - find a way to get exceptions passed into the error bits.
 		// TODO - read the CRIM MINOS register to get MINOS SGATE
 		unsigned short error         = 0;
 		unsigned int minos           = 0;
-		// TODO - event_data.triggerType  = dynamicTriggerType;
 		event_data.feb_info[1] = daq->GetController()->GetID();
 		event_data.feb_info[4] = bank; 
 		event_data.readoutInfo = error; 
@@ -479,7 +498,6 @@ int main(int argc, char *argv[])
 #if DEBUG_ME
 		cout << "Contacting the EventBuilder from Main." << endl;
 #endif
-
 		// Here the soldier node must wait for a "done" signal from the worker node 
 		// before attaching the end-of-event header bank.
 #if MASTER
@@ -499,7 +517,7 @@ int main(int argc, char *argv[])
 					// The call was interrupted by a signal. Try again.
 					continue;
 				else
-				// Something else went wrong. 
+					// Something else went wrong. 
 					perror("accept");
 					exit(EXIT_FAILURE);
 			}
@@ -545,6 +563,7 @@ int main(int argc, char *argv[])
 		}
 #endif
 #if SINGLE_PC
+		// TODO - Come up with a mechanism to synch global gate record keeping for multi-PC mode!
 		global_gate.open("global_gate.dat");
 		try {
 			if (!global_gate) throw (!global_gate);
@@ -568,7 +587,6 @@ int main(int argc, char *argv[])
                         (unsigned long long)(runend.tv_usec);
 
 	unsigned long long totaldiff  = totalend - totalstart;
-	// double totaldiffsec = totaldiff/1000000.0; 
 	printf(" Total acquisition time was %d microseconds.\n",totaldiff);
 #endif 
 //TAKE_DATA
@@ -724,14 +742,14 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType)
 #if DEBUG_ME
 	time_t currentTime; time(&currentTime);
 	std::cout << " Starting Trigger at " << ctime(&currentTime);
-	std::cout << " ->Setting Trigger: TODO - pass trigger id here!" << std::endl;
+	std::cout << " ->Setting Trigger: " << triggerType << std::endl;
 #endif
 
 	/**********************************************************************************/
 	/* let the hardware tell us when the trigger has completed                        */
 	/**********************************************************************************/
 
-	daq->TriggerDAQ(0);  // send the one-shot trigger
+	daq->TriggerDAQ(triggerType);  // send the one-shot trigger
 	daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
 
 	/**********************************************************************************/
@@ -766,82 +784,3 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType)
 } // end void TriggerDAQ
 
 
-void SetHV(acquire_data *daq, int i, int j) 
-{
-/*! \fn void SetHV(acquire_data *daq, int i, int j)
- * Sets and monitors the HV on an FEB until the HV comes to the set-point.
- * 
- * This function loops over each FEB in the list belonging to channel j and 
- * sets the high voltage via an FPGA frame.  
- *
- * It then monitors that voltage via MonitorHV, belonging to *daq, until
- * the return value is within 15 counts of the set point.
- *
- * Code is available for both threaded and unthreaded execution.
- *
- * \param *daq a pointer to the acquire_data object which governs this DAQ execution
- * \param i an integer, the CROC ID being set
- * \param j an integer, the Channel ID on croc i  
- */
-
-	/**********************************************************************************/
-	/*   A function which sets the HV on FEB's                                        */
-	/**********************************************************************************/
-#if THREAD_ME
-	stringstream thread_number;
-	thread_number<<j;
-	string filename="HV_thread_"+thread_number.str();
-	ofstream monitor_thread;
-	monitor_thread.open(filename.c_str());
-	monitor_thread<<"Preparing to set HV"<<endl;
-#else
-	cout<<"Preparing to set HV"<<endl;
-#endif
-	// bool hv_set = false; // unused...
-	int hvdiff = -1;
-	std::list<feb*> *feblist = daq->GetController()->GetCroc(i)->GetChannel(j)->GetFebList();
-	std::list<feb*>::iterator p,q;
-	for (p=feblist->begin();p!=feblist->end();p++) {
-#if THREAD_ME
-		monitor_thread<<"Setting the HV on FEB: "<<(*p)->GetFEBNumber()<<std::endl;
-#else
-		cout<<"Setting the HV on FEB: "<<(*p)->GetFEBNumber()<<std::endl;
-#endif
-		daq->SetHV((*p),daq->GetController()->GetCroc(i), 
-			daq->GetController()->GetCroc(i)->GetChannel(j), 44000, 30, 1);
-		hvdiff = abs(44000-(daq->MonitorHV((*p),daq->GetController()->GetCroc(i), 
-			daq->GetController()->GetCroc(i)->GetChannel(j))));
-	}
-
-	for (p=feblist->begin();p!=feblist->end();p++) {
-#if THREAD_ME
-		monitor_thread<<"Current HV for Tube "<<(*p)->GetFEBNumber()<<" on Channel "<<j
-			<<": "<<(daq->MonitorHV((*p),daq->GetController()->GetCroc(i),
-			daq->GetController()->GetCroc(i)->GetChannel(j)))<<endl;
-		(*p)->ShowValues();
-#else
-		cout<<"Current HV for Tube "<<(*p)->GetFEBNumber()<<" on Channel "<<j<<": "
-			<<(daq->MonitorHV((*p),daq->GetController()->GetCroc(i),
-			daq->GetController()->GetCroc(i)->GetChannel(j)))<<endl;
-#endif
-
-		while (hvdiff>15) { 
-			for (q=feblist->begin();q!=feblist->end();q++) {
-				system("sleep 10s");
-				hvdiff = abs(44000-(daq->MonitorHV((*q),daq->GetController()->GetCroc(i), 
-					daq->GetController()->GetCroc(i)->GetChannel(j))));
-#if DEBUG_THREAD
-				(*q)->ShowValues();
-#endif
-#if THREAD_ME
-				monitor_thread<<"Current HV: "<<(daq->MonitorHV((*q),daq->GetController()->GetCroc(i),
-					daq->GetController()->GetCroc(i)->GetChannel(j)))<<" hvdiff: "<<hvdiff<<endl;
-#else
-				cout<<"Current HV: "<<(daq->MonitorHV((*q),daq->GetController()->GetCroc(i),
-					daq->GetController()->GetCroc(i)->GetChannel(j)))<<" hvdiff: "<<hvdiff<<endl;
-#endif
-				if (hvdiff<=15)  break;
-			}
-		}
-	}
-} // end void SetHV
