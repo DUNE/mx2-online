@@ -33,8 +33,81 @@ using namespace std;
 
 int main(int argc, char *argv[]) 
 {
+	/*********************************************************************************/
+	/*      Initialize some execution status variables                               */
+	/*********************************************************************************/
+	bool success             = false;     // Success state of the DAQ at exit,
+	int record_gates         = -1;        // Run length in GATES.
+	RunningModes runningMode = OneShot;
+	int runMode              = 0;         // Same as OneShot...
+	int runNumber            = 938;       // MINERvA!
+	int subRunNumber         = 11;        // It goes to 11...
+	int record_seconds       = -1;	      // Run length in SECONDS (Not Supported...)
+	int detector             = 0;         // Default to UnknownDetector.
+	string et_filename       = "testme";  
+
+	/*********************************************************************************/
+	/* Process the command line argument set.                                        */
+	/*********************************************************************************/
+	// TODO - We need to add to the command line argument set...
+	//  li box config - led groups activated
+	//  li box config - pulse height
+	int optind = 1;
+	// Decode Arguments
+	cout << "\n\nArguments to MINERvA DAQ: " << endl;
+	while ((optind < argc) && (argv[optind][0]=='-')) {
+		string sw = argv[optind];
+		if (sw=="-r") {
+			optind++;
+			runNumber = atoi(argv[optind]);
+			cout << "\tRun Number             = " << runNumber << endl;
+        	}
+		else if (sw=="-s") {
+			optind++;
+			subRunNumber = atoi(argv[optind]);
+			cout << "\tSubrun Number          = " << subRunNumber << endl;
+        	}
+		else if (sw=="-g") {
+			optind++;
+			record_gates = atoi(argv[optind]);
+			cout << "\tTotal Gates            = " << record_gates << endl;
+        	}
+		else if (sw=="-t") {
+			optind++;
+			record_seconds = atoi(argv[optind]);
+			cout << "\tTotal Seconds (not supported) = " << record_seconds << endl;
+        	}
+		else if (sw=="-m") {
+			optind++;
+			runMode = atoi(argv[optind]);
+			runningMode = (RunningModes)runMode;
+			cout << "\tRunning Mode (encoded) = " << runningMode << endl;
+        	}
+		else if (sw=="-d") {
+			optind++;
+			detector = atoi(argv[optind]);
+			cout << "\tDetector (encoded)     = " << detector << endl;
+        	}
+		else if (sw=="-et") {
+			optind++;
+			et_filename = argv[optind];
+			cout << "\tET Filename            = " << et_filename << endl;
+		}
+		else
+			cout << "Unknown switch: " << argv[optind] << endl;
+		optind++;
+	}
+	cout << endl;
+
+	// Report the rest of the command line...
+	if (optind < argc) {
+		cout << "There were remaining arguments!  Are you sure you set the run up correctly?" << endl;
+		cout << "  Remaining arguments = ";
+		for (;optind<argc;optind++) cout << argv[optind];
+		cout << endl;
+	}
+
 	// Log files for the main routine.  
-	string et_filename;
 	ofstream gate_time_log;
 	ofstream thread_launch_log;
 	ofstream thread_return_log;
@@ -54,39 +127,13 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	event_handler event_data;
 	evt_record_available = true;
+	// Add some data for the header to the event_handler...
+	event_data.runNumber      = runNumber;
+	event_data.subRunNumber   = subRunNumber;
+	event_data.detectorType   = (unsigned char)detector;
+	event_data.detectorConfig = (unsigned short)0;
+	event_data.triggerType    = (unsigned short)0;
 
-	/*********************************************************************************/
-	/*      Initialize some execution status variables                               */
-	/*********************************************************************************/
-	bool success             = false; //initialize the success state of the DAQ on exit
-	int record_gates         = -1;
-	RunningModes runningMode = OneShot;
-
-	/*********************************************************************************/
-	/* Process the command line argument set.                                        */
-	/*********************************************************************************/
-	// TODO - We need to add a lot here to the command line argument set...
-	//  running mode - for now assume pedestal. 
-	//  log file name (same as et name)
-	//  run number
-	//  subrun number
-	//  run length in gates
-	//  run length in seconds?
-	//  detector
-	//  li box config - led groups activated
-	//  li box config - pulse height
-	if (argc!=3) {
-		cout<<"You forgot to give me the number of gates you want recorded! No "<<endl;
-		cout<<"matter how hard I try, I can't record any data if you don't tell "<<endl;
-		cout<<"me how many gates you want!"<<endl;
-		cout<<"Now GIVE ME A NUMBER OF GATES!"<<endl;
-		cin>>record_gates;
-		cout<<"And the file name..."<<endl;
-		cin>>et_filename;
-	} else {
-		record_gates = atoi(argv[2]);
-		et_filename.assign(argv[1]);
-	}
 
 	/*********************************************************************************/
 	/* Now set up ET for use in writing the first-pass memory mapped data file.      */
@@ -208,26 +255,6 @@ int main(int argc, char *argv[])
 // endif (!MASTER)&&(!SINGLE_PC)
 
 	/*********************************************************************************/
-	/*  First thing's first:  Read in the event status file which contains things    */
-	/*  like the run & subrun numbers, and the trigger type to be used.              */
-	/*  TODO - Phase out run_status.dat and pass everything via the command line...  */
-	/*  TODO - Need a python script to format data passed to the command line.       */
-	/*********************************************************************************/
-	ifstream run_status("run_status.dat");
-	try {
-		// We assume the run_status is formatted as: run-number sub-run-number
-		if (!run_status) throw (!run_status);
-		run_status >> event_data.runNumber >> event_data.subRunNumber;
-		event_data.detectorType   = (unsigned char)0;
-		event_data.detectorConfig = (unsigned short)0;
-		event_data.triggerType    = (unsigned short)0;
-	} catch (bool e) {
-		cout << "Error opening run_status.dat.  " << endl;
-		cout << "You know, the one that tells me what the run number is!" << endl;
-		exit(-2000);
-	}
-
-	/*********************************************************************************/
 	/*   Make an acquire data object which contains the functions for                */
 	/*   performing initialization and the acquisition sequence                      */
 	/*********************************************************************************/
@@ -257,7 +284,7 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/*  At this point we are now set up and are ready to start event acquistion.     */
 	/*********************************************************************************/
-#if DEBUG_ME
+#if DEBUG_GENERAL
 	cout << "\nGetting ready to start taking data!\n" << endl;
 #endif
 
@@ -270,7 +297,7 @@ int main(int argc, char *argv[])
 #endif
 
 #if TAKE_DATA
-#if DEBUG_ME
+#if DEBUG_GENERAL
 	cout << " Attempting to record " << record_gates << " gates.\n" << endl;
 #endif
 
@@ -286,7 +313,7 @@ int main(int argc, char *argv[])
 		struct timeval gate_start_time, gate_stop_time;
 		gettimeofday(&gate_start_time, NULL);
 #endif
-#if DEBUG_ME
+#if DEBUG_GENERAL
 		cout << "\n\n->Top of the Event Loop, starting Gate: " << gate << endl;
 #endif
 #if RECORD_EVENT
@@ -320,7 +347,7 @@ int main(int argc, char *argv[])
 			exit(-2000);
 		}
 		global_gate.close();
-#if DEBUG_ME
+#if DEBUG_GENERAL
 		cout << "    Global Gate: " << event_data.globalGate << endl;
 #endif
 #endif
@@ -393,7 +420,7 @@ int main(int argc, char *argv[])
 		gettimeofday(&triggerNow, NULL);
 		unsigned long long totaluseconds = ((unsigned long long)(triggerNow.tv_sec))*1000000 + 
 			(unsigned long long)(triggerNow.tv_usec);
-#if DEBUG_ME
+#if DEBUG_GENERAL
 		std::cout << " ->Trigger Time (gpsTime) = " << totaluseconds << std::endl;
 #endif
 		event_data.triggerTime = totaluseconds;
@@ -448,7 +475,7 @@ int main(int argc, char *argv[])
 					//  Unthreaded option
 					//
 #elif NO_THREAD
-#if DEBUG_ME
+#if DEBUG_GENERAL
 					cout << " Reading CROC: " << croc_id << " channel: " << j << std::endl;
 #endif
 					TakeData(daq,evt,croc_id,j,0,attach,sys_id);
@@ -504,7 +531,7 @@ int main(int argc, char *argv[])
 		event_data.readoutInfo = error; 
 		event_data.minosSGATE  = minos;
 
-#if DEBUG_ME
+#if DEBUG_GENERAL
 		cout << "Contacting the EventBuilder from Main." << endl;
 #endif
 		// Here the soldier node must wait for a "done" signal from the worker node 
@@ -596,7 +623,7 @@ int main(int argc, char *argv[])
                         (unsigned long long)(runend.tv_usec);
 
 	unsigned long long totaldiff  = totalend - totalstart;
-	printf(" Total acquisition time was %d microseconds.\n",totaldiff);
+	printf(" Total acquisition time was %lu microseconds.\n",totaldiff);
 #endif 
 //TAKE_DATA
 
@@ -683,7 +710,7 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 	list<feb*> *feb_list = channelTrial->GetFebList(); //the feb's on this channel
 	list<feb*>::iterator feb; //we want to loop over them when we get the chance...
 
-#if DEBUG_ME
+#if DEBUG_GENERAL
 	data_monitor << "Is data ready? " << data_ready << std::endl;
 	data_monitor << " Bank Type?    " << evt->feb_info[4] << std::endl;
 #endif
@@ -702,7 +729,7 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 			/*          Take all data on the feb                                              */
 			/**********************************************************************************/
 			data_taken = daq->TakeAllData((*feb),channelTrial,crocTrial,evt,thread,attach,sys_id); 
-#if DEBUG_ME
+#if DEBUG_GENERAL
 			data_monitor<<"TakeAllData Returned"<<std::endl;
 #endif
 			if (data_taken) { //and if you didn't succeed...(the functions return 0 if successful) 
@@ -711,7 +738,7 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 				exit(-2000); //stop the presses!
 			}
 		} //feb loop
-#if DEBUG_ME
+#if DEBUG_GENERAL
 		data_monitor<<"Completed processing FEB's in this list."<<std::endl;
 #endif
 #if TIME_ME
@@ -748,7 +775,7 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType)
 		trigger_log.open("trigger_thread_log.csv");
 	}
 #endif
-#if DEBUG_ME
+#if DEBUG_GENERAL
 	time_t currentTime; time(&currentTime);
 	std::cout << " Starting Trigger at " << ctime(&currentTime);
 	std::cout << " ->Setting Trigger: " << triggerType << std::endl;
@@ -771,7 +798,7 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType)
 	daq->AcknowledgeIRQ(); //acknowledge the IRQ (only returns if successful)
 #endif
 
-#if DEBUG_ME
+#if DEBUG_GENERAL
 	std::cout << " Data Ready! " << std::endl;
 #endif
 #if RUN_SLEEPY
