@@ -49,6 +49,8 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 		exit(e);
 	} 
 
+	// TODO - Add VME card lookup by file here...
+
 	// Then we need the cards which can read the data - hardcoded for now....
 #if THREAD_ME
 	boost::thread crim_thread(boost::bind(&acquire_data::InitializeCrim, this, 0xE00000, 1, runningMode)); 
@@ -150,8 +152,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 
 	// Check running mode and perform appropriate initialization.
 	switch (runningMode) {
-		case Pedestal:
-			std::cout << "Running Mode is Pedestal." << std::endl;
+		case OneShot:
+			std::cout << "Running Mode is OneShot." << std::endl;
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = ZeroFreq;
@@ -1678,75 +1680,37 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 }
 
 
-void acquire_data::TriggerDAQ(int a) 
+void acquire_data::TriggerDAQ(unsigned short int a) 
 {
-/*! \fn void acquire_data::TriggerDAQ(int a)
+/*! \fn void acquire_data::TriggerDAQ(unsigned short int a)
  *
  * A function which sets up the acquisition trigger indexed by parameter a.
  *
- * Currently, there's the one-shot trigger (0)
+ * Currently, we have the following triggers defined as enumerated types in the DAQ Header (v4,v5?):
+ *  TODO - Make sure trigger types and documentation stay current for new DAQ Header.
+ *  Note the trigger does not depend on CRIM timing mode explicity, but there is occasionally an 
+ *  implicit dependence (e.g., NuMI can only run in CRIM MTM mode).
+ * UnknownTrigger  = 0x0000,
+ * Pedestal        = 0x0001,
+ * LightInjection  = 0x0002,
+ * ChargeInjection = 0x0004,
+ * Cosmic          = 0x0008,
+ * NuMI            = 0x0010,
+ * TGReserved6     = 0x0020,
+ * TGReserved7     = 0x0040,
+ * MonteCarlo      = 0x0080'
  *
- * \param int a the index of the trigger to be set up 
+ * \param unsigned short int a the index of the trigger to be set up 
  */
 	CVAddressModifier AM = daqController->GetAddressModifier();
 	CVDataWidth       DW = daqController->GetDataWidth();
 	int error=-1;
 	switch (a) { //which type of trigger are we using
-		case 0: //the one-shot trigger
+		case 0: // Default to OneShot?
+			std::cout << "   WARNING! You have not set the triggerType somehow!" << std::endl;
+			std::cout << "   -> Defaulting to running the sequencer (OneShot)..." << std::endl;
+		case 1: //the one-shot trigger
 			//Obsolete// daqController->GetCrim()->SetupOneShot(); // Prep a shot (software only).
-			/*
-			unsigned char crim_send[2];
-			// Send the timing setup request.
-			crim_send[0] = daqController->GetCrim()->GetTimingSetup() & 0xff;
-			crim_send[1] = (daqController->GetCrim()->GetTimingSetup()>>0x08) & 0xff;
-			try {
-				error = daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
-					daqController->GetCrim()->GetTimingRegister(), AM, DW); 
-				if (error) throw error;
-			} catch (int e) {
-				std::cout << "Unable to set the CRIM Timing Mode!" << std::endl;
-				daqController->ReportError(e);
-				exit(-2002);
-			}
-#if DEBUG_TRIGGER
-			std::cout<<"  Sent Timing Request"<<std::endl;
-#endif
-			*/
-			// Send the gate width!  NONONONONO not here!
-			// Big Time TODO - move CRIM timing init to CRIM init function!
-			/*
-			crim_send[0] = daqController->GetCrim()->GetGateWidth() & 0xff;
-			crim_send[1] = (daqController->GetCrim()->GetGateWidth()>>0x08) & 0xff;
-			try {
-				error=daqAcquire->WriteCycle(daqController->handle,2,crim_send,
-					daqController->GetCrim()->GetGateRegister(), AM,DW); //send it
-				if (error) throw error;
-			} catch (int e) {
-				std::cout << "Unable to set trigger width register!" << std::endl;
-				daqController->ReportError(e);
-				exit(-2003);
-			}
-#if DEBUG_TRIGGER
-			std::cout << "  Sent Gate Width" << std::endl;
-#endif
-			*/
-			// Pulse delay! Also not here!
-			/*
-			crim_send[0] = daqController->GetCrim()->GetTcalbPulse() & 0xff;
-			crim_send[1] = (daqController->GetCrim()->GetTcalbPulse()<<0x08) & 0xff;
-			try {
-				error=daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
-					daqController->GetCrim()->GetTCalbRegister(), AM, DW);
-				if (error) throw error;
-			} catch (int e) {
-				std::cout << "Unable to set pulse delay register!" << std::endl;
-				daqController->ReportError(e);
-				exit(-2004);
-			}
-#if DEBUG_TRIGGER
-			std::cout << "  Sent TCALB Delay" << std::endl;
-#endif
-			*/
 			// Start the sequencer (trigger CNRST software pulse)
 #if DEBUG_TRIGGER
 			std::cout << "   Preparing to start the sequencer..." << std::endl;
