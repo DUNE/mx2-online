@@ -114,6 +114,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
  * \param runningMode an integer specifying what sort of run the DAQ is taking.
  */
 // TODO - Make InitializeCrim return a value!
+// TODO - InitializeCrim should not need to be called!  The parameters should be set beforehand.
 #if DEBUG_INIT
 	std::cout << "\nEntering acquire_data::InitializeCrim for address " << (address>>16) << 
 		" with running mode " << runningMode << std::endl;
@@ -151,12 +152,43 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	crimTimingModes       TimingMode = MTM;      // Default to MTM.
 
 	// Check running mode and perform appropriate initialization.
+	// We are needlessly repetitious with setting the gate width and tcalb delay, but 
+	// this is to "build in" some flexibility if we decide we need it (as a reminder).
 	switch (runningMode) {
+		// "OneShot" is the casual name for CRIM internal timing with software gates.
 		case OneShot:
 			std::cout << "Running Mode is OneShot." << std::endl;
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = ZeroFreq;
+			TimingMode   = crimInternal; 
+			TCALBEnable  = 0x1;
+			break;
+		// All of the NuMI and dedicated LI modes use MTM timing.
+		case NuMIBeam:
+			std::cout << "Running Mode is NuMI Beam." << std::endl;
+			// Continue to fall through down to last MTM mode...
+		case PureLightInjection:
+			std::cout << "Running Mode is PureLightInjection." << std::endl;
+			// Continue to fall through down to last MTM mode...
+		case MixedBeamPedestal:
+			std::cout << "Running Mode is MixedBeamPedestal." << std::endl;
+			// Continue to fall through down to last MTM mode...
+		case MixedBeamLightInjection:
+			std::cout << "Running Mode is MixedBeamLightInjection." << std::endl;
+			// This is the last MTM mode, so execute setup.
+			GateWidth    = 0x7F;
+			TCALBDelay   = 0x3FF;
+			Frequency    = ZeroFreq;
+			TimingMode   = MTM; 
+			TCALBEnable  = 0x1;
+			break;
+		// Cosmics use CRIM internal timing with gates send at a set frequency.
+		case Cosmics:
+			std::cout << "Running Mode is Cosmic." << std::endl;
+			GateWidth    = 0x7F;
+			TCALBDelay   = 0x3FF;
+			Frequency    = F4; // This is as fast as we ran in Wideband.
 			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
 			break;
@@ -176,7 +208,6 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 #endif
 
 	unsigned char crim_message[2];
-
 	// Set GateWidth.
 	try {
 		crim_message[0] = daqController->GetCrim(index)->GetGateWidthSetup() & 0xFF;
@@ -189,7 +220,6 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		daqController->ReportError(e);
 		exit (e);
 	}
-
 	// Setup TCALB Delay.
 	try {
 		crim_message[0] = daqController->GetCrim(index)->GetTCALBPulse() & 0xFF;
@@ -202,7 +232,6 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		daqController->ReportError(e);
 		exit (e);
 	}
-
 	// Setup Timing register.
 	try {
 		crim_message[0] = daqController->GetCrim(index)->GetTimingSetup() & 0xFF;
@@ -217,6 +246,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	}
 
 	// Now set up the IRQ handler, initializing the global enable bit for the first go-around.
+	// TODO - IRQ configuration depends on runningMode (Cosmics are special).  Update this!
 	SetupIRQ();
 
 #if DEBUG_THREAD
@@ -1700,17 +1730,19 @@ void acquire_data::TriggerDAQ(unsigned short int a)
  * TGReserved7     = 0x0040,
  * MonteCarlo      = 0x0080'
  *
- * \param unsigned short int a the index of the trigger to be set up 
+ * \param unsigned short int a The index of the trigger command to be executed. 
  */
 	CVAddressModifier AM = daqController->GetAddressModifier();
 	CVDataWidth       DW = daqController->GetDataWidth();
 	int error=-1;
-	switch (a) { //which type of trigger are we using
-		case 0: // Default to OneShot?
+	switch (a) { 
+		case UnknownTrigger: // Default to OneShot?
 			std::cout << "   WARNING! You have not set the triggerType somehow!" << std::endl;
 			std::cout << "   -> Defaulting to running the sequencer (OneShot)..." << std::endl;
-		case 1: //the one-shot trigger
-			//Obsolete// daqController->GetCrim()->SetupOneShot(); // Prep a shot (software only).
+		// The "OneShot" Trigger - really we are running the software trigger sequencer.	
+		case Pedestal: 
+		case LightInjection:
+		case ChargeInjection:
 			// Start the sequencer (trigger CNRST software pulse)
 #if DEBUG_TRIGGER
 			std::cout << "   Preparing to start the sequencer..." << std::endl;
@@ -1733,6 +1765,12 @@ void acquire_data::TriggerDAQ(unsigned short int a)
 			std::cout << "   -->Sent Sequencer Init. Signal!" << std::endl;
 #endif
 			break;
+		// The NuMI Beam trigger is initiated via an external signal.
+		case NuMI:
+			break;
+		case MonteCarlo:
+			std::cout << "WHY ARE YOU TRYING TO WRITE A MC TRIGGER INTO THE DAQ HEADER!?" << std::endl;
+			exit(-2000);
 		default:
 			std::cout << "We don't have that trigger mode coded up yet!" << std::endl;
 			exit(-2001);

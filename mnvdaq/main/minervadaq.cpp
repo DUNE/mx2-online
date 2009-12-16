@@ -354,11 +354,24 @@ int main(int argc, char *argv[])
 				triggerType = LightInjection;
 				break;
 			case MixedBeamPedestal:
-				std::cout << "No multimode trigger logic defined yet!" << std::endl;
-				exit(-4);
+				// TODO - Test mixed beam-pedestal running!
+				if (gate%2) {
+					triggerType = Pedestal;
+				} else {
+					triggerType = NuMI;
+				}
+				std::cout << "Warning!  Calling untested mixed mode beam-pedestal trigger types!" << std::endl;
+				break;
 			case MixedBeamLightInjection:
-				std::cout << "No multimode trigger logic defined yet!" << std::endl;
-				exit(-4); 
+				// TODO - Test mixed beam-li running!
+				if (gate%2) {
+					triggerType = LightInjection;
+				} else {
+					triggerType = NuMI;
+				}
+				std::cout << "Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
+				std::cout << "Warning!  No LI control class exists yet!" << std::endl;
+				break; 
 			default:
                         	std::cout << "ERROR! Improper Running Mode defined!" << std::endl;
                         	exit(-4);
@@ -370,10 +383,6 @@ int main(int argc, char *argv[])
 #elif NO_THREAD
 		TriggerDAQ(daq, triggerType);
 #endif 
-
-		/**********************************************************************************/
-		/* Execute TakeData or launch threads as needed for the current running mode      */
-		/**********************************************************************************/
 		/**********************************************************************************/
 		/* Make the event_handler pointer.                                                */
 		/**********************************************************************************/
