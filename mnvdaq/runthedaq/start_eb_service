@@ -13,9 +13,11 @@ then
 	exit 1
 fi
 
-if [ $LOCALE == 'FNAL' ]
+if [ "$DAQROOT" == "" ]
 then
-	source /work/software/mnvonline/mnvdaq/setup_daqbuild.sh
-	nice ${DAQROOT}/bin/event_builder $1  
+	echo No DAQROOT defined!  Please configure your environment!
+	exit 1
 fi
 
+#source /work/software/mnvonline/mnvdaq/setup_daqbuild.sh
+nice ${DAQROOT}/bin/event_builder $1  
