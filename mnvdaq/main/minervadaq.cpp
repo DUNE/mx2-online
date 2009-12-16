@@ -48,9 +48,7 @@ int main(int argc, char *argv[])
 	take_data_extime_log.open("take_data_extime_log.csv");
 
 #if TIME_ME
-	/********************************************************************************
-	*   For Benchmark Execution Timing                                              
-	*********************************************************************************/
+	// For Benchmark Execution Timing.                                             
 	struct timeval start_time, stop_time;
 	gettimeofday(&start_time, NULL);
 #endif
@@ -92,8 +90,7 @@ int main(int argc, char *argv[])
 	}
 
 	/*********************************************************************************/
-	/* now set up ET for use in writing the first-pass memory mapped data file       */
-	/* Setting up ET for use in remote mode for multi-PC operation                   */
+	/* Now set up ET for use in writing the first-pass memory mapped data file.      */
 	/*********************************************************************************/
 	et_att_id      attach;
 	et_sys_id      sys_id;
@@ -110,7 +107,7 @@ int main(int argc, char *argv[])
 	// Set this ET client for remote operation.
 	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote (multi-pc) mode only.
 	// Set to the current host machine name. 
-	// Currently (2009.November.26), setting IP addresses explicitly doesn't work quite right.
+	// Currently (2009.December.15), setting IP addresses explicitly doesn't work quite right.
 
 	// Set direct connection.
 	et_open_config_setcast(openconfig, ET_DIRECT);  // Remote (multi-pc) mode only.
@@ -132,9 +129,6 @@ int main(int argc, char *argv[])
 	et_system_setdebug(sys_id, ET_DEBUG_INFO);
 
 	// This only works for local operation, not over the network for some reason!
-	// Leave this commented out when working on networked running.  It can be 
-	// commented back in for local running.  Overall, should be debugged...
-	//------
 #if SINGLE_PC
 	// Set up the heartbeat to make sure ET starts correctly.
 	unsigned int oldheartbeat, newheartbeat;
@@ -157,7 +151,6 @@ int main(int argc, char *argv[])
 		exit(-5);
 	}   
 #endif 
-	//------
 
 	// Attach to GRANDCENTRAL station since we are producing events.
 	if (et_station_attach(sys_id, ET_GRANDCENTRAL, &attach) < 0) {
@@ -236,31 +229,19 @@ int main(int argc, char *argv[])
 	/*  During electronics initialization, we can prepare the event builder.         */
 	/*                                                                               */
 	/*  First thing's first:  Read in the event status file which contains things    */
-	/*  like the global event number and run number to be used.                      */
-	/*  Recall the event_handler definition...
-		run_info: 
-			0: detector, 
-			1: configuration, 
-			2: run number, 
-			3: sub-run number, 
-			4: trigger type 
- 		gate_info: 
- 			0: g_gate, 
-			1: gate, 
-			2: trig_time, 
-			3: error, 
-			4: minos gate information                                        */
+	/*  like the run & subrun numbers, and the trigger type to be used.              */
+	/*  TODO - Phase out run_status.dat and pass everything via the command line...  */
+	/*  TODO - Need a python script to format data passed to the command line.       */
 	/*********************************************************************************/
 	ifstream run_status("run_status.dat");
 	try {
-		// We assume the run_status is formatted as: gate run-number sub-run-number
-		// TODO - Format run_status appropriately and/or pass the missing data via 
-		//	the command line.
-		// TODO - Read in global gate from a file for single PC mode, get global gate 
-		//	from master node gate-by-gate (?) in multi-PC mode?	
+		// We assume the run_status is formatted as: run-number sub-run-number trigger-type.
+		// TODO - We don't really want to pass a "trigger type," but rather a "run type."
+		// TODO - We want to set trigger type dynamically (static is okay for now).
 		if (!run_status) throw (!run_status);
-		run_status>>event_data.gate_info[0]>>event_data.run_info[2]>>event_data.run_info[3];
-		event_data.run_info[0]=event_data.run_info[1]=event_data.run_info[4]=0;
+		run_status >> event_data.runNumber >> event_data.subRunNumber >> event_data.triggerType;
+		event_data.detectorType   = (unsigned char)0;
+		event_data.detectorConfig = (unsigned short)0;
 	} catch (bool e) {
 		cout << "Error opening run_status.dat.  " << endl;
 		cout << "You know, the one that tells me what the run number is!" << endl;
@@ -321,16 +302,14 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		/*  Initialize the following data members of the event_handler structure          */
 		/*    event_data:                                                                 */
-		/*       event_data.gate_info[1]  the local gate number                           */
-		/*       event_data.gate_info[2]  trig_time                                       */
-		/*       event_data.gate_info[3]  error                                           */
-		/*       event_data.gate_info[4]  minos                                           */
 		/*       event_data.feb_info[0-9] 0: link_no, 1: crate_no, 2: croc_no,            */
 		/*                                  3: chan_no, 4: bank 5: buffer length          */
 		/*                                  6: feb number, 7: feb firmware, 8: hits       */
 		/**********************************************************************************/
-		event_data.gate_info[1] = gate; //record gate number
-		event_data.gate_info[2] = event_data.gate_info[3] = event_data.gate_info[4] = 0;
+		event_data.gate        = gate; //record gate number
+		event_data.triggerTime = 0;
+		event_data.readoutInfo = 0;
+		event_data.minosSGATE  = 0;
 		for (int i=0;i<9;i++) {
 			event_data.feb_info[i] = 0; //initialize feb information block 
 		}
@@ -338,17 +317,16 @@ int main(int argc, char *argv[])
 		fstream global_gate("global_gate.dat");
 		try {
 			if (!global_gate) throw (!global_gate);
-			global_gate >> event_data.gate_info[0];
+			global_gate >> event_data.globalGate;
 		} catch (bool e) {
 			cout << "Error in minervadaq::main opening global gate data!" << endl;
 			exit(-2000);
 		}
 		global_gate.close();
 #if DEBUG_ME
-		cout << "    Global Gate: " << event_data.gate_info[0] << endl;
+		cout << "    Global Gate: " << event_data.globalGate << endl;
 #endif
 #endif
-
 		// Set the data_ready flag to false, we have not yet taken any data
 		data_ready = false; //no data is ready to be processed
 
@@ -363,10 +341,12 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		/*    Trigger the DAQ, either mode.                                               */
 		/**********************************************************************************/
+		// TODO - Add dynamic trigger typing here - want to switch between beam & X.
+		unsigned short int triggerType = event_data.triggerType;  // TEMP (This backwards.)
 #if THREAD_ME
-		boost::thread trigger_thread(boost::bind(&TriggerDAQ,daq));
+		boost::thread trigger_thread(boost::bind(&TriggerDAQ,daq)); // Careful about arguments!
 #elif NO_THREAD
-		TriggerDAQ(daq);
+		TriggerDAQ(daq, triggerType);
 #endif 
 
 		/**********************************************************************************/
@@ -378,6 +358,16 @@ int main(int argc, char *argv[])
 		/*   require a pointer passed to them                                             */
 		/**********************************************************************************/
 		event_handler *evt = &event_data;
+
+		// Set the trigger time.
+		struct timeval triggerNow;
+		gettimeofday(&triggerNow, NULL);
+		unsigned long long totaluseconds = ((unsigned long long)(triggerNow.tv_sec))*1000000 + 
+			(unsigned long long)(triggerNow.tv_usec);
+#if DEBUG_ME
+		std::cout << " ->Trigger Time (gpsTime) = " << totaluseconds << std::endl;
+#endif
+		event_data.triggerTime = totaluseconds;
 
 		/**********************************************************************************/
 		/*  Initialize loop counter variables                                             */
@@ -476,17 +466,15 @@ int main(int argc, char *argv[])
 		//Build DAQ event bank--we should have collected up all of the signals by now
 		//Get Trigger Time, Timing Violation Error (obsolete), MINOS SGATE
 		int bank = 3; //DAQ Data Bank
-		int error, minos, trig_time; error = minos = trig_time = 0; //hold that thought...
-		int detector, configuration, trigger; detector = configuration = trigger = 0;
-
-		event_data.run_info[0]  = detector; 
-		event_data.run_info[1]  = configuration; 
-		event_data.run_info[4]  = trigger;
-		event_data.feb_info[1]  = daq->GetController()->GetID();
-		event_data.feb_info[4]  = bank; 
-		event_data.gate_info[3] = trig_time; 
-		event_data.gate_info[3] = error; 
-		event_data.gate_info[4] = minos;
+		// TODO - find a way to get exceptions passed into the error bits.
+		// TODO - read the CRIM MINOS register to get MINOS SGATE
+		unsigned short error         = 0;
+		unsigned int minos           = 0;
+		// TODO - event_data.triggerType  = dynamicTriggerType;
+		event_data.feb_info[1] = daq->GetController()->GetID();
+		event_data.feb_info[4] = bank; 
+		event_data.readoutInfo = error; 
+		event_data.minosSGATE  = minos;
 
 #if DEBUG_ME
 		cout << "Contacting the EventBuilder from Main." << endl;
@@ -524,13 +512,11 @@ int main(int argc, char *argv[])
 		}
 #endif
 		// Contact event builder service.
-#if KEEP_DATA
 		daq->ContactEventBuilder(&event_data, -1, attach, sys_id);
-#endif
 
 #if RECORD_EVENT
 		if (!(gate%100)) {
-			cout << "******************************************************************************" << endl;
+			cout << "******************************************************************" << endl;
 			cout << "   Completed Gate: " << gate << endl;
 		}
 
@@ -545,7 +531,7 @@ int main(int argc, char *argv[])
 		gate_time_log<<gate<<"\t"<<duration<<endl;
 #endif
 		if (!(gate%100)) {
-			cout<<"********************************************************************************"<<endl;
+			cout << "******************************************************************" << endl;
 		}
 #endif
 #endif
@@ -562,8 +548,8 @@ int main(int argc, char *argv[])
 		global_gate.open("global_gate.dat");
 		try {
 			if (!global_gate) throw (!global_gate);
-			event_data.gate_info[0]++;
-			global_gate << event_data.gate_info[0];
+			event_data.globalGate++;
+			global_gate << event_data.globalGate;
 		} catch (bool e) {
 			cout << "Error in minervadaq::main opening global gate data!" << endl;
 			exit(-2000);
@@ -576,9 +562,14 @@ int main(int argc, char *argv[])
 	close(socket_handle);
 #endif
 	gettimeofday(&runend, NULL);
-	int diffsec  = runend.tv_sec - runstart.tv_sec; 
-	int diffusec = runend.tv_usec - runstart.tv_usec; 
-	printf(" Total acquisition time was %d.%06d seconds.\n",diffsec,diffusec);
+	unsigned long long totalstart = ((unsigned long long)(runstart.tv_sec))*1000000 +
+                        (unsigned long long)(runstart.tv_usec);
+	unsigned long long totalend   = ((unsigned long long)(runend.tv_sec))*1000000 +
+                        (unsigned long long)(runend.tv_usec);
+
+	unsigned long long totaldiff  = totalend - totalstart;
+	// double totaldiffsec = totaldiff/1000000.0; 
+	printf(" Total acquisition time was %d microseconds.\n",totaldiff);
 #endif 
 //TAKE_DATA
 
@@ -701,7 +692,7 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 		gettimeofday(&stop_time,NULL);
 		double duration = (double) (stop_time.tv_sec*1e6+stop_time.tv_usec) - 
 			(start_time.tv_sec*1e6+start_time.tv_usec);
-		take_data_extime_log << evt->gate_info[1] << "\t" << thread << "\t" << 
+		take_data_extime_log << evt->gate << "\t" << thread << "\t" << 
 			(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
 			(stop_time.tv_sec*1000000+stop_time.tv_usec) << endl;
 #endif
@@ -711,9 +702,9 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 } // end void TakeData
 
 
-void TriggerDAQ(acquire_data *daq) 
+void TriggerDAQ(acquire_data *daq, unsigned short int triggerType) 
 {
-/*! \fn void TriggerDAQ(acquire_data *data)
+/*! \fn void TriggerDAQ(acquire_data *data, unsigned short int triggerType)
  *
  *  The function which arms and sets the trigger for each gate.  
  *
@@ -721,7 +712,7 @@ void TriggerDAQ(acquire_data *daq)
  *  trigger type. 
  *
  *  \param *daq a pointer to the acquire_data object which governs this DAQ Execution.
- *
+ *  \param triggerType identifies the sequence of commands for the CRIM.
  */
 #if TIME_ME
 	struct timeval start_time, stop_time;
@@ -732,7 +723,7 @@ void TriggerDAQ(acquire_data *daq)
 #endif
 #if DEBUG_ME
 	time_t currentTime; time(&currentTime);
-	std::cout << " Trigger Time:   " << ctime(&currentTime);
+	std::cout << " Starting Trigger at " << ctime(&currentTime);
 	std::cout << " ->Setting Trigger: TODO - pass trigger id here!" << std::endl;
 #endif
 
@@ -746,9 +737,9 @@ void TriggerDAQ(acquire_data *daq)
 	/**********************************************************************************/
 	/*  Let the interrupt handler deal with an asserted interrupt                     */
 	/**********************************************************************************/
-    /*! \note  This uses the interrupt handler to handle an asserted interrupt 
-     *
-     */
+	/*! \note  This uses the interrupt handler to handle an asserted interrupt 
+	 *
+	 */
 #if ASSERT_INTERRUPT
 	daq->AcknowledgeIRQ(); //acknowledge the IRQ (only returns if successful)
 #endif
@@ -764,15 +755,6 @@ void TriggerDAQ(acquire_data *daq)
 
 	// Tell the data acquiring threads that data is available for processing.	
 	data_ready = true; 
-	
-	struct timeval triggerNow;
-	gettimeofday(&triggerNow, NULL);
-	unsigned long long totaluseconds = ((unsigned long long)(triggerNow.tv_sec))*1000000 + 
-		(unsigned long long)(triggerNow.tv_usec);
-	// TODO - fix DAQ header to accept 64 bit time (2 32's) and add this data to header...
-#if DEBUG_ME
-	std::cout << " ->Trigger Time (gpsTime) = " << totaluseconds << std::endl;
-#endif
 
 #if TIME_ME
 	gettimeofday(&stop_time,NULL);

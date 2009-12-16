@@ -80,9 +80,15 @@ class MinervaEvent {
 		/*! the default constructor */
 		MinervaEvent() { };
 		/*! the constructor */
+		MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
+			unsigned short int trig, unsigned long long g_gate, unsigned long long gate, 
+			unsigned long long trig_time, unsigned short int error, unsigned int minos, 
+			MinervaHeader *header);
+		/*
 		MinervaEvent(int det, int config, int run, int sub_run, int trig,
 			unsigned int g_gate, unsigned int gate, unsigned long int trig_time, 
 			unsigned short int error, unsigned int minos, MinervaHeader *header);
+		*/
 		/*! the default destructor */
 		~MinervaEvent() { };
 		template <class X> void MakeDataBlock(X *frame, MinervaHeader *header);

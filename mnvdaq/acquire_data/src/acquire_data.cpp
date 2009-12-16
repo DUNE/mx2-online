@@ -1060,7 +1060,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		take_data_log << "Start Time: "<<(start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
 			<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
 		take_data_log << "*************************************************************" << std::endl; 
-		frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "2" << "\t" << 
+		frame_acquire_log << evt->gate << "\t" << thread << "\t" << "2" << "\t" << 
 			(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
 			(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
 		lock.unlock();
@@ -1086,7 +1086,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
 			<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
 		take_data_log << "**************************************************************" << std::endl; 
-		frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "10" << "\t"
+		frame_acquire_log << evt->gate << "\t" << thread << "\t" << "10" << "\t"
 			<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
 			<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
 		lock.unlock();
@@ -1124,7 +1124,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
 			<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
 		take_data_log << "********************************************************************" << std::endl; 
-		frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "20" << "\t"
+		frame_acquire_log << evt->gate << "\t" << thread << "\t" << "20" << "\t"
 			<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
 			<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
 		lock.unlock();
@@ -1163,7 +1163,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
 				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
 			take_data_log << "**************************************************************" << std::endl; 
-			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "1" << "\t" << 
+			frame_acquire_log << evt->gate << "\t" << thread << "\t" << "1" << "\t" << 
 				(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
 				(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
 			lock.unlock();
@@ -1180,7 +1180,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
 				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
 			take_data_log << "*******************************************************************" << std::endl; 
-			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "11" << "\t"
+			frame_acquire_log << evt->gate << "\t" << thread << "\t" << "11" << "\t"
 				<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
 				<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
 			lock.unlock();
@@ -1260,7 +1260,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 				" Stop Time: " << (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << 
 				(duration/1e6) << std::endl;
 			take_data_log << "**********************************************************" << std::endl; 
-			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "0" << "\t" << 
+			frame_acquire_log << evt->gate << "\t" << thread << "\t" << "0" << "\t" << 
 				(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
 				(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
 			lock.unlock();
@@ -1280,7 +1280,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
 				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
 			take_data_log << "****************************************************************" << std::endl; 
-			frame_acquire_log << evt->gate_info[1] << "\t" << thread << "\t" << "12" << "\t"
+			frame_acquire_log << evt->gate << "\t" << thread << "\t" << "12" << "\t"
 				<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
 				<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
 			lock.unlock();
@@ -2038,19 +2038,19 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 				std::cout << "      event_handler_size: " << sizeof(struct event_handler) << std::endl;
 				std::cout << "      evt_size:           " << sizeof(evt) << std::endl;
 				std::cout << "Finished Processing Event Data:" << std::endl;
-				std::cout << " GATE---------: " << evt->gate_info[1] << std::endl;
+				std::cout << " GATE---------: " << evt->gate << std::endl;
 				std::cout << " CROC---------: " << evt->feb_info[2] << std::endl;
 				std::cout << " CHANNEL------: " << evt->feb_info[3] << std::endl;
 				std::cout << " BANK---------: " << evt->feb_info[4] << std::endl;
-				std::cout << " DETECT-------: " << evt->run_info[0] << std::endl; 
-				std::cout << " CONFIG-------: " << evt->run_info[1] << std::endl; 
-				std::cout << " RUN----------: " << evt->run_info[2] << std::endl;
-				std::cout << " SUB-RUN------: " << evt->run_info[3] << std::endl;
-				std::cout << " TRIGGER------: " << evt->run_info[4] << std::endl;
-				std::cout << " GLOBAL GATE--: " << evt->gate_info[0] << std::endl;
-				std::cout << " TRIG TIME----: " << evt->gate_info[2] << std::endl;
-				std::cout << " ERROR--------: " << evt->gate_info[3] << std::endl;
-				std::cout << " MINOS--------: " << evt->gate_info[4] << std::endl;
+				std::cout << " DETECT-------: " << (int)evt->detectorType << std::endl; 
+				std::cout << " CONFIG-------: " << evt->detectorConfig << std::endl; 
+				std::cout << " RUN----------: " << evt->runNumber << std::endl;
+				std::cout << " SUB-RUN------: " << evt->subRunNumber << std::endl;
+				std::cout << " TRIGGER------: " << evt->triggerType << std::endl;
+				std::cout << " GLOBAL GATE--: " << evt->globalGate << std::endl;
+				std::cout << " TRIG TIME----: " << evt->triggerTime << std::endl;
+				std::cout << " ERROR--------: " << evt->readoutInfo << std::endl;
+				std::cout << " MINOS--------: " << evt->minosSGATE << std::endl;
 				std::cout << " BUFFER_LENGTH: " << evt->feb_info[5] << std::endl;
 				std::cout << " FIRMWARE-----: " << evt->feb_info[7] << std::endl;
 				std::cout << " FRAME DATA---: " << std::endl;

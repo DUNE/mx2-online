@@ -229,39 +229,34 @@ int event_builder(event_handler *evt)
 #if DEBUG_REPORT_EVENT
 	thread_log << "*************************************************************************" << std::endl; 
 	thread_log << "Processing Event Data:"<< std::endl;
-	thread_log << "  GATE : "<< evt->gate_info[1] << std::endl;
+	thread_log << "  GATE : "<< evt->gate << std::endl;
 	thread_log << "    CROC ----------: " << evt->feb_info[2] << std::endl;
 	thread_log << "    CHAN ----------: " << evt->feb_info[3] << std::endl;
 	thread_log << "    BANK ----------: " << evt->feb_info[4] << std::endl;
 	thread_log << "    BUFFER_LENGTH -: " << evt->feb_info[5] << std::endl;
 	thread_log << "    FIRMWARE ------: " << evt->feb_info[7] << std::endl;
-	thread_log << "    DETECTOR ------: " << evt->run_info[0] << std::endl; 
-	thread_log << "    CONFIG --------: " << evt->run_info[1] << std::endl; 
-	thread_log << "    RUN -----------: " << evt->run_info[2] << std::endl;
-	thread_log << "    SUB-RUN -------: " << evt->run_info[3] << std::endl;
-	thread_log << "    TRIGGER -------: " << evt->run_info[4] << std::endl;
-	thread_log << "    GLOBAL GATE ---: " << evt->gate_info[0] << std::endl;
-	thread_log << "    TRIG TIME -----: " << evt->gate_info[2] << std::endl;
-	thread_log << "    ERROR ---------: " << evt->gate_info[3] << std::endl;
-	thread_log << "    MINOS ---------: " << evt->gate_info[4] << std::endl;
+	thread_log << "    DETECTOR ------: " << (int)evt->detectorType << std::endl; 
+	thread_log << "    CONFIG --------: " << evt->detectorConfig << std::endl; 
+	thread_log << "    RUN -----------: " << evt->runNumber << std::endl;
+	thread_log << "    SUB-RUN -------: " << evt->subRunNumber << std::endl;
+	thread_log << "    TRIGGER -------: " << evt->triggerType << std::endl;
+	thread_log << "    GLOBAL GATE ---: " << evt->globalGate << std::endl;
+	thread_log << "    TRIG TIME -----: " << evt->triggerTime << std::endl;
+	thread_log << "    ERROR ---------: " << evt->readoutInfo << std::endl;
+	thread_log << "    MINOS ---------: " << evt->minosSGATE << std::endl;
 	thread_log << "    EMBEDDED LENGTH: " << (int)( evt->event_data[0] + (evt->event_data[1]<<8) ) << std::endl;
         thread_log << "    DUMMY BYTE ----: " << (int)evt->event_data[10] << std::endl;
-	// thread_log << "    FRAME DATA: "<< std::endl;
-	// for (unsigned int index = 0; index < evt->feb_info[5]; index++) {
-	// 	thread_log <<"      byte: " << index << "   " << (int)evt->event_data[index] << std::endl;
-	// }
 #endif
 	MinervaHeader *tmp_header;
-	// 56?  54 registers in modern feb firmware, should replace with variable argument anyway...
+	// 56?  TODO 54 registers in modern feb firmware, should replace with variable argument anyway...
 	feb *dummy_feb = new feb(6,1,(febAddresses)0,56); // Make a dummy feb for access to the header decoding functions. 
 	if (evt->feb_info[4]==3) {
 		// Build the "DAQ" header
 		tmp_header = new MinervaHeader(evt->feb_info[1]); //the special constructor for the DAQ bank
 		// Make the new event block
-		event = new MinervaEvent(evt->run_info[0], evt->run_info[1], evt->run_info[2], 
-			evt->run_info[3], evt->run_info[4], evt->gate_info[0], 
-			evt->gate_info[1], evt->gate_info[2], evt->gate_info[3], 
-			evt->gate_info[4], tmp_header); //make up a new event
+		event = new MinervaEvent(evt->detectorType, evt->detectorConfig, evt->runNumber, 
+			evt->subRunNumber, evt->triggerType, evt->globalGate, evt->gate, evt->triggerTime, 
+			evt->readoutInfo, evt->minosSGATE, tmp_header); //make up a new event
 		// The call to MinervaEvent constructor automatically inserts the DAQ block into the event buffer
 	} else {
 		event = new MinervaEvent();

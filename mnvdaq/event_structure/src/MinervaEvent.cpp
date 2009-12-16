@@ -93,23 +93,23 @@ MinervaHeader::MinervaHeader(unsigned char crate)
 
 
 /*****************MinervaEvent Class******************************************************/ 
-
-MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig, 
-	unsigned int g_gate,unsigned int gate,unsigned long trig_time, 
-	unsigned short error, unsigned int minos, MinervaHeader *header) 
+MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
+	unsigned short int trig, unsigned long long g_gate, unsigned long long gate, 
+	unsigned long long trig_time, unsigned short int error, unsigned int minos, 
+	MinervaHeader *header)
 {
 /*! \fn 
  *
  * Constructor for MinervaEvent event model data block.  This is the "DAQ Header."
  *
- * \param int det detector type
- * \param int config detector configuration
+ * \param unsigned char det detector type
+ * \param unsigned short config detector configuration
  * \param int run run number
  * \param int sub_run sub-run number
- * \param int trig trigger type
- * \param unsigned int g_gate global gate number
- * \param unsigned int gate current gate number
- * \param unsigned long trig_time trigger time
+ * \param unsigned short trig trigger type
+ * \param unsigned long long g_gate global gate number
+ * \param unsigned long long gate current gate number
+ * \param unsigned long long trig_time trigger time
  * \param unsigned short error error flag
  * \param unsigned int minos minos trigger time
  * \param MinervaHeader *header data bank header
@@ -125,24 +125,28 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
 	event_info_block[1] = run & 0xFFFFFFFF;
 	event_info_block[2] = sub_run & 0xFFFFFFFF;
 	event_info_block[3] = trig & 0xFFFFFFFF;
-	event_info_block[4] = g_gate & 0xFFFFFFFF; // the "global gate"; 
-	event_info_block[5] = 0; // TODO, Fix this!  Global gate is 64 bits!
-	event_info_block[6] = gate & 0xFFFFFFFF; //the gate number
-	event_info_block[7] = 0; // TODO, Fix this!  Gate is also 64 bits! 
-	event_info_block[8] = trig_time & 0xFFFFFFFF; //the gate time, TODO - fill trig_time!
-	event_info_block[9] = 0; // TODO, Fix this!  GPS Time Stamp is 64 bits!
-	event_info_block[10] =  error & 0xFFFF; //the error bytes
-	event_info_block[10] |= 0<<0x10; //2 reserved bytes
-	event_info_block[11] = minos & 0xFFFFFFFF; //the minos gate
-	
+	event_info_block[4] = g_gate & 0xFFFFFFFF;       // the "global gate" least sig int 
+	event_info_block[5] = (g_gate>>32) & 0xFFFFFFFF; // the "global gate" most sig int
+	event_info_block[6] = gate & 0xFFFFFFFF;         // the gate number least sig int 
+	event_info_block[7] = (gate>>32) & 0xFFFFFFFF;   // the gate number most sig int 
+	event_info_block[8] = trig_time & 0xFFFFFFFF;    // the gate time least sig int
+	event_info_block[9] = (trig_time>>32) & 0xFFFFFFFF;  // the gate time most sig int
+	event_info_block[10] = error & 0xFFFF;           // the error bytes
+	event_info_block[10] |= 0<<0x10;                 // 2 reserved bytes
+	event_info_block[11] = minos & 0x3FFFFFFF;       // the minos gate (only 28 bits of data)
+#if DEBUG_HEADERS
+	for (int i = 0; i < 12; i++) {
+		std::cout << "   DAQHeader Data Int [" << i << "] = " << event_info_block[i] << std::endl;
+	}
+#endif	
 	// We need to allow room for the event header we haven't added yet.
 	int buffer_index = 4; // 4+4=8 bytes for the MINERvA Header.
 	for (int i = 0; i < 12; i++) {
 		buffer_index += 4;   
 		event_block[buffer_index]   = event_info_block[i] & 0xFF;
-		event_block[buffer_index+1] = event_info_block[i] & 0xFF00;
-		event_block[buffer_index+2] = event_info_block[i] & 0xFF0000;
-		event_block[buffer_index+3] = event_info_block[i] & 0xFF000000;
+		event_block[buffer_index+1] = (event_info_block[i]>>8) & 0xFF;
+		event_block[buffer_index+2] = (event_info_block[i]>>16) & 0xFF;
+		event_block[buffer_index+3] = (event_info_block[i]>>24) & 0xFF;
 	}
 
 	unsigned short *tmpDAQHeader = header->GetDAQEvtHeader();
@@ -154,12 +158,12 @@ MinervaEvent::MinervaEvent(int det, int config, int run, int sub_run, int trig,
 		buffer_index++;
 	}
 	//InsertData(event_block);
-// #if DEBUG_HEADERS
-//	std::cout << " DAQ Header Data..." << std::endl;
-//	for (int i = 0; i < 12; i++) {
-//		std::cout << "   event_block[" << i << "] = " << (int)event_block[i] << std::endl;  
-//	}
-// #endif
+#if DEBUG_HEADERS
+	std::cout << " DAQ Header Data..." << std::endl;
+	for (int i = 0; i < 56; i++) {
+		std::cout << "   event_block[" << i << "] = " << (int)event_block[i] << std::endl;  
+	}
+#endif
 }
 
 #endif
