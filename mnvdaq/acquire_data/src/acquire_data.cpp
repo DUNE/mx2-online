@@ -496,6 +496,7 @@ int acquire_data::SetupIRQ()
  *
  * Returns a status value.
  * TODO: Update this function to work with more than one crim in the crate! 
+ * TODO: Configure this function to take an argument that sets the IRQ line (SGATEFALL, etc.).
  */
 	int error = 0; 
 
