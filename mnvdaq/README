@@ -1,4 +1,4 @@
-This file is current as of 2009.December.15 - GNP
+This file is current as of 2009.December.16 - GNP
 
 To build the MINERvA Production DAQ (mnvdaq) you need to first install and build CAEN driver libraries 
 to interface with the CAEN v2718 VME Controller and a2818 PCI Interface Card.  These drivers are available
@@ -101,6 +101,19 @@ And check ${DAQROOT}/lib/ for
 10) If you are missing any of these, read the Makefile and try building each package one at a time and check 
 for errors.  Most likely, an environment variable has been incorrectly set.
 
+11) To run the DAQ in single PC mode go to $DAQROOT/runthedaq and use the start_daq_singleton script.  Note you 
+can pass the following flagged commands to the script:
+	-et	ET Filename (default is "testme")
+	-f)	Number of FEBs (default is 4)
+	-g)	Number of Gates (default is 10)
+	-m)	Run Mode (default is 0 - OneShot)
+	-r)	Run Number (default is 1337)
+	-s)	Subrun Number (default is 391)
+So, for example, to run the DAQ you might type:
+	$DAQROOT/runthedaq> ./start_daq_singleton -et myfile -g 1000 -r 100 -s 1
+to run the DAQ taking 1000 gates using run number 100 and subrun number 1.  The ET system name will be myfile 
+and the Minerva RawData (decodable wih BuildRawEventsAlg) will be recorded in myfile.dat.  Note that the 
+running mode would default to OneShot. 
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Note about data sizes!  If you run the DAQ on an OS besides 64-bit SLF5.3, be sure to check the data sizes 
