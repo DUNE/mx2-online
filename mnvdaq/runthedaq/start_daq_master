@@ -37,22 +37,20 @@ do
 done
 
 
-xterm -hold -geometry 80x30+1+1 -sl 1000 -e ./start_et_system $ETNAME $NFEBS $NGATES &
+xterm -hold -geometry 80x30+255+1 -sl 1000 -e ./start_et_system $ETNAME $NFEBS $NGATES &
 export ET_SYST_TERM_PID=$!
 echo ET_SYST_TERM_PID=${ET_SYST_TERM_PID}
 sleep 2s
 
-xterm -hold -geometry 88x60+451+11 -sl 1000 -e ./start_et_monitor $ETNAME &
+xterm -hold -geometry 88x60+770+1 -sl 1000 -e ./start_et_monitor $ETNAME &
 export ET_MON_TERM_PID=$!
 echo ET_MON_TERM_PID=${ET_MON_TERM_PID}
 sleep 2s
 
-xterm -hold -geometry 80x60+901+21 -sl 10000 -e ./start_eb_service $ETNAME &
+xterm -hold -geometry 80x20+255+421 -sl 10000 -e ./start_eb_service $ETNAME &
 export EB_SERV_TERM_PID=$!
 echo EB_SERV_TERM_PID=${EB_SERV_TERM_PID}
 sleep 28s
 
-nice ${DAQROOT}/bin/daq_master $ETNAME $NGATES &
-# Master does not parse arguments like DAQ yet...
-##nice ${DAQROOT}/bin/minervadaq -et $ETNAME -g $NGATES -m $RUNMODE -r $RUN -s $SUB &
+nice ${DAQROOT}/bin/daq_master -et $ETNAME -g $NGATES -m $RUNMODE -r $RUN -s $SUB & 
 
