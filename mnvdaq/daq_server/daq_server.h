@@ -9,7 +9,12 @@
 struct sockaddr_in daq_service; // internet socket address, contains machine and port number
 int socket_handle, gate_number;
 bool done[1];
-int gates[1];
+
+int gates[1];    // Run length in *gates*
+int runMode[1];  // Running Mode - 0==OneShot, 1==NuMI, etc.
+int runNum[1];   // Run Number
+int subNum[1];   // Subrun Number
+int detect[1];   // Detector Code (0==Unknown, 1==PMT Test Stand, etc.
 char et_file[100]; // Base file name: DD_RRRRRRRR_SSSS_YYYYY_vVV_TTTTTTTTTT
 // D = Detector
 // R = Run Number

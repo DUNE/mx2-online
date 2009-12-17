@@ -1816,6 +1816,7 @@ void acquire_data::WaitOnIRQ()
 #if POLL_INTERRUPT
 #if DEBUG_IRQ
 	std::cout << "  Polling Interrupt!" << std::endl;
+	int intcounter = 0;
 #endif
 	unsigned short interrupt_status = 0;
 	unsigned char crim_send[2];
@@ -1828,7 +1829,11 @@ void acquire_data::WaitOnIRQ()
 				daqController->GetAddressModifier(),
 				daqController->GetDataWidth());  
 #if DEBUG_IRQ
-			printf("    Interrrupt status = 0x%02X\n", (crim_send[0] + (crim_send[1]<<8)));  
+			intcounter++;
+			if (!(intcounter%10000)) {
+				printf("    %06d - Interrrupt status = 0x%02X\n", intcounter, 
+					(crim_send[0] + (crim_send[1]<<8)));  
+			}
 #endif
 			if (error) throw error;
 			interrupt_status =  (crim_send[0]|(crim_send[1]<<0x08));

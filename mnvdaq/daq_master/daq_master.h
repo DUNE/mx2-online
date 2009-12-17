@@ -10,10 +10,16 @@
 struct sockaddr_in daq_client[2]; // internet socket address, contains machine and port number 
                                   // (one for each readout node).  "client" is a bit confusing 
                                   // because these are data servers, but set-up info clients.
-int socket_handle[2]; // file descriptors (array subscripts in file descriptor table) for readout node sockets
+int socket_handle[2];     // file descriptors (array subscripts in file descriptor table) for readout node sockets
 struct hostent *hostinfo; // h_addr field contain's the host IP number
 bool done[2];
-int gates[2];
+
+// Don't really have a mechanism in place yet for *global* gates...
+int gates[2];    // Run length in *gates*
+int runMode[2];  // Running Mode - 0==OneShot, 1==NuMI, etc.
+int runNum[2];   // Run Number
+int subNum[2];   // Subrun Number
+int detect[2];   // Detector Code (0==Unknown, 1==PMT Test Stand, etc.
 char et_file[100]; // Base file name: DD_RRRRRRRR_SSSS_YYYYY_vVV_TTTTTTTTTT
 // D = Detector
 // R = Run Number

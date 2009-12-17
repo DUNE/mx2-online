@@ -35,6 +35,7 @@ int main() {
 	return 0; //success
 }
 
+
 int make_socket() {
 
 	/* create a TCP socket */
@@ -62,18 +63,30 @@ int make_socket() {
 	return 0; //success
 }
 
+
 /* Write setup information to the command line - this starts a run */
 int launch_minervadaq() {
-	stringstream process_gates;
-	process_gates<<gates[0];
-	string command = "$DAQROOT/bin/minervadaq ./"+string(et_file)+" "+process_gates.str()+" > log_file";
-	cout<<"launch_minervadaq command: "<<command<<endl;
+	stringstream process_gates, rmode, runn, subr, dtctr;
+	process_gates << gates[0];
+	rmode         << runMode[0];
+	runn          << runNum[0];
+	subr          << subNum[0];
+        dtctr         << detect[0];
+	string command = "$DAQROOT/bin/minervadaq -et " + string(et_file) + " " +
+		"-g " + process_gates.str() + " " + 
+		"-r " + runn.str() + " " + 
+		"-s " + subr.str() + " " +  
+		"-m " + rmode.str() + " " + 
+		"-d " + dtctr.str() + " " + 
+		"> log_file";
+	cout << "launch_minervadaq command: " << command << endl;
 	if ((system(command.c_str())!=-1)) {
 		perror("run_minervadaq failed");
 		exit(EXIT_FAILURE);
 	}
 	return 0; //success
 }
+
 
 int server() {
 	/* first make the socket */
@@ -120,36 +133,70 @@ int server() {
 	return 0; //success
 }
 
+
 int read_setup_data(int master_connection) {
+	// Properly a DEBUG check...
+	cout << " daq_server::read_setup_data() sizeof(gates): " << sizeof(gates) << endl;
+
 	/********************************************************************************/
-	cout<<"sizeof(gates): "<<sizeof(gates)<<endl;
-	//read in the number of gates to process
+	// Read the number of gates to process.
 	if ((read(master_connection,gates,sizeof(gates)))!=sizeof(gates)) { 
 		perror("server read error: gates"); 
 		exit(EXIT_FAILURE);
 	}
-	cout<<"Number of gates to process: "<<gates[0]<<endl;
+	cout << " Number of Gates        : " << gates[0] << endl;
+	
 	/********************************************************************************/
+	// Read the run mode.
+	if ((read(master_connection,runMode,sizeof(runMode)))!=sizeof(runMode)) { 
+		perror("server read error: run mode"); 
+		exit(EXIT_FAILURE);
+	}
+	cout << " Running Mode (encoded) : " << runMode[0] << endl;
 
 	/********************************************************************************/
-	//read in the ET filename for data storage
+	// Read the run number.
+	if ((read(master_connection,runNum,sizeof(runNum)))!=sizeof(runNum)) { 
+		perror("server read error: run number"); 
+		exit(EXIT_FAILURE);
+	}
+	cout << " Run Number             : " << runNum[0] << endl;
+
+	/********************************************************************************/
+	// Read the subrun number.
+	if ((read(master_connection,subNum,sizeof(subNum)))!=sizeof(subNum)) { 
+		perror("server read error: subrun number"); 
+		exit(EXIT_FAILURE);
+	}
+	cout << " Subrun Number          : " << subNum[0] << endl;
+
+	/********************************************************************************/
+	// Read the detector type.
+	if ((read(master_connection,detect,sizeof(detect)))!=sizeof(detect)) { 
+		perror("server read error: detector type"); 
+		exit(EXIT_FAILURE);
+	}
+	cout << " Detector Type (encoded): " << subNum[0] << endl;
+
+	/********************************************************************************/
+	// Read the ET filename for data storagea
 	if ((read(master_connection,et_file,sizeof(et_file)))!=sizeof(et_file)) {  
 		perror("server read error: et_file"); 
 		exit(EXIT_FAILURE);
 	}
-	cout<<"Name of ET file: "<<et_file<<endl;
-	/********************************************************************************/
+	cout << " Name of ET file        : " << et_file << endl;
 
 	/********************************************************************************/
-	//read "done" from the master
+	// Read "done" from the master.
 	if ((read (master_connection, done, sizeof (done)))!=sizeof(done)) { 
 		perror("server read error: done"); 
 		exit(EXIT_FAILURE);
 	}
-	cout<<"Are we done? "<<done[0]<<endl;
-	/********************************************************************************/
+	cout << " Are we done? " << done[0] << endl;
+
 	return 0;
 }
+
 
 int write_server_response(int connection) {
 	done[0] = true;
