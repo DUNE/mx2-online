@@ -255,8 +255,8 @@ int event_builder(event_handler *evt)
 		tmp_header = new MinervaHeader(evt->feb_info[1]); //the special constructor for the DAQ bank
 		// Make the new event block
 		event = new MinervaEvent(evt->detectorType, evt->detectorConfig, evt->runNumber, 
-			evt->subRunNumber, evt->triggerType, evt->globalGate, evt->gate, evt->triggerTime, 
-			evt->readoutInfo, evt->minosSGATE, tmp_header); //make up a new event
+			evt->subRunNumber, evt->triggerType, evt->ledLevel, evt->ledGroup, evt->globalGate, 
+			evt->gate, evt->triggerTime, evt->readoutInfo, evt->minosSGATE, tmp_header); 
 		// The call to MinervaEvent constructor automatically inserts the DAQ block into the event buffer
 	} else {
 		event = new MinervaEvent();

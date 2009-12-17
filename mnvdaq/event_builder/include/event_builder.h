@@ -25,10 +25,8 @@
 * the final event model.  The final event will then be placed on
 * the Event Transfer system for storage.
 *
-* Elaine Schulte
-* Rutgers University
-* August 18, 2009
-*
+* Elaine Schulte, Rutgers University
+* Gabriel Perdue, The University of Rochester
 */
 
 /*! \struct event_handler
@@ -37,10 +35,6 @@
  */
 struct event_handler { //the structure to hold the data
 	bool quit, new_event, done; /*!<we need some status info */
-	/*
-	unsigned int run_info[5]; // 0: detector, 1: configuration, 2: run number, 3: sub-run number, 4: trigger type 
-	unsigned int gate_info[5];  // 0: g_gate, 1: gate, 2: trig_time, 3: error, 4: minos; gate information 
-	*/
 	unsigned char		detectorType;   // Enumerated in the DAQHeader Class 
 	unsigned short int	detectorConfig; // Number of modules in the detector
 	unsigned int		runNumber;      // Run series demarcator.

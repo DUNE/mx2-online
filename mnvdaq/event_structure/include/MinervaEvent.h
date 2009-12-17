@@ -23,7 +23,7 @@ passing it to the event builder in order to ensure the frame length matches the 
 /* 885 = 8 MINERvA Header + 2 Length + 9 Header + 864 data bytes + 2 CRC (no dummy?) */ 
 
 #define DAQ_HEADER 56     // number of bytes for the event header with the DAQ header attached.
-/* 8 MINERvA Header + 48 bytes in v4.  This is the framework set. */
+/* 8 MINERvA Header + 48 bytes in v5.  This is the framework set. */
 
 // The offset value defines where in the output buffer we need to begin inserting data for a 
 // given FEB's worth of information.  So:
@@ -81,14 +81,9 @@ class MinervaEvent {
 		MinervaEvent() { };
 		/*! the constructor */
 		MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
-			unsigned short int trig, unsigned long long g_gate, unsigned long long gate, 
-			unsigned long long trig_time, unsigned short int error, unsigned int minos, 
-			MinervaHeader *header);
-		/*
-		MinervaEvent(int det, int config, int run, int sub_run, int trig,
-			unsigned int g_gate, unsigned int gate, unsigned long int trig_time, 
+			unsigned short int trig, unsigned char ledGroup, unsigned char ledLevel, 
+			unsigned long long g_gate, unsigned long long gate, unsigned long long trig_time, 
 			unsigned short int error, unsigned int minos, MinervaHeader *header);
-		*/
 		/*! the default destructor */
 		~MinervaEvent() { };
 		template <class X> void MakeDataBlock(X *frame, MinervaHeader *header);

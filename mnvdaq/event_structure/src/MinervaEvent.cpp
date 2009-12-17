@@ -82,7 +82,7 @@ MinervaHeader::MinervaHeader(unsigned char crate)
 	DAQ_event_header[0] = magic_pattern;    // add: the magic pattern to the header,
 	DAQ_event_header[1] = 48;               // the length in bytes of the DAQ header,
 	DAQ_event_header[2] = (3 & 0xFF);       // Bank Type (3 for DAQ Header),
-	DAQ_event_header[2] |= (4 & 0xFF)<<0x8; // Version (4 as of 2009.Dec.05), and
+	DAQ_event_header[2] |= (5 & 0xFF)<<0x8; // Version (5 as of 2009.Dec.17), and
 	DAQ_event_header[3] = source_id;        // the source information.
 #if DEBUG_HEADERS
 	printf("\tHeader Words:\n");
@@ -94,9 +94,9 @@ MinervaHeader::MinervaHeader(unsigned char crate)
 
 /*****************MinervaEvent Class******************************************************/ 
 MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
-	unsigned short int trig, unsigned long long g_gate, unsigned long long gate, 
-	unsigned long long trig_time, unsigned short int error, unsigned int minos, 
-	MinervaHeader *header)
+	unsigned short int trig, unsigned char ledLevel, unsigned char ledGroup, 
+	unsigned long long g_gate, unsigned long long gate, unsigned long long trig_time, 
+	unsigned short int error, unsigned int minos, MinervaHeader *header)
 {
 /*! \fn 
  *
@@ -107,6 +107,8 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
  * \param int run run number
  * \param int sub_run sub-run number
  * \param unsigned short trig trigger type
+ * \param unsigned char ledLevel (1 or Max PE)
+ * \param unsigned char ledGroup (All, A, B, C, or D)
  * \param unsigned long long g_gate global gate number
  * \param unsigned long long gate current gate number
  * \param unsigned long long trig_time trigger time
@@ -124,7 +126,9 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 	event_info_block[0] |= (config & 0xFFFF)<<0x10;
 	event_info_block[1] = run & 0xFFFFFFFF;
 	event_info_block[2] = sub_run & 0xFFFFFFFF;
-	event_info_block[3] = trig & 0xFFFFFFFF;
+	event_info_block[3] = trig & 0xFF;
+	event_info_block[3] |= ( (ledLevel & 0x3) << 8 );
+	event_info_block[3] |= ( (ledGroup & 0x1F) << 11 );
 	event_info_block[4] = g_gate & 0xFFFFFFFF;       // the "global gate" least sig int 
 	event_info_block[5] = (g_gate>>32) & 0xFFFFFFFF; // the "global gate" most sig int
 	event_info_block[6] = gate & 0xFFFFFFFF;         // the gate number least sig int 

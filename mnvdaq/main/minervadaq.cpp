@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
 	int subRunNumber         = 11;        // It goes to 11...
 	int record_seconds       = -1;	      // Run length in SECONDS (Not Supported...)
 	int detector             = 0;         // Default to UnknownDetector.
+	detector                 = (0x1)<<4;  // For header debugging... the Upstream Detector.
 	string et_filename       = "testme";  
 
 	/*********************************************************************************/
@@ -131,7 +132,7 @@ int main(int argc, char *argv[])
 	event_data.runNumber      = runNumber;
 	event_data.subRunNumber   = subRunNumber;
 	event_data.detectorType   = (unsigned char)detector;
-	event_data.detectorConfig = (unsigned short)0;
+	event_data.detectorConfig = (unsigned short)0xBABE; // TODO - For debugging purposes...
 	event_data.triggerType    = (unsigned short)0;
 
 
@@ -333,6 +334,8 @@ int main(int argc, char *argv[])
 		event_data.triggerTime = 0;    // Set after returning from the Trigger function.
 		event_data.readoutInfo = 0;    // Error bits.
 		event_data.minosSGATE  = 0;
+		event_data.ledLevel    = (unsigned char)3; // TODO - MaxPE - For debugging purposes...
+		event_data.ledGroup    = (unsigned char)1; // TODO - LEDALL - For debugging purposes...
 		for (int i=0;i<9;i++) {
 			event_data.feb_info[i] = 0; // Initialize the FEB information block. 
 		}
@@ -525,7 +528,7 @@ int main(int argc, char *argv[])
 		// TODO - find a way to get exceptions passed into the error bits.
 		// TODO - read the CRIM MINOS register to get MINOS SGATE
 		unsigned short error         = 0;
-		unsigned int minos           = 0;
+		unsigned int minos           = 123456789; // TODO - For deugging only... 
 		event_data.feb_info[1] = daq->GetController()->GetID();
 		event_data.feb_info[4] = bank; 
 		event_data.readoutInfo = error; 
