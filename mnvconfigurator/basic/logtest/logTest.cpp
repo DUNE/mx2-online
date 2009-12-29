@@ -26,34 +26,14 @@
 #include "feb.h"
 #include "adctdc.h"
 
-
 // Implement this interface for your own strategies for printing log statements.
 log4cpp::Appender* appender;
 // Return the root of the Category hierarchy.
 log4cpp::Category& root = log4cpp::Category::getRoot();
 // Further category hierarchy.
 log4cpp::Category& clearAndReset = log4cpp::Category::getInstance(std::string("clearAndReset"));
-// log4cpp Priority Chain.  Messages of higher numerical priority will not pass.
-/*
-Priorities
-typedef enum {
-	EMERG  = 0, 
-	FATAL  = 0,
-	ALERT  = 100,
-	CRIT   = 200,
-	ERROR  = 300, 
-	WARN   = 400,
-	NOTICE = 500,
-	INFO   = 600,
-	DEBUG  = 700,
-	NOTSET = 800
-} PriorityLevel;
-*/
-
-using namespace std;
 
 #define DEBUGLEVEL 10
-#define CLEARANDRESETLEVEL 50
 #define FPGAREADLEVEL 50
 #define FPGAWRITELEVEL 50
 #define TRIPTREADLEVEL 50
@@ -72,6 +52,7 @@ const unsigned int crimCardAddress = 224 << 16;
 const int crimID                   = 1;
 const int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
 
+// TriPT Programming Register Values.
 const int tripRegIBP        =  60;
 const int tripRegIBBNFOLL   = 120;
 const int tripRegIFF        =   0;
@@ -87,6 +68,7 @@ const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
 
+// Some convenient constants.
 const CVRegisters ControllerStatusAddress = cvStatusReg;
 const CVDataWidth DW                      = cvD16;
 const CVDataWidth DWS                     = cvD16_swapped;
@@ -97,13 +79,31 @@ unsigned char crocChanResetValue[]        = {0x02,0x02}; //Good for clear status
 unsigned char crocDPMResetValue[]         = {0x08,0x08};
 unsigned char crocResetAndTestPulseMask[] = {0x0F,0x0F}; // enable reset (0F) and test pulse (2nd 0F) 
 
+// log4cpp Priority Chain.  Messages of higher numerical priority will not pass.
+/*
+Priorities
+typedef enum {
+	EMERG  = 0, 
+	FATAL  = 0,
+	ALERT  = 100,
+	CRIT   = 200,
+	ERROR  = 300, 
+	WARN   = 400,
+	NOTICE = 500,
+	INFO   = 600,
+	DEBUG  = 700,
+	NOTSET = 800
+} PriorityLevel;
+*/
 void SetPriorities() {
-	root.setPriority(log4cpp::Priority::ERROR); 
+	root.setPriority(log4cpp::Priority::INFO); 
 	clearAndReset.setPriority(log4cpp::Priority::DEBUG);
 };
 
+// Reset DPM pointer && clear status reg. for all four channels on the CROC.
 int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire, croc *myCroc);
-
+// Initialize the CRIM for Data Taking.
+void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int runningMode);
 
 
 int main(int argc, char** argv) 
@@ -122,21 +122,81 @@ int main(int argc, char** argv)
 	root.addAppender(appender);
 	SetPriorities();
 	
+	// Control variables for electronics maniptulation.
 	int error;		
 	int controllerID = 0;
 	int runningMode  = 0; // 0 == OneShot	
+	
+	//
+	// Instantiate Controller & VME Cards, Check availability.
+	//
 	
 	// Controller & Acquire class init, contact the controller
 	controller *myController = new controller(0x00, controllerID);	
 	acquire *myAcquire = new acquire(); 				
 	if ((error=myController->ContactController())!=0) { 
+		std::cout << "Controller Contatc Error!\n";
 		root.critStream() << "Controller contact error: " << error << log4cpp::eol; 
 		exit(error); // Exit due to no controller!
 	}
 	root.infoStream() << "Controller & Acquire Initialized..." << log4cpp::eol;
 
-
+	// Create FEB List
+	std::list<febAddresses> febAddr;
+	for (int nboard = 1; nboard <= nFEBs; nboard++) {
+		febAddr.push_back( (febAddresses)nboard );
+	}
+  
+	// Make CRIM
+	root.infoStream() << "Making CRIM with index == " << crimID << " && address == " 
+		<< (crimCardAddress>>16) << log4cpp::eol;
+	myController->MakeCrim(crimCardAddress,crimID);
+	try {
+		error = myController->GetCrimStatus(crimID); 
+		if (error) throw error;
+	} catch (int e)  {
+		std::cout << "CRIM Contact Error!\n";
+		root.critStream() << "Unable to read the status register for CRIM " << 
+			((myController->GetCrim(crimID)->GetCrimAddress())>>16) << log4cpp::eol;
+		exit(-3);
+	} 	
+	crim *myCrim = myController->GetCrim(crimID);
+	InitCRIM(myController, myAcquire, myCrim, runningMode);
 	
+	// Make CROC
+	root.infoStream() << "Making CROC with index == " << crocID << " && address == " 
+		<< (crocCardAddress>>16) << log4cpp::eol;
+	myController->MakeCroc(crocCardAddress,(crocID));
+	try {
+		error = myController->GetCrocStatus(crocID); 
+		if (error) throw error;
+	} catch (int e)  {
+		std::cout << "CROC Contact Error!\n";
+		root.critStream() << "Unable to read the status register for CROC " << 
+			((myController->GetCroc(crocID)->GetCrocAddress())>>16) << log4cpp::eol;
+		exit(-3);
+	} 	
+	croc *myCroc = myController->GetCroc(crocID);    
+
+	//
+	// Configure Hardware
+	//
+	
+	// Clear Status & Reset
+	{
+		try {
+			error = CROCClearStatusAndResetPointer(myController, myAcquire, myCroc);
+			if (error) throw error;
+		} catch (int e) {
+			std::cout << "Cannot Clear Status & Reset Pointer!\n"; 
+			root.critStream() << "Unable to clear the status register for CROC " << 
+				((myController->GetCroc(crocID)->GetCrocAddress())>>16) << log4cpp::eol;
+			exit(error); 
+		}
+	}
+	
+	
+	// ~~~ Clean Up
 	delete myAcquire;
 	delete myController; //also deletes associated crocs && crims;
 	
@@ -158,29 +218,54 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 		unsigned char myData[] = {0x0,0x0};
 		// Reset DPM.
 		myAddress = myCroc->GetAddress() + (unsigned int)crocClearStatus +i*0x4000;
-		error = myAcquire->WriteCycle(myController->GetHandle(),2,crocDPMResetValue,myAddress,AM,DW);
-		clearAndReset.debugStream() << "DPMReset Flag = " << error << log4cpp::eol;
+		try {
+			error = myAcquire->WriteCycle(myController->GetHandle(),2,crocDPMResetValue,myAddress,AM,DW);
+			if (error) throw error;
+		} catch (int e) {
+			clearAndReset.critStream() << "DPMReset Flag = " << error;
+			return e;
+		}
+		clearAndReset.debugStream() << "DPMReset Flag = " << error;
 		// Clear Status.
-		error = myAcquire->WriteCycle(myController->GetHandle(),2,crocChanResetValue,myAddress,AM,DW);
-		clearAndReset.debugStream() << "Clear Status Flag = " << error << log4cpp::eol;		
+		try {
+			error = myAcquire->WriteCycle(myController->GetHandle(),2,crocChanResetValue,myAddress,AM,DW);
+			if (error) throw error;
+		} catch (int e) {
+			clearAndReset.critStream() << "Clear Status Flag = " << error;		
+			return e;
+		}
+		clearAndReset.debugStream() << "Clear Status Flag = " << error;		
 		// Read Status
 		myAddress = myCroc->GetAddress() + (unsigned int)crocStatus + i*0x4000;
-		error = myAcquire->ReadCycle(myController->GetHandle(),myData,myAddress,AM,DW);
-		clearAndReset.debugStream() << "Read Status Flag = " << error << log4cpp::eol;				
-		clearAndReset.debugStream() << "Address  = " << myAddress << log4cpp::eol;		
-		clearAndReset.debugStream() << "  Status = " << (myData[0] + myData[1]<<8) << log4cpp::eol;		
-		// Let's check to see if the deserializer & sync worked OK 
+		try {
+			error = myAcquire->ReadCycle(myController->GetHandle(),myData,myAddress,AM,DW);
+			if (error) throw error;
+		} catch (int e) {
+			clearAndReset.critStream() << "Read Status Flag = " << error;				
+			return e;
+		}
+		clearAndReset.debugStream() << "Read Status Flag = " << error;				
+		clearAndReset.debug("%s%X","Address = 0x",myAddress);
+		clearAndReset.debug("%s%04X","  Status = 0x",(myData[0] + myData[1]<<8));		
+		// Let's check to see if the deserializer & sync are present.
 		deserializer = myData[1] & 0x04;
 		synch        = myData[1] & 0x02;
-		clearAndReset.debugStream() <<"  deserializer = " << deserializer << log4cpp::eol;
-		clearAndReset.debugStream() <<"  synch        = " << synch << log4cpp::eol;
+		clearAndReset.debugStream() <<"  deserializer = " << deserializer;
+		clearAndReset.debugStream() <<"  synch        = " << synch;
 		if ( (deserializer == false) || (synch == false) ) {
-			clearAndReset.debugStream() << "Error on CROC Channel " << i+1 << log4cpp::eol;
-			clearAndReset.debugStream() << "  deserializer = " << deserializer << log4cpp::eol;  
-			clearAndReset.debugStream() << "  synch        = " << synch << log4cpp::eol;
+			clearAndReset.critStream() << "Error on CROC Channel " << i+1;
+			clearAndReset.critStream() << "  deserializer = " << deserializer;  
+			clearAndReset.critStream() << "  synch        = " << synch;
 			return 1;
 		}
 	} //end loop over *chains*	
 
 	return 0;
+}
+
+
+// Initialize the CRIM for Data Taking
+void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int runningMode)
+{
+	root.infoStream() << "InitCRIM is a dummy function." << log4cpp::eol;
 }
