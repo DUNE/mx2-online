@@ -1,5 +1,16 @@
 #!/bin/bash
 
+Help()
+{
+        echo  "Usage : start_daq_singleton_leakchk -et <ET filename> -f <Num FEBS> -g <Num Gates> -m <Mode> -r <Run Num> -s <Sub Num>"
+}
+
+if [ $# -eq 0 ]
+then
+        Help
+        exit 1
+fi
+
 # Running Modes:
 #  0 == OneShot
 #  1 == NuMI
