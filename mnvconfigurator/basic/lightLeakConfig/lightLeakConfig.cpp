@@ -171,16 +171,16 @@ int main(int argc, char *argv[])
 					std::cout << "Enabling HV.\n";
 #endif
 					error = FEBFPGAWrite(myController, myAcquire, myCroc, crocChannel, *p, HVTarget);
-					if (error!=0) { cout<<"Error in FEB TRiPT Test Write!\n"; exit(error); }	
+					if (error!=0) { cout<<"Error in FEB FPGA Write!\n"; exit(error); }	
 				}
 				// Setup TriPT's
 				{
 					error = FEBTRiPTWrite(myController, myAcquire, myCroc, crocChannel, *p);
-					if (error!=0) { cout<<"Error in FEB TRiPT Test Write!\n"; exit(error); }	
+					if (error!=0) { cout<<"Error in FEB TRiPT Write!\n"; exit(error); }	
 				}
 				if (doTriPReadBackCheck) {
 					error = FEBTRiPTRead(myController, myAcquire, myCroc, crocChannel, *p);
-					if (error!=0) { cout<<"Error in FEB TRiPT Test Write!\n"; exit(error); }						
+					if (error!=0) { cout<<"Error in FEB TRiPT Read!\n"; exit(error); }						
 				}
 			}		  
 	}
