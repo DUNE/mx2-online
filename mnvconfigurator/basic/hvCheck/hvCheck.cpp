@@ -49,16 +49,16 @@ unsigned char crocResetAndTestPulseMask[] = {0x0F,0x0F}; // enable reset (0F) an
 
 // Clear status && reset DPM pointer for all four channels on the CROC.
 int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire, croc *myCroc);
-// Pure Readback of FPGA's - not needed or used here...
+// Pure Readback of FPGA's - Prints HV info regardless of debug level
 int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc, 
 	unsigned int crocChannel, febAddresses boardID);
-// Basic Setup of FPGA's
+// Basic Setup of FPGA's - not used, but here anyway...
 int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc, 
  	unsigned int crocChannel, febAddresses boardID, int HVTarget);
-// Read all 6 TRiP's
+// Read all 6 TRiP's - not used, but here anyway...
 int FEBTRiPTRead(controller *myController, acquire *myAcquire, croc *myCroc, 
 	unsigned int crocChannel, febAddresses boardID);
-// Write to all 6 TRiP's
+// Write to all 6 TRiP's - not used, but here anyway...
 int FEBTRiPTWrite(controller *myController, acquire *myAcquire, croc *myCroc, 
 	unsigned int crocChannel, febAddresses boardID);
 // Open a gate - not used, but here anyway...
@@ -68,8 +68,7 @@ int FastCommandOpenGate(controller *myController, acquire *myAcquire, croc *myCr
 int main(int argc, char *argv[]) 
 {
 	if (argc < 2) {
-		cout << "Usage : lightLeakConfig -c <CROC Address> -h <CHANNEL Number> -f <Number of FEBs> ";
-		cout << "-v <HV Target>\n";
+		cout << "Usage : lightLeakConfig -c <CROC Address> -h <CHANNEL Number> -f <Number of FEBs>\n";
 		exit(0);
 	}
 	
@@ -78,14 +77,10 @@ int main(int argc, char *argv[])
 	unsigned int crocChannel     = 1;	
 	int crocID                   = 1;
 	int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
-	int HVTarget                 = 32000;
+	// int HVTarget                 = 32000;
 	
 	int error;		
 	int controllerID = 0;
-	bool doTriPReadBackCheck = false;
-#if DEBUGLEVEL > TRIPTREADLEVEL
-	doTriPReadBackCheck = true;
-#endif
 
 	// Process the command line argument set.
 	int optind = 1;
@@ -107,11 +102,6 @@ int main(int argc, char *argv[])
 			optind++;
 			nFEBs = atoi(argv[optind]);
 			cout << "\tNumber of FEBs = " << nFEBs << endl;
-        }
-		else if (sw=="-v") {
-			optind++;
-			HVTarget = atoi(argv[optind]);
-			cout << "\tTarget HV      = " << HVTarget << endl;
         }
 		else
 			cout << "Unknown switch: " << argv[optind] << endl;
@@ -165,22 +155,10 @@ int main(int argc, char *argv[])
 					error = CROCClearStatusAndResetPointer(myController, myAcquire, myCroc);
 					if (error!=0) { cout<<"Cannot Clear Status & Reset Pointer!\n"; exit(error); }
 				}
-				// Setup FPGA's
+				// Read FPGA's
 				{
-#if HVENABLE
-					std::cout << "Enabling HV.\n";
-#endif
-					error = FEBFPGAWrite(myController, myAcquire, myCroc, crocChannel, *p, HVTarget);
-					if (error!=0) { cout<<"Error in FEB TRiPT Test Write!\n"; exit(error); }	
-				}
-				// Setup TriPT's
-				{
-					error = FEBTRiPTWrite(myController, myAcquire, myCroc, crocChannel, *p);
-					if (error!=0) { cout<<"Error in FEB TRiPT Test Write!\n"; exit(error); }	
-				}
-				if (doTriPReadBackCheck) {
-					error = FEBTRiPTRead(myController, myAcquire, myCroc, crocChannel, *p);
-					if (error!=0) { cout<<"Error in FEB TRiPT Test Write!\n"; exit(error); }						
+					error = FEBFPGARead(myController, myAcquire, myCroc, crocChannel, *p);
+					if (error!=0) { cout<<"Error in FEB FPGA Read!\n"; exit(error); }	
 				}
 			}		  
 	}
@@ -353,6 +331,9 @@ int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->ShowValues();
 		cout << endl;
 #endif
+		printf("Board ID = %02d, HV Actual = %05d, HV Period Auto = %05d, HV Diff from Targ = %05d\n",
+			myFeb->GetBoardNumber(), myFeb->GetHVActual(), myFeb->GetHVPeriodAuto(), 
+			(myFeb->GetHVActual()-myFeb->GetHVTarget()));
 		myFeb->message = 0;
 		delete [] testarr;
 	}
