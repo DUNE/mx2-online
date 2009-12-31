@@ -176,7 +176,7 @@ int read_setup_data(int master_connection) {
 		perror("server read error: detector type"); 
 		exit(EXIT_FAILURE);
 	}
-	cout << " Detector Type (encoded): " << subNum[0] << endl;
+	cout << " Detector Type (encoded): " << detect[0] << endl;
 
 	/********************************************************************************/
 	// Read the ET filename for data storagea

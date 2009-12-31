@@ -123,6 +123,10 @@ int main(int argc, char *argv[])
 	gettimeofday(&start_time, NULL);
 #endif
 
+	// Socket communication status variables.
+	int sock_connection;
+
+
 	/*********************************************************************************/
 	/*   An event_handler structure object for building event data blocks.           */
 	/*********************************************************************************/
@@ -212,7 +216,9 @@ int main(int argc, char *argv[])
 #if MASTER&&(!SINGLE_PC)
 	// Create a TCP socket.
 	socket_handle = socket (PF_INET, SOCK_STREAM, 0);
-	std::cout<<"socket_handle: "<<socket_handle<<std::endl;
+#if DEBUG_SOCKETS
+	std::cout << "Multi-PC socket_handle: " << socket_handle << std::endl;
+#endif
 	if (socket_handle == -1) {
 		perror("socket");
 		exit(EXIT_FAILURE);
@@ -535,23 +541,35 @@ int main(int argc, char *argv[])
 		event_data.minosSGATE  = minos;
 
 #if DEBUG_GENERAL
-		cout << "Contacting the EventBuilder from Main." << endl;
+		std::cout << "Contacting the EventBuilder from Main.\n";
 #endif
 		// Here the soldier node must wait for a "done" signal from the worker node 
 		// before attaching the end-of-event header bank.
 #if MASTER
-		gate_done[0] = false;
-		cout << "gate_done: " << gate_done[0] << endl;
+		//gate_done[0] = false;
+#if DEBUG_SOCKETS
+		std::cout << "Preparing to end event.\n";
+		std::cout << " Initial gate_done: " << gate_done[0] << std::endl;
+#endif
 		while (!gate_done[0]) {
-			cout << "waiting..." << endl;
+#if DEBUG_SOCKETS
+			std::cout << " Waiting for worker...\n";
+#endif
 			struct sockaddr_in remote_address;
 			socklen_t address_length;
 			int connection;
 			address_length = sizeof (remote_address);
-			cout << "ready to connect: " << socket_handle << endl;
+#if DEBUG_SOCKETS
+			std::cout << " Ready to connect to socket_handle: " << socket_handle << std::endl;
+#endif
 			connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
-			cout << "still waiting..." << endl;
+			//junk// if (sock_connection<=0) sock_connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
+#if DEBUG_SOCKETS
+			std::cout << " Socket Connection is " << connection << " and still waiting...\n";
+			//junk// std::cout << " Socket Connection is " << sock_connection << " and still waiting...\n";
+#endif
 			if (connection == -1) {
+			//junk// if (sock_connection == -1) {
 				// The call to accept failed. 
 				if (errno == EINTR)
 					// The call was interrupted by a signal. Try again.
@@ -563,12 +581,15 @@ int main(int argc, char *argv[])
 			}
 			// Read "done" from the master
 			if ((read(connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
+			//junk// if ((read(sock_connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
 				perror("server read error: done"); //read in the number of gates to process
 				exit(EXIT_FAILURE);
 			}
-			cout << "gate_done: " << gate_done[0] << endl;
-		}
+#if DEBUG_SOCKETS
+			std::cout << " After accept and read, new gate_done: " << gate_done[0] << std::endl;
 #endif
+		}
+#endif // end if MASTER
 		// Contact event builder service.
 		daq->ContactEventBuilder(&event_data, -1, attach, sys_id);
 
@@ -591,17 +612,19 @@ int main(int argc, char *argv[])
 		if (!(gate%100)) {
 			cout << "******************************************************************" << endl;
 		}
-#endif
-#endif
-// endif SINGLE_PC||MASTER
+#endif // end if RECORD_EVENT
+#endif // end if SINGLE_PC || MASTER
+
 #if (!MASTER)&&(!SINGLE_PC)
-		std::cout<<"writing true to master"<<std::endl;
+#if DEBUG_SOCKETS
+		std::cout << " Writing true to soldier node to indicate end of gate..." << std::endl;
+#endif
 		gate_done[0]=true;
-		if (write(socket_handle,gate_done,1)==-1) { //we're done!
-			perror("server read error: done"); //read in the number of gates to process
+		if (write(socket_handle,gate_done,1) == -1) { // We're done!
+			perror("server read error: done"); 
 			exit(EXIT_FAILURE);
 		}
-#endif
+#endif // end if !MASTER && !SINGLE_PC
 #if SINGLE_PC
 		// TODO - Come up with a mechanism to synch global gate record keeping for multi-PC mode!
 		global_gate.open("global_gate.dat");
