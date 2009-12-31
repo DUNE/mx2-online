@@ -124,7 +124,8 @@ int main(int argc, char *argv[])
 #endif
 
 	// Socket communication status variables.
-	int sock_connection;
+	int  sock_connection; 
+	bool sock_connection_is_live = false;
 
 
 	/*********************************************************************************/
@@ -235,7 +236,8 @@ int main(int argc, char *argv[])
 		perror ("bind");
 		exit(EXIT_FAILURE);
 	}
-	if (listen (socket_handle, 10)) {
+	// Enable connection requests.
+	if (listen (socket_handle, 10)) { // Accept up to 10 clients... too many?
 		perror("listen");
 		exit(EXIT_FAILURE);
 	}
@@ -248,14 +250,15 @@ int main(int argc, char *argv[])
 #endif
 	// Store the server’s name in the socket address. 
 	daq_service.sin_family = AF_INET;
-	// Set hostname - this needs to be changed for the appropriate machine.
-	// (Should point from worker to soldier node.)
-	// Eventually want to use IP numbers.
+	// Set hostname - this needs to be changed for the appropriate machine.  This 
+	// connection points from worker to soldier... eventually we want to use IP numbers.
 	string hostname="mnvonline0.fnal.gov"; 
 	hostinfo = gethostbyname(hostname.c_str());
-	if (hostinfo == NULL) { std::cout << "No host to connect to!\n"; return 1; }
+	if (hostinfo == NULL) { std::cout << "No soldier node to connect to!\n"; return 1; }
 	else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
 	daq_service.sin_port = htons (port); //port assigned in minervadaq.h
+
+	// Initiate connection with "server" (soldier node).
 	if (connect(socket_handle, (struct sockaddr*) &daq_service, sizeof (struct sockaddr_in)) == -1) {
 		perror ("connect");
 		exit(EXIT_FAILURE) ;
@@ -275,8 +278,7 @@ int main(int argc, char *argv[])
 	boost::thread electronics_init_thread(boost::bind(&acquire_data::InitializeDaq,daq)); 
 #else
 	daq->InitializeDaq(CONTROLLER_ID, runningMode);
-#endif
-// endif THREAD_ME
+#endif // end if THREAD_ME
 
 	/*********************************************************************************/
 	/*  With run metadata in hand we can set about starting up an event builder...   */
@@ -286,7 +288,7 @@ int main(int argc, char *argv[])
 #endif
 
 	// Get the controller object created during InitializeDaq.
-	// TODO - Should be keyed by controller id?  May not matter...
+	// Note that controller ID's are keyed for worker/soldier nodes elsewhere.
 	controller *currentController = daq->GetController(); 
 
 	/*********************************************************************************/
@@ -300,7 +302,6 @@ int main(int argc, char *argv[])
 	/*   Make up the data-taking threads if in multi-threaded operation              */
 	/*********************************************************************************/
 #if THREAD_ME
-	// int thread_count = THREAD_COUNT;
 	boost::thread *data_threads[thread_count];
 #endif
 
@@ -375,7 +376,6 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		/* Trigger the DAQ, threaded or unthreaded.                                       */
 		/**********************************************************************************/
-		// TODO - Add dynamic trigger typing here - want to switch between beam & X, etc.
 		unsigned short int triggerType;
 		switch (runningMode) {
 			case OneShot:
@@ -547,27 +547,28 @@ int main(int argc, char *argv[])
 		// Here the soldier node must wait for a "done" signal from the worker node 
 		// before attaching the end-of-event header bank.
 #if MASTER
-		//gate_done[0] = false;
+		gate_done[0] = false;
 #if DEBUG_SOCKETS
 		std::cout << "Preparing to end event...\n";
-		std::cout << " Initial gate_done: " << gate_done[0] << std::endl;
+		std::cout << " Initial gate_done       = " << gate_done[0] << std::endl;
+		std::cout << " sock_connection_is_live = " << sock_connection_is_live << std::endl; 
 #endif
-		while (!gate_done[0]) {
+		// Accept connection from worker node to supply end of event signalling.
+		while (!sock_connection_is_live) {
 #if DEBUG_SOCKETS
 			std::cout << " Waiting for worker...\n";
 #endif
 			struct sockaddr_in remote_address;
 			socklen_t address_length;
-			int connection;
 			address_length = sizeof (remote_address);
 #if DEBUG_SOCKETS
 			std::cout << " Ready to connect to socket_handle: " << socket_handle << std::endl;
 #endif
-			connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
+			sock_connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
 #if DEBUG_SOCKETS
-			std::cout << " Socket Connection is " << connection << " and still waiting...\n";
+			std::cout << " Socket Connection is " << sock_connection << " and still waiting...\n";
 #endif
-			if (connection == -1) {
+			if (sock_connection == -1) {
 				// The call to accept failed. 
 				if (errno == EINTR)
 					// The call was interrupted by a signal. Try again.
@@ -577,8 +578,11 @@ int main(int argc, char *argv[])
 					perror("accept");
 					exit(EXIT_FAILURE);
 			}
+			sock_connection_is_live = true;
+		}
+		while (!gate_done[0]) { 
 			// Read "done" from the worker node 
-			if ((read(connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
+			if ((read(sock_connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
 				perror("server read error: done"); //read in the number of gates to process
 				exit(EXIT_FAILURE);
 			}
@@ -635,8 +639,8 @@ int main(int argc, char *argv[])
 		}
 		global_gate.close();
 #endif
-
 	} //end of gates loop
+
 #if !SINGLE_PC
 	close(socket_handle);
 #endif
@@ -648,8 +652,7 @@ int main(int argc, char *argv[])
 
 	unsigned long long totaldiff  = totalend - totalstart;
 	printf(" Total acquisition time was %lu microseconds.\n",totaldiff);
-#endif 
-//TAKE_DATA
+#endif // end if TAKE_DATA
 
 	/**********************************************************************************/
 	/*   return the success status of the run                                         */
