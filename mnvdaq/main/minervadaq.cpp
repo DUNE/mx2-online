@@ -540,6 +540,7 @@ int main(int argc, char *argv[])
 		// Here the soldier node must wait for a "done" signal from the worker node 
 		// before attaching the end-of-event header bank.
 #if MASTER
+		gate_done[0] = false;
 		cout << "gate_done: " << gate_done[0] << endl;
 		while (!gate_done[0]) {
 			cout << "waiting..." << endl;
