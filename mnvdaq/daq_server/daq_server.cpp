@@ -135,9 +135,9 @@ int server() {
 
 
 int read_setup_data(int master_connection) {
-	// Properly a DEBUG check...
+#if DEBUG_GENERAL
 	cout << " daq_server::read_setup_data() sizeof(gates): " << sizeof(gates) << endl;
-
+#endif
 	/********************************************************************************/
 	// Read the number of gates to process.
 	if ((read(master_connection,gates,sizeof(gates)))!=sizeof(gates)) { 
@@ -192,7 +192,7 @@ int read_setup_data(int master_connection) {
 		perror("server read error: done"); 
 		exit(EXIT_FAILURE);
 	}
-	cout << " Are we done? " << done[0] << endl;
+	cout << " Are we done (finished argument parsing)? " << done[0] << endl;
 
 	return 0;
 }

@@ -167,16 +167,30 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		// All of the NuMI and dedicated LI modes use MTM timing.
 		case NuMIBeam:
 			std::cout << "Running Mode is NuMI Beam." << std::endl;
-			// Continue to fall through down to last MTM mode...
+			GateWidth    = 0x7F;
+			TCALBDelay   = 0x3FF;
+			Frequency    = ZeroFreq;
+			TimingMode   = MTM; 
+			TCALBEnable  = 0x1;
+			break;
 		case PureLightInjection:
 			std::cout << "Running Mode is PureLightInjection." << std::endl;
-			// Continue to fall through down to last MTM mode...
+			GateWidth    = 0x7F;
+			TCALBDelay   = 0x3FF;
+			Frequency    = ZeroFreq;
+			TimingMode   = MTM; 
+			TCALBEnable  = 0x1;
+			break;
 		case MixedBeamPedestal:
 			std::cout << "Running Mode is MixedBeamPedestal." << std::endl;
-			// Continue to fall through down to last MTM mode...
+			GateWidth    = 0x7F;
+			TCALBDelay   = 0x3FF;
+			Frequency    = ZeroFreq;
+			TimingMode   = MTM; 
+			TCALBEnable  = 0x1;
+			break;
 		case MixedBeamLightInjection:
 			std::cout << "Running Mode is MixedBeamLightInjection." << std::endl;
-			// This is the last MTM mode, so execute setup.
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = ZeroFreq;
@@ -188,7 +202,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			std::cout << "Running Mode is Cosmic." << std::endl;
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
-			Frequency    = F4; // This is as fast as we ran in Wideband.
+			Frequency    = F4; // The fastest setting is a function of FEB firmware.
 			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
 			break;

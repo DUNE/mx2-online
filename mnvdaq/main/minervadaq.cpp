@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 	int subRunNumber         = 11;        // It goes to 11...
 	int record_seconds       = -1;	      // Run length in SECONDS (Not Supported...)
 	int detector             = 0;         // Default to UnknownDetector.
-	detector                 = (0x1)<<4;  // For header debugging... the Upstream Detector.
+	detector                 = (0x1)<<4;  // TODO - For header debugging... the Upstream Detector.
 	string et_filename       = "testme";  
 
 	/*********************************************************************************/
@@ -55,57 +55,57 @@ int main(int argc, char *argv[])
 	//  li box config - pulse height
 	int optind = 1;
 	// Decode Arguments
-	cout << "\n\nArguments to MINERvA DAQ: " << endl;
+	std::cout << "\nArguments to MINERvA DAQ: \n";
 	while ((optind < argc) && (argv[optind][0]=='-')) {
 		string sw = argv[optind];
 		if (sw=="-r") {
 			optind++;
 			runNumber = atoi(argv[optind]);
-			cout << "\tRun Number             = " << runNumber << endl;
+			std::cout << "\tRun Number             = " << runNumber << std::endl;
         	}
 		else if (sw=="-s") {
 			optind++;
 			subRunNumber = atoi(argv[optind]);
-			cout << "\tSubrun Number          = " << subRunNumber << endl;
+			std::cout << "\tSubrun Number          = " << subRunNumber << std::endl;
         	}
 		else if (sw=="-g") {
 			optind++;
 			record_gates = atoi(argv[optind]);
-			cout << "\tTotal Gates            = " << record_gates << endl;
+			std::cout << "\tTotal Gates            = " << record_gates << std::endl;
         	}
 		else if (sw=="-t") {
 			optind++;
 			record_seconds = atoi(argv[optind]);
-			cout << "\tTotal Seconds (not supported) = " << record_seconds << endl;
+			std::cout << "\tTotal Seconds (not supported) = " << record_seconds << std::endl;
         	}
 		else if (sw=="-m") {
 			optind++;
 			runMode = atoi(argv[optind]);
 			runningMode = (RunningModes)runMode;
-			cout << "\tRunning Mode (encoded) = " << runningMode << endl;
+			std::cout << "\tRunning Mode (encoded) = " << runningMode << std::endl;
         	}
 		else if (sw=="-d") {
 			optind++;
 			detector = atoi(argv[optind]);
-			cout << "\tDetector (encoded)     = " << detector << endl;
+			std::cout << "\tDetector (encoded)     = " << detector << std::endl;
         	}
 		else if (sw=="-et") {
 			optind++;
 			et_filename = argv[optind];
-			cout << "\tET Filename            = " << et_filename << endl;
+			std::cout << "\tET Filename            = " << et_filename << std::endl;
 		}
 		else
-			cout << "Unknown switch: " << argv[optind] << endl;
+			std::cout << "Unknown switch: " << argv[optind] << std::endl;
 		optind++;
 	}
-	cout << endl;
+	std::cout << std::endl;
 
 	// Report the rest of the command line...
 	if (optind < argc) {
-		cout << "There were remaining arguments!  Are you sure you set the run up correctly?" << endl;
-		cout << "  Remaining arguments = ";
-		for (;optind<argc;optind++) cout << argv[optind];
-		cout << endl;
+		std::cout << "There were remaining arguments!  Are you sure you set the run up correctly?" << std::endl;
+		std::cout << "  Remaining arguments = ";
+		for (;optind<argc;optind++) std::cout << argv[optind];
+		std::cout << std::endl;
 	}
 
 	// Log files for the main routine.  
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 	// Create a TCP socket.
 	socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 #if DEBUG_SOCKETS
-	std::cout << "Multi-PC socket_handle: " << socket_handle << std::endl;
+	std::cout << "Master-node Multi-PC socket_handle: " << socket_handle << std::endl;
 #endif
 	if (socket_handle == -1) {
 		perror("socket");
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 	socket_address.s_addr = htonl(INADDR_ANY); //bind to the local address
 	memset (&daq_service, 0, sizeof (daq_service));
 	daq_service.sin_family = AF_INET;
-	daq_service.sin_port = htons(port);
+	daq_service.sin_port = htons(port); //port assigned in minervadaq.h
 	daq_service.sin_addr = socket_address;
 
 	// Bind the socket to that address.
@@ -239,11 +239,13 @@ int main(int argc, char *argv[])
 		perror("listen");
 		exit(EXIT_FAILURE);
 	}
-#endif
-// endif MASTER&&(!SINGLE_PC)
+#endif // end if MASTER&&(!SINGLE_PC)
 
 #if (!MASTER)&&(!SINGLE_PC)
 	socket_handle = socket (PF_INET, SOCK_STREAM, 0);
+#if DEBUG_SOCKETS
+	std::cout << "Slave-node Multi-PC socket_handle: " << socket_handle << std::endl;
+#endif
 	// Store the server’s name in the socket address. 
 	daq_service.sin_family = AF_INET;
 	// Set hostname - this needs to be changed for the appropriate machine.
@@ -251,15 +253,14 @@ int main(int argc, char *argv[])
 	// Eventually want to use IP numbers.
 	string hostname="mnvonline0.fnal.gov"; 
 	hostinfo = gethostbyname(hostname.c_str());
-	if (hostinfo == NULL) return 1;
+	if (hostinfo == NULL) { std::cout << "No host to connect to!\n"; return 1; }
 	else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
-	daq_service.sin_port = htons (port);
+	daq_service.sin_port = htons (port); //port assigned in minervadaq.h
 	if (connect(socket_handle, (struct sockaddr*) &daq_service, sizeof (struct sockaddr_in)) == -1) {
 		perror ("connect");
 		exit(EXIT_FAILURE) ;
 	}
-#endif
-// endif (!MASTER)&&(!SINGLE_PC)
+#endif // end if (!MASTER)&&(!SINGLE_PC)
 
 	/*********************************************************************************/
 	/*   Make an acquire data object which contains the functions for                */
@@ -292,7 +293,7 @@ int main(int argc, char *argv[])
 	/*  At this point we are now set up and are ready to start event acquistion.     */
 	/*********************************************************************************/
 #if DEBUG_GENERAL
-	cout << "\nGetting ready to start taking data!\n" << endl;
+	std::cout << "\nGetting ready to start taking data!\n" << std::endl;
 #endif
 
 	/*********************************************************************************/
@@ -305,7 +306,7 @@ int main(int argc, char *argv[])
 
 #if TAKE_DATA
 #if DEBUG_GENERAL
-	cout << " Attempting to record " << record_gates << " gates.\n" << endl;
+	std::cout << " Attempting to record " << record_gates << " gates.\n" << std::endl;
 #endif
 
 	/*********************************************************************************/
@@ -321,12 +322,12 @@ int main(int argc, char *argv[])
 		gettimeofday(&gate_start_time, NULL);
 #endif
 #if DEBUG_GENERAL
-		cout << "\n\n->Top of the Event Loop, starting Gate: " << gate << endl;
+		std::cout << "\n\n->Top of the Event Loop, starting Gate: " << gate << std::endl;
 #endif
 #if RECORD_EVENT
 		if (!(gate%100)) {
-			cout << "******************************************************************" << endl;
-			cout << "   Acquiring Gate: " << gate << endl;
+			std::cout << "******************************************************************\n";
+			std::cout << "   Acquiring Gate: " << gate << std::endl;
 		}
 #endif
 		/**********************************************************************************/
@@ -357,7 +358,7 @@ int main(int argc, char *argv[])
 		}
 		global_gate.close();
 #if DEBUG_GENERAL
-		cout << "    Global Gate: " << event_data.globalGate << endl;
+		std::cout << "    Global Gate: " << event_data.globalGate << std::endl;
 #endif
 #endif
 		// Set the data_ready flag to false, we have not yet taken any data.
@@ -368,7 +369,7 @@ int main(int argc, char *argv[])
 		thread_count = 0;
 #endif
 #if DEBUG_THREAD
-		cout << "Launching the trigger thread." << endl;
+		std::cout << "Launching the trigger thread." << std::endl;
 #endif
 
 		/**********************************************************************************/
@@ -453,7 +454,7 @@ int main(int argc, char *argv[])
 					// Threaded Option
 					//
 #if DEBUG_THREAD
-					cout << " Launching data thread: " << croc_id << " " << j <<endl;
+					std::cout << " Launching data thread: " << croc_id << " " << j << std::endl;
 #endif
 #if THREAD_ME
 #if TIME_ME
@@ -464,13 +465,13 @@ int main(int argc, char *argv[])
 						<<(gate_start_time.tv_sec*1000000+gate_start_time.tv_usec)<<endl;
 #endif
 #if DEBUG_THREAD
-					cout<<thread_count<<endl;
+					std::cout << thread_count << std::endl;
 #endif
 					data_threads[thread_count] = 
 						new boost::thread((boost::bind(&TakeData,boost::ref(daq),boost::ref(evt),croc_id,j,
 						thread_count, attach, sys_id)));
 #if DEBUG_THREAD
-					cout << "Success." << endl;
+					std::cout << "Success." << std::endl;
 #endif 
 #if TIME_ME
 					gettimeofday(&dummy,NULL);
@@ -485,7 +486,7 @@ int main(int argc, char *argv[])
 					//
 #elif NO_THREAD
 #if DEBUG_GENERAL
-					cout << " Reading CROC: " << croc_id << " channel: " << j << std::endl;
+					std::cout << " Reading CROC: " << croc_id << " channel: " << j << std::endl;
 #endif
 					TakeData(daq,evt,croc_id,j,0,attach,sys_id);
 #endif
@@ -503,7 +504,7 @@ int main(int argc, char *argv[])
 		/*   And the data taking threads                                                  */
 		/**********************************************************************************/
 #if DEBUG_THREAD
-		cout << "Getting ready to join threads..." << endl;
+		std::cout << "Getting ready to join threads..." << std::endl;
 #endif
 		for (int i=0;i<thread_count;i++) {
 #if DEBUG_THREAD
@@ -511,7 +512,7 @@ int main(int argc, char *argv[])
 #endif
 			data_threads[i]->join();
 #if DEBUG_THREAD
-			cout << "Thread joined!" << endl;
+			std::cout << "Thread joined!" << std::endl;
 #endif
 		}
 #endif
@@ -541,14 +542,14 @@ int main(int argc, char *argv[])
 		event_data.minosSGATE  = minos;
 
 #if DEBUG_GENERAL
-		std::cout << "Contacting the EventBuilder from Main.\n";
+		std::cout << "Preparing to contact the EventBuilder from Main...\n";
 #endif
 		// Here the soldier node must wait for a "done" signal from the worker node 
 		// before attaching the end-of-event header bank.
 #if MASTER
 		//gate_done[0] = false;
 #if DEBUG_SOCKETS
-		std::cout << "Preparing to end event.\n";
+		std::cout << "Preparing to end event...\n";
 		std::cout << " Initial gate_done: " << gate_done[0] << std::endl;
 #endif
 		while (!gate_done[0]) {
@@ -563,13 +564,10 @@ int main(int argc, char *argv[])
 			std::cout << " Ready to connect to socket_handle: " << socket_handle << std::endl;
 #endif
 			connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
-			//junk// if (sock_connection<=0) sock_connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
 #if DEBUG_SOCKETS
 			std::cout << " Socket Connection is " << connection << " and still waiting...\n";
-			//junk// std::cout << " Socket Connection is " << sock_connection << " and still waiting...\n";
 #endif
 			if (connection == -1) {
-			//junk// if (sock_connection == -1) {
 				// The call to accept failed. 
 				if (errno == EINTR)
 					// The call was interrupted by a signal. Try again.
@@ -579,9 +577,8 @@ int main(int argc, char *argv[])
 					perror("accept");
 					exit(EXIT_FAILURE);
 			}
-			// Read "done" from the master
+			// Read "done" from the worker node 
 			if ((read(connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
-			//junk// if ((read(sock_connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
 				perror("server read error: done"); //read in the number of gates to process
 				exit(EXIT_FAILURE);
 			}
@@ -595,8 +592,8 @@ int main(int argc, char *argv[])
 
 #if RECORD_EVENT
 		if (!(gate%100)) {
-			cout << "******************************************************************" << endl;
-			cout << "   Completed Gate: " << gate << endl;
+			std::cout << "******************************************************************\n";
+			std::cout << "   Completed Gate: " << gate << std::endl;
 		}
 
 #if TIME_ME
@@ -604,13 +601,13 @@ int main(int argc, char *argv[])
 		double duration = (gate_stop_time.tv_sec*1e6+gate_stop_time.tv_usec) - 
 			(gate_start_time.tv_sec*1e6+gate_start_time.tv_usec);
 		if (!(gate%100)) {
-			cout<<"Start Time: "<<(gate_start_time.tv_sec*1000000+gate_start_time.tv_usec)<<" Stop Time: "
-				<<(gate_stop_time.tv_sec*1e6+gate_start_time.tv_usec)<<" Run Time: "<<(duration/1e6)<<endl;
+			std::cout<<"Start Time: "<<(gate_start_time.tv_sec*1000000+gate_start_time.tv_usec)<<" Stop Time: "
+				<<(gate_stop_time.tv_sec*1e6+gate_start_time.tv_usec)<<" Run Time: "<<(duration/1e6)<<std::endl;
 		}
-		gate_time_log<<gate<<"\t"<<duration<<endl;
+		gate_time_log << gate << "\t" << duration << std::endl;
 #endif
 		if (!(gate%100)) {
-			cout << "******************************************************************" << endl;
+			std::cout << "******************************************************************\n";
 		}
 #endif // end if RECORD_EVENT
 #endif // end if SINGLE_PC || MASTER
@@ -633,7 +630,7 @@ int main(int argc, char *argv[])
 			event_data.globalGate++;
 			global_gate << event_data.globalGate;
 		} catch (bool e) {
-			cout << "Error in minervadaq::main opening global gate data!" << endl;
+			std::cout << "Error in minervadaq::main opening global gate data!" << std::endl;
 			exit(-2000);
 		}
 		global_gate.close();
