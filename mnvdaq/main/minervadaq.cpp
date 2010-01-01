@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
 	// TODO - We need to add to the command line argument set...
 	//  li box config - led groups activated
 	//  li box config - pulse height
+	// TODO - Add support for the total seconds flag?...
 	int optind = 1;
 	// Decode Arguments
 	std::cout << "\nArguments to MINERvA DAQ: \n";
@@ -125,7 +126,8 @@ int main(int argc, char *argv[])
 
 	// Socket communication status variables.
 	int  sock_connection; 
-	bool sock_connection_is_live = false;
+	bool ready_to_go[1];
+	bool sock_connection_is_live;
 
 
 	/*********************************************************************************/
@@ -159,7 +161,7 @@ int main(int argc, char *argv[])
 	// Set this ET client for remote operation.
 	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote (multi-pc) mode only.
 	// Set to the current host machine name. 
-	// Currently (2009.December.15), setting IP addresses explicitly doesn't work quite right.
+	// Currently (2010.January.1), setting IP addresses explicitly doesn't work quite right.
 
 	// Set direct connection.
 	et_open_config_setcast(openconfig, ET_DIRECT);  // Remote (multi-pc) mode only.
@@ -180,7 +182,6 @@ int main(int argc, char *argv[])
 	// Set the debug level for output (everything).
 	et_system_setdebug(sys_id, ET_DEBUG_INFO);
 
-	// This only works for local operation, not over the network for some reason!
 #if SINGLE_PC
 	// Set up the heartbeat to make sure ET starts correctly.
 	unsigned int oldheartbeat, newheartbeat;
@@ -211,14 +212,15 @@ int main(int argc, char *argv[])
 		exit(1);
 	} 
 
+
 	/*********************************************************************************/
-	/*  Now we need to synch up the "master" and "slave" DAQ's                       */
+	/*  Basic Socket Configuration for Worker && Soldier Nodes.                      */
 	/*********************************************************************************/
-#if MASTER&&(!SINGLE_PC)
+#if MASTER&&(!SINGLE_PC) // Soldier Node
 	// Create a TCP socket.
 	socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 #if DEBUG_SOCKETS
-	std::cout << "Master-node Multi-PC socket_handle: " << socket_handle << std::endl;
+	std::cout << "\nSoldier/Master-node Multi-PC socket_handle: " << socket_handle << std::endl;
 #endif
 	if (socket_handle == -1) {
 		perror("socket");
@@ -243,10 +245,10 @@ int main(int argc, char *argv[])
 	}
 #endif // end if MASTER&&(!SINGLE_PC)
 
-#if (!MASTER)&&(!SINGLE_PC)
+#if (!MASTER)&&(!SINGLE_PC) // Worker Node
 	socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 #if DEBUG_SOCKETS
-	std::cout << "Slave-node Multi-PC socket_handle: " << socket_handle << std::endl;
+	std::cout << "\nWorker/Slave-node Multi-PC socket_handle: " << socket_handle << std::endl;
 #endif
 	// Store the server’s name in the socket address. 
 	daq_service.sin_family = AF_INET;
@@ -257,13 +259,61 @@ int main(int argc, char *argv[])
 	if (hostinfo == NULL) { std::cout << "No soldier node to connect to!\n"; return 1; }
 	else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
 	daq_service.sin_port = htons (port); //port assigned in minervadaq.h
+#endif // end if (!MASTER)&&(!SINGLE_PC)
 
-	// Initiate connection with "server" (soldier node).
+
+	/*********************************************************************************/
+	/*  Event handshaking - START.                                                   */
+	/*********************************************************************************/
+	sock_connection_is_live = false;
+#if MASTER&&(!SINGLE_PC) // Soldier Node
+#if DEBUG_SOCKETS
+	std::cout << "Preparing make new server connection for event synchronization...\n";
+	std::cout << " sock_connection_is_live = " << sock_connection_is_live << std::endl; 
+#endif
+	// Accept connection from worker node to supply end of event & global gate signalling.
+	while (!sock_connection_is_live) {
+#if DEBUG_SOCKETS
+		std::cout << " Waiting for worker node...\n";
+		std::cout << " Ready to connect to socket_handle: " << socket_handle << std::endl;
+#endif
+		struct sockaddr_in remote_address;
+		socklen_t address_length;
+		address_length = sizeof (remote_address);
+		// Accept will wait for a connection...
+		sock_connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
+		if (sock_connection == -1) {
+			// The call to accept failed. 
+			if (errno == EINTR)
+				// The call was interrupted by a signal. Try again.
+				continue;
+			else
+				// Something else went wrong. 
+				perror("accept");
+				exit(EXIT_FAILURE);
+		}
+		sock_connection_is_live = true;
+	} // end while !sock_connection_is_live
+#if DEBUG_SOCKETS
+	std::cout << " ->Connection complete at " << sock_connection << 
+		" with live status = " << sock_connection_is_live << "\n\n";
+#endif
+#endif // end if MASTER&&(!SINGLE_PC)
+
+#if (!MASTER)&&(!SINGLE_PC) // Worker Node
+	// Initiate connection with "server" (soldier node).  Connect waits for a server response.
 	if (connect(socket_handle, (struct sockaddr*) &daq_service, sizeof (struct sockaddr_in)) == -1) {
 		perror ("connect");
 		exit(EXIT_FAILURE) ;
 	}
+#if DEBUG_SOCKETS
+	std::cout << " ->Returned from connect!\n\n";
+#endif
 #endif // end if (!MASTER)&&(!SINGLE_PC)
+	/*********************************************************************************/
+	/*  Event handshaking - STOP.                                                    */
+	/*********************************************************************************/
+
 
 	/*********************************************************************************/
 	/*   Make an acquire data object which contains the functions for                */
@@ -298,9 +348,7 @@ int main(int argc, char *argv[])
 	std::cout << "\nGetting ready to start taking data!\n" << std::endl;
 #endif
 
-	/*********************************************************************************/
-	/*   Make up the data-taking threads if in multi-threaded operation              */
-	/*********************************************************************************/
+	// Make the data-taking threads if in multi-threaded operation.
 #if THREAD_ME
 	boost::thread *data_threads[thread_count];
 #endif
@@ -316,14 +364,14 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	struct timeval runstart, runend;
 	gettimeofday(&runstart, NULL);
-	//
-	for (int gate = 1; gate <= record_gates; gate++) {
+	// TODO - use a while loop that also checks for a stop condition
+	for (int gate = 1; gate <= record_gates; gate++) { 
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
 		gettimeofday(&gate_start_time, NULL);
 #endif
 #if DEBUG_GENERAL
-		std::cout << "\n\n->Top of the Event Loop, starting Gate: " << gate << std::endl;
+		std::cout << "\n->Top of the Event Loop, starting Gate: " << gate << std::endl;
 #endif
 #if RECORD_EVENT
 		if (!(gate%100)) {
@@ -341,27 +389,67 @@ int main(int argc, char *argv[])
 		event_data.gate        = gate; // Record gate number.
 		event_data.triggerTime = 0;    // Set after returning from the Trigger function.
 		event_data.readoutInfo = 0;    // Error bits.
-		event_data.minosSGATE  = 0;
+		event_data.minosSGATE  = 0;    // MINOS Start GATE in their time coordinates.
 		event_data.ledLevel    = (unsigned char)3; // TODO - MaxPE - For debugging purposes...
 		event_data.ledGroup    = (unsigned char)1; // TODO - LEDALL - For debugging purposes...
 		for (int i=0;i<9;i++) {
 			event_data.feb_info[i] = 0; // Initialize the FEB information block. 
 		}
-#if SINGLE_PC
-		// TODO - Add a method for getting the global gate in multi-PC mode!
-		fstream global_gate("global_gate.dat");
+#if SINGLE_PC||((!MASTER)&&(!SINGLE_PC)) // Single PC or Worker Node
+		fstream global_gate("global_gate.dat"); // TODO - use absolute path to a log & records area...
 		try {
 			if (!global_gate) throw (!global_gate);
-			global_gate >> event_data.globalGate;
+			global_gate >> global_gate_data[0];
 		} catch (bool e) {
-			cout << "Error in minervadaq::main opening global gate data!" << endl;
+			std::cout << "Error in minervadaq::main opening global gate data!\n";
 			exit(-2000);
 		}
 		global_gate.close();
 #if DEBUG_GENERAL
-		std::cout << "    Global Gate: " << event_data.globalGate << std::endl;
+		std::cout << "    Global Gate: " << global_gate_data[0] << std::endl;
 #endif
+		event_data.globalGate = global_gate_data[0];
+#endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
+#if (MASTER)&&(!SINGLE_PC) // Soldier Node
+		event_data.globalGate = global_gate_data[0] = 0;
 #endif
+
+		// soldier-worker global gate data synchronization.
+#if (!MASTER)&&(!SINGLE_PC) // Worker Node
+#if DEBUG_SOCKETS
+		std::cout << " Writing global gate to soldier node to indicate readiness of trigger..." << std::endl;
+#endif
+		if (write(socket_handle,global_gate_data,sizeof(global_gate_data)) == -1) { // write 8 bytes
+			perror("write error: global_gate"); 
+			exit(EXIT_FAILURE);
+		}
+#if DEBUG_SOCKETS
+		std::cout << " Finished writing global gate to soldier node." << std::endl;
+#endif
+#endif // end if !MASTER && !SINGLE_PC
+#if (MASTER)&&(!SINGLE_PC) // Soldier Node
+#if DEBUG_SOCKETS
+		std::cout << " Reading global gate from worker node to indicate start of trigger..." << std::endl;
+		std::cout << "  Initial global_gate_data = " << global_gate_data[0] << std::endl;
+		std::cout << "  sock_connection_is_live  = " << sock_connection_is_live << std::endl; 
+#endif
+		while (!global_gate_data[0]) { 
+			// Read global gate data from the worker node 
+			int read_val = read(sock_connection, global_gate_data, sizeof(global_gate_data));
+#if DEBUG_SOCKETS
+			std::cout << "  socket readback data size = " << read_val << std::endl;
+#endif
+			if ( read_val != sizeof(global_gate_data) ) { 
+				perror("server read error: done"); 
+				exit(EXIT_FAILURE);
+			}
+#if DEBUG_SOCKETS
+			std::cout << "  ->After read, new global_gate_data: " << global_gate_data[0] << std::endl;
+#endif
+		}
+		event_data.globalGate = global_gate_data[0];
+#endif // end if (MASTER)&&(!SINGLE_PC)
+
 		// Set the data_ready flag to false, we have not yet taken any data.
 		data_ready = false; 
 
@@ -389,6 +477,7 @@ int main(int argc, char *argv[])
 				break;
 			case PureLightInjection:
 				triggerType = LightInjection;
+				std::cout << "Warning!  No LI control class exists yet!" << std::endl;
 				break;
 			case MixedBeamPedestal:
 				// TODO - Test mixed beam-pedestal running!
@@ -397,7 +486,8 @@ int main(int argc, char *argv[])
 				} else {
 					triggerType = NuMI;
 				}
-				std::cout << "Warning!  Calling untested mixed mode beam-pedestal trigger types!" << std::endl;
+				std::cout << "Warning!  Calling untested mixed mode beam-pedestal trigger types!" << 
+					std::endl;
 				break;
 			case MixedBeamLightInjection:
 				// TODO - Test mixed beam-li running!
@@ -410,8 +500,8 @@ int main(int argc, char *argv[])
 				std::cout << "Warning!  No LI control class exists yet!" << std::endl;
 				break; 
 			default:
-                        	std::cout << "ERROR! Improper Running Mode defined!" << std::endl;
-                        	exit(-4);
+				std::cout << "ERROR! Improper Running Mode defined!" << std::endl;
+				exit(-4);
         	}
 		event_data.triggerType = triggerType;
 #if THREAD_ME
@@ -420,9 +510,8 @@ int main(int argc, char *argv[])
 #elif NO_THREAD
 		TriggerDAQ(daq, triggerType);
 #endif 
-		/**********************************************************************************/
-		/* Make the event_handler pointer.                                                */
-		/**********************************************************************************/
+
+		// Make the event_handler pointer.
 		event_handler *evt = &event_data;
 
 		// Set the trigger time.
@@ -546,51 +635,24 @@ int main(int argc, char *argv[])
 #endif
 		// Here the soldier node must wait for a "done" signal from the worker node 
 		// before attaching the end-of-event header bank.
-#if MASTER
+#if MASTER&&(!SINGLE_PC) // Soldier Node
 		gate_done[0] = false;
 #if DEBUG_SOCKETS
 		std::cout << "Preparing to end event...\n";
 		std::cout << " Initial gate_done       = " << gate_done[0] << std::endl;
 		std::cout << " sock_connection_is_live = " << sock_connection_is_live << std::endl; 
 #endif
-		// Accept connection from worker node to supply end of event signalling.
-		while (!sock_connection_is_live) {
-#if DEBUG_SOCKETS
-			std::cout << " Waiting for worker...\n";
-#endif
-			struct sockaddr_in remote_address;
-			socklen_t address_length;
-			address_length = sizeof (remote_address);
-#if DEBUG_SOCKETS
-			std::cout << " Ready to connect to socket_handle: " << socket_handle << std::endl;
-#endif
-			sock_connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
-#if DEBUG_SOCKETS
-			std::cout << " Socket Connection is " << sock_connection << " and still waiting...\n";
-#endif
-			if (sock_connection == -1) {
-				// The call to accept failed. 
-				if (errno == EINTR)
-					// The call was interrupted by a signal. Try again.
-					continue;
-				else
-					// Something else went wrong. 
-					perror("accept");
-					exit(EXIT_FAILURE);
-			}
-			sock_connection_is_live = true;
-		}
 		while (!gate_done[0]) { 
 			// Read "done" from the worker node 
 			if ((read(sock_connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
-				perror("server read error: done"); //read in the number of gates to process
+				perror("server read error: done"); 
 				exit(EXIT_FAILURE);
 			}
 #if DEBUG_SOCKETS
-			std::cout << " After accept and read, new gate_done: " << gate_done[0] << std::endl;
+			std::cout << " After read, new gate_done: " << gate_done[0] << std::endl;
 #endif
 		}
-#endif // end if MASTER
+#endif // end if MASTER&&(!SINGLE_PC)
 		// Contact event builder service.
 		daq->ContactEventBuilder(&event_data, -1, attach, sys_id);
 
@@ -605,8 +667,9 @@ int main(int argc, char *argv[])
 		double duration = (gate_stop_time.tv_sec*1e6+gate_stop_time.tv_usec) - 
 			(gate_start_time.tv_sec*1e6+gate_start_time.tv_usec);
 		if (!(gate%100)) {
-			std::cout<<"Start Time: "<<(gate_start_time.tv_sec*1000000+gate_start_time.tv_usec)<<" Stop Time: "
-				<<(gate_stop_time.tv_sec*1e6+gate_start_time.tv_usec)<<" Run Time: "<<(duration/1e6)<<std::endl;
+			std::cout << "Start Time: " << (gate_start_time.tv_sec*1000000+gate_start_time.tv_usec) << 
+				" Stop Time: " << (gate_stop_time.tv_sec*1e6+gate_start_time.tv_usec) << 
+				" Run Time: " << (duration/1e6) << std::endl;
 		}
 		gate_time_log << gate << "\t" << duration << std::endl;
 #endif
@@ -616,7 +679,7 @@ int main(int argc, char *argv[])
 #endif // end if RECORD_EVENT
 #endif // end if SINGLE_PC || MASTER
 
-#if (!MASTER)&&(!SINGLE_PC)
+#if (!MASTER)&&(!SINGLE_PC) // Worker Node
 #if DEBUG_SOCKETS
 		std::cout << " Writing true to soldier node to indicate end of gate..." << std::endl;
 #endif
@@ -626,8 +689,8 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 #endif // end if !MASTER && !SINGLE_PC
-#if SINGLE_PC
-		// TODO - Come up with a mechanism to synch global gate record keeping for multi-PC mode!
+
+#if SINGLE_PC||((!MASTER)&&(!SINGLE_PC)) // Single PC or Worker Node
 		global_gate.open("global_gate.dat");
 		try {
 			if (!global_gate) throw (!global_gate);
@@ -639,11 +702,15 @@ int main(int argc, char *argv[])
 		}
 		global_gate.close();
 #endif
+// #if !SINGLE_PC
+// 		close(sock_connection);
+// #endif
 	} //end of gates loop
 
 #if !SINGLE_PC
 	close(socket_handle);
 #endif
+
 	gettimeofday(&runend, NULL);
 	unsigned long long totalstart = ((unsigned long long)(runstart.tv_sec))*1000000 +
                         (unsigned long long)(runstart.tv_usec);
@@ -651,7 +718,7 @@ int main(int argc, char *argv[])
                         (unsigned long long)(runend.tv_usec);
 
 	unsigned long long totaldiff  = totalend - totalstart;
-	printf(" Total acquisition time was %lu microseconds.\n",totaldiff);
+	printf(" Total acquisition time was %llu microseconds.\n",totaldiff);
 #endif // end if TAKE_DATA
 
 	/**********************************************************************************/
@@ -706,17 +773,18 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 	struct timeval start_time, stop_time;
 	gettimeofday(&start_time, NULL);
 #endif
-	/**********************************************************************************/
-	/*      Files for monitoring acquisition                                          */
-	/**********************************************************************************/
+	// Files for monitoring acquisition.
+	// These are mostly for use with multi-threaded debugging tasks...
+#if DEBUG_THREAD
 	ofstream data_monitor;
 	stringstream threadno;
-	threadno<<thread;
+	threadno << thread;
 	string filename;
 	filename = "data_monitor_"+threadno.str();
 	data_monitor.open(filename.c_str());
 	time_t currentTime; time(&currentTime);
-	data_monitor<<"Thread Start Time:  "<<ctime(&currentTime)<<endl;
+	data_monitor << "Thread Start Time:  " << ctime(&currentTime) << std::endl;
+#endif
 
 	/**********************************************************************************/
 	/*  Local croc & crim variables for eas of computational manipulation             */
@@ -737,7 +805,7 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 	list<feb*> *feb_list = channelTrial->GetFebList(); //the feb's on this channel
 	list<feb*>::iterator feb; //we want to loop over them when we get the chance...
 
-#if DEBUG_GENERAL
+#if DEBUG_THREAD
 	data_monitor << "Is data ready? " << data_ready << std::endl;
 	data_monitor << " Bank Type?    " << evt->feb_info[4] << std::endl;
 #endif
@@ -756,8 +824,8 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 			/*          Take all data on the feb                                              */
 			/**********************************************************************************/
 			data_taken = daq->TakeAllData((*feb),channelTrial,crocTrial,evt,thread,attach,sys_id); 
-#if DEBUG_GENERAL
-			data_monitor<<"TakeAllData Returned"<<std::endl;
+#if DEBUG_THREAD
+			data_monitor << "TakeAllData Returned" << std::endl;
 #endif
 			if (data_taken) { //and if you didn't succeed...(the functions return 0 if successful) 
 				cout<<"Problems taking data on FEB: "<<(*feb)->GetBoardNumber()<<endl;
@@ -765,8 +833,8 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 				exit(-2000); //stop the presses!
 			}
 		} //feb loop
-#if DEBUG_GENERAL
-		data_monitor<<"Completed processing FEB's in this list."<<std::endl;
+#if DEBUG_THREAD
+		data_monitor << "Completed processing FEB's in this list." << std::endl;
 #endif
 #if TIME_ME
 		boost::mutex::scoped_lock lock(main_mutex); 

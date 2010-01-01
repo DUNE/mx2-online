@@ -21,17 +21,20 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 std::ofstream take_data_extime_log; /*!<an output file for tiing data */
 std::ofstream trigger_log; /*!<an output file for trigger debuggin */
 
-bool gate_done[1];
+// Socket Communication Vars.
+bool gate_done[1]; // signal for end of event readout completion from the worker -> soldier
+unsigned long long global_gate_data[1]; // signal for end of trigger from the worker -> soldier
 struct in_addr socket_address;
+
 #if MASTER&&(!SINGLE_PC)
-/* minervadaq server for "master" DAQ */
+/* minervadaq server for "master" (soldier node) DAQ */
 struct sockaddr_in daq_service;
 int socket_handle;
 const static unsigned short port=1095; //the port number for our TCP service
 #endif
 
 #if (!MASTER)&&(!SINGLE_PC)
-/* minervadaq client for "slave" DAQ */
+/* minervadaq client for "slave" (worker node) DAQ */
 struct sockaddr_in daq_service;
 int socket_handle;
 struct hostent *hostinfo;
