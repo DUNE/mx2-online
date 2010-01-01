@@ -17,6 +17,12 @@ libraries.  v2.7 requires some fiddling to get things clean afterwards because t
 the libraries for Windows.  Note that even if you do not intend to run the DAQ for acquisition, you still 
 need the CAEN libraries to build the code.
 
+Note: It is worth mentioning that the drivers are set up a bit funny on the default DAQ machines.  We used 
+the x86_64 version of the library, but ran the regular install script (which put the libraries in /usr/lib 
+instead of /usr/lib64 as is technically proper).  The Makefiles for the DAQ reflect this, so if you put 
+the CAEN libraries in the "correct" directory (/usr/lib64), you will need to also modify the default 
+Makefiles in order to get the DAQ to build.
+
 Once the CAEN libraries are installed, go to $WORKROOT and create a mnvonline/ directory to hold the DAQ 
 and (eventually) SlowControl code.  Within mnvonline/ run a CVS checkout on the package mnvdaq.  Make sure 
 you have the following environment variables set and a valid kerberos ticket to access the MINERvA CVS 
