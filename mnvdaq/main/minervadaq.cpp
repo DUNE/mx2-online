@@ -124,12 +124,6 @@ int main(int argc, char *argv[])
 	gettimeofday(&start_time, NULL);
 #endif
 
-	// Socket communication status variables.
-	int  sock_connection; 
-	bool ready_to_go[1];
-	bool sock_connection_is_live;
-
-
 	/*********************************************************************************/
 	/*   An event_handler structure object for building event data blocks.           */
 	/*********************************************************************************/
@@ -218,71 +212,87 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 #if MASTER&&(!SINGLE_PC) // Soldier Node
 	// Create a TCP socket.
-	socket_handle = socket (PF_INET, SOCK_STREAM, 0);
+	gate_done_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
+	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
+	if (gate_done_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
+	if (global_gate_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
 #if DEBUG_SOCKETS
-	std::cout << "\nSoldier/Master-node Multi-PC socket_handle: " << socket_handle << std::endl;
+	std::cout << "\nSoldier/Master-node Multi-PC gate_done_socket_handle  : " << 
+		gate_done_socket_handle << std::endl;
+	std::cout << "Soldier/Master-node Multi-PC global_gate_socket_handle: " << 
+		global_gate_socket_handle << std::endl;
 #endif
-	if (socket_handle == -1) {
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
+	// Set up the global_gate service. 
+	global_gate_service.sin_family = AF_INET;
+	string hostname="mnvonline1.fnal.gov"; 
+	worker_node_info = gethostbyname(hostname.c_str());
+	if (worker_node_info == NULL) { std::cout << "No worker node to connect to!\n"; return 1; }
+	else global_gate_service.sin_addr = *((struct in_addr *) worker_node_info->h_addr);
+	global_gate_service.sin_port = htons (global_gate_port); 
 
-	socket_address.s_addr = htonl(INADDR_ANY); //bind to the local address
-	memset (&daq_service, 0, sizeof (daq_service));
-	daq_service.sin_family = AF_INET;
-	daq_service.sin_port = htons(port); //port assigned in minervadaq.h
-	daq_service.sin_addr = socket_address;
-
-	// Bind the socket to that address.
-	if ((bind (socket_handle, (const sockaddr*)&daq_service, sizeof (daq_service)))) {
-		perror ("bind");
-		exit(EXIT_FAILURE);
-	}
-	// Enable connection requests.
-	if (listen (socket_handle, 10)) { // Accept up to 10 clients... too many?
-		perror("listen");
-		exit(EXIT_FAILURE);
-	}
+	// Create an address for the gate_done listener.
+	gate_done_socket_address.s_addr = htonl(INADDR_ANY); 
+	memset (&gate_done_service, 0, sizeof (gate_done_service));
+	gate_done_service.sin_family = AF_INET;
+	gate_done_service.sin_port = htons(gate_done_port); 
+	gate_done_service.sin_addr = gate_done_socket_address;
+	// Bind the gate_done socket to that address for the listener.
+	if ((bind (gate_done_socket_handle, (const sockaddr*)&gate_done_service, 
+			sizeof (gate_done_service)))) { perror ("bind"); exit(EXIT_FAILURE); }
+	// Enable connection requests on the gate_done socket for the listener.
+	if (listen (gate_done_socket_handle, 10)) { perror("listen"); exit(EXIT_FAILURE); }
 #endif // end if MASTER&&(!SINGLE_PC)
 
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
-	socket_handle = socket (PF_INET, SOCK_STREAM, 0);
+	gate_done_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
+	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
+	if (gate_done_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
+	if (global_gate_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
 #if DEBUG_SOCKETS
-	std::cout << "\nWorker/Slave-node Multi-PC socket_handle: " << socket_handle << std::endl;
+	std::cout << "\nWorker/Slave-node Multi-PC gate_done_socket_handle  : " << 
+		gate_done_socket_handle << std::endl;
+	std::cout << "Worker/Slave-node Multi-PC global_gate_socket_handle: " << 
+		global_gate_socket_handle << std::endl;
 #endif
-	// Store the server’s name in the socket address. 
-	daq_service.sin_family = AF_INET;
-	// Set hostname - this needs to be changed for the appropriate machine.  This 
-	// connection points from worker to soldier... eventually we want to use IP numbers.
+	// Set up the gate_done service. 
+	gate_done_service.sin_family = AF_INET;
 	string hostname="mnvonline0.fnal.gov"; 
-	hostinfo = gethostbyname(hostname.c_str());
-	if (hostinfo == NULL) { std::cout << "No soldier node to connect to!\n"; return 1; }
-	else daq_service.sin_addr = *((struct in_addr *) hostinfo->h_addr);
-	daq_service.sin_port = htons (port); //port assigned in minervadaq.h
+	soldier_node_info = gethostbyname(hostname.c_str());
+	if (soldier_node_info == NULL) { std::cout << "No soldier node to connect to!\n"; return 1; }
+	else gate_done_service.sin_addr = *((struct in_addr *) soldier_node_info->h_addr);
+	gate_done_service.sin_port = htons (gate_done_port); 
+
+	// Create an address for the global_gate listener.
+	global_gate_socket_address.s_addr = htonl(INADDR_ANY); 
+	memset (&global_gate_service, 0, sizeof (global_gate_service));
+	global_gate_service.sin_family = AF_INET;
+	global_gate_service.sin_port = htons(global_gate_port); 
+	global_gate_service.sin_addr = global_gate_socket_address;
+	// Bind the global_gate socket to that address for the listener.
+	if ((bind (global_gate_socket_handle, (const sockaddr*)&global_gate_service, 
+			sizeof (global_gate_service)))) { perror ("bind"); exit(EXIT_FAILURE); }
+	// Enable connection requests on the global socket for the listener.
+	if (listen (global_gate_socket_handle, 10)) { perror("listen"); exit(EXIT_FAILURE); }
 #endif // end if (!MASTER)&&(!SINGLE_PC)
 
 
-	/*********************************************************************************/
-	/*  Event handshaking - START.                                                   */
-	/*********************************************************************************/
-	sock_connection_is_live = false;
+	// Client-server connect - gate_done. #if DEBUG_SOCKETS, etc.
+	gate_done_socket_is_live = false;
 #if MASTER&&(!SINGLE_PC) // Soldier Node
-#if DEBUG_SOCKETS
-	std::cout << "Preparing make new server connection for event synchronization...\n";
-	std::cout << " sock_connection_is_live = " << sock_connection_is_live << std::endl; 
-#endif
-	// Accept connection from worker node to supply end of event & global gate signalling.
-	while (!sock_connection_is_live) {
-#if DEBUG_SOCKETS
+	std::cout << "\nPreparing make new server connection for gate_done synchronization...\n";
+	std::cout << " gate_done_socket_is_live = " << gate_done_socket_is_live << std::endl; 
+	// Accept connection from worker node to supply end of event signalling.
+	while (!gate_done_socket_is_live) {
 		std::cout << " Waiting for worker node...\n";
-		std::cout << " Ready to connect to socket_handle: " << socket_handle << std::endl;
-#endif
+		std::cout << " Ready to connect to gate_done_socket_handle: " << 
+			gate_done_socket_handle << std::endl;
 		struct sockaddr_in remote_address;
 		socklen_t address_length;
 		address_length = sizeof (remote_address);
 		// Accept will wait for a connection...
-		sock_connection = accept(socket_handle, (sockaddr*)&remote_address, &address_length);
-		if (sock_connection == -1) {
+		gate_done_socket_connection = 
+			accept(gate_done_socket_handle, (sockaddr*)&remote_address, &address_length);
+		if (gate_done_socket_connection == -1) {
 			// The call to accept failed. 
 			if (errno == EINTR)
 				// The call was interrupted by a signal. Try again.
@@ -292,33 +302,59 @@ int main(int argc, char *argv[])
 				perror("accept");
 				exit(EXIT_FAILURE);
 		}
-		sock_connection_is_live = true;
-	} // end while !sock_connection_is_live
-#if DEBUG_SOCKETS
-	std::cout << " ->Connection complete at " << sock_connection << 
-		" with live status = " << sock_connection_is_live << "\n\n";
-#endif
+		gate_done_socket_is_live = true;
+	} // end while !gate_done_socket_is_live
+	std::cout << " ->Connection complete at " << gate_done_socket_connection << 
+		" with live status = " << gate_done_socket_is_live << "\n";
 #endif // end if MASTER&&(!SINGLE_PC)
-
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
 	// Initiate connection with "server" (soldier node).  Connect waits for a server response.
-	if (connect(socket_handle, (struct sockaddr*) &daq_service, sizeof (struct sockaddr_in)) == -1) {
-		perror ("connect");
-		exit(EXIT_FAILURE) ;
-	}
-#if DEBUG_SOCKETS
-	std::cout << " ->Returned from connect!\n\n";
-#endif
+	if (connect(gate_done_socket_handle, (struct sockaddr*) &gate_done_service, 
+			sizeof (struct sockaddr_in)) == -1) { perror ("connect"); exit(EXIT_FAILURE); }
+	std::cout << " ->Returned from connect to gate_done!\n";
 #endif // end if (!MASTER)&&(!SINGLE_PC)
-	/*********************************************************************************/
-	/*  Event handshaking - STOP.                                                    */
-	/*********************************************************************************/
+
+	
+	// Client-server connect - global_gate. #if DEBUG_SOCKETS, etc.
+	global_gate_socket_is_live = false;
+#if MASTER&&(!SINGLE_PC) // Soldier Node
+	// Initiate connection with "server" (worker node).  Connect waits for a server response.
+	if (connect(global_gate_socket_handle, (struct sockaddr*) &global_gate_service, 
+			sizeof (struct sockaddr_in)) == -1) { perror ("connect"); exit(EXIT_FAILURE); }
+	std::cout << " ->Returned from connect to global_gate!\n\n";
+#endif // end if MASTER&&(!SINGLE_PC)
+#if (!MASTER)&&(!SINGLE_PC) // Worker Node
+	std::cout << "\nPreparing make new server connection for global_gate synchronization...\n";
+	std::cout << " global_gate_socket_is_live = " << global_gate_socket_is_live << std::endl; 
+	// Accept connection from worker node to supply global gate signalling.
+	while (!global_gate_socket_is_live) {
+		std::cout << " Waiting for soldier node...\n";
+		std::cout << " Ready to connect to global_gate_socket_handle: " << 
+			global_gate_socket_handle << std::endl;
+		struct sockaddr_in remote_address;
+		socklen_t address_length;
+		address_length = sizeof (remote_address);
+		// Accept will wait for a connection...
+		global_gate_socket_connection = 
+			accept(global_gate_socket_handle, (sockaddr*)&remote_address, &address_length);
+		if (global_gate_socket_connection == -1) {
+			// The call to accept failed. 
+			if (errno == EINTR)
+				// The call was interrupted by a signal. Try again.
+				continue;
+			else
+				// Something else went wrong. 
+				perror("accept");
+				exit(EXIT_FAILURE);
+		}
+		global_gate_socket_is_live = true;
+	} // end while !global_gate_socket_is_live
+	std::cout << " ->Connection complete at " << global_gate_socket_connection << 
+		" with live status = " << global_gate_socket_is_live << "\n\n";
+#endif // end if (!MASTER)&&(!SINGLE_PC)
 
 
-	/*********************************************************************************/
-	/*   Make an acquire data object which contains the functions for                */
-	/*   performing initialization and the acquisition sequence                      */
-	/*********************************************************************************/
+	// Make an acquire data object containing functions for performing initialization and acquisition.
 	acquire_data *daq = new acquire_data(et_filename); 
 
 	/*********************************************************************************/
@@ -329,14 +365,9 @@ int main(int argc, char *argv[])
 #else
 	daq->InitializeDaq(CONTROLLER_ID, runningMode);
 #endif // end if THREAD_ME
-
-	/*********************************************************************************/
-	/*  With run metadata in hand we can set about starting up an event builder...   */
-	/*********************************************************************************/
 #if THREAD_ME
 	electronics_init_thread.join(); //wait for the electronics initialization to finish 
 #endif
-
 	// Get the controller object created during InitializeDaq.
 	// Note that controller ID's are keyed for worker/soldier nodes elsewhere.
 	controller *currentController = daq->GetController(); 
@@ -344,17 +375,13 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/*  At this point we are now set up and are ready to start event acquistion.     */
 	/*********************************************************************************/
-#if DEBUG_GENERAL
-	std::cout << "\nGetting ready to start taking data!\n" << std::endl;
-#endif
-
 	// Make the data-taking threads if in multi-threaded operation.
 #if THREAD_ME
 	boost::thread *data_threads[thread_count];
 #endif
-
 #if TAKE_DATA
 #if DEBUG_GENERAL
+	std::cout << "\nGetting ready to start taking data!" << std::endl;
 	std::cout << " Attempting to record " << record_gates << " gates.\n" << std::endl;
 #endif
 
@@ -395,7 +422,7 @@ int main(int argc, char *argv[])
 		for (int i=0;i<9;i++) {
 			event_data.feb_info[i] = 0; // Initialize the FEB information block. 
 		}
-#if SINGLE_PC||((!MASTER)&&(!SINGLE_PC)) // Single PC or Worker Node
+#if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
 		fstream global_gate("global_gate.dat"); // TODO - use absolute path to a log & records area...
 		try {
 			if (!global_gate) throw (!global_gate);
@@ -410,32 +437,32 @@ int main(int argc, char *argv[])
 #endif
 		event_data.globalGate = global_gate_data[0];
 #endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
-#if (MASTER)&&(!SINGLE_PC) // Soldier Node
+#if (!MASTER)&&(!SINGLE_PC) // Worker Node
 		event_data.globalGate = global_gate_data[0] = 0;
 #endif
 
 		// soldier-worker global gate data synchronization.
-#if (!MASTER)&&(!SINGLE_PC) // Worker Node
+#if MASTER&&(!SINGLE_PC) // Soldier Node
 #if DEBUG_SOCKETS
 		std::cout << " Writing global gate to soldier node to indicate readiness of trigger..." << std::endl;
 #endif
-		if (write(socket_handle,global_gate_data,sizeof(global_gate_data)) == -1) { // write 8 bytes
+		if (write(global_gate_socket_handle,global_gate_data,sizeof(global_gate_data)) == -1) { 
 			perror("write error: global_gate"); 
 			exit(EXIT_FAILURE);
 		}
 #if DEBUG_SOCKETS
-		std::cout << " Finished writing global gate to soldier node." << std::endl;
+		std::cout << " Finished writing global gate to worker node." << std::endl;
 #endif
-#endif // end if !MASTER && !SINGLE_PC
-#if (MASTER)&&(!SINGLE_PC) // Soldier Node
+#endif // end if MASTER && !SINGLE_PC
+#if (!MASTER)&&(!SINGLE_PC) // Worker Node
 #if DEBUG_SOCKETS
-		std::cout << " Reading global gate from worker node to indicate start of trigger..." << std::endl;
-		std::cout << "  Initial global_gate_data = " << global_gate_data[0] << std::endl;
-		std::cout << "  sock_connection_is_live  = " << sock_connection_is_live << std::endl; 
+		std::cout << " Reading global gate from soldier node to indicate start of trigger..." << std::endl;
+		std::cout << "  Initial global_gate_data   = " << global_gate_data[0] << std::endl;
+		std::cout << "  global_gate_socket_is_live = " << global_gate_socket_is_live << std::endl; 
 #endif
 		while (!global_gate_data[0]) { 
 			// Read global gate data from the worker node 
-			int read_val = read(sock_connection, global_gate_data, sizeof(global_gate_data));
+			int read_val = read(global_gate_socket_connection,global_gate_data,sizeof(global_gate_data));
 #if DEBUG_SOCKETS
 			std::cout << "  socket readback data size = " << read_val << std::endl;
 #endif
@@ -448,7 +475,7 @@ int main(int argc, char *argv[])
 #endif
 		}
 		event_data.globalGate = global_gate_data[0];
-#endif // end if (MASTER)&&(!SINGLE_PC)
+#endif // end if (!MASTER)&&(!SINGLE_PC)
 
 		// Set the data_ready flag to false, we have not yet taken any data.
 		data_ready = false; 
@@ -502,7 +529,7 @@ int main(int argc, char *argv[])
 			default:
 				std::cout << "ERROR! Improper Running Mode defined!" << std::endl;
 				exit(-4);
-        	}
+		}
 		event_data.triggerType = triggerType;
 #if THREAD_ME
 		// Careul about arguments with the threaded functions!  They are not exercised regularly.
@@ -588,31 +615,26 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 #if THREAD_ME
 		trigger_thread.join();
-
-		/**********************************************************************************/
-		/*   And the data taking threads                                                  */
-		/**********************************************************************************/
 #if DEBUG_THREAD
 		std::cout << "Getting ready to join threads..." << std::endl;
 #endif
 		for (int i=0;i<thread_count;i++) {
 #if DEBUG_THREAD
-			std::cout << i << endl;
+			std::cout << " Joining thread " << i << endl;
 #endif
 			data_threads[i]->join();
 #if DEBUG_THREAD
-			std::cout << "Thread joined!" << std::endl;
+			std::cout << " ->Thread joined!" << std::endl;
 #endif
 		}
-#endif
-// endif THREAD_ME
+#endif // endif THREAD_ME
 
 		/**********************************************************************************/
 		/*  re-enable the IRQ for the next trigger                                        */
 		/**********************************************************************************/
 		daq->ResetGlobalIRQEnable(); // TODO - Consider moving this to the top of the loop.
 
-#if SINGLE_PC||MASTER
+#if SINGLE_PC||MASTER // Soldier Node
 		/**********************************************************************************/
 		/*   Write the End-of-Event Record to the event_handler and then to the           */
 		/*   event builder.                                                               */
@@ -633,18 +655,18 @@ int main(int argc, char *argv[])
 #if DEBUG_GENERAL
 		std::cout << "Preparing to contact the EventBuilder from Main...\n";
 #endif
-		// Here the soldier node must wait for a "done" signal from the worker node 
-		// before attaching the end-of-event header bank.
-#if MASTER&&(!SINGLE_PC) // Soldier Node
+		// The soldier node must wait for a "done" signal from the 
+		// worker node before attaching the end-of-event header bank.
+#if !SINGLE_PC // Soldier Node
 		gate_done[0] = false;
 #if DEBUG_SOCKETS
 		std::cout << "Preparing to end event...\n";
-		std::cout << " Initial gate_done       = " << gate_done[0] << std::endl;
-		std::cout << " sock_connection_is_live = " << sock_connection_is_live << std::endl; 
+		std::cout << " Initial gate_done        = " << gate_done[0] << std::endl;
+		std::cout << " gate_done_socket_is_live = " << gate_done_socket_is_live << std::endl; 
 #endif
 		while (!gate_done[0]) { 
 			// Read "done" from the worker node 
-			if ((read(sock_connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
+			if ((read(gate_done_socket_connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
 				perror("server read error: done"); 
 				exit(EXIT_FAILURE);
 			}
@@ -652,7 +674,7 @@ int main(int argc, char *argv[])
 			std::cout << " After read, new gate_done: " << gate_done[0] << std::endl;
 #endif
 		}
-#endif // end if MASTER&&(!SINGLE_PC)
+#endif // end if !SINGLE_PC
 		// Contact event builder service.
 		daq->ContactEventBuilder(&event_data, -1, attach, sys_id);
 
@@ -661,7 +683,6 @@ int main(int argc, char *argv[])
 			std::cout << "******************************************************************\n";
 			std::cout << "   Completed Gate: " << gate << std::endl;
 		}
-
 #if TIME_ME
 		gettimeofday(&gate_stop_time,NULL);
 		double duration = (gate_stop_time.tv_sec*1e6+gate_stop_time.tv_usec) - 
@@ -681,16 +702,16 @@ int main(int argc, char *argv[])
 
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
 #if DEBUG_SOCKETS
-		std::cout << " Writing true to soldier node to indicate end of gate..." << std::endl;
+		std::cout << " Writing to soldier node to indicate end of gate..." << std::endl;
 #endif
 		gate_done[0]=true;
-		if (write(socket_handle,gate_done,1) == -1) { // We're done!
+		if (write(gate_done_socket_handle,gate_done,sizeof(gate_done)) == -1) { 
 			perror("server read error: done"); 
 			exit(EXIT_FAILURE);
 		}
 #endif // end if !MASTER && !SINGLE_PC
 
-#if SINGLE_PC||((!MASTER)&&(!SINGLE_PC)) // Single PC or Worker Node
+#if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
 		global_gate.open("global_gate.dat");
 		try {
 			if (!global_gate) throw (!global_gate);
@@ -702,13 +723,11 @@ int main(int argc, char *argv[])
 		}
 		global_gate.close();
 #endif
-// #if !SINGLE_PC
-// 		close(sock_connection);
-// #endif
 	} //end of gates loop
 
 #if !SINGLE_PC
-	close(socket_handle);
+	close(gate_done_socket_handle);
+	close(global_gate_socket_handle);
 #endif
 
 	gettimeofday(&runend, NULL);
@@ -718,7 +737,7 @@ int main(int argc, char *argv[])
                         (unsigned long long)(runend.tv_usec);
 
 	unsigned long long totaldiff  = totalend - totalstart;
-	printf(" Total acquisition time was %llu microseconds.\n",totaldiff);
+	printf(" \n\nTotal acquisition time was %llu microseconds.\n\n",totaldiff);
 #endif // end if TAKE_DATA
 
 	/**********************************************************************************/
