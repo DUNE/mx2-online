@@ -68,7 +68,7 @@ int FastCommandOpenGate(controller *myController, acquire *myAcquire, croc *myCr
 int main(int argc, char *argv[]) 
 {
 	if (argc < 2) {
-		cout << "Usage : lightLeakConfig -c <CROC Address> -h <CHANNEL Number> -f <Number of FEBs>\n";
+		cout << "Usage : hvCheck -c <CROC Address> -h <CHANNEL Number> -f <Number of FEBs>\n";
 		exit(0);
 	}
 	
