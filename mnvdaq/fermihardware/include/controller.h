@@ -38,8 +38,8 @@ class controller {
 		CVAddressModifier addressModifier;
 		CVDataWidth dataWidth;
 
-		std::vector<crim*> interfaceModule; /*!< a vector of CROC interface module objects */
-		std::vector<croc*> readOutController;  /*!< a vector of CROC objects */
+		std::vector<crim*> interfaceModule; /*!< A vector of CROC Interface Module (CRIM) objects. */
+		std::vector<croc*> readOutController;  /*!< A vector of CROC objects. */
 		/*! these are the controller registers for the VME controller */
 		unsigned short status, control, irq, irqMask, input, output,
 			clearOutput, inputMux, inputMuxClear, outPutMux;
@@ -90,9 +90,11 @@ class controller {
 		void MakeCrim(unsigned int a, int b); //make up each interface module
 		void MakeCroc(unsigned int a, int b); //make up each croc
 
-		crim *GetCrim();       //return the pointer to the *first* crim
-		crim *GetCrim(int a);  //return the pointer to the requested crim
-		croc *GetCroc(int a);  //return the pointer to the requested croc
+		// By convention (& hopefully construction), the first CRIM (indexed to 1) 
+		// will always be the MASTER CRIM (the interrupt handler we poll or IACK).
+		crim *GetCrim();       // Return the pointer to the *first* CRIM.
+		crim *GetCrim(int a);  // Return the pointer to the requested CRIM.
+		croc *GetCroc(int a);  // Return the pointer to the requested CROC.
 
 		void inline SetDataWidth(CVDataWidth a) {dataWidth=a;}; 
 

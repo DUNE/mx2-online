@@ -273,11 +273,17 @@ croc *controller::GetCroc(int a)
 crim *controller::GetCrim() 
 {
 /*! \fn 
- * Returns a pointer to a CRIM object, if only one CRIM is in a crate.
- * This is a LEGACY function and should not be called!
+ * Returns a pointer to the *first* CRIM object.  This is by convention & construction 
+ * the master CRIM for a given crate and is our designated interrupt handler. 
  */
 	crim *tmp = 0; // temp object, have to return something...
-	if (interfaceModule.size() == 1) { tmp = interfaceModule[0]; }
+	if (interfaceModule.size() > 0) { 
+		tmp = interfaceModule[0]; 
+	} else {
+		std::cout << "Error in controller::GetCrim()!" << std::endl;
+		std::cout << "CRIM interfaceModule vector has size zero!" << std::endl;
+		exit (-1);
+	}  
 	return tmp;
 }
 
