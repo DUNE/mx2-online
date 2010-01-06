@@ -79,7 +79,7 @@ class acquire_data {
 		static const int numberOfHits;
 
 	public:
-		/*! Specialized constructor which takes a string for the et filesystem. */
+		/*! Specialized constructor which takes a string for old-style logging. */
 		acquire_data(std::string fn) {
 			frame_acquire_log.open("frame_data_time_log.csv"); 
 			et_filename = fn;
@@ -107,23 +107,17 @@ class acquire_data {
 		/*! Function to initialize a CROC at the given VME address; requires an identifier */
 		void InitializeCroc(int address, int a); 
 
-		/*! Function to set up the interrupt handler */
-		int SetupIRQ();
+		/*! Function to set up the interrupt handler on CRIM index */
+		int SetupIRQ(int index);
 
-		/*! Function to re-enable the interrupt handler */
-		int ResetGlobalIRQEnable();
+		/*! Function to re-enable the interrupt handler for CRIM index */
+		int ResetGlobalIRQEnable(int index);
 
 		/*! Function to build a list of FEB objects for use in data acquisition */
 		int BuildFEBList(int i, int j);
 
 		/*! Function to initialize TRiP-t chips on FEB's */
 		int InitializeTrips(feb *tmpFEB, croc *tmpCroc, channels *tmpChan);
-
-		/*! Function to set the high voltage on a given FEB */
-		int SetHV(feb *febTrial, croc *crocTrial, channels *channelTrial, int newHV, int newPulse, int hvEnable);
-
-		/*! Function to monitor the high voltage on a given FEB */
-		int MonitorHV(feb *febTrial, croc *tmpCroc, channels *tmpChan);
 
 		/*! A templated function for sending messages from a generic "device" */
 		template <class X> int SendMessage(X *device, croc *crocTrial, channels *channelTrial,bool singleton);
