@@ -6,9 +6,10 @@ COMPILE_OPTIONS += -DNO_THREAD
 #--DEBUG FLAGS--
 #COMPILE_OPTIONS += -DDEBUG_VERBOSE 
 #COMPILE_OPTIONS += -DDEBUG_BUFFERS
+#COMPILE_OPTIONS += -DDEBUG_BANKHEADER
 #COMPILE_OPTIONS += -DDEBUG_REPORT_EVENT
 #--MULTI PC SETUP--
-COMPILE_OPTIONS += -DMULTIPC  #Comment this out for single PC running.
+#COMPILE_OPTIONS += -DMULTIPC  #Comment this out for single PC running.
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))

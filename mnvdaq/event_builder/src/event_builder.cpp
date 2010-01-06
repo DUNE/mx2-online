@@ -138,13 +138,13 @@ int main(int argc, char **argv)
 #endif
 		switch (evt->feb_info[4]) {
 			case 0:
-				length = 8 + evt->feb_info[5] + 2; // MINERvA Header + Data + CRC 
+				length = 8 + evt->feb_info[5] + 2; // ADC; MINERvA Header + Data + CRC 
 				break;
 			case 1:
-				length = 8 + evt->feb_info[5] + 2; // MINERvA Header + Data + CRC 
+				length = 8 + evt->feb_info[5] + 2; // Discr; MINERvA Header + Data + CRC 
 				break;
 			case 2:
-				length = 8 + evt->feb_info[5] + 2; // MINERvA Header + Data + CRC 
+				length = 8 + evt->feb_info[5] + 2; // FPGA Prog; MINERvA Header + Data + CRC 
 				break;
 			case 3:
 				length = DAQ_HEADER;
@@ -232,6 +232,7 @@ int event_builder(event_handler *evt)
 	thread_log << "  GATE : "<< evt->gate << std::endl;
 	thread_log << "    CROC ----------: " << evt->feb_info[2] << std::endl;
 	thread_log << "    CHAN ----------: " << evt->feb_info[3] << std::endl;
+	thread_log << "    FEB -----------: " << evt->feb_info[6] << std::endl;
 	thread_log << "    BANK ----------: " << evt->feb_info[4] << std::endl;
 	thread_log << "    BUFFER_LENGTH -: " << evt->feb_info[5] << std::endl;
 	thread_log << "    FIRMWARE ------: " << evt->feb_info[7] << std::endl;
