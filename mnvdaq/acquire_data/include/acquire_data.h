@@ -152,8 +152,8 @@ class acquire_data {
 		/*! Function to reset a CROC channel's DPM */
 		bool ResetDPM(croc*, channels*);
 
-		/*!  Function which sets up a designated "trigger" */
-		void TriggerDAQ(unsigned short int a);
+		/*!  Function which runs the "trigger" (only executes a VME command for "OneShot"). */
+		void TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
 
 		/*! Function which waits for the interrupt handler to raise an interrupt */
 		void WaitOnIRQ();

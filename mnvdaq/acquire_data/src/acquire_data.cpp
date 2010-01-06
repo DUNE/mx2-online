@@ -61,9 +61,9 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	// Add look-up functions here - one for file content look-up and one by address scanning 
 #if NO_THREAD
 	InitializeCrim(0xE00000, 1, runningMode);
-	// InitializeCrim(0xF00000, 2, runningMode);
+	//InitializeCrim(0xF00000, 2, runningMode);
 	InitializeCroc(0x010000, 1);
-	// InitializeCroc(0x020000, 2);
+	//InitializeCroc(0x020000, 2);
 #endif
 #if THREAD_ME
 	crim_thread.join(); // Wait for the crim thread to return.
@@ -385,9 +385,9 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 #if DEBUG_THREAD
 			croc_thread<<"Launching build FEB list thread "<<i<<std::endl;
 #endif
-			chan_thread[i] = new boost::thread(boost::bind(&acquire_data::BuildFEBList,this,i,1));
+			chan_thread[i] = new boost::thread(boost::bind(&acquire_data::BuildFEBList,this,i,crocNo));
 #else
-			BuildFEBList(i, 1);
+			BuildFEBList(i,crocNo);
 #endif
 		}
 	}
@@ -398,7 +398,7 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 	for (int i=0;i<4;i++) {
 		chan_thread[i]->join(); // Wait for all the threads to finish up before moving on.
 #if DEBUG_THREAD
-		croc_thread<<"Build FEB List: channel "<<i<<" thread completed"<<std::endl;
+		croc_thread << "Build FEB List: channel " << i << " thread completed." << std::endl;
 		croc_thread.close();
 #endif
 		delete chan_thread[i];
@@ -604,7 +604,7 @@ int acquire_data::BuildFEBList(int i, int croc_id)
  *  Returns a status value (0 for success).
  */
 #if DEBUG_INIT
-	std::cout << "\nEntering BuildFEBList for Channel " << i << std::endl;
+	std::cout << "\nEntering BuildFEBList for CROC " << croc_id << " Channel " << i << std::endl;
 #endif
 #if DEBUG_THREAD
 	std::ofstream build_feb_thread;
@@ -683,12 +683,14 @@ int acquire_data::BuildFEBList(int i, int croc_id)
 		// If the FEB is available, load it into the channel's FEB list and initialize the TriPs. 
 		if (!success) {
 #if DEBUG_INIT
-			std::cout<<"FEB: "<<tmpFEB->GetBoardNumber()<<" is available on this channel "
-				<<tmpChan->GetChannelNumber()<<" "<<tmpFEB->GetInit()<<std::endl;
+			std::cout << "FEB: " << tmpFEB->GetBoardNumber() << " is available on CROC "
+				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
+				<< tmpChan->GetChannelNumber() << " " << tmpFEB->GetInit() << std::endl;
 #endif
 #if DEBUG_THREAD
-			build_feb_thread<<"FEB: "<<tmpFEB->GetBoardNumber()<<" is available on this channel "
-				<<tmpChan->GetChannelNumber()<<" "<<tmpFEB->GetInit()<<std::endl;
+			build_feb_thread << "FEB: " << tmpFEB->GetBoardNumber() << " is available on CROC "
+				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
+				<< tmpChan->GetChannelNumber() << " " << tmpFEB->GetInit() << std::endl;
 #endif
 			// Add the FEB to the list.
 			tmpChan->SetFEBs(j, numberOfHits); 
@@ -696,19 +698,18 @@ int acquire_data::BuildFEBList(int i, int croc_id)
 			// Set the FEB available flag.
 			tmpChan->SetHasFebs(true);
 
-			// Initialize the TriPs.
-			//InitializeTrips(tmpFEB, tmpCroc, tmpChan);
-
 			// Clean up the memory.
 			delete tmpFEB;  
 		} else {
 #if DEBUG_INIT
-			std::cout<<"FEB: "<<(int)tmpFEB->GetBoardNumber()<<" is not available on this channel "
-				<<tmpChan->GetChannelNumber()<<std::endl;
+			std::cout << "FEB: " << tmpFEB->GetBoardNumber() << " is not available on CROC "
+				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
+				<< tmpChan->GetChannelNumber() << " " << tmpFEB->GetInit() << std::endl;
 #endif
 #if DEBUG_THREAD
-			build_feb_thread<<"FEB: "<<(int)tmpFEB->GetBoardNumber()<<" is not available on this channel "
-				<<tmpChan->GetChannelNumber()<<std::endl;
+			build_feb_thread << "FEB: " << tmpFEB->GetBoardNumber() << " is not available on CROC "
+				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
+				<< tmpChan->GetChannelNumber() << " " << tmpFEB->GetInit() << std::endl;
 #endif
 			// Clean up the memory.
 			delete tmpFEB; 
@@ -1696,13 +1697,13 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 }
 
 
-void acquire_data::TriggerDAQ(unsigned short int a) 
+void acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID) 
 {
-/*! \fn void acquire_data::TriggerDAQ(unsigned short int a)
+/*! \fn void acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
  *
  * A function which sets up the acquisition trigger indexed by parameter a.
  *
- * Currently, we have the following triggers defined as enumerated types in the DAQ Header (v4,v5?):
+ * Currently, we have the following triggers defined as enumerated types in the DAQ Header (v5):
  *  TODO - Make sure trigger types and documentation stay current for new DAQ Header.
  *  Note the trigger does not depend on CRIM timing mode explicity, but there is occasionally an 
  *  implicit dependence (e.g., NuMI can only run in CRIM MTM mode).
@@ -1716,20 +1717,20 @@ void acquire_data::TriggerDAQ(unsigned short int a)
  * TGReserved7     = 0x0040,
  * MonteCarlo      = 0x0080'
  *
- * \param unsigned short int a The index of the trigger command to be executed. 
+ * \param unsigned short int triggerBit The trigger bit.
+ * \param int crimID The CRIM we are "triggering." 
  */
-// TODO - Be sure we are only using the Master CRIM as interrupter.
 #if DEBUG_TRIGGER
-	printf("   Entering acquire_data::TriggerDAQ with trigger bit 0x%02X\n",a);
+	printf("   Entering acquire_data::TriggerDAQ with trigger bit 0x%02X\n",triggerBit);
+	printf("   ->Preparing to address CRIM %d\n",(daqController->GetCrim(crimID)->GetCrimAddress()>>16));
 #endif
 	CVAddressModifier AM = daqController->GetAddressModifier();
 	CVDataWidth       DW = daqController->GetDataWidth();
-	int error=-1;
-	switch (a) { 
-		case UnknownTrigger: // Default to OneShot?
+	int error = -1;
+	switch (triggerBit) { 
+		case UnknownTrigger: // Default to issuing a software trigger or exit?...
 			std::cout << "   WARNING! You have not set the triggerType somehow!" << std::endl;
-			std::cout << "   -> Defaulting to running the sequencer (OneShot)..." << std::endl;
-		// The "OneShot" Trigger - really we are running the software trigger sequencer.	
+			std::cout << "   -> Defaulting to running the sequencer..." << std::endl;
 		case Pedestal: 
 		case LightInjection:
 		case ChargeInjection:
@@ -1739,13 +1740,14 @@ void acquire_data::TriggerDAQ(unsigned short int a)
 #endif
 			try {
 				unsigned char send_pulse[2];
-				send_pulse[0] = daqController->GetCrim()->GetSoftCNRSTSeq() & 0xFF;
-				send_pulse[1] = (daqController->GetCrim()->GetSoftCNRSTSeq()>>0x08) & 0xFF;
+				send_pulse[0] = daqController->GetCrim(crimID)->GetSoftCNRSTSeq() & 0xFF;
+				send_pulse[1] = (daqController->GetCrim(crimID)->GetSoftCNRSTSeq()>>0x08) & 0xFF;
 #if DEBUG_TRIGGER
 				printf("    send_pulse msg = 0x%02X%02X\n",send_pulse[1],send_pulse[0]);
+				printf("    pulse address  = 0x%X\n",daqController->GetCrim(crimID)->GetSoftCNRSTRegister());
 #endif
 				error = daqAcquire->WriteCycle(daqController->handle, 2, send_pulse,
-					daqController->GetCrim()->GetSoftCNRSTRegister(), AM, DW); 
+					daqController->GetCrim(crimID)->GetSoftCNRSTRegister(), AM, DW); 
 				if (error) throw error;
 			} catch (int e) {
 				std::cout << "Unable to set pulse delay register" << std::endl;
@@ -1773,7 +1775,9 @@ void acquire_data::WaitOnIRQ()
 {
 /*! \fn void acquire_data::WaitOnIRQ() 
  *
- * A function which waits on the interrupt handler to set an interrupt.
+ * A function which waits on the interrupt handler to set an interrupt.  This function 
+ * only checks the "master" CRIM.  The implicit assumption is that a trigger on any 
+ * CRIM is a trigger on all CRIMs (this assumption is true by design).
  *
  * Two options exist, one can wait for the CAEN interrupt handler to Wait on IRQ, or 
  * the status register can be polled until the interrupt bits are driven high.
