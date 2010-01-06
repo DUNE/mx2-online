@@ -19,9 +19,9 @@
 #include <sys/time.h>
 
 #define THREAD_COUNT 4  /*!< a thread count var if we aren't finding the # of threads needed */
-#if MASTER||SINGLE_PC
+#if MASTER||SINGLE_PC // Soldier Node
 #define CONTROLLER_ID 0
-#elif (!MASTER)&&(!SINGLE_PC)
+#elif (!MASTER)&&(!SINGLE_PC) // Worker Node
 #define CONTROLLER_ID 1
 #endif
 
@@ -224,13 +224,13 @@ int main(int argc, char *argv[])
 #endif
 	// Set up the global_gate service. 
 	global_gate_service.sin_family = AF_INET;
-	string hostname="mnvonline1.fnal.gov"; 
+	string hostname="mnvonline1.fnal.gov"; // The worker node will listen for the global gate.
 	worker_node_info = gethostbyname(hostname.c_str());
 	if (worker_node_info == NULL) { std::cout << "No worker node to connect to!\n"; return 1; }
 	else global_gate_service.sin_addr = *((struct in_addr *) worker_node_info->h_addr);
 	global_gate_service.sin_port = htons (global_gate_port); 
 
-	// Create an address for the gate_done listener.
+	// Create an address for the gate_done listener.  The soldier listens for the gate done signal.
 	gate_done_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&gate_done_service, 0, sizeof (gate_done_service));
 	gate_done_service.sin_family = AF_INET;
@@ -256,13 +256,13 @@ int main(int argc, char *argv[])
 #endif
 	// Set up the gate_done service. 
 	gate_done_service.sin_family = AF_INET;
-	string hostname="mnvonline0.fnal.gov"; 
+	string hostname="mnvonline0.fnal.gov"; // The soldier node will listen for the gate done signal.
 	soldier_node_info = gethostbyname(hostname.c_str());
 	if (soldier_node_info == NULL) { std::cout << "No soldier node to connect to!\n"; return 1; }
 	else gate_done_service.sin_addr = *((struct in_addr *) soldier_node_info->h_addr);
 	gate_done_service.sin_port = htons (gate_done_port); 
 
-	// Create an address for the global_gate listener.
+	// Create an address for the global_gate listener.  The worker listens for the global gate data.
 	global_gate_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&global_gate_service, 0, sizeof (global_gate_service));
 	global_gate_service.sin_family = AF_INET;
@@ -369,7 +369,6 @@ int main(int argc, char *argv[])
 	electronics_init_thread.join(); //wait for the electronics initialization to finish 
 #endif
 	// Get the controller object created during InitializeDaq.
-	// Note that controller ID's are keyed for worker/soldier nodes elsewhere.
 	controller *currentController = daq->GetController(); 
 
 	/*********************************************************************************/
@@ -558,13 +557,15 @@ int main(int argc, char *argv[])
 		int no_crocs = currentController->GetCrocVectorLength(); 
 
 		/**********************************************************************************/
-		/*   Loop over crocs and then channels in the system.  Execute TakeData on each   */
-		/*   Croc/channel combination of FEB's                                            */
+		/* Loop over crocs and then channels in the system.  Execute TakeData on each     */
+		/* Croc/Channel combination of FEB's.  Here we assume that the CROCs are indexed  */
+		/* from 1->N.  The routine will fail if this is false!                            */
 		/**********************************************************************************/
-		for (int i=0;i<no_crocs;i++) {
+		// TODO - It would be better to iterate over the CROC vector here rather loop over ID's.
+		for (int i=0; i<no_crocs; i++) {
 			croc_id = i+1;
 			croc *tmpCroc = currentController->GetCroc(croc_id);
-			for (int j=0;j<4;j++) {
+			for (int j=0; j<4 ;j++) { // Loop over FE Channels.
 				if ((tmpCroc->GetChannelAvailable(j))&&(tmpCroc->GetChannel(j)->GetHasFebs())) {
 					//
 					// Threaded Option
@@ -602,7 +603,8 @@ int main(int argc, char *argv[])
 					//
 #elif NO_THREAD
 #if DEBUG_GENERAL
-					std::cout << " Reading CROC: " << croc_id << " channel: " << j << std::endl;
+					std::cout << "\n Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
+						" Index " << croc_id << " Channel: " << j << std::endl;
 #endif
 					TakeData(daq,evt,croc_id,j,0,attach,sys_id);
 #endif
@@ -632,7 +634,10 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		/*  re-enable the IRQ for the next trigger                                        */
 		/**********************************************************************************/
-		daq->ResetGlobalIRQEnable(); // TODO - Consider moving this to the top of the loop.
+		// TODO - take care we are only doing interrrupt config on master CRIMs...
+		for (int i=1; i<=currentController->GetCrimVectorLength(); i++) {
+			daq->ResetGlobalIRQEnable(i); // TODO - Consider moving this to the top of the loop.
+		}
 
 #if SINGLE_PC||MASTER // Soldier Node
 		/**********************************************************************************/
@@ -785,9 +790,6 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
  *  \param attach, the ET attachemnt to which data will be stored
  *  \param sys_id, the ET system handle
  */
-	/****************************************************************************************/
-	/* This function interfaces with the acquire functions to execute the acquisition loop. */
-	/****************************************************************************************/
 #if TIME_ME
 	struct timeval start_time, stop_time;
 	gettimeofday(&start_time, NULL);
@@ -806,20 +808,17 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 #endif
 
 	/**********************************************************************************/
-	/*  Local croc & crim variables for eas of computational manipulation             */
+	/*  Local croc & crim variables for ease of computational manipulation.           */
 	/**********************************************************************************/
-	croc *crocTrial = daq->GetController()->GetCroc(croc_id);
-	channels *channelTrial=daq->GetController()->GetCroc(croc_id)->GetChannel(channel_id);
+	croc     *crocTrial    = daq->GetController()->GetCroc(croc_id);
+	channels *channelTrial = daq->GetController()->GetCroc(croc_id)->GetChannel(channel_id);
+
+	// A flag to let us know that we have successfully serviced this channel (the functions 
+	// return "0" if they are successful...)
+	bool data_taken = true; 
 
 	/**********************************************************************************/
-	/*   a flag for data acquisition status                                           */
-	/**********************************************************************************/
-	bool data_taken = true; //a flag to let us know that we have successfully
-				//serviced this channel (the functions return "0" if they are successful...)
-
-	/**********************************************************************************/
-	/*   get the FEB list which belongs to this channel                               */
-	/*   and an iterator for the FEB loop                                             */
+	/* Get the FEB list for this channel and an iterator for the FEB loop.            */
 	/**********************************************************************************/
 	list<feb*> *feb_list = channelTrial->GetFebList(); //the feb's on this channel
 	list<feb*>::iterator feb; //we want to loop over them when we get the chance...
@@ -830,7 +829,7 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 #endif
 
 	/**********************************************************************************/
-	/*   the loops which govern the acquiring of data from the FEB's.                 */
+	/*   The loops which govern the acquiring of data from the FEB's.                 */
 	/*   The first waits until data is ready.                                         */
 	/*   The second executes when data is ready to be acquired from the electronics   */
 	/**********************************************************************************/
@@ -838,7 +837,7 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 
 	while ((data_ready)&&(evt_record_available)) { //wait for data to become available
 		//loop over all febs
-		for (feb=feb_list->begin();feb!=feb_list->end();feb++) { //here it is, the feb loop
+		for (feb=feb_list->begin(); feb!=feb_list->end(); feb++) { //here it is, the feb loop
 			/**********************************************************************************/
 			/*          Take all data on the feb                                              */
 			/**********************************************************************************/
@@ -847,9 +846,11 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 			data_monitor << "TakeAllData Returned" << std::endl;
 #endif
 			if (data_taken) { //and if you didn't succeed...(the functions return 0 if successful) 
-				cout<<"Problems taking data on FEB: "<<(*feb)->GetBoardNumber()<<endl;
-				cout<<"Leaving thread servicing CROC: "<<croc_id<<" channel: "<<channel_id<<endl;
-				exit(-2000); //stop the presses!
+				std::cout << "Problems taking data on FEB: " << 
+					(*feb)->GetBoardNumber() << std::endl;
+				std::cout << "Leaving thread servicing CROC: " << (crocTrial->GetCrocAddress()>>16) << 
+					" channel: " << channel_id << std::endl;
+				exit(-2000); 
 			}
 		} //feb loop
 #if DEBUG_THREAD
