@@ -95,6 +95,8 @@ class controller {
 		crim *GetCrim();       // Return the pointer to the *first* CRIM.
 		crim *GetCrim(int a);  // Return the pointer to the requested CRIM.
 		croc *GetCroc(int a);  // Return the pointer to the requested CROC.
+		std::vector<croc*> inline *GetCrocVector() {return &readOutController;};
+		std::vector<crim*> inline *GetCrimVector() {return &interfaceModule;};
 
 		void inline SetDataWidth(CVDataWidth a) {dataWidth=a;}; 
 
