@@ -12,7 +12,7 @@ boost::mutex main_mutex; /*!< A BOOST multiple exclusion for use in threaded ope
 
 bool data_ready, evt_record_available;   /*!<data status variables */
 /*! a function for selecting a trigger and waiting on it */
-void TriggerDAQ(acquire_data *daq, unsigned short int triggerType); // The triggering functions.
+void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode, controller *tmpController); 
 /*! the function which governs the entire data acquisition sequence */
 void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,int thread, 
               et_att_id  attach, et_sys_id  sys_id); //the data taking routine

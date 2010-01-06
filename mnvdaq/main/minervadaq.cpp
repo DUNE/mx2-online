@@ -532,9 +532,9 @@ int main(int argc, char *argv[])
 		event_data.triggerType = triggerType;
 #if THREAD_ME
 		// Careul about arguments with the threaded functions!  They are not exercised regularly.
-		boost::thread trigger_thread(boost::bind(&TriggerDAQ,daq,triggerType));
+		boost::thread trigger_thread(boost::bind(&TriggerDAQ,daq,triggerType,runningMode,currentController));
 #elif NO_THREAD
-		TriggerDAQ(daq, triggerType);
+		TriggerDAQ(daq, triggerType, runningMode, currentController);
 #endif 
 
 		// Make the event_handler pointer.
@@ -603,7 +603,7 @@ int main(int argc, char *argv[])
 					//
 #elif NO_THREAD
 #if DEBUG_GENERAL
-					std::cout << "\n Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
+					std::cout << " Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
 						" Index " << croc_id << " Channel: " << j << std::endl;
 #endif
 					TakeData(daq,evt,croc_id,j,0,attach,sys_id);
@@ -634,7 +634,8 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		/*  re-enable the IRQ for the next trigger                                        */
 		/**********************************************************************************/
-		// TODO - take care we are only doing interrrupt config on master CRIMs...
+		// TODO - Take care we are only doing interrrupt config on master CRIMs...
+		// TODO - This means making this a function of running mode (True OneShot is special)...
 		for (int i=1; i<=currentController->GetCrimVectorLength(); i++) {
 			daq->ResetGlobalIRQEnable(i); // TODO - Consider moving this to the top of the loop.
 		}
@@ -871,17 +872,26 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 } // end void TakeData
 
 
-void TriggerDAQ(acquire_data *daq, unsigned short int triggerType) 
+// TODO - Get rid of this function!
+void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode, controller *tmpController) 
 {
 /*! \fn void TriggerDAQ(acquire_data *data, unsigned short int triggerType)
  *
- *  The function which arms and sets the trigger for each gate.  
- *
- *  This version currently is only has "One-Shot" set up for the 
- *  trigger type. 
+ *  The function which arms and sets the trigger for each gate (really, it is setting the 
+ *  data type for the gate).  Only for the OneShot mode does this involve "triggering" the 
+ *  CRIMs.  In the other running modes, the gate signals are initiated by an external source.  
+ *  In all running modes, we must handle the interrupt signals generated on the CRIM though.  
+ *  Because trigger types are not unique to running modes (e.g., we take both pedestal and 
+ *  numi spill triggers in MixedBeamPedestal mode), we need to know both.  For some gates 
+ *  (e.g. OneShot), we will need to send software triggers on all CRIMs for pedestal triggers 
+ *  and for others (e.g. MixedBeamPedestal), we will only want to trigger the master CRIM.  
+ *  Synchronization must be provided by an electrical connection in this case!  This scheme 
+ *  will only work for v8 CRIM firmware.
  *
  *  \param *daq a pointer to the acquire_data object which governs this DAQ Execution.
- *  \param triggerType identifies the sequence of commands for the CRIM.
+ *  \param triggerType Identifies the gate data type (trigger type).
+ *  \param runningMode Identifies the mode of the subrun.
+ *  \param *tmpController Pointer to the controller object (for accessing all CRIMs).
  */
 #if TIME_ME
 	struct timeval start_time, stop_time;
@@ -897,14 +907,33 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType)
 #endif
 
 	/**********************************************************************************/
-	/* let the hardware tell us when the trigger has completed                        */
+	/* Let the hardware tell us when the trigger has completed.                       */
 	/**********************************************************************************/
-
-	daq->TriggerDAQ(triggerType);  // send the one-shot trigger
+	vector<crim*> *crim_vector = tmpController->GetCrimVector(); 
+	vector<crim*>::iterator crim = crim_vector->begin();
+	int id = (*crim)->GetCrimID();
+	switch (runningMode) {
+		case OneShot:
+			for (crim = crim_vector->begin(); crim != crim_vector->end(); crim++) {
+				id = (*crim)->GetCrimID();
+				daq->TriggerDAQ(triggerType, id);
+			}  
+                       	break;
+		case NuMIBeam:
+		case Cosmics:
+		case PureLightInjection:
+		case MixedBeamPedestal:
+		case MixedBeamLightInjection:
+			daq->TriggerDAQ(triggerType, id); // Not strictly needed.
+			break;
+		default:
+			std::cout << "ERROR! Improper Running Mode defined!" << std::endl;
+			exit(-4);
+	}
 	daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
 
 	/**********************************************************************************/
-	/*  Let the interrupt handler deal with an asserted interrupt                     */
+	/*  Let the interrupt handler deal with an asserted interrupt.                    */
 	/**********************************************************************************/
 	/*! \note  This uses the interrupt handler to handle an asserted interrupt 
 	 *
@@ -917,6 +946,7 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType)
 	std::cout << " Data Ready! " << std::endl;
 #endif
 #if RUN_SLEEPY
+	// This sleep is here because we return too quickly - the FEBs are still digitizing.
 	// Smallest possible time with "sleep" command is probably something like ~1 ms
 	// TODO - Put in a more clever wait function so we don't step on digitization on the FEBs.
 	system("sleep 1e-3");
