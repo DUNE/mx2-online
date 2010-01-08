@@ -13,14 +13,17 @@ int main(int argc, char **argv)
  * This function is the MINERvA-specific implementation 
  * of the generic et_producer class.  
  */
-	if (argc != 2) {
-		printf("Usage: event_builder <et_filename>\n");
+	if (argc != 3) {
+		printf("Usage: event_builder <et_filename> <rawdata_filename>\n");
+		printf("  Please supply the full path!\n");
 		exit(1);
 	}
 
 	// Open the file for binary output.
-	string output_filename(argv[1]);
-	output_filename+=".dat";
+	string output_filename(argv[2]);
+	//output_filename = "/work/data/rawdata/" + output_filename + ".dat"; // this doesn't work for some reason...
+	std::cout << "Ouptut Filename = " << output_filename << std::endl;
+	std::cout << "ET Filesystem   = " << argv[1] << std::endl;
 	ofstream binary_outputfile(output_filename.c_str(),ios::out|ios::app|ios::binary); 
 																
 	// int            event_size; // unused...

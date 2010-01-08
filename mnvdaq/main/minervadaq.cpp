@@ -45,7 +45,8 @@ int main(int argc, char *argv[])
 	int record_seconds       = -1;	      // Run length in SECONDS (Not Supported...)
 	int detector             = 0;         // Default to UnknownDetector.
 	detector                 = (0x1)<<4;  // TODO - For header debugging... the Upstream Detector.
-	string et_filename       = "testme";  
+	string et_filename       = "/work/data/etsys/testme";
+	string fileroot          = "testme";  // For logs, etc.  
 
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
@@ -93,6 +94,8 @@ int main(int argc, char *argv[])
 		else if (sw=="-et") {
 			optind++;
 			et_filename = argv[optind];
+			fileroot    = et_filename;
+			et_filename = "/work/data/etsys/" + et_filename;
 			std::cout << "\tET Filename            = " << et_filename << std::endl;
 		}
 		else
