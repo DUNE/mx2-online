@@ -1,11 +1,13 @@
 #!/bin/bash
 
 # Argument List:
-#  $1 == et_system file name
+#  $1 == et_system file name (should include full path).
 if [ $# -ne 1 ]; then
 	echo Please supply et_system file name.
 	exit 1
 fi
+
+ETSYS=$1
 
 if [ "$LOCALE" == "" ]
 then
@@ -19,6 +21,6 @@ then
         exit 1
 fi
 
-#source /work/software/mnvonline/mnvdaq/setup_daqbuild.sh
-$ET_HOME/Linux-x86_64-64/bin/et_monitor -f $1 
+# Pass the full path to the ET system!
+$ET_HOME/Linux-x86_64-64/bin/et_monitor -f $ETSYS 
 
