@@ -1,0 +1,12 @@
+# default script for preparing the LI box for operation.
+# place single commands on each line.
+# if you want the program to verify that the box responds with a particular response,
+# put that on the same line, separated from the command by a colon (command:response).
+# for example:
+#  aA:z
+
+_X
+aB3
+aCf_f
+aO
+aQ
