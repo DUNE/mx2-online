@@ -1,7 +1,8 @@
 #!/bin/sh
 
 #rm *.csv
-rm testme*
+rm /work/data/etsys/testme
+rm /work/data/rawdata/testme.dat
 #rm *.txt
 #rm channel*
 #rm controller*
