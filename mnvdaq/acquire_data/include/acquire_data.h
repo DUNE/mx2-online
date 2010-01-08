@@ -81,7 +81,9 @@ class acquire_data {
 	public:
 		/*! Specialized constructor which takes a string for old-style logging. */
 		acquire_data(std::string fn) {
+#if TIME_ME
 			frame_acquire_log.open("frame_data_time_log.csv"); 
+#endif
 			et_filename = fn;
 		};
 		/*! Specialized destructor. */
