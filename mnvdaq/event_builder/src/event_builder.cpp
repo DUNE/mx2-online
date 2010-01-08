@@ -3,7 +3,9 @@
 
 using namespace std;
 
+#if DEBUG_THREAD
 ofstream thread_log("eb_log.txt");
+#endif
 
 int main(int argc, char **argv) 
 {
@@ -47,7 +49,7 @@ int main(int argc, char **argv)
 	et_open_config_setserverport(openconfig, 1091); 
 #endif
 	if (et_open(&sys_id, argv[1], openconfig) != ET_OK) {
-		printf("et_producer: et_open problems\n");
+		printf("event_builder::main(): et_producer: et_open problems\n");
 		exit(1);
 	}
 	et_open_config_destroy(openconfig);
@@ -68,7 +70,8 @@ int main(int argc, char **argv)
 		counter++;  
 	} while ((newheartbeat==oldheartbeat)&&(counter!=20));
 	if (counter==20) {
-		thread_log << "ET System did not start properly!" << std::endl;
+		std::cout << "Error in event_builder::main()!" << std::endl;
+		std::cout << "ET System did not start properly!  Exiting..." << std::endl;
 		exit(-5);
 	}  
 
@@ -78,7 +81,7 @@ int main(int argc, char **argv)
 	// Create & attach to a new station for making the final output file.
 	et_station_create(sys_id,&cu_station,"CHICAGO_UNION",sconfig);
 	if (et_station_attach(sys_id, cu_station, &attach) < 0) {
-		printf("et_producer: error in station attach\n");
+		printf("event_builder::main(): et_producer: error in station attach\n");
 		system("sleep 10s");
 		exit(1);
 	}
@@ -91,31 +94,31 @@ int main(int argc, char **argv)
 		status = et_event_get(sys_id, attach, &pe, ET_TIMED|ET_MODIFY, &time);
 		if (status==ET_ERROR_TIMEOUT) break;
 		if (status == ET_ERROR_DEAD) {
-			printf("et_client: ET system is dead\n");
+			printf("event_builder::main(): et_client: ET system is dead\n");
 			exit(-1);
 		}
 		else if (status == ET_ERROR_TIMEOUT) {
-			printf("et_client: got timeout\n");
+			printf("event_builder::main(): et_client: got timeout\n");
 			exit(-1);
 		}
 		else if (status == ET_ERROR_EMPTY) {
-			printf("et_client: no events\n");
+			printf("event_builder::main(): et_client: no events\n");
 			exit(-1);
 		}
 		else if (status == ET_ERROR_BUSY) {
-			printf("et_client: station is busy\n");
+			printf("event_builder::main(): et_client: station is busy\n");
 			exit(-1);
 		}
 		else if (status == ET_ERROR_WAKEUP) {
-			printf("et_client: someone told me to wake up\n");
+			printf("event_builder::main(): et_client: someone told me to wake up\n");
 			exit(-1);
 		}
 		else if ((status == ET_ERROR_WRITE) || (status == ET_ERROR_READ)) {
-			printf("et_client: socket communication error\n");
+			printf("event_builder::main(): et_client: socket communication error\n");
 			exit(-1);
 		}
 		else if (status != ET_OK) {
-			printf("et_client: get error\n");
+			printf("event_builder::main(): et_client: get error\n");
 			exit(-1);
 		}
 		event_handler *evt;
@@ -132,9 +135,9 @@ int main(int argc, char **argv)
 		void *pdata;
 		int length;
 #if DEBUG_BUFFERS
-		printf(" Building final data buffers...\n");
-		printf("  Frame Data Type           = %d\n",evt->feb_info[4]);
-		printf("  Frame Length (header val) = %d\n",evt->feb_info[5]);
+		printf(" event_builder::main(): Building final data buffers...\n");
+		printf("   Frame Data Type           = %d\n",evt->feb_info[4]);
+		printf("   Frame Length (header val) = %d\n",evt->feb_info[5]);
 #endif
 		switch (evt->feb_info[4]) {
 			case 0:
@@ -162,19 +165,19 @@ int main(int argc, char **argv)
 		unsigned char final_buffer[length];
 		unsigned char *tmp_buffer; 
 #if DEBUG_BUFFERS
-		printf("   Final data buffer length = %d\n",length);
+		printf("   event_builder::main(): Final data buffer length = %d\n",length);
 #endif
 		if (evt->feb_info[4]!=3) {
 			tmp_buffer = event->GetDataBlock();
 #if DEBUG_BUFFERS
-			printf(" Copying Data Header data into final buffer...\n");
+			printf(" event_builder::main(): Copying Data Header data into final buffer...\n");
 #endif
 			for (int data_index = 0; data_index < length; data_index++) {
 				final_buffer[data_index] = tmp_buffer[data_index];
 			}
 		} else { 
 #if DEBUG_BUFFERS
-			printf(" Copying DAQ Header data into final buffer...\n");
+			printf(" event_builder::main(): Copying DAQ Header data into final buffer...\n");
 #endif
 			for (int data_index = 0; data_index < length; data_index++) {
 				final_buffer[data_index] = event->GetEventBlock(data_index);
@@ -191,20 +194,19 @@ int main(int argc, char **argv)
 		binary_outputfile.write((char *) final_buffer, length);  
 		binary_outputfile.flush();
 		if ( !( evt_counter%10000 ) ) {
-			thread_log << "*****************************************************************************"<<endl; 
-			thread_log << "      Event (Frame) Processed: "<<evt_counter<<endl;
-			thread_log << "*****************************************************************************"<<endl; 
-			cout << "*****************************************************************************"<<endl; 
-			cout << "      Event (Frame) Processed: "<<evt_counter<<endl;
-			cout << "*****************************************************************************"<<endl; 
+#if DEBUG_THREAD
+			thread_log << "*****************************************************************" << std::endl; 
+			thread_log << "  event_builder::main(): Event (Frame) Processed: " << evt_counter << std::endl;
+#endif
+			std::cout << "*****************************************************************" << std::endl; 
+			std::cout << "  event_builder::main(): Event (Frame) Processed: " << evt_counter << std::endl;
 		}
 		delete event;
 	}
-
-	thread_log << "*****************************************************************************" << endl;
-	thread_log << "  Quitting Event Builder." << endl;
-	thread_log << "*****************************************************************************" << endl;
-
+#if DEBUG_THREAD
+	thread_log << "*****************************************************************" << std::endl; 
+	thread_log << "  event_builder::main(): Quitting Event Builder." << std::endl;
+#endif
 	// Detach from the station.
 	if (et_station_detach(sys_id, attach) < 0) {
 		printf("et_producer: error in station detach\n");
@@ -227,26 +229,26 @@ int main(int argc, char **argv)
 int event_builder(event_handler *evt) 
 {
 #if DEBUG_REPORT_EVENT
-	thread_log << "*************************************************************************" << std::endl; 
-	thread_log << "Processing Event Data:"<< std::endl;
-	thread_log << "  GATE : "<< evt->gate << std::endl;
-	thread_log << "    CROC ----------: " << evt->feb_info[2] << std::endl;
-	thread_log << "    CHAN ----------: " << evt->feb_info[3] << std::endl;
-	thread_log << "    FEB -----------: " << evt->feb_info[6] << std::endl;
-	thread_log << "    BANK ----------: " << evt->feb_info[4] << std::endl;
-	thread_log << "    BUFFER_LENGTH -: " << evt->feb_info[5] << std::endl;
-	thread_log << "    FIRMWARE ------: " << evt->feb_info[7] << std::endl;
-	thread_log << "    DETECTOR ------: " << (int)evt->detectorType << std::endl; 
-	thread_log << "    CONFIG --------: " << evt->detectorConfig << std::endl; 
-	thread_log << "    RUN -----------: " << evt->runNumber << std::endl;
-	thread_log << "    SUB-RUN -------: " << evt->subRunNumber << std::endl;
-	thread_log << "    TRIGGER -------: " << evt->triggerType << std::endl;
-	thread_log << "    GLOBAL GATE ---: " << evt->globalGate << std::endl;
-	thread_log << "    TRIG TIME -----: " << evt->triggerTime << std::endl;
-	thread_log << "    ERROR ---------: " << evt->readoutInfo << std::endl;
-	thread_log << "    MINOS ---------: " << evt->minosSGATE << std::endl;
-	thread_log << "    EMBEDDED LENGTH: " << (int)( evt->event_data[0] + (evt->event_data[1]<<8) ) << std::endl;
-        thread_log << "    DUMMY BYTE ----: " << (int)evt->event_data[10] << std::endl;
+	std::cout << "*************************************************************************" << std::endl; 
+	std::cout << "Processing Event Data in event_builder::main():"<< std::endl;
+	std::cout << "  GATE : "<< evt->gate << std::endl;
+	std::cout << "    CROC ----------: " << evt->feb_info[2] << std::endl;
+	std::cout << "    CHAN ----------: " << evt->feb_info[3] << std::endl;
+	std::cout << "    FEB -----------: " << evt->feb_info[6] << std::endl;
+	std::cout << "    BANK ----------: " << evt->feb_info[4] << std::endl;
+	std::cout << "    BUFFER_LENGTH -: " << evt->feb_info[5] << std::endl;
+	std::cout << "    FIRMWARE ------: " << evt->feb_info[7] << std::endl;
+	std::cout << "    DETECTOR ------: " << (int)evt->detectorType << std::endl; 
+	std::cout << "    CONFIG --------: " << evt->detectorConfig << std::endl; 
+	std::cout << "    RUN -----------: " << evt->runNumber << std::endl;
+	std::cout << "    SUB-RUN -------: " << evt->subRunNumber << std::endl;
+	std::cout << "    TRIGGER -------: " << evt->triggerType << std::endl;
+	std::cout << "    GLOBAL GATE ---: " << evt->globalGate << std::endl;
+	std::cout << "    TRIG TIME -----: " << evt->triggerTime << std::endl;
+	std::cout << "    ERROR ---------: " << evt->readoutInfo << std::endl;
+	std::cout << "    MINOS ---------: " << evt->minosSGATE << std::endl;
+	std::cout << "    EMBEDDED LENGTH: " << (int)( evt->event_data[0] + (evt->event_data[1]<<8) ) << std::endl;
+        std::cout << "    DUMMY BYTE ----: " << (int)evt->event_data[10] << std::endl;
 #endif
 	MinervaHeader *tmp_header;
 	// 56?  TODO 54 registers in modern feb firmware, should replace with variable argument anyway...
@@ -267,30 +269,21 @@ int event_builder(event_handler *evt)
 		switch (evt->feb_info[4]) {
 			case 0: // ADC Data
 #if DEBUG_VERBOSE
-				thread_log << "\nADC Values" << std::endl;
+				std::cout << "\nevent_builder::main(): ADC Values" << std::endl;
 #endif
 				// Compare embedded length (data) + CRC to info_length		
 				CheckBufferLength(evt->feb_info[5]+2, info_length); 
 				for (unsigned int i=0; i<evt->feb_info[5]; i+=info_length) {
-#if DEBUG_VERBOSE
-					thread_log << "Decoding Buffer" << std::endl;
-#endif
 					DecodeBuffer(evt, dummy_feb->GetADC(0), i, info_length);
-#if DEBUG_VERBOSE
-					thread_log << "Building Bank Header" << std::endl;
-#endif
 					// Build the data block header.
 					tmp_header = BuildBankHeader(evt, dummy_feb->GetADC(0));
-#if DEBUG_VERBOSE
-					thread_log << "Making Data Block" << std::endl;
-#endif
 					// Build event.
 					event->MakeDataBlock(dummy_feb->GetADC(0), tmp_header);
 				}
 				break;
 			case 1: // Discriminator Data
 #if DEBUG_VERBOSE
-				thread_log << "\nDISC Values" << std::endl;
+				std::cout << "\nevent_builder::main(): DISC Values" << std::endl;
 #endif
 				// Compare embedded length (data) + CRC to info_length	
 				CheckBufferLength(evt->feb_info[5]+2, info_length);
@@ -304,43 +297,35 @@ int event_builder(event_handler *evt)
 				break;
 			case 2: // FEB Data
 #if DEBUG_VERBOSE
-				thread_log << "--FEB Values--" << std::endl;
+				std::cout << "\nevent_builder::main(): FPGA Programming Values" << std::endl;
 #endif
 				// Compare embedded length (data) + CRC to info_length				
 				CheckBufferLength(evt->feb_info[5]+2, info_length);
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
-#if DEBUG_VERBOSE
-					thread_log << "Decoding Buffer..." << std::endl;
-#endif
 					DecodeBuffer(evt, dummy_feb, i, info_length);
-					//?// dummy_feb->ShowValues();
-#if DEBUG_VERBOSE
-					thread_log << "Building Bank Header..." << std::endl;
-#endif
 					// Build the data block header
 					tmp_header = BuildBankHeader(evt, dummy_feb);
-#if DEBUG_VERBOSE
-					thread_log << "Making Data Block..." << std::endl;
-#endif
 					// Build event  
 					event->MakeDataBlock(dummy_feb, tmp_header);
 				}
 				break;
 			case 3: // DAQ Event Info (End of Record Bank)
-				thread_log << "Received a DAQ event bank on a current event!" << endl;
+				std::cout << "Error in event_builder::main()!" << std::endl;
+				std::cout << "Received a DAQ event bank on a current event!" << std::endl;
 				return (-1);
-				break;
 			case 4:
-				thread_log << "TriP Programming Frames not supported yet!" << endl;
+				std::cout << "Error in event_builder::main()!" << std::endl;
+				std::cout << "TriP Programming Frames not supported yet!" << std::endl;
 				return (-1);
 			default:
-				thread_log << "Failed Event Bank!" << endl;
+				std::cout << "Error in event_builder::main()!" << std::endl;
+				std::cout << "Failed Event Bank!" << std::endl;
 				return (-1);
 		}
 	}
 
 #if DEBUG_VERBOSE
-	thread_log << "Completed! Processed Event Data!" << std::endl;
+	std::cout << "Completed event_builder::main()! Processed Event Data!" << std::endl;
 #endif
 	// Clean up memory.
 	delete dummy_feb;
@@ -374,7 +359,7 @@ void CheckBufferLength(int length, int frame_length)
  * \param frame_length the lenght that the frame is supposed to be
  */
 	if (length != frame_length) {
-		thread_log << "Buffer length, frame length disparity in event_builder::CheckBufferLength!." << endl;
+		std::cout << "Buffer length, frame length disparity in event_builder::CheckBufferLength!." << endl;
 		exit(-4);
 	}
 }
