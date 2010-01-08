@@ -109,19 +109,19 @@ int main(int argc, char *argv[])
 		std::cout << std::endl;
 	}
 
-	// Log files for the main routine.  
-	ofstream gate_time_log;
+	// Log files for threading in the main routine. 
+#if (THREAD_ME)&&(TIME_ME)
 	ofstream thread_launch_log;
 	ofstream thread_return_log;
 	thread_launch_log.open("thread_launch_log.csv");
 	thread_return_log.open("thread_return_log.csv");
-	gate_time_log.open("gate_time_log.csv");
-	take_data_extime_log.open("take_data_extime_log.csv");
+#endif
 
 #if TIME_ME
 	// For Benchmark Execution Timing.                                             
 	struct timeval start_time, stop_time;
 	gettimeofday(&start_time, NULL);
+	take_data_extime_log.open("take_data_extime_log.csv");
 #endif
 
 	/*********************************************************************************/
@@ -698,7 +698,6 @@ int main(int argc, char *argv[])
 				" Stop Time: " << (gate_stop_time.tv_sec*1e6+gate_start_time.tv_usec) << 
 				" Run Time: " << (duration/1e6) << std::endl;
 		}
-		gate_time_log << gate << "\t" << duration << std::endl;
 #endif
 		if (!(gate%100)) {
 			std::cout << "******************************************************************\n";

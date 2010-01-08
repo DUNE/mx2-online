@@ -18,7 +18,9 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
               et_att_id  attach, et_sys_id  sys_id); //the data taking routine
 
 /* some logging files for debugging purposes */
+#if TIME_ME
 std::ofstream take_data_extime_log; /*!<an output file for tiing data */
+#endif
 std::ofstream trigger_log; /*!<an output file for trigger debuggin */
 
 // Socket Communication Vars.
