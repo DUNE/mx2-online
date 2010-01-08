@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Argument List:
-#  $1 == et_system file name
+#  $1 == et_system file name (should include full path)
 #  $2 == number of febs
 #  $3 == number of gates to process
 if [ $# -ne 3 ]; then
@@ -9,6 +9,7 @@ if [ $# -ne 3 ]; then
 	exit 1
 fi
 
+ETSYS=$1
 EVENT_SIZE=2048  # two kilobytes - this is the *frame* size ("events"==frames in ET)
 FEBS=$2          # how many total FEB's need to be serviced
 FRAMES=8         # this is anticipating 1 FPGA & 1 TDC & 6 ADC Frames.
@@ -26,6 +27,6 @@ then
         exit 1
 fi
 
-#source /work/software/mnvonline/mnvdaq/setup_daqbuild.sh
-$ET_HOME/Linux-x86_64-64/bin/et_start -v -f ./$1 -n $EVENTS -s $EVENT_SIZE
+# The ETSYS should include the full path.
+$ET_HOME/Linux-x86_64-64/bin/et_start -v -f $ETSYS -n $EVENTS -s $EVENT_SIZE
 
