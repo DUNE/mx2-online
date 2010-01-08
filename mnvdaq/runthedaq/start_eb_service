@@ -22,6 +22,5 @@ then
 	exit 1
 fi
 
-# We pass both the system name and output file.  The ETSYS must contain the full path! 
-# The OUTFL should be just the file root.
+# We pass both the system name and output file - must contain the full path! 
 nice ${DAQROOT}/bin/event_builder $ETSYS $OUTFL 
