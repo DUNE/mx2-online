@@ -433,28 +433,36 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-02-00'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
+	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
+	fprintf(sam_file,"({'triggerconfig':'unknown',"); //TODO - "unknown" should be hardware config as specified by run control.
 	switch (runningMode) {
 		case OneShot:
+			fprintf(sam_file,"'triggertype':'OneShot',})}),\n");
 			fprintf(sam_file,"runType='OneShot',\n");
                        	break;
 		case NuMIBeam:
+			fprintf(sam_file,"'triggertype':'NuMIBeam',})}),\n");
 			fprintf(sam_file,"runType='NuMIBeam',\n");
 			break;
 		case Cosmics:
+			fprintf(sam_file,"'triggertype':'Cosmics',})}),\n");
 			fprintf(sam_file,"runType='Cosmics',\n");
 			break;
 		case PureLightInjection:
+			fprintf(sam_file,"'triggertype':'PureLightInjection',})}),\n");
 			fprintf(sam_file,"runType='PureLightInjection',\n");
 			std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 			break;
 		case MixedBeamPedestal:
 			// TODO - Test mixed beam-pedestal running!
+			fprintf(sam_file,"'triggertype':'MixedBeamPedestal',})}),\n");
 			fprintf(sam_file,"runType='MixedBeamPedestal',\n");
 			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-pedestal trigger types!" << 
 				std::endl;
 			break;
 		case MixedBeamLightInjection:
 			// TODO - Test mixed beam-li running!
+			fprintf(sam_file,"'triggertype':'MixedBeamLightInjection',})}),\n");
 			fprintf(sam_file,"runType='MixedBeamLightInjection',\n");
 			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
 			std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
