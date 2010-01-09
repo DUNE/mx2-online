@@ -45,8 +45,11 @@ int main(int argc, char *argv[])
 	int record_seconds       = -1;	      // Run length in SECONDS (Not Supported...)
 	int detector             = 0;         // Default to UnknownDetector.
 	detector                 = (0x1)<<4;  // TODO - For header debugging... the Upstream Detector.
-	string et_filename       = "/work/data/etsys/testme";
 	string fileroot          = "testme";  // For logs, etc.  
+	string et_filename       = "/work/data/etsys/testme";
+	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme.py");
+	FILE *sam_file;
+	unsigned long long firstEvent, lastEvent;
 
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
@@ -93,10 +96,11 @@ int main(int argc, char *argv[])
         	}
 		else if (sw=="-et") {
 			optind++;
-			et_filename = argv[optind];
-			fileroot    = et_filename;
-			et_filename = "/work/data/etsys/" + et_filename;
+			fileroot     = argv[optind];
+			et_filename  = "/work/data/etsys/" + fileroot;
+			sprintf(sam_filename,"/work/data/sam/%s.py",fileroot.c_str());
 			std::cout << "\tET Filename            = " << et_filename << std::endl;
+			std::cout << "\tSAM Filename           = " << sam_filename << std::endl;
 		}
 		else
 			std::cout << "Unknown switch: " << argv[optind] << std::endl;
@@ -388,13 +392,88 @@ int main(int argc, char *argv[])
 #endif
 
 	/*********************************************************************************/
-	/*      The top of the Event Loop.  Events here are referred to as GATES.        */
-	/*      Be mindful of this jargon - in ET, "events" are actually FRAMES.         */
+	/* If we've made it this far, it is safe to set up the SAM metadata file.        */
 	/*********************************************************************************/
 	struct timeval runstart, runend;
 	gettimeofday(&runstart, NULL);
+#if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
+	fstream global_gate("global_gate.dat"); // TODO - use absolute path to a log & records area...
+	try {
+		if (!global_gate) throw (!global_gate);
+		global_gate >> global_gate_data[0];
+	} catch (bool e) {
+		std::cout << "Error in minervadaq::main opening global gate data!\n";
+		exit(-2000);
+	}
+	global_gate.close();
+	std::cout << " First Event = " << global_gate_data[0] << std::endl;
+	firstEvent = global_gate_data[0];
+#endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
+#if SINGLE_PC||MASTER
+	if ( (sam_file=fopen(sam_filename,"w")) ==NULL) {
+		std::cout << "minervadaq::main(): Error!  Cannot open SAM file for writing!" << std::endl;
+		exit(1);
+	}
+	fprintf(sam_file,"from SamFile.SamDataFile import SamDataFile\n\n");
+	fprintf(sam_file,"from SamFile.SamDataFile import ApplicationFamily\n");
+	fprintf(sam_file,"from SamFile.SamDataFile import CRC\n");
+	fprintf(sam_file,"from SamFile.SamDataFile import SamTime\n");
+	fprintf(sam_file,"from SamFile.SamDataFile import RunDescriptorList\n");
+	fprintf(sam_file,"from SamFile.SamDataFile import SamSize\n\n");
+	fprintf(sam_file,"import SAM\n\n");	
+	fprintf(sam_file,"metadata = SamDataFile(\n");
+	fprintf(sam_file,"fileName = '%s.dat',\n",fileroot.c_str());
+	fprintf(sam_file,"fileType = SAM.DataFileType_ImportedDetector,\n");
+	fprintf(sam_file,"fileFormat = SAM.DataFileFormat_ROOT,\n");
+	fprintf(sam_file,"crc=CRC(666L,SAM.CRC_Adler32Type),\n");
+	fprintf(sam_file,"group='minerva',\n");
+	fprintf(sam_file,"dataTier='raw',\n");
+	fprintf(sam_file,"datastream='alldata',\n");
+	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-02-00'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
+	fprintf(sam_file,"filePartition=1L,\n");
+	switch (runningMode) {
+		case OneShot:
+			fprintf(sam_file,"runType='OneShot',\n");
+                       	break;
+		case NuMIBeam:
+			fprintf(sam_file,"runType='NuMIBeam',\n");
+			break;
+		case Cosmics:
+			fprintf(sam_file,"runType='Cosmics',\n");
+			break;
+		case PureLightInjection:
+			fprintf(sam_file,"runType='PureLightInjection',\n");
+			std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
+			break;
+		case MixedBeamPedestal:
+			// TODO - Test mixed beam-pedestal running!
+			fprintf(sam_file,"runType='MixedBeamPedestal',\n");
+			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-pedestal trigger types!" << 
+				std::endl;
+			break;
+		case MixedBeamLightInjection:
+			// TODO - Test mixed beam-li running!
+			fprintf(sam_file,"runType='MixedBeamLightInjection',\n");
+			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
+			std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
+			break; 
+		default:
+			std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
+			exit(-4);
+	}
+	fprintf(sam_file,"startTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n",
+		(unsigned long long)(runstart.tv_sec)*1000000 + (unsigned long long)(runstart.tv_usec));
+#endif
+
+	/*********************************************************************************/
+	/*      The top of the Event Loop.  Events here are referred to as GATES.        */
+	/*      Be mindful of this jargon - in ET, "events" are actually FRAMES.         */
+	/*********************************************************************************/
 	// TODO - use a while loop that also checks for a stop condition
-	for (int gate = 1; gate <= record_gates; gate++) { 
+	int gate;
+	for (gate = 1; gate <= record_gates; gate++) { 
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
 		gettimeofday(&gate_start_time, NULL);
@@ -425,7 +504,7 @@ int main(int argc, char *argv[])
 			event_data.feb_info[i] = 0; // Initialize the FEB information block. 
 		}
 #if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
-		fstream global_gate("global_gate.dat"); // TODO - use absolute path to a log & records area...
+		global_gate.open("global_gate.dat"); // TODO - use absolute path to a log & records area...
 		try {
 			if (!global_gate) throw (!global_gate);
 			global_gate >> global_gate_data[0];
@@ -506,7 +585,7 @@ int main(int argc, char *argv[])
 				break;
 			case PureLightInjection:
 				triggerType = LightInjection;
-				std::cout << "Warning!  No LI control class exists yet!" << std::endl;
+				std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 				break;
 			case MixedBeamPedestal:
 				// TODO - Test mixed beam-pedestal running!
@@ -515,7 +594,7 @@ int main(int argc, char *argv[])
 				} else {
 					triggerType = NuMI;
 				}
-				std::cout << "Warning!  Calling untested mixed mode beam-pedestal trigger types!" << 
+				std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-pedestal trigger types!" << 
 					std::endl;
 				break;
 			case MixedBeamLightInjection:
@@ -525,11 +604,11 @@ int main(int argc, char *argv[])
 				} else {
 					triggerType = NuMI;
 				}
-				std::cout << "Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
-				std::cout << "Warning!  No LI control class exists yet!" << std::endl;
+				std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
+				std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 				break; 
 			default:
-				std::cout << "ERROR! Improper Running Mode defined!" << std::endl;
+				std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
 				exit(-4);
 		}
 		event_data.triggerType = triggerType;
@@ -720,7 +799,7 @@ int main(int argc, char *argv[])
 #endif // end if !MASTER && !SINGLE_PC
 
 #if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
-		global_gate.open("global_gate.dat");
+		global_gate.open("global_gate.dat"); // TODO - use absolute path to a log & records area... 
 		try {
 			if (!global_gate) throw (!global_gate);
 			event_data.globalGate++;
@@ -737,6 +816,19 @@ int main(int argc, char *argv[])
 	close(gate_done_socket_handle);
 	close(global_gate_socket_handle);
 #endif
+#if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
+	global_gate.open("global_gate.dat"); // TODO - use absolute path to a log & records area...  
+	try {
+		if (!global_gate) throw (!global_gate);
+		global_gate >> global_gate_data[0];
+	} catch (bool e) {
+		std::cout << "Error in minervadaq::main opening global gate data!\n";
+		exit(-2000);
+	}
+	global_gate.close();
+	std::cout << " Last Event = " << global_gate_data[0] << std::endl;
+	lastEvent = global_gate_data[0];
+#endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
 
 	gettimeofday(&runend, NULL);
 	unsigned long long totalstart = ((unsigned long long)(runstart.tv_sec))*1000000 +
@@ -764,6 +856,19 @@ int main(int argc, char *argv[])
 		(start_time.tv_sec*1e6+start_time.tv_usec);
 	cout<<"Start Time: "<<(start_time.tv_sec*1e6+start_time.tv_usec)<<" Stop Time: "
 		<<(stop_time.tv_sec*1e6+stop_time.tv_usec)<<" Run Time: "<<(duration/1e6)<<endl;
+#endif
+
+	// Close the SAM File.
+#if SINGLE_PC||MASTER
+	fprintf(sam_file,"endTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n",
+		(unsigned long long)(runend.tv_sec)*1000000 + (unsigned long long)(runend.tv_usec));
+	fprintf(sam_file,"eventCount=%d,\n",(gate-1));
+	fprintf(sam_file,"firstEvent=%llu,\n",firstEvent);
+	fprintf(sam_file,"lastEvent=%llu,\n",lastEvent);
+	fprintf(sam_file,"lumBlockRangeList=LumBlockRangeList([LumBlockRange(%llu,%llu)])\n",
+		firstEvent, lastEvent);
+	fprintf(sam_file,")\n");
+	fclose(sam_file);
 #endif
 
 	/**********************************************************************************/
