@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
 	struct timeval runstart, runend;
 	gettimeofday(&runstart, NULL);
 #if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
-	fstream global_gate("/work/conditions/global_gate.dat"); // TODO - use absolute path to a log & records area...
+	fstream global_gate("/work/conditions/global_gate.dat"); 
 	try {
 		if (!global_gate) throw (!global_gate);
 		global_gate >> global_gate_data[0];
@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"datastream='alldata',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-02-02'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-02-03'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
@@ -512,7 +512,7 @@ int main(int argc, char *argv[])
 			event_data.feb_info[i] = 0; // Initialize the FEB information block. 
 		}
 #if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
-		global_gate.open("/work/conditions/global_gate.dat"); // TODO - use absolute path to a log & records area...
+		global_gate.open("/work/conditions/global_gate.dat"); 
 		try {
 			if (!global_gate) throw (!global_gate);
 			global_gate >> global_gate_data[0];
@@ -807,7 +807,7 @@ int main(int argc, char *argv[])
 #endif // end if !MASTER && !SINGLE_PC
 
 #if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
-		global_gate.open("/work/conditions/global_gate.dat"); // TODO - use absolute path to a log & records area... 
+		global_gate.open("/work/conditions/global_gate.dat"); 
 		try {
 			if (!global_gate) throw (!global_gate);
 			event_data.globalGate++;
@@ -825,7 +825,7 @@ int main(int argc, char *argv[])
 	close(global_gate_socket_handle);
 #endif
 #if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
-	global_gate.open("/work/conditions/global_gate.dat"); // TODO - use absolute path to a log & records area...  
+	global_gate.open("/work/conditions/global_gate.dat"); 
 	try {
 		if (!global_gate) throw (!global_gate);
 		global_gate >> global_gate_data[0];

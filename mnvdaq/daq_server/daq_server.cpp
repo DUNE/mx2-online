@@ -72,7 +72,7 @@ int launch_minervadaq() {
 	runn          << runNum[0];
 	subr          << subNum[0];
         dtctr         << detect[0];
-	string command = "$DAQROOT/bin/minervadaq -et ./" + string(et_file) + " " +
+	string command = "$DAQROOT/bin/minervadaq -et " + string(et_file) + " " +
 		"-g " + process_gates.str() + " " + 
 		"-r " + runn.str() + " " + 
 		"-s " + subr.str() + " " +  
