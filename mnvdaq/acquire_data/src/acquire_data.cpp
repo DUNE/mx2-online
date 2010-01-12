@@ -138,9 +138,10 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
  * \param runningMode an integer specifying what sort of run the DAQ is taking.
  */
 // TODO - Make InitializeCrim return a value!
-// TODO - InitializeCrim should not need to be called!  The parameters should be set beforehand.
 // TODO - Really, InitializeCrim should take a flag to allow it to just instantiate the software 
-// objects without touching the actual hardware registers.
+// objects without touching the actual hardware registers - we would like any actual configuration 
+// done with the SlowControl.  The one exception to this philosophy might be interrupt configuration 
+// (certainly interrupt resets must be handled by the DAQ).
 	std::cout << "\nEntering acquire_data::InitializeCrim for address " << (address>>16) << 
 		" with running mode " << runningMode << std::endl;
 #if DEBUG_THREAD
@@ -169,15 +170,18 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		exit(-3);
 	} 
 
+	// Note IRQLine is set in the CRIM constructor.  The default is SGATEFall, 
+        // which is the correct choice for every running mode but Cosmics.
 	unsigned short GateWidth    = 0x1;       // GetWidth must never be zero!
 	unsigned short TCALBDelay   = 0x1;       // Delay should also be non-zero.
 	unsigned short TCALBEnable  = 0x1;       // Enable pulse delay.
 	crimTimingFrequencies Frequency  = ZeroFreq; // Used to set ONE frequency bit!  ZeroFreq ~no Frequency.
 	crimTimingModes       TimingMode = MTM;      // Default to MTM.
 
-	// Check running mode and perform appropriate initialization.
-	// We are needlessly repetitious with setting the gate width and tcalb delay, but 
-	// this is to "build in" some flexibility if we decide we need it (as a reminder).
+	// Check running mode and perform appropriate initialization.  We are needlessly 
+        // repetitious with setting the gate width and tcalb delay (0x7F & 0x3FF will probably 
+        // always be fine for any running mode), but this is to "build in" some flexibility 
+        // if we decide we need it (as a reminder).
 	switch (runningMode) {
 		// "OneShot" is the casual name for CRIM internal timing with software gates.
 		case OneShot:
@@ -229,13 +233,14 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			Frequency    = F4; // The fastest setting is a function of FEB firmware.
 			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
+			daqController->GetCrim(index)->SetIRQLine((crimInterrupts)0x01); // Trigger
 			break;
 		default:
 			std::cout << "ERROR! No Running Mode defined!" << std::endl;
 			exit(-4);
 	}
 
-	// Build Register Settings.
+	// Build Register Settings (this does not write to hardware, it only configures software objects).
 	daqController->GetCrim(index)->SetupTiming(TimingMode, Frequency);
 	daqController->GetCrim(index)->SetupGateWidth(TCALBEnable, GateWidth);
 	daqController->GetCrim(index)->SetupTCALBPulse(TCALBDelay);
@@ -245,6 +250,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	printf("  CRIM TCALB Setup     = 0x%04X\n", daqController->GetCrim(index)->GetTCALBPulse());
 #endif
 
+	// Now write settings to hardware.
+	// TODO - This part should be something we can do or not do according to a flag...
 	unsigned char crim_message[2];
 	// Set GateWidth.
 	try {
@@ -284,7 +291,6 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	}
 
 	// Now set up the IRQ handler, initializing the global enable bit for the first go-around.
-	// TODO - IRQ configuration depends on runningMode (Cosmics are special).  Update this!
 	// TODO - Be sure only the Master CRIM is our interrupt handler...
 	try {
 		int error = SetupIRQ(index);
@@ -295,7 +301,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		exit (e);
 	}
 #if DEBUG_THREAD
-	crim_thread << "In InitializeCrim, Done" << std::endl;
+	crim_thread << "In InitializeCrim, finished initializing CRIM " << (address>>16) << std::endl;
 	crim_thread.close();
 #endif
 	std::cout << "Finished initializing CRIM " << (address>>16) << std::endl;
@@ -438,12 +444,17 @@ int acquire_data::SetupIRQ(int index)
 // TODO: Configure this function to take an argument that sets the IRQ line (SGATEFALL, etc.).
 #if DEBUG_IRQ
 	std::cout << "   Entering acquire_data::SetupIRQ for CRIM " << 
-		(daqController->GetCrim(index)->GetCrimAddress()>>16) << " and index " << index << std::endl; 
+		(daqController->GetCrim(index)->GetCrimAddress()>>16) << " and index " << 
+		index << std::endl;
+	std::cout << "    IRQ Line      = " << (int)daqController->GetCrim(index)->GetIRQLine() << std::endl;
 #endif
 	int error = 0; 
 
 	// Set up the crim interrupt mask.
 	daqController->GetCrim(index)->SetInterruptMask(); 
+#if DEBUG_IRQ
+	std::cout << "    InterruptMask = " << daqController->GetCrim(index)->GetInterruptMask() << std::endl;
+#endif
 	unsigned char crim_send[2] = {0,0};
 	crim_send[0] = (daqController->GetCrim(index)->GetInterruptMask()) & 0xff;
 	crim_send[1] = ((daqController->GetCrim(index)->GetInterruptMask())>>0x08) & 0xff;
@@ -530,6 +541,10 @@ int acquire_data::SetupIRQ(int index)
 	}
 
 	// Now enable the line on the CAEN controller.
+#if DEBUG_IRQ
+	printf("     IRQ LINE   = 0x%02X\n",daqController->GetCrim(index)->GetIRQLine());
+	printf("     IRQ MASK   = 0x%04X\n",daqController->GetCrim(index)->GetInterruptMask());
+#endif
 	try {
 		error = CAENVME_IRQEnable(daqController->handle,~daqController->GetCrim(index)->GetInterruptMask());
 		if (error) throw error;
@@ -727,111 +742,33 @@ int acquire_data::BuildFEBList(int i, int croc_id)
 }
 
 
-// Please don't call this function.
-int acquire_data::InitializeTrips(feb *tmpFEB, croc *tmpCroc, channels *tmpChan) 
+int acquire_data::WriteCROCFastCommand(int id, unsigned char command[])
 {
-/*! \fn 
- * int acquire_data::InitializeTrips(feb *tmpFEB, croc *tmpCroc, channels *tmpChan)
- *
- *   The function which executes a trip initialization.
- *
- *   \param *tmpFEB  a pointer to the FEB object being initialized 
- *   \param *tmpCroc a pointer to the CROC object on which the FEB/Channel resides
- *   \param *tmpChan a pointer to the Channel object which has this FEB on it's list
- *
- *   Returns a status value.
- */
-
-	// Compose a read frame.
-	tmpFEB->SetFEBDefaultValues();
-	tmpFEB->MakeMessage();
-	for (int index=0;index<tmpFEB->GetOutgoingMessageLength();index++) {
-		std::cout << "Outgoing Message before send: " << (int)tmpFEB->GetOutgoingMessage()[index]
-			<< std::endl;
+#if DEBUG_FASTCOMMAND
+	std::cout << "  Entering WriteCROCFastCommand for CROC " <<
+		(daqController->GetCroc(id)->GetCrocAddress()>>16) << 
+		" and " << sizeof(*command)/sizeof(unsigned char) << " command(s): " 
+		<< std::endl; 
+	for (int i = 0; i<(sizeof(*command)/sizeof(unsigned char)); i++) { 
+		printf("   0x%02X",command[i]);
 	}
+	std::cout << std::endl;
+#endif
+	int ml = sizeof(*command)/sizeof(unsigned char);
+#if DEBUG_FASTCOMMAND
+	std::cout << " ml = " << ml << std::endl;
+#endif
 	try {
-		// Send the message.
-		int success = SendMessage(tmpFEB, tmpCroc, tmpChan, true);
-		if (success) throw success;
+		int error = daqAcquire->WriteCycle(daqController->handle, ml, command, 
+			daqController->GetCroc(id)->GetFastCommandAddress(), 
+			daqController->GetAddressModifier(), daqController->GetDataWidth()); 
+		if (error) throw error;
 	} catch (int e) {
-		std::cout << "Unable to access already listed FEB: " << tmpFEB->GetBoardNumber()
-			<< " on channel: " << tmpChan->GetChannelNumber() << std::endl;
-		exit(-9);
+		std::cout << "Error in acquire_data::WriteCROCFastCommand for CROC " <<
+			(daqController->GetCroc(id)->GetCrocAddress()>>16) << std::endl;
+		daqController->ReportError(e);
+		return e;
 	}
-	for (int index=0;index<tmpFEB->GetOutgoingMessageLength();index++) {
-		std::cout << "Outgoing Message after send: " << (int)tmpFEB->GetOutgoingMessage()[index]
-			<< std::endl;
-	}
-	tmpFEB->DeleteOutgoingMessage();
-
-	// Read the DPM.
-	try {
-		int success = ReceiveMessage(tmpFEB, tmpCroc, tmpChan);
-		if (success) throw (success);
-	} catch (int e) {
-		std::cout<<"Unable to read message from FEB: "<<tmpFEB->GetBoardNumber()
-			<<" on channel: "<<tmpChan->GetChannelNumber()<<std::endl;
-		exit(-10);
-	}
-	delete [] tmpFEB->message;
-
-	// Turn on the TriP power
-	if (tmpFEB->GetTripPowerOff()) {
-		unsigned char val[1] = {0}; // Zero -> All TriPs power on.
-		tmpFEB->SetTripPowerOff(val);
-		// Compose a write frame.
-		Devices dev = FPGA;
-		Broadcasts b = None;
-		Directions d = MasterToSlave;
-		FPGAFunctions f = Write;
-		tmpFEB->MakeDeviceFrameTransmit(dev,b,d,f,(unsigned int) tmpFEB->GetBoardNumber());
-		tmpFEB->MakeMessage(); 
-#if DEBUG_INIT
-		std::cout << "Turning on the TriPs!" << std::endl;
-#endif
-		// Send the frame.
-		try {
-			int success = SendMessage(tmpFEB, tmpCroc, tmpChan, true); 
-			if (success) throw success;
-		} catch (int e) {
-			std::cout << "Unable to access already listed FEB: " << tmpFEB->GetBoardNumber()
-				<< " on channel: " << tmpChan->GetChannelNumber() << std::endl;
-			exit(-9);
-		}
-		// Read the DPM.
-		try {
-			int success = ReceiveMessage(tmpFEB,tmpCroc, tmpChan);
-			if (success) throw (success);
-		} catch (int e) {
-			std::cout<<"Unable to read message from FEB: "<<tmpFEB->GetBoardNumber()
-				<<" on channel: "<<tmpChan->GetChannelNumber()<<std::endl;
-			exit(-10);
-		}
-#if DEBUG_INIT
-		std::cout << "Done turning on the TriPs." << std::endl;
-#endif
-	}
- 
-	for (int qq=0;qq<6;qq++) {
-		tmpFEB->GetTrip(qq)->MakeMessage();
-#if DEBUG_INIT
-		std::cout << "Init Trip Message Length: " << tmpFEB->GetTrip(qq)->GetOutgoingMessageLength()
-			<< std::endl;
-#endif
-		// Send the frame.
-		try {
-			int success = SendMessage(tmpFEB->GetTrip(qq), tmpCroc, tmpChan,true);
-			if (success) throw success;
-		} catch (int e) {
-			std::cout<<"Unable to set trip: "<<qq<<" on FEB: "<<tmpFEB->GetBoardNumber()
-				<<" on channel: "<<tmpChan->GetChannelNumber()<<std::endl;
-			exit(-11);
-		}
-		tmpFEB->GetTrip(qq)->DeleteOutgoingMessage();
-	}
-	tmpFEB->SetInitialized(true); // Now the FEB is intitialzed and we're ready to go!
-
-	//Done with the initialization procedures.
 	return 0;
 }
 
@@ -1755,7 +1692,7 @@ void acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
 				exit(-2005);
 			}
 #if DEBUG_TRIGGER
-			std::cout << "   -->Sent Sequencer Init. Signal!" << std::endl;
+			std::cout << "    ->Sent Sequencer Init. Signal!" << std::endl;
 #endif
 			break;
 		// The NuMI Beam trigger is initiated via an external signal.
