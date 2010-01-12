@@ -3,6 +3,7 @@
 #rm *.csv
 rm /work/data/etsys/testme
 rm /work/data/rawdata/testme.dat
+rm /work/data/sam/testme.py
 #rm *.txt
 #rm channel*
 #rm controller*
