@@ -118,8 +118,9 @@ class acquire_data {
 		/*! Function to build a list of FEB objects for use in data acquisition */
 		int BuildFEBList(int i, int j);
 
-		/*! Function to initialize TRiP-t chips on FEB's */
-		int InitializeTrips(feb *tmpFEB, croc *tmpCroc, channels *tmpChan);
+		/*! Write to the CROC Fast Command register. */
+		// Passing an array like this is a bit old fashioned, but there it is...
+		int WriteCROCFastCommand(int id, unsigned char command[]);
 
 		/*! A templated function for sending messages from a generic "device" */
 		template <class X> int SendMessage(X *device, croc *crocTrial, channels *channelTrial,bool singleton);
