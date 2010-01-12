@@ -377,6 +377,9 @@ int main(int argc, char *argv[])
 #endif
 	// Get the controller object created during InitializeDaq.
 	controller *currentController = daq->GetController(); 
+	// Vector of the CROC's we initialized.
+	vector<croc*> *croc_vector = currentController->GetCrocVector();
+	vector<croc*>::iterator croc_iter = croc_vector->begin();
 
 	/*********************************************************************************/
 	/*  At this point we are now set up and are ready to start event acquistion.     */
@@ -430,7 +433,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"datastream='alldata',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-02-03'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-03-00'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
@@ -589,6 +592,20 @@ int main(int argc, char *argv[])
 				triggerType = NuMI;
 				break;
 			case Cosmics:
+				// We need to reset the external trigger latch in Cosmic mode...
+				for (croc_iter = croc_vector->begin(); croc_iter != croc_vector->end(); croc_iter++) {
+					int crocID = (*croc_iter)->GetCrocID();
+					try {
+						unsigned char command[] = {0x85};
+						int error = daq->WriteCROCFastCommand(crocID, command);
+						if (error) throw error;
+					} catch (int e) {
+						std::cout << "Error in minervadaq::main() for CROC " <<
+							((*croc_iter)->GetCrocAddress()>>16) << std::endl;
+						std::cout << "Cannot write to FastCommand register!" << std::endl;
+						exit(e);
+					}
+				}
 				triggerType = Cosmic;
 				break;
 			case PureLightInjection:
@@ -835,7 +852,7 @@ int main(int argc, char *argv[])
 	}
 	global_gate.close();
 	std::cout << " Last Event = " << global_gate_data[0] << std::endl;
-	lastEvent = global_gate_data[0];
+	lastEvent = global_gate_data[0] - 1; // Fencepost, etc.
 #endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
 
 	gettimeofday(&runend, NULL);
