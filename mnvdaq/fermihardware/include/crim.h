@@ -164,6 +164,8 @@ class crim {
 		/*! interrupt stuff */
 		void inline SetIRQLevel(CVIRQLevels a) {irqLevel = a;};  //sets the IRQ Level (CAEN)
 		void inline SetIRQLine(crimInterrupts a) {irqLine = a;}; //sets the IRQ Level (CAEN)
+		CVIRQLevels inline GetIRQLevel() {return irqLevel;}; //returns the irq level (CAEN)
+		unsigned char inline GetIRQLine() { return (unsigned char)irqLine; };
 
 		void inline SetInterruptMask() {
 			interruptValue = ((unsigned short)irqLine & InterruptMaskRegisterMask);
@@ -175,7 +177,7 @@ class crim {
 
 		void inline SetInterruptConfigValue(unsigned short a) {
 			interruptConfigValue = a;
-		}; //must match the IRQ vlaue
+		}; //interrupt level - must match the IRQ value!
 		
 		void inline SetInterruptGlobalEnable(bool a) {
 			interruptConfigValue |= ((a << 7) & InterruptConfigGlobalEnableMask);
@@ -204,8 +206,6 @@ class crim {
 		unsigned int inline GetInterruptsConfigAddress() {
 			return interruptConfig;
 		}; //returns the interrupt config address
-
-		CVIRQLevels inline GetIRQLevel() {return irqLevel;}; //returns the irq level (CAEN)
 
 		unsigned int inline GetInterruptStatusAddress() {
 			return interruptStatusRegister;

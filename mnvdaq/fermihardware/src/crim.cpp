@@ -169,6 +169,7 @@ void crim::SetReTransmitEnable(bool a)
 }
 
 
+// TODO - This function is now basically obsolete?... Should probably remove it.
 void crim::SetupOneShot() 
 {
 /*! \fn
