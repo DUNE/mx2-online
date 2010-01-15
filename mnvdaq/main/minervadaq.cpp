@@ -433,7 +433,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"datastream='alldata',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-03-01'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-03-02'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
@@ -475,7 +475,7 @@ int main(int argc, char *argv[])
 			exit(-4);
 	}
 	fprintf(sam_file,"startTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n",
-		(unsigned long long)(runstart.tv_sec)*1000000);
+		(unsigned long long)(runstart.tv_sec));
 #endif
 
 	/*********************************************************************************/
@@ -851,8 +851,8 @@ int main(int argc, char *argv[])
 		exit(-2000);
 	}
 	global_gate.close();
-	std::cout << " Last Event = " << global_gate_data[0] << std::endl;
 	lastEvent = global_gate_data[0] - 1; // Fencepost, etc.
+	std::cout << " Last Event = " << lastEvent << std::endl;
 #endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
 
 	gettimeofday(&runend, NULL);
@@ -886,7 +886,7 @@ int main(int argc, char *argv[])
 	// Close the SAM File.
 #if SINGLE_PC||MASTER
 	fprintf(sam_file,"endTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n",
-		(unsigned long long)(runend.tv_sec)*1000000);
+		(unsigned long long)(runend.tv_sec));
 	fprintf(sam_file,"eventCount=%d,\n",(gate-1));
 	fprintf(sam_file,"firstEvent=%llu,\n",firstEvent);
 	fprintf(sam_file,"lastEvent=%llu,\n",lastEvent);
