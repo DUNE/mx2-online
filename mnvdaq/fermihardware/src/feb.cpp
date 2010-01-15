@@ -88,7 +88,10 @@ feb::feb(int mh, bool init, febAddresses a,int reg):NRegisters(reg)
 	hits_n_timing = new disc(a); 
 	
 	// Instantiate objects for the ADC's
-	// We read the RAMFunctions in "reverse" order: 5,4,3,2,1,0.
+	// We read the RAMFunctions in "reverse" order:
+	//  0 for 1 Hit (any firmware) - this *assumes* a PIPEDEL of 1!  This is a user responsibility! 
+	//  5,4,3,2,1,0 for 6 Hit firmware (PIPEDEL 11).
+	//  7,6,5,4,3,2,1,0 for 8 Hit firmware (PIPEDEL 15).
 	if (maxHits == 1) {
 		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0 ); 
 	} else if (maxHits == 6) {
@@ -98,8 +101,17 @@ feb::feb(int mh, bool init, febAddresses a,int reg):NRegisters(reg)
 		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit2 );
 		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit1 );
 		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit0 );
+	} else if (maxHits == 8) {
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit7 );
+		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit6 );
+		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit5 );
+		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit4 );
+		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit3 );
+		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit2 );
+		adcHits[6] = new adc( a, (RAMFunctionsHit)ReadHit1 );
+		adcHits[7] = new adc( a, (RAMFunctionsHit)ReadHit0 );
 	} else {
-		std::cout << "Invalid number of maximum hits!  Only 1 or 6 are accepted right now!" << std::endl;
+		std::cout << "Invalid number of maximum hits!  Only 1, 6, or 8 are accepted right now!" << std::endl;
 		exit(-1);		
 	}
 #if DEBUG_FEB  
