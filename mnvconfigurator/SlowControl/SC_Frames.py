@@ -140,7 +140,7 @@ class RedirectText:
 class VME(wx.Panel):
     def __init__(self, parent):
         """Creates the VME tab in the Notebook."""
-        p=wx.Panel.__init__(self, parent, -1)
+        p=wx.Panel.__init__(self, parent)
         wx.StaticText(self, -1, 'W/R (hex)', size=(60, 20), pos=(13, 24), style=wx.ALIGN_CENTER)
         addr=wx.StaticText(self, -1, 'Address', size=(60, 20), pos=(75, 24), style=wx.ALIGN_CENTER)
         data=wx.StaticText(self, -1, 'Data', size=(60, 20), pos=(140, 24), style=wx.ALIGN_CENTER)
@@ -161,26 +161,114 @@ class CRIM(wx.Panel):
         """Creates the CRIM tab in the Notebook."""
         self.topPanel=wx.Panel.__init__(self, parent)
         self.btnShowAdvancedGUI=SC_Util.CreateButton(self, "Show Advanced GUI",
-            (5,5), (120, 20), 'AdvancedGUI', 'coral')
-        TopLabelsData=(('CRIM', (0, 0),(40, 16), 'lbl', 'coral'),
-            ('', (40, 0), (40, 16), 'crimID', 'white'))
+            (5,5), (120, 20), 'AdvancedGUI', SC_Util.colorButton)
+        TopLabelsData=(('CRIM', (0, 0),(40, 16), 'lbl', SC_Util.colorLabel),
+            ('', (40, 0), (40, 16), 'crimID', SC_Util.colorText))
         self.TopLabels = SC_Util.CreateLabels(self, TopLabelsData, offset=(130, 7))
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
-        #TO DO...
-        self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE|wx.VSCROLL)
-        szBottom = wx.BoxSizer(wx.HORIZONTAL)
-        szBottom.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
+        #Creates the CRIM 'modules' Notebook
+        self.modules = wx.Notebook(self)
+        self.TimingModule = CRIMTimingModule(self.modules)
+        self.modules.AddPage(self.TimingModule, "TimingModule")
+        self.DAQModule = CRIMDAQModule(self.modules)
+        self.modules.AddPage(self.DAQModule, "DAQModule")
+        self.InterrupterModule = CRIMInterrupterModule(self.modules)
+        self.modules.AddPage(self.InterrupterModule, "InterrupterModule")
+        self.FELoopQuerry = CRIMFELoopQuerry(self.modules)
+        self.modules.AddPage(self.FELoopQuerry, "FELoopQuerry")
         
-        sizerALL=wx.BoxSizer(wx.VERTICAL)
-        sizerALL.Add(szTop,0,0,0)
-        sizerALL.Add(szBottom, 1, wx.EXPAND|wx.ALL, 0)
-        self.SetSizer(sizerALL)
+        szBottom = wx.BoxSizer(wx.HORIZONTAL)
+        szBottom.Add(self.modules, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
+
+        self.sizerALL=wx.BoxSizer(wx.VERTICAL)
+        self.sizerALL.Add(szTop,0,0,0)
+        self.sizerALL.Add(szBottom, 1, wx.EXPAND|wx.ALL, 0)  
+        self.SetSizer(self.sizerALL)
         self.Fit()
         
+        self.Bind(wx.EVT_BUTTON, self.OnbtnShowAdvancedGUI, self.btnShowAdvancedGUI)
+        self.showAdvanced=False
+        self.OnbtnShowAdvancedGUI(None)
+
     def SetAddress(self, crimNumber):
         '''Sets crimNumber variables and GUI labels'''
         self.crimNumber=int(crimNumber)
         self.FindWindowByName('crimID').Label=crimNumber
+    def OnbtnShowAdvancedGUI(self, event):
+        self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
+            self.TimingModule.FlashButtons.controls, self.DAQModule.FlashButtons.controls,
+            self.InterrupterModule.FlashButtons.controls, self.FELoopQuerry.FlashButtons.controls)
+        self.TimingModule.Fit()
+        self.DAQModule.Fit()
+        self.InterrupterModule.Fit()
+        self.FELoopQuerry.Fit()
+
+
+class CRIMTimingModule(wx.Panel):
+    def __init__(self, parent):
+        """Creates the TimingModule tab in the Notebook."""
+        wx.Panel.__init__(self, parent)
+        self.FlashButtons=SC_Util.FlashButtons(self,
+            'Read FLASH to File', 'Write File to FLASH')
+        sizerALL=wx.BoxSizer(wx.VERTICAL)
+        sizerALL.Add(self.FlashButtons.FlashBoxSizer, proportion=0, flag=wx.ALL, border=5)  
+        #self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE|wx.VSCROLL)
+        #sizerALL.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
+        self.SetSizer(sizerALL)
+        self.Fit()
+
+class CRIMDAQModule(wx.Panel):
+    def __init__(self, parent):
+        """Creates the DAQModule tab in the Notebook."""
+        wx.Panel.__init__(self, parent)
+        self.FlashButtons=SC_Util.FlashButtons(self,
+            'Read FLASH to File', 'Write File to FLASH')
+        sizerALL=wx.BoxSizer(wx.VERTICAL)
+        sizerALL.Add(self.FlashButtons.FlashBoxSizer, proportion=0, flag=wx.ALL, border=5)  
+        #self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE|wx.VSCROLL)
+        #sizerALL.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
+        self.SetSizer(sizerALL)
+        self.Fit()
+
+class CRIMInterrupterModule(wx.Panel):
+    def __init__(self, parent):
+        """Creates the InterrupterModule tab in the Notebook."""
+        wx.Panel.__init__(self, parent)
+        self.FlashButtons=SC_Util.FlashButtons(self,
+            'Read FLASH to File', 'Write File to FLASH')
+        sizerALL=wx.BoxSizer(wx.VERTICAL)
+        sizerALL.Add(self.FlashButtons.FlashBoxSizer, proportion=0, flag=wx.ALL, border=5)  
+        #self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE|wx.VSCROLL)
+        #sizerALL.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
+        self.SetSizer(sizerALL)
+        self.Fit()
+
+class CRIMFELoopQuerry(wx.Panel):
+    def __init__(self, parent):
+        """Creates the FELoopQuerry tab in the Notebook."""
+        wx.Panel.__init__(self, parent)
+        self.FlashButtons=SC_Util.FlashButtons(self,
+            'Read FLASH to File', 'Write File to FLASH')
+        sizerALL=wx.BoxSizer(wx.VERTICAL)
+        sizerALL.Add(self.FlashButtons.FlashBoxSizer, proportion=0, flag=wx.ALL, border=5)  
+        #self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE|wx.VSCROLL)
+        #sizerALL.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
+        self.SetSizer(sizerALL)
+        self.Fit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         
 class CROC(wx.Panel):
@@ -188,13 +276,14 @@ class CROC(wx.Panel):
         """Creates the CROC tab in the Notebook."""
         wx.Panel.__init__(self, parent)
         self.btnShowAdvancedGUI=SC_Util.CreateButton(self, "Show Advanced GUI",
-            (5,5), (120, 20), 'AdvancedGUI', 'coral')
-        TopLabelsData=(('CROC', (0, 0),(40, 16), 'lbl', 'coral'),
-            ('', (40, 0), (40, 16), 'crocID', 'white'))
+            (5,5), (120, 20), 'AdvancedGUI', SC_Util.colorButton)
+        TopLabelsData=(('CROC', (0, 0),(40, 16), 'lbl', SC_Util.colorLabel),
+            ('', (40, 0), (40, 16), 'crocID', SC_Util.colorText))
         self.TopLabels = SC_Util.CreateLabels(self, TopLabelsData, offset=(130, 7))
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
         self.FlashButtons=SC_Util.FlashButtons(self,
             'Write File to FLASH Memory', 'Reboot FEs (reload FLASH content)')
+        self.TimingSetup=SC_Util.CROCTimingSetup(self, caption=' Timing Setup')
         self.FastCmd=SC_Util.CROCFastCmd(self, caption=' Fast Commands')
         self.LoopDelays=SC_Util.LoopDelays(self, caption=' Loop Delays')
         self.ResetAndTestPulse=SC_Util.CROCResetAndTestPulse(
@@ -205,6 +294,7 @@ class CROC(wx.Panel):
         sizerALL.Add(szTop, 0, wx.ALL, 5)
         sizerALL.Add(self.FlashButtons.FlashBoxSizer, 0, wx.ALL, 5)  
         szV1=wx.BoxSizer(wx.VERTICAL)
+        szV1.Add(self.TimingSetup.BoxSizer, 0, wx.ALL, 2)
         szV1.Add(self.FastCmd.BoxSizer, 0, wx.ALL, 2)
         szV1.Add(self.LoopDelays.BoxSizer, 1, wx.ALL|wx.EXPAND, 2)
         szV2=wx.BoxSizer(wx.VERTICAL)
@@ -228,7 +318,8 @@ class CROC(wx.Panel):
         self.FindWindowByName('crocID').Label=crocNumber
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
-            self.FlashButtons.controls, self.FastCmd.controls, self.LoopDelays.controls,
+            self.FlashButtons.controls, self.TimingSetup.controls,
+            self.FastCmd.controls, self.LoopDelays.controls,
             self.ResetAndTestPulse.controls, self.FEBGateDelays.controls)
         self.Fit()
 
@@ -238,11 +329,11 @@ class CH(wx.Panel):
         """Creates the CH tab in the Notebook."""
         wx.Panel.__init__(self, parent)
         self.btnShowAdvancedGUI=SC_Util.CreateButton(self, "Show Advanced GUI",
-            (5,5), (120, 20), 'AdvancedGUI', 'coral')
-        TopLabelsData=(('CH', (0, 0), (40, 16), 'lbl', 'coral'),
-            ('', (40, 0), (40, 16), 'chID', 'white'),
-            ('CROC', (80, 0), (40, 16), 'lbl', 'coral'),
-            ('', (120, 0), (40, 16), 'crocID', 'white'))
+            (5,5), (120, 20), 'AdvancedGUI', SC_Util.colorButton)
+        TopLabelsData=(('CH', (0, 0), (40, 16), 'lbl', SC_Util.colorLabel),
+            ('', (40, 0), (40, 16), 'chID', SC_Util.colorText),
+            ('CROC', (80, 0), (40, 16), 'lbl', SC_Util.colorLabel),
+            ('', (120, 0), (40, 16), 'crocID', SC_Util.colorText))
         self.TopLabels=SC_Util.CreateLabels(self, TopLabelsData, offset=(130, 7))
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
         self.FlashButtons=SC_Util.FlashButtons(self,
@@ -287,13 +378,13 @@ class FE(wx.Panel):
         """Creates the FE tab in the Notebook."""
         wx.Panel.__init__(self, parent)
         self.btnShowAdvancedGUI=SC_Util.CreateButton(self, "Show Advanced GUI",
-            (5,5), (120, 20), 'AdvancedGUI', 'coral')
-        TopLabelsData=(('FEB', (0, 0),(40, 16), 'lbl', 'coral'),
-            ('', (40, 0), (40, 16), 'febID', 'white'),
-            ('CH', (80, 0), (40, 16), 'lbl', 'coral'),
-            ('', (120, 0), (40, 16), 'chID', 'white'),
-            ('CROC', (160, 0), (40, 16), 'lbl', 'coral'),
-            ('', (200, 0), (40, 16), 'crocID', 'white'))
+            (5,5), (120, 20), 'AdvancedGUI', SC_Util.colorButton)
+        TopLabelsData=(('FEB', (0, 0),(40, 16), 'lbl', SC_Util.colorLabel),
+            ('', (40, 0), (40, 16), 'febID', SC_Util.colorText),
+            ('CH', (80, 0), (40, 16), 'lbl', SC_Util.colorLabel),
+            ('', (120, 0), (40, 16), 'chID', SC_Util.colorText),
+            ('CROC', (160, 0), (40, 16), 'lbl', SC_Util.colorLabel),
+            ('', (200, 0), (40, 16), 'crocID', SC_Util.colorText))
         self.TopLabels = SC_Util.CreateLabels(self, TopLabelsData, offset=(130, 7))
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
         #Creates the FE 'devices' Notebook

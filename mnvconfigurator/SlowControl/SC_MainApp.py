@@ -11,6 +11,11 @@ import SC_Frames
 import SC_Util
 import random
 
+from ctypes import *
+#vme = windll.CAENVMElib             #use this on windows
+#cdll.LoadLibrary("libCAENVME.so")   #use this on linux
+#vme = CDLL("libCAENVME.so")         #use this on linux
+
 class SCApp(wx.App):
     """SlowControl application. Subclass of wx.App"""
     def __init__(self):
@@ -43,6 +48,8 @@ class SCApp(wx.App):
         # CROC pannel events ##########################################################
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnFlashFirst, self.frame.croc.FlashButtons.btnFlashFirst)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnFlashSecond, self.frame.croc.FlashButtons.btnFlashSecond)
+        self.Bind(wx.EVT_BUTTON, self.OnCROCbtnWriteTimingSetup, self.frame.croc.TimingSetup.btnWriteTimingSetup)
+        self.Bind(wx.EVT_BUTTON, self.OnCROCbtnReadTimingSetup, self.frame.croc.TimingSetup.btnReadTimingSetup)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnSendFastCmd, self.frame.croc.FastCmd.btnSendFastCmd)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnClearLoopDelays, self.frame.croc.LoopDelays.btnClearLoopDelays)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnReadLoopDelays, self.frame.croc.LoopDelays.btnReadLoopDelays)
@@ -157,6 +164,22 @@ class SCApp(wx.App):
     # CROC pannel events ##########################################################
     def OnCROCbtnFlashFirst(self, event): wx.MessageBox('not yet implemented')
     def OnCROCbtnFlashSecond(self, event): wx.MessageBox('not yet implemented')
+    def OnCROCbtnReadTimingSetup(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
+            data=theCROC.ReadTimingSetup()
+            self.frame.croc.TimingSetup.choiceCLKSource.SetSelection((data & 0x8000)>>15)
+            self.frame.croc.TimingSetup.choiceTPDelayEnable.SetSelection((data & 0x1000)>>12)
+            self.frame.croc.TimingSetup.txtTPDelayValue.SetValue(str(data & 0x3FF))
+        except: ReportException('OnCROCbtnReadTimingSetup', self.reportErrorChoice)
+    def OnCROCbtnWriteTimingSetup(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
+            data = self.frame.croc.TimingSetup.choiceCLKSource.GetSelection()<<15 | \
+                self.frame.croc.TimingSetup.choiceTPDelayEnable.GetSelection()<<12 | \
+                int(self.frame.croc.TimingSetup.txtTPDelayValue.GetValue()) & 0x3FF 
+            theCROC.WriteTimingSetup(data)
+        except: ReportException('OnCROCbtnWriteTimingSetup', self.reportErrorChoice)
     def OnCROCbtnSendFastCmd(self, event):
         try:
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
@@ -344,6 +367,15 @@ class CROC(VMEDevice):
     def NodeList(self): return [self.Description(), 
         [self.channels[0].NodeList(), self.channels[1].NodeList(),
         self.channels[2].NodeList(), self.channels[3].NodeList()]]
+    def ReadTimingSetup(self):
+        print hex(self.RegWRTimingSetup)
+        return int(self.controller.ReadCycle(self.RegWRTimingSetup))
+    def WriteTimingSetup(self, data):
+        print hex(self.RegWRTimingSetup), hex(data)
+        self.controller.WriteCycle(self.RegWRTimingSetup, data)
+    def SendFastCommand(self, data):
+        print hex(self.RegWFastCommand), hex(data)
+        self.controller.WriteCycle(self.RegWFastCommand, data)
     def WriteRSTTP(self, data):
         print hex(self.RegWRResetAndTestMask), hex(data)
         self.controller.WriteCycle(self.RegWRResetAndTestMask, data)
@@ -356,9 +388,7 @@ class CROC(VMEDevice):
     def SendTPOnly(self):
         print hex(self.RegWTestPulse), hex(0x0404)
         self.controller.WriteCycle(self.RegWTestPulse, 0x0404)
-    def SendFastCommand(self, data):
-        print hex(self.RegWFastCommand), hex(data)
-        self.controller.WriteCycle(self.RegWFastCommand, data)
+    
 
     
     
