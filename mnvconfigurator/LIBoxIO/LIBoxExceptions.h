@@ -45,6 +45,11 @@ namespace Minerva
 			
 			std::string file;
 	};
+	
+	class LIBoxCommandException : public std::exception
+	{
+		
+	}
 
 };
 

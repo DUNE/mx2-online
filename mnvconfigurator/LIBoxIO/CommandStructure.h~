@@ -1,0 +1,16 @@
+#ifndef COMMANDSTRUCTURE_H
+#define COMMANDSTRUCTURE_H 1
+#include <string>
+
+namespace Minerva
+{
+	class CommandStructure
+	{
+		public:
+			virtual bool Validate() = 0;
+			virtual std::string ToString() = 0;
+			virtual static std::string Description() = 0;
+	}
+};
+
+#endif
