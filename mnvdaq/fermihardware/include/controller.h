@@ -15,6 +15,7 @@
 /* custom headers here */
 #include "crim.h"
 #include "croc.h"
+#include "log4cppHeaders.h"
 
 /*********************************************************************************
 * Class for creating CAEN VME V2718 Controller objects for use with the 
@@ -24,6 +25,8 @@
 * Gabriel Perdue, The University of Rochester
 *
 **********************************************************************************/
+
+log4cpp::Category& root = log4cpp::Category::getRoot();
 
 /*! \class controller
  *
@@ -45,9 +48,11 @@ class controller {
 			clearOutput, inputMux, inputMuxClear, outPutMux;
 		char firmware[1];
 		int transferBytes, crocVectorLength, crimVectorLength, controller_id;
-		// std::ofstream &log_file; /*!<a log file for debugging output */
 
 	public: 
+		// log4cpp appender for printing log statements.
+		log4cpp::Appender* appender;
+
 		unsigned short *shortBuffer; /*!<a short buffer for registers*/
 		int handle; /*!<a device handle returned by the initialization function*/
 
@@ -64,10 +69,15 @@ class controller {
 			handle          = -1;
 			firmware[0]     = 0;
 			controller_id   = id; //an internal ID used for sorting data 
+			appender = new log4cpp::FileAppender("default", "/work/data/logs/testme.txt");
+			appender->setLayout(new log4cpp::BasicLayout());
+			root.addAppender(appender);
+			root.setPriority(log4cpp::Priority::INFO);
 		};
 
 		/*! the specialty destructor */
 		~controller() {
+			//delete appender;
 			for (std::vector<crim*>::iterator p=interfaceModule.begin();
 				p!=interfaceModule.end();p++) delete (*p);
 			interfaceModule.clear();
@@ -112,5 +122,26 @@ class controller {
 		void SetCrimVectorLength() {crimVectorLength = interfaceModule.size();};
 		
 		void ReportError(int error);
+
+		// log4cpp Priority Chain.  Messages of higher numerical priority will not pass.
+		/*
+		Priorities
+		typedef enum {
+			EMERG  = 0, 
+			FATAL  = 0,
+			ALERT  = 100,
+			CRIT   = 200,
+			ERROR  = 300, 
+			WARN   = 400,
+			NOTICE = 500,
+			INFO   = 600,
+			DEBUG  = 700,
+			NOTSET = 800               
+		} PriorityLevel;
+		*/
+		void SetRootPriority(log4cpp::Priority::Value priority) {             
+			root.setPriority(priority);
+		};
+
 };
 #endif
