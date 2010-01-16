@@ -10,6 +10,10 @@ LDLIBS += -L/usr/lib64 -ldl
 INCLUDE += -I$(CAEN_DIR)/include
 LDLIBS += -L$(CAEN_DIR)/lib/x86_64 -lCAENVME
 
+# log4cpp Classes and Libraries
+INCLUDE += -I/usr/local/include
+LDLIBS += -L/usr/local/lib -llog4cpp -L/usr/lib64 -lpthread 
+
 #BOOST libraries for the threading
 ifeq ($(LOCALE),FNAL)
 #FNAL

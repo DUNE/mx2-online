@@ -24,8 +24,8 @@ then
 	# Add /usr/local/lib for log4cpp support.
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
 else
-        echo Unsupported LOCALE!
-        exit 1
+	echo Unsupported LOCALE!
+	exit 1
 fi
 
 echo Your DAQROOT is $DAQROOT
