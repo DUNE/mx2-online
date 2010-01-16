@@ -1,6 +1,5 @@
 #!/bin/sh
 
-source ./log4cppSetup.sh
 gmake clean
 gmake
 
