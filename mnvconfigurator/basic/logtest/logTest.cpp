@@ -213,6 +213,8 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 	int error;
 	bool deserializer = false;
 	bool synch        = false;
+	//clearAndReset.setPriority(log4cpp::Priority::INFO);
+	clearAndReset.setPriority(log4cpp::Priority::ERROR);
 	
 	for (unsigned int i = 0; i<4; i++) { // loop over *chains*
 		unsigned char myData[] = {0x0,0x0};
@@ -225,7 +227,7 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 			clearAndReset.critStream() << "DPMReset Flag = " << error;
 			return e;
 		}
-		clearAndReset.debugStream() << "DPMReset Flag = " << error;
+		clearAndReset.infoStream() << "DPMReset Flag = " << error;
 		// Clear Status.
 		try {
 			error = myAcquire->WriteCycle(myController->GetHandle(),2,crocChanResetValue,myAddress,AM,DW);
@@ -234,7 +236,7 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 			clearAndReset.critStream() << "Clear Status Flag = " << error;		
 			return e;
 		}
-		clearAndReset.debugStream() << "Clear Status Flag = " << error;		
+		clearAndReset.infoStream() << "Clear Status Flag = " << error;		
 		// Read Status
 		myAddress = myCroc->GetAddress() + (unsigned int)crocStatus + i*0x4000;
 		try {
@@ -244,14 +246,14 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 			clearAndReset.critStream() << "Read Status Flag = " << error;				
 			return e;
 		}
-		clearAndReset.debugStream() << "Read Status Flag = " << error;				
-		clearAndReset.debug("%s%X","Address = 0x",myAddress);
-		clearAndReset.debug("%s%04X","  Status = 0x",(myData[0] + myData[1]<<8));		
+		clearAndReset.infoStream() << "Read Status Flag = " << error;				
+		clearAndReset.info("%s%X","Address = 0x",myAddress);
+		clearAndReset.info("%s%04X","  Status = 0x",(myData[0] + myData[1]<<8));		
 		// Let's check to see if the deserializer & sync are present.
 		deserializer = myData[1] & 0x04;
 		synch        = myData[1] & 0x02;
-		clearAndReset.debugStream() <<"  deserializer = " << deserializer;
-		clearAndReset.debugStream() <<"  synch        = " << synch;
+		clearAndReset.infoStream() <<"  deserializer = " << deserializer;
+		clearAndReset.infoStream() <<"  synch        = " << synch;
 		if ( (deserializer == false) || (synch == false) ) {
 			clearAndReset.critStream() << "Error on CROC Channel " << i+1;
 			clearAndReset.critStream() << "  deserializer = " << deserializer;  
