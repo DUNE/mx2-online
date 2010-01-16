@@ -27,9 +27,9 @@
 #include "adctdc.h"
 
 // Implement this interface for your own strategies for printing log statements.
-log4cpp::Appender* appender;
-// Return the root of the Category hierarchy.
-log4cpp::Category& root = log4cpp::Category::getRoot();
+log4cpp::Appender* myAppender;
+// Return the root of the Category hierarchy - now defined in controller.h.
+//obsolete//log4cpp::Category& root = log4cpp::Category::getRoot();
 // Further category hierarchy.
 log4cpp::Category& clearAndReset = log4cpp::Category::getInstance(std::string("clearAndReset"));
 
@@ -110,16 +110,16 @@ int main(int argc, char** argv)
 {
 	// FileAppender appends to named files.  Supply full path (otherwise sits in program dir).
 	if (argc < 2) {
-		appender = new log4cpp::FileAppender("default", "testlog.txt");
+		myAppender = new log4cpp::FileAppender("default", "testlog.txt");
 	} else {
-		appender = new log4cpp::FileAppender("default", argv[1]);
+		myAppender = new log4cpp::FileAppender("default", argv[1]);
 	}
 
 	// BasicLayout is a simple fixed format Layout implementation. 
-	appender->setLayout(new log4cpp::BasicLayout());
+	myAppender->setLayout(new log4cpp::BasicLayout());
 
 	// Add appender & set priorities.
-	root.addAppender(appender);
+	root.addAppender(myAppender);
 	SetPriorities();
 	
 	// Control variables for electronics maniptulation.
@@ -197,6 +197,8 @@ int main(int argc, char** argv)
 	
 	
 	// ~~~ Clean Up
+	log4cpp::Category::shutdown();
+	//delete myAppender;
 	delete myAcquire;
 	delete myController; //also deletes associated crocs && crims;
 	
