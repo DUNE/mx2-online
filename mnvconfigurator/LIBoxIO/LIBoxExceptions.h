@@ -46,9 +46,12 @@ namespace Minerva
 			std::string file;
 	};
 	
-	class LIBoxCommandException : public std::exception
+	class LIBoxCommandBlockException : public std::exception
 	{
-		
+		virtual const char * what() const throw()
+		{
+			return "Error: this command block is not allowed here.";
+		}
 	}
 
 };
