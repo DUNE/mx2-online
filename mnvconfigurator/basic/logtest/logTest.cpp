@@ -146,7 +146,7 @@ int main(int argc, char** argv)
 	//
 	
 	// Controller & Acquire class init, contact the controller
-	controller *myController = new controller(0x00, controllerID);	
+	controller *myController = new controller(0x00, controllerID, myAppender);	
 	acquire *myAcquire = new acquire(); 				
 	logTest.infoStream() << "Controller & Acquire Instantiated..." << log4cpp::eol;
 	root.alertStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << log4cpp::eol;
