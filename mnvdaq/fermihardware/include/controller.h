@@ -26,7 +26,9 @@
 *
 **********************************************************************************/
 
-log4cpp::Category& root = log4cpp::Category::getRoot();
+// Further category hierarchy.
+log4cpp::Category& controllerLog = log4cpp::Category::getInstance(std::string("controller"));
+
 
 /*! \class controller
  *
@@ -49,9 +51,10 @@ class controller {
 		char firmware[1];
 		int transferBytes, crocVectorLength, crimVectorLength, controller_id;
 
-	public: 
 		// log4cpp appender for printing log statements.
 		log4cpp::Appender* appender;
+
+	public: 
 
 		unsigned short *shortBuffer; /*!<a short buffer for registers*/
 		int handle; /*!<a device handle returned by the initialization function*/
@@ -71,13 +74,14 @@ class controller {
 			controller_id   = id; //an internal ID used for sorting data 
 			appender = new log4cpp::FileAppender("default", "/work/data/logs/testme.txt");
 			appender->setLayout(new log4cpp::BasicLayout());
-			root.addAppender(appender);
-			root.setPriority(log4cpp::Priority::INFO);
+			log4cpp::Category::getRoot().addAppender(appender);
+			log4cpp::Category::getRoot().setPriority(log4cpp::Priority::DEBUG);
+			controllerLog.setPriority(log4cpp::Priority::DEBUG);
 		};
 
 		/*! the specialty destructor */
 		~controller() {
-			//delete appender;
+			//delete appender; //TODO - check memory management here...
 			for (std::vector<crim*>::iterator p=interfaceModule.begin();
 				p!=interfaceModule.end();p++) delete (*p);
 			interfaceModule.clear();
@@ -139,9 +143,12 @@ class controller {
 			NOTSET = 800               
 		} PriorityLevel;
 		*/
+		// Probably shouldn't call this function from here...
+		/*
 		void SetRootPriority(log4cpp::Priority::Value priority) {             
 			root.setPriority(priority);
 		};
+		*/
 
 };
 #endif
