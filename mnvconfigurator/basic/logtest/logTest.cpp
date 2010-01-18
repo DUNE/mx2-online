@@ -7,30 +7,21 @@
 #include <iomanip>
 #include <cstdlib>
 
-// log4cpp Headers
-#include "log4cpp/Portability.hh"
-#include "log4cpp/Category.hh"
-#include "log4cpp/Appender.hh"
-#include "log4cpp/FileAppender.hh"
-#include "log4cpp/OstreamAppender.hh"
-#include "log4cpp/SyslogAppender.hh"
-#include "log4cpp/Layout.hh"
-#include "log4cpp/BasicLayout.hh"
-#include "log4cpp/Priority.hh"
-#include "log4cpp/NDC.hh"
-
+// log4cpp Headers - included in controller.h
 // MINERvA DAQ Headers
 #include "acquire.h"
 #include "MinervaDAQtypes.h"
 #include "controller.h"
 #include "feb.h"
 #include "adctdc.h"
+#include "log4cppHeaders.h"
 
 // Implement this interface for your own strategies for printing log statements.
 log4cpp::Appender* myAppender;
-// Return the root of the Category hierarchy - now defined in controller.h.
-//obsolete//log4cpp::Category& root = log4cpp::Category::getRoot();
+// Return the root of the Category hierarchy?...
+log4cpp::Category& root = log4cpp::Category::getRoot();
 // Further category hierarchy.
+log4cpp::Category& logTest       = log4cpp::Category::getInstance(std::string("logTest"));
 log4cpp::Category& clearAndReset = log4cpp::Category::getInstance(std::string("clearAndReset"));
 
 #define DEBUGLEVEL 10
@@ -50,7 +41,7 @@ const unsigned int crocChannel     = 1;
 const int crocID                   = 1;
 const unsigned int crimCardAddress = 224 << 16;
 const int crimID                   = 1;
-const int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
+const int nFEBs                    = 7; // USE SEQUENTIAL ADDRESSING!!!
 
 // TriPT Programming Register Values.
 const int tripRegIBP        =  60;
@@ -96,8 +87,9 @@ typedef enum {
 } PriorityLevel;
 */
 void SetPriorities() {
-	root.setPriority(log4cpp::Priority::INFO); 
+	root.setPriority(log4cpp::Priority::ERROR); 
 	clearAndReset.setPriority(log4cpp::Priority::DEBUG);
+	logTest.setPriority(log4cpp::Priority::DEBUG);
 };
 
 // Reset DPM pointer && clear status reg. for all four channels on the CROC.
@@ -120,7 +112,29 @@ int main(int argc, char** argv)
 
 	// Add appender & set priorities.
 	root.addAppender(myAppender);
+	root.infoStream() << "Starting logTest." << log4cpp::eol;
+	root.emergStream() << " This is a EMERG  level statement." << log4cpp::eol;
+	root.fatalStream() << " This is a FATAL  level statement." << log4cpp::eol;
+	root.alertStream() << " This is a ALERT  level statement." << log4cpp::eol;
+	root.critStream() << " This is a CRIT   level statement." << log4cpp::eol;
+	root.errorStream() << " This is a ERROR  level statement." << log4cpp::eol;
+	root.warnStream() << " This is a WARN   level statement." << log4cpp::eol;
+	root.noticeStream() << " This is a NOTICE level statement." << log4cpp::eol;
+	root.infoStream() << " This is a INFO   level statement." << log4cpp::eol;
+	root.debugStream() << " This is a DEBUG  level statement." << log4cpp::eol;
 	SetPriorities();
+	root.alertStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << log4cpp::eol;
+	root.alertStream() << "Set new priorities for logTest!" << log4cpp::eol;
+	root.emergStream() << " This is a EMERG  level statement." << log4cpp::eol;
+	root.fatalStream() << " This is a FATAL  level statement." << log4cpp::eol;
+	root.alertStream() << " This is a ALERT  level statement." << log4cpp::eol;
+	root.critStream() << " This is a CRIT   level statement." << log4cpp::eol;
+	root.errorStream() << " This is a ERROR  level statement." << log4cpp::eol;
+	root.warnStream() << " This is a WARN   level statement." << log4cpp::eol;
+	root.noticeStream() << " This is a NOTICE level statement." << log4cpp::eol;
+	root.infoStream() << " This is a INFO   level statement." << log4cpp::eol;
+	root.debugStream() << " This is a DEBUG  level statement." << log4cpp::eol;
+	root.alertStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << log4cpp::eol;
 	
 	// Control variables for electronics maniptulation.
 	int error;		
@@ -134,12 +148,25 @@ int main(int argc, char** argv)
 	// Controller & Acquire class init, contact the controller
 	controller *myController = new controller(0x00, controllerID);	
 	acquire *myAcquire = new acquire(); 				
+	logTest.infoStream() << "Controller & Acquire Instantiated..." << log4cpp::eol;
+	root.alertStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << log4cpp::eol;
+	root.alertStream() << "Set new priorities for logTest?" << log4cpp::eol;
+	root.emergStream() << " This is a EMERG  level statement." << log4cpp::eol;
+	root.fatalStream() << " This is a FATAL  level statement." << log4cpp::eol;
+	root.alertStream() << " This is a ALERT  level statement." << log4cpp::eol;
+	root.critStream() << " This is a CRIT   level statement." << log4cpp::eol;
+	root.errorStream() << " This is a ERROR  level statement." << log4cpp::eol;
+	root.warnStream() << " This is a WARN   level statement." << log4cpp::eol;
+	root.noticeStream() << " This is a NOTICE level statement." << log4cpp::eol;
+	root.infoStream() << " This is a INFO   level statement." << log4cpp::eol;
+	root.debugStream() << " This is a DEBUG  level statement." << log4cpp::eol;
+	root.alertStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << log4cpp::eol;
 	if ((error=myController->ContactController())!=0) { 
 		std::cout << "Controller Contatc Error!\n";
-		root.critStream() << "Controller contact error: " << error << log4cpp::eol; 
+		logTest.critStream() << "Controller contact error: " << error << log4cpp::eol; 
 		exit(error); // Exit due to no controller!
 	}
-	root.infoStream() << "Controller & Acquire Initialized..." << log4cpp::eol;
+	logTest.infoStream() << "Controller & Acquire Initialized..." << log4cpp::eol;
 
 	// Create FEB List
 	std::list<febAddresses> febAddr;
@@ -148,7 +175,7 @@ int main(int argc, char** argv)
 	}
   
 	// Make CRIM
-	root.infoStream() << "Making CRIM with index == " << crimID << " && address == " 
+	logTest.infoStream() << "Making CRIM with index == " << crimID << " && address == " 
 		<< (crimCardAddress>>16) << log4cpp::eol;
 	myController->MakeCrim(crimCardAddress,crimID);
 	try {
@@ -156,7 +183,7 @@ int main(int argc, char** argv)
 		if (error) throw error;
 	} catch (int e)  {
 		std::cout << "CRIM Contact Error!\n";
-		root.critStream() << "Unable to read the status register for CRIM " << 
+		logTest.critStream() << "Unable to read the status register for CRIM " << 
 			((myController->GetCrim(crimID)->GetCrimAddress())>>16) << log4cpp::eol;
 		exit(-3);
 	} 	
@@ -164,7 +191,7 @@ int main(int argc, char** argv)
 	InitCRIM(myController, myAcquire, myCrim, runningMode);
 	
 	// Make CROC
-	root.infoStream() << "Making CROC with index == " << crocID << " && address == " 
+	logTest.infoStream() << "Making CROC with index == " << crocID << " && address == " 
 		<< (crocCardAddress>>16) << log4cpp::eol;
 	myController->MakeCroc(crocCardAddress,(crocID));
 	try {
@@ -172,7 +199,7 @@ int main(int argc, char** argv)
 		if (error) throw error;
 	} catch (int e)  {
 		std::cout << "CROC Contact Error!\n";
-		root.critStream() << "Unable to read the status register for CROC " << 
+		logTest.critStream() << "Unable to read the status register for CROC " << 
 			((myController->GetCroc(crocID)->GetCrocAddress())>>16) << log4cpp::eol;
 		exit(-3);
 	} 	
@@ -189,7 +216,7 @@ int main(int argc, char** argv)
 			if (error) throw error;
 		} catch (int e) {
 			std::cout << "Cannot Clear Status & Reset Pointer!\n"; 
-			root.critStream() << "Unable to clear the status register for CROC " << 
+			logTest.critStream() << "Unable to clear the status register for CROC " << 
 				((myController->GetCroc(crocID)->GetCrocAddress())>>16) << log4cpp::eol;
 			exit(error); 
 		}
@@ -215,8 +242,7 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 	int error;
 	bool deserializer = false;
 	bool synch        = false;
-	//clearAndReset.setPriority(log4cpp::Priority::INFO);
-	clearAndReset.setPriority(log4cpp::Priority::ERROR);
+	clearAndReset.setPriority(log4cpp::Priority::DEBUG);
 	
 	for (unsigned int i = 0; i<4; i++) { // loop over *chains*
 		unsigned char myData[] = {0x0,0x0};
@@ -271,5 +297,5 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 // Initialize the CRIM for Data Taking
 void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int runningMode)
 {
-	root.infoStream() << "InitCRIM is a dummy function." << log4cpp::eol;
+	logTest.infoStream() << "InitCRIM is a dummy function." << log4cpp::eol;
 }
