@@ -20,9 +20,6 @@ const int Frames::MinBroadcastLength=2; //I'm not sure this is ever used in our 
 const int Frames::ADCFrameLength=875; //bytes of course (dpm pointer should be this +2)
 const int Frames::NDiscrChPerTrip=16;
 
-// log4cpp category hierarchy.
-//log4cpp::Category& framesLog = log4cpp::Category::getInstance(std::string("frame"));
-
 Frames::Frames() 
 { 
 /*! \fn 
@@ -31,12 +28,6 @@ Frames::Frames()
 	// These don't seem to need a value...
 	FrameID[0] = 0x00; 
 	FrameID[1] = 0x00; //initialize the frame id to no value
-	// log4cpp info.
-	//appender = new log4cpp::FileAppender("default", "/work/data/logs/testme.txt");
-	//appender->setLayout(new log4cpp::BasicLayout());
-	//log4cpp::Category::getRoot().addAppender(appender);
-	//log4cpp::Category::getRoot().setPriority(log4cpp::Priority::DEBUG);
-	//framesLog.setPriority(log4cpp::Priority::DEBUG);
 }
 
 void Frames::MakeDeviceFrameTransmit(Devices dev,Broadcasts b, Directions d, 

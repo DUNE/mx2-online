@@ -13,7 +13,7 @@
 #include "MinervaDAQtypes.h"
 #include "TripTTypes.h"
 #include "FlashTypes.h"
-//#include "log4cppHeaders.h"
+#include "log4cppHeaders.h"
 
 /*********************************************************************************
 * Class for creating FPGA Frame header objects for use with the 
@@ -53,10 +53,9 @@ class Frames {
 		int IncomingMessageLength, OutgoingMessageLength;
 
 		// log4cpp appender for printing log statements.
-                //log4cpp::Appender* appender;
+                log4cpp::Appender* appender;
 	
 	public:
-
 		Frames(); 
 		virtual ~Frames() { };
 

@@ -13,9 +13,9 @@
 #include "acquire_data.h"
 #include <sys/time.h>
 
-const int acquire_data::dpmMax = 1024*6; //we have only 6 Kb of space in the DPM Memory per channel
-
+const int acquire_data::dpmMax       = 1024*6; //we have only 6 Kb of space in the DPM Memory per channel
 const int acquire_data::numberOfHits = 6;
+log4cpp::Category& acqData           = log4cpp::Category::getInstance(std::string("acqData"));
 
 void acquire_data::InitializeDaq(int id, RunningModes runningMode) 
 {
@@ -36,11 +36,15 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	struct timeval start_time, stop_time;
 	gettimeofday(&start_time, NULL);
 #endif
+	// Set logging priority for this function:
+	acqData.setPriority(log4cpp::Priority::DEBUG);
+	acqData.infoStream() << "Entering acquire_data::InitializeDaq()." << log4cpp::eol;
+
 	// Get the VME read/write access functions.
 	daqAcquire = new acquire(); 
 
 	// We need a controller to control the VME bus.
-	daqController = new controller(0x00, id); 
+	daqController = new controller(0x00, id, acqAppender); 
 	try {
 		int error = daqController->ContactController();
 		if (error) throw error;

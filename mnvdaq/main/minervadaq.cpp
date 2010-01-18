@@ -27,6 +27,11 @@
 
 #include "minervadaq.h"
 
+// log4cpp Variables - Needed throughout the minervadaq functions.
+log4cpp::Appender* daqAppender;
+log4cpp::Category& root   = log4cpp::Category::getRoot();
+log4cpp::Category& mnvdaq = log4cpp::Category::getInstance(std::string("mnvdaq"));
+
 /*! The main routine which executes the data acquisition sequences for minervadaq. */
 
 using namespace std;
@@ -46,7 +51,8 @@ int main(int argc, char *argv[])
 	int detector             = 0;         // Default to UnknownDetector.
 	detector                 = (0x1)<<4;  // TODO - For header debugging... the Upstream Detector.
 	string fileroot          = "testme";  // For logs, etc.  
-	string et_filename       = "/work/data/etsys/testme";
+	string et_filename       = "/work/data/etsys/testme";  
+	string log_filename      = "/work/data/logs/testme.txt"; 
 	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme.py");
 	FILE *sam_file;
 	unsigned long long firstEvent, lastEvent;
@@ -98,9 +104,11 @@ int main(int argc, char *argv[])
 			optind++;
 			fileroot     = argv[optind];
 			et_filename  = "/work/data/etsys/" + fileroot;
+			log_filename = "/work/data/logs/" + fileroot + ".txt";
 			sprintf(sam_filename,"/work/data/sam/%s.py",fileroot.c_str());
 			std::cout << "\tET Filename            = " << et_filename << std::endl;
 			std::cout << "\tSAM Filename           = " << sam_filename << std::endl;
+			std::cout << "\tLOG Filename           = " << log_filename << std::endl;
 		}
 		else
 			std::cout << "Unknown switch: " << argv[optind] << std::endl;
@@ -115,6 +123,23 @@ int main(int argc, char *argv[])
 		for (;optind<argc;optind++) std::cout << argv[optind];
 		std::cout << std::endl;
 	}
+
+	// Set up general logging utilities.
+	daqAppender = new log4cpp::FileAppender("default", log_filename);
+	daqAppender->setLayout(new log4cpp::BasicLayout());
+	root.addAppender(daqAppender);
+	root.setPriority(log4cpp::Priority::DEBUG);
+        mnvdaq.setPriority(log4cpp::Priority::DEBUG);
+	root.infoStream()   << "Starting MINERvA DAQ. " << log4cpp::eol;
+	mnvdaq.infoStream() << "Arguments to MINERvA DAQ: " << log4cpp::eol;
+	mnvdaq.infoStream() << "  Run Number             = " << runNumber << log4cpp::eol;
+	mnvdaq.infoStream() << "  Subrun Number          = " << subRunNumber << log4cpp::eol;
+	mnvdaq.infoStream() << "  Total Gates            = " << record_gates << log4cpp::eol;
+	mnvdaq.infoStream() << "  Running Mode (encoded) = " << runningMode << log4cpp::eol;
+	mnvdaq.infoStream() << "  Detector (encoded)     = " << detector << log4cpp::eol;
+	mnvdaq.infoStream() << "  ET Filename            = " << et_filename << log4cpp::eol;
+	mnvdaq.infoStream() << "  SAM Filename           = " << sam_filename << log4cpp::eol;
+	mnvdaq.infoStream() << "  LOG Filename           = " << log_filename << log4cpp::eol;
 
 	// Log files for threading in the main routine. 
 #if (THREAD_ME)&&(TIME_ME)
@@ -362,7 +387,7 @@ int main(int argc, char *argv[])
 
 
 	// Make an acquire data object containing functions for performing initialization and acquisition.
-	acquire_data *daq = new acquire_data(et_filename); 
+	acquire_data *daq = new acquire_data(et_filename, daqAppender); 
 
 	/*********************************************************************************/
 	/*      Now initialize the DAQ electronics                                       */
@@ -433,7 +458,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"datastream='alldata',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-04-01'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-05-00'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
@@ -895,6 +920,8 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,")\n");
 	fclose(sam_file);
 #endif
+	// Clean up the log4cpp file.
+	log4cpp::Category::shutdown();
 
 	/**********************************************************************************/
 	/*              End of execution                                                  */

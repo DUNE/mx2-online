@@ -52,7 +52,7 @@ class controller {
 		int transferBytes, crocVectorLength, crimVectorLength, controller_id;
 
 		// log4cpp appender for printing log statements.
-		log4cpp::Appender* appender;
+		log4cpp::Appender* ctrlAppender;
 
 	public: 
 
@@ -60,7 +60,8 @@ class controller {
 		int handle; /*!<a device handle returned by the initialization function*/
 
 		/*! the specialty constructor */
-		controller(int a, int id) { 
+		// TODO - add a version that does not require an appender.
+		controller(int a, int id, log4cpp::Appender* appender) { 
 			address         = a;
 			addressModifier = cvA24_U_DATA; // default address modifier
 			dataWidth       = cvD16;    // default data width
@@ -71,11 +72,12 @@ class controller {
 			boardNumber     = 0; // we basically use controller_id for this...
 			handle          = -1;
 			firmware[0]     = 0;
-			controller_id   = id; //an internal ID used for sorting data 
-			appender = new log4cpp::FileAppender("default", "/work/data/logs/testme.txt");
-			appender->setLayout(new log4cpp::BasicLayout());
-			log4cpp::Category::getRoot().addAppender(appender);
-			log4cpp::Category::getRoot().setPriority(log4cpp::Priority::DEBUG);
+			controller_id   = id; //an internal ID used for sorting data
+			ctrlAppender    = appender; 
+			//obsolete//appender = new log4cpp::FileAppender("default", "/work/data/logs/testme.txt");
+			//obsolete//appender->setLayout(new log4cpp::BasicLayout());
+			//obsolete//log4cpp::Category::getRoot().addAppender(appender);
+			//obsolete//log4cpp::Category::getRoot().setPriority(log4cpp::Priority::DEBUG);
 			controllerLog.setPriority(log4cpp::Priority::DEBUG);
 		};
 
@@ -127,28 +129,6 @@ class controller {
 		
 		void ReportError(int error);
 
-		// log4cpp Priority Chain.  Messages of higher numerical priority will not pass.
-		/*
-		Priorities
-		typedef enum {
-			EMERG  = 0, 
-			FATAL  = 0,
-			ALERT  = 100,
-			CRIT   = 200,
-			ERROR  = 300, 
-			WARN   = 400,
-			NOTICE = 500,
-			INFO   = 600,
-			DEBUG  = 700,
-			NOTSET = 800               
-		} PriorityLevel;
-		*/
-		// Probably shouldn't call this function from here...
-		/*
-		void SetRootPriority(log4cpp::Priority::Value priority) {             
-			root.setPriority(priority);
-		};
-		*/
 
 };
 #endif

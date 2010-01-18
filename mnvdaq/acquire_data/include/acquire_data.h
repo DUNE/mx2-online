@@ -4,6 +4,7 @@
 #include "controller.h" 
 #include "adctdc.h" // This class isn't included in the contoller, but we need it for reads & writes.
 #include "acquire.h" 
+#include "log4cppHeaders.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
@@ -77,14 +78,16 @@ class acquire_data {
 		std::ofstream frame_acquire_log; /*!< log file streamer for timing output */
 		std::string et_filename; /*!< A string object for the Event Transfer output filename */
 		static const int numberOfHits;
+		log4cpp::Appender* acqAppender;
 
 	public:
-		/*! Specialized constructor which takes a string for old-style logging. */
-		acquire_data(std::string fn) {
+		/*! Specialized constructor. */
+		acquire_data(std::string fn, log4cpp::Appender* appender) {
 #if TIME_ME
 			frame_acquire_log.open("frame_data_time_log.csv"); 
 #endif
 			et_filename = fn;
+			acqAppender = appender;
 		};
 		/*! Specialized destructor. */
 		~acquire_data() {
