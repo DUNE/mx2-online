@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
 
 
 	// Make an acquire data object containing functions for performing initialization and acquisition.
-	acquire_data *daq = new acquire_data(et_filename, daqAppender); 
+	acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::INFO); 
 	mnvdaq.infoStream() << "Got the acquire_data functions.";
 
 	/*********************************************************************************/

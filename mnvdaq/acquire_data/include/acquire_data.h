@@ -46,6 +46,8 @@ typedef enum TriggerType {
 	MonteCarlo      = 0x0080  // Obviously, the DAQ should not write this type, ever!
 };
 
+log4cpp::Category& acqData = log4cpp::Category::getInstance(std::string("acqData"));
+
 /*! \class acquire_data
  *  \brief The class containing all methods necessary for 
  *  requesting and manipulating data from teh MINERvA detector.
@@ -82,12 +84,13 @@ class acquire_data {
 
 	public:
 		/*! Specialized constructor. */
-		acquire_data(std::string fn, log4cpp::Appender* appender) {
+		acquire_data(std::string fn, log4cpp::Appender* appender, log4cpp::Priority::Value priority) {
 #if TIME_ME
 			frame_acquire_log.open("frame_data_time_log.csv"); 
 #endif
 			et_filename = fn;
 			acqAppender = appender;
+			acqData.setPriority(priority);
 		};
 		/*! Specialized destructor. */
 		~acquire_data() {

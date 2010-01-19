@@ -15,7 +15,6 @@
 
 const int acquire_data::dpmMax       = 1024*6; //we have only 6 Kb of space in the DPM Memory per channel
 const int acquire_data::numberOfHits = 6;
-log4cpp::Category& acqData           = log4cpp::Category::getInstance(std::string("acqData"));
 
 void acquire_data::InitializeDaq(int id, RunningModes runningMode) 
 {
@@ -36,8 +35,6 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	struct timeval start_time, stop_time;
 	gettimeofday(&start_time, NULL);
 #endif
-	// Set logging priority for this function:
-	acqData.setPriority(log4cpp::Priority::DEBUG);
 	acqData.infoStream() << "Entering acquire_data::InitializeDaq().";
 
 	// Get the VME read/write access functions.
@@ -84,32 +81,22 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	// Set the flags that tells us how many VME cards are installed for this controller.
 	daqController->SetCrocVectorLength(); 
 	daqController->SetCrimVectorLength();
-#if DEBUG_INIT
 	acqData.infoStream() << " Total Number of Initialized CRIMs attached to this controller = " << 
 		daqController->GetCrimVectorLength(); 
 	acqData.infoStream() << " Total Number of Initialized CROCs attached to this controller = " << 
 		daqController->GetCrocVectorLength(); 
 	acqData.infoStream() << " Master CRIM address = " <<
 			(daqController->GetCrim()->GetCrimAddress()>>16);
-#endif
 
 	// Enable the CAEN IRQ handler.
 	// Only the MASTER (first) CRIM should be the interrupt handler!
 	try {
 		unsigned short bitmask = daqController->GetCrim()->GetInterruptMask();
-#if DEBUG_INIT
-		printf("Enabling the IRQ Handler on CRIM %d with bimask 0x%04X\n",
-			(daqController->GetCrim()->GetCrimAddress()>>16),bitmask);
 		acqData.info("Enabling the IRQ Handler on CRIM %d with bimask 0x%04X",
 			(daqController->GetCrim()->GetCrimAddress()>>16),bitmask);
-#endif
 		int error = CAENVME_IRQEnable(daqController->handle,~bitmask);
-#if DEBUG_INIT
-		std::cout << " Returned from IRQEnable for CRIM " << 
-			(daqController->GetCrim()->GetCrimAddress()>>16) << std::endl;
 		acqData.infoStream() << " Returned from IRQEnable for CRIM " << 
 			(daqController->GetCrim()->GetCrimAddress()>>16);
-#endif
 		if (error) throw error;
 	} catch (int e) {
 		std::cout << "Error in acquire_data::InitializeDaq() enabling CAEN VME IRQ handler!" << std::endl;
@@ -267,14 +254,9 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	daqController->GetCrim(index)->SetupTiming(TimingMode, Frequency);
 	daqController->GetCrim(index)->SetupGateWidth(TCALBEnable, GateWidth);
 	daqController->GetCrim(index)->SetupTCALBPulse(TCALBDelay);
-#if DEBUG_INIT
-	printf("  CRIM Timing Setup    = 0x%04X\n", daqController->GetCrim(index)->GetTimingSetup());
-	printf("  CRIM GateWidth Setup = 0x%04X\n", daqController->GetCrim(index)->GetGateWidthSetup());
-	printf("  CRIM TCALB Setup     = 0x%04X\n", daqController->GetCrim(index)->GetTCALBPulse());
-#endif
-	acqData.info("  CRIM Timing Setup    = 0x%04X", daqController->GetCrim(index)->GetTimingSetup());
-	acqData.info("  CRIM GateWidth Setup = 0x%04X", daqController->GetCrim(index)->GetGateWidthSetup());
-	acqData.info("  CRIM TCALB Setup     = 0x%04X", daqController->GetCrim(index)->GetTCALBPulse());
+	acqData.debug("  CRIM Timing Setup    = 0x%04X", daqController->GetCrim(index)->GetTimingSetup());
+	acqData.debug("  CRIM GateWidth Setup = 0x%04X", daqController->GetCrim(index)->GetGateWidthSetup());
+	acqData.debug("  CRIM TCALB Setup     = 0x%04X", daqController->GetCrim(index)->GetTCALBPulse());
 
 	// Now write settings to hardware.
 	// TODO - This part should be something we can do or not do according to a flag...
@@ -355,6 +337,7 @@ void acquire_data::InitializeCroc(int address, int crocNo)
  * \param crocNo an integer given this CROC for ID
  */
 	std::cout << "\nEntering acquire_data::InitializeCroc for CROC " << (address>>16) << std::endl;
+	acqData.infoStream() << "Entering acquire_data::InitializeCroc for CROC " << (address>>16);
 #if DEBUG_THREAD
 	std::ofstream croc_thread;
 	std::stringstream thread_number;
@@ -378,6 +361,8 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 	} catch (int e)  {
 		std::cout << "Error in acquire_data::InitializeCroc!  Cannot read the status register for CROC " <<
 			(address>>16) << std::endl;
+		acqData.fatalStream() << "Error in acquire_data::InitializeCroc!  Cannot read the status register for CROC " <<
+			(address>>16);
 		exit(-2);
 	}
 
@@ -386,11 +371,9 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 	unsigned char croc_message[2];
 	croc_message[0] = (unsigned char)(daqController->GetCroc(crocNo)->GetTimingRegister() & 0xFF);
 	croc_message[1] = (unsigned char)( (daqController->GetCroc(crocNo)->GetTimingRegister()>>8) & 0xFF);
-#if DEBUG_INIT
-	printf("  Timing Register Address  = 0x%X\n",daqController->GetCroc(crocNo)->GetTimingAddress());
-	printf("  Timing Register Message  = 0x%X\n",daqController->GetCroc(crocNo)->GetTimingRegister());
-	printf("  Timing Message (Sending) = 0x%02X%02X\n",croc_message[1],croc_message[0]);
-#endif
+	acqData.debug("  Timing Register Address  = 0x%X\n",daqController->GetCroc(crocNo)->GetTimingAddress());
+	acqData.debug("  Timing Register Message  = 0x%X\n",daqController->GetCroc(crocNo)->GetTimingRegister());
+	acqData.debug("  Timing Message (Sending) = 0x%02X%02X\n",croc_message[1],croc_message[0]);
 	try {
 		int error = daqAcquire->WriteCycle(daqController->handle, 2, croc_message, 
 			daqController->GetCroc(crocNo)->GetTimingAddress(), AM, DW);
@@ -398,6 +381,7 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 	} catch (int e) {
 		std::cout << "Unable to set the CROC timing mode!" << std::endl;
 		daqController->ReportError(e);
+		acqData.fatalStream() << "Unable to set the CROC timing mode!";
 		exit (e);
 	}
 
@@ -409,9 +393,11 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 
 	// Build the FEB list for each channel.
 #if DEBUG_INIT
-	std::cout << "Building FEB List" << std::endl;
+	std::cout << "Building FEB List:" << std::endl;
+	acqData.infoStream() << "Building FEB List:";
 	nChannels = 1;
 	std::cout << " Using " << nChannels << " FE Channels per CROC." << std::endl;
+	acqData.infoStream() << " Using " << nChannels << " FE Channels per CROC.";
 #endif
 	for (int i = 0; i < nChannels; i++) {
 		// Now set up the channels and FEB's.
@@ -446,6 +432,8 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 	std::cout << "Finished initialization for CROC " << 
 		(daqController->GetCroc(crocNo)->GetCrocAddress()>>16) << std::endl;
 #endif
+	acqData.infoStream() << "Finished initialization for CROC " << 
+		(daqController->GetCroc(crocNo)->GetCrocAddress()>>16);
 }
 
 
@@ -476,9 +464,11 @@ int acquire_data::SetupIRQ(int index)
 // TODO: Configure this function to take an argument that sets the IRQ line (SGATEFALL, etc.).
 #if DEBUG_IRQ
 	std::cout << "   Entering acquire_data::SetupIRQ for CRIM " << 
-		(daqController->GetCrim(index)->GetCrimAddress()>>16) << " and index " << 
-		index << std::endl;
+		(daqController->GetCrim(index)->GetCrimAddress()>>16) << " and index " << index << std::endl;
 	std::cout << "    IRQ Line      = " << (int)daqController->GetCrim(index)->GetIRQLine() << std::endl;
+	acqData.debugStream() << "   Entering acquire_data::SetupIRQ for CRIM " << 
+		(daqController->GetCrim(index)->GetCrimAddress()>>16) << " and index " << index;
+	acqData.debugStream() << "    IRQ Line      = " << (int)daqController->GetCrim(index)->GetIRQLine();
 #endif
 	int error = 0; 
 
@@ -486,6 +476,7 @@ int acquire_data::SetupIRQ(int index)
 	daqController->GetCrim(index)->SetInterruptMask(); 
 #if DEBUG_IRQ
 	std::cout << "    InterruptMask = " << daqController->GetCrim(index)->GetInterruptMask() << std::endl;
+	acqData.debugStream() << "    InterruptMask = " << daqController->GetCrim(index)->GetInterruptMask();
 #endif
 	unsigned char crim_send[2] = {0,0};
 	crim_send[0] = (daqController->GetCrim(index)->GetInterruptMask()) & 0xff;
@@ -503,6 +494,7 @@ int acquire_data::SetupIRQ(int index)
 	} catch (int e) {
 		std::cout << "Error setting crim IRQ mask in acquire_data::SetupIRQ!" << std::endl;
 		daqController->ReportError(e);
+		acqData.critStream() << "Error setting crim IRQ mask in acquire_data::SetupIRQ!";
 		return e;
 	}
 
@@ -519,6 +511,7 @@ int acquire_data::SetupIRQ(int index)
 		interrupt_status = (unsigned short) (crim_send[0]|(crim_send[1]<<0x08));
 #if DEBUG_IRQ
 		std::cout << "     Current interrupt status = " << interrupt_status << std::endl;
+		acqData.debugStream() << "     Current interrupt status = " << interrupt_status;
 #endif
 		if (interrupt_status!=0) { 
 			// Clear the pending interrupts.
@@ -526,6 +519,8 @@ int acquire_data::SetupIRQ(int index)
 			crim_send[1] = (daqController->GetCrim(index)->GetClearInterrupts()>>0x08) & 0xff;
 #if DEBUG_IRQ
 			printf("     Clearing pending interrupts with message: 0x%02X%02X\n",
+				crim_send[1], crim_send[0]);
+			acqData.debug("     Clearing pending interrupts with message: 0x%02X%02X",
 				crim_send[1], crim_send[0]);
 #endif
 			try {
@@ -535,14 +530,16 @@ int acquire_data::SetupIRQ(int index)
 					daqController->GetDataWidth() ); 
 				if (error) throw error;
 			} catch (int e) {
-				std::cout << "Error clearing crim interrupts in acquire_data::SetupIRQ: " << e << std::endl;
+				std::cout << "Error clearing crim interrupts in acquire_data::SetupIRQ!" << std::endl;
 				daqController->ReportError(e);
+				acqData.critStream() << "Error clearing crim interrupts in acquire_data::SetupIRQ!";
 				return e;
 			}
 		}
 	} catch (int e) {
 		std::cout << "Error getting crim interrupt status in acquire_data::SetupIRQ!" << std::endl;
 		daqController->ReportError(e);
+		acqData.critStream() << "Error getting crim interrupt status in acquire_data::SetupIRQ!";
 		return e;
 	}
 
@@ -552,6 +549,7 @@ int acquire_data::SetupIRQ(int index)
 		if (error) throw error;
 	} catch (int e) {
 		std::cout << "Failed to ResetGlobalIRQ!  Status code = " << e << std::endl;
+		acqData.critStream() << "Failed to ResetGlobalIRQ!  Status code = " << e;
 		return e;
 	}
 	crim_send[0] = (daqController->GetCrim(index)->GetInterruptConfig()) & 0xff;
@@ -559,6 +557,8 @@ int acquire_data::SetupIRQ(int index)
 #if DEBUG_IRQ
 	printf("     IRQ CONFIG = 0x%04X\n",daqController->GetCrim(index)->GetInterruptConfig());
 	printf("     IRQ ADDR   = 0x%04X\n",daqController->GetCrim(index)->GetInterruptsConfigAddress());
+	acqData.debug("     IRQ CONFIG = 0x%04X\n",daqController->GetCrim(index)->GetInterruptConfig());
+	acqData.debug("     IRQ ADDR   = 0x%04X\n",daqController->GetCrim(index)->GetInterruptsConfigAddress());
 #endif
 	try {
 		error = daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
@@ -569,6 +569,7 @@ int acquire_data::SetupIRQ(int index)
 	} catch (int e) {
 		std::cout << "Error setting crim IRQ mask in acquire_data::SetupIRQ!" << std::endl;
 		daqController->ReportError(e);
+		acqData.critStream() << "Error setting crim IRQ mask in acquire_data::SetupIRQ!";
 		return e;
 	}
 
@@ -576,6 +577,8 @@ int acquire_data::SetupIRQ(int index)
 #if DEBUG_IRQ
 	printf("     IRQ LINE   = 0x%02X\n",daqController->GetCrim(index)->GetIRQLine());
 	printf("     IRQ MASK   = 0x%04X\n",daqController->GetCrim(index)->GetInterruptMask());
+	acqData.debug("     IRQ LINE   = 0x%02X",daqController->GetCrim(index)->GetIRQLine());
+	acqData.debug("     IRQ MASK   = 0x%04X",daqController->GetCrim(index)->GetInterruptMask());
 #endif
 	try {
 		error = CAENVME_IRQEnable(daqController->handle,~daqController->GetCrim(index)->GetInterruptMask());
@@ -583,10 +586,12 @@ int acquire_data::SetupIRQ(int index)
 	} catch (int e) {
 		std::cout << "Error in acquire_data::SetupIRQ!  Cannot execut IRQEnable!" << std::endl;
                 daqController->ReportError(e);
+		acqData.critStream() << "Error in acquire_data::SetupIRQ!  Cannot execut IRQEnable!";
                 return e;
 	}
-#if (DEBUG_IRQ)&&(DEBUG_VERBOSE)
-	std::cout << "   Exiting acquire_data::SetupIRQ()" << std::endl;
+#if DEBUG_IRQ
+	std::cout << "   Exiting acquire_data::SetupIRQ()." << std::endl;
+	acqData.debugStream() << "   Exiting acquire_data::SetupIRQ().";
 #endif 
 	return 0;
 }
@@ -605,6 +610,8 @@ int acquire_data::ResetGlobalIRQEnable(int index)
 #if DEBUG_IRQ
 	std::cout << "      Entering ResetGlobalIRQEnable for CRIM " << 
 		(daqController->GetCrim(index)->GetCrimAddress()>>16) << " and index " << index << std::endl; 
+	acqData.debugStream() << "      Entering ResetGlobalIRQEnable for CRIM " << 
+		(daqController->GetCrim(index)->GetCrimAddress()>>16) << " and index " << index; 
 #endif	
 	// Set the global enable bit.
 	daqController->GetCrim(index)->SetInterruptGlobalEnable(true);
@@ -614,6 +621,7 @@ int acquire_data::ResetGlobalIRQEnable(int index)
 	crim_send[1] = (((daqController->GetCrim(index)->GetInterruptConfig())>>0x08) & 0xff);
 #if DEBUG_IRQ
 	printf("       Resetting Global IRQ Enable with message 0x%02X%02X\n",crim_send[1],crim_send[0]);
+	acqData.debug("       Resetting Global IRQ Enable with message 0x%02X%02X",crim_send[1],crim_send[0]);
 #endif
 	try { 
 		int error = daqAcquire->WriteCycle( daqController->handle, 2, crim_send,
@@ -622,12 +630,14 @@ int acquire_data::ResetGlobalIRQEnable(int index)
 			daqController->GetDataWidth() );
 		if (error) throw error;
 	} catch (int e) {
-		std::cout << "Error setting IRQ Global Enable Bit " << e << std::endl;
+		std::cout << "Error setting IRQ Global Enable Bit!";
 		daqController->ReportError(e);
+		acqData.critStream() << "Error setting IRQ Global Enable Bit!";
 		return e;
 	}
-#if (DEBUG_IRQ)&&(DEBUG_VERBOSE)
-	std::cout << "      Exiting acquire_data::ResetGlobalIRQEnable()" << std::endl;
+#if DEBUG_IRQ
+	std::cout << "      Exiting acquire_data::ResetGlobalIRQEnable()." << std::endl;
+	acqData.debugStream() << "Exiting acquire_data::ResetGlobalIRQEnable().";
 #endif
 	return 0;
 }
