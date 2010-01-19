@@ -1,9 +1,8 @@
 #ifndef COMMANDBLOCK_H
 #define COMMANDBLOCK_H 1
 
-#include "CommandStructure.h"
-#include "CommandBlock.h"
-#include "Command.h"
+#include "../CommandStructure.h"
+#include "../Commands/Command.h"
 
 #include <vector>
 #include <map>
@@ -11,19 +10,24 @@
 
 namespace Minerva
 {
-	enum CommandBlockTypes { Reset, Initialize, LEDSelection, TriggerSetup, PulseSetup };
+	enum CommandBlockTypes { RESET, INITIALIZE, LED_SELECTION, TRIGGER_SETUP, PULSE_SETUP };
 
 	class CommandBlock : public CommandStructure
 	{
 		public:
-			virtual std::string ToString()         = 0;
-			static std::string  Description()      = 0;
+			virtual        std::string  ToString();
+			virtual static std::string  Description()      = 0;
 			
-			virtual bool Validate()                = 0;			
+			bool Validate();			
 			bool ValidCommand(Command * command);
-			
+			void AddCommand(Command * command);
 			
 		protected:
+			virtual static void InitializeStatics() = 0;		// initializes any static variables (like the ones below) that can't be initialized here (like ones with std::maps, std::vectors, etc.)
+			static bool initialized = false;
+			
+			void AddValidCommand(Command * command);
+
 			std::vector<Command *> commands;
 			
 			// the grammar for the command block type.
@@ -35,6 +39,8 @@ namespace Minerva
 
 			static std::map<CommandBlockType, int>    requiredBlocks;
 			static std::vector<CommandBlockType>      excludedBlocks;
+
+			static CommandBlockType commandBlockType;
 			
 			std::map<CommandType, int> numCommands;
 			
