@@ -130,16 +130,16 @@ int main(int argc, char *argv[])
 	root.addAppender(daqAppender);
 	root.setPriority(log4cpp::Priority::DEBUG);
         mnvdaq.setPriority(log4cpp::Priority::DEBUG);
-	root.infoStream()   << "Starting MINERvA DAQ. " << log4cpp::eol;
-	mnvdaq.infoStream() << "Arguments to MINERvA DAQ: " << log4cpp::eol;
-	mnvdaq.infoStream() << "  Run Number             = " << runNumber << log4cpp::eol;
-	mnvdaq.infoStream() << "  Subrun Number          = " << subRunNumber << log4cpp::eol;
-	mnvdaq.infoStream() << "  Total Gates            = " << record_gates << log4cpp::eol;
-	mnvdaq.infoStream() << "  Running Mode (encoded) = " << runningMode << log4cpp::eol;
-	mnvdaq.infoStream() << "  Detector (encoded)     = " << detector << log4cpp::eol;
-	mnvdaq.infoStream() << "  ET Filename            = " << et_filename << log4cpp::eol;
-	mnvdaq.infoStream() << "  SAM Filename           = " << sam_filename << log4cpp::eol;
-	mnvdaq.infoStream() << "  LOG Filename           = " << log_filename << log4cpp::eol;
+	root.infoStream()   << "Starting MINERvA DAQ. ";
+	mnvdaq.infoStream() << "Arguments to MINERvA DAQ: ";
+	mnvdaq.infoStream() << "  Run Number             = " << runNumber;
+	mnvdaq.infoStream() << "  Subrun Number          = " << subRunNumber;
+	mnvdaq.infoStream() << "  Total Gates            = " << record_gates;
+	mnvdaq.infoStream() << "  Running Mode (encoded) = " << runningMode;
+	mnvdaq.infoStream() << "  Detector (encoded)     = " << detector;
+	mnvdaq.infoStream() << "  ET Filename            = " << et_filename;
+	mnvdaq.infoStream() << "  SAM Filename           = " << sam_filename;
+	mnvdaq.infoStream() << "  LOG Filename           = " << log_filename;
 
 	// Log files for threading in the main routine. 
 #if (THREAD_ME)&&(TIME_ME)
@@ -199,6 +199,7 @@ int main(int argc, char *argv[])
 	// Open it.
 	if (et_open(&sys_id, et_filename.c_str(), openconfig) != ET_OK) {
 		printf("et_producer: et_open problems\n");
+		mnvdaq.fatalStream() << "et_producer: et_open problems!";
 		exit(1);
 	}
 
@@ -227,6 +228,7 @@ int main(int argc, char *argv[])
 	// Notify the user if ET did not start properly & exit.
 	if (counter==50) {
 		std::cout << "ET System did not start properly!" << std::endl;
+		mnvdaq.fatalStream() << "ET System did not start properly - bad heartbeat!";
 		exit(-5);
 	}   
 #endif 
@@ -234,6 +236,7 @@ int main(int argc, char *argv[])
 	// Attach to GRANDCENTRAL station since we are producing events.
 	if (et_station_attach(sys_id, ET_GRANDCENTRAL, &attach) < 0) {
 		printf("et_producer: error in station attach\n");
+		mnvdaq.fatalStream() << "et_producer: error in station attach!";
 		system("sleep 10s");
 		exit(1);
 	} 
@@ -248,17 +251,18 @@ int main(int argc, char *argv[])
 	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 	if (gate_done_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
 	if (global_gate_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
-#if DEBUG_SOCKETS
-	std::cout << "\nSoldier/Master-node Multi-PC gate_done_socket_handle  : " << 
-		gate_done_socket_handle << std::endl;
-	std::cout << "Soldier/Master-node Multi-PC global_gate_socket_handle: " << 
-		global_gate_socket_handle << std::endl;
-#endif
+	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC gate_done_socket_handle  : " << 
+		gate_done_socket_handle;
+	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC global_gate_socket_handle: " << 
+		global_gate_socket_handle;
 	// Set up the global_gate service. 
 	global_gate_service.sin_family = AF_INET;
 	string hostname="mnvonline1.fnal.gov"; // The worker node will listen for the global gate.
 	worker_node_info = gethostbyname(hostname.c_str());
-	if (worker_node_info == NULL) { std::cout << "No worker node to connect to!\n"; return 1; }
+	if (worker_node_info == NULL) {
+		mnvdaq.fatalStream() << "No worker node to connect to!"; 
+		std::cout << "No worker node to connect to!\n"; return 1; 
+	}
 	else global_gate_service.sin_addr = *((struct in_addr *) worker_node_info->h_addr);
 	global_gate_service.sin_port = htons (global_gate_port); 
 
@@ -270,9 +274,15 @@ int main(int argc, char *argv[])
 	gate_done_service.sin_addr = gate_done_socket_address;
 	// Bind the gate_done socket to that address for the listener.
 	if ((bind (gate_done_socket_handle, (const sockaddr*)&gate_done_service, 
-			sizeof (gate_done_service)))) { perror ("bind"); exit(EXIT_FAILURE); }
+			sizeof (gate_done_service)))) {
+		mnvdaq.fatalStream() << "Error binding the gate_done socket!"; 
+		perror ("bind"); exit(EXIT_FAILURE); 
+	}
 	// Enable connection requests on the gate_done socket for the listener.
-	if (listen (gate_done_socket_handle, 10)) { perror("listen"); exit(EXIT_FAILURE); }
+	if (listen (gate_done_socket_handle, 10)) { 
+		mnvdaq.fatalStream() << "Error listening on the gate_done socket!"; 
+		perror("listen"); exit(EXIT_FAILURE); 
+	}
 #endif // end if MASTER&&(!SINGLE_PC)
 
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
@@ -280,17 +290,18 @@ int main(int argc, char *argv[])
 	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 	if (gate_done_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
 	if (global_gate_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
-#if DEBUG_SOCKETS
-	std::cout << "\nWorker/Slave-node Multi-PC gate_done_socket_handle  : " << 
-		gate_done_socket_handle << std::endl;
-	std::cout << "Worker/Slave-node Multi-PC global_gate_socket_handle: " << 
-		global_gate_socket_handle << std::endl;
-#endif
+	mnvdaq.infoStream() << "\nWorker/Slave-node Multi-PC gate_done_socket_handle  : " << 
+		gate_done_socket_handle;
+	mnvdaq.infoStream() << "Worker/Slave-node Multi-PC global_gate_socket_handle: " << 
+		global_gate_socket_handle;
 	// Set up the gate_done service. 
 	gate_done_service.sin_family = AF_INET;
 	string hostname="mnvonline0.fnal.gov"; // The soldier node will listen for the gate done signal.
 	soldier_node_info = gethostbyname(hostname.c_str());
-	if (soldier_node_info == NULL) { std::cout << "No soldier node to connect to!\n"; return 1; }
+	if (soldier_node_info == NULL) { 
+		mnvdaq.fatalStream() << "No soldier node to connect to!"; 
+		std::cout << "No soldier node to connect to!\n"; return 1; 
+	}
 	else gate_done_service.sin_addr = *((struct in_addr *) soldier_node_info->h_addr);
 	gate_done_service.sin_port = htons (gate_done_port); 
 
@@ -302,9 +313,15 @@ int main(int argc, char *argv[])
 	global_gate_service.sin_addr = global_gate_socket_address;
 	// Bind the global_gate socket to that address for the listener.
 	if ((bind (global_gate_socket_handle, (const sockaddr*)&global_gate_service, 
-			sizeof (global_gate_service)))) { perror ("bind"); exit(EXIT_FAILURE); }
+			sizeof (global_gate_service)))) { 
+		mnvdaq.fatalStream() << "Error binding the global_gate socket!"; 
+		perror ("bind"); exit(EXIT_FAILURE); 
+	}
 	// Enable connection requests on the global socket for the listener.
-	if (listen (global_gate_socket_handle, 10)) { perror("listen"); exit(EXIT_FAILURE); }
+	if (listen (global_gate_socket_handle, 10)) { 
+		mnvdaq.fatalStream() << "Error listening on the global_gate socket!"; 
+		perror("listen"); exit(EXIT_FAILURE); 
+	}
 #endif // end if (!MASTER)&&(!SINGLE_PC)
 
 
@@ -313,11 +330,16 @@ int main(int argc, char *argv[])
 #if MASTER&&(!SINGLE_PC) // Soldier Node
 	std::cout << "\nPreparing make new server connection for gate_done synchronization...\n";
 	std::cout << " gate_done_socket_is_live = " << gate_done_socket_is_live << std::endl; 
+	mnvdaq.infoStream() << "Preparing make new server connection for gate_done synchronization...";
+	mnvdaq.infoStream() << " gate_done_socket_is_live = " << gate_done_socket_is_live; 
 	// Accept connection from worker node to supply end of event signalling.
 	while (!gate_done_socket_is_live) {
 		std::cout << " Waiting for worker node...\n";
 		std::cout << " Ready to connect to gate_done_socket_handle: " << 
 			gate_done_socket_handle << std::endl;
+		mnvdaq.infoStream() << " Waiting for worker node...";
+		mnvdaq.infoStream() << " Ready to connect to gate_done_socket_handle: " << 
+			gate_done_socket_handle;
 		struct sockaddr_in remote_address;
 		socklen_t address_length;
 		address_length = sizeof (remote_address);
@@ -326,24 +348,32 @@ int main(int argc, char *argv[])
 			accept(gate_done_socket_handle, (sockaddr*)&remote_address, &address_length);
 		if (gate_done_socket_connection == -1) {
 			// The call to accept failed. 
-			if (errno == EINTR)
+			if (errno == EINTR) {
 				// The call was interrupted by a signal. Try again.
 				continue;
-			else
-				// Something else went wrong. 
+			} else {
+				// Something else went wrong.
+				mnvdaq.fatalStream() << "Error in socket accept!"; 
 				perror("accept");
 				exit(EXIT_FAILURE);
+			}
 		}
 		gate_done_socket_is_live = true;
 	} // end while !gate_done_socket_is_live
 	std::cout << " ->Connection complete at " << gate_done_socket_connection << 
 		" with live status = " << gate_done_socket_is_live << "\n";
+	mnvdaq.infoStream() << " ->Connection complete at " << gate_done_socket_connection << 
+		" with live status = " << gate_done_socket_is_live;
 #endif // end if MASTER&&(!SINGLE_PC)
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
 	// Initiate connection with "server" (soldier node).  Connect waits for a server response.
 	if (connect(gate_done_socket_handle, (struct sockaddr*) &gate_done_service, 
-			sizeof (struct sockaddr_in)) == -1) { perror ("connect"); exit(EXIT_FAILURE); }
+			sizeof (struct sockaddr_in)) == -1) { 
+		mnvdaq.fatalStream() << "Error in gate_done connect!";
+		perror ("connect"); exit(EXIT_FAILURE); 
+	}
 	std::cout << " ->Returned from connect to gate_done!\n";
+	mnvdaq.infoStream() << " ->Returned from connect to gate_done!";
 #endif // end if (!MASTER)&&(!SINGLE_PC)
 
 	
@@ -352,17 +382,26 @@ int main(int argc, char *argv[])
 #if MASTER&&(!SINGLE_PC) // Soldier Node
 	// Initiate connection with "server" (worker node).  Connect waits for a server response.
 	if (connect(global_gate_socket_handle, (struct sockaddr*) &global_gate_service, 
-			sizeof (struct sockaddr_in)) == -1) { perror ("connect"); exit(EXIT_FAILURE); }
+			sizeof (struct sockaddr_in)) == -1) { 
+		mnvdaq.fatalStream() << "Error in global_gate connect!";
+		perror ("connect"); exit(EXIT_FAILURE); 
+	}
 	std::cout << " ->Returned from connect to global_gate!\n\n";
+	mnvdaq.infoStream() << " ->Returned from connect to global_gate!";
 #endif // end if MASTER&&(!SINGLE_PC)
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
 	std::cout << "\nPreparing make new server connection for global_gate synchronization...\n";
 	std::cout << " global_gate_socket_is_live = " << global_gate_socket_is_live << std::endl; 
+	mnvdaq.infoStream() << "Preparing make new server connection for global_gate synchronization...";
+	mnvdaq.infoStream() << " global_gate_socket_is_live = " << global_gate_socket_is_live; 
 	// Accept connection from worker node to supply global gate signalling.
 	while (!global_gate_socket_is_live) {
 		std::cout << " Waiting for soldier node...\n";
 		std::cout << " Ready to connect to global_gate_socket_handle: " << 
 			global_gate_socket_handle << std::endl;
+		mnvdaq.infoStream() << " Waiting for soldier node...";
+		mnvdaq.infoStream() << << " Ready to connect to global_gate_socket_handle: " << 
+			global_gate_socket_handle;
 		struct sockaddr_in remote_address;
 		socklen_t address_length;
 		address_length = sizeof (remote_address);
@@ -371,28 +410,33 @@ int main(int argc, char *argv[])
 			accept(global_gate_socket_handle, (sockaddr*)&remote_address, &address_length);
 		if (global_gate_socket_connection == -1) {
 			// The call to accept failed. 
-			if (errno == EINTR)
+			if (errno == EINTR) {
 				// The call was interrupted by a signal. Try again.
 				continue;
-			else
+			} else {
 				// Something else went wrong. 
+				mnvdaq.fatalStream() << "Error in socket accept!"; 
 				perror("accept");
 				exit(EXIT_FAILURE);
+			}
 		}
 		global_gate_socket_is_live = true;
 	} // end while !global_gate_socket_is_live
 	std::cout << " ->Connection complete at " << global_gate_socket_connection << 
 		" with live status = " << global_gate_socket_is_live << "\n\n";
+	mnvdaq.infoStream() << " ->Connection complete at " << global_gate_socket_connection << 
+		" with live status = " << global_gate_socket_is_live;
 #endif // end if (!MASTER)&&(!SINGLE_PC)
 
 
 	// Make an acquire data object containing functions for performing initialization and acquisition.
 	acquire_data *daq = new acquire_data(et_filename, daqAppender); 
+	mnvdaq.infoStream() << "Got the acquire_data functions.";
 
 	/*********************************************************************************/
 	/*      Now initialize the DAQ electronics                                       */
 	/*********************************************************************************/
-#if THREAD_ME
+#if THREAD_ME //TODO - Arguments probably wrong for threaded function here...
 	boost::thread electronics_init_thread(boost::bind(&acquire_data::InitializeDaq,daq)); 
 #else
 	daq->InitializeDaq(CONTROLLER_ID, runningMode);
@@ -405,6 +449,7 @@ int main(int argc, char *argv[])
 	// Vector of the CROC's we initialized.
 	vector<croc*> *croc_vector = currentController->GetCrocVector();
 	vector<croc*>::iterator croc_iter = croc_vector->begin();
+	mnvdaq.infoStream() << "Returned from electronics initialization.";
 
 	/*********************************************************************************/
 	/*  At this point we are now set up and are ready to start event acquistion.     */
@@ -418,6 +463,8 @@ int main(int argc, char *argv[])
 	std::cout << "\nGetting ready to start taking data!" << std::endl;
 	std::cout << " Attempting to record " << record_gates << " gates.\n" << std::endl;
 #endif
+	mnvdaq.infoStream() << "Getting ready to start taking data!";
+	mnvdaq.infoStream() << " Attempting to record " << record_gates << " gates.";
 
 	/*********************************************************************************/
 	/* If we've made it this far, it is safe to set up the SAM metadata file.        */
@@ -431,15 +478,18 @@ int main(int argc, char *argv[])
 		global_gate >> global_gate_data[0];
 	} catch (bool e) {
 		std::cout << "Error in minervadaq::main opening global gate data!\n";
+		mnvdaq.fatalStream() << "Error opening global gate data!";
 		exit(-2000);
 	}
 	global_gate.close();
 	std::cout << " First Event = " << global_gate_data[0] << std::endl;
+	mnvdaq.infoStream() << "First Event = " << global_gate_data[0];
 	firstEvent = global_gate_data[0];
 #endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
 #if SINGLE_PC||MASTER
 	if ( (sam_file=fopen(sam_filename,"w")) ==NULL) {
 		std::cout << "minervadaq::main(): Error!  Cannot open SAM file for writing!" << std::endl;
+		mnvdaq.fatalStream() << "Error opening SAM file for writing!";
 		exit(1);
 	}
 	fprintf(sam_file,"from SamFile.SamDataFile import SamDataFile\n\n");
@@ -458,7 +508,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"datastream='alldata',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-05-00'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-05-01'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
@@ -516,6 +566,7 @@ int main(int argc, char *argv[])
 #endif
 #if DEBUG_GENERAL
 		std::cout << "\n->Top of the Event Loop, starting Gate: " << gate << std::endl;
+		mnvdaq.infoStream() << "->Top of the Event Loop, starting Gate: " << gate;
 #endif
 #if RECORD_EVENT
 		if (!(gate%100)) {
@@ -546,11 +597,13 @@ int main(int argc, char *argv[])
 			global_gate >> global_gate_data[0];
 		} catch (bool e) {
 			std::cout << "Error in minervadaq::main opening global gate data!\n";
+			mnvdaq.fatalStream() << "Error opening global gate data!";
 			exit(-2000);
 		}
 		global_gate.close();
 #if DEBUG_GENERAL
 		std::cout << "    Global Gate: " << global_gate_data[0] << std::endl;
+		mnvdaq.infoStream() << "    Global Gate: " << global_gate_data[0];
 #endif
 		event_data.globalGate = global_gate_data[0];
 #endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
@@ -562,13 +615,16 @@ int main(int argc, char *argv[])
 #if MASTER&&(!SINGLE_PC) // Soldier Node
 #if DEBUG_SOCKETS
 		std::cout << " Writing global gate to soldier node to indicate readiness of trigger..." << std::endl;
+		mnvdaq.infoStream() << " Writing global gate to soldier node to indicate readiness of trigger...";
 #endif
 		if (write(global_gate_socket_handle,global_gate_data,sizeof(global_gate_data)) == -1) { 
+			mnvdaq.fatalStream() << "socket write error: global_gate!";
 			perror("write error: global_gate"); 
 			exit(EXIT_FAILURE);
 		}
 #if DEBUG_SOCKETS
 		std::cout << " Finished writing global gate to worker node." << std::endl;
+		mnvdaq.infoStream() << " Finished writing global gate to worker node.";
 #endif
 #endif // end if MASTER && !SINGLE_PC
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
@@ -576,19 +632,22 @@ int main(int argc, char *argv[])
 		std::cout << " Reading global gate from soldier node to indicate start of trigger..." << std::endl;
 		std::cout << "  Initial global_gate_data   = " << global_gate_data[0] << std::endl;
 		std::cout << "  global_gate_socket_is_live = " << global_gate_socket_is_live << std::endl; 
+		mnvdaq.infoStream() << " Reading global gate from soldier node to indicate start of trigger...";
+		mnvdaq.infoStream() << "  Initial global_gate_data   = " << global_gate_data[0];
+		mnvdaq.infoStream() << "  global_gate_socket_is_live = " << global_gate_socket_is_live; 
 #endif
 		while (!global_gate_data[0]) { 
 			// Read global gate data from the worker node 
 			int read_val = read(global_gate_socket_connection,global_gate_data,sizeof(global_gate_data));
-#if DEBUG_SOCKETS
-			std::cout << "  socket readback data size = " << read_val << std::endl;
-#endif
 			if ( read_val != sizeof(global_gate_data) ) { 
+				mnvdaq.fatalStream() << "server read error: cannot get global_gate!";
+				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;
 				perror("server read error: done"); 
 				exit(EXIT_FAILURE);
 			}
 #if DEBUG_SOCKETS
 			std::cout << "  ->After read, new global_gate_data: " << global_gate_data[0] << std::endl;
+			mnvdaq.infoStream() << "  ->After read, new global_gate_data: " << global_gate_data[0];
 #endif
 		}
 		event_data.globalGate = global_gate_data[0];
@@ -625,6 +684,9 @@ int main(int argc, char *argv[])
 						int error = daq->WriteCROCFastCommand(crocID, command);
 						if (error) throw error;
 					} catch (int e) {
+						mnvdaq.fatalStream() << "Error for CROC " <<
+							((*croc_iter)->GetCrocAddress()>>16);
+						mnvdaq.fatalStream() << "Cannot write to FastCommand register!";
 						std::cout << "Error in minervadaq::main() for CROC " <<
 							((*croc_iter)->GetCrocAddress()>>16) << std::endl;
 						std::cout << "Cannot write to FastCommand register!" << std::endl;
@@ -635,7 +697,8 @@ int main(int argc, char *argv[])
 				break;
 			case PureLightInjection:
 				triggerType = LightInjection;
-				std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
+				mnvdaq.warnStream() << "No LI control class implemented yet!";
+				std::cout << "minervadaq::main(): Warning!  No LI control class implemented yet!" << std::endl;
 				break;
 			case MixedBeamPedestal:
 				// TODO - Test mixed beam-pedestal running!
@@ -644,6 +707,7 @@ int main(int argc, char *argv[])
 				} else {
 					triggerType = NuMI;
 				}
+				mnvdaq.warnStream() << "Calling untested mixed mode beam-pedestal trigger types!";
 				std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-pedestal trigger types!" << 
 					std::endl;
 				break;
@@ -654,11 +718,14 @@ int main(int argc, char *argv[])
 				} else {
 					triggerType = NuMI;
 				}
+				mnvdaq.warnStream() << "Calling untested mixed mode beam-li trigger types!";
+				mnvdaq.warnStream() << "No LI control class implemented yet!";
 				std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
 				std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 				break; 
 			default:
 				std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
+				mnvdaq.fatalStream() << "Improper Running Mode defined!";
 				exit(-4);
 		}
 		event_data.triggerType = triggerType;
@@ -679,6 +746,7 @@ int main(int argc, char *argv[])
 			(unsigned long long)(triggerNow.tv_usec);
 #if DEBUG_GENERAL
 		std::cout << " ->Trigger Time (gpsTime) = " << totaluseconds << std::endl;
+		mnvdaq.infoStream() << " ->Recording Trigger Time (gpsTime) = " << totaluseconds;
 #endif
 		event_data.triggerTime = totaluseconds;
 
@@ -735,8 +803,10 @@ int main(int argc, char *argv[])
 					//
 #elif NO_THREAD
 #if DEBUG_GENERAL
+					mnvdaq.infoStream() << " Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
+						" Index: " << croc_id << " Channel: " << j;
 					std::cout << " Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
-						" Index " << croc_id << " Channel: " << j << std::endl;
+						" Index: " << croc_id << " Channel: " << j << std::endl;
 #endif
 					TakeData(daq,evt,croc_id,j,0,attach,sys_id);
 #endif
@@ -792,6 +862,7 @@ int main(int argc, char *argv[])
 
 #if DEBUG_GENERAL
 		std::cout << "Preparing to contact the EventBuilder from Main...\n";
+		mnvdaq.infoStream() << "Preparing to contact the EventBuilder from Main...";
 #endif
 		// The soldier node must wait for a "done" signal from the 
 		// worker node before attaching the end-of-event header bank.
@@ -801,15 +872,20 @@ int main(int argc, char *argv[])
 		std::cout << "Preparing to end event...\n";
 		std::cout << " Initial gate_done        = " << gate_done[0] << std::endl;
 		std::cout << " gate_done_socket_is_live = " << gate_done_socket_is_live << std::endl; 
+		mnvdaq.infoStream() << "Preparing to end event...";
+		mnvdaq.infoStream() << " Initial gate_done        = " << gate_done[0];
+		mnvdaq.infoStream() << " gate_done_socket_is_live = " << gate_done_socket_is_live; 
 #endif
 		while (!gate_done[0]) { 
 			// Read "done" from the worker node 
 			if ((read(gate_done_socket_connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
-				perror("server read error: done"); 
+				mnvdaq.fatalStream() << "server read error: cannot get gate_done!";
+				perror("server read error: gate_done"); 
 				exit(EXIT_FAILURE);
 			}
 #if DEBUG_SOCKETS
 			std::cout << " After read, new gate_done: " << gate_done[0] << std::endl;
+			mnvdaq.infoStream() << " After read, new gate_done: " << gate_done[0];
 #endif
 		}
 #endif // end if !SINGLE_PC
@@ -840,10 +916,12 @@ int main(int argc, char *argv[])
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
 #if DEBUG_SOCKETS
 		std::cout << " Writing to soldier node to indicate end of gate..." << std::endl;
+		mnvdaq.infoStream() << " Writing to soldier node to indicate end of gate...";
 #endif
 		gate_done[0]=true;
 		if (write(gate_done_socket_handle,gate_done,sizeof(gate_done)) == -1) { 
-			perror("server read error: done"); 
+			mnvdaq.fatalStream() << "server write error: cannot put gate_done!";
+			perror("server write error: gate_done"); 
 			exit(EXIT_FAILURE);
 		}
 #endif // end if !MASTER && !SINGLE_PC
@@ -856,6 +934,7 @@ int main(int argc, char *argv[])
 			global_gate << event_data.globalGate;
 		} catch (bool e) {
 			std::cout << "Error in minervadaq::main opening global gate data!" << std::endl;
+			mnvdaq.fatalStream() << "Error opening global gate data!";
 			exit(-2000);
 		}
 		global_gate.close();
@@ -873,11 +952,13 @@ int main(int argc, char *argv[])
 		global_gate >> global_gate_data[0];
 	} catch (bool e) {
 		std::cout << "Error in minervadaq::main opening global gate data!\n";
+		mnvdaq.fatalStream() << "Error opening global gate data!";
 		exit(-2000);
 	}
 	global_gate.close();
 	lastEvent = global_gate_data[0] - 1; // Fencepost, etc.
 	std::cout << " Last Event = " << lastEvent << std::endl;
+	mnvdaq.infoStream() << "Last Event = " << lastEvent;
 #endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
 
 	gettimeofday(&runend, NULL);
@@ -888,6 +969,7 @@ int main(int argc, char *argv[])
 
 	unsigned long long totaldiff  = totalend - totalstart;
 	printf(" \n\nTotal acquisition time was %llu microseconds.\n\n",totaldiff);
+	mnvdaq.info("Total acquisition time was %llu microseconds.",totaldiff);
 #endif // end if TAKE_DATA
 
 	/**********************************************************************************/
@@ -1031,7 +1113,6 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 } // end void TakeData
 
 
-// TODO - Get rid of this function!
 void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode, controller *tmpController) 
 {
 /*! \fn void TriggerDAQ(acquire_data *data, unsigned short int triggerType)
@@ -1063,6 +1144,7 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes 
 	time_t currentTime; time(&currentTime);
 	std::cout << " Starting Trigger at " << ctime(&currentTime);
 	std::cout << " ->Setting Trigger: " << triggerType << std::endl;
+	mnvdaq.infoStream() << " ->Setting Trigger: " << triggerType;
 #endif
 
 	/**********************************************************************************/
@@ -1087,6 +1169,7 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes 
 			break;
 		default:
 			std::cout << "ERROR! Improper Running Mode defined!" << std::endl;
+			mnvdaq.fatalStream() << "Improper Running Mode defined!";
 			exit(-4);
 	}
 	daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
@@ -1103,6 +1186,7 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes 
 
 #if DEBUG_GENERAL
 	std::cout << " Data Ready! " << std::endl;
+	mnvdaq.infoStream() << " Data Ready! ";
 #endif
 #if RUN_SLEEPY
 	// This sleep is here because we return too quickly - the FEBs are still digitizing.

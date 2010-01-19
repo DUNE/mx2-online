@@ -63,7 +63,7 @@ sleep 2s
 xterm -geometry 80x28+380+421 -sl 10000 -e ./start_eb_service $ETSYS $OUTFL &
 export EB_SERV_TERM_PID=$!
 echo EB_SERV_TERM_PID=${EB_SERV_TERM_PID}
-sleep 16s
+sleep 15s
 
 # Note we do not pass the full path of the ET system to the daq.
 # That information is attached within the process itself.

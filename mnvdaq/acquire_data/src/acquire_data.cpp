@@ -38,7 +38,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 #endif
 	// Set logging priority for this function:
 	acqData.setPriority(log4cpp::Priority::DEBUG);
-	acqData.infoStream() << "Entering acquire_data::InitializeDaq()." << log4cpp::eol;
+	acqData.infoStream() << "Entering acquire_data::InitializeDaq().";
 
 	// Get the VME read/write access functions.
 	daqAcquire = new acquire(); 
@@ -50,7 +50,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 		if (error) throw error;
 	} catch (int e) {
 		std::cout << "Error contacting the VME controller!" << std::endl;
-		daqController->ReportError(e);
+		acqData.fatalStream() << "acquire_data::InitializeDaq(): Error contacting the VME controller!";
 		exit(e);
 	} 
 
@@ -85,12 +85,12 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	daqController->SetCrocVectorLength(); 
 	daqController->SetCrimVectorLength();
 #if DEBUG_INIT
-	std::cout << " Total Number of Initialized CRIMs attached to this controller = " << 
-		daqController->GetCrimVectorLength() << std::endl; 
-	std::cout << " Total Number of Initialized CROCs attached to this controller = " << 
-		daqController->GetCrocVectorLength() << std::endl; 
-	std::cout << " Master CRIM address = " <<
-			(daqController->GetCrim()->GetCrimAddress()>>16) << std::endl;
+	acqData.infoStream() << " Total Number of Initialized CRIMs attached to this controller = " << 
+		daqController->GetCrimVectorLength(); 
+	acqData.infoStream() << " Total Number of Initialized CROCs attached to this controller = " << 
+		daqController->GetCrocVectorLength(); 
+	acqData.infoStream() << " Master CRIM address = " <<
+			(daqController->GetCrim()->GetCrimAddress()>>16);
 #endif
 
 	// Enable the CAEN IRQ handler.
@@ -98,17 +98,23 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	try {
 		unsigned short bitmask = daqController->GetCrim()->GetInterruptMask();
 #if DEBUG_INIT
-		printf("Enabling the IRQ Handler with bimask 0x%04X\n",bitmask);
+		printf("Enabling the IRQ Handler on CRIM %d with bimask 0x%04X\n",
+			(daqController->GetCrim()->GetCrimAddress()>>16),bitmask);
+		acqData.info("Enabling the IRQ Handler on CRIM %d with bimask 0x%04X",
+			(daqController->GetCrim()->GetCrimAddress()>>16),bitmask);
 #endif
-		int error = CAENVME_IRQEnable(daqController->handle,~bitmask );
+		int error = CAENVME_IRQEnable(daqController->handle,~bitmask);
 #if DEBUG_INIT
 		std::cout << " Returned from IRQEnable for CRIM " << 
 			(daqController->GetCrim()->GetCrimAddress()>>16) << std::endl;
+		acqData.infoStream() << " Returned from IRQEnable for CRIM " << 
+			(daqController->GetCrim()->GetCrimAddress()>>16);
 #endif
 		if (error) throw error;
 	} catch (int e) {
-		std::cout << "Error enabling CAEN VME IRQ handler!" << std::endl;
+		std::cout << "Error in acquire_data::InitializeDaq() enabling CAEN VME IRQ handler!" << std::endl;
 		daqController->ReportError(e);
+		acqData.fatalStream() << "Error in acquire_data::InitializeDaq() enabling CAEN VME IRQ handler!";
 		exit(-8);
 	}    
 
@@ -127,6 +133,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 #if DEBUG_INIT
 	std::cout << "~~~~~ EXITING acquire_data::InitializeDaq() ~~~~~~~~~~~" << std::endl;
 #endif
+	acqData.infoStream() << "Exiting acquire_data::InitializeDaq().";
 }
 
 
@@ -148,6 +155,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 // (certainly interrupt resets must be handled by the DAQ).
 	std::cout << "\nEntering acquire_data::InitializeCrim for address " << (address>>16) << 
 		" with running mode " << runningMode << std::endl;
+	acqData.infoStream() << "Entering acquire_data::InitializeCrim for address " << (address>>16) << 
+		" with running mode " << runningMode;
 #if DEBUG_THREAD
 	std::ofstream crim_thread;
 	std::stringstream thread_number;
@@ -171,6 +180,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	} catch (int e)  {
 		std::cout << "Unable to read the status register for CRIM with Address " << 
 			((daqController->GetCrim(index)->GetCrimAddress())>>16) << std::endl;
+		acqData.fatalStream() << "Unable to read the status register for CRIM with Address " << 
+			((daqController->GetCrim(index)->GetCrimAddress())>>16);
 		exit(-3);
 	} 
 
@@ -185,11 +196,13 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	// Check running mode and perform appropriate initialization.  We are needlessly 
         // repetitious with setting the gate width and tcalb delay (0x7F & 0x3FF will probably 
         // always be fine for any running mode), but this is to "build in" some flexibility 
-        // if we decide we need it (as a reminder).
+        // if we decide we need it (as a reminder).  NOTE that the IRQLine defaults to 
+	// SGATEFALL in the CRIM constructor!
 	switch (runningMode) {
 		// "OneShot" is the casual name for CRIM internal timing with software gates.
 		case OneShot:
-			std::cout << "Running Mode is OneShot." << std::endl;
+			std::cout << " Running Mode is OneShot." << std::endl;
+			acqData.infoStream() << " Running Mode is OneShot.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = ZeroFreq;
@@ -198,7 +211,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			break;
 		// All of the NuMI and dedicated LI modes use MTM timing.
 		case NuMIBeam:
-			std::cout << "Running Mode is NuMI Beam." << std::endl;
+			std::cout << " Running Mode is NuMI Beam." << std::endl;
+			acqData.infoStream() << " Running Mode is NuMI Beam.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = ZeroFreq;
@@ -206,7 +220,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			TCALBEnable  = 0x1;
 			break;
 		case PureLightInjection:
-			std::cout << "Running Mode is PureLightInjection." << std::endl;
+			std::cout << " Running Mode is PureLightInjection." << std::endl;
+			acqData.infoStream() << " Running Mode is PureLightInjection.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = ZeroFreq;
@@ -214,7 +229,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			TCALBEnable  = 0x1;
 			break;
 		case MixedBeamPedestal:
-			std::cout << "Running Mode is MixedBeamPedestal." << std::endl;
+			std::cout << " Running Mode is MixedBeamPedestal." << std::endl;
+			acqData.infoStream() << " Running Mode is MixedBeamPedestal.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = ZeroFreq;
@@ -222,7 +238,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			TCALBEnable  = 0x1;
 			break;
 		case MixedBeamLightInjection:
-			std::cout << "Running Mode is MixedBeamLightInjection." << std::endl;
+			std::cout << " Running Mode is MixedBeamLightInjection." << std::endl;
+			acqData.infoStream() << " Running Mode is MixedBeamLightInjection.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = ZeroFreq;
@@ -231,7 +248,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			break;
 		// Cosmics use CRIM internal timing with gates send at a set frequency.
 		case Cosmics:
-			std::cout << "Running Mode is Cosmic." << std::endl;
+			std::cout << " Running Mode is Cosmic." << std::endl;
+			acqData.infoStream() << " Running Mode is Cosmic.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = F4; // The fastest setting is a function of FEB firmware.
@@ -240,7 +258,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			daqController->GetCrim(index)->SetIRQLine((crimInterrupts)0x01); // Trigger
 			break;
 		default:
-			std::cout << "ERROR! No Running Mode defined!" << std::endl;
+			std::cout << "Error in acquire_data::InitializeCrim()! No Running Mode defined!" << std::endl;
+			acqData.fatalStream() << "Error in acquire_data::InitializeCrim()! No Running Mode defined!";
 			exit(-4);
 	}
 
@@ -253,6 +272,9 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	printf("  CRIM GateWidth Setup = 0x%04X\n", daqController->GetCrim(index)->GetGateWidthSetup());
 	printf("  CRIM TCALB Setup     = 0x%04X\n", daqController->GetCrim(index)->GetTCALBPulse());
 #endif
+	acqData.info("  CRIM Timing Setup    = 0x%04X", daqController->GetCrim(index)->GetTimingSetup());
+	acqData.info("  CRIM GateWidth Setup = 0x%04X", daqController->GetCrim(index)->GetGateWidthSetup());
+	acqData.info("  CRIM TCALB Setup     = 0x%04X", daqController->GetCrim(index)->GetTCALBPulse());
 
 	// Now write settings to hardware.
 	// TODO - This part should be something we can do or not do according to a flag...
@@ -267,6 +289,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	} catch (int e) {
 		std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the Gate Width register!" << std::endl;
 		daqController->ReportError(e);
+		acqData.fatalStream() << "Error in acquire_data::InitializeCrim!  Cannot write to the Gate Width register!";
 		exit (e);
 	}
 	// Setup TCALB Delay.
@@ -279,6 +302,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	} catch (int e) {
 		std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the TCALB register!" << std::endl;
 		daqController->ReportError(e);
+		acqData.fatalStream() << "Error in acquire_data::InitializeCrim!  Cannot write to the TCALB register!";
 		exit (e);
 	}
 	// Setup Timing register.
@@ -291,6 +315,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	} catch (int e) {
 		std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the Timing Setup register!" << std::endl;
 		daqController->ReportError(e);
+		acqData.fatalStream() << "Error in acquire_data::InitializeCrim!  Cannot write to the Timing Setup register!";
 		exit (e);
 	}
 
@@ -302,6 +327,8 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	} catch (int e) {
 		std::cout << "Error in acquire_data::InitializeCrim for CRIM with address = " << (address>>16) << std::endl;
 		std::cout << "Cannot SetupIRQ!" << std::endl;
+		acqData.fatalStream() << "Error in acquire_data::InitializeCrim for CRIM with address = " << (address>>16);
+		acqData.fatalStream() << "Cannot SetupIRQ!";
 		exit (e);
 	}
 #if DEBUG_THREAD
@@ -309,6 +336,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	crim_thread.close();
 #endif
 	std::cout << "Finished initializing CRIM " << (address>>16) << std::endl;
+	acqData.infoStream() << "Finished initializing CRIM " << (address>>16);
 }
 
 
