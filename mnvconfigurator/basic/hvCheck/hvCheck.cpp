@@ -1,13 +1,16 @@
-#include "acquire.h"
-#include "MinervaDAQtypes.h"
-#include "controller.h"
-#include "feb.h"
-#include "adctdc.h"
+// General Headers
 #include <iostream>
 #include <iterator>
 #include <fstream>
 #include <iomanip>
 #include <cstdlib>
+
+// Minerva Headers
+#include "acquire.h"
+#include "MinervaDAQtypes.h"
+#include "controller.h"
+#include "feb.h"
+#include "adctdc.h"
 
 using namespace std;
 
@@ -21,6 +24,13 @@ using namespace std;
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs now.
 const int maxHits    = 6;  // maxHits should not be changed independent of the DAQ!
+
+// Implement this interface for your own strategies for printing log statements.
+log4cpp::Appender* myAppender;
+// Return the root of the Category hierarchy?...
+log4cpp::Category& root    = log4cpp::Category::getRoot();
+// Further category hierarchy.
+log4cpp::Category& hvCheck = log4cpp::Category::getInstance(std::string("hvCheck"));
 
 const int tripRegIBP        =  60;
 const int tripRegIBBNFOLL   = 120;
@@ -116,8 +126,17 @@ int main(int argc, char *argv[])
 		cout << endl;
 	}
 
+	myAppender = new log4cpp::FileAppender("default", "/work/data/logs/config.txt");
+	myAppender->setLayout(new log4cpp::BasicLayout());
+	root.addAppender(myAppender);
+	root.setPriority(log4cpp::Priority::ERROR);
+	hvCheck.setPriority(log4cpp::Priority::INFO);
+
+	hvCheck.info("--Starting hvCheck script.--");
+
+
 	// Controller & Acquire class init, contact the controller
-	controller *myController = new controller(0x00, controllerID);	
+	controller *myController = new controller(0x00, controllerID, myAppender);	
 	acquire *myAcquire = new acquire(); 				
 	if ((error=myController->ContactController())!=0) { 
 		cout<<"Controller contact error: "<<error<<endl; exit(error); // Exit due to no controller!
