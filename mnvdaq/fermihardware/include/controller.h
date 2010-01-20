@@ -60,7 +60,6 @@ class controller {
 		int handle; /*!<a device handle returned by the initialization function*/
 
 		/*! the specialty constructor */
-		// TODO - add a version that does not require an appender.
 		controller(int a, int id, log4cpp::Appender* appender) { 
 			address         = a;
 			addressModifier = cvA24_U_DATA; // default address modifier
@@ -74,10 +73,24 @@ class controller {
 			firmware[0]     = 0;
 			controller_id   = id; //an internal ID used for sorting data
 			ctrlAppender    = appender; 
-			//obsolete//appender = new log4cpp::FileAppender("default", "/work/data/logs/testme.txt");
-			//obsolete//appender->setLayout(new log4cpp::BasicLayout());
-			//obsolete//log4cpp::Category::getRoot().addAppender(appender);
-			//obsolete//log4cpp::Category::getRoot().setPriority(log4cpp::Priority::DEBUG);
+			controllerLog.setPriority(log4cpp::Priority::DEBUG);
+		};
+		controller(int a, int id) { 
+			address         = a;
+			addressModifier = cvA24_U_DATA; // default address modifier
+			dataWidth       = cvD16;    // default data width
+			controllerType  = cvV2718;  // this is the only controller board we have
+			bridgeType      = cvA2818;  // this is the only PCI card we have
+			slotNumber      = 0; // by construction 
+			pciSlotNumber   = 0; // link - probably always 0.
+			boardNumber     = 0; // we basically use controller_id for this...
+			handle          = -1;
+			firmware[0]     = 0;
+			controller_id   = id; //an internal ID used for sorting data
+			ctrlAppender = new log4cpp::FileAppender("default", "/work/data/logs/config.txt");
+			ctrlAppender->setLayout(new log4cpp::BasicLayout());
+			log4cpp::Category::getRoot().addAppender(ctrlAppender);
+			log4cpp::Category::getRoot().setPriority(log4cpp::Priority::DEBUG);
 			controllerLog.setPriority(log4cpp::Priority::DEBUG);
 		};
 
