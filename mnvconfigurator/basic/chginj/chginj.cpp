@@ -1,13 +1,16 @@
-#include "acquire.h"
-#include "MinervaDAQtypes.h"
-#include "controller.h"
-#include "feb.h"
-#include "adctdc.h"
+// General Headers
 #include <iostream>
 #include <iterator>
 #include <fstream>
 #include <iomanip>
 #include <cstdlib>
+
+// Minerva Headers
+#include "acquire.h"
+#include "MinervaDAQtypes.h"
+#include "controller.h"
+#include "feb.h"
+#include "adctdc.h"
 
 using namespace std;
 
@@ -45,6 +48,14 @@ const int tripRegVTH        = 240;
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
+
+// Implement this interface for your own strategies for printing log statements.
+log4cpp::Appender* myAppender;
+// Return the root of the Category hierarchy?...
+log4cpp::Category& root   = log4cpp::Category::getRoot();
+// Further category hierarchy.
+log4cpp::Category& chginj = log4cpp::Category::getInstance(std::string("chginj"));
+
 
 const CVRegisters ControllerStatusAddress = cvStatusReg;
 const CVDataWidth DW                      = cvD16;
@@ -96,9 +107,17 @@ int main()
 	
 	bool doChjInjConfig = true;
 	// bool doChjInjConfig = false;
+
+	myAppender = new log4cpp::FileAppender("default", "/work/data/logs/config.txt");
+	myAppender->setLayout(new log4cpp::BasicLayout());
+	root.addAppender(myAppender);
+	root.setPriority(log4cpp::Priority::ERROR);
+	chginj.setPriority(log4cpp::Priority::INFO);
+
+	chginj.info("--Starting chginj script.--");
 	
 	// Controller & Acquire class init, contact the controller
-	controller *myController = new controller(0x00, controllerID);	
+	controller *myController = new controller(0x00, controllerID, myAppender);	
 	acquire *myAcquire = new acquire(); 				
 	if ((error=myController->ContactController())!=0) { 
 		cout<<"Controller contact error: "<<error<<endl; exit(error); // Exit due to no controller!
@@ -555,7 +574,10 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 		myFeb->SetInjectDACValue(dacval);
 		unsigned char injPhase[] = {0x1};
 		myFeb->SetInjectPhase(injPhase);
-    	for (int i=0;i<4;i++) { myFeb->SetDiscrimEnableMask(0xFFFF,i); } 
+    		myFeb->SetDiscrimEnableMask(0xFFFF,0);  
+    		myFeb->SetDiscrimEnableMask(0xFFFF,1);  
+    		myFeb->SetDiscrimEnableMask(0xFFFF,2);  
+    		myFeb->SetDiscrimEnableMask(0xFFFF,3);  
 		// Change FEB fpga function to write
 		Devices dev = FPGA;
 		Broadcasts b = None;
@@ -1239,7 +1261,8 @@ int FEBTRiPTWriteChargeInjection(controller *myController, acquire *myAcquire, c
 			myFeb->GetTrip(i)->SetRegisterValue(11, tripRegGAIN ); //gain
 			myFeb->GetTrip(i)->SetRegisterValue(12, tripRegIRSEL ); //irsel
 			myFeb->GetTrip(i)->SetRegisterValue(13, tripRegIWSEL ); //iwsel
-			myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FE ); //inject, enable first word
+			//myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FE ); //inject, enable first word
+			myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FFFE ); //inject, enable first two words
 			// Injection patterns:
 			// ~~~~~~~~~~~~~~~~~~~
 			// Funny structure... 34 bits... using "FermiDAQ" nomenclature...
