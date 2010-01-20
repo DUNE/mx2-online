@@ -1,13 +1,17 @@
-#include "acquire.h"
-#include "MinervaDAQtypes.h"
-#include "controller.h"
-#include "feb.h"
-#include "adctdc.h"
+// General Headers
 #include <iostream>
 #include <iterator>
 #include <fstream>
 #include <iomanip>
 #include <cstdlib>
+
+
+// Minerva Headers (log4cpp Headers contained within). 
+#include "acquire.h"
+#include "MinervaDAQtypes.h"
+#include "controller.h"
+#include "feb.h"
+#include "adctdc.h"
 
 using namespace std;
 
@@ -18,6 +22,13 @@ using namespace std;
 #define TRIPTREADLEVEL 50
 #define TRIPTWRITELEVEL 50
 #define HVENABLE 0 // 1 to enable HV
+
+// Implement this interface for your own strategies for printing log statements.
+log4cpp::Appender* myAppender;
+// Return the root of the Category hierarchy?...
+log4cpp::Category& root     = log4cpp::Category::getRoot();
+// Further category hierarchy.
+log4cpp::Category& llConfig = log4cpp::Category::getInstance(std::string("llConfig"));
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs now.
 const int maxHits    = 6;  // maxHits should not be changed independent of the DAQ!
@@ -126,8 +137,16 @@ int main(int argc, char *argv[])
 		cout << endl;
 	}
 
+	myAppender = new log4cpp::FileAppender("default", "/work/data/logs/config.txt");
+	myAppender->setLayout(new log4cpp::BasicLayout());
+	root.addAppender(myAppender);
+	root.setPriority(log4cpp::Priority::ERROR); 	
+	llConfig.setPriority(log4cpp::Priority::INFO);
+
+	llConfig.info("--Starting lightLeakConfig script.--");	
+
 	// Controller & Acquire class init, contact the controller
-	controller *myController = new controller(0x00, controllerID);	
+	controller *myController = new controller(0x00, controllerID, myAppender);	
 	acquire *myAcquire = new acquire(); 				
 	if ((error=myController->ContactController())!=0) { 
 		cout<<"Controller contact error: "<<error<<endl; exit(error); // Exit due to no controller!
