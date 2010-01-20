@@ -1,4 +1,5 @@
 #include "PulseWidthCommand.h"
+#include "PulseWidthCommandGrammar.h"
 
 #include <map>
 #include <vector>
@@ -8,21 +9,26 @@
 
 namespace Minerva
 {
+	// have to initialize static members outside class declaration
+	PulseWidthCommandGrammar * PulseWidthCommand::class_grammar = NULL;
+
 	PulseWidthCommand::PulseWidthCommand()
 	  : width(-1)
-	{}
+	{
+		commandType = PULSE_WIDTH_COMMAND;
+		
+		if (PulseWidthCommand::class_grammar == NULL)
+			PulseWidthCommand::class_grammar = new PulseWidthCommandGrammar;
+		
+		grammar = PulseWidthCommand::class_grammar;
+	}
 	
 	void PulseWidthCommand::set_width(int newWidth)
 	{
 		if (newWidth >= 0 && newWidth <= 7)
-			highBit = newHighBit;
+			width = newWidth;
 		else
 			throw std::out_of_range("Pulse width must be between 0 and 7 (inclusive).");
-	}
-
-	void PulseWidthCommand::InitializeStatics()
-	{
-		return;
 	}
 
 	std::string PulseWidthCommand::ToString()

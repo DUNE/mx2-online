@@ -4,13 +4,16 @@
 
 namespace Minerva
 {
-	void PulseHeightStoreCommand::InitializeStatics()
+	// have to initialize static members outside class declaration
+	PulseHeightStoreCommandGrammar * PulseHeightStoreCommand::class_grammar = NULL;
+
+	PulseHeightStoreCommand::PulseHeightStoreCommand()
 	{
-		requiredCommands.insert( std::pair<CommandType, int>(PULSE_HEIGHT_HIGH_BIT, -2) );
-		requiredCommands.insert( std::pair<CommandType, int>(PULSE_HEIGHT_LOW_BITS, -1) );
+		commandType = PULSE_HEIGHT_STORE_COMMAND;
 		
-		initialized = true;
+		if (PulseHeightStoreCommand::class_grammar == NULL)
+			PulseHeightStoreCommand::class_grammar = new PulseHeightStoreCommandGrammar;
 		
-		return;
+		grammar = PulseHeightStoreCommand::class_grammar;
 	}
 };

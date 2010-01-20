@@ -1,4 +1,5 @@
-#include "CommandBlock.h"
+#include "Command.h"
+#include "../Blocks/CommandBlock.h"
 
 #include <string>
 #include <map>
@@ -6,22 +7,6 @@
 
 namespace Minerva
 {
-	bool Command::TestString(std::string teststring)
-	{
-		InitializeStatics();
-		
-		if ( teststring.length() != tokenTemplate.length() )
-			return false;
-			
-		for ( int i = 0; i < teststring.length(); i++ )
-		{
-			if ( (teststring[i] != tokenTemplate[i]) && (tokenTemplate[i] != '?'))
-				return false;
-		}
-		
-		return true;
-	}
-	
 	bool Command::CheckCompatibility( const std::multimap<CommandType, int> & positionList, int myPosition )
 	{
 		// first check the exclusions.
@@ -32,7 +17,7 @@ namespace Minerva
 			int position = (*commandIt).second;
 			
 			// if any of the commands in the list are excluded by my command we know this list is incompatible.  don't look any further.
-			if ( excludedCommands.find(commandType) != excludedCommands.end() )
+			if ( grammar->get_excludedCommands().find(commandType) != grammar->get_excludedCommands().end() )
 				return false;
 			
 			// we'll need the multimap inverted for the next checking step.
@@ -40,7 +25,7 @@ namespace Minerva
 		}
 		
 		// check the requirements.
-		for (std::map<CommandType, int>::iterator requirementIt = requiredCommands.begin(); requirementIt != requiredCommands.end(); requirementIt++)
+		for (std::map<CommandType, int>::const_iterator requirementIt = grammar->get_requiredCommands().begin(); requirementIt != grammar->get_requiredCommands().end(); requirementIt++)
 		{
 			CommandType commandType = (*requirementIt).first;
 			int positionOffset = (*requirementIt).second;

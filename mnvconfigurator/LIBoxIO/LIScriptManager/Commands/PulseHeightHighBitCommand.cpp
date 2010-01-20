@@ -1,4 +1,5 @@
 #include "PulseHeightHighBitCommand.h"
+#include "PulseHeightHighBitCommandGrammar.h"
 
 #include <map>
 #include <vector>
@@ -8,9 +9,19 @@
 
 namespace Minerva
 {
+	// have to initialize static members outside class declaration
+	PulseHeightHighBitCommandGrammar * PulseHeightHighBitCommand::class_grammar = NULL;
+
 	PulseHeightHighBitCommand::PulseHeightHighBitCommand()
 	  : highBit(-1)
-	{}
+	{
+		commandType = PULSE_HEIGHT_HIGH_BIT_COMMAND;
+		
+		if (PulseHeightHighBitCommand::class_grammar == NULL)
+			PulseHeightHighBitCommand::class_grammar = new PulseHeightHighBitCommandGrammar;
+		
+		grammar = PulseHeightHighBitCommand::class_grammar;
+	}
 	
 	void PulseHeightHighBitCommand::set_highBit(int newHighBit)
 	{
@@ -18,18 +29,6 @@ namespace Minerva
 			highBit = newHighBit;
 		else
 			throw std::out_of_range("High bit must be between 0 and 16 (inclusive).");
-	}
-
-	void PulseHeightHighBitCommand::InitializeStatics()
-	{
-		if (initialized)
-			return;
-		
-		requiredCommands.insert( std::pair<CommandType, int>(PULSE_HEIGHT_LOW_BITS, 1) );
-		requiredCommands.insert( std::pair<CommandType, int>(PULSE_HEIGHT_STORE, 2) );
-
-		initialized = true;
-		return;
 	}
 
 	std::string PulseHeightHighBitCommand::ToString()

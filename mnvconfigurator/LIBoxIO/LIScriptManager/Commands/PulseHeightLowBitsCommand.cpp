@@ -1,4 +1,5 @@
 #include "PulseHeightLowBitsCommand.h"
+#include "PulseHeightLowBitsCommandGrammar.h"
 
 #include <map>
 #include <vector>
@@ -8,10 +9,19 @@
 
 namespace Minerva
 {
+	// have to initialize static members outside class declaration
+	PulseHeightLowBitsCommandGrammar * PulseHeightLowBitsCommand::class_grammar = NULL;
 
 	PulseHeightLowBitsCommand::PulseHeightLowBitsCommand()
 	  : lowBit1(-1), lowBit2(-1)
-	{}
+	{
+		commandType = PULSE_HEIGHT_LOW_BITS_COMMAND;
+		
+		if (PulseHeightLowBitsCommand::class_grammar == NULL)
+			PulseHeightLowBitsCommand::class_grammar = new PulseHeightLowBitsCommandGrammar;
+		
+		grammar = PulseHeightLowBitsCommand::class_grammar;
+	}
 	
 	void PulseHeightLowBitsCommand::set_lowBit1(int newLowBit1)
 	{
@@ -27,18 +37,6 @@ namespace Minerva
 			lowBit2 = newLowBit2;
 		else
 			throw std::out_of_range("Both low bits must be between 0 and 15 (inclusive).");
-	}
-
-	void PulseHeightLowBitsCommand::InitializeStatics()
-	{
-		if (initialized)
-			return;
-		
-		requiredCommands.insert( std::pair<CommandType, int>(PULSE_HEIGHT_HIGH_BIT, -1) );
-		requiredCommands.insert( std::pair<CommandType, int>(PULSE_HEIGHT_STORE, 1) );
-
-		initialized = true;
-		return;
 	}
 
 	std::string PulseHeightLowBitsCommand::ToString()

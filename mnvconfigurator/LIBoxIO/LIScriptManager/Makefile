@@ -2,6 +2,7 @@ all: LIScriptManager
 
 COMMANDS=Commands/*.cpp
 BLOCKS=Blocks/*.cpp
+SCRIPTS=Scripts/*.cpp
 
-LIScriptManager: $(COMMANDS) $(BLOCKS) CommandScript.cpp main.cpp
-	g++ -o LIScriptManager $(COMMANDS) $(BLOCKS) ../LIBoxExceptions.cpp main.cpp
+LIScriptManager: $(COMMANDS) $(BLOCKS) $(SCRIPTS) main.cpp
+	g++ -o LIScriptManager $(COMMANDS) $(BLOCKS) $(SCRIPTS) ../LIBoxExceptions.cpp main.cpp

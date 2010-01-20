@@ -7,9 +7,11 @@ namespace Minerva
 	class CommandStructure
 	{
 		public:
+			virtual ~CommandStructure() {};
+			
 			virtual bool Validate() = 0;
 			virtual std::string ToString() = 0;
-			virtual static std::string Description() = 0;
+			virtual std::string Describe() = 0;
 	};
 };
 

@@ -2,7 +2,7 @@
 #define INITIALIZEBLOCK_H 1
 
 #include "CommandBlock.h"
-#include "../Commands/ResetCommand.h"
+#include "InitializeBlockGrammar.h"
 
 #include <string>
 
@@ -11,17 +11,13 @@ namespace Minerva
 	class InitializeBlock : public CommandBlock
 	{
 		public:
-			static std::string  Description()		{ return std::string("Block of commands that initializes the LI box."); };
+			InitializeBlock();
 			
-			bool ValidCommand(InitializeCommand * command) { return true; };
-			
-			void AddCommand(InitializeCommand * command) { AddValidCommand(command); };
+			std::string  Describe()		{ return std::string("Block of commands that initializes the LI box."); };
 			
 		protected:
-			static void InitializeStatics();
-
-			static CommandBlockType commandBlockType = INITIALIZE;
-
+			// this guy allows us to avoid making one copy of the grammar for each object we instantiate.
+			static InitializeBlockGrammar * class_grammar;
 	};	
 };
 

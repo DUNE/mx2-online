@@ -1,21 +1,20 @@
 #include "LEDSelectionBlock.h"
-#include "../../Command.h"
+#include "LEDSelectionBlockGrammar.h"
 
-#include <map>
+#include "../Commands/Command.h"
 
 namespace Minerva
 {
-	void LEDSelectionBlock::InitializeStatics()
+	// have to initialize static members outside class declaration
+	LEDSelectionBlockGrammar * LEDSelectionBlock::class_grammar = NULL;
+
+	LEDSelectionBlock::LEDSelectionBlock()
 	{
-		if (initialized)
-			return;
-			
-		numAllowedCommands.insert( std::pair<CommandType, int>(LED_SELECTION, 1) );
-		requiredCommands.push_back(LED_SELECTION);
+		commandBlockType = LED_SELECTION_BLOCK;
 		
-		initialized = true;
-		return;
+		if (LEDSelectionBlock::class_grammar == NULL)
+			LEDSelectionBlock::class_grammar = new LEDSelectionBlockGrammar;
+			
+		grammar = LEDSelectionBlock::class_grammar;
 	}
-
-
 };

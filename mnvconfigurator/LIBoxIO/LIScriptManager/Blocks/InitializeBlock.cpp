@@ -1,21 +1,20 @@
 #include "InitializeBlock.h"
-#include "../../Command.h"
+#include "InitializeBlockGrammar.h"
 
-#include <map>
+#include "../Commands/Command.h"
 
 namespace Minerva
 {
-	void InitializeBlock::InitializeStatics()
+	// have to initialize static members outside class declaration
+	InitializeBlockGrammar * InitializeBlock::class_grammar = NULL;
+
+	InitializeBlock::InitializeBlock()
 	{
-		if (initialized)
-			return;
-			
-		numAllowedCommands.insert( std::pair<CommandType, int>(INITIALIZE, 1) );
-		requiredCommands.push_back(INITIALIZE);
+		commandBlockType = INITIALIZE_BLOCK;
 		
-		initialized = true;
-		return;
+		if (InitializeBlock::class_grammar == NULL)
+			InitializeBlock::class_grammar = new InitializeBlockGrammar;
+
+		grammar = InitializeBlock::class_grammar;
 	}
-
-
 };

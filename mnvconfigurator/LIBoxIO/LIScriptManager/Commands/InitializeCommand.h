@@ -2,6 +2,7 @@
 #define INITIALIZECOMMAND_H 1
 
 #include "Command.h"
+#include "InitializeCommandGrammar.h"
 
 #include <string>
 
@@ -10,17 +11,17 @@ namespace Minerva
 	class InitializeCommand : public Command
 	{
 		public:
-			inline bool Validate()	{ return true; }		// there are no parameters for a reset command so it's always valid.
+			InitializeCommand();
+		
+			inline bool Validate()	        { return true; }		// there are no parameters for an initialization command so it's always valid.
 			
 			inline std::string ToString()    { return std::string("aA"); };
-			inline static std::string Description() { return std::string("Initialize the LI box."); };
+			inline std::string Describe()    { return std::string("Initialize the LI box."); };
 			
-			bool operator==(const PulseHeightStoreCommand& rhs) { return true; };		// again, no parameters, so two of these are always equal.
+			inline bool operator==(const InitializeCommand& rhs) { return true; };		// again, no parameters, so two of these are always equal.
 
-		protected:
-			static const CommandType commandType    = INITIALIZE;
-			static const std::string tokenTemplate  = "aA";
-
+		private:
+			static InitializeCommandGrammar * class_grammar;
 	};
 };
 

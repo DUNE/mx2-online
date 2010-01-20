@@ -1,20 +1,21 @@
 #include "ResetBlock.h"
-#include "../../Command.h"
+#include "ResetBlockGrammar.h"
 
-#include <map>
+#include "../Commands/Command.h"
 
 namespace Minerva
 {
-	void ResetBlock::InitializeStatics()
+	// have to initialize static members outside class declaration
+	ResetBlockGrammar * ResetBlock::class_grammar = NULL;
+
+	ResetBlock::ResetBlock()
 	{
-		if (initialized)
-			return;
-			
-		numAllowedCommands.insert( std::pair<CommandType, int>(RESET, 1) );
-		requiredCommands.push_back(RESET);
-		
-		initialized = true;
-		return;
+		commandBlockType = RESET_BLOCK;
+
+		if (ResetBlock::class_grammar == NULL)
+			ResetBlock::class_grammar = new ResetBlockGrammar;
+
+		grammar = ResetBlock::class_grammar;
 	}
 
 

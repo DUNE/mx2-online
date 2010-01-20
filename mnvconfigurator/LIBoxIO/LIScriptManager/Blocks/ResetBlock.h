@@ -2,7 +2,7 @@
 #define RESETBLOCK_H 1
 
 #include "CommandBlock.h"
-#include "../Commands/ResetCommand.h"
+#include "ResetBlockGrammar.h"
 
 #include <string>
 
@@ -11,17 +11,13 @@ namespace Minerva
 	class ResetBlock : public CommandBlock
 	{
 		public:
-			static std::string  Description()		{ return std::string("Block of commands that resets the LI box."); };
+			ResetBlock();
 			
-			bool ValidCommand(ResetCommand * command) { return true; };
-			
-			void AddCommand(ResetCommand * command) { AddValidCommand(command); };
+			std::string  Describe()		{ return std::string("Block of commands that resets the LI box."); };
 			
 		protected:
-			static void InitializeStatics();
-
-			static CommandBlockType commandBlockType = RESET;
-
+			// this guy allows us to avoid making one copy of the grammar for each object we instantiate.
+			static ResetBlockGrammar * class_grammar;
 	};	
 };
 

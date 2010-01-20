@@ -2,7 +2,7 @@
 #define LEDSELECTIONBLOCK_H 1
 
 #include "CommandBlock.h"
-#include "../Commands/ResetCommand.h"
+#include "LEDSelectionBlockGrammar.h"
 
 #include <string>
 
@@ -11,16 +11,13 @@ namespace Minerva
 	class LEDSelectionBlock : public CommandBlock
 	{
 		public:
-			static std::string  Description()		{ return std::string("Block of commands that selects which LEDs to use."); };
-			
-			bool ValidCommand(LEDSelectionCommand * command) { return true; };
-			
-			void AddCommand(LEDSelectionCommand * command) { AddValidCommand(command); };
+			LEDSelectionBlock();
+		
+			std::string  Describe()		{ return std::string("Block of commands that selects which LEDs to use."); };
 			
 		protected:
-			static void InitializeStatics();
-
-			static CommandBlockType commandBlockType = LED_SELECTION;
+			// this guy allows us to avoid making one copy of the grammar for each object we instantiate.
+			static LEDSelectionBlockGrammar * class_grammar;
 
 	};	
 };

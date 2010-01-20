@@ -1,17 +1,24 @@
 #include "TriggerRateHighNumberCommand.h"
+#include "TriggerRateHighNumberCommandGrammar.h"
 
-#include <map>
-#include <vector>
 #include <string>
 #include <sstream>
 #include <stdexcept>
 
 namespace Minerva
 {
+	TriggerRateHighNumberCommandGrammar * TriggerRateHighNumberCommand::class_grammar = NULL;
 
 	TriggerRateHighNumberCommand::TriggerRateHighNumberCommand()
-	  : digit1(-1), digit2(-1)
-	{}
+	   : digit1(-1), digit2(-1)
+	{
+		commandType = TRIGGER_RATE_HIGH_NUMBER_COMMAND;
+		
+		if (TriggerRateHighNumberCommand::class_grammar == NULL)
+			TriggerRateHighNumberCommand::class_grammar = new TriggerRateHighNumberCommandGrammar;
+		
+		grammar = TriggerRateHighNumberCommand::class_grammar;
+	}
 	
 	void TriggerRateHighNumberCommand::set_digit1(int newDigit1)
 	{
@@ -27,20 +34,6 @@ namespace Minerva
 			digit2 = newDigit2;
 		else
 			throw std::out_of_range("Both low bits must be between 0 and 15 (inclusive).");
-	}
-
-	void TriggerRateHighNumberCommand::InitializeStatics()
-	{
-		if (initialized)
-			return;
-		
-		requiredCommands.insert( std::pair<CommandType, int>(TRIGGER_INTERNAL, 0) );
-		requiredCommands.insert( std::pair<CommandType, int>(TRIGGER_RATE_LOW_NUMBER, 0) );
-		
-		excludedCommands.push_back(TRIGGER_EXTERNAL);
-
-		initialized = true;
-		return;
 	}
 
 	std::string TriggerRateHighNumberCommand::ToString()

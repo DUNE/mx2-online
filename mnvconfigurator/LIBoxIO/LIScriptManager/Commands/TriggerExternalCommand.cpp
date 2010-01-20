@@ -1,19 +1,20 @@
 #include "TriggerExternalCommand.h"
+#include "TriggerExternalCommandGrammar.h"
 
 #include <vector>
 
 namespace Minerva
 {
-	void TriggerExternalCommand::InitializeStatics()
+	// have to initialize static members outside class declaration
+	TriggerExternalCommandGrammar * TriggerExternalCommand::class_grammar = NULL;
+
+	TriggerExternalCommand::TriggerExternalCommand()
 	{
-		if (initialized)
-			return;
-			
-		excludedCommands.insert(TRIGGER_INTERNAL);
-		excludedCommands.insert(TRIGGER_RATE_HIGH_NUMBER);
-		excludedCommands.insert(TRIGGER_RATE_LOW_NUMBER);
-	
-		initialized = true;
-		return;
+		commandType = TRIGGER_EXTERNAL_COMMAND;
+		
+		if (TriggerExternalCommand::class_grammar == NULL)
+			TriggerExternalCommand::class_grammar = new TriggerExternalCommandGrammar;
+		
+		grammar = TriggerExternalCommand::class_grammar;
 	}
 };

@@ -1,20 +1,18 @@
 #include "TriggerInternalCommand.h"
-
-#include <map>
+#include "TriggerInternalCommandGrammar.h"
 
 namespace Minerva
 {
-	void TriggerInternalCommand::InitializeStatics()
+	// have to initialize static members outside class declaration
+	TriggerInternalCommandGrammar * TriggerInternalCommand::class_grammar = NULL;
+
+	TriggerInternalCommand::TriggerInternalCommand()
 	{
-		if (initialized)
-			return;
-			
-		requiredCommands.insert( std::pair<CommandType, int>(TRIGGER_RATE_HIGH_NUMBER, 0) );
-		requiredCommands.insert( std::pair<CommandType, int>(TRIGGER_RATE_LOW_NUMBER, 0) );
+		commandType = TRIGGER_INTERNAL_COMMAND;
+
+		if (TriggerInternalCommand::class_grammar == NULL)
+			TriggerInternalCommand::class_grammar = new TriggerInternalCommandGrammar;
 		
-		excludedCommands.insert(TRIGGER_EXTERNAL);
-		
-		initialized = true;
-		return;
+		grammar = TriggerInternalCommand::class_grammar;
 	}
 };

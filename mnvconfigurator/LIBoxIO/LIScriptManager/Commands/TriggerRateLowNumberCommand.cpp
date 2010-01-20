@@ -1,4 +1,5 @@
 #include "TriggerRateLowNumberCommand.h"
+#include "TriggerRateLowNumberCommandGrammar.h"
 
 #include <map>
 #include <vector>
@@ -8,10 +9,19 @@
 
 namespace Minerva
 {
+	// have to initialize static members outside class declaration
+	TriggerRateLowNumberCommandGrammar * TriggerRateLowNumberCommand::class_grammar = NULL;
 
 	TriggerRateLowNumberCommand::TriggerRateLowNumberCommand()
 	  : digit1(-1), digit2(-1)
-	{}
+	{
+		commandType = TRIGGER_RATE_LOW_NUMBER_COMMAND;
+		
+		if (TriggerRateLowNumberCommand::class_grammar == NULL)
+			TriggerRateLowNumberCommand::class_grammar = new TriggerRateLowNumberCommandGrammar;
+		
+		grammar = TriggerRateLowNumberCommand::class_grammar;
+	}
 	
 	void TriggerRateLowNumberCommand::set_digit1(int newDigit1)
 	{
@@ -27,20 +37,6 @@ namespace Minerva
 			digit2 = newDigit2;
 		else
 			throw std::out_of_range("Both low number digits must be between 0 and 15 (inclusive).");
-	}
-
-	void TriggerRateLowNumberCommand::InitializeStatics()
-	{
-		if (initialized)
-			return;
-		
-		requiredCommands.insert( std::pair<CommandType, int>(TRIGGER_INTERNAL, 0) );
-		requiredCommands.insert( std::pair<CommandType, int>(TRIGGER_RATE_LOW_NUMBER, 0) );
-		
-		excludedCommands.push_back(TRIGGER_EXTERNAL);
-
-		initialized = true;
-		return;
 	}
 
 	std::string TriggerRateLowNumberCommand::ToString()
