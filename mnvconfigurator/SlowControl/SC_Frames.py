@@ -141,25 +141,17 @@ class VME(wx.Panel):
     def __init__(self, parent):
         """Creates the VME tab in the Notebook."""
         p=wx.Panel.__init__(self, parent)
-        wx.StaticText(self, -1, 'W/R (hex)', size=(60, 20), pos=(13, 24), style=wx.ALIGN_CENTER)
-        addr=wx.StaticText(self, -1, 'Address', size=(60, 20), pos=(75, 24), style=wx.ALIGN_CENTER)
-        data=wx.StaticText(self, -1, 'Data', size=(60, 20), pos=(140, 24), style=wx.ALIGN_CENTER)
-        self.btnRead = wx.Button(self, -1, "Read", size=(60, 26), pos=(10, 46))
-        self.btnWrite = wx.Button(self, -1, "Write", size=(60, 26), pos=(10, 74))
-        self.txtReadAddr = wx.TextCtrl(self, -1, '', size=(60, 20), pos=(75, 49))
-        self.txtReadData = wx.TextCtrl(self, -1, '', size=(60, 20), pos=(140, 49), style=wx.TE_READONLY)
-        self.txtWriteAddr = wx.TextCtrl(self, -1, '', size=(60, 20), pos=(75, 77))
-        self.txtWriteData = wx.TextCtrl(self, -1, '', size=(60, 20), pos=(140, 77))
-        addr.SetBackgroundColour('coral')
-        data.SetBackgroundColour('coral')
-        self.btnRead.SetBackgroundColour('coral')
-        self.btnWrite.SetBackgroundColour('coral')
+        self.VMEReadWrite = SC_Util.VMEReadWrite(self, caption=' Read/Write')
+        sizerALL=wx.BoxSizer(wx.VERTICAL)
+        sizerALL.Add(self.VMEReadWrite.BoxSizer, 0, wx.ALL, 5)
+        self.SetSizer(sizerALL)
+        self.Fit()     
 
 
 class CRIM(wx.Panel):
     def __init__(self, parent):
         """Creates the CRIM tab in the Notebook."""
-        self.topPanel=wx.Panel.__init__(self, parent)
+        self.Panel=wx.Panel.__init__(self, parent)
         self.btnShowAdvancedGUI=SC_Util.CreateButton(self, "Show Advanced GUI",
             (5,5), (120, 20), 'AdvancedGUI', SC_Util.colorButton)
         TopLabelsData=(('CRIM', (0, 0),(40, 16), 'lbl', SC_Util.colorLabel),

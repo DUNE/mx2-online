@@ -12,7 +12,7 @@ colorButton='coral'     #wx.Color(255,0,0)      #'red'
 colorLabel='coral'      #wx.Color(0,255,0)      #'green'
 colorText='white'       #wx.Color(255,255,255)  #'white'
 colorForeground='blue'  #wx.Color(0,0,255)      #'blue'  #wx.Color.Blue
-fontSizeLabel=10
+fontSizeLabel=8
 fontSizeButton=8
 fontSizeTextCtrl=8
 fontSizeCheckBox=6
@@ -497,7 +497,7 @@ class StatusRegister():
             leftLabelsData, rightLabelData = CROCCHStatusRegLabelsData()
         if caption=='CRIM CH':
             leftLabelsData, rightLabelData = CRIMCHStatusRegLabelsData()
-        StatusBox=wx.StaticBox(panel, -1, caption+' Status Register')
+        StatusBox=wx.StaticBox(panel, -1, caption+' Status Reg')
         StatusBox.SetFont(myFont(fontSizeStaticBox))
         StatusBox.SetForegroundColour(colorForeground)
         rows=len(leftLabelsData)
@@ -560,36 +560,33 @@ class DPMPointer():
 
 class MessageRegisters():
     def __init__(self, panel):
-        MessageRegisterBox=wx.StaticBox(panel, -1, 'Message Registers')
+        MessageRegisterBox=wx.StaticBox(panel, -1, 'Message Registers (hex)')
         MessageRegisterBox.SetFont(myFont(fontSizeStaticBox))
         MessageRegisterBox.SetForegroundColour(colorForeground)
-        self.btnAppendMessage=CreateButton(panel, 'Append Message',
-            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.txtAppendMessage=CreateTextCtrl(panel, 'message string',
             pos=(0,0), size=(125,16), name='', bckcolor=colorText)
         self.btnWriteFIFO=CreateButton(panel, 'Write FIFO',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnSendFrame=CreateButton(panel, 'Send Frame',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.btnReadDPMBytesN=CreateButton(panel, 'Read DPM Bytes#',
+        self.btnReadDPMWordsN=CreateButton(panel, 'Read DPM Words#',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.txtReadDPMBytesN=CreateTextCtrl(panel, '#bytes',
+        self.txtReadDPMWordsN=CreateTextCtrl(panel, '#words',
             pos=(0,0), size=(125,20), name='', bckcolor=colorText)
         self.txtReadDPMContent=wx.TextCtrl(panel, -1, size=(125,100),
             style = wx.TE_READONLY | wx.TE_MULTILINE | wx.VSCROLL)
-        
+        self.txtReadDPMContent.SetFont(myFont(fontSizeTextCtrl))
         self.MessageBoxSizer=wx.StaticBoxSizer(MessageRegisterBox, wx.VERTICAL)
-        self.MessageBoxSizer.Add(self.btnAppendMessage, 0, wx.ALL|wx.EXPAND, 2)
         self.MessageBoxSizer.Add(self.txtAppendMessage, 0, wx.ALL|wx.EXPAND, 2)
         self.MessageBoxSizer.Add(self.btnWriteFIFO, 0, wx.ALL|wx.EXPAND, 2)
         self.MessageBoxSizer.Add(self.btnSendFrame, 0, wx.ALL|wx.EXPAND, 2)
-        self.MessageBoxSizer.Add(self.btnReadDPMBytesN, 0, wx.ALL|wx.EXPAND, 2)
-        self.MessageBoxSizer.Add(self.txtReadDPMBytesN, 0, wx.ALL|wx.EXPAND, 2)
+        self.MessageBoxSizer.Add(self.btnReadDPMWordsN, 0, wx.ALL|wx.EXPAND, 2)
+        self.MessageBoxSizer.Add(self.txtReadDPMWordsN, 0, wx.ALL|wx.EXPAND, 2)
         self.MessageBoxSizer.Add(self.txtReadDPMContent, 1, wx.ALL|wx.EXPAND, 2)
     
-        self.controls=[MessageRegisterBox, self.btnAppendMessage, self.txtAppendMessage,
-            self.btnWriteFIFO, self.btnSendFrame, self.btnReadDPMBytesN,
-            self.txtReadDPMBytesN, self.txtReadDPMContent]
+        self.controls=[MessageRegisterBox, self.txtAppendMessage,
+            self.btnWriteFIFO, self.btnSendFrame, self.btnReadDPMWordsN,
+            self.txtReadDPMWordsN, self.txtReadDPMContent]
 
 class TRIPRegisters():
     def __init__(self, panel):
@@ -808,10 +805,41 @@ class FEBGateDelays():
         for lbl in FEBGateDelaysLabels: self.controls.append(lbl)
         for txt in FEBGateDelaysValues: self.controls.append(txt)
 
-
-
-
-
-
+class VMEReadWrite():
+    def __init__(self, panel, caption=' VME Read/Write'):
+        VMEReadWriteBox=wx.StaticBox(panel, -1, caption)
+        VMEReadWriteBox.SetFont(myFont(fontSizeStaticBox))
+        VMEReadWriteBox.SetForegroundColour(colorForeground)
+        lblEmpty=CreateLabel(panel, '',
+            pos=(0,0), size=(60, 16), name='', color=colorLabel)
+        lblAddr=CreateLabel(panel, 'Address',
+            pos=(0,0), size=(60, 16), name='', color=colorLabel)
+        lblData=CreateLabel(panel, 'Data',
+            pos=(0,0), size=(60, 16), name='', color=colorLabel)
+        self.btnRead=CreateButton(panel, 'Read',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorButton)
+        self.txtReadAddr = CreateTextCtrl(panel, label='addr',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
+        self.txtReadData = CreateTextCtrl(panel, label='data',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
+        self.txtReadData.Enable(False)
+        self.btnWrite=CreateButton(panel, 'Write',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorButton)
+        self.txtWriteAddr = CreateTextCtrl(panel, label='addr',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
+        self.txtWriteData = CreateTextCtrl(panel, label='data',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
         
-        
+        sz = wx.FlexGridSizer(rows=3, cols=3, hgap=5, vgap=5)
+        sz.Add(lblEmpty, 0, 0, 0)
+        sz.Add(lblAddr, 0, 0, 0)
+        sz.Add(lblData, 0, 0, 0)
+        sz.Add(self.btnRead, 0, 0, 0)
+        sz.Add(self.txtReadAddr, 0, 0, 0)
+        sz.Add(self.txtReadData, 0, 0, 0)
+        sz.Add(self.btnWrite, 0, 0, 0)
+        sz.Add(self.txtWriteAddr, 0, 0, 0)
+        sz.Add(self.txtWriteData, 0, 0, 0)
+ 
+        self.BoxSizer=wx.StaticBoxSizer(VMEReadWriteBox, wx.VERTICAL)
+        self.BoxSizer.Add(sz, 0, wx.ALL, 2)    

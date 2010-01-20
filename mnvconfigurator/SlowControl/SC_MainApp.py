@@ -43,8 +43,8 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_MENU, self.OnMenuActionsZeroHVAll, self.frame.menuActionsZeroHVAll)
         self.Bind(wx.EVT_MENU, self.OnMenuActionsMonitorVoltages, self.frame.menuActionsMonitorVoltages)
         # VME pannel events ##########################################################
-        self.Bind(wx.EVT_BUTTON, self.OnVMEbtnRead, self.frame.vme.btnRead)
-        self.Bind(wx.EVT_BUTTON, self.OnVMEbtnWrite, self.frame.vme.btnWrite)
+        self.Bind(wx.EVT_BUTTON, self.OnVMEbtnRead, self.frame.vme.VMEReadWrite.btnRead)
+        self.Bind(wx.EVT_BUTTON, self.OnVMEbtnWrite, self.frame.vme.VMEReadWrite.btnWrite)
         # CROC pannel events ##########################################################
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnFlashFirst, self.frame.croc.FlashButtons.btnFlashFirst)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnFlashSecond, self.frame.croc.FlashButtons.btnFlashSecond)
@@ -65,11 +65,19 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_BUTTON, self.OnCHbtnReadStatus, self.frame.ch.StatusRegister.btnReadStatus)
         self.Bind(wx.EVT_BUTTON, self.OnCHbtnDPMPointerReset, self.frame.ch.DPMPointer.btnDPMPointerReset)
         self.Bind(wx.EVT_BUTTON, self.OnCHbtnDPMPointerRead, self.frame.ch.DPMPointer.btnDPMPointerRead)
-        self.Bind(wx.EVT_BUTTON, self.OnCHbtnAppendMessage, self.frame.ch.MessageRegisters.btnAppendMessage)
         self.Bind(wx.EVT_BUTTON, self.OnCHbtnWriteFIFO, self.frame.ch.MessageRegisters.btnWriteFIFO)
         self.Bind(wx.EVT_BUTTON, self.OnCHbtnSendFrame, self.frame.ch.MessageRegisters.btnSendFrame)
-        self.Bind(wx.EVT_BUTTON, self.OnCHbtnReadDPMBytesN, self.frame.ch.MessageRegisters.btnReadDPMBytesN)
-
+        self.Bind(wx.EVT_BUTTON, self.OnCHbtnReadDPMWordsN, self.frame.ch.MessageRegisters.btnReadDPMWordsN)
+        # FE pannel events ##########################################################
+        self.Bind(wx.EVT_BUTTON, self.OnFEFPGAbtnRead, self.frame.fe.fpga.Registers.btnRead)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFPGAbtnWrite, self.frame.fe.fpga.Registers.btnWrite)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFPGAbtnWriteALL, self.frame.fe.fpga.Registers.btnWriteALL)
+        self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnRead, self.frame.fe.trip.Registers.btnRead)
+        self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnWrite, self.frame.fe.trip.Registers.btnWrite)
+        self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnWriteALL, self.frame.fe.trip.Registers.btnWriteALL)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnFlashFirst, self.frame.fe.flash.FlashButtons.btnFlashFirst)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnFlashSecond, self.frame.fe.flash.FlashButtons.btnFlashSecond)
+        
         self.OnMenuLoadHardware(None)
         self.OnMenuShowExpandAll(None)
         
@@ -84,45 +92,48 @@ class SCApp(wx.App):
         return True
 
     # MENU events ##########################################################
-    def OnMenuLoadHardware(self, event):
-        #addrListCRIMs=[128]
-        #addrListCROCs=[5,15]
-        
-        addrListCRIMs=[]
-        addrListCROCs=[]
-        #CROC mapping addr is 1 to 8, register is ResetTestPulse
-        #CRIM mapping addr is 9 to 255, register is InterruptMask
-        crocReg=0xF010; crimReg=0xF000  
-        for i in range(256):
-            data=( ((i&0xF0)<<8) | ((i&0x0F)<<4) ) & 0xF0F0
-            if (i<=8): addr=((i<<16)|crocReg) & 0xFFFFFF
-            else: addr=((i<<16)|crimReg) & 0xFFFFFF
-            #print hex(i), hex(addr), hex(data), 
-            try:
-                self.controller.WriteCycle(addr, data)
-                if (i<=8):
-                    print "Found CROC at ", hex(i)
-                    addrListCROCs.append(i)
-                else:
-                    print "Found CRIM at ", hex(i)
-                    addrListCRIMs.append(i)
-                self.controller.WriteCycle(addr, 0)
-            except:
-                pass
-                #print str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1]) 
-        
-        #now create object lists for CRIMs and CROCs found
-        self.vmeCRIMs=[]; self.vmeCROCs=[]
-        for addr in addrListCRIMs: self.vmeCRIMs.append(CRIM(self.controller, addr<<16))        
-        for addr in addrListCROCs: self.vmeCROCs.append(CROC(self.controller, addr<<16))
-        
-        #and then update self.frame.tree
-        self.frame.tree.DeleteAllItems()
-        treeRoot = self.frame.tree.AddRoot("VME-BRIDGE")
-        for vmedev in self.vmeCRIMs:            
-            SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
-        for vmedev in self.vmeCROCs:
-            SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()]) 
+    def OnMenuLoadHardware(self, event):      
+        try:
+            #addrListCRIMs=[128]
+            #addrListCROCs=[5,15]
+            addrListCRIMs=[]
+            addrListCROCs=[]
+            #CROC mapping addr is 1 to 8, register is ResetTestPulse
+            #CRIM mapping addr is 9 to 255, register is InterruptMask
+            crocReg=0xF010; crimReg=0xF000  
+            for i in range(256):
+                data=( ((i&0xF0)<<8) | ((i&0x0F)<<4) ) & 0xF0F0
+                if (i<=8): addr=((i<<16)|crocReg) & 0xFFFFFF    #CROC addr
+                else: addr=((i<<16)|crimReg) & 0xFFFFFF         #CRIM addr
+                #print hex(i), hex(addr), hex(data), 
+                try:
+                    self.controller.WriteCycle(addr, data)
+                    if (i<=8):
+                        print "Found CROC at ", hex(i)
+                        addrListCROCs.append(i)
+                    else:
+                        print "Found CRIM at ", hex(i)
+                        addrListCRIMs.append(i)
+                    self.controller.WriteCycle(addr, 0)
+                except: pass
+            #now create object lists for CRIMs and CROCs found
+            self.vmeCRIMs=[]; self.vmeCROCs=[]
+            for addr in addrListCRIMs: self.vmeCRIMs.append(CRIM(self.controller, addr<<16))        
+            for addr in addrListCROCs: self.vmeCROCs.append(CROC(self.controller, addr<<16))
+
+            #then take each CROC CH and find the FEBs
+            for theCROC in self.vmeCROCs:
+                for theCROCChannel in theCROC.Channels():
+                    FindFEBs(theCROCChannel)
+            
+            #and then update self.frame.tree
+            self.frame.tree.DeleteAllItems()
+            treeRoot = self.frame.tree.AddRoot("VME-BRIDGE")
+            for vmedev in self.vmeCRIMs:            
+                SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
+            for vmedev in self.vmeCROCs:
+                SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
+        except: ReportException('OnMenuLoadHardware', self.reportErrorChoice)
             
     def OnMenuLoadFile(self, event):
         dlg = wx.FileDialog(self.frame, message="Choose a file",
@@ -148,17 +159,17 @@ class SCApp(wx.App):
     # VME pannel events ##########################################################
     def OnVMEbtnWrite(self, event):
         try:
-            addr=int(str(self.frame.vme.txtWriteAddr.GetValue()), 16)
-            data=int(self.frame.vme.txtWriteData.GetValue(), 16)
+            addr=int(str(self.frame.vme.VMEReadWrite.txtWriteAddr.GetValue()), 16)
+            data=int(self.frame.vme.VMEReadWrite.txtWriteData.GetValue(), 16)
             self.controller.WriteCycle(addr, data)
         except: ReportException('OnVMEbtnWrite', self.reportErrorChoice)
     def OnVMEbtnRead(self, event):
         try:          
-            addr=int(self.frame.vme.txtReadAddr.GetValue(), 16)
+            addr=int(self.frame.vme.VMEReadWrite.txtReadAddr.GetValue(), 16)
             data=int(self.controller.ReadCycle(addr))
             data=hex(data)[2:]
             if data[-1]=='L': data=data[:-1]
-            self.frame.vme.txtReadData.SetValue(data)
+            self.frame.vme.VMEReadWrite.txtReadData.SetValue(data)
         except: ReportException('OnVMEbtnRead', self.reportErrorChoice)
 
     # CROC pannel events ##########################################################
@@ -190,7 +201,7 @@ class SCApp(wx.App):
         except: ReportException('OnCROCbtnSendFastCmd', self.reportErrorChoice)
     def OnCROCbtnClearLoopDelays(self, event):
         try:
-            theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
+            theCROC=FindVMEdev(self.vmeCROCs, selfFindFEBs.frame.croc.crocNumber<<16)
             for ch in theCROC.Channels():
                 ch.ClearStatus()
             self.OnCROCbtnReadLoopDelays(None)
@@ -275,10 +286,45 @@ class SCApp(wx.App):
             data=theCROCChannel.DPMPointerRead()
             self.frame.ch.DPMPointer.lblDPMPointerValue.Label=hex(data)
         except: ReportException('OnCHbtnDPMPointerRead', self.reportErrorChoice)
-    def OnCHbtnAppendMessage(self, event): wx.MessageBox('not yet implemented')
-    def OnCHbtnWriteFIFO(self, event): wx.MessageBox('not yet implemented')
-    def OnCHbtnSendFrame(self, event): wx.MessageBox('not yet implemented')
-    def OnCHbtnReadDPMBytesN(self, event): wx.MessageBox('not yet implemented')
+    def OnCHbtnWriteFIFO(self, event):
+        try:
+            msg=self.frame.ch.MessageRegisters.txtAppendMessage.GetValue()
+            if ((len(msg) % 4) !=0): raise Exception(
+                "A CROC message string must have a muliple of 4 hex characters")
+            nWords=len(msg)/4   # one word == 2 bytes == 4 HexChar 
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.ch.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.ch.chNumber]           
+            for i in range(nWords):
+                data = msg[4*i:4*(i+1)]
+                theCROCChannel.WriteFIFO(int(data,16))
+        except: ReportException('OnCHbtnWriteFIFO', self.reportErrorChoice)
+    def OnCHbtnSendFrame(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.ch.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.ch.chNumber]
+            theCROCChannel.SendMessage()
+        except: ReportException('OnCHbtnSendFrame', self.reportErrorChoice)
+    def OnCHbtnReadDPMWordsN(self, event):
+        msg=''
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.ch.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.ch.chNumber]
+            nWords=int(self.frame.ch.MessageRegisters.txtReadDPMWordsN.GetValue())
+            for i in range(nWords):
+                data=hex(theCROCChannel.ReadDPM(2*i)).upper()
+                msg += data[2:].rjust(4, '0')            
+        except: ReportException('OnCHbtnReadDPMWordsN', self.reportErrorChoice)
+        self.frame.ch.MessageRegisters.txtReadDPMContent.SetValue(msg)
+
+    # FE pannel events ##########################################################
+    def OnFEFPGAbtnRead(self, event): wx.MessageBox('not yet implemented')
+    def OnFEFPGAbtnWrite(self, event): wx.MessageBox('not yet implemented')
+    def OnFEFPGAbtnWriteALL(self, event): wx.MessageBox('not yet implemented')
+    def OnFETRIPbtnRead(self, event): wx.MessageBox('not yet implemented')
+    def OnFETRIPbtnWrite(self, event): wx.MessageBox('not yet implemented')
+    def OnFETRIPbtnWriteALL(self, event): wx.MessageBox('not yet implemented')
+    def OnFEFLASHbtnFlashFirst(self, event): wx.MessageBox('not yet implemented')
+    def OnFEFLASHbtnFlashSecond(self, event): wx.MessageBox('not yet implemented')    
 
     # OTHER events ##########################################################
     def OnClose(self, event):
@@ -289,6 +335,45 @@ class SCApp(wx.App):
 def FindVMEdev(vmeDevList, devAddr):
     for dev in vmeDevList:
         if (dev.BaseAddress()==devAddr): return dev
+def FindFEBs(theCROCChannel):  
+    #clear the self.FEBs list
+    theCROCChannel.FEBs=[]
+    for feb in range(1,16):
+        for itry in range(1,3):
+            #clear/check status register
+            theCROCChannel.ClearStatus()
+            status=theCROCChannel.ReadStatus()
+            if (status!=0x3700): raise Exception(
+                "Error after clear STATUS register for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
+            #reset/check DPM pointer
+            theCROCChannel.DPMPointerReset()
+            dpmPointer=theCROCChannel.DPMPointerRead()
+            if (dpmPointer!=0x02): raise Exception(
+                "Error after DPMPointerReset() for CROC channel " + hex(theCROCChannel.chBaseAddr) + " DPMPointer=" + hex(dpmPointer))
+            #write to FIFO and check status register
+            theCROCChannel.WriteFIFO(feb<<8)
+            status=theCROCChannel.ReadStatus()
+            if (status!=0x3710): raise Exception(
+                "Error after fill FIFO for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
+            #send message and check status register
+            theCROCChannel.SendMessage()
+            for i in range(1000):
+                status=theCROCChannel.ReadStatus()
+                if (status==0x3703): break
+            if (status!=0x3703): raise Exception(
+                "Error after send message for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
+            #decode first two words from DPM and check DPM pointer
+            dpmPointer=theCROCChannel.DPMPointerRead()
+            w1=theCROCChannel.ReadDPM(0)
+            w2=theCROCChannel.ReadDPM(2)
+            if (w2==(0x8000 | (feb<<8))) & (w1==0x0B00) & (dpmPointer==13):
+                #print "Found feb#" + str(feb), "w1="+hex(w1), "dpmPointer="+str(dpmPointer)
+                theCROCChannel.FEBs.append("FE:"+str(feb))
+                break
+            elif (w2==(0x0000 | (feb<<8))) & (w1==0x0400) & (dpmPointer==6): pass
+                #print "NO    feb#" + str(feb), "w1="+hex(w1), "dpmPointer="+str(dpmPointer) 
+            else: print "FindFEBs(" + hex(theCROCChannel.chBaseAddr) + ") wrong message " + "w1="+hex(w1) + "w2="+hex(w2), "dpmPointer="+str(dpmPointer) 
+  
 def ReportException(comment, choice):
     msg = comment + ' : ' + str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1])
     if (choice['display']): print msg
@@ -329,23 +414,18 @@ class CROCChannel(VMEDevice):
         self.FEBs=[]
     def Number(self): return self.chNumber
     def NodeList(self): return [self.Description(), self.FEBs]
-    def ClearStatus(self):
-        print hex(self.RegWClearStatus), hex(0x0202)
-        self.controller.WriteCycle(self.RegWClearStatus, 0x0202)
-    def ReadStatus(self):
-        print hex(self.RegRStatus)
-        return int(self.controller.ReadCycle(self.RegRStatus))
-    def ReadLoopDelay(self):
-        print hex(self.RegRLoopDelay)
-        return int(self.controller.ReadCycle(self.RegRLoopDelay)) 
-    def DPMPointerReset(self):
-        print hex(self.RegWClearStatus), hex(0x0808)
-        self.controller.WriteCycle(self.RegWClearStatus, 0x0808)
+    def ReadDPM(self, offset):
+        if (offset>0x1FFF): raise Exception("address " + hex(offset) + " is out of rnage")
+        return int(self.controller.ReadCycle(self.RegRMemory+offset)) 
+    def WriteFIFO(self, data): self.controller.WriteCycle(self.RegWInput, data)
+    def SendMessage(self): self.controller.WriteCycle(self.RegWSendMessage, 0x0101)
+    def ReadStatus(self): return int(self.controller.ReadCycle(self.RegRStatus))
+    def ClearStatus(self): self.controller.WriteCycle(self.RegWClearStatus, 0x0202)
+    def ReadLoopDelay(self): return int(self.controller.ReadCycle(self.RegRLoopDelay)) 
+    def DPMPointerReset(self): self.controller.WriteCycle(self.RegWClearStatus, 0x0808)
     def DPMPointerRead(self):
-        print hex(self.RegRDPMPointer)
         data=int(self.controller.ReadCycle(self.RegRDPMPointer))
         datasw=int(((data&0xFF)<<8) | ((data&0xFF00)>>8))
-        print data, datasw
         return datasw
 
 class CROC(VMEDevice):
@@ -367,27 +447,13 @@ class CROC(VMEDevice):
     def NodeList(self): return [self.Description(), 
         [self.channels[0].NodeList(), self.channels[1].NodeList(),
         self.channels[2].NodeList(), self.channels[3].NodeList()]]
-    def ReadTimingSetup(self):
-        print hex(self.RegWRTimingSetup)
-        return int(self.controller.ReadCycle(self.RegWRTimingSetup))
-    def WriteTimingSetup(self, data):
-        print hex(self.RegWRTimingSetup), hex(data)
-        self.controller.WriteCycle(self.RegWRTimingSetup, data)
-    def SendFastCommand(self, data):
-        print hex(self.RegWFastCommand), hex(data)
-        self.controller.WriteCycle(self.RegWFastCommand, data)
-    def WriteRSTTP(self, data):
-        print hex(self.RegWRResetAndTestMask), hex(data)
-        self.controller.WriteCycle(self.RegWRResetAndTestMask, data)
-    def ReadRSTTP(self):
-        print hex(self.RegWRResetAndTestMask)
-        return int(self.controller.ReadCycle(self.RegWRResetAndTestMask))
-    def SendRSTOnly(self):
-        print hex(self.RegWChannelReset), hex(0x0202)
-        self.controller.WriteCycle(self.RegWChannelReset, 0x0202)
-    def SendTPOnly(self):
-        print hex(self.RegWTestPulse), hex(0x0404)
-        self.controller.WriteCycle(self.RegWTestPulse, 0x0404)
+    def ReadTimingSetup(self): return int(self.controller.ReadCycle(self.RegWRTimingSetup))
+    def WriteTimingSetup(self, data): self.controller.WriteCycle(self.RegWRTimingSetup, data)
+    def SendFastCommand(self, data): self.controller.WriteCycle(self.RegWFastCommand, data)
+    def WriteRSTTP(self, data): self.controller.WriteCycle(self.RegWRResetAndTestMask, data)
+    def ReadRSTTP(self): return int(self.controller.ReadCycle(self.RegWRResetAndTestMask))
+    def SendRSTOnly(self): self.controller.WriteCycle(self.RegWChannelReset, 0x0202)
+    def SendTPOnly(self): self.controller.WriteCycle(self.RegWTestPulse, 0x0404)
     
 
     
