@@ -104,6 +104,7 @@ int main(int argc, char *argv[])
 			optind++;
 			fileroot     = argv[optind];
 			et_filename  = "/work/data/etsys/" + fileroot;
+			// TODO - Alter log filename for worker/solider node...
 			log_filename = "/work/data/logs/" + fileroot + ".txt";
 			sprintf(sam_filename,"/work/data/sam/%s.py",fileroot.c_str());
 			std::cout << "\tET Filename            = " << et_filename << std::endl;
@@ -118,7 +119,7 @@ int main(int argc, char *argv[])
 
 	// Report the rest of the command line...
 	if (optind < argc) {
-		std::cout << "There were remaining arguments!  Are you sure you set the run up correctly?" << std::endl;
+		std::cout << "There were remaining arguments!  Are you SURE you set the run up correctly?" << std::endl;
 		std::cout << "  Remaining arguments = ";
 		for (;optind<argc;optind++) std::cout << argv[optind];
 		std::cout << std::endl;
@@ -325,7 +326,7 @@ int main(int argc, char *argv[])
 #endif // end if (!MASTER)&&(!SINGLE_PC)
 
 
-	// Client-server connect - gate_done. #if DEBUG_SOCKETS, etc.
+	// Client-server connect - gate_done. 
 	gate_done_socket_is_live = false;
 #if MASTER&&(!SINGLE_PC) // Soldier Node
 	std::cout << "\nPreparing make new server connection for gate_done synchronization...\n";
@@ -377,7 +378,7 @@ int main(int argc, char *argv[])
 #endif // end if (!MASTER)&&(!SINGLE_PC)
 
 	
-	// Client-server connect - global_gate. #if DEBUG_SOCKETS, etc.
+	// Client-server connect - global_gate. 
 	global_gate_socket_is_live = false;
 #if MASTER&&(!SINGLE_PC) // Soldier Node
 	// Initiate connection with "server" (worker node).  Connect waits for a server response.
@@ -446,25 +447,11 @@ int main(int argc, char *argv[])
 #endif
 	// Get the controller object created during InitializeDaq.
 	controller *currentController = daq->GetController(); 
-	// Vector of the CROC's we initialized.
+	// Vector of the CROC's we initialized - we will loop over these when we record data.
 	vector<croc*> *croc_vector = currentController->GetCrocVector();
 	vector<croc*>::iterator croc_iter = croc_vector->begin();
 	mnvdaq.infoStream() << "Returned from electronics initialization.";
 
-	/*********************************************************************************/
-	/*  At this point we are now set up and are ready to start event acquistion.     */
-	/*********************************************************************************/
-	// Make the data-taking threads if in multi-threaded operation.
-#if THREAD_ME
-	boost::thread *data_threads[thread_count];
-#endif
-#if TAKE_DATA
-#if DEBUG_GENERAL
-	std::cout << "\nGetting ready to start taking data!" << std::endl;
-	std::cout << " Attempting to record " << record_gates << " gates.\n" << std::endl;
-#endif
-	mnvdaq.infoStream() << "Getting ready to start taking data!";
-	mnvdaq.infoStream() << " Attempting to record " << record_gates << " gates.";
 
 	/*********************************************************************************/
 	/* If we've made it this far, it is safe to set up the SAM metadata file.        */
@@ -482,8 +469,8 @@ int main(int argc, char *argv[])
 		exit(-2000);
 	}
 	global_gate.close();
-	std::cout << " First Event = " << global_gate_data[0] << std::endl;
-	mnvdaq.infoStream() << "First Event = " << global_gate_data[0];
+	std::cout << "Opened Event Log, First Event = " << global_gate_data[0] << std::endl;
+	mnvdaq.infoStream() << "Opened Event Log, First Event = " << global_gate_data[0];
 	firstEvent = global_gate_data[0];
 #endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
 #if SINGLE_PC||MASTER
@@ -508,7 +495,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"datastream='alldata',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-05-01'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-06-00'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
@@ -554,6 +541,19 @@ int main(int argc, char *argv[])
 #endif
 
 	/*********************************************************************************/
+	/*  At this point we are now set up and are ready to start event acquistion.     */
+	/*********************************************************************************/
+	// Make the data-taking threads if in multi-threaded operation.
+#if THREAD_ME
+	boost::thread *data_threads[thread_count];
+#endif
+#if TAKE_DATA
+	std::cout << "Getting ready to start taking data!" << std::endl;
+	std::cout << " Attempting to record " << record_gates << " gates.\n" << std::endl;
+	mnvdaq.infoStream() << "Getting ready to start taking data!";
+	mnvdaq.infoStream() << " Attempting to record " << record_gates << " gates.";
+
+	/*********************************************************************************/
 	/*      The top of the Event Loop.  Events here are referred to as GATES.        */
 	/*      Be mindful of this jargon - in ET, "events" are actually FRAMES.         */
 	/*********************************************************************************/
@@ -565,15 +565,10 @@ int main(int argc, char *argv[])
 		gettimeofday(&gate_start_time, NULL);
 #endif
 #if DEBUG_GENERAL
-		std::cout << "\n->Top of the Event Loop, starting Gate: " << gate << std::endl;
-		mnvdaq.infoStream() << "->Top of the Event Loop, starting Gate: " << gate;
+		mnvdaq.debugStream() << "->Top of the Event Loop, starting Gate: " << gate;
 #endif
-#if RECORD_EVENT
-		if (!(gate%100)) {
-			std::cout << "******************************************************************\n";
-			std::cout << "   Acquiring Gate: " << gate << std::endl;
-		}
-#endif
+		if (!(gate%100)) { std::cout << "   Acquiring Gate: " << gate << std::endl; }
+		if (!(gate%1000)) { mnvdaq.infoStream() << "   Acquiring Gate: " << gate; }
 		/**********************************************************************************/
 		/*  Initialize the following data members of the event_handler structure          */
 		/*    event_data:                                                                 */
@@ -602,8 +597,7 @@ int main(int argc, char *argv[])
 		}
 		global_gate.close();
 #if DEBUG_GENERAL
-		std::cout << "    Global Gate: " << global_gate_data[0] << std::endl;
-		mnvdaq.infoStream() << "    Global Gate: " << global_gate_data[0];
+		mnvdaq.debugStream() << "    Global Gate: " << global_gate_data[0];
 #endif
 		event_data.globalGate = global_gate_data[0];
 #endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
@@ -614,8 +608,7 @@ int main(int argc, char *argv[])
 		// soldier-worker global gate data synchronization.
 #if MASTER&&(!SINGLE_PC) // Soldier Node
 #if DEBUG_SOCKETS
-		std::cout << " Writing global gate to soldier node to indicate readiness of trigger..." << std::endl;
-		mnvdaq.infoStream() << " Writing global gate to soldier node to indicate readiness of trigger...";
+		mnvdaq.debugStream() << " Writing global gate to soldier node to indicate readiness of trigger...";
 #endif
 		if (write(global_gate_socket_handle,global_gate_data,sizeof(global_gate_data)) == -1) { 
 			mnvdaq.fatalStream() << "socket write error: global_gate!";
@@ -623,18 +616,14 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 #if DEBUG_SOCKETS
-		std::cout << " Finished writing global gate to worker node." << std::endl;
-		mnvdaq.infoStream() << " Finished writing global gate to worker node.";
+		mnvdaq.debugStream() << " Finished writing global gate to worker node.";
 #endif
 #endif // end if MASTER && !SINGLE_PC
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
 #if DEBUG_SOCKETS
-		std::cout << " Reading global gate from soldier node to indicate start of trigger..." << std::endl;
-		std::cout << "  Initial global_gate_data   = " << global_gate_data[0] << std::endl;
-		std::cout << "  global_gate_socket_is_live = " << global_gate_socket_is_live << std::endl; 
-		mnvdaq.infoStream() << " Reading global gate from soldier node to indicate start of trigger...";
-		mnvdaq.infoStream() << "  Initial global_gate_data   = " << global_gate_data[0];
-		mnvdaq.infoStream() << "  global_gate_socket_is_live = " << global_gate_socket_is_live; 
+		mnvdaq.debugStream() << " Reading global gate from soldier node to indicate start of trigger...";
+		mnvdaq.debugStream() << "  Initial global_gate_data   = " << global_gate_data[0];
+		mnvdaq.debugStream() << "  global_gate_socket_is_live = " << global_gate_socket_is_live; 
 #endif
 		while (!global_gate_data[0]) { 
 			// Read global gate data from the worker node 
@@ -646,8 +635,7 @@ int main(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 #if DEBUG_SOCKETS
-			std::cout << "  ->After read, new global_gate_data: " << global_gate_data[0] << std::endl;
-			mnvdaq.infoStream() << "  ->After read, new global_gate_data: " << global_gate_data[0];
+			mnvdaq.debugStream() << "  ->After read, new global_gate_data: " << global_gate_data[0];
 #endif
 		}
 		event_data.globalGate = global_gate_data[0];
@@ -708,8 +696,6 @@ int main(int argc, char *argv[])
 					triggerType = NuMI;
 				}
 				mnvdaq.warnStream() << "Calling untested mixed mode beam-pedestal trigger types!";
-				std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-pedestal trigger types!" << 
-					std::endl;
 				break;
 			case MixedBeamLightInjection:
 				// TODO - Test mixed beam-li running!
@@ -720,7 +706,6 @@ int main(int argc, char *argv[])
 				}
 				mnvdaq.warnStream() << "Calling untested mixed mode beam-li trigger types!";
 				mnvdaq.warnStream() << "No LI control class implemented yet!";
-				std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
 				std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 				break; 
 			default:
@@ -745,8 +730,7 @@ int main(int argc, char *argv[])
 		unsigned long long totaluseconds = ((unsigned long long)(triggerNow.tv_sec))*1000000 + 
 			(unsigned long long)(triggerNow.tv_usec);
 #if DEBUG_GENERAL
-		std::cout << " ->Trigger Time (gpsTime) = " << totaluseconds << std::endl;
-		mnvdaq.infoStream() << " ->Recording Trigger Time (gpsTime) = " << totaluseconds;
+		mnvdaq.debugStream() << " ->Recording Trigger Time (gpsTime) = " << totaluseconds;
 #endif
 		event_data.triggerTime = totaluseconds;
 
@@ -803,10 +787,8 @@ int main(int argc, char *argv[])
 					//
 #elif NO_THREAD
 #if DEBUG_GENERAL
-					mnvdaq.infoStream() << " Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
+					mnvdaq.debugStream() << " Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
 						" Index: " << croc_id << " Channel: " << j;
-					std::cout << " Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
-						" Index: " << croc_id << " Channel: " << j << std::endl;
 #endif
 					TakeData(daq,evt,croc_id,j,0,attach,sys_id);
 #endif
@@ -836,18 +818,25 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		/*  re-enable the IRQ for the next trigger                                        */
 		/**********************************************************************************/
-		// TODO - Take care we are only doing interrrupt config on master CRIMs...
-		// TODO - This means making this a function of running mode (True OneShot is special)...
+		// TODO - Take care we are only doing interrrupt *config* on master CRIMs...
+		// Interrupt configuration is already stored in the CRIM objects.
 		for (int i=1; i<=currentController->GetCrimVectorLength(); i++) {
-			daq->ResetGlobalIRQEnable(i); // TODO - Consider moving this to the top of the loop.
+			try {
+				int error = daq->ResetGlobalIRQEnable(i); 
+				if (error) throw error;
+			} catch (int e) {
+				std::cout << "Error in main!  Failed to ResetGlobalIRQ!";
+				std::cout << "  Status code = " << e << std::endl;
+				mnvdaq.fatalStream() << "Error in main!  Failed to ResetGlobalIRQ!";
+				mnvdaq.fatalStream() << "  Status code = " << e;
+				exit (e);
+			}
 		}
 
 #if SINGLE_PC||MASTER // Soldier Node
-		/**********************************************************************************/
-		/*   Write the End-of-Event Record to the event_handler and then to the           */
-		/*   event builder.                                                               */
-		/**********************************************************************************/
-
+		/*************************************************************************************/
+		/* Write the End-of-Event Record to the event_handler and then to the event builder. */
+		/*************************************************************************************/
 		// Build DAQ Header bank.
 		// Get Trigger Time, Timing Violation Error (obsolete), MINOS SGATE
 		int bank = 3; //DAQ Data Bank
@@ -861,20 +850,16 @@ int main(int argc, char *argv[])
 		event_data.minosSGATE  = minos;
 
 #if DEBUG_GENERAL
-		std::cout << "Preparing to contact the EventBuilder from Main...\n";
-		mnvdaq.infoStream() << "Preparing to contact the EventBuilder from Main...";
+		mnvdaq.debugStream() << "Preparing to contact the EventBuilder from Main...";
 #endif
 		// The soldier node must wait for a "done" signal from the 
 		// worker node before attaching the end-of-event header bank.
 #if !SINGLE_PC // Soldier Node
 		gate_done[0] = false;
 #if DEBUG_SOCKETS
-		std::cout << "Preparing to end event...\n";
-		std::cout << " Initial gate_done        = " << gate_done[0] << std::endl;
-		std::cout << " gate_done_socket_is_live = " << gate_done_socket_is_live << std::endl; 
-		mnvdaq.infoStream() << "Preparing to end event...";
-		mnvdaq.infoStream() << " Initial gate_done        = " << gate_done[0];
-		mnvdaq.infoStream() << " gate_done_socket_is_live = " << gate_done_socket_is_live; 
+		mnvdaq.debugStream() << "Preparing to end event...";
+		mnvdaq.debugStream() << " Initial gate_done        = " << gate_done[0];
+		mnvdaq.debugStream() << " gate_done_socket_is_live = " << gate_done_socket_is_live; 
 #endif
 		while (!gate_done[0]) { 
 			// Read "done" from the worker node 
@@ -884,19 +869,13 @@ int main(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 #if DEBUG_SOCKETS
-			std::cout << " After read, new gate_done: " << gate_done[0] << std::endl;
-			mnvdaq.infoStream() << " After read, new gate_done: " << gate_done[0];
+			mnvdaq.debugStream() << " After read, new gate_done: " << gate_done[0];
 #endif
 		}
 #endif // end if !SINGLE_PC
 		// Contact event builder service.
 		daq->ContactEventBuilder(&event_data, -1, attach, sys_id);
 
-#if RECORD_EVENT
-		if (!(gate%100)) {
-			std::cout << "******************************************************************\n";
-			std::cout << "   Completed Gate: " << gate << std::endl;
-		}
 #if TIME_ME
 		gettimeofday(&gate_stop_time,NULL);
 		double duration = (gate_stop_time.tv_sec*1e6+gate_stop_time.tv_usec) - 
@@ -907,16 +886,11 @@ int main(int argc, char *argv[])
 				" Run Time: " << (duration/1e6) << std::endl;
 		}
 #endif
-		if (!(gate%100)) {
-			std::cout << "******************************************************************\n";
-		}
-#endif // end if RECORD_EVENT
 #endif // end if SINGLE_PC || MASTER
 
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
 #if DEBUG_SOCKETS
-		std::cout << " Writing to soldier node to indicate end of gate..." << std::endl;
-		mnvdaq.infoStream() << " Writing to soldier node to indicate end of gate...";
+		mnvdaq.debugStream() << " Writing to soldier node to indicate end of gate...";
 #endif
 		gate_done[0]=true;
 		if (write(gate_done_socket_handle,gate_done,sizeof(gate_done)) == -1) { 
@@ -1141,9 +1115,6 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes 
 	}
 #endif
 #if DEBUG_GENERAL
-	time_t currentTime; time(&currentTime);
-	std::cout << " Starting Trigger at " << ctime(&currentTime);
-	std::cout << " ->Setting Trigger: " << triggerType << std::endl;
 	mnvdaq.infoStream() << " ->Setting Trigger: " << triggerType;
 #endif
 
@@ -1185,8 +1156,7 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes 
 #endif
 
 #if DEBUG_GENERAL
-	std::cout << " Data Ready! " << std::endl;
-	mnvdaq.infoStream() << " Data Ready! ";
+	mnvdaq.debugStream() << " Data Ready! ";
 #endif
 #if RUN_SLEEPY
 	// This sleep is here because we return too quickly - the FEBs are still digitizing.

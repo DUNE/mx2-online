@@ -10,10 +10,13 @@
 * Gabriel Perdue, The University of Rochester
 **********************************************************************************/
 
-feb::feb(int mh, bool init, febAddresses a,int reg):NRegisters(reg) 
+// log4cpp category hierarchy.
+log4cpp::Category& febLog = log4cpp::Category::getInstance(std::string("feb"));
+
+feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender) : Frames(appender) 
 {
 /*! \fn********************************************************************************
- * constructor takes the following arguments:
+ * The log-free constructor takes the following arguments:
  * \param mh: maximum number of hits per tdc
  * \param init: the FEB is initialized (i.e. an FEB is available)
  * \param a: The address (number) of the feb
@@ -21,22 +24,17 @@ feb::feb(int mh, bool init, febAddresses a,int reg):NRegisters(reg)
  *       The message body is set up for FEB Firmware Versions 78+ (54 registers).  
  *       It will need to be adjusted for other firmware versions. ECS & GNP
  */
-	maxHits = mh; // Maximum number of hits
-	initialized = false;  // Frames are not initialized by default
-	boardNumber = a;  // feb address (also called board number)
+	maxHits      = mh;     // Maximum number of hits
+	initialized  = false;  // Frames are not initialized by default
+	boardNumber  = a;      // feb address (also called board number)
 	febNumber[0] = (unsigned char) a; // put the feb number into it's character.
+	NRegisters   = reg;      // # of one byte registers in the data frame
+	febAppender  = appender; // log4cpp appender
+	if (febAppender!=0) febLog.setPriority(log4cpp::Priority::ERROR);
 	
-	// Max Hits is tied to the PIPEDEL setting in the TriPs with the following relationship:
-	//     PIPEDEL = 2 * MaxHits - 1
-	// Because the user will be independently setting the PIPEDEL, we want to be sure the 
-	// DAQ is configured for the likely use scenarios *only* and neglect the others for 
-	// now.  This is not the most elegant solution, but time pressure, etc.  For now we 
-	// will accept *only* maxHits == 1 or maxHits == 6.  For maxHits == 1, we are 
-	// *assuming* the user has correctly set the PIPEDEL to 1, and for 6, we are assuming 
-	// the user has correctly set the PIPEDEL to 11.  Note that these settings are of 
-	// course independent of the discriminator threshold itself.
 	if ( (maxHits != 1) && (maxHits != 6) ) {
 		std::cout << "Invalid number of maximum hits!  Only 1 or 6 are accepted right now!" << std::endl;
+		if (febAppender!=0) febLog.fatalStream() << "Invalid number of maximum hits!  Only 1 or 6 are accepted right now!";
 		exit(-1);
 	}
 
@@ -79,6 +77,7 @@ feb::feb(int mh, bool init, febAddresses a,int reg):NRegisters(reg)
 				break;
 			default: 
 				std::cout << "Invalid TriP ChipID at instantiation!" << std::endl;
+				if (febAppender!=0) { febLog.fatalStream() << "Invalid TriP ChipID at instantiation!"; }
 				exit(1);
 		}
 		tripChips[i] = new trips(boardNumber,chipFunction,maxHits); 
@@ -112,13 +111,15 @@ feb::feb(int mh, bool init, febAddresses a,int reg):NRegisters(reg)
 		adcHits[7] = new adc( a, (RAMFunctionsHit)ReadHit0 );
 	} else {
 		std::cout << "Invalid number of maximum hits!  Only 1, 6, or 8 are accepted right now!" << std::endl;
+		if (febAppender!=0) febLog.fatalStream() << 
+			"Invalid number of maximum hits!  Only 1, 6, or 8 are accepted right now!";
 		exit(-1);		
 	}
-#if DEBUG_FEB  
-	std::cout << "Created a new FEB! " << (int)febNumber[0] << std::endl;
-	std::cout << "  BoardNumber = " << boardNumber << std::endl;
-	std::cout << "  Max hits    =  "<< maxHits << std::endl;
-#endif
+	if (febAppender!=0) {
+		febLog.infoStream() << "Created a new FEB! " << (int)febNumber[0];
+		febLog.infoStream() << "  BoardNumber = " << boardNumber;
+		febLog.infoStream() << "  Max hits    =  "<< maxHits;
+	}
 }
 
 void feb::MakeMessage() 
@@ -276,64 +277,52 @@ void feb::MakeMessage()
 	/* message word 23-24: HV target value, 16 bits */
 	message[23] = (HVTarget & 0xFF); //mask off bits 0-7
 	message[24] = (HVTarget >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7. 
-											//and mask off bits 0-7
-
-#if DEBUG_FEB
-	std::cout<<(int) HVEnabled[0]<<" "<<HVTarget<<std::endl;
-#endif
+						//and mask off bits 0-7
 	/* message word 25-26: HV actual value, 16 bits */
 	message[25] = (HVActual & 0xFF); //mask off bits 0-7
 	message[26] = (HVActual >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7. 
-											//and mask off bits 0-7
-
+						//and mask off bits 0-7
 	/* message word 27: HV control value, 8 bits */
 	message[27] = (HVControl[0] & 0xFF); //mask off bits 0-7
 
 	/* message word 28-29, bits 0-3: Inject DAC value, 12 bits */
 	message[28] = (InjectDACValue & 0xFF); //mask off bits 0-7
 	message[29] = (InjectDACValue & 0x0F00) >> 8; //shift bits 8-11 to bits 0-3
-													//and mask off bits 0-3
-
+							//and mask off bits 0-3
 	/* message word 29, bits 4-7: InjectDACMode, 2 bits; InjectDACDone, 1 bit, 
 	*     InjectDACStart, 1 bit */
 	message[29] |= (InjectDACMode[0] & 0x03) << 0x04; //mask off bits 0-1 & shift left 4 bits
-												// to bits 4-5
+							// to bits 4-5
 	message[29] |= (InjectDACDone[0] & 0x01) << 0x06; //mask off bits 0 & shift left 6 bits
-												// to bit 6
+							// to bit 6
 	message[29] |= (InjectDACStart[0] & 0x01) << 0x07; //mask off bits 0 & shift left 7 bits
-												// to bit 7
-
+							// to bit 7
 	/* message word 30: Inject range (bits 0-3), Inject phase (bits 4-7) */
 	message[30] = (InjectRange[0] & 0x0F); //mask off bits 0-3
 	message[30] |= (InjectPhase[0] & 0x0F) << 0x04; //mask off bits 0-3 and
-											//shift left 4 bits to 4-7
-
+							//shift left 4 bits to 4-7
 	/* message word 31: BoardID (bits 0-3) and HVNumAve (bits 4-7) */
 	message[31] = (boardID[0] & 0x0F); //mask off bits 0-3
 	message[31] |= (HVNumAve[0] & 0x0F) << 0x04; //mask off bits 0-3 and
-											//shift left 4 bits to 4-7
-
+						//shift left 4 bits to 4-7
 	/* message word 32:  Firmware version */
 	message[32] = (FirmwareVersion[0] & 0xFF); //the firmware version is 8 bits
 
 	/* message word 33 - 34: HV period manual, 16 bits */
 	message[33] = (HVPeriodManual & 0xFF); //mask off bits 0-7
 	message[34] = (HVPeriodManual >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
-												//and mask off ibt 0-7
-
+							//and mask off ibt 0-7
 	/* message word 35 - 36: HV period auto, 16 bits */
 	message[35] = (HVPeriodAuto & 0xFF); //mask off bits 0-7
 	message[36] = (HVPeriodAuto >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
-												//and mask off ibt 0-7
-
+						//and mask off ibt 0-7
 	/* message word 37: HV pulse width, 8 bits */
 	message[37] = (HVPulseWidth[0] & 0xFF); //mask off bits 0-7
 
 	/* message word 38 - 39: Temperature, 16 bits */
 	message[38] = (Temperature & 0xFF); //mask off bits 0-7
 	message[39] = (Temperature >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
-												//and mask off ibt 0-7
-
+						//and mask off ibt 0-7
 	/* message word 40: cosmics trigger , 8 bits */
 	message[40] = (CosmicTrig[0] & 0xFF); //mask off bits 0-7
 

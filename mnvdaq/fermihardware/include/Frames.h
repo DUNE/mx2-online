@@ -53,10 +53,11 @@ class Frames {
 		int IncomingMessageLength, OutgoingMessageLength;
 
 		// log4cpp appender for printing log statements.
-                log4cpp::Appender* appender;
+                log4cpp::Appender* frmsAppender;
 	
 	public:
 		Frames(); 
+		Frames(log4cpp::Appender* appender);
 		virtual ~Frames() { };
 
 		unsigned char *message; //the message that will be sent or received.

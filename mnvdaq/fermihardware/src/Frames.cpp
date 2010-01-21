@@ -20,15 +20,33 @@ const int Frames::MinBroadcastLength=2; //I'm not sure this is ever used in our 
 const int Frames::ADCFrameLength=875; //bytes of course (dpm pointer should be this +2)
 const int Frames::NDiscrChPerTrip=16;
 
+// log4cpp category hierarchy.
+log4cpp::Category& framesLog = log4cpp::Category::getInstance(std::string("frames"));
+
 Frames::Frames() 
 { 
 /*! \fn 
- * The constructor sets the FrameID bytes and adds a log4cpp appender.
+ * The basic constructor sets the FrameID bytes and sets the log4cpp appender to null.
  */
 	// These don't seem to need a value...
-	FrameID[0] = 0x00; 
-	FrameID[1] = 0x00; //initialize the frame id to no value
+	FrameID[0]   = 0x00; 
+	FrameID[1]   = 0x00; //initialize the frame id to no value
+	frmsAppender = 0;
 }
+
+
+Frames::Frames(log4cpp::Appender* appender) 
+{ 
+/*! \fn 
+ * The basic constructor sets the FrameID bytes and sets the log4cpp appender to null.
+ */
+	// These don't seem to need a value...
+	FrameID[0]   = 0x00; 
+	FrameID[1]   = 0x00; //initialize the frame id to no value
+	frmsAppender = appender;
+	framesLog.setPriority(log4cpp::Priority::ERROR);
+}
+
 
 void Frames::MakeDeviceFrameTransmit(Devices dev,Broadcasts b, Directions d, 
 	unsigned int f, unsigned int feb) 
@@ -84,7 +102,6 @@ void Frames::MakeHeader()
 	frameHeader[3] = FrameID[0]; frameHeader[4] = FrameID[1];
 
 	/* words 5 - 8 are reserved for response information */
-
 	frameHeader[5] = frameHeader[6] = frameHeader[7] = frameHeader[8] = 0x00; //initialize them to null
 }
 
@@ -118,7 +135,10 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: Direction: " << errors[0] << std::endl;
 #endif
 	if (errors[0]) {
-		error = true; std::cout<<"CheckForErrors: Direction: "<<errors[0]<<std::endl;
+		error = true; 
+		if (frmsAppender!=0) {
+			framesLog.errorStream()<<"CheckForErrors: Direction: "<<errors[0];
+		}
 	}
 
 	word = DeviceStatus; flag = DeviceOK; //check status
@@ -127,7 +147,10 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: DeviceOK: " << errors[1] << std::endl;
 #endif
 	if (errors[1]) {
-		error = true; std::cout<<"CheckForErrors: DeviceOK: "<<errors[1]<<std::endl;
+		error = true; 
+		if (frmsAppender!=0) {
+			framesLog.errorStream()<<"CheckForErrors: DeviceOK: "<<errors[1];
+		}
 	}
 
 	word = DeviceStatus; flag = FunctionOK; //check execution status
@@ -136,7 +159,10 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: FunctionOK: " << errors[2] << std::endl;
 #endif
 	if (errors[2]) {
-		error = true; std::cout<<"CheckForErrors: FunctionOK: "<<errors[2]<<std::endl;
+		error = true; 
+		if (frmsAppender!=0) {
+			framesLog.errorStream()<<"CheckForErrors: FunctionOK: "<<errors[2];
+		}
 	}
 
 	word = FrameStatus; flag = CRCOK; //check CRC error bit
@@ -145,7 +171,10 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: CRCOK: " << errors[3] << std::endl;
 #endif
 	if (errors[3]) {
-		error = true; std::cout<<"CheckForErrors: CRCOK: "<<errors[3]<<std::endl;
+		error = true; 
+		if (frmsAppender!=0) {
+			framesLog.errorStream()<<"CheckForErrors: CRCOK: "<<errors[3];
+		}
 	}
 
 	word = FrameStatus; flag = EndHeader; //message ended properly
@@ -154,7 +183,10 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: EndHeader: " << errors[4] << std::endl;
 #endif
 	if (errors[4]) {
-		error = true; std::cout<<"CheckForErrors: EndHeader: "<<errors[4]<<std::endl;
+		error = true; 
+		if (frmsAppender!=0) {
+			framesLog.errorStream()<<"CheckForErrors: EndHeader: "<<errors[4];
+		}
 	}
 
 	word = FrameStatus; flag = MaxLen; //message exceeded maximum message length
@@ -163,7 +195,10 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: MaxLen: " << errors[5] << std::endl;
 #endif
 	if (errors[5]) {
-		error = true; std::cout<<"CheckForErrors: MaxLen: "<<errors[5]<<std::endl;
+		error = true; 
+		if (frmsAppender!=0) {
+			framesLog.errorStream()<<"CheckForErrors: MaxLen: "<<errors[5];
+		}
 	}
 
 	word = FrameStatus; flag = SecondStart;
@@ -172,7 +207,10 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: SecondStart: " << errors[6] << std::endl;
 #endif
 	if (errors[6]) {
-		error = true; std::cout<<"CheckForErrors: SecondStart: "<<errors[6]<<std::endl;
+		error = true; 
+		if (frmsAppender!=0) {
+			framesLog.errorStream()<<"CheckForErrors: SecondStart: "<<errors[6];
+		}
 	}
 
 	word = FrameStatus; flag = NAHeader;
@@ -181,7 +219,10 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: NAHeader: " << errors[7] << std::endl;
 #endif
 	if (errors[7]) {
-		error = true; std::cout<<"CheckForErrors: NAHeader: "<<errors[7]<<std::endl;
+		error = true; 
+		if (frmsAppender!=0) {
+			framesLog.errorStream()<<"CheckForErrors: NAHeader: "<<errors[7];
+		}
 	}
 
 	return error; // true if *any* error was found!

@@ -41,7 +41,7 @@ class feb : public Frames {
 		disc *hits_n_timing; //timing & number of hits /*!< The discriminator for this FEB */
 
 		unsigned char *buffer; /*!< a buffer for FEB data */
-		const int NRegisters; /*!< the number of registers this FEB's firmware has */
+		int NRegisters; /*!< the number of registers this FEB's firmware has */
 
 		/*! here are some variables for the data about the feb */
 		unsigned int Timer, TestPulseCount, GateTimeStamp;
@@ -58,9 +58,12 @@ class feb : public Frames {
 			HVNumAve[1], HVPulseWidth[1], CosmicTrig[1], TripXCompEnc[1],
 			ExtTriggerFound[1], ExtTriggerRearm[1];
 
+		// log4cpp appender for printing log statements.
+		log4cpp::Appender* febAppender;
+
 	public:
-		/*! The constructor */
-		feb(int, bool, febAddresses, int reg); 
+		/*! The constructor.  The appender is initialized to null as a default for log-less mode. */
+		feb(int mh, bool init, febAddresses, int reg, log4cpp::Appender* appender=0); 
 		/*! The destructor */
 		~feb() {
 			for (int i=0;i<6;i++) delete tripChips[i]; 
