@@ -21,7 +21,8 @@ namespace Minerva
 			virtual std::string  ToString();
 			virtual std::string  Describe()      = 0;
 			
-			bool Validate();			
+			bool Validate();		
+			bool AddValidCommand(Command * command);	
 			void AddCommand(Command * command);
 			bool CheckCompatibility( const std::multimap<CommandBlockType, int> & positionList, int myPosition );
 

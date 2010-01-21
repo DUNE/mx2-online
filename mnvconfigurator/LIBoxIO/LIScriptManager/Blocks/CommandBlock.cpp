@@ -1,7 +1,8 @@
 #include "CommandBlock.h"
 #include "../Commands/Command.h"
-#include "../../LIBoxExceptions.h"
+#include "../LIScriptExceptions.h"
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <map>
@@ -10,13 +11,43 @@ namespace Minerva
 {
 	// --------------------------------------------------------------------
 	// CommandBlock::AddComand()
+	//   throws an exception if this command is incompatible
+	//   with the TYPES specified in the grammar, but doesn't check
+	//   if adding the command violates the other rules.
+	//   usually you should use AddValidCommand() instead.
 	// --------------------------------------------------------------------
 	void CommandBlock::AddCommand(Command * command)
 	{
 		if (grammar->ValidCommand(command))
 			commands.push_back(command);
 		else
-			throw LIBoxCommandNotAllowedException();
+			throw LIScriptCommandNotAllowedException();
+	}
+	
+	// --------------------------------------------------------------------
+	// CommandBlock::AddValidComand()
+	//    tries adding the command and uses Validate() to see if it's ok.
+	//    catches exceptions so that it can return a boolean corresponding
+	//    to whether or not the command was successfully added.
+	// --------------------------------------------------------------------
+	bool CommandBlock::AddValidCommand(Command * command)
+	{
+		if (!grammar->ValidCommand(command))
+			return false;
+			
+		commands.push_back(command);
+		
+		try
+		{
+			Validate();
+		}
+		catch (LIScriptException e)
+		{
+			commands.pop_back();
+			return false;
+		}
+		
+		return true;
 	}
 	
 	// --------------------------------------------------------------------
@@ -45,15 +76,20 @@ namespace Minerva
 				// note that the comparison is supposed to be a BITWISE 'and' (only one ampersand '&').
 				// this is how we check if a command satisfies a requirement that has been 'OR'ed together
 				// out of several individual requirements.
-				if ( ((*commandIt)->get_commandType()) & requirement > 0 )
+				int matches = ((*commandIt)->get_commandType()) & requirement;
+				if ( matches > 0 )
 				{
 					reqSatisfied = true;
 					break;
 				}
+				
 			} // for (commandIt)
 			
 			if ( !reqSatisfied )
+			{
+				throw LIScriptBlockCommandRequirementNotSatisfied(commandBlockType, requirement);
 				return false;
+			}
 		} // for (requirementIt)
 
 		//  (2) are there too many of one kind of command?
@@ -62,7 +98,10 @@ namespace Minerva
 			CommandType capType = (*capIt).first;
 			int capNum = (*capIt).second;
 			if ( commandPlacement.count(capType) > capNum )
+			{
+				throw LIScriptBlockTooManyCommands(commandBlockType, capType, capNum);
 				return false;
+			}
 		}
 
 		// each Command knows how to check a list of commands to see if the list is compatible with it:
@@ -73,7 +112,10 @@ namespace Minerva
 		{
 			Command * command = (*commandIt);
 			if ( !command->CheckCompatibility(commandPlacement, position) )
+			{
+				throw LIBoxCommandNotCompatibleException(commandBlockType, command->get_commandType());
 				return false;
+			}
 		}
 				
 		return true;
@@ -110,8 +152,11 @@ namespace Minerva
 			// if the position is unimportant, all that we have to have is that the required block be in the list somewhere.
 			//      if it isn't, we know this list isn't compatible. 
 			// otherwise, check that the right kind of block is in the right place.
-			if (positionOffset == 0 && positionList.count(blockType) == 0)
-				return false;
+			if (positionOffset == 0 )
+			{
+				if (positionList.count(blockType) == 0)
+					return false;
+			}
 			else
 			{
 				int position = myPosition + positionOffset;
@@ -135,7 +180,7 @@ namespace Minerva
 	std::string CommandBlock::ToString()
 	{
 		if (	! Validate() )
-			throw LIBoxInvalidBlockException();
+			throw LIScriptInvalidBlockException(commandBlockType);
 		
 		std::string out;
 		for ( std::vector<Command*>::const_iterator commandIt = commands.begin(); commandIt != commands.end(); commandIt++)

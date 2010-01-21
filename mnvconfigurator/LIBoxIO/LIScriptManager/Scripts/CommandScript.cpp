@@ -1,5 +1,5 @@
 #include "CommandScript.h"
-#include "../../LIBoxExceptions.h"
+#include "../LIScriptExceptions.h"
 
 #include <string>
 
@@ -16,7 +16,7 @@ namespace Minerva
 		if (grammar->ValidBlock(block))
 			blocks.push_back(block);
 		else			
-			throw LIBoxBlockNotAllowedException();
+			throw LIScriptBlockNotAllowedException();
 
 		return;
 	}

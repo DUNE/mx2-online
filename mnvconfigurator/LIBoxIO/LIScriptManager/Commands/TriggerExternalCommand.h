@@ -8,7 +8,7 @@
 
 namespace Minerva
 {
-	class TriggerExternalCommand : Command
+	class TriggerExternalCommand : public Command
 	{
 		public:
 			TriggerExternalCommand();
@@ -16,7 +16,7 @@ namespace Minerva
 			inline bool Validate()	{ return true; }		// there are no parameters for this command so it's always valid.
 			
 			inline std::string ToString()    { return std::string("aQ"); };
-			inline std::string Description() { return std::string("Set external trigger mode."); };
+			inline std::string Describe()    { return std::string("Set external trigger mode."); };
 			
 			bool operator==(const TriggerExternalCommand& rhs) { return true; };		// again, no parameters, so two of these are always equal.
 
