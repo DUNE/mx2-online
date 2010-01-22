@@ -11,7 +11,7 @@ namespace Minerva
 	class PulseWidthCommand : public Command
 	{
 		public:
-			PulseWidthCommand();
+			PulseWidthCommand(int newWidth = -1);
 			
 			inline bool Validate() { return (width >= 0); };
 			

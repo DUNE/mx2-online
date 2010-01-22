@@ -19,10 +19,14 @@ namespace Minerva
 
 	class LIScriptCommandNotAllowedException : public LIScriptException
 	{
-		virtual const char * what() const throw()
-		{
-			return "Error: this command is not allowed here.";
-		}
+		public:
+			virtual ~LIScriptCommandNotAllowedException() throw() {};
+			LIScriptCommandNotAllowedException(CommandType commandType, CommandBlockType blockType);
+			virtual const char * what() const throw();
+		private:
+			LIScriptCommandNotAllowedException();
+			CommandType commandType;
+			CommandBlockType blockType;
 	};
 
 	class LIScriptBlockNotAllowedException : public LIScriptException

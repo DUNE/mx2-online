@@ -11,7 +11,7 @@ namespace Minerva
 	class LEDSelectionCommand : public Command
 	{
 		public:
-			LEDSelectionCommand();
+			LEDSelectionCommand(char LEDgroup = '\0');
 			
 			inline bool Validate() { return (LEDgroup != '\0'); };
 			

@@ -11,7 +11,7 @@ namespace Minerva
 	class PulseHeightHighBitCommand : public Command
 	{
 		public:
-			PulseHeightHighBitCommand();
+			PulseHeightHighBitCommand(int highBit = -1);
 			
 			inline bool Validate() { return (highBit >= 0); };
 			

@@ -5,6 +5,16 @@
 
 namespace Minerva
 {
+	LIScriptCommandNotAllowedException::LIScriptCommandNotAllowedException(CommandType ct, CommandBlockType bt)
+	   : commandType(ct), blockType(bt)
+	{	}
+	
+	const char * LIScriptCommandNotAllowedException::what() const throw()
+	{
+		std::stringstream out;
+		out << "Error: this command (type " << commandType <<") is not allowed here (thrown by block of type " << blockType << ").";
+		return out.str().c_str();
+	}
 
 	LIScriptInvalidBlockException::LIScriptInvalidBlockException(CommandBlockType type)
 	{

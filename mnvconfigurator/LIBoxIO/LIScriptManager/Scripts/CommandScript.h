@@ -23,6 +23,9 @@ namespace Minerva
 			
 			void AddBlock(CommandBlock * block);
 			
+			// not implemented for now
+			virtual bool operator==(const CommandScript & otherScript) const   { return true; };
+			
 		protected:
 			ScriptGrammar * grammar;
 			std::vector<CommandBlock*> blocks;

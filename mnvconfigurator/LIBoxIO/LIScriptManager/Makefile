@@ -10,5 +10,5 @@ OBJECTS = $(GETOPTPP_OBJECTS)
 
 %.cpp : %.h
 
-LIScriptManager: $(OBJECTS) $(COMMANDS) $(BLOCKS) $(SCRIPTS) LIScriptExceptions.cpp main.cpp
-	g++ -o LIScriptManager $(OBJECTS) $(COMMANDS) $(BLOCKS) $(SCRIPTS) LIScriptExceptions.cpp main.cpp
+LIScriptManager: $(OBJECTS) $(COMMANDS) $(BLOCKS) $(SCRIPTS) LIScriptExceptions.cpp LIScriptManager.cpp main.cpp
+	g++ -o LIScriptManager $(OBJECTS) $(COMMANDS) $(BLOCKS) $(SCRIPTS) LIScriptExceptions.cpp LIScriptManager.cpp main.cpp

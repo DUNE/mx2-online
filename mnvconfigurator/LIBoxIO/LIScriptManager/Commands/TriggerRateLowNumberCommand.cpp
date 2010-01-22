@@ -12,8 +12,8 @@ namespace Minerva
 	// have to initialize static members outside class declaration
 	TriggerRateLowNumberCommandGrammar * TriggerRateLowNumberCommand::class_grammar = NULL;
 
-	TriggerRateLowNumberCommand::TriggerRateLowNumberCommand()
-	  : digit1(-1), digit2(-1)
+	TriggerRateLowNumberCommand::TriggerRateLowNumberCommand(int d1, int d2)
+	   : digit1(d1), digit2(d2)
 	{
 		commandType = TRIGGER_RATE_LOW_NUMBER_COMMAND;
 		
@@ -22,7 +22,7 @@ namespace Minerva
 		
 		grammar = TriggerRateLowNumberCommand::class_grammar;
 	}
-	
+
 	void TriggerRateLowNumberCommand::set_digit1(int newDigit1)
 	{
 		if (newDigit1 >= 0 && newDigit1 <= 15)

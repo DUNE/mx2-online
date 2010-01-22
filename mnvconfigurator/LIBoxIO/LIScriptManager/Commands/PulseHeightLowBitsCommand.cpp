@@ -7,13 +7,15 @@
 #include <sstream>
 #include <stdexcept>
 
+#include <iostream>
+
 namespace Minerva
 {
 	// have to initialize static members outside class declaration
 	PulseHeightLowBitsCommandGrammar * PulseHeightLowBitsCommand::class_grammar = NULL;
 
-	PulseHeightLowBitsCommand::PulseHeightLowBitsCommand()
-	  : lowBit1(-1), lowBit2(-1)
+	PulseHeightLowBitsCommand::PulseHeightLowBitsCommand(int lb1, int lb2)
+	   : lowBit1(lb1), lowBit2(lb2)
 	{
 		commandType = PULSE_HEIGHT_LOW_BITS_COMMAND;
 		

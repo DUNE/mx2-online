@@ -11,12 +11,12 @@ namespace Minerva
 	class PulseHeightLowBitsCommand : public Command
 	{
 		public:
-			PulseHeightLowBitsCommand();
+			PulseHeightLowBitsCommand(int lowBit1 = -1, int lowBit2 = -1);
 			
 			inline bool Validate() { return (lowBit1 >= 0 && lowBit2 >= 0); };
 			
 			std::string ToString();
-			inline std::string Description() { return std::string("Sets pulse height low bits."); };
+			inline std::string Describe() { return std::string("Sets pulse height low bits."); };
 			
 			inline int  get_lowBit1() const                 { return lowBit1; };
 			inline int  get_lowBit2() const                 { return lowBit2; };

@@ -6,6 +6,7 @@
 
 
 #include "../getoptpp/getopt_pp.h"
+#include "LIScriptManager.h"
 
 using namespace std;
 
@@ -35,38 +36,63 @@ int main (int argc, char ** argv)
 		
 		string filename = *(++command);
 		
+		Minerva::LIScriptManager manager;
+		manager.set_fileName(filename);
+		
 		if (mode == "create" || mode == "verify")
 		{
+			bool   noInitialization;
+			bool   noPulseConfig;
 			float  pulseHeight;
 			int    pulseWidth;
+			bool   noLEDconfig;
 			string LEDgroup;
+			bool   noTriggerConfig;
 			bool   triggerInternal;
-			string triggerRate;
+			int    triggerRate;
 			bool   requireResponse;
 			string responseRequired;
 			string responseSeparator;
+			bool   includeReset;
 			
-			opts >>                     GetOpt::Option       ('h', "pulse-height",       pulseHeight,        12.07f );
-			opts >>                     GetOpt::Option       ('w', "pulse-width",        pulseWidth,         7      );
-			opts >>                     GetOpt::Option       ('l', "ledgroup",           LEDgroup,           "ABCD" );
-			triggerInternal = ( opts >> GetOpt::OptionPresent('I', "trigger-internal")                              );
-			opts >>                     GetOpt::Option       ('r', "trigger-rate",       triggerRate,        "0220" );
-			requireResponse = ( opts >> GetOpt::OptionPresent('R', "require-response")                              );
-			opts >>                     GetOpt::Option       ('t', "response-required",  responseRequired,   ""     );
-			opts >>                     GetOpt::Option       ('s', "response-separator", responseSeparator,  ":"    );
+			noInitialization = ( opts >> GetOpt::OptionPresent('I', "no-initialization")                             );
+			noPulseConfig    = ( opts >> GetOpt::OptionPresent('P', "no-pulse-config")                               );
+			opts >>                      GetOpt::Option       ('h', "pulse-height",       pulseHeight,        12.07f );
+			opts >>                      GetOpt::Option       ('w', "pulse-width",        pulseWidth,         7      );
+			noLEDconfig      = ( opts >> GetOpt::OptionPresent('P', "no-LED-config")                                 );
+			opts >>                      GetOpt::Option       ('l', "ledgroup",           LEDgroup,           "ABCD" );
+			noTriggerConfig  = ( opts >> GetOpt::OptionPresent('T', "no-trigger-config")                             );
+			triggerInternal  = ( opts >> GetOpt::OptionPresent('N', "trigger-internal")                              );
+			opts >>   std::hex        >> GetOpt::Option       ('r', "trigger-rate",       triggerRate,        0x0220 );
+			requireResponse  = ( opts >> GetOpt::OptionPresent('R', "require-response")                              );
+			opts >>                      GetOpt::Option       ('t', "response-required",  responseRequired,   ""     );
+			opts >>                      GetOpt::Option       ('s', "response-separator", responseSeparator,  ":"    );
+			includeReset     = ( opts >> GetOpt::OptionPresent('X', "include-reset")                                 );
 			
+			manager.set_noInitialization    (noInitialization);
+			manager.set_noPulseConfig       (noPulseConfig);
+			manager.set_pulseHeight         (pulseHeight);
+			manager.set_pulseWidth          (pulseWidth);
+			manager.set_triggerRateLowNumber(triggerRate % 0x100);
+			manager.set_triggerRateLowNumber(triggerRate / 0x100);
+			manager.set_requireResponse     (requireResponse);
+			manager.set_responseRequired    (responseRequired);
+			manager.set_responseSeparator   (responseSeparator);
+			manager.set_doReset             (includeReset);
+			
+			manager.Create();
 			
 		}
 		else if (mode == "validate" || mode == "describe")
-		{
-			if (opts.options_remain())
-				optsOkay = false;
-		}
+		{}
 		else
 		{
 			cerr << "Invalid command." << endl;
 			optsOkay = false;
 		}
+
+		if (opts.options_remain())
+			optsOkay = false;
 	}
 	
 	if (!optsOkay)

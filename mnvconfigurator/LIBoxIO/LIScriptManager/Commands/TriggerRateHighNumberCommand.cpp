@@ -9,8 +9,8 @@ namespace Minerva
 {
 	TriggerRateHighNumberCommandGrammar * TriggerRateHighNumberCommand::class_grammar = NULL;
 
-	TriggerRateHighNumberCommand::TriggerRateHighNumberCommand()
-	   : digit1(-1), digit2(-1)
+	TriggerRateHighNumberCommand::TriggerRateHighNumberCommand(int d1, int d2)
+	   : digit1(d1), digit2(d2)
 	{
 		commandType = TRIGGER_RATE_HIGH_NUMBER_COMMAND;
 		
@@ -19,7 +19,7 @@ namespace Minerva
 		
 		grammar = TriggerRateHighNumberCommand::class_grammar;
 	}
-	
+
 	void TriggerRateHighNumberCommand::set_digit1(int newDigit1)
 	{
 		if (newDigit1 >= 0 && newDigit1 <= 15)

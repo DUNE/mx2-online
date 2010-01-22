@@ -11,7 +11,7 @@ namespace Minerva
 	class TriggerRateLowNumberCommand : public Command
 	{
 		public:
-			TriggerRateLowNumberCommand();
+			TriggerRateLowNumberCommand(int digit1 = -1, int digit2 = -1);
 			
 			inline bool Validate() { return (digit1 >= 0 && digit2 >= 0); };
 			

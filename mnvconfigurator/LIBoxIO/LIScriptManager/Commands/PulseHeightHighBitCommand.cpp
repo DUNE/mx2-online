@@ -12,8 +12,8 @@ namespace Minerva
 	// have to initialize static members outside class declaration
 	PulseHeightHighBitCommandGrammar * PulseHeightHighBitCommand::class_grammar = NULL;
 
-	PulseHeightHighBitCommand::PulseHeightHighBitCommand()
-	  : highBit(-1)
+	PulseHeightHighBitCommand::PulseHeightHighBitCommand(int hb)
+	  : highBit(hb)
 	{
 		commandType = PULSE_HEIGHT_HIGH_BIT_COMMAND;
 		

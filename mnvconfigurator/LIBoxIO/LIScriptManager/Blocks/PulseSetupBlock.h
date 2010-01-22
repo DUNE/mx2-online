@@ -13,6 +13,8 @@ namespace Minerva
 		public:
 			PulseSetupBlock();
 			
+			bool Validate();
+			
 			std::string  Describe()		{ return std::string("Block of commands that sets up the pulse shape."); };
 			
 		protected:

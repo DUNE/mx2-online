@@ -11,8 +11,8 @@ namespace Minerva
 	// have to initialize static members outside class declaration
 	LEDSelectionCommandGrammar * LEDSelectionCommand::class_grammar = NULL;
 
-	LEDSelectionCommand::LEDSelectionCommand()
-	  : LEDgroup('\0')
+	LEDSelectionCommand::LEDSelectionCommand(char lg)
+	   : LEDgroup(lg)
 	{
 		commandType = LED_SELECTION_COMMAND;
 		

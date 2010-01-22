@@ -21,7 +21,7 @@ namespace Minerva
 		if (grammar->ValidCommand(command))
 			commands.push_back(command);
 		else
-			throw LIScriptCommandNotAllowedException();
+			throw LIScriptCommandNotAllowedException(command->get_commandType(), commandBlockType);
 	}
 	
 	// --------------------------------------------------------------------

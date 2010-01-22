@@ -12,8 +12,8 @@ namespace Minerva
 	// have to initialize static members outside class declaration
 	PulseWidthCommandGrammar * PulseWidthCommand::class_grammar = NULL;
 
-	PulseWidthCommand::PulseWidthCommand()
-	  : width(-1)
+	PulseWidthCommand::PulseWidthCommand(int newWidth)
+	   : width(newWidth)
 	{
 		commandType = PULSE_WIDTH_COMMAND;
 		
