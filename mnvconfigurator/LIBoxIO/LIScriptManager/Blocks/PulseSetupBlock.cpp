@@ -21,14 +21,4 @@ namespace Minerva
 		grammar = PulseSetupBlock::class_grammar;
 	}
 
-	bool PulseSetupBlock::Validate()
-	{
-		for (std::vector<Command*>::const_iterator it = commands.begin(); it != commands.end(); it++)
-			std::cout << (*it)->get_commandType() << " ";
-			
-		std::cout << std::endl;
-		
-		return CommandBlock::Validate();
-	}
-
 };

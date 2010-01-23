@@ -54,6 +54,25 @@ namespace Minerva
 		
 			outScript->AddBlock(initializeBlock);
 		}
+
+		if (!noLEDconfig)
+		{
+			std::string LEDcodes = "0abcdefghijklmnopqrstuv";
+			
+			int hasA = (LEDgroup.find('A') != std::string::npos);
+			int hasB = (LEDgroup.find('B') != std::string::npos);
+			int hasC = (LEDgroup.find('C') != std::string::npos);
+			int hasD = (LEDgroup.find('D') != std::string::npos);
+			
+			int inverseAddress = hasA + 2*hasB + 4*hasC + 8*hasD;
+			
+			char LEDcode = LEDcodes[15 - inverseAddress];
+			
+			LEDSelectionBlock   * LEDblock   = new LEDSelectionBlock;
+			LEDblock->AddCommand(new LEDSelectionCommand(LEDcode));
+			
+			outScript->AddBlock(LEDblock);
+		}
 		
 		if (!noPulseConfig)
 		{
@@ -75,24 +94,6 @@ namespace Minerva
 			pulseBlock->AddCommand(widthCommand);
 			
 			outScript->AddBlock(pulseBlock);
-		}
-		
-		if (!noLEDconfig)
-		{
-			std::string LEDcodes = "0abcdefghijklmnopqrstuv";
-			
-			int hasA = (LEDgroup.find('A') == std::string::npos);
-			int hasB = (LEDgroup.find('B') == std::string::npos);
-			int hasC = (LEDgroup.find('C') == std::string::npos);
-			int hasD = (LEDgroup.find('D') == std::string::npos);
-			
-			int inverseAddress = hasA + 2*hasB + 4*hasC + 8*hasD;
-			char LEDcode = LEDcodes[15 - inverseAddress];
-			
-			LEDSelectionBlock   * LEDblock   = new LEDSelectionBlock;
-			LEDblock->AddCommand(new LEDSelectionCommand(LEDcode));
-			
-			outScript->AddBlock(LEDblock);
 		}
 		
 		if (!noTriggerConfig)

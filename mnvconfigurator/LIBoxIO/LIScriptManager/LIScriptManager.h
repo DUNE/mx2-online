@@ -42,7 +42,7 @@ namespace Minerva
 			inline void  set_noPulseConfig         (float       newNoPulseConfig           ) { noPulseConfig = newNoPulseConfig; };
 			       void  set_pulseHeight           (float       newPulseHeight             );
 			       void  set_pulseWidth            (int         newPulseWidth              );
-			inline void  set_noLEDConfig           (float       newNoLEDConfig             ) { noLEDconfig = newNoLEDConfig; };
+			inline void  set_noLEDconfig           (float       newNoLEDConfig             ) { noLEDconfig = newNoLEDConfig; };
 			       void  set_LEDgroup              (std::string newLEDgroup                );
 			inline void  set_noTriggerConfig       (float       newNoTriggerConfig         ) { noTriggerConfig = newNoTriggerConfig; };
 			inline void  set_triggerInternal       (bool        newTriggerInternal         ) { triggerInternal = newTriggerInternal; };
