@@ -1,5 +1,6 @@
-#include <string>
 #include "LIBoxExceptions.h"
+
+#include <string>
 
 namespace Minerva
 {

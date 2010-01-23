@@ -54,6 +54,14 @@ namespace Minerva
 		}
 	}
 
+	class LIBoxCommandNotAllowedException : public std::exception
+	{
+		virtual const char * what() const throw()
+		{
+			return "Error: specified Command is not allowed in this Command Block.";
+		}
+	}
+
 };
 
 #endif
