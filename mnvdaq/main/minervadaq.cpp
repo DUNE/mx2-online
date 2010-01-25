@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"datastream='alldata',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-06-00'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-06-01'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
