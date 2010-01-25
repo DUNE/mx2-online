@@ -21,7 +21,6 @@ using namespace std;
 #define FPGAWRITELEVEL 50
 #define TRIPTREADLEVEL 50
 #define TRIPTWRITELEVEL 50
-#define HVENABLE 0 // 1 to enable HV
 
 // Implement this interface for your own strategies for printing log statements.
 log4cpp::Appender* myAppender;
@@ -65,7 +64,7 @@ int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc,
 	unsigned int crocChannel, febAddresses boardID);
 // Basic Setup of FPGA's
 int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc, 
- 	unsigned int crocChannel, febAddresses boardID, int HVTarget);
+ 	unsigned int crocChannel, febAddresses boardID, int HVTarget, int HVEnableFlag);
 // Read all 6 TRiP's
 int FEBTRiPTRead(controller *myController, acquire *myAcquire, croc *myCroc, 
 	unsigned int crocChannel, febAddresses boardID);
@@ -80,7 +79,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2) {
 		cout << "Usage : lightLeakConfig -c <CROC Address> -h <CHANNEL Number> -f <Number of FEBs> ";
-		cout << "-v <HV Target>\n";
+		cout << "-v <HV Target> -e <enable 1 or 0>\n";
 		exit(0);
 	}
 	
@@ -90,6 +89,7 @@ int main(int argc, char *argv[])
 	int crocID                   = 1;
 	int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
 	int HVTarget                 = 32000;
+	int HVEnableFlag             = 0; // disable by default
 	
 	int error;		
 	int controllerID = 0;
@@ -108,22 +108,27 @@ int main(int argc, char *argv[])
 			optind++;
 			crocCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
 			cout << "\tCROC Address   = " << (crocCardAddress>>16) << endl;
-        }
+        	}
 		else if (sw=="-h") {
 			optind++;
 			crocChannel = (unsigned int)( atoi(argv[optind]) );
 			cout << "\tCROC Channel   = " << crocChannel << endl;
-        }
+        	}
 		else if (sw=="-f") {
 			optind++;
 			nFEBs = atoi(argv[optind]);
 			cout << "\tNumber of FEBs = " << nFEBs << endl;
-        }
+        	}
 		else if (sw=="-v") {
 			optind++;
 			HVTarget = atoi(argv[optind]);
 			cout << "\tTarget HV      = " << HVTarget << endl;
-        }
+        	}
+		else if (sw=="-e") {
+			optind++;
+			HVEnableFlag = atoi(argv[optind]);
+			cout << "\tHV Enable Flag = " << HVEnableFlag << endl;
+		}
 		else
 			cout << "Unknown switch: " << argv[optind] << endl;
 		optind++;
@@ -186,10 +191,8 @@ int main(int argc, char *argv[])
 				}
 				// Setup FPGA's
 				{
-#if HVENABLE
-					std::cout << "Enabling HV.\n";
-#endif
-					error = FEBFPGAWrite(myController, myAcquire, myCroc, crocChannel, *p, HVTarget);
+					error = FEBFPGAWrite(myController, myAcquire, myCroc, crocChannel, *p, HVTarget, 
+						HVEnableFlag);
 					if (error!=0) { cout<<"Error in FEB FPGA Write!\n"; exit(error); }	
 				}
 				// Setup TriPT's
@@ -385,7 +388,7 @@ int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc,
 
 // Write some stuff to the FEB FPGA Frame
 int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc, 
- 	unsigned int crocChannel, febAddresses boardID, int HVTarget)
+ 	unsigned int crocChannel, febAddresses boardID, int HVTarget, int HVEnableFlag)
 {
 #if DEBUGLEVEL > FPGAWRITELEVEL
 	printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
@@ -406,11 +409,13 @@ int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->SetTripPowerOff(val); //turn the trips on
 		myFeb->SetGateStart(43000);      
 		myFeb->SetGateLength(1702);  
-		val[0]=0x0; 
-#if HVENABLE
-		std::cout << "ENABLING HV!!!\n";
-		val[0]=0x1; 
-#endif
+		if (HVEnableFlag) {
+			std::cout << "HV Enable Flag is set to ON!\n";
+			val[0]=0x1; 
+		} else {
+			std::cout << "HV Enable Flag is set to OFF!\n";
+			val[0]=0x0; 
+		}
 		myFeb->SetHVEnabled(val);
 		myFeb->SetHVTarget(HVTarget);
 		val[0]=0x2; myFeb->SetHVNumAve(val);
