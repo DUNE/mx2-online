@@ -350,8 +350,8 @@ int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->ShowValues();
 		cout << endl;
 #endif
-		printf("Board ID = %02d, HV Actual = %05d, HV Period Auto = %05d, HV Diff from Targ = %05d\n",
-			myFeb->GetBoardNumber(), myFeb->GetHVActual(), myFeb->GetHVPeriodAuto(), 
+		printf("Board ID = %02d, HV Enabled = %1d, HV Target = %05d, HV Actual = %05d, HV Period Auto = %05d, HV Diff from Targ = %05d\n",
+			myFeb->GetBoardNumber(), myFeb->GetHVEnabled(), myFeb->GetHVTarget(), myFeb->GetHVActual(), myFeb->GetHVPeriodAuto(), 
 			(myFeb->GetHVActual()-myFeb->GetHVTarget()));
 		myFeb->message = 0;
 		delete [] testarr;
