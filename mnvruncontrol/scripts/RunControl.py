@@ -2,8 +2,9 @@
 import wx
 import sys
 import wx.richtext as rt
-from commands import *
-from subprocess import *
+import commands
+import subprocess
+import os
 
 class MyFrame(wx.Frame):
     """
@@ -85,58 +86,73 @@ class MyFrame(wx.Frame):
         self.Close()
 
     def StartDaqSingleton(self, evt):
+
 	self.run     = self.t1.GetValue()
         self.subrun  = self.t2.GetValue()
 	self.gates   = self.t3.GetValue()
 	self.runMode = self.t4.GetValue()
         self.febs    = self.t5.GetValue()
 
-	#get_date = 'date -u +%y%m%d%k%M'
-	#date = getoutput(get_date)
-        date = getoutput('date -u +%y%m%d%k%M')
-	
-	self.ETNAME = 'MN_%08d_%04d_numib_v04_%s' % (int(self.run),int(self.subrun),date)
-	print self.ETNAME
+        get_time_stamp = 'date -u +%y%m%d%k%M'
+        time_stamp = commands.getoutput(get_time_stamp)
 
-	self.StartETSys()	
+        self.ETNAME = 'MN_%08d_%04d_numib_v04_%s' % (int(self.run),int(self.subrun),time_stamp)
+        #self.ETNAME='testme'
+        print self.ETNAME
+
+	self.OUTFL = self.ETNAME + '.dat'
+	print self.OUTFL
+
+	self.StartETSys()
 	self.StartETMon()
 	self.StartEBSvc()
 
     def StartETSys(self):
 	
-        self.etSysFrame = wx.Frame(self, -1, 'ET System', pos=(600, 0), size=(400, 300))
-        self.etSysFrame.rtc = rt.RichTextCtrl(self.etSysFrame, style=wx.VSCROLL|wx.NO_BORDER);
-        self.etSysFrame.Show(True)
+        #self.etSysFrame = wx.Frame(self, -1, 'ET System', pos=(600, 0), size=(400, 300))
+        #self.etSysFrame.rtc = rt.RichTextCtrl(self.etSysFrame, style=wx.VSCROLL|wx.NO_BORDER);
+        #self.etSysFrame.Show(True)
 
 	EVENT_SIZE=2048 
 	FRAMES=8
 	EVENTS=int(self.gates)*FRAMES*int(self.febs)
 
 	#self.et_sys = Popen(['$ET_HOME/Linux-x86_64-64/bin/et_start','-v','-f','test','-n',str(EVENTS),'-s',str(EVENT_SIZE)], stdout=PIPE)
-	self.et_sys = Popen(['$ET_HOME/Linux-x86_64-64/bin/et_start','-v','-f',str(self.ETNAME),'-n',str(EVENTS),'-s',str(EVENT_SIZE)], stdout=PIPE)
+	#self.et_sys = Popen(['$ET_HOME/Linux-x86_64-64/bin/et_start','-v','-f',str(self.ETNAME),'-n',str(EVENTS),'-s',str(EVENT_SIZE)], stdout=PIPE)
 	#self.et_sys = Popen(['$ET_HOME/Linux-x86_64-64/bin/et_start','-v -f ./'+self.ETNAME+' -n '+str(EVENTS)+' -s '+str(EVENT_SIZE)], stdout=PIPE)
 	#self.et_sys = Popen(['./start_et_system',str(self.ETNAME),str(self.febs),str(self.gates)], stdout=PIPE)
-	self.etSysFrame.rtc.WriteText(self.et_sys.communicate()[0])
+	#self.etSysFrame.rtc.WriteText(self.et_sys.communicate()[0])
+
+	script_string = '%s/runthedaq/start_et_system' % os.environ['DAQROOT']
+	print script_string
+	subprocess.Popen(['xterm','-geometry','80x30+380+1','-e',str(script_string),str(self.ETNAME),str(self.febs),str(self.gates)])
 
     def StartETMon(self):
 
-        self.etMonFrame = wx.Frame(self, -1, 'ET Monitor', pos=(600, 400), size=(400, 300))
-        self.etMonFrame.rtc = rt.RichTextCtrl(self.etMonFrame, style=wx.VSCROLL|wx.NO_BORDER);
-        self.etMonFrame.Show(True)
+        #self.etMonFrame = wx.Frame(self, -1, 'ET Monitor', pos=(600, 400), size=(400, 300))
+        #self.etMonFrame.rtc = rt.RichTextCtrl(self.etMonFrame, style=wx.VSCROLL|wx.NO_BORDER);
+        #self.etMonFrame.Show(True)
 
-        self.et_mon = Popen(['$ET_HOME/Linux-x86_64-64/bin/et_monitor','-f',str(self.ETNAME)], stdout=PIPE)
-        self.etMonFrame.rtc.WriteText(self.et_mon.communicate()[0])
+        #self.et_mon = Popen(['$ET_HOME/Linux-x86_64-64/bin/et_monitor','-f',str(self.ETNAME)], stdout=PIPE)
+        #self.etMonFrame.rtc.WriteText(self.et_mon.communicate()[0])
+
+        script_string = '%s/runthedaq/start_et_monitor' % os.environ['DAQROOT']
+        print script_string
+	subprocess.Popen(['xterm','-geometry','88x60+890+1','-e',str(script_string),str(self.ETNAME)])
 
     def StartEBSvc(self):
 
-        self.ebSvcFrame = wx.Frame(self, -1, 'EB Service', pos=(1050, 0), size=(400, 800))
-	self.ebSvcFrame.rtc = rt.RichTextCtrl(self.ebSvcFrame, style=wx.VSCROLL|wx.NO_BORDER);
-        self.ebSvcFrame.Show()
+        #self.ebSvcFrame = wx.Frame(self, -1, 'EB Service', pos=(1050, 0), size=(400, 800))
+	#self.ebSvcFrame.rtc = rt.RichTextCtrl(self.ebSvcFrame, style=wx.VSCROLL|wx.NO_BORDER);
+        #self.ebSvcFrame.Show()
 
-        self.eb_svc = Popen(['nice','${DAQROOT}/bin/event_builder',str(self.ETNAME)], stdout=PIPE)
-        self.ebSvcFrame.rtc.WriteText(self.eb_svc.communicate()[0])
+        #self.eb_svc = Popen(['nice','${DAQROOT}/bin/event_builder',str(self.ETNAME)], stdout=PIPE)
+        #self.ebSvcFrame.rtc.WriteText(self.eb_svc.communicate()[0])
 
-	
+        script_string = '%s/runthedaq/start_eb_service' % os.environ['DAQROOT']
+        print script_string
+        subprocess.Popen(['xterm','-geometry','88x28+380+421','-e',str(script_string),str(self.ETNAME),str(self.OUTFL)])
+
 class MyApp(wx.App):
     def OnInit(self):
         frame = MyFrame(None, "Run Control")
