@@ -2,8 +2,11 @@
 
 from ctypes import *
 #vme = windll.CAENVMElib
-cdll.LoadLibrary("libCAENVME.so")
-vme = CDLL("libCAENVME.so")
+cdll.LoadLibrary("/usr/lib/libCAENVME.so")
+vme = CDLL("/usr/lib/libCAENVME.so")
+
+#cdll.LoadLibrary("/work/software/mnvsingle/mnvdaq/lib/libhardware.so")
+#hardware = CDLL("/work/software/mnvsingle/mnvdaq/lib/libhardware.so")
 
 from random import *
 

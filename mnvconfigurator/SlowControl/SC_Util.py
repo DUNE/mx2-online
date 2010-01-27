@@ -101,6 +101,56 @@ FastCmds={
     'TriggerRearm':0x85,
     'QueryFPGA':0x91}
 
+CRIMTimingModes={
+    '0 None':0x0000,
+    '1 DAQ':0x1000,
+    '2 EXT':0x2000,
+    '4 INT':0x4000,
+    '8 MTM':0x8000}
+
+CRIMTimingFrequencies={
+    '0 None':0x0000,
+    'F00':0x0001,
+    'F01':0x0002,
+    'F02':0x0004,
+    'F03':0x0008,
+    'F04':0x0010,
+    'F05':0x0020,
+    'F06':0x0040,
+    'F07':0x0080,
+    'F08':0x0100,
+    'F09':0x0200,
+    'F10':0x0400,
+    'F11':0x0800}
+    
+def CRIMDAQModeChkBoxData():
+    pos=(0,0)
+    size=(125, 16)
+    color=colorLabel
+    leftLabels=(
+        (' re-transmit', pos, size, '', color),
+        (' send message', pos, size, '', color),
+        (' CRC error enabled', pos, size, '', color),
+        (' FE trigger enabled', pos, size, '', color))
+    return leftLabels
+
+def CRIMIntVectorTableIDLabelsData():
+    pos=(0,0)
+    size=(80, 16)
+    color=colorLabel
+    leftLabels=(
+        (' Vect Inp 0', pos, size, '', color),
+        (' Vect Inp 1', pos, size, '', color),
+        (' Vect Inp 2', pos, size, '', color),
+        (' Vect Inp 3', pos, size, '', color),
+        (' Vect Inp 4', pos, size, '', color),
+        (' Vect Inp 5', pos, size, '', color),
+        (' Vect Inp 6', pos, size, '', color),
+        (' Vect Inp 7', pos, size, '', color))
+    rightLabels=(('X', pos, (40, 16), '', 'white'),)
+    rightLabels=(len(leftLabels))*rightLabels
+    return (leftLabels, rightLabels) 
+
 def CROCResetAndTestPulseChkBoxData():
     pos=(0,0)
     size=(58, 16)
@@ -125,28 +175,24 @@ def CROCFEBGateDelaysLabelsData():
         (' N of Meas', pos, size, '', color),
         (' Load Timer', pos, size, '', color),
         (' Gate Start', pos, size, '', color))
-    return leftLabels
-
-def CROCFEBGateDelaysTextData():
-    pos=(0,0)
-    size=(50, 20)
+    size=(50, 16)
     color=colorText
-    rightText=(
+    rightLabels=(
         ('5', pos, size, 'NofMeasurements', color),
         ('15', pos, size, 'LoadTimerValue', color),
         ('63500', pos, size, 'GateStartValue', color))
-    return rightText
+    return leftLabels, rightLabels
 
-def CROCLoopDelayRegLabelsData():
+def CROCLoopDelaysLabelsData():
     pos=(0,0)
-    size=(90, 16)
+    size=(80, 16)
     color=colorLabel
     leftLabels=(
         (' Channel 1', pos, size, '', color),
         (' Channel 2', pos, size, '', color),
         (' Channel 3', pos, size, '', color),
         (' Channel 4', pos, size, '', color))
-    rightLabels=(('X', pos, (30, 16), '', 'white'),)
+    rightLabels=(('X', pos, (40, 16), '', 'white'),)
     rightLabels=(len(leftLabels))*rightLabels
     return (leftLabels, rightLabels) 
 
@@ -300,7 +346,6 @@ def FPGARegLabelsData():
         (' R  DCM2 PhaseTotal', pos, size, '', color),
         (' R  TP Count2b', pos, size, '', color),
         (' R  TP Count', pos, size, '', color),
-        (' R  Temperature', pos, size, '', color),
         (' WR TripX Threshold', pos, size, '', color),
         (' R  TripX Comparators', pos, size, '', color),
         (' R  ExtTriggFound', pos, size, '', color),
@@ -318,7 +363,7 @@ def FPGARegLabelsData():
 
 def FPGARegTextData():
     pos=(0,0)
-    size=(30, 20)
+    size=(40, 20)
     color=colorText
     rightRegText=(
         #these are the default GUI
@@ -362,7 +407,6 @@ def FPGARegTextData():
         ('', pos, size, ' R  DCM2 PhaseTotal', color),
         ('', pos, size, ' R  TP Count2b', color),
         ('', pos, size, ' R  TP Count', color),
-        ('', pos, size, ' R  Temperature', color),
         ('', pos, size, ' WR TripX Threshold', color),
         ('', pos, size, ' R  TripX Comparators', color),
         ('', pos, size, ' R  ExtTriggFound', color),
@@ -378,9 +422,9 @@ def FPGARegTextData():
         ('', pos, size, ' R  TXSyncErr(1)', color))
     return rightRegText
 
-def CreateLabels(panel, data, style=wx.ALIGN_CENTER | wx.ST_NO_AUTORESIZE, offset=(0,0)):
+def CreateLabels(panel, data, style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE, offset=(0,0)):
     '''Returns a list of wx.StaticText objects, as specified by Data'''
-    top = []
+    top = [] 
     for label, pos, size, name, color in data:
         newpos = (pos[0]+offset[0], pos[1]+offset[1])
         top.append(CreateLabel(panel, label, newpos, size, name, color, style))
@@ -476,7 +520,44 @@ def SizerTop(btnShowAdvancedGUI, TopLabels):
     szTop.Add(btnShowAdvancedGUI,0,wx.ALL,5)
     szTop.Add(szTopLabels,0,wx.ALL,7)
     return szTop
-        
+
+class VMEReadWrite():
+    def __init__(self, panel, caption=' VME Read/Write'):
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
+        lblEmpty=CreateLabel(panel, '',
+            pos=(0,0), size=(60, 16), name='', color=colorLabel)
+        lblAddr=CreateLabel(panel, 'Address',
+            pos=(0,0), size=(60, 16), name='', color=colorLabel)
+        lblData=CreateLabel(panel, 'Data',
+            pos=(0,0), size=(60, 16), name='', color=colorLabel)
+        self.btnRead=CreateButton(panel, 'Read',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorButton)
+        self.txtReadAddr = CreateTextCtrl(panel, label='addr',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
+        self.txtReadData = CreateTextCtrl(panel, label='data',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
+        self.txtReadData.Enable(False)
+        self.btnWrite=CreateButton(panel, 'Write',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorButton)
+        self.txtWriteAddr = CreateTextCtrl(panel, label='addr',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
+        self.txtWriteData = CreateTextCtrl(panel, label='data',
+            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)        
+        sz = wx.FlexGridSizer(rows=3, cols=3, hgap=5, vgap=5)
+        sz.Add(lblEmpty, 0, 0, 0)
+        sz.Add(lblAddr, 0, 0, 0)
+        sz.Add(lblData, 0, 0, 0)
+        sz.Add(self.btnRead, 0, 0, 0)
+        sz.Add(self.txtReadAddr, 0, 0, 0)
+        sz.Add(self.txtReadData, 0, 0, 0)
+        sz.Add(self.btnWrite, 0, 0, 0)
+        sz.Add(self.txtWriteAddr, 0, 0, 0)
+        sz.Add(self.txtWriteData, 0, 0, 0) 
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        self.BoxSizer.Add(sz, 0, wx.ALL, 2)    
+      
 class FlashButtons():
     def __init__(self, panel, lblFirst, lblSecond):
         FlashBox=wx.StaticBox(panel, -1, 'Flash Commands')
@@ -490,28 +571,26 @@ class FlashButtons():
         self.FlashBoxSizer.Add(self.btnFlashFirst, 0, wx.ALL|wx.EXPAND, 2)
         self.FlashBoxSizer.Add(self.btnFlashSecond, 0, wx.ALL|wx.EXPAND, 2)
         self.controls=[FlashBox, self.btnFlashFirst, self.btnFlashSecond]
-        
+      
 class StatusRegister():
     def __init__(self, panel, caption='CROC CH'):
         if caption=='CROC CH':
             leftLabelsData, rightLabelData = CROCCHStatusRegLabelsData()
         if caption=='CRIM CH':
             leftLabelsData, rightLabelData = CRIMCHStatusRegLabelsData()
-        StatusBox=wx.StaticBox(panel, -1, caption+' Status Reg')
-        StatusBox.SetFont(myFont(fontSizeStaticBox))
-        StatusBox.SetForegroundColour(colorForeground)
+        StaticBox=wx.StaticBox(panel, -1, caption+' Status Reg')
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
         rows=len(leftLabelsData)
         self.btnClearStatus=CreateButton(panel, 'Clear Status',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnReadStatus=CreateButton(panel, 'Read Status',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.lblStatus=CreateLabel(panel, 'status value',
-            pos=(0,0), size=(125,16), name='', color='white',
-            style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE)
-        RegLabels=CreateLabels(panel, leftLabelsData,
-            style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE)
-        self.RegValues=CreateLabels(panel, rightLabelData,
-            style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE)
+        self.txtReadStatusData = CreateTextCtrl(panel, label='status value',
+            pos=(0,0), size=(125, 20), name='', bckcolor=colorText)
+        self.txtReadStatusData.Enable(False) 
+        RegLabels=CreateLabels(panel, leftLabelsData)
+        self.RegValues=CreateLabels(panel, rightLabelData)
         statSizer1=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=1)
         statSizer2=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=1)
         statSizer3=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=1)
@@ -525,44 +604,50 @@ class StatusRegister():
             statSizer3.Add(self.RegValues[i+8], 0, 0)
             statSizer4.Add(RegLabels[i+12], 0, 0)
             statSizer4.Add(self.RegValues[i+12], 0, 0)
-        self.StatusBoxSizer=wx.StaticBoxSizer(StatusBox, wx.VERTICAL)
-        self.StatusBoxSizer.Add(self.btnClearStatus, 0, wx.ALL, 2)
-        self.StatusBoxSizer.Add(self.btnReadStatus, 0, wx.ALL, 2)
-        self.StatusBoxSizer.Add(self.lblStatus, 0, wx.ALL, 2)
-        self.StatusBoxSizer.Add(statSizer1, 0, wx.ALL, 2)
-        self.StatusBoxSizer.Add(statSizer2, 0, wx.ALL, 2)
-        self.StatusBoxSizer.Add(statSizer3, 0, wx.ALL, 2)
-        self.StatusBoxSizer.Add(statSizer4, 0, wx.ALL, 2)
-
-        self.controls=[StatusBox, self.btnClearStatus, self.btnReadStatus, self.lblStatus]
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        self.BoxSizer.Add(self.btnClearStatus, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnReadStatus, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.txtReadStatusData, 0, wx.ALL, 2)
+        self.BoxSizer.Add(statSizer1, 0, wx.ALL, 2)
+        self.BoxSizer.Add(statSizer2, 0, wx.ALL, 2)
+        self.BoxSizer.Add(statSizer3, 0, wx.ALL, 2)
+        self.BoxSizer.Add(statSizer4, 0, wx.ALL, 2)
+        self.controls=[StaticBox, self.btnClearStatus, self.btnReadStatus, self.txtReadStatusData]
         for lbl in RegLabels: self.controls.append(lbl)
         for lbl in self.RegValues: self.controls.append(lbl)
 
-class DPMPointer():
-    def __init__(self, panel):
-        DPMRegisterBox=wx.StaticBox(panel, -1, 'DPM Pointer')
-        DPMRegisterBox.SetFont(myFont(fontSizeStaticBox))
-        DPMRegisterBox.SetForegroundColour(colorForeground)
-        self.btnDPMPointerReset=CreateButton(panel, 'Reset DPM Pointer',
-            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.btnDPMPointerRead=CreateButton(panel, 'Read DPM Pointer',
-            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.lblDPMPointerValue=CreateLabel(panel, 'pointer value',
-            pos=(0,0), size=(125,16), name='', color='white',
-            style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE)
-        self.DPMBoxSizer=wx.StaticBoxSizer(DPMRegisterBox, wx.VERTICAL)
-        self.DPMBoxSizer.Add(self.btnDPMPointerReset, 0, wx.ALL, 2)
-        self.DPMBoxSizer.Add(self.btnDPMPointerRead, 0, wx.ALL, 2)
-        self.DPMBoxSizer.Add(self.lblDPMPointerValue, 0, wx.ALL, 2)
-
-        self.controls=[DPMRegisterBox, self.btnDPMPointerReset,
-            self.btnDPMPointerRead, self.lblDPMPointerValue]
-
+class GenericRegister():
+    def __init__(self, panel, caption='Generic Register (hex)',
+            btnWriteVisible=False, btnWriteCaption='Write',
+            btnReadVisible=False, btnReadCaption='Read',
+            txtDataVisible=False, txtDataCaption='value', WEnable=True):
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        self.controls=[StaticBox]
+        if btnWriteVisible==True:
+            self.btnWrite=CreateButton(panel, btnWriteCaption,
+                pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+            self.BoxSizer.Add(self.btnWrite, 0, wx.ALL, 2)
+            self.controls.append(self.btnWrite)
+        if btnReadVisible==True:
+            self.btnRead=CreateButton(panel, btnReadCaption,
+                pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+            self.BoxSizer.Add(self.btnRead, 0, wx.ALL, 2)
+            self.controls.append(self.btnRead)
+        if txtDataVisible==True:
+            self.txtData = CreateTextCtrl(panel, label=txtDataCaption,
+                pos=(0,0), size=(125, 20), name='', bckcolor=colorText)
+            self.txtData.Enable(WEnable)
+            self.BoxSizer.Add(self.txtData, 0, wx.ALL, 2)
+            self.controls.append(self.txtData)
+     
 class MessageRegisters():
     def __init__(self, panel):
-        MessageRegisterBox=wx.StaticBox(panel, -1, 'Message Registers (hex)')
-        MessageRegisterBox.SetFont(myFont(fontSizeStaticBox))
-        MessageRegisterBox.SetForegroundColour(colorForeground)
+        StaticBox=wx.StaticBox(panel, -1, 'Message Registers (hex)')
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
         self.txtAppendMessage=CreateTextCtrl(panel, 'message string',
             pos=(0,0), size=(125,16), name='', bckcolor=colorText)
         self.btnWriteFIFO=CreateButton(panel, 'Write FIFO',
@@ -576,99 +661,162 @@ class MessageRegisters():
         self.txtReadDPMContent=wx.TextCtrl(panel, -1, size=(125,100),
             style = wx.TE_READONLY | wx.TE_MULTILINE | wx.VSCROLL)
         self.txtReadDPMContent.SetFont(myFont(fontSizeTextCtrl))
-        self.MessageBoxSizer=wx.StaticBoxSizer(MessageRegisterBox, wx.VERTICAL)
-        self.MessageBoxSizer.Add(self.txtAppendMessage, 0, wx.ALL|wx.EXPAND, 2)
-        self.MessageBoxSizer.Add(self.btnWriteFIFO, 0, wx.ALL|wx.EXPAND, 2)
-        self.MessageBoxSizer.Add(self.btnSendFrame, 0, wx.ALL|wx.EXPAND, 2)
-        self.MessageBoxSizer.Add(self.btnReadDPMWordsN, 0, wx.ALL|wx.EXPAND, 2)
-        self.MessageBoxSizer.Add(self.txtReadDPMWordsN, 0, wx.ALL|wx.EXPAND, 2)
-        self.MessageBoxSizer.Add(self.txtReadDPMContent, 1, wx.ALL|wx.EXPAND, 2)
-    
-        self.controls=[MessageRegisterBox, self.txtAppendMessage,
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        self.BoxSizer.Add(self.txtAppendMessage, 0, wx.ALL|wx.EXPAND, 2)
+        self.BoxSizer.Add(self.btnWriteFIFO, 0, wx.ALL|wx.EXPAND, 2)
+        self.BoxSizer.Add(self.btnSendFrame, 0, wx.ALL|wx.EXPAND, 2)
+        self.BoxSizer.Add(self.btnReadDPMWordsN, 0, wx.ALL|wx.EXPAND, 2)
+        self.BoxSizer.Add(self.txtReadDPMWordsN, 0, wx.ALL|wx.EXPAND, 2)
+        self.BoxSizer.Add(self.txtReadDPMContent, 1, wx.ALL|wx.EXPAND, 2)       
+        self.controls=[StaticBox, self.txtAppendMessage,
             self.btnWriteFIFO, self.btnSendFrame, self.btnReadDPMWordsN,
             self.txtReadDPMWordsN, self.txtReadDPMContent]
 
-class TRIPRegisters():
+class CRIMTimingTimingSetupRegister():
+    def __init__(self, panel, caption=' Timing Setup Register'):
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
+        Modes=CRIMTimingModes.keys(); Modes.sort()
+        Frequencies=CRIMTimingFrequencies.keys(); Frequencies.sort()
+        self.choiceMode=wx.Choice(panel, size=(125,20), choices=Modes)
+        self.choiceFrequency=wx.Choice(panel, size=(125,20), choices=Frequencies)
+        self.choiceMode.SetFont(myFont(fontSizeChoice))
+        self.choiceFrequency.SetFont(myFont(fontSizeChoice))
+        self.btnWrite=CreateButton(panel, 'Write',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnRead=CreateButton(panel, 'Read',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        self.BoxSizer.Add(self.choiceMode, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.choiceFrequency, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnWrite, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnRead, 0, wx.ALL, 2)        
+        self.controls=[StaticBox, self.choiceMode, self.choiceFrequency,
+            self.btnWrite, self.btnRead]
+
+class CRIMTimingGateWidthRegister():
+    def __init__(self, panel, caption='Gate Width Register'):
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
+        self.chkCNTRSTEnable=CreateCheckBox(panel, 'CNTRST Enable',
+            pos=(0,0), size=(125,16), name='', bckcolor=colorButton)
+        self.txtGateWidthData = CreateTextCtrl(panel, label='150.6ns per bit',
+            pos=(0,0), size=(125, 20), name='', bckcolor=colorText)
+        self.btnWrite=CreateButton(panel, 'Write',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnRead=CreateButton(panel, 'Read',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        self.BoxSizer.Add(self.chkCNTRSTEnable, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.txtGateWidthData, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnWrite, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnRead, 0, wx.ALL, 2)
+        self.controls=[StaticBox, self.chkCNTRSTEnable,
+            self.txtGateWidthData, self.btnWrite, self.btnRead]
+
+class CRIMDAQMiscRegisters():
     def __init__(self, panel):
-        leftLabelsData = TRIPRegLabelsData()
-        rightTextData = TRIPRegTextData()
-        lblRegs=CreateLabels(panel, leftLabelsData, style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE)
-        self.txtRegs=CreateTextCtrls(panel, rightTextData, offset=(0,0))     
+        StaticBox=wx.StaticBox(panel, -1, 'Misc Registers')
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
+        self.btnFIFOFlagReset=CreateButton(panel, 'Reset FIFO Flag',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnTimingCmdRead=CreateButton(panel, 'Read Timing Cmd',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.txtTimingCmdReadData = CreateTextCtrl(panel, label='timing cmd data',
+            pos=(0,0), size=(125, 20), name='', bckcolor=colorText)
+        self.txtTimingCmdReadData.Enable(False)
+        self.btnSendSYNC=CreateButton(panel, 'Send SYNC',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        self.BoxSizer.Add(self.btnFIFOFlagReset, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnTimingCmdRead, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.txtTimingCmdReadData, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnSendSYNC, 0, wx.ALL, 2)
+        self.controls=[StaticBox, self.btnFIFOFlagReset,
+            self.btnTimingCmdRead, self.txtTimingCmdReadData, self.btnSendSYNC]
+
+class CRIMDAQModeRegister():
+    def __init__(self, panel):
+        StaticBox=wx.StaticBox(panel, -1, 'Mode Register')
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
+        self.chkReTransmit=CreateCheckBox(panel, 'Re-Transmit',
+            pos=(0,0), size=(125,16), name='', bckcolor=colorButton)
+        self.chkSendMessage=CreateCheckBox(panel, 'Send Message',
+            pos=(0,0), size=(125,16), name='', bckcolor=colorButton)
+        self.chkCRCErrorEnabled=CreateCheckBox(panel, 'CRC Error Enabled',
+            pos=(0,0), size=(125,16), name='', bckcolor=colorButton)
+        self.chkFETriggerEnabled=CreateCheckBox(panel, 'FE Trigger Enabled',
+            pos=(0,0), size=(125,16), name='', bckcolor=colorButton)
+        self.btnWrite=CreateButton(panel, 'Write',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnRead=CreateButton(panel, 'Read',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        self.BoxSizer.Add(self.chkReTransmit, 0, wx.ALL, 0)
+        self.BoxSizer.Add(self.chkSendMessage, 0, wx.ALL, 0)
+        self.BoxSizer.Add(self.chkCRCErrorEnabled, 0, wx.ALL, 0)
+        self.BoxSizer.Add(self.chkFETriggerEnabled, 0, wx.ALL, 0)
+        self.BoxSizer.Add(self.btnWrite, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnRead, 0, wx.ALL, 2)       
+        self.controls=[StaticBox, self.chkReTransmit, self.chkSendMessage,
+            self.chkCRCErrorEnabled, self.chkFETriggerEnabled,
+            self.btnWrite, self.btnRead]
+
+class CRIMIntVectorTableID():
+    def __init__(self, panel, caption=' Vector Table IDs'):
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
+        leftLabelsData, rightTextsData = CRIMIntVectorTableIDLabelsData()      
         rows=len(leftLabelsData)
-        szRegs=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
+        VectorLabels=CreateLabels(panel, leftLabelsData)
+        self.VectorValues=CreateTextCtrls(panel, rightTextsData)
+        VectorSizer=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=1)
         for i in range(rows):
-            szRegs.Add(lblRegs[i], 0, 0, 0)
-            szRegs.Add(self.txtRegs[i], 0, 0, 0)
-        self.chkTrip=wx.RadioBox(panel, -1, 'Trip choices', (5,5), wx.DefaultSize,
-            ['Trip 0','Trip 1','Trip 2','Trip 3','Trip 4','Trip 5'], 2, wx.RA_SPECIFY_COLS)
-        self.chkTrip.SetFont(myFont(fontSizeRadioBox))
-        self.btnRead=CreateButton(panel, 'Read',
-            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+            VectorSizer.Add(VectorLabels[i], 0, 0)
+            VectorSizer.Add(self.VectorValues[i], 0, 0)
         self.btnWrite=CreateButton(panel, 'Write',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.btnWriteALL=CreateButton(panel, 'Write ALL FEs',
-            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        szBtns=wx.BoxSizer(wx.VERTICAL)
-        szBtns.Add(self.chkTrip, 0, wx.ALL|wx.EXPAND, 2)
-        szBtns.Add(self.btnRead, 0, wx.ALL, 2)
-        szBtns.Add(self.btnWrite, 0, wx.ALL, 2)
-        szBtns.Add(self.btnWriteALL, 0, wx.ALL, 2)
-
-        self.TripBoxSizer=wx.BoxSizer(wx.HORIZONTAL)
-        self.TripBoxSizer.Add(szBtns, 0, wx.ALL, 2)
-        self.TripBoxSizer.Add(szRegs, 0, wx.ALL, 2)
-        
-        self.controls=[self.chkTrip, self.btnRead, self.btnWrite, self.btnWriteALL]
-        for lbl in lblRegs: self.controls.append(lbl)
-        for txt in self.txtRegs: self.controls.append(txt)
-
-class FPGARegisters():
-    def __init__(self, panel):
-        leftLabelsData = FPGARegLabelsData()
-        rightTextData = FPGARegTextData()
-        lblRegs=CreateLabels(panel, leftLabelsData, style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE)
-        self.txtRegs=CreateTextCtrls(panel, rightTextData, offset=(0,0))     
-        rows=len(leftLabelsData)
-        szRegs1=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
-        szRegs2=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
-        szRegs3=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
-        for i in range(20):
-            szRegs1.Add(lblRegs[i], 0, 0, 0)
-            szRegs1.Add(self.txtRegs[i], 0, 0, 0)
-            if i+20<rows:
-                szRegs2.Add(lblRegs[i+20], 0, 0, 0)
-                szRegs2.Add(self.txtRegs[i+20], 0, 0, 0)
-            if i+40<rows:
-                szRegs3.Add(lblRegs[i+40], 0, 0, 0)
-                szRegs3.Add(self.txtRegs[i+40], 0, 0, 0)
-
         self.btnRead=CreateButton(panel, 'Read',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        self.BoxSizer.Add(self.btnWrite, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnRead, 0, wx.ALL, 2)
+        self.BoxSizer.Add(VectorSizer, 0, wx.ALL, 2)
+        self.controls=[StaticBox, self.btnWrite, self.btnRead]
+        for lbl in VectorLabels: self.controls.append(lbl)
+        for lbl in self.VectorValues: self.controls.append(lbl)
+
+class CRIMIntConfigRegister():
+    def __init__(self, panel, caption='Int Config Register'):
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
+        self.chkGlobalIntEnable=CreateCheckBox(panel, 'Global Int Enable',
+            pos=(0,0), size=(125,16), name='', bckcolor=colorButton)
+        self.txtVMEIntLevelData = CreateTextCtrl(panel, label='VME Int Level',
+            pos=(0,0), size=(125, 20), name='', bckcolor=colorText)
         self.btnWrite=CreateButton(panel, 'Write',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.btnWriteALL=CreateButton(panel, 'Write ALL FEs',
+        self.btnRead=CreateButton(panel, 'Read',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        szBtns=wx.BoxSizer(wx.VERTICAL)
-        szBtns.Add(self.btnRead, 0, wx.ALL, 2)
-        szBtns.Add(self.btnWrite, 0, wx.ALL, 2)
-        szBtns.Add(self.btnWriteALL, 0, wx.ALL, 2)
-
-        self.FPGABoxSizer=wx.BoxSizer(wx.HORIZONTAL)
-        self.FPGABoxSizer.Add(szBtns, 0, wx.ALL, 2)
-        self.FPGABoxSizer.Add(szRegs1, 0, wx.ALL, 2)
-        self.FPGABoxSizer.Add(szRegs2, 0, wx.ALL, 2)
-        self.FPGABoxSizer.Add(szRegs3, 0, wx.ALL, 2)
-        
-        self.controlsAdvanced=[]
-        for i in range(14, len(lblRegs)):
-            self.controlsAdvanced.append(lblRegs[i])
-            self.controlsAdvanced.append(self.txtRegs[i])
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        self.BoxSizer.Add(self.chkGlobalIntEnable, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.txtVMEIntLevelData, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnWrite, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnRead, 0, wx.ALL, 2)
+        self.controls=[StaticBox, self.chkGlobalIntEnable,
+            self.txtVMEIntLevelData, self.btnWrite, self.btnRead]
 
 class CROCTimingSetup():
     def __init__(self, panel, caption=' Timing Setup'):
-        CROCTimingSetupBox=wx.StaticBox(panel, -1, caption)
-        CROCTimingSetupBox.SetFont(myFont(fontSizeStaticBox))
-        CROCTimingSetupBox.SetForegroundColour(colorForeground)
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
         self.choiceCLKSource=wx.Choice(panel, size=(125,20),
             choices=['0 CLK Internal', '1 CLK External'])
         self.choiceTPDelayEnable=wx.Choice(panel, size=(125,20),
@@ -689,42 +837,39 @@ class CROCTimingSetup():
         szH2=wx.BoxSizer(wx.HORIZONTAL)
         szH2.Add(self.btnWriteTimingSetup, 0, wx.ALL, 1)
         szH2.Add(self.btnReadTimingSetup, 0, wx.ALL, 1)
-        self.BoxSizer=wx.StaticBoxSizer(CROCTimingSetupBox, wx.VERTICAL)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
         self.BoxSizer.Add(self.choiceCLKSource, 0, wx.ALL, 2)
         self.BoxSizer.Add(self.choiceTPDelayEnable, 0, wx.ALL, 2)
         self.BoxSizer.Add(szH1, 0, wx.ALL, 2)
         self.BoxSizer.Add(szH2, 0, wx.ALL, 2)
-        
-        self.controls=[CROCTimingSetupBox, self.choiceCLKSource,
+        self.controls=[StaticBox, self.choiceCLKSource,
             self.choiceTPDelayEnable, lblTPDelayValue, self.txtTPDelayValue,
             self.btnWriteTimingSetup, self.btnReadTimingSetup]
 
 class CROCFastCmd():
     def __init__(self, panel, caption=' Fast Commands'):
-        CROCFastCommandBox=wx.StaticBox(panel, -1, caption)
-        CROCFastCommandBox.SetFont(myFont(fontSizeStaticBox))
-        CROCFastCommandBox.SetForegroundColour(colorForeground)
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
         FCmds=FastCmds.keys(); FCmds.sort()
         self.choiceFastCmd=wx.Choice(panel, size=(125,20), choices=FCmds)
         self.choiceFastCmd.SetFont(myFont(fontSizeChoice))
         self.btnSendFastCmd=CreateButton(panel, 'Send Fast Cmd',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.BoxSizer=wx.StaticBoxSizer(CROCFastCommandBox, wx.VERTICAL)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
         self.BoxSizer.Add(self.choiceFastCmd, 0, wx.ALL, 2)
         self.BoxSizer.Add(self.btnSendFastCmd, 0, wx.ALL, 2)
-        self.controls=[CROCFastCommandBox, self.choiceFastCmd, self.btnSendFastCmd]
+        self.controls=[StaticBox, self.choiceFastCmd, self.btnSendFastCmd]
 
-class LoopDelays():
+class CROCLoopDelays():
     def __init__(self, panel, caption=' LoopDelays'):
-        LoopDelayBox=wx.StaticBox(panel, -1, caption)
-        LoopDelayBox.SetFont(myFont(fontSizeStaticBox))
-        LoopDelayBox.SetForegroundColour(colorForeground)
-        leftLabelsData, rightsLabelData = CROCLoopDelayRegLabelsData()
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
+        leftLabelsData, rightLabelsData = CROCLoopDelaysLabelsData()
         rows=len(leftLabelsData)
-        LoopDelayLabels=CreateLabels(panel, leftLabelsData,
-            style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE)
-        self.LoopDelayValues=CreateLabels(panel, rightsLabelData,
-            style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE)
+        LoopDelayLabels=CreateLabels(panel, leftLabelsData)
+        self.LoopDelayValues=CreateTextCtrls(panel, rightLabelsData)
         loopDelaySizer=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=1)
         for i in range(rows):
             loopDelaySizer.Add(LoopDelayLabels[i], 0, 0)
@@ -733,20 +878,19 @@ class LoopDelays():
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnReadLoopDelays=CreateButton(panel, 'Read Loop Delays',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.BoxSizer=wx.StaticBoxSizer(LoopDelayBox, wx.VERTICAL)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
         self.BoxSizer.Add(self.btnClearLoopDelays, 0, wx.ALL, 2)
         self.BoxSizer.Add(self.btnReadLoopDelays, 0, wx.ALL, 2)
         self.BoxSizer.Add(loopDelaySizer, 0, wx.ALL, 2)
-
-        self.controls=[LoopDelayBox, self.btnClearLoopDelays, self.btnReadLoopDelays]
+        self.controls=[StaticBox, self.btnClearLoopDelays, self.btnReadLoopDelays]
         for lbl in LoopDelayLabels: self.controls.append(lbl)
         for lbl in self.LoopDelayValues: self.controls.append(lbl)
 
 class CROCResetAndTestPulse():
     def __init__(self, panel, caption=' Reset And Test Pulse'):
-        CROCResetAndTestPulseBox=wx.StaticBox(panel, -1, caption)
-        CROCResetAndTestPulseBox.SetFont(myFont(fontSizeStaticBox))
-        CROCResetAndTestPulseBox.SetForegroundColour(colorForeground)
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
         leftChkBoxData, rightChkBoxData = CROCResetAndTestPulseChkBoxData()
         rows=len(leftChkBoxData)
         self.ChXReset=CreateCheckBoxs(panel, leftChkBoxData, offset=(0,0))
@@ -763,30 +907,26 @@ class CROCResetAndTestPulse():
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnSendTPOnly=CreateButton(panel, 'Send Test Pulse',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-
-        self.BoxSizer=wx.StaticBoxSizer(CROCResetAndTestPulseBox, wx.VERTICAL)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
         self.BoxSizer.Add(CheckBoxsSizer, 0, wx.ALL, 2)
         self.BoxSizer.Add(self.btnWriteRSTTP, 0, wx.ALL, 2)
         self.BoxSizer.Add(self.btnReadRSTTP, 0, wx.ALL, 2)
         self.BoxSizer.Add(self.btnSendRSTOnly, 0, wx.ALL, 2)
         self.BoxSizer.Add(self.btnSendTPOnly, 0, wx.ALL, 2)
-
-        self.controls=[CROCResetAndTestPulseBox, self.btnWriteRSTTP,
+        self.controls=[StaticBox, self.btnWriteRSTTP,
             self.btnReadRSTTP, self.btnSendRSTOnly, self.btnSendTPOnly]
         for lbl in self.ChXReset: self.controls.append(lbl)
         for txt in self.ChXTPulse: self.controls.append(txt)
 
-class FEBGateDelays():
+class CROCFEBGateDelays():
     def __init__(self, panel, caption=' FEB Gate Delays'):
-        FEBGateDelaysBox=wx.StaticBox(panel, -1, caption)
-        FEBGateDelaysBox.SetFont(myFont(fontSizeStaticBox))
-        FEBGateDelaysBox.SetForegroundColour(colorForeground)
-        leftLabelsData = CROCFEBGateDelaysLabelsData()
-        rightTextData = CROCFEBGateDelaysTextData()
+        StaticBox=wx.StaticBox(panel, -1, caption)
+        StaticBox.SetFont(myFont(fontSizeStaticBox))
+        StaticBox.SetForegroundColour(colorForeground)
+        leftLabelsData, rightTextData = CROCFEBGateDelaysLabelsData()
         rows=len(leftLabelsData)
-        FEBGateDelaysLabels=CreateLabels(panel, leftLabelsData,
-            style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE)
-        FEBGateDelaysValues=CreateTextCtrls(panel, rightTextData, offset=(0,0))
+        FEBGateDelaysLabels=CreateLabels(panel, leftLabelsData)
+        FEBGateDelaysValues=CreateTextCtrls(panel, rightTextData)
         self.txtNumberOfMeas=FEBGateDelaysValues[0]
         self.txtLoadTimerValue=FEBGateDelaysValues[1]
         self.txtGateStartValue=FEBGateDelaysValues[2]
@@ -796,50 +936,84 @@ class FEBGateDelays():
             FEBGateDelaysSizer.Add(FEBGateDelaysValues[i], 0, 0, 0)
         self.btnReportAlignmentsAllChains=CreateButton(panel, 'Report Align All CHs',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        
-        self.BoxSizer=wx.StaticBoxSizer(FEBGateDelaysBox, wx.VERTICAL)
+        self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
         self.BoxSizer.Add(self.btnReportAlignmentsAllChains, 0, wx.ALL, 2)
         self.BoxSizer.Add(FEBGateDelaysSizer, 0, wx.ALL, 2)
-
-        self.controls=[FEBGateDelaysBox, self.btnReportAlignmentsAllChains]
+        self.controls=[StaticBox, self.btnReportAlignmentsAllChains]
         for lbl in FEBGateDelaysLabels: self.controls.append(lbl)
         for txt in FEBGateDelaysValues: self.controls.append(txt)
 
-class VMEReadWrite():
-    def __init__(self, panel, caption=' VME Read/Write'):
-        VMEReadWriteBox=wx.StaticBox(panel, -1, caption)
-        VMEReadWriteBox.SetFont(myFont(fontSizeStaticBox))
-        VMEReadWriteBox.SetForegroundColour(colorForeground)
-        lblEmpty=CreateLabel(panel, '',
-            pos=(0,0), size=(60, 16), name='', color=colorLabel)
-        lblAddr=CreateLabel(panel, 'Address',
-            pos=(0,0), size=(60, 16), name='', color=colorLabel)
-        lblData=CreateLabel(panel, 'Data',
-            pos=(0,0), size=(60, 16), name='', color=colorLabel)
+class FPGARegisters():
+    def __init__(self, panel):
+        leftLabelsData = FPGARegLabelsData()
+        rightTextData = FPGARegTextData()
+        lblRegs=CreateLabels(panel, leftLabelsData)
+        self.txtRegs=CreateTextCtrls(panel, rightTextData)     
+        rows=len(leftLabelsData)
+        szRegs1=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
+        szRegs2=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
+        szRegs3=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
+        for i in range(20):
+            szRegs1.Add(lblRegs[i], 0, 0, 0)
+            szRegs1.Add(self.txtRegs[i], 0, 0, 0)
+            if i+20<rows:
+                szRegs2.Add(lblRegs[i+20], 0, 0, 0)
+                szRegs2.Add(self.txtRegs[i+20], 0, 0, 0)
+            if i+40<rows:
+                szRegs3.Add(lblRegs[i+40], 0, 0, 0)
+                szRegs3.Add(self.txtRegs[i+40], 0, 0, 0)
         self.btnRead=CreateButton(panel, 'Read',
-            pos=(0,0), size=(60, 20), name='', bckcolor=colorButton)
-        self.txtReadAddr = CreateTextCtrl(panel, label='addr',
-            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
-        self.txtReadData = CreateTextCtrl(panel, label='data',
-            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
-        self.txtReadData.Enable(False)
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnWrite=CreateButton(panel, 'Write',
-            pos=(0,0), size=(60, 20), name='', bckcolor=colorButton)
-        self.txtWriteAddr = CreateTextCtrl(panel, label='addr',
-            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
-        self.txtWriteData = CreateTextCtrl(panel, label='data',
-            pos=(0,0), size=(60, 20), name='', bckcolor=colorText)
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnWriteALL=CreateButton(panel, 'Write ALL FEs',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        szBtns=wx.BoxSizer(wx.VERTICAL)
+        szBtns.Add(self.btnRead, 0, wx.ALL, 2)
+        szBtns.Add(self.btnWrite, 0, wx.ALL, 2)
+        szBtns.Add(self.btnWriteALL, 0, wx.ALL, 2)
+        self.FPGABoxSizer=wx.BoxSizer(wx.HORIZONTAL)
+        self.FPGABoxSizer.Add(szBtns, 0, wx.ALL, 2)
+        self.FPGABoxSizer.Add(szRegs1, 0, wx.ALL, 2)
+        self.FPGABoxSizer.Add(szRegs2, 0, wx.ALL, 2)
+        self.FPGABoxSizer.Add(szRegs3, 0, wx.ALL, 2)
+        self.controlsAdvanced=[]
+        for i in range(14, len(lblRegs)):
+            self.controlsAdvanced.append(lblRegs[i])
+            self.controlsAdvanced.append(self.txtRegs[i])
+
+class TRIPRegisters():
+    def __init__(self, panel):
+        leftLabelsData = TRIPRegLabelsData()
+        rightTextData = TRIPRegTextData()
+        lblRegs=CreateLabels(panel, leftLabelsData)
+        self.txtRegs=CreateTextCtrls(panel, rightTextData)     
+        rows=len(leftLabelsData)
+        szRegs=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
+        for i in range(rows):
+            szRegs.Add(lblRegs[i], 0, 0, 0)
+            szRegs.Add(self.txtRegs[i], 0, 0, 0)
+        self.chkTrip=wx.RadioBox(panel, -1, 'Trip choices', (5,5), wx.DefaultSize,
+            ['Trip 0','Trip 1','Trip 2','Trip 3','Trip 4','Trip 5'], 2, wx.RA_SPECIFY_COLS)
+        self.chkTrip.SetFont(myFont(fontSizeRadioBox))
+        self.btnRead=CreateButton(panel, 'Read',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnWrite=CreateButton(panel, 'Write',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnWriteALL=CreateButton(panel, 'Write ALL FEs',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        szBtns=wx.BoxSizer(wx.VERTICAL)
+        szBtns.Add(self.chkTrip, 0, wx.ALL|wx.EXPAND, 2)
+        szBtns.Add(self.btnRead, 0, wx.ALL, 2)
+        szBtns.Add(self.btnWrite, 0, wx.ALL, 2)
+        szBtns.Add(self.btnWriteALL, 0, wx.ALL, 2)
+        self.TripBoxSizer=wx.BoxSizer(wx.HORIZONTAL)
+        self.TripBoxSizer.Add(szBtns, 0, wx.ALL, 2)
+        self.TripBoxSizer.Add(szRegs, 0, wx.ALL, 2)
+        self.controls=[self.chkTrip, self.btnRead, self.btnWrite, self.btnWriteALL]
+        for lbl in lblRegs: self.controls.append(lbl)
+        for txt in self.txtRegs: self.controls.append(txt)
+
+
+
         
-        sz = wx.FlexGridSizer(rows=3, cols=3, hgap=5, vgap=5)
-        sz.Add(lblEmpty, 0, 0, 0)
-        sz.Add(lblAddr, 0, 0, 0)
-        sz.Add(lblData, 0, 0, 0)
-        sz.Add(self.btnRead, 0, 0, 0)
-        sz.Add(self.txtReadAddr, 0, 0, 0)
-        sz.Add(self.txtReadData, 0, 0, 0)
-        sz.Add(self.btnWrite, 0, 0, 0)
-        sz.Add(self.txtWriteAddr, 0, 0, 0)
-        sz.Add(self.txtWriteData, 0, 0, 0)
- 
-        self.BoxSizer=wx.StaticBoxSizer(VMEReadWriteBox, wx.VERTICAL)
-        self.BoxSizer.Add(sz, 0, wx.ALL, 2)    

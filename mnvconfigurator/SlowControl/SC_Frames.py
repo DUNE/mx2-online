@@ -13,7 +13,7 @@ from wx.py.filling import FillingFrame
 class SCMainFrame(wx.Frame):
     '''SlowControl main frame '''
     def __init__(self, logoPhoto=None, parent=None, id=-1, title='Slow Control Main Frame'):
-        wx.Frame.__init__(self, parent, id, title, size=(800, 600)
+        wx.Frame.__init__(self, parent, id, title, size=(850, 600)
             , style=wx.DEFAULT_FRAME_STYLE|wx.NO_FULL_REPAINT_ON_RESIZE)
             ###, style=wx.DEFAULT_FRAME_STYLE ^ (wx.RESIZE_BORDER))
         #self.bmp = wx.StaticBitmap(parent=self, bitmap=logoPhoto.ConvertToBitmap())
@@ -156,7 +156,8 @@ class CRIM(wx.Panel):
             (5,5), (120, 20), 'AdvancedGUI', SC_Util.colorButton)
         TopLabelsData=(('CRIM', (0, 0),(40, 16), 'lbl', SC_Util.colorLabel),
             ('', (40, 0), (40, 16), 'crimID', SC_Util.colorText))
-        self.TopLabels = SC_Util.CreateLabels(self, TopLabelsData, offset=(130, 7))
+        self.TopLabels = SC_Util.CreateTextCtrls(self, TopLabelsData, offset=(130, 7))
+        for txt in self.TopLabels: txt.Enable(False)
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
         #Creates the CRIM 'modules' Notebook
         self.modules = wx.Notebook(self)
@@ -166,101 +167,158 @@ class CRIM(wx.Panel):
         self.modules.AddPage(self.DAQModule, "DAQModule")
         self.InterrupterModule = CRIMInterrupterModule(self.modules)
         self.modules.AddPage(self.InterrupterModule, "InterrupterModule")
-        self.FELoopQuerry = CRIMFELoopQuerry(self.modules)
-        self.modules.AddPage(self.FELoopQuerry, "FELoopQuerry")
-        
         szBottom = wx.BoxSizer(wx.HORIZONTAL)
         szBottom.Add(self.modules, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
-
         self.sizerALL=wx.BoxSizer(wx.VERTICAL)
-        self.sizerALL.Add(szTop,0,0,0)
+        self.sizerALL.Add(szTop,0,wx.ALL,5)
         self.sizerALL.Add(szBottom, 1, wx.EXPAND|wx.ALL, 0)  
         self.SetSizer(self.sizerALL)
         self.Fit()
-        
         self.Bind(wx.EVT_BUTTON, self.OnbtnShowAdvancedGUI, self.btnShowAdvancedGUI)
         self.showAdvanced=False
         self.OnbtnShowAdvancedGUI(None)
-
     def SetAddress(self, crimNumber):
         '''Sets crimNumber variables and GUI labels'''
         self.crimNumber=int(crimNumber)
-        self.FindWindowByName('crimID').Label=crimNumber
+        self.FindWindowByName('crimID').SetValue(crimNumber)
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
-            self.TimingModule.FlashButtons.controls, self.DAQModule.FlashButtons.controls,
-            self.InterrupterModule.FlashButtons.controls, self.FELoopQuerry.FlashButtons.controls)
+            self.TimingModule.TimingSetupRegister.controls, self.TimingModule.GateWidthRegister.controls,
+            self.TimingModule.TCALBDelayRegister.controls, self.TimingModule.TRIGGERSendRegister.controls,
+            self.TimingModule.TCALBSendRegister.controls, self.TimingModule.GATERegister.controls,
+            self.TimingModule.CNTRSTRegister.controls, self.TimingModule.IDRegister.controls,
+            self.TimingModule.GateTimestampRegister.controls,                                              
+            self.DAQModule.StatusRegister.controls, self.DAQModule.MiscRegisters.controls,
+            self.DAQModule.ModeRegister.controls, self.DAQModule.DPMPointer.controls,
+            self.DAQModule.MessageRegisters.controls, self.InterrupterModule.MaskRegister.controls,
+            self.InterrupterModule.StatusRegister.controls, self.InterrupterModule.IntConfigRegister.controls,
+            self.InterrupterModule.ClearInterruptRegister.controls, self.InterrupterModule.VectorTable.controls)
         self.TimingModule.Fit()
         self.DAQModule.Fit()
         self.InterrupterModule.Fit()
-        self.FELoopQuerry.Fit()
 
 
 class CRIMTimingModule(wx.Panel):
     def __init__(self, parent):
         """Creates the TimingModule tab in the Notebook."""
         wx.Panel.__init__(self, parent)
-        self.FlashButtons=SC_Util.FlashButtons(self,
-            'Read FLASH to File', 'Write File to FLASH')
+        self.TimingSetupRegister=SC_Util.CRIMTimingTimingSetupRegister(
+            self, caption='Timing Setup Register')
+        self.GateWidthRegister=SC_Util.CRIMTimingGateWidthRegister(
+            self, caption='Gate Width Register')
+        self.TCALBDelayRegister=SC_Util.GenericRegister(self, caption='TCALB Delay Register',
+            btnWriteVisible=True, btnWriteCaption='Write',
+            btnReadVisible=True, btnReadCaption='Read',
+            txtDataVisible=True, txtDataCaption='18.9ns per bit', WEnable=True)
+        self.TRIGGERSendRegister=SC_Util.GenericRegister(self, caption='TRIGGER Send Register',
+            btnWriteVisible=True, btnWriteCaption='Send TRIGGER',
+            btnReadVisible=False, txtDataVisible=False)
+        self.TCALBSendRegister=SC_Util.GenericRegister(self, caption='TCALB Send Register',
+            btnWriteVisible=True, btnWriteCaption='Send TCALB',
+            btnReadVisible=False, txtDataVisible=False)
+        self.GATERegister=SC_Util.GenericRegister(self, caption='GATE Register',
+            btnWriteVisible=True, btnWriteCaption='Start GATE',
+            btnReadVisible=True, btnReadCaption='Stop GATE', txtDataVisible=False)
+        self.CNTRSTRegister=SC_Util.GenericRegister(self, caption='SEQUENCE Register',
+            btnWriteVisible=True, btnWriteCaption='CNTRST',
+            btnReadVisible=True, btnReadCaption='CNTRSTSGATETCALB', txtDataVisible=False)
+        self.IDRegister=SC_Util.GenericRegister(self, caption='ID Register',
+            btnWriteVisible=True, btnWriteCaption='Write',
+            btnReadVisible=True, btnReadCaption='Read',
+            txtDataVisible=True, txtDataCaption='any value', WEnable=True)
+        self.GateTimestampRegister=SC_Util.GenericRegister(self, caption='Gate Time Register',
+            btnWriteVisible=False, btnReadVisible=True, btnReadCaption='Read',
+            txtDataVisible=True, txtDataCaption='timestamp 28bits', WEnable=False)
+        szV1=wx.BoxSizer(wx.VERTICAL)
+        szV1.Add(self.TimingSetupRegister.BoxSizer, 0, wx.ALL, 2)
+        szV1.Add(self.GateWidthRegister.BoxSizer, 0, wx.ALL, 2)
+        szV1.Add(self.TCALBDelayRegister.BoxSizer, 0, wx.ALL, 2)
+        szV2=wx.BoxSizer(wx.VERTICAL)
+        szV2.Add(self.TRIGGERSendRegister.BoxSizer, 0, wx.ALL, 2)
+        szV2.Add(self.TCALBSendRegister.BoxSizer, 0, wx.ALL, 2)
+        szV2.Add(self.GATERegister.BoxSizer, 0, wx.ALL, 2)
+        szV2.Add(self.CNTRSTRegister.BoxSizer, 0, wx.ALL, 2)
+        szV3=wx.BoxSizer(wx.VERTICAL)
+        szV3.Add(self.IDRegister.BoxSizer, 0, wx.ALL, 2)
+        szV3.Add(self.GateTimestampRegister.BoxSizer, 0, wx.ALL, 2)
+        szH=wx.BoxSizer(wx.HORIZONTAL)
+        szH.Add(szV1, 1, wx.ALL|wx.EXPAND, 0)
+        szH.Add(szV2, 1, wx.ALL|wx.EXPAND, 0)
+        szH.Add(szV3, 1, wx.ALL|wx.EXPAND, 0)
         sizerALL=wx.BoxSizer(wx.VERTICAL)
-        sizerALL.Add(self.FlashButtons.FlashBoxSizer, proportion=0, flag=wx.ALL, border=5)  
-        #self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE|wx.VSCROLL)
-        #sizerALL.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
+        sizerALL.Add(szH, 0, wx.ALL, 5)       
         self.SetSizer(sizerALL)
         self.Fit()
+
 
 class CRIMDAQModule(wx.Panel):
     def __init__(self, parent):
         """Creates the DAQModule tab in the Notebook."""
         wx.Panel.__init__(self, parent)
-        self.FlashButtons=SC_Util.FlashButtons(self,
-            'Read FLASH to File', 'Write File to FLASH')
+        self.StatusRegister=SC_Util.StatusRegister(self, 'CRIM CH')
+        self.DPMPointer=SC_Util.GenericRegister(self, caption='DPM Pointer',
+            btnWriteVisible=True, btnWriteCaption='Reset DPM Pointer',
+            btnReadVisible=True, btnReadCaption='Read DPM Pointer',
+            txtDataVisible=True, txtDataCaption='dpm pointer value', WEnable=False)
+        self.MessageRegisters=SC_Util.MessageRegisters(self)
+        self.MiscRegisters=SC_Util.CRIMDAQMiscRegisters(self)
+        self.ModeRegister=SC_Util.CRIMDAQModeRegister(self)
+        szV1=wx.BoxSizer(wx.VERTICAL)
+        szV1.Add(self.StatusRegister.BoxSizer, 1, wx.ALL, 2)
+        szV2=wx.BoxSizer(wx.VERTICAL)
+        szV2.Add(self.DPMPointer.BoxSizer, 0, wx.ALL, 2)
+        szV2.Add(self.MessageRegisters.BoxSizer, 1, wx.ALL|wx.EXPAND, 2)
+        szV3=wx.BoxSizer(wx.VERTICAL)
+        szV3.Add(self.ModeRegister.BoxSizer, 0, wx.ALL, 2)
+        szV3.Add(self.MiscRegisters.BoxSizer, 0, wx.ALL, 2)
+        szH=wx.BoxSizer(wx.HORIZONTAL)
+        szH.Add(szV1, 1, wx.ALL|wx.EXPAND, 0)
+        szH.Add(szV2, 1, wx.ALL|wx.EXPAND, 0)
+        szH.Add(szV3, 1, wx.ALL|wx.EXPAND, 0)
         sizerALL=wx.BoxSizer(wx.VERTICAL)
-        sizerALL.Add(self.FlashButtons.FlashBoxSizer, proportion=0, flag=wx.ALL, border=5)  
-        #self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE|wx.VSCROLL)
-        #sizerALL.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
+        sizerALL.Add(szH, 0, wx.ALL, 5)       
         self.SetSizer(sizerALL)
         self.Fit()
-
+     
+        
 class CRIMInterrupterModule(wx.Panel):
     def __init__(self, parent):
         """Creates the InterrupterModule tab in the Notebook."""
         wx.Panel.__init__(self, parent)
-        self.FlashButtons=SC_Util.FlashButtons(self,
-            'Read FLASH to File', 'Write File to FLASH')
+        self.MaskRegister=SC_Util.GenericRegister(
+            self, caption='Mask Register',
+            btnWriteVisible=True, btnWriteCaption='Write',
+            btnReadVisible=True, btnReadCaption='Read',
+            txtDataVisible=True, txtDataCaption='mask value', WEnable=True)
+        self.StatusRegister=SC_Util.GenericRegister(
+            self, caption='Status Register',
+            btnWriteVisible=True, btnWriteCaption='Write',
+            btnReadVisible=True, btnReadCaption='Read',
+            txtDataVisible=True, txtDataCaption='interrupt value', WEnable=True)
+        self.IntConfigRegister = SC_Util.CRIMIntConfigRegister(
+            self, caption='Int Config Register')
+        self.ClearInterruptRegister=SC_Util.GenericRegister(
+            self, caption='Interrupt Clear Register',
+            btnWriteVisible=True, btnWriteCaption='Clear ALL Pending Int',
+            btnReadVisible=False, txtDataVisible=False)
+        self.VectorTable=SC_Util.CRIMIntVectorTableID(
+            self, caption='Vector Table IDs')
+        szV1=wx.BoxSizer(wx.VERTICAL)
+        szV2=wx.BoxSizer(wx.VERTICAL)
+        szV3=wx.BoxSizer(wx.VERTICAL)
+        szV1.Add(self.MaskRegister.BoxSizer, 0, wx.ALL, 2)
+        szV1.Add(self.StatusRegister.BoxSizer, 0, wx.ALL|wx.EXPAND, 2)
+        szV2.Add(self.IntConfigRegister.BoxSizer, 0, wx.ALL, 2)
+        szV2.Add(self.ClearInterruptRegister.BoxSizer, 0, wx.ALL|wx.EXPAND, 2)
+        szV3.Add(self.VectorTable.BoxSizer, 0, wx.ALL|wx.EXPAND, 2)
+        szH=wx.BoxSizer(wx.HORIZONTAL)
+        szH.Add(szV1, 0, wx.ALL|wx.EXPAND, 0)
+        szH.Add(szV2, 0, wx.ALL|wx.EXPAND, 0)
+        szH.Add(szV3, 0, wx.ALL|wx.EXPAND, 0)
         sizerALL=wx.BoxSizer(wx.VERTICAL)
-        sizerALL.Add(self.FlashButtons.FlashBoxSizer, proportion=0, flag=wx.ALL, border=5)  
-        #self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE|wx.VSCROLL)
-        #sizerALL.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
+        sizerALL.Add(szH, 0, wx.ALL, 5)       
         self.SetSizer(sizerALL)
         self.Fit()
-
-class CRIMFELoopQuerry(wx.Panel):
-    def __init__(self, parent):
-        """Creates the FELoopQuerry tab in the Notebook."""
-        wx.Panel.__init__(self, parent)
-        self.FlashButtons=SC_Util.FlashButtons(self,
-            'Read FLASH to File', 'Write File to FLASH')
-        sizerALL=wx.BoxSizer(wx.VERTICAL)
-        sizerALL.Add(self.FlashButtons.FlashBoxSizer, proportion=0, flag=wx.ALL, border=5)  
-        #self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE|wx.VSCROLL)
-        #sizerALL.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
-        self.SetSizer(sizerALL)
-        self.Fit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         
 class CROC(wx.Panel):
@@ -271,16 +329,17 @@ class CROC(wx.Panel):
             (5,5), (120, 20), 'AdvancedGUI', SC_Util.colorButton)
         TopLabelsData=(('CROC', (0, 0),(40, 16), 'lbl', SC_Util.colorLabel),
             ('', (40, 0), (40, 16), 'crocID', SC_Util.colorText))
-        self.TopLabels = SC_Util.CreateLabels(self, TopLabelsData, offset=(130, 7))
+        self.TopLabels = SC_Util.CreateTextCtrls(self, TopLabelsData, offset=(130, 7))
+        for txt in self.TopLabels: txt.Enable(False)
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
         self.FlashButtons=SC_Util.FlashButtons(self,
             'Write File to FLASH Memory', 'Reboot FEs (reload FLASH content)')
         self.TimingSetup=SC_Util.CROCTimingSetup(self, caption=' Timing Setup')
         self.FastCmd=SC_Util.CROCFastCmd(self, caption=' Fast Commands')
-        self.LoopDelays=SC_Util.LoopDelays(self, caption=' Loop Delays')
+        self.LoopDelays=SC_Util.CROCLoopDelays(self, caption=' Loop Delays')
         self.ResetAndTestPulse=SC_Util.CROCResetAndTestPulse(
             self, caption=' Reset And Test Pulse')
-        self.FEBGateDelays=SC_Util.FEBGateDelays(
+        self.FEBGateDelays=SC_Util.CROCFEBGateDelays(
             self, caption=' FEB Gate Delays')
         sizerALL=wx.BoxSizer(wx.VERTICAL)
         sizerALL.Add(szTop, 0, wx.ALL, 5)
@@ -288,26 +347,23 @@ class CROC(wx.Panel):
         szV1=wx.BoxSizer(wx.VERTICAL)
         szV1.Add(self.TimingSetup.BoxSizer, 0, wx.ALL, 2)
         szV1.Add(self.FastCmd.BoxSizer, 0, wx.ALL, 2)
-        szV1.Add(self.LoopDelays.BoxSizer, 1, wx.ALL|wx.EXPAND, 2)
+        szV1.Add(self.LoopDelays.BoxSizer, 0, wx.ALL|wx.EXPAND, 2)
         szV2=wx.BoxSizer(wx.VERTICAL)
         szV2.Add(self.ResetAndTestPulse.BoxSizer, 0, wx.ALL, 2)
-        szV2.Add(self.FEBGateDelays.BoxSizer, 1, wx.ALL|wx.EXPAND, 2)
+        szV2.Add(self.FEBGateDelays.BoxSizer, 0, wx.ALL|wx.EXPAND, 2)
         szH=wx.BoxSizer(wx.HORIZONTAL)
         szH.Add(szV1, 1, wx.ALL|wx.EXPAND, 0)
         szH.Add(szV2, 1, wx.ALL|wx.EXPAND, 0)
         sizerALL.Add(szH, 0, wx.ALL, 5)
-                
         self.SetSizer(sizerALL)
         self.Fit()
-
         self.Bind(wx.EVT_BUTTON, self.OnbtnShowAdvancedGUI, self.btnShowAdvancedGUI)
         self.showAdvanced=False
         self.OnbtnShowAdvancedGUI(None)
-        
     def SetAddress(self, crocNumber):
         '''Sets crocNumber variables and GUI labels'''
         self.crocNumber=int(crocNumber)
-        self.FindWindowByName('crocID').Label=crocNumber
+        self.FindWindowByName('crocID').SetValue(crocNumber)
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
             self.FlashButtons.controls, self.TimingSetup.controls,
@@ -326,39 +382,40 @@ class CH(wx.Panel):
             ('', (40, 0), (40, 16), 'chID', SC_Util.colorText),
             ('CROC', (80, 0), (40, 16), 'lbl', SC_Util.colorLabel),
             ('', (120, 0), (40, 16), 'crocID', SC_Util.colorText))
-        self.TopLabels=SC_Util.CreateLabels(self, TopLabelsData, offset=(130, 7))
+        self.TopLabels=SC_Util.CreateTextCtrls(self, TopLabelsData, offset=(130, 7))
+        for txt in self.TopLabels: txt.Enable(False)
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
         self.FlashButtons=SC_Util.FlashButtons(self,
             'Write File to FLASH Memory', 'Reboot FEs (reload FLASH content)')
         self.StatusRegister=SC_Util.StatusRegister(self, 'CROC CH')
-        self.DPMPointer=SC_Util.DPMPointer(self)
+        self.DPMPointer=SC_Util.GenericRegister(self, caption='DPM Pointer',
+            btnWriteVisible=True, btnWriteCaption='Reset DPM Pointer',
+            btnReadVisible=True, btnReadCaption='Read DPM Pointer',
+            txtDataVisible=True, txtDataCaption='dpm pointer value', WEnable=False)
         self.MessageRegisters=SC_Util.MessageRegisters(self)        
         sizerALL=wx.BoxSizer(wx.VERTICAL)
         sizerALL.Add(szTop, 0, wx.ALL, 5)
         sizerALL.Add(self.FlashButtons.FlashBoxSizer, 0, wx.ALL, 5)  
         szV1=wx.BoxSizer(wx.VERTICAL)
-        szV1.Add(self.StatusRegister.StatusBoxSizer, 1, wx.ALL|wx.EXPAND, 2)
+        szV1.Add(self.StatusRegister.BoxSizer, 1, wx.ALL|wx.EXPAND, 2)
         szV2=wx.BoxSizer(wx.VERTICAL)
-        szV2.Add(self.DPMPointer.DPMBoxSizer, 0, wx.ALL, 2)
-        szV2.Add(self.MessageRegisters.MessageBoxSizer, 1, wx.ALL|wx.EXPAND, 2)
+        szV2.Add(self.DPMPointer.BoxSizer, 0, wx.ALL, 2)
+        szV2.Add(self.MessageRegisters.BoxSizer, 1, wx.ALL|wx.EXPAND, 2)
         szH=wx.BoxSizer(wx.HORIZONTAL)
         szH.Add(szV1, 1, wx.ALL|wx.EXPAND, 0)
         szH.Add(szV2, 1, wx.ALL|wx.EXPAND, 0)
         sizerALL.Add(szH, 0, wx.ALL, 5)
-                
         self.SetSizer(sizerALL)
         self.Fit()
-        
         self.Bind(wx.EVT_BUTTON, self.OnbtnShowAdvancedGUI, self.btnShowAdvancedGUI)
         self.showAdvanced=False
         self.OnbtnShowAdvancedGUI(None)
-        
     def SetAddress(self, chNumber, crocNumber):
         '''Sets chNumber and crocNumber variables and GUI labels'''
         self.chNumber=int(chNumber)
         self.crocNumber=int(crocNumber)
-        self.FindWindowByName('chID').Label=chNumber
-        self.FindWindowByName('crocID').Label=crocNumber     
+        self.FindWindowByName('chID').SetValue(chNumber)
+        self.FindWindowByName('crocID').SetValue(crocNumber)    
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
             self.FlashButtons.controls, self.StatusRegister.controls,
@@ -377,7 +434,8 @@ class FE(wx.Panel):
             ('', (120, 0), (40, 16), 'chID', SC_Util.colorText),
             ('CROC', (160, 0), (40, 16), 'lbl', SC_Util.colorLabel),
             ('', (200, 0), (40, 16), 'crocID', SC_Util.colorText))
-        self.TopLabels = SC_Util.CreateLabels(self, TopLabelsData, offset=(130, 7))
+        self.TopLabels = SC_Util.CreateTextCtrls(self, TopLabelsData, offset=(130, 7))
+        for txt in self.TopLabels: txt.Enable(False)
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
         #Creates the FE 'devices' Notebook
         self.devices = wx.Notebook(self)
@@ -387,28 +445,24 @@ class FE(wx.Panel):
         self.devices.AddPage(self.trip, "TRIP")
         self.flash = FLASH(self.devices)
         self.devices.AddPage(self.flash, "FLASH")
-        
         szBottom = wx.BoxSizer(wx.HORIZONTAL)
         szBottom.Add(self.devices, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
-
         self.sizerALL=wx.BoxSizer(wx.VERTICAL)
-        self.sizerALL.Add(szTop,0,0,0)
+        self.sizerALL.Add(szTop,0,wx.ALL,5)
         self.sizerALL.Add(szBottom, 1, wx.EXPAND|wx.ALL, 0)  
         self.SetSizer(self.sizerALL)
         self.Fit()
-        
         self.Bind(wx.EVT_BUTTON, self.OnbtnShowAdvancedGUI, self.btnShowAdvancedGUI)
         self.showAdvanced=False
         self.OnbtnShowAdvancedGUI(None)
-        
     def SetAddress(self, febNumber, chNumber, crocNumber):
         '''Sets febNumber, chNumber and crocNumber variables and GUI labels'''
         self.febNumber=int(febNumber)
         self.chNumber=int(chNumber)
         self.crocNumber=int(crocNumber)
-        self.FindWindowByName('febID').Label=febNumber
-        self.FindWindowByName('chID').Label=chNumber
-        self.FindWindowByName('crocID').Label=crocNumber  
+        self.FindWindowByName('febID').SetValue(febNumber)
+        self.FindWindowByName('chID').SetValue(chNumber)
+        self.FindWindowByName('crocID').SetValue(crocNumber)  
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
             self.flash.FlashButtons.controls, self.fpga.Registers.controlsAdvanced)
@@ -422,6 +476,8 @@ class FPGA(wx.Panel):
         """Creates the FPGA tab in the Notebook."""
         wx.Panel.__init__(self, parent)
         self.Registers=SC_Util.FPGARegisters(self)
+        for wrReg in self.Registers.txtRegs:
+            if wrReg.GetName()[1]=='R': wrReg.Enable(False)
         sizerALL=wx.BoxSizer(wx.HORIZONTAL)
         sizerALL.Add(self.Registers.FPGABoxSizer, proportion=0, flag=wx.ALL, border=5)  
         self.SetSizer(sizerALL)
