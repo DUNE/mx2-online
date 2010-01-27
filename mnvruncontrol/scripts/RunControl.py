@@ -6,6 +6,7 @@ import subprocess
 import os
 import threading
 import datetime
+import time
 
 ID_START = wx.NewId()
 
@@ -109,70 +110,78 @@ class MyFrame(wx.Frame):
 			window = self.windows.pop()
 			window.Close()
 			
-		self.run     = self.t1.GetValue()
-		self.subrun  = self.t2.GetValue()
-		self.gates   = self.t3.GetValue()
-		self.runMode = self.t4.GetValue()
-		self.febs    = self.t5.GetValue()
+		self.run     = int(self.t1.GetValue())
+		self.subrun  = int(self.t2.GetValue())
+		self.gates   = int(self.t3.GetValue())
+		self.runMode = int(self.t4.GetValue())
+		self.febs    = int(self.t5.GetValue())
 
 		now = datetime.datetime.today()
 		
-		self.ETNAME = 'MN_%08d_%04d_numib_v04_%02d%02d%02d%02d%02d' % (int(self.run), int(self.subrun), now.year, now.month, now.day, now.hour, now.minute)
+		self.ETNAME = 'MN_%08d_%04d_numib_v04_%02d%02d%02d%02d%02d' % (int(self.run), int(self.subrun), now.year % 100, now.month, now.day, now.hour, now.minute)
 		#self.ETNAME='testme'
-		print self.ETNAME
+		#print self.ETNAME
 
 		self.OUTFL = self.ETNAME + '.dat'
-		print self.OUTFL
+		#print self.OUTFL
 
-		self.StartETSys()
-		self.StartETMon()
-		self.StartEBSvc()
+		self.etSysLocation = "/work/data/etsys"
+		self.rawDataLocation = "/work/data/rawdata"
 
 		self.startButton.Disable()
 		self.stopButton.Enable()
 
-	def StartETSys(self):
+		self.StartETSys()
+		#time.sleep(2)
 
+		self.StartETMon()
+		#time.sleep(2)
+
+		self.StartEBSvc()
+		#time.sleep(15)	
+	
+		self.StartDAQ()
+
+
+	def StartETSys(self):
 		EVENT_SIZE=2048 
 		FRAMES=8
 		EVENTS=int(self.gates)*FRAMES*int(self.febs)
 
-		etSysFrame = OutputFrame(self, "ET System")
+		etSysFrame = OutputFrame(self, "ET system")
 		etSysFrame.Show(True)
-		
+
+		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (os.environ["ET_HOME"], self.etSysLocation, self.ETNAME, EVENTS, EVENT_SIZE)
+
 		self.windows.append( etSysFrame )
-		self.threads.append( ETThread(["/home/jeremy/code/mnvruncontrol/scripts/test.sh"], etSysFrame) )
-
-#		self.et_sys = Popen(['$ET_HOME/Linux-x86_64-64/bin/et_start','-v','-f','test','-n',str(EVENTS),'-s',str(EVENT_SIZE)], stdout=PIPE)
-#		self.et_sys = Popen(['$ET_HOME/Linux-x86_64-64/bin/et_start','-v','-f',str(self.ETNAME),'-n',str(EVENTS),'-s',str(EVENT_SIZE)], stdout=PIPE)
-#		self.et_sys = Popen(['$ET_HOME/Linux-x86_64-64/bin/et_start','-v -f ./'+self.ETNAME+' -n '+str(EVENTS)+' -s '+str(EVENT_SIZE)], stdout=PIPE)
-#		self.et_sys = Popen(['./start_et_system',str(self.ETNAME),str(self.febs),str(self.gates)], stdout=PIPE)
-
+		self.threads.append( ETThread(etsys_command, etSysFrame) ) 
 
 	def StartETMon(self):
-		etMonFrame = OutputFrame(self, "ET Monitor")
+		etMonFrame = OutputFrame(self, "ET monitor")
 		etMonFrame.Show(True)
 
+		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s" % (os.environ["ET_HOME"], self.etSysLocation, self.ETNAME)
 		self.windows.append( etMonFrame )
-		self.threads.append( ETThread(["/home/jeremy/code/mnvruncontrol/scripts/test.sh"], etMonFrame) )		
-
-#		#self.et_mon = Popen(['$ET_HOME/Linux-x86_64-64/bin/et_monitor','-f',str(self.ETNAME)], stdout=PIPE)
-#		#self.etMonFrame.rtc.WriteText(self.et_mon.communicate()[0])
-
-#		script_string = '%s/runthedaq/start_et_monitor' % os.environ['DAQROOT']
-#		print script_string
-#		subprocess.Popen(['xterm','-geometry','88x60+890+1','-e',str(script_string),str(self.ETNAME)])
+		self.threads.append( ETThread(etmon_command, etMonFrame) )		 
 
 	def StartEBSvc(self):
-		ebSvcFrame = OutputFrame(self, "EB Service")
+		ebSvcFrame = OutputFrame(self, "Event builder service")
 		ebSvcFrame.Show(True)
 
-		self.windows.append( ebSvcFrame )
-		self.threads.append( ETThread(["/home/jeremy/code/mnvruncontrol/scripts/test.sh"], ebSvcFrame) )		
+		eb_command = '%s/bin/event_builder %s/%s %s/%s' % (os.environ['DAQROOT'], self.etSysLocation, self.ETNAME, self.rawDataLocation, self.OUTFL)
 
-#		script_string = '%s/runthedaq/start_eb_service' % os.environ['DAQROOT']
-#		print script_string
-#		subprocess.Popen(['xterm','-geometry','88x28+380+421','-e',str(script_string),str(self.ETNAME),str(self.OUTFL)])
+		self.windows.append( ebSvcFrame )
+		self.threads.append( ETThread(eb_command, ebSvcFrame) )	
+
+	def StartDAQ(self):
+		daqFrame = OutputFrame(self, "THE DAQ")
+		daqFrame.Show(True)
+
+
+		daq_command = "%s/bin/minervadaq -et %s -g %d -m %d -r %d -s %d" % (os.environ["DAQROOT"], self.ETNAME, self.gates, self.runMode, self.run, self.subrun)
+
+		self.windows.append(daqFrame)
+		self.threads.append( ETThread(daq_command, daqFrame) )
 
 	def StopAll(self, evt):
 		while len(self.threads) > 0:
@@ -189,7 +198,7 @@ class MyFrame(wx.Frame):
 class OutputFrame(wx.Frame):
 	def __init__(self, parent, title):
 		wx.Frame.__init__(self, parent, -1, title, size=(400,300)) #, style = wx.VSCROLL | wx.SIMPLE_BORDER)
-		self.textarea = rt.RichTextCtrl(self, -1, style = rt.RE_CENTER_CARET)
+		self.textarea = rt.RichTextCtrl(self, -1)
 		self.textarea.SetEditable(False)
 
 		self.Connect(-1, -1, EVT_NEWDATA_ID, self.OnNewData)
@@ -197,21 +206,21 @@ class OutputFrame(wx.Frame):
 	def OnNewData(self, data_event):
 		self.textarea.AppendText(data_event.data)
 		self.textarea.LineBreak()
-		self.textarea.ScrollIntoView(self.textarea.GetLastPosition(), wx.WXK_DOWN)		# scroll down until you can see the last line.
+		#self.textarea.ScrollIntoView(self.textarea.GetLastPosition(), wx.WXK_DOWN)		# scroll down until you can see the last line.
 		
 
 class ETThread(threading.Thread):
-	""" A thread for an ET process. """
+	""" A thread for an ET/DAQ process. """
 	def __init__(self, process_info, parent_window):
 		threading.Thread.__init__(self)
 		self.parent_window = parent_window
-		self.process = subprocess.Popen(process_info, stdout=subprocess.PIPE)
+		self.process = subprocess.Popen(process_info, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		self.pid = self.process.pid
 
 		self.time_to_quit = False
 
 		wx.PostEvent(self.parent_window, NewDataEvent("Started thread with PID " + str(self.pid)))	# post a message noting the PID of this thread
-		
+
 		self.start()				# starts the run() function in a separate thread.  (inherited from threading.Thread)
 	
 	def run(self):
@@ -219,11 +228,12 @@ class ETThread(threading.Thread):
 		while (self.process.returncode == None):
 			self.process.poll()		# check if the process is still alive
 			
-			newdata = self.process.stdout.readline()
+			newdata = self.process.stdout.readline()[0:-1] 		# strip off the trailing newline
 			if (self.time_to_quit == False):
-				wx.PostEvent(self.parent_window, NewDataEvent(newdata[0:-1]))	# strip off the EOL character
+				wx.PostEvent(self.parent_window, NewDataEvent(newdata))
 			else:
 				break
+		print "Process", self.pid, "has quit."
 		
 	def Abort(self):
 		''' When the Stop button is pressed, we gotta quit! '''
@@ -254,6 +264,6 @@ class MyApp(wx.App):
 		return True
 
 if __name__ == '__main__':		# make sure that this file isn't being included somewhere else
-	app = MyApp(redirect=True)
+	app = MyApp(redirect=False)
 	app.MainLoop()
 
