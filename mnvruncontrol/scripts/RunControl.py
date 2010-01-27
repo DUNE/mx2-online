@@ -7,6 +7,7 @@ import os
 import threading
 import datetime
 import time
+import shelve
 
 ID_START = wx.NewId()
 
@@ -44,11 +45,13 @@ class MyFrame(wx.Frame):
 		panel = wx.Panel(self)
 
 		l1 = wx.StaticText(panel, -1, "Run")
-		t1 = wx.TextCtrl(panel, -1, "1337", size=(125, -1))
+                t1 = wx.SpinCtrl(panel, -1, '0', size=(125, -1), min=0, max=100000)
+                t1.Disable()
 		self.t1 = t1
 
 		l2 = wx.StaticText(panel, -1, "Subrun")
-		t2 = wx.TextCtrl(panel, -1, "391", size=(125, -1))
+                t2 = wx.SpinCtrl(panel, -1, '0', size=(125, -1), min=0, max=100000)
+                t2.Disable()
 		self.t2 = t2
 
 		l3 = wx.StaticText(panel, -1, "Gates")
@@ -63,14 +66,18 @@ class MyFrame(wx.Frame):
 		t5 = wx.TextCtrl(panel, -1, "4", size=(125, -1))
 		self.t5 = t5
 
+                self.getLastButton = wx.Button(panel, -1, 'Get Last Run/Subrun')
+                self.Bind(wx.EVT_BUTTON, self.GetLastRunSubrun, self.getLastButton)
+
 		self.startButton = wx.Button(panel, ID_START, "Start DAQ Singleton")
 		self.Bind(wx.EVT_BUTTON, self.StartDaqSingleton, self.startButton)
+		self.startButton.Disable()
 		
 		self.stopButton = wx.Button(panel, wx.ID_STOP)
 		self.Bind(wx.EVT_BUTTON, self.StopAll, self.stopButton)
 		self.stopButton.Disable()		# disabled until the 'start' button is pressed
 
-		space = 6
+		space = 10
 		#bsizer = wx.BoxSizer(wx.VERTICAL)
 		#bsizer.Add(b, 0, wx.GROW|wx.ALL, space)
 		#bsizer.Add(b2, 0, wx.GROW|wx.ALL, space)
@@ -82,6 +89,7 @@ class MyFrame(wx.Frame):
 				    l3, t3,
 				    l4, t4,
 				    l5, t5,  
+				    self.getLastButton, (0,0),
 				    self.startButton, (0,0),
 				    self.stopButton, (0,0)
 				    ])
@@ -102,6 +110,32 @@ class MyFrame(wx.Frame):
 		
 		self.Close()
 
+        def GetLastRunSubrun(self, evt):
+
+            if not os.path.exists('last_run_subrun.db'):
+
+                print 'File \'last_run_subrun.db\' does not exist'
+
+            else:
+
+                d = shelve.open('last_run_subrun.db', 'r')
+
+                if d.has_key('run') and d.has_key('subrun'):
+
+                    self.t1.SetRange(int(d['run']),100000)
+                    self.t1.SetValue(int(d['run']))
+                    self.t2.SetValue(int(d['subrun']))
+
+                    self.t1.Enable()
+                    self.getLastButton.Disable()
+                    self.startButton.Enable()
+
+                else:
+
+                    print '\'last_run_subrun.db\' does not contain run & subrun'
+
+                d.close()
+
 	def StartDaqSingleton(self, evt):
 		while len(self.threads) > 0:		# if there are any leftover threads from a previous run, remove them
 			self.threads.pop()
@@ -109,6 +143,12 @@ class MyFrame(wx.Frame):
 		while len(self.windows) > 0:		# same for extra windows
 			window = self.windows.pop()
 			window.Close()
+
+                self.t1.Disable()
+                self.t2.Disable()
+                self.t3.Disable()
+                self.t4.Disable()
+                self.t5.Disable()
 			
 		self.run     = int(self.t1.GetValue())
 		self.subrun  = int(self.t2.GetValue())
@@ -194,6 +234,11 @@ class MyFrame(wx.Frame):
 		while len(self.windows) > 0:		# remove windows from the list and close them.
 			window = self.windows.pop()
 			window.Close()
+
+                self.t1.Enable()
+                self.t3.Enable()
+                self.t4.Enable()
+                self.t5.Enable()
 
 class OutputFrame(wx.Frame):
 	def __init__(self, parent, title):
