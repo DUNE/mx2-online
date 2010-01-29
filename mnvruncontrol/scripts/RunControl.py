@@ -51,29 +51,28 @@ class MyFrame(wx.Frame):
 		# Now create the Panel to put the other controls on.
 		panel = wx.Panel(self)
 
-		l1 = wx.StaticText(panel, -1, "Run")
-                t1 = wx.SpinCtrl(panel, -1, '0', size=(125, -1), min=0, max=100000)
-                t1.Disable()
-		self.t1 = t1
+		configPanel = wx.Panel(panel, -1)
+		
+		runEntryLabel = wx.StaticText(configPanel, -1, "Run")
+                self.runEntry = wx.SpinCtrl(configPanel, -1, '0', size=(125, -1), min=0, max=100000)
+                self.runEntry.Disable()
 
-		l2 = wx.StaticText(panel, -1, "Subrun")
-                t2 = wx.SpinCtrl(panel, -1, '0', size=(125, -1), min=0, max=100000)
-                t2.Disable()
-		self.t2 = t2
+		subrunEntryLabel = wx.StaticText(panel, -1, "Subrun")
+		self.subrunEntry = wx.SpinCtrl(panel, -1, '0', size=(125, -1), min=0, max=100000)
+		self.subrunEntry.Disable()
 
-		l3 = wx.StaticText(panel, -1, "Gates")
-		t3 = wx.TextCtrl(panel, -1, "10", size=(125, -1))
-		self.t3 = t3
+		gatesEntryLabel = wx.StaticText(panel, -1, "Gates")
+		self.gatesEntry = wx.SpinCtrl(panel, -1, "10", size=(125, -1), min=1, max=10000)
 
-		l4 = wx.StaticText(panel, -1, "Run Mode")
-		t4 = wx.TextCtrl(panel, -1, "0", size=(125, -1))
-		self.t4 = t4
+		runModeEntryLabel = wx.StaticText(panel, -1, "Run Mode")
+		RunModeChoices = ["OneShot", "NuMI"]
+		self.runModeEntry =  wx.Choice(self, -1, choices=RunModeChoices)
 
-		l5 = wx.StaticText(panel, -1, "FEBs")
-		t5 = wx.TextCtrl(panel, -1, "4", size=(125, -1))
-		self.t5 = t5
 
-                self.getLastButton = wx.Button(panel, -1, 'Get Last Run/Subrun')
+		febsEntryLabel = wx.StaticText(panel, -1, "FEBs")
+		self.febsEntry = wx.SpinCtrl(panel, -1, "4", size=(125, -1), min=1, max=10000)
+
+		self.getLastButton = wx.Button(panel, -1, 'Get Last Run/Subrun')
                 self.Bind(wx.EVT_BUTTON, self.GetLastRunSubrun, self.getLastButton)
 
 		self.startButton = wx.Button(panel, ID_START, "Start DAQ Singleton")
@@ -88,25 +87,31 @@ class MyFrame(wx.Frame):
 		self.Bind(wx.EVT_BUTTON, self.CloseAllWindows, self.closeAllButton)
 		self.closeAllButton.Disable()
 
-		space = 10
-		#bsizer = wx.BoxSizer(wx.VERTICAL)
-		#bsizer.Add(b, 0, wx.GROW|wx.ALL, space)
-		#bsizer.Add(b2, 0, wx.GROW|wx.ALL, space)
-		#bsizer.Add(b3, 0, wx.GROW|wx.ALL, space)
+		configSizer = wx.FlexGridSizer(5, 2, 10, 10)
+		configBoxSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Run Configuration"), orient=wx.VERTICAL)
+		configSizer.AddMany([ runEntryLabel,      self.runEntry,
+		                      subrunEntryLabel,   self.subrunEntry,
+		                      gatesEntryLabel,    self.gatesEntry,
+		                      runModeEntryLabel,  self.runModeEntry,
+		                      febsEntryLabel,     self.febsEntry ])
+#		configBoxSizer.Add(runEntryLabel, 1)
+#		configBoxSizer.Add(self.runEntry, 1)
+		configBoxSizer.Add(configSizer)
+		configPanel.SetSizer(configBoxSizer)
 
-		sizer = wx.FlexGridSizer(cols=2, hgap=space, vgap=space)
-		sizer.AddMany([ l1, t1,
-				    l2, t2,
-				    l3, t3,
-				    l4, t4,
-				    l5, t5,  
-				    self.getLastButton, (0,0),
-				    self.startButton, (0,0),
-				    self.stopButton, self.closeAllButton
-				    ])
-		border = wx.BoxSizer(wx.VERTICAL)
-		border.Add(sizer, 0, wx.ALL, 25)
-		panel.SetSizer(border)
+		#controlBox = wx.StaticBox(self, -1, "Run control")
+		
+		controlSizer = wx.BoxSizer(wx.VERTICAL)
+#		controlSizer.AddMany( [self.getLastButton, self.startButton, self.stopButton, self.closeAllButton] )
+
+
+#		topSizer = wx.BoxSizer(wx.HORIZONTAL)
+#		topSizer.AddMany( [configBoxSizer, controlSizer] )
+		
+		globalSizer = wx.BoxSizer(wx.VERTICAL)
+		globalSizer.AddMany( [configPanel] ) #, logBox] )
+
+		panel.SetSizer(globalSizer)
 		panel.SetAutoLayout(True)
 		
 		self.threads = []			# ET threads.
@@ -136,11 +141,11 @@ class MyFrame(wx.Frame):
 
                 if d.has_key('run') and d.has_key('subrun'):
 
-                    self.t1.SetRange(int(d['run']),100000)
-                    self.t1.SetValue(int(d['run']))
-                    self.t2.SetValue(int(d['subrun']))
+                    self.runEntry.SetRange(int(d['run']),100000)
+                    self.runEntry.SetValue(int(d['run']))
+                    self.subRunEntry.SetValue(int(d['subrun']))
 
-                    self.t1.Enable()
+                    self.runEntry.Enable()
                     self.getLastButton.Disable()
                     self.startButton.Enable()
 
@@ -156,17 +161,17 @@ class MyFrame(wx.Frame):
 	
 		self.CloseAllWindows()			# same for the windows
 
-                self.t1.Disable()
-                self.t2.Disable()
-                self.t3.Disable()
-                self.t4.Disable()
-                self.t5.Disable()
+                self.runEntry.Disable()
+                self.subRunEntry.Disable()
+                self.gatesEntry.Disable()
+                self.runModeEntry.Disable()
+                self.febsEntry.Disable()
 			
-		self.run     = int(self.t1.GetValue())
-		self.subrun  = int(self.t2.GetValue())
-		self.gates   = int(self.t3.GetValue())
-		self.runMode = int(self.t4.GetValue())
-		self.febs    = int(self.t5.GetValue())
+		self.run     = int(self.runEntry.GetValue())
+		self.subrun  = int(self.subRunEntry.GetValue())
+		self.gates   = int(self.gatesEntry.GetValue())
+		self.runMode = int(self.runModeEntry.GetSelection())
+		self.febs    = int(self.febsEntry.GetValue())
 
 		now = datetime.datetime.today()
 		
@@ -239,10 +244,10 @@ class MyFrame(wx.Frame):
 		self.stopButton.Disable()
 		self.startButton.Enable()
 
-                self.t1.Enable()
-                self.t3.Enable()
-                self.t4.Enable()
-                self.t5.Enable()
+                self.runEntry.Enable()
+                self.gatesEntry.Enable()
+                self.runModeEntry.Enable()
+                self.febsEntry.Enable()
 
 		self.current_thread = 0			# reset the thread counter in case the user wants to start another subrun
 
