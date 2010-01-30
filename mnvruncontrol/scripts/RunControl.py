@@ -152,7 +152,7 @@ class MainFrame(wx.Frame):
 			self.runEntry.SetValue(1)
 			self.subrunEntry.SetValue(1)
 		else:
-			d = shelve.open('last_run_subrun.db', 'r')
+			d = shelve.open(RUN_SUBRUN_DB_LOCATION + "/last_run_subrun.db", 'r')
 
 			if d.has_key('run') and d.has_key('subrun'):
 				self.runEntry.SetRange(int(d['run']),100000)
@@ -217,11 +217,8 @@ class MainFrame(wx.Frame):
 		now = datetime.datetime.today()
 		
 		self.ETNAME = 'MN_%08d_%04d_numib_v04_%02d%02d%02d%02d%02d' % (int(self.run), int(self.subrun), now.year % 100, now.month, now.day, now.hour, now.minute)
-		#self.ETNAME='testme'
-		#print self.ETNAME
 
 		self.OUTFL = self.ETNAME + '.dat'
-		#print self.OUTFL
 
 		self.startButton.Disable()
 		self.stopButton.Enable()
@@ -323,6 +320,7 @@ class MainFrame(wx.Frame):
 	
 	def DAQShutdown(self, evt=None):
 		self.subrunEntry.SetValue(self.subrunEntry.GetValue() + 1)
+		self.minRunSubrun = self.subrunEntry.GetValue()
 		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
 		self.StoreNextRunSubrun()
 		
@@ -348,8 +346,6 @@ class OutputFrame(wx.Frame):
 		
 	def OnNewData(self, data_event):
 		self.textarea.AppendText(data_event.data)
-		#self.textarea.LineBreak()
-		#self.textarea.ScrollIntoView(self.textarea.GetLastPosition(), wx.WXK_DOWN)		# scroll down until you can see the last line.
 		
 
 #########################################################
