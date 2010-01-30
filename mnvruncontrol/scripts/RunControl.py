@@ -51,74 +51,84 @@ class MyFrame(wx.Frame):
 		# Now create the Panel to put the other controls on.
 		panel = wx.Panel(self)
 
-		configPanel = wx.Panel(panel, -1)
-		
-		runEntryLabel = wx.StaticText(configPanel, -1, "Run")
-                self.runEntry = wx.SpinCtrl(configPanel, -1, '0', size=(125, -1), min=0, max=100000)
-                self.runEntry.Disable()
+		runEntryLabel = wx.StaticText(self, -1, "Run")
+		self.runEntry = wx.SpinCtrl(self, -1, '0', size=(125, -1), min=0, max=100000)
+		self.runEntry.Disable()
 
-		subrunEntryLabel = wx.StaticText(panel, -1, "Subrun")
-		self.subrunEntry = wx.SpinCtrl(panel, -1, '0', size=(125, -1), min=0, max=100000)
+		subrunEntryLabel = wx.StaticText(self, -1, "Subrun")
+		self.subrunEntry = wx.SpinCtrl(self, -1, '0', size=(125, -1), min=0, max=100000)
 		self.subrunEntry.Disable()
 
-		gatesEntryLabel = wx.StaticText(panel, -1, "Gates")
-		self.gatesEntry = wx.SpinCtrl(panel, -1, "10", size=(125, -1), min=1, max=10000)
+		gatesEntryLabel = wx.StaticText(self, -1, "Gates")
+		self.gatesEntry = wx.SpinCtrl(self, -1, "10", size=(125, -1), min=1, max=10000)
 
-		runModeEntryLabel = wx.StaticText(panel, -1, "Run Mode")
+		runModeEntryLabel = wx.StaticText(self, -1, "Run Mode")
 		RunModeChoices = ["OneShot", "NuMI"]
 		self.runModeEntry =  wx.Choice(self, -1, choices=RunModeChoices)
 
 
-		febsEntryLabel = wx.StaticText(panel, -1, "FEBs")
-		self.febsEntry = wx.SpinCtrl(panel, -1, "4", size=(125, -1), min=1, max=10000)
+		febsEntryLabel = wx.StaticText(self, -1, "FEBs")
+		self.febsEntry = wx.SpinCtrl(self, -1, "4", size=(125, -1), min=1, max=10000)
 
-		self.getLastButton = wx.Button(panel, -1, 'Get Last Run/Subrun')
-                self.Bind(wx.EVT_BUTTON, self.GetLastRunSubrun, self.getLastButton)
-
-		self.startButton = wx.Button(panel, ID_START, "Start DAQ Singleton")
+		self.startButton = wx.Button(self, ID_START, "Start")
 		self.Bind(wx.EVT_BUTTON, self.StartDaqSingleton, self.startButton)
 		self.startButton.Disable()
 		
-		self.stopButton = wx.Button(panel, wx.ID_STOP)
+		self.stopButton = wx.Button(self, wx.ID_STOP)
 		self.Bind(wx.EVT_BUTTON, self.StopAll, self.stopButton)
 		self.stopButton.Disable()		# disabled until the 'start' button is pressed
 
-		self.closeAllButton = wx.Button(panel, wx.ID_CLOSE, "Close windows")
+		self.closeAllButton = wx.Button(self, wx.ID_CLOSE, "Close windows")
 		self.Bind(wx.EVT_BUTTON, self.CloseAllWindows, self.closeAllButton)
 		self.closeAllButton.Disable()
 
 		configSizer = wx.FlexGridSizer(5, 2, 10, 10)
-		configBoxSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Run Configuration"), orient=wx.VERTICAL)
+		configBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Run Configuration"))
 		configSizer.AddMany([ runEntryLabel,      self.runEntry,
 		                      subrunEntryLabel,   self.subrunEntry,
 		                      gatesEntryLabel,    self.gatesEntry,
 		                      runModeEntryLabel,  self.runModeEntry,
 		                      febsEntryLabel,     self.febsEntry ])
-#		configBoxSizer.Add(runEntryLabel, 1)
-#		configBoxSizer.Add(self.runEntry, 1)
 		configBoxSizer.Add(configSizer)
-		configPanel.SetSizer(configBoxSizer)
 
-		#controlBox = wx.StaticBox(self, -1, "Run control")
+		controlBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Run Control"), orient=wx.VERTICAL)
+		controlBoxSizer.AddMany( [ (self.startButton, 1, wx.ALIGN_CENTER),
+		                           (self.stopButton, 1, wx.ALIGN_CENTER),
+		                           (self.closeAllButton, 1, wx.ALIGN_CENTER) ] )
+
+		topSizer = wx.BoxSizer(wx.HORIZONTAL)
+		topSizer.AddMany( [(configBoxSizer, 1, wx.EXPAND), (controlBoxSizer, 1, wx.EXPAND)] )
+
+		logText = wx.StaticText(self, -1, "Most recent log (this session):")
 		
-		controlSizer = wx.BoxSizer(wx.VERTICAL)
-#		controlSizer.AddMany( [self.getLastButton, self.startButton, self.stopButton, self.closeAllButton] )
+		self.logFileName = wx.TextCtrl(self, -1, size=(300, -1))
+		self.logFileName.Disable()
+		self.logFileButton = wx.Button(self, -1, "View")
+#		self.Bind(wx.EVT_BUTTON, self.ViewLog, self.logFileButton)
+		self.logFileButton.Disable()
 
-
-#		topSizer = wx.BoxSizer(wx.HORIZONTAL)
-#		topSizer.AddMany( [configBoxSizer, controlSizer] )
+		logFileSizer = wx.BoxSizer(wx.HORIZONTAL)
+		logFileSizer.AddMany( [self.logFileName, self.logFileButton] )
+		
+		logFileViewOldButton = wx.Button(self, -1, "View older logs...")
+		
+		logBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Logs"), orient=wx.VERTICAL)
+		logBoxSizer.AddMany( [logText, self.logFileName, logFileSizer, logFileViewOldButton] )
 		
 		globalSizer = wx.BoxSizer(wx.VERTICAL)
-		globalSizer.AddMany( [configPanel] ) #, logBox] )
+		globalSizer.Add( topSizer, border=25)
+		globalSizer.Add(logBoxSizer, border=25 )
 
 		panel.SetSizer(globalSizer)
-		panel.SetAutoLayout(True)
+	#	panel.SetAutoLayout(True)
 		
 		self.threads = []			# ET threads.
 		self.thread_starters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartDAQ]
 		self.current_thread = 0			# the next thread to start
 		self.windows = []			# child windows opened by the process.
 
+
+		self.GetLastRunSubrun()
 		self.Connect(-1, -1, EVT_THREAD_READY_ID, self.StartNextThread)
 		self.Connect(-1, -1, EVT_DAQQUIT_ID, self.StopAll)		# if the DAQ process quits, everything should be stopped.
 
@@ -129,31 +139,23 @@ class MyFrame(wx.Frame):
 
 		self.Close()
 
-        def GetLastRunSubrun(self, evt=None):
+	def GetLastRunSubrun(self, evt=None):
+		if not os.path.exists('last_run_subrun.db'):
+			print 'File \'last_run_subrun.db\' does not exist'
+		else:
+			d = shelve.open('last_run_subrun.db', 'r')
 
-            if not os.path.exists('last_run_subrun.db'):
+			if d.has_key('run') and d.has_key('subrun'):
+				self.runEntry.SetRange(int(d['run']),100000)
+				self.runEntry.SetValue(int(d['run']))
+				self.subrunEntry.SetValue(int(d['subrun']))
 
-                print 'File \'last_run_subrun.db\' does not exist'
+				self.runEntry.Enable()
+				self.startButton.Enable()
+			else:
+				print '\'last_run_subrun.db\' does not contain run & subrun'
 
-            else:
-
-                d = shelve.open('last_run_subrun.db', 'r')
-
-                if d.has_key('run') and d.has_key('subrun'):
-
-                    self.runEntry.SetRange(int(d['run']),100000)
-                    self.runEntry.SetValue(int(d['run']))
-                    self.subRunEntry.SetValue(int(d['subrun']))
-
-                    self.runEntry.Enable()
-                    self.getLastButton.Disable()
-                    self.startButton.Enable()
-
-                else:
-
-                    print '\'last_run_subrun.db\' does not contain run & subrun'
-
-                d.close()
+			d.close()
 
 	def StartDaqSingleton(self, evt):
 		while len(self.threads) > 0:		# if there are any leftover threads from a previous run, remove them
@@ -162,13 +164,13 @@ class MyFrame(wx.Frame):
 		self.CloseAllWindows()			# same for the windows
 
                 self.runEntry.Disable()
-                self.subRunEntry.Disable()
+                self.subrunEntry.Disable()
                 self.gatesEntry.Disable()
                 self.runModeEntry.Disable()
                 self.febsEntry.Disable()
 			
 		self.run     = int(self.runEntry.GetValue())
-		self.subrun  = int(self.subRunEntry.GetValue())
+		self.subrun  = int(self.subrunEntry.GetValue())
 		self.gates   = int(self.gatesEntry.GetValue())
 		self.runMode = int(self.runModeEntry.GetSelection())
 		self.febs    = int(self.febsEntry.GetValue())
