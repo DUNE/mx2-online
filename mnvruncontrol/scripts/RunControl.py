@@ -1,59 +1,50 @@
+#!/usr/bin/python
+
 import wx
-import sys
-import wx.richtext as rt
-import commands
 import subprocess
 import os
-import fcntl
 import threading
 import datetime
 import time
 import shelve
+import anydbm		# if a shelve database doesn't exist, this module contains the error raised
 
-# some constants for configuration
-RUN_SUBRUN_DB_LOCATION = "/work/conditions"
-LOGFILE_LOCATION = "/work/data/logs"
+## some constants for configuration
+RUN_SUBRUN_DB_LOCATION_DEFAULT = "/work/conditions/next_run_subrun.db"
+LOGFILE_LOCATION_DEFAULT = "/work/data/logs"
 
-ET_SYSTEM_LOCATION = "/work/data/etsys"
-RAW_DATA_LOCATION = "/work/data/rawdata"
-
-ID_START = wx.NewId()
+ET_SYSTEM_LOCATION_DEFAULT = "/work/data/etsys"
+RAW_DATA_LOCATION_DEFAULT = "/work/data/rawdata"
 
 #########################################################
 #    MyFrame
 #########################################################
-
+ID_START = wx.NewId()
+ID_OPTIONS = wx.NewId()
 class MainFrame(wx.Frame):
-	"""
-	This is MyFrame.  It just shows a few controls on a wxPanel,
-	and has a simple menu.
-	"""
+	""" The main control window. """
 	def __init__(self, parent, title):
 		wx.Frame.__init__(self, parent, -1, title,
 				      pos=(0, 0), size=(600, 400))
 
-		# Create the menubar
 		menuBar = wx.MenuBar()
 
-		# and a menu 
-		menu = wx.Menu()
-
-		# add an item to the menu, using \tKeyName automatically
-		# creates an accelerator, the third param is some help text
-		# that will show up in the statusbar
-		menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit the run control")
-
-		# bind the menu event to an event handler
+		fileMenu = wx.Menu()
+		fileMenu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit the run control")
 		self.Bind(wx.EVT_MENU, self.OnTimeToClose, id=wx.ID_EXIT)
+		menuBar.Append(fileMenu, "&File")
 
-		# and put the menu on the menubar
-		menuBar.Append(menu, "&File")
+		optionsMenu = wx.Menu()
+		optionsMenu.Append(ID_OPTIONS, "Configuration settings...", "Various configuration settings.")
+		self.Bind(wx.EVT_MENU, self.Configure, id=ID_OPTIONS)
+		menuBar.Append(optionsMenu, "&Options")
+
 		self.SetMenuBar(menuBar)
 
 		self.statusbar = self.CreateStatusBar(2)
 		self.SetStatusWidths([-6, -1])
 		self.SetStatusText("STOPPED", 1)
-        
+
 
 		# Now create the Panel to put the other controls on.
 		panel = wx.Panel(self)
@@ -91,7 +82,7 @@ class MainFrame(wx.Frame):
 		self.closeAllButton.Disable()
 
 		configSizer = wx.GridSizer(5, 2, 10, 10)
- 		configSizer.AddMany([ runEntryLabel,      (self.runEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		configSizer.AddMany([ runEntryLabel,      (self.runEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
 		                      subrunEntryLabel,   (self.subrunEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
 		                      gatesEntryLabel,    (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
 		                      runModeEntryLabel,  (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
@@ -130,8 +121,9 @@ class MainFrame(wx.Frame):
 		self.ETthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartDAQ]
 		self.current_ET_thread = 0			# the next thread to start
 		self.windows = []					# child windows opened by the process.
-		self.logfilename = "/etc/X11/xorg.conf"
+		self.logfilename = None
 
+		self.GetConfig()
 		self.GetNextRunSubrun()
 		self.Connect(-1, -1, EVT_THREAD_READY_ID, self.StartNextThread)
 		self.Connect(-1, -1, EVT_DAQQUIT_ID, self.DAQShutdown)		# if the DAQ process quits, everything should be stopped.
@@ -142,9 +134,13 @@ class MainFrame(wx.Frame):
 		self.CloseAllWindows()
 
 		self.Close()
+		
+	def Configure(self, evt):
+		wnd = OptionsFrame(self)
+		wnd.Show()
 
 	def GetNextRunSubrun(self, evt=None):
-		if not os.path.exists(RUN_SUBRUN_DB_LOCATION + "/last_run_subrun.db"):
+		if not os.path.exists(self.runinfoFile + "/last_run_subrun.db"):
 			errordlg = wx.MessageDialog( None, "The database storing the run/subrun data appears to be missing.  Run/subrun will be set to 1...", "Run/subrun database missing", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
 
@@ -152,7 +148,7 @@ class MainFrame(wx.Frame):
 			self.runEntry.SetValue(1)
 			self.subrunEntry.SetValue(1)
 		else:
-			d = shelve.open(RUN_SUBRUN_DB_LOCATION + "/last_run_subrun.db", 'r')
+			d = shelve.open(self.runinfoFile + "/last_run_subrun.db", 'r')
 
 			if d.has_key('run') and d.has_key('subrun'):
 				self.runEntry.SetRange(int(d['run']),100000)
@@ -179,10 +175,39 @@ class MainFrame(wx.Frame):
 		self.startButton.Enable()
 	
 	def StoreNextRunSubrun(self):
-		db = shelve.open(RUN_SUBRUN_DB_LOCATION + "/last_run_subrun.db")
-		db["run"] = self.runEntry.GetValue()
-		db["subrun"] = self.subrunEntry.GetValue()
-		db.close()
+		try:
+			db = shelve.open(self.runinfoFile)
+		except anydbm.error:
+			errordlg = wx.MessageDialog( None, "The database storing the run/subrun data cannot be accessed.  Run/subrun will not be retained...", "Run/subrun database inaccessible", wx.OK | wx.ICON_ERROR )
+			errordlg.ShowModal()
+		else:
+			db["run"] = self.runEntry.GetValue()
+			db["subrun"] = self.subrunEntry.GetValue()
+			db.close()
+			
+	def GetConfig(self):
+		try:
+			db = shelve.open("/work/conditions/run_control_config.db")
+		except anydbm.error:
+			errordlg = wx.MessageDialog( None, "The configuration file does not exist.  Default values are being used.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
+			errordlg.ShowModal()
+
+			self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
+			self.logfileLocation = LOGFILE_LOCATION_DEFAULT
+			self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+		else:
+			try:	self.runinfoFile = db["runinfoFile"]
+			except KeyError: self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
+			
+			try:	self.logfileLocation = db["logfileLocation"]
+			except KeyError: self.logfileLocation = LOGFILE_LOCATION_DEFAULT
+			
+			try:	self.etSystemFileLocation = db["etSystemFileLocation"]
+			except KeyError: self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			
+			try:	self.rawdataLocation = db["rawdataLocation"]
+			except KeyError: self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
 		
 	def CheckRunNumber(self, evt=None):
 		if self.runEntry.GetValue() < self.runEntry.GetMin():
@@ -235,7 +260,7 @@ class MainFrame(wx.Frame):
 		etSysFrame.Show(True)
 		self.closeAllButton.Enable()
 
-		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (os.environ["ET_HOME"], ET_SYSTEM_LOCATION, self.ETNAME, EVENTS, EVENT_SIZE)
+		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (os.environ["ET_HOME"], self.etSystemFileLocation, self.ETNAME, EVENTS, EVENT_SIZE)
 
 		self.windows.append( etSysFrame )
 		self.ETthreads.append( ETThread(etsys_command, output_window=etSysFrame, owner_window=self, next_thread_delay=2) ) 
@@ -245,7 +270,7 @@ class MainFrame(wx.Frame):
 		etMonFrame.Show(True)
 		self.closeAllButton.Enable()
 		
-		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s" % (os.environ["ET_HOME"], ET_SYSTEM_LOCATION, self.ETNAME)
+		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s" % (os.environ["ET_HOME"], self.etSystemFileLocation, self.ETNAME)
 		self.windows.append( etMonFrame )
 		self.ETthreads.append( ETThread(etmon_command, output_window=etMonFrame, owner_window=self, next_thread_delay=2) )
 
@@ -254,7 +279,7 @@ class MainFrame(wx.Frame):
 		ebSvcFrame.Show(True)
 		self.closeAllButton.Enable()
 
-		eb_command = '%s/bin/event_builder %s/%s %s/%s' % (os.environ['DAQROOT'], ET_SYSTEM_LOCATION, self.ETNAME, RAW_DATA_LOCATION, self.OUTFL)
+		eb_command = '%s/bin/event_builder %s/%s %s/%s' % (os.environ['DAQROOT'], self.etSystemFileLocation, self.ETNAME, self.rawdataLocation, self.OUTFL)
 
 		self.windows.append( ebSvcFrame )
 		self.ETthreads.append( ETThread(eb_command, output_window=ebSvcFrame, owner_window=self, next_thread_delay=15) )	
@@ -300,7 +325,8 @@ class MainFrame(wx.Frame):
 	def ShowLogFile(self, evt=None):
 		if (self.logfilename):
 			logdlg = LogFrame(self, self.logfilename)
-			logdlg.Show(True)
+			if logdlg.ok:		# the file might not be accessible...
+				logdlg.Show(True)
 		else:
 			print "Whoops!  Log file button shouldn't be enabled before log file is available..."
 
@@ -319,15 +345,15 @@ class MainFrame(wx.Frame):
 		self.closeAllButton.Disable()
 	
 	def DAQShutdown(self, evt=None):
+		self.StopAll()
+
 		self.subrunEntry.SetValue(self.subrunEntry.GetValue() + 1)
 		self.minRunSubrun = self.subrunEntry.GetValue()
 		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
 		self.StoreNextRunSubrun()
-		
-		self.logfilename = LOGFILE_LOCATION + "/" + self.ETNAME + ".txt"
+
+		self.logfilename = self.logfileLocation + "/" + self.ETNAME + ".txt"
 		self.logFileButton.Enable()
-		
-		self.StopAll()
 	
 
 #########################################################
@@ -354,32 +380,147 @@ class OutputFrame(wx.Frame):
 
 class LogFrame(wx.Frame):
 	def __init__(self, parent, filename):
-		wx.Frame.__init__(self, parent, -1, "DAQ log: " + filename, size=(800,600))
+		try:
+			f = open(filename)
+		except IOError:
+			errordlg = wx.MessageDialog( None, "The last log file is not accessible.  Did you stop the run before the DAQ process was started?", "Log file inaccessible", wx.OK | wx.ICON_ERROR )
+			errordlg.ShowModal()
+			self.ok = False			
+			
+			return
 
+		self.ok = True
+
+		wx.Frame.__init__(self, parent, -1, "DAQ log: " + filename, size=(800,600))
 		panel = wx.Panel(self)
 
 		textarea = wx.TextCtrl(panel, -1, style = wx.TE_MULTILINE | wx.TE_READONLY)
-		textarea.SetEditable(False)
 
-		with open(filename) as f:
-			for line in f:
-				textarea.AppendText(line)
+		for line in f:
+			textarea.AppendText(line)
 
-		
 		okButton = wx.Button(panel, wx.ID_OK)
-		
+
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		sizer.Add(textarea, 1, wx.EXPAND | wx.ALIGN_TOP)
 		sizer.Add(okButton, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM)
-		
+
 		panel.SetSizer(sizer)
-		
+
 		self.Bind(wx.EVT_BUTTON, self.CloseOut, okButton)
 		
 	def CloseOut(self, evt=None):
 		self.Close()
 	
 
+#########################################################
+#   OptionsFrame
+#########################################################
+
+class OptionsFrame(wx.Frame):
+	""" A window for configuration of paths, etc. """
+	def __init__(self, parent):
+		wx.Frame.__init__(self, parent, -1, "Configuration", size=(600,400))
+
+		try:
+			db = shelve.open("/work/conditions/run_control_config.db")
+		except anydbm.error:
+			# the user has already been informed once (when the main frame was opened)
+			# if the DB is not accessible, so we'll just silently go to the defaults here.
+			runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
+			logfileLocation = LOGFILE_LOCATION_DEFAULT
+			etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+		else:
+			try:	runinfoFile = db["runinfoFile"]
+			except KeyError: runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
+
+			try:	logfileLocation = db["logfileLocation"]
+			except KeyError: logfileLocation = LOGFILE_LOCATION_DEFAULT
+			
+			try:	etSystemFileLocation = db["etSystemFileLocation"]
+			except KeyError: etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			
+			try:	rawdataLocation = db["rawdataLocation"]
+			except KeyError: rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+			
+		panel = wx.Panel(self)
+		
+		warningText = wx.StaticText(panel, -1, "** PLEASE don't change these values unless you know what you're doing! **")
+		
+		runInfoDBLabel = wx.StaticText(panel, -1, "Run/subrun info database file")
+		self.runInfoDBEntry = wx.TextCtrl(panel, -1, runinfoFile)
+		
+		logfileLocationLabel = wx.StaticText(panel, -1, "Log file location")
+		self.logfileLocationEntry = wx.TextCtrl(panel, -1, logfileLocation)
+
+		etSystemFileLocationLabel = wx.StaticText(panel, -1, "ET system file location")
+		self.etSystemFileLocationEntry = wx.TextCtrl(panel, -1, etSystemFileLocation)
+		
+		rawDataLocationLabel = wx.StaticText(panel, -1, "Raw data location")
+		self.rawDataLocationEntry = wx.TextCtrl(panel, -1, rawdataLocation)
+		
+		pathsGridSizer = wx.GridSizer(6, 2, 10, 10)
+		pathsGridSizer.AddMany( ( runInfoDBLabel,            (self.runInfoDBEntry, 1, wx.EXPAND),
+		                     logfileLocationLabel,      (self.logfileLocationEntry, 1, wx.EXPAND),
+		                     etSystemFileLocationLabel, (self.etSystemFileLocationEntry, 1, wx.EXPAND),
+		                     rawDataLocationLabel,      (self.rawDataLocationEntry, 1, wx.EXPAND) ) )
+		
+		pathsSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Paths"), orient=wx.VERTICAL)
+		pathsSizer.Add(pathsGridSizer, 1, wx.EXPAND)
+		
+		DAQrootLabel = wx.StaticText(panel, -1, "$DAQROOT")
+		DAQrootText = wx.TextCtrl(panel, -1, os.environ["DAQROOT"], style=wx.TE_READONLY)
+		DAQrootText.Disable()
+		
+		EThomeLabel = wx.StaticText(panel, -1, "$ET_HOME")
+		EThomeText = wx.TextCtrl(panel, -1, os.environ["ET_HOME"], style=wx.TE_READONLY)
+		EThomeText.Disable()
+		
+		environGridSizer = wx.GridSizer(2, 2, 10, 10)
+		environGridSizer.AddMany( ( DAQrootLabel, (DAQrootText, 1, wx.EXPAND),
+		                            EThomeLabel,  (EThomeText, 1, wx.EXPAND) ) )
+		
+		environSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Environment"), orient=wx.VERTICAL)
+		environSizer.Add(environGridSizer, flag = wx.EXPAND)
+		
+		saveButton = wx.Button(panel, wx.ID_SAVE)
+		self.Bind(wx.EVT_BUTTON, self.SaveAll, saveButton)
+
+		cancelButton = wx.Button(panel, wx.ID_CANCEL)
+		self.Bind(wx.EVT_BUTTON, self.Cancel, cancelButton)
+
+		buttonSizer = wx.GridSizer(1, 2, 10, 10)
+		buttonSizer.AddMany( ( (saveButton, 1, wx.ALIGN_CENTER_HORIZONTAL), (cancelButton, 1, wx.ALIGN_CENTER_HORIZONTAL) ) )
+
+		globalSizer = wx.BoxSizer(wx.VERTICAL)
+		globalSizer.Add(warningText, flag=wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL, border=10)
+		globalSizer.Add(pathsSizer, flag=wx.ALL | wx.EXPAND, border=10)
+		globalSizer.Add(environSizer, flag=wx.ALL | wx.EXPAND, border=10)
+		globalSizer.Add(buttonSizer, flag=wx.ALIGN_CENTER_HORIZONTAL)		
+		panel.SetSizer(globalSizer)
+		
+		self.Layout()
+		
+	def SaveAll(self, evt=None):
+		try:
+			db = shelve.open("/work/conditions/run_control_config.db", "w")
+		except anydbm.error:
+			errordlg = wx.MessageDialog( None, "The configuration file cannot be opened.  Values will not be saved.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
+			errordlg.ShowModal()
+		else:
+			db["runinfoFile"] = self.runInfoDBEntry
+			db["logfileLocation"] = self.logfileLocationEntry
+			db["etSystemFileLocation"] = self.etSystemFileLocationEntry
+			db["rawdataLocation"] = self.rawDataLocationEntry
+			
+			db.close()
+
+		self.Close()
+		
+	def Cancel(self, evt=None):
+		self.Close()
+		
 #########################################################
 #   ETThread
 #########################################################
