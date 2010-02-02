@@ -140,7 +140,7 @@ class MainFrame(wx.Frame):
 		wnd.Show()
 
 	def GetNextRunSubrun(self, evt=None):
-		if not os.path.exists(self.runinfoFile + "/last_run_subrun.db"):
+		if not os.path.exists(self.runinfoFile):
 			errordlg = wx.MessageDialog( None, "The database storing the run/subrun data appears to be missing.  Run/subrun will be set to 1...", "Run/subrun database missing", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
 
@@ -148,7 +148,7 @@ class MainFrame(wx.Frame):
 			self.runEntry.SetValue(1)
 			self.subrunEntry.SetValue(1)
 		else:
-			d = shelve.open(self.runinfoFile + "/last_run_subrun.db", 'r')
+			d = shelve.open(self.runinfoFile, 'r')
 
 			if d.has_key('run') and d.has_key('subrun'):
 				self.runEntry.SetRange(int(d['run']),100000)
@@ -509,10 +509,10 @@ class OptionsFrame(wx.Frame):
 			errordlg = wx.MessageDialog( None, "The configuration file cannot be opened.  Values will not be saved.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
 		else:
-			db["runinfoFile"] = self.runInfoDBEntry
-			db["logfileLocation"] = self.logfileLocationEntry
-			db["etSystemFileLocation"] = self.etSystemFileLocationEntry
-			db["rawdataLocation"] = self.rawDataLocationEntry
+			db["runinfoFile"] = self.runInfoDBEntry.GetValue()
+			db["logfileLocation"] = self.logfileLocationEntry.GetValue()
+			db["etSystemFileLocation"] = self.etSystemFileLocationEntry.GetValue()
+			db["rawdataLocation"] = self.rawDataLocationEntry.GetValue()
 			
 			db.close()
 
