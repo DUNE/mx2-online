@@ -1,15 +1,21 @@
 #!/usr/bin/python
 
 import wx
+from wx.lib.wordwrap import wordwrap
 import subprocess
 import os
+import sys
 import threading
 import datetime
 import time
 import shelve
 import anydbm		# if a shelve database doesn't exist, this module contains the error raised
+import re			# regular expressions
 
 ## some constants for configuration
+CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
+#CONFIG_DB_LOCATION = "/home/jeremy/run_control_config.db"
+
 RUN_SUBRUN_DB_LOCATION_DEFAULT = "/work/conditions/next_run_subrun.db"
 LOGFILE_LOCATION_DEFAULT = "/work/data/logs"
 
@@ -26,6 +32,8 @@ class MainFrame(wx.Frame):
 	def __init__(self, parent, title):
 		wx.Frame.__init__(self, parent, -1, title,
 				      pos=(0, 0), size=(600, 400))
+
+		self.GetConfig()
 
 		menuBar = wx.MenuBar()
 
@@ -98,15 +106,25 @@ class MainFrame(wx.Frame):
 		topSizer = wx.BoxSizer(wx.HORIZONTAL)
 		topSizer.AddMany( [(configBoxSizer, 1, wx.EXPAND | wx.RIGHT, 5), (controlBoxSizer, 1, wx.EXPAND | wx.LEFT, 5)] )
 
-		self.logFileButton = wx.Button(panel, -1, "View most recent log")
-		self.Bind(wx.EVT_BUTTON, self.ShowLogFile, self.logFileButton)
-		self.logFileButton.Disable()
+		logfileText = wx.StaticText( panel, -1, wordwrap("Select log files you want to view (ctrl+click for multiple selections) and click the \"View log file(s)\" button below...", 400, wx.ClientDC(self)) )
+		self.logfileList = wx.ListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
+		self.logfileList.InsertColumn(0, "Run")
+		self.logfileList.InsertColumn(1, "Subrun")
+		self.logfileList.InsertColumn(2, "Date")
+		self.logfileList.InsertColumn(3, "Time (GMT)")
+		self.logfileList.InsertColumn(4, "Run config")
+		self.logfileList.InsertColumn(5, "Detector")
+		self.logfileList.InsertColumn(6, "Filename")
+		
+		self.logFileButton = wx.Button(panel, -1, "View selected log files")
+		self.Bind(wx.EVT_BUTTON, self.ShowLogFiles, self.logFileButton)
+#		self.logFileButton.Disable()
 
-		logFileViewOldButton = wx.Button(panel, -1, "View older logs...")
-		self.Bind(wx.EVT_BUTTON, self.OlderLogFileSelection, logFileViewOldButton)
+#		logFileViewOldButton = wx.Button(panel, -1, "View older logs...")
+#		self.Bind(wx.EVT_BUTTON, self.OlderLogFileSelection, logFileViewOldButton)
 		
 		logBoxSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Logs"), orient=wx.VERTICAL)
-		logBoxSizer.AddMany( [self.logFileButton, logFileViewOldButton] )
+		logBoxSizer.AddMany( [(logfileText, 0, wx.ALIGN_CENTER_HORIZONTAL), (self.logfileList, 1, wx.EXPAND), (self.logFileButton, 0, wx.ALIGN_CENTER_HORIZONTAL)] )
 		
 		globalSizer = wx.BoxSizer(wx.VERTICAL)
 		globalSizer.Add(topSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
@@ -123,22 +141,76 @@ class MainFrame(wx.Frame):
 		self.windows = []					# child windows opened by the process.
 		self.logfilename = None
 
-		self.GetConfig()
 		self.GetNextRunSubrun()
+		self.UpdateLogFiles()
 		self.Connect(-1, -1, EVT_THREAD_READY_ID, self.StartNextThread)
 		self.Connect(-1, -1, EVT_DAQQUIT_ID, self.DAQShutdown)		# if the DAQ process quits, everything should be stopped.
 
-	def OnTimeToClose(self, evt):
-		self.StopAll()
-
-		self.CloseAllWindows()
-
-		self.Close()
+	def parseLogfileName(self, filename):
+		matches = re.match("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2}).txt$", filename)
 		
+		if matches is None:
+			return None
+		
+		fileinfo = []
+
+		fileinfo.append(matches.group("run").lstrip('0'))
+		fileinfo.append(matches.group("subrun").lstrip('0'))
+		fileinfo.append(matches.group("month") + "/" + matches.group("day") + "/20" + matches.group("year"))
+		fileinfo.append( matches.group("hour") + ":" + matches.group("minute") )
+
+		if matches.group("type") == "numib":
+			fileinfo.append("NuMI beam")
+		elif matches.group("type") == "linj":
+			fileinfo.append("light injection")
+		elif matches.group("type") == "chinj":
+			fileinfo.append("charge injection")
+		elif matches.group("type") == "cosmc":
+			fileinfo.append("cosmics")
+		elif matches.group("type") == "pdstl":
+			fileinfo.append("pedestal")
+		else:
+			return None
+		
+		if matches.group("detector") == "TP":
+			fileinfo.append("prototype")
+		elif matches.group("detector") == "MN":
+			fileinfo.append("frozen")
+		else:
+			return None
+
+		fileinfo.append(filename)
+		
+		return fileinfo
+
 	def Configure(self, evt):
 		wnd = OptionsFrame(self)
 		wnd.Show()
 
+	def GetConfig(self):
+		try:
+			db = shelve.open(CONFIG_DB_LOCATION)
+		except anydbm.error:
+			errordlg = wx.MessageDialog( None, "The configuration file does not exist.  Default values are being used.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
+			errordlg.ShowModal()
+
+			self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
+			self.logfileLocation = LOGFILE_LOCATION_DEFAULT
+			self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+		else:
+			try:	self.runinfoFile = db["runinfoFile"]
+			except KeyError: self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
+			
+			try:	self.logfileLocation = db["logfileLocation"]
+			except KeyError: self.logfileLocation = LOGFILE_LOCATION_DEFAULT
+			
+			try:	self.etSystemFileLocation = db["etSystemFileLocation"]
+			except KeyError: self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			
+			try:	self.rawdataLocation = db["rawdataLocation"]
+			except KeyError: self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+		
 	def GetNextRunSubrun(self, evt=None):
 		if not os.path.exists(self.runinfoFile):
 			errordlg = wx.MessageDialog( None, "The database storing the run/subrun data appears to be missing.  Run/subrun will be set to 1...", "Run/subrun database missing", wx.OK | wx.ICON_WARNING )
@@ -185,30 +257,6 @@ class MainFrame(wx.Frame):
 			db["subrun"] = self.subrunEntry.GetValue()
 			db.close()
 			
-	def GetConfig(self):
-		try:
-			db = shelve.open("/work/conditions/run_control_config.db")
-		except anydbm.error:
-			errordlg = wx.MessageDialog( None, "The configuration file does not exist.  Default values are being used.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
-			errordlg.ShowModal()
-
-			self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
-			self.logfileLocation = LOGFILE_LOCATION_DEFAULT
-			self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
-			self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
-		else:
-			try:	self.runinfoFile = db["runinfoFile"]
-			except KeyError: self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
-			
-			try:	self.logfileLocation = db["logfileLocation"]
-			except KeyError: self.logfileLocation = LOGFILE_LOCATION_DEFAULT
-			
-			try:	self.etSystemFileLocation = db["etSystemFileLocation"]
-			except KeyError: self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
-			
-			try:	self.rawdataLocation = db["rawdataLocation"]
-			except KeyError: self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
-		
 	def CheckRunNumber(self, evt=None):
 		if self.runEntry.GetValue() < self.runEntry.GetMin():
 			self.runEntry.SetValue(self.runEntry.GetMin())
@@ -294,6 +342,13 @@ class MainFrame(wx.Frame):
 		self.windows.append(daqFrame)
 		self.ETthreads.append( ETThread(daq_command, output_window=daqFrame, owner_window=self, quit_event=DAQQuitEvent) )
 
+	def OnTimeToClose(self, evt):
+		self.StopAll()
+
+		self.CloseAllWindows()
+
+		self.Close()
+		
 	def StopAll(self, evt=None):
 		while len(self.ETthreads) > 0:
 			thread = self.ETthreads.pop()	# pull the threads out of the list one by one.  this way they go out of scope and are garbage collected.
@@ -321,14 +376,44 @@ class MainFrame(wx.Frame):
 			self.current_ET_thread += 1
 		else:
 			print "Thread count too high"
+
+	def UpdateLogFiles(self):
+		self.logfileList.DeleteAllItems()
+		
+		try:
+			for filename in os.listdir(self.logfileLocation):
+				if os.path.isdir(filename):
+					continue
+				fileinfo = self.parseLogfileName(filename)
+				if fileinfo is not None:
+					index = self.logfileList.InsertStringItem(sys.maxint, fileinfo[0])
+					for i in range(1,7):
+						self.logfileList.SetStringItem(index, i, fileinfo[i])
+		except OSError:
+			self.logfileList.InsertStringItem(0, "Log directory does not exist.  Please fix it in the options.")
+		
 			
-	def ShowLogFile(self, evt=None):
-		if (self.logfilename):
-			logdlg = LogFrame(self, self.logfilename)
-			if logdlg.ok:		# the file might not be accessible...
-				logdlg.Show(True)
-		else:
-			print "Whoops!  Log file button shouldn't be enabled before log file is available..."
+	def ShowLogFiles(self, evt=None):
+		filenames = []
+
+		index = -1
+		while True:
+			index = self.logfileList.GetNextSelected(index)
+			
+			if index == -1:
+				break
+			
+			filenames.append(self.logfileLocation + "/" + self.logfileList.GetItem(index, 6).GetText())
+	
+#		if (self.logfilename):
+#			logdlg = LogFrame(self, self.logfilename)
+#			if logdlg.ok:		# the file might not be accessible...
+#				logdlg.Show(True)
+#		else:
+#			print "Whoops!  Log file button shouldn't be enabled before log file is available..."
+
+		logframe = LogFrame(self, filenames)
+		logframe.Show()
 
 	def OlderLogFileSelection(self, evt=None):
 		errordlg = wx.MessageDialog( None, "This feature is not yet implemented.", "Not yet implemented", wx.OK | wx.ICON_WARNING )
@@ -379,30 +464,38 @@ class OutputFrame(wx.Frame):
 #########################################################
 
 class LogFrame(wx.Frame):
-	def __init__(self, parent, filename):
+	def __init__(self, parent, filenames):
 		try:
-			f = open(filename)
+			for filename in filenames:
+				f = open(filename)
+				f.close()
 		except IOError:
-			errordlg = wx.MessageDialog( None, "The last log file is not accessible.  Did you stop the run before the DAQ process was started?", "Log file inaccessible", wx.OK | wx.ICON_ERROR )
+			errordlg = wx.MessageDialog( None, "Couldn't open file '" + filename + "'.  Sorry...", "Log file inaccessible", wx.OK | wx.ICON_ERROR )
 			errordlg.ShowModal()
 			self.ok = False			
 			
 			return
 
 		self.ok = True
-
-		wx.Frame.__init__(self, parent, -1, "DAQ log: " + filename, size=(800,600))
+		
+		wx.Frame.__init__(self, parent, -1, "DAQ log", size=(800,600))
 		panel = wx.Panel(self)
+		
+		nb = wx.Notebook(panel)
+		for filename in filenames:
+			textarea = wx.TextCtrl(nb, -1, style = wx.TE_MULTILINE | wx.TE_READONLY)
 
-		textarea = wx.TextCtrl(panel, -1, style = wx.TE_MULTILINE | wx.TE_READONLY)
-
-		for line in f:
-			textarea.AppendText(line)
-
+			f = open(filename)
+			for line in f:
+				textarea.AppendText(line)
+			f.close()
+			
+			nb.AddPage(textarea, filename)
+			
 		okButton = wx.Button(panel, wx.ID_OK)
 
 		sizer = wx.BoxSizer(wx.VERTICAL)
-		sizer.Add(textarea, 1, wx.EXPAND | wx.ALIGN_TOP)
+		sizer.Add(nb, 1, wx.EXPAND | wx.ALIGN_TOP)
 		sizer.Add(okButton, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM)
 
 		panel.SetSizer(sizer)
@@ -423,7 +516,7 @@ class OptionsFrame(wx.Frame):
 		wx.Frame.__init__(self, parent, -1, "Configuration", size=(600,400))
 
 		try:
-			db = shelve.open("/work/conditions/run_control_config.db")
+			db = shelve.open(CONFIG_DB_LOCATION)
 		except anydbm.error:
 			# the user has already been informed once (when the main frame was opened)
 			# if the DB is not accessible, so we'll just silently go to the defaults here.
@@ -504,7 +597,7 @@ class OptionsFrame(wx.Frame):
 		
 	def SaveAll(self, evt=None):
 		try:
-			db = shelve.open("/work/conditions/run_control_config.db", "w")
+			db = shelve.open(CONFIG_DB_LOCATION, "w")
 		except anydbm.error:
 			errordlg = wx.MessageDialog( None, "The configuration file cannot be opened.  Values will not be saved.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
