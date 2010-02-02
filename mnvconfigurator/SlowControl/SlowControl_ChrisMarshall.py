@@ -3,13 +3,16 @@ MINERvA DAQ Slow Control GUI
 By Chris Marshall
 Last modified 6 August, 2009
 """
+from ctypes import *
+cdll.LoadLibrary("/usr/local/lib/liblog4cpp.so.4")
+log4cpp = CDLL("/usr/local/lib/liblog4cpp.so.4")
 # wx is the module for wxPython. The string library is used for saving and loading settings to/from files.
 # sys is necessary for redirecting print statements to the Description tab rather than the terminal.
 import wx
 import string
 import sys
 # feb is the module for the Front End Board class, wrapped in SWIG, for the C++ readout library.
-###import feb
+import feb
 # Note: this will raise an error unless you have the SWIG-generated feb.py file in the same directory
 # as this program.
 
@@ -364,9 +367,9 @@ class SCTree(wx.Frame):
         """Eventually, will perform the hardware scan. For now just sets arbitrary lists."""
         self.croc.setListOfCrocs([1, 2, 3, 4, 5, 6, 7])
         self.fpga.setListOfFEBs([i for i in range(1, 29)])
-###        board13 = feb.feb(6, False, 13, 54)
+        board13 = feb.feb(6, False, 13, 54)
         self.boardList = {}
-###        self.boardList[13] = board13
+        self.boardList[13] = board13
         self.fpga.setBoardList(self.boardList)
         self.trip.setListOfFEBs([i for i in range(1, 29)])
 

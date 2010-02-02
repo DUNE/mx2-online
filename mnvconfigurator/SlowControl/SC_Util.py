@@ -27,7 +27,7 @@ class VMDdevTypes():
     CROC='CROC'
     CH='CH'
     FE='FE'
-
+    
 class CROCRegs():
     RegWRTimingSetup        = 0xF000
     RegWRResetAndTestMask   = 0xF010
@@ -43,7 +43,6 @@ class CROCCHRegs():
     RegWClearStatus = 0x2030
     RegRLoopDelay   = 0x2040
     RegRDPMPointer  = 0x2050
-
 class CROCCHStatusBits():
     MessageSent     = 0x0001
     MessageReceived = 0x0002
@@ -61,19 +60,25 @@ class CROCCHStatusBits():
     PLL1Locked      = 0x2000
     UnusedBit14     = 0x4000
     UnusedBit14     = 0x8000
+    
+class CRIMTimingModuleRegs():
+    RegWRTimingSetup = 0xC010
+    RegWRGateWidth   = 0xC020
+    RegWRTCALBDelay  = 0xC030
+    RegWTRIGGERSend  = 0xC040
+    RegWTCALBSend    = 0xC050
+    RegWGATE         = 0xC060
+    #RegWR___         = 0xC070
+    RegWCNTRST       = 0xC080
+    #RegWR___         = 0xC090
+    RegWRScrapRegister      = 0xC0A0
+    RegRGateTimestampLower  = 0xC0B0
+    RegRGateTimestampUpper  = 0xC0C0
 
-class CRIMCHRegs():
-    RegRMemory      = 0x0000
-    RegWInput       = 0x2000
+class CRIMCHModuleRegs(CROCCHRegs):
     RegWResetFIFO   = 0x2008
-    RegWSendMessage = 0x2010
-    RegRStatus      = 0x2020
-    RegWClearStatus = 0x2030
-    RegRLoopDelay   = 0x2040
-    RegRDPMPointer  = 0x2050
     RegRDecodTmgCmd = 0x2060
-    RegRWControl    = 0x2070
-
+    RegWRMode       = 0x2070
 class CRIMCHStatusBits():
     MessageSent     = 0x0001
     MessageReceived = 0x0002
@@ -91,6 +96,15 @@ class CRIMCHStatusBits():
     TestPulseRcv    = 0x2000
     FERebootRcv     = 0x4000
     EncodedCmdRcv   = 0x8000
+    
+class CRIMInterrupterModuleRegs(): 
+    RegWRMask           = 0xF000
+    RegWRStatus         = 0xF010
+    RegWClearInterrupt  = 0xF020
+    RegWRIntConfig      = 0xF040
+    RegWRVectorTable    = \
+    [0xF810, 0xF812, 0xF814, 0xF816, \
+     0xF818, 0xF81A, 0xF81C, 0xF81E]
 
 FastCmds={
     'ResetFPGA':0x8D,
@@ -102,7 +116,6 @@ FastCmds={
     'QueryFPGA':0x91}
 
 CRIMTimingModes={
-    '0 None':0x0000,
     '1 DAQ':0x1000,
     '2 EXT':0x2000,
     '4 INT':0x4000,
@@ -123,7 +136,7 @@ CRIMTimingFrequencies={
     'F10':0x0400,
     'F11':0x0800}
     
-def CRIMDAQModeChkBoxData():
+def CRIMCHModeChkBoxData():
     pos=(0,0)
     size=(125, 16)
     color=colorLabel
@@ -318,8 +331,8 @@ def FPGARegLabelsData():
         (' R  HV PeriodAuto', pos, size, '', color),
         (' WR HV PulseWidth', pos, size, '', color),
         (' R  Temperature', pos, size, '', color),
-        (' R  Version', pos, size, '', color),
-        (' R  FEB ID', pos, size, '', color),
+        (' R  Firmware Version', pos, size, '', color),
+        (' R  FE Board ID', pos, size, '', color),
         #these are the advanced GUI
         (' WR Timer', pos, size, '', color),
         (' WR Trip0 En+Inj', pos, size, '', color),
@@ -392,7 +405,7 @@ def FPGARegTextData():
         ('', pos, size, ' WR TripX InjRange', color),
         ('', pos, size, ' WR TripX InjPhase', color),
         ('', pos, size, ' WR InjDAC Value', color),
-        ('', pos, size, ' WR InjDAC Mode', color),
+        ('', pos, size, ' WR InjDAC Mode(0)', color),
         ('', pos, size, ' WR InjDAC R(0)S(1)', color),   
         ('', pos, size, ' R  InjDAC Done(1)', color),
         ('', pos, size, ' R  HV Control', color),
@@ -522,7 +535,7 @@ def SizerTop(btnShowAdvancedGUI, TopLabels):
     return szTop
 
 class VMEReadWrite():
-    def __init__(self, panel, caption=' VME Read/Write'):
+    def __init__(self, panel, caption=' VME Read/Write (hex)'):
         StaticBox=wx.StaticBox(panel, -1, caption)
         StaticBox.SetFont(myFont(fontSizeStaticBox))
         StaticBox.SetForegroundColour(colorForeground)
@@ -615,6 +628,9 @@ class StatusRegister():
         self.controls=[StaticBox, self.btnClearStatus, self.btnReadStatus, self.txtReadStatusData]
         for lbl in RegLabels: self.controls.append(lbl)
         for lbl in self.RegValues: self.controls.append(lbl)
+    def ResetControls(self):
+        self.txtReadStatusData.SetValue('')
+        for txt in self.RegValues: txt.Label=''
 
 class GenericRegister():
     def __init__(self, panel, caption='Generic Register (hex)',
@@ -642,7 +658,10 @@ class GenericRegister():
             self.txtData.Enable(WEnable)
             self.BoxSizer.Add(self.txtData, 0, wx.ALL, 2)
             self.controls.append(self.txtData)
-     
+        self.txtDataVisible=txtDataVisible
+    def ResetControls(self):
+        if self.txtDataVisible==True: self.txtData.SetValue('')
+ 
 class MessageRegisters():
     def __init__(self, panel):
         StaticBox=wx.StaticBox(panel, -1, 'Message Registers (hex)')
@@ -671,6 +690,10 @@ class MessageRegisters():
         self.controls=[StaticBox, self.txtAppendMessage,
             self.btnWriteFIFO, self.btnSendFrame, self.btnReadDPMWordsN,
             self.txtReadDPMWordsN, self.txtReadDPMContent]
+    def ResetControls(self):
+        self.txtAppendMessage.SetValue('')
+        self.txtReadDPMWordsN.SetValue('')
+        self.txtReadDPMContent.SetValue('')
 
 class CRIMTimingTimingSetupRegister():
     def __init__(self, panel, caption=' Timing Setup Register'):
@@ -694,6 +717,10 @@ class CRIMTimingTimingSetupRegister():
         self.BoxSizer.Add(self.btnRead, 0, wx.ALL, 2)        
         self.controls=[StaticBox, self.choiceMode, self.choiceFrequency,
             self.btnWrite, self.btnRead]
+    def ResetControls(self):
+        self.choiceMode.SetSelection(0)
+        self.choiceFrequency.SetSelection(0)
+
 
 class CRIMTimingGateWidthRegister():
     def __init__(self, panel, caption='Gate Width Register'):
@@ -715,8 +742,11 @@ class CRIMTimingGateWidthRegister():
         self.BoxSizer.Add(self.btnRead, 0, wx.ALL, 2)
         self.controls=[StaticBox, self.chkCNTRSTEnable,
             self.txtGateWidthData, self.btnWrite, self.btnRead]
+    def ResetControls(self):
+        self.chkCNTRSTEnable.SetValue(False)
+        self.txtGateWidthData.SetValue('')
 
-class CRIMDAQMiscRegisters():
+class CRIMCHMiscRegisters():
     def __init__(self, panel):
         StaticBox=wx.StaticBox(panel, -1, 'Misc Registers')
         StaticBox.SetFont(myFont(fontSizeStaticBox))
@@ -737,8 +767,10 @@ class CRIMDAQMiscRegisters():
         self.BoxSizer.Add(self.btnSendSYNC, 0, wx.ALL, 2)
         self.controls=[StaticBox, self.btnFIFOFlagReset,
             self.btnTimingCmdRead, self.txtTimingCmdReadData, self.btnSendSYNC]
+    def ResetControls(self):
+        self.txtTimingCmdReadData.SetValue('')
 
-class CRIMDAQModeRegister():
+class CRIMCHModeRegister():
     def __init__(self, panel):
         StaticBox=wx.StaticBox(panel, -1, 'Mode Register')
         StaticBox.SetFont(myFont(fontSizeStaticBox))
@@ -765,20 +797,25 @@ class CRIMDAQModeRegister():
         self.controls=[StaticBox, self.chkReTransmit, self.chkSendMessage,
             self.chkCRCErrorEnabled, self.chkFETriggerEnabled,
             self.btnWrite, self.btnRead]
+    def ResetControls(self):
+        self.chkReTransmit.SetValue(False)
+        self.chkSendMessage.SetValue(False)
+        self.chkCRCErrorEnabled.SetValue(False)
+        self.chkFETriggerEnabled.SetValue(False)
 
 class CRIMIntVectorTableID():
-    def __init__(self, panel, caption=' Vector Table IDs'):
+    def __init__(self, panel, caption=' Vector Table IDs (hex)'):
         StaticBox=wx.StaticBox(panel, -1, caption)
         StaticBox.SetFont(myFont(fontSizeStaticBox))
         StaticBox.SetForegroundColour(colorForeground)
         leftLabelsData, rightTextsData = CRIMIntVectorTableIDLabelsData()      
         rows=len(leftLabelsData)
-        VectorLabels=CreateLabels(panel, leftLabelsData)
-        self.VectorValues=CreateTextCtrls(panel, rightTextsData)
+        lblVectorLabels=CreateLabels(panel, leftLabelsData)
+        self.txtVectorValues=CreateTextCtrls(panel, rightTextsData)
         VectorSizer=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=1)
         for i in range(rows):
-            VectorSizer.Add(VectorLabels[i], 0, 0)
-            VectorSizer.Add(self.VectorValues[i], 0, 0)
+            VectorSizer.Add(lblVectorLabels[i], 0, 0)
+            VectorSizer.Add(self.txtVectorValues[i], 0, 0)
         self.btnWrite=CreateButton(panel, 'Write',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnRead=CreateButton(panel, 'Read',
@@ -788,8 +825,10 @@ class CRIMIntVectorTableID():
         self.BoxSizer.Add(self.btnRead, 0, wx.ALL, 2)
         self.BoxSizer.Add(VectorSizer, 0, wx.ALL, 2)
         self.controls=[StaticBox, self.btnWrite, self.btnRead]
-        for lbl in VectorLabels: self.controls.append(lbl)
-        for lbl in self.VectorValues: self.controls.append(lbl)
+        for lbl in lblVectorLabels: self.controls.append(lbl)
+        for txt in self.txtVectorValues: self.controls.append(txt)
+    def ResetControls(self):
+        for txt in self.txtVectorValues: txt.SetValue('')
 
 class CRIMIntConfigRegister():
     def __init__(self, panel, caption='Int Config Register'):
@@ -811,6 +850,9 @@ class CRIMIntConfigRegister():
         self.BoxSizer.Add(self.btnRead, 0, wx.ALL, 2)
         self.controls=[StaticBox, self.chkGlobalIntEnable,
             self.txtVMEIntLevelData, self.btnWrite, self.btnRead]
+    def ResetControls(self):
+        self.chkGlobalIntEnable.SetValue(False)
+        self.txtVMEIntLevelData.SetValue('')
 
 class CROCTimingSetup():
     def __init__(self, panel, caption=' Timing Setup'):
@@ -845,6 +887,10 @@ class CROCTimingSetup():
         self.controls=[StaticBox, self.choiceCLKSource,
             self.choiceTPDelayEnable, lblTPDelayValue, self.txtTPDelayValue,
             self.btnWriteTimingSetup, self.btnReadTimingSetup]
+    def ResetControls(self):
+        self.choiceCLKSource.SetSelection(0)
+        self.choiceTPDelayEnable.SetSelection(0)
+        self.txtTPDelayValue.SetValue('')
 
 class CROCFastCmd():
     def __init__(self, panel, caption=' Fast Commands'):
@@ -860,6 +906,8 @@ class CROCFastCmd():
         self.BoxSizer.Add(self.choiceFastCmd, 0, wx.ALL, 2)
         self.BoxSizer.Add(self.btnSendFastCmd, 0, wx.ALL, 2)
         self.controls=[StaticBox, self.choiceFastCmd, self.btnSendFastCmd]
+    def ResetControls(self):
+        self.choiceFastCmd.SetSelection(0)
 
 class CROCLoopDelays():
     def __init__(self, panel, caption=' LoopDelays'):
@@ -869,11 +917,12 @@ class CROCLoopDelays():
         leftLabelsData, rightLabelsData = CROCLoopDelaysLabelsData()
         rows=len(leftLabelsData)
         LoopDelayLabels=CreateLabels(panel, leftLabelsData)
-        self.LoopDelayValues=CreateTextCtrls(panel, rightLabelsData)
+        self.txtLoopDelayValues=CreateTextCtrls(panel, rightLabelsData)
+        for txt in self.txtLoopDelayValues: txt.Enable(False)
         loopDelaySizer=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=1)
         for i in range(rows):
             loopDelaySizer.Add(LoopDelayLabels[i], 0, 0)
-            loopDelaySizer.Add(self.LoopDelayValues[i], 0, 0)
+            loopDelaySizer.Add(self.txtLoopDelayValues[i], 0, 0)
         self.btnClearLoopDelays=CreateButton(panel, 'Clear Loop Delays',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnReadLoopDelays=CreateButton(panel, 'Read Loop Delays',
@@ -884,7 +933,9 @@ class CROCLoopDelays():
         self.BoxSizer.Add(loopDelaySizer, 0, wx.ALL, 2)
         self.controls=[StaticBox, self.btnClearLoopDelays, self.btnReadLoopDelays]
         for lbl in LoopDelayLabels: self.controls.append(lbl)
-        for lbl in self.LoopDelayValues: self.controls.append(lbl)
+        for txt in self.txtLoopDelayValues: self.controls.append(txt)
+    def ResetControls(self):
+        for txt in self.txtLoopDelayValues: txt.SetValue('')
 
 class CROCResetAndTestPulse():
     def __init__(self, panel, caption=' Reset And Test Pulse'):
@@ -915,8 +966,11 @@ class CROCResetAndTestPulse():
         self.BoxSizer.Add(self.btnSendTPOnly, 0, wx.ALL, 2)
         self.controls=[StaticBox, self.btnWriteRSTTP,
             self.btnReadRSTTP, self.btnSendRSTOnly, self.btnSendTPOnly]
-        for lbl in self.ChXReset: self.controls.append(lbl)
-        for txt in self.ChXTPulse: self.controls.append(txt)
+        for chk in self.ChXReset: self.controls.append(chk)
+        for chk in self.ChXTPulse: self.controls.append(chk)
+    def ResetControls(self):
+        for chk in self.ChXReset: chk.SetValue(False)
+        for chk in self.ChXTPulse: chk.SetValue(False)
 
 class CROCFEBGateDelays():
     def __init__(self, panel, caption=' FEB Gate Delays'):
@@ -942,13 +996,18 @@ class CROCFEBGateDelays():
         self.controls=[StaticBox, self.btnReportAlignmentsAllChains]
         for lbl in FEBGateDelaysLabels: self.controls.append(lbl)
         for txt in FEBGateDelaysValues: self.controls.append(txt)
+    def ResetControls(self):
+        self.txtNumberOfMeas.SetValue('')
+        self.txtLoadTimerValue.SetValue('')
+        self.txtGateStartValue.SetValue('')
 
 class FPGARegisters():
     def __init__(self, panel):
         leftLabelsData = FPGARegLabelsData()
         rightTextData = FPGARegTextData()
         lblRegs=CreateLabels(panel, leftLabelsData)
-        self.txtRegs=CreateTextCtrls(panel, rightTextData)     
+        self.txtRegs=CreateTextCtrls(panel, rightTextData)
+        #self.txtRegs[0].SetValidator(myValidator(self.txtRegs[0], 0,15))
         rows=len(leftLabelsData)
         szRegs1=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
         szRegs2=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
@@ -981,13 +1040,15 @@ class FPGARegisters():
         for i in range(14, len(lblRegs)):
             self.controlsAdvanced.append(lblRegs[i])
             self.controlsAdvanced.append(self.txtRegs[i])
+    def ResetControls(self):
+        for txt in self.txtRegs: txt.SetValue('')
 
 class TRIPRegisters():
     def __init__(self, panel):
         leftLabelsData = TRIPRegLabelsData()
         rightTextData = TRIPRegTextData()
         lblRegs=CreateLabels(panel, leftLabelsData)
-        self.txtRegs=CreateTextCtrls(panel, rightTextData)     
+        self.txtRegs=CreateTextCtrls(panel, rightTextData)
         rows=len(leftLabelsData)
         szRegs=wx.FlexGridSizer(rows=rows, cols=2, hgap=5, vgap=0)
         for i in range(rows):
@@ -1013,6 +1074,33 @@ class TRIPRegisters():
         self.controls=[self.chkTrip, self.btnRead, self.btnWrite, self.btnWriteALL]
         for lbl in lblRegs: self.controls.append(lbl)
         for txt in self.txtRegs: self.controls.append(txt)
+    def ResetControls(self):
+        for txt in self.txtRegs: txt.SetValue('')
+
+##class myValidator(wx.PyValidator):
+##    def __init__(self, txtCtrl, minValue, maxValue):
+##        wx.PyValidator.__init__(self)
+##        self.txtCtrl=txtCtrl
+##        self.min=minValue
+##        self.max=maxValue 
+##        #self.Bind(wx.EVT_LEAVE_WINDOW, self.Validate)
+##        #self.Bind(wx.EVT_SET_FOCUS, self.Validate)
+##        #self.Bind(wx.EVT_TEXT, self.Validate)
+##        #self.Bind(wx.EVT_TEXT_ENTER, self.Validate)
+##    def Clone(self): return myValidator(self.txtCtrl, self.min, self.max)
+##    def Validate(self, evt):
+##        if self.txtCtrl.GetValue()=='':self.txtCtrl.SetValue('0')
+##        try:
+##            data = int(self.txtCtrl.GetValue()) 
+##            if data<self.min or data>self.max:
+##                wx.MessageBox('data must be %d to %d' % (self.min, self.max))  
+##                self.txtCtrl.SetValue('0')
+##                evt.Skip()
+##        except:
+##            evt.Skip()
+##            self.txtCtrl.SetValue('')
+            
+        
 
 
 

@@ -4,12 +4,12 @@ Contains the main application code
 Started October 21 2009
 """
 from ctypes import *
-#cdll.LoadLibrary("/usr/local/lib/liblog4cpp.so.4")
-#log4cpp = CDLL("/usr/local/lib/liblog4cpp.so.4")
+cdll.LoadLibrary("/usr/local/lib/liblog4cpp.so.4")
+log4cpp = CDLL("/usr/local/lib/liblog4cpp.so.4")
 #cdll.LoadLibrary("/work/software/mnvsingle/mnvdaq/lib/libhardware.so")
 #hardware = CDLL("/work/software/mnvsingle/mnvdaq/lib/libhardware.so")
-cdll.LoadLibrary("/lib64/libc.so.6")
-libc = CDLL("/lib64/libc.so.6")
+#cdll.LoadLibrary("/lib64/libc.so.6")
+#libc = CDLL("/lib64/libc.so.6")
 
 import wx
 import sys
@@ -61,23 +61,23 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_BUTTON, self.OnCRIMTimingbtnWriteGATEStop, self.frame.crim.TimingModule.GATERegister.btnRead)
         self.Bind(wx.EVT_BUTTON, self.OnCRIMTimingbtnWriteSeqCNTRST, self.frame.crim.TimingModule.CNTRSTRegister.btnWrite)
         self.Bind(wx.EVT_BUTTON, self.OnCRIMTimingbtnWriteSeqCNTRSTSGATETCALB, self.frame.crim.TimingModule.CNTRSTRegister.btnRead)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMTimingbtnWriteID, self.frame.crim.TimingModule.IDRegister.btnWrite)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMTimingbtnReadID, self.frame.crim.TimingModule.IDRegister.btnRead)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMTimingbtnReadGateTimestamp, self.frame.crim.TimingModule.GateTimestampRegister.btnRead)
-        # CRIM DAQ pannel events ##########################################################
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnClearStatus, self.frame.crim.DAQModule.StatusRegister.btnClearStatus)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnReadStatus, self.frame.crim.DAQModule.StatusRegister.btnReadStatus)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbbtnDPMPointerReset, self.frame.crim.DAQModule.DPMPointer.btnWrite)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnDPMPointerRead, self.frame.crim.DAQModule.DPMPointer.btnRead)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnWriteFIFO, self.frame.crim.DAQModule.MessageRegisters.btnWriteFIFO)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnSendFrame, self.frame.crim.DAQModule.MessageRegisters.btnSendFrame)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnReadDPMWordsN, self.frame.crim.DAQModule.MessageRegisters.btnReadDPMWordsN)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnClearStatus, self.frame.crim.DAQModule.StatusRegister.btnClearStatus)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnWriteMode, self.frame.crim.DAQModule.ModeRegister.btnWrite)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnReadMode, self.frame.crim.DAQModule.ModeRegister.btnRead)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnFIFOFlagReset, self.frame.crim.DAQModule.MiscRegisters.btnFIFOFlagReset)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnTimingCmdRead, self.frame.crim.DAQModule.MiscRegisters.btnTimingCmdRead)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMDAQbtnSendSYNC, self.frame.crim.DAQModule.MiscRegisters.btnSendSYNC)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMTimingbtnWriteScrap, self.frame.crim.TimingModule.ScrapRegister.btnWrite)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMTimingbtnReadScrap, self.frame.crim.TimingModule.ScrapRegister.btnRead)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMTimingbtnReadGateTimestamp, self.frame.crim.TimingModule.GateTimestampRegisters.btnRead)
+        # CRIM CH pannel events ##########################################################
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnClearStatus, self.frame.crim.ChannelModule.StatusRegister.btnClearStatus)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnReadStatus, self.frame.crim.ChannelModule.StatusRegister.btnReadStatus)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbbtnDPMPointerReset, self.frame.crim.ChannelModule.DPMPointer.btnWrite)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnDPMPointerRead, self.frame.crim.ChannelModule.DPMPointer.btnRead)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnWriteFIFO, self.frame.crim.ChannelModule.MessageRegisters.btnWriteFIFO)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnSendFrame, self.frame.crim.ChannelModule.MessageRegisters.btnSendFrame)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnReadDPMWordsN, self.frame.crim.ChannelModule.MessageRegisters.btnReadDPMWordsN)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnClearStatus, self.frame.crim.ChannelModule.StatusRegister.btnClearStatus)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnWriteMode, self.frame.crim.ChannelModule.ModeRegister.btnWrite)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnReadMode, self.frame.crim.ChannelModule.ModeRegister.btnRead)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnFIFOFlagReset, self.frame.crim.ChannelModule.MiscRegisters.btnFIFOFlagReset)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnTimingCmdRead, self.frame.crim.ChannelModule.MiscRegisters.btnTimingCmdRead)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMCHbtnSendSYNC, self.frame.crim.ChannelModule.MiscRegisters.btnSendSYNC)
         # CRIM INTERRUPTER pannel events ##########################################################
         self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnWriteMaskRegister, self.frame.crim.InterrupterModule.MaskRegister.btnWrite)
         self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnReadMaskRegister, self.frame.crim.InterrupterModule.MaskRegister.btnRead)
@@ -86,8 +86,8 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnWriteIntConfigRegister, self.frame.crim.InterrupterModule.IntConfigRegister.btnWrite)
         self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnReadIntConfigRegister, self.frame.crim.InterrupterModule.IntConfigRegister.btnRead)
         self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnWriteClearInterruptRegister, self.frame.crim.InterrupterModule.ClearInterruptRegister.btnWrite)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnWriteVectorTableRegister, self.frame.crim.InterrupterModule.VectorTable.btnWrite)
-        self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnReadVectorTableRegister, self.frame.crim.InterrupterModule.VectorTable.btnRead)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnWriteVectorTableRegister, self.frame.crim.InterrupterModule.VectorTableRegisters.btnWrite)
+        self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnReadVectorTableRegister, self.frame.crim.InterrupterModule.VectorTableRegisters.btnRead)
         # CROC pannel events ##########################################################
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnFlashFirst, self.frame.croc.FlashButtons.btnFlashFirst)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnFlashSecond, self.frame.croc.FlashButtons.btnFlashSecond)
@@ -163,19 +163,17 @@ class SCApp(wx.App):
             self.vmeCRIMs=[]; self.vmeCROCs=[]
             for addr in addrListCRIMs: self.vmeCRIMs.append(CRIM(self.controller, addr<<16))        
             for addr in addrListCROCs: self.vmeCROCs.append(CROC(self.controller, addr<<16))
-
             #then take each CROC CH and find the FEBs
             for theCROC in self.vmeCROCs:
                 for theCROCChannel in theCROC.Channels():
-                    FindFEBs(theCROCChannel)
-            
+                    FindFEBs(theCROCChannel)        
             #and then update self.frame.tree
             self.frame.tree.DeleteAllItems()
             treeRoot = self.frame.tree.AddRoot("VME-BRIDGE")
             for vmedev in self.vmeCRIMs:            
                 SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
             for vmedev in self.vmeCROCs:
-                SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
+                SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])            
         except: ReportException('OnMenuLoadHardware', self.reportErrorChoice)
             
     def OnMenuLoadFile(self, event):
@@ -191,6 +189,8 @@ class SCApp(wx.App):
             f.close()
         dlg.Destroy()
     def OnMenuSaveFile(self, event):
+        #for croc in self.vmeCROCs:
+        #    print croc
         wx.MessageBox('SaveFile...', wx.Frame.GetTitle(self),
             wx.OK | wx.ICON_INFORMATION)
     def OnMenuShowExpandAll(self, event): self.frame.tree.ExpandAll()
@@ -216,46 +216,244 @@ class SCApp(wx.App):
         except: ReportException('OnVMEbtnRead', self.reportErrorChoice)
 
     # CRIM Timing pannel events ##########################################################
-    def OnCRIMTimingbtnWriteTimingSetup(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnReadTimingSetup(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnWriteGateWidth(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnReadGateWidth(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnWriteTCALBDelay(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnReadTCALBDelay(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnWriteTRIGGERSend(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnWriteTCALBSend(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnWriteGATEStart(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnWriteGATEStop(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnWriteSeqCNTRST(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnWriteSeqCNTRSTSGATETCALB(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnWriteID(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnReadID(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMTimingbtnReadGateTimestamp(self, event): wx.MessageBox('not yet implemented')
-    
-    # CRIM DAQ pannel events ##########################################################
-    def OnCRIMDAQbtnClearStatus(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbtnReadStatus(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbbtnDPMPointerReset(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbtnDPMPointerRead(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbtnWriteFIFO(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbtnSendFrame(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbtnReadDPMWordsN(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbtnWriteMode(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbtnReadMode(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbtnFIFOFlagReset(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbtnTimingCmdRead(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMDAQbtnSendSYNC(self, event): wx.MessageBox('not yet implemented')
+    def OnCRIMTimingbtnWriteTimingSetup(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            mode = SC_Util.CRIMTimingModes[self.frame.crim.TimingModule.TimingSetupRegister.choiceMode.GetStringSelection()]
+            freq = SC_Util.CRIMTimingFrequencies[self.frame.crim.TimingModule.TimingSetupRegister.choiceFrequency.GetStringSelection()]
+            data = mode | freq
+            theCRIM.TimingModule.WriteTimingSetup(data)         
+        except: ReportException('OnCRIMTimingbtnWriteTimingSetup', self.reportErrorChoice)
+    def OnCRIMTimingbtnReadTimingSetup(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data=theCRIM.TimingModule.ReadTimingSetup()
+            for k in SC_Util.CRIMTimingModes.keys():
+                if SC_Util.CRIMTimingModes[k]==(data & 0xF000):
+                    self.frame.crim.TimingModule.TimingSetupRegister.choiceMode.SetStringSelection(k)
+            for k in SC_Util.CRIMTimingFrequencies.keys():
+                if SC_Util.CRIMTimingFrequencies[k]==(data&0x0FFF):
+                    self.frame.crim.TimingModule.TimingSetupRegister.choiceFrequency.SetStringSelection(k)
+        except: ReportException('OnCRIMTimingbtnReadTimingSetup', self.reportErrorChoice)
+    def OnCRIMTimingbtnWriteGateWidth(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            gateWidth = int(self.frame.crim.TimingModule.GateWidthRegister.txtGateWidthData.GetValue()) & 0x7F
+            enableBit = self.frame.crim.TimingModule.GateWidthRegister.chkCNTRSTEnable.IsChecked() << 15               
+            theCRIM.TimingModule.WriteGateWidth(gateWidth | enableBit)         
+        except: ReportException('OnCRIMTimingbtnWriteGateWidth', self.reportErrorChoice)
+    def OnCRIMTimingbtnReadGateWidth(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.TimingModule.ReadGateWidth()
+            self.frame.crim.TimingModule.GateWidthRegister.txtGateWidthData.SetValue(str(data & 0x7F))
+            self.frame.crim.TimingModule.GateWidthRegister.chkCNTRSTEnable.SetValue((data & 0x8000) >> 15)
+        except: ReportException('OnCRIMTimingbtnReadGateWidth', self.reportErrorChoice)
+    def OnCRIMTimingbtnWriteTCALBDelay(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = int(self.frame.crim.TimingModule.TCALBDelayRegister.txtData.GetValue()) & 0x3FF         
+            theCRIM.TimingModule.WriteTCALBDelay(data)         
+        except: ReportException('OnCRIMTimingbtnWriteTCALBDelay', self.reportErrorChoice)
+    def OnCRIMTimingbtnReadTCALBDelay(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.TimingModule.ReadTCALBDelay()
+            self.frame.crim.TimingModule.TCALBDelayRegister.txtData.SetValue(str(data & 0x3FF))
+        except: ReportException('OnCRIMTimingbtnReadTCALBDelay', self.reportErrorChoice)
+    def OnCRIMTimingbtnWriteTRIGGERSend(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)  
+            theCRIM.TimingModule.SendTRIGGER()         
+        except: ReportException('OnCRIMTimingbtnWriteTRIGGERSend', self.reportErrorChoice)
+    def OnCRIMTimingbtnWriteTCALBSend(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)  
+            theCRIM.TimingModule.SendTCALB()         
+        except: ReportException('OnCRIMTimingbtnWriteTCALBSend', self.reportErrorChoice)
+    def OnCRIMTimingbtnWriteGATEStart(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)  
+            theCRIM.TimingModule.SendGateStart()         
+        except: ReportException('OnCRIMTimingbtnWriteGATEStart', self.reportErrorChoice)
+    def OnCRIMTimingbtnWriteGATEStop(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)  
+            theCRIM.TimingModule.SendGateStop()         
+        except: ReportException('OnCRIMTimingbtnWriteGATEStop', self.reportErrorChoice)
+    def OnCRIMTimingbtnWriteSeqCNTRST(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)  
+            theCRIM.TimingModule.SendSequenceCNTRST()         
+        except: ReportException('OnCRIMTimingbtnWriteSeqCNTRST', self.reportErrorChoice)
+    def OnCRIMTimingbtnWriteSeqCNTRSTSGATETCALB(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)  
+            theCRIM.TimingModule.SendSequenceCNTRSTSGATETCALB()         
+        except: ReportException('OnCRIMTimingbtnWriteSeqCNTRSTSGATETCALB', self.reportErrorChoice)
+    def OnCRIMTimingbtnWriteScrap(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = int(self.frame.crim.TimingModule.ScrapRegister.txtData.GetValue())
+            theCRIM.TimingModule.WriteScrap(data)         
+        except: ReportException('OnCRIMTimingbtnWriteScrap', self.reportErrorChoice)
+    def OnCRIMTimingbtnReadScrap(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.TimingModule.ReadScrap()
+            self.frame.crim.TimingModule.ScrapRegister.txtData.SetValue(str(data))
+        except: ReportException('OnCRIMTimingbtnReadScrap', self.reportErrorChoice)
+    def OnCRIMTimingbtnReadGateTimestamp(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.TimingModule.ReadGateTimestamp()
+            self.frame.crim.TimingModule.GateTimestampRegisters.txtData.SetValue(str(data))
+        except: ReportException('OnCRIMTimingbtnReadGateTimestamp', self.reportErrorChoice)
 
+    # CRIM CH pannel events ##########################################################
+    def OnCRIMCHbtnClearStatus(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            theCRIM.ChannelModule.ClearStatus()
+        except: ReportException('OnCRIMCHbtnClearStatus', self.reportErrorChoice) 
+    def OnCRIMCHbtnReadStatus(self, event): 
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.ChannelModule.ReadStatus()
+            self.frame.crim.ChannelModule.StatusRegister.txtReadStatusData.SetValue(hex(data))
+            ParseDataToListLabels(data, self.frame.crim.ChannelModule.StatusRegister.RegValues)
+        except: ReportException('OnCRIMCHbtnReadStatus', self.reportErrorChoice)        
+    def OnCRIMCHbbtnDPMPointerReset(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            theCRIM.ChannelModule.DPMPointerReset()
+        except: ReportException('OnCRIMCHbbtnDPMPointerReset', self.reportErrorChoice) 
+    def OnCRIMCHbtnDPMPointerRead(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.ChannelModule.DPMPointerRead()
+            self.frame.crim.ChannelModule.DPMPointer.txtData.SetValue(hex(data))
+        except: ReportException('OnCRIMCHbtnDPMPointerRead', self.reportErrorChoice)        
+    def OnCRIMCHbtnWriteFIFO(self, event):
+        try:
+            msg=self.frame.crim.ChannelModule.MessageRegisters.txtAppendMessage.GetValue()
+            if ((len(msg) % 4) !=0): raise Exception("A CROC/CRIM message string must have a muliple of 4 hex characters")
+            nWords=len(msg)/4   # one word == 2 bytes == 4 HexChar 
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            #theCROCChannel=theCROC.Channels()[self.frame.ch.chNumber]           
+            for i in range(nWords):
+                data = msg[4*i:4*(i+1)]
+                theCRIM.ChannelModule.WriteFIFO(int(data,16))
+        except: ReportException('OnCRIMCHbtnWriteFIFO', self.reportErrorChoice)        
+    def OnCRIMCHbtnSendFrame(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            theCRIM.ChannelModule.SendMessage()
+        except: ReportException('OnCRIMCHbtnSendFrame', self.reportErrorChoice)  
+    def OnCRIMCHbtnReadDPMWordsN(self, event):
+        msg=''
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            nWords=int(self.frame.crim.ChannelModule.MessageRegisters.txtReadDPMWordsN.GetValue())
+            for i in range(nWords):
+                data=hex(theCRIM.ChannelModule.ReadDPM(2*i)).upper()
+                msg += data[2:].rjust(4, '0')            
+        except: ReportException('OnCRIMCHbtnReadDPMWordsN', self.reportErrorChoice)
+        self.frame.crim.ChannelModule.MessageRegisters.txtReadDPMContent.SetValue(msg)             
+    def OnCRIMCHbtnWriteMode(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            chkReTransmit = self.frame.crim.ChannelModule.ModeRegister.chkReTransmit.IsChecked() << 15
+            chkSendMessage = self.frame.crim.ChannelModule.ModeRegister.chkSendMessage.IsChecked() << 14
+            chkCRCErrorEnabled = self.frame.crim.ChannelModule.ModeRegister.chkCRCErrorEnabled.IsChecked() << 13
+            chkFETriggerEnabled = self.frame.crim.ChannelModule.ModeRegister.chkFETriggerEnabled.IsChecked() << 12          
+            theCRIM.ChannelModule.WriteControl(chkReTransmit | chkSendMessage | chkCRCErrorEnabled | chkFETriggerEnabled)         
+        except: ReportException('OnCRIMCHbtnWriteMode', self.reportErrorChoice)
+    def OnCRIMCHbtnReadMode(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.ChannelModule.ReadControl()
+            chkReTransmit = self.frame.crim.ChannelModule.ModeRegister.chkReTransmit.SetValue((data & 0x8000) >> 15)
+            chkSendMessage = self.frame.crim.ChannelModule.ModeRegister.chkSendMessage.SetValue((data & 0x4000) >> 14)
+            chkCRCErrorEnabled = self.frame.crim.ChannelModule.ModeRegister.chkCRCErrorEnabled.SetValue((data & 0x2000) >> 13)
+            chkFETriggerEnabled = self.frame.crim.ChannelModule.ModeRegister.chkFETriggerEnabled.SetValue((data & 0x1000) >> 12) 
+        except: ReportException('OnCRIMCHbtnReadMode', self.reportErrorChoice)        
+    def OnCRIMCHbtnFIFOFlagReset(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            theCRIM.ChannelModule.ResetFIFO()
+        except: ReportException('OnCRIMCHbtnFIFOFlagReset', self.reportErrorChoice)  
+    def OnCRIMCHbtnTimingCmdRead(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.ChannelModule.ReadDecodTmgCmd()
+            self.frame.crim.ChannelModule.MiscRegisters.txtTimingCmdReadData.SetValue(hex(data))
+        except: ReportException('OnCRIMCHbtnTimingCmdRead', self.reportErrorChoice)      
+    def OnCRIMCHbtnSendSYNC(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            theCRIM.ChannelModule.SendSYNC()
+        except: ReportException('OnCRIMCHbtnSendSYNC', self.reportErrorChoice)  
+       
     # CRIM INTERRUPTER pannel events ##########################################################
-    def OnCRIMINTbtnWriteMaskRegister(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMINTbtnReadMaskRegister(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMINTbtnWriteStatusRegister(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMINTbtnReadStatusRegister(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMINTbtnWriteIntConfigRegister(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMINTbtnReadIntConfigRegister(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMINTbtnWriteClearInterruptRegister(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMINTbtnWriteVectorTableRegister(self, event): wx.MessageBox('not yet implemented')
-    def OnCRIMINTbtnReadVectorTableRegister(self, event): wx.MessageBox('not yet implemented')
+    def OnCRIMINTbtnWriteMaskRegister(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = int(self.frame.crim.InterrupterModule.MaskRegister.txtData.GetValue(), 16)
+            theCRIM.InterrupterModule.WriteMask(data)         
+        except: ReportException('OnCRIMINTbtnWriteMaskRegister', self.reportErrorChoice)        
+    def OnCRIMINTbtnReadMaskRegister(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.InterrupterModule.ReadMask()
+            self.frame.crim.InterrupterModule.MaskRegister.txtData.SetValue(hex(data)[2:])
+        except: ReportException('OnCRIMINTbtnReadMaskRegister', self.reportErrorChoice) 
+    def OnCRIMINTbtnWriteStatusRegister(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = int(self.frame.crim.InterrupterModule.StatusRegister.txtData.GetValue(), 16)
+            theCRIM.InterrupterModule.WriteStatus(data)         
+        except: ReportException('OnCRIMINTbtnWriteStatusRegister', self.reportErrorChoice)
+    def OnCRIMINTbtnReadStatusRegister(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.InterrupterModule.ReadStatus()
+            self.frame.crim.InterrupterModule.StatusRegister.txtData.SetValue(hex(data)[2:])
+        except: ReportException('OnCRIMINTbtnReadStatusRegister', self.reportErrorChoice) 
+    def OnCRIMINTbtnWriteIntConfigRegister(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            level = int(self.frame.crim.InterrupterModule.IntConfigRegister.txtVMEIntLevelData.GetValue()) & 0x3
+            enableBit = self.frame.crim.InterrupterModule.IntConfigRegister.chkGlobalIntEnable.IsChecked() << 7               
+            theCRIM.InterrupterModule.WriteIntConfig(level | enableBit)         
+        except: ReportException('OnCRIMINTbtnWriteIntConfigRegister', self.reportErrorChoice)
+    def OnCRIMINTbtnReadIntConfigRegister(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.InterrupterModule.ReadIntConfig()
+            self.frame.crim.InterrupterModule.IntConfigRegister.txtVMEIntLevelData.SetValue(str(data & 0x3))
+            self.frame.crim.InterrupterModule.IntConfigRegister.chkGlobalIntEnable.SetValue((data & 0x80) >> 7)
+        except: ReportException('OnCRIMINTbtnReadIntConfigRegister', self.reportErrorChoice)
+    def OnCRIMINTbtnWriteClearInterruptRegister(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)  
+            theCRIM.InterrupterModule.SendClearInterrupt()         
+        except: ReportException('OnCRIMINTbtnWriteClearInterruptRegister', self.reportErrorChoice)
+    def OnCRIMINTbtnWriteVectorTableRegister(self, event): 
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = []
+            for txt in self.frame.crim.InterrupterModule.VectorTableRegisters.txtVectorValues:
+                data.append(int(txt.GetValue(), 16))
+            theCRIM.InterrupterModule.WriteVectorTable(data)         
+        except: ReportException('OnCRIMINTbtnWriteVectorTableRegister', self.reportErrorChoice)       
+    def OnCRIMINTbtnReadVectorTableRegister(self, event):
+        try:
+            theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
+            data = theCRIM.InterrupterModule.ReadVectorTable()
+            for i in range(len(self.frame.crim.InterrupterModule.VectorTableRegisters.txtVectorValues)):
+                self.frame.crim.InterrupterModule.VectorTableRegisters.txtVectorValues[i].SetValue(hex(data[i])[2:])
+        except: ReportException('OnCRIMINTbtnReadVectorTableRegister', self.reportErrorChoice)   
     
     # CROC pannel events ##########################################################
     def OnCROCbtnFlashFirst(self, event): wx.MessageBox('not yet implemented')
@@ -297,7 +495,7 @@ class SCApp(wx.App):
             for i in range(len(theCROC.Channels())):
                 data=theCROC.Channels()[i].ReadLoopDelay()
                 #data=random.randint(1,65535) & 0x007F; wx.MessageBox(hex(data))
-                self.frame.croc.LoopDelays.LoopDelayValues[i].SetValue(hex(data))            
+                self.frame.croc.LoopDelays.txtLoopDelayValues[i].SetValue(hex(data))            
         except: ReportException('OnCROCbtnReadLoopDelays', self.reportErrorChoice)        
     def OnCROCbtnWriteRSTTP(self, event):
         try:
@@ -374,8 +572,7 @@ class SCApp(wx.App):
     def OnCHbtnWriteFIFO(self, event):
         try:
             msg=self.frame.ch.MessageRegisters.txtAppendMessage.GetValue()
-            if ((len(msg) % 4) !=0): raise Exception(
-                "A CROC message string must have a muliple of 4 hex characters")
+            if ((len(msg) % 4) !=0): raise Exception("A CROC/CRIM message string must have a muliple of 4 hex characters")
             nWords=len(msg)/4   # one word == 2 bytes == 4 HexChar 
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.ch.crocNumber<<16)
             theCROCChannel=theCROC.Channels()[self.frame.ch.chNumber]           
@@ -434,10 +631,10 @@ class SCApp(wx.App):
 def FindVMEdev(vmeDevList, devAddr):
     for dev in vmeDevList:
         if (dev.BaseAddress()==devAddr): return dev
-def GetFEB(theCROCChannel, theAddress):
+def GetFEB(theCROCChannel, theFEBNumber):
     feb=None
     for theFEB in theCROCChannel.FEBs:
-        if theFEB.fpga.GetBoardNumber()==theAddress:
+        if theFEB.fpga.GetBoardNumber()==theFEBNumber:
             feb=theFEB; break
     return feb
 def FindFEBs(theCROCChannel):
@@ -449,24 +646,24 @@ def FindFEBs(theCROCChannel):
             theCROCChannel.ClearStatus()
             status=theCROCChannel.ReadStatus()
             if (status!=0x3700): raise Exception(
-                "Error after clear STATUS register for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
+                "FindFEBs: Error after clear STATUS register for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
             #reset/check DPM pointer
             theCROCChannel.DPMPointerReset()
             dpmPointer=theCROCChannel.DPMPointerRead()
             if (dpmPointer!=0x02): raise Exception(
-                "Error after DPMPointerReset() for CROC channel " + hex(theCROCChannel.chBaseAddr) + " DPMPointer=" + hex(dpmPointer))
+                "FindFEBs: Error after DPMPointerReset() for CROC channel " + hex(theCROCChannel.chBaseAddr) + " DPMPointer=" + hex(dpmPointer))
             #write to FIFO and check status register
             theCROCChannel.WriteFIFO(febAddr<<8)
             status=theCROCChannel.ReadStatus()
             if (status!=0x3710): raise Exception(
-                "Error after fill FIFO for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
+                "FindFEBs: Error after fill FIFO for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
             #send message and check status register
             theCROCChannel.SendMessage()
             for i in range(1000):
                 status=theCROCChannel.ReadStatus()
                 if (status==0x3703): break
             if (status!=0x3703): raise Exception(
-                "Error after send message for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
+                "FindFEBs: Error after send message for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
             #decode first two words from DPM and check DPM pointer
             dpmPointer=theCROCChannel.DPMPointerRead()
             w1=theCROCChannel.ReadDPM(0)
@@ -552,6 +749,7 @@ class CROC(VMEDevice):
         #self.channels[1].FEBs=[FEB(5), FEB(6), FEB(7), FEB(8)]
         #self.channels[2].FEBs=[FEB(9), FEB(10), FEB(11), FEB(12)]
         #self.channels[3].FEBs=[FEB(13), FEB(14), FEB(15), FEB(16), FEB(17)]
+        print hex(self.RegWTestPulse)[2:].ljust(4, '0')
     def Channels(self): return self.channels
     def NodeList(self): return [self.Description(), 
         [self.channels[0].NodeList(), self.channels[1].NodeList(),
@@ -563,25 +761,130 @@ class CROC(VMEDevice):
     def ReadRSTTP(self): return int(self.controller.ReadCycle(self.RegWRResetAndTestMask))
     def SendRSTOnly(self): self.controller.WriteCycle(self.RegWChannelReset, 0x0202)
     def SendTPOnly(self): self.controller.WriteCycle(self.RegWTestPulse, 0x0404)
-    
+    def GetRegValues(self):
+        return [(hex(self.RegWRTimingSetup)[2:].ljust(4, '0'), RegWRTimingSetup()),
+                (hex(self.RegWRResetAndTestMask)[2:].ljust(4, '0'), RegWRResetAndTestMask())]
  
 class CRIM(VMEDevice):
     def __init__(self, controller, baseAddr):
         VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
+        self.TimingModule = CRIMTimingModule(controller, baseAddr)
+        self.ChannelModule = CRIMChannelModule(controller, baseAddr)
+        self.InterrupterModule = CRIMInterrupterModule(controller, baseAddr)
     def NodeList(self): return [self.Description(), []]
+class CRIMTimingModule(VMEDevice):
+    def __init__(self, controller, baseAddr):
+        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
+        self.RegWRTimingSetup = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWRTimingSetup
+        self.RegWRGateWidth   = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWRGateWidth
+        self.RegWRTCALBDelay  = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWRTCALBDelay
+        self.RegWTRIGGERSend  = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWTRIGGERSend
+        self.RegWTCALBSend    = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWTCALBSend
+        self.RegWGATE         = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWGATE
+        self.RegWCNTRST       = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWCNTRST
+        self.RegWRScrapRegister     = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWRScrapRegister
+        self.RegRGateTimestampLower = baseAddr + SC_Util.CRIMTimingModuleRegs.RegRGateTimestampLower
+        self.RegRGateTimestampUpper = baseAddr + SC_Util.CRIMTimingModuleRegs.RegRGateTimestampUpper
+    def WriteTimingSetup(self, data): self.controller.WriteCycle(self.RegWRTimingSetup, data)
+    def ReadTimingSetup(self): return int(self.controller.ReadCycle(self.RegWRTimingSetup))
+    def WriteGateWidth(self, data): self.controller.WriteCycle(self.RegWRGateWidth, data)
+    def ReadGateWidth(self): return int(self.controller.ReadCycle(self.RegWRGateWidth))
+    def WriteTCALBDelay(self, data): self.controller.WriteCycle(self.RegWRTCALBDelay, data)
+    def ReadTCALBDelay(self): return int(self.controller.ReadCycle(self.RegWRTCALBDelay))
+    def SendTRIGGER(self): self.controller.WriteCycle(self.RegWTRIGGERSend, 0x0404)
+    def SendTCALB(self): self.controller.WriteCycle(self.RegWTCALBSend, 0x0404)
+    def SendGateStart(self): self.controller.WriteCycle(self.RegWGATE, 0x0401)
+    def SendGateStop(self): self.controller.WriteCycle(self.RegWGATE, 0x0402)
+    def SendSequenceCNTRST(self): self.controller.WriteCycle(self.RegWCNTRST, 0x0202)
+    def SendSequenceCNTRSTSGATETCALB(self): self.controller.WriteCycle(self.RegWCNTRST, 0x0808)
+    def WriteScrap(self, data): self.controller.WriteCycle(self.RegWRScrapRegister, data)
+    def ReadScrap(self): return int(self.controller.ReadCycle(self.RegWRScrapRegister))
+    def ReadGateTimestamp(self):
+        dataLower = int(self.controller.ReadCycle(self.RegRGateTimestampLower))
+        dataUpper = (int(self.controller.ReadCycle(self.RegRGateTimestampUpper)) & 0xFFF) << 16
+        return dataUpper | dataLower
+class CRIMChannelModule(CROCChannel, VMEDevice):
+    def __init__(self, controller, baseAddr):
+        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
+        self.RegRMemory     = baseAddr + SC_Util.CRIMCHModuleRegs.RegRMemory
+        self.RegWInput      = baseAddr + SC_Util.CRIMCHModuleRegs.RegWInput
+        self.RegWResetFIFO  = baseAddr + SC_Util.CRIMCHModuleRegs.RegWResetFIFO
+        self.RegWSendMessage= baseAddr + SC_Util.CRIMCHModuleRegs.RegWSendMessage
+        self.RegRStatus     = baseAddr + SC_Util.CRIMCHModuleRegs.RegRStatus
+        self.RegWClearStatus= baseAddr + SC_Util.CRIMCHModuleRegs.RegWClearStatus
+        self.RegWSendSYNC   = baseAddr + SC_Util.CRIMCHModuleRegs.RegRLoopDelay
+        self.RegRDPMPointer = baseAddr + SC_Util.CRIMCHModuleRegs.RegRDPMPointer
+        self.RegRDecodTmgCmd= baseAddr + SC_Util.CRIMCHModuleRegs.RegRDecodTmgCmd
+        self.RegWRMode      = baseAddr + SC_Util.CRIMCHModuleRegs.RegWRMode
+    def ResetFIFO(self): self.controller.WriteCycle(self.RegWResetFIFO, 0x0808)
+    def SendSYNC(self): self.controller.WriteCycle(self.RegWSendSYNC, 0x0101)
+    def ReadDecodTmgCmd(self): return int(self.controller.ReadCycle(self.RegRDecodTmgCmd))
+    def WriteControl(self, data): self.controller.WriteCycle(self.RegWRMode, data)
+    def ReadControl(self): return int(self.controller.ReadCycle(self.RegWRMode))
+class CRIMInterrupterModule(VMEDevice):
+    def __init__(self, controller, baseAddr):
+        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
+        self.RegWRMask = baseAddr + SC_Util.CRIMInterrupterModuleRegs.RegWRMask
+        self.RegWRStatus = baseAddr + SC_Util.CRIMInterrupterModuleRegs.RegWRStatus
+        self.RegWClearInterrupt = baseAddr + SC_Util.CRIMInterrupterModuleRegs.RegWClearInterrupt
+        self.RegWRIntConfig = baseAddr + SC_Util.CRIMInterrupterModuleRegs.RegWRIntConfig
+        self.RegWRVectorTable = []
+        for RegAddr in SC_Util.CRIMInterrupterModuleRegs.RegWRVectorTable:
+            self.RegWRVectorTable.append(baseAddr + RegAddr)
+    def WriteMask(self, data): self.controller.WriteCycle(self.RegWRMask, data)
+    def ReadMask(self): return int(self.controller.ReadCycle(self.RegWRMask))
+    def WriteStatus(self, data): self.controller.WriteCycle(self.RegWRStatus, data)
+    def ReadStatus(self): return int(self.controller.ReadCycle(self.RegWRStatus))
+    def SendClearInterrupt(self): self.controller.WriteCycle(self.RegWClearInterrupt, 0x81)
+    def WriteIntConfig(self, data): self.controller.WriteCycle(self.RegWRIntConfig, data)
+    def ReadIntConfig(self): return int(self.controller.ReadCycle(self.RegWRIntConfig))
+    def WriteVectorTable(self, data):
+        for i in range(len(self.RegWRVectorTable)):
+            self.controller.WriteCycle(self.RegWRVectorTable[i], data[i])
+    def ReadVectorTable(self):
+        data = []
+        for RegAddr in self.RegWRVectorTable: data.append(int(self.controller.ReadCycle(RegAddr)))
+        return data
 
 
 class FEB():
     def __init__(self, febAddresses, nHits=6, initialized=True, nRegisters=54):
         self.fpga = feb.feb(nHits, initialized, febAddresses, nRegisters)
+        self.fpga1bitreg=[3,]
+        self.fpga2bitreg=[]
+        self.fpga4bitreg=[]
+        self.fpga6bitreg=[0,]
+        self.fpga8bitreg=[]
+        self.fpga9bitreg=[]
+        self.fpga12bitreg=[]
+        self.fpga16bitreg=[1,2,4]
+        self.fpga32bitreg=[]
+        
         self.fpga.SetFEBDefaultValues()
-        self.trips = feb.trips()
+        #feb.trips.CheckForErrors
+        #self.trips = feb.trips(febAddresses, ???, nHits)    #trips::trips(febAddresses a, TRiPFunctions f, int maxHits) 
         self.frames = feb.Frames()
+
+        trip0 = self.fpga.GetTrip(0)
+        trip0.SetRead(True)
+        trip0.MakeMessage()
+        trip0.GetOutgoingMessage()
+        #trip0.GetRegisterValue()
+        #trip0.DecodeRegisterValues(100)
+        
+        #print hardware._name
+        #print hardware.__init__('trip')
+        #print hardware.__class__('feb')
+        #print hardware._FuncPtr.argtypes.
+        #self.hw=hardware.feb.feb(nHits, initialized, febAddresses, nRegisters)
+        #print self.hw
+        
         #self.fpga.MakeDeviceFrameTransmit()
         #self.fpga.MakeHeader()
         self.fpga.MakeMessage()
-
         OutgoingMessage = self.fpga.GetOutgoingMessage()
+
+        
         set_conversion_mode('ascii', 'strict')  #"strict", "replace", or "ignore".
         #set_conversion_mode('utf-8', 'strict')
         #set_conversion_mode('mbcs', 'strict')
@@ -591,6 +894,7 @@ class FEB():
         z = c_wchar_p(int(self.fpga.GetOutgoingMessage()))
         zz = c_wchar_p(int(self.fpga.GetOutgoingMessage())+8)
         #print OutgoingMessage
+        #print chr(OutgoingMessage())
         #print x, x.value
         #print y, y.value
         print z, z.value    #, string_at(y), string_at(z)
@@ -605,72 +909,92 @@ class FEB():
 
         
     def UpdateFPGARegs(self, txtRegs):
+##        data = c_char_p('3')
+##        print 'data=%s' % data.value
+##        print self
+##        print self.fpga
+##    s    self.fpga.SetTripPowerOff('A')
+        
         #these are the default GUI
-        #theFEB.fpga.SetTimer(int(self.frame.fe.fpga.Registers.txtRegs[14].GetValue()))
-        #self.fpga.SetTripPowerOff(int(txtRegs[0].GetValue()))
-        self.fpga.SetGateStart(int(txtRegs[1].GetValue()))
-        self.fpga.SetGateLength(int(txtRegs[2].GetValue()))
-        #self.fpga.SetHVEnabled(int(txtRegs[3].GetValue()))
-        self.fpga.SetHVTarget(int(txtRegs[4].GetValue()))
-        self.fpga.SetHVActual(int(txtRegs[5].GetValue()))           #???     => READ only
-        #self.fpga.SetHVManual(int(txtRegs[6].GetValue()))
-        #self.fpga.SetHVNumAvg(int(txtRegs[7].GetValue()))
+        self.fpga.SetTripPowerOff(chr(int(txtRegs[0].GetValue()) & 0x3F))
+        self.fpga.SetGateStart(int(txtRegs[1].GetValue()) & 0xFFFF)
+        self.fpga.SetGateLength(int(txtRegs[2].GetValue()) & 0xFFFF)
+        self.fpga.SetHVEnabled(chr(int(txtRegs[3].GetValue()) & 0x1))
+        self.fpga.SetHVTarget(int(txtRegs[4].GetValue()) & 0xFFFF)
+        #self.fpga.SetHVActual(int(txtRegs[5].GetValue()))          # READ only => must be REMOVED from feb.py 
+        self.fpga.SetHVManual(chr(int(txtRegs[6].GetValue()) & 0x01))
+        self.fpga.SetHVNumAve(chr(int(txtRegs[7].GetValue()) & 0x0F))
         self.fpga.SetHVPeriodManual(int(txtRegs[8].GetValue()))
-        #self.fpga.SetHVPeriodAuto(int(txtRegs[9].GetValue()))       #???     => READ only
-        #self.fpga.SetHVPulseWidth(int(txtRegs[10].GetValue()))
-        self.fpga.SetTemperature(int(txtRegs[11].GetValue()))       #???     => READ only
-        ###self.fpga.SetVersion(int(txtRegs[12].GetValue()))       => not defined READ only
-        ###self.fpga.SetBoardID(int(txtRegs[13].GetValue()))       => not defined READ only
+        #self.fpga.SetHVPeriodAuto(int(txtRegs[9].GetValue()))      # READ only => must be REMOVED from feb.py 
+        self.fpga.SetHVPulseWidth(chr(int(txtRegs[10].GetValue()) & 0xFF))
+        #self.fpga.SetTemperature(int(txtRegs[11].GetValue()))      # READ only => must be REMOVED from feb.py
+        #self.fpga.SetVersion(int(txtRegs[12].GetValue()))          # READ only => must be REMOVED from feb.py THEN,
+                                                                    # is SetVersion() different from SetFirmwareVersion() ???? 
+        #self.fpga.SetBoardID(int(txtRegs[13].GetValue()))          # READ only => must be REMOVED from feb.py 
         #these are the advanced GUI
         self.fpga.SetTimer(int(txtRegs[14].GetValue()))
-        #self.fpga.(int(txtRegs[15].GetValue()))
-        #self.fpga.(int(txtRegs[16].GetValue()))
-        #self.fpga.(int(txtRegs[17].GetValue()))
-        #self.fpga.(int(txtRegs[18].GetValue()))
-        #self.fpga.(int(txtRegs[19].GetValue()))
-        #self.fpga.(int(txtRegs[20].GetValue()))
-        ###def SetInjectCount(self, *args): return _feb.feb_SetInjectCount(self, *args)
-        ###def SetInjectEnable(self, *args): return _feb.feb_SetInjectEnable(self, *args)
-        #self.fpga.SetInjectRange(int(txtRegs[21].GetValue()))
-        #self.fpga.SetInjectPhase(int(txtRegs[22].GetValue()))
-        self.fpga.SetInjectDACValue(int(txtRegs[23].GetValue()))
-        #self.fpga.SetInjectDACMode(int(txtRegs[24].GetValue()))
-        #self.fpga.SetInjectDACStart(int(txtRegs[25].GetValue()))
-        #self.fpga.SetInjectDACDone(int(txtRegs[26].GetValue()))        #???     => READ only
-        #self.fpga.SetHVControl(int(txtRegs[27].GetValue()))         #???     => READ only
-        #self.fpga.SetPhaseStart(int(txtRegs[28].GetValue()))
-        #self.fpga.SetPhaseIncrement(int(txtRegs[29].GetValue()))
-        #self.fpga.SetPhaseCount(int(txtRegs[30].GetValue()))
-        #self.fpga.SetDCM1Lock(int(txtRegs[31].GetValue()))          #???     => READ only
-        #self.fpga.SetDCM2Lock(int(txtRegs[32].GetValue()))          #???     => READ only
-        #self.fpga.SetDCM1NoClock(int(txtRegs[33].GetValue()))       #???     => READ only
-        #self.fpga.SetDCM2NoClock(int(txtRegs[34].GetValue()))       #???     => READ only
-        #self.fpga.SetDCM2PhaseDone(int(txtRegs[35].GetValue()))     #???     => READ only
-        self.fpga.SetDCM2PhaseTotal(int(txtRegs[36].GetValue()))    #???     => READ only
-        #self.fpga.SetTestPulse2Bit(int(txtRegs[37].GetValue()))            #???     => READ only
-        self.fpga.SetTestPulseCount(int(txtRegs[38].GetValue()))           #???     => READ only
-        ###self.fpga.Set??????(int(txtRegs[39].GetValue())) #' WR TripX Threshold' 
-        #self.fpga.SetTripXCompEnc(int(txtRegs[40].GetValue()))      #???     => READ only
-        #self.fpga.SetExtTriggerFound(int(txtRegs[41].GetValue()))   #???     => READ only
-        #self.fpga.SetExtTriggerRearm(int(txtRegs[42].GetValue()))
-        #self.fpga.SetDiscrimEnableMask(int(txtRegs[43].GetValue())) #one SET for all discriminators...
-        #self.fpga.SetDiscEnMask0(int(txtRegs[43].GetValue()))
-        #self.fpga.SetDiscEnMask1(int(txtRegs[44].GetValue()))
-        #self.fpga.SetDiscEnMask2(int(txtRegs[45].GetValue()))
-        #self.fpga.SetDiscEnMask3(int(txtRegs[46].GetValue()))
-        self.fpga.SetGateTimeStamp(int(txtRegs[47].GetValue()))         #???     => READ only
-        ###self.fpga.(int(txtRegs[48].GetValue()))  ' R  SCmdErr(1)'    #???     => READ only
-        ###self.fpga.(int(txtRegs[49].GetValue()))  ' R  FCmdErr(1)'    #???     => READ only
-        ###self.fpga.(int(txtRegs[50].GetValue()))  ' R  RXSyncErr(1)'  #???     => READ only
-        ###self.fpga.(int(txtRegs[51].GetValue()))  ' R  TXSyncErr(1)'  #???     => READ only
+        #--------------------------------
+        #self.fpga.(int(txtRegs[15].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
+        #self.fpga.(int(txtRegs[16].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
+        #self.fpga.(int(txtRegs[17].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
+        #self.fpga.(int(txtRegs[18].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
+        #self.fpga.(int(txtRegs[19].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
+        #self.fpga.(int(txtRegs[20].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
+        self.fpga.SetInjectCount(chr(int(txtRegs[15].GetValue()) & 0x3F), 0)
+        self.fpga.SetInjectCount(chr(int(txtRegs[16].GetValue()) & 0x3F), 1)
+        self.fpga.SetInjectCount(chr(int(txtRegs[17].GetValue()) & 0x3F), 2)
+        self.fpga.SetInjectCount(chr(int(txtRegs[18].GetValue()) & 0x3F), 3)
+        self.fpga.SetInjectCount(chr(int(txtRegs[19].GetValue()) & 0x3F), 4)
+        self.fpga.SetInjectCount(chr(int(txtRegs[20].GetValue()) & 0x3F), 5)
+        self.fpga.SetInjectEnable(chr(int(txtRegs[15].GetValue()) & 0x80), 0)
+        self.fpga.SetInjectEnable(chr(int(txtRegs[16].GetValue()) & 0x80), 1)
+        self.fpga.SetInjectEnable(chr(int(txtRegs[17].GetValue()) & 0x80), 2)
+        self.fpga.SetInjectEnable(chr(int(txtRegs[18].GetValue()) & 0x80), 3)
+        self.fpga.SetInjectEnable(chr(int(txtRegs[19].GetValue()) & 0x80), 4)
+        self.fpga.SetInjectEnable(chr(int(txtRegs[20].GetValue()) & 0x80), 5)
+        #--------------------------------
+        self.fpga.SetInjectRange(chr(int(txtRegs[21].GetValue()) & 0xF))
+        injPhase=int(txtRegs[22].GetValue())
+        if injPhase!=0 and injPhase!=1 and injPhase!=2 and injPhase!=4 and injPhase!=8:
+            raise Exception(txtRegs[22].GetName() + ' must be 1, 2, 4 or 8')
+        self.fpga.SetInjectPhase(chr(int(txtRegs[22].GetValue()) & 0xF))
+        self.fpga.SetInjectDACValue(int(txtRegs[23].GetValue()) & 0xFFF)
+        self.fpga.SetInjectDACMode(chr(int(txtRegs[24].GetValue()) & 0x1))
+        self.fpga.SetInjectDACStart(chr(int(txtRegs[25].GetValue()) & 0x1))
+        #self.fpga.SetInjectDACDone(int(txtRegs[26].GetValue()))    # READ only => must be REMOVED from feb.py 
+        #self.fpga.SetHVControl(int(txtRegs[27].GetValue()))        # READ only => must be REMOVED from feb.py 
+        self.fpga.SetPhaseStart(chr(int(txtRegs[28].GetValue()) & 0x1))
+        self.fpga.SetPhaseIncrement(chr(int(txtRegs[29].GetValue()) & 0x1))
+        self.fpga.SetPhaseCount(chr(int(txtRegs[30].GetValue()) & 0xFF))
+        #self.fpga.SetDCM1Lock(int(txtRegs[31].GetValue()))         # READ only => must be REMOVED from feb.py 
+        #self.fpga.SetDCM2Lock(int(txtRegs[32].GetValue()))         # READ only => must be REMOVED from feb.py 
+        #self.fpga.SetDCM1NoClock(int(txtRegs[33].GetValue()))      # READ only => must be REMOVED from feb.py 
+        #self.fpga.SetDCM2NoClock(int(txtRegs[34].GetValue()))      # READ only => must be REMOVED from feb.py 
+        #self.fpga.SetDCM2PhaseDone(int(txtRegs[35].GetValue()))    # READ only => must be REMOVED from feb.py 
+        #self.fpga.SetDCM2PhaseTotal(int(txtRegs[36].GetValue()))   # READ only => must be REMOVED from feb.py 
+        #self.fpga.SetTestPulse2Bit(int(txtRegs[37].GetValue()))    # READ only => must be REMOVED from feb.py 
+        #self.fpga.SetTestPulseCount(int(txtRegs[38].GetValue()))   # READ only => must be REMOVED from feb.py 
+        #self.fpga.Set??????(int(txtRegs[39].GetValue()))           # 'WR TripX Threshold' MISSING function from feb.py -> **** PLEASE UPDATE ****
+        #self.fpga.SetTripXCompEnc(int(txtRegs[40].GetValue()))     # READ only => must be REMOVED from feb.py
+        #self.fpga.SetExtTriggerFound(int(txtRegs[41].GetValue()))  # READ only => must be REMOVED from feb.py
+        self.fpga.SetExtTriggerRearm(chr(int(txtRegs[42].GetValue()) & 0x1))
+        self.fpga.SetDiscrimEnableMask(int(txtRegs[43].GetValue()), 0) 
+        self.fpga.SetDiscrimEnableMask(int(txtRegs[44].GetValue()), 1) 
+        self.fpga.SetDiscrimEnableMask(int(txtRegs[45].GetValue()), 2) 
+        self.fpga.SetDiscrimEnableMask(int(txtRegs[46].GetValue()), 3) 
+        #self.fpga.SetGateTimeStamp(int(txtRegs[47].GetValue()))    # READ only => must be REMOVED from feb.py
+        #self.fpga.(int(txtRegs[48].GetValue()))                    # RREAD only  SCmdErr(1)
+        #self.fpga.(int(txtRegs[49].GetValue()))                    # RREAD only  FCmdErr(1)
+        #self.fpga.(int(txtRegs[50].GetValue()))                    # RREAD only  RXSyncErr(1)
+        #self.fpga.(int(txtRegs[51].GetValue()))                    # RREAD only  TXSyncErr(1)
+## existing functions from feb.py -> **** NOT MORE VALID ; PLEASE REMOVE ****       
+##    def SetVXOOff(self, *args): return _feb.feb_SetVXOOff(self, *args)
+##    def SetVXOMuxXilinx(self, *args): return _feb.feb_SetVXOMuxXilinx(self, *args)
+##    def SetPhaseSpare(self, *args): return _feb.feb_SetPhaseSpare(self, *args)
+##    def SetCosmicTrig(self, *args): return _feb.feb_SetCosmicTrig(self, *args)
 
-        ###def SetVXOOff(self, *args): return _feb.feb_SetVXOOff(self, *args)
-        ###def SetVXOMuxXilinx(self, *args): return _feb.feb_SetVXOMuxXilinx(self, *args)
-        ###def SetPhaseSpare(self, *args): return _feb.feb_SetPhaseSpare(self, *args)
-        ###def SetFirmwareVersion(self, *args): return _feb.feb_SetFirmwareVersion(self, *args)
-        ###def SetCosmicTrig(self, *args): return _feb.feb_SetCosmicTrig(self, *args)
     def UpdateFPGAtxtRegs(self, txtRegs):
-        #these are the default GUI
+        #these are the default GUI        
         txtRegs[0].SetValue(str(self.fpga.GetTripPowerOff()))
         txtRegs[1].SetValue(str(self.fpga.GetGateStart()))
         txtRegs[2].SetValue(str(self.fpga.GetGateLength()))
@@ -683,16 +1007,16 @@ class FEB():
         txtRegs[9].SetValue(str(self.fpga.GetHVPeriodAuto()))
         txtRegs[10].SetValue(str(self.fpga.GetHVPulseWidth()))
         txtRegs[11].SetValue(str(self.fpga.GetTemperature()))
-        txtRegs[12].SetValue(str(self.fpga.GetVersion()))
-        txtRegs[13].SetValue(str(self.fpga.GetBoardID()))
+        txtRegs[12].SetValue(str(self.fpga.GetVersion()))       # is GetVersion() different from GetFirmwareVersion() ????
+        txtRegs[13].SetValue(str(self.fpga.GetBoardNumber()))
         #these are the advanced GUI
         txtRegs[14].SetValue(str(self.fpga.GetTimer()))
-        #txtRegs[15].SetValue(str(self.fpga.GetInjEnable0()<<7+fpga.GetInjCount0))
-        #txtRegs[16].SetValue(str(self.fpga.GetInjEnable1()<<7+fpga.GetInjCount1))
-        #txtRegs[17].SetValue(str(self.fpga.GetInjEnable2()<<7+fpga.GetInjCount2))
-        #txtRegs[18].SetValue(str(self.fpga.GetInjEnable3()<<7+fpga.GetInjCount3))
-        #txtRegs[19].SetValue(str(self.fpga.GetInjEnable4()<<7+fpga.GetInjCount4))
-        #txtRegs[20].SetValue(str(self.fpga.GetInjEnable5()<<7+fpga.GetInjCount5))
+        txtRegs[15].SetValue(str(self.fpga.GetInjEnable0()<<7 + self.fpga.GetInjCount0()))
+        txtRegs[16].SetValue(str(self.fpga.GetInjEnable1()<<7 + self.fpga.GetInjCount1()))
+        txtRegs[17].SetValue(str(self.fpga.GetInjEnable2()<<7 + self.fpga.GetInjCount2()))
+        txtRegs[18].SetValue(str(self.fpga.GetInjEnable3()<<7 + self.fpga.GetInjCount3()))
+        txtRegs[19].SetValue(str(self.fpga.GetInjEnable4()<<7 + self.fpga.GetInjCount4()))
+        txtRegs[20].SetValue(str(self.fpga.GetInjEnable5()<<7 + self.fpga.GetInjCount5()))
         txtRegs[21].SetValue(str(self.fpga.GetInjectRange()))
         txtRegs[22].SetValue(str(self.fpga.GetInjectPhase()))
         txtRegs[23].SetValue(str(self.fpga.GetInjDACValue()))
@@ -711,7 +1035,7 @@ class FEB():
         txtRegs[36].SetValue(str(self.fpga.GetDCM2PhaseTotal()))
         txtRegs[37].SetValue(str(self.fpga.GetTP2Bit()))
         txtRegs[38].SetValue(str(self.fpga.GetTPCount()))
-        ###txtRegs[39].SetValue(str(self.fpga.??????())) #' WR TripX Threshold' 
+        #txtRegs[39].SetValue(str(self.fpga.()))  ' WR TripX Threshold'
         txtRegs[40].SetValue(str(self.fpga.GetTripXCompEnc()))
         txtRegs[41].SetValue(str(self.fpga.GetExtTriggerFound()))
         txtRegs[42].SetValue(str(self.fpga.GetExtTriggerRearm()))
@@ -724,10 +1048,17 @@ class FEB():
         ###txtRegs[49].SetValue(str(self.fpga.()))  ' R  FCmdErr(1)'
         ###txtRegs[50].SetValue(str(self.fpga.()))  ' R  RXSyncErr(1)'
         ###txtRegs[51].SetValue(str(self.fpga.()))  ' R  TXSyncErr(1)'
+## existing functions from feb.py -> **** NOT MORE VALID ; PLEASE REMOVE ****     
 ##        def GetVXOXilinx(self): return _feb.feb_GetVXOXilinx(self)
-##        def GetPhaseSpare(self): return _feb.feb_GetPhaseSpare(self)   
-        
+##        def GetPhaseSpare(self): return _feb.feb_GetPhaseSpare(self)
+## MISSING functions from feb.py -> **** PLEASE UPDATE ****
+##      txtRegs[39].SetValue(str(self.fpga.()))  ' WR TripX Threshold'
+##      txtRegs[48].SetValue(str(self.fpga.()))  ' R  SCmdErr(1)'
+##      txtRegs[49].SetValue(str(self.fpga.()))  ' R  FCmdErr(1)'
+##      txtRegs[50].SetValue(str(self.fpga.()))  ' R  RXSyncErr(1)'
+##      txtRegs[51].SetValue(str(self.fpga.()))  ' R  TXSyncErr(1)'
 
+                 
 def main():
     """Instantiates the Slow Control GUI."""
     try:

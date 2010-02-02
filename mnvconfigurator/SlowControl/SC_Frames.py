@@ -91,14 +91,17 @@ class SCMainFrame(wx.Frame):
         if items[0]==CRIM.__name__:
             self.nb.ChangeSelection(2)
             self.crim.SetAddress(items[1])
+            self.crim.ResetControls()
         if items[0]==CROC.__name__:
             self.nb.ChangeSelection(3)
             self.croc.SetAddress(items[1])
+            self.croc.ResetControls()
         if items[0]==CH.__name__:
             self.nb.ChangeSelection(4)
             parent=self.tree.GetItemParent(event.GetItem())
             self.ch.SetAddress(items[1],
                 self.tree.GetItemText(parent).split(':')[1])
+            self.ch.ResetControls()
         if items[0]==FE.__name__: 
             self.nb.ChangeSelection(5)
             parent=self.tree.GetItemParent(event.GetItem())
@@ -106,6 +109,7 @@ class SCMainFrame(wx.Frame):
             self.fe.SetAddress(items[1],
                 self.tree.GetItemText(parent).split(':')[1],
                 self.tree.GetItemText(grandparent).split(':')[1])
+            self.fe.ResetControls()
     
     def OnSCMainFrameClose(self, event):
         self.Close(True)
@@ -141,7 +145,7 @@ class VME(wx.Panel):
     def __init__(self, parent):
         """Creates the VME tab in the Notebook."""
         p=wx.Panel.__init__(self, parent)
-        self.VMEReadWrite = SC_Util.VMEReadWrite(self, caption=' Read/Write')
+        self.VMEReadWrite = SC_Util.VMEReadWrite(self, caption=' Read/Write (hex)')
         sizerALL=wx.BoxSizer(wx.VERTICAL)
         sizerALL.Add(self.VMEReadWrite.BoxSizer, 0, wx.ALL, 5)
         self.SetSizer(sizerALL)
@@ -163,8 +167,8 @@ class CRIM(wx.Panel):
         self.modules = wx.Notebook(self)
         self.TimingModule = CRIMTimingModule(self.modules)
         self.modules.AddPage(self.TimingModule, "TimingModule")
-        self.DAQModule = CRIMDAQModule(self.modules)
-        self.modules.AddPage(self.DAQModule, "DAQModule")
+        self.ChannelModule = CRIMChannelModule(self.modules)
+        self.modules.AddPage(self.ChannelModule, "CHModule")
         self.InterrupterModule = CRIMInterrupterModule(self.modules)
         self.modules.AddPage(self.InterrupterModule, "InterrupterModule")
         szBottom = wx.BoxSizer(wx.HORIZONTAL)
@@ -181,20 +185,25 @@ class CRIM(wx.Panel):
         '''Sets crimNumber variables and GUI labels'''
         self.crimNumber=int(crimNumber)
         self.FindWindowByName('crimID').SetValue(crimNumber)
+    def ResetControls(self):
+        self.TimingModule.ResetControls()
+        self.ChannelModule.ResetControls()
+        self.InterrupterModule.ResetControls()
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
             self.TimingModule.TimingSetupRegister.controls, self.TimingModule.GateWidthRegister.controls,
             self.TimingModule.TCALBDelayRegister.controls, self.TimingModule.TRIGGERSendRegister.controls,
             self.TimingModule.TCALBSendRegister.controls, self.TimingModule.GATERegister.controls,
-            self.TimingModule.CNTRSTRegister.controls, self.TimingModule.IDRegister.controls,
-            self.TimingModule.GateTimestampRegister.controls,                                              
-            self.DAQModule.StatusRegister.controls, self.DAQModule.MiscRegisters.controls,
-            self.DAQModule.ModeRegister.controls, self.DAQModule.DPMPointer.controls,
-            self.DAQModule.MessageRegisters.controls, self.InterrupterModule.MaskRegister.controls,
-            self.InterrupterModule.StatusRegister.controls, self.InterrupterModule.IntConfigRegister.controls,
-            self.InterrupterModule.ClearInterruptRegister.controls, self.InterrupterModule.VectorTable.controls)
+            self.TimingModule.CNTRSTRegister.controls, self.TimingModule.ScrapRegister.controls,
+            self.TimingModule.GateTimestampRegisters.controls,                                              
+            self.ChannelModule.StatusRegister.controls, self.ChannelModule.MiscRegisters.controls,
+            self.ChannelModule.ModeRegister.controls, self.ChannelModule.DPMPointer.controls,
+            self.ChannelModule.MessageRegisters.controls,
+            self.InterrupterModule.MaskRegister.controls, self.InterrupterModule.StatusRegister.controls,
+            self.InterrupterModule.IntConfigRegister.controls, self.InterrupterModule.ClearInterruptRegister.controls,
+            self.InterrupterModule.VectorTableRegisters.controls)
         self.TimingModule.Fit()
-        self.DAQModule.Fit()
+        self.ChannelModule.Fit()
         self.InterrupterModule.Fit()
 
 
@@ -222,11 +231,11 @@ class CRIMTimingModule(wx.Panel):
         self.CNTRSTRegister=SC_Util.GenericRegister(self, caption='SEQUENCE Register',
             btnWriteVisible=True, btnWriteCaption='CNTRST',
             btnReadVisible=True, btnReadCaption='CNTRSTSGATETCALB', txtDataVisible=False)
-        self.IDRegister=SC_Util.GenericRegister(self, caption='ID Register',
+        self.ScrapRegister=SC_Util.GenericRegister(self, caption='ID Register',
             btnWriteVisible=True, btnWriteCaption='Write',
             btnReadVisible=True, btnReadCaption='Read',
             txtDataVisible=True, txtDataCaption='any value', WEnable=True)
-        self.GateTimestampRegister=SC_Util.GenericRegister(self, caption='Gate Time Register',
+        self.GateTimestampRegisters=SC_Util.GenericRegister(self, caption='Gate Time Register',
             btnWriteVisible=False, btnReadVisible=True, btnReadCaption='Read',
             txtDataVisible=True, txtDataCaption='timestamp 28bits', WEnable=False)
         szV1=wx.BoxSizer(wx.VERTICAL)
@@ -239,8 +248,8 @@ class CRIMTimingModule(wx.Panel):
         szV2.Add(self.GATERegister.BoxSizer, 0, wx.ALL, 2)
         szV2.Add(self.CNTRSTRegister.BoxSizer, 0, wx.ALL, 2)
         szV3=wx.BoxSizer(wx.VERTICAL)
-        szV3.Add(self.IDRegister.BoxSizer, 0, wx.ALL, 2)
-        szV3.Add(self.GateTimestampRegister.BoxSizer, 0, wx.ALL, 2)
+        szV3.Add(self.ScrapRegister.BoxSizer, 0, wx.ALL, 2)
+        szV3.Add(self.GateTimestampRegisters.BoxSizer, 0, wx.ALL, 2)
         szH=wx.BoxSizer(wx.HORIZONTAL)
         szH.Add(szV1, 1, wx.ALL|wx.EXPAND, 0)
         szH.Add(szV2, 1, wx.ALL|wx.EXPAND, 0)
@@ -249,9 +258,19 @@ class CRIMTimingModule(wx.Panel):
         sizerALL.Add(szH, 0, wx.ALL, 5)       
         self.SetSizer(sizerALL)
         self.Fit()
+    def ResetControls(self):
+        self.TimingSetupRegister.ResetControls()
+        self.GateWidthRegister.ResetControls()
+        self.TCALBDelayRegister.ResetControls()
+        self.TRIGGERSendRegister.ResetControls()
+        self.TCALBSendRegister.ResetControls()
+        self.GATERegister.ResetControls()
+        self.CNTRSTRegister.ResetControls()
+        self.ScrapRegister.ResetControls()
+        self.GateTimestampRegisters.ResetControls()
 
 
-class CRIMDAQModule(wx.Panel):
+class CRIMChannelModule(wx.Panel):
     def __init__(self, parent):
         """Creates the DAQModule tab in the Notebook."""
         wx.Panel.__init__(self, parent)
@@ -261,8 +280,8 @@ class CRIMDAQModule(wx.Panel):
             btnReadVisible=True, btnReadCaption='Read DPM Pointer',
             txtDataVisible=True, txtDataCaption='dpm pointer value', WEnable=False)
         self.MessageRegisters=SC_Util.MessageRegisters(self)
-        self.MiscRegisters=SC_Util.CRIMDAQMiscRegisters(self)
-        self.ModeRegister=SC_Util.CRIMDAQModeRegister(self)
+        self.ModeRegister=SC_Util.CRIMCHModeRegister(self)
+        self.MiscRegisters=SC_Util.CRIMCHMiscRegisters(self)
         szV1=wx.BoxSizer(wx.VERTICAL)
         szV1.Add(self.StatusRegister.BoxSizer, 1, wx.ALL, 2)
         szV2=wx.BoxSizer(wx.VERTICAL)
@@ -279,19 +298,25 @@ class CRIMDAQModule(wx.Panel):
         sizerALL.Add(szH, 0, wx.ALL, 5)       
         self.SetSizer(sizerALL)
         self.Fit()
-     
-        
+    def ResetControls(self):
+        self.StatusRegister.ResetControls()
+        self.DPMPointer.ResetControls()
+        self.MessageRegisters.ResetControls()
+        self.ModeRegister.ResetControls()
+        self.MiscRegisters.ResetControls()
+
+       
 class CRIMInterrupterModule(wx.Panel):
     def __init__(self, parent):
         """Creates the InterrupterModule tab in the Notebook."""
         wx.Panel.__init__(self, parent)
         self.MaskRegister=SC_Util.GenericRegister(
-            self, caption='Mask Register',
+            self, caption='Mask Register (hex)',
             btnWriteVisible=True, btnWriteCaption='Write',
             btnReadVisible=True, btnReadCaption='Read',
             txtDataVisible=True, txtDataCaption='mask value', WEnable=True)
         self.StatusRegister=SC_Util.GenericRegister(
-            self, caption='Status Register',
+            self, caption='Status Register (hex)',
             btnWriteVisible=True, btnWriteCaption='Write',
             btnReadVisible=True, btnReadCaption='Read',
             txtDataVisible=True, txtDataCaption='interrupt value', WEnable=True)
@@ -301,8 +326,8 @@ class CRIMInterrupterModule(wx.Panel):
             self, caption='Interrupt Clear Register',
             btnWriteVisible=True, btnWriteCaption='Clear ALL Pending Int',
             btnReadVisible=False, txtDataVisible=False)
-        self.VectorTable=SC_Util.CRIMIntVectorTableID(
-            self, caption='Vector Table IDs')
+        self.VectorTableRegisters=SC_Util.CRIMIntVectorTableID(
+            self, caption='Vector Table IDs (hex)')
         szV1=wx.BoxSizer(wx.VERTICAL)
         szV2=wx.BoxSizer(wx.VERTICAL)
         szV3=wx.BoxSizer(wx.VERTICAL)
@@ -310,7 +335,7 @@ class CRIMInterrupterModule(wx.Panel):
         szV1.Add(self.StatusRegister.BoxSizer, 0, wx.ALL|wx.EXPAND, 2)
         szV2.Add(self.IntConfigRegister.BoxSizer, 0, wx.ALL, 2)
         szV2.Add(self.ClearInterruptRegister.BoxSizer, 0, wx.ALL|wx.EXPAND, 2)
-        szV3.Add(self.VectorTable.BoxSizer, 0, wx.ALL|wx.EXPAND, 2)
+        szV3.Add(self.VectorTableRegisters.BoxSizer, 0, wx.ALL|wx.EXPAND, 2)
         szH=wx.BoxSizer(wx.HORIZONTAL)
         szH.Add(szV1, 0, wx.ALL|wx.EXPAND, 0)
         szH.Add(szV2, 0, wx.ALL|wx.EXPAND, 0)
@@ -319,6 +344,12 @@ class CRIMInterrupterModule(wx.Panel):
         sizerALL.Add(szH, 0, wx.ALL, 5)       
         self.SetSizer(sizerALL)
         self.Fit()
+    def ResetControls(self):
+        self.MaskRegister.ResetControls()
+        self.StatusRegister.ResetControls()
+        self.IntConfigRegister.ResetControls()
+        self.ClearInterruptRegister.ResetControls()
+        self.VectorTableRegisters.ResetControls()
 
         
 class CROC(wx.Panel):
@@ -364,6 +395,12 @@ class CROC(wx.Panel):
         '''Sets crocNumber variables and GUI labels'''
         self.crocNumber=int(crocNumber)
         self.FindWindowByName('crocID').SetValue(crocNumber)
+    def ResetControls(self):
+        self.TimingSetup.ResetControls()
+        self.FastCmd.ResetControls()
+        self.LoopDelays.ResetControls()
+        self.ResetAndTestPulse.ResetControls()
+        self.FEBGateDelays.ResetControls()
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
             self.FlashButtons.controls, self.TimingSetup.controls,
@@ -371,7 +408,7 @@ class CROC(wx.Panel):
             self.ResetAndTestPulse.controls, self.FEBGateDelays.controls)
         self.Fit()
 
-        
+
 class CH(wx.Panel):
     def __init__(self, parent):
         """Creates the CH tab in the Notebook."""
@@ -415,13 +452,17 @@ class CH(wx.Panel):
         self.chNumber=int(chNumber)
         self.crocNumber=int(crocNumber)
         self.FindWindowByName('chID').SetValue(chNumber)
-        self.FindWindowByName('crocID').SetValue(crocNumber)    
+        self.FindWindowByName('crocID').SetValue(crocNumber)
+    def ResetControls(self):
+        self.StatusRegister.ResetControls()
+        self.DPMPointer.ResetControls()
+        self.MessageRegisters.ResetControls()
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
             self.FlashButtons.controls, self.StatusRegister.controls,
-            self.DPMPointer.controls, self.MessageRegisters.controls) 
+            self.DPMPointer.controls, self.MessageRegisters.controls)
 
-        
+
 class FE(wx.Panel):
     def __init__(self, parent):
         """Creates the FE tab in the Notebook."""
@@ -462,7 +503,10 @@ class FE(wx.Panel):
         self.crocNumber=int(crocNumber)
         self.FindWindowByName('febID').SetValue(febNumber)
         self.FindWindowByName('chID').SetValue(chNumber)
-        self.FindWindowByName('crocID').SetValue(crocNumber)  
+        self.FindWindowByName('crocID').SetValue(crocNumber)
+    def ResetControls(self):
+        self.fpga.ResetControls()
+        self.trip.ResetControls()
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
             self.flash.FlashButtons.controls, self.fpga.Registers.controlsAdvanced)
@@ -482,6 +526,7 @@ class FPGA(wx.Panel):
         sizerALL.Add(self.Registers.FPGABoxSizer, proportion=0, flag=wx.ALL, border=5)  
         self.SetSizer(sizerALL)
         self.Fit()
+    def ResetControls(self): self.Registers.ResetControls()
 
 
 class TRIP(wx.Panel):
@@ -493,6 +538,7 @@ class TRIP(wx.Panel):
         sizerALL.Add(self.Registers.TripBoxSizer, proportion=0, flag=wx.ALL, border=5)  
         self.SetSizer(sizerALL)
         self.Fit()
+    def ResetControls(self): self.Registers.ResetControls()
 
 
 class FLASH(wx.Panel):
