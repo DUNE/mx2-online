@@ -51,6 +51,8 @@ int main(int argc, char *argv[])
 	int detector             = 0;         // Default to UnknownDetector.
 	detector                 = (0x1)<<4;  // TODO - For header debugging... the Upstream Detector.
 	string fileroot          = "testme";  // For logs, etc.  
+	string strtemp           = "unknown";
+	char config_filename[100]; sprintf(config_filename,"unknown"); // For SAM.
 	string et_filename       = "/work/data/etsys/testme";  
 	string log_filename      = "/work/data/logs/testme.txt"; 
 	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme.py");
@@ -111,6 +113,12 @@ int main(int argc, char *argv[])
 			std::cout << "\tSAM Filename           = " << sam_filename << std::endl;
 			std::cout << "\tLOG Filename           = " << log_filename << std::endl;
 		}
+		else if (sw=="-cf") {
+			optind++;
+			strtemp = argv[optind]; 
+			sprintf(config_filename,"%s",strtemp.c_str());
+			std::cout << "\tHardware Config. File  = " << config_filename << std::endl;
+		}
 		else
 			std::cout << "Unknown switch: " << argv[optind] << std::endl;
 		optind++;
@@ -141,6 +149,7 @@ int main(int argc, char *argv[])
 	mnvdaq.infoStream() << "  ET Filename            = " << et_filename;
 	mnvdaq.infoStream() << "  SAM Filename           = " << sam_filename;
 	mnvdaq.infoStream() << "  LOG Filename           = " << log_filename;
+	mnvdaq.infoStream() << "  Configuration File     = " << config_filename;
 
 	// Log files for threading in the main routine. 
 #if (THREAD_ME)&&(TIME_ME)
@@ -458,7 +467,7 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	struct timeval runstart, runend;
 	gettimeofday(&runstart, NULL);
-#if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
+#if SINGLE_PC||MASTER // Single PC or Soldier Node
 	fstream global_gate("/work/conditions/global_gate.dat"); 
 	try {
 		if (!global_gate) throw (!global_gate);
@@ -472,8 +481,7 @@ int main(int argc, char *argv[])
 	std::cout << "Opened Event Log, First Event = " << global_gate_data[0] << std::endl;
 	mnvdaq.infoStream() << "Opened Event Log, First Event = " << global_gate_data[0];
 	firstEvent = global_gate_data[0];
-#endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
-#if SINGLE_PC||MASTER
+
 	if ( (sam_file=fopen(sam_filename,"w")) ==NULL) {
 		std::cout << "minervadaq::main(): Error!  Cannot open SAM file for writing!" << std::endl;
 		mnvdaq.fatalStream() << "Error opening SAM file for writing!";
@@ -489,46 +497,71 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"metadata = SamDataFile(\n");
 	fprintf(sam_file,"fileName = '%s.dat',\n",fileroot.c_str());
 	fprintf(sam_file,"fileType = SAM.DataFileType_ImportedDetector,\n");
-	fprintf(sam_file,"fileFormat = SAM.DataFileFormat_ROOT,\n");
+	fprintf(sam_file,"fileFormat = SAM.DataFileFormat_BINARY,\n");
 	fprintf(sam_file,"crc=CRC(666L,SAM.CRC_Adler32Type),\n");
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
-	fprintf(sam_file,"datastream='alldata',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-06-01'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-06-02'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
+	switch (detector) { // Enumerations set by the DAQHeader class.
+		case 0:
+			fprintf(sam_file,"runType='UnknownDetector',\n");
+			break;
+		case 1:
+			fprintf(sam_file,"runType='PMTTestStand',\n");
+			break;
+		case 2:
+			fprintf(sam_file,"runType='TrackingPrototype',\n");
+			break;
+		case 4:
+			fprintf(sam_file,"runType='TestBeam',\n");
+			break;
+		case 8:
+			fprintf(sam_file,"runType='FrozenDetector',\n");
+			break;
+		case 16:
+			fprintf(sam_file,"runType='UpstreamDetector',\n");
+			break;
+		case 32:
+			fprintf(sam_file,"runType='FullMinerva',\n");
+			break;
+		default:
+			std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
+			exit(-4);
+	}
 	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
-	fprintf(sam_file,"({'triggerconfig':'unknown',"); //TODO - "unknown" should be hardware config as specified by run control.
+	fprintf(sam_file,"({'triggerconfig':'%s',",config_filename); 
 	switch (runningMode) {
 		case OneShot:
 			fprintf(sam_file,"'triggertype':'OneShot',})}),\n");
-			fprintf(sam_file,"runType='OneShot',\n");
+			fprintf(sam_file,"datastream='pdstl',\n");
                        	break;
 		case NuMIBeam:
 			fprintf(sam_file,"'triggertype':'NuMIBeam',})}),\n");
-			fprintf(sam_file,"runType='NuMIBeam',\n");
+			fprintf(sam_file,"datastream='numib',\n");
 			break;
 		case Cosmics:
 			fprintf(sam_file,"'triggertype':'Cosmics',})}),\n");
-			fprintf(sam_file,"runType='Cosmics',\n");
+			fprintf(sam_file,"datastream='cosmc',\n");
 			break;
 		case PureLightInjection:
 			fprintf(sam_file,"'triggertype':'PureLightInjection',})}),\n");
-			fprintf(sam_file,"runType='PureLightInjection',\n");
+			fprintf(sam_file,"datastream='linjc',\n");
 			std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 			break;
 		case MixedBeamPedestal:
 			// TODO - Test mixed beam-pedestal running!
 			fprintf(sam_file,"'triggertype':'MixedBeamPedestal',})}),\n");
-			fprintf(sam_file,"runType='MixedBeamPedestal',\n");
+			fprintf(sam_file,"datastream='numip',\n");
 			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-pedestal trigger types!" << 
 				std::endl;
 			break;
 		case MixedBeamLightInjection:
 			// TODO - Test mixed beam-li running!
 			fprintf(sam_file,"'triggertype':'MixedBeamLightInjection',})}),\n");
-			fprintf(sam_file,"runType='MixedBeamLightInjection',\n");
+			fprintf(sam_file,"datastream='numil',\n");
 			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
 			std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 			break; 
