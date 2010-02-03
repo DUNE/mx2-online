@@ -64,9 +64,15 @@ int controller::ContactController()
 	} catch (int e) {
 		ReportError(e);
 		std::cout << "Unable to contact the v2718 VME controller!" << std::endl; 
-		std::cout << "Are you sure the a2818 module is loaded?  Check /proc/a2818..." << std::endl;
+		std::cout << "Are you sure the a2818 module is loaded?  Check /proc/a2818." << std::endl;
+		std::cout << "If there is no entry for /proc/a2818, execute the following: " << std::endl;
+		std::cout << "  cd /work/software/CAENVMElib/driver/v2718" << std::endl;
+		std::cout << "  sudo sh a2818_load.2.6" << std::endl;
 		controllerLog.critStream() << "Unable to contact the v2718 VME controller!";
-		controllerLog.critStream() << "Are you sure the a2818 module is loaded?  Check /proc/a2818...";
+		controllerLog.critStream() << "Are you sure the a2818 module is loaded?  Check /proc/a2818.";
+		controllerLog.critStream() << "If there is no entry for /proc/a2818, execute the following: ";
+		controllerLog.critStream() << "  cd /work/software/CAENVMElib/driver/v2718";
+		controllerLog.critStream() << "  sudo sh a2818_load.2.6";
 		return e;
 	} 
 	std::cout << "Controller " << controller_id << " is initialized." << std::endl; 
