@@ -137,7 +137,7 @@ class feb : public Frames {
 		unsigned short inline GetDCM2PhaseTotal() {return DCM2PhaseTotal;};
 		unsigned char inline GetTP2Bit() {return TestPulse2Bit[0];};
 		unsigned int inline GetTPCount() {return TestPulseCount;};
-		unsigned char inline GetVersion() {return FirmwareVersion[0];};
+		//unsigned char inline GetVersion() {return FirmwareVersion[0];}; // redundant.
 		unsigned char inline GetHVNumAvg() {return HVNumAve[0];};
 		unsigned short inline GetHVPeriodManual() {return HVPeriodManual;};
 		unsigned short inline GetHVPeriodAuto() {return HVPeriodAuto;};
@@ -153,17 +153,17 @@ class feb : public Frames {
 		unsigned int inline GetGateTimeStamp() {return GateTimeStamp;};
 		/*! set functions for FEB setable values */
 		void inline SetTimer(unsigned int a) {Timer=a;};
-		void inline SetTestPulseCount(unsigned int a) {TestPulseCount=a;};
-		void inline SetGateTimeStamp(unsigned int a) {GateTimeStamp=a;};
+		//void inline SetTestPulseCount(unsigned int a) {TestPulseCount=a;}; //Readonly
+		//void inline SetGateTimeStamp(unsigned int a) {GateTimeStamp=a;}; //Readonly
 		void inline SetGateStart(unsigned short a) {GateStart=a;};
 		void inline SetGateLength(unsigned short a) {GateLength=a;};
 		void inline SetInjectDACValue(unsigned short a) {InjectDACValue=a;};
 		void inline SetHVTarget(unsigned short a) {HVTarget=a;};
-		void inline SetHVActual(unsigned short a) {HVActual=a;};
-		void inline SetDCM2PhaseTotal(unsigned short a) {DCM2PhaseTotal=a;};
-		void inline SetHVPeriodAuto(unsigned short a) {HVPeriodAuto=a;};
+		//void inline SetHVActual(unsigned short a) {HVActual=a;}; //Readonly
+		//void inline SetDCM2PhaseTotal(unsigned short a) {DCM2PhaseTotal=a;}; //Readonly
+		//void inline SetHVPeriodAuto(unsigned short a) {HVPeriodAuto=a;}; //Readonly
 		void inline SetHVPeriodManual(unsigned short a) {HVPeriodManual=a;};
-		void inline SetTemperature(unsigned short a) {Temperature=a;};
+		//void inline SetTemperature(unsigned short a) {Temperature=a;}; //Readonly
 		void inline SetTripPowerOff(unsigned char *a) {TripPowerOff[0]=a[0];};
 		void SetTripPowerOff(char *a);
 		void inline SetInjectCount(unsigned char *a, int i) {InjectCount[i][0]=a[0];};
@@ -176,14 +176,14 @@ class feb : public Frames {
 		void SetInjectPhase(char *a);
 		void inline SetInjectDACMode(unsigned char *a) {InjectDACMode[0]=a[0];};
 		void SetInjectDACMode(char *a);
-		void inline SetInjectDACDone(unsigned char *a) {InjectDACDone[0]=a[0];};
-		void SetInjectDACDone(char *a);
+		//void inline SetInjectDACDone(unsigned char *a) {InjectDACDone[0]=a[0];}; //Readonly
+		//void SetInjectDACDone(char *a); //Readonly
 		void inline SetInjectDACStart(unsigned char *a) {InjectDACStart[0]=a[0];};
 		void SetInjectDACStart(char *a);
 		void inline SetHVEnabled(unsigned char *a) {HVEnabled[0]=a[0];};
 		void SetHVEnabled(char *a);
-		void inline SetHVControl(unsigned char *a) {HVControl[0]=a[0];};
-		void SetHVControl(char *a);
+		//void inline SetHVControl(unsigned char *a) {HVControl[0]=a[0];}; //Readonly
+		//void SetHVControl(char *a);  //Readonly
 		void inline SetHVManual(unsigned char *a) {HVManual[0]=a[0];};
 		void SetHVManual(char *a);
 		void inline SetVXOOff(unsigned char *a) {VXOOff[0]=a[0];};
@@ -198,32 +198,32 @@ class feb : public Frames {
 		void SetPhaseSpare(char *a);
 		void inline SetPhaseCount(unsigned char *a) {PhaseCount[0]=a[0];};
 		void SetPhaseCount(char *a);
-		void inline SetDCM1Lock(unsigned char *a) {DCM1Lock[0]=a[0];};
-		void SetDCM1Lock(char *a);
-		void inline SetDCM2Lock(unsigned char *a) {DCM2Lock[0]=a[0];};
-		void SetDCM2Lock(char *a);
-		void inline SetDCM1NoClock(unsigned char *a) {DCM1NoClock[0]=a[0];};
-		void SetDCM1NoClock(char *a);
-		void inline SetDCM2NoClock(unsigned char *a) {DCM2NoClock[0]=a[0];};
-		void SetDCM2NoClock(char *a);
-		void inline SetDCM2PhaseDone(unsigned char *a) {DCM2PhaseDone[0]=a[0];};
-		void SetDCM2PhaseDone(char *a);
-		void inline SetTestPulse2Bit(unsigned char *a) {TestPulse2Bit[0]=a[0];};
-		void SetTestPulse2Bit(char *a);
-		void inline SetBoardID(unsigned char *a) {boardID[0]=a[0];};
-		void SetBoardID(char *a);
-		void inline SetFirmwareVersion(unsigned char *a) {FirmwareVersion[0]=a[0];};
-		void SetFirmwareVersion(char *a);
+		//void inline SetDCM1Lock(unsigned char *a) {DCM1Lock[0]=a[0];}; //Readonly
+		//void SetDCM1Lock(char *a);  //Readonly
+		//void inline SetDCM2Lock(unsigned char *a) {DCM2Lock[0]=a[0];}; //Readonly
+		//void SetDCM2Lock(char *a);  //Readonly
+		//void inline SetDCM1NoClock(unsigned char *a) {DCM1NoClock[0]=a[0];}; //Readonly
+		//void SetDCM1NoClock(char *a);  //Readonly
+		//void inline SetDCM2NoClock(unsigned char *a) {DCM2NoClock[0]=a[0];}; //Readonly
+		//void SetDCM2NoClock(char *a);  //Readonly
+		//void inline SetDCM2PhaseDone(unsigned char *a) {DCM2PhaseDone[0]=a[0];}; //Readonly
+		//void SetDCM2PhaseDone(char *a); //Readonly
+		//void inline SetTestPulse2Bit(unsigned char *a) {TestPulse2Bit[0]=a[0];}; //Readonly
+		//void SetTestPulse2Bit(char *a); //Readonly
+		//void inline SetBoardID(unsigned char *a) {boardID[0]=a[0];}; // Readonly
+		//void SetBoardID(char *a); // Readonly
+		//void inline SetFirmwareVersion(unsigned char *a) {FirmwareVersion[0]=a[0];}; // Readonly
+		//void SetFirmwareVersion(char *a);  // Readonly
 		void inline SetHVNumAve(unsigned char *a) {HVNumAve[0]=a[0];};
 		void SetHVNumAve(char *a);
 		void inline SetHVPulseWidth(unsigned char *a) {HVPulseWidth[0]=a[0];};
 		void SetHVPulseWidth(char *a);
 		void inline SetCosmicTrig(unsigned char *a) {CosmicTrig[0]=a[0];};
 		void SetCosmicTrig(char *a);
-		void inline SetTripXCompEnc(unsigned char *a) {TripXCompEnc[0]=a[0];};
-		void SetTripXCompEnc(char *a);
-		void inline SetExtTriggerFound(unsigned char *a) {ExtTriggerFound[0]=a[0];};
-		void SetExtTriggerFound(char *a);
+		//void inline SetTripXCompEnc(unsigned char *a) {TripXCompEnc[0]=a[0];}; //Readonly
+		//void SetTripXCompEnc(char *a); //Readonly
+		//void inline SetExtTriggerFound(unsigned char *a) {ExtTriggerFound[0]=a[0];}; //Readonly
+		//void SetExtTriggerFound(char *a);  //Readonly
 		void inline SetExtTriggerRearm(unsigned char *a) {ExtTriggerRearm[0]=a[0];};
 		void SetExtTriggerRearm(char *a);
 		void inline SetDiscrimEnableMask(unsigned short a, int i) {DiscrimEnableMask[i]=a;};

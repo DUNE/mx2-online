@@ -793,11 +793,12 @@ void feb::SetInjectDACMode(char *a)
 	feb::SetInjectDACMode(c);
 }
 
-void feb::SetInjectDACDone(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetInjectDACDone(c);
-}
+// Readonly
+//void feb::SetInjectDACDone(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetInjectDACDone(c);
+//}
 
 void feb::SetInjectDACStart(char *a)
 {
@@ -811,11 +812,12 @@ void feb::SetHVEnabled(char *a)
 	feb::SetHVEnabled(c);
 }
 
-void feb::SetHVControl(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetHVControl(c);
-}
+// Readonly
+//void feb::SetHVControl(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetHVControl(c);
+//}
 
 void feb::SetHVManual(char *a)
 {
@@ -859,53 +861,61 @@ void feb::SetPhaseCount(char *a)
 	feb::SetPhaseCount(c);
 }
 
-void feb::SetDCM1Lock(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetDCM1Lock(c);
-}
+// Readonly
+//void feb::SetDCM1Lock(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetDCM1Lock(c);
+//}
 
-void feb::SetDCM2Lock(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetDCM2Lock(c);
-}
+// Readonly
+//void feb::SetDCM2Lock(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetDCM2Lock(c);
+//}
 
-void feb::SetDCM1NoClock(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetDCM1NoClock(c);
-}
+// Readonly
+//void feb::SetDCM1NoClock(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetDCM1NoClock(c);
+//}
 
-void feb::SetDCM2NoClock(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetDCM2NoClock(c);
-}
+// Readonly
+//void feb::SetDCM2NoClock(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetDCM2NoClock(c);
+//}
 
-void feb::SetDCM2PhaseDone(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetDCM2PhaseDone(c);
-}
+// Readonly
+//void feb::SetDCM2PhaseDone(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetDCM2PhaseDone(c);
+//}
 
-void feb::SetTestPulse2Bit(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetTestPulse2Bit(c);
-}
+// Readonly
+//void feb::SetTestPulse2Bit(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetTestPulse2Bit(c);
+//}
 
-void feb::SetBoardID(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetBoardID(c);
-}
+// Readonly.
+//void feb::SetBoardID(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetBoardID(c);
+//}
 
-void feb::SetFirmwareVersion(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetFirmwareVersion(c);
-}
+// Readonly.
+//void feb::SetFirmwareVersion(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetFirmwareVersion(c);
+//}
 
 void feb::SetHVNumAve(char *a)
 {
@@ -925,17 +935,19 @@ void feb::SetCosmicTrig(char *a)
 	feb::SetCosmicTrig(c);
 }
 
-void feb::SetTripXCompEnc(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetTripXCompEnc(c);
-}
+// Readonly
+//void feb::SetTripXCompEnc(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetTripXCompEnc(c);
+//}
 
-void feb::SetExtTriggerFound(char *a)
-{
-	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetExtTriggerFound(c);
-}
+// Readonly
+//void feb::SetExtTriggerFound(char *a)
+//{
+//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+//	feb::SetExtTriggerFound(c);
+//}
 
 void feb::SetExtTriggerRearm(char *a)
 {
