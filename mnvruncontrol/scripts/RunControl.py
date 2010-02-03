@@ -5,6 +5,7 @@ from wx.lib.wordwrap import wordwrap
 import subprocess
 import os
 import sys
+import signal
 import threading
 import datetime
 import time
@@ -31,8 +32,7 @@ class MainFrame(wx.Frame):
 	""" The main control window. """
 	def __init__(self, parent, title):
 		wx.Frame.__init__(self, parent, -1, title,
-				      pos=(0, 0), size=(600, 400))
-
+				      pos=(0, 0), size=(600, 600) ) 
 		self.GetConfig()
 
 		menuBar = wx.MenuBar()
@@ -69,9 +69,16 @@ class MainFrame(wx.Frame):
 		gatesEntryLabel = wx.StaticText(panel, -1, "Gates")
 		self.gatesEntry = wx.SpinCtrl(panel, -1, "10", size=(125, -1), min=1, max=10000)
 
+		detConfigEntryLabel = wx.StaticText(panel, -1, "Detector")
+		self.detectorChoices = ["Unknown", "PMT test stand", "Tracking prototype", "Test beam", "Frozen", "Upstream", "Full MINERvA"]
+		self.detectorCodes = ["UN", "FT", "TP", "TB", "MN", "US", "MV"]
+		self.detConfigEntry = wx.Choice(panel, -1, choices=self.detectorChoices)
+		self.detConfigEntry.SetSelection(5)
+
 		runModeEntryLabel = wx.StaticText(panel, -1, "Run Mode")
-		RunModeChoices = ["One shot", "NuMI", "Cosmics", "Pure light injection", "Mixed beam/pedestal", "Mixed beam/light injection"]
-		self.runModeEntry =  wx.Choice(panel, -1, choices=RunModeChoices)
+		self.runModeChoices = ["Pedestal", "Light injection", "Charge injection", "Cosmics", "NuMI beam", "Mixed beam/pedestal", "Mixed beam/light injection", "Unknown trigger"]
+		self.runModeCodes = ["pdstl", "linjc", "chinj", "cosmc", "numib", "numip", "numil", "unkwn"]
+		self.runModeEntry =  wx.Choice(panel, -1, choices=self.runModeChoices)
 
 
 		febsEntryLabel = wx.StaticText(panel, -1, "FEBs")
@@ -89,12 +96,13 @@ class MainFrame(wx.Frame):
 		self.Bind(wx.EVT_BUTTON, self.CloseAllWindows, self.closeAllButton)
 		self.closeAllButton.Disable()
 
-		configSizer = wx.GridSizer(5, 2, 10, 10)
-		configSizer.AddMany([ runEntryLabel,      (self.runEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                      subrunEntryLabel,   (self.subrunEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                      gatesEntryLabel,    (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                      runModeEntryLabel,  (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                      febsEntryLabel,     (self.febsEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
+		configSizer = wx.GridSizer(6, 2, 10, 10)
+		configSizer.AddMany([ (runEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),       (self.runEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (subrunEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),    (self.subrunEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (gatesEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),     (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (detConfigEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL), (self.detConfigEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (runModeEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (febsEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),      (self.febsEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
 		configBoxSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Run Configuration"), wx.VERTICAL)
 		configBoxSizer.Add(configSizer, 1, wx.EXPAND)
 
@@ -107,14 +115,14 @@ class MainFrame(wx.Frame):
 		topSizer.AddMany( [(configBoxSizer, 1, wx.EXPAND | wx.RIGHT, 5), (controlBoxSizer, 1, wx.EXPAND | wx.LEFT, 5)] )
 
 		logfileText = wx.StaticText( panel, -1, wordwrap("Select log files you want to view (ctrl+click for multiple selections) and click the \"View log file(s)\" button below...", 400, wx.ClientDC(self)) )
-		self.logfileList = wx.ListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
+		self.logfileList = wx.ListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
 		self.logfileList.InsertColumn(0, "Run")
 		self.logfileList.InsertColumn(1, "Subrun")
 		self.logfileList.InsertColumn(2, "Date")
 		self.logfileList.InsertColumn(3, "Time (GMT)")
 		self.logfileList.InsertColumn(4, "Run config")
 		self.logfileList.InsertColumn(5, "Detector")
-		self.logfileList.InsertColumn(6, "Filename")
+#		self.logfileList.InsertColumn(6, "Filename")
 		
 		self.logFileButton = wx.Button(panel, -1, "View selected log files")
 		self.Bind(wx.EVT_BUTTON, self.ShowLogFiles, self.logFileButton)
@@ -139,7 +147,7 @@ class MainFrame(wx.Frame):
 		self.ETthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartDAQ]
 		self.current_ET_thread = 0			# the next thread to start
 		self.windows = []					# child windows opened by the process.
-		self.logfilename = None
+		self.logfileNames = None
 
 		self.GetNextRunSubrun()
 		self.UpdateLogFiles()
@@ -159,27 +167,17 @@ class MainFrame(wx.Frame):
 		fileinfo.append(matches.group("month") + "/" + matches.group("day") + "/20" + matches.group("year"))
 		fileinfo.append( matches.group("hour") + ":" + matches.group("minute") )
 
-		if matches.group("type") == "numib":
-			fileinfo.append("NuMI beam")
-		elif matches.group("type") == "linj":
-			fileinfo.append("light injection")
-		elif matches.group("type") == "chinj":
-			fileinfo.append("charge injection")
-		elif matches.group("type") == "cosmc":
-			fileinfo.append("cosmics")
-		elif matches.group("type") == "pdstl":
-			fileinfo.append("pedestal")
+		if matches.group("type") in self.runModeCodes:
+			fileinfo.append( self.runModeChoices[self.runModeCodes.index(matches.group("type"))] )
 		else:
 			return None
-		
-		if matches.group("detector") == "TP":
-			fileinfo.append("prototype")
-		elif matches.group("detector") == "MN":
-			fileinfo.append("frozen")
+	
+		if matches.group("detector") in self.detectorCodes:
+			fileinfo.append( self.detectorChoices[self.detectorCodes.index(matches.group("detector"))] )	
 		else:
 			return None
 
-		fileinfo.append(filename)
+	#	fileinfo.append(filename)
 		
 		return fileinfo
 
@@ -278,18 +276,20 @@ class MainFrame(wx.Frame):
 		self.runEntry.Disable()
 		self.subrunEntry.Disable()
 		self.gatesEntry.Disable()
+		self.detConfigEntry.Disable()
 		self.runModeEntry.Disable()
 		self.febsEntry.Disable()
 			
-		self.run     = int(self.runEntry.GetValue())
-		self.subrun  = int(self.subrunEntry.GetValue())
-		self.gates   = int(self.gatesEntry.GetValue())
-		self.runMode = int(self.runModeEntry.GetSelection())
-		self.febs    = int(self.febsEntry.GetValue())
+		self.run      = int(self.runEntry.GetValue())
+		self.subrun   = int(self.subrunEntry.GetValue())
+		self.gates    = int(self.gatesEntry.GetValue())
+		self.detector = int(self.detConfigEntry.GetSelection())
+		self.runMode  = int(self.runModeEntry.GetSelection())
+		self.febs     = int(self.febsEntry.GetValue())
 
-		now = datetime.datetime.today()
-		
-		self.ETNAME = 'MN_%08d_%04d_numib_v04_%02d%02d%02d%02d%02d' % (int(self.run), int(self.subrun), now.year % 100, now.month, now.day, now.hour, now.minute)
+		now = datetime.datetime.utcnow()
+	
+		self.ETNAME = '%s_%08d_%04d_%s_v04_%02d%02d%02d%02d%02d' % (self.detectorCodes[self.detector], int(self.run), int(self.subrun), self.runModeCodes[self.runMode], now.year % 100, now.month, now.day, now.hour, now.minute)
 
 		self.OUTFL = self.ETNAME + '.dat'
 
@@ -365,6 +365,7 @@ class MainFrame(wx.Frame):
 
 		self.runEntry.Enable()
 		self.gatesEntry.Enable()
+		self.detConfigEntry.Enable()
 		self.runModeEntry.Enable()
 		self.febsEntry.Enable()
 
@@ -379,6 +380,8 @@ class MainFrame(wx.Frame):
 
 	def UpdateLogFiles(self):
 		self.logfileList.DeleteAllItems()
+		self.logfileNames = []
+		self.logfileInfo = []
 		
 		try:
 			for filename in os.listdir(self.logfileLocation):
@@ -386,11 +389,22 @@ class MainFrame(wx.Frame):
 					continue
 				fileinfo = self.parseLogfileName(filename)
 				if fileinfo is not None:
-					index = self.logfileList.InsertStringItem(sys.maxint, fileinfo[0])
-					for i in range(1,7):
-						self.logfileList.SetStringItem(index, i, fileinfo[i])
+					self.logfileNames.append(filename)
+					self.logfileInfo.append(fileinfo)
 		except OSError:
-			self.logfileList.InsertStringItem(0, "Log directory does not exist.  Please fix it in the options.")
+			self.logfileNames = None
+			self.logfileInfo = None
+
+		if len(self.logfileNames) > 0:
+			for fileinfo in self.logfileInfo:
+				index = self.logfileList.InsertStringItem(sys.maxint, fileinfo[0])
+				for i in range(1,len(fileinfo)):
+					self.logfileList.SetStringItem(index, i, fileinfo[i])
+				self.logfileList.SetItemData(index, int(fileinfo[0]) * 10000 + int(fileinfo[1]))		# need a unique key for each row if I want to sort them.  this is run * 10000 + subrun
+		else:
+			self.logfileList.InsertStringItem(0, "Log directory is empty or inaccessible.")
+
+		self.logfileList.SortItems(self.SortLogRows)
 		
 			
 	def ShowLogFiles(self, evt=None):
@@ -403,7 +417,7 @@ class MainFrame(wx.Frame):
 			if index == -1:
 				break
 			
-			filenames.append(self.logfileLocation + "/" + self.logfileList.GetItem(index, 6).GetText())
+			filenames.append(self.logfileLocation + "/" + self.logfileNames[index])
 	
 #		if (self.logfilename):
 #			logdlg = LogFrame(self, self.logfilename)
@@ -437,8 +451,14 @@ class MainFrame(wx.Frame):
 		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
 		self.StoreNextRunSubrun()
 
-		self.logfilename = self.logfileLocation + "/" + self.ETNAME + ".txt"
+#		self.logfilename = self.logfileLocation + "/" + self.ETNAME + ".txt"
 		self.logFileButton.Enable()
+
+	@staticmethod
+	def SortLogRows(key1, key2):
+		if key1 == key2:
+			return 0
+		return 1 if key1 < key2 else -1
 	
 
 #########################################################
@@ -630,6 +650,8 @@ class ETThread(threading.Thread):
 
 		self.time_to_quit = False
 
+		self.timerthread = None			# used to count down to a hard kill if necessary
+
 		self.start()				# starts the run() function in a separate thread.  (inherited from threading.Thread)
 	
 	def run(self):
@@ -650,16 +672,18 @@ class ETThread(threading.Thread):
 
 			while True:
 				self.process.poll()		# check if the process is still alive
-				newdata = self.process.stdout.read(50)	# not every process is careful to spit things out with line breaks, so I can't use readline()
+				newdata = self.process.stdout.read(10)	# not every process is careful to spit things out with line breaks, so I can't use readline()
 
 				if len(newdata) > 0:		# shouldn't be a problem since reads are BLOCKING in python, but it's always better to check
 					wx.PostEvent(self.output_window, NewDataEvent(newdata))
 
 
-				if (self.time_to_quit or self.process.returncode != None) and newdata == "":
+				if (self.time_to_quit or self.process.returncode != None):
+#					print "Data in buffer at last read: '" + newdata + "'"
 					break
 
-		print "Process", self.pid, "has quit."
+
+		# if something special is supposed to happen when this thread quits, do it.
 		if self.quit_event:
 			wx.PostEvent(self.owner_window, self.quit_event())
 		
@@ -667,12 +691,50 @@ class ETThread(threading.Thread):
 		''' When the Stop button is pressed, we gotta quit! '''
 		self.time_to_quit = True
 		
-		if (self.process.returncode == None):		# it COULD happen that the process has already quit.
-			self.process.terminate()		# first, try nicely.
+		if (self.process.returncode == None):			# it COULD happen that the process has already quit.
+			self.process.send_signal(signal.SIGINT)		# first, try nicely.
 
 			self.process.poll()
-			if (self.process.returncode == None):		# if that doesn't work, kill it the brute force way
-				self.process.kill()
+			if (self.process.returncode == None):		# if that doesn't work, give it a few seconds, then kill it the brute force way
+				print "Waiting 5 seconds before hard kill..."
+				self.timerthread = threading.Timer(5, self.HardKill)
+				self.timerthread.start()
+
+		# make sure there's nothing left in the buffer to read!
+		self.process.stdout.flush()
+		newdata = self.process.stdout.read()
+		if len(newdata) > 0 and self.output_window:
+			wx.PostEvent(self.output_window, NewDataEvent(newdata))
+		
+		if self.process.returncode != None:
+			if (self.timerthread):
+				self.timerthread.cancel()
+			print "Process", self.pid, "has quit."
+			if self.output_window:
+				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
+
+	def HardKill(self):
+		print "Checking if hard kill is necessary..."
+		
+		self.process.stdout.flush()
+		newdata = self.process.stdout.read()
+		if len(newdata) > 0 and self.output_window:
+			wx.PostEvent(self.output_window, NewDataEvent(newdata))
+		
+		self.process.poll()
+		if self.process.returncode == None:
+			print "Thread", self.pid, "not responding to SIGINT.  Issuing SIGKILL..."
+			self.process.kill()
+	
+			print "Process", self.pid, "was killed."
+			if self.output_window:
+				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread killed."))
+		else:
+			print "Process", self.pid, "has quit."
+			if self.output_window:
+				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
+		
+
 
 #########################################################
 #   TimerThread
