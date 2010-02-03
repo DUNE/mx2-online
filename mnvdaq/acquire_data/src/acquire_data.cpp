@@ -54,18 +54,23 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 #if THREAD_ME
 	boost::thread crim_thread(boost::bind(&acquire_data::InitializeCrim, this, 0xE00000, 1, runningMode)); 
 	boost::thread croc_thread(boost::bind(&acquire_data::InitializeCroc, this, 0x010000, 1)); 
+	crim_thread.join(); // Wait for the crim thread to return.
+	croc_thread.join(); // Wait for the croc thread to return.
 #endif
 
 	// Add look-up functions here - one for file content look-up and one by address scanning 
 #if NO_THREAD
+#if WH14
 	InitializeCrim(0xE00000, 1, runningMode);
 	//InitializeCrim(0xF00000, 2, runningMode);
 	InitializeCroc(0x010000, 1);
 	//InitializeCroc(0x020000, 2);
 #endif
-#if THREAD_ME
-	crim_thread.join(); // Wait for the crim thread to return.
-	croc_thread.join(); // Wait for the croc thread to return.
+#if NUMIUS
+	InitializeCrim(0xE00000, 1, runningMode);
+	InitializeCroc(0x050000, 1);
+	InitializeCroc(0x060000, 2);
+#endif
 #endif
 
 	// Set the flags that tells us how many VME cards are installed for this controller.
