@@ -63,13 +63,17 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 #if WH14
 	InitializeCrim(0xE00000, 1, runningMode);
 	//InitializeCrim(0xF00000, 2, runningMode);
-	InitializeCroc(0x010000, 1);
-	//InitializeCroc(0x020000, 2);
+	InitializeCroc(0x010000, 1, 5, 0, 0, 0);
+	//InitializeCroc(0x020000, 2, 4, 5, 6, 7);
 #endif
 #if NUMIUS
 	InitializeCrim(0xE00000, 1, runningMode);
-	InitializeCroc(0x050000, 1);
-	InitializeCroc(0x060000, 2);
+	//InitializeCroc(0x010000, 1,  0,  0,  0,  0); // MS01W, MS02W, MS03W, MS04W
+	//InitializeCroc(0x020000, 2,  0,  0,  0,  0); // MS01E, MS02E, MS03E, MS04E
+	//InitializeCroc(0x030000, 3,  0,  0,  0, 10); // MS05W, MS06W, MS07W, MS08W
+	//InitializeCroc(0x040000, 1,  0,  0,  0,  9); // MS05E, MS06E, MS07E, MS08E
+	InitializeCroc(0x050000, 1, 10, 10, 10,  0); // MS09W, MS10W, MS11W, Loopback
+	InitializeCroc(0x060000, 2,  9,  9,  9,  0); // MS09E, MS10E, MS11E, Loopback
 #endif
 #endif
 
@@ -312,19 +316,24 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 }
 
 
-void acquire_data::InitializeCroc(int address, int crocNo) 
+void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int nFEBchain1, int nFEBchain2, int nFEBchain3) 
 {
-/*! \fn void acquire_data::InitializeCroc(int address, int crocNo)
+/*! \fn void acquire_data::InitializeCroc(int address, int crocNo, int crocNo, int nFEBchain0, int nFEBchain1, int nFEBchain2, int nFEBchain3)
  *
  * This function checks the CROC addressed by "address"
  * is available by reading the status register.  
  *
  * The CROC is then assigned the id crocNo.
  *
- * Then the FEB list for each channel on this croc is built.
+ * Then the FEB list for each channel on this croc is built.  We use this sort of wonky-looking 
+ * set of arguments for the number of FEB's on each chain for formatting convenience.  
  *
  * \param address an integer VME addres for the CROC
  * \param crocNo an integer given this CROC for ID
+ * \param nFEBchain0 an integer describing the number of FEB's on chain 0.  Defaults to 11.
+ * \param nFEBchain1 an integer describing the number of FEB's on chain 1.  Defaults to 11.
+ * \param nFEBchain2 an integer describing the number of FEB's on chain 2.  Defaults to 11.
+ * \param nFEBchain3 an integer describing the number of FEB's on chain 3.  Defaults to 11.
  */
 	std::cout << "\nEntering acquire_data::InitializeCroc for CROC " << (address>>16) << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeCroc for CROC " << (address>>16);
@@ -343,6 +352,7 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 	// Make a CROC object on this controller.
 	daqController->MakeCroc(address,crocNo); 
 	int nChannels = 4; // # of CROC FE Channels - always fixed for the real detector...
+	int nFEBsPerChain[] = { nFEBchain0, nFEBchain1, nFEBchain2, nFEBchain3 };
 
 	// Make sure that we can actually talk to the cards.
 	try {
@@ -357,7 +367,7 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 	}
 
 	// Set the timing mode to EXTERNAL: clock mode, test pulse enable, test pulse delay
-	// Clock Mode set to External in CROC constructor.
+	// Clock Mode set to External in CROC constructor.  TODO - Make these actions controlle by a flag.
 	unsigned char croc_message[2];
 	croc_message[0] = (unsigned char)(daqController->GetCroc(crocNo)->GetTimingRegister() & 0xFF);
 	croc_message[1] = (unsigned char)( (daqController->GetCroc(crocNo)->GetTimingRegister()>>8) & 0xFF);
@@ -393,9 +403,9 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 #if DEBUG_THREAD
 			croc_thread<<"Launching build FEB list thread "<<i<<std::endl;
 #endif
-			chan_thread[i] = new boost::thread(boost::bind(&acquire_data::BuildFEBList,this,i,crocNo));
+			chan_thread[i] = new boost::thread(boost::bind(&acquire_data::BuildFEBList,this,i,crocNo,nFEBsPerChain[i]));
 #else
-			BuildFEBList(i,crocNo);
+			BuildFEBList(i, crocNo, nFEBsPerChain[i]);
 #endif
 		}
 	}
@@ -403,7 +413,7 @@ void acquire_data::InitializeCroc(int address, int crocNo)
 #if THREAD_ME
 	// If we are working in multi-threaded operation we need  
 	// to wait for the each thread we launched to complete.
-	for (int i=0;i<4;i++) {
+	for (int i = 0; i < nChannels; i++) {
 		chan_thread[i]->join(); // Wait for all the threads to finish up before moving on.
 #if DEBUG_THREAD
 		croc_thread << "Build FEB List: channel " << i << " thread completed." << std::endl;
@@ -608,25 +618,27 @@ int acquire_data::ResetGlobalIRQEnable(int index)
 }
 
 
-int acquire_data::BuildFEBList(int i, int croc_id) 
+int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs) 
 {
 /*! \fn
- * int acquire_data::BuildFEBList(int i, int croc_id)
+ * int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
  *
  *  Builds up the FEB list on each CROC channel.
  *
- *  Finds FEB's by sending a message to each 1 through 15 potential FEB's
+ *  Finds FEB's by sending a message to each 1 through nFEBs potential FEB's
  *  per channel.  Those channels which respond with "message received"
  *  for that FEB have and FEB of the corresponding number loaded into an 
  *  STL list containing objects of type feb.
  *
  *  \param i an integer for the channel number
  *  \param croc_id an integer the ID number for the CROC
+ *  \param nFEBs an integer for the number of FEB's to search through on the chain.
  *
  *  Returns a status value (0 for success).
  */
 	acqData.infoStream() << "Entering BuildFEBList for CROC " << 
 		(daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " << i;
+	acqData.infoStream() << " Looking for " << nFEBs << " FEBs.";
 #if DEBUG_THREAD
 	std::ofstream build_feb_thread;
 	std::stringstream thread_number;
@@ -640,20 +652,19 @@ int acquire_data::BuildFEBList(int i, int croc_id)
 	// and assign them to a tmp of each type for ease of use.
 	croc *tmpCroc = daqController->GetCroc(croc_id);
 	channels *tmpChan = daqController->GetCroc(croc_id)->GetChannel(i);
-	int nFEBperChannel = 12; // Real maximum is 15, install max is 11.
 
 	// This is a dynamic look-up of the FEB's on the channel.
 	// Addresses numbers range from 1 to 15 and we'll loop
 	// over all of them and look for S2M message headers.
-	for (int j = 1; j <= nFEBperChannel; j++) { 
+	for (int j = 1; j <= nFEBs; j++) { 
 #if DEBUG_THREAD
 		build_feb_thread << " Making FEB: " << j << std::endl;
 #endif
-		acqData.infoStream() << "    Trying to make FEB " << j << " on channel " << i;
+		acqData.infoStream() << "    Trying to make FEB " << j << " on chain " << i;
 		// Make a "trial" FEB for the current address.
 		feb *tmpFEB = tmpChan->MakeTrialFEB(j, numberOfHits, acqAppender); 
 #if DEBUG_THREAD
-		build_feb_thread << "  Made FEB " << j << " on channel: " << i << std::endl;
+		build_feb_thread << "  Made FEB " << j << " on chain " << i << std::endl;
 #endif
 		
 		// Build an outgoing message to test if an FEB of this address is available on this channel.
@@ -689,9 +700,12 @@ int acquire_data::BuildFEBList(int i, int croc_id)
 			// Clean up the memory.
 			delete tmpFEB;  
 		} else {
-			acqData.infoStream() << "FEB: " << tmpFEB->GetBoardNumber() << " is not available on CROC "
+			acqData.critStream() << "FEB: " << tmpFEB->GetBoardNumber() << " is NOT available on CROC "
 				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
 				<< tmpChan->GetChannelNumber();
+			std::cout << "\nCRITICAL!  FEB: " << tmpFEB->GetBoardNumber() << " is NOT available on CROC "
+				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
+				<< tmpChan->GetChannelNumber() << "\n" << std::endl;
 #if DEBUG_THREAD
 			build_feb_thread << "FEB: " << tmpFEB->GetBoardNumber() << " is not available on CROC "
 				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 

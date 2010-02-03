@@ -112,8 +112,11 @@ class acquire_data {
 		/*! Function to initialize a CRIM at the given VME address w/ index & running mode */
 		void InitializeCrim(int address, int index, RunningModes runningMode); 
 
-		/*! Function to initialize a CROC at the given VME address; requires an identifier */
-		void InitializeCroc(int address, int a); 
+		/*! Function to initialize a CROC at the given VME address; requires an index. 
+		    Additionally, we pass the number of FEB's to search for on each channel.  
+		    (These are passed this way for formatting convenience.)  11 is the default 
+		    (instead of 15) because 11 is the maximum number we will install on a chain.  */
+		void InitializeCroc(int address, int crocNo, int nFEBchain0=11, int nFEBchain1=11, int nFEBchain2=11, int nFEBchain3=11); 
 
 		/*! Function to set up the interrupt handler on CRIM index */
 		int SetupIRQ(int index);
@@ -121,8 +124,8 @@ class acquire_data {
 		/*! Function to re-enable the interrupt handler for CRIM index */
 		int ResetGlobalIRQEnable(int index);
 
-		/*! Function to build a list of FEB objects for use in data acquisition */
-		int BuildFEBList(int i, int j);
+		/*! Function to build a list of FEB objects for use in data acquisition. */
+		int BuildFEBList(int chainID, int crocNo, int nFEBs=11);
 
 		/*! Write to the CROC Fast Command register. */
 		// Passing an array like this is a bit old fashioned, but there it is...
