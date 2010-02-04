@@ -222,7 +222,7 @@ FPGA[36]47 = HV Period Auto 2nd byte
 FPGA[37]48 = HV Pulse Width (8 bits)
 FPGA[38]49 = Temperature 1st byte (16 bits)
 FPGA[39]50 = Temperature 2nd byte
-FPGA[40]51 = Cosmic Trigger (8 bits)
+FPGA[40]51 = TripX Threshold (8 bits - really, 6 least significant bits (2 spare))
 FPGA[41]52 = TRiP X Comp Enc (8 bits)
 FPGA[42]53 = Discriminator Enable Mask TRiP 0 1st byte (16 bits)
 FPGA[43]54 = Discriminator Enable Mask TRiP 0 2nd byte
@@ -379,8 +379,8 @@ FPGA[56]67 = ??
 	message[38] = (Temperature & 0xFF); //mask off bits 0-7
 	message[39] = (Temperature >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
 						//and mask off ibt 0-7
-	/* message word 40: cosmics trigger , 8 bits */
-	message[40] = (CosmicTrig[0] & 0xFF); //mask off bits 0-7
+	/* message word 40: TripX Thresh , 6 bits (using 8, 2 are spare) */
+	message[40] = (TripXThresh[0] & 0x3F); //mask off bits 0-5
 
 	/* message word 41: whatever this is...TripXCompEnc, 8 bits */
 	message[41] = (TripXCompEnc[0] & 0xFF); //mask off bits 0-7
@@ -652,9 +652,9 @@ void feb::DecodeRegisterValues(int buffersize)
 			Temperature |= (message[startByte] & 0xFF) << 0x08;  //shift bits 8-15 to bits 0-7
 										//and mask off ibt 0-7
 
-			/* message word 40: cosmics trigger , 8 bits */
+			/* message word 40: TripXThresh , 6 bits (using 8, 2 are spare) */
 			startByte++;
-			CosmicTrig[0] = (message[startByte] & 0xFF); //mask off bits 0-7
+			TripXThresh[0] = (message[startByte] & 0x3F); //mask off bits 0-5
 
 			/* message word 41: whatever this is...TripXCompEnc, 8 bits */
 			startByte++;
@@ -744,7 +744,7 @@ void feb::SetFEBDefaultValues()
 	HVPeriodManual = 0;
 	HVPulseWidth[0] = 0;
 	Temperature = 0;
-	CosmicTrig[0] = 0;
+	TripXThresh[0] = 0;
 	TripXCompEnc[0] = 0;
 	for (int i=0; i<4; i++) {DiscrimEnableMask[i]=0xFFFF;} // default to discr. enabled
 	GateTimeStamp = 0; // readonly
@@ -804,7 +804,7 @@ void feb::ShowValues()
 	std::cout<<"HVPeriodManual  : "<<(int)HVPeriodManual<<std::endl;
 	std::cout<<"HVPulseWidth    : "<<(int)HVPulseWidth[0]<<std::endl;
 	std::cout<<"Temperature     : "<<(int)Temperature<<std::endl;
-	std::cout<<"CosmicTrig      : "<<(int)CosmicTrig[0]<<std::endl;
+	std::cout<<"TripXThresh     : "<<(int)TripXThresh[0]<<std::endl;
 	std::cout<<"TripXCompEnc    : "<<(int)TripXCompEnc[0]<<std::endl;
 	for (int i=0; i<4; i++) {
 		printf("DiscrimEnabledMask[%d]: 0x%04X\n",i,DiscrimEnableMask[i]);
@@ -852,13 +852,6 @@ void feb::SetInjectDACMode(char *a)
 	feb::SetInjectDACMode(c);
 }
 
-// Readonly
-//void feb::SetInjectDACDone(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetInjectDACDone(c);
-//}
-
 void feb::SetInjectDACStart(char *a)
 {
 	unsigned char * c = reinterpret_cast<unsigned char *>(a);
@@ -870,13 +863,6 @@ void feb::SetHVEnabled(char *a)
 	unsigned char * c = reinterpret_cast<unsigned char *>(a);
 	feb::SetHVEnabled(c);
 }
-
-// Readonly
-//void feb::SetHVControl(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetHVControl(c);
-//}
 
 void feb::SetHVManual(char *a)
 {
@@ -902,62 +888,6 @@ void feb::SetPhaseCount(char *a)
 	feb::SetPhaseCount(c);
 }
 
-// Readonly
-//void feb::SetDCM1Lock(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetDCM1Lock(c);
-//}
-
-// Readonly
-//void feb::SetDCM2Lock(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetDCM2Lock(c);
-//}
-
-// Readonly
-//void feb::SetDCM1NoClock(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetDCM1NoClock(c);
-//}
-
-// Readonly
-//void feb::SetDCM2NoClock(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetDCM2NoClock(c);
-//}
-
-// Readonly
-//void feb::SetDCM2PhaseDone(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetDCM2PhaseDone(c);
-//}
-
-// Readonly
-//void feb::SetTestPulse2Bit(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetTestPulse2Bit(c);
-//}
-
-// Readonly.
-//void feb::SetBoardID(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetBoardID(c);
-//}
-
-// Readonly.
-//void feb::SetFirmwareVersion(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetFirmwareVersion(c);
-//}
-
 void feb::SetHVNumAve(char *a)
 {
 	unsigned char * c = reinterpret_cast<unsigned char *>(a);
@@ -970,25 +900,11 @@ void feb::SetHVPulseWidth(char *a)
 	feb::SetHVPulseWidth(c);
 }
 
-void feb::SetCosmicTrig(char *a)
+void feb::SetTripXThresh(char *a)
 {
 	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-	feb::SetCosmicTrig(c);
+	feb::SetTripXThresh(c);
 }
-
-// Readonly
-//void feb::SetTripXCompEnc(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetTripXCompEnc(c);
-//}
-
-// Readonly
-//void feb::SetExtTriggerFound(char *a)
-//{
-//	unsigned char * c = reinterpret_cast<unsigned char *>(a);
-//	feb::SetExtTriggerFound(c);
-//}
 
 void feb::SetExtTriggerRearm(char *a)
 {
