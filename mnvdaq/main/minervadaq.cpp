@@ -502,30 +502,30 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-07-00'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-07-01'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
 		case 0:
-			fprintf(sam_file,"runType='UnknownDetector',\n");
+			fprintf(sam_file,"runType='unknowndetector',\n");
 			break;
 		case 1:
-			fprintf(sam_file,"runType='PMTTestStand',\n");
+			fprintf(sam_file,"runType='pmtteststand',\n");
 			break;
 		case 2:
-			fprintf(sam_file,"runType='TrackingPrototype',\n");
+			fprintf(sam_file,"runType='trackingprototype',\n");
 			break;
 		case 4:
-			fprintf(sam_file,"runType='TestBeam',\n");
+			fprintf(sam_file,"runType='testbeam',\n");
 			break;
 		case 8:
-			fprintf(sam_file,"runType='FrozenDetector',\n");
+			fprintf(sam_file,"runType='frozendetector',\n");
 			break;
 		case 16:
-			fprintf(sam_file,"runType='UpstreamDetector',\n");
+			fprintf(sam_file,"runType='upstreamdetector',\n");
 			break;
 		case 32:
-			fprintf(sam_file,"runType='FullMinerva',\n");
+			fprintf(sam_file,"runType='fullminerva',\n");
 			break;
 		default:
 			std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
@@ -535,32 +535,32 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"({'triggerconfig':'%s',",config_filename); 
 	switch (runningMode) {
 		case OneShot:
-			fprintf(sam_file,"'triggertype':'OneShot',})}),\n");
+			fprintf(sam_file,"'triggertype':'oneshot',})}),\n");
 			fprintf(sam_file,"datastream='pdstl',\n");
                        	break;
 		case NuMIBeam:
-			fprintf(sam_file,"'triggertype':'NuMIBeam',})}),\n");
+			fprintf(sam_file,"'triggertype':'numibeam',})}),\n");
 			fprintf(sam_file,"datastream='numib',\n");
 			break;
 		case Cosmics:
-			fprintf(sam_file,"'triggertype':'Cosmics',})}),\n");
+			fprintf(sam_file,"'triggertype':'cosmics',})}),\n");
 			fprintf(sam_file,"datastream='cosmc',\n");
 			break;
 		case PureLightInjection:
-			fprintf(sam_file,"'triggertype':'PureLightInjection',})}),\n");
+			fprintf(sam_file,"'triggertype':'purelightinjection',})}),\n");
 			fprintf(sam_file,"datastream='linjc',\n");
 			std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 			break;
 		case MixedBeamPedestal:
 			// TODO - Test mixed beam-pedestal running!
-			fprintf(sam_file,"'triggertype':'MixedBeamPedestal',})}),\n");
+			fprintf(sam_file,"'triggertype':'mixedbeampedestal',})}),\n");
 			fprintf(sam_file,"datastream='numip',\n");
 			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-pedestal trigger types!" << 
 				std::endl;
 			break;
 		case MixedBeamLightInjection:
 			// TODO - Test mixed beam-li running!
-			fprintf(sam_file,"'triggertype':'MixedBeamLightInjection',})}),\n");
+			fprintf(sam_file,"'triggertype':'mixedbeamlightinjection',})}),\n");
 			fprintf(sam_file,"datastream='numil',\n");
 			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
 			std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
