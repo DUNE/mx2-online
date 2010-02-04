@@ -189,9 +189,12 @@ class SCApp(wx.App):
             f.close()
         dlg.Destroy()
     def OnMenuSaveFile(self, event):
-        #for croc in self.vmeCROCs:
-        #    print croc
-        wx.MessageBox('SaveFile...', wx.Frame.GetTitle(self),
+        for crim in self.vmeCRIMs:
+            print crim.type, crim.GetWRRegValues()
+        for croc in self.vmeCROCs:
+            print croc.type, croc.GetWRRegValues()
+        febPrint()
+        wx.MessageBox('SaveFile...', wx.Frame.GetTitle(self.frame),
             wx.OK | wx.ICON_INFORMATION)
     def OnMenuShowExpandAll(self, event): self.frame.tree.ExpandAll()
     def OnMenuShowCollapseAll(self, event): self.frame.tree.CollapseAll()
@@ -367,12 +370,12 @@ class SCApp(wx.App):
             chkSendMessage = self.frame.crim.ChannelModule.ModeRegister.chkSendMessage.IsChecked() << 14
             chkCRCErrorEnabled = self.frame.crim.ChannelModule.ModeRegister.chkCRCErrorEnabled.IsChecked() << 13
             chkFETriggerEnabled = self.frame.crim.ChannelModule.ModeRegister.chkFETriggerEnabled.IsChecked() << 12          
-            theCRIM.ChannelModule.WriteControl(chkReTransmit | chkSendMessage | chkCRCErrorEnabled | chkFETriggerEnabled)         
+            theCRIM.ChannelModule.WriteMode(chkReTransmit | chkSendMessage | chkCRCErrorEnabled | chkFETriggerEnabled)         
         except: ReportException('OnCRIMCHbtnWriteMode', self.reportErrorChoice)
     def OnCRIMCHbtnReadMode(self, event):
         try:
             theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
-            data = theCRIM.ChannelModule.ReadControl()
+            data = theCRIM.ChannelModule.ReadMode()
             chkReTransmit = self.frame.crim.ChannelModule.ModeRegister.chkReTransmit.SetValue((data & 0x8000) >> 15)
             chkSendMessage = self.frame.crim.ChannelModule.ModeRegister.chkSendMessage.SetValue((data & 0x4000) >> 14)
             chkCRCErrorEnabled = self.frame.crim.ChannelModule.ModeRegister.chkCRCErrorEnabled.SetValue((data & 0x2000) >> 13)
@@ -423,7 +426,7 @@ class SCApp(wx.App):
     def OnCRIMINTbtnWriteIntConfigRegister(self, event):
         try:
             theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
-            level = int(self.frame.crim.InterrupterModule.IntConfigRegister.txtVMEIntLevelData.GetValue()) & 0x3
+            level = int(self.frame.crim.InterrupterModule.IntConfigRegister.txtVMEIntLevelData.GetValue()) & 0x7
             enableBit = self.frame.crim.InterrupterModule.IntConfigRegister.chkGlobalIntEnable.IsChecked() << 7               
             theCRIM.InterrupterModule.WriteIntConfig(level | enableBit)         
         except: ReportException('OnCRIMINTbtnWriteIntConfigRegister', self.reportErrorChoice)
@@ -431,7 +434,7 @@ class SCApp(wx.App):
         try:
             theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
             data = theCRIM.InterrupterModule.ReadIntConfig()
-            self.frame.crim.InterrupterModule.IntConfigRegister.txtVMEIntLevelData.SetValue(str(data & 0x3))
+            self.frame.crim.InterrupterModule.IntConfigRegister.txtVMEIntLevelData.SetValue(str(data & 0x7))
             self.frame.crim.InterrupterModule.IntConfigRegister.chkGlobalIntEnable.SetValue((data & 0x80) >> 7)
         except: ReportException('OnCRIMINTbtnReadIntConfigRegister', self.reportErrorChoice)
     def OnCRIMINTbtnWriteClearInterruptRegister(self, event):
@@ -604,16 +607,48 @@ class SCApp(wx.App):
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
             theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
             theFEB=GetFEB(theCROCChannel, self.frame.fe.febNumber)
-            if theFEB==None: raise Exception('Unable to find the FEB')
-            theFEB.UpdateFPGAtxtRegs(self.frame.fe.fpga.Registers.txtRegs)
+            #if theFEB==None: raise Exception('Unable to find the FEB')
+            #theFEB.UpdateFPGAtxtRegs(self.frame.fe.fpga.Registers.txtRegs)
+            
+            sentMessageHeader=MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, \
+                self.frame.fe.febNumber, Frame.DeviceFPGA, Frame.FuncFPGARead)
+            sentMessageData=Frame.NFPGARegisters*[0]
+            sentMessage = sentMessageHeader + sentMessageData
+            
+            ClearAndCheckStatusRegister(theCROCChannel)
+            ResetAndCheckDPMPointer(theCROCChannel)
+            WriteFIFOAndCheckStatus(sentMessage, theCROCChannel) 
+            SendFIFOAndCheckStatus(theCROCChannel)
+            rcvMessageHeader, rcvMessageData = GetRcvMessageHeaderAndData(theCROCChannel)
+            
+            rcvHeaderErr=GetHeaderErrors(rcvMessageHeader, Frame.DirectionM2S, \
+                Frame.BroadcastNone, self.frame.fe.febNumber, Frame.DeviceFPGA, Frame.FuncFPGARead)
+            if len(rcvHeaderErr)!=0: print rcvHeaderErr
+
+            ParseMessageToFPGAtxtRegs(rcvMessageData, self.frame.fe.fpga.Registers.txtRegs)
         except: ReportException('OnFEFPGAbtnRead', self.reportErrorChoice)  
     def OnFEFPGAbtnWrite(self, event):
         try:
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
             theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
             theFEB=GetFEB(theCROCChannel, self.frame.fe.febNumber)
-            if theFEB==None: raise Exception('Unable to find the FEB')
-            theFEB.UpdateFPGARegs(self.frame.fe.fpga.Registers.txtRegs)
+            #if theFEB==None: raise Exception('Unable to find the FEB')
+            #theFEB.UpdateFPGARegs(self.frame.fe.fpga.Registers.txtRegs)
+
+            sentMessageHeader=MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, \
+            self.frame.fe.febNumber, Frame.DeviceFPGA, Frame.FuncFPGAWrite)
+            sentMessageData=ParseFPGARegsToMessage(self.frame.fe.fpga.Registers.txtRegs)
+            sentMessage = sentMessageHeader + sentMessageData
+            
+            ClearAndCheckStatusRegister(theCROCChannel)
+            ResetAndCheckDPMPointer(theCROCChannel)
+            WriteFIFOAndCheckStatus(sentMessage, theCROCChannel) 
+            SendFIFOAndCheckStatus(theCROCChannel)
+            rcvMessageHeader, rcvMessageData = GetRcvMessageHeaderAndData(theCROCChannel)
+            
+            rcvHeaderErr=GetHeaderErrors(rcvMessageHeader, Frame.DirectionM2S, \
+                Frame.BroadcastNone, self.frame.fe.febNumber, Frame.DeviceFPGA, Frame.FuncFPGARead)
+            if len(rcvHeaderErr)!=0: print rcvHeaderErr         
         except: ReportException('OnFEFPGAbtnWrite', self.reportErrorChoice)  
     def OnFEFPGAbtnWriteALL(self, event): wx.MessageBox('not yet implemented')
     def OnFETRIPbtnRead(self, event): wx.MessageBox('not yet implemented')
@@ -627,43 +662,322 @@ class SCApp(wx.App):
         #self.controller.End()
         self.Close(True)
         self.Destroy()
-        
+
+class Frame():
+    DirectionM2S=0x00
+    DirectionS2M=0x80
+    BroadcastNone=0x00
+    BroadcastLoadTimer=0x10
+    BroadcastResetTimer=0x20
+    BroadcastOpenGate=0x30
+    BroadcastSoftReset=0x40
+    DeviceNone=0x00
+    DeviceTRIP=0x10
+    DeviceFPGA=0x20
+    DeviceBRAM=0x30
+    DeviceFLASH=0x40
+    FuncNone=0x00
+    FuncFPGAWrite=0x01
+    FuncFPGARead=0x02
+    FuncTRIPWrite=0x01
+    FuncTRIPRead=0x02
+    StatusDeviceOK=0x01
+    StatusFuncOK=0x02
+    StatusCRCOK=0x01
+    StatusEndHeaderOK=0x02
+    StatusMaxLengthERR=0x04
+    StatusSecondStartErr=0x08
+    StatusNAHeaderErr=0x10
+    NFPGARegisters=54
+
+def MakeHeader(direction, broadcast, febAddress, device, function, frameID0=0, frameID1=0):
+    return [direction+broadcast+febAddress, device+function, 0, frameID0, frameID1, 0, 0, 0, 0]
+
+def GetHeaderErrors(header, direction, broadcast, febAddress, device, function, frameID0=0, frameID1=0):
+    err=[]
+    if len(header)!=9: err.append('Lenth!=%s'%len(header))
+    if header[0]&direction!=direction: err.append('Direction!=%s'%direction)
+    if header[0]&broadcast!=broadcast: err.append('Broadcast!=%s'%broadcast)
+    if header[0]&febAddress!=febAddress: err.append('FEBAddress!=%s'%febAddress)
+    if header[1]&device!=device: err.append('Device!=%s'%device)
+    if header[1]&Frame.StatusDeviceOK!=Frame.StatusDeviceOK: err.append('StatusDeviceOK=False')
+    if header[1]&Frame.StatusFuncOK!=Frame.StatusFuncOK: err.append('StatusFuncOK=False')
+    if header[2]&Frame.StatusCRCOK!=Frame.StatusCRCOK: err.append('StatusCRCOK=False')
+    if header[2]&Frame.StatusEndHeaderOK!=Frame.StatusEndHeaderOK: err.append('StatusEndHeaderOK=False')
+    if header[2]&Frame.StatusMaxLengthERR==Frame.StatusMaxLengthERR: err.append('StatusMaxLengthERR=True')
+    if header[2]&Frame.StatusSecondStartErr==Frame.StatusSecondStartErr: err.append('StatusSecondStartErr=True')
+    if header[2]&Frame.StatusNAHeaderErr==Frame.StatusNAHeaderErr: err.append('StatusNAHeaderErr=True')
+    if header[3]&frameID0!=frameID0: err.append('frameI12D0!=%s'%frameID0)
+    if header[4]&frameID1!=frameID1: err.append('frameID1!=%s'%frameID1)
+    return err
+
+def ParseMessageToFPGAtxtRegs(msg, txtRegs):
+    #message word 0-3: WR Timer, 32 bits
+    txtRegs[14].SetValue(str(msg[0]+(msg[1]<<8)+(msg[2]<<16)+(msg[3]<<24)))
+    #message word 4-5: WR Gate Start, 16 bits
+    txtRegs[1].SetValue(str(msg[4]+(msg[5]<<8)))
+    #message word 6-7: WR Gate Length, 16 bits
+    txtRegs[2].SetValue(str(msg[6]+(msg[7]<<8)))
+    #message word 8-9, bit 0: R  DCM2 PhaseTotal, 9 bits
+    txtRegs[36].SetValue(str(msg[8]+((msg[9]&0x01)<<8)))
+    #message word 9, bit 1: R  DCM2 PhaseDone, 1 bit
+    txtRegs[35].SetValue(str((msg[9]>>1)&0x01))
+    #message word 9, bit 2: R  DCM1 NoCLK(0), 1 bit
+    txtRegs[33].SetValue(str((msg[9]>>2)&0x01))
+    #message word 9, bit 3: R  DCM2 NoCLK(0), 1 bit
+    txtRegs[34].SetValue(str((msg[9]>>3)&0x01))
+    #message word 9, bit 4: R  DCM1 Lock(0), 1 bit
+    txtRegs[31].SetValue(str((msg[9]>>4)&0x01))
+    #message word 9, bit 5: R  DCM2 Lock(0), 1 bit
+    txtRegs[32].SetValue(str((msg[9]>>5)&0x01))
+    #message word 9, bit 6 - 7: R  TP Count2b, 2 bits
+    txtRegs[37].SetValue(str((msg[9]>>6)&0x03))
+    #message word 10: WR Phase Ticks, 8 bits
+    txtRegs[30].SetValue(str(msg[10]))
+    #message word 11, bit 0: R  ExtTriggFound, 1 bit
+    txtRegs[41].SetValue(str((msg[11])&0x01))
+    #message word 11, bit 1: WR ExtTriggRearm, 1 bit
+    txtRegs[42].SetValue(str((msg[11]>>1)&0x01))
+    #message word 11, bit 2: R  SCmdErr(1), 1 bit
+    txtRegs[48].SetValue(str((msg[11]>>2)&0x01))
+    #message word 11, bit 3: R  FCmdErr(1), 1 bit
+    txtRegs[49].SetValue(str((msg[11]>>3)&0x01))
+    #message word 11, bit 4: WR Phase -(0)+(1), 1 bit
+    txtRegs[29].SetValue(str((msg[11]>>4)&0x01))
+    #message word 11, bit 5: WR Phase R(0)S(1), 1 bit
+    txtRegs[28].SetValue(str((msg[11]>>5)&0x01))
+    #message word 11, bit 6: R  RXSyncErr(1), 1 bit
+    txtRegs[50].SetValue(str((msg[11]>>6)&0x01))
+    #message word 11, bit 7: R  TXSyncErr(1), 1 bit
+    txtRegs[51].SetValue(str((msg[11]>>7)&0x01))
+    #message word 12-15: R  TP Count, 32 bits
+    txtRegs[38].SetValue(str(msg[12]+(msg[13]<<8)+(msg[14]<<16)+(msg[15]<<24)))
+    #message word 16: WR Trip0 En+Inj, 8 bits
+    txtRegs[15].SetValue(str(msg[16]))
+    #message word 17: WR Trip1 En+Inj, 8 bits
+    txtRegs[16].SetValue(str(msg[17]))
+    #message word 18: WR Trip2 En+Inj, 8 bits
+    txtRegs[17].SetValue(str(msg[18]))
+    #message word 19: WR Trip3 En+Inj, 8 bits
+    txtRegs[18].SetValue(str(msg[19]))
+    #message word 20: WR Trip4 En+Inj, 8 bits
+    txtRegs[19].SetValue(str(msg[20]))
+    #message word 21: WR Trip5 En+Inj, 8 bits
+    txtRegs[20].SetValue(str(msg[21]))
+    #message word 22, bit 0-5: WR Trip PowOFF, 1 bit for each trip
+    txtRegs[0].SetValue(str(msg[22]&0x3F))
+    #message word 22, bit 6: WR HV Auto(0)Man(1), 1 bit 
+    txtRegs[6].SetValue(str((msg[22]>>6)&0x01))
+    #message word 22, bit 7: WR HV Enable(1), 1 bit
+    txtRegs[3].SetValue(str((msg[22]>>7)&0x01))
+    #message word 23-24: WR HV Target, 16 bits
+    txtRegs[4].SetValue(str(msg[23]+(msg[24]<<8)))
+    #message word 25-26: R  HV Actual, 16 bits
+    txtRegs[5].SetValue(str(msg[25]+(msg[26]<<8)))
+    #message word 27: R  HV Control, 8 bits
+    txtRegs[27].SetValue(str(msg[27]))
+    #message word 28-29, bits 0-3: WR InjDAC Value, 12 bits
+    txtRegs[23].SetValue(str(msg[28]+((msg[29]&0x0F)<<8)))
+    #message word 29, bits 4-5: WR InjDAC Mode(0), 2 bits
+    txtRegs[24].SetValue(str((msg[29]>>4)&0x03))
+    #message word 29, bits 6: R  InjDAC Done(1), 1 bit
+    txtRegs[26].SetValue(str((msg[29]>>6)&0x01))
+    #message word 29, bits 7: WR InjDAC R(0)S(1), 1 bit
+    txtRegs[25].SetValue(str((msg[29]>>7)&0x01))
+    #message word 30: WR TripX InjRange (bits 0-3)
+    txtRegs[21].SetValue(str((msg[30])&0x0F))
+    #message word 30: WR TripX InjPhase (bits 4-7)
+    txtRegs[22].SetValue(str((msg[30]>>4)&0x0F))
+    #message word 31: R  FE Board ID (bits 0-3)
+    txtRegs[13].SetValue(str((msg[31])&0x0F))
+    #message word 31: WR HV NumAvg (bits 4-7)
+    txtRegs[7].SetValue(str((msg[31]>>4)&0x0F))
+    #message word 32: R  Firmware Version, 8 bits
+    txtRegs[12].SetValue(str(msg[32]))
+    #message word 33-34: WR HV PeriodMan, 16 bits
+    txtRegs[8].SetValue(str(msg[33]+(msg[34]<<8)))
+    #message word 35-36: R  HV PeriodAuto, 16 bits
+    txtRegs[9].SetValue(str(msg[35]+(msg[36]<<8)))
+    #message word 37: WR HV PulseWidth, 8 bits 
+    txtRegs[10].SetValue(str(msg[37]))
+    #message word 38-39: R  Temperature, 16 bits
+    txtRegs[11].SetValue(str(msg[38]+(msg[39]<<8)))
+    #message word 40: WR TripX Threshold, 8 bits
+    txtRegs[39].SetValue(str(msg[40]))
+    #message word 41: R  TripX Comparators, 8 bits
+    txtRegs[40].SetValue(str(msg[41]))
+    #message word 42-43: WR DiscMaskT0 (0x), 16 bits
+    txtRegs[43].SetValue(hex(msg[42]+(msg[43]<<8))[2:])
+    #message word 44-45: WR DiscMaskT1 (0x), 16 bits
+    txtRegs[44].SetValue(hex(msg[44]+(msg[45]<<8))[2:])
+    #message word 46-47: WR DiscMaskT2 (0x), 16 bits
+    txtRegs[45].SetValue(hex(msg[46]+(msg[47]<<8))[2:])
+    #message word 48-49: WR DiscMaskT3 (0x), 16 bits
+    txtRegs[46].SetValue(hex(msg[48]+(msg[49]<<8))[2:])
+    #message word 50-53: R  GateTimeStamp, 32 bits
+    txtRegs[47].SetValue(str(msg[50]+(msg[51]<<8)+(msg[52]<<16)+(msg[53]<<24)))
+
+def ParseFPGARegsToMessage(txtRegs):
+    msg=Frame.NFPGARegisters*[0]
+    #message word 0-3: WR Timer, 32 bits
+    msg[0] = (int(txtRegs[14].GetValue())) & 0xFF
+    msg[1] = (int(txtRegs[14].GetValue())>>8) & 0xFF
+    msg[2] = (int(txtRegs[14].GetValue())>>16) & 0xFF
+    msg[3] = (int(txtRegs[14].GetValue())>>24) & 0xFF
+    #message word 4-5: WR Gate Start, 16 bits
+    msg[4] = (int(txtRegs[1].GetValue())) & 0xFF
+    msg[5] = (int(txtRegs[1].GetValue())>>8) & 0xFF
+    #message word 6-7: WR Gate Length, 16 bits
+    msg[6] = (int(txtRegs[2].GetValue())) & 0xFF
+    msg[7] = (int(txtRegs[2].GetValue())>>8) & 0xFF
+    #message word 8-9: Read Only
+    #message word 10: WR Phase Ticks, 8 bits
+    msg[10] = (int(txtRegs[30].GetValue())) & 0xFF
+    #message word 11, bit 1: WR ExtTriggRearm, 1 bit
+    #message word 11, bit 4: WR Phase -(0)+(1), 1 bit
+    #message word 11, bit 5: WR Phase R(0)S(1), 1 bit
+    msg[11] = ((int(txtRegs[42].GetValue()) & 0x01) << 1) + \
+              ((int(txtRegs[29].GetValue()) & 0x01) << 4) + \
+              ((int(txtRegs[28].GetValue()) & 0x01) << 5)
+    #message word 12-15: Read Only
+    #message word 16: WR Trip0 En+Inj, 8 bits
+    msg[16] = (int(txtRegs[15].GetValue())) & 0xFF
+    #message word 17: WR Trip1 En+Inj, 8 bits
+    msg[17] = (int(txtRegs[16].GetValue())) & 0xFF
+    #message word 18: WR Trip2 En+Inj, 8 bits
+    msg[18] = (int(txtRegs[17].GetValue())) & 0xFF
+    #message word 19: WR Trip3 En+Inj, 8 bits
+    msg[19] = (int(txtRegs[18].GetValue())) & 0xFF
+    #message word 20: WR Trip4 En+Inj, 8 bits
+    msg[20] = (int(txtRegs[19].GetValue())) & 0xFF
+    #message word 21: WR Trip5 En+Inj, 8 bits
+    msg[21] = (int(txtRegs[20].GetValue())) & 0xFF
+    #message word 22, bit 0-5: WR Trip PowOFF, 1 bit for each trip
+    #message word 22, bit 6: WR HV Auto(0)Man(1), 1 bit
+    #message word 22, bit 7: WR HV Enable(1), 1 bit
+    msg[22] = ((int(txtRegs[0].GetValue()) & 0x3F)) + \
+              ((int(txtRegs[6].GetValue()) & 0x01) << 6) + \
+              ((int(txtRegs[3].GetValue()) & 0x01) << 7)
+    #message word 23-24: WR HV Target, 16 bits
+    msg[23] = (int(txtRegs[4].GetValue())) & 0xFF
+    msg[24] = (int(txtRegs[4].GetValue())>>8) & 0xFF
+    #message word 25-27: Read Only
+    #message word 28-29, bits 0-3: WR InjDAC Value, 12 bits
+    msg[28] = (int(txtRegs[23].GetValue())) & 0xFF
+    #message word 28-29, bits 0-3: WR InjDAC Value, 12 bits
+    #message word 29, bits 4-5: WR InjDAC Mode(0), 2 bits
+    #message word 29, bits 7: WR InjDAC R(0)S(1), 1 bit
+    msg[29] = ((int(txtRegs[23].GetValue()) & 0xF00) >> 8) + \
+              ((int(txtRegs[24].GetValue()) & 0x03) << 4) + \
+              ((int(txtRegs[25].GetValue()) & 0x01) << 7)
+    #message word 30: WR TripX InjRange (bits 0-3)
+    #message word 30: WR TripX InjPhase (bits 4-7)
+    #a special case for InjectPhase register
+    injPhase=int(txtRegs[22].GetValue())
+    if injPhase==0 or injPhase==1 or injPhase==2 or injPhase==4 or injPhase==8:
+        msg[30] = ((int(txtRegs[21].GetValue()) & 0x0F)) + \
+                  ((int(txtRegs[22].GetValue()) & 0x0F) << 4)
+    else: raise Exception(txtRegs[22].GetName() + ' must be 1, 2, 4 or 8')
+    #message word 31: WR HV NumAvg (bits 4-7)
+    msg[31] = ((int(txtRegs[7].GetValue()) & 0x0F) << 4)
+    #message word 32: Read Only
+    #message word 33-34: WR HV PeriodMan, 16 bits
+    msg[33] = (int(txtRegs[8].GetValue())) & 0xFF
+    msg[34] = (int(txtRegs[8].GetValue())>>8) & 0xFF
+    #message word 35-36: Read Only
+    #message word 37: WR HV PulseWidth, 8 bits
+    msg[37] = (int(txtRegs[10].GetValue())) & 0xFF
+    #message word 38-39: Read Only
+    #message word 40: WR TripX Threshold, 8 bits
+    msg[40] = (int(txtRegs[39].GetValue())) & 0xFF
+    #message word 41: Read Only
+    #message word 42-43: WR DiscMaskT0 (0x), 16 bits
+    msg[42] = (int(txtRegs[43].GetValue(),16)) & 0xFF
+    msg[43] = (int(txtRegs[43].GetValue(),16)>>8) & 0xFF
+    #message word 44-45: WR DiscMaskT1 (0x), 16 bits
+    msg[44] = (int(txtRegs[44].GetValue(),16)) & 0xFF
+    msg[45] = (int(txtRegs[44].GetValue(),16)>>8) & 0xFF
+    #message word 46-47: WR DiscMaskT2 (0x), 16 bits
+    msg[46] = (int(txtRegs[45].GetValue(),16)) & 0xFF
+    msg[47] = (int(txtRegs[45].GetValue(),16)>>8) & 0xFF
+    #message word 48-49: WR DiscMaskT3 (0x), 16 bits
+    msg[48] = (int(txtRegs[46].GetValue(),16)) & 0xFF
+    msg[49] = (int(txtRegs[46].GetValue(),16)>>8) & 0xFF
+    #message word 50-53: 
+    return msg    
+
 def FindVMEdev(vmeDevList, devAddr):
     for dev in vmeDevList:
         if (dev.BaseAddress()==devAddr): return dev
+
 def GetFEB(theCROCChannel, theFEBNumber):
     feb=None
     for theFEB in theCROCChannel.FEBs:
         if theFEB.fpga.GetBoardNumber()==theFEBNumber:
             feb=theFEB; break
     return feb
+
+def ClearAndCheckStatusRegister(theCROCChannel, chk=True):
+    theCROCChannel.ClearStatus()
+    if chk:
+        status=theCROCChannel.ReadStatus()
+        if (status!=0x3700): raise Exception(
+            "Error after clear STATUS register for channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
+
+def ResetAndCheckDPMPointer(theCROCChannel, chk=True):
+    theCROCChannel.DPMPointerReset()
+    if chk:
+        dpmPointer=theCROCChannel.DPMPointerRead()
+        if (dpmPointer!=0x02): raise Exception(
+            "Error after DPMPointerReset() for channel " + hex(theCROCChannel.chBaseAddr) + " DPMPointer=" + hex(dpmPointer))
+
+def WriteFIFOAndCheckStatus(theMessage, theCROCChannel, chk=True):
+    if len(theMessage)%2==1: theMessage.append(0)
+    for i in range(0,len(theMessage),2):
+        data = (theMessage[i]<<8) + theMessage[i+1]
+        theCROCChannel.WriteFIFO(data)
+    if chk:
+        status=theCROCChannel.ReadStatus()
+        if (status!=0x3710): raise Exception(
+            "Error after fill FIFO for channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
+
+def SendFIFOAndCheckStatus(theCROCChannel, chk=True):
+    theCROCChannel.SendMessage()
+    for i in range(100):
+        status=theCROCChannel.ReadStatus()
+        if (status==0x3703): break
+    if (status!=0x3703): raise Exception(
+        "Error after send message for channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
+
+def GetRcvMessageHeaderAndData(theCROCChannel):
+    dpmPointer=theCROCChannel.DPMPointerRead()
+    print 'dpmPointer=%s, %s' % (hex(dpmPointer), dpmPointer)
+    rcvMessage=[]
+    for i in range(0, dpmPointer, 2):
+        data=theCROCChannel.ReadDPM(i)
+        rcvMessage.append((data&0xFF00)>>8)
+        rcvMessage.append(data&0x00FF)
+        print 'i=%s, data=%s' % (str(i), hex(data))
+    print [hex(x) for x in rcvMessage]
+    rcvLength=rcvMessage[0]+(rcvMessage[1]<<8)
+    if rcvLength!=(dpmPointer-2): raise Exception(
+        'Error for channel ' + hex(theCROCChannel.chBaseAddr) +
+        ' DPMPointer=' + dpmPointer +' <> RcvMessageLength+2=' + rcvLength)
+    rcvMessageHeader=rcvMessage[2:11]
+    rcvMessageData=rcvMessage[11:rcvLength]
+    print [hex(x) for x in rcvMessageHeader], len(rcvMessageHeader)
+    print [hex(x) for x in rcvMessageData], len(rcvMessageData)
+    return (rcvMessageHeader, rcvMessageData)
+
 def FindFEBs(theCROCChannel):
     #clear the self.FEBs list
     theCROCChannel.FEBs=[]
     for febAddr in range(1,16):
         for itry in range(1,3):
-            #clear/check status register
-            theCROCChannel.ClearStatus()
-            status=theCROCChannel.ReadStatus()
-            if (status!=0x3700): raise Exception(
-                "FindFEBs: Error after clear STATUS register for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
-            #reset/check DPM pointer
-            theCROCChannel.DPMPointerReset()
-            dpmPointer=theCROCChannel.DPMPointerRead()
-            if (dpmPointer!=0x02): raise Exception(
-                "FindFEBs: Error after DPMPointerReset() for CROC channel " + hex(theCROCChannel.chBaseAddr) + " DPMPointer=" + hex(dpmPointer))
-            #write to FIFO and check status register
-            theCROCChannel.WriteFIFO(febAddr<<8)
-            status=theCROCChannel.ReadStatus()
-            if (status!=0x3710): raise Exception(
-                "FindFEBs: Error after fill FIFO for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
-            #send message and check status register
-            theCROCChannel.SendMessage()
-            for i in range(1000):
-                status=theCROCChannel.ReadStatus()
-                if (status==0x3703): break
-            if (status!=0x3703): raise Exception(
-                "FindFEBs: Error after send message for CROC channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
+            ClearAndCheckStatusRegister(theCROCChannel)
+            ResetAndCheckDPMPointer(theCROCChannel)
+            WriteFIFOAndCheckStatus([febAddr], theCROCChannel) 
+            SendFIFOAndCheckStatus(theCROCChannel)
             #decode first two words from DPM and check DPM pointer
             dpmPointer=theCROCChannel.DPMPointerRead()
             w1=theCROCChannel.ReadDPM(0)
@@ -675,17 +989,19 @@ def FindFEBs(theCROCChannel):
             elif (w2==(0x0000 | (febAddr<<8))) & (w1==0x0400) & (dpmPointer==6): pass
                 #print "NO    feb#" + str(feb), "w1="+hex(w1), "dpmPointer="+str(dpmPointer) 
             else: print "FindFEBs(" + hex(theCROCChannel.chBaseAddr) + ") wrong message " + "w1="+hex(w1) + "w2="+hex(w2), "dpmPointer="+str(dpmPointer)  
+
 def ReportException(comment, choice):
     msg = comment + ' : ' + str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1])
     if (choice['display']): print msg
     if (choice['msgBox']): wx.MessageBox(msg)
+
 def ParseDataToListLabels(data, ListLabels):
     for i in range(len(ListLabels)):
         ListLabels[i].Label=str((data & (1<<i))>>i)
+
 def ParseDataToListCheckBoxs(data, ListCheckBoxs):
     for i in range(len(ListCheckBoxs)):
         ListCheckBoxs[i].SetValue((data & (1<<i))>>i)
-        
 
 class VMEDevice():
     def __init__(self, controller, baseAddr, moduleType):
@@ -699,7 +1015,6 @@ class VMEDevice():
             return self.type+':'+str((self.baseAddr & 0xFF0000)>>16)
         if (self.type==SC_Util.VMDdevTypes.CH):
             return self.type+':'+str(((self.baseAddr & 0x00F000)>>12)/4)
-
 
 class CROCChannel(VMEDevice):
     def __init__(self, chNumber, baseAddr, controller):
@@ -733,7 +1048,6 @@ class CROCChannel(VMEDevice):
         datasw=int(((data&0xFF)<<8) | ((data&0xFF00)>>8))
         return datasw
 
-
 class CROC(VMEDevice):
     def __init__(self, controller, baseAddr):
         VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CROC)
@@ -749,7 +1063,6 @@ class CROC(VMEDevice):
         #self.channels[1].FEBs=[FEB(5), FEB(6), FEB(7), FEB(8)]
         #self.channels[2].FEBs=[FEB(9), FEB(10), FEB(11), FEB(12)]
         #self.channels[3].FEBs=[FEB(13), FEB(14), FEB(15), FEB(16), FEB(17)]
-        print hex(self.RegWTestPulse)[2:].ljust(4, '0')
     def Channels(self): return self.channels
     def NodeList(self): return [self.Description(), 
         [self.channels[0].NodeList(), self.channels[1].NodeList(),
@@ -761,10 +1074,10 @@ class CROC(VMEDevice):
     def ReadRSTTP(self): return int(self.controller.ReadCycle(self.RegWRResetAndTestMask))
     def SendRSTOnly(self): self.controller.WriteCycle(self.RegWChannelReset, 0x0202)
     def SendTPOnly(self): self.controller.WriteCycle(self.RegWTestPulse, 0x0404)
-    def GetRegValues(self):
-        return [(hex(self.RegWRTimingSetup)[2:].ljust(4, '0'), RegWRTimingSetup()),
-                (hex(self.RegWRResetAndTestMask)[2:].ljust(4, '0'), RegWRResetAndTestMask())]
- 
+    def GetWRRegValues(self):
+        return [(hex(self.RegWRTimingSetup)[2:].rjust(6, '0'),  hex(self.ReadTimingSetup())[2:].rjust(4, '0')),
+                (hex(self.RegWRResetAndTestMask)[2:].rjust(6, '0'), hex(self.ReadRSTTP())[2:].rjust(4, '0'))]
+
 class CRIM(VMEDevice):
     def __init__(self, controller, baseAddr):
         VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
@@ -772,6 +1085,19 @@ class CRIM(VMEDevice):
         self.ChannelModule = CRIMChannelModule(controller, baseAddr)
         self.InterrupterModule = CRIMInterrupterModule(controller, baseAddr)
     def NodeList(self): return [self.Description(), []]
+    def GetWRRegValues(self):
+        regval = [(hex(self.ChannelModule.RegWRMode)[2:].rjust(6, '0'), hex(self.ChannelModule.ReadMode())[2:].rjust(4, '0')),
+            (hex(self.TimingModule.RegWRTimingSetup)[2:].rjust(6, '0'),  hex(self.TimingModule.ReadTimingSetup())[2:].rjust(4, '0')),
+            (hex(self.TimingModule.RegWRGateWidth)[2:].rjust(6, '0'), hex(self.TimingModule.ReadGateWidth())[2:].rjust(4, '0')),
+            (hex(self.TimingModule.RegWRTCALBDelay)[2:].rjust(6, '0'), hex(self.TimingModule.ReadTCALBDelay())[2:].rjust(4, '0')),
+            (hex(self.TimingModule.RegWRScrapRegister)[2:].rjust(6, '0'), hex(self.TimingModule.ReadScrap())[2:].rjust(4, '0')),
+            (hex(self.InterrupterModule.RegWRMask)[2:].rjust(6, '0'), hex(self.InterrupterModule.ReadMask())[2:].rjust(4, '0')),
+            (hex(self.InterrupterModule.RegWRStatus)[2:].rjust(6, '0'), hex(self.InterrupterModule.ReadStatus())[2:].rjust(4, '0')),
+            (hex(self.InterrupterModule.RegWRIntConfig)[2:].rjust(6, '0'), hex(self.InterrupterModule.ReadIntConfig())[2:].rjust(4, '0'))]
+        for RegAddr in self.InterrupterModule.RegWRVectorTable:
+            regval.append((hex(RegAddr)[2:].rjust(6, '0'), hex(int(self.controller.ReadCycle(RegAddr)))[2:].rjust(4, '0')))
+        return regval
+
 class CRIMTimingModule(VMEDevice):
     def __init__(self, controller, baseAddr):
         VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
@@ -803,6 +1129,7 @@ class CRIMTimingModule(VMEDevice):
         dataLower = int(self.controller.ReadCycle(self.RegRGateTimestampLower))
         dataUpper = (int(self.controller.ReadCycle(self.RegRGateTimestampUpper)) & 0xFFF) << 16
         return dataUpper | dataLower
+
 class CRIMChannelModule(CROCChannel, VMEDevice):
     def __init__(self, controller, baseAddr):
         VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
@@ -819,8 +1146,9 @@ class CRIMChannelModule(CROCChannel, VMEDevice):
     def ResetFIFO(self): self.controller.WriteCycle(self.RegWResetFIFO, 0x0808)
     def SendSYNC(self): self.controller.WriteCycle(self.RegWSendSYNC, 0x0101)
     def ReadDecodTmgCmd(self): return int(self.controller.ReadCycle(self.RegRDecodTmgCmd))
-    def WriteControl(self, data): self.controller.WriteCycle(self.RegWRMode, data)
-    def ReadControl(self): return int(self.controller.ReadCycle(self.RegWRMode))
+    def WriteMode(self, data): self.controller.WriteCycle(self.RegWRMode, data)
+    def ReadMode(self): return int(self.controller.ReadCycle(self.RegWRMode))
+
 class CRIMInterrupterModule(VMEDevice):
     def __init__(self, controller, baseAddr):
         VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
@@ -846,75 +1174,78 @@ class CRIMInterrupterModule(VMEDevice):
         for RegAddr in self.RegWRVectorTable: data.append(int(self.controller.ReadCycle(RegAddr)))
         return data
 
-
 class FEB():
     def __init__(self, febAddresses, nHits=6, initialized=True, nRegisters=54):
         self.fpga = feb.feb(nHits, initialized, febAddresses, nRegisters)
-        self.fpga1bitreg=[3,]
-        self.fpga2bitreg=[]
-        self.fpga4bitreg=[]
-        self.fpga6bitreg=[0,]
-        self.fpga8bitreg=[]
-        self.fpga9bitreg=[]
-        self.fpga12bitreg=[]
-        self.fpga16bitreg=[1,2,4]
-        self.fpga32bitreg=[]
-        
         self.fpga.SetFEBDefaultValues()
-        #feb.trips.CheckForErrors
-        #self.trips = feb.trips(febAddresses, ???, nHits)    #trips::trips(febAddresses a, TRiPFunctions f, int maxHits) 
-        self.frames = feb.Frames()
-
-        trip0 = self.fpga.GetTrip(0)
-        trip0.SetRead(True)
-        trip0.MakeMessage()
-        trip0.GetOutgoingMessage()
-        #trip0.GetRegisterValue()
-        #trip0.DecodeRegisterValues(100)
-        
-        #print hardware._name
-        #print hardware.__init__('trip')
-        #print hardware.__class__('feb')
-        #print hardware._FuncPtr.argtypes.
-        #self.hw=hardware.feb.feb(nHits, initialized, febAddresses, nRegisters)
-        #print self.hw
-        
-        #self.fpga.MakeDeviceFrameTransmit()
-        #self.fpga.MakeHeader()
         self.fpga.MakeMessage()
-        OutgoingMessage = self.fpga.GetOutgoingMessage()
+        self.fpga.ShowValues()
+        self.fpga.SetTimer(0xFFFF)#; print self.fpga.GetTimer()
+        self.fpga.ShowValues()
+##        // Change FEB fpga function to write
+##                Devices dev = FPGA;               
+##                Broadcasts b = None;
+##                Directions d = MasterToSlave;
+##                FPGAFunctions f = Write;          ->keep Read=
+##                myFeb->MakeDeviceFrameTransmit(dev,b,d,f,(unsigned int) myFeb->GetBoardNumber());
+        ##the following two statements, when uncomment, generate this error
+        ##(python2.6:32271): Gtk-CRITICAL **: gtk_text_buffer_emit_insert: assertion `g_utf8_validate (text, len, NULL)' failed
+        #self.fpga.MakeDeviceFrameTransmit(feb.FPGA, 0, feb.MasterToSlave, feb.Read, febAddresses)
+        #self.fpga.MakeMessage()
+##        print 'GetOutgoingMessageLength = %s' % self.fpga.GetOutgoingMessageLength()
+##        msg = self.fpga.GetOutgoingMessage()
+##        #self.fpga.DeleteOutgoingMessage(); # must clean up FEB messages manually on a case-by-case basis #???
+##
+##        #set_conversion_mode('ascii', 'strict')  #"strict", "replace", or "ignore".
+##        #set_conversion_mode('utf-8', 'strict')
+##        #set_conversion_mode('mbcs', 'strict')
+##        print 'str(msg)='+str(msg)
+##        print 'int(msg)='+str(int(msg))
+##        x = c_char_p(str(msg)); 
+##        y = c_char_p(int(msg));
+##        yy = c_void_p(int(msg)); 
+##        z = c_wchar_p(int(msg))
+##        zz = c_wchar_p(int(msg)+8)
+##        #print OutgoingMessage
+##        #print chr(OutgoingMessage())
+##        print x, x.value
+##        print y, y.value
+##        print yy, yy.value
+##        print z, z.value
+##        print zz, zz.value#, chr(int(msg)+2)
+##        #print zz.value.encode('utf-8')
+##        #print zz.value.encode('ascii')
+##        #print zz.value.encode('mbcs')
+##        for i in range(20):
+##            print 'i=%d'%i, c_wchar_p(int(msg)+i), c_wchar_p(int(msg)+i).value
+##             #print string_at(z, i)
+##        for i in range(9):
+##            print 'i=%d'%i, c_char_p(int(msg)+i), c_char_p(int(msg)+i).value
+            
+        #If the result can contain nul bytes, you have to specify its size
+        #explicitely (else it will be truncated at the first zero). Use the
+        #string_at utility function:
+        # result_str = string_at(result, length)
+        #print string_at(z, 63)
 
         
-        set_conversion_mode('ascii', 'strict')  #"strict", "replace", or "ignore".
-        #set_conversion_mode('utf-8', 'strict')
-        #set_conversion_mode('mbcs', 'strict')
-        
-        x = c_char_p(str(self.fpga.GetOutgoingMessage()))
-        y = c_char_p(int(self.fpga.GetOutgoingMessage()))
-        z = c_wchar_p(int(self.fpga.GetOutgoingMessage()))
-        zz = c_wchar_p(int(self.fpga.GetOutgoingMessage())+8)
-        #print OutgoingMessage
-        #print chr(OutgoingMessage())
-        #print x, x.value
-        #print y, y.value
-        print z, z.value    #, string_at(y), string_at(z)
-        print zz, zz.value
-        #print string_at(y)  #, x.value
-
         #msg = c_char_p(0);print "msg=",msg
         #msg = int(self.fpga.GetOutgoingMessage());print "msg=",msg
         #strchr = libc.strchr
+
         #msg = create_string_buffer(str(self.fpga.GetOutgoingMessage()))
         #print msg, sizeof(msg), repr(msg.raw), repr(msg.value)
 
+
+##        trip0 = self.fpga.GetTrip(0)
+##        trip0.SetRead(True)
+##        trip0.MakeMessage()
+##        trip0.GetOutgoingMessage()
+##        #trip0.GetRegisterValue()
+##        #trip0.DecodeRegisterValues(100)
+
         
     def UpdateFPGARegs(self, txtRegs):
-##        data = c_char_p('3')
-##        print 'data=%s' % data.value
-##        print self
-##        print self.fpga
-##    s    self.fpga.SetTripPowerOff('A')
-        
         #these are the default GUI
         self.fpga.SetTripPowerOff(chr(int(txtRegs[0].GetValue()) & 0x3F))
         self.fpga.SetGateStart(int(txtRegs[1].GetValue()) & 0xFFFF)
@@ -923,7 +1254,7 @@ class FEB():
         self.fpga.SetHVTarget(int(txtRegs[4].GetValue()) & 0xFFFF)
         #self.fpga.SetHVActual(int(txtRegs[5].GetValue()))          # READ only => must be REMOVED from feb.py 
         self.fpga.SetHVManual(chr(int(txtRegs[6].GetValue()) & 0x01))
-        self.fpga.SetHVNumAve(chr(int(txtRegs[7].GetValue()) & 0x0F))
+        self.fpga.SetHVNumAve(chr(int(txtRegs[7].GetValue()) & 0x07))
         self.fpga.SetHVPeriodManual(int(txtRegs[8].GetValue()))
         #self.fpga.SetHVPeriodAuto(int(txtRegs[9].GetValue()))      # READ only => must be REMOVED from feb.py 
         self.fpga.SetHVPulseWidth(chr(int(txtRegs[10].GetValue()) & 0xFF))
@@ -933,31 +1264,24 @@ class FEB():
         #self.fpga.SetBoardID(int(txtRegs[13].GetValue()))          # READ only => must be REMOVED from feb.py 
         #these are the advanced GUI
         self.fpga.SetTimer(int(txtRegs[14].GetValue()))
-        #--------------------------------
-        #self.fpga.(int(txtRegs[15].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
-        #self.fpga.(int(txtRegs[16].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
-        #self.fpga.(int(txtRegs[17].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
-        #self.fpga.(int(txtRegs[18].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
-        #self.fpga.(int(txtRegs[19].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
-        #self.fpga.(int(txtRegs[20].GetValue()))                    # use SetInjectCount(self, *args) and SetInjectEnable(self, *args)
         self.fpga.SetInjectCount(chr(int(txtRegs[15].GetValue()) & 0x3F), 0)
         self.fpga.SetInjectCount(chr(int(txtRegs[16].GetValue()) & 0x3F), 1)
         self.fpga.SetInjectCount(chr(int(txtRegs[17].GetValue()) & 0x3F), 2)
         self.fpga.SetInjectCount(chr(int(txtRegs[18].GetValue()) & 0x3F), 3)
         self.fpga.SetInjectCount(chr(int(txtRegs[19].GetValue()) & 0x3F), 4)
         self.fpga.SetInjectCount(chr(int(txtRegs[20].GetValue()) & 0x3F), 5)
-        self.fpga.SetInjectEnable(chr(int(txtRegs[15].GetValue()) & 0x80), 0)
-        self.fpga.SetInjectEnable(chr(int(txtRegs[16].GetValue()) & 0x80), 1)
-        self.fpga.SetInjectEnable(chr(int(txtRegs[17].GetValue()) & 0x80), 2)
-        self.fpga.SetInjectEnable(chr(int(txtRegs[18].GetValue()) & 0x80), 3)
-        self.fpga.SetInjectEnable(chr(int(txtRegs[19].GetValue()) & 0x80), 4)
-        self.fpga.SetInjectEnable(chr(int(txtRegs[20].GetValue()) & 0x80), 5)
-        #--------------------------------
+        self.fpga.SetInjectEnable(chr((int(txtRegs[15].GetValue()) & 0x80) >>7), 0)
+        self.fpga.SetInjectEnable(chr((int(txtRegs[16].GetValue()) & 0x80) >>7), 1)
+        self.fpga.SetInjectEnable(chr((int(txtRegs[17].GetValue()) & 0x80) >>7), 2)
+        self.fpga.SetInjectEnable(chr((int(txtRegs[18].GetValue()) & 0x80) >>7), 3)
+        self.fpga.SetInjectEnable(chr((int(txtRegs[19].GetValue()) & 0x80) >>7), 4)
+        self.fpga.SetInjectEnable(chr((int(txtRegs[20].GetValue()) & 0x80) >>7), 5)
         self.fpga.SetInjectRange(chr(int(txtRegs[21].GetValue()) & 0xF))
+        #a special case for InjectPhase register
         injPhase=int(txtRegs[22].GetValue())
-        if injPhase!=0 and injPhase!=1 and injPhase!=2 and injPhase!=4 and injPhase!=8:
-            raise Exception(txtRegs[22].GetName() + ' must be 1, 2, 4 or 8')
-        self.fpga.SetInjectPhase(chr(int(txtRegs[22].GetValue()) & 0xF))
+        if injPhase==0 or injPhase==1 or injPhase==2 or injPhase==4 or injPhase==8:
+            self.fpga.SetInjectPhase(chr(injPhase))
+        else: raise Exception(txtRegs[22].GetName() + ' must be 1, 2, 4 or 8')
         self.fpga.SetInjectDACValue(int(txtRegs[23].GetValue()) & 0xFFF)
         self.fpga.SetInjectDACMode(chr(int(txtRegs[24].GetValue()) & 0x1))
         self.fpga.SetInjectDACStart(chr(int(txtRegs[25].GetValue()) & 0x1))
@@ -1011,12 +1335,12 @@ class FEB():
         txtRegs[13].SetValue(str(self.fpga.GetBoardNumber()))
         #these are the advanced GUI
         txtRegs[14].SetValue(str(self.fpga.GetTimer()))
-        txtRegs[15].SetValue(str(self.fpga.GetInjEnable0()<<7 + self.fpga.GetInjCount0()))
-        txtRegs[16].SetValue(str(self.fpga.GetInjEnable1()<<7 + self.fpga.GetInjCount1()))
-        txtRegs[17].SetValue(str(self.fpga.GetInjEnable2()<<7 + self.fpga.GetInjCount2()))
-        txtRegs[18].SetValue(str(self.fpga.GetInjEnable3()<<7 + self.fpga.GetInjCount3()))
-        txtRegs[19].SetValue(str(self.fpga.GetInjEnable4()<<7 + self.fpga.GetInjCount4()))
-        txtRegs[20].SetValue(str(self.fpga.GetInjEnable5()<<7 + self.fpga.GetInjCount5()))
+        txtRegs[15].SetValue(str((self.fpga.GetInjEnable0()<<7) + self.fpga.GetInjCount0()))
+        txtRegs[16].SetValue(str((self.fpga.GetInjEnable1()<<7) + self.fpga.GetInjCount1()))
+        txtRegs[17].SetValue(str((self.fpga.GetInjEnable2()<<7) + self.fpga.GetInjCount2()))
+        txtRegs[18].SetValue(str((self.fpga.GetInjEnable3()<<7) + self.fpga.GetInjCount3()))
+        txtRegs[19].SetValue(str((self.fpga.GetInjEnable4()<<7) + self.fpga.GetInjCount4()))
+        txtRegs[20].SetValue(str((self.fpga.GetInjEnable5()<<7) + self.fpga.GetInjCount5()))
         txtRegs[21].SetValue(str(self.fpga.GetInjectRange()))
         txtRegs[22].SetValue(str(self.fpga.GetInjectPhase()))
         txtRegs[23].SetValue(str(self.fpga.GetInjDACValue()))
@@ -1057,8 +1381,93 @@ class FEB():
 ##      txtRegs[49].SetValue(str(self.fpga.()))  ' R  FCmdErr(1)'
 ##      txtRegs[50].SetValue(str(self.fpga.()))  ' R  RXSyncErr(1)'
 ##      txtRegs[51].SetValue(str(self.fpga.()))  ' R  TXSyncErr(1)'
-
-                 
+    
+def febPrint():
+    print 'Broadcast = %s' % feb.Broadcast
+    print 'MasterToSlave = %s' % feb.MasterToSlave
+    print 'SlaveToMaster = %s' % feb.SlaveToMaster
+    print 'LoadTimer = %s' % feb.LoadTimer
+    print 'ResetTimer = %s' % feb.ResetTimer
+    print 'OpenGate = %s' % feb.OpenGate
+    print 'SoftReset = %s' % feb.SoftReset
+    print 'NoDevices = %s' % feb.NoDevices
+    print 'TRiP = %s' % feb.TRiP
+    print 'FPGA = %s' % feb.FPGA
+    print 'RAM = %s' % feb.RAM
+    print 'Flash = %s' % feb.Flash
+    print 'NoFPGA = %s' % feb.NoFPGA
+    print 'Write = %s' % feb.Write
+    print 'Read = %s' % feb.Read
+    print 'NoRAM = %s' % feb.NoRAM
+    print 'ReadHit0 = %s' % feb.ReadHit0
+    print 'ReadHit1 = %s' % feb.ReadHit1
+    print 'ReadHit2 = %s' % feb.ReadHit2
+    print 'ReadHit3 = %s' % feb.ReadHit3
+    print 'ReadHit4 = %s' % feb.ReadHit4
+    print 'ReadHit5 = %s' % feb.ReadHit5
+    print 'ReadHitDiscr = %s' % feb.ReadHitDiscr
+    print 'ReadHit6 = %s' % feb.ReadHit6
+    print 'ReadHit7 = %s' % feb.ReadHit7
+    print 'NoChip = %s' % feb.NoChip
+    print 'ReadChip0 = %s' % feb.ReadChip0
+    print 'ReadChip1 = %s' % feb.ReadChip1
+    print 'ReadChip2 = %s' % feb.ReadChip2
+    print 'ReadChip3 = %s' % feb.ReadChip3
+    print 'ReadChip4 = %s' % feb.ReadChip4
+    print 'ReadChip5 = %s' % feb.ReadChip5
+    print 'ReadDigital0 = %s' % feb.ReadDigital0
+    print 'ReadDigital1 = %s' % feb.ReadDigital1
+    print 'NoFlash = %s' % feb.NoFlash
+    print 'Command = %s' % feb.Command
+    print 'SetReset = %s' % feb.SetReset
+    print 'ResponseLength0 = %s' % feb.ResponseLength0
+    print 'ResponseLength1 = %s' % feb.ResponseLength1
+    print 'FrameStart = %s' % feb.FrameStart
+    print 'DeviceStatus = %s' % feb.DeviceStatus
+    print 'FrameStatus = %s' % feb.FrameStatus
+    print 'FrameID0 = %s' % feb.FrameID0
+    print 'FrameID1 = %s' % feb.FrameID1
+    print 'Timestamp0 = %s' % feb.Timestamp0
+    print 'Timestamp1 = %s' % feb.Timestamp1
+    print 'Timestamp2 = %s' % feb.Timestamp2
+    print 'Timestamp3 = %s' % feb.Timestamp3
+    print 'Data = %s' % feb.Data
+    print 'hwFrameStart = %s' % feb.hwFrameStart
+    print 'hwDeviceFunction = %s' % feb.hwDeviceFunction
+    print 'hWord2 = %s' % feb.hWord2
+    print 'hwFrameID0 = %s' % feb.hwFrameID0
+    print 'hwFrameID1 = %s' % feb.hwFrameID1
+    print 'hWord5 = %s' % feb.hWord5
+    print 'hWord6 = %s' % feb.hWord6
+    print 'hWord7 = %s' % feb.hWord7
+    print 'hWord8 = %s' % feb.hWord8
+    print 'Direction = %s' % feb.Direction
+    print 'Broadcast = %s' % feb.Broadcast
+    print 'DeviceOK = %s' % feb.DeviceOK
+    print 'FunctionOK = %s' % feb.FunctionOK
+    print 'CRCOK = %s' % feb.CRCOK
+    print 'EndHeader = %s' % feb.EndHeader
+    print 'MaxLen = %s' % feb.MaxLen
+    print 'SecondStart = %s' % feb.SecondStart
+    print 'NAHeader = %s' % feb.NAHeader
+    print 'febAll = %s' % feb.febAll
+    print 'FE1 = %s' % feb.FE1
+    print 'FE2 = %s' % feb.FE2
+    print 'FE3 = %s' % feb.FE3
+    print 'FE4 = %s' % feb.FE4
+    print 'FE5 = %s' % feb.FE5
+    print 'FE6 = %s' % feb.FE6
+    print 'FE7 = %s' % feb.FE7
+    print 'FE8 = %s' % feb.FE8
+    print 'FE9 = %s' % feb.FE9
+    print 'FE10 = %s' % feb.FE10
+    print 'FE11 = %s' % feb.FE11
+    print 'FE12 = %s' % feb.FE12
+    print 'FE13 = %s' % feb.FE13
+    print 'FE14 = %s' % feb.FE14
+    print 'FE15 = %s' % feb.FE15
+    
+    
 def main():
     """Instantiates the Slow Control GUI."""
     try:

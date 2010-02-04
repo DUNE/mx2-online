@@ -231,7 +231,7 @@ class CRIMTimingModule(wx.Panel):
         self.CNTRSTRegister=SC_Util.GenericRegister(self, caption='SEQUENCE Register',
             btnWriteVisible=True, btnWriteCaption='CNTRST',
             btnReadVisible=True, btnReadCaption='CNTRSTSGATETCALB', txtDataVisible=False)
-        self.ScrapRegister=SC_Util.GenericRegister(self, caption='ID Register',
+        self.ScrapRegister=SC_Util.GenericRegister(self, caption='Scrap Register',
             btnWriteVisible=True, btnWriteCaption='Write',
             btnReadVisible=True, btnReadCaption='Read',
             txtDataVisible=True, txtDataCaption='any value', WEnable=True)
