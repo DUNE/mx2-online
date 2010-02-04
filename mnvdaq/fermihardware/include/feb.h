@@ -51,9 +51,9 @@ class feb : public Frames {
 		unsigned char TripPowerOff[1], InjectCount[6][1], InjectEnable[6][1], 
 			InjectRange[1], InjectPhase[1], InjectDACMode[1], InjectDACDone[1], 
 			InjectDACStart[1], HVEnabled[1], HVControl[1], HVManual[1], 
-			VXOOff[1], VXOMuxXilinx[1], PhaseStart[1], PhaseIncrement[1], 
-			PhaseSpare[1], PhaseCount[1], DCM1Lock[1], DCM2Lock[1], 
-			DCM1NoClock[1], DCM2NoClock[1], DCM2PhaseDone[1], 
+			statusTXSyncLock[1], statusRXLock[1], PhaseStart[1], PhaseIncrement[1], 
+			statusSCMDUnknown[1], statusFCMDUnknown[1],PhaseCount[1], 
+			DCM1Lock[1], DCM2Lock[1], DCM1NoClock[1], DCM2NoClock[1], DCM2PhaseDone[1], 
 			TestPulse2Bit[1], FirmwareVersion[1], boardID[1],
 			HVNumAve[1], HVPulseWidth[1], CosmicTrig[1], TripXCompEnc[1],
 			ExtTriggerFound[1], ExtTriggerRearm[1];
@@ -76,7 +76,7 @@ class feb : public Frames {
 
 		/*! Get functions */
 		febAddresses inline GetBoardNumber() {return boardNumber;};
-		int inline GetFWB() {return (int)FirmwareVersion[0];};
+		//int inline GetFWB() {return (int)FirmwareVersion[0];}; //redundant
 		int inline GetFirmwareVersion() {return (int)FirmwareVersion[0];};
 		int inline GetMaxHits() {return maxHits;};
 		bool inline GetInit() {return initialized;};
@@ -124,11 +124,13 @@ class feb : public Frames {
 		unsigned short inline GetHVActual() {return HVActual;};
 		unsigned char inline GetHVControl() {return HVControl[0];};
 		unsigned char inline GetHVManual() {return HVManual[0];};
-		unsigned char inline GetVXOXilinx() {return VXOMuxXilinx[0];};
+		unsigned char inline GetStatusRXLock() {return statusRXLock[0];};
+		unsigned char inline GetStatusTXSyncLock() {return statusTXSyncLock[0];};
 		unsigned char inline GetPhaseStart() {return PhaseStart[0];};
 		unsigned char inline GetPhaseInc() {return PhaseIncrement[0];};
-		unsigned char inline GetPhaseSpare() {return PhaseSpare[0];};
 		unsigned char inline GetPhaseCount() {return PhaseCount[0];};
+		unsigned char inline GetStatusSCMDUnknown() {return statusSCMDUnknown[0];};
+		unsigned char inline GetStatusFCMDUnknown() {return statusFCMDUnknown[0];};
 		unsigned char inline GetDCM1Lock() {return DCM1Lock[0];};
 		unsigned char inline GetDCM2Lock() {return DCM2Lock[0];};
 		unsigned char inline GetDCM1NoClock() {return DCM1NoClock[0];};
@@ -186,16 +188,10 @@ class feb : public Frames {
 		//void SetHVControl(char *a);  //Readonly
 		void inline SetHVManual(unsigned char *a) {HVManual[0]=a[0];};
 		void SetHVManual(char *a);
-		void inline SetVXOOff(unsigned char *a) {VXOOff[0]=a[0];};
-		void SetVXOOff(char *a);
-		void inline SetVXOMuxXilinx(unsigned char *a) {VXOMuxXilinx[0]=a[0];};
-		void SetVXOMuxXilinx(char *a);
 		void inline SetPhaseStart(unsigned char *a) {PhaseStart[0]=a[0];};
 		void SetPhaseStart(char *a);
 		void inline SetPhaseIncrement(unsigned char *a) {PhaseIncrement[0]=a[0];};
 		void SetPhaseIncrement(char *a);
-		void inline SetPhaseSpare(unsigned char *a) {PhaseSpare[0]=a[0];};
-		void SetPhaseSpare(char *a);
 		void inline SetPhaseCount(unsigned char *a) {PhaseCount[0]=a[0];};
 		void SetPhaseCount(char *a);
 		//void inline SetDCM1Lock(unsigned char *a) {DCM1Lock[0]=a[0];}; //Readonly
