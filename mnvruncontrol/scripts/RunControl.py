@@ -53,46 +53,49 @@ class MainFrame(wx.Frame):
 		self.SetStatusWidths([-6, -1])
 		self.SetStatusText("STOPPED", 1)
 
+#		panel = wx.Panel(self)
 
-		# Now create the Panel to put the other controls on.
-		panel = wx.Panel(self)
+		nb = wx.Notebook(self)
 
-		runEntryLabel = wx.StaticText(panel, -1, "Run")
-		self.runEntry = wx.SpinCtrl(panel, -1, '0', size=(125, -1), min=0, max=100000)
+		# the main page (main config / run controls)
+		mainPage = wx.Panel(nb)
+
+		runEntryLabel = wx.StaticText(mainPage, -1, "Run")
+		self.runEntry = wx.SpinCtrl(mainPage, -1, '0', size=(125, -1), min=0, max=100000)
 		self.Bind(wx.EVT_SPINCTRL, self.CheckRunNumber, self.runEntry)
 		self.runEntry.Disable()
 
-		subrunEntryLabel = wx.StaticText(panel, -1, "Subrun")
-		self.subrunEntry = wx.SpinCtrl(panel, -1, '0', size=(125, -1), min=0, max=100000)
+		subrunEntryLabel = wx.StaticText(mainPage, -1, "Subrun")
+		self.subrunEntry = wx.SpinCtrl(mainPage, -1, '0', size=(125, -1), min=0, max=100000)
 		self.subrunEntry.Disable()
 
-		gatesEntryLabel = wx.StaticText(panel, -1, "Gates")
-		self.gatesEntry = wx.SpinCtrl(panel, -1, "10", size=(125, -1), min=1, max=10000)
+		gatesEntryLabel = wx.StaticText(mainPage, -1, "Gates")
+		self.gatesEntry = wx.SpinCtrl(mainPage, -1, "10", size=(125, -1), min=1, max=10000)
 
-		detConfigEntryLabel = wx.StaticText(panel, -1, "Detector")
+		detConfigEntryLabel = wx.StaticText(mainPage, -1, "Detector")
 		self.detectorChoices = ["Unknown", "PMT test stand", "Tracking prototype", "Test beam", "Frozen", "Upstream", "Full MINERvA"]
 		self.detectorCodes = ["UN", "FT", "TP", "TB", "MN", "US", "MV"]
-		self.detConfigEntry = wx.Choice(panel, -1, choices=self.detectorChoices)
+		self.detConfigEntry = wx.Choice(mainPage, -1, choices=self.detectorChoices)
 		self.detConfigEntry.SetSelection(5)
 
-		runModeEntryLabel = wx.StaticText(panel, -1, "Run Mode")
+		runModeEntryLabel = wx.StaticText(mainPage, -1, "Run Mode")
 		self.runModeChoices = ["Pedestal", "Light injection", "Charge injection", "Cosmics", "NuMI beam", "Mixed beam/pedestal", "Mixed beam/light injection", "Unknown trigger"]
 		self.runModeCodes = ["pdstl", "linjc", "chinj", "cosmc", "numib", "numip", "numil", "unkwn"]
-		self.runModeEntry =  wx.Choice(panel, -1, choices=self.runModeChoices)
+		self.runModeEntry =  wx.Choice(mainPage, -1, choices=self.runModeChoices)
 
 
-		febsEntryLabel = wx.StaticText(panel, -1, "FEBs")
-		self.febsEntry = wx.SpinCtrl(panel, -1, "4", size=(125, -1), min=1, max=10000)
+		febsEntryLabel = wx.StaticText(mainPage, -1, "FEBs")
+		self.febsEntry = wx.SpinCtrl(mainPage, -1, "4", size=(125, -1), min=1, max=10000)
 
-		self.startButton = wx.Button(panel, ID_START, "Start")
+		self.startButton = wx.Button(mainPage, ID_START, "Start")
 		self.Bind(wx.EVT_BUTTON, self.StartDaqSingleton, self.startButton)
 		self.startButton.Disable()
 		
-		self.stopButton = wx.Button(panel, wx.ID_STOP)
+		self.stopButton = wx.Button(mainPage, wx.ID_STOP)
 		self.Bind(wx.EVT_BUTTON, self.DAQShutdown, self.stopButton)
 		self.stopButton.Disable()		# disabled until the 'start' button is pressed
 
-		self.closeAllButton = wx.Button(panel, wx.ID_CLOSE, "Close ET/DAQ windows")
+		self.closeAllButton = wx.Button(mainPage, wx.ID_CLOSE, "Close ET/DAQ windows")
 		self.Bind(wx.EVT_BUTTON, self.CloseAllWindows, self.closeAllButton)
 		self.closeAllButton.Disable()
 
@@ -103,19 +106,30 @@ class MainFrame(wx.Frame):
 		                      (detConfigEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL), (self.detConfigEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
 		                      (runModeEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
 		                      (febsEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),      (self.febsEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
-		configBoxSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Run Configuration"), wx.VERTICAL)
+		configBoxSizer = wx.StaticBoxSizer(wx.StaticBox(mainPage, -1, "Run Configuration"), wx.VERTICAL)
 		configBoxSizer.Add(configSizer, 1, wx.EXPAND)
 
-		controlBoxSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Run Control"), wx.VERTICAL)
+		controlBoxSizer = wx.StaticBoxSizer(wx.StaticBox(mainPage, -1, "Run Control"), wx.VERTICAL)
 		controlBoxSizer.AddMany( [ (self.startButton, 1, wx.ALIGN_CENTER_HORIZONTAL),
 		                           (self.stopButton, 1, wx.ALIGN_CENTER_HORIZONTAL),
 		                           (self.closeAllButton, 1, wx.ALIGN_CENTER_HORIZONTAL) ] )
 
 		topSizer = wx.BoxSizer(wx.HORIZONTAL)
 		topSizer.AddMany( [(configBoxSizer, 1, wx.EXPAND | wx.RIGHT, 5), (controlBoxSizer, 1, wx.EXPAND | wx.LEFT, 5)] )
+		
+		
 
-		logfileText = wx.StaticText( panel, -1, wordwrap("Select log files you want to view (ctrl+click for multiple selections) and click the \"View log file(s)\" button below...", 400, wx.ClientDC(self)) )
-		self.logfileList = wx.ListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
+		globalSizer = wx.BoxSizer(wx.VERTICAL)
+		globalSizer.Add(topSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
+#		globalSizer.Add(logBoxSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM | wx.TOP | wx.LEFT | wx.RIGHT, border=10)
+
+		mainPage.SetSizer(globalSizer)
+
+		# now the log page panel.
+		logPage = wx.Panel(nb)
+
+		logfileText = wx.StaticText( logPage, -1, wordwrap("Select log files you want to view (ctrl+click for multiple selections) and click the \"View log file(s)\" button below...", 400, wx.ClientDC(self)) )
+		self.logfileList = wx.ListCtrl(logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
 		self.logfileList.InsertColumn(0, "Run")
 		self.logfileList.InsertColumn(1, "Subrun")
 		self.logfileList.InsertColumn(2, "Date")
@@ -124,24 +138,24 @@ class MainFrame(wx.Frame):
 		self.logfileList.InsertColumn(5, "Detector")
 #		self.logfileList.InsertColumn(6, "Filename")
 		
-		self.logFileButton = wx.Button(panel, -1, "View selected log files")
+		self.logFileButton = wx.Button(logPage, -1, "View selected log files")
 		self.Bind(wx.EVT_BUTTON, self.ShowLogFiles, self.logFileButton)
 #		self.logFileButton.Disable()
 
-#		logFileViewOldButton = wx.Button(panel, -1, "View older logs...")
+#		logFileViewOldButton = wx.Button(mainPage, -1, "View older logs...")
 #		self.Bind(wx.EVT_BUTTON, self.OlderLogFileSelection, logFileViewOldButton)
 		
-		logBoxSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Logs"), orient=wx.VERTICAL)
+		logBoxSizer = wx.StaticBoxSizer(wx.StaticBox(logPage, -1, "Logs"), orient=wx.VERTICAL)
 		logBoxSizer.AddMany( [ (logfileText, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM, 10),
 		                       (self.logfileList, 1, wx.EXPAND),
 		                       (self.logFileButton, 0, wx.ALIGN_CENTER_HORIZONTAL) ] )
+		                       
+		logPage.SetSizer(logBoxSizer)
 		
-		globalSizer = wx.BoxSizer(wx.VERTICAL)
-		globalSizer.Add(topSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
-		globalSizer.Add(logBoxSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM | wx.TOP | wx.LEFT | wx.RIGHT, border=10)
-
-		panel.SetSizer(globalSizer)
-		panel.SetAutoLayout(True)
+		# add the pages into the notebook.
+		nb.AddPage(mainPage, "Run control")
+		nb.AddPage(logPage, "Log files")
+		
 		self.Layout()
 		
 		self.ETthreads = []
