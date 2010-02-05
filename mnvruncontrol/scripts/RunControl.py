@@ -155,6 +155,7 @@ class MainFrame(wx.Frame):
 		self.UpdateLogFiles()
 		self.Connect(-1, -1, EVT_THREAD_READY_ID, self.StartNextThread)
 		self.Connect(-1, -1, EVT_DAQQUIT_ID, self.DAQShutdown)		# if the DAQ process quits, everything should be stopped.
+		self.Connect(-1, -1, EVT_CONFIGUPDATED_ID, self.UpdateLogFiles)
 
 	def parseLogfileName(self, filename):
 		matches = re.match("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2}).txt$", filename)
@@ -380,7 +381,9 @@ class MainFrame(wx.Frame):
 		else:
 			print "Thread count too high"
 
-	def UpdateLogFiles(self):
+	def UpdateLogFiles(self, evt=None):
+		self.GetConfig()
+
 		self.logfileList.DeleteAllItems()
 		self.logfileNames = []
 		self.logfileInfo = []
@@ -396,17 +399,23 @@ class MainFrame(wx.Frame):
 		except OSError:
 			self.logfileNames = None
 			self.logfileInfo = None
+		else:
+			self.logfileNames.sort()
+			self.logfileInfo.sort(self.SortLogData)
+			
+			self.logfileNames.reverse()
+			self.logfileInfo.reverse()
 
 		if self.logfileNames is not None and len(self.logfileNames) > 0:
 			for fileinfo in self.logfileInfo:
 				index = self.logfileList.InsertStringItem(sys.maxint, fileinfo[0])
 				for i in range(1,len(fileinfo)):
 					self.logfileList.SetStringItem(index, i, fileinfo[i])
-				self.logfileList.SetItemData(index, int(fileinfo[0]) * 10000 + int(fileinfo[1]))		# need a unique key for each row if I want to sort them.  this is run * 10000 + subrun
+	#			self.logfileList.SetItemData(index, int(fileinfo[0]) * 10000 + int(fileinfo[1]))		# need a unique key for each row if I want to sort them.  this is run * 10000 + subrun
 		else:
 			self.logfileList.InsertStringItem(0, "Log directory is empty or inaccessible.")
 
-		self.logfileList.SortItems(self.SortLogRows)
+#		self.logfileList.SortItems(self.SortLogRows)
 		
 			
 	def ShowLogFiles(self, evt=None):
@@ -431,11 +440,6 @@ class MainFrame(wx.Frame):
 		logframe = LogFrame(self, filenames)
 		logframe.Show()
 
-	def OlderLogFileSelection(self, evt=None):
-		errordlg = wx.MessageDialog( None, "This feature is not yet implemented.", "Not yet implemented", wx.OK | wx.ICON_WARNING )
-		errordlg.ShowModal()
-
-
 	def CloseAllWindows(self, evt=None):
 		while len(self.windows) > 0:		
 			window = self.windows.pop()
@@ -456,10 +460,22 @@ class MainFrame(wx.Frame):
 		self.UpdateLogFiles()	
 
 	@staticmethod
-	def SortLogRows(key1, key2):
-		if key1 == key2:
-			return 0
-		return 1 if key1 < key2 else -1
+	def SortLogData(fileinfo1, fileinfo2):
+		f1 = fileinfo1[0]*10000 + fileinfo1[1]		# run * 10000 + subrun
+		f2 = fileinfo2[0]*10000 + fileinfo2[1]
+		
+		if f1 == f2:
+			t1 = time.strptime("2010 " + fileinfo1[3], "%Y %H:%M")		# need to include a year because otherwise the 'mktime' below overflows.  which year it is is irrelevant (all we need is a difference anyway).
+			t2 = time.strptime("2010 " + fileinfo2[3], "%Y %H:%M")
+			
+			timediff = time.mktime(t1) - time.mktime(t2)
+			if timediff == 0:		# this should never happen.
+				return 0
+			else:
+				return 1 if timediff > 0 else -1
+		else:
+			return 1 if f1 > f2 else -1
+
 
 #########################################################
 #   OutputFrame
@@ -534,6 +550,8 @@ class OptionsFrame(wx.Frame):
 	""" A window for configuration of paths, etc. """
 	def __init__(self, parent):
 		wx.Frame.__init__(self, parent, -1, "Configuration", size=(600,400))
+		
+		self.parent = parent
 
 		try:
 			db = shelve.open(CONFIG_DB_LOCATION)
@@ -628,6 +646,8 @@ class OptionsFrame(wx.Frame):
 			db["rawdataLocation"] = self.rawDataLocationEntry.GetValue()
 			
 			db.close()
+			
+		wx.PostEvent(self.parent, ConfigUpdatedEvent())
 
 		self.Close()
 		
@@ -790,6 +810,17 @@ class DAQQuitEvent(wx.CommandEvent):
 	def __init__(self):
 		wx.CommandEvent.__init__(self)
 		self.SetEventType(EVT_DAQQUIT_ID)
+
+#########################################################
+#   ConfigUpdatedEvent
+#########################################################
+
+EVT_CONFIGUPDATED_ID = wx.NewId()
+class ConfigUpdatedEvent(wx.CommandEvent):
+	""" An event informing the main window that the configuration database has been updated. """
+	def __init__(self):
+		wx.CommandEvent.__init__(self)
+		self.SetEventType(EVT_CONFIGUPDATED_ID)
 
 
 #########################################################
