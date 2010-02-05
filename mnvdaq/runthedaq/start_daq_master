@@ -3,6 +3,7 @@
 Help()
 {
 	echo  "Usage : start_daq_master -et <ET filename (stub)> -f <Num FEBS> -g <Num Gates> -m <Mode> -r <Run Num> -s <Sub Num>"
+	echo  "          -t <n seconds (not supported)> -d <detector code (see DAQHeader class)> -cf <slow control config file>"
 }
 
 if [ $# -eq 0 ]
@@ -22,6 +23,9 @@ NGATES=10
 RUNMODE=0
 RUN=1337
 SUB=391
+NSECONDS=0  # NSECONDS is a dummy argument for the DAQ right now.
+DETECTOR=0  # See Event/MinervaEvent/DAQHeader.xml for the detector codes.
+CONFIGFILE=unknown # This is the filename for the config loaded by the slow control.
 
 while [ $# -gt 0 ]
 do
@@ -42,6 +46,15 @@ do
 			shift 2
 			;;
 		-s)	SUB=$2
+			shift 2
+			;;
+		-t)	NSECONDS=$2
+			shift 2
+			;;
+		-d)	DETECTOR=$2
+			shift 2
+			;;
+		-cf)	CONFIGFILE=$2
 			shift 2
 			;;
 	esac
@@ -67,5 +80,5 @@ sleep 18s
 
 # Note we do not pass the full path of the ET system to the daq.
 # That information is attached within the process itself.
-nice ${DAQROOT}/bin/daq_master -et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB & 
+nice ${DAQROOT}/bin/daq_master -et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB d $DETECTOR -t $NSECONDS -cf $CONFIGFILE & 
 

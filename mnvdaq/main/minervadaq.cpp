@@ -49,7 +49,13 @@ int main(int argc, char *argv[])
 	int subRunNumber         = 11;        // It goes to 11...
 	int record_seconds       = -1;	      // Run length in SECONDS (Not Supported...)
 	int detector             = 0;         // Default to UnknownDetector.
-	detector                 = (0x1)<<4;  // TODO - For header debugging... the Upstream Detector.
+	int detectorConfig       = 0;
+	int LEDLevel             = 0;
+	int LEDGroup             = 0;
+	detector                 = (0x1)<<4;  // TODO - REMOVE: For header debugging... the Upstream Detector.
+	detectorConfig           = 0xBABE;    // TODO - REMOVE: For header debugging...
+	LEDLevel                 = 3;         // TODO - REMOVE: MaxPE - For debugging purposes...
+	LEDGroup                 = 1;         // TODO - REMOVE: LEDALL - For debugging purposes...
 	string fileroot          = "testme";  // For logs, etc.  
 	string strtemp           = "unknown";
 	char config_filename[100]; sprintf(config_filename,"unknown"); // For SAM.
@@ -119,6 +125,21 @@ int main(int argc, char *argv[])
 			sprintf(config_filename,"%s",strtemp.c_str());
 			std::cout << "\tHardware Config. File  = " << config_filename << std::endl;
 		}
+		else if (sw=="-dc") {
+			optind++;
+			detectorConfig = atoi(argv[optind]);
+			std::cout << "\tDetector Config. Code  = " << detectorConfig << std::endl;	
+		}
+		else if (sw=="-ll") {
+			optind++;
+			LEDLevel = atoi(argv[optind]);
+			std::cout << "\tLED Level              = " << LEDLevel << std::endl;	
+		}
+		else if (sw=="-lg") {
+			optind++;
+			LEDGroup = atoi(argv[optind]);
+			std::cout << "\tLED Group              = " << LEDGroup << std::endl;	
+		}
 		else
 			std::cout << "Unknown switch: " << argv[optind] << std::endl;
 		optind++;
@@ -140,16 +161,22 @@ int main(int argc, char *argv[])
 	root.setPriority(log4cpp::Priority::DEBUG);
         mnvdaq.setPriority(log4cpp::Priority::DEBUG);
 	root.infoStream()   << "Starting MINERvA DAQ. ";
+	mnvdaq.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 	mnvdaq.infoStream() << "Arguments to MINERvA DAQ: ";
 	mnvdaq.infoStream() << "  Run Number             = " << runNumber;
 	mnvdaq.infoStream() << "  Subrun Number          = " << subRunNumber;
 	mnvdaq.infoStream() << "  Total Gates            = " << record_gates;
 	mnvdaq.infoStream() << "  Running Mode (encoded) = " << runningMode;
 	mnvdaq.infoStream() << "  Detector (encoded)     = " << detector;
+	mnvdaq.infoStream() << "  DetectorConfiguration  = " << detectorConfig;
+	mnvdaq.infoStream() << "  LED Level (encoded)    = " << LEDLevel;
+	mnvdaq.infoStream() << "  LED Group (encoded)    = " << LEDGroup;
 	mnvdaq.infoStream() << "  ET Filename            = " << et_filename;
 	mnvdaq.infoStream() << "  SAM Filename           = " << sam_filename;
 	mnvdaq.infoStream() << "  LOG Filename           = " << log_filename;
 	mnvdaq.infoStream() << "  Configuration File     = " << config_filename;
+	mnvdaq.infoStream() << "See Event/MinervaEvent/xml/DAQHeader.xml for codes.";
+	mnvdaq.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
 	// Log files for threading in the main routine. 
 #if (THREAD_ME)&&(TIME_ME)
@@ -175,7 +202,7 @@ int main(int argc, char *argv[])
 	event_data.runNumber      = runNumber;
 	event_data.subRunNumber   = subRunNumber;
 	event_data.detectorType   = (unsigned char)detector;
-	event_data.detectorConfig = (unsigned short)0xBABE; // TODO - For debugging purposes...
+	event_data.detectorConfig = (unsigned short)detectorConfig;
 	event_data.triggerType    = (unsigned short)0;
 
 
@@ -502,7 +529,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-08-01'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-08-02'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -613,8 +640,8 @@ int main(int argc, char *argv[])
 		event_data.triggerTime = 0;    // Set after returning from the Trigger function.
 		event_data.readoutInfo = 0;    // Error bits.
 		event_data.minosSGATE  = 0;    // MINOS Start GATE in their time coordinates.
-		event_data.ledLevel    = (unsigned char)3; // TODO - MaxPE - For debugging purposes...
-		event_data.ledGroup    = (unsigned char)1; // TODO - LEDALL - For debugging purposes...
+		event_data.ledLevel    = (unsigned char)LEDLevel; 
+		event_data.ledGroup    = (unsigned char)LEDGroup; 
 		for (int i=0;i<9;i++) {
 			event_data.feb_info[i] = 0; // Initialize the FEB information block. 
 		}
