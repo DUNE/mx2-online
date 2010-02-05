@@ -120,7 +120,7 @@ class MainFrame(wx.Frame):
 		self.logfileList.InsertColumn(1, "Subrun")
 		self.logfileList.InsertColumn(2, "Date")
 		self.logfileList.InsertColumn(3, "Time (GMT)")
-		self.logfileList.InsertColumn(4, "Run config")
+		self.logfileList.InsertColumn(4, "Run type")
 		self.logfileList.InsertColumn(5, "Detector")
 #		self.logfileList.InsertColumn(6, "Filename")
 		
@@ -132,7 +132,9 @@ class MainFrame(wx.Frame):
 #		self.Bind(wx.EVT_BUTTON, self.OlderLogFileSelection, logFileViewOldButton)
 		
 		logBoxSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Logs"), orient=wx.VERTICAL)
-		logBoxSizer.AddMany( [(logfileText, 0, wx.ALIGN_CENTER_HORIZONTAL), (self.logfileList, 1, wx.EXPAND), (self.logFileButton, 0, wx.ALIGN_CENTER_HORIZONTAL)] )
+		logBoxSizer.AddMany( [ (logfileText, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM, 10),
+		                       (self.logfileList, 1, wx.EXPAND),
+		                       (self.logFileButton, 0, wx.ALIGN_CENTER_HORIZONTAL) ] )
 		
 		globalSizer = wx.BoxSizer(wx.VERTICAL)
 		globalSizer.Add(topSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
@@ -395,7 +397,7 @@ class MainFrame(wx.Frame):
 			self.logfileNames = None
 			self.logfileInfo = None
 
-		if len(self.logfileNames) > 0:
+		if self.logfileNames is not None and len(self.logfileNames) > 0:
 			for fileinfo in self.logfileInfo:
 				index = self.logfileList.InsertStringItem(sys.maxint, fileinfo[0])
 				for i in range(1,len(fileinfo)):
@@ -451,15 +453,13 @@ class MainFrame(wx.Frame):
 		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
 		self.StoreNextRunSubrun()
 
-#		self.logfilename = self.logfileLocation + "/" + self.ETNAME + ".txt"
-		self.logFileButton.Enable()
+		self.UpdateLogFiles()	
 
 	@staticmethod
 	def SortLogRows(key1, key2):
 		if key1 == key2:
 			return 0
 		return 1 if key1 < key2 else -1
-	
 
 #########################################################
 #   OutputFrame
