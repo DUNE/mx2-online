@@ -17,7 +17,7 @@ import CAENVMEwrapper
 import SC_Frames
 import SC_Util
 import random
-import feb
+#import feb
 
 class SCApp(wx.App):
     """SlowControl application. Subclass of wx.App"""
@@ -606,51 +606,25 @@ class SCApp(wx.App):
         try:
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
             theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
-            theFEB=GetFEB(theCROCChannel, self.frame.fe.febNumber)
-            #if theFEB==None: raise Exception('Unable to find the FEB')
-            #theFEB.UpdateFPGAtxtRegs(self.frame.fe.fpga.Registers.txtRegs)
-            
-            sentMessageHeader=MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, \
-                self.frame.fe.febNumber, Frame.DeviceFPGA, Frame.FuncFPGARead)
-            sentMessageData=Frame.NFPGARegisters*[0]
-            sentMessage = sentMessageHeader + sentMessageData
-            
-            ClearAndCheckStatusRegister(theCROCChannel)
-            ResetAndCheckDPMPointer(theCROCChannel)
-            WriteFIFOAndCheckStatus(sentMessage, theCROCChannel) 
-            SendFIFOAndCheckStatus(theCROCChannel)
-            rcvMessageHeader, rcvMessageData = GetRcvMessageHeaderAndData(theCROCChannel)
-            
-            rcvHeaderErr=GetHeaderErrors(rcvMessageHeader, Frame.DirectionM2S, \
-                Frame.BroadcastNone, self.frame.fe.febNumber, Frame.DeviceFPGA, Frame.FuncFPGARead)
-            if len(rcvHeaderErr)!=0: print rcvHeaderErr
-
-            ParseMessageToFPGAtxtRegs(rcvMessageData, self.frame.fe.fpga.Registers.txtRegs)
+            rcvMessageData=FEB(self.frame.fe.febNumber).FPGARead(theCROCChannel) 
+            ParseMessageToFPGAtxtRegs(rcvMessageData, self.frame.fe.fpga.Registers.txtRegs)            
         except: ReportException('OnFEFPGAbtnRead', self.reportErrorChoice)  
     def OnFEFPGAbtnWrite(self, event):
         try:
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
             theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
-            theFEB=GetFEB(theCROCChannel, self.frame.fe.febNumber)
-            #if theFEB==None: raise Exception('Unable to find the FEB')
-            #theFEB.UpdateFPGARegs(self.frame.fe.fpga.Registers.txtRegs)
-
-            sentMessageHeader=MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, \
-            self.frame.fe.febNumber, Frame.DeviceFPGA, Frame.FuncFPGAWrite)
             sentMessageData=ParseFPGARegsToMessage(self.frame.fe.fpga.Registers.txtRegs)
-            sentMessage = sentMessageHeader + sentMessageData
-            
-            ClearAndCheckStatusRegister(theCROCChannel)
-            ResetAndCheckDPMPointer(theCROCChannel)
-            WriteFIFOAndCheckStatus(sentMessage, theCROCChannel) 
-            SendFIFOAndCheckStatus(theCROCChannel)
-            rcvMessageHeader, rcvMessageData = GetRcvMessageHeaderAndData(theCROCChannel)
-            
-            rcvHeaderErr=GetHeaderErrors(rcvMessageHeader, Frame.DirectionM2S, \
-                Frame.BroadcastNone, self.frame.fe.febNumber, Frame.DeviceFPGA, Frame.FuncFPGARead)
-            if len(rcvHeaderErr)!=0: print rcvHeaderErr         
+            rcvMessageData=FEB(self.frame.fe.febNumber).FPGAWrite(theCROCChannel, sentMessageData)
+            ParseMessageToFPGAtxtRegs(rcvMessageData, self.frame.fe.fpga.Registers.txtRegs)            
         except: ReportException('OnFEFPGAbtnWrite', self.reportErrorChoice)  
-    def OnFEFPGAbtnWriteALL(self, event): wx.MessageBox('not yet implemented')
+    def OnFEFPGAbtnWriteALL(self, event):
+        try:
+            sentMessageData=ParseFPGARegsToMessage(self.frame.fe.fpga.Registers.txtRegs)
+            for theCROC in self.vmeCROCs:
+                for theCROCChannel in theCROC.Channels():
+                    for theFEB in theCROCChannel.FEBs:
+                        theFEB.FPGAWrite(theCROCChannel, sentMessageData)
+        except: ReportException('OnFEFPGAbtnWriteALL', self.reportErrorChoice)  
     def OnFETRIPbtnRead(self, event): wx.MessageBox('not yet implemented')
     def OnFETRIPbtnWrite(self, event): wx.MessageBox('not yet implemented')
     def OnFETRIPbtnWriteALL(self, event): wx.MessageBox('not yet implemented')
@@ -689,13 +663,15 @@ class Frame():
     StatusSecondStartErr=0x08
     StatusNAHeaderErr=0x10
     NFPGARegisters=54
+    MessageHeaderLength=9
+    MessageDataLengthFPGA=55
 
 def MakeHeader(direction, broadcast, febAddress, device, function, frameID0=0, frameID1=0):
     return [direction+broadcast+febAddress, device+function, 0, frameID0, frameID1, 0, 0, 0, 0]
 
-def GetHeaderErrors(header, direction, broadcast, febAddress, device, function, frameID0=0, frameID1=0):
+def GetReceivedHeaderErrors(header, direction, broadcast, febAddress, device, frameID0=0, frameID1=0):
     err=[]
-    if len(header)!=9: err.append('Lenth!=%s'%len(header))
+    if len(header)!=Frame.MessageHeaderLength: err.append('HeaderLenth!=%s'%Frame.MessageHeaderLength)
     if header[0]&direction!=direction: err.append('Direction!=%s'%direction)
     if header[0]&broadcast!=broadcast: err.append('Broadcast!=%s'%broadcast)
     if header[0]&febAddress!=febAddress: err.append('FEBAddress!=%s'%febAddress)
@@ -712,6 +688,7 @@ def GetHeaderErrors(header, direction, broadcast, febAddress, device, function, 
     return err
 
 def ParseMessageToFPGAtxtRegs(msg, txtRegs):
+    if len(msg)!=Frame.MessageDataLengthFPGA: raise Exception('Datalength!=%s'%Frame.MessageDataLengthFPGA)
     #message word 0-3: WR Timer, 32 bits
     txtRegs[14].SetValue(str(msg[0]+(msg[1]<<8)+(msg[2]<<16)+(msg[3]<<24)))
     #message word 4-5: WR Gate Start, 16 bits
@@ -910,27 +887,36 @@ def FindVMEdev(vmeDevList, devAddr):
     for dev in vmeDevList:
         if (dev.BaseAddress()==devAddr): return dev
 
-def GetFEB(theCROCChannel, theFEBNumber):
-    feb=None
-    for theFEB in theCROCChannel.FEBs:
-        if theFEB.fpga.GetBoardNumber()==theFEBNumber:
-            feb=theFEB; break
-    return feb
-
+##def GetFEB(theCROCChannel, theFEBNumber):
+##    feb=None
+##    for theFEB in theCROCChannel.FEBs:
+##        if theFEB.Address==theFEBNumber:
+##            feb=theFEB; break
+##    return feb
+def WriteSendReceive(sentMessage, theFEBAddress, theCROCChannel):
+    ClearAndCheckStatusRegister(theCROCChannel)
+    ResetAndCheckDPMPointer(theCROCChannel)
+    WriteFIFOAndCheckStatus(sentMessage, theCROCChannel) 
+    SendFIFOAndCheckStatus(theCROCChannel)
+    rcvMessageHeader, rcvMessageData = GetRcvMessageHeaderAndData(theCROCChannel)
+    #print [hex(x) for x in rcvMessageHeader], len(rcvMessageHeader)
+    #print [hex(x) for x in rcvMessageData], len(rcvMessageData)
+    rcvHeaderErr=GetReceivedHeaderErrors(rcvMessageHeader,
+        Frame.DirectionM2S, Frame.BroadcastNone, theFEBAddress, Frame.DeviceFPGA)
+    if len(rcvHeaderErr)!=0: print rcvHeaderErr; raise Exception(rcvHeaderErr)
+    return rcvMessageData
 def ClearAndCheckStatusRegister(theCROCChannel, chk=True):
     theCROCChannel.ClearStatus()
     if chk:
         status=theCROCChannel.ReadStatus()
         if (status!=0x3700): raise Exception(
             "Error after clear STATUS register for channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
-
 def ResetAndCheckDPMPointer(theCROCChannel, chk=True):
     theCROCChannel.DPMPointerReset()
     if chk:
         dpmPointer=theCROCChannel.DPMPointerRead()
         if (dpmPointer!=0x02): raise Exception(
             "Error after DPMPointerReset() for channel " + hex(theCROCChannel.chBaseAddr) + " DPMPointer=" + hex(dpmPointer))
-
 def WriteFIFOAndCheckStatus(theMessage, theCROCChannel, chk=True):
     if len(theMessage)%2==1: theMessage.append(0)
     for i in range(0,len(theMessage),2):
@@ -940,7 +926,6 @@ def WriteFIFOAndCheckStatus(theMessage, theCROCChannel, chk=True):
         status=theCROCChannel.ReadStatus()
         if (status!=0x3710): raise Exception(
             "Error after fill FIFO for channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
-
 def SendFIFOAndCheckStatus(theCROCChannel, chk=True):
     theCROCChannel.SendMessage()
     for i in range(100):
@@ -948,25 +933,24 @@ def SendFIFOAndCheckStatus(theCROCChannel, chk=True):
         if (status==0x3703): break
     if (status!=0x3703): raise Exception(
         "Error after send message for channel " + hex(theCROCChannel.chBaseAddr) + " status=" + hex(status))
-
 def GetRcvMessageHeaderAndData(theCROCChannel):
     dpmPointer=theCROCChannel.DPMPointerRead()
-    print 'dpmPointer=%s, %s' % (hex(dpmPointer), dpmPointer)
     rcvMessage=[]
+    rcvMessageHeader=[]
+    rcvMessageData=[]
     for i in range(0, dpmPointer, 2):
         data=theCROCChannel.ReadDPM(i)
         rcvMessage.append((data&0xFF00)>>8)
         rcvMessage.append(data&0x00FF)
-        print 'i=%s, data=%s' % (str(i), hex(data))
-    print [hex(x) for x in rcvMessage]
     rcvLength=rcvMessage[0]+(rcvMessage[1]<<8)
     if rcvLength!=(dpmPointer-2): raise Exception(
         'Error for channel ' + hex(theCROCChannel.chBaseAddr) +
         ' DPMPointer=' + dpmPointer +' <> RcvMessageLength+2=' + rcvLength)
+    if rcvLength<(2+Frame.MessageHeaderLength): raise Exception(
+        'Error for channel ' + hex(theCROCChannel.chBaseAddr) +
+        ' RcvMessageHeaderLength=' + rcvLength +' (too short)')
     rcvMessageHeader=rcvMessage[2:11]
-    rcvMessageData=rcvMessage[11:rcvLength]
-    print [hex(x) for x in rcvMessageHeader], len(rcvMessageHeader)
-    print [hex(x) for x in rcvMessageData], len(rcvMessageData)
+    if rcvLength>11: rcvMessageData=rcvMessage[11:rcvLength]
     return (rcvMessageHeader, rcvMessageData)
 
 def FindFEBs(theCROCChannel):
@@ -1032,7 +1016,7 @@ class CROCChannel(VMEDevice):
     def Number(self): return self.chNumber
     def NodeList(self):
         FEBsAddresses=[]
-        for feb in self.FEBs: FEBsAddresses.append("FE:"+str(feb.fpga.GetBoardNumber()))
+        for feb in self.FEBs: FEBsAddresses.append("FE:"+str(feb.Address))
         return [self.Description(), FEBsAddresses]
     def ReadDPM(self, offset):
         if (offset>0x1FFF): raise Exception("address " + hex(offset) + " is out of rnage")
@@ -1175,213 +1159,17 @@ class CRIMInterrupterModule(VMEDevice):
         return data
 
 class FEB():
-    def __init__(self, febAddresses, nHits=6, initialized=True, nRegisters=54):
-        self.fpga = feb.feb(nHits, initialized, febAddresses, nRegisters)
-        self.fpga.SetFEBDefaultValues()
-        self.fpga.MakeMessage()
-        self.fpga.ShowValues()
-        self.fpga.SetTimer(0xFFFF)#; print self.fpga.GetTimer()
-        self.fpga.ShowValues()
-##        // Change FEB fpga function to write
-##                Devices dev = FPGA;               
-##                Broadcasts b = None;
-##                Directions d = MasterToSlave;
-##                FPGAFunctions f = Write;          ->keep Read=
-##                myFeb->MakeDeviceFrameTransmit(dev,b,d,f,(unsigned int) myFeb->GetBoardNumber());
-        ##the following two statements, when uncomment, generate this error
-        ##(python2.6:32271): Gtk-CRITICAL **: gtk_text_buffer_emit_insert: assertion `g_utf8_validate (text, len, NULL)' failed
-        #self.fpga.MakeDeviceFrameTransmit(feb.FPGA, 0, feb.MasterToSlave, feb.Read, febAddresses)
-        #self.fpga.MakeMessage()
-##        print 'GetOutgoingMessageLength = %s' % self.fpga.GetOutgoingMessageLength()
-##        msg = self.fpga.GetOutgoingMessage()
-##        #self.fpga.DeleteOutgoingMessage(); # must clean up FEB messages manually on a case-by-case basis #???
-##
-##        #set_conversion_mode('ascii', 'strict')  #"strict", "replace", or "ignore".
-##        #set_conversion_mode('utf-8', 'strict')
-##        #set_conversion_mode('mbcs', 'strict')
-##        print 'str(msg)='+str(msg)
-##        print 'int(msg)='+str(int(msg))
-##        x = c_char_p(str(msg)); 
-##        y = c_char_p(int(msg));
-##        yy = c_void_p(int(msg)); 
-##        z = c_wchar_p(int(msg))
-##        zz = c_wchar_p(int(msg)+8)
-##        #print OutgoingMessage
-##        #print chr(OutgoingMessage())
-##        print x, x.value
-##        print y, y.value
-##        print yy, yy.value
-##        print z, z.value
-##        print zz, zz.value#, chr(int(msg)+2)
-##        #print zz.value.encode('utf-8')
-##        #print zz.value.encode('ascii')
-##        #print zz.value.encode('mbcs')
-##        for i in range(20):
-##            print 'i=%d'%i, c_wchar_p(int(msg)+i), c_wchar_p(int(msg)+i).value
-##             #print string_at(z, i)
-##        for i in range(9):
-##            print 'i=%d'%i, c_char_p(int(msg)+i), c_char_p(int(msg)+i).value
-            
-        #If the result can contain nul bytes, you have to specify its size
-        #explicitely (else it will be truncated at the first zero). Use the
-        #string_at utility function:
-        # result_str = string_at(result, length)
-        #print string_at(z, 63)
-
-        
-        #msg = c_char_p(0);print "msg=",msg
-        #msg = int(self.fpga.GetOutgoingMessage());print "msg=",msg
-        #strchr = libc.strchr
-
-        #msg = create_string_buffer(str(self.fpga.GetOutgoingMessage()))
-        #print msg, sizeof(msg), repr(msg.raw), repr(msg.value)
-
-
-##        trip0 = self.fpga.GetTrip(0)
-##        trip0.SetRead(True)
-##        trip0.MakeMessage()
-##        trip0.GetOutgoingMessage()
-##        #trip0.GetRegisterValue()
-##        #trip0.DecodeRegisterValues(100)
-
-        
-    def UpdateFPGARegs(self, txtRegs):
-        #these are the default GUI
-        self.fpga.SetTripPowerOff(chr(int(txtRegs[0].GetValue()) & 0x3F))
-        self.fpga.SetGateStart(int(txtRegs[1].GetValue()) & 0xFFFF)
-        self.fpga.SetGateLength(int(txtRegs[2].GetValue()) & 0xFFFF)
-        self.fpga.SetHVEnabled(chr(int(txtRegs[3].GetValue()) & 0x1))
-        self.fpga.SetHVTarget(int(txtRegs[4].GetValue()) & 0xFFFF)
-        #self.fpga.SetHVActual(int(txtRegs[5].GetValue()))          # READ only => must be REMOVED from feb.py 
-        self.fpga.SetHVManual(chr(int(txtRegs[6].GetValue()) & 0x01))
-        self.fpga.SetHVNumAve(chr(int(txtRegs[7].GetValue()) & 0x07))
-        self.fpga.SetHVPeriodManual(int(txtRegs[8].GetValue()))
-        #self.fpga.SetHVPeriodAuto(int(txtRegs[9].GetValue()))      # READ only => must be REMOVED from feb.py 
-        self.fpga.SetHVPulseWidth(chr(int(txtRegs[10].GetValue()) & 0xFF))
-        #self.fpga.SetTemperature(int(txtRegs[11].GetValue()))      # READ only => must be REMOVED from feb.py
-        #self.fpga.SetVersion(int(txtRegs[12].GetValue()))          # READ only => must be REMOVED from feb.py THEN,
-                                                                    # is SetVersion() different from SetFirmwareVersion() ???? 
-        #self.fpga.SetBoardID(int(txtRegs[13].GetValue()))          # READ only => must be REMOVED from feb.py 
-        #these are the advanced GUI
-        self.fpga.SetTimer(int(txtRegs[14].GetValue()))
-        self.fpga.SetInjectCount(chr(int(txtRegs[15].GetValue()) & 0x3F), 0)
-        self.fpga.SetInjectCount(chr(int(txtRegs[16].GetValue()) & 0x3F), 1)
-        self.fpga.SetInjectCount(chr(int(txtRegs[17].GetValue()) & 0x3F), 2)
-        self.fpga.SetInjectCount(chr(int(txtRegs[18].GetValue()) & 0x3F), 3)
-        self.fpga.SetInjectCount(chr(int(txtRegs[19].GetValue()) & 0x3F), 4)
-        self.fpga.SetInjectCount(chr(int(txtRegs[20].GetValue()) & 0x3F), 5)
-        self.fpga.SetInjectEnable(chr((int(txtRegs[15].GetValue()) & 0x80) >>7), 0)
-        self.fpga.SetInjectEnable(chr((int(txtRegs[16].GetValue()) & 0x80) >>7), 1)
-        self.fpga.SetInjectEnable(chr((int(txtRegs[17].GetValue()) & 0x80) >>7), 2)
-        self.fpga.SetInjectEnable(chr((int(txtRegs[18].GetValue()) & 0x80) >>7), 3)
-        self.fpga.SetInjectEnable(chr((int(txtRegs[19].GetValue()) & 0x80) >>7), 4)
-        self.fpga.SetInjectEnable(chr((int(txtRegs[20].GetValue()) & 0x80) >>7), 5)
-        self.fpga.SetInjectRange(chr(int(txtRegs[21].GetValue()) & 0xF))
-        #a special case for InjectPhase register
-        injPhase=int(txtRegs[22].GetValue())
-        if injPhase==0 or injPhase==1 or injPhase==2 or injPhase==4 or injPhase==8:
-            self.fpga.SetInjectPhase(chr(injPhase))
-        else: raise Exception(txtRegs[22].GetName() + ' must be 1, 2, 4 or 8')
-        self.fpga.SetInjectDACValue(int(txtRegs[23].GetValue()) & 0xFFF)
-        self.fpga.SetInjectDACMode(chr(int(txtRegs[24].GetValue()) & 0x1))
-        self.fpga.SetInjectDACStart(chr(int(txtRegs[25].GetValue()) & 0x1))
-        #self.fpga.SetInjectDACDone(int(txtRegs[26].GetValue()))    # READ only => must be REMOVED from feb.py 
-        #self.fpga.SetHVControl(int(txtRegs[27].GetValue()))        # READ only => must be REMOVED from feb.py 
-        self.fpga.SetPhaseStart(chr(int(txtRegs[28].GetValue()) & 0x1))
-        self.fpga.SetPhaseIncrement(chr(int(txtRegs[29].GetValue()) & 0x1))
-        self.fpga.SetPhaseCount(chr(int(txtRegs[30].GetValue()) & 0xFF))
-        #self.fpga.SetDCM1Lock(int(txtRegs[31].GetValue()))         # READ only => must be REMOVED from feb.py 
-        #self.fpga.SetDCM2Lock(int(txtRegs[32].GetValue()))         # READ only => must be REMOVED from feb.py 
-        #self.fpga.SetDCM1NoClock(int(txtRegs[33].GetValue()))      # READ only => must be REMOVED from feb.py 
-        #self.fpga.SetDCM2NoClock(int(txtRegs[34].GetValue()))      # READ only => must be REMOVED from feb.py 
-        #self.fpga.SetDCM2PhaseDone(int(txtRegs[35].GetValue()))    # READ only => must be REMOVED from feb.py 
-        #self.fpga.SetDCM2PhaseTotal(int(txtRegs[36].GetValue()))   # READ only => must be REMOVED from feb.py 
-        #self.fpga.SetTestPulse2Bit(int(txtRegs[37].GetValue()))    # READ only => must be REMOVED from feb.py 
-        #self.fpga.SetTestPulseCount(int(txtRegs[38].GetValue()))   # READ only => must be REMOVED from feb.py 
-        #self.fpga.Set??????(int(txtRegs[39].GetValue()))           # 'WR TripX Threshold' MISSING function from feb.py -> **** PLEASE UPDATE ****
-        #self.fpga.SetTripXCompEnc(int(txtRegs[40].GetValue()))     # READ only => must be REMOVED from feb.py
-        #self.fpga.SetExtTriggerFound(int(txtRegs[41].GetValue()))  # READ only => must be REMOVED from feb.py
-        self.fpga.SetExtTriggerRearm(chr(int(txtRegs[42].GetValue()) & 0x1))
-        self.fpga.SetDiscrimEnableMask(int(txtRegs[43].GetValue()), 0) 
-        self.fpga.SetDiscrimEnableMask(int(txtRegs[44].GetValue()), 1) 
-        self.fpga.SetDiscrimEnableMask(int(txtRegs[45].GetValue()), 2) 
-        self.fpga.SetDiscrimEnableMask(int(txtRegs[46].GetValue()), 3) 
-        #self.fpga.SetGateTimeStamp(int(txtRegs[47].GetValue()))    # READ only => must be REMOVED from feb.py
-        #self.fpga.(int(txtRegs[48].GetValue()))                    # RREAD only  SCmdErr(1)
-        #self.fpga.(int(txtRegs[49].GetValue()))                    # RREAD only  FCmdErr(1)
-        #self.fpga.(int(txtRegs[50].GetValue()))                    # RREAD only  RXSyncErr(1)
-        #self.fpga.(int(txtRegs[51].GetValue()))                    # RREAD only  TXSyncErr(1)
-## existing functions from feb.py -> **** NOT MORE VALID ; PLEASE REMOVE ****       
-##    def SetVXOOff(self, *args): return _feb.feb_SetVXOOff(self, *args)
-##    def SetVXOMuxXilinx(self, *args): return _feb.feb_SetVXOMuxXilinx(self, *args)
-##    def SetPhaseSpare(self, *args): return _feb.feb_SetPhaseSpare(self, *args)
-##    def SetCosmicTrig(self, *args): return _feb.feb_SetCosmicTrig(self, *args)
-
-    def UpdateFPGAtxtRegs(self, txtRegs):
-        #these are the default GUI        
-        txtRegs[0].SetValue(str(self.fpga.GetTripPowerOff()))
-        txtRegs[1].SetValue(str(self.fpga.GetGateStart()))
-        txtRegs[2].SetValue(str(self.fpga.GetGateLength()))
-        txtRegs[3].SetValue(str(self.fpga.GetHVEnabled()))
-        txtRegs[4].SetValue(str(self.fpga.GetHVTarget()))
-        txtRegs[5].SetValue(str(self.fpga.GetHVActual()))
-        txtRegs[6].SetValue(str(self.fpga.GetHVManual()))
-        txtRegs[7].SetValue(str(self.fpga.GetHVNumAvg()))
-        txtRegs[8].SetValue(str(self.fpga.GetHVPeriodManual()))
-        txtRegs[9].SetValue(str(self.fpga.GetHVPeriodAuto()))
-        txtRegs[10].SetValue(str(self.fpga.GetHVPulseWidth()))
-        txtRegs[11].SetValue(str(self.fpga.GetTemperature()))
-        txtRegs[12].SetValue(str(self.fpga.GetVersion()))       # is GetVersion() different from GetFirmwareVersion() ????
-        txtRegs[13].SetValue(str(self.fpga.GetBoardNumber()))
-        #these are the advanced GUI
-        txtRegs[14].SetValue(str(self.fpga.GetTimer()))
-        txtRegs[15].SetValue(str((self.fpga.GetInjEnable0()<<7) + self.fpga.GetInjCount0()))
-        txtRegs[16].SetValue(str((self.fpga.GetInjEnable1()<<7) + self.fpga.GetInjCount1()))
-        txtRegs[17].SetValue(str((self.fpga.GetInjEnable2()<<7) + self.fpga.GetInjCount2()))
-        txtRegs[18].SetValue(str((self.fpga.GetInjEnable3()<<7) + self.fpga.GetInjCount3()))
-        txtRegs[19].SetValue(str((self.fpga.GetInjEnable4()<<7) + self.fpga.GetInjCount4()))
-        txtRegs[20].SetValue(str((self.fpga.GetInjEnable5()<<7) + self.fpga.GetInjCount5()))
-        txtRegs[21].SetValue(str(self.fpga.GetInjectRange()))
-        txtRegs[22].SetValue(str(self.fpga.GetInjectPhase()))
-        txtRegs[23].SetValue(str(self.fpga.GetInjDACValue()))
-        txtRegs[24].SetValue(str(self.fpga.GetInjDACMode()))
-        txtRegs[25].SetValue(str(self.fpga.GetInjDACStart()))
-        txtRegs[26].SetValue(str(self.fpga.GetInjDACDone()))
-        txtRegs[27].SetValue(str(self.fpga.GetHVControl()))
-        txtRegs[28].SetValue(str(self.fpga.GetPhaseStart()))
-        txtRegs[29].SetValue(str(self.fpga.GetPhaseInc()))
-        txtRegs[30].SetValue(str(self.fpga.GetPhaseCount()))
-        txtRegs[31].SetValue(str(self.fpga.GetDCM1Lock()))
-        txtRegs[32].SetValue(str(self.fpga.GetDCM2Lock()))
-        txtRegs[33].SetValue(str(self.fpga.GetDCM1NoClock()))
-        txtRegs[34].SetValue(str(self.fpga.GetDCM2NoClock()))
-        txtRegs[35].SetValue(str(self.fpga.GetDCM2PhaseDone()))
-        txtRegs[36].SetValue(str(self.fpga.GetDCM2PhaseTotal()))
-        txtRegs[37].SetValue(str(self.fpga.GetTP2Bit()))
-        txtRegs[38].SetValue(str(self.fpga.GetTPCount()))
-        #txtRegs[39].SetValue(str(self.fpga.()))  ' WR TripX Threshold'
-        txtRegs[40].SetValue(str(self.fpga.GetTripXCompEnc()))
-        txtRegs[41].SetValue(str(self.fpga.GetExtTriggerFound()))
-        txtRegs[42].SetValue(str(self.fpga.GetExtTriggerRearm()))
-        txtRegs[43].SetValue(str(self.fpga.GetDiscEnMask0()))
-        txtRegs[44].SetValue(str(self.fpga.GetDiscEnMask1()))
-        txtRegs[45].SetValue(str(self.fpga.GetDiscEnMask2()))
-        txtRegs[46].SetValue(str(self.fpga.GetDiscEnMask3()))
-        txtRegs[47].SetValue(str(self.fpga.GetGateTimeStamp()))
-        ###txtRegs[48].SetValue(str(self.fpga.()))  ' R  SCmdErr(1)'
-        ###txtRegs[49].SetValue(str(self.fpga.()))  ' R  FCmdErr(1)'
-        ###txtRegs[50].SetValue(str(self.fpga.()))  ' R  RXSyncErr(1)'
-        ###txtRegs[51].SetValue(str(self.fpga.()))  ' R  TXSyncErr(1)'
-## existing functions from feb.py -> **** NOT MORE VALID ; PLEASE REMOVE ****     
-##        def GetVXOXilinx(self): return _feb.feb_GetVXOXilinx(self)
-##        def GetPhaseSpare(self): return _feb.feb_GetPhaseSpare(self)
-## MISSING functions from feb.py -> **** PLEASE UPDATE ****
-##      txtRegs[39].SetValue(str(self.fpga.()))  ' WR TripX Threshold'
-##      txtRegs[48].SetValue(str(self.fpga.()))  ' R  SCmdErr(1)'
-##      txtRegs[49].SetValue(str(self.fpga.()))  ' R  FCmdErr(1)'
-##      txtRegs[50].SetValue(str(self.fpga.()))  ' R  RXSyncErr(1)'
-##      txtRegs[51].SetValue(str(self.fpga.()))  ' R  TXSyncErr(1)'
-    
+    def __init__(self, febAddress):
+        self.Address=febAddress
+    def FPGARead(self, theCROCChannel):
+        sentMessage = MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
+            Frame.DeviceFPGA, Frame.FuncFPGARead) + Frame.NFPGARegisters*[0]
+        return WriteSendReceive(sentMessage, self.Address, theCROCChannel)
+    def FPGAWrite(self, theCROCChannel, sentMessageData):
+        sentMessage = MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
+            Frame.DeviceFPGA, Frame.FuncFPGAWrite) + sentMessageData
+        return WriteSendReceive(sentMessage, self.Address, theCROCChannel)
+   
 def febPrint():
     print 'Broadcast = %s' % feb.Broadcast
     print 'MasterToSlave = %s' % feb.MasterToSlave
