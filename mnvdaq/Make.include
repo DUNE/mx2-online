@@ -3,6 +3,7 @@
 #	CAEN_DIR
 # environment variables.
 
+CPPFLAGS += -g -Wall 
 LDLIBS += -L/usr/lib64 -ldl
 
 #CAEN libraries & drivers needed
@@ -22,7 +23,7 @@ else
 	LDLIBS += -L/usr/lib64 -lboost_thread-mt
 endif
 
-INCLUDE += -I/usr/include/boost/thread -I/usr/include/boost
+INCLUDE += /usr/include/boost/thread /usr/include/boost
 
 #MINERvA DAQ Libraries
 #Electronics drive code
@@ -46,3 +47,4 @@ INCLUDE += -I$(DAQROOT)/event_builder/include
 #Event Transver
 INCLUDE += -I$(DAQROOT)/et_9.0/src/libsrc
 
+CPPFLAGS += $(INCLUDE)
