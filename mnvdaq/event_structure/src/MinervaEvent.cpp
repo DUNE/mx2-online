@@ -128,7 +128,7 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 	event_info_block[2] = sub_run & 0xFFFFFFFF;
 	event_info_block[3] = trig & 0xFF;
 	event_info_block[3] |= ( (ledLevel & 0x3) << 8 );
-	event_info_block[3] |= ( (ledGroup & 0x1F) << 11 );
+	event_info_block[3] |= ( (ledGroup & 0xF8) << 8 );
 	event_info_block[4] = g_gate & 0xFFFFFFFF;       // the "global gate" least sig int 
 	event_info_block[5] = (g_gate>>32) & 0xFFFFFFFF; // the "global gate" most sig int
 	event_info_block[6] = gate & 0xFFFFFFFF;         // the gate number least sig int 
