@@ -161,6 +161,7 @@ class MainFrame(wx.Frame):
 		self.ETthreads = []
 		self.timerThreads = []
 		self.ETthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartDAQ]
+#		self.ETthreadStarters = [self.StartTestProcess, self.StartTestProcess, self.StartTestProcess]
 		self.current_ET_thread = 0			# the next thread to start
 		self.windows = []					# child windows opened by the process.
 		self.logfileNames = None
@@ -358,6 +359,17 @@ class MainFrame(wx.Frame):
 
 		self.windows.append(daqFrame)
 		self.ETthreads.append( ETThread(daq_command, output_window=daqFrame, owner_window=self, quit_event=DAQQuitEvent) )
+
+	def StartTestProcess(self):
+		frame = OutputFrame(self, "test process", window_size=(600,600), window_pos=(1200,200))
+		frame.Show(True)
+		self.closeAllButton.Enable()
+
+		command = "/home/jeremy/code/mnvruncontrol/scripts/test.sh"
+
+		self.windows.append(frame)
+		self.ETthreads.append( ETThread(command, output_window=frame, owner_window=self, next_thread_delay=3) )
+
 
 	def OnTimeToClose(self, evt):
 		self.StopAll()
@@ -706,7 +718,7 @@ class ETThread(threading.Thread):
 
 			while True:
 				self.process.poll()		# check if the process is still alive
-				newdata = self.process.stdout.read(10)	# not every process is careful to spit things out with line breaks, so I can't use readline()
+				newdata = self.process.stdout.read(5)	# not every process is careful to spit things out with line breaks, so I can't use readline()
 
 				if len(newdata) > 0:		# shouldn't be a problem since reads are BLOCKING in python, but it's always better to check
 					wx.PostEvent(self.output_window, NewDataEvent(newdata))
@@ -730,39 +742,50 @@ class ETThread(threading.Thread):
 
 			self.process.poll()
 			if (self.process.returncode == None):		# if that doesn't work, give it a few seconds, then kill it the brute force way
-				print "Waiting 5 seconds before hard kill..."
+				print "Process", self.pid, "not yet exited.  Waiting 5 seconds before hard kill..."
 				self.timerthread = threading.Timer(5, self.HardKill)
 				self.timerthread.start()
-
-		# make sure there's nothing left in the buffer to read!
-		self.process.stdout.flush()
-		newdata = self.process.stdout.read()
-		if len(newdata) > 0 and self.output_window:
-			wx.PostEvent(self.output_window, NewDataEvent(newdata))
+		else:
+			# make sure there's nothing left in the buffer to read!
+			self.process.stdout.flush()
+			newdata = self.process.stdout.read()
+			if len(newdata) > 0 and self.output_window:
+				wx.PostEvent(self.output_window, NewDataEvent(newdata))
 		
-		if self.process.returncode != None:
-			if (self.timerthread):
-				self.timerthread.cancel()
-			print "Process", self.pid, "has quit."
-			if self.output_window:
-				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
+			if self.process.returncode != None:
+				if (self.timerthread):
+					self.timerthread.cancel()
+				print "Process", self.pid, "has quit."
+				if self.output_window:
+					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
 
 	def HardKill(self):
-		print "Checking if hard kill is necessary..."
+		print "Thread", self.pid, "was unresponsive.  Checking if hard kill is necessary..."
 		
-		self.process.stdout.flush()
-		newdata = self.process.stdout.read()
-		if len(newdata) > 0 and self.output_window:
-			wx.PostEvent(self.output_window, NewDataEvent(newdata))
+#		self.process.stdout.flush()
+#		(newdata, tmp) = self.process.communicate()
+#		if len(newdata) > 0 and self.output_window:
+#			wx.PostEvent(self.output_window, NewDataEvent(newdata))
 		
 		self.process.poll()
+		
 		if self.process.returncode == None:
-			print "Thread", self.pid, "not responding to SIGINT.  Issuing SIGKILL..."
-			self.process.kill()
+			print "Thread", self.pid, "not responding to SIGINT.  Issuing SIGTERM..."
+			self.process.terminate()
+			
+			time.sleep(2)
+			
+			if self.process.returncode == None:
+				print "Thread", self.pid, "is deadlocked.  Issuing SIGKILL..."
+				self.process.kill()
 	
-			print "Process", self.pid, "was killed."
-			if self.output_window:
-				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread killed."))
+				print "Process", self.pid, "was killed."
+				if self.output_window:
+					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread killed."))
+			else:
+				print "Thread", self.pid, "forcibly terminated but clean exit."
+				if self.output_window:
+					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
 		else:
 			print "Process", self.pid, "has quit."
 			if self.output_window:
