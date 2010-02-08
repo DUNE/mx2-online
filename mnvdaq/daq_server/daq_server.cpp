@@ -29,10 +29,10 @@
 	using namespace std;
 
 int main() {
-	done[0] = false; //set the loop flag
-	server(); //run the server  
+	done[0] = false; // Set the loop flag.
+	server();        // Run the server.  
 
-	return 0; //success
+	return 0;        // Success!
 }
 
 
@@ -66,18 +66,28 @@ int make_socket() {
 
 /* Write setup information to the command line - this starts a run */
 int launch_minervadaq() {
-	stringstream process_gates, rmode, runn, subr, dtctr;
+	stringstream process_gates, rmode, runn, subr, dtctr, totsec, detconf, 
+		ledlevel, ledgroup;
 	process_gates << gates[0];
 	rmode         << runMode[0];
 	runn          << runNum[0];
 	subr          << subNum[0];
         dtctr         << detect[0];
+	totsec        << totSec[0];
+	detconf       << detConf[0];
+	ledlevel      << ledLevel[0];
+	ledgroup      << ledGroup[0];
 	string command = "$DAQROOT/bin/minervadaq -et " + string(et_file) + " " +
 		"-g " + process_gates.str() + " " + 
+		"-m " + rmode.str() + " " + 
 		"-r " + runn.str() + " " + 
 		"-s " + subr.str() + " " +  
-		"-m " + rmode.str() + " " + 
 		"-d " + dtctr.str() + " " + 
+		"-t " + totsec.str() + " " + 
+		"-cf " + string(conf_file) + " " +
+		"-dc " + detconf.str() + " " + 
+		"-ll " + ledlevel.str() + " " + 
+		"-lg " + ledgroup.str() + " " + 
 		"> log_file";
 	cout << "launch_minervadaq command: " << command << endl;
 	if ((system(command.c_str())!=-1)) {
@@ -177,6 +187,46 @@ int read_setup_data(int master_connection) {
 		exit(EXIT_FAILURE);
 	}
 	cout << " Detector Type (encoded): " << detect[0] << endl;
+
+	/********************************************************************************/
+	// Read the run length in seconds (ignored by the DAQ)
+	if ((read(master_connection,totSec,sizeof(totSec)))!=sizeof(totSec)) {
+		perror("server read error: run time length");
+		exit(EXIT_FAILURE);
+	}
+	cout << " Run Length (seconds)   : " << totSec[0] << endl;
+
+	/********************************************************************************/
+	// Read the run length in seconds (ignored by the DAQ)
+	if ((read(master_connection,conf_file,sizeof(conf_file)))!=sizeof(conf_file)) {
+		perror("server read error: conf_file");
+		exit(EXIT_FAILURE);
+	}
+	cout << " Name of config file    : " << conf_file << endl;
+
+	/********************************************************************************/
+	// Read the detector config (# of FEB's)
+	if ((read(master_connection,detConf,sizeof(detConf)))!=sizeof(detConf)) {
+		perror("server read error: detector config");
+		exit(EXIT_FAILURE);
+	}
+	cout << " Detector Config (#FEBs): " << detConf[0] << endl;
+
+	/********************************************************************************/
+	// Read the LED level
+	if ((read(master_connection,ledLevel,sizeof(ledLevel)))!=sizeof(ledLevel)) {
+		perror("server read error: LED Level");
+		exit(EXIT_FAILURE);
+	}
+	cout << " LED Level (encoded)    : " << ledLevel[0] << endl;
+
+	/********************************************************************************/
+	// Read the LED group
+	if ((read(master_connection,ledGroup,sizeof(ledGroup)))!=sizeof(ledGroup)) {
+		perror("server read error: LED Group");
+		exit(EXIT_FAILURE);
+	}
+	cout << " LED Group (encoded)    : " << ledGroup[0] << endl;
 
 	/********************************************************************************/
 	// Read the ET filename for data storagea

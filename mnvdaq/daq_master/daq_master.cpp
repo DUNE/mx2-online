@@ -25,14 +25,19 @@ using namespace std;
 int main(int argc, char* argv[]) {
 
 	// Initialize run parameters for MINERvA DAQ.
-	for (int i = 0; i < 2; i++) {
-		gates[i]   = 10;   // Run length in gates
-		runMode[i] = 0;    // Running Mode (0==OneShot, etc.)
-		runNum[i]  = 938;  // Run number
-		subNum[i]  = 11;   // Subrun number
-		detect[i]  = 0;    // Default to UnknownDetector
-		sprintf(et_file,"testme");	
+	for (int i = 0; i < daq_slaves; i++) {
+		gates[i]    = 10;  // Run length in gates
+		runMode[i]  = 0;   // Running Mode (0==OneShot, etc.)
+		runNum[i]   = 938; // Run number
+		subNum[i]   = 11;  // Subrun number
+		detect[i]   = 0;   // Default to UnknownDetector
+		totSec[i]   = 117; // Random default.
+		detConf[i]  = 8;   // Detector config - basically , number of FEB's.
+		ledLevel[i] = 0;   // Default to Zero PE (only for Header, not used)
+		ledGroup[i] = 8;   // Default to LEDALL (only for Header, not used)
 	}
+	sprintf(conf_file,"unknown");
+	sprintf(et_file,"testme");	
         // Process the command line argument set.  
         // TODO - Be sure the command arg set for daq_master is up to date.
         int optind = 1;
@@ -42,33 +47,58 @@ int main(int argc, char* argv[]) {
                 if (sw=="-r") {
                         optind++;
                         for (int i=0;i<daq_slaves;i++) runNum[i] = atoi(argv[optind]);
-                        cout << "\tRun Number             = " << runNum[0] << endl;
+                        cout << "\tRun Number                  = " << runNum[0] << endl;
                 }
                 else if (sw=="-s") {
                         optind++;
                         for (int i=0;i<daq_slaves;i++) subNum[i] = atoi(argv[optind]);
-                        cout << "\tSubrun Number          = " << subNum[0] << endl;
+                        cout << "\tSubrun Number               = " << subNum[0] << endl;
                 }
                 else if (sw=="-g") {
                         optind++;
                         for (int i=0;i<daq_slaves;i++) gates[i] = atoi(argv[optind]);
-                        cout << "\tTotal Gates            = " << gates[0] << endl;
+                        cout << "\tTotal Gates                 = " << gates[0] << endl;
                 }
+		else if (sw=="-t") {
+			optind++;
+                        for (int i=0;i<daq_slaves;i++) totSec[i] = atoi(argv[optind]);
+			cout << "\tTotal Seconds (ignored)     = " << totSec[0] << endl;
+		}
                 else if (sw=="-m") {
                         optind++;
                         for (int i=0;i<daq_slaves;i++) runMode[i] = atoi(argv[optind]);
-                        cout << "\tRunning Mode (encoded) = " << runMode[0] << endl;
+                        cout << "\tRunning Mode (encoded)      = " << runMode[0] << endl;
                 }
                 else if (sw=="-d") {
                         optind++;
                         for (int i=0;i<daq_slaves;i++) detect[i] = atoi(argv[optind]);
-                        cout << "\tDetector (encoded)     = " << detect[0] << endl;
+                        cout << "\tDetector (encoded)          = " << detect[0] << endl;
                 }
                 else if (sw=="-et") {
                         optind++;
 			sprintf(et_file,argv[optind]);	
-                        cout << "\tET Filename            = " << et_file << endl;
+                        cout << "\tFileroot (ET, SAM, logging) = " << et_file << endl;
                 }
+		else if (sw=="-cf") {
+			optind++;
+			sprintf(conf_file,argv[optind]);
+			cout << "\tHardware Config Filename    = " << conf_file << endl;
+		}
+		else if (sw=="-dc") {
+			optind++;
+			for (int i=0;i<daq_slaves;i++) detConf[i] = atoi(argv[optind]);
+			cout << "\tDetector Config. Code       = " << detConf[0] << endl;
+		}
+		else if (sw=="-ll") {
+			optind++;
+			for (int i=0;i<daq_slaves;i++) ledLevel[i] = atoi(argv[optind]);
+			cout << "\tLED Level (encoded)         = " << ledLevel[0] << endl;
+		}
+		else if (sw=="-lg") {
+			optind++;
+			for (int i=0;i<daq_slaves;i++) ledGroup[i] = atoi(argv[optind]);
+			cout << "\tLED Group (encoded)         = " << ledGroup[0] << endl;
+		}
                 else
                         cout << "Unknown switch: " << argv[optind] << endl;
                 optind++;
@@ -78,17 +108,18 @@ int main(int argc, char* argv[]) {
 	make_socket(); //make up the communication socket
 
 	/* Connect to the DAQ Server server */
-	for (int i=0;i<daq_slaves;i++) {
+	for (int i = 0; i < daq_slaves; i++) {
 		if (connect (socket_handle[i], (struct sockaddr*) &daq_client[i], sizeof (struct sockaddr_in)) == -1) {
 			perror ("connect");
 			return 1;
 		}
 	}
 
-	cout << "writing data to socket..." << endl;
-	write_setup_data(); //write setup data to the "slave" 
-
+	cout << "Writing data to socket..." << endl;
+	write_setup_data();     //write setup data to the "slave" 
+	cout << "Reading server response..." << endl;
 	read_server_response(); //read the "slave" response
+
 	return 0;
 }
 
@@ -128,12 +159,17 @@ int write_setup_data() {
 
 		cout << " daq_master::write_setup_data() socket_handle: " << socket_handle[i] << endl;
 		// daq_server expects the data to come in a very specific order!
-		write( socket_handle[i], &gates[i],   sizeof(gates[i])); 
-		write( socket_handle[i], &runMode[i], sizeof(runMode[i])); 
-		write( socket_handle[i], &runNum[i],  sizeof(runNum[i])); 
-		write( socket_handle[i], &subNum[i],  sizeof(subNum[i])); 
-		write( socket_handle[i], &detect[i],  sizeof(detect[i])); 
-		write( socket_handle[i], et_file,     sizeof(et_file));
+		write( socket_handle[i], &gates[i],    sizeof(gates[i])); 
+		write( socket_handle[i], &runMode[i],  sizeof(runMode[i])); 
+		write( socket_handle[i], &runNum[i],   sizeof(runNum[i])); 
+		write( socket_handle[i], &subNum[i],   sizeof(subNum[i])); 
+		write( socket_handle[i], &detect[i],   sizeof(detect[i])); 
+		write( socket_handle[i], &totSec[i],   sizeof(totSec[i])); 
+		write( socket_handle[i], conf_file,    sizeof(conf_file));
+		write( socket_handle[i], &detConf[i],  sizeof(detConf[i])); 
+		write( socket_handle[i], &ledLevel[i], sizeof(ledLevel[i])); 
+		write( socket_handle[i], &ledGroup[i], sizeof(ledGroup[i])); 
+		write( socket_handle[i], et_file,      sizeof(et_file));
 		write( socket_handle[i], &done[i], 1);  //send the status
 	}
 	return 0;

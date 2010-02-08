@@ -54,10 +54,10 @@ int main(int argc, char *argv[])
 	int LEDGroup             = 0;
 	detector                 = (0x1)<<4;  // TODO - REMOVE: For header debugging... the Upstream Detector.
 	detectorConfig           = 0xBABE;    // TODO - REMOVE: For header debugging...
-	LEDLevel                 = 3;         // TODO - REMOVE: MaxPE - For debugging purposes...
-	LEDGroup                 = 1;         // TODO - REMOVE: LEDALL - For debugging purposes...
+	LEDLevel                 = 2;         // TODO - REMOVE: MaxPE - For debugging purposes...
+	LEDGroup                 = 8;         // TODO - REMOVE: LEDALL - For debugging purposes...
 	string fileroot          = "testme";  // For logs, etc.  
-	string strtemp           = "unknown";
+	string strtemp           = "unknown"; // For SAM, temp.
 	char config_filename[100]; sprintf(config_filename,"unknown"); // For SAM.
 	string et_filename       = "/work/data/etsys/testme";  
 	string log_filename      = "/work/data/logs/testme.txt"; 
@@ -68,9 +68,6 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
 	/*********************************************************************************/
-	// TODO - We need to add to the command line argument set...
-	//  li box config - led groups activated
-	//  li box config - pulse height
 	// TODO - Add support for the total seconds flag?...
 	int optind = 1;
 	// Decode Arguments
@@ -529,7 +526,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-08-03'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-09-00'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
