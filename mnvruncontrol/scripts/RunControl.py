@@ -718,7 +718,7 @@ class ETThread(threading.Thread):
 
 			while True:
 				self.process.poll()		# check if the process is still alive
-				newdata = self.process.stdout.read(5)	# not every process is careful to spit things out with line breaks, so I can't use readline()
+				newdata = self.process.stdout.read(1)	# not every process is careful to spit things out with line breaks, so I can't use readline()
 
 				if len(newdata) > 0:		# shouldn't be a problem since reads are BLOCKING in python, but it's always better to check
 					wx.PostEvent(self.output_window, NewDataEvent(newdata))
