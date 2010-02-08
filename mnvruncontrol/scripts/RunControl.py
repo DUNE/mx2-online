@@ -117,11 +117,26 @@ class MainFrame(wx.Frame):
 		topSizer = wx.BoxSizer(wx.HORIZONTAL)
 		topSizer.AddMany( [(configBoxSizer, 1, wx.EXPAND | wx.RIGHT, 5), (controlBoxSizer, 1, wx.EXPAND | wx.LEFT, 5)] )
 		
+		self.onImage = wx.Bitmap("LED_on.png", type=wx.BITMAP_TYPE_PNG)
+		self.offImage = wx.Bitmap("LED_off.png", type=wx.BITMAP_TYPE_PNG)
+		self.runningIndicator = wx.StaticBitmap(mainPage, -1)
+		self.runningIndicator.SetBitmap(self.offImage)
 		
+		runningIndicatorText = wx.StaticText(mainPage, -1, "Running?")
+		
+		runningIndicatorSizer = wx.BoxSizer(wx.VERTICAL)
+		runningIndicatorSizer.Add(self.runningIndicator, 0, wx.ALIGN_CENTER_HORIZONTAL)
+		runningIndicatorSizer.Add(runningIndicatorText, 0, wx.ALIGN_CENTER_HORIZONTAL)
+
+#		self.notRunningIndicator = wx.StaticBitmap(mainPage, -1)
+#		self.notRunningIndicator.SetBitmap(self.offImage)
+		
+		statusSizer = wx.StaticBoxSizer(wx.StaticBox(mainPage, -1, "Status"), wx.HORIZONTAL)
+		statusSizer.Add(runningIndicatorSizer, 1, wx.ALIGN_CENTER_HORIZONTAL)
 
 		globalSizer = wx.BoxSizer(wx.VERTICAL)
 		globalSizer.Add(topSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
-#		globalSizer.Add(logBoxSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM | wx.TOP | wx.LEFT | wx.RIGHT, border=10)
+		globalSizer.Add(statusSizer, 0, wx.EXPAND | wx.ALIGN_TOP | wx.ALL, border=10)
 
 		mainPage.SetSizer(globalSizer)
 
@@ -315,6 +330,7 @@ class MainFrame(wx.Frame):
 		self.stopButton.Enable()
 
 		self.SetStatusText("RUNNING", 1)
+		self.runningIndicator.SetBitmap(self.onImage)
 		self.StartNextThread()			# starts the first thread.  the rest will be started in turn as ThreadReadyEvents are received by this window.
 
 	def StartETSys(self):
@@ -388,6 +404,7 @@ class MainFrame(wx.Frame):
 			thread.Abort()
 			
 		self.SetStatusText("STOPPED", 1)
+		self.runningIndicator.SetBitmap(self.offImage)
 
 		self.stopButton.Disable()
 		self.startButton.Enable()
@@ -747,8 +764,8 @@ class ETThread(threading.Thread):
 				self.timerthread.start()
 		else:
 			# make sure there's nothing left in the buffer to read!
-			self.process.stdout.flush()
-			newdata = self.process.stdout.read()
+#			self.process.stdout.flush()
+			(newdata, tmp) = self.process.communicate()
 			if len(newdata) > 0 and self.output_window:
 				wx.PostEvent(self.output_window, NewDataEvent(newdata))
 		
