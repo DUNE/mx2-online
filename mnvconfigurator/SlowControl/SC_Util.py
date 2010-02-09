@@ -279,38 +279,38 @@ def TRIPRegLabelsData():
         (' IRSEL', pos, size, '', color),
         (' IWSEL', pos, size, '', color),
         (' INJEX0', pos, size, '', color),
-        (' INJB0', pos, size, '', color),
-        (' INJB1', pos, size, '', color),
-        (' INJB2', pos, size, '', color),
-        (' INJB3', pos, size, '', color),
+        (' INJB0 (0x)', pos, size, '', color),
+        (' INJB1 (0x)', pos, size, '', color),
+        (' INJB2 (0x)', pos, size, '', color),
+        (' INJB3 (0x)', pos, size, '', color),
         (' INJEX33', pos, size, '', color))
     return leftRegLabels
 
 def TRIPRegTextData():
     pos=(0,0)
-    size=(30, 20)
+    size=(180, 20)
     color=colorText
     rightRegText=(
-        ('', pos, size, 'IBP', color),
-        ('', pos, size, 'IBBNFALL', color),
-        ('', pos, size, 'IFF', color),
-        ('', pos, size, 'IBPIFF1REF', color),
-        ('', pos, size, 'IBOPAMP', color),
-        ('', pos, size, 'IB_T', color),
-        ('', pos, size, 'IFFP2', color),
-        ('', pos, size, 'IBCOMP', color),
-        ('', pos, size, 'VREF', color),
-        ('', pos, size, 'VTH', color),
-        ('', pos, size, 'GAIN', color),
-        ('', pos, size, 'PIPEDEL', color),
-        ('', pos, size, 'IRSEL', color),
-        ('', pos, size, 'IWSEL', color),
-        ('', pos, size, 'INJEX0', color),
-        ('', pos, size, 'INJB0', color),
-        ('', pos, size, 'INJB1', color),
-        ('', pos, size, 'INJB2', color),
-        ('', pos, size, 'INJB3', color),
-        ('', pos, size, 'INJEX33', color))
+        ('1', pos, size, 'IBP', color),
+        ('2', pos, size, 'IBBNFALL', color),
+        ('3', pos, size, 'IFF', color),
+        ('4', pos, size, 'IBPIFF1REF', color),
+        ('5', pos, size, 'IBOPAMP', color),
+        ('6', pos, size, 'IB_T', color),
+        ('7', pos, size, 'IFFP2', color),
+        ('8', pos, size, 'IBCOMP', color),
+        ('9', pos, size, 'VREF', color),
+        ('10', pos, size, 'VTH', color),
+        ('11', pos, size, 'GAIN', color),
+        ('12', pos, size, 'PIPEDEL', color),
+        ('13', pos, size, 'IRSEL', color),
+        ('14', pos, size, 'IWSEL', color),
+        ('1', pos, size, 'INJEX0', color),
+        ('F', pos, size, 'INJB0', color),
+        ('F0', pos, size, 'INJB1', color),
+        ('F', pos, size, 'INJB2', color),
+        ('F0', pos, size, 'INJB3', color),
+        ('1', pos, size, 'INJEX33', color))
     return rightRegText
 
 def FPGARegLabelsData():
@@ -1057,21 +1057,35 @@ class TRIPRegisters():
         self.chkTrip=wx.RadioBox(panel, -1, 'Trip choices', (5,5), wx.DefaultSize,
             ['Trip 0','Trip 1','Trip 2','Trip 3','Trip 4','Trip 5'], 2, wx.RA_SPECIFY_COLS)
         self.chkTrip.SetFont(myFont(fontSizeRadioBox))
-        self.btnRead=CreateButton(panel, 'Read',
+        self.btnRead=CreateButton(panel, 'Read', 
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnRead6=CreateButton(panel, 'Read ALL 6',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnWrite=CreateButton(panel, 'Write',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.btnWriteALL=CreateButton(panel, 'Write ALL FEs',
+        self.btnWrite6=CreateButton(panel, 'Write ALL 6',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnWriteALL=CreateButton(panel, 'Write ALL TRIPs',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnPRGRST=CreateButton(panel, 'RESET',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnPRGRSTALL=CreateButton(panel, 'RESET ALL TRIPs',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         szBtns=wx.BoxSizer(wx.VERTICAL)
         szBtns.Add(self.chkTrip, 0, wx.ALL|wx.EXPAND, 2)
         szBtns.Add(self.btnRead, 0, wx.ALL, 2)
+        szBtns.Add(self.btnRead6, 0, wx.ALL, 2)
         szBtns.Add(self.btnWrite, 0, wx.ALL, 2)
+        szBtns.Add(self.btnWrite6, 0, wx.ALL, 2)
         szBtns.Add(self.btnWriteALL, 0, wx.ALL, 2)
+        szBtns.Add(self.btnPRGRST, 0, wx.ALL, 2)
+        szBtns.Add(self.btnPRGRSTALL, 0, wx.ALL, 2)
         self.TripBoxSizer=wx.BoxSizer(wx.HORIZONTAL)
         self.TripBoxSizer.Add(szBtns, 0, wx.ALL, 2)
         self.TripBoxSizer.Add(szRegs, 0, wx.ALL, 2)
-        self.controls=[self.chkTrip, self.btnRead, self.btnWrite, self.btnWriteALL]
+        self.controls=[self.chkTrip, self.btnRead, self.btnRead6,
+            self.btnWrite, self.btnWrite6, self.btnWriteALL,
+            self.btnPRGRST, self.btnPRGRSTALL]
         for lbl in lblRegs: self.controls.append(lbl)
         for txt in self.txtRegs: self.controls.append(txt)
     def ResetControls(self):

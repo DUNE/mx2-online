@@ -538,7 +538,10 @@ class TRIP(wx.Panel):
         sizerALL.Add(self.Registers.TripBoxSizer, proportion=0, flag=wx.ALL, border=5)  
         self.SetSizer(sizerALL)
         self.Fit()
-    def ResetControls(self): self.Registers.ResetControls()
+        self.Bind(wx.EVT_RADIOBOX, self.ResetControls, self.Registers.chkTrip)
+    def ResetControls(self, event=None):
+        if event!=None: print self, event, event.GetInt()#, wx.CommandEvent.GetInt()
+        self.Registers.ResetControls()
 
 
 class FLASH(wx.Panel):
