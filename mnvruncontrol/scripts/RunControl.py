@@ -14,8 +14,8 @@ import anydbm		# if a shelve database doesn't exist, this module contains the er
 import re			# regular expressions
 
 ## some constants for configuration
-CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
-#CONFIG_DB_LOCATION = "/home/jeremy/run_control_config.db"
+#CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
+CONFIG_DB_LOCATION = "/home/jeremy/run_control_config.db"
 
 RUN_SUBRUN_DB_LOCATION_DEFAULT = "/work/conditions/next_run_subrun.db"
 LOGFILE_LOCATION_DEFAULT = "/work/data/logs"
@@ -24,9 +24,11 @@ ET_SYSTEM_LOCATION_DEFAULT = "/work/data/etsys"
 RAW_DATA_LOCATION_DEFAULT = "/work/data/rawdata"
 
 #########################################################
-#    MyFrame
+#    MainFrame
 #########################################################
 ID_START = wx.NewId()
+ID_PICKFILE = wx.NewId()
+ID_MOREINFO = wx.NewId()
 ID_OPTIONS = wx.NewId()
 class MainFrame(wx.Frame):
 	""" The main control window. """
@@ -58,87 +60,148 @@ class MainFrame(wx.Frame):
 		nb = wx.Notebook(self)
 
 		# the main page (main config / run controls)
-		mainPage = wx.Panel(nb)
+		self.mainPage = wx.Panel(nb)
+		self.singleRunConfigPanel = wx.Panel(self.mainPage)
+		self.runSeriesConfigPanel = wx.Panel(self.mainPage)
+		self.runSeriesConfigPanel.Show(False)
 
-		runEntryLabel = wx.StaticText(mainPage, -1, "Run")
-		self.runEntry = wx.SpinCtrl(mainPage, -1, '0', size=(125, -1), min=0, max=100000)
+		# first, the 'global' configuration: run #, subrun #, which detector this is, # of FEBs, whether this is a single run or a series
+		runEntryLabel = wx.StaticText(self.mainPage, -1, "Run")
+		self.runEntry = wx.SpinCtrl(self.mainPage, -1, '0', size=(125, -1), min=0, max=100000)
 		self.Bind(wx.EVT_SPINCTRL, self.CheckRunNumber, self.runEntry)
 		self.runEntry.Disable()
 
-		subrunEntryLabel = wx.StaticText(mainPage, -1, "Subrun")
-		self.subrunEntry = wx.SpinCtrl(mainPage, -1, '0', size=(125, -1), min=0, max=100000)
+		subrunEntryLabel = wx.StaticText(self.mainPage, -1, "Subrun")
+		self.subrunEntry = wx.SpinCtrl(self.mainPage, -1, '0', size=(125, -1), min=0, max=100000)
 		self.subrunEntry.Disable()
 
-		gatesEntryLabel = wx.StaticText(mainPage, -1, "Gates")
-		self.gatesEntry = wx.SpinCtrl(mainPage, -1, "10", size=(125, -1), min=1, max=10000)
-
-		detConfigEntryLabel = wx.StaticText(mainPage, -1, "Detector")
+		detConfigEntryLabel = wx.StaticText(self.mainPage, -1, "Detector")
 		self.detectorChoices = ["Unknown", "PMT test stand", "Tracking prototype", "Test beam", "Frozen", "Upstream", "Full MINERvA"]
 		self.detectorCodes = ["UN", "FT", "TP", "TB", "MN", "US", "MV"]
-		self.detConfigEntry = wx.Choice(mainPage, -1, choices=self.detectorChoices)
+		self.detConfigEntry = wx.Choice(self.mainPage, -1, choices=self.detectorChoices)
 		self.detConfigEntry.SetSelection(5)
 
-		runModeEntryLabel = wx.StaticText(mainPage, -1, "Run Mode")
+		febsEntryLabel = wx.StaticText(self.mainPage, -1, "FEBs")
+		self.febsEntry = wx.SpinCtrl(self.mainPage, -1, "4", size=(125, -1), min=1, max=10000)
+
+		self.singleRunButton = wx.RadioButton(self.mainPage, -1, "Single run", style=wx.RB_GROUP)
+		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateRunConfig, self.singleRunButton)
+
+		self.runSeriesButton = wx.RadioButton(self.mainPage, -1, "Run series")
+		self.Bind(wx.EVT_RADIOBUTTON, self.UpdateRunConfig, self.runSeriesButton)
+
+		runSelectionSizer = wx.BoxSizer(wx.HORIZONTAL)
+		runSelectionSizer.Add(self.singleRunButton)
+		runSelectionSizer.Add(self.runSeriesButton)
+		
+		globalConfigSizer = wx.GridSizer(2, 2, 10, 10)
+		globalConfigSizer.AddMany([ (runEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),       (self.runEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                               (subrunEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),    (self.subrunEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                               (detConfigEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL), (self.detConfigEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                               (febsEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),      (self.febsEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
+		globalConfigBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Global run configuration"), wx.VERTICAL)
+		globalConfigBoxSizer.Add(globalConfigSizer, flag=wx.EXPAND)
+		globalConfigBoxSizer.Add(runSelectionSizer, flag=wx.ALIGN_CENTER_HORIZONTAL)
+
+		# now the single-run-specific config: # gates, the run mode
+		gatesEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "Gates")
+		self.gatesEntry = wx.SpinCtrl(self.singleRunConfigPanel, -1, "10", size=(125, -1), min=1, max=10000)
+
+		runModeEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "Run Mode")
 		self.runModeChoices = ["Pedestal", "Light injection", "Charge injection", "Cosmics", "NuMI beam", "Mixed beam/pedestal", "Mixed beam/light injection", "Unknown trigger"]
 		self.runModeCodes = ["pdstl", "linjc", "chinj", "cosmc", "numib", "numip", "numil", "unkwn"]
-		self.runModeEntry =  wx.Choice(mainPage, -1, choices=self.runModeChoices)
+		self.runModeEntry =  wx.Choice(self.singleRunConfigPanel, -1, choices=self.runModeChoices)
 
+		singleRunConfigSizer = wx.GridSizer(3, 2, 10, 10)
+		singleRunConfigSizer.AddMany([ (gatesEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),     (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (runModeEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
+		singleRunConfigBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.singleRunConfigPanel, -1, "Single run Configuration"), wx.VERTICAL)
+		singleRunConfigBoxSizer.Add(singleRunConfigSizer, 1, wx.EXPAND)
 
-		febsEntryLabel = wx.StaticText(mainPage, -1, "FEBs")
-		self.febsEntry = wx.SpinCtrl(mainPage, -1, "4", size=(125, -1), min=1, max=10000)
+		self.singleRunConfigPanel.SetSizer(singleRunConfigBoxSizer)
 
-		self.startButton = wx.Button(mainPage, ID_START, "Start")
+		# run series config: allows user to select a predefined run series file and see what's in it.
+		
+		seriesFileLabel = wx.StaticText(self.runSeriesConfigPanel, -1, "Run series file:")
+		self.seriesFile = wx.TextCtrl(self.runSeriesConfigPanel, -1, "", style=wx.TE_READONLY)
+
+		self.seriesFileButton = wx.Button(self.runSeriesConfigPanel, ID_PICKFILE, "Load...")
+		self.Bind(wx.EVT_BUTTON, self.LoadRunSeriesFile, self.seriesFileButton)
+		
+		seriesFileSizer = wx.BoxSizer(wx.HORIZONTAL)
+		seriesFileSizer.Add(self.seriesFile, 1, flag=wx.RIGHT | wx.LEFT, border=5)
+		seriesFileSizer.Add(self.seriesFileButton, 0, flag=wx.LEFT, border=5)
+		
+		self.seriesDescription = wx.ListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
+		self.seriesDescription.InsertColumn(0, "Run mode", width=150)
+		self.seriesDescription.InsertColumn(1, "Number of gates", width=125)
+		
+		self.moreInfoButton = wx.Button(self.runSeriesConfigPanel, ID_MOREINFO, "More info on this run item...")
+		self.Bind(wx.EVT_BUTTON, self.SeriesEntryMoreInfo, self.moreInfoButton)
+		self.moreInfoButton.Disable()		# will be enabled when a file is loaded.
+		
+		runSeriesConfigSizer = wx.StaticBoxSizer(wx.StaticBox(self.runSeriesConfigPanel, -1, "Run series configuration"), wx.VERTICAL)
+		runSeriesConfigSizer.Add(seriesFileLabel, 0, flag=wx.RIGHT, border=5)
+		runSeriesConfigSizer.Add(seriesFileSizer, flag=wx.EXPAND)
+		runSeriesConfigSizer.Add(self.seriesDescription, 1, flag=wx.EXPAND)
+		runSeriesConfigSizer.Add(self.moreInfoButton, flag=wx.ALIGN_CENTER_HORIZONTAL)
+		
+		self.runSeriesConfigPanel.SetSizer(runSeriesConfigSizer)
+		
+
+		# put the configuration stuff together in one sizer.
+		runConfigSizer = wx.BoxSizer(wx.VERTICAL)
+		runConfigSizer.Add(self.singleRunConfigPanel, proportion=1, flag=wx.EXPAND)
+		runConfigSizer.Add(self.runSeriesConfigPanel, proportion=1, flag=wx.EXPAND)
+		
+		configSizer = wx.BoxSizer(wx.VERTICAL)
+		configSizer.Add(globalConfigBoxSizer, flag=wx.EXPAND | wx.BOTTOM, border=5)
+		configSizer.Add(runConfigSizer, proportion=1, flag=wx.EXPAND)
+
+		# run control: start, stop, close windows
+		self.startButton = wx.Button(self.mainPage, ID_START, "Start")
 		self.Bind(wx.EVT_BUTTON, self.StartDaqSingleton, self.startButton)
 		self.startButton.Disable()
 		
-		self.stopButton = wx.Button(mainPage, wx.ID_STOP)
+		self.stopButton = wx.Button(self.mainPage, wx.ID_STOP)
 		self.Bind(wx.EVT_BUTTON, self.DAQShutdown, self.stopButton)
 		self.stopButton.Disable()		# disabled until the 'start' button is pressed
 
-		self.closeAllButton = wx.Button(mainPage, wx.ID_CLOSE, "Close ET/DAQ windows")
+		self.closeAllButton = wx.Button(self.mainPage, wx.ID_CLOSE, "Close ET/DAQ windows")
 		self.Bind(wx.EVT_BUTTON, self.CloseAllWindows, self.closeAllButton)
 		self.closeAllButton.Disable()
-
-		configSizer = wx.GridSizer(6, 2, 10, 10)
-		configSizer.AddMany([ (runEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),       (self.runEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                      (subrunEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),    (self.subrunEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                      (gatesEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),     (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                      (detConfigEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL), (self.detConfigEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                      (runModeEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                      (febsEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),      (self.febsEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
-		configBoxSizer = wx.StaticBoxSizer(wx.StaticBox(mainPage, -1, "Run Configuration"), wx.VERTICAL)
-		configBoxSizer.Add(configSizer, 1, wx.EXPAND)
-
-		controlBoxSizer = wx.StaticBoxSizer(wx.StaticBox(mainPage, -1, "Run Control"), wx.VERTICAL)
+		
+		controlBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Run Control"), wx.VERTICAL)
 		controlBoxSizer.AddMany( [ (self.startButton, 1, wx.ALIGN_CENTER_HORIZONTAL),
 		                           (self.stopButton, 1, wx.ALIGN_CENTER_HORIZONTAL),
 		                           (self.closeAllButton, 1, wx.ALIGN_CENTER_HORIZONTAL) ] )
-
-		topSizer = wx.BoxSizer(wx.HORIZONTAL)
-		topSizer.AddMany( [(configBoxSizer, 1, wx.EXPAND | wx.RIGHT, 5), (controlBoxSizer, 1, wx.EXPAND | wx.LEFT, 5)] )
 		
+		
+		# a sizer for all the run control stuff (as separate from the status indicator)
+		topSizer = wx.BoxSizer(wx.HORIZONTAL)
+		topSizer.AddMany( [(configSizer, 1, wx.EXPAND | wx.RIGHT, 5), (controlBoxSizer, 1, wx.EXPAND | wx.LEFT, 5)] )
+		
+		# now the 'status' area
 		self.onImage = wx.Bitmap("LED_on.png", type=wx.BITMAP_TYPE_PNG)
 		self.offImage = wx.Bitmap("LED_off.png", type=wx.BITMAP_TYPE_PNG)
-		self.runningIndicator = wx.StaticBitmap(mainPage, -1)
+		self.runningIndicator = wx.StaticBitmap(self.mainPage, -1)
 		self.runningIndicator.SetBitmap(self.offImage)
-		
-		runningIndicatorText = wx.StaticText(mainPage, -1, "Running?")
+
+		runningIndicatorText = wx.StaticText(self.mainPage, -1, "Running?")
 		
 		runningIndicatorSizer = wx.BoxSizer(wx.VERTICAL)
 		runningIndicatorSizer.Add(self.runningIndicator, 0, wx.ALIGN_CENTER_HORIZONTAL)
 		runningIndicatorSizer.Add(runningIndicatorText, 0, wx.ALIGN_CENTER_HORIZONTAL)
 
-#		self.notRunningIndicator = wx.StaticBitmap(mainPage, -1)
-#		self.notRunningIndicator.SetBitmap(self.offImage)
-		
-		statusSizer = wx.StaticBoxSizer(wx.StaticBox(mainPage, -1, "Status"), wx.HORIZONTAL)
+		statusSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Status"), wx.HORIZONTAL)
 		statusSizer.Add(runningIndicatorSizer, 1, wx.ALIGN_CENTER_HORIZONTAL)
 
+		# one sizer to rule them all, one sizer to bind them...
 		globalSizer = wx.BoxSizer(wx.VERTICAL)
-		globalSizer.Add(topSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
+		globalSizer.Add(topSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_TOP | wx.ALL, border=10)
 		globalSizer.Add(statusSizer, 0, wx.EXPAND | wx.ALIGN_TOP | wx.ALL, border=10)
 
-		mainPage.SetSizer(globalSizer)
+		self.mainPage.SetSizer(globalSizer)
 
 		# now the log page panel.
 		logPage = wx.Panel(nb)
@@ -151,14 +214,9 @@ class MainFrame(wx.Frame):
 		self.logfileList.InsertColumn(3, "Time (GMT)")
 		self.logfileList.InsertColumn(4, "Run type")
 		self.logfileList.InsertColumn(5, "Detector")
-#		self.logfileList.InsertColumn(6, "Filename")
 		
 		self.logFileButton = wx.Button(logPage, -1, "View selected log files")
 		self.Bind(wx.EVT_BUTTON, self.ShowLogFiles, self.logFileButton)
-#		self.logFileButton.Disable()
-
-#		logFileViewOldButton = wx.Button(mainPage, -1, "View older logs...")
-#		self.Bind(wx.EVT_BUTTON, self.OlderLogFileSelection, logFileViewOldButton)
 		
 		logBoxSizer = wx.StaticBoxSizer(wx.StaticBox(logPage, -1, "Logs"), orient=wx.VERTICAL)
 		logBoxSizer.AddMany( [ (logfileText, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM, 10),
@@ -168,7 +226,7 @@ class MainFrame(wx.Frame):
 		logPage.SetSizer(logBoxSizer)
 		
 		# add the pages into the notebook.
-		nb.AddPage(mainPage, "Run control")
+		nb.AddPage(self.mainPage, "Run control")
 		nb.AddPage(logPage, "Log files")
 		
 		self.Layout()
@@ -299,6 +357,19 @@ class MainFrame(wx.Frame):
 			self.subrunEntry.SetValue(self.minRunSubrun)
 		else:
 			self.subrunEntry.SetValue(1)
+			
+	def LoadRunSeriesFile(self, evt=None):
+		fileSelector = wx.FileDialog(self, "Select a run series file", wildcard="*", style=wx.FD_OPEN)
+		fileSelector.ShowModal()
+		
+		filename = fileSelector.GetFilename()
+		path = fileSelector.GetPath()
+		if filename != "":
+			self.seriesFile.SetValue(filename)
+			self.seriesPath = path
+		
+	def SeriesEntryMoreInfo(self, evt=None):
+		pass
 
 	def StartDaqSingleton(self, evt):
 		while len(self.ETthreads) > 0:		# if there are any leftover threads from a previous run, remove them
@@ -332,6 +403,19 @@ class MainFrame(wx.Frame):
 		self.SetStatusText("RUNNING", 1)
 		self.runningIndicator.SetBitmap(self.onImage)
 		self.StartNextThread()			# starts the first thread.  the rest will be started in turn as ThreadReadyEvents are received by this window.
+		
+	def UpdateRunConfig(self, evt=None):
+		if self.singleRunButton.GetValue() == True:
+			self.runSeriesConfigPanel.Show(False)
+			self.singleRunConfigPanel.Show(True)
+		else:
+			self.runSeriesConfigPanel.Show(True)
+			self.singleRunConfigPanel.Show(False)
+		
+		self.mainPage.Layout()
+		self.mainPage.Refresh()
+		self.mainPage.Update()
+		
 
 	def StartETSys(self):
 		EVENT_SIZE=2048 
