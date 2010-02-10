@@ -25,6 +25,7 @@ int main(int argc, char **argv)
 	std::cout << "Ouptut Filename = " << output_filename << std::endl;
 	std::cout << "ET Filesystem   = " << argv[1] << std::endl;
 	ofstream binary_outputfile(output_filename.c_str(),ios::out|ios::app|ios::binary); 
+
 																
 	// int            event_size; // unused...
 	int            status;
@@ -43,6 +44,9 @@ int main(int argc, char **argv)
 	et_station_config_setuser(sconfig,ET_STATION_USER_SINGLE);
 	et_station_config_setrestore(sconfig,ET_STATION_RESTORE_OUT);
 
+	// The station name
+	std::string station_name("CHICAGO_UNION");
+
 	// Opening the ET system is the first thing we must do...
 	et_open_config_init(&openconfig);
 #if MULTI_PC
@@ -51,6 +55,15 @@ int main(int argc, char **argv)
 	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov"); // Adjust, etc.
 	et_open_config_setserverport(openconfig, 1091); 
 #endif
+
+#if NEARLINE
+	et_open_config_setmode(&openconfig, ET_HOST_AS_REMOTE);
+	et_open_config_setcast(openconfig, ET_DIRECT);
+	et_open_config_sethost(openconfig, "mnvonline1.fnal.gov"); // Adjust, etc.
+	et_open_config_setserverport(openconfig, 1091);
+	station_name = "RIODEJANEIRO";
+#endif
+
 	if (et_open(&sys_id, argv[1], openconfig) != ET_OK) {
 		printf("event_builder::main(): et_producer: et_open problems\n");
 		exit(1);
@@ -58,7 +71,7 @@ int main(int argc, char **argv)
 	et_open_config_destroy(openconfig);
 
 	// Check if ET is up and running.
-	unsigned int oldheartbeat, newheartbeat;
+	/*unsigned int oldheartbeat, newheartbeat;
 	id = (et_id *) sys_id;
 	oldheartbeat = id->sys->heartbeat;
 	int counter = 0;
@@ -76,13 +89,13 @@ int main(int argc, char **argv)
 		std::cout << "Error in event_builder::main()!" << std::endl;
 		std::cout << "ET System did not start properly!  Exiting..." << std::endl;
 		exit(-5);
-	}  
+	} */ 
 
 	// Set the level of debug output that we want (everything).
 	et_system_setdebug(sys_id, ET_DEBUG_INFO);
 
 	// Create & attach to a new station for making the final output file.
-	et_station_create(sys_id,&cu_station,"CHICAGO_UNION",sconfig);
+	et_station_create(sys_id,&cu_station,station_name.c_str(),sconfig);
 	if (et_station_attach(sys_id, cu_station, &attach) < 0) {
 		printf("event_builder::main(): et_producer: error in station attach\n");
 		system("sleep 10s");
@@ -187,8 +200,8 @@ int main(int argc, char **argv)
 			}
 		}
 
-		memcpy (pdata, (void *) final_buffer, length);
-		et_event_setlength(pe,length);
+		//memcpy (pdata, (void *) final_buffer, length);
+		//et_event_setlength(pe,length);
 
 		// Put the event back into the ET system.
 		status = et_event_put(sys_id, attach, pe); 
