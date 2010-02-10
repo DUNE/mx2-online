@@ -27,6 +27,8 @@ class VMDdevTypes():
     CROC='CROC'
     CH='CH'
     FE='FE'
+    FPGA='FPGA'
+    TRIP='TRIP'
     
 class CROCRegs():
     RegWRTimingSetup        = 0xF000

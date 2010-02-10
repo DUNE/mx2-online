@@ -112,7 +112,7 @@ class SCMainFrame(wx.Frame):
             self.fe.ResetControls()
     
     def OnSCMainFrameClose(self, event):
-        self.Close(True)
+        #self.Close(True)
         self.Destroy()
 
 
@@ -540,7 +540,7 @@ class TRIP(wx.Panel):
         self.Fit()
         self.Bind(wx.EVT_RADIOBOX, self.ResetControls, self.Registers.chkTrip)
     def ResetControls(self, event=None):
-        if event!=None: print self, event, event.GetInt()#, wx.CommandEvent.GetInt()
+        #if event!=None: print self, event, event.GetInt()#, wx.CommandEvent.GetInt()
         self.Registers.ResetControls()
 
 

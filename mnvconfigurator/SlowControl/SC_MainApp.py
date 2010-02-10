@@ -3,9 +3,9 @@ MINERvA DAQ Slow Control GUI
 Contains the main application code
 Started October 21 2009
 """
-from ctypes import *
-cdll.LoadLibrary("/usr/local/lib/liblog4cpp.so.4")
-log4cpp = CDLL("/usr/local/lib/liblog4cpp.so.4")
+#from ctypes import *
+#cdll.LoadLibrary("/usr/local/lib/liblog4cpp.so.4")
+#log4cpp = CDLL("/usr/local/lib/liblog4cpp.so.4")
 #cdll.LoadLibrary("/work/software/mnvsingle/mnvdaq/lib/libhardware.so")
 #hardware = CDLL("/work/software/mnvsingle/mnvdaq/lib/libhardware.so")
 #cdll.LoadLibrary("/lib64/libc.so.6")
@@ -18,7 +18,6 @@ import SC_Frames
 import SC_Util
 from SC_MainObjects import *
 import random
-#import feb
 
 class SCApp(wx.App):
     """SlowControl application. Subclass of wx.App"""
@@ -182,25 +181,99 @@ class SCApp(wx.App):
         except: ReportException('OnMenuLoadHardware', self.reportErrorChoice)
             
     def OnMenuLoadFile(self, event):
-        dlg = wx.FileDialog(self.frame, message="Choose a file",
-            defaultDir="", defaultFile="", wildcard="*.*")
-        if dlg.ShowModal()==wx.ID_OK:
-            filename=dlg.GetFilename()
-            dirname=dlg.GetDirectory()
-            print 'filename = ' + filename
-            print 'dirname = ' + dirname
-            f=open(dirname+'\\'+ filename,'r')
-            print f.read()
-            f.close()
-        dlg.Destroy()
+        try:
+            dlg = wx.FileDialog(self.frame, message='READ Hardware Configuration', defaultDir='', defaultFile='',
+                wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+            if dlg.ShowModal()==wx.ID_OK:
+                filename=dlg.GetFilename()
+                dirname=dlg.GetDirectory()
+                f=open(filename,'r')
+                for line in f:
+                    #print line
+                    lineList = line.split(':')
+                    if len(lineList)!=3: raise Exception('Wrong format in line %s wrong number of ":" characters'%line)
+                    if lineList[0]==SC_Util.VMDdevTypes.CRIM:
+                        if len(lineList[2])!=321: raise Exception('Wrong format in line %s wrong data field length <> 321'%line)
+                        for i in range(16):
+                            addr=str(lineList[2][3+i*20:9+i*20])
+                            data=str(lineList[2][13+i*20:17+i*20])
+                            self.controller.WriteCycle(int(addr,16), int(data,16))
+                    if lineList[0]==SC_Util.VMDdevTypes.CROC:
+                        if len(lineList[2])!=41: raise Exception('Wrong format in line %s wrong data field length <> 41'%line)
+                        for i in range(2):
+                            addr=lineList[2][3+i*20:9+i*20]
+                            data=lineList[2][13+i*20:17+i*20]
+                            self.controller.WriteCycle(int(addr,16), int(data,16))
+                    if lineList[0]==SC_Util.VMDdevTypes.FPGA:
+                        if len(lineList[2])!=331: raise Exception('Wrong format in line %s wrong data field length <> 331'%line)
+                        addresses = lineList[1].split(',')
+                        if len(addresses)!=3: raise Exception('Wrong format in line %s wrong number of "," characters'%line)
+                        febNumber=int(addresses[0])
+                        chNumber=int(addresses[1])
+                        crocNumber=int(addresses[2])
+                        sentMessageData=Frame.NRegsFPGA*[0]
+                        for i in range(Frame.NRegsFPGA):
+                            data=lineList[2][2+i*6:4+i*6]
+                            sentMessageData[i]=int(data,16)
+                        theCROC=FindVMEdev(self.vmeCROCs, crocNumber<<16)
+                        theCROCChannel=theCROC.Channels()[chNumber]
+                        FEB(febNumber).FPGAWrite(theCROCChannel, sentMessageData)
+                    if lineList[0]==SC_Util.VMDdevTypes.TRIP:
+                        if len(lineList[2])!=99: raise Exception('Wrong format in line %s wrong data field length <> 99'%line)
+                        addresses = lineList[1].split(',')
+                        if len(addresses)!=4: raise Exception('Wrong format in line %s wrong number of "," characters'%line)
+                        tripNumber=addresses[0]
+                        febNumber=int(addresses[1])
+                        chNumber=int(addresses[2])
+                        crocNumber=int(addresses[3])
+                        pRegs=Frame.NRegsTRIPPhysical*[0]
+                        for i in range(Frame.NRegsTRIPPhysical):
+                            data=lineList[2][2+i*7:5+i*7]
+                            pRegs[i]=int(data,16)
+                        theCROC=FindVMEdev(self.vmeCROCs, crocNumber<<16)
+                        theCROCChannel=theCROC.Channels()[chNumber]
+                        theFEB=FEB(febNumber)
+                        if tripNumber!='X':
+                            sentMessageHeader = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, theFEB.Address,
+                                Frame.DeviceTRIP, Frame.FuncTRIPWRi[int(tripNumber)])
+                        else:sentMessageHeader = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, theFEB.Address,
+                                Frame.DeviceTRIP, Frame.FuncTRIPWRAll) 
+                        sentMessageData = theFEB.ParseTRIPAllRegsPhysicalToMessage(pRegs, Frame.InstrTRIPWrite)
+                        sentMessage = sentMessageHeader + sentMessageData
+                        WriteSendReceive(sentMessage, theFEB.Address, Frame.DeviceTRIP, theCROCChannel)
+                f.close()
+            dlg.Destroy()
+        except: ReportException('OnMenuLoadFile', self.reportErrorChoice)
     def OnMenuSaveFile(self, event):
-        for crim in self.vmeCRIMs:
-            print crim.type, crim.GetWRRegValues()
-        for croc in self.vmeCROCs:
-            print croc.type, croc.GetWRRegValues()
-        febPrint()
-        wx.MessageBox('SaveFile...', wx.Frame.GetTitle(self.frame),
-            wx.OK | wx.ICON_INFORMATION)
+        try:
+            dlg = wx.FileDialog(self.frame, message='SAVE Hardware Configuration', defaultDir='', defaultFile='',
+                wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+            if dlg.ShowModal()==wx.ID_OK:
+                filename=dlg.GetFilename()
+                dirname=dlg.GetDirectory()
+                f=open(filename,'w')
+                for theCRIM in self.vmeCRIMs:
+                    f.write('%s:%s\n'%(theCRIM.Description(), theCRIM.GetWRRegValues()))
+                for theCROC in self.vmeCROCs:
+                    f.write('%s:%s\n'%(theCROC.Description(), theCROC.GetWRRegValues()))
+                for theCROC in self.vmeCROCs:   
+                    for theCROCChannel in theCROC.Channels():
+                        for febAddress in theCROCChannel.FEBs:
+                            theFEB=FEB(febAddress)
+                            f.write('%s:%s\n'%(theFEB.FPGADescription(theCROCChannel, theCROC), \
+                                [hex(val)[2:].rjust(2,'0') for val in theFEB.FPGARead(theCROCChannel)]))
+                for theCROC in self.vmeCROCs:   
+                    for theCROCChannel in theCROC.Channels():
+                        for febAddress in theCROCChannel.FEBs:
+                            theFEB=FEB(febAddress)
+                            for theTRIPIndex in range(6):
+                                rcvMessageData=theFEB.TRIPRead(theCROCChannel, theTRIPIndex)
+                                pRegs = theFEB.ParseMessageToTRIPRegsPhysical(rcvMessageData, theTRIPIndex)
+                                f.write('%s:%s\n'%(theFEB.TRIPDescription(theTRIPIndex, theCROCChannel, theCROC), \
+                                    [hex(val)[2:].rjust(3,'0') for val in pRegs]))     
+                f.close()
+            dlg.Destroy()              
+        except: ReportException('OnMenuSaveFile', self.reportErrorChoice)
     def OnMenuShowExpandAll(self, event): self.frame.tree.ExpandAll()
     def OnMenuShowCollapseAll(self, event): self.frame.tree.CollapseAll()
     def OnMenuActionsReadVoltages(self, event): wx.MessageBox('not yet implemented')
@@ -701,12 +774,6 @@ class SCApp(wx.App):
 def FindVMEdev(vmeDevList, devAddr):
     for dev in vmeDevList:
         if (dev.BaseAddress()==devAddr): return dev
-##def GetFEB(theCROCChannel, theFEBNumber):
-##    feb=None
-##    for theFEB in theCROCChannel.FEBs:
-##        if theFEB.Address==theFEBNumber:
-##            feb=theFEB; break
-##    return feb
 def FindFEBs(theCROCChannel):
     #clear the self.FEBs list
     theCROCChannel.FEBs=[]
@@ -739,92 +806,6 @@ def ParseDataToListCheckBoxs(data, ListCheckBoxs):
     for i in range(len(ListCheckBoxs)):
         ListCheckBoxs[i].SetValue((data & (1<<i))>>i)
 
-
-def febPrint():
-    print 'Broadcast = %s' % feb.Broadcast
-    print 'MasterToSlave = %s' % feb.MasterToSlave
-    print 'SlaveToMaster = %s' % feb.SlaveToMaster
-    print 'LoadTimer = %s' % feb.LoadTimer
-    print 'ResetTimer = %s' % feb.ResetTimer
-    print 'OpenGate = %s' % feb.OpenGate
-    print 'SoftReset = %s' % feb.SoftReset
-    print 'NoDevices = %s' % feb.NoDevices
-    print 'TRiP = %s' % feb.TRiP
-    print 'FPGA = %s' % feb.FPGA
-    print 'RAM = %s' % feb.RAM
-    print 'Flash = %s' % feb.Flash
-    print 'NoFPGA = %s' % feb.NoFPGA
-    print 'Write = %s' % feb.Write
-    print 'Read = %s' % feb.Read
-    print 'NoRAM = %s' % feb.NoRAM
-    print 'ReadHit0 = %s' % feb.ReadHit0
-    print 'ReadHit1 = %s' % feb.ReadHit1
-    print 'ReadHit2 = %s' % feb.ReadHit2
-    print 'ReadHit3 = %s' % feb.ReadHit3
-    print 'ReadHit4 = %s' % feb.ReadHit4
-    print 'ReadHit5 = %s' % feb.ReadHit5
-    print 'ReadHitDiscr = %s' % feb.ReadHitDiscr
-    print 'ReadHit6 = %s' % feb.ReadHit6
-    print 'ReadHit7 = %s' % feb.ReadHit7
-    print 'NoChip = %s' % feb.NoChip
-    print 'ReadChip0 = %s' % feb.ReadChip0
-    print 'ReadChip1 = %s' % feb.ReadChip1
-    print 'ReadChip2 = %s' % feb.ReadChip2
-    print 'ReadChip3 = %s' % feb.ReadChip3
-    print 'ReadChip4 = %s' % feb.ReadChip4
-    print 'ReadChip5 = %s' % feb.ReadChip5
-    print 'ReadDigital0 = %s' % feb.ReadDigital0
-    print 'ReadDigital1 = %s' % feb.ReadDigital1
-    print 'NoFlash = %s' % feb.NoFlash
-    print 'Command = %s' % feb.Command
-    print 'SetReset = %s' % feb.SetReset
-    print 'ResponseLength0 = %s' % feb.ResponseLength0
-    print 'ResponseLength1 = %s' % feb.ResponseLength1
-    print 'FrameStart = %s' % feb.FrameStart
-    print 'DeviceStatus = %s' % feb.DeviceStatus
-    print 'FrameStatus = %s' % feb.FrameStatus
-    print 'FrameID0 = %s' % feb.FrameID0
-    print 'FrameID1 = %s' % feb.FrameID1
-    print 'Timestamp0 = %s' % feb.Timestamp0
-    print 'Timestamp1 = %s' % feb.Timestamp1
-    print 'Timestamp2 = %s' % feb.Timestamp2
-    print 'Timestamp3 = %s' % feb.Timestamp3
-    print 'Data = %s' % feb.Data
-    print 'hwFrameStart = %s' % feb.hwFrameStart
-    print 'hwDeviceFunction = %s' % feb.hwDeviceFunction
-    print 'hWord2 = %s' % feb.hWord2
-    print 'hwFrameID0 = %s' % feb.hwFrameID0
-    print 'hwFrameID1 = %s' % feb.hwFrameID1
-    print 'hWord5 = %s' % feb.hWord5
-    print 'hWord6 = %s' % feb.hWord6
-    print 'hWord7 = %s' % feb.hWord7
-    print 'hWord8 = %s' % feb.hWord8
-    print 'Direction = %s' % feb.Direction
-    print 'Broadcast = %s' % feb.Broadcast
-    print 'DeviceOK = %s' % feb.DeviceOK
-    print 'FunctionOK = %s' % feb.FunctionOK
-    print 'CRCOK = %s' % feb.CRCOK
-    print 'EndHeader = %s' % feb.EndHeader
-    print 'MaxLen = %s' % feb.MaxLen
-    print 'SecondStart = %s' % feb.SecondStart
-    print 'NAHeader = %s' % feb.NAHeader
-    print 'febAll = %s' % feb.febAll
-    print 'FE1 = %s' % feb.FE1
-    print 'FE2 = %s' % feb.FE2
-    print 'FE3 = %s' % feb.FE3
-    print 'FE4 = %s' % feb.FE4
-    print 'FE5 = %s' % feb.FE5
-    print 'FE6 = %s' % feb.FE6
-    print 'FE7 = %s' % feb.FE7
-    print 'FE8 = %s' % feb.FE8
-    print 'FE9 = %s' % feb.FE9
-    print 'FE10 = %s' % feb.FE10
-    print 'FE11 = %s' % feb.FE11
-    print 'FE12 = %s' % feb.FE12
-    print 'FE13 = %s' % feb.FE13
-    print 'FE14 = %s' % feb.FE14
-    print 'FE15 = %s' % feb.FE15
-    
     
 def main():
     """Instantiates the Slow Control GUI."""
