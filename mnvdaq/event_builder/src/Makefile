@@ -10,6 +10,8 @@ COMPILE_OPTIONS += -DNO_THREAD
 #COMPILE_OPTIONS += -DDEBUG_REPORT_EVENT
 #--MULTI PC SETUP--
 #COMPILE_OPTIONS += -DMULTIPC  #Comment this out for single PC running.
+#--NEARLINE SETUP
+#COMPILE_OPTIONS += -DNEARLINE #Comment this out for single PC running.
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
