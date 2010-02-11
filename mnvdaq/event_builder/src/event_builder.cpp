@@ -44,8 +44,9 @@ int main(int argc, char **argv)
 	et_station_config_setuser(sconfig,ET_STATION_USER_SINGLE);
 	et_station_config_setrestore(sconfig,ET_STATION_RESTORE_OUT);
 
-	// The station name
-	std::string station_name("CHICAGO_UNION");
+	// The station name for the DAQ Event Builder.
+	// For some reason, using this creates problems for the DAQ.  Keep it commented out for now.
+	//std::string station_name("CHICAGO_UNION");
 
 	// Opening the ET system is the first thing we must do...
 	et_open_config_init(&openconfig);
@@ -61,7 +62,7 @@ int main(int argc, char **argv)
 	et_open_config_setcast(openconfig, ET_DIRECT);
 	et_open_config_sethost(openconfig, "mnvonline1.fnal.gov"); // Adjust, etc.
 	et_open_config_setserverport(openconfig, 1091);
-	station_name = "RIODEJANEIRO";
+	//station_name = "RIODEJANEIRO"; // For some reason, the DAQ has problems if we use these...
 #endif
 
 	if (et_open(&sys_id, argv[1], openconfig) != ET_OK) {
@@ -71,7 +72,11 @@ int main(int argc, char **argv)
 	et_open_config_destroy(openconfig);
 
 	// Check if ET is up and running.
-	/*unsigned int oldheartbeat, newheartbeat;
+	// This evidently does not work for NearOnline stations?
+	// It seems to work for both multi and single PC DAQ running...
+#if !NEARLINE
+	std::cout << "Running a DAQ Station..." << std::endl;
+	unsigned int oldheartbeat, newheartbeat;
 	id = (et_id *) sys_id;
 	oldheartbeat = id->sys->heartbeat;
 	int counter = 0;
@@ -89,13 +94,18 @@ int main(int argc, char **argv)
 		std::cout << "Error in event_builder::main()!" << std::endl;
 		std::cout << "ET System did not start properly!  Exiting..." << std::endl;
 		exit(-5);
-	} */ 
+	} 
+#endif
 
 	// Set the level of debug output that we want (everything).
 	et_system_setdebug(sys_id, ET_DEBUG_INFO);
 
 	// Create & attach to a new station for making the final output file.
-	et_station_create(sys_id,&cu_station,station_name.c_str(),sconfig);
+#if NEARLINE
+	et_station_create(sys_id,&cu_station,"RIODEJANEIRO",sconfig);
+#else
+	et_station_create(sys_id,&cu_station,"CHICAGO_UNION",sconfig);
+#endif
 	if (et_station_attach(sys_id, cu_station, &attach) < 0) {
 		printf("event_builder::main(): et_producer: error in station attach\n");
 		system("sleep 10s");
@@ -200,8 +210,10 @@ int main(int argc, char **argv)
 			}
 		}
 
+#if !NEARLINE
 		//memcpy (pdata, (void *) final_buffer, length);
 		//et_event_setlength(pe,length);
+#endif
 
 		// Put the event back into the ET system.
 		status = et_event_put(sys_id, attach, pe); 

@@ -11,7 +11,7 @@ COMPILE_OPTIONS += -DNO_THREAD
 #--MULTI PC SETUP--
 #COMPILE_OPTIONS += -DMULTIPC  #Comment this out for single PC running.
 #--NEARLINE SETUP
-#COMPILE_OPTIONS += -DNEARLINE #Comment this out for single PC running.
+#COMPILE_OPTIONS += -DNEARLINE #Comment this out to make a NearOnline station.
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
