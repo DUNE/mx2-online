@@ -158,14 +158,12 @@ DetectorTypes		= MetaData(( ("Unknown",            0,  "UN"),
 				             ("Upstream",           16, "US"),
 				             ("Full MINERvA",       32, "MV") ))
 
-RunningModes		= MetaData(( ("Unknown",             0,  "unkwn"),
-				             ("Pedestal",            1,  "pdstl"),
-				             ("Light injection",     2,  "linjc"),
-				             ("Charge injection",    4,  "chinj"),
-				             ("Cosmics",             8,  "cosmc"),
-				             ("NuMI beam",           16, "numib"),
-				             ("Mixed beam/pedestal", 32, "numip"),
-				             ("Mixed beam/LI",       64, "numil") ))
+RunningModes		= MetaData(( ("One shot",            0, "pdstl"),
+				             ("NuMI beam",           1, "numib"),
+				             ("Cosmics",             2, "cosmc"),
+				             ("Light injection",     3, "linjc"),
+				             ("Mixed beam/pedestal", 4, "numip"),
+				             ("Mixed beam/LI",       5, "numil") ))
 
         	
 #public static readonly DateTime EpochTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
