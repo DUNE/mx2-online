@@ -22,6 +22,7 @@ COMPILE_OPTIONS += -DREAD_ADC
 #--DETECTOR FLAGS--
 COMPILE_OPTIONS += -DWH14    # 14th floor test stands
 #COMPILE_OPTIONS += -DNUMIUS  # Upstream Detector
+#COMPILE_OPTIONS += -DPMTTEST  # Lab F Test Stand
 
 LDFLAGS += -shared -Wl,-soname
 CXX = g++

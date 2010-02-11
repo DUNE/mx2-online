@@ -60,6 +60,10 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 
 	// Add look-up functions here - one for file content look-up and one by address scanning 
 #if NO_THREAD
+#if PMTTEST
+	InitializeCrim(0xE00000, 1, runningMode);
+	InitializeCroc(0x030000, 1, 4, 0, 0, 0);
+#endif
 #if WH14
 	InitializeCrim(0xE00000, 1, runningMode);
 	//InitializeCrim(0xF00000, 2, runningMode);
