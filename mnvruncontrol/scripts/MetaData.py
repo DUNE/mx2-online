@@ -1,46 +1,172 @@
 # Meta Data Module
+
+# some module constants
+DESCRIPTION = 0
+HASH = 1
+CODE = 2
+ANY = 3
+
+
+class MetaData:
+	""" 
+	Metadata type.  Used to replace the corresponding C++ enumerations.
+	It has the cool feature of being able to guess what sort of thing
+	(hash, code, description) you want back when you write 'MetaDataInstance[thing]'.
+	"""
+	
+	# now methods.
+	def __init__(self, data):
+		self.descriptions = []
+		self.hashes = []
+		self.codes = []
+		
+		omittedHashes = 0
+		omittedCodes = 0
+		warned = False
+		for entry in data:
+			if len(entry) != 3:
+				raise ValueError("Metadata entries must be lists or tuples of 3 entries: (description, hash, code).  Length you provided: " + str(len(entry)))
+			description = entry[0]
+			hashitem = entry[1]
+			code = entry[2]
+			
+			if description == None:
+				raise ValueError("A description must be provided for each metadata item.")
+			else:
+				self.descriptions.append(description)
+				
+			if hashitem == None and code == None:
+				raise ValueError("Either a code or a hash (or both) must be provided for each metadata item.")
+			
+			if hashitem == None:
+				omittedHashes += 1
+			if code == None:
+				omittedCodes += 1
+			
+			if omittedHashes > 0 and omittedCodes > 0 and not warned:
+				print "Warning: you omitted a code in one entry of this metadata and a hash in another.  Did you really mean to do that?..."
+				warned = True
+			
+			self.hashes.append(hashitem)
+			self.codes.append(code)
+		
+		self.locations = (self.descriptions, self.hashes, self.codes)
+	
+	def __getitem__(self, key):
+		""" 
+		The 'operator[]' for this class.
+		Intelligently returns the hash/code/description
+		corresponding to the key it's given.
+		"""
+		returntype = ANY
+		
+		# if you provide more than one argument to the [] operator, it passes them all as a tuple
+		if isinstance(key, tuple):
+			returntype = key[1]
+			key = key[0]
+		
+		keylocation = None
+
+		for location in self.locations:
+#			if location is None:
+#				continue
+			if key in location:
+				keylocation = location
+				
+		if keylocation is None:
+			raise KeyError("Key '" + str(key) + "' is not found in any hash, code, or description.")
+		
+		if returntype != ANY and returntype in (DESCRIPTION, HASH, CODE):
+			return locations[returntype][keylocation.index(key)]
+		elif returntype != ANY:
+			raise ValueError("Invalid return type requested for key '" + str(key) + "'")	
+		
+		# now we know that the user didn't specify which return type.  do something intelligent.
+		if keylocation == self.descriptions:
+			if self.codes[keylocation.index(key)] is not None and self.hashes[keylocation.index(key)] is None:
+				return self.codes[keylocation.index(key)]
+			elif self.codes[keylocation.index(key)] is None and self.hashes[keylocation.index(key)] is not None:
+				return self.hashes[keylocation.index(key)]
+			else:
+				raise KeyError("Description corresponds to metadata with both hashes and keys: must specify return type.")
+		else:
+			return self.descriptions[keylocation.index(key)]
+	
+	def __contains__(self, key):
+		"""
+		This function implements the 'in' operator.
+		Allows you to easily check if a description/code/hash is in the metadata
+		without having to know which one of the three areas to look in.
+		"""
+		
+		for location in self.locations:
+			if key in location:
+				return True
+		return False
+			
+	def index(self, key):
+		"""
+		Replaces the standard Python list function index():
+		returns the index of the item in the list that corresponds
+		to the key passed.  Raises ValueError if no such key exists.
+		"""
+		if not key in self:
+			raise ValueError("Key not found in this metadata.")
+		
+		for location in self.locations:
+			if key in location:
+				return location.index(key)
+		
+		
 		
 # need variable "daqStop"
+
+# Format for constructor for MetaData objects:
+# ( (description1, hash1, code1),
+#   (description2, hash2, code2),
+#   ...
+#   (descriptionN, hashN, codeN) )
+#
+# If you want to omit either a hash or a code 
+# (you need to have a description and at least one of hash or code every time)
+# you should pass None in that position.  e.g.:
+# ( (description1, hash1, code1),
+#   (description2, None,  code2),
+#   (description3, hash3, None ),
+#   ...
+#   (descriptionN, None,  codeN) )
+#
+# etc.
+#
+# Note that if you pass only a hash for one item and only a code for another,
+# the program will print out a warning because it assumes you probably didn't mean to do that.
 		
-SpecialGUI         = {'Depricated':0}
+SpecialGUI		= MetaData( tuple([("Deprecated", 0, None)]) )
 
-OperatingModes     = {'OneShot'        :0,
-                      'Cosmic'         :1,
-                      'MixedModePedLI' :2,
-                      'MTM'            :3,
-                      'MixedModeMTMLI' :4,
-                      'MixedModePedMTM':5}
+HardwareInitLevels	= MetaData(( ("Full HW init", 0, None),
+				             ("No HW init",   1, None) ))
+				             
+LILevels			= MetaData(( ("Zero PE", 0, None),
+				             ("One PE",  1, None),
+				             ("Max PE",  2, None) ))
 
-HardwareInitLevels = {'FullHWInit':0,
-                      'NoHWInit'  :1}
+DetectorTypes		= MetaData(( ("Unknown",            0,  "UN"),
+				             ("PMT test stand",     1,  "FT"),
+				             ("Tracking prototype", 2,  "TP"),
+				             ("Test beam",          4,  "TB"),
+				             ("Frozen",             8,  "MN"),
+				             ("Upstream",           16, "US"),
+				             ("Full MINERvA",       32, "MV") ))
 
-LILevels           = {'ZeroPE':0,
-                      'OnePE' :1,
-                      'MaxPE' :2}
+RunningModes		= MetaData(( ("Unknown",             0,  "unkwn"),
+				             ("Pedestal",            1,  "pdstl"),
+				             ("Light injection",     2,  "linjc"),
+				             ("Charge injection",    4,  "chinj"),
+				             ("Cosmics",             8,  "cosmc"),
+				             ("NuMI beam",           16, "numib"),
+				             ("Mixed beam/pedestal", 32, "numip"),
+				             ("Mixed beam/LI",       64, "numil") ))
 
-DetectorTypes      = {'UnknownDetector'  :0,
-                      'PMTTestStand'     :1,
-                      'TrackingPrototype':2,
-                      'TestBeam'         :4,
-                      'MINERvA'          :8}
-
-TriggerTypes       = {'UnknownTrigger'     :0,
-                      'Pedestal'           :1,
-                      'LightInjection'     :2,
-                      'ChargeInjection'    :4,
-                      'Cosmic'             :8,
-                      'NuMI'               :16,
-                      'NuMI_Pedestal'      :32,
-                      'NuMI_LightInjection':64}
- 
-#Special Type Arrays
-
-specGUI   = tuple(sorted(SpecialGUI.values()))
-opModes   = tuple(sorted(OperatingModes.values()))
-hwLevels  = tuple(sorted(HardwareInitLevels.values()))
-liLevels  = tuple(sorted(LILevels.values()))
-detTypes  = tuple(sorted(DetectorTypes.values()))
-trigTypes = tuple(sorted(TriggerTypes.values()))
         	
 #public static readonly DateTime EpochTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 

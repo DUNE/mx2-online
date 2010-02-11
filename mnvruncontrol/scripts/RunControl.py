@@ -13,6 +13,9 @@ import shelve
 import anydbm		# if a shelve database doesn't exist, this module contains the error raised
 import re			# regular expressions
 
+# other run control modules
+import MetaData
+
 ## some constants for configuration
 CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
 #CONFIG_DB_LOCATION = "/home/jeremy/run_control_config.db"
@@ -22,6 +25,8 @@ LOGFILE_LOCATION_DEFAULT = "/work/data/logs"
 
 ET_SYSTEM_LOCATION_DEFAULT = "/work/data/etsys"
 RAW_DATA_LOCATION_DEFAULT = "/work/data/rawdata"
+
+LI_CONTROL_LOCATION_DEFAULT = "/work/software/LIBoxIO"
 
 #########################################################
 #    MainFrame
@@ -76,10 +81,8 @@ class MainFrame(wx.Frame):
 		self.subrunEntry.Disable()
 
 		detConfigEntryLabel = wx.StaticText(self.mainPage, -1, "Detector")
-		self.detectorChoices = ["Unknown", "PMT test stand", "Tracking prototype", "Test beam", "Frozen", "Upstream", "Full MINERvA"]
-		self.detectorCodes = ["UN", "FT", "TP", "TB", "MN", "US", "MV"]
-		self.detConfigEntry = wx.Choice(self.mainPage, -1, choices=self.detectorChoices)
-		self.detConfigEntry.SetSelection(5)
+		self.detConfigEntry = wx.Choice(self.mainPage, -1, choices=MetaData.DetectorTypes.descriptions)
+		self.detConfigEntry.SetSelection(MetaData.DetectorTypes.index("Upstream"))
 
 		febsEntryLabel = wx.StaticText(self.mainPage, -1, "FEBs")
 		self.febsEntry = wx.SpinCtrl(self.mainPage, -1, "4", size=(125, -1), min=1, max=10000)
@@ -103,18 +106,33 @@ class MainFrame(wx.Frame):
 		globalConfigBoxSizer.Add(globalConfigSizer, flag=wx.EXPAND)
 		globalConfigBoxSizer.Add(runSelectionSizer, flag=wx.ALIGN_CENTER_HORIZONTAL)
 
-		# now the single-run-specific config: # gates, the run mode
+		# now the single-run-specific config: # gates, the run mode, LI box config
 		gatesEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "Gates")
 		self.gatesEntry = wx.SpinCtrl(self.singleRunConfigPanel, -1, "10", size=(125, -1), min=1, max=10000)
 
 		runModeEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "Run Mode")
-		self.runModeChoices = ["Pedestal", "Light injection", "Charge injection", "Cosmics", "NuMI beam", "Mixed beam/pedestal", "Mixed beam/light injection", "Unknown trigger"]
-		self.runModeCodes = ["pdstl", "linjc", "chinj", "cosmc", "numib", "numip", "numil", "unkwn"]
-		self.runModeEntry =  wx.Choice(self.singleRunConfigPanel, -1, choices=self.runModeChoices)
+		self.runModeEntry =  wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.RunningModes.descriptions)
+		self.Bind(wx.EVT_CHOICE, self.UpdateLEDgroups, self.runModeEntry)
+
+		LEDgroupLabel = wx.StaticText(self.singleRunConfigPanel, -1, "LED groups used in LI")
+		LEDgroupSizer = wx.GridSizer(2, 2)
+		self.LEDgroups = []
+		for letter in ('A', 'B', 'C', 'D'):
+			cb = wx.CheckBox(self.singleRunConfigPanel, -1, letter)
+			cb.SetValue(True)
+			cb.Disable()		# will be enabled when necessary
+			self.LEDgroups.append(cb)
+			LEDgroupSizer.Add(cb)
+
+		LIVoltageEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "LI pulse voltage")
+		self.LIVoltageEntry = wx.TextCtrl(self.singleRunConfigPanel, -1, "4.05")
+		self.LIVoltageEntry.Disable()		# will be enabled when necessary
 
 		singleRunConfigSizer = wx.GridSizer(3, 2, 10, 10)
 		singleRunConfigSizer.AddMany([ (gatesEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),     (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                      (runModeEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
+		                      (runModeEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (LEDgroupLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (LEDgroupSizer, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (LIVoltageEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (self.LIVoltageEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
 		singleRunConfigBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.singleRunConfigPanel, -1, "Single run Configuration"), wx.VERTICAL)
 		singleRunConfigBoxSizer.Add(singleRunConfigSizer, 1, wx.EXPAND)
 
@@ -258,18 +276,16 @@ class MainFrame(wx.Frame):
 		fileinfo.append(matches.group("month") + "/" + matches.group("day") + "/20" + matches.group("year"))
 		fileinfo.append( matches.group("hour") + ":" + matches.group("minute") )
 
-		if matches.group("type") in self.runModeCodes:
-			fileinfo.append( self.runModeChoices[self.runModeCodes.index(matches.group("type"))] )
+		if matches.group("type") in MetaData.RunningModes:
+			fileinfo.append( MetaData.RunningModes[matches.group("type")] )
 		else:
 			return None
 	
-		if matches.group("detector") in self.detectorCodes:
-			fileinfo.append( self.detectorChoices[self.detectorCodes.index(matches.group("detector"))] )	
+		if matches.group("detector") in MetaData.DetectorTypes:
+			fileinfo.append( MetaData.DetectorTypes[matches.group("detector")] )	
 		else:
 			return None
 
-	#	fileinfo.append(filename)
-		
 		return fileinfo
 
 	def Configure(self, evt):
@@ -287,6 +303,8 @@ class MainFrame(wx.Frame):
 			self.logfileLocation = LOGFILE_LOCATION_DEFAULT
 			self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
 			self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+			self.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			
 		else:
 			try:	self.runinfoFile = db["runinfoFile"]
 			except KeyError: self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
@@ -299,6 +317,9 @@ class MainFrame(wx.Frame):
 			
 			try:	self.rawdataLocation = db["rawdataLocation"]
 			except KeyError: self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+
+			try:	self.LIBoxControlLocation = db["LIBoxControlLocation"]
+			except KeyError: self.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
 		
 	def GetNextRunSubrun(self, evt=None):
 		if not os.path.exists(self.runinfoFile):
@@ -393,7 +414,7 @@ class MainFrame(wx.Frame):
 
 		now = datetime.datetime.utcnow()
 	
-		self.ETNAME = '%s_%08d_%04d_%s_v04_%02d%02d%02d%02d%02d' % (self.detectorCodes[self.detector], int(self.run), int(self.subrun), self.runModeCodes[self.runMode], now.year % 100, now.month, now.day, now.hour, now.minute)
+		self.ETNAME = '%s_%08d_%04d_%s_v04_%02d%02d%02d%02d%02d' % (self.detectorCodes[self.detector], int(self.run), int(self.subrun), self.RunningModes.codes[self.runMode], now.year % 100, now.month, now.day, now.hour, now.minute)
 
 		self.OUTFL = self.ETNAME + '.dat'
 
@@ -415,6 +436,18 @@ class MainFrame(wx.Frame):
 		self.mainPage.Layout()
 		self.mainPage.Refresh()
 		self.mainPage.Update()
+		
+	def UpdateLEDgroups(self, evt=None):
+		runMode = self.runModeEntry.GetSelection()
+		if runMode == MetaData.RunningModes.index("Light injection") or runMode == MetaData.RunningModes.index("Mixed beam/LI"):
+			for cb in self.LEDgroups:
+				cb.Enable()
+			self.LIVoltageEntry.Enable()
+		else:
+			for cb in self.LEDgroups:
+				cb.Disable()
+			self.LIVoltageEntry.Disable()
+			
 		
 
 	def StartETSys(self):
@@ -689,6 +722,7 @@ class OptionsFrame(wx.Frame):
 			logfileLocation = LOGFILE_LOCATION_DEFAULT
 			etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
 			rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+			LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
 		else:
 			try:	runinfoFile = db["runinfoFile"]
 			except KeyError: runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
@@ -702,6 +736,9 @@ class OptionsFrame(wx.Frame):
 			try:	rawdataLocation = db["rawdataLocation"]
 			except KeyError: rawdataLocation = RAW_DATA_LOCATION_DEFAULT
 			
+			try:	LIBoxControlLocation = db["LIBoxControlLocation"]
+			except KeyError: LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+
 		panel = wx.Panel(self)
 		
 		warningText = wx.StaticText(panel, -1, "** PLEASE don't change these values unless you know what you're doing! **")
@@ -718,12 +755,16 @@ class OptionsFrame(wx.Frame):
 		rawDataLocationLabel = wx.StaticText(panel, -1, "Raw data location")
 		self.rawDataLocationEntry = wx.TextCtrl(panel, -1, rawdataLocation)
 		
+		LIBoxControlLocationLabel = wx.StaticText(panel, -1, "LI box control location")
+		self.LIBoxControlLocationEntry = wx.TextCtrl(panel, -1, LIBoxControlLocation)
+		
 		pathsGridSizer = wx.GridSizer(6, 2, 10, 10)
 		pathsGridSizer.AddMany( ( runInfoDBLabel,            (self.runInfoDBEntry, 1, wx.EXPAND),
 		                     logfileLocationLabel,      (self.logfileLocationEntry, 1, wx.EXPAND),
 		                     etSystemFileLocationLabel, (self.etSystemFileLocationEntry, 1, wx.EXPAND),
-		                     rawDataLocationLabel,      (self.rawDataLocationEntry, 1, wx.EXPAND) ) )
-		
+		                     rawDataLocationLabel,      (self.rawDataLocationEntry, 1, wx.EXPAND),
+		                     LIBoxControlLocationLabel, (self.LIBoxControlLocationEntry, 1, wx.EXPAND) ) )
+
 		pathsSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Paths"), orient=wx.VERTICAL)
 		pathsSizer.Add(pathsGridSizer, 1, wx.EXPAND)
 		
@@ -771,6 +812,7 @@ class OptionsFrame(wx.Frame):
 			db["logfileLocation"] = self.logfileLocationEntry.GetValue()
 			db["etSystemFileLocation"] = self.etSystemFileLocationEntry.GetValue()
 			db["rawdataLocation"] = self.rawDataLocationEntry.GetValue()
+			db["LIBoxControlLocation"] = self.LIBoxControlLocationEntry.GetValue()
 			
 			db.close()
 			
@@ -802,7 +844,7 @@ class ETThread(threading.Thread):
 		self.start()				# starts the run() function in a separate thread.  (inherited from threading.Thread)
 	
 	def run(self):
-		''' The stuff to do while this thread is going.  Overridden from threading.Thread'''
+		''' The stuff to do while this thread is going.  Overridden from threading.Thread '''
 		if self.output_window:			# the user could have closed the window before the thread was ready...
 			self.process = subprocess.Popen(self.command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 			self.pid = self.process.pid
@@ -965,7 +1007,7 @@ class ConfigUpdatedEvent(wx.CommandEvent):
 #   MyApp
 #########################################################
 
-class MyApp(wx.App):
+class MainApp(wx.App):
 	def OnInit(self):
 		try:
 			temp = os.environ["DAQROOT"]
@@ -987,6 +1029,6 @@ class MyApp(wx.App):
 
 
 if __name__ == '__main__':		# make sure that this file isn't being included somewhere else
-	app = MyApp(redirect=False)
+	app = MainApp(redirect=False)
 	app.MainLoop()
 
