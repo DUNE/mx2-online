@@ -499,16 +499,7 @@ int main(int argc, char *argv[])
 	struct timeval runstart, runend;
 	gettimeofday(&runstart, NULL);
 #if SINGLE_PC||MASTER // Single PC or Soldier Node
-	fstream global_gate("/work/conditions/global_gate.dat"); 
-	try {
-		if (!global_gate) throw (!global_gate);
-		global_gate >> global_gate_data[0];
-	} catch (bool e) {
-		std::cout << "Error in minervadaq::main opening global gate data!\n";
-		mnvdaq.fatalStream() << "Error opening global gate data!";
-		exit(-2000);
-	}
-	global_gate.close();
+	global_gate_data[0] = GetGlobalGate();
 	std::cout << "Opened Event Log, First Event = " << global_gate_data[0] << std::endl;
 	mnvdaq.infoStream() << "Opened Event Log, First Event = " << global_gate_data[0];
 	firstEvent = global_gate_data[0];
@@ -533,7 +524,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-09-02'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-09-03'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -622,8 +613,11 @@ int main(int argc, char *argv[])
 	/*      Be mindful of this jargon - in ET, "events" are actually FRAMES.         */
 	/*********************************************************************************/
 	// TODO - use a while loop that also checks for a stop condition
-	int gate;
-	for (gate = 1; gate <= record_gates; gate++) { 
+	int gate = 0;
+	bool continueRunning = true;
+	//for (gate = 1; gate <= record_gates; gate++) { 
+	while ( (gate<record_gates) && continueRunning ) {
+		gate++;
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
 		gettimeofday(&gate_start_time, NULL);
@@ -650,16 +644,7 @@ int main(int argc, char *argv[])
 			event_data.feb_info[i] = 0; // Initialize the FEB information block. 
 		}
 #if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
-		global_gate.open("/work/conditions/global_gate.dat"); 
-		try {
-			if (!global_gate) throw (!global_gate);
-			global_gate >> global_gate_data[0];
-		} catch (bool e) {
-			std::cout << "Error in minervadaq::main opening global gate data!\n";
-			mnvdaq.fatalStream() << "Error opening global gate data!";
-			exit(-2000);
-		}
-		global_gate.close();
+		global_gate_data[0] = GetGlobalGate();
 #if DEBUG_GENERAL
 		mnvdaq.debugStream() << "    Global Gate: " << global_gate_data[0];
 #endif
@@ -780,9 +765,18 @@ int main(int argc, char *argv[])
 		event_data.triggerType = triggerType;
 #if THREAD_ME
 		// Careul about arguments with the threaded functions!  They are not exercised regularly.
+		// TODO - find how to make boost thread functions return values.
 		boost::thread trigger_thread(boost::bind(&TriggerDAQ,daq,triggerType,runningMode,currentController));
 #elif NO_THREAD
-		TriggerDAQ(daq, triggerType, runningMode, currentController);
+		try {
+			int error = TriggerDAQ(daq, triggerType, runningMode, currentController);
+			if (error) throw error;
+		} catch (int e) {
+			std::cout << "Error in minervadaq::main()!  Cannot trigger the DAQ!" << std::endl;
+			mnvdaq.critStream() << "Error in minervadaq::main()!  Cannot trigger the DAQ!";
+			//continueRunning = false; //?
+			//break; //?
+		}
 #endif 
 
 		// Make the event_handler pointer.
@@ -832,6 +826,8 @@ int main(int argc, char *argv[])
 #if DEBUG_THREAD
 					std::cout << thread_count << std::endl;
 #endif
+					// TODO - how to get a return value from a boost thread function?
+					// TODO - can we use a try-catch here?
 					data_threads[thread_count] = 
 						new boost::thread((boost::bind(&TakeData,boost::ref(daq),boost::ref(evt),croc_id,j,
 						thread_count, attach, sys_id)));
@@ -854,7 +850,20 @@ int main(int argc, char *argv[])
 					mnvdaq.debugStream() << " Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
 						" Index: " << croc_id << " Channel: " << j;
 #endif
-					TakeData(daq,evt,croc_id,j,0,attach,sys_id);
+					try {
+						int error = TakeData(daq,evt,croc_id,j,0,attach,sys_id);
+						if (error) throw error;
+					} catch (int e) {
+						std::cout << "Error in minervadaq::main()!  Cannot TakeData!" << std::endl;
+						std::cout << "Failed to execute on CROC Addr: " << 
+							(tmpCroc->GetCrocAddress()>>16) << " Channel: " << j << std::endl;
+						mnvdaq.critStream() << "Error in minervadaq::main()!  Cannot TakeData!";
+						mnvdaq.critStream() << "Failed to execute on CROC Addr: " << 
+							(tmpCroc->GetCrocAddress()>>16) << " Channel: " << j;
+						// TODO - set error bits in DAQHeader here?
+						//continueRunning = false; //?
+						//break; //?
+					}
 #endif
 				} //channel has febs
 			} //channel
@@ -965,17 +974,8 @@ int main(int argc, char *argv[])
 #endif // end if !MASTER && !SINGLE_PC
 
 #if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
-		global_gate.open("/work/conditions/global_gate.dat"); 
-		try {
-			if (!global_gate) throw (!global_gate);
-			event_data.globalGate++;
-			global_gate << event_data.globalGate;
-		} catch (bool e) {
-			std::cout << "Error in minervadaq::main opening global gate data!" << std::endl;
-			mnvdaq.fatalStream() << "Error opening global gate data!";
-			exit(-2000);
-		}
-		global_gate.close();
+		// Increment the Global Gate value and log it.
+		PutGlobalGate(++event_data.globalGate);
 #endif
 	} //end of gates loop
 
@@ -984,17 +984,7 @@ int main(int argc, char *argv[])
 	close(global_gate_socket_handle);
 #endif
 #if SINGLE_PC||(MASTER&&(!SINGLE_PC)) // Single PC or Soldier Node
-	global_gate.open("/work/conditions/global_gate.dat"); 
-	try {
-		if (!global_gate) throw (!global_gate);
-		global_gate >> global_gate_data[0];
-	} catch (bool e) {
-		std::cout << "Error in minervadaq::main opening global gate data!\n";
-		mnvdaq.fatalStream() << "Error opening global gate data!";
-		exit(-2000);
-	}
-	global_gate.close();
-	lastEvent = global_gate_data[0] - 1; // Fencepost, etc.
+	lastEvent = GetGlobalGate() - 1; // Fencepost, etc.
 	std::cout << " Last Event = " << lastEvent << std::endl;
 	mnvdaq.infoStream() << "Last Event = " << lastEvent;
 #endif // end if SINGLE_PC||((!MASTER)&&(!SINGLE_PC))
@@ -1050,11 +1040,11 @@ int main(int argc, char *argv[])
 }
 
 
-void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread, 
+int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread, 
 	et_att_id  attach, et_sys_id  sys_id) 
 {
 /*!
- *  \fn void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread,
+ *  \fn int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread,
  *                et_att_id  attach, et_sys_id  sys_id)
  *
  *  This function executes the necessary commands to complete an acquisition sequence.
@@ -1069,6 +1059,8 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
  *  \param thread, the thread number of this call
  *  \param attach, the ET attachemnt to which data will be stored
  *  \param sys_id, the ET system handle
+ * 
+ * Returns a success integer (0 for success).
  */
 #if TIME_ME
 	struct timeval start_time, stop_time;
@@ -1146,14 +1138,15 @@ void TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id
 			(stop_time.tv_sec*1000000+stop_time.tv_usec) << endl;
 #endif
 
-		if (!data_taken) return; //we're done processing this channel
+		if (!data_taken) { return 0; } //we're done processing this channel
 	} //data ready loop
-} // end void TakeData
+	return 0;
+} // end TakeData
 
 
-void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode, controller *tmpController) 
+int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode, controller *tmpController) 
 {
-/*! \fn void TriggerDAQ(acquire_data *data, unsigned short int triggerType)
+/*! \fn int TriggerDAQ(acquire_data *data, unsigned short int triggerType)
  *
  *  The function which arms and sets the trigger for each gate (really, it is setting the 
  *  data type for the gate).  Only for the OneShot mode does this involve "triggering" the 
@@ -1170,6 +1163,8 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes 
  *  \param triggerType Identifies the gate data type (trigger type).
  *  \param runningMode Identifies the mode of the subrun.
  *  \param *tmpController Pointer to the controller object (for accessing all CRIMs).
+ *
+ * Returns a status integer (0 for success).
  */
 #if TIME_ME
 	struct timeval start_time, stop_time;
@@ -1209,13 +1204,10 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes 
 	}
 	daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
 
+#if ASSERT_INTERRUPT
 	/**********************************************************************************/
 	/*  Let the interrupt handler deal with an asserted interrupt.                    */
 	/**********************************************************************************/
-	/*! \note  This uses the interrupt handler to handle an asserted interrupt 
-	 *
-	 */
-#if ASSERT_INTERRUPT
 	daq->AcknowledgeIRQ(); //acknowledge the IRQ (only returns if successful)
 #endif
 
@@ -1239,6 +1231,47 @@ void TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes 
 	trigger_log<<(start_time.tv_sec*1000000+start_time.tv_usec)<<"\t"
 		<<(stop_time.tv_sec*1000000+stop_time.tv_usec)<<"\t"<<(duration/1000000)<<endl;
 #endif
-} // end void TriggerDAQ
+	return 0;
+} // end TriggerDAQ
 
 
+int GetGlobalGate()
+{                       
+/*! \fn int GetGlobalGate()
+ *
+ * This function gets the value of the global gate from the data file used for tracking.  
+ * On mnvdaq build machines, that file is: /work/conditions/global_gate.dat.              
+ */
+	int ggate;
+	fstream global_gate("/work/conditions/global_gate.dat");
+	try {
+		if (!global_gate) throw (!global_gate);
+		global_gate >> ggate;
+	} catch (bool e) {
+		std::cout << "Error in minervadaq::main opening global gate data!\n";
+		mnvdaq.fatalStream() << "Error opening global gate data!";
+		exit(-2000);
+	}
+	global_gate.close();
+	return ggate;
+} 
+
+
+void PutGlobalGate(int ggate)
+{
+/*! \fn void PutGlobalGate(int ggate)
+ *
+ * This funciton writes a new value into the global gate data log.
+ * On mnvdaq build machines, that file is: /work/conditions/global_gate.dat.              
+ */
+	fstream global_gate("/work/conditions/global_gate.dat");
+	try {
+		if (!global_gate) throw (!global_gate);
+		global_gate << ggate;
+	} catch (bool e) {
+		std::cout << "Error in minervadaq::main opening global gate data!" << std::endl;
+		mnvdaq.fatalStream() << "Error opening global gate data!";
+		exit(-2000);
+	}
+	global_gate.close();
+}
