@@ -1,4 +1,3 @@
-import MetaData
 import datetime
 
 class RunSeries:
@@ -43,53 +42,34 @@ class RunSeries:
 
 class RunInfo(object):
 
-	def __init__(self,
-		     detector          = MetaData.DetectorTypes['UnknownDetector'],
-		     sequenceNumber    = 0,
-		     runType           = MetaData.TriggerTypes['UnknownTrigger'],
-		     runNumber         = 0,
-		     subRunNumber      = 0,
-            	     daqConfigFile     = 'daqConfig', # No reasonable default? -> SlowControl xml
-                     liConfigFile      = 'liConfig', # No reasonable default? -> LI Box config
-                     runTimeLength     = 60, # seconds
-                     numberOfEvents    = 0, # events
-                     fileBase          = 'Run0',
-                     hwInitLevel       = MetaData.HardwareInitLevels['NoHWInit'], # no init
-                     operatingMode     = MetaData.OperatingModes['OneShot'], # default mode right now is oneShot
-                     version           = 1,
-                     liLevel           = 0,
-                     liEnabled         = False,
-                     detectorConfig    = 0,
-                     pulserEventPeriod = 10,
-                     pulserHeight      = 4.05,
-                     ledtoprow         = 1,
-                     ledbotrow         = 0,
-                     crocList          = 0):
+	def __init__(   self,
+			run        = 1,
+                        subrun     = 1,
+                        gates      = 0,
+                        runLength  = 0,
+                        runMode    = "Null",
+                        detector   = "Null",
+                        febs       = 1,
+                        ledLevel   = "Off",
+                        ledGroup   = "None",
+			configFile = "",
+			etFile     = ""):
 
-		self.detector          = detector
-		self.sequenceNumber    = sequenceNumber
-		self.runType           = runType
-		self.runNumber         = runNumber
-		self.subRunNumber      = subRunNumber
-		self.daqConfigFile     = daqConfigFile
-		self.liConfigFile      = liConfigFile
-		self.runTimeLength     = runTimeLength
-		self.numberOfEvents    = numberOfEvents
-		self.fileBase          = fileBase
-		self.hwInitLevel       = hwInitLevel
-		self.operatingMode     = operatingMode
-		self.version           = version
-		self.liLevel           = liLevel
-		self.liEnabled         = liEnabled
-		self.detectorConfig    = detectorConfig
-		self.pulserEventPeriod = pulserEventPeriod
-		self.pulserHeight      = pulserHeight
-		self.ledtoprow         = ledtoprow
-		self.ledbotrow         = ledbotrow
-		self.crocList          = crocList
+		self.run        = run
+		self.subrun     = subrun
+		self.gates      = gates
+		self.runLength  = runLength
+		self.runMode    = runMode
+		self.detector   = detector
+		self.febs       = febs
+		self.ledLevel   = ledLevel
+		self.ledGroup   = ledGroup
+                self.configFile = configFile
+                self.etFile     = etFile
 
+	"""
 	def BuildFileBase(self):
-        
+
 		det = 'UN' # Default: 'UN' denotes unknown detector type
                 if self.detector == MetaData.DetectorTypes['TrackingPrototype']:
 			det = 'TP'
@@ -129,28 +109,20 @@ class RunInfo(object):
 									      now.day,
 									      now.hour,
 									      now.minute)
-        
+	"""        
+
 	def ToString(self):
 
-                dump  = 'Detector              = %s\n' % self.detector
-                dump += 'Sequence Number       = %s\n' % self.sequenceNumber
-                dump += 'Run Type              = %s\n' % self.runType
-                dump += 'Run Number            = %s\n' % self.runNumber
-                dump += 'SubRun Number         = %s\n' % self.subRunNumber
-                dump += 'DAQ Config File       = %s\n' % self.daqConfigFile
-                dump += 'LI Config File        = %s\n' % self.liConfigFile
-                dump += 'Run Time (s)          = %s\n' % self.runTimeLength
-                dump += 'Num. of Events        = %s\n' % self.numberOfEvents
-                dump += 'HW Init Level         = %s\n' % self.hwInitLevel
-                dump += 'Operating Mode        = %s\n' % self.operatingMode
-                dump += 'DAQ Version           = %s\n' % self.version
-                dump += 'LI Level              = %s\n' % self.liLevel
-                dump += 'LI Enabled            = %s\n' % self.liEnabled
-                dump += 'Config. Code          = %s\n' % self.detectorConfig
-                dump += 'Pulser Event Period   = %s\n' % self.pulserEventPeriod
-                dump += 'Pulser Height         = %s\n' % self.pulserHeight
-                dump += 'Pulser Code (Top Row) = %s\n' % self.ledtoprow
-                dump += 'Pulser Code (Bot Row) = %s\n' % self.ledbotrow
-                dump += 'CROC List Code        = %s\n' % self.crocList
+                dump  = 'Run Number            = %s\n' % self.run
+                dump += 'SubRun Number         = %s\n' % self.subrun
+                dump += 'Gates                 = %s\n' % self.gates
+                dump += 'Run Length (s)        = %s\n' % self.runLength
+                dump += 'Run Mode              = %s\n' % self.runMode
+                dump += 'Detector              = %s\n' % self.detector
+                dump += 'FEBs                  = %s\n' % self.febs
+                dump += 'LED Level             = %s\n' % self.ledLevel
+                dump += 'LED Group             = %s\n' % self.ledGroup
+                dump += 'Config File           = %s\n' % self.configFile
+                dump += 'ET File               = %s\n' % self.etFile
 		
 		return dump

@@ -1,17 +1,16 @@
-
 import wx
 import sys
 import RunSeries
 import shelve
 
-class MainFrame(wx.Frame):
+class MyFrame(wx.Frame):
     """
     This is MyFrame.  It just shows a few controls on a wxPanel,
     and has a simple menu.
     """
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, -1, title,
-                          pos=(0, 0), size=(600, 600))
+                          pos=(0, 0), size=(600, 800))
 
         # Create the menubar
         menuBar = wx.MenuBar()
@@ -37,67 +36,55 @@ class MainFrame(wx.Frame):
         # Now create the Panel to put the other controls on.
         mainPage = wx.Panel(self)
 
-	runSeriesNameEntryLabel = wx.StaticText(mainPage, -1, "Run Series Name")
-	self.runSeriesNameEntry = wx.TextCtrl(mainPage, -1, "RunSeries_1", size=(125, -1))
+        runSeriesNameEntryLabel = wx.StaticText(mainPage, -1, "Run Series Name")
+        self.runSeriesNameEntry = wx.TextCtrl(mainPage, -1, "RunSeries_1", size=(125, -1))
 
         runEntryLabel = wx.StaticText(mainPage, -1, "Run")
-       	self.runEntry = wx.SpinCtrl(mainPage, -1, '1', size=(125, -1), min=1, max=100000)
-        #self.Bind(wx.EVT_SPINCTRL, self.CheckRunNumber, self.runEntry)
-        #self.runEntry.Disable()
+        self.runEntry = wx.SpinCtrl(mainPage, -1, '1', size=(125, -1), min=1, max=100000)
 
         subrunEntryLabel = wx.StaticText(mainPage, -1, "Subrun")
         self.subrunEntry = wx.SpinCtrl(mainPage, -1, '1', size=(125, -1), min=1, max=100000)
         self.subrunEntry.Disable()
 
-        detectorEntryLabel = wx.StaticText(mainPage, -1, "Detector")
-        self.detectorChoices = ["Unknown", "PMT test stand", "Tracking prototype", "Test beam", "Frozen", "Upstream", "Full MINERvA"]
-        self.detectorCodes = ["UN", "FT", "TP", "TB", "MN", "US", "MV"]
-        self.detectorEntry = wx.Choice(mainPage, -1, choices=self.detectorChoices)
-        self.detectorEntry.SetSelection(5)
-
-        runTypeEntryLabel = wx.StaticText(mainPage, -1, "Run Mode")
-        self.runTypeChoices = ["Pedestal", "Light injection", "Charge injection", "Cosmics", "NuMI beam", "Mixed beam/pedestal", "Mixed beam/light injection", "Unknown trigger"]
-        self.runTypeCodes = ["pdstl", "linjc", "chinj", "cosmc", "numib", "numip", "numil", "unkwn"]
-        self.runTypeEntry =  wx.Choice(mainPage, -1, choices=self.runTypeChoices)
-
-        detConfigEntryLabel = wx.StaticText(mainPage, -1, "Det. Config")
-        self.detConfigEntry = wx.SpinCtrl(mainPage, -1, '0', size=(125, -1), min=0, max=10)
+        gatesEntryLabel = wx.StaticText(mainPage, -1, "Gates")
+        self.gatesEntry = wx.SpinCtrl(mainPage, -1, "0", size=(125, -1), min=0, max=10000)
 
         runLengthEntryLabel = wx.StaticText(mainPage, -1, "Run Length (s)")
         self.runLengthEntry = wx.SpinCtrl(mainPage, -1, '0', size=(125, -1), min=0, max=100000)
 
-        gatesEntryLabel = wx.StaticText(mainPage, -1, "Gates")
-        self.gatesEntry = wx.SpinCtrl(mainPage, -1, "10", size=(125, -1), min=1, max=10000)
+        runModeEntryLabel = wx.StaticText(mainPage, -1, "Run Mode")
+        self.runModeChoices = ["Null","OneShot","NumiBeam","Cosmics","PureLightInjection","MixedBeamPedestal","MixedBeamLightInjection"]
+        self.runModeEntry = wx.Choice(mainPage, -1, choices = self.runModeChoices)
 
-	hwInitLevelEntryLabel = wx.StaticText(mainPage, -1, "HW Init. Level")
-	self.hwInitLevelChoices = ["FullHWInit","NoHWInit"]
-	self.hwInitLevelEntry = wx.Choice(mainPage, -1, choices = self.hwInitLevelChoices)
+        detectorEntryLabel = wx.StaticText(mainPage, -1, "Detector")
+        self.detectorChoices = ["Null","PMTTestStand","TrackingPrototype","TestBeam","FrozenDetector","UpstreamDetector","FullMinerva","DTReserved7","DTReserved8"]
+        self.detectorEntry = wx.Choice(mainPage, -1, choices=self.detectorChoices)
 
-        operatingModeEntryLabel = wx.StaticText(mainPage, -1, "Operating Mode")
-        self.operatingModeChoices = ["OneShot","Cosmic","MixedModePedLI","MTM","MixedModeMTMLI","MixedModePedMTM"]
-        self.operatingModeEntry = wx.Choice(mainPage, -1, choices = self.operatingModeChoices)
-
-	liLevelEntryLabel = wx.StaticText(mainPage, -1, "LI Level")
-        self.liLevelChoices = ["ZeroPE","OnePE","MaxPE"]
-        self.liLevelEntry = wx.Choice(mainPage, -1, choices = self.liLevelEntry)
-
-	liPulseHeightEntryLabel = wx.StaticText(mainPage, -1, "LI Pulse Height")
-	self.liPulseHeightEntry = wx.TextCtrl(mainPage, -1, "4.05", size=(125, -1))
-
-        liEventPeriodEntryLabel = wx.StaticText(mainPage, -1, "LI Event Period")
-        self.liEventPeriodEntry = wx.SpinCtrl(mainPage, -1, "1", size=(125, -1), min=1, max=10000)
-
+        configFileLabel = wx.StaticText(mainPage, -1, "Config. File")
+        self.configFileEntry = wx.TextCtrl(mainPage, -1, "", size=(125, -1))
+	
         febsEntryLabel = wx.StaticText(mainPage, -1, "FEBs")
         self.febsEntry = wx.SpinCtrl(mainPage, -1, "1", size=(125, -1), min=1, max=10000)
 
-        b_createNewRunSeries = wx.Button(panel, -1, "Create New Run Series")
-        self.Bind(wx.EVT_BUTTON, self.CreateNewRunSeries, b_createNewRunSeries)
+	ledLevelLabel = wx.StaticText(mainPage, -1, "LED Level")
+        self.ledLevelChoices = ["Off","ZeroPE","OnePE","MaxPE"]
+        self.ledLevelEntry = wx.Choice(mainPage, -1, choices=self.ledLevelChoices)
 
-	b_addRunToSeries = wx.Button(panel, -1, "Add Run To Series")
+        ledGroupLabel = wx.StaticText(mainPage, -1, "LED Group")
+        self.ledGroupChoices = ["None","LEDALL","LEDA","LEDB","LEDC","LEDD","LEDE","LEDF","LEDG","LEDI","LEDJ","LEDK","LEDL","LEDM","LEDN","LEDO","LEDQ","LEDR","LEDS","LEDT","LEDU","LEDV"]
+        self.ledGroupEntry = wx.Choice(mainPage, -1, choices=self.ledGroupChoices)
+
+        b_clearRunSeries = wx.Button(mainPage, -1, "Clear Run Series")
+        self.Bind(wx.EVT_BUTTON, self.ClearRunSeries, b_clearRunSeries)
+
+        b_addRunToSeries = wx.Button(mainPage, -1, "Add Run To Series")
         self.Bind(wx.EVT_BUTTON, self.AddToRunSeries, b_addRunToSeries)
 
-	b_writeRunSeries = wx.Button(panel, -1, "Write Run Series")
-        self.Bind(wx.EVT_BUTTON, self.WriteRunSeries, b_addRunToSeries)
+        b_writeRunSeries = wx.Button(mainPage, -1, "Write Run Series")
+        self.Bind(wx.EVT_BUTTON, self.WriteRunSeries, b_writeRunSeries)
+
+	b_showRunSeries = wx.Button(mainPage, -1, "Show Run Series")
+        self.Bind(wx.EVT_BUTTON, self.ShowRunSeries, b_showRunSeries)
 
         space = 6
         #bsizer = wx.BoxSizer(wx.VERTICAL)
@@ -106,74 +93,71 @@ class MainFrame(wx.Frame):
         #bsizer.Add(b3, 0, wx.GROW|wx.ALL, space)
 
         sizer = wx.FlexGridSizer(cols=2, hgap=space, vgap=space)
-        sizer.AddMany([runSeriesNameEntryLabel,self.runSeriesNameEntry,
-		       runEntryLabel,self.runEntry,
-                       subrunEntryLabel,self.subrunEntry,
-		       detectorEntryLabel,self.detectorEntry,
-		       runTypeEntryLabel,self.runTypeEntry,
-		       detConfigEntryLabel,self.detConfigEntry,
-		       runLengthEntryLabel,self.runLengthEntry,
-                       gatesEntryLabel,self.gatesEntry,
-		       hwInitLevelEntryLabel,self.hwInitLevelEntry,
-		       operatingModeEntryLabel,self.operatingModeEntry,
-		       liLevelEntryLabel,self.liLevelEntry,
-		       liPulseHeightEntryLabel,self.liPulseHeightEntry,
-		       liEventPeriodEntryLabel,self.liEventPeriodEntry,
-		       febsEntryLabel,self.febsEntry,
-		       b, (0,0)])
+        sizer.AddMany([ runSeriesNameEntryLabel,self.runSeriesNameEntry,
+			runEntryLabel,self.runEntry,
+                        subrunEntryLabel,self.subrunEntry,
+                        gatesEntryLabel,self.gatesEntry,
+                        runLengthEntryLabel,self.runLengthEntry,
+                        runModeEntryLabel,self.runModeEntry,
+			detectorEntryLabel,self.detectorEntry,
+			configFileLabel,self.configFileEntry,
+			febsEntryLabel,self.febsEntry,
+			ledLevelLabel,self.ledLevelEntry,
+			ledGroupLabel,self.ledGroupEntry,
+                        b_addRunToSeries, (0,0),
+			b_writeRunSeries, (0,0),
+			b_showRunSeries, (0,0),
+                        b_clearRunSeries, (0,0),
+                        ])
         border = wx.BoxSizer(wx.VERTICAL)
         border.Add(sizer, 0, wx.ALL, 25)
-        panel.SetSizer(border)
-        panel.SetAutoLayout(True)
+        mainPage.SetSizer(border)
+        mainPage.SetAutoLayout(True)
 
+	# Run Series Instance
+	self.runSeries = RunSeries.RunSeries()
 
     def OnTimeToClose(self, evt):
         self.Close()
 
-    def CreateNewRunSeries(self,evt):
-	self.runSeries = RunSeries.RunSeries()
-	self.runEntry.SetValue(1)
+    def ClearRunSeries(self,evt):
+        self.runSeries.ClearRunList()
+        self.runEntry.SetValue(1)
         self.subrunEntry.SetValue(1)
 
+    
     def AddToRunSeries(self,evt):
-	run = RunSeries.RunInfo(detector          = self.detectorEntry.GetStringSelection(),
-				sequenceNumber    = 0,
-				runType           = self.runTypeEntry.GetStringSelection(),
-				runNumber         = self.runEntry.GetValue(),
-				subRunNumber      = self.subrunEntry.GetValue(),
-				daqConfigFile     = 'daqConfig', # No reasonable default? -> SlowControl xml
-				liConfigFile      = 'liConfig', # No reasonable default? -> LI Box config
-				runTimeLength     = self.runLengthEntry.GetValue(), # seconds
-				numberOfEvents    = self.gatesEntry.GetValue(), # events
-				fileBase          = 'Run0',
-				hwInitLevel       = self.hwInitLevelEntry.GetStringSelection(),
-				operatingMode     = self.operatingModeEntry.GetStringSelection(), # default mode right now is oneShot
-				version           = 1,
-				liLevel           = self.liLevelEntry.GetStringSelection(),
-				liEnabled         = False,
-				detectorConfig    = self.detConfigEntry.GetValue(),
-				pulserEventPeriod = self.liEventPeriodEntry.GetValue(),
-				pulserHeight      = self.liPulseHeightEntry.GetValue(),
-				ledtoprow         = 1,
-				ledbotrow         = 0,
-				crocList          = 0)
+        run = RunSeries.RunInfo(run        = self.runEntry.GetValue(),
+                        	subrun     = self.subrunEntry.GetValue(),
+                        	gates      = self.gatesEntry.GetValue(),
+                        	runLength  = self.runLengthEntry.GetValue(),
+                        	runMode    = self.runModeEntry.GetStringSelection(),
+                        	detector   = self.detectorEntry.GetStringSelection(),
+                                configFile = self.configFileEntry.GetValue(),
+                                febs       = self.febsEntry.GetValue(),
+                                ledLevel   = self.ledLevelEntry.GetStringSelection(),
+                                ledGroup   = self.ledGroupEntry.GetStringSelection())
 
-	self.runSeries.AppendToRunList(run)
+        self.runSeries.AppendToRunList(run)
         self.subrunEntry.SetValue(self.subrunEntry.GetValue()+1)
 
     def WriteRunSeries(self,evt):
-	d = shelve.open('run_series_test.db', 'c')
-	d[self.runSeriesNameEntry.GetValue()] = self.runSeries
-	d.close()
+        d = shelve.open('run_series_test.db', 'c')
+        d[str(self.runSeriesNameEntry.GetValue())] = self.runSeries
+        d.close()
 
-class MainApp(wx.App):
+    def ShowRunSeries(self,evt):
+	print str(self.runSeriesNameEntry.GetValue())+":\n"
+	print self.runSeries.Show()
+
+class MyApp(wx.App):
     def OnInit(self):
-        frame = MainFrame(None, "Run Series Configurator")
+        frame = MyFrame(None, "Run Series Configurator")
         self.SetTopWindow(frame)
 
         frame.Show(True)
         return True
         
-app = MainApp(redirect=True)
+app = MyApp(redirect=True)
 app.MainLoop()
 
