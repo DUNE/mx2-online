@@ -67,7 +67,7 @@ int make_socket() {
 /* Write setup information to the command line - this starts a run */
 int launch_minervadaq() {
 	stringstream process_gates, rmode, runn, subr, dtctr, totsec, detconf, 
-		ledlevel, ledgroup;
+		ledlevel, ledgroup, initlevel;
 	process_gates << gates[0];
 	rmode         << runMode[0];
 	runn          << runNum[0];
@@ -77,6 +77,7 @@ int launch_minervadaq() {
 	detconf       << detConf[0];
 	ledlevel      << ledLevel[0];
 	ledgroup      << ledGroup[0];
+	initlevel     << initLevel[0];
 	string command = "$DAQROOT/bin/minervadaq -et " + string(et_file) + " " +
 		"-g " + process_gates.str() + " " + 
 		"-m " + rmode.str() + " " + 
@@ -88,6 +89,7 @@ int launch_minervadaq() {
 		"-dc " + detconf.str() + " " + 
 		"-ll " + ledlevel.str() + " " + 
 		"-lg " + ledgroup.str() + " " + 
+		"-hw " + initlevel.str() + " " + 
 		"> log_file";
 	cout << "launch_minervadaq command: " << command << endl;
 	if ((system(command.c_str())!=-1)) {
@@ -227,6 +229,14 @@ int read_setup_data(int master_connection) {
 		exit(EXIT_FAILURE);
 	}
 	cout << " LED Group (encoded)    : " << ledGroup[0] << endl;
+
+	/********************************************************************************/
+	// Read the HW init level
+	if ((read(master_connection,initLevel,sizeof(initLevel)))!=sizeof(initLevel)) {
+		perror("server read error: VME Card Init. Level");
+		exit(EXIT_FAILURE);
+	}
+	cout << " VME Card Init. Level   : " << initLevel[0] << endl;
 
 	/********************************************************************************/
 	// Read the ET filename for data storagea

@@ -28,13 +28,14 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < daq_slaves; i++) {
 		gates[i]    = 10;  // Run length in gates
 		runMode[i]  = 0;   // Running Mode (0==OneShot, etc.)
-		runNum[i]   = 938; // Run number
-		subNum[i]   = 11;  // Subrun number
-		detect[i]   = 0;   // Default to UnknownDetector
-		totSec[i]   = 117; // Random default.
-		detConf[i]  = 8;   // Detector config - basically , number of FEB's.
-		ledLevel[i] = 0;   // Default to Zero PE (only for Header, not used)
-		ledGroup[i] = 8;   // Default to LEDALL (only for Header, not used)
+		runNum[i]    = 938; // Run number
+		subNum[i]    = 11;  // Subrun number
+		detect[i]    = 0;   // Default to UnknownDetector
+		totSec[i]    = 117; // Random default.
+		detConf[i]   = 8;   // Detector config - basically , number of FEB's.
+		ledLevel[i]  = 0;   // Default to Zero PE (only for Header, not used)
+		ledGroup[i]  = 8;   // Default to LEDALL (only for Header, not used)
+		initLevel[i] = 1;   // Default to "init" while we are debugging TODO default to nothing.
 	}
 	sprintf(conf_file,"unknown");
 	sprintf(et_file,"testme");	
@@ -99,6 +100,11 @@ int main(int argc, char* argv[]) {
 			for (int i=0;i<daq_slaves;i++) ledGroup[i] = atoi(argv[optind]);
 			cout << "\tLED Group (encoded)         = " << ledGroup[0] << endl;
 		}
+		else if (sw=="-hw") {
+			optind++;
+			for (int i=0;i<daq_slaves;i++) initLevel[i] = atoi(argv[optind]);
+			cout << "\tVME Card Init. Level        = " << initLevel[0] << endl;
+		}
                 else
                         cout << "Unknown switch: " << argv[optind] << endl;
                 optind++;
@@ -159,17 +165,18 @@ int write_setup_data() {
 
 		cout << " daq_master::write_setup_data() socket_handle: " << socket_handle[i] << endl;
 		// daq_server expects the data to come in a very specific order!
-		write( socket_handle[i], &gates[i],    sizeof(gates[i])); 
-		write( socket_handle[i], &runMode[i],  sizeof(runMode[i])); 
-		write( socket_handle[i], &runNum[i],   sizeof(runNum[i])); 
-		write( socket_handle[i], &subNum[i],   sizeof(subNum[i])); 
-		write( socket_handle[i], &detect[i],   sizeof(detect[i])); 
-		write( socket_handle[i], &totSec[i],   sizeof(totSec[i])); 
-		write( socket_handle[i], conf_file,    sizeof(conf_file));
-		write( socket_handle[i], &detConf[i],  sizeof(detConf[i])); 
-		write( socket_handle[i], &ledLevel[i], sizeof(ledLevel[i])); 
-		write( socket_handle[i], &ledGroup[i], sizeof(ledGroup[i])); 
-		write( socket_handle[i], et_file,      sizeof(et_file));
+		write( socket_handle[i], &gates[i],     sizeof(gates[i])); 
+		write( socket_handle[i], &runMode[i],   sizeof(runMode[i])); 
+		write( socket_handle[i], &runNum[i],    sizeof(runNum[i])); 
+		write( socket_handle[i], &subNum[i],    sizeof(subNum[i])); 
+		write( socket_handle[i], &detect[i],    sizeof(detect[i])); 
+		write( socket_handle[i], &totSec[i],    sizeof(totSec[i])); 
+		write( socket_handle[i], conf_file,     sizeof(conf_file));
+		write( socket_handle[i], &detConf[i],   sizeof(detConf[i])); 
+		write( socket_handle[i], &ledLevel[i],  sizeof(ledLevel[i])); 
+		write( socket_handle[i], &ledGroup[i],  sizeof(ledGroup[i])); 
+		write( socket_handle[i], &initLevel[i], sizeof(initLevel[i])); 
+		write( socket_handle[i], et_file,       sizeof(et_file));
 		write( socket_handle[i], &done[i], 1);  //send the status
 	}
 	return 0;

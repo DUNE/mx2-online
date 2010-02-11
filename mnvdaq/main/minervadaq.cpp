@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
 	int detectorConfig       = 0;
 	int LEDLevel             = 0;
 	int LEDGroup             = 0;
+	int hardwareInit         = 1;         // Default to "init." (This will set VME card timing modes, etc., but not touch FEB's). TODO fix
 	detector                 = (0x1)<<4;  // TODO - REMOVE: For header debugging... the Upstream Detector.
 	detectorConfig           = 0xBABE;    // TODO - REMOVE: For header debugging...
 	LEDLevel                 = 2;         // TODO - REMOVE: MaxPE - For debugging purposes...
@@ -137,6 +138,11 @@ int main(int argc, char *argv[])
 			LEDGroup = atoi(argv[optind]);
 			std::cout << "\tLED Group              = " << LEDGroup << std::endl;	
 		}
+		else if (sw=="-hw") {
+			optind++;
+			hardwareInit = atoi(argv[optind]);
+			std::cout << "\tVME Card Init. Level   = " << hardwareInit << std::endl;	
+		}
 		else
 			std::cout << "Unknown switch: " << argv[optind] << std::endl;
 		optind++;
@@ -172,6 +178,7 @@ int main(int argc, char *argv[])
 	mnvdaq.infoStream() << "  SAM Filename           = " << sam_filename;
 	mnvdaq.infoStream() << "  LOG Filename           = " << log_filename;
 	mnvdaq.infoStream() << "  Configuration File     = " << config_filename;
+	mnvdaq.infoStream() << "  VME Card Init. Level   = " << hardwareInit;	
 	mnvdaq.infoStream() << "See Event/MinervaEvent/xml/DAQHeader.xml for codes.";
 	mnvdaq.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
@@ -526,7 +533,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-09-01'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-09-02'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
