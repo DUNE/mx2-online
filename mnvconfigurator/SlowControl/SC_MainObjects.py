@@ -8,16 +8,16 @@ class VMEDevice():
     def BaseAddress(self): return self.baseAddr
     def Type(self): return self.type
     def Description(self):
-        if (self.type==SC_Util.VMDdevTypes.CROC or self.type==SC_Util.VMDdevTypes.CRIM):
+        if (self.type==SC_Util.VMEdevTypes.CROC or self.type==SC_Util.VMEdevTypes.CRIM):
             return self.type+':'+str((self.baseAddr & 0xFF0000)>>16)
-        if (self.type==SC_Util.VMDdevTypes.CH):
+        if (self.type==SC_Util.VMEdevTypes.CH):
             return self.type+':'+str(((self.baseAddr & 0x00F000)>>12)/4)
 
 class CROCChannel(VMEDevice):
     def __init__(self, chNumber, baseAddr, controller):
         self.chBaseAddr=baseAddr+0x4000*chNumber
         self.chNumber=chNumber;
-        VMEDevice.__init__(self, controller, self.chBaseAddr, SC_Util.VMDdevTypes.CH)
+        VMEDevice.__init__(self, controller, self.chBaseAddr, SC_Util.VMEdevTypes.CH)
         self.RegRMemory      = self.chBaseAddr + SC_Util.CROCCHRegs.RegRMemory
         self.RegWInput       = self.chBaseAddr + SC_Util.CROCCHRegs.RegWInput
         self.RegWSendMessage = self.chBaseAddr + SC_Util.CROCCHRegs.RegWSendMessage
@@ -48,7 +48,7 @@ class CROCChannel(VMEDevice):
 
 class CROC(VMEDevice):
     def __init__(self, controller, baseAddr):
-        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CROC)
+        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMEdevTypes.CROC)
         self.RegWRTimingSetup       = baseAddr + SC_Util.CROCRegs.RegWRTimingSetup
         self.RegWRResetAndTestMask  = baseAddr + SC_Util.CROCRegs.RegWRResetAndTestMask
         self.RegWChannelReset      = baseAddr + SC_Util.CROCRegs.RegWChannelReset
@@ -78,7 +78,7 @@ class CROC(VMEDevice):
 
 class CRIM(VMEDevice):
     def __init__(self, controller, baseAddr):
-        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
+        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMEdevTypes.CRIM)
         self.TimingModule = CRIMTimingModule(controller, baseAddr)
         self.ChannelModule = CRIMChannelModule(controller, baseAddr)
         self.InterrupterModule = CRIMInterrupterModule(controller, baseAddr)
@@ -97,7 +97,7 @@ class CRIM(VMEDevice):
         return regval
 class CRIMTimingModule(VMEDevice):
     def __init__(self, controller, baseAddr):
-        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
+        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMEdevTypes.CRIM)
         self.RegWRTimingSetup = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWRTimingSetup
         self.RegWRGateWidth   = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWRGateWidth
         self.RegWRTCALBDelay  = baseAddr + SC_Util.CRIMTimingModuleRegs.RegWRTCALBDelay
@@ -128,7 +128,7 @@ class CRIMTimingModule(VMEDevice):
         return dataUpper | dataLower
 class CRIMChannelModule(CROCChannel, VMEDevice):
     def __init__(self, controller, baseAddr):
-        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
+        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMEdevTypes.CRIM)
         self.RegRMemory     = baseAddr + SC_Util.CRIMCHModuleRegs.RegRMemory
         self.RegWInput      = baseAddr + SC_Util.CRIMCHModuleRegs.RegWInput
         self.RegWResetFIFO  = baseAddr + SC_Util.CRIMCHModuleRegs.RegWResetFIFO
@@ -146,7 +146,7 @@ class CRIMChannelModule(CROCChannel, VMEDevice):
     def ReadMode(self): return int(self.controller.ReadCycle(self.RegWRMode))
 class CRIMInterrupterModule(VMEDevice):
     def __init__(self, controller, baseAddr):
-        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMDdevTypes.CRIM)
+        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMEdevTypes.CRIM)
         self.RegWRMask = baseAddr + SC_Util.CRIMInterrupterModuleRegs.RegWRMask
         self.RegWRStatus = baseAddr + SC_Util.CRIMInterrupterModuleRegs.RegWRStatus
         self.RegWClearInterrupt = baseAddr + SC_Util.CRIMInterrupterModuleRegs.RegWClearInterrupt
@@ -173,9 +173,11 @@ class FEB():
     def __init__(self, febAddress):
         self.Address=febAddress
     def FPGADescription(self, theCROCChannel, theCROC):
-        return '%s:%d,%d,%d'%(SC_Util.VMDdevTypes.FPGA, self.Address, theCROCChannel.chNumber, theCROC.baseAddr>>16)
+        return '%s:%d,%d,%d'%(SC_Util.VMEdevTypes.FPGA, self.Address, theCROCChannel.chNumber, theCROC.baseAddr>>16)
     def TRIPDescription(self, theTripIndex, theCROCChannel, theCROC):
-        return '%s:%d,%d,%d,%d'%(SC_Util.VMDdevTypes.TRIP, theTripIndex, self.Address, theCROCChannel.chNumber, theCROC.baseAddr>>16)
+        return '%s:%d,%d,%d,%d'%(SC_Util.VMEdevTypes.TRIP, theTripIndex, self.Address, theCROCChannel.chNumber, theCROC.baseAddr>>16)
+    def FLASHDescription(self, thePageIndex, theCROCChannel, theCROC):
+        return '%s:%d,%d,%d,%d'%(SC_Util.VMEdevTypes.FLASH, thePageIndex, self.Address, theCROCChannel.chNumber, theCROC.baseAddr>>16)
     def FPGARead(self, theCROCChannel):
         sentMessage = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
             Frame.DeviceFPGA, Frame.FuncFPGARead) + Frame.NRegsFPGA*[0]
@@ -207,6 +209,31 @@ class FEB():
         sentMessageData = self.ParseTRIPAllRegsPhysicalToMessage(pRegs, Frame.InstrTRIPWrite)
         sentMessage = sentMessageHeader + sentMessageData
         WriteSendReceive(sentMessage, self.Address, Frame.DeviceTRIP, theCROCChannel)
+    def FLASHMainMemPageRead(self, theCROCChannel, pageAddr, NBytes):
+        sentMessageHeader = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
+            Frame.DeviceFLASH, Frame.FuncFLASHCommand)
+        sentMessageDataOpCode = Flash().MakeOpCodeMessageMainMemPageRead(pageAddr)
+        sentMessage = sentMessageHeader + sentMessageDataOpCode + NBytes*[0]
+        rcvMessageData = WriteSendReceive(sentMessage, self.Address, Frame.DeviceFLASH, theCROCChannel)
+        if len(rcvMessageData)<len(sentMessageDataOpCode) + NBytes:
+            raise Exception('MainMemPageRead %s rcv msg length %s (too short)'%(pageAddr,len(rcvMessageData)))
+        return rcvMessageData[len(sentMessageDataOpCode):len(sentMessageDataOpCode)+NBytes]
+    def FLASHMainMemPageProgThroughBuffer(self, theCROCChannel, pageAddr, pageBytes, NBytes, bufferIndex=1):
+        sentMessageHeader = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
+            Frame.DeviceFLASH, Frame.FuncFLASHCommand)
+        sentMessageDataOpCode = Flash().MakeOpCodeMessageMainMemPageProgThroughBuffer(bufferIndex, pageAddr)
+        sentMessage = sentMessageHeader + sentMessageDataOpCode + pageBytes
+        rcvMessageData = WriteSendReceive(sentMessage, self.Address, Frame.DeviceFLASH, theCROCChannel)
+        sentMessage = sentMessageHeader + [Flash().OpStatRegRead] + 8*[0]
+        for i in range(50):
+            rcvMessageData = WriteSendReceive(sentMessage, self.Address, Frame.DeviceFLASH, theCROCChannel)
+            if rcvMessageData[8]&0x80==0x80: break
+        if i==50: raise Exception('MainMemPageProgThroughBuffer StatusBit NOT Ready')
+        
+        
+        
+
+    
 
     def ParseMessageToFPGAtxtRegs(self, msg, txtRegs):
         if len(msg)!=Frame.MessageDataLengthFPGA: raise Exception('Datalength!=%s'%Frame.MessageDataLengthFPGA)
@@ -457,7 +484,7 @@ class FEB():
         # !!!! CAUTION !!!!
         # For unknown reasons the following BIT, when CTRL goes low, is now different
         # from my ORIGINAL implementation (the one back to SBC controller)
-        # It use to be (0,0,0,1)+(0,0,0,0) for both TripInstruction Read and Write.
+        # It used to be (0,0,0,1)+(0,0,0,0) for both TripInstruction Read and Write.
         # NOW I have to make them different or else the Trip will provide wrong data output...    
         if instrID==Frame.InstrTRIPRead:
             msg.append(self.TripPrgEnc(0,0,1,1))        # CTRL keep high
@@ -495,7 +522,7 @@ class FEB():
         self.ParseTRIPRegsPhysicalToLogical(pRegs, txtRegs, append=False)
     def ParseMessageToTRIPtxtRegs6(self, msg, txtRegs):    
         for txt in txtRegs:  txt.SetValue('')
-        for iTrip in range(6):
+        for iTrip in range(Frame.NTRIPs):
             pRegs = self.ParseMessageToTRIPRegsPhysical(msg, iTrip)
             self.ParseTRIPRegsPhysicalToLogical(pRegs, txtRegs, append=True)
     def ParseMessageToTRIPRegsPhysical(self, msg, theTRIPIndex):
@@ -515,7 +542,7 @@ class FEB():
                 if regMsg[index]!=3 or regMsg[index+1]!=1:
                     raise Exception(err + ' clk up/down')
             # check: ONLY ONE position for dummy bit
-            if regMsg[30]!=3:
+            if regMsg[30]!=3: 
                 raise Exception(err + ' clk phase after dummy bit')
             # check: (clk,ctrl) is now 1,3,1,3.... and get register value one bit at a time
             for index in range(31, 31+2*pRegsNBits[iReg], 2):
@@ -527,6 +554,52 @@ class FEB():
             #print 'pReg[%d]=%d'%(iReg, pRegs[iReg])
         return pRegs
 
+class Flash():
+    def __init__(self):
+        self.NPages=1075
+        self.NBytesPerPage=264
+        #Read operation commands
+        self.OpBuffer1Read=0xD4
+        self.OpBuffer2Read=0xD6
+        self.OpStatRegRead=0xD7
+        self.OpMainMemPageRead=0xD2
+        self.OpContinuousArrayRead=0xE8
+        #Write operation commands
+        self.OpBuffer1Write=0x84
+        self.OpBuffer2Write=0x87
+        self.OpMainMemPageProgThroughBuffer1=0x82
+        self.OpMainMemPageProgThroughBuffer2=0x85
+        #Additional operation commands
+        self.OpMainMemToBuffer1Transfer=0x53
+        self.OpMainMemToBuffer2Transfer=0x55
+        self.OpMainMemToBuffer1Compare=0x60
+        self.OpMainMemToBuffer2Compare=0x61
+    def ParseStrLineToMessage(self, line):
+        try:
+            if len(line)!=self.NBytesPerPage*2+6 or line[4]!=' ': raise
+            pageAddr=int(line[0:4])
+            pageBytes=[int(line[5+2*i:5+2*(i+1)],16) for i in range(self.NBytesPerPage)]
+        except: raise Exception('Parsing error in line %s...'%line[0:20])
+        return pageAddr, pageBytes
+    def MakeOpCodeMessageMainMemPageRead(self, pageAddress, byteAddress=0):
+        byte0=self.OpMainMemPageRead
+        byte1=(pageAddress&0x710)>>7
+        byte2=((pageAddress&0x3F)<<1) + ((byteAddress&0x100)>>8)
+        byte3=byteAddress&0xFF
+        return [byte0, byte1, byte2, byte3, 0, 0, 0, 0]
+    def MakeOpCodeMessageMainMemPageProgThroughBuffer(self, bufferIndex, pageAddress, byteAddress=0):
+        if bufferIndex!=1 and bufferIndex!=2: raise Exception('Flash Buffer Index out of range')
+        if bufferIndex==1: byte0=self.OpMainMemPageProgThroughBuffer1
+        if bufferIndex==2: byte0=self.OpMainMemPageProgThroughBuffer2
+        byte1=(pageAddress&0x710)>>7
+        byte2=((pageAddress&0x3F)<<1) + ((byteAddress&0x100)>>8)
+        byte3=byteAddress&0xFF
+        return [byte0, byte1, byte2, byte3]
+    def MakeOpStatRegRead(self): return [self.OpStatRegRead]
+    
+        
+
+        
 class Frame():
     DirectionMask=0x80
     DirectionM2S=0x00
@@ -549,7 +622,9 @@ class Frame():
     FuncFPGAWrite=0x01
     FuncFPGARead=0x02
     FuncTRIPWRAll=0x01
-    FuncTRIPWRi=[2,3,4,5,6,7] 
+    FuncTRIPWRi=[2,3,4,5,6,7]
+    FuncFLASHCommand=0x01
+    FuncFLASHSetReset=0x02
     StatusDeviceOK=0x01
     StatusFuncOK=0x02
     StatusCRCOK=0x01
@@ -560,6 +635,7 @@ class Frame():
     NRegsFPGA=54
     NRegsTRIPLogical=20
     NRegsTRIPPhysical=14
+    NTRIPs=6
     MessageHeaderLength=9
     MessageDataLengthFPGA=55
     InstrTRIPWrite=1

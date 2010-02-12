@@ -363,8 +363,6 @@ class CROC(wx.Panel):
         self.TopLabels = SC_Util.CreateTextCtrls(self, TopLabelsData, offset=(130, 7))
         for txt in self.TopLabels: txt.Enable(False)
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
-        self.FlashButtons=SC_Util.FlashButtons(self,
-            'Write File to FLASH Memory', 'Reboot FEs (reload FLASH content)')
         self.TimingSetup=SC_Util.CROCTimingSetup(self, caption=' Timing Setup')
         self.FastCmd=SC_Util.CROCFastCmd(self, caption=' Fast Commands')
         self.LoopDelays=SC_Util.CROCLoopDelays(self, caption=' Loop Delays')
@@ -373,8 +371,7 @@ class CROC(wx.Panel):
         self.FEBGateDelays=SC_Util.CROCFEBGateDelays(
             self, caption=' FEB Gate Delays')
         sizerALL=wx.BoxSizer(wx.VERTICAL)
-        sizerALL.Add(szTop, 0, wx.ALL, 5)
-        sizerALL.Add(self.FlashButtons.FlashBoxSizer, 0, wx.ALL, 5)  
+        sizerALL.Add(szTop, 0, wx.ALL, 5) 
         szV1=wx.BoxSizer(wx.VERTICAL)
         szV1.Add(self.TimingSetup.BoxSizer, 0, wx.ALL, 2)
         szV1.Add(self.FastCmd.BoxSizer, 0, wx.ALL, 2)
@@ -403,8 +400,7 @@ class CROC(wx.Panel):
         self.FEBGateDelays.ResetControls()
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
-            self.FlashButtons.controls, self.TimingSetup.controls,
-            self.FastCmd.controls, self.LoopDelays.controls,
+            self.TimingSetup.controls, self.FastCmd.controls, self.LoopDelays.controls,
             self.ResetAndTestPulse.controls, self.FEBGateDelays.controls)
         self.Fit()
 
@@ -422,8 +418,6 @@ class CH(wx.Panel):
         self.TopLabels=SC_Util.CreateTextCtrls(self, TopLabelsData, offset=(130, 7))
         for txt in self.TopLabels: txt.Enable(False)
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
-        self.FlashButtons=SC_Util.FlashButtons(self,
-            'Write File to FLASH Memory', 'Reboot FEs (reload FLASH content)')
         self.StatusRegister=SC_Util.StatusRegister(self, 'CROC CH')
         self.DPMPointer=SC_Util.GenericRegister(self, caption='DPM Pointer',
             btnWriteVisible=True, btnWriteCaption='Reset DPM Pointer',
@@ -431,8 +425,7 @@ class CH(wx.Panel):
             txtDataVisible=True, txtDataCaption='dpm pointer value', WEnable=False)
         self.MessageRegisters=SC_Util.MessageRegisters(self)        
         sizerALL=wx.BoxSizer(wx.VERTICAL)
-        sizerALL.Add(szTop, 0, wx.ALL, 5)
-        sizerALL.Add(self.FlashButtons.FlashBoxSizer, 0, wx.ALL, 5)  
+        sizerALL.Add(szTop, 0, wx.ALL, 5)  
         szV1=wx.BoxSizer(wx.VERTICAL)
         szV1.Add(self.StatusRegister.BoxSizer, 1, wx.ALL|wx.EXPAND, 2)
         szV2=wx.BoxSizer(wx.VERTICAL)
@@ -459,8 +452,7 @@ class CH(wx.Panel):
         self.MessageRegisters.ResetControls()
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
-            self.FlashButtons.controls, self.StatusRegister.controls,
-            self.DPMPointer.controls, self.MessageRegisters.controls)
+            self.StatusRegister.controls, self.DPMPointer.controls, self.MessageRegisters.controls)
 
 
 class FE(wx.Panel):
@@ -526,7 +518,8 @@ class FPGA(wx.Panel):
         sizerALL.Add(self.Registers.FPGABoxSizer, proportion=0, flag=wx.ALL, border=5)  
         self.SetSizer(sizerALL)
         self.Fit()
-    def ResetControls(self): self.Registers.ResetControls()
+    def ResetControls(self):
+        self.Registers.ResetControls()
 
 
 class TRIP(wx.Panel):

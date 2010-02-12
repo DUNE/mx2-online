@@ -89,8 +89,6 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnWriteVectorTableRegister, self.frame.crim.InterrupterModule.VectorTableRegisters.btnWrite)
         self.Bind(wx.EVT_BUTTON, self.OnCRIMINTbtnReadVectorTableRegister, self.frame.crim.InterrupterModule.VectorTableRegisters.btnRead)
         # CROC pannel events ##########################################################
-        self.Bind(wx.EVT_BUTTON, self.OnCROCbtnFlashFirst, self.frame.croc.FlashButtons.btnFlashFirst)
-        self.Bind(wx.EVT_BUTTON, self.OnCROCbtnFlashSecond, self.frame.croc.FlashButtons.btnFlashSecond)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnWriteTimingSetup, self.frame.croc.TimingSetup.btnWriteTimingSetup)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnReadTimingSetup, self.frame.croc.TimingSetup.btnReadTimingSetup)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnSendFastCmd, self.frame.croc.FastCmd.btnSendFastCmd)
@@ -102,8 +100,6 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnSendTPOnly, self.frame.croc.ResetAndTestPulse.btnSendTPOnly)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnReportAlignmentsAllChains, self.frame.croc.FEBGateDelays.btnReportAlignmentsAllChains)
         # CH pannel events ##########################################################
-        self.Bind(wx.EVT_BUTTON, self.OnCHbtnFlashFirst, self.frame.ch.FlashButtons.btnFlashFirst)
-        self.Bind(wx.EVT_BUTTON, self.OnCHbtnFlashSecond, self.frame.ch.FlashButtons.btnFlashSecond)
         self.Bind(wx.EVT_BUTTON, self.OnCHbtnClearStatus, self.frame.ch.StatusRegister.btnClearStatus)
         self.Bind(wx.EVT_BUTTON, self.OnCHbtnReadStatus, self.frame.ch.StatusRegister.btnReadStatus)
         self.Bind(wx.EVT_BUTTON, self.OnCHbtnDPMPointerReset, self.frame.ch.DPMPointer.btnWrite)
@@ -114,16 +110,24 @@ class SCApp(wx.App):
         # FE pannel events ##########################################################
         self.Bind(wx.EVT_BUTTON, self.OnFEFPGAbtnRead, self.frame.fe.fpga.Registers.btnRead)
         self.Bind(wx.EVT_BUTTON, self.OnFEFPGAbtnWrite, self.frame.fe.fpga.Registers.btnWrite)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFPGAbtnWriteALLThisCH, self.frame.fe.fpga.Registers.btnWriteALLThisCH)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFPGAbtnWriteALLThisCROC, self.frame.fe.fpga.Registers.btnWriteALLThisCROC)
         self.Bind(wx.EVT_BUTTON, self.OnFEFPGAbtnWriteALL, self.frame.fe.fpga.Registers.btnWriteALL)
         self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnRead, self.frame.fe.trip.Registers.btnRead)
         self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnRead6, self.frame.fe.trip.Registers.btnRead6)
         self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnWrite, self.frame.fe.trip.Registers.btnWrite)
         self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnWrite6, self.frame.fe.trip.Registers.btnWrite6)
+        self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnWriteALLThisCH, self.frame.fe.trip.Registers.btnWriteALLThisCH)
+        self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnWriteALLThisCROC, self.frame.fe.trip.Registers.btnWriteALLThisCROC)
         self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnWriteALL, self.frame.fe.trip.Registers.btnWriteALL)
         self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnPRGRST, self.frame.fe.trip.Registers.btnPRGRST)
         self.Bind(wx.EVT_BUTTON, self.OnFETRIPbtnPRGRSTALL, self.frame.fe.trip.Registers.btnPRGRSTALL)
-        self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnFlashFirst, self.frame.fe.flash.FlashButtons.btnFlashFirst)
-        self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnFlashSecond, self.frame.fe.flash.FlashButtons.btnFlashSecond)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnReadFlashToFile, self.frame.fe.flash.FlashButtons.btnReadFlashToFile)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnCompareFileToFlash, self.frame.fe.flash.FlashButtons.btnCompareFileToFlash)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnWriteFileToFlash, self.frame.fe.flash.FlashButtons.btnWriteFileToFlash)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnWriteFileToFlashThisCH, self.frame.fe.flash.FlashButtons.btnWriteFileToFlashThisCH)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnWriteFileToFlashThisCROC, self.frame.fe.flash.FlashButtons.btnWriteFileToFlashThisCROC)
+        self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnWriteFileToFlashALL, self.frame.fe.flash.FlashButtons.btnWriteFileToFlashALL)
         
         self.OnMenuLoadHardware(None)
         self.OnMenuShowExpandAll(None)        
@@ -158,9 +162,11 @@ class SCApp(wx.App):
                     if (i<=8):
                         print "Found CROC at ", hex(i)
                         addrListCROCs.append(i)
+                        self.frame.SetStatusText('Found CROC at '%hex(i), 0)
                     else:
                         print "Found CRIM at ", hex(i)
                         addrListCRIMs.append(i)
+                        self.frame.SetStatusText('Found CROC at '%hex(i), 0)
                     self.controller.WriteCycle(addr, 0)
                 except: pass
             #now create object lists for CRIMs and CROCs found
@@ -169,8 +175,9 @@ class SCApp(wx.App):
             for addr in addrListCROCs: self.vmeCROCs.append(CROC(self.controller, addr<<16))
             #then take each CROC CH and find the FEBs
             for theCROC in self.vmeCROCs:
-                for theCROCChannel in theCROC.Channels():
-                    FindFEBs(theCROCChannel)        
+                for theCROCChannel in theCROC.Channels(): 
+                    FindFEBs(theCROCChannel)
+                    self.frame.SetStatusText('%s %s Finding FEs... done'%(theCROC.Description(), theCROCChannel.Description()), 0)
             #and then update self.frame.tree
             self.frame.tree.DeleteAllItems()
             treeRoot = self.frame.tree.AddRoot("VME-BRIDGE")
@@ -192,19 +199,21 @@ class SCApp(wx.App):
                     #print line
                     lineList = line.split(':')
                     if len(lineList)!=3: raise Exception('Wrong format in line %s wrong number of ":" characters'%line)
-                    if lineList[0]==SC_Util.VMDdevTypes.CRIM:
+                    if lineList[0]==SC_Util.VMEdevTypes.CRIM:
                         if len(lineList[2])!=321: raise Exception('Wrong format in line %s wrong data field length <> 321'%line)
                         for i in range(16):
                             addr=str(lineList[2][3+i*20:9+i*20])
                             data=str(lineList[2][13+i*20:17+i*20])
                             self.controller.WriteCycle(int(addr,16), int(data,16))
-                    if lineList[0]==SC_Util.VMDdevTypes.CROC:
+                        self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
+                    if lineList[0]==SC_Util.VMEdevTypes.CROC:
                         if len(lineList[2])!=41: raise Exception('Wrong format in line %s wrong data field length <> 41'%line)
                         for i in range(2):
                             addr=lineList[2][3+i*20:9+i*20]
                             data=lineList[2][13+i*20:17+i*20]
                             self.controller.WriteCycle(int(addr,16), int(data,16))
-                    if lineList[0]==SC_Util.VMDdevTypes.FPGA:
+                        self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
+                    if lineList[0]==SC_Util.VMEdevTypes.FPGA:
                         if len(lineList[2])!=331: raise Exception('Wrong format in line %s wrong data field length <> 331'%line)
                         addresses = lineList[1].split(',')
                         if len(addresses)!=3: raise Exception('Wrong format in line %s wrong number of "," characters'%line)
@@ -218,7 +227,8 @@ class SCApp(wx.App):
                         theCROC=FindVMEdev(self.vmeCROCs, crocNumber<<16)
                         theCROCChannel=theCROC.Channels()[chNumber]
                         FEB(febNumber).FPGAWrite(theCROCChannel, sentMessageData)
-                    if lineList[0]==SC_Util.VMDdevTypes.TRIP:
+                        self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
+                    if lineList[0]==SC_Util.VMEdevTypes.TRIP:
                         if len(lineList[2])!=99: raise Exception('Wrong format in line %s wrong data field length <> 99'%line)
                         addresses = lineList[1].split(',')
                         if len(addresses)!=4: raise Exception('Wrong format in line %s wrong number of "," characters'%line)
@@ -241,6 +251,7 @@ class SCApp(wx.App):
                         sentMessageData = theFEB.ParseTRIPAllRegsPhysicalToMessage(pRegs, Frame.InstrTRIPWrite)
                         sentMessage = sentMessageHeader + sentMessageData
                         WriteSendReceive(sentMessage, theFEB.Address, Frame.DeviceTRIP, theCROCChannel)
+                        self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
                 f.close()
             dlg.Destroy()
         except: ReportException('OnMenuLoadFile', self.reportErrorChoice)
@@ -254,23 +265,27 @@ class SCApp(wx.App):
                 f=open(filename,'w')
                 for theCRIM in self.vmeCRIMs:
                     f.write('%s:%s\n'%(theCRIM.Description(), theCRIM.GetWRRegValues()))
+                    self.frame.SetStatusText('%s...done'%theCRIM.Description(), 0)
                 for theCROC in self.vmeCROCs:
                     f.write('%s:%s\n'%(theCROC.Description(), theCROC.GetWRRegValues()))
+                    self.frame.SetStatusText('%s...done'%theCROC.Description(), 0)
                 for theCROC in self.vmeCROCs:   
                     for theCROCChannel in theCROC.Channels():
                         for febAddress in theCROCChannel.FEBs:
                             theFEB=FEB(febAddress)
                             f.write('%s:%s\n'%(theFEB.FPGADescription(theCROCChannel, theCROC), \
                                 [hex(val)[2:].rjust(2,'0') for val in theFEB.FPGARead(theCROCChannel)]))
+                            self.frame.SetStatusText('%s...done'%theFEB.FPGADescription(theCROCChannel, theCROC), 0)
                 for theCROC in self.vmeCROCs:   
                     for theCROCChannel in theCROC.Channels():
                         for febAddress in theCROCChannel.FEBs:
                             theFEB=FEB(febAddress)
-                            for theTRIPIndex in range(6):
+                            for theTRIPIndex in range(Frame.NTRIPs):
                                 rcvMessageData=theFEB.TRIPRead(theCROCChannel, theTRIPIndex)
                                 pRegs = theFEB.ParseMessageToTRIPRegsPhysical(rcvMessageData, theTRIPIndex)
                                 f.write('%s:%s\n'%(theFEB.TRIPDescription(theTRIPIndex, theCROCChannel, theCROC), \
-                                    [hex(val)[2:].rjust(3,'0') for val in pRegs]))     
+                                    [hex(val)[2:].rjust(3,'0') for val in pRegs]))
+                                self.frame.SetStatusText('%s...done'%theFEB.TRIPDescription(theTRIPIndex, theCROCChannel, theCROC), 0)
                 f.close()
             dlg.Destroy()              
         except: ReportException('OnMenuSaveFile', self.reportErrorChoice)
@@ -537,8 +552,6 @@ class SCApp(wx.App):
         except: ReportException('OnCRIMINTbtnReadVectorTableRegister', self.reportErrorChoice)   
     
     # CROC pannel events ##########################################################
-    def OnCROCbtnFlashFirst(self, event): wx.MessageBox('not yet implemented')
-    def OnCROCbtnFlashSecond(self, event): wx.MessageBox('not yet implemented')
     def OnCROCbtnReadTimingSetup(self, event):
         try:
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
@@ -620,8 +633,6 @@ class SCApp(wx.App):
         except: ReportException('btnReportAlignmentsAllChains', self.reportErrorChoice)        
 
     # CH pannel events ##########################################################
-    def OnCHbtnFlashFirst(self, event): wx.MessageBox('not yet implemented')
-    def OnCHbtnFlashSecond(self, event): wx.MessageBox('not yet implemented')
     def OnCHbtnClearStatus(self, event):
         try:
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.ch.crocNumber<<16)
@@ -697,14 +708,35 @@ class SCApp(wx.App):
             rcvMessageData=theFEB.FPGAWrite(theCROCChannel, sentMessageData)
             theFEB.ParseMessageToFPGAtxtRegs(rcvMessageData, self.frame.fe.fpga.Registers.txtRegs)            
         except: ReportException('OnFEFPGAbtnWrite', self.reportErrorChoice)  
+    def OnFEFPGAbtnWriteALLThisCH(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
+            sentMessageData=FEB(self.frame.fe.febNumber).ParseFPGARegsToMessage(self.frame.fe.fpga.Registers.txtRegs)
+            for febAddress in theCROCChannel.FEBs:
+                theFEB=FEB(febAddress)
+                theFEB.FPGAWrite(theCROCChannel, sentMessageData)
+                self.frame.SetStatusText('%s...done'%theFEB.FPGADescription(theCROCChannel, theCROC), 0)
+        except: ReportException('OnFEFPGAbtnWriteALLThisCH', self.reportErrorChoice)
+    def OnFEFPGAbtnWriteALLThisCROC(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
+            sentMessageData=FEB(self.frame.fe.febNumber).ParseFPGARegsToMessage(self.frame.fe.fpga.Registers.txtRegs)
+            for theCROCChannel in theCROC.Channels():
+                for febAddress in theCROCChannel.FEBs:
+                    theFEB=FEB(febAddress)
+                    theFEB.FPGAWrite(theCROCChannel, sentMessageData)
+                    self.frame.SetStatusText('%s...done'%theFEB.FPGADescription(theCROCChannel, theCROC), 0)
+        except: ReportException('OnFEFPGAbtnWriteALLThisCROC', self.reportErrorChoice)
     def OnFEFPGAbtnWriteALL(self, event):
         try:
-            theFEB=FEB(self.frame.fe.febNumber)
-            sentMessageData=theFEB.ParseFPGARegsToMessage(self.frame.fe.fpga.Registers.txtRegs)
+            sentMessageData=FEB(self.frame.fe.febNumber).ParseFPGARegsToMessage(self.frame.fe.fpga.Registers.txtRegs)
             for theCROC in self.vmeCROCs:
                 for theCROCChannel in theCROC.Channels():
                     for febAddress in theCROCChannel.FEBs:
-                        FEB(febAddress).FPGAWrite(theCROCChannel, sentMessageData)
+                        theFEB=FEB(febAddress)
+                        theFEB.FPGAWrite(theCROCChannel, sentMessageData)
+                        self.frame.SetStatusText('%s...done'%theFEB.FPGADescription(theCROCChannel, theCROC), 0)
         except: ReportException('OnFEFPGAbtnWriteALL', self.reportErrorChoice)  
     def OnFETRIPbtnRead(self, event):
         try:
@@ -740,14 +772,36 @@ class SCApp(wx.App):
             theRegs=self.frame.fe.trip.Registers.txtRegs
             theFEB.TRIPWrite(theCROCChannel, theRegs)
         except: ReportException('OnFETRIPbtnWrite6', self.reportErrorChoice)
+    def OnFETRIPbtnWriteALLThisCH(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
+            theRegs=self.frame.fe.trip.Registers.txtRegs
+            for febAddress in theCROCChannel.FEBs:
+                theFEB=FEB(febAddress)
+                theFEB.TRIPWrite(theCROCChannel, theRegs)
+                self.frame.SetStatusText('%s...done'%theFEB.TRIPDescription('X', theCROCChannel, theCROC), 0)
+        except: ReportException('OnFETRIPbtnWriteALLThisCH', self.reportErrorChoice)
+    def OnFETRIPbtnWriteALLThisCROC(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
+            theRegs=self.frame.fe.trip.Registers.txtRegs
+            for theCROCChannel in theCROC.Channels():
+                for febAddress in theCROCChannel.FEBs:
+                    theFEB=FEB(febAddress)
+                    theFEB.TRIPWrite(theCROCChannel, theRegs)
+                    self.frame.SetStatusText('%s...done'%theFEB.TRIPDescription('X', theCROCChannel, theCROC), 0)
+        except: ReportException('OnFETRIPbtnWriteALLThisCROC', self.reportErrorChoice)
     def OnFETRIPbtnWriteALL(self, event):
         try:
             theRegs=self.frame.fe.trip.Registers.txtRegs
             for theCROC in self.vmeCROCs:
                 for theCROCChannel in theCROC.Channels():
                     for febAddress in theCROCChannel.FEBs:
-                        FEB(febAddress).TRIPWrite(theCROCChannel, theRegs)
-        except: ReportException('OnFETRIPbtnWriteALL', self.reportErrorChoice)      
+                        theFEB=FEB(febAddress)
+                        theFEB.TRIPWrite(theCROCChannel, theRegs)
+                        self.frame.SetStatusText('%s...done'%theFEB.TRIPDescription('X', theCROCChannel, theCROC), 0)
+        except: ReportException('OnFETRIPbtnWriteALL', self.reportErrorChoice)
     def OnFETRIPbtnPRGRST(self, event):
         try:
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
@@ -762,8 +816,97 @@ class SCApp(wx.App):
                     for febAddress in theCROCChannel.FEBs:
                         FEB(febAddress).TRIPProgramRST(theCROCChannel)
         except: ReportException('OnFETRIPbtnPRGRSTALL', self.reportErrorChoice)  
-    def OnFEFLASHbtnFlashFirst(self, event): wx.MessageBox('not yet implemented')
-    def OnFEFLASHbtnFlashSecond(self, event): wx.MessageBox('not yet implemented')    
+    def OnFEFLASHbtnReadFlashToFile(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
+            theFEB=FEB(self.frame.fe.febNumber) 
+            dlg = wx.FileDialog(self.frame, message='SAVE Flash Configuration', defaultDir='', defaultFile='',
+                wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+            if dlg.ShowModal()==wx.ID_OK:
+                filename=dlg.GetFilename()
+                dirname=dlg.GetDirectory()
+                self.frame.SetStatusText('ReadFLASH WriteFILE %s'%filename, 1)
+                f=open(filename,'w')
+                for iPage in range(Flash().NPages):
+                    pageBytes=theFEB.FLASHMainMemPageRead(theCROCChannel, iPage, Flash().NBytesPerPage)
+                    f.write('%s '%str(iPage).rjust(4,'0').upper())
+                    for iByte in pageBytes:
+                        f.write('%s'%hex(iByte)[2:].rjust(2,'0').upper())
+                    f.write('\n')
+                    if iPage%50==24:
+                        self.frame.Refresh(); self.frame.Update()
+                        self.frame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)
+                f.close()
+            dlg.Destroy()              
+        except: ReportException('OnFEFLASHbtnReadFlashToFile', self.reportErrorChoice)
+    def OnFEFLASHbtnCompareFileToFlash(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
+            theFEB=FEB(self.frame.fe.febNumber) 
+            dlg = wx.FileDialog(self.frame, message='READ Flash Configuration', defaultDir='', defaultFile='',
+                wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+            if dlg.ShowModal()==wx.ID_OK:
+                filename=dlg.GetFilename()
+                dirname=dlg.GetDirectory()
+                self.frame.SetStatusText('ReadFLASH CompFILE %s'%filename, 1)
+                f=open(filename,'r')
+                errPages=''
+                iPage=0
+                for line in f:
+                    if iPage>=Flash().NPages: raise Exception("The file has more lines than expected %s"%iPage)
+                    pageAddrFile, pageBytesFile = Flash().ParseStrLineToMessage(line)
+                    if pageAddrFile!=iPage: raise Exception("Error in file's page address field at line %s"%iPage)
+                    pageBytesRead=theFEB.FLASHMainMemPageRead(theCROCChannel, iPage, Flash().NBytesPerPage)
+                    if pageBytesRead!=pageBytesFile: errPages += '%s '%iPage
+                    if iPage%50==24:
+                        self.frame.Refresh(); self.frame.Update()
+                        self.frame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)
+                    iPage+=1
+                f.close()
+                if iPage<Flash().NPages: raise Exception("The file has less lines than expected %s"%iPage)
+                if errPages!='': raise Exception('Comparison failed on pages: %s'%errPages) 
+            dlg.Destroy()              
+        except: ReportException('OnFEFLASHbtnCompareFileToFlash', self.reportErrorChoice)
+    def OnFEFLASHbtnWriteFileToFlash(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
+            theFEB=FEB(self.frame.fe.febNumber) 
+            dlg = wx.FileDialog(self.frame, message='READ Flash Configuration', defaultDir='', defaultFile='',
+                wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+            if dlg.ShowModal()==wx.ID_OK:
+                filename=dlg.GetFilename()
+                dirname=dlg.GetDirectory()
+                self.frame.SetStatusText('WriteFLASH FromFILE %s'%filename, 1)
+                f=open(filename,'r')
+                errPages=''
+                iPage=0
+                pagesAddrFile=Flash().NPages*[0]
+                pagesBytesFile=Flash().NPages*[0]
+                for line in f:
+                    if iPage>=Flash().NPages: raise Exception("The file has more lines than expected %s"%iPage)
+                    pagesAddrFile[iPage], pagesBytesFile[iPage] = Flash().ParseStrLineToMessage(line)
+                    if pagesAddrFile[iPage]!=iPage: raise Exception("Error in file's page address field at line %s"%iPage)
+                    iPage+=1
+                f.close()
+                if iPage<Flash().NPages: raise Exception("The file has less lines than expected %s"%iPage)
+                for iPage in range(Flash().NPages):
+                    theFEB.FLASHMainMemPageProgThroughBuffer(theCROCChannel, pagesAddrFile[iPage], pagesBytesFile[iPage], Flash().NBytesPerPage)
+                    if iPage%50==24:
+                        self.frame.Refresh(); self.frame.Update()
+                        self.frame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)    
+            dlg.Destroy()              
+        except: ReportException('OnFEFLASHbtnWriteFileToFlash', self.reportErrorChoice)
+
+
+
+
+        
+    def OnFEFLASHbtnWriteFileToFlashThisCH(self, event): wx.MessageBox('not yet implemented')
+    def OnFEFLASHbtnWriteFileToFlashThisCROC(self, event): wx.MessageBox('not yet implemented')
+    def OnFEFLASHbtnWriteFileToFlashALL(self, event): wx.MessageBox('not yet implemented')
 
     # OTHER events ##########################################################
     def OnClose(self, event):

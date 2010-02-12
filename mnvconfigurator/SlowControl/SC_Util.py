@@ -22,13 +22,14 @@ fontSizeChoice=8
 def myFont(size, family=wx.DEFAULT, style=wx.NORMAL, weight=wx.NORMAL):
     return wx.Font(size, family, style, weight)
 
-class VMDdevTypes():
+class VMEdevTypes():
     CRIM='CRIM'
     CROC='CROC'
     CH='CH'
     FE='FE'
     FPGA='FPGA'
     TRIP='TRIP'
+    FLASH='FLASH'
     
 class CROCRegs():
     RegWRTimingSetup        = 0xF000
@@ -578,14 +579,28 @@ class FlashButtons():
         FlashBox=wx.StaticBox(panel, -1, 'Flash Commands')
         FlashBox.SetFont(myFont(fontSizeStaticBox))
         FlashBox.SetForegroundColour(colorForeground)
-        self.btnFlashFirst=CreateButton(panel, lblFirst,
-            pos=(0,0), size=(270,20), name=lblFirst, bckcolor=colorButton)
-        self.btnFlashSecond=CreateButton(panel, lblSecond,
-            pos=(0,0), size=(270,20), name=lblSecond, bckcolor=colorButton)
+        self.btnReadFlashToFile=CreateButton(panel, 'Read Flash To File',
+            pos=(0,0), size=(270,20), name='', bckcolor=colorButton)
+        self.btnCompareFileToFlash=CreateButton(panel, 'Compare File To Flash',
+            pos=(0,0), size=(270,20), name='', bckcolor=colorButton)
+        self.btnWriteFileToFlash=CreateButton(panel, 'Write File To Flash',
+            pos=(0,0), size=(270,20), name='', bckcolor=colorButton)
+        self.btnWriteFileToFlashThisCH=CreateButton(panel, 'Write File To Flash This CH',
+            pos=(0,0), size=(270,20), name='', bckcolor=colorButton)
+        self.btnWriteFileToFlashThisCROC=CreateButton(panel, 'Write File To Flash This CROC',
+            pos=(0,0), size=(270,20), name='', bckcolor=colorButton)
+        self.btnWriteFileToFlashALL=CreateButton(panel, 'Write File To Flash ALL',
+            pos=(0,0), size=(270,20), name='', bckcolor=colorButton)        
         self.FlashBoxSizer=wx.StaticBoxSizer(FlashBox, wx.VERTICAL)
-        self.FlashBoxSizer.Add(self.btnFlashFirst, 0, wx.ALL|wx.EXPAND, 2)
-        self.FlashBoxSizer.Add(self.btnFlashSecond, 0, wx.ALL|wx.EXPAND, 2)
-        self.controls=[FlashBox, self.btnFlashFirst, self.btnFlashSecond]
+        self.FlashBoxSizer.Add(self.btnReadFlashToFile, 0, wx.ALL|wx.EXPAND, 2)
+        self.FlashBoxSizer.Add(self.btnCompareFileToFlash, 0, wx.ALL|wx.EXPAND, 2)
+        self.FlashBoxSizer.Add(self.btnWriteFileToFlash, 0, wx.ALL|wx.EXPAND, 2)
+        self.FlashBoxSizer.Add(self.btnWriteFileToFlashThisCH, 0, wx.ALL|wx.EXPAND, 2)
+        self.FlashBoxSizer.Add(self.btnWriteFileToFlashThisCROC, 0, wx.ALL|wx.EXPAND, 2)
+        self.FlashBoxSizer.Add(self.btnWriteFileToFlashALL, 0, wx.ALL|wx.EXPAND, 2)
+        self.controls=[FlashBox, self.btnReadFlashToFile, self.btnCompareFileToFlash,
+            self.btnWriteFileToFlash, self.btnWriteFileToFlashThisCH,
+            self.btnWriteFileToFlashThisCROC, self.btnWriteFileToFlashALL]
       
 class StatusRegister():
     def __init__(self, panel, caption='CROC CH'):
@@ -1027,11 +1042,17 @@ class FPGARegisters():
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnWrite=CreateButton(panel, 'Write',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnWriteALLThisCH=CreateButton(panel, 'Write ALL This CH',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnWriteALLThisCROC=CreateButton(panel, 'Write ALL This CROC',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnWriteALL=CreateButton(panel, 'Write ALL FEs',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         szBtns=wx.BoxSizer(wx.VERTICAL)
         szBtns.Add(self.btnRead, 0, wx.ALL, 2)
         szBtns.Add(self.btnWrite, 0, wx.ALL, 2)
+        szBtns.Add(self.btnWriteALLThisCH, 0, wx.ALL, 2)
+        szBtns.Add(self.btnWriteALLThisCROC, 0, wx.ALL, 2)
         szBtns.Add(self.btnWriteALL, 0, wx.ALL, 2)
         self.FPGABoxSizer=wx.BoxSizer(wx.HORIZONTAL)
         self.FPGABoxSizer.Add(szBtns, 0, wx.ALL, 2)
@@ -1067,9 +1088,13 @@ class TRIPRegisters():
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnWrite6=CreateButton(panel, 'Write ALL 6',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnWriteALLThisCH=CreateButton(panel, 'Write ALL This CH',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnWriteALLThisCROC=CreateButton(panel, 'Write ALL This CROC',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnWriteALL=CreateButton(panel, 'Write ALL TRIPs',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
-        self.btnPRGRST=CreateButton(panel, 'RESET',
+        self.btnPRGRST=CreateButton(panel, 'RESET All 6',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnPRGRSTALL=CreateButton(panel, 'RESET ALL TRIPs',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
@@ -1079,17 +1104,14 @@ class TRIPRegisters():
         szBtns.Add(self.btnRead6, 0, wx.ALL, 2)
         szBtns.Add(self.btnWrite, 0, wx.ALL, 2)
         szBtns.Add(self.btnWrite6, 0, wx.ALL, 2)
+        szBtns.Add(self.btnWriteALLThisCH, 0, wx.ALL, 2)
+        szBtns.Add(self.btnWriteALLThisCROC, 0, wx.ALL, 2)
         szBtns.Add(self.btnWriteALL, 0, wx.ALL, 2)
         szBtns.Add(self.btnPRGRST, 0, wx.ALL, 2)
         szBtns.Add(self.btnPRGRSTALL, 0, wx.ALL, 2)
         self.TripBoxSizer=wx.BoxSizer(wx.HORIZONTAL)
         self.TripBoxSizer.Add(szBtns, 0, wx.ALL, 2)
         self.TripBoxSizer.Add(szRegs, 0, wx.ALL, 2)
-        self.controls=[self.chkTrip, self.btnRead, self.btnRead6,
-            self.btnWrite, self.btnWrite6, self.btnWriteALL,
-            self.btnPRGRST, self.btnPRGRSTALL]
-        for lbl in lblRegs: self.controls.append(lbl)
-        for txt in self.txtRegs: self.controls.append(txt)
     def ResetControls(self):
         for txt in self.txtRegs: txt.SetValue('')
 
