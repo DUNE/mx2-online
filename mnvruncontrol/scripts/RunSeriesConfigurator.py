@@ -3,6 +3,8 @@ import sys
 import RunSeries
 import shelve
 
+import MetaData
+
 class MyFrame(wx.Frame):
     """
     This is MyFrame.  It just shows a few controls on a wxPanel,
@@ -10,7 +12,7 @@ class MyFrame(wx.Frame):
     """
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, -1, title,
-                          pos=(0, 0), size=(600, 800))
+                          pos=(0, 0), size=(800, 600))
 
         # Create the menubar
         menuBar = wx.MenuBar()
@@ -34,85 +36,79 @@ class MyFrame(wx.Frame):
         
 
         # Now create the Panel to put the other controls on.
-        mainPage = wx.Panel(self)
+        self.mainPage = wx.Panel(self)
 
-        runSeriesNameEntryLabel = wx.StaticText(mainPage, -1, "Run Series Name")
-        self.runSeriesNameEntry = wx.TextCtrl(mainPage, -1, "RunSeries_1", size=(125, -1))
+        runSeriesNameLabel = wx.StaticText(self.mainPage, -1, "Run Series Name")
+        self.runSeriesNameEntry = wx.TextCtrl(self.mainPage, -1, "Enter Run Series Name", size=(200, -1))
 
-        runEntryLabel = wx.StaticText(mainPage, -1, "Run")
-        self.runEntry = wx.SpinCtrl(mainPage, -1, '1', size=(125, -1), min=1, max=100000)
+        runModeLabel = wx.StaticText(self.mainPage, -1, "Run Mode")
+        self.runModeEntry = wx.Choice(self.mainPage, -1, choices=MetaData.RunningModes.descriptions)
 
-        subrunEntryLabel = wx.StaticText(mainPage, -1, "Subrun")
-        self.subrunEntry = wx.SpinCtrl(mainPage, -1, '1', size=(125, -1), min=1, max=100000)
-        self.subrunEntry.Disable()
+	gatesLabel = wx.StaticText(self.mainPage, -1, "Gates")
+        self.gatesEntry = wx.SpinCtrl(self.mainPage, -1, "0", size=(125, -1), min=0, max=10000)
 
-        gatesEntryLabel = wx.StaticText(mainPage, -1, "Gates")
-        self.gatesEntry = wx.SpinCtrl(mainPage, -1, "0", size=(125, -1), min=0, max=10000)
+	ledLevelLabel = wx.StaticText(self.mainPage, -1, "LED Level")
+        self.ledLevelEntry = wx.Choice(self.mainPage, -1, choices=MetaData.LILevels.descriptions)
 
-        runLengthEntryLabel = wx.StaticText(mainPage, -1, "Run Length (s)")
-        self.runLengthEntry = wx.SpinCtrl(mainPage, -1, '0', size=(125, -1), min=0, max=100000)
+        ledGroupLabel = wx.StaticText(self.mainPage, -1, "LED Group")
+        self.ledGroupEntry = wx.Choice(self.mainPage, -1, choices=MetaData.LEDGroups.descriptions)
 
-        runModeEntryLabel = wx.StaticText(mainPage, -1, "Run Mode")
-        self.runModeChoices = ["Null","OneShot","NumiBeam","Cosmics","PureLightInjection","MixedBeamPedestal","MixedBeamLightInjection"]
-        self.runModeEntry = wx.Choice(mainPage, -1, choices = self.runModeChoices)
-
-        detectorEntryLabel = wx.StaticText(mainPage, -1, "Detector")
-        self.detectorChoices = ["Null","PMTTestStand","TrackingPrototype","TestBeam","FrozenDetector","UpstreamDetector","FullMinerva","DTReserved7","DTReserved8"]
-        self.detectorEntry = wx.Choice(mainPage, -1, choices=self.detectorChoices)
-
-        configFileLabel = wx.StaticText(mainPage, -1, "Config. File")
-        self.configFileEntry = wx.TextCtrl(mainPage, -1, "", size=(125, -1))
-	
-        febsEntryLabel = wx.StaticText(mainPage, -1, "FEBs")
-        self.febsEntry = wx.SpinCtrl(mainPage, -1, "1", size=(125, -1), min=1, max=10000)
-
-	ledLevelLabel = wx.StaticText(mainPage, -1, "LED Level")
-        self.ledLevelChoices = ["Off","ZeroPE","OnePE","MaxPE"]
-        self.ledLevelEntry = wx.Choice(mainPage, -1, choices=self.ledLevelChoices)
-
-        ledGroupLabel = wx.StaticText(mainPage, -1, "LED Group")
-        self.ledGroupChoices = ["None","LEDALL","LEDA","LEDB","LEDC","LEDD","LEDE","LEDF","LEDG","LEDI","LEDJ","LEDK","LEDL","LEDM","LEDN","LEDO","LEDQ","LEDR","LEDS","LEDT","LEDU","LEDV"]
-        self.ledGroupEntry = wx.Choice(mainPage, -1, choices=self.ledGroupChoices)
-
-        b_clearRunSeries = wx.Button(mainPage, -1, "Clear Run Series")
+        b_clearRunSeries = wx.Button(self.mainPage, -1, "Clear Run Series")
         self.Bind(wx.EVT_BUTTON, self.ClearRunSeries, b_clearRunSeries)
 
-        b_addRunToSeries = wx.Button(mainPage, -1, "Add Run To Series")
-        self.Bind(wx.EVT_BUTTON, self.AddToRunSeries, b_addRunToSeries)
+        b_appendRunToSeries = wx.Button(self.mainPage, -1, "Append Run To Series")
+        self.Bind(wx.EVT_BUTTON, self.AppendRunToSeries, b_appendRunToSeries)
 
-        b_writeRunSeries = wx.Button(mainPage, -1, "Write Run Series")
+        b_writeRunSeries = wx.Button(self.mainPage, -1, "Write Run Series")
         self.Bind(wx.EVT_BUTTON, self.WriteRunSeries, b_writeRunSeries)
 
-	b_showRunSeries = wx.Button(mainPage, -1, "Show Run Series")
+	b_showRunSeries = wx.Button(self.mainPage, -1, "Show Run Series")
         self.Bind(wx.EVT_BUTTON, self.ShowRunSeries, b_showRunSeries)
 
-        space = 6
-        #bsizer = wx.BoxSizer(wx.VERTICAL)
-        #bsizer.Add(b, 0, wx.GROW|wx.ALL, space)
-        #bsizer.Add(b2, 0, wx.GROW|wx.ALL, space)
-        #bsizer.Add(b3, 0, wx.GROW|wx.ALL, space)
+        seriesGridSizer = wx.GridSizer(2, 2, 10, 10)
+       	seriesGridSizer.AddMany([       (runSeriesNameLabel, 0, wx.ALIGN_CENTER_VERTICAL),       (self.runSeriesNameEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+        				(b_writeRunSeries, 0, wx.ALIGN_CENTER_VERTICAL),         (0,0),
+                               		(b_showRunSeries, 0, wx.ALIGN_CENTER_VERTICAL),          (0,0),
+                               		(b_clearRunSeries, 0, wx.ALIGN_CENTER_VERTICAL),      	 (0,0) ])
+	seriesBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Run Series"), wx.VERTICAL)
+        seriesBoxSizer.Add(seriesGridSizer, flag=wx.EXPAND)
 
-        sizer = wx.FlexGridSizer(cols=2, hgap=space, vgap=space)
-        sizer.AddMany([ runSeriesNameEntryLabel,self.runSeriesNameEntry,
-			runEntryLabel,self.runEntry,
-                        subrunEntryLabel,self.subrunEntry,
-                        gatesEntryLabel,self.gatesEntry,
-                        runLengthEntryLabel,self.runLengthEntry,
-                        runModeEntryLabel,self.runModeEntry,
-			detectorEntryLabel,self.detectorEntry,
-			configFileLabel,self.configFileEntry,
-			febsEntryLabel,self.febsEntry,
-			ledLevelLabel,self.ledLevelEntry,
-			ledGroupLabel,self.ledGroupEntry,
-                        b_addRunToSeries, (0,0),
-			b_writeRunSeries, (0,0),
-			b_showRunSeries, (0,0),
-                        b_clearRunSeries, (0,0),
-                        ])
-        border = wx.BoxSizer(wx.VERTICAL)
-        border.Add(sizer, 0, wx.ALL, 25)
-        mainPage.SetSizer(border)
-        mainPage.SetAutoLayout(True)
+        runGridSizer = wx.GridSizer(2, 2, 10, 10)
+        runGridSizer.AddMany([          (runModeLabel, 0, wx.ALIGN_CENTER_VERTICAL),             (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+					(gatesLabel, 0, wx.ALIGN_CENTER_VERTICAL),		 (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+                                        (ledLevelLabel, 0, wx.ALIGN_CENTER_VERTICAL),            (self.ledLevelEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),  
+                                        (ledGroupLabel, 0, wx.ALIGN_CENTER_VERTICAL),          	 (self.ledGroupEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+                                        (b_appendRunToSeries, 0, wx.ALIGN_CENTER_VERTICAL),         (0,0) ])
+        runBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Run"), wx.VERTICAL)
+        runBoxSizer.Add(runGridSizer, flag=wx.EXPAND)
+
+        configureSizer = wx.BoxSizer(wx.HORIZONTAL)
+        configureSizer.Add(seriesBoxSizer, proportion=1, flag=wx.EXPAND)
+        configureSizer.Add(runBoxSizer, proportion=1, flag=wx.EXPAND)
+
+	self.runList = wx.ListCtrl(self.mainPage, -1, style=wx.LC_REPORT | wx.LC_VRULES)
+	self.runList.InsertColumn(0, "Sequence No.", wx.EXPAND)
+      	self.runList.InsertColumn(1, "Run Mode")
+       	self.runList.InsertColumn(2, "Gates")
+     	self.runList.InsertColumn(3, "LED Level")
+      	self.runList.InsertColumn(4, "LED Group")
+
+	#runList.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        #runList.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        #runList.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+        #runList.SetColumnWidth(3, wx.LIST_AUTOSIZE)
+        #runList.SetColumnWidth(4, wx.LIST_AUTOSIZE)
+
+    	runListBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Run List"), orient=wx.VERTICAL)
+	runListBoxSizer.Add(self.runList, flag=wx.EXPAND)
+
+	globalSizer = wx.BoxSizer(wx.VERTICAL)
+	globalSizer.Add(configureSizer, flag=wx.EXPAND)
+	globalSizer.Add(runListBoxSizer, flag=wx.EXPAND)
+
+ 	self.mainPage.SetSizer(globalSizer)
+        self.mainPage.SetAutoLayout(True)
+		
 
 	# Run Series Instance
 	self.runSeries = RunSeries.RunSeries()
@@ -122,28 +118,25 @@ class MyFrame(wx.Frame):
 
     def ClearRunSeries(self,evt):
         self.runSeries.ClearRunList()
-        self.runEntry.SetValue(1)
-        self.subrunEntry.SetValue(1)
 
-    
-    def AddToRunSeries(self,evt):
-        run = RunSeries.RunInfo(run        = self.runEntry.GetValue(),
-                        	subrun     = self.subrunEntry.GetValue(),
-                        	gates      = self.gatesEntry.GetValue(),
-                        	runLength  = self.runLengthEntry.GetValue(),
+    def AppendRunToSeries(self,evt):
+        run = RunSeries.RunInfo(gates      = self.gatesEntry.GetValue(),
                         	runMode    = self.runModeEntry.GetStringSelection(),
-                        	detector   = self.detectorEntry.GetStringSelection(),
-                                configFile = self.configFileEntry.GetValue(),
-                                febs       = self.febsEntry.GetValue(),
                                 ledLevel   = self.ledLevelEntry.GetStringSelection(),
                                 ledGroup   = self.ledGroupEntry.GetStringSelection())
 
         self.runSeries.AppendToRunList(run)
-        self.subrunEntry.SetValue(self.subrunEntry.GetValue()+1)
+
+	num_items = self.runList.GetItemCount()
+ 	self.runList.InsertStringItem(num_items, str(num_items))
+        self.runList.SetStringItem(num_items, 1, run.runMode)
+  	self.runList.SetStringItem(num_items, 2, str(run.gates))
+        self.runList.SetStringItem(num_items, 3, run.ledLevel)
+        self.runList.SetStringItem(num_items, 4, run.ledGroup)
 
     def WriteRunSeries(self,evt):
-        d = shelve.open('run_series_test.db', 'c')
-        d[str(self.runSeriesNameEntry.GetValue())] = self.runSeries
+        d = shelve.open(str(self.runSeriesNameEntry.GetValue())+".db", 'c')
+        d['series'] = self.runSeries
         d.close()
 
     def ShowRunSeries(self,evt):
