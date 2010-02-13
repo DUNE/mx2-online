@@ -150,29 +150,70 @@ LILevels			= MetaData(( ("Zero PE", 0, None),
 				             ("One PE",  1, None),
 				             ("Max PE",  2, None) ))
 
-LEDGroups			= MetaData(( ("All", 2**3,    None),
-				             ("A",   2**4,    None),
-				             ("B",   2**5,    None),
-				             ("C",   2**6,    None),
-				             ("D",   2**7,    None),
-				             ("E",   2**8,    None),
-				             ("F",   2**9,    None),
-				             ("G",   2**10,   None),
-				             ("H",   2**11,   None),
-				             ("I",   2**12,   None),
-				             ("J",   2**13,   None),
-				             ("K",   2**14,   None),
-				             ("L",   2**15,   None),
-				             ("M",   2**16,   None),
-				             ("N",   2**17,   None),
-				             ("O",   2**18,   None),
-				             ("P",   2**19,   None),
-				             ("Q",   2**20,   None),
-				             ("R",   2**21,   None),
-				             ("S",   2**22,   None),
-				             ("T",   2**23,   None),
-				             ("U",   2**24,   None),
-				             ("V",   2**25,   None) ))
+LEDGroups			= MetaData(( ("All" ,   2**3,    "0"),
+				             (" BCD",   2**4,    "a"),
+				             ("A CD",   2**5,    "b"),
+				             ("  CD",   2**6,    "c"),
+				             ("AB D",   2**7,    "d"),
+				             (" B D",   2**8,    "e"),
+				             ("A  D",   2**9,    "f"),
+				             ("   D",   2**10,   "g"),
+				             (""    ,   2**11,   "h"),
+				             (" BC ",   2**12,   "i"),
+				             ("A C ",   2**13,   "j"),
+				             ("  C ",   2**14,   "k"),
+				             ("AB  ",   2**15,   "l"),
+				             (" B  ",   2**16,   "m"),
+				             ("A   ",   2**17,   "n"),
+				             (""    ,   2**18,   "o"),
+				             (""    ,   2**19,   "p"),
+				             (" BCD",   2**20,   "q"),
+				             ("A CD",   2**21,   "r"),
+				             ("  CD",   2**22,   "s"),
+				             ("AB D",   2**23,   "t"),
+				             (" B D",   2**24,   "u") ))
+
+# these are a couple of very useful translator functions
+# (they convert LED group strings like "ABD" to the appropriate code, e.g., "d",
+#  and back.)
+@staticmethod
+def LIgroupCodeToLEDgroups(LEDgroupcode):
+	LEDcodes = "0abcdefghijklmnopqrstuv"
+	pos = LEDcodes.index(LEDgroupcode.lower())
+	
+	LIgroup = ""
+	
+	if LEDgroupcode / 8 == 0:
+		LIgroup += "D"
+	LEDgroupcode %= 8
+	if LEDgroupcode / 4 == 0:
+		LIgroup += "C"
+	LEDgroupcode %= 4
+	if LEDgroupcode / 2 == 0:
+		LIgroup += "B"
+	LEDgroupcode %= 2
+	if LEDgroupcode == 1:
+		LIgroup += "A"
+		
+	return LIgroup
+
+@staticmethod		
+def LEDgroupsToLIgroupCode(LEDgroup):
+	LEDcodes = "0abcdefghijklmnopqrstuv"
+	
+	LEDgroup = LEDgroup.upper()
+	
+	hasA = 'A' in LEDgroup
+	hasB = 'B' in LEDgroup
+	hasC = 'C' in LEDgroup
+	hasD = 'D' in LEDgroup
+	
+	inverseAddress = hasA + 2*hasB + 4*hasC + 8*hasD
+	return LEDcodes[15 - inverseAddress]
+
+LEDGroups.LIgroupCodeToLEDgroups = LIgroupCodeToLEDgroups
+LEDGroups.LEDgroupsToLIgroupCode = LEDgroupsToLIgroupCode
+
 
 DetectorTypes		= MetaData(( ("Unknown",            0,  "UN"),
 				             ("PMT test stand",     1,  "FT"),
