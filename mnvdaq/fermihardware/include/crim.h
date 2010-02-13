@@ -66,6 +66,10 @@ class crim {
 		unsigned int statusRegisterAddress;
 		unsigned int clearStatusRegister;
 
+		/*! "external" data register addresses */
+		unsigned int gateTimeWordLowAddress;
+		unsigned int gateTimeWordHighAddress;
+
 		/*! variables for holding information about the setup of the crim for use. */
 		unsigned short timingSetup, gateWidthSetup, TCALBDelaySetup;
 		
@@ -218,6 +222,14 @@ class crim {
 		unsigned int inline GetClearInterruptsAddress() {
 			return interruptsClear;
 		}; //returns the clear interrupts register address
+
+		unsigned int inline GetGateTimeWordLowAddress() { 
+			return gateTimeWordLowAddress;
+		}; // returns the least significant 16 bits of the MINOS GATE time address
+                unsigned int inline GetGateTimeWordHighAddress() {
+			return gateTimeWordHighAddress;
+		}; // returns the most significant 16 bits of the MINOS GATE time address
+
 
 		/*! control stuff */
 		void SetCRCEnable(bool a);

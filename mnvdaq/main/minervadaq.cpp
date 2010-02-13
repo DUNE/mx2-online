@@ -53,10 +53,6 @@ int main(int argc, char *argv[])
 	int LEDLevel             = 0;
 	int LEDGroup             = 0;
 	int hardwareInit         = 1;         // Default to "init." (This will set VME card timing modes, etc., but not touch FEB's). TODO fix
-	detector                 = (0x1)<<4;  // TODO - REMOVE: For header debugging... the Upstream Detector.
-	detectorConfig           = 0xBABE;    // TODO - REMOVE: For header debugging...
-	LEDLevel                 = 2;         // TODO - REMOVE: MaxPE - For debugging purposes...
-	LEDGroup                 = 8;         // TODO - REMOVE: LEDALL - For debugging purposes...
 	string fileroot          = "testme";  // For logs, etc.  
 	string strtemp           = "unknown"; // For SAM, temp.
 	char config_filename[100]; sprintf(config_filename,"unknown"); // For SAM.
@@ -524,7 +520,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-09-03'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-09-04'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -612,12 +608,11 @@ int main(int argc, char *argv[])
 	/*      The top of the Event Loop.  Events here are referred to as GATES.        */
 	/*      Be mindful of this jargon - in ET, "events" are actually FRAMES.         */
 	/*********************************************************************************/
-	// TODO - use a while loop that also checks for a stop condition
-	int gate = 0;
+	int  gate            = 0;
 	bool continueRunning = true;
-	//for (gate = 1; gate <= record_gates; gate++) { 
 	while ( (gate<record_gates) && continueRunning ) {
 		gate++;
+		//continueRunning = true; //reset? TODO - fix
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
 		gettimeofday(&gate_start_time, NULL);
@@ -804,71 +799,74 @@ int main(int argc, char *argv[])
 		/* from 1->N.  The routine will fail if this is false!                            */
 		/**********************************************************************************/
 		// TODO - It would be better to iterate over the CROC vector here rather loop over ID's.
-		for (int i=0; i<no_crocs; i++) {
-			croc_id = i+1;
-			croc *tmpCroc = currentController->GetCroc(croc_id);
-			for (int j=0; j<4 ;j++) { // Loop over FE Channels.
-				if ((tmpCroc->GetChannelAvailable(j))&&(tmpCroc->GetChannel(j)->GetHasFebs())) {
-					//
-					// Threaded Option
-					//
+		// TODO - Looping over the vector lets us have id's "out of order" too.
+		if (continueRunning) {
+			for (int i=0; i<no_crocs; i++) {
+				croc_id = i+1;
+				croc *tmpCroc = currentController->GetCroc(croc_id);
+				for (int j=0; j<4 ;j++) { // Loop over FE Channels.
+					if ((tmpCroc->GetChannelAvailable(j))&&(tmpCroc->GetChannel(j)->GetHasFebs())) {
+						//
+						// Threaded Option
+						//
 #if DEBUG_THREAD
-					std::cout << " Launching data thread: " << croc_id << " " << j << std::endl;
+						std::cout << " Launching data thread: " << croc_id << " " << j << std::endl;
 #endif
 #if THREAD_ME
 #if TIME_ME
-					struct timeval dummy;
-					gettimeofday(&dummy,NULL);
-					thread_launch_log<<thread_count<<"\t"<<gate<<"\t"
-						<<(dummy.tv_sec*1000000+dummy.tv_usec)<<"\t"
-						<<(gate_start_time.tv_sec*1000000+gate_start_time.tv_usec)<<endl;
+						struct timeval dummy;
+						gettimeofday(&dummy,NULL);
+						thread_launch_log<<thread_count<<"\t"<<gate<<"\t"
+							<<(dummy.tv_sec*1000000+dummy.tv_usec)<<"\t"
+							<<(gate_start_time.tv_sec*1000000+gate_start_time.tv_usec)<<endl;
 #endif
 #if DEBUG_THREAD
-					std::cout << thread_count << std::endl;
+						std::cout << thread_count << std::endl;
 #endif
-					// TODO - how to get a return value from a boost thread function?
-					// TODO - can we use a try-catch here?
-					data_threads[thread_count] = 
-						new boost::thread((boost::bind(&TakeData,boost::ref(daq),boost::ref(evt),croc_id,j,
-						thread_count, attach, sys_id)));
-#if DEBUG_THREAD
-					std::cout << "Success." << std::endl;
+						// TODO - how to get a return value from a boost thread function?
+						// TODO - can we use a try-catch here?
+						data_threads[thread_count] = 
+							new boost::thread((boost::bind(&TakeData,boost::ref(daq),boost::ref(evt),croc_id,j,
+							thread_count, attach, sys_id)));
+#if DEBUG_THREAD	
+						std::cout << "Success." << std::endl;
 #endif 
 #if TIME_ME
-					gettimeofday(&dummy,NULL);
-					thread_return_log<<thread_count<<"\t"<<gate<<"\t"
-						<<(dummy.tv_sec*1000000+dummy.tv_usec)<<"\t"
-						<<(gate_start_time.tv_sec*1000000+gate_start_time.tv_usec)<<endl;
+						gettimeofday(&dummy,NULL);
+						thread_return_log<<thread_count<<"\t"<<gate<<"\t"
+							<<(dummy.tv_sec*1000000+dummy.tv_usec)<<"\t"
+							<<(gate_start_time.tv_sec*1000000+gate_start_time.tv_usec)<<endl;
 #endif
-					thread_count++;
+						thread_count++;
 
-					//
-					//  Unthreaded option
-					//
+						//
+						//  Unthreaded option
+						//
 #elif NO_THREAD
 #if DEBUG_GENERAL
-					mnvdaq.debugStream() << " Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
-						" Index: " << croc_id << " Channel: " << j;
+						mnvdaq.debugStream() << " Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
+							" Index: " << croc_id << " Channel: " << j;
 #endif
-					try {
-						int error = TakeData(daq,evt,croc_id,j,0,attach,sys_id);
-						if (error) throw error;
-					} catch (int e) {
-						std::cout << "Error in minervadaq::main()!  Cannot TakeData!" << std::endl;
-						std::cout << "Failed to execute on CROC Addr: " << 
-							(tmpCroc->GetCrocAddress()>>16) << " Channel: " << j << std::endl;
-						mnvdaq.critStream() << "Error in minervadaq::main()!  Cannot TakeData!";
-						mnvdaq.critStream() << "Failed to execute on CROC Addr: " << 
-							(tmpCroc->GetCrocAddress()>>16) << " Channel: " << j;
-						// TODO - set error bits in DAQHeader here?
-						//continueRunning = false; //?
-						//break; //?
-					}
+						try {
+							int error = TakeData(daq,evt,croc_id,j,0,attach,sys_id);
+							if (error) throw error;
+						} catch (int e) {
+							std::cout << "Error in minervadaq::main()!  Cannot TakeData!" << std::endl;
+							std::cout << "Failed to execute on CROC Addr: " << 
+								(tmpCroc->GetCrocAddress()>>16) << " Channel: " << j << std::endl;
+							mnvdaq.critStream() << "Error in minervadaq::main()!  Cannot TakeData!";
+							mnvdaq.critStream() << "Failed to execute on CROC Addr: " << 
+								(tmpCroc->GetCrocAddress()>>16) << " Channel: " << j;
+							// TODO - set error bits in DAQHeader here?
+							event_data.readoutInfo = (unsigned short)e; // Only 1 for now, "VME Error" 
+							//continueRunning = false; //?
+							//break; //?
+						}
 #endif
-				} //channel has febs
-			} //channel
-		} //croc
-
+					} //channel has febs
+				} //channel
+			} //croc
+		} //continueRunning Check
 		/**********************************************************************************/
 		/*   Wait for trigger thread to join in threaded operation.                       */
 		/**********************************************************************************/
@@ -913,14 +911,12 @@ int main(int argc, char *argv[])
 		// Build DAQ Header bank.
 		// Get Trigger Time, Timing Violation Error (obsolete), MINOS SGATE
 		int bank = 3; //DAQ Data Bank
-		// TODO - find a way to get exceptions passed into the error bits.
 		// TODO - read the CRIM MINOS register to get MINOS SGATE
-		unsigned short error         = 0;
-		unsigned int minos           = 123456789; // TODO - For deugging only... 
+		//test//unsigned short error         = 0;
+		//test//event_data.readoutInfo = error; 
 		event_data.feb_info[1] = daq->GetController()->GetID();
 		event_data.feb_info[4] = bank; 
-		event_data.readoutInfo = error; 
-		event_data.minosSGATE  = minos;
+		event_data.minosSGATE  = daq->GetMINOSSGATE();
 
 #if DEBUG_GENERAL
 		mnvdaq.debugStream() << "Preparing to contact the EventBuilder from Main...";
@@ -1022,7 +1018,7 @@ int main(int argc, char *argv[])
 #if SINGLE_PC||MASTER
 	fprintf(sam_file,"endTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n",
 		(unsigned long long)(runend.tv_sec));
-	fprintf(sam_file,"eventCount=%d,\n",(gate-1));
+	fprintf(sam_file,"eventCount=%d,\n",gate);
 	fprintf(sam_file,"firstEvent=%llu,\n",firstEvent);
 	fprintf(sam_file,"lastEvent=%llu,\n",lastEvent);
 	fprintf(sam_file,"lumBlockRangeList=LumBlockRangeList([LumBlockRange(%llu,%llu)])\n",
@@ -1085,8 +1081,8 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 	croc     *crocTrial    = daq->GetController()->GetCroc(croc_id);
 	channels *channelTrial = daq->GetController()->GetCroc(croc_id)->GetChannel(channel_id);
 
-	// A flag to let us know that we have successfully serviced this channel (the functions 
-	// return "0" if they are successful...)
+	// A flag to let us know that we have successfully serviced this channel.  The functions 
+	// return "0" if they are successful, so data_taken == true means we have not taken data!
 	bool data_taken = true; 
 
 	/**********************************************************************************/
@@ -1113,16 +1109,17 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 			/**********************************************************************************/
 			/*          Take all data on the feb                                              */
 			/**********************************************************************************/
-			data_taken = daq->TakeAllData((*feb),channelTrial,crocTrial,evt,thread,attach,sys_id); 
+			try {
+				data_taken = daq->TakeAllData((*feb),channelTrial,crocTrial,evt,thread,attach,sys_id); 
 #if DEBUG_THREAD
-			data_monitor << "TakeAllData Returned" << std::endl;
+				data_monitor << "TakeAllData Returned" << std::endl;
 #endif
-			if (data_taken) { //and if you didn't succeed...(the functions return 0 if successful) 
-				std::cout << "Problems taking data on FEB: " << 
-					(*feb)->GetBoardNumber() << std::endl;
-				std::cout << "Leaving thread servicing CROC: " << (crocTrial->GetCrocAddress()>>16) << 
+				if (data_taken) throw data_taken;
+			} catch (bool e) {
+				std::cout << "Problems taking data on FEB: " << (*feb)->GetBoardNumber() << std::endl;
+				std::cout << "Leaving thread servicing CROC: " << (crocTrial->GetCrocAddress()>>16) <<
 					" channel: " << channel_id << std::endl;
-				exit(-2000); 
+				return 1; // TODO - check error code for DAQHeader error bits.
 			}
 		} //feb loop
 #if DEBUG_THREAD
@@ -1187,7 +1184,14 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 		case OneShot:
 			for (crim = crim_vector->begin(); crim != crim_vector->end(); crim++) {
 				id = (*crim)->GetCrimID();
-				daq->TriggerDAQ(triggerType, id);
+				try {
+					int error = daq->TriggerDAQ(triggerType, id);
+					if (error) throw error;
+				} catch (int e) {
+					std::cout << "Error in minervadaq::TriggerDAQ()!" << std::endl;
+					mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ()!";
+					return e;
+				}
 			}  
                        	break;
 		case NuMIBeam:
@@ -1195,20 +1199,41 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 		case PureLightInjection:
 		case MixedBeamPedestal:
 		case MixedBeamLightInjection:
-			daq->TriggerDAQ(triggerType, id); // Not strictly needed.
+			try {
+				int error = daq->TriggerDAQ(triggerType, id); // Not strictly needed.
+				if (error) throw error;
+			} catch (int e) {
+				std::cout << "Error in minervadaq::TriggerDAQ()!" << std::endl;
+				mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ()!";
+				return e;
+			}
 			break;
 		default:
 			std::cout << "ERROR! Improper Running Mode defined!" << std::endl;
 			mnvdaq.fatalStream() << "Improper Running Mode defined!";
 			exit(-4);
 	}
-	daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
+	try {
+		int error = daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!" << std::endl;
+		mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!";
+		return e;
+	}
 
 #if ASSERT_INTERRUPT
 	/**********************************************************************************/
 	/*  Let the interrupt handler deal with an asserted interrupt.                    */
 	/**********************************************************************************/
-	daq->AcknowledgeIRQ(); //acknowledge the IRQ (only returns if successful)
+	try {
+		int error = daq->AcknowledgeIRQ(); //acknowledge the IRQ (only returns if successful)
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in minervadaq::TriggerDAQ!  IACK error!" << std::endl;
+		mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ!  IACK error!";
+		return e;
+	}
 #endif
 
 #if DEBUG_GENERAL

@@ -1,13 +1,10 @@
 CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 
-# daq_master does not appear to use any of these...
-#COMPILE_OPTIONS += -DTHREAD_ME
-COMPILE_OPTIONS += -DNO_THREAD
-#COMPILE_OPTIONS += -DDEBUG_ME 
-#COMPILE_OPTIONS += -DDEBUG_THREAD
-COMPILE_OPTIONS += -DRECORD_EVENT
-#COMPILE_OPTIONS += -DASSERT_INTERRUPT
-#COMPILE_OPTIONS += -DTIME_ME
+# log4cpp Classes 
+CPPFLAGS += -I/usr/local/include
+
+# log4cpp Libraries
+LDLIBS += -L/usr/local/lib -llog4cpp -L/usr/lib64 -lpthread 
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))

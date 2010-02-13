@@ -165,16 +165,19 @@ class acquire_data {
 		bool ResetDPM(croc*, channels*);
 
 		/*!  Function which runs the "trigger" (only executes a VME command for "OneShot"). */
-		void TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
+		int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
 
 		/*! Function which waits for the interrupt handler to raise an interrupt */
-		void WaitOnIRQ();
+		int WaitOnIRQ();
 
 		/*! Function which acknowledges the interrupt and resets the interrupt handler */
-		void AcknowledgeIRQ();
+		int AcknowledgeIRQ();
 
 		/*! Function which sends data to the event builder via ET */
 		void ContactEventBuilder(event_handler *evt,int thread, et_att_id  attach, et_sys_id  sys_id);
+
+		/*! Function that gets the MINOS SGATE value from the CRIM registers.  Check the "master" CRIM. */
+		unsigned int GetMINOSSGATE();
 };
 
 #endif

@@ -1664,7 +1664,7 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 }
 
 
-void acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID) 
+int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID) 
 {
 /*! \fn void acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
  *
@@ -1686,6 +1686,8 @@ void acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
  *
  * \param unsigned short int triggerBit The trigger bit.
  * \param int crimID The CRIM we are "triggering." 
+ *
+ * Returns a status integer (0 for success).
  */
 #if DEBUG_TRIGGER
 	acqData.debug("   Entering acquire_data::TriggerDAQ with trigger bit 0x%02X",triggerBit);
@@ -1693,7 +1695,8 @@ void acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
 #endif
 	CVAddressModifier AM = daqController->GetAddressModifier();
 	CVDataWidth       DW = daqController->GetDataWidth();
-	int error = -1;
+	int error     = -1;
+	int errorCode =  1;
 	switch (triggerBit) { 
 		case UnknownTrigger: // Default to issuing a software trigger or exit?...
 			acqData.warnStream() << "   WARNING! You have not set the triggerType somehow!";
@@ -1721,8 +1724,10 @@ void acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
 			} catch (int e) {
 				std::cout << "Unable to set the pulse delay register in acquire_data::TriggerDAQ!" << std::endl;
 				daqController->ReportError(e);
-				acqData.fatalStream() << "Unable to set the pulse delay register in acquire_data::TriggerDAQ!";
-				exit(-2005);
+				//acqData.fatalStream() << "Unable to set the pulse delay register in acquire_data::TriggerDAQ!";
+				//exit(-2005);
+				acqData.critStream() << "Unable to set the pulse delay register in acquire_data::TriggerDAQ!";
+				return errorCode;
 			}
 #if DEBUG_TRIGGER
 			acqData.debugStream() << "    ->Sent Sequencer Init. Signal!";
@@ -1740,10 +1745,11 @@ void acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
 			acqData.fatalStream() << "Invalid trigger mode in acquire_data::TriggerDAQ!";
 			exit(-2001);
 	}  
+	return 0;
 }
 
 
-void acquire_data::WaitOnIRQ() 
+int acquire_data::WaitOnIRQ() 
 {
 /*! \fn void acquire_data::WaitOnIRQ() 
  *
@@ -1754,8 +1760,10 @@ void acquire_data::WaitOnIRQ()
  * Two options exist, one can wait for the CAEN interrupt handler to Wait on IRQ, or 
  * the status register can be polled until the interrupt bits are driven high.
  *
+ * Returns a status integer (0 for success);
  */
 	int error;
+	int errorCode = 2;
 #if DEBUG_IRQ
 	acqData.debugStream() << "  Entering acquire_data::WaitOnIRQ: IRQLevel = " << daqController->GetCrim()->GetIRQLevel();
 #endif
@@ -1774,8 +1782,10 @@ void acquire_data::WaitOnIRQ()
 		}
 	} catch (int e) {
 		std::cout << "The IRQ Wait probably timed-out..." << e << std::endl;
-		acqData.fatalStream() << "The IRQ Wait probably timed-out..." << e;
-		exit(-3000);  
+		//acqData.fatalStream() << "The IRQ Wait probably timed-out..." << e;
+		//exit(-3000);
+		acqData.critStream() << "The IRQ Wait probably timed-out..." << e;  
+		return errorCode;
 	}
 #endif
 // endif - ASSERT_INTERRUPT
@@ -1807,8 +1817,10 @@ void acquire_data::WaitOnIRQ()
 		} catch (int e) {
 			std::cout << "Error getting crim interrupt status in acquire_data::WaitOnIRQ!" << std::endl;
 			daqController->ReportError(e);
-			acqData.fatalStream() << "Error getting crim interrupt status in acquire_data::WaitOnIRQ!";
-			exit(-5);
+			//acqData.fatalStream() << "Error getting crim interrupt status in acquire_data::WaitOnIRQ!";
+			//exit(-5);
+			acqData.critStream() << "Error getting crim interrupt status in acquire_data::WaitOnIRQ!";
+			return errorCode;
 		}
 	}
 	// Clear the interrupt after acknowledging it.
@@ -1823,25 +1835,32 @@ void acquire_data::WaitOnIRQ()
 	} catch (int e) {
 		std::cout << "Error clearing crim interrupts in acquire_data::WaitOnIRQ!" << std::endl;
 		daqController->ReportError(e);
-		acqData.fatalStream() << "Error clearing crim interrupts in acquire_data::WaitOnIRQ!";
-		exit(-6);
+		//acqData.fatalStream() << "Error clearing crim interrupts in acquire_data::WaitOnIRQ!";
+		//exit(-6);
+		acqData.critStream() << "Error clearing crim interrupts in acquire_data::WaitOnIRQ!";
+		return errorCode;
 	}
 #endif
 // endif - POLL_INTERRUPT
+	return 0;
 }
 
 
-void acquire_data::AcknowledgeIRQ() 
+int acquire_data::AcknowledgeIRQ() 
 {
 /*! \fn void acquire_data::AcknowledgeIRQ() 
  *
  * A function which acknowledges and resets the interrupt handler.
+ *
+ * Returns a status integer (0 for success).
  */
+// TODO - AcknowledgeIRQ() needs a lot of try-catch polishing if we start using it...
 #if DEBUG_IRQ
 	acqData.debugStream() << "  Entering acquire_data::AcknowledgeIRQ...";
 #endif
 	CVDataWidth DW = daqController->GetDataWidth();
 	int error;
+	int errorCode = 3;
 	try {
 		unsigned short vec;
 		error = CAENVME_IACKCycle(daqController->handle, daqController->GetCrim()->GetIRQLevel(), 
@@ -1852,7 +1871,7 @@ void acquire_data::AcknowledgeIRQ()
 		unsigned short interrupt_status;
 		unsigned char crim_send[2];
 		crim_send[0] = 0; crim_send[1] = 0;  
-		error=daqAcquire->ReadCycle(daqController->handle, crim_send,
+		error = daqAcquire->ReadCycle(daqController->handle, crim_send,
 			daqController->GetCrim()->GetInterruptStatusAddress(), 
 			daqController->GetAddressModifier(),
 			daqController->GetDataWidth()); 
@@ -1861,7 +1880,7 @@ void acquire_data::AcknowledgeIRQ()
 		while (interrupt_status) {
 			try {
 				crim_send[0] = 0; crim_send[1] = 0;
-				error=daqAcquire->ReadCycle(daqController->handle, crim_send,
+				error = daqAcquire->ReadCycle(daqController->handle, crim_send,
 					daqController->GetCrim()->GetInterruptStatusAddress(), 
 					daqController->GetAddressModifier(),
 					daqController->GetDataWidth()); 
@@ -1872,13 +1891,13 @@ void acquire_data::AcknowledgeIRQ()
 				crim_send[0] = daqController->GetCrim()->GetClearInterrupts() & 0xff;
 				crim_send[1] = (daqController->GetCrim()->GetClearInterrupts()>>0x08) & 0xff;
 				try {
-					error=daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
+					error = daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
 						daqController->GetCrim()->GetClearInterruptsAddress(), 
 						daqController->GetAddressModifier(),
 						daqController->GetDataWidth()); 
 					// Read the status register 
 					crim_send[0] = 0; crim_send[1] = 0; 
-					error=daqAcquire->ReadCycle(daqController->handle, crim_send,
+					error = daqAcquire->ReadCycle(daqController->handle, crim_send,
 						daqController->GetCrim()->GetInterruptStatusAddress(), 
 						daqController->GetAddressModifier(),
 						daqController->GetDataWidth()); 
@@ -1914,6 +1933,7 @@ void acquire_data::AcknowledgeIRQ()
 		acqData.fatalStream() << "The IRQ Wait probably timed-out in acquire_data::AcknowledgeIRQ!";
 		exit(-3000);  
 	}
+	return 0;
 }
 
 
@@ -2135,5 +2155,46 @@ template <class X> void acquire_data::FillEventStructure(event_handler *evt, int
 #endif
 #endif
 }
+
+
+unsigned int acquire_data::GetMINOSSGATE()
+{
+/*! \fn int acquire_data::GetMINOSSGATE()
+ *
+ * Read the logged value of the MINOS SGATE signal in their timing coordinates.
+ */
+	// Check only the master CRIM.
+	unsigned char gatelo[2];
+	unsigned char gatehi[2];
+	unsigned int gatetime = 0;
+	try {
+		int error = daqAcquire->ReadCycle(daqController->handle, gatelo,
+			daqController->GetCrim()->GetGateTimeWordLowAddress(),
+			daqController->GetAddressModifier(),
+			daqController->GetDataWidth());
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in acquire_data::GetMINOSSGATE()!  Cannot read MINOSSGATE!" << std::endl;
+		acqData.critStream() << "Error in acquire_data::GetMINOSSGATE()!  Cannot read MINOSSGATE!";
+		return 0;
+	}
+	try {
+		int error = daqAcquire->ReadCycle(daqController->handle, gatehi,
+			daqController->GetCrim()->GetGateTimeWordHighAddress(),
+			daqController->GetAddressModifier(),
+			daqController->GetDataWidth());
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in acquire_data::GetMINOSSGATE()!  Cannot read MINOSSGATE!" << std::endl;
+		acqData.critStream() << "Error in acquire_data::GetMINOSSGATE()!  Cannot read MINOSSGATE!";
+		return 0;
+	}
+	unsigned short hiword = (unsigned short)( gatehi[0]|(gatehi[1]<<0x08) & 0x0FFF ); 
+	unsigned short loword = (unsigned short)( gatelo[0]|(gatelo[1]<<0x08) ); 
+	gatetime = (unsigned int)( loword|(hiword<<0x10) ); 
+	
+	return gatetime;
+}
+
 
 #endif
