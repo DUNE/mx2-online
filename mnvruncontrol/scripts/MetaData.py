@@ -77,7 +77,7 @@ class MetaData:
 			raise KeyError("Key '" + str(key) + "' is not found in any hash, code, or description.")
 		
 		if returntype != ANY and returntype in (DESCRIPTION, HASH, CODE):
-			return locations[returntype][keylocation.index(key)]
+			return self.locations[returntype][keylocation.index(key)]
 		elif returntype != ANY:
 			raise ValueError("Invalid return type requested for key '" + str(key) + "'")	
 		
@@ -176,7 +176,6 @@ LEDGroups			= MetaData(( ("All" ,   2**3,    "0"),
 # these are a couple of very useful translator functions
 # (they convert LED group strings like "ABD" to the appropriate code, e.g., "d",
 #  and back.)
-@staticmethod
 def LIgroupCodeToLEDgroups(LEDgroupcode):
 	LEDcodes = "0abcdefghijklmnopqrstuv"
 	pos = LEDcodes.index(LEDgroupcode.lower())
@@ -197,7 +196,6 @@ def LIgroupCodeToLEDgroups(LEDgroupcode):
 		
 	return LIgroup
 
-@staticmethod		
 def LEDgroupsToLIgroupCode(LEDgroup):
 	LEDcodes = "0abcdefghijklmnopqrstuv"
 	

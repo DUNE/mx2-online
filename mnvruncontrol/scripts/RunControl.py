@@ -7,7 +7,6 @@ import os
 import sys
 import signal
 import threading
-import datetime
 import time
 import shelve
 import anydbm		# if a shelve database doesn't exist, this module contains the error raised
@@ -42,12 +41,13 @@ class MainFrame(wx.Frame):
 	def __init__(self, parent, title):
 		wx.Frame.__init__(self, parent, -1, title,
 				      pos=(0, 0), size=(600, 600) ) 
+		self.runmanager = DataAcquisitionManager.DataAcquisitionManager(self)
+
 		self.GetConfig()		# load up the configuration entries from the file.
 		self.BuildGraphics()	# build and draw the GUI panel.
 
 		# now initialize some member variables we'll need:
 		self.logfileNames = None
-		self.runmanager = DataAcquisitionManager()
 
 		# finally, make sure the display is current
 		self.GetNextRunSubrun()
@@ -314,9 +314,9 @@ class MainFrame(wx.Frame):
 
 			self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
 			self.logfileLocation = LOGFILE_LOCATION_DEFAULT
-			self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
-			self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
-			self.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			self.runmanager.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			self.runmanager.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+			self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
 			
 		else:
 			try:	self.runinfoFile = db["runinfoFile"]
@@ -325,14 +325,14 @@ class MainFrame(wx.Frame):
 			try:	self.logfileLocation = db["logfileLocation"]
 			except KeyError: self.logfileLocation = LOGFILE_LOCATION_DEFAULT
 			
-			try:	self.etSystemFileLocation = db["etSystemFileLocation"]
-			except KeyError: self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			try:	self.runmanager.etSystemFileLocation = db["etSystemFileLocation"]
+			except KeyError: self.runmanager.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
 			
-			try:	self.rawdataLocation = db["rawdataLocation"]
-			except KeyError: self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+			try:	self.runmanager.rawdataLocation = db["rawdataLocation"]
+			except KeyError: self.runmanager.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
 
-			try:	self.LIBoxControlLocation = db["LIBoxControlLocation"]
-			except KeyError: self.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			try:	self.runmanager.LIBoxControlLocation = db["LIBoxControlLocation"]
+			except KeyError: self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
 		
 	def GetNextRunSubrun(self, evt=None):
 		if not os.path.exists(self.runinfoFile):
@@ -380,6 +380,14 @@ class MainFrame(wx.Frame):
 			db["subrun"] = self.subrunEntry.GetValue()
 			db.close()
 			
+	def PostSubrun(self, evt=None):
+		self.subrunEntry.SetValue(self.subrunEntry.GetValue() + 1)
+		self.minRunSubrun = self.subrunEntry.GetValue()
+		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
+		self.StoreNextRunSubrun()
+		
+		self.UpdateLogFiles()
+			
 	def CheckRunNumber(self, evt=None):
 		if self.runEntry.GetValue() < self.runEntry.GetMin():
 			self.runEntry.SetValue(self.runEntry.GetMin())
@@ -405,7 +413,6 @@ class MainFrame(wx.Frame):
 	def SeriesEntryMoreInfo(self, evt=None):
 		pass
 
-		
 	def UpdateRunConfig(self, evt=None):
 		if self.singleRunButton.GetValue() == True:
 			self.runSeriesConfigPanel.Show(False)
@@ -428,6 +435,12 @@ class MainFrame(wx.Frame):
 			for cb in self.LEDgroups:
 				cb.Disable()
 			self.LILevelEntry.Disable()
+			
+	def UpdateCloseWindows(self, windowsOpen):
+		if windowsOpen:
+			self.closeAllButton.Enable()
+		else:
+			self.closeAllButton.Disable()
 			
 
 	def OnTimeToClose(self, evt):
@@ -468,11 +481,8 @@ class MainFrame(wx.Frame):
 				index = self.logfileList.InsertStringItem(sys.maxint, fileinfo[0])
 				for i in range(1,len(fileinfo)):
 					self.logfileList.SetStringItem(index, i, fileinfo[i])
-	#			self.logfileList.SetItemData(index, int(fileinfo[0]) * 10000 + int(fileinfo[1]))		# need a unique key for each row if I want to sort them.  this is run * 10000 + subrun
 		else:
 			self.logfileList.InsertStringItem(0, "Log directory is empty or inaccessible.")
-
-#		self.logfileList.SortItems(self.SortLogRows)
 		
 			
 	def ShowLogFiles(self, evt=None):
@@ -487,20 +497,12 @@ class MainFrame(wx.Frame):
 			
 			filenames.append(self.logfileLocation + "/" + self.logfileNames[index])
 	
-#		if (self.logfilename):
-#			logdlg = LogFrame(self, self.logfilename)
-#			if logdlg.ok:		# the file might not be accessible...
-#				logdlg.Show(True)
-#		else:
-#			print "Whoops!  Log file button shouldn't be enabled before log file is available..."
-
 		logframe = LogFrame(self, filenames)
 		logframe.Show()
 
 	def CloseAllWindows(self, evt=None):
 		self.runmanager.CloseWindows()
-
-		self.closeAllButton.Disable()
+		self.runmanager.UpdateWindowCount()
 	
 	def StartRunning(self, evt=None):
 		if (self.singleRunButton.GetValue() == True):		# if this is a single run
@@ -510,17 +512,17 @@ class MainFrame(wx.Frame):
 			for cb in self.LEDgroups:
 				if cb.GetValue == True:
 					LEDgroups += cb.GetLabelText()
-			LEDcode = MetaData.LEDgroups.LEDgroupsToLIgroupCode(LEDgroups)
+			LEDcode = MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups)
 
 			gates    = int(self.gatesEntry.GetValue())
 			runMode  = MetaData.RunningModes.hashes[int(self.runModeEntry.GetSelection())]
-			LIlevel = MetaData.LEDLevels.hashes[int(self.LILevelEntry.GetSelection())]
+			LIlevel = MetaData.LILevels.hashes[int(self.LILevelEntry.GetSelection())]
 			
 
 			run = RunSeries.RunInfo(gates, runMode, LIlevel, LEDcode)
 			self.runmanager.runseries.Runs.append(run)
 		else:										# if it's a run series
-			if (!self.runmanager.runseries):
+			if self.runmanager.runseries == None:
 				errordlg = wx.MessageDialog( None, "You must load a run series file before beginning the run!", "Must load run series before starting run", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
 				
@@ -531,23 +533,28 @@ class MainFrame(wx.Frame):
 		self.runmanager.detector     = MetaData.DetectorTypes.hashes[int(self.detConfigEntry.GetSelection())]
 		self.runmanager.febs         = int(self.febsEntry.GetValue())
 				
-		self.runEntry.Disable()
-		self.subrunEntry.Disable()
-		self.gatesEntry.Disable()
-		self.detConfigEntry.Disable()
-		self.runModeEntry.Disable()
-		self.febsEntry.Disable()
-			
 		self.runmanager.StartDataAcquisition()
+		if (self.runmanager.running):
+			self.runEntry.Disable()
+			self.subrunEntry.Disable()
+			self.gatesEntry.Disable()
+			self.detConfigEntry.Disable()
+			self.runModeEntry.Disable()
+			self.febsEntry.Disable()
+
+			self.startButton.Disable()
+			self.stopButton.Enable()
+
+			self.SetStatusText("RUNNING", 1)
+			self.runningIndicator.SetBitmap(self.onImage)
+			
 	
 	def StopRunning(self, evt=None):
-		self.runmanager.StopDataAcquisition()
+		if self.runmanager.running:		
+			self.runmanager.StopDataAcquisition()
 
 		self.SetStatusText("STOPPED", 1)
 		self.runningIndicator.SetBitmap(self.offImage)
-
-		self.stopButton.Disable()
-		self.startButton.Enable()
 
 		self.runEntry.Enable()
 		self.gatesEntry.Enable()
@@ -555,11 +562,8 @@ class MainFrame(wx.Frame):
 		self.runModeEntry.Enable()
 		self.febsEntry.Enable()
 
-		self.subrunEntry.SetValue(self.subrunEntry.GetValue() + 1)
-		self.minRunSubrun = self.subrunEntry.GetValue()
-		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
-		self.StoreNextRunSubrun()
-
+		self.stopButton.Disable()
+		self.startButton.Enable()
 		self.UpdateLogFiles()
 		
 	@staticmethod
