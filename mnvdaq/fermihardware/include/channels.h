@@ -65,7 +65,8 @@ class channels {
 		};
 
 		/*! get functions for various data members*/
-		int inline GetChannelNumber() {return channelNumber;};
+		int inline GetChannelNumber() {return channelNumber;}; // TODO - properly distinguish between channels and chains!
+		int inline GetChainNumber() {return channelNumber;}; // TODO - properly distinguish between channels and chains!
 		unsigned int inline GetChannelAddress() {return channelDirectAddress;};
 		unsigned int inline GetFIFOAddress() {return fifoAddress;};
 		unsigned int inline GetDPMAddress() {return dpmAddress;};

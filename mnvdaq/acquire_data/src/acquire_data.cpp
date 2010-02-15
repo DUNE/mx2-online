@@ -420,7 +420,7 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 	for (int i = 0; i < nChannels; i++) {
 		chan_thread[i]->join(); // Wait for all the threads to finish up before moving on.
 #if DEBUG_THREAD
-		croc_thread << "Build FEB List: channel " << i << " thread completed." << std::endl;
+		croc_thread << "Build FEB List: chain " << i << " thread completed." << std::endl;
 #endif
 		croc_thread.close();
 		delete chan_thread[i];
@@ -648,14 +648,14 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
  *  for that FEB have and FEB of the corresponding number loaded into an 
  *  STL list containing objects of type feb.
  *
- *  \param i an integer for the channel number
+ *  \param i an integer for the *chain* number corresponding to a channel.
  *  \param croc_id an integer the ID number for the CROC
  *  \param nFEBs an integer for the number of FEB's to search through on the chain.
  *
  *  Returns a status value (0 for success).
  */
 	acqData.infoStream() << "Entering BuildFEBList for CROC " << 
-		(daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " << i;
+		(daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " << i;
 	acqData.infoStream() << " Looking for " << nFEBs << " FEBs.";
 #if DEBUG_THREAD
 	std::ofstream build_feb_thread;
@@ -672,7 +672,7 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 	channels *tmpChan = daqController->GetCroc(croc_id)->GetChannel(i);
 
 	// This is a dynamic look-up of the FEB's on the channel.
-	// Addresses numbers range from 1 to 15 and we'll loop
+	// Addresses numbers range from 1 to Max and we'll loop
 	// over all of them and look for S2M message headers.
 	for (int j = 1; j <= nFEBs; j++) { 
 #if DEBUG_THREAD
@@ -688,7 +688,7 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 		// Build an outgoing message to test if an FEB of this address is available on this channel.
 		tmpFEB->MakeMessage(); 
 #if DEBUG_THREAD
-		build_feb_thread << "  Made Message & Sending on channel: " << i << std::endl;
+		build_feb_thread << "  Made Message & Sending on chain: " << i << std::endl;
 #endif
 
 		// Send the message & delete the outgoingMessage.
@@ -702,11 +702,11 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 		// If the FEB is available, load it into the channel's FEB list and initialize the TriPs. 
 		if (!success) {
 			acqData.infoStream() << "FEB: " << tmpFEB->GetBoardNumber() << " is available on CROC "
-				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
+				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " 
 				<< tmpChan->GetChannelNumber() << " with init. level " << tmpFEB->GetInit();
 #if DEBUG_THREAD
 			build_feb_thread << "FEB: " << tmpFEB->GetBoardNumber() << " is available on CROC "
-				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
+				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " 
 				<< tmpChan->GetChannelNumber() << " with init. level" << tmpFEB->GetInit() << std::endl;
 #endif
 			// Add the FEB to the list.
@@ -720,14 +720,14 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 		} else {
 		// TODO - Return an error code in this case?
 			acqData.critStream() << "FEB: " << tmpFEB->GetBoardNumber() << " is NOT available on CROC "
-				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
+				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " 
 				<< tmpChan->GetChannelNumber();
 			std::cout << "\nCRITICAL!  FEB: " << tmpFEB->GetBoardNumber() << " is NOT available on CROC "
-				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
+				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " 
 				<< tmpChan->GetChannelNumber() << "\n" << std::endl;
 #if DEBUG_THREAD
 			build_feb_thread << "FEB: " << tmpFEB->GetBoardNumber() << " is not available on CROC "
-				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Channel " 
+				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " 
 				<< tmpChan->GetChannelNumber() << std::endl;
 #endif
 			// Clean up the memory.
@@ -954,7 +954,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 	evt->feb_info[0] = 0;     // We need to sort this out later (link number) -> *Probably* ALWAYS 0.
 	evt->feb_info[1] = 0;     // Crate number.  Assigned in minervadaq::main().
 	evt->feb_info[2] = (crocTrial->GetCrocAddress()>>16);
-	evt->feb_info[3] = channelTrial->GetChannelNumber();
+	evt->feb_info[3] = channelTrial->GetChannelNumber(); // here we report chain number
 	evt->feb_info[6] = febTrial->GetFEBNumber();
 #if DEBUG_VERBOSE 
 	acqData.debugStream() << "    CROC  : " << evt->feb_info[2];
@@ -1159,9 +1159,9 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 #endif
 #if DEBUG_VERBOSE
 			acqData.debugStream() << "  Acquired DISC data for: ";
-			acqData.debugStream() << "    CROC:    " << crocTrial->GetCrocID();
-			acqData.debugStream() << "    Channel: " << channelTrial->GetChannelNumber();
-			acqData.debugStream() << "    FEB:     " << febTrial->GetBoardNumber();
+			acqData.debugStream() << "    CROC:  " << crocTrial->GetCrocID();
+			acqData.debugStream() << "    Chain: " << channelTrial->GetChannelNumber();
+			acqData.debugStream() << "    FEB:   " << febTrial->GetBoardNumber();
 			acqData.debug("    Hit Info words: [12]0x%02X [13]0x%02X",evt->event_data[12], evt->event_data[13]);
 #endif
 			// Hit Info in event_data for discriminator frames in indices 12 && 13.
@@ -1214,6 +1214,8 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			} catch (bool e) {
 				std::cout << "Error adding ADC Information to the DPM in acquire_data::TakeAllData!" << std::endl;
 				acqData.fatalStream() << "Error adding ADC Information to the DPM in acquire_data::TakeAllData!";
+				acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
+					channelTrial->GetChannelNumber() << ", " << febTrial->GetBoardNumber();
 				exit(-1003);
 			}
 #if TIME_ME
@@ -1260,9 +1262,9 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 #endif
 #if DEBUG_VERBOSE
 			acqData.debugStream() << "  Acquired ADC data for:";
-			acqData.debugStream() << "    CROC:    " << crocTrial->GetCrocID();
-			acqData.debugStream() << "    Channel: " << channelTrial->GetChannelNumber();
-			acqData.debugStream() << "    FEB:     " << febTrial->GetBoardNumber();
+			acqData.debugStream() << "    CROC:  " << crocTrial->GetCrocID();
+			acqData.debugStream() << "    Chain: " << channelTrial->GetChannelNumber();
+			acqData.debugStream() << "    FEB:   " << febTrial->GetBoardNumber();
 #endif
 		} //end of hits loop
 
@@ -1303,7 +1305,7 @@ bool acquire_data::ResetDPM(croc *crocTrial, channels *channelTrial)
  */
 #if (DEBUG_VERBOSE)||(DEBUG_SENDMESSAGE)
 	acqData.debugStream() << "    Entering acquire_data::ResetDPM for CROC " << (crocTrial->GetCrocAddress()>>16) << 
-		" Channel " << channelTrial->GetChannelNumber();
+		" Chain " << channelTrial->GetChannelNumber();
 #endif
 	bool reset = false;
 	CVAddressModifier AM  = daqController->GetAddressModifier();
@@ -1319,6 +1321,8 @@ bool acquire_data::ResetDPM(croc *crocTrial, channels *channelTrial)
 		std::cout << "Error in acquire_data::ResetDPM!  Cannot write to the status register!" << std::endl;
 		daqController->ReportError(e);
 		acqData.critStream() << "Error in acquire_data::ResetDPM!  Cannot write to the status register!";
+		acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) << 
+			" Chain " << channelTrial->GetChannelNumber();
 		return false;
 	}
 	// Check the value of the pointer.  Probably better is reading the status register...
@@ -1381,6 +1385,8 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 				<< std::endl;
 			daqController->ReportError(e);
 			acqData.critStream() << "Unable to Clear the Status & Reset DPM Pointer in acquire_data::SendMessage!"; 
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) << 
+				" Chain " << channelTrial->GetChannelNumber();
 			return e;
 		}
 	}
@@ -1393,6 +1399,8 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
                	std::cout << "Unable to read DPM Pointer in acquire_data::SendMessage!" << std::cout;
 		daqController->ReportError(e);
                	acqData.critStream() << "Unable to read DPM Pointer in acquire_data::SendMessage!";
+		acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+			" Chain " << channelTrial->GetChannelNumber();
 		return e;
 	}
 	dpmPointer = (unsigned short) (reset_status[0] | (reset_status[1]<<0x08));
@@ -1409,12 +1417,14 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 		std::cout << "Unable to Read the Status Register in acquire_data::SendMessage!" << std::endl;
 		daqController->ReportError(e);
 		acqData.critStream() << "Unable to Read the Status Register in acquire_data::SendMessage!";
+		acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+			" Chain " << channelTrial->GetChannelNumber();
 		return e;
 	}
 	status = (unsigned short) (reset_status[0] | reset_status[1]<<0x08);
 	channelTrial->SetChannelStatus(status);
 #if (DEBUG_VERBOSE)||(DEBUG_SENDMESSAGE)
-	acqData.debug("       acquire_data::SendMessage - RESET - Channel %d Status = 0x%X",
+	acqData.debug("       acquire_data::SendMessage - RESET - Chain %d Status = 0x%X",
 		channelTrial->GetChannelNumber(),status);	
 #endif
 	// Check for errors. 
@@ -1422,9 +1432,9 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 		int error = channelTrial->DecodeStatusMessage();
 		if (error) throw error;
 	} catch (int e) {
-		printf(" Channel %d Status = 0x%X\n",channelTrial->GetChannelNumber(),status); 
+		printf(" Chain %d Status = 0x%X\n",channelTrial->GetChannelNumber(),status); 
 		printf(" Error Code = %d\n",e);
-		acqData.crit("Channel %d Status = 0x%X",channelTrial->GetChannelNumber(),status); 
+		acqData.crit("Chain %d Status = 0x%X",channelTrial->GetChannelNumber(),status); 
 		acqData.crit("Error Code = %d",e);
 		return e;
 	}
@@ -1442,6 +1452,8 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 			std::cout << " Error in acquire_data::SendMessage while writing to the FIFO!" << std::endl;
 			daqController->ReportError(e);
 			acqData.critStream() << "Error in acquire_data::SendMessage while writing to the FIFO!";
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			return e;
 		}
 		// TODO - Investigate using FIFO BLT for FPGA programming frames though...
@@ -1460,6 +1472,8 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 			std::cout << " Error in acquire_data::SendMessage while writing to the SendMessage address!" << std::endl;
 			daqController->ReportError(e);
 			acqData.critStream() << "Error in acquire_data::SendMessage while writing to the SendMessage address!";
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			return e;
 		}
 		// TODO - Fix this and setup a more general status checker...
@@ -1473,12 +1487,14 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 					<< std::endl;
 				daqController->ReportError(e);
 				acqData.critStream() << "Error in acquire_data::SendMessage while reading the status register!";
+				acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+					" Chain " << channelTrial->GetChannelNumber();	
 				return e;
 			} 
                 	status = (unsigned short)(reset_status[0] | reset_status[1]<<0x08);
 			channelTrial->SetChannelStatus(status);
 #if DEBUG_SENDMESSAGE
-			acqData.debug("       acquire_data::SendMessage - SENDING - Channel %d status = 0x%04X",
+			acqData.debug("       acquire_data::SendMessage - SENDING - Chain %d status = 0x%04X",
 				channelTrial->GetChannelNumber(),status);
 #endif
 		} while ( !(status & MessageReceived) && !(status & CRCError) && !(status & TimeoutError) 
@@ -1487,47 +1503,65 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 		if ( (status & CRCError) ) { 
 			std::cout << "CRC Error!\n";  
 			acqData.critStream() << "CRC Error in acquire_data::SendMessage!";         
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			return (-10); 
 		}
 		if ( (status & TimeoutError) ) { 
 			std::cout << "Timeout Error!\n";       
 			acqData.critStream() << "Timeout Error in acquire_data::SendMessage!";         
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			return (-11); 
 		}
 
 		if ( (status & FIFONotEmpty) ) { 
 			std::cout << "FIFO Not Empty!\n";       
 			acqData.critStream() << "FIFO Not Empty Error in acquire_data::SendMessage!";         
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			//return (-11); 
 		}
 		if ( (status & FIFOFull) ) { 
 			std::cout << "FIFO Full!\n";       
 			acqData.critStream() << "FIFO Full Error in acquire_data::SendMessage!";         
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			//return (-11); 
 		}
 		if ( (status & DPMFull) ) { 
 			std::cout << "DPM Full!\n";       
 			acqData.critStream() << "DPM Full Error in acquire_data::SendMessage!";         
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			//return (-11); 
 		}
 		if ( !(status & RFPresent) ) { 
 			std::cout << "No RF Present!\n";       
 			acqData.critStream() << "No RF Error in acquire_data::SendMessage!";         
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			return (-12); 
 		}
 		if ( !(status & SerializerSynch) ) { 
 			std::cout << "No SerializerSynch!\n";  
 			acqData.critStream() << "No SerializerSynch Error in acquire_data::SendMessage!";         
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			return (-13); 
 		}
 		if ( !(status & DeserializerLock) ) { 
 			std::cout << "No DeserializerLock!\n"; 
 			acqData.critStream() << "DeserializerLock Error in acquire_data::SendMessage!";         
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			return (-14); 
 		}
 		if ( !(status & PLLLocked) ) { 
 			std::cout << "No PLLLock!\n"; 
 			acqData.critStream() << "PLLLock Error in acquire_data::SendMessage!";         
+			acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+				" Chain " << channelTrial->GetChannelNumber();	
 			return (-15); 
 		}
 		success = 0;
@@ -1587,6 +1621,8 @@ template <class X> int acquire_data::ReceiveMessage(X *device, croc *crocTrial, 
 		std::cout << "Error in acquire_data::ReceiveMessage!  Cannot ReadBLT!" << std::endl;
 		daqController->ReportError(e);
 		acqData.critStream() << "Error in acquire_data::ReceiveMessage!  Cannot ReadBLT!";
+		acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+			" Chain " << channelTrial->GetChannelNumber();	
 		return e;
 	}
 	bool success = device->CheckForErrors();
@@ -1617,10 +1653,10 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 	lock lock_send(send_lock);
 #endif
 #if (DEBUG_VERBOSE)||(DEBUG_SENDMESSAGE)
-	acqData.debugStream() << "+++Entering acquire_data::AcquireDeviceData...";
-	acqData.debugStream() << "    CROC Address:   " << (crocTrial->GetCrocAddress()>>16);
-	acqData.debugStream() << "    Channel Number: " << channelTrial->GetChannelNumber();
-	acqData.debug("    Device:         0x%X",frame->GetDeviceType());
+	acqData.debugStream() << " Entering acquire_data::AcquireDeviceData...";
+	acqData.debugStream() << "  CROC Address:   " << (crocTrial->GetCrocAddress()>>16);
+	acqData.debugStream() << "  Chain Number: " << channelTrial->GetChannelNumber();
+	acqData.debug("  Device:         0x%X",frame->GetDeviceType());
 #endif
 	CVAddressModifier AM  = daqController->GetAddressModifier();
 	CVDataWidth       DWS = crocTrial->GetDataWidthSwapped();
@@ -1655,7 +1691,9 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 		// If unsuccessful, the DPM doesn't have enough memory, and we need to process what is there (?)
 		std::cout << "DPM Fill Failure!  DPM Should have been reset before tyring to use!" << std::endl;
 		acqData.fatalStream() << "DPM Fill Failure!  DPM Should have been reset before tyring to use!";
-		exit(-4001);
+		acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
+			" Chain " << channelTrial->GetChannelNumber();
+ 		exit(-4001);
 	}
 #if (DEBUG_VERBOSE)||(DEBUG_SENDMESSAGE)
 	acqData.debugStream() << "   AcquireDeviceData success: " << success;
@@ -2131,7 +2169,7 @@ template <class X> void acquire_data::FillEventStructure(event_handler *evt, int
 	acqData.debugStream() << "     Link      (evt->feb_info[0]) = " << evt->feb_info[0];
 	acqData.debugStream() << "     Crate     (evt->feb_info[1]) = " << evt->feb_info[1];
 	acqData.debugStream() << "     CROC      (evt->feb_info[2]) = " << evt->feb_info[2];
-	acqData.debugStream() << "     Channel   (evt->feb_info[3]) = " << evt->feb_info[3];
+	acqData.debugStream() << "     Chain     (evt->feb_info[3]) = " << evt->feb_info[3];
 	acqData.debugStream() << "     Bank Type (evt->feb_info[4]) = " << evt->feb_info[4];
 	acqData.debugStream() << "     Frame L.  (evt->feb_info[5]) = " << evt->feb_info[5];
 	acqData.debugStream() << "     FEB Num.  (evt->feb_info[6]) = " << evt->feb_info[6];
