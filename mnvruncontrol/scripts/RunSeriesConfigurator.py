@@ -53,32 +53,47 @@ class MyFrame(wx.Frame):
         ledGroupLabel = wx.StaticText(self.mainPage, -1, "LED Group")
         self.ledGroupEntry = wx.Choice(self.mainPage, -1, choices=MetaData.LEDGroups.descriptions)
 
-        b_clearRunSeries = wx.Button(self.mainPage, -1, "Clear Run Series")
-        self.Bind(wx.EVT_BUTTON, self.ClearRunSeries, b_clearRunSeries)
+        self.b_createNewSeries = wx.Button(self.mainPage, -1, "Create New Series")
+        self.Bind(wx.EVT_BUTTON, self.CreateNewSeries, self.b_createNewSeries)
 
-        b_appendRunToSeries = wx.Button(self.mainPage, -1, "Append Run To Series")
-        self.Bind(wx.EVT_BUTTON, self.AppendRunToSeries, b_appendRunToSeries)
+        self.b_writeRunSeries = wx.Button(self.mainPage, -1, "Write Series")
+        self.Bind(wx.EVT_BUTTON, self.WriteRunSeries, self.b_writeRunSeries)
 
-        b_writeRunSeries = wx.Button(self.mainPage, -1, "Write Run Series")
-        self.Bind(wx.EVT_BUTTON, self.WriteRunSeries, b_writeRunSeries)
+        self.b_openRunSeries = wx.Button(self.mainPage, -1, "Open Series")
+        self.Bind(wx.EVT_BUTTON, self.OpenRunSeries, self.b_openRunSeries)
 
-	b_showRunSeries = wx.Button(self.mainPage, -1, "Show Run Series")
-        self.Bind(wx.EVT_BUTTON, self.ShowRunSeries, b_showRunSeries)
+	self.b_showRunSeries = wx.Button(self.mainPage, -1, "Show Run Series")
+        self.Bind(wx.EVT_BUTTON, self.ShowRunSeries, self.b_showRunSeries)
+
+        self.b_appendRunToSeries = wx.Button(self.mainPage, -1, "Append Run To Series")
+        self.Bind(wx.EVT_BUTTON, self.AppendRunToSeries, self.b_appendRunToSeries)
+
+	self.b_updateRun = wx.Button(self.mainPage, -1, "Update Run")
+        self.Bind(wx.EVT_BUTTON, self.UpdateRun, self.b_updateRun)
+	self.b_updateRun.Disable()	
+
+        self.b_editSelectedRun = wx.Button(self.mainPage, -1, "Edit Selected Run")
+        self.Bind(wx.EVT_BUTTON, self.EditSelectedRun, self.b_editSelectedRun)
+
+        self.b_deleteSelectedRun = wx.Button(self.mainPage, -1, "Delete Selected Run")
+        self.Bind(wx.EVT_BUTTON, self.DeleteSelectedRun, self.b_deleteSelectedRun)
+	self.b_deleteSelectedRun.Disable()
 
         seriesGridSizer = wx.GridSizer(2, 2, 10, 10)
        	seriesGridSizer.AddMany([       (runSeriesNameLabel, 0, wx.ALIGN_CENTER_VERTICAL),       (self.runSeriesNameEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-        				(b_writeRunSeries, 0, wx.ALIGN_CENTER_VERTICAL),         (0,0),
-                               		(b_showRunSeries, 0, wx.ALIGN_CENTER_VERTICAL),          (0,0),
-                               		(b_clearRunSeries, 0, wx.ALIGN_CENTER_VERTICAL),      	 (0,0) ])
+        				(self.b_createNewSeries, 0, wx.ALIGN_CENTER_VERTICAL),         (0,0),
+                               		(self.b_openRunSeries, 0, wx.ALIGN_CENTER_VERTICAL),          (0,0),
+                                        (self.b_writeRunSeries, 0, wx.ALIGN_CENTER_VERTICAL),          (0,0),
+                               		(self.b_showRunSeries, 0, wx.ALIGN_CENTER_VERTICAL),      	 (0,0) ])
 	seriesBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Run Series"), wx.VERTICAL)
         seriesBoxSizer.Add(seriesGridSizer, flag=wx.EXPAND)
 
         runGridSizer = wx.GridSizer(2, 2, 10, 10)
-        runGridSizer.AddMany([          (runModeLabel, 0, wx.ALIGN_CENTER_VERTICAL),             (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-					(gatesLabel, 0, wx.ALIGN_CENTER_VERTICAL),		 (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-                                        (ledLevelLabel, 0, wx.ALIGN_CENTER_VERTICAL),            (self.ledLevelEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),  
-                                        (ledGroupLabel, 0, wx.ALIGN_CENTER_VERTICAL),          	 (self.ledGroupEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-                                        (b_appendRunToSeries, 0, wx.ALIGN_CENTER_VERTICAL),         (0,0) ])
+        runGridSizer.AddMany([          (runModeLabel, 0, wx.ALIGN_CENTER_VERTICAL),             (self.runModeEntry, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL),
+					(gatesLabel, 0, wx.ALIGN_CENTER_VERTICAL),		 (self.gatesEntry, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL),
+                                        (ledLevelLabel, 0, wx.ALIGN_CENTER_VERTICAL),            (self.ledLevelEntry, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL),  
+                                        (ledGroupLabel, 0, wx.ALIGN_CENTER_VERTICAL),          	 (self.ledGroupEntry, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL),
+                                        (self.b_appendRunToSeries, 0, wx.ALIGN_CENTER_VERTICAL), (self.b_updateRun, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL) ])
         runBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Run"), wx.VERTICAL)
         runBoxSizer.Add(runGridSizer, flag=wx.EXPAND)
 
@@ -99,40 +114,34 @@ class MyFrame(wx.Frame):
         #runList.SetColumnWidth(3, wx.LIST_AUTOSIZE)
         #runList.SetColumnWidth(4, wx.LIST_AUTOSIZE)
 
+        runSelectGridSizer = wx.GridSizer(cols=2, vgap=10, hgap=10)
+        runSelectGridSizer.AddMany([ (self.b_editSelectedRun, 0, wx.ALIGN_RIGHT), (self.b_deleteSelectedRun, 0, wx.ALIGN_LEFT) ])
+
     	runListBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Run List"), orient=wx.VERTICAL)
-	runListBoxSizer.Add(self.runList, flag=wx.EXPAND)
+	runListBoxSizer.Add(self.runList, 1, flag=wx.EXPAND)
+	runListBoxSizer.Add(runSelectGridSizer, flag=wx.EXPAND)
 
 	globalSizer = wx.BoxSizer(wx.VERTICAL)
 	globalSizer.Add(configureSizer, flag=wx.EXPAND)
-	globalSizer.Add(runListBoxSizer, flag=wx.EXPAND)
+	globalSizer.Add(runListBoxSizer, 1, flag=wx.EXPAND)
 
  	self.mainPage.SetSizer(globalSizer)
         self.mainPage.SetAutoLayout(True)
-		
 
 	# Run Series Instance
 	self.runSeries = RunSeries.RunSeries()
 
+	# Run Info Instance
+	#self.runSeries = RunSeries.RunInfo()
+
     def OnTimeToClose(self, evt):
         self.Close()
 
-    def ClearRunSeries(self,evt):
+    def CreateNewSeries(self,evt):
         self.runSeries.ClearRunList()
 
-    def AppendRunToSeries(self,evt):
-        run = RunSeries.RunInfo(gates      = self.gatesEntry.GetValue(),
-                        	runMode    = self.runModeEntry.GetStringSelection(),
-                                ledLevel   = self.ledLevelEntry.GetStringSelection(),
-                                ledGroup   = self.ledGroupEntry.GetStringSelection())
-
-        self.runSeries.AppendToRunList(run)
-
-	num_items = self.runList.GetItemCount()
- 	self.runList.InsertStringItem(num_items, str(num_items))
-        self.runList.SetStringItem(num_items, 1, run.runMode)
-  	self.runList.SetStringItem(num_items, 2, str(run.gates))
-        self.runList.SetStringItem(num_items, 3, run.ledLevel)
-        self.runList.SetStringItem(num_items, 4, run.ledGroup)
+    def OpenRunSeries(self,evt):
+	pass
 
     def WriteRunSeries(self,evt):
         d = shelve.open(str(self.runSeriesNameEntry.GetValue())+".db", 'c')
@@ -142,6 +151,62 @@ class MyFrame(wx.Frame):
     def ShowRunSeries(self,evt):
 	print str(self.runSeriesNameEntry.GetValue())+":\n"
 	print self.runSeries.Show()
+
+    def AppendRunToSeries(self,evt):
+        run = RunSeries.RunInfo(gates      = self.gatesEntry.GetValue(),
+                                runMode    = MetaData.RunningModes[self.runModeEntry.GetStringSelection(),MetaData.HASH],
+                                ledLevel   = MetaData.LILevels[self.ledLevelEntry.GetStringSelection(),MetaData.HASH],
+                                ledGroup   = MetaData.LEDGroups[self.ledGroupEntry.GetStringSelection(),MetaData.HASH])
+
+        self.runSeries.AppendToRunList(run)
+
+        num_items = self.runList.GetItemCount()
+        self.runList.InsertStringItem(num_items, str(num_items))
+        self.runList.SetStringItem(num_items, 1, self.runModeEntry.GetStringSelection())
+        self.runList.SetStringItem(num_items, 2, str(self.gatesEntry.GetValue()))
+        self.runList.SetStringItem(num_items, 3, self.ledLevelEntry.GetStringSelection())
+        self.runList.SetStringItem(num_items, 4, self.ledGroupEntry.GetStringSelection())
+
+    def UpdateRun(self,evt):
+
+        run = RunSeries.RunInfo(gates      = self.gatesEntry.GetValue(),
+                                runMode    = MetaData.RunningModes[self.runModeEntry.GetStringSelection(),MetaData.HASH],
+                                ledLevel   = MetaData.LILevels[self.ledLevelEntry.GetStringSelection(),MetaData.HASH],
+                                ledGroup   = MetaData.LEDGroups[self.ledGroupEntry.GetStringSelection(),MetaData.HASH])
+
+        index = self.runList.GetFirstSelected()
+	self.runSeries.SetRun(index,run)
+
+        self.runList.SetStringItem(index, 1, self.runModeEntry.GetStringSelection())
+        self.runList.SetStringItem(index, 2, str(self.gatesEntry.GetValue()))
+        self.runList.SetStringItem(index, 3, self.ledLevelEntry.GetStringSelection())
+        self.runList.SetStringItem(index, 4, self.ledGroupEntry.GetStringSelection())
+	
+	self.runList.Enable()
+	self.b_editSelectedRun.Enable()
+        #self.b_deleteSelectedRun.Enable()
+        self.b_appendRunToSeries.Enable()
+        self.b_updateRun.Disable()
+
+    def EditSelectedRun(self,evt):
+	
+	self.runList.Disable()
+	self.b_editSelectedRun.Disable()
+	#self.b_deleteSelectedRun.Disable()
+	self.b_appendRunToSeries.Disable()
+
+	index = self.runList.GetFirstSelected()
+	run = self.runSeries.GetRun(index)
+
+        self.gatesEntry.SetValue(run.gates)
+	self.runModeEntry.SetSelection(self.runModeEntry.FindString(MetaData.RunningModes[run.runMode,MetaData.DESCRIPTION]))
+	self.ledLevelEntry.SetSelection(self.ledLevelEntry.FindString(MetaData.LILevels[run.ledLevel,MetaData.DESCRIPTION]))
+	self.ledGroupEntry.SetSelection(self.ledGroupEntry.FindString(MetaData.LEDGroups[run.ledGroup,MetaData.DESCRIPTION]))
+
+	self.b_updateRun.Enable()
+
+    def DeleteSelectedRun(self,evt):
+        pass
 
 class MyApp(wx.App):
     def OnInit(self):
