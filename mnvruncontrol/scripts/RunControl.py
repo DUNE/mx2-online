@@ -2,13 +2,12 @@
 
 import wx
 from wx.lib.wordwrap import wordwrap
-from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
-from wx.lib.mixins.listctrl import ListRowHighlighter
 import subprocess
 import os
 import sys
 import signal
 import threading
+import datetime
 import time
 import shelve
 import anydbm		# if a shelve database doesn't exist, this module contains the error raised
@@ -16,8 +15,6 @@ import re			# regular expressions
 
 # other run control modules
 import MetaData
-import RunSeries
-import DataAcquisitionManager
 
 ## some constants for configuration
 CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
@@ -43,19 +40,8 @@ class MainFrame(wx.Frame):
 	def __init__(self, parent, title):
 		wx.Frame.__init__(self, parent, -1, title,
 				      pos=(0, 0), size=(600, 600) ) 
-		self.runmanager = DataAcquisitionManager.DataAcquisitionManager(self)
+		self.GetConfig()
 
-		self.GetConfig()		# load up the configuration entries from the file.
-		self.BuildGraphics()	# build and draw the GUI panel.
-
-		# now initialize some member variables we'll need:
-		self.logfileNames = None
-
-		# finally, make sure the display is current
-		self.GetNextRunSubrun()
-		self.UpdateLogFiles()
-
-	def BuildGraphics(self):
 		menuBar = wx.MenuBar()
 
 		fileMenu = wx.Menu()
@@ -94,9 +80,6 @@ class MainFrame(wx.Frame):
 		self.subrunEntry = wx.SpinCtrl(self.mainPage, -1, '0', size=(125, -1), min=0, max=100000)
 		self.subrunEntry.Disable()
 
-		HWinitEntryLabel = wx.StaticText(self.mainPage, -1, "HW init level")
-		self.HWinitEntry =  wx.Choice(self.mainPage, -1, choices=MetaData.HardwareInitLevels.descriptions)
-
 		detConfigEntryLabel = wx.StaticText(self.mainPage, -1, "Detector")
 		self.detConfigEntry = wx.Choice(self.mainPage, -1, choices=MetaData.DetectorTypes.descriptions)
 		self.detConfigEntry.SetSelection(MetaData.DetectorTypes.index("Upstream"))
@@ -115,16 +98,10 @@ class MainFrame(wx.Frame):
 		runSelectionSizer.Add(self.runSeriesButton)
 		
 		globalConfigSizer = wx.GridSizer(2, 2, 10, 10)
-		globalConfigSizer.AddMany([ (runEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
-		                            (self.runEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                            (subrunEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
-		                            (self.subrunEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                            (HWinitEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
-		                            (self.HWinitEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                            (detConfigEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
-		                            (self.detConfigEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                            (febsEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
-		                            (self.febsEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
+		globalConfigSizer.AddMany([ (runEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),       (self.runEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                               (subrunEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),    (self.subrunEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                               (detConfigEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL), (self.detConfigEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                               (febsEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),      (self.febsEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
 		globalConfigBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Global run configuration"), wx.VERTICAL)
 		globalConfigBoxSizer.Add(globalConfigSizer, flag=wx.EXPAND)
 		globalConfigBoxSizer.Add(runSelectionSizer, flag=wx.ALIGN_CENTER_HORIZONTAL)
@@ -147,19 +124,15 @@ class MainFrame(wx.Frame):
 			self.LEDgroups.append(cb)
 			LEDgroupSizer.Add(cb)
 
-		LILevelEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "LI light level")
-		self.LILevelEntry = wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.LILevels.descriptions)
-		self.LILevelEntry.Disable()		# will be enabled when necessary
+		LIVoltageEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "LI pulse voltage")
+		self.LIVoltageEntry = wx.TextCtrl(self.singleRunConfigPanel, -1, "4.05")
+		self.LIVoltageEntry.Disable()		# will be enabled when necessary
 
 		singleRunConfigSizer = wx.GridSizer(3, 2, 10, 10)
-		singleRunConfigSizer.AddMany([ (gatesEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
-		                               (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                               (runModeEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
-		                               (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                               (LEDgroupLabel, 0, wx.ALIGN_CENTER_VERTICAL),
-		                               (LEDgroupSizer, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
-		                               (LILevelEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
-		                               (self.LILevelEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
+		singleRunConfigSizer.AddMany([ (gatesEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),     (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (runModeEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (LEDgroupLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (LEDgroupSizer, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                      (LIVoltageEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),   (self.LIVoltageEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL) ])
 		singleRunConfigBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.singleRunConfigPanel, -1, "Single run Configuration"), wx.VERTICAL)
 		singleRunConfigBoxSizer.Add(singleRunConfigSizer, 1, wx.EXPAND)
 
@@ -177,14 +150,12 @@ class MainFrame(wx.Frame):
 		seriesFileSizer.Add(self.seriesFile, 1, flag=wx.RIGHT | wx.LEFT, border=5)
 		seriesFileSizer.Add(self.seriesFileButton, 0, flag=wx.LEFT, border=5)
 		
-		self.seriesDescription = AutoSizingListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
-		self.seriesDescription.setResizeColumn(2)
-		self.seriesDescription.InsertColumn(0, "", width=20)		# which subrun is currently being executed
-		self.seriesDescription.InsertColumn(1, "Run mode")#, width=150)
-		self.seriesDescription.InsertColumn(2, "Number of gates", width=125)
+		self.seriesDescription = wx.ListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
+		self.seriesDescription.InsertColumn(0, "Run mode", width=150)
+		self.seriesDescription.InsertColumn(1, "Number of gates", width=125)
 		
-		self.moreInfoButton = wx.Button(self.runSeriesConfigPanel, ID_MOREINFO, "More details...")
-		self.Bind(wx.EVT_BUTTON, self.SeriesMoreInfo, self.moreInfoButton)
+		self.moreInfoButton = wx.Button(self.runSeriesConfigPanel, ID_MOREINFO, "More info on this run item...")
+		self.Bind(wx.EVT_BUTTON, self.SeriesEntryMoreInfo, self.moreInfoButton)
 		self.moreInfoButton.Disable()		# will be enabled when a file is loaded.
 		
 		runSeriesConfigSizer = wx.StaticBoxSizer(wx.StaticBox(self.runSeriesConfigPanel, -1, "Run series configuration"), wx.VERTICAL)
@@ -207,11 +178,11 @@ class MainFrame(wx.Frame):
 
 		# run control: start, stop, close windows
 		self.startButton = wx.Button(self.mainPage, ID_START, "Start")
-		self.Bind(wx.EVT_BUTTON, self.StartRunning, self.startButton)
+		self.Bind(wx.EVT_BUTTON, self.StartDaqSingleton, self.startButton)
 		self.startButton.Disable()
 		
 		self.stopButton = wx.Button(self.mainPage, wx.ID_STOP)
-		self.Bind(wx.EVT_BUTTON, self.StopRunning, self.stopButton)
+		self.Bind(wx.EVT_BUTTON, self.DAQShutdown, self.stopButton)
 		self.stopButton.Disable()		# disabled until the 'start' button is pressed
 
 		self.closeAllButton = wx.Button(self.mainPage, wx.ID_CLOSE, "Close ET/DAQ windows")
@@ -254,8 +225,7 @@ class MainFrame(wx.Frame):
 		logPage = wx.Panel(nb)
 
 		logfileText = wx.StaticText( logPage, -1, wordwrap("Select log files you want to view (ctrl+click for multiple selections) and click the \"View log file(s)\" button below...", 400, wx.ClientDC(self)) )
-		self.logfileList = AutoSizingListCtrl(logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
-		self.logfileList.setResizeColumn(6)
+		self.logfileList = wx.ListCtrl(logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
 		self.logfileList.InsertColumn(0, "Run")
 		self.logfileList.InsertColumn(1, "Subrun")
 		self.logfileList.InsertColumn(2, "Date")
@@ -278,7 +248,19 @@ class MainFrame(wx.Frame):
 		nb.AddPage(logPage, "Log files")
 		
 		self.Layout()
+		
+		self.ETthreads = []
+		self.timerThreads = []
+		self.ETthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartDAQ]
+#		self.ETthreadStarters = [self.StartTestProcess, self.StartTestProcess, self.StartTestProcess]
+		self.current_ET_thread = 0			# the next thread to start
+		self.windows = []					# child windows opened by the process.
+		self.logfileNames = None
 
+		self.GetNextRunSubrun()
+		self.UpdateLogFiles()
+		self.Connect(-1, -1, EVT_THREAD_READY_ID, self.StartNextThread)
+		self.Connect(-1, -1, EVT_DAQQUIT_ID, self.DAQShutdown)		# if the DAQ process quits, everything should be stopped.
 		self.Connect(-1, -1, EVT_CONFIGUPDATED_ID, self.UpdateLogFiles)
 
 	def parseLogfileName(self, filename):
@@ -319,9 +301,9 @@ class MainFrame(wx.Frame):
 
 			self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
 			self.logfileLocation = LOGFILE_LOCATION_DEFAULT
-			self.runmanager.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
-			self.runmanager.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
-			self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+			self.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
 			
 		else:
 			try:	self.runinfoFile = db["runinfoFile"]
@@ -330,14 +312,14 @@ class MainFrame(wx.Frame):
 			try:	self.logfileLocation = db["logfileLocation"]
 			except KeyError: self.logfileLocation = LOGFILE_LOCATION_DEFAULT
 			
-			try:	self.runmanager.etSystemFileLocation = db["etSystemFileLocation"]
-			except KeyError: self.runmanager.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			try:	self.etSystemFileLocation = db["etSystemFileLocation"]
+			except KeyError: self.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
 			
-			try:	self.runmanager.rawdataLocation = db["rawdataLocation"]
-			except KeyError: self.runmanager.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+			try:	self.rawdataLocation = db["rawdataLocation"]
+			except KeyError: self.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
 
-			try:	self.runmanager.LIBoxControlLocation = db["LIBoxControlLocation"]
-			except KeyError: self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			try:	self.LIBoxControlLocation = db["LIBoxControlLocation"]
+			except KeyError: self.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
 		
 	def GetNextRunSubrun(self, evt=None):
 		if not os.path.exists(self.runinfoFile):
@@ -385,14 +367,6 @@ class MainFrame(wx.Frame):
 			db["subrun"] = self.subrunEntry.GetValue()
 			db.close()
 			
-	def PostSubrun(self, evt=None):
-		self.subrunEntry.SetValue(self.subrunEntry.GetValue() + 1)
-		self.minRunSubrun = self.subrunEntry.GetValue()
-		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
-		self.StoreNextRunSubrun()
-		
-		self.UpdateLogFiles()
-			
 	def CheckRunNumber(self, evt=None):
 		if self.runEntry.GetValue() < self.runEntry.GetMin():
 			self.runEntry.SetValue(self.runEntry.GetMin())
@@ -412,34 +386,45 @@ class MainFrame(wx.Frame):
 		filename = fileSelector.GetFilename()
 		path = fileSelector.GetPath()
 		if filename != "":
-			
-			badfile = False
-			try:
-				db = shelve.open(path)
-				self.runmanager.runseries = db["series"]
-				db.close()
-			except (anydbm.error, KeyError):
-				errordlg = wx.MessageDialog( None, "The file you selected is not a valid run series file.  Select another.", "Invalid file", wx.OK | wx.ICON_ERROR )
-				errordlg.ShowModal()
-				return
-			
 			self.seriesFile.SetValue(filename)
-			self.seriesFilename = filename
 			self.seriesPath = path
-			
-			self.seriesDescription.DeleteAllItems()
-			for runinfo in self.runmanager.runseries.Runs:
-				index = self.seriesDescription.InsertStringItem(sys.maxint, "")		# first column is which subrun is currently being executed
-				self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-				self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
-				
-			self.moreInfoButton.Enable()
-			self.UpdateStatus()
 		
-	def SeriesMoreInfo(self, evt=None):
-		infowindow = RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
-		infowindow.Show()
+	def SeriesEntryMoreInfo(self, evt=None):
+		pass
 
+	def StartDaqSingleton(self, evt):
+		while len(self.ETthreads) > 0:		# if there are any leftover threads from a previous run, remove them
+			self.ETthreads.pop()
+	
+		self.CloseAllWindows()			# same for the windows
+
+		self.runEntry.Disable()
+		self.subrunEntry.Disable()
+		self.gatesEntry.Disable()
+		self.detConfigEntry.Disable()
+		self.runModeEntry.Disable()
+		self.febsEntry.Disable()
+			
+		self.run      = int(self.runEntry.GetValue())
+		self.subrun   = int(self.subrunEntry.GetValue())
+		self.gates    = int(self.gatesEntry.GetValue())
+		self.detector = int(self.detConfigEntry.GetSelection())
+		self.runMode  = int(self.runModeEntry.GetSelection())
+		self.febs     = int(self.febsEntry.GetValue())
+
+		now = datetime.datetime.utcnow()
+	
+		self.ETNAME = '%s_%08d_%04d_%s_v04_%02d%02d%02d%02d%02d' % (self.detectorCodes[self.detector], int(self.run), int(self.subrun), self.RunningModes.codes[self.runMode], now.year % 100, now.month, now.day, now.hour, now.minute)
+
+		self.OUTFL = self.ETNAME + '.dat'
+
+		self.startButton.Disable()
+		self.stopButton.Enable()
+
+		self.SetStatusText("RUNNING", 1)
+		self.runningIndicator.SetBitmap(self.onImage)
+		self.StartNextThread()			# starts the first thread.  the rest will be started in turn as ThreadReadyEvents are received by this window.
+		
 	def UpdateRunConfig(self, evt=None):
 		if self.singleRunButton.GetValue() == True:
 			self.runSeriesConfigPanel.Show(False)
@@ -457,47 +442,104 @@ class MainFrame(wx.Frame):
 		if runMode == MetaData.RunningModes.index("Light injection") or runMode == MetaData.RunningModes.index("Mixed beam/LI"):
 			for cb in self.LEDgroups:
 				cb.Enable()
-			self.LILevelEntry.Enable()
+			self.LIVoltageEntry.Enable()
 		else:
 			for cb in self.LEDgroups:
 				cb.Disable()
-			self.LILevelEntry.Disable()
+			self.LIVoltageEntry.Disable()
 			
-	def UpdateCloseWindows(self, windowsOpen):
-		if windowsOpen:
-			self.closeAllButton.Enable()
-		else:
-			self.closeAllButton.Disable()
-	
-	def UpdateStatus(self):
-		symbol = ""
-		if self.runmanager.running:
-			symbol = u"\u25b7"		# a right-facing triangle: like a "play" symbol
-		else:
-			symbol = u"\u25a1"		# a square: like a "stop" symbol
+		
 
-		if self.runSeriesButton.GetValue() == True:		# if this is a run SERIES
-			index = -1
-			while True:
-				index = self.seriesDescription.GetNextItem(index)
-			
-				if index == -1:
-					break
-			
-				if index == self.runmanager.subrun:
-					self.seriesDescription.SetStringItem(index, 0, symbol)
-					self.seriesDescription.Select(index)
-				else:
-					self.seriesDescription.SetStringItem(index, 0, "")
-					self.seriesDescription.Select(index, False)
+	def StartETSys(self):
+		EVENT_SIZE=2048 
+		FRAMES=8
+		EVENTS=int(self.gates)*FRAMES*int(self.febs)
+
+		etSysFrame = OutputFrame(self, "ET system", window_size=(600,200), window_pos=(600,0))
+		etSysFrame.Show(True)
+		self.closeAllButton.Enable()
+
+		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (os.environ["ET_HOME"], self.etSystemFileLocation, self.ETNAME, EVENTS, EVENT_SIZE)
+
+		self.windows.append( etSysFrame )
+		self.ETthreads.append( ETThread(etsys_command, output_window=etSysFrame, owner_window=self, next_thread_delay=2) ) 
+
+	def StartETMon(self):
+		etMonFrame = OutputFrame(self, "ET monitor", window_size=(600,600), window_pos=(600,200))
+		etMonFrame.Show(True)
+		self.closeAllButton.Enable()
+		
+		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s" % (os.environ["ET_HOME"], self.etSystemFileLocation, self.ETNAME)
+		self.windows.append( etMonFrame )
+		self.ETthreads.append( ETThread(etmon_command, output_window=etMonFrame, owner_window=self, next_thread_delay=2) )
+
+	def StartEBSvc(self):
+		ebSvcFrame = OutputFrame(self, "Event builder service", window_size=(600,200), window_pos=(1200,0))
+		ebSvcFrame.Show(True)
+		self.closeAllButton.Enable()
+
+		eb_command = '%s/bin/event_builder %s/%s %s/%s' % (os.environ['DAQROOT'], self.etSystemFileLocation, self.ETNAME, self.rawdataLocation, self.OUTFL)
+
+		self.windows.append( ebSvcFrame )
+		self.ETthreads.append( ETThread(eb_command, output_window=ebSvcFrame, owner_window=self, next_thread_delay=15) )	
+
+	def StartDAQ(self):
+		daqFrame = OutputFrame(self, "THE DAQ", window_size=(600,600), window_pos=(1200,200))
+		daqFrame.Show(True)
+		self.closeAllButton.Enable()
+
+		daq_command = "%s/bin/minervadaq -et %s -g %d -m %d -r %d -s %d" % (os.environ["DAQROOT"], self.ETNAME, self.gates, self.runMode, self.run, self.subrun)
+
+		self.windows.append(daqFrame)
+		self.ETthreads.append( ETThread(daq_command, output_window=daqFrame, owner_window=self, quit_event=DAQQuitEvent) )
+
+	def StartTestProcess(self):
+		frame = OutputFrame(self, "test process", window_size=(600,600), window_pos=(1200,200))
+		frame.Show(True)
+		self.closeAllButton.Enable()
+
+		command = "/home/jeremy/code/mnvruncontrol/scripts/test.sh"
+
+		self.windows.append(frame)
+		self.ETthreads.append( ETThread(command, output_window=frame, owner_window=self, next_thread_delay=3) )
+
 
 	def OnTimeToClose(self, evt):
-		self.runmanager.StopDataAcquisition()
+		self.StopAll()
 
 		self.CloseAllWindows()
 
 		self.Close()
 		
+	def StopAll(self, evt=None):
+		while len(self.ETthreads) > 0:
+			thread = self.ETthreads.pop()	# pull the threads out of the list one by one.  this way they go out of scope and are garbage collected.
+			thread.Abort()
+			
+		while len(self.timerThreads) > 0:
+			thread = self.timerThreads.pop()
+			thread.Abort()
+			
+		self.SetStatusText("STOPPED", 1)
+		self.runningIndicator.SetBitmap(self.offImage)
+
+		self.stopButton.Disable()
+		self.startButton.Enable()
+
+		self.runEntry.Enable()
+		self.gatesEntry.Enable()
+		self.detConfigEntry.Enable()
+		self.runModeEntry.Enable()
+		self.febsEntry.Enable()
+
+		self.current_ET_thread = 0			# reset the thread counter in case the user wants to start another subrun
+
+	def StartNextThread(self, evt=None):
+		if self.current_ET_thread < len(self.ETthreadStarters):
+			self.ETthreadStarters[self.current_ET_thread]()
+			self.current_ET_thread += 1
+		else:
+			print "Thread count too high"
 
 	def UpdateLogFiles(self, evt=None):
 		self.GetConfig()
@@ -529,8 +571,11 @@ class MainFrame(wx.Frame):
 				index = self.logfileList.InsertStringItem(sys.maxint, fileinfo[0])
 				for i in range(1,len(fileinfo)):
 					self.logfileList.SetStringItem(index, i, fileinfo[i])
+	#			self.logfileList.SetItemData(index, int(fileinfo[0]) * 10000 + int(fileinfo[1]))		# need a unique key for each row if I want to sort them.  this is run * 10000 + subrun
 		else:
 			self.logfileList.InsertStringItem(0, "Log directory is empty or inaccessible.")
+
+#		self.logfileList.SortItems(self.SortLogRows)
 		
 			
 	def ShowLogFiles(self, evt=None):
@@ -545,86 +590,35 @@ class MainFrame(wx.Frame):
 			
 			filenames.append(self.logfileLocation + "/" + self.logfileNames[index])
 	
+#		if (self.logfilename):
+#			logdlg = LogFrame(self, self.logfilename)
+#			if logdlg.ok:		# the file might not be accessible...
+#				logdlg.Show(True)
+#		else:
+#			print "Whoops!  Log file button shouldn't be enabled before log file is available..."
+
 		logframe = LogFrame(self, filenames)
 		logframe.Show()
 
 	def CloseAllWindows(self, evt=None):
-		self.runmanager.CloseWindows()
-		self.runmanager.UpdateWindowCount()
+		while len(self.windows) > 0:		
+			window = self.windows.pop()
+			
+			if window:		# wx guarantees that 'dead' windows will evaluate to False
+				window.Destroy()
+
+		self.closeAllButton.Disable()
 	
-	def StartRunning(self, evt=None):
-		if (self.singleRunButton.GetValue() == True):		# if this is a single run
-			self.runmanager.runseries = RunSeries.RunSeries()
-			
-			LEDgroups = ""
-			for cb in self.LEDgroups:
-				if cb.GetValue == True:
-					LEDgroups += cb.GetLabelText()
-			LEDcode = MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups)
+	def DAQShutdown(self, evt=None):
+		self.StopAll()
 
-			gates    = int(self.gatesEntry.GetValue())
-			runMode  = MetaData.RunningModes.item(int(self.runModeEntry.GetSelection()), MetaData.HASH)
-			LIlevel  = MetaData.LILevels.item(int(self.LILevelEntry.GetSelection()), MetaData.HASH)
-			
+		self.subrunEntry.SetValue(self.subrunEntry.GetValue() + 1)
+		self.minRunSubrun = self.subrunEntry.GetValue()
+		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
+		self.StoreNextRunSubrun()
 
-			run = RunSeries.RunInfo(gates, runMode, LIlevel, LEDcode)
-			self.runmanager.runseries.Runs.append(run)
-		else:										# if it's a run series
-			if self.runmanager.runseries == None:
-				errordlg = wx.MessageDialog( None, "You must load a run series file before beginning the run!", "Must load run series before starting run", wx.OK | wx.ICON_ERROR )
-				errordlg.ShowModal()
-				
-				return
+		self.UpdateLogFiles()	
 
-		self.runmanager.run          = int(self.runEntry.GetValue())
-		self.runmanager.first_subrun = int(self.subrunEntry.GetValue())
-		self.runmanager.detector     = MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH)
-		self.runmanager.febs         = int(self.febsEntry.GetValue())
-				
-		self.runmanager.StartDataAcquisition()
-		if (self.runmanager.running):
-			self.runEntry.Disable()
-			self.subrunEntry.Disable()
-			self.HWinitEntry.Disable()
-			self.gatesEntry.Disable()
-			self.detConfigEntry.Disable()
-			self.runModeEntry.Disable()
-			self.febsEntry.Disable()
-			
-			self.singleRunButton.Disable()
-			self.runSeriesButton.Disable()
-			self.seriesFileButton.Disable()
-
-			self.startButton.Disable()
-			self.stopButton.Enable()
-
-			self.SetStatusText("RUNNING", 1)
-			self.runningIndicator.SetBitmap(self.onImage)
-			
-	
-	def StopRunning(self, evt=None):
-		if self.runmanager.running:		
-			self.runmanager.StopDataAcquisition()
-
-		self.SetStatusText("STOPPED", 1)
-		self.runningIndicator.SetBitmap(self.offImage)
-
-		self.runEntry.Enable()
-		self.gatesEntry.Enable()
-		self.detConfigEntry.Enable()
-		self.runModeEntry.Enable()
-		self.febsEntry.Enable()
-		self.HWinitEntry.Enable()
-
-		self.singleRunButton.Enable()
-		self.runSeriesButton.Enable()
-		self.seriesFileButton.Enable()
-
-		self.stopButton.Disable()
-		self.startButton.Enable()
-		self.UpdateStatus()
-		self.UpdateLogFiles()
-		
 	@staticmethod
 	def SortLogData(fileinfo1, fileinfo2):
 		f1 = fileinfo1[0]*10000 + fileinfo1[1]		# run * 10000 + subrun
@@ -642,6 +636,24 @@ class MainFrame(wx.Frame):
 		else:
 			return 1 if f1 > f2 else -1
 
+
+#########################################################
+#   OutputFrame
+#########################################################
+
+class OutputFrame(wx.Frame):
+	def __init__(self, parent, title, window_size=(400,300), window_pos=None):
+		if window_pos:
+			wx.Frame.__init__(self, parent, -1, title, size=window_size)
+		else:
+			wx.Frame.__init__(self, parent, -1, title, size=window_size, pos=window_pos)
+		self.textarea = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE | wx.TE_READONLY)
+
+		self.Connect(-1, -1, EVT_NEWDATA_ID, self.OnNewData)
+		
+	def OnNewData(self, data_event):
+		self.textarea.AppendText(data_event.data)
+		
 
 #########################################################
 #   LogFrame
@@ -688,45 +700,7 @@ class LogFrame(wx.Frame):
 		
 	def CloseOut(self, evt=None):
 		self.Close()
-		
-#########################################################
-#   RunSeriesInfoFrame
-#########################################################
-
-class RunSeriesInfoFrame(wx.Frame):
-	""" A window for configuration of paths, etc. """
-	def __init__(self, parent, filename, runseries):
-		wx.Frame.__init__(self, parent, -1, "Run series: " + filename, size=(600,400))
-
-		panel = wx.Panel(self)
-
-		infoList = AutoSizingListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
-		infoList.setResizeColumn(2)
-
-		infoList.InsertColumn(0, "# gates")
-		infoList.InsertColumn(1, "Running mode")
-		infoList.InsertColumn(2, "LI level")
-		infoList.InsertColumn(3, "LED group")
-
-		for runinfo in runseries.Runs:
-			index = infoList.InsertStringItem(sys.maxint, str(runinfo.gates))
-			infoList.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-			infoList.SetStringItem(index, 2, MetaData.LILevels[runinfo.ledLevel])
-			infoList.SetStringItem(index, 3, MetaData.LEDGroups[runinfo.ledGroup])
-		
-		okButton = wx.Button(panel, wx.ID_OK)
-
-		sizer = wx.BoxSizer(wx.VERTICAL)
-		sizer.Add(infoList, 1, wx.EXPAND | wx.ALIGN_TOP)
-		sizer.Add(okButton, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM)
-
-		panel.SetSizer(sizer)
-
-		self.Bind(wx.EVT_BUTTON, self.CloseOut, okButton)
-		
-	def CloseOut(self, evt=None):
-		self.Close()
-		
+	
 
 #########################################################
 #   OptionsFrame
@@ -848,17 +822,174 @@ class OptionsFrame(wx.Frame):
 		
 	def Cancel(self, evt=None):
 		self.Close()
+		
+#########################################################
+#   ETThread
+#########################################################
+
+class ETThread(threading.Thread):
+	""" A thread for an ET/DAQ process. """
+	def __init__(self, process_info, output_window, owner_window, next_thread_delay=0, quit_event=None):
+		threading.Thread.__init__(self)
+		self.output_window = output_window
+		self.owner_window = owner_window
+		self.command = process_info
+		self.next_thread_delay = next_thread_delay
+		self.quit_event = quit_event
+
+		self.time_to_quit = False
+
+		self.timerthread = None			# used to count down to a hard kill if necessary
+
+		self.start()				# starts the run() function in a separate thread.  (inherited from threading.Thread)
+	
+	def run(self):
+		''' The stuff to do while this thread is going.  Overridden from threading.Thread '''
+		if self.output_window:			# the user could have closed the window before the thread was ready...
+			self.process = subprocess.Popen(self.command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			self.pid = self.process.pid
+
+			wx.PostEvent(self.output_window, NewDataEvent("Started thread with PID " + str(self.pid) + "\n"))	# post a message noting the PID of this thread
+			#wx.PostEvent(self.output_window, NewDataEvent("using command '" + self.command + "'...\n"))
+
+			if self.next_thread_delay > 0:
+				# start a new thread to count down until the next one can be started.
+				# need to do this since the reads from STDOUT are BLOCKING, that is,
+				# they lock up the thread until they read the specified number of characters from STDOUT.
+				# that means that we can't count on THIS thread to do the countdown.
+				self.owner_window.timerThreads.append(TimerThread(self.next_thread_delay, self.owner_window))
+
+			while True:
+				self.process.poll()		# check if the process is still alive
+				newdata = self.process.stdout.read(1)	# not every process is careful to spit things out with line breaks, so I can't use readline()
+
+				if len(newdata) > 0:		# shouldn't be a problem since reads are BLOCKING in python, but it's always better to check
+					wx.PostEvent(self.output_window, NewDataEvent(newdata))
+
+
+				if (self.time_to_quit or self.process.returncode != None):
+#					print "Data in buffer at last read: '" + newdata + "'"
+					break
+
+
+		# if something special is supposed to happen when this thread quits, do it.
+		if self.quit_event:
+			wx.PostEvent(self.owner_window, self.quit_event())
+		
+	def Abort(self):
+		''' When the Stop button is pressed, we gotta quit! '''
+		self.time_to_quit = True
+		
+		if (self.process.returncode == None):			# it COULD happen that the process has already quit.
+			self.process.send_signal(signal.SIGINT)		# first, try nicely.
+
+			self.process.poll()
+			if (self.process.returncode == None):		# if that doesn't work, give it a few seconds, then kill it the brute force way
+				print "Process", self.pid, "not yet exited.  Waiting 5 seconds before hard kill..."
+				self.timerthread = threading.Timer(5, self.HardKill)
+				self.timerthread.start()
+		else:
+			# make sure there's nothing left in the buffer to read!
+#			self.process.stdout.flush()
+			(newdata, tmp) = self.process.communicate()
+			if len(newdata) > 0 and self.output_window:
+				wx.PostEvent(self.output_window, NewDataEvent(newdata))
+		
+			if self.process.returncode != None:
+				if (self.timerthread):
+					self.timerthread.cancel()
+				print "Process", self.pid, "has quit."
+				if self.output_window:
+					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
+
+	def HardKill(self):
+		print "Thread", self.pid, "was unresponsive.  Checking if hard kill is necessary..."
+		
+#		self.process.stdout.flush()
+#		(newdata, tmp) = self.process.communicate()
+#		if len(newdata) > 0 and self.output_window:
+#			wx.PostEvent(self.output_window, NewDataEvent(newdata))
+		
+		self.process.poll()
+		
+		if self.process.returncode == None:
+			print "Thread", self.pid, "not responding to SIGINT.  Issuing SIGTERM..."
+			self.process.terminate()
+			
+			time.sleep(2)
+			
+			if self.process.returncode == None:
+				print "Thread", self.pid, "is deadlocked.  Issuing SIGKILL..."
+				self.process.kill()
+	
+				print "Process", self.pid, "was killed."
+				if self.output_window:
+					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread killed."))
+			else:
+				print "Thread", self.pid, "forcibly terminated but clean exit."
+				if self.output_window:
+					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
+		else:
+			print "Process", self.pid, "has quit."
+			if self.output_window:
+				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
+		
+
 
 #########################################################
-#   AutoSizingListCtrl
+#   TimerThread
 #########################################################
-class AutoSizingListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin, ListRowHighlighter):
-	def __init__(self, parent, id=-1, style=wx.LC_REPORT):
-		wx.ListCtrl.__init__(self, parent, id, style=style)
-		ListCtrlAutoWidthMixin.__init__(self)
-		ListRowHighlighter.__init__(self)
-		
-	
+
+class TimerThread(threading.Thread):
+	def __init__(self, countdown_time, postback_window):
+		threading.Thread.__init__(self)
+		self.time = countdown_time
+		self.postback_window = postback_window
+		self.time_to_quit = False
+		self.start()
+
+	def run(self):
+		time.sleep(self.time)
+
+		if self.postback_window and not(self.time_to_quit):		# make sure the user didn't close the window while we were waiting
+			wx.PostEvent(self.postback_window, ThreadReadyEvent())
+			
+	def Abort(self):
+		self.time_to_quit = True
+
+#########################################################
+#   NewDataEvent
+#########################################################
+
+EVT_NEWDATA_ID = wx.NewId()
+class NewDataEvent(wx.PyEvent):
+	""" An event to carry data between the threaded processes and the windows built to display their output. """
+	def __init__(self, data):
+		wx.PyEvent.__init__(self)
+		self.data = data	
+		self.SetEventType(EVT_NEWDATA_ID)
+
+#########################################################
+#   ThreadReadyEvent
+#########################################################
+
+EVT_THREAD_READY_ID = wx.NewId()
+class ThreadReadyEvent(wx.CommandEvent):
+	""" An event that informs the next process that it's done """
+	def __init__(self):
+		wx.CommandEvent.__init__(self)
+		self.SetEventType(EVT_THREAD_READY_ID)
+
+#########################################################
+#   DAQQuitEvent
+#########################################################
+
+EVT_DAQQUIT_ID = wx.NewId()
+class DAQQuitEvent(wx.CommandEvent):
+	""" An event informing the main window that the DAQ has quit (and thus all other processes should be stopped). """
+	def __init__(self):
+		wx.CommandEvent.__init__(self)
+		self.SetEventType(EVT_DAQQUIT_ID)
 
 #########################################################
 #   ConfigUpdatedEvent
@@ -873,7 +1004,7 @@ class ConfigUpdatedEvent(wx.CommandEvent):
 
 
 #########################################################
-#   MainApp
+#   MyApp
 #########################################################
 
 class MainApp(wx.App):
@@ -890,6 +1021,7 @@ class MainApp(wx.App):
 			self.SetTopWindow(frame)
 			frame.Show(True)
 			return True
+
 
 #########################################################
 #   Main execution
