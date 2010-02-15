@@ -2,6 +2,8 @@
 
 import wx
 from wx.lib.wordwrap import wordwrap
+from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
+from wx.lib.mixins.listctrl import ListRowHighlighter
 import subprocess
 import os
 import sys
@@ -18,8 +20,8 @@ import RunSeries
 import DataAcquisitionManager
 
 ## some constants for configuration
-#CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
-CONFIG_DB_LOCATION = "/home/jeremy/run_control_config.db"
+CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
+#CONFIG_DB_LOCATION = "/home/jeremy/run_control_config.db"
 
 RUN_SUBRUN_DB_LOCATION_DEFAULT = "/work/conditions/next_run_subrun.db"
 LOGFILE_LOCATION_DEFAULT = "/work/data/logs"
@@ -175,12 +177,14 @@ class MainFrame(wx.Frame):
 		seriesFileSizer.Add(self.seriesFile, 1, flag=wx.RIGHT | wx.LEFT, border=5)
 		seriesFileSizer.Add(self.seriesFileButton, 0, flag=wx.LEFT, border=5)
 		
-		self.seriesDescription = wx.ListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
-		self.seriesDescription.InsertColumn(0, "Run mode", width=150)
-		self.seriesDescription.InsertColumn(1, "Number of gates", width=125)
+		self.seriesDescription = AutoSizingListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
+		self.seriesDescription.setResizeColumn(2)
+		self.seriesDescription.InsertColumn(0, "", width=20)		# which subrun is currently being executed
+		self.seriesDescription.InsertColumn(1, "Run mode")#, width=150)
+		self.seriesDescription.InsertColumn(2, "Number of gates", width=125)
 		
-		self.moreInfoButton = wx.Button(self.runSeriesConfigPanel, ID_MOREINFO, "More info on this run item...")
-		self.Bind(wx.EVT_BUTTON, self.SeriesEntryMoreInfo, self.moreInfoButton)
+		self.moreInfoButton = wx.Button(self.runSeriesConfigPanel, ID_MOREINFO, "More details...")
+		self.Bind(wx.EVT_BUTTON, self.SeriesMoreInfo, self.moreInfoButton)
 		self.moreInfoButton.Disable()		# will be enabled when a file is loaded.
 		
 		runSeriesConfigSizer = wx.StaticBoxSizer(wx.StaticBox(self.runSeriesConfigPanel, -1, "Run series configuration"), wx.VERTICAL)
@@ -250,7 +254,8 @@ class MainFrame(wx.Frame):
 		logPage = wx.Panel(nb)
 
 		logfileText = wx.StaticText( logPage, -1, wordwrap("Select log files you want to view (ctrl+click for multiple selections) and click the \"View log file(s)\" button below...", 400, wx.ClientDC(self)) )
-		self.logfileList = wx.ListCtrl(logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
+		self.logfileList = AutoSizingListCtrl(logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
+		self.logfileList.setResizeColumn(6)
 		self.logfileList.InsertColumn(0, "Run")
 		self.logfileList.InsertColumn(1, "Subrun")
 		self.logfileList.InsertColumn(2, "Date")
@@ -408,10 +413,31 @@ class MainFrame(wx.Frame):
 		path = fileSelector.GetPath()
 		if filename != "":
 			self.seriesFile.SetValue(filename)
+			self.seriesFilename = filename
 			self.seriesPath = path
+			
+			badfile = False
+			try:
+				db = shelve.open(path)
+				self.runmanager.runseries = db["series"]
+				db.close()
+			except (anydbm.error, KeyError):
+				errordlg = wx.MessageDialog( None, "The file you selected is not a valid run series file.  Select another.", "Invalid file", wx.OK | wx.ICON_ERROR )
+				errordlg.ShowModal()
+				return
+			
+			self.seriesDescription.DeleteAllItems()
+			for runinfo in self.runmanager.runseries.Runs:
+				index = self.seriesDescription.InsertStringItem(sys.maxint, "")		# first column is which subrun is currently being executed
+				self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
+				self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
+				
+			self.moreInfoButton.Enable()
+			self.UpdateStatus()
 		
-	def SeriesEntryMoreInfo(self, evt=None):
-		pass
+	def SeriesMoreInfo(self, evt=None):
+		infowindow = RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
+		infowindow.Show()
 
 	def UpdateRunConfig(self, evt=None):
 		if self.singleRunButton.GetValue() == True:
@@ -441,7 +467,28 @@ class MainFrame(wx.Frame):
 			self.closeAllButton.Enable()
 		else:
 			self.closeAllButton.Disable()
+	
+	def UpdateStatus(self):
+		symbol = ""
+		if self.runmanager.running:
+			symbol = u"\u25b7"		# a right-facing triangle: like a "play" symbol
+		else:
+			symbol = u"\u25a1"		# a square: like a "stop" symbol
+
+		if self.runSeriesButton.GetValue() == True:		# if this is a run SERIES
+			index = -1
+			while True:
+				index = self.seriesDescription.GetNextItem(index)
 			
+				if index == -1:
+					break
+			
+				if index == self.runmanager.subrun:
+					self.seriesDescription.SetStringItem(index, 0, symbol)
+					self.seriesDescription.Select(index)
+				else:
+					self.seriesDescription.SetStringItem(index, 0, "")
+					self.seriesDescription.Select(index, False)
 
 	def OnTimeToClose(self, evt):
 		self.runmanager.StopDataAcquisition()
@@ -515,8 +562,8 @@ class MainFrame(wx.Frame):
 			LEDcode = MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups)
 
 			gates    = int(self.gatesEntry.GetValue())
-			runMode  = MetaData.RunningModes.hashes[int(self.runModeEntry.GetSelection())]
-			LIlevel = MetaData.LILevels.hashes[int(self.LILevelEntry.GetSelection())]
+			runMode  = MetaData.RunningModes.item(int(self.runModeEntry.GetSelection()), MetaData.HASH)
+			LIlevel  = MetaData.LILevels.item(int(self.LILevelEntry.GetSelection()), MetaData.HASH)
 			
 
 			run = RunSeries.RunInfo(gates, runMode, LIlevel, LEDcode)
@@ -530,17 +577,22 @@ class MainFrame(wx.Frame):
 
 		self.runmanager.run          = int(self.runEntry.GetValue())
 		self.runmanager.first_subrun = int(self.subrunEntry.GetValue())
-		self.runmanager.detector     = MetaData.DetectorTypes.hashes[int(self.detConfigEntry.GetSelection())]
+		self.runmanager.detector     = MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH)
 		self.runmanager.febs         = int(self.febsEntry.GetValue())
 				
 		self.runmanager.StartDataAcquisition()
 		if (self.runmanager.running):
 			self.runEntry.Disable()
 			self.subrunEntry.Disable()
+			self.HWinitEntry.Disable()
 			self.gatesEntry.Disable()
 			self.detConfigEntry.Disable()
 			self.runModeEntry.Disable()
 			self.febsEntry.Disable()
+			
+			self.singleRunButton.Disable()
+			self.runSeriesButton.Disable()
+			self.seriesFileButton.Disable()
 
 			self.startButton.Disable()
 			self.stopButton.Enable()
@@ -561,9 +613,15 @@ class MainFrame(wx.Frame):
 		self.detConfigEntry.Enable()
 		self.runModeEntry.Enable()
 		self.febsEntry.Enable()
+		self.HWinitEntry.Enable()
+
+		self.singleRunButton.Enable()
+		self.runSeriesButton.Enable()
+		self.seriesFileButton.Enable()
 
 		self.stopButton.Disable()
 		self.startButton.Enable()
+		self.UpdateStatus()
 		self.UpdateLogFiles()
 		
 	@staticmethod
@@ -629,7 +687,45 @@ class LogFrame(wx.Frame):
 		
 	def CloseOut(self, evt=None):
 		self.Close()
-	
+		
+#########################################################
+#   RunSeriesInfoFrame
+#########################################################
+
+class RunSeriesInfoFrame(wx.Frame):
+	""" A window for configuration of paths, etc. """
+	def __init__(self, parent, filename, runseries):
+		wx.Frame.__init__(self, parent, -1, "Run series: " + filename, size=(600,400))
+
+		panel = wx.Panel(self)
+
+		infoList = AutoSizingListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
+		infoList.setResizeColumn(2)
+
+		infoList.InsertColumn(0, "# gates")
+		infoList.InsertColumn(1, "Running mode")
+		infoList.InsertColumn(2, "LI level")
+		infoList.InsertColumn(3, "LED group")
+
+		for runinfo in runseries.Runs:
+			index = infoList.InsertStringItem(sys.maxint, str(runinfo.gates))
+			infoList.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
+			infoList.SetStringItem(index, 2, MetaData.LILevels[runinfo.ledLevel])
+			infoList.SetStringItem(index, 3, MetaData.LEDGroups[runinfo.ledGroup])
+		
+		okButton = wx.Button(panel, wx.ID_OK)
+
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		sizer.Add(infoList, 1, wx.EXPAND | wx.ALIGN_TOP)
+		sizer.Add(okButton, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM)
+
+		panel.SetSizer(sizer)
+
+		self.Bind(wx.EVT_BUTTON, self.CloseOut, okButton)
+		
+	def CloseOut(self, evt=None):
+		self.Close()
+		
 
 #########################################################
 #   OptionsFrame
@@ -751,7 +847,17 @@ class OptionsFrame(wx.Frame):
 		
 	def Cancel(self, evt=None):
 		self.Close()
+
+#########################################################
+#   AutoSizingListCtrl
+#########################################################
+class AutoSizingListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin, ListRowHighlighter):
+	def __init__(self, parent, id=-1, style=wx.LC_REPORT):
+		wx.ListCtrl.__init__(self, parent, id, style=style)
+		ListCtrlAutoWidthMixin.__init__(self)
+		ListRowHighlighter.__init__(self)
 		
+	
 
 #########################################################
 #   ConfigUpdatedEvent
