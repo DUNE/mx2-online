@@ -88,7 +88,7 @@ class MetaData:
 			elif self.codes[keylocation.index(key)] is None and self.hashes[keylocation.index(key)] is not None:
 				return self.hashes[keylocation.index(key)]
 			else:
-				raise KeyError("Description corresponds to metadata with both hashes and keys: must specify return type.")
+				raise KeyError("Description you provided corresponds to metadata with both hashes and keys: must specify return type.")
 		else:
 			return self.descriptions[keylocation.index(key)]
 	
@@ -103,6 +103,19 @@ class MetaData:
 			if key in location:
 				return True
 		return False
+		
+	def item(self, index, returntype = ANY):
+		"""
+		Allows you to get information based on the position in the array.
+		It's sort of the inverse of index() below.
+		Useful if you have a list box or something similar where you provided
+		one of the lists (descriptions, hashes, codes) as input and the indexing
+		by position is maintained when you are figuring out what is selected.
+		"""
+		if returntype != ANY and returntype in (DESCRIPTION, HASH, CODE):
+			return self.locations[returntype][index]
+		elif returntype == ANY:	# defaults to returning the DESCRIPTION
+			return self.descriptions[index]
 			
 	def index(self, key):
 		"""
@@ -143,8 +156,8 @@ class MetaData:
 		
 SpecialGUI		= MetaData( tuple([("Deprecated", 0, None)]) )
 
-HardwareInitLevels	= MetaData(( ("Full HW init", 0, None),
-				             ("No HW init",   1, None) ))
+HardwareInitLevels	= MetaData(( ("No HW init",   0, None),
+				             ("Full HW init", 1, None) ))
 				             
 LILevels			= MetaData(( ("Zero PE", 0, None),
 				             ("One PE",  1, None),
