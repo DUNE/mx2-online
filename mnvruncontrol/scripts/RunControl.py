@@ -412,9 +412,6 @@ class MainFrame(wx.Frame):
 		filename = fileSelector.GetFilename()
 		path = fileSelector.GetPath()
 		if filename != "":
-			self.seriesFile.SetValue(filename)
-			self.seriesFilename = filename
-			self.seriesPath = path
 			
 			badfile = False
 			try:
@@ -425,6 +422,10 @@ class MainFrame(wx.Frame):
 				errordlg = wx.MessageDialog( None, "The file you selected is not a valid run series file.  Select another.", "Invalid file", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
 				return
+			
+			self.seriesFile.SetValue(filename)
+			self.seriesFilename = filename
+			self.seriesPath = path
 			
 			self.seriesDescription.DeleteAllItems()
 			for runinfo in self.runmanager.runseries.Runs:

@@ -150,7 +150,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		daq_command = "%s/bin/minervadaq -et %s -g %d -m %d -r %d -s %d -d %d -cf %s -dc %d" % (os.environ["DAQROOT"], self.ET_filename, self.runinfo.gates, self.runinfo.runMode, self.run, self.subrun, self.detector, self.hwconfigfile, self.febs)
 		if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
 			daq_command += " -ll %d -lg %d" % (self.runinfo.ledLevel, self.runinfo.ledGroup)
-			
+		
+#		print daq_command
+	
 		self.windows.append(daqFrame)
 		self.UpdateWindowCount()
 		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, quit_event=DAQQuitEvent) )
