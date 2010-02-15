@@ -74,8 +74,8 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	InitializeCrim(0xE00000, 1, runningMode);
 	//InitializeCroc(0x010000, 1,  0,  0,  0,  0); // MS01W, MS02W, MS03W, MS04W
 	//InitializeCroc(0x020000, 2,  0,  0,  0,  0); // MS01E, MS02E, MS03E, MS04E
-	InitializeCroc(0x030000, 1,  0,  0,  0, 10); // MS05W, MS06W, MS07W, MS08W
-	InitializeCroc(0x040000, 2,  0,  0,  0,  9); // MS05E, MS06E, MS07E, MS08E
+	InitializeCroc(0x030000, 1,  0, 10, 10, 10); // MS05W, MS06W, MS07W, MS08W
+	InitializeCroc(0x040000, 2,  0,  9,  9,  9); // MS05E, MS06E, MS07E, MS08E
 	InitializeCroc(0x050000, 3, 10, 10, 10,  0); // MS09W, MS10W, MS11W, Loopback
 	InitializeCroc(0x060000, 4,  9,  9,  9,  0); // MS09E, MS10E, MS11E, Loopback
 #endif
