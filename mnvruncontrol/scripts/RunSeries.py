@@ -11,6 +11,21 @@ class RunSeries:
         	except:
 			print 'RunSeries: Could not retrieve first run.  Runs container may be empty'
 
+	def GetRun(self, index):
+                try:
+                        return self.Runs[index]
+                except:
+                        print 'RunSeries: Could not retrieve run.  Runs container may be empty'
+
+	def SetRun(self, index, runInfo):
+		if type(runInfo) != RunInfo:
+			print 'RunSeries: Second parameter must be an instance of the RunInfo class'
+			return
+		try:
+			self.Runs[index] = runInfo
+		except:
+			print 'RunSeries: Invalid index to Runs container'
+
 	def AppendToRunList(self,runInfo):     
 		self.Runs.append(runInfo)
 	
@@ -27,9 +42,9 @@ class RunInfo(object):
 
 	def __init__(   self,
                         gates      = 0,
-                        runMode    = MetaData.RunningModes.descriptions[0],
-                        ledLevel   = MetaData.LILevels.descriptions[0],
-                        ledGroup   = MetaData.LEDGroups.descriptions[0]):
+                        runMode    = MetaData.RunningModes.item(0,MetaData.HASH),
+                        ledLevel   = MetaData.LILevels.item(0,MetaData.HASH),
+                        ledGroup   = MetaData.LEDGroups.item(0,MetaData.HASH)):
 
 		self.gates      = gates
 		self.runMode    = runMode
@@ -39,8 +54,8 @@ class RunInfo(object):
 	def ToString(self):
 
                 dump  = 'Gates                 = %s\n' % self.gates
-                dump += 'Run Mode              = %s\n' % self.runMode
-                dump += 'LED Level             = %s\n' % self.ledLevel
-                dump += 'LED Group             = %s\n' % self.ledGroup
+                dump += 'Run Mode              = %s\n' % MetaData.RunningModes[self.runMode,MetaData.DESCRIPTION]
+                dump += 'LED Level             = %s\n' % MetaData.LILevels[self.ledLevel,MetaData.DESCRIPTION]
+                dump += 'LED Group             = %s\n' % MetaData.LEDGroups[self.ledGroup,MetaData.DESCRIPTION]
 		
 		return dump
