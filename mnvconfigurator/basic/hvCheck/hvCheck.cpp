@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <cstdlib>
+#include <cmath>
 
 // Minerva Headers
 #include "acquire.h"
@@ -20,7 +21,6 @@ using namespace std;
 #define FPGAWRITELEVEL 50
 #define TRIPTREADLEVEL 50
 #define TRIPTWRITELEVEL 50
-#define HVENABLE 0 // 1 to enable HV
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs now.
 const int maxHits    = 6;  // maxHits should not be changed independent of the DAQ!
@@ -61,7 +61,7 @@ unsigned char crocResetAndTestPulseMask[] = {0x0F,0x0F}; // enable reset (0F) an
 int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire, croc *myCroc);
 // Pure Readback of FPGA's - Prints HV info regardless of debug level
 int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc, 
-	unsigned int crocChannel, febAddresses boardID);
+	unsigned int crocChannel, int vWindow, febAddresses boardID);
 // Basic Setup of FPGA's - not used, but here anyway...
 int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc, 
  	unsigned int crocChannel, febAddresses boardID, int HVTarget);
@@ -78,7 +78,7 @@ int FastCommandOpenGate(controller *myController, acquire *myAcquire, croc *myCr
 int main(int argc, char *argv[]) 
 {
 	if (argc < 2) {
-		cout << "Usage : hvCheck -c <CROC Address> -h <CHANNEL Number> -f <Number of FEBs>\n";
+		cout << "Usage : hvCheck -c <CROC Address> -h <CHANNEL Number> -f <Number of FEBs> -w <Voltage Window (ADC)>\n";
 		exit(0);
 	}
 	
@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
 	int crocID                   = 1;
 	int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
 	// int HVTarget                 = 32000;
+	int vWindow                  = 60;
 	
 	int error;		
 	int controllerID = 0;
@@ -95,26 +96,31 @@ int main(int argc, char *argv[])
 	// Process the command line argument set.
 	int optind = 1;
 	// Decode Arguments
-	cout << "\n\nArguments: " << endl;
+	printf("\nArguments: ");
 	while ((optind < argc) && (argv[optind][0]=='-')) {
 		string sw = argv[optind];
 		if (sw=="-c") {
 			optind++;
 			crocCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
-			cout << "\tCROC Address   = " << (crocCardAddress>>16) << endl;
-        }
+			printf(" CROC Address = %03d ", (crocCardAddress>>16));
+        	}
 		else if (sw=="-h") {
 			optind++;
 			crocChannel = (unsigned int)( atoi(argv[optind]) );
-			cout << "\tCROC Channel   = " << crocChannel << endl;
-        }
+			printf(" CROC Channel = %1d ", crocChannel);
+        	}
 		else if (sw=="-f") {
 			optind++;
 			nFEBs = atoi(argv[optind]);
-			cout << "\tNumber of FEBs = " << nFEBs << endl;
-        }
+			printf(" Number of FEBs = %02d ", nFEBs);
+        	}
+		else if (sw=="-w") {
+			optind++;
+			vWindow = atoi(argv[optind]);
+			printf(" Voltage Window (ADC) = %04d ", vWindow);
+		}
 		else
-			cout << "Unknown switch: " << argv[optind] << endl;
+			cout << "\nUnknown switch: " << argv[optind] << endl;
 		optind++;
 	}
 	cout << endl;
@@ -141,8 +147,6 @@ int main(int argc, char *argv[])
 	if ((error=myController->ContactController())!=0) { 
 		cout<<"Controller contact error: "<<error<<endl; exit(error); // Exit due to no controller!
 	}
-	cout<<"Controller & Acquire Initialized..."<<endl;
-	cout<<endl;
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::list<febAddresses> febAddr;
@@ -150,8 +154,6 @@ int main(int argc, char *argv[])
 		febAddr.push_back( (febAddresses)nboard );
 	}
   	
-	std::cout << "Making CROC with index == " << crocID << " && address == " 
-		<< (crocCardAddress>>16) << std::endl;
 	myController->MakeCroc(crocCardAddress,(crocID));
 	try {
 		error = myController->GetCrocStatus(crocID); 
@@ -176,7 +178,7 @@ int main(int argc, char *argv[])
 				}
 				// Read FPGA's
 				{
-					error = FEBFPGARead(myController, myAcquire, myCroc, crocChannel, *p);
+					error = FEBFPGARead(myController, myAcquire, myCroc, crocChannel, vWindow, *p);
 					if (error!=0) { cout<<"Error in FEB FPGA Read!\n"; exit(error); }	
 				}
 			}		  
@@ -245,7 +247,7 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 
 // Read the values in the FEB FPGA Frame
 int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc,
-	unsigned int crocChannel, febAddresses boardID)
+	unsigned int crocChannel, int vWindow, febAddresses boardID)
 {
 #if DEBUGLEVEL > FPGAREADLEVEL
 	printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
@@ -350,9 +352,11 @@ int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->ShowValues();
 		cout << endl;
 #endif
-		printf("Board ID = %02d, HV Enabled = %1d, HV Target = %05d, HV Actual = %05d, HV Period Auto = %05d, HV Diff from Targ = %05d\n",
-			myFeb->GetBoardNumber(), myFeb->GetHVEnabled(), myFeb->GetHVTarget(), myFeb->GetHVActual(), myFeb->GetHVPeriodAuto(), 
-			(myFeb->GetHVActual()-myFeb->GetHVTarget()));
+		if ( abs( myFeb->GetHVActual()-myFeb->GetHVTarget() ) > vWindow ) {
+			printf("Board ID = %02d, HV Enabled = %1d, HV Target = %05d, HV Actual = %05d, HV Period Auto = %05d, HV Diff from Targ = %05d\n",
+				myFeb->GetBoardNumber(), myFeb->GetHVEnabled(), myFeb->GetHVTarget(), myFeb->GetHVActual(), myFeb->GetHVPeriodAuto(), 
+				(myFeb->GetHVActual()-myFeb->GetHVTarget()));
+		}
 		myFeb->message = 0;
 		delete [] testarr;
 	}
