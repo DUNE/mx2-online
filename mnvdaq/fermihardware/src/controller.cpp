@@ -75,7 +75,7 @@ int controller::ContactController()
 		controllerLog.critStream() << "  sudo sh a2818_load.2.6";
 		return e;
 	} 
-	std::cout << "Controller " << controller_id << " is initialized." << std::endl; 
+	//suppress//std::cout << "Controller " << controller_id << " is initialized." << std::endl; 
 	controllerLog.infoStream() << "Controller " << controller_id << " is initialized.";
 
 	// Get the firmware version of the controller card.
@@ -88,7 +88,7 @@ int controller::ContactController()
 		controllerLog.critStream() << "Unable to obtain the controller firmware version!";
 		return e;
 	}
-	std::cout << "The controller firmware version is: " << firmware << std::endl; 
+	//suppress//std::cout << "The controller firmware version is: " << firmware << std::endl; 
 	controllerLog.infoStream() << "The controller firmware version is: " << firmware; 
 
 	// Get the status of the controller.
