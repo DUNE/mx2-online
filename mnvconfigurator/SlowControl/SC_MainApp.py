@@ -828,15 +828,16 @@ class SCApp(wx.App):
                 dirname=dlg.GetDirectory()
                 self.frame.SetStatusText('ReadFLASH WriteFILE %s'%filename, 1)
                 f=open(filename,'w')
-                for iPage in range(Flash().NPages):
-                    pageBytes=theFEB.FLASHMainMemPageRead(theCROCChannel, iPage, Flash().NBytesPerPage)
+                for iPage in range(Flash.NPages):
+                    pageBytes=theFEB.FLASHMainMemPageRead(theCROCChannel, iPage)
                     f.write('%s '%str(iPage).rjust(4,'0').upper())
                     for iByte in pageBytes:
                         f.write('%s'%hex(iByte)[2:].rjust(2,'0').upper())
                     f.write('\n')
-                    if iPage%50==24:
+                    if iPage%100==0:
                         self.frame.Refresh(); self.frame.Update()
-                        self.frame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)
+                        self.frame.SetStatusText('%s...'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)
+                self.frame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)
                 f.close()
             dlg.Destroy()              
         except: ReportException('OnFEFLASHbtnReadFlashToFile', self.reportErrorChoice)
@@ -852,61 +853,51 @@ class SCApp(wx.App):
                 dirname=dlg.GetDirectory()
                 self.frame.SetStatusText('ReadFLASH CompFILE %s'%filename, 1)
                 f=open(filename,'r')
-                errPages=''
-                iPage=0
-                for line in f:
-                    if iPage>=Flash().NPages: raise Exception("The file has more lines than expected %s"%iPage)
-                    pageAddrFile, pageBytesFile = Flash().ParseStrLineToMessage(line)
-                    if pageAddrFile!=iPage: raise Exception("Error in file's page address field at line %s"%iPage)
-                    pageBytesRead=theFEB.FLASHMainMemPageRead(theCROCChannel, iPage, Flash().NBytesPerPage)
-                    if pageBytesRead!=pageBytesFile: errPages += '%s '%iPage
-                    if iPage%50==24:
-                        self.frame.Refresh(); self.frame.Update()
-                        self.frame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)
-                    iPage+=1
+                pagesAddrFile, pagesBytesFile = Flash().ParseFileLinesToMessages(f)
                 f.close()
-                if iPage<Flash().NPages: raise Exception("The file has less lines than expected %s"%iPage)
-                if errPages!='': raise Exception('Comparison failed on pages: %s'%errPages) 
+                errPages=''
+                for iPage in range(Flash.NPages):
+                    pageBytesRead=theFEB.FLASHMainMemPageRead(theCROCChannel, pagesAddrFile[iPage])
+                    if pageBytesRead!=pagesBytesFile[iPage]: errPages += '%s '%iPage
+                    if iPage%100==0:
+                        self.frame.Refresh(); self.frame.Update()
+                        self.frame.SetStatusText('%s...'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)
+                self.frame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)
+                if errPages!='': raise Exception('ReadFLASH CompFILE Error on page %s'%errPages)                
             dlg.Destroy()              
         except: ReportException('OnFEFLASHbtnCompareFileToFlash', self.reportErrorChoice)
     def OnFEFLASHbtnWriteFileToFlash(self, event):
         try:
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
             theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
-            theFEB=FEB(self.frame.fe.febNumber) 
-            dlg = wx.FileDialog(self.frame, message='READ Flash Configuration', defaultDir='', defaultFile='',
-                wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
-            if dlg.ShowModal()==wx.ID_OK:
-                filename=dlg.GetFilename()
-                dirname=dlg.GetDirectory()
-                self.frame.SetStatusText('WriteFLASH FromFILE %s'%filename, 1)
-                f=open(filename,'r')
-                errPages=''
-                iPage=0
-                pagesAddrFile=Flash().NPages*[0]
-                pagesBytesFile=Flash().NPages*[0]
-                for line in f:
-                    if iPage>=Flash().NPages: raise Exception("The file has more lines than expected %s"%iPage)
-                    pagesAddrFile[iPage], pagesBytesFile[iPage] = Flash().ParseStrLineToMessage(line)
-                    if pagesAddrFile[iPage]!=iPage: raise Exception("Error in file's page address field at line %s"%iPage)
-                    iPage+=1
-                f.close()
-                if iPage<Flash().NPages: raise Exception("The file has less lines than expected %s"%iPage)
-                for iPage in range(Flash().NPages):
-                    theFEB.FLASHMainMemPageProgThroughBuffer(theCROCChannel, pagesAddrFile[iPage], pagesBytesFile[iPage], Flash().NBytesPerPage)
-                    if iPage%50==24:
-                        self.frame.Refresh(); self.frame.Update()
-                        self.frame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)    
-            dlg.Destroy()              
+            theFEB=FEB(self.frame.fe.febNumber)
+            theFEB.WriteFileToFlash(theCROCChannel=theCROCChannel, theCROC=theCROC, theVMECROCs=None,
+                toThisFEB=True, toThisCH=False, toThisCROC=False, toAllCROCs=False, theFrame=self.frame)             
         except: ReportException('OnFEFLASHbtnWriteFileToFlash', self.reportErrorChoice)
-
-
-
-
-        
-    def OnFEFLASHbtnWriteFileToFlashThisCH(self, event): wx.MessageBox('not yet implemented')
-    def OnFEFLASHbtnWriteFileToFlashThisCROC(self, event): wx.MessageBox('not yet implemented')
-    def OnFEFLASHbtnWriteFileToFlashALL(self, event): wx.MessageBox('not yet implemented')
+    def OnFEFLASHbtnWriteFileToFlashThisCH(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
+            theFEB=FEB(self.frame.fe.febNumber)
+            theFEB.WriteFileToFlash(theCROCChannel=theCROCChannel, theCROC=theCROC, theVMECROCs=None,
+                toThisFEB=False, toThisCH=True, toThisCROC=False, toAllCROCs=False, theFrame=self.frame)             
+        except: ReportException('OnFEFLASHbtnWriteFileToFlashThisCH', self.reportErrorChoice)
+    def OnFEFLASHbtnWriteFileToFlashThisCROC(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
+            theFEB=FEB(self.frame.fe.febNumber)
+            theFEB.WriteFileToFlash(theCROCChannel=None, theCROC=theCROC, theVMECROCs=None,
+                toThisFEB=False, toThisCH=False, toThisCROC=True, toAllCROCs=False, theFrame=self.frame)             
+        except: ReportException('OnFEFLASHbtnWriteFileToFlashThisCROC', self.reportErrorChoice)
+    def OnFEFLASHbtnWriteFileToFlashALL(self, event):
+        try:
+            theCROC=FindVMEdev(self.vmeCROCs, self.frame.fe.crocNumber<<16)
+            theCROCChannel=theCROC.Channels()[self.frame.fe.chNumber]
+            theFEB=FEB(self.frame.fe.febNumber)
+            theFEB.WriteFileToFlash(theCROCChannel=None, theCROC=None, theVMECROCs=self.vmeCROCs,
+                toThisFEB=False, toThisCH=False, toThisCROC=False, toAllCROCs=True, theFrame=self.frame)             
+        except: ReportException('OnFEFLASHbtnWriteFileToFlashALL', self.reportErrorChoice)
 
     # OTHER events ##########################################################
     def OnClose(self, event):
@@ -922,22 +913,24 @@ def FindFEBs(theCROCChannel):
     theCROCChannel.FEBs=[]
     for febAddr in range(1,16):
         for itry in range(1,3):
-            ClearAndCheckStatusRegister(theCROCChannel)
-            ResetAndCheckDPMPointer(theCROCChannel)
-            WriteFIFOAndCheckStatus([febAddr], theCROCChannel) 
-            SendFIFOAndCheckStatus(theCROCChannel)
-            #decode first two words from DPM and check DPM pointer
-            dpmPointer=theCROCChannel.DPMPointerRead()
-            w1=theCROCChannel.ReadDPM(0)
-            w2=theCROCChannel.ReadDPM(2)
-            if (w2==(0x8000 | (febAddr<<8))) & (w1==0x0B00) & (dpmPointer==13):
-                #print "Found feb#" + str(febAddr), "w1="+hex(w1), "dpmPointer="+str(dpmPointer)
-                #theCROCChannel.FEBs.append(FEB(febAddr))
-                theCROCChannel.FEBs.append(febAddr)
-                break
-            elif (w2==(0x0000 | (febAddr<<8))) & (w1==0x0400) & (dpmPointer==6): pass
-                #print "NO    feb#" + str(feb), "w1="+hex(w1), "dpmPointer="+str(dpmPointer) 
-            else: print "FindFEBs(" + hex(theCROCChannel.chBaseAddr) + ") wrong message " + "w1="+hex(w1) + "w2="+hex(w2), "dpmPointer="+str(dpmPointer)  
+            try:
+                ClearAndCheckStatusRegister(theCROCChannel)
+                ResetAndCheckDPMPointer(theCROCChannel)
+                WriteFIFOAndCheckStatus([febAddr], theCROCChannel) 
+                SendFIFOAndCheckStatus(theCROCChannel)
+                #decode first two words from DPM and check DPM pointer
+                dpmPointer=theCROCChannel.DPMPointerRead()
+                w1=theCROCChannel.ReadDPM(0)
+                w2=theCROCChannel.ReadDPM(2)
+                if (w2==(0x8000 | (febAddr<<8))) & (w1==0x0B00) & (dpmPointer==13):
+                    #print "Found feb#" + str(febAddr), "w1="+hex(w1), "dpmPointer="+str(dpmPointer)
+                    #theCROCChannel.FEBs.append(FEB(febAddr))
+                    theCROCChannel.FEBs.append(febAddr)
+                    break
+                elif (w2==(0x0000 | (febAddr<<8))) & (w1==0x0400) & (dpmPointer==6): pass
+                    #print "NO    feb#" + str(feb), "w1="+hex(w1), "dpmPointer="+str(dpmPointer) 
+                else: print "FindFEBs(" + hex(theCROCChannel.chBaseAddr) + ") wrong message " + "w1="+hex(w1) + "w2="+hex(w2), "dpmPointer="+str(dpmPointer)  
+            except: ReportException('FindFEBs', {'display':True, 'msgBox':False})
 def ReportException(comment, choice):
     msg = comment + ' : ' + str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1])
     if (choice['display']): print msg
