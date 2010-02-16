@@ -52,7 +52,7 @@ namespace Minerva
 		{
 			return "Error: this command block is not allowed here.";
 		}
-	}
+	};
 
 	class LIBoxCommandNotAllowedException : public std::exception
 	{
@@ -60,7 +60,7 @@ namespace Minerva
 		{
 			return "Error: specified Command is not allowed in this Command Block.";
 		}
-	}
+	};
 
 };
 
