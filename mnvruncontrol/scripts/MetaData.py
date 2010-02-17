@@ -192,19 +192,20 @@ LEDGroups			= MetaData(( ("All" ,   2**3,    "0"),
 def LIgroupCodeToLEDgroups(LEDgroupcode):
 	LEDcodes = "0abcdefghijklmnopqrstuv"
 	pos = LEDcodes.index(LEDgroupcode.lower())
+#	print "Pos is: ", pos
 	
 	LIgroup = ""
 	
-	if LEDgroupcode / 8 == 0:
+	if pos / 8 > 0:
 		LIgroup += "D"
-	LEDgroupcode %= 8
-	if LEDgroupcode / 4 == 0:
+	pos %= 8
+	if pos / 4 > 0:
 		LIgroup += "C"
-	LEDgroupcode %= 4
-	if LEDgroupcode / 2 == 0:
+	pos %= 4
+	if pos / 2 > 0:
 		LIgroup += "B"
-	LEDgroupcode %= 2
-	if LEDgroupcode == 1:
+	pos %= 2
+	if pos == 1:
 		LIgroup += "A"
 		
 	return LIgroup

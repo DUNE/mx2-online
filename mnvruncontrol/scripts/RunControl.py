@@ -29,7 +29,7 @@ LOGFILE_LOCATION_DEFAULT = "/work/data/logs"
 ET_SYSTEM_LOCATION_DEFAULT = "/work/data/etsys"
 RAW_DATA_LOCATION_DEFAULT = "/work/data/rawdata"
 
-LI_CONTROL_LOCATION_DEFAULT = "/work/software/LIBoxIO"
+LI_CONTROL_LOCATION_DEFAULT = "/work/software/LIBox"
 
 #########################################################
 #    MainFrame
@@ -149,6 +149,7 @@ class MainFrame(wx.Frame):
 
 		LILevelEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "LI light level")
 		self.LILevelEntry = wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.LILevels.descriptions)
+		self.LILevelEntry.SetSelection(MetaData.LILevels.index("Max PE"))
 		self.LILevelEntry.Disable()		# will be enabled when necessary
 
 		singleRunConfigSizer = wx.GridSizer(3, 2, 10, 10)
@@ -338,6 +339,8 @@ class MainFrame(wx.Frame):
 
 			try:	self.runmanager.LIBoxControlLocation = db["LIBoxControlLocation"]
 			except KeyError: self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+		
+		
 		
 	def GetNextRunSubrun(self, evt=None):
 		if not os.path.exists(self.runinfoFile):
@@ -560,13 +563,12 @@ class MainFrame(wx.Frame):
 			for cb in self.LEDgroups:
 				if cb.GetValue == True:
 					LEDgroups += cb.GetLabelText()
-			LEDcode = MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups)
+			LEDcode = MetaData.LEDGroups[MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups), MetaData.HASH]
 
 			gates    = int(self.gatesEntry.GetValue())
 			runMode  = MetaData.RunningModes.item(int(self.runModeEntry.GetSelection()), MetaData.HASH)
 			LIlevel  = MetaData.LILevels.item(int(self.LILevelEntry.GetSelection()), MetaData.HASH)
 			
-
 			run = RunSeries.RunInfo(gates, runMode, LIlevel, LEDcode)
 			self.runmanager.runseries.Runs.append(run)
 		else:										# if it's a run series

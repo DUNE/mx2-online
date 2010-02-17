@@ -34,6 +34,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.current_DAQ_thread = 0			# the next thread to start
 		self.subrun = 0					# the next run in the series to start
 		self.windows = []					# child windows opened by the process.
+		
+		self.LIBox = None					# this will be set in StartDataAcquisition
 
 		# configuration stuff
 		self.etSystemFileLocation = RunControl.ET_SYSTEM_LOCATION_DEFAULT
@@ -63,7 +65,18 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.detector == None or self.run == None or self.first_subrun == None or self.febs == None:
 			raise ValueError("Run series is improperly configured.")
 
-		self.CloseWindows()			# same for the windows
+		# the LI box module needs to be imported late
+		# because we don't know where to find it
+		# until the config has been loaded.  
+		if self.LIBox == None:
+			if not "LIBox" in dir():
+				if not self.LIBoxControlLocation in sys.path:
+					sys.path.append(self.LIBoxControlLocation)
+				import LIBox
+			
+			self.LIBox = LIBox.LIBox()
+			
+		self.CloseWindows()			# any leftover windows will need to be closed.
 
 		self.subrun = 0
 		self.running = True
@@ -89,6 +102,32 @@ class DataAcquisitionManager(wx.EvtHandler):
 			return
 
 		self.CloseWindows()			# don't want leftover windows open.
+
+		# set up the LI box to do what it's supposed to, if it needs to be on.
+		if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
+			self.LIBox.LED_groups = MetaData.LEDGroups[self.runinfo.ledGroup]
+			
+			need_LI = True
+			if self.runinfo.ledLevel == MetaData.LILevels["One PE"]:
+				self.LIBox.pulse_height = 6.5					# THIS SHOULD BE VERIFIED
+			elif self.runinfo.ledLevel == MetaData.LILevels["Max PE"]:
+				self.LIBox.pulse_height = 12.07
+			else:
+				need_LI = False
+			
+			if need_LI:
+				try:
+					self.LIBox.initialize()
+					self.LIBox.write_configuration()	
+				except:
+					errordlg = wx.MessageDialog( None, "The LI box does not seem to be responding.  Check the connection settings and the cable...", "LI box not responding", wx.OK | wx.ICON_WARNING )
+					errordlg.ShowModal()
+					self.running = False
+					self.subrun = 0
+					self.main_window.StopRunning()		# tell the main window that we're done here.
+					return
+					
+				
 
 		####
 		#### NEED TO DECIDE THE HARDWARE CONFIG FILE TO BE PASSED TO THE SLOW CONTROL HERE
@@ -194,7 +233,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
 		self.subrun += 1
-		
+
+		try:
+			self.LIBox.reset()					# don't want the LI box going unless it needs to be.
+		except:
+			print "Couldn't reset LI box at the end of the subrun..."
+
 		self.main_window.PostSubrun()			# main window needs to update subrun #, etc.
 		
 		if self.running:
