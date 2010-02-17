@@ -60,6 +60,11 @@ class LIBox:
 
 		self.port.writeTimeout = 0.1
 		
+#		try:
+#			self.port.read(1)
+#		except serial.SerialException:
+#			raise LIBoxException("The LI box does not seem to be connected.  Check the settings and the cable connection.")
+		
 	def reset(self):
 		self.command_stack = ["_X"]
 		self.communicate()
@@ -113,6 +118,7 @@ class LIBox:
 		
 		# first, LED group.
 		self.LED_groups = self.LED_groups.upper()
+		self.LED_groups = self.LED_groups.replace(" ", "")
 		
 		if not re.match("[a-dA-D]{1,4}", self.LED_groups):
 			raise LIBoxException("LED groups to use must be some combination of 'A', 'B', 'C', 'D'.")
