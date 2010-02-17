@@ -101,36 +101,36 @@ int main(int argc, char *argv[])
 	// Process the command line argument set.
 	int optind = 1;
 	// Decode Arguments
-	cout << "\n\nArguments: " << endl;
+	printf("\nArguments: ");
 	while ((optind < argc) && (argv[optind][0]=='-')) {
 		string sw = argv[optind];
 		if (sw=="-c") {
 			optind++;
 			crocCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
-			cout << "\tCROC Address   = " << (crocCardAddress>>16) << endl;
+			printf(" CROC Address = %03d ", (crocCardAddress>>16));
         	}
 		else if (sw=="-h") {
 			optind++;
 			crocChannel = (unsigned int)( atoi(argv[optind]) );
-			cout << "\tCROC Channel   = " << crocChannel << endl;
+			printf(" CROC Channel = %1d ", crocChannel);
         	}
 		else if (sw=="-f") {
 			optind++;
 			nFEBs = atoi(argv[optind]);
-			cout << "\tNumber of FEBs = " << nFEBs << endl;
+			printf(" Number of FEBs = %02d ", nFEBs);
         	}
 		else if (sw=="-v") {
 			optind++;
 			HVTarget = atoi(argv[optind]);
-			cout << "\tTarget HV      = " << HVTarget << endl;
+			printf(" Target HV = %05d ", HVTarget);
         	}
 		else if (sw=="-e") {
 			optind++;
 			HVEnableFlag = atoi(argv[optind]);
-			cout << "\tHV Enable Flag = " << HVEnableFlag << endl;
+			printf(" HV Enable Flag = %1d ", HVEnableFlag);
 		}
 		else
-			cout << "Unknown switch: " << argv[optind] << endl;
+			cout << "\nUnknown switch: " << argv[optind] << endl;
 		optind++;
 	}
 	cout << endl;
@@ -156,7 +156,6 @@ int main(int argc, char *argv[])
 	if ((error=myController->ContactController())!=0) { 
 		cout<<"Controller contact error: "<<error<<endl; exit(error); // Exit due to no controller!
 	}
-	cout<<"Controller & Acquire Initialized..."<<endl;
 	cout<<endl;
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,8 +164,6 @@ int main(int argc, char *argv[])
 		febAddr.push_back( (febAddresses)nboard );
 	}
   	
-	std::cout << "Making CROC with index == " << crocID << " && address == " 
-		<< (crocCardAddress>>16) << std::endl;
 	myController->MakeCroc(crocCardAddress,(crocID));
 	try {
 		error = myController->GetCrocStatus(crocID); 
@@ -410,10 +407,10 @@ int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->SetGateStart(43000);      
 		myFeb->SetGateLength(1702);  
 		if (HVEnableFlag) {
-			std::cout << "HV Enable Flag is set to ON!\n";
+			//std::cout << "HV Enable Flag is set to ON!\n";
 			val[0]=0x1; 
 		} else {
-			std::cout << "HV Enable Flag is set to OFF!\n";
+			//std::cout << "HV Enable Flag is set to OFF!\n";
 			val[0]=0x0; 
 		}
 		myFeb->SetHVEnabled(val);
