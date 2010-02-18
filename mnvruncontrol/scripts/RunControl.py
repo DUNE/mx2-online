@@ -20,8 +20,8 @@ import RunSeries
 import DataAcquisitionManager
 
 ## some constants for configuration
-CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
-#CONFIG_DB_LOCATION = "/home/jeremy/run_control_config.db"
+#CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
+CONFIG_DB_LOCATION = "/home/jeremy/run_control_config.db"
 
 RUN_SUBRUN_DB_LOCATION_DEFAULT = "/work/conditions/next_run_subrun.db"
 LOGFILE_LOCATION_DEFAULT = "/work/data/logs"
@@ -322,7 +322,7 @@ class MainFrame(wx.Frame):
 			self.logfileLocation = LOGFILE_LOCATION_DEFAULT
 			self.runmanager.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
 			self.runmanager.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
-			self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			self.runmanager.LIBoxControlProgram = LI_CONTROL_PROGRAM_DEFAULT
 			
 		else:
 			try:	self.runinfoFile = db["runinfoFile"]
@@ -337,8 +337,8 @@ class MainFrame(wx.Frame):
 			try:	self.runmanager.rawdataLocation = db["rawdataLocation"]
 			except KeyError: self.runmanager.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
 
-			try:	self.runmanager.LIBoxControlLocation = db["LIBoxControlLocation"]
-			except KeyError: self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			try:	self.runmanager.LIBoxControlProgram = db["LIBoxControlProgram"]
+			except KeyError: self.runmanager.LIBoxControlProgram = LI_CONTROL_PROGRAM_DEFAULT
 		
 		
 		
@@ -503,7 +503,8 @@ class MainFrame(wx.Frame):
 		
 
 	def UpdateLogFiles(self, evt=None):
-		self.GetConfig()
+		if evt is not None and evt.GetEventType() == EVT_CONFIGUPDATED_ID:		# we only need to reload the config if it's changed!
+			self.GetConfig()
 
 		self.logfileList.DeleteAllItems()
 		self.logfileNames = []
@@ -750,7 +751,7 @@ class OptionsFrame(wx.Frame):
 			logfileLocation = LOGFILE_LOCATION_DEFAULT
 			etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
 			rawdataLocation = RAW_DATA_LOCATION_DEFAULT
-			LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			LIBoxControlProgram = LI_CONTROL_PROGRAM_DEFAULT
 		else:
 			try:	runinfoFile = db["runinfoFile"]
 			except KeyError: runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
@@ -764,8 +765,8 @@ class OptionsFrame(wx.Frame):
 			try:	rawdataLocation = db["rawdataLocation"]
 			except KeyError: rawdataLocation = RAW_DATA_LOCATION_DEFAULT
 			
-			try:	LIBoxControlLocation = db["LIBoxControlLocation"]
-			except KeyError: LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			try:	LIBoxControlProgram = db["LIBoxControlProgram"]
+			except KeyError: LIBoxControlProgram = LI_CONTROL_PROGRAM_DEFAULT
 
 		panel = wx.Panel(self)
 		
@@ -783,15 +784,15 @@ class OptionsFrame(wx.Frame):
 		rawDataLocationLabel = wx.StaticText(panel, -1, "Raw data location")
 		self.rawDataLocationEntry = wx.TextCtrl(panel, -1, rawdataLocation)
 		
-		LIBoxControlLocationLabel = wx.StaticText(panel, -1, "LI box control location")
-		self.LIBoxControlLocationEntry = wx.TextCtrl(panel, -1, LIBoxControlLocation)
+		LIBoxControlProgramLabel = wx.StaticText(panel, -1, "LI box control location")
+		self.LIBoxControlProgramEntry = wx.TextCtrl(panel, -1, LIBoxControlProgram)
 		
 		pathsGridSizer = wx.GridSizer(6, 2, 10, 10)
 		pathsGridSizer.AddMany( ( runInfoDBLabel,            (self.runInfoDBEntry, 1, wx.EXPAND),
 		                     logfileLocationLabel,      (self.logfileLocationEntry, 1, wx.EXPAND),
 		                     etSystemFileLocationLabel, (self.etSystemFileLocationEntry, 1, wx.EXPAND),
 		                     rawDataLocationLabel,      (self.rawDataLocationEntry, 1, wx.EXPAND),
-		                     LIBoxControlLocationLabel, (self.LIBoxControlLocationEntry, 1, wx.EXPAND) ) )
+		                     LIBoxControlProgramLabel, (self.LIBoxControlProgramEntry, 1, wx.EXPAND) ) )
 
 		pathsSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Paths"), orient=wx.VERTICAL)
 		pathsSizer.Add(pathsGridSizer, 1, wx.EXPAND)
@@ -840,7 +841,7 @@ class OptionsFrame(wx.Frame):
 			db["logfileLocation"] = self.logfileLocationEntry.GetValue()
 			db["etSystemFileLocation"] = self.etSystemFileLocationEntry.GetValue()
 			db["rawdataLocation"] = self.rawDataLocationEntry.GetValue()
-			db["LIBoxControlLocation"] = self.LIBoxControlLocationEntry.GetValue()
+			db["LIBoxControlProgram"] = self.LIBoxControlProgramEntry.GetValue()
 			
 			db.close()
 			

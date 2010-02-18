@@ -40,7 +40,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# configuration stuff
 		self.etSystemFileLocation = RunControl.ET_SYSTEM_LOCATION_DEFAULT
 		self.rawdataLocation      = RunControl.RAW_DATA_LOCATION_DEFAULT
-		self.LIBoxControlLocation = RunControl.LI_CONTROL_LOCATION_DEFAULT
+		self.LIBoxControlProgram  = RunControl.LI_CONTROL_PROGRAM_DEFAULT
 
 
 		# these will need to be set by the run control window before the process is started.
@@ -102,6 +102,26 @@ class DataAcquisitionManager(wx.EvtHandler):
 			return
 
 		self.CloseWindows()			# don't want leftover windows open.
+		
+		# make sure the LI box is ready.
+		LIBoxCommand = self.LIBoxControlProgram + " disarm"
+		LIBoxProcess = subprocess.Popen(LIBoxCommand)
+		LIBoxProcess.wait()		# waits until the process finishes
+		if LIBoxProcess.returncode != 0:
+			errordlg = wx.MessageDialog( None, "The LI box does not seem to be responding.  Check the setup!", "LI box not responding", wx.OK | wx.ICON_ERROR )
+			errordlg.ShowModal()
+			return
+		
+		# for now the LI box parameters on the main window won't do anything.
+		# this script always fires all the LEDs at max PE...
+		LIBoxCommand = self.LIBoxControlProgram + " runscript MaxPE.li"
+		LIBoxProcess = subprocess.Popen(LIBoxCommand)
+		LIBoxProcess.wait()		# waits until the process finishes
+		if LIBoxProcess.returncode != 0:
+			errordlg = wx.MessageDialog( None, "The LI box wasn't happy with the configuration script.  Check the setup!", "LI box unhappy", wx.OK | wx.ICON_ERROR )
+			errordlg.ShowModal()
+			return
+		
 
 		# set up the LI box to do what it's supposed to, if it needs to be on.
 		if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
@@ -191,7 +211,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			daq_command += " -ll %d -lg %d" % (self.runinfo.ledLevel, self.runinfo.ledGroup)
 		
 #		print daq_command
-	
+
 		self.windows.append(daqFrame)
 		self.UpdateWindowCount()
 		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, quit_event=DAQQuitEvent) )
