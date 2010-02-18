@@ -40,7 +40,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# configuration stuff
 		self.etSystemFileLocation = RunControl.ET_SYSTEM_LOCATION_DEFAULT
 		self.rawdataLocation      = RunControl.RAW_DATA_LOCATION_DEFAULT
-		self.LIBoxControlProgram  = RunControl.LI_CONTROL_PROGRAM_DEFAULT
+		self.LIBoxControlLocation  = RunControl.LI_CONTROL_LOCATION_DEFAULT
 
 
 		# these will need to be set by the run control window before the process is started.
@@ -103,26 +103,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.CloseWindows()			# don't want leftover windows open.
 		
-		# make sure the LI box is ready.
-		LIBoxCommand = self.LIBoxControlProgram + " disarm"
-		LIBoxProcess = subprocess.Popen(LIBoxCommand)
-		LIBoxProcess.wait()		# waits until the process finishes
-		if LIBoxProcess.returncode != 0:
-			errordlg = wx.MessageDialog( None, "The LI box does not seem to be responding.  Check the setup!", "LI box not responding", wx.OK | wx.ICON_ERROR )
-			errordlg.ShowModal()
-			return
-		
-		# for now the LI box parameters on the main window won't do anything.
-		# this script always fires all the LEDs at max PE...
-		LIBoxCommand = self.LIBoxControlProgram + " runscript MaxPE.li"
-		LIBoxProcess = subprocess.Popen(LIBoxCommand)
-		LIBoxProcess.wait()		# waits until the process finishes
-		if LIBoxProcess.returncode != 0:
-			errordlg = wx.MessageDialog( None, "The LI box wasn't happy with the configuration script.  Check the setup!", "LI box unhappy", wx.OK | wx.ICON_ERROR )
-			errordlg.ShowModal()
-			return
-		
-
 		# set up the LI box to do what it's supposed to, if it needs to be on.
 		if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
 			self.LIBox.LED_groups = MetaData.LEDGroups[self.runinfo.ledGroup]
@@ -140,7 +120,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					self.LIBox.initialize()
 					self.LIBox.write_configuration()	
 				except:
-					errordlg = wx.MessageDialog( None, "The LI box does not seem to be responding.  Check the connection settings and the cable...", "LI box not responding", wx.OK | wx.ICON_WARNING )
+					errordlg = wx.MessageDialog( None, "The LI box does not seem to be responding.  Check the connection settings and the cable and try again.", "LI box not responding", wx.OK | wx.ICON_ERROR )
 					errordlg.ShowModal()
 					self.running = False
 					self.subrun = 0
@@ -158,7 +138,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.current_DAQ_thread = 0
 
 		now = datetime.datetime.utcnow()
-		self.ET_filename = '%s_%08d_%04d_%s_v04_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
+		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
 		self.raw_data_filename = self.ET_filename + '.dat'
 
 		self.StartNextThread()			# starts the first thread.  the rest will be started in turn as ThreadReadyEvents are received by the run manager.

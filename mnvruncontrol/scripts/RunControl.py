@@ -322,7 +322,7 @@ class MainFrame(wx.Frame):
 			self.logfileLocation = LOGFILE_LOCATION_DEFAULT
 			self.runmanager.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
 			self.runmanager.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
-			self.runmanager.LIBoxControlProgram = LI_CONTROL_PROGRAM_DEFAULT
+			self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
 			
 		else:
 			try:	self.runinfoFile = db["runinfoFile"]
@@ -337,8 +337,8 @@ class MainFrame(wx.Frame):
 			try:	self.runmanager.rawdataLocation = db["rawdataLocation"]
 			except KeyError: self.runmanager.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
 
-			try:	self.runmanager.LIBoxControlProgram = db["LIBoxControlProgram"]
-			except KeyError: self.runmanager.LIBoxControlProgram = LI_CONTROL_PROGRAM_DEFAULT
+			try:	self.runmanager.LIBoxControlLocation = db["LIBoxControlLocation"]
+			except KeyError: self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
 		
 		
 		
@@ -751,7 +751,7 @@ class OptionsFrame(wx.Frame):
 			logfileLocation = LOGFILE_LOCATION_DEFAULT
 			etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
 			rawdataLocation = RAW_DATA_LOCATION_DEFAULT
-			LIBoxControlProgram = LI_CONTROL_PROGRAM_DEFAULT
+			LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
 		else:
 			try:	runinfoFile = db["runinfoFile"]
 			except KeyError: runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
@@ -765,8 +765,8 @@ class OptionsFrame(wx.Frame):
 			try:	rawdataLocation = db["rawdataLocation"]
 			except KeyError: rawdataLocation = RAW_DATA_LOCATION_DEFAULT
 			
-			try:	LIBoxControlProgram = db["LIBoxControlProgram"]
-			except KeyError: LIBoxControlProgram = LI_CONTROL_PROGRAM_DEFAULT
+			try:	LIBoxControlLocation = db["LIBoxControlLocation"]
+			except KeyError: LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
 
 		panel = wx.Panel(self)
 		
@@ -784,15 +784,15 @@ class OptionsFrame(wx.Frame):
 		rawDataLocationLabel = wx.StaticText(panel, -1, "Raw data location")
 		self.rawDataLocationEntry = wx.TextCtrl(panel, -1, rawdataLocation)
 		
-		LIBoxControlProgramLabel = wx.StaticText(panel, -1, "LI box control location")
-		self.LIBoxControlProgramEntry = wx.TextCtrl(panel, -1, LIBoxControlProgram)
+		LIBoxControlLocationLabel = wx.StaticText(panel, -1, "LI box control location")
+		self.LIBoxControlLocationEntry = wx.TextCtrl(panel, -1, LIBoxControlLocation)
 		
 		pathsGridSizer = wx.GridSizer(6, 2, 10, 10)
 		pathsGridSizer.AddMany( ( runInfoDBLabel,            (self.runInfoDBEntry, 1, wx.EXPAND),
 		                     logfileLocationLabel,      (self.logfileLocationEntry, 1, wx.EXPAND),
 		                     etSystemFileLocationLabel, (self.etSystemFileLocationEntry, 1, wx.EXPAND),
 		                     rawDataLocationLabel,      (self.rawDataLocationEntry, 1, wx.EXPAND),
-		                     LIBoxControlProgramLabel, (self.LIBoxControlProgramEntry, 1, wx.EXPAND) ) )
+		                     LIBoxControlLocationLabel, (self.LIBoxControlLocationEntry, 1, wx.EXPAND) ) )
 
 		pathsSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Paths"), orient=wx.VERTICAL)
 		pathsSizer.Add(pathsGridSizer, 1, wx.EXPAND)
@@ -841,7 +841,7 @@ class OptionsFrame(wx.Frame):
 			db["logfileLocation"] = self.logfileLocationEntry.GetValue()
 			db["etSystemFileLocation"] = self.etSystemFileLocationEntry.GetValue()
 			db["rawdataLocation"] = self.rawDataLocationEntry.GetValue()
-			db["LIBoxControlProgram"] = self.LIBoxControlProgramEntry.GetValue()
+			db["LIBoxControlLocation"] = self.LIBoxControlLocationEntry.GetValue()
 			
 			db.close()
 			
