@@ -313,11 +313,12 @@ class DAQthread(threading.Thread):
 
 				if len(newdata) > 0:		# shouldn't be a problem since reads are BLOCKING in python, but it's always better to check
 					wx.PostEvent(self.output_window, NewDataEvent(newdata))
-
-
-				if (self.time_to_quit or self.process.returncode != None):
-#					print "Data in buffer at last read: '" + newdata + "'"
+				elif self.process.returncode != None:	# if the buffer is empty and the process has finished, don't loop any more
 					break
+				
+				if self.time_to_quit:
+					break
+				
 
 
 		# if something special is supposed to happen when this thread quits, do it.

@@ -21,7 +21,6 @@ import DataAcquisitionManager
 
 ## some constants for configuration
 CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
-#CONFIG_DB_LOCATION = "/home/jeremy/run_control_config.db"
 
 RUN_SUBRUN_DB_LOCATION_DEFAULT = "/work/conditions/next_run_subrun.db"
 LOGFILE_LOCATION_DEFAULT = "/work/data/logs"
