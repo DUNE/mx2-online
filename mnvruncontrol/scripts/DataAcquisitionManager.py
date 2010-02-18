@@ -67,7 +67,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		# the LI box module needs to be imported late
 		# because we don't know where to find it
-		# until the config has been loaded.  
+		# until the config has been loaded. 
+		 
 		if self.LIBox == None:
 			if not "LIBox" in dir():
 				if not self.LIBoxControlLocation in sys.path:
@@ -75,7 +76,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				import LIBox
 			
 			self.LIBox = LIBox.LIBox()
-			
+					
 		self.CloseWindows()			# any leftover windows will need to be closed.
 
 		self.subrun = 0
@@ -126,7 +127,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					self.subrun = 0
 					self.main_window.StopRunning()		# tell the main window that we're done here.
 					return
-					
+							
 				
 
 		####
@@ -234,11 +235,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
 		self.subrun += 1
 
+		
 		try:
 			self.LIBox.reset()					# don't want the LI box going unless it needs to be.
 		except:
 			print "Couldn't reset LI box at the end of the subrun..."
-
+		
 		self.main_window.PostSubrun()			# main window needs to update subrun #, etc.
 		
 		if self.running:
@@ -309,7 +311,7 @@ class DAQthread(threading.Thread):
 
 			while True:
 				self.process.poll()		# check if the process is still alive
-				newdata = self.process.stdout.read(1)	# not every process is careful to spit things out with line breaks, so I can't use readline()
+				newdata = self.process.stdout.read(2)	# not every process is careful to spit things out with line breaks, so I can't use readline()
 
 				if len(newdata) > 0:		# shouldn't be a problem since reads are BLOCKING in python, but it's always better to check
 					wx.PostEvent(self.output_window, NewDataEvent(newdata))
@@ -344,15 +346,14 @@ class DAQthread(threading.Thread):
 			if len(newdata) > 0 and self.output_window:
 				wx.PostEvent(self.output_window, NewDataEvent(newdata))
 		
-			if self.process.returncode != None:
-				if (self.timerthread):
-					self.timerthread.cancel()
-				print "Process", self.pid, "has quit."
-				if self.output_window:
-					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
+			if (self.timerthread):
+				self.timerthread.cancel()
+			print "Process " + str(self.pid) + " has quit."
+			if self.output_window:
+				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
 
 	def HardKill(self):
-		print "Thread", self.pid, "was unresponsive.  Checking if hard kill is necessary..."
+		print "Thread " + str(self.pid) + " was unresponsive.  Checking if hard kill is necessary..."
 		
 #		self.process.stdout.flush()
 #		(newdata, tmp) = self.process.communicate()
@@ -362,24 +363,30 @@ class DAQthread(threading.Thread):
 		self.process.poll()
 		
 		if self.process.returncode == None:
-			print "Thread", self.pid, "not responding to SIGINT.  Issuing SIGTERM..."
+			print "Thread " + str(self.pid) + "not responding to SIGINT.  Issuing SIGTERM..."
 			self.process.terminate()
 			
 			time.sleep(2)
 			
 			if self.process.returncode == None:
-				print "Thread", self.pid, "is deadlocked.  Issuing SIGKILL..."
+				print "Thread " + str(self.pid) + " is deadlocked.  Issuing SIGKILL..."
 				self.process.kill()
 	
-				print "Process", self.pid, "was killed."
+				print "Process " + str(self.pid) + " was killed."
 				if self.output_window:
 					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread killed."))
 			else:
-				print "Thread", self.pid, "forcibly terminated but clean exit."
+				(newdata, tmp) = self.process.communicate()
+				if len(newdata) > 0 and self.output_window:
+					wx.PostEvent(self.output_window, NewDataEvent(newdata))
+				print "Thread " + str(self.pid) + " forcibly terminated but clean exit."
 				if self.output_window:
 					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
 		else:
-			print "Process", self.pid, "has quit."
+			(newdata, tmp) = self.process.communicate()
+			if len(newdata) > 0 and self.output_window:
+				wx.PostEvent(self.output_window, NewDataEvent(newdata))
+			print "Process " + str(self.pid) + " has quit."
 			if self.output_window:
 				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
 		
