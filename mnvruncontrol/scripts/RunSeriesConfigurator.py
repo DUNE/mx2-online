@@ -85,8 +85,8 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.DeleteSelectedRun, self.b_deleteSelectedRun)
 	self.b_deleteSelectedRun.Disable()
 
-        self.runList = wx.ListCtrl(self.mainPage, -1, style=wx.LC_REPORT | wx.LC_VRULES)
-        self.runList.InsertColumn(0, "Run #", wx.LIST_FORMAT_CENTER)
+        self.runList = wx.ListCtrl(self.mainPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL)
+        self.runList.InsertColumn(0, "Seq. No.", wx.LIST_FORMAT_CENTER)
         self.runList.InsertColumn(1, "Run Mode", wx.LIST_FORMAT_CENTER)
         self.runList.InsertColumn(2, "Gates", wx.LIST_FORMAT_CENTER)
         self.runList.InsertColumn(3, "LED Level", wx.LIST_FORMAT_CENTER)
