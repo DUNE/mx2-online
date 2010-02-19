@@ -505,9 +505,9 @@ class MainFrame(wx.Frame):
 			if not self.LoadRunSeriesFile(filename, path):
 				errordlg = wx.MessageDialog( None, "The file you selected is not a valid run series file.  Select another.", "Invalid file", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
-				
-			self.moreInfoButton.Enable()
-			self.UpdateStatus()
+			else:	
+				self.moreInfoButton.Enable()
+				self.UpdateStatus()
 	
 	def LoadRunSeriesFile(self, filename, fullpath):
 		try:
