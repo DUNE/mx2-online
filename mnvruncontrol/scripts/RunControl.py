@@ -53,12 +53,15 @@ class MainFrame(wx.Frame):
 		# finally, make sure the display is current
 		self.GetNextRunSubrun()
 		self.UpdateLogFiles()
+		self.UpdateRunConfig()
 
 	def BuildGraphics(self):
 		menuBar = wx.MenuBar()
 
 		fileMenu = wx.Menu()
+		fileMenu.Append(wx.ID_SAVE, "&Save values", "Save the currently-specified values for next time.")
 		fileMenu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit the run control")
+		self.Bind(wx.EVT_MENU, self.StoreNextRunSubrun, id=wx.ID_SAVE)
 		self.Bind(wx.EVT_MENU, self.OnTimeToClose, id=wx.ID_EXIT)
 		menuBar.Append(fileMenu, "&File")
 
@@ -139,7 +142,7 @@ class MainFrame(wx.Frame):
 		LEDgroupLabel = wx.StaticText(self.singleRunConfigPanel, -1, "LED groups used in LI")
 		LEDgroupSizer = wx.GridSizer(2, 2)
 		self.LEDgroups = []
-		for letter in ('A', 'B', 'C', 'D'):
+		for letter in "ABCD":
 			cb = wx.CheckBox(self.singleRunConfigPanel, -1, letter)
 			cb.SetValue(True)
 			cb.Disable()		# will be enabled when necessary
@@ -171,7 +174,7 @@ class MainFrame(wx.Frame):
 		self.seriesFile = wx.TextCtrl(self.runSeriesConfigPanel, -1, "", style=wx.TE_READONLY)
 
 		self.seriesFileButton = wx.Button(self.runSeriesConfigPanel, ID_PICKFILE, "Load...")
-		self.Bind(wx.EVT_BUTTON, self.LoadRunSeriesFile, self.seriesFileButton)
+		self.Bind(wx.EVT_BUTTON, self.SelectRunSeriesFile, self.seriesFileButton)
 		
 		seriesFileSizer = wx.BoxSizer(wx.HORIZONTAL)
 		seriesFileSizer.Add(self.seriesFile, 1, flag=wx.RIGHT | wx.LEFT, border=5)
@@ -182,6 +185,11 @@ class MainFrame(wx.Frame):
 		self.seriesDescription.InsertColumn(0, "", width=20)		# which subrun is currently being executed
 		self.seriesDescription.InsertColumn(1, "Run mode")#, width=150)
 		self.seriesDescription.InsertColumn(2, "Number of gates", width=125)
+
+		# center the "currently running indicator" column
+		col = wx.ListItem()
+		col.SetAlign(wx.LIST_FORMAT_CENTER)
+		self.seriesDescription.SetColumn(0, col)
 		
 		self.moreInfoButton = wx.Button(self.runSeriesConfigPanel, ID_MOREINFO, "More details...")
 		self.Bind(wx.EVT_BUTTON, self.SeriesMoreInfo, self.moreInfoButton)
@@ -342,49 +350,129 @@ class MainFrame(wx.Frame):
 		
 		
 	def GetNextRunSubrun(self, evt=None):
+		"""
+		Loads up the configuration values used in the last subrun (as well as the run/subrun number)
+		so as to give a hopefully intelligent set of default values.
+		"""
+		
 		if not os.path.exists(self.runinfoFile):
-			errordlg = wx.MessageDialog( None, "The database storing the run/subrun data appears to be missing.  Run/subrun will be set to 1...", "Run/subrun database missing", wx.OK | wx.ICON_WARNING )
+			errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be missing.  Default configuration will be used...", "Last run configuration database missing", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
-
-			self.runEntry.SetRange(1, 100000)
-			self.runEntry.SetValue(1)
-			self.subrunEntry.SetValue(1)
+			has_all_keys = False
 		else:
-			d = shelve.open(self.runinfoFile, 'r')
-
-			if d.has_key('run') and d.has_key('subrun'):
-				self.runEntry.SetRange(int(d['run']),100000)
-				self.runEntry.SetValue(int(d['run']))
-				self.subrunEntry.SetValue(int(d['subrun']))
-
-			else:
-				errordlg = wx.MessageDialog( None, "The database storing the run/subrun data appears to be corrupted.  Run/subrun will be set to 1...", "Run/subrun database corrupted", wx.OK | wx.ICON_WARNING )
+			db = shelve.open(self.runinfoFile, 'r')
+			
+			keys_to_check = ("run", "subrun", "hwinit", "detector", "febs", "is_single_run", "gates", "runmode", "ledgroups", "lilevel", "runseries_path", "runseries_file")
+			
+			has_all_keys = True
+			for key in keys_to_check:
+				if not db.has_key(key):
+					has_all_keys = False
+					break
+			
+			if not has_all_keys:
+				errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be corrupted.  Default configuration will be used...", "Last run configuration database corrupted", wx.OK | wx.ICON_WARNING )
 				errordlg.ShowModal()
 
-				self.runEntry.SetRange(1, 100000)
-				self.runEntry.SetValue(1)
-				self.subrunEntry.SetValue(1)
+		if has_all_keys:
+			run = db['run']
+			subrun = db['subrun']
+			hwinit = MetaData.HardwareInitLevels.index(db["hwinit"])
+			detconfig = MetaData.DetectorTypes.index(db["detector"])
+			febs = db["febs"]
+			singlerun = db["is_single_run"]
+			
+			gates = db["gates"]
+			runmode = MetaData.RunningModes.index(db["runmode"])
+			ledgroups = db["ledgroups"]
+			lilevel = MetaData.LILevels.index(db["lilevel"])
+			runseries_path = db["runseries_path"]
+			runseries_file = db["runseries_file"]
+		else:
+			run = 1
+			subrun = 1
+			hwinit = MetaData.HardwareInitLevels.index("No HW init")
+			detconfig = MetaData.DetectorTypes.index("Upstream")
+			febs = 114
+			singlerun = True
 
-			d.close()
+			gates = 1500
+			runmode = MetaData.RunningModes.index("One shot")
+			ledgroups = "ABCD"
+			lilevel = MetaData.LILevels.index("Max PE")
+			runseries_path = None
+			runseries_file = None
 
+			db.close()
+
+		self.runEntry.SetRange(run, 100000)
+		self.runEntry.SetValue(run)
+		self.subrunEntry.SetValue(subrun)
+		self.HWinitEntry.SetSelection(hwinit)
+		self.detConfigEntry.SetSelection(detconfig)
+		self.febsEntry.SetValue(febs)
+		self.singleRunButton.SetValue(singlerun)
+		self.runSeriesButton.SetValue(not(singlerun))
+		
+		self.gatesEntry.SetValue(gates)
+		self.runModeEntry.SetSelection(runmode)
+		self.LILevelEntry.SetSelection(lilevel)
+
+		
+		for cb in self.LEDgroups:
+			if cb.GetLabelText() in ledgroups:
+				cb.SetValue(True)
+			else:
+				cb.SetValue(False)
+		
+		# these are initialized here to None, but will be updated
+		# by LoadRunSeries if the file is valid.
+		self.seriesFilename = None
+		self.seriesPath = None
+		if runseries_path != None and runseries_file != None:
+			self.LoadRunSeriesFile(runseries_file, runseries_path)
+			
+			
 		# the minimum subrun allowed for the lowest run.  
 		# if the user raises the run number, the subrun will be returned to 1,
 		# so if s/he subsequently lowers it again, we need to know what to set the the minimum
 		# back to.
 		self.minRunSubrun = self.subrunEntry.GetValue()		
 
+		self.UpdateLEDgroups()
 		self.runEntry.Enable()
 		self.startButton.Enable()
 	
-	def StoreNextRunSubrun(self):
+	def StoreNextRunSubrun(self, evt=None):
+		"""
+		Stores the currently selected configuration for use as default values the next time.
+		Prevents shifters from having to necessarily remember the settings between runs.
+		"""
+		
 		try:
 			db = shelve.open(self.runinfoFile)
 		except anydbm.error:
 			errordlg = wx.MessageDialog( None, "The database storing the run/subrun data cannot be accessed.  Run/subrun will not be retained...", "Run/subrun database inaccessible", wx.OK | wx.ICON_ERROR )
 			errordlg.ShowModal()
 		else:
-			db["run"] = self.runEntry.GetValue()
-			db["subrun"] = self.subrunEntry.GetValue()
+			db["run"] = int(self.runEntry.GetValue())
+			db["subrun"] = int(self.subrunEntry.GetValue())
+			db["hwinit"] = int(MetaData.HardwareInitLevels.item(self.HWinitEntry.GetSelection(), MetaData.HASH))
+			db["detector"] = int(MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH))
+			db["febs"] = int(self.febsEntry.GetValue())
+			db["is_single_run"] = self.singleRunButton.GetValue()
+			db["gates"] = int(self.gatesEntry.GetValue())
+			db["runmode"] = MetaData.RunningModes.item(self.runModeEntry.GetSelection())
+
+			LEDgroups = ""
+			for cb in self.LEDgroups:
+				if cb.GetValue() == True:
+					LEDgroups += cb.GetLabelText()
+			db["ledgroups"] = LEDgroups
+			db["lilevel"] = MetaData.LILevels.item(self.LILevelEntry.GetSelection())
+			db["runseries_file"] = self.seriesFilename
+			db["runseries_path"] = self.seriesPath
+
 			db.close()
 			
 	def PostSubrun(self, evt=None):
@@ -407,53 +495,54 @@ class MainFrame(wx.Frame):
 		else:
 			self.subrunEntry.SetValue(1)
 			
-	def LoadRunSeriesFile(self, evt=None):
+	def SelectRunSeriesFile(self, evt=None):
 		fileSelector = wx.FileDialog(self, "Select a run series file", wildcard="*", style=wx.FD_OPEN)
 		fileSelector.ShowModal()
 		
 		filename = fileSelector.GetFilename()
 		path = fileSelector.GetPath()
 		if filename != "":
-			
-			badfile = False
-			try:
-				db = shelve.open(path)
-				self.runmanager.runseries = db["series"]
-				db.close()
-			except (anydbm.error, KeyError):
+			if not self.LoadRunSeriesFile(filename, path):
 				errordlg = wx.MessageDialog( None, "The file you selected is not a valid run series file.  Select another.", "Invalid file", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
-				return
-			
-			self.seriesFile.SetValue(filename)
-			self.seriesFilename = filename
-			self.seriesPath = path
-			
-			self.seriesDescription.DeleteAllItems()
-			for runinfo in self.runmanager.runseries.Runs:
-				index = self.seriesDescription.InsertStringItem(sys.maxint, "")		# first column is which subrun is currently being executed
-				self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-				self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
 				
 			self.moreInfoButton.Enable()
 			self.UpdateStatus()
+	
+	def LoadRunSeriesFile(self, filename, fullpath):
+		try:
+			db = shelve.open(fullpath)
+			self.runmanager.runseries = db["series"]
+			db.close()
+		except (anydbm.error, KeyError):
+			return False
 		
+		self.seriesFile.SetValue(filename)
+		self.seriesFilename = filename
+		self.seriesPath = fullpath
+		
+		self.seriesDescription.DeleteAllItems()
+		for runinfo in self.runmanager.runseries.Runs:
+			index = self.seriesDescription.InsertStringItem(sys.maxint, "")		# first column is which subrun is currently being executed
+			self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
+			self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
+		
+		return True
+		
+	
 	def SeriesMoreInfo(self, evt=None):
 		infowindow = RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
 		infowindow.Show()
 
 	def UpdateRunConfig(self, evt=None):
-		if self.singleRunButton.GetValue() == True:
-			self.runSeriesConfigPanel.Show(False)
-			self.singleRunConfigPanel.Show(True)
-		else:
-			self.runSeriesConfigPanel.Show(True)
-			self.singleRunConfigPanel.Show(False)
-		
+		showSingleRun = self.singleRunButton.GetValue()
+		self.singleRunConfigPanel.Show(showSingleRun)
+		self.runSeriesConfigPanel.Show(not(showSingleRun))
+
 		self.mainPage.Layout()
 		self.mainPage.Refresh()
 		self.mainPage.Update()
-		
+
 	def UpdateLEDgroups(self, evt=None):
 		runMode = self.runModeEntry.GetSelection()
 		if runMode == MetaData.RunningModes.index("Light injection") or runMode == MetaData.RunningModes.index("Mixed beam/LI"):
@@ -561,7 +650,7 @@ class MainFrame(wx.Frame):
 			
 			LEDgroups = ""
 			for cb in self.LEDgroups:
-				if cb.GetValue == True:
+				if cb.GetValue() == True:
 					LEDgroups += cb.GetLabelText()
 			LEDcode = MetaData.LEDGroups[MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups), MetaData.HASH]
 
@@ -708,13 +797,24 @@ class RunSeriesInfoFrame(wx.Frame):
 		infoList.InsertColumn(0, "# gates")
 		infoList.InsertColumn(1, "Running mode")
 		infoList.InsertColumn(2, "LI level")
-		infoList.InsertColumn(3, "LED group")
+		infoList.InsertColumn(3, "LED group(s)")
+		
+		# center the columns
+		col = wx.ListItem()
+		col.SetAlign(wx.LIST_FORMAT_CENTER)
+		for i in range(4):
+			infoList.SetColumn(i, col)
 
 		for runinfo in runseries.Runs:
 			index = infoList.InsertStringItem(sys.maxint, str(runinfo.gates))
 			infoList.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-			infoList.SetStringItem(index, 2, MetaData.LILevels[runinfo.ledLevel])
-			infoList.SetStringItem(index, 3, MetaData.LEDGroups[runinfo.ledGroup])
+			if runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
+				infoList.SetStringItem(index, 2, MetaData.LILevels[runinfo.ledLevel])
+				infoList.SetStringItem(index, 3, MetaData.LEDGroups[runinfo.ledGroup])
+			else:
+				infoList.SetStringItem(index, 2, "--")
+				infoList.SetStringItem(index, 3, "--")
+			
 		
 		okButton = wx.Button(panel, wx.ID_OK)
 

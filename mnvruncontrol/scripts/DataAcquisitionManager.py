@@ -120,7 +120,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				try:
 					self.LIBox.initialize()
 					self.LIBox.write_configuration()	
-				except:
+				except Exception as e:
 					errordlg = wx.MessageDialog( None, "The LI box does not seem to be responding.  Check the connection settings and the cable and try again.", "LI box not responding", wx.OK | wx.ICON_ERROR )
 					errordlg.ShowModal()
 					self.running = False
