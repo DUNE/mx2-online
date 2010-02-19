@@ -26,7 +26,7 @@ class RunSeries:
 		except:
 			print 'RunSeries: Invalid index to Runs container'
 
-	def AppendToRunList(self,runInfo):     
+	def AppendRun(self,runInfo):     
 		self.Runs.append(runInfo)
 	
         def ClearRunList(self):
@@ -53,8 +53,8 @@ class RunInfo(object):
 
 	def ToString(self):
 
-                dump  = 'Gates                 = %s\n' % self.gates
-                dump += 'Run Mode              = %s\n' % MetaData.RunningModes[self.runMode,MetaData.DESCRIPTION]
+                dump  = 'Run Mode              = %s\n' % MetaData.RunningModes[self.runMode,MetaData.DESCRIPTION]
+		dump += 'Gates                 = %s\n' % self.gates
                 dump += 'LED Level             = %s\n' % MetaData.LILevels[self.ledLevel,MetaData.DESCRIPTION]
                 dump += 'LED Group             = %s\n' % MetaData.LEDGroups[self.ledGroup,MetaData.DESCRIPTION]
 		
