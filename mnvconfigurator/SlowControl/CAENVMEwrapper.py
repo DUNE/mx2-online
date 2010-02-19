@@ -91,6 +91,11 @@ class Controller(CAENVMETypes):
             raise CAENErr(cvRetError)
         self.handle = -1
 
+    def SystemReset(self):
+        cvRetError = vme.CAENVME_SystemReset(c_long(self.handle))
+        if cvRetError!=CAENVMETypes.CVErrors.cvSuccess:
+            raise CAENErr(cvRetError)
+
     def ReadCycle(self, addr):        
         d = c_void_p(-1)
         cvRetError = vme.CAENVME_ReadCycle(c_long(self.handle), c_ulong(addr), \

@@ -40,11 +40,13 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_MENU, self.OnMenuLoadHardware, self.frame.menuFileLoadHardware)
         self.Bind(wx.EVT_MENU, self.OnMenuLoadFile, self.frame.menuFileLoadFromFile)
         self.Bind(wx.EVT_MENU, self.OnMenuSaveFile, self.frame.menuFileSaveToFile)
+        self.Bind(wx.EVT_MENU, self.OnMenuReset, self.frame.menuFileReset)
+        self.Bind(wx.EVT_MENU, self.OnClose, self.frame.menuFileQuit)
         self.Bind(wx.EVT_MENU, self.OnMenuShowExpandAll, self.frame.menuShowExpandAll)
         self.Bind(wx.EVT_MENU, self.OnMenuShowCollapseAll, self.frame.menuShowCollapseAll)
-        self.Bind(wx.EVT_MENU, self.OnMenuActionsReadVoltages, self.frame.menuActionsReadVoltages)
-        self.Bind(wx.EVT_MENU, self.OnMenuActionsZeroHVAll, self.frame.menuActionsZeroHVAll)
-        self.Bind(wx.EVT_MENU, self.OnMenuActionsMonitorVoltages, self.frame.menuActionsMonitorVoltages)
+        self.Bind(wx.EVT_MENU, self.OnMenuActionsReadAllHV, self.frame.menuActionsReadAllHV)
+        self.Bind(wx.EVT_MENU, self.OnMenuActionsSetAllHV, self.frame.menuActionsSetAllHV)
+        self.Bind(wx.EVT_MENU, self.OnMenuActionsMonitorAllHV, self.frame.menuActionsMonitorAllHV)
         # VME pannel events ##########################################################
         self.Bind(wx.EVT_BUTTON, self.OnVMEbtnRead, self.frame.vme.VMEReadWrite.btnRead)
         self.Bind(wx.EVT_BUTTON, self.OnVMEbtnWrite, self.frame.vme.VMEReadWrite.btnWrite)
@@ -98,7 +100,8 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnReadRSTTP, self.frame.croc.ResetAndTestPulse.btnReadRSTTP)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnSendRSTOnly, self.frame.croc.ResetAndTestPulse.btnSendRSTOnly)
         self.Bind(wx.EVT_BUTTON, self.OnCROCbtnSendTPOnly, self.frame.croc.ResetAndTestPulse.btnSendTPOnly)
-        self.Bind(wx.EVT_BUTTON, self.OnCROCbtnReportAlignmentsAllChains, self.frame.croc.FEBGateDelays.btnReportAlignmentsAllChains)
+        self.Bind(wx.EVT_BUTTON, self.OnCROCbtnReportAlignmentsAllCHs, self.frame.croc.FEBGateDelays.btnReportAlignmentsAllCHs)
+        self.Bind(wx.EVT_BUTTON, self.OnCROCbtnReportAlignmentsAllCROCs, self.frame.croc.FEBGateDelays.btnReportAlignmentsAllCROCs)
         # CH pannel events ##########################################################
         self.Bind(wx.EVT_BUTTON, self.OnCHbtnClearStatus, self.frame.ch.StatusRegister.btnClearStatus)
         self.Bind(wx.EVT_BUTTON, self.OnCHbtnReadStatus, self.frame.ch.StatusRegister.btnReadStatus)
@@ -141,6 +144,8 @@ class SCApp(wx.App):
         self.frame.CenterOnScreen()
         self.frame.Show()
         return True
+    def OnClose(self, event):
+        self.frame.Close(True)
 
     # MENU events ##########################################################
     def OnMenuLoadHardware(self, event):      
@@ -175,44 +180,53 @@ class SCApp(wx.App):
             for addr in addrListCROCs: self.vmeCROCs.append(CROC(self.controller, addr<<16))
             #then take each CROC CH and find the FEBs
             for theCROC in self.vmeCROCs:
-                for theCROCChannel in theCROC.Channels(): 
+                for theCROCChannel in theCROC.Channels():
                     FindFEBs(theCROCChannel)
                     self.frame.SetStatusText('%s %s Finding FEs... done'%(theCROC.Description(), theCROCChannel.Description()), 0)
+                    print 'Found FEBs at %s %s %s'%(theCROC.Description(), theCROCChannel.Description(), theCROCChannel.FEBs)
             #and then update self.frame.tree
             self.frame.tree.DeleteAllItems()
             treeRoot = self.frame.tree.AddRoot("VME-BRIDGE")
             for vmedev in self.vmeCRIMs:            
                 SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
             for vmedev in self.vmeCROCs:
-                SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])            
+                SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
         except: ReportException('OnMenuLoadHardware', self.reportErrorChoice)
             
     def OnMenuLoadFile(self, event):
         try:
+            fileCRIMs=[];fileCROCs=[];fileFPGAs=[];fileTRIPs=[]
             dlg = wx.FileDialog(self.frame, message='READ Hardware Configuration', defaultDir='', defaultFile='',
                 wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 filename=dlg.GetFilename()
                 dirname=dlg.GetDirectory()
                 f=open(filename,'r')
+                self.frame.SetStatusText('Loading Config File %s'%filename, 1)
                 for line in f:
                     #print line
                     lineList = line.split(':')
                     if len(lineList)!=3: raise Exception('Wrong format in line %s wrong number of ":" characters'%line)
                     if lineList[0]==SC_Util.VMEdevTypes.CRIM:
                         if len(lineList[2])!=321: raise Exception('Wrong format in line %s wrong data field length <> 321'%line)
+                        if FindVMEdev(self.vmeCRIMs, int(lineList[1])<<16)==None:
+                            raise Exception('Load ERROR: CRIM:%s not present in current configuration'%lineList[1])
                         for i in range(16):
                             addr=str(lineList[2][3+i*20:9+i*20])
                             data=str(lineList[2][13+i*20:17+i*20])
                             self.controller.WriteCycle(int(addr,16), int(data,16))
                         self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
+                        fileCRIMs.append(lineList[1])
                     if lineList[0]==SC_Util.VMEdevTypes.CROC:
                         if len(lineList[2])!=41: raise Exception('Wrong format in line %s wrong data field length <> 41'%line)
+                        if FindVMEdev(self.vmeCROCs, int(lineList[1])<<16)==None:
+                            raise Exception('Load ERROR: CROC:%s not present in current configuration'%lineList[1])
                         for i in range(2):
                             addr=lineList[2][3+i*20:9+i*20]
                             data=lineList[2][13+i*20:17+i*20]
                             self.controller.WriteCycle(int(addr,16), int(data,16))
                         self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
+                        fileCROCs.append(lineList[1])
                     if lineList[0]==SC_Util.VMEdevTypes.FPGA:
                         if len(lineList[2])!=331: raise Exception('Wrong format in line %s wrong data field length <> 331'%line)
                         addresses = lineList[1].split(',')
@@ -225,9 +239,12 @@ class SCApp(wx.App):
                             data=lineList[2][2+i*6:4+i*6]
                             sentMessageData[i]=int(data,16)
                         theCROC=FindVMEdev(self.vmeCROCs, crocNumber<<16)
+                        if (theCROC==None) or not(chNumber in [0,1,2,3]) or not(febNumber in theCROC.Channels()[chNumber].FEBs):
+                            raise Exception('Load ERROR: FPGA:%s not present in current configuration'%lineList[1])
                         theCROCChannel=theCROC.Channels()[chNumber]
                         FEB(febNumber).FPGAWrite(theCROCChannel, sentMessageData)
                         self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
+                        fileFPGAs.append(lineList[1])
                     if lineList[0]==SC_Util.VMEdevTypes.TRIP:
                         if len(lineList[2])!=99: raise Exception('Wrong format in line %s wrong data field length <> 99'%line)
                         addresses = lineList[1].split(',')
@@ -241,6 +258,8 @@ class SCApp(wx.App):
                             data=lineList[2][2+i*7:5+i*7]
                             pRegs[i]=int(data,16)
                         theCROC=FindVMEdev(self.vmeCROCs, crocNumber<<16)
+                        if (theCROC==None) or not(chNumber in [0,1,2,3]) or not(febNumber in theCROC.Channels()[chNumber].FEBs) or not(tripNumber in ['0','1','2','3','4','5','X']):
+                            raise Exception('Load ERROR: TRIP:%s not present in current configuration'%lineList[1])
                         theCROCChannel=theCROC.Channels()[chNumber]
                         theFEB=FEB(febNumber)
                         if tripNumber!='X':
@@ -250,9 +269,25 @@ class SCApp(wx.App):
                                 Frame.DeviceTRIP, Frame.FuncTRIPWRAll) 
                         sentMessageData = theFEB.ParseTRIPAllRegsPhysicalToMessage(pRegs, Frame.InstrTRIPWrite)
                         sentMessage = sentMessageHeader + sentMessageData
-                        WriteSendReceive(sentMessage, theFEB.Address, Frame.DeviceTRIP, theCROCChannel)
+                        WriteSendReceive(sentMessage, Frame.MessageDataLengthTRIPWrite, theFEB.Address, Frame.DeviceTRIP, theCROCChannel)
                         self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
+                        fileTRIPs.append(lineList[1])
                 f.close()
+                matchError=[]
+                for crim in self.vmeCRIMs:
+                    crimAddr=str((crim.BaseAddress()&0xFF0000)>>16)
+                    if not(crimAddr in fileCRIMs): matchError.append('CRIM:'+crimAddr)
+                for croc in self.vmeCROCs:
+                    crocAdr=str((croc.BaseAddress()&0xFF0000)>>16)
+                    if not(crocAdr in fileCROCs): matchError.append('CROC:'+crocAdr)
+                    for ch in croc.Channels():
+                        for feb in ch.FEBs:
+                            fpga='%s,%s,%s'%(feb, ch.Number(), crocAdr)
+                            if not(fpga in fileFPGAs): matchError.append('FPGA:'+fpga)
+                            if not('X,%s'%fpga in fileTRIPs):
+                                for i in range(6):
+                                    if not('%s,%s'%(i,fpga) in fileTRIPs): matchError.append('TRIP:'+'%s,%s'%(i,fpga))
+                if matchError!=[]: raise Exception('The following devices were NOT found in file %s:\n%s'%(filename, '\n'.join(matchError)))
             dlg.Destroy()
         except: ReportException('OnMenuLoadFile', self.reportErrorChoice)
     def OnMenuSaveFile(self, event):
@@ -260,7 +295,7 @@ class SCApp(wx.App):
             dlg = wx.FileDialog(self.frame, message='SAVE Hardware Configuration', defaultDir='', defaultFile='',
                 wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
-                filename=dlg.GetFilename()
+                filename=dlg.GetFilename()+'.hwcfg'
                 dirname=dlg.GetDirectory()
                 f=open(filename,'w')
                 for theCRIM in self.vmeCRIMs:
@@ -289,11 +324,26 @@ class SCApp(wx.App):
                 f.close()
             dlg.Destroy()              
         except: ReportException('OnMenuSaveFile', self.reportErrorChoice)
+    def OnMenuReset(self, event):
+        try: self.controller.SystemReset()
+        except: ReportException('OnMenuReset', self.reportErrorChoice)
     def OnMenuShowExpandAll(self, event): self.frame.tree.ExpandAll()
     def OnMenuShowCollapseAll(self, event): self.frame.tree.CollapseAll()
-    def OnMenuActionsReadVoltages(self, event): wx.MessageBox('not yet implemented')
-    def OnMenuActionsZeroHVAll(self, event): wx.MessageBox('not yet implemented')
-    def OnMenuActionsMonitorVoltages(self, event): wx.MessageBox('not yet implemented')  
+    def OnMenuActionsReadAllHV(self, event):
+        try: 
+            self.frame.nb.ChangeSelection(0)
+            print '\n'.join(FEB(0).GetAllHVActual(self.vmeCROCs))
+        except: ReportException('OnMenuActionsReadVoltages', self.reportErrorChoice)
+    def OnMenuActionsSetAllHV(self, event):
+        try:
+            dlg = wx.TextEntryDialog(self.frame, message='Enter HV Value in ADC counts',
+                caption=self.frame.GetTitle(), defaultValue='0')
+            if dlg.ShowModal()==wx.ID_OK:
+                self.frame.nb.ChangeSelection(0)
+                FEB(0).SetAllHVTarget(self.vmeCROCs, dlg.GetValue())
+            dlg.Destroy()
+        except: ReportException('OnMenuActionsReadVoltages', self.reportErrorChoice)
+    def OnMenuActionsMonitorAllHV(self, event): wx.MessageBox('not yet implemented')  
 
     # VME pannel events ##########################################################
     def OnVMEbtnWrite(self, event):
@@ -436,7 +486,6 @@ class SCApp(wx.App):
             if ((len(msg) % 4) !=0): raise Exception("A CROC/CRIM message string must have a muliple of 4 hex characters")
             nWords=len(msg)/4   # one word == 2 bytes == 4 HexChar 
             theCRIM=FindVMEdev(self.vmeCRIMs, self.frame.crim.crimNumber<<16)
-            #theCROCChannel=theCROC.Channels()[self.frame.ch.chNumber]           
             for i in range(nWords):
                 data = msg[4*i:4*(i+1)]
                 theCRIM.ChannelModule.WriteFIFO(int(data,16))
@@ -588,8 +637,7 @@ class SCApp(wx.App):
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
             for i in range(len(theCROC.Channels())):
                 data=theCROC.Channels()[i].ReadLoopDelay()
-                #data=random.randint(1,65535) & 0x007F; wx.MessageBox(hex(data))
-                self.frame.croc.LoopDelays.txtLoopDelayValues[i].SetValue(hex(data))            
+                self.frame.croc.LoopDelays.txtLoopDelayValues[i].SetValue(str(data))            
         except: ReportException('OnCROCbtnReadLoopDelays', self.reportErrorChoice)        
     def OnCROCbtnWriteRSTTP(self, event):
         try:
@@ -599,14 +647,12 @@ class SCApp(wx.App):
                 ChXReset=self.frame.croc.ResetAndTestPulse.ChXReset[i].IsChecked()
                 ChXTPulse=self.frame.croc.ResetAndTestPulse.ChXTPulse[i].IsChecked()
                 data = data | (ChXReset<<(i+8)) | (ChXTPulse<<i)
-                #print i, ChXReset, ChXTPulse, hex(data)
             theCROC.WriteRSTTP(data)
         except: ReportException('OnCROCbtnWriteRSTTP', self.reportErrorChoice)
     def OnCROCbtnReadRSTTP(self, event): 
         try:
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
             data=theCROC.ReadRSTTP()
-            #data=random.randint(1,65535) & 0x0F0F; wx.MessageBox(hex(data))
             ParseDataToListCheckBoxs((data & 0x000F), self.frame.croc.ResetAndTestPulse.ChXTPulse)
             ParseDataToListCheckBoxs((data & 0x0F00)>>8, self.frame.croc.ResetAndTestPulse.ChXReset)
         except: ReportException('OnCROCbtnReadRSTTP', self.reportErrorChoice)
@@ -620,17 +666,26 @@ class SCApp(wx.App):
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
             theCROC.SendTPOnly()
         except: ReportException('OnCROCbtnSendTPOnly', self.reportErrorChoice)        
-    def OnCROCbtnReportAlignmentsAllChains(self, event):
+    def OnCROCbtnReportAlignmentsAllCHs(self, event):
         try:
-            print self.frame.croc.FEBGateDelays.txtNumberOfMeas.GetValue()
-            print self.frame.croc.FEBGateDelays.txtLoadTimerValue.GetValue()
-            print self.frame.croc.FEBGateDelays.txtGateStartValue.GetValue()
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
-            addr=theCROC.BaseAddress()
-            print hex(addr)
-            #the code of the allignment method should pe placed here... 
-            wx.MessageBox('not yet implemented')
-        except: ReportException('btnReportAlignmentsAllChains', self.reportErrorChoice)        
+            theNumberOfMeas=int(self.frame.croc.FEBGateDelays.txtNumberOfMeas.GetValue())
+            theLoadTimerValue=int(self.frame.croc.FEBGateDelays.txtLoadTimerValue.GetValue())
+            theGateStartValue=int(self.frame.croc.FEBGateDelays.txtGateStartValue.GetValue())
+            self.frame.nb.ChangeSelection(0)
+            for theCROCChannel in theCROC.Channels():
+                FEB(0).AlignGateDelays(theCROC, theCROCChannel, theNumberOfMeas, theLoadTimerValue, theGateStartValue)
+        except: ReportException('OnCROCbtnReportAlignmentsAllCHs', self.reportErrorChoice)
+    def OnCROCbtnReportAlignmentsAllCROCs(self, event):
+        try:
+            theNumberOfMeas=int(self.frame.croc.FEBGateDelays.txtNumberOfMeas.GetValue())
+            theLoadTimerValue=int(self.frame.croc.FEBGateDelays.txtLoadTimerValue.GetValue())
+            theGateStartValue=int(self.frame.croc.FEBGateDelays.txtGateStartValue.GetValue())
+            self.frame.nb.ChangeSelection(0)
+            for theCROC in self.vmeCROCs:
+                for theCROCChannel in theCROC.Channels():
+                    FEB(0).AlignGateDelays(theCROC, theCROCChannel, theNumberOfMeas, theLoadTimerValue, theGateStartValue)
+        except: ReportException('OnCROCbtnReportAlignmentsAllCROCs', self.reportErrorChoice)
 
     # CH pannel events ##########################################################
     def OnCHbtnClearStatus(self, event):
@@ -644,7 +699,6 @@ class SCApp(wx.App):
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.ch.crocNumber<<16)
             theCROCChannel=theCROC.Channels()[self.frame.ch.chNumber]
             data=theCROCChannel.ReadStatus()
-            #data=random.randint(1,65535)
             self.frame.ch.StatusRegister.txtReadStatusData.SetValue(hex(data))
             ParseDataToListLabels(data, self.frame.ch.StatusRegister.RegValues)
         except: ReportException('OnCHbtnReadStatus', self.reportErrorChoice)
@@ -899,12 +953,6 @@ class SCApp(wx.App):
                 toThisFEB=False, toThisCH=False, toThisCROC=False, toAllCROCs=True, theFrame=self.frame)             
         except: ReportException('OnFEFLASHbtnWriteFileToFlashALL', self.reportErrorChoice)
 
-    # OTHER events ##########################################################
-    def OnClose(self, event):
-        #self.controller.End()
-        self.Close(True)
-        self.Destroy()
-
 def FindVMEdev(vmeDevList, devAddr):
     for dev in vmeDevList:
         if (dev.BaseAddress()==devAddr): return dev
@@ -912,7 +960,7 @@ def FindFEBs(theCROCChannel):
     #clear the self.FEBs list
     theCROCChannel.FEBs=[]
     for febAddr in range(1,16):
-        for itry in range(1,3):
+        for itry in range(1,4):
             try:
                 ClearAndCheckStatusRegister(theCROCChannel)
                 ResetAndCheckDPMPointer(theCROCChannel)
@@ -924,7 +972,6 @@ def FindFEBs(theCROCChannel):
                 w2=theCROCChannel.ReadDPM(2)
                 if (w2==(0x8000 | (febAddr<<8))) & (w1==0x0B00) & (dpmPointer==13):
                     #print "Found feb#" + str(febAddr), "w1="+hex(w1), "dpmPointer="+str(dpmPointer)
-                    #theCROCChannel.FEBs.append(FEB(febAddr))
                     theCROCChannel.FEBs.append(febAddr)
                     break
                 elif (w2==(0x0000 | (febAddr<<8))) & (w1==0x0400) & (dpmPointer==6): pass
@@ -942,11 +989,12 @@ def ParseDataToListCheckBoxs(data, ListCheckBoxs):
     for i in range(len(ListCheckBoxs)):
         ListCheckBoxs[i].SetValue((data & (1<<i))>>i)
 
-    
+
 def main():
     """Instantiates the Slow Control GUI."""
     try:
-        app = SCApp()
+        #theArgs = sys.argv[1:]; print theArgs
+        app = SCApp() 
         app.MainLoop()
     except:
         print "Unexpected error:", sys.exc_info()[0], sys.exc_info()[1]

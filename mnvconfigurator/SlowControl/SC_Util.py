@@ -1005,12 +1005,15 @@ class CROCFEBGateDelays():
         for i in range(rows):
             FEBGateDelaysSizer.Add(FEBGateDelaysLabels[i], 0, 0, 0)
             FEBGateDelaysSizer.Add(FEBGateDelaysValues[i], 0, 0, 0)
-        self.btnReportAlignmentsAllChains=CreateButton(panel, 'Report Align All CHs',
+        self.btnReportAlignmentsAllCHs=CreateButton(panel, 'Report Align All CHs',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnReportAlignmentsAllCROCs=CreateButton(panel, 'Report Align All CROCs',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.BoxSizer=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
-        self.BoxSizer.Add(self.btnReportAlignmentsAllChains, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnReportAlignmentsAllCHs, 0, wx.ALL, 2)
+        self.BoxSizer.Add(self.btnReportAlignmentsAllCROCs, 0, wx.ALL, 2)
         self.BoxSizer.Add(FEBGateDelaysSizer, 0, wx.ALL, 2)
-        self.controls=[StaticBox, self.btnReportAlignmentsAllChains]
+        self.controls=[StaticBox, self.btnReportAlignmentsAllCHs, self.btnReportAlignmentsAllCROCs]
         for lbl in FEBGateDelaysLabels: self.controls.append(lbl)
         for txt in FEBGateDelaysValues: self.controls.append(txt)
     def ResetControls(self):

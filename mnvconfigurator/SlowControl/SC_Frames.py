@@ -23,16 +23,19 @@ class SCMainFrame(wx.Frame):
 
         # Creating the top menu
         menuFile = wx.Menu()
-        self.menuFileLoadHardware = menuFile.Append(wx.NewId(), text="Load &Hardware", help=" Loads the VME crate hardware")
+        self.menuFileLoadHardware = menuFile.Append(wx.NewId(), text="Find &Hardware", help=" Finds the VME crate hardware")
         self.menuFileLoadFromFile =menuFile.Append(wx.NewId(), "&Load from File", " Open a file with hardware settings")
         self.menuFileSaveToFile = menuFile.Append(wx.NewId(), "&Save to File", " Save a file with hardware settings")
+        menuFile.AppendSeparator()
+        self.menuFileReset = menuFile.Append(wx.NewId(), "System &Reset", " V2718/VME System Reset")
+        self.menuFileQuit = menuFile.Append(wx.NewId(), "&Quit", " Quit the application")
         menuShow = wx.Menu()
-        self.menuShowExpandAll = menuShow.Append(wx.NewId(), "&Expand All")
-        self.menuShowCollapseAll = menuShow.Append(wx.NewId(), "&Collapse All")
+        self.menuShowExpandAll = menuShow.Append(wx.NewId(), "&Expand All", "Expand Hardware Tree")
+        self.menuShowCollapseAll = menuShow.Append(wx.NewId(), "&Collapse All", "Collapse Hardware Tree")
         menuActions = wx.Menu()
-        self.menuActionsReadVoltages = menuActions.Append(wx.NewId(), "&Read Voltages")
-        self.menuActionsZeroHVAll = menuActions.Append(wx.NewId(), "&Zero HV All")
-        self.menuActionsMonitorVoltages = menuActions.Append(wx.NewId(), "&Monitor Voltages")
+        self.menuActionsReadAllHV = menuActions.Append(wx.NewId(), "&Read All HVs") 
+        self.menuActionsSetAllHV = menuActions.Append(wx.NewId(), "&Set All HVs") 
+        self.menuActionsMonitorAllHV = menuActions.Append(wx.NewId(), "&Monitor All HVs") 
         menuDebug = wx.Menu()
         self.menuDebugShell = menuDebug.Append(wx.NewId(), "&Python Shell", "Open wxPython shell frame")
         self.menuDebugNamespace = menuDebug.Append(wx.NewId(), "&Namespace Viewer", "Open namespace viewer frame")
@@ -40,7 +43,7 @@ class SCMainFrame(wx.Frame):
         menuBar.Append(menuFile, "&File")
         menuBar.Append(menuShow, "&Show")
         menuBar.Append(menuActions, "&Actions")
-        menuBar.Append(menuDebug, "&Debug")
+        ###menuBar.Append(menuDebug, "&Debug")
         self.SetMenuBar(menuBar)
         # Binding top menu events
         self.Bind(wx.EVT_MENU, self.OnMenuDebugShell, self.menuDebugShell)
@@ -397,7 +400,7 @@ class CROC(wx.Panel):
         self.FastCmd.ResetControls()
         self.LoopDelays.ResetControls()
         self.ResetAndTestPulse.ResetControls()
-        self.FEBGateDelays.ResetControls()
+        #self.FEBGateDelays.ResetControls()
     def OnbtnShowAdvancedGUI(self, event):
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
             self.TimingSetup.controls, self.FastCmd.controls, self.LoopDelays.controls,

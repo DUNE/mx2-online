@@ -255,12 +255,7 @@ class FEB():
                     for theCROCChannel in theCROC.Channels():
                         for febAddress in theCROCChannel.FEBs:
                             theFEB=FEB(febAddress)
-                            self.WritePagesToFlash(theFEB, theCROCChannel, theCROC, pagesAddrFile, pagesBytesFile, theFrame)
-
-
-
-
-                    
+                            self.WritePagesToFlash(theFEB, theCROCChannel, theCROC, pagesAddrFile, pagesBytesFile, theFrame)         
         dlg.Destroy()
     def WritePagesToFlash(self, theFEB, theCROCChannel, theCROC, pagesAddrFile, pagesBytesFile, theFrame):
         errPages=''
@@ -276,13 +271,94 @@ class FEB():
             print "Write ERROR on %s, page %s"%(theFEB.FLASHDescription('', theCROCChannel, theCROC), errPages)
             theFrame.SetStatusText("Write ERROR on %s"%theFEB.FLASHDescription('', theCROCChannel, theCROC), 2)
         else:
-            msg = "Write DONE on %s"%theFEB.FLASHDescription('', theCROCChannel, theCROC)
+            msg="Write DONE on %s"%theFEB.FLASHDescription('', theCROCChannel, theCROC)
             print msg; theFrame.SetStatusText(msg, 2)
-
-
-
-
-
+    def AlignGateDelays(self, theCROC, theCROCChannel, theNumberOfMeas, theLoadTimerValue, theGateStartValue):
+        if theCROCChannel.FEBs==[]: return
+        print 'Reporting FEBs TPDelay measurements on %s %s'%(theCROC.Description(),theCROCChannel.Description())
+        #Set LoadTimerValue and GateStartValue equal for ALL boards in this Channel
+        for febAddress in theCROCChannel.FEBs:
+            theFEB=FEB(febAddress)
+            rcvMessage=theFEB.FPGARead(theCROCChannel)
+            #message word 0-3: WR Timer, 32 bits
+            rcvMessage[0] = (theLoadTimerValue) & 0xFF
+            rcvMessage[1] = (theLoadTimerValue>>8) & 0xFF
+            rcvMessage[2] = (theLoadTimerValue>>16) & 0xFF
+            rcvMessage[3] = (theLoadTimerValue>>24) & 0xFF
+            #message word 4-5: WR Gate Start, 16 bits
+            rcvMessage[4] = (theGateStartValue) & 0xFF
+            rcvMessage[5] = (theGateStartValue>>8) & 0xFF
+            theFEB.FPGAWrite(theCROCChannel, rcvMessage)
+        #Acquire TPDelay information
+        TPDelay=[]
+        for iMeas in range(theNumberOfMeas):
+            theCROC.SendFastCommand(SC_Util.FastCmds['LoadTimer'])
+            theCROC.WriteRSTTP(1<<theCROCChannel.Number())
+            theCROC.SendTPOnly()
+            #Get TP delay for ALL FEBs in this Channel
+            FEBsTPDelay=[]
+            for febAddress in theCROCChannel.FEBs:
+                theFEB=FEB(febAddress)
+                rcvMessage=theFEB.FPGARead(theCROCChannel)
+                #message word 9, bit 6 - 7: R  TP Count2b, 2 bits
+                tpCount2b=(rcvMessage[9]>>6)&0x03
+                #message word 12-15: R  TP Count, 32 bits
+                tpCount32b=rcvMessage[12]+(rcvMessage[13]<<8)+(rcvMessage[14]<<16)+(rcvMessage[15]<<24)
+                if tpCount2b==0: tpCount=tpCount32b+1
+                else: tpCount=tpCount32b+0.25*tpCount2b
+                FEBsTPDelay.append([febAddress, tpCount])
+                'first position == febAddress, second position == tpCount'
+            thisMeasMinValue=FEBsTPDelay[0][1]
+            for feb in FEBsTPDelay:
+                if feb[1]<thisMeasMinValue: thisMeasMinValue=feb[1]
+            for feb in FEBsTPDelay: feb[1]-=thisMeasMinValue
+            TPDelay.append(FEBsTPDelay)
+        #Clear RST and TP content 
+        theCROC.WriteRSTTP(0)
+        #Calculate average value of ALL measurements
+        TPDelayAvg=[]
+        for i in range(len(theCROCChannel.FEBs)): TPDelayAvg.append([0,0])
+        for iFEB in range(len(theCROCChannel.FEBs)):
+            TPDelayAvg[iFEB][0]=TPDelay[0][iFEB][0]
+            for iMeas in range(theNumberOfMeas):
+                TPDelayAvg[iFEB][1]+=TPDelay[iMeas][iFEB][1]
+            TPDelayAvg[iFEB][1]/=theNumberOfMeas         
+        for feb in TPDelayAvg:
+            print 'FEB:%s, AvgDelay=%s'%(feb[0],feb[1])
+        #Update new values to FPGA's Timer and GateStart
+        for iFEB in TPDelayAvg:
+            theFEB=FEB(iFEB[0])
+            theDelay = int(round(float(iFEB[1])/2))
+            rcvMessage=theFEB.FPGARead(theCROCChannel)
+            #message word 0-3: WR Timer, 32 bits
+            rcvMessage[0] -= (theDelay) & 0xFF
+            rcvMessage[1] -= (theDelay>>8) & 0xFF
+            rcvMessage[2] -= (theDelay>>16) & 0xFF
+            rcvMessage[3] -= (theDelay>>24) & 0xFF
+            #message word 4-5: WR Gate Start, 16 bits
+            rcvMessage[4] -= (theDelay) & 0xFF
+            rcvMessage[5] -= (theDelay>>8) & 0xFF
+            theFEB.FPGAWrite(theCROCChannel, rcvMessage)
+    def GetAllHVActual(self, vmeCROCs):
+        hvVals=[]
+        for theCROC in vmeCROCs:
+            for theCROCChannel in theCROC.Channels():
+                for febAddress in theCROCChannel.FEBs:
+                    theFEB=FEB(febAddress)
+                    rcvMessage=theFEB.FPGARead(theCROCChannel)
+                    #message word 25-26: R  HV Actual, 16 bits
+                    hvVals.append('%s: HV=%s'%(theFEB.FPGADescription(theCROCChannel, theCROC), rcvMessage[25]+(rcvMessage[26]<<8)))
+        return hvVals
+    def SetAllHVTarget(self, vmeCROCs, hvVal):
+        for theCROC in vmeCROCs:
+            for theCROCChannel in theCROC.Channels():
+                for febAddress in theCROCChannel.FEBs:
+                    theFEB=FEB(febAddress)
+                    rcvMessage=theFEB.FPGARead(theCROCChannel)
+                    #message word 23-24: WR HV Target, 16 bits
+                    rcvMessage[23] = (int(hvVal)) & 0xFF
+                    rcvMessage[24] = (int(hvVal)>>8) & 0xFF
+                    theFEB.FPGAWrite(theCROCChannel, rcvMessage)
 
     def ParseMessageToFPGAtxtRegs(self, msg, txtRegs):
         #message word 0-3: WR Timer, 32 bits
@@ -300,7 +376,8 @@ class FEB():
         #message word 9, bit 3: R  DCM2 NoCLK(0), 1 bit
         txtRegs[34].SetValue(str((msg[9]>>3)&0x01))
         #message word 9, bit 4: R  DCM1 Lock(0), 1 bit
-        txtRegs[31].SetValue(str((msg[9]>>4)&0x01))
+        txtRegs[31].SetValue(str((msg[9]>>4)&0x01))#message word 25-26: R  HV Actual, 16 bits
+        txtRegs[5].SetValue(str(msg[25]+(msg[26]<<8)))
         #message word 9, bit 5: R  DCM2 Lock(0), 1 bit
         txtRegs[32].SetValue(str((msg[9]>>5)&0x01))
         #message word 9, bit 6 - 7: R  TP Count2b, 2 bits
@@ -336,7 +413,14 @@ class FEB():
         #message word 20: WR Trip4 En+Inj, 8 bits
         txtRegs[19].SetValue(str(msg[20]))
         #message word 21: WR Trip5 En+Inj, 8 bits
-        txtRegs[20].SetValue(str(msg[21]))
+        txtRegs[20].SetValue(str(msg[21]))#message word 0-3: WR Timer, 32 bits
+        msg[0] = (int(txtRegs[14].GetValue())) & 0xFF
+        msg[1] = (int(txtRegs[14].GetValue())>>8) & 0xFF
+        msg[2] = (int(txtRegs[14].GetValue())>>16) & 0xFF
+        msg[3] = (int(txtRegs[14].GetValue())>>24) & 0xFF
+        #message word 4-5: WR Gate Start, 16 bits
+        msg[4] = (int(txtRegs[1].GetValue())) & 0xFF
+        msg[5] = (int(txtRegs[1].GetValue())>>8) & 0xFF
         #message word 22, bit 0-5: WR Trip PowOFF, 1 bit for each trip
         txtRegs[0].SetValue(str(msg[22]&0x3F))
         #message word 22, bit 6: WR HV Auto(0)Man(1), 1 bit 
