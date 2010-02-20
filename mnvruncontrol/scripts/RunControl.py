@@ -359,6 +359,7 @@ class MainFrame(wx.Frame):
 			errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be missing.  Default configuration will be used...", "Last run configuration database missing", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
 			has_all_keys = False
+			db = None
 		else:
 			db = shelve.open(self.runinfoFile, 'r')
 			
@@ -403,8 +404,9 @@ class MainFrame(wx.Frame):
 			runseries_path = None
 			runseries_file = None
 
+		if db:
 			db.close()
-
+			
 		self.runEntry.SetRange(run, 100000)
 		self.runEntry.SetValue(run)
 		self.subrunEntry.SetValue(subrun)
