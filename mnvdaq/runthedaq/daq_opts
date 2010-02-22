@@ -1,5 +1,0 @@
-# Some common vars for the daq.
-ETSYSPIDFILE="/work/conditions/etsys.pid"
-ETMONPIDFILE="/work/conditions/etmon.pid"
-EBSRVPIDFILE="/work/conditions/ebsrv.pid"
-
