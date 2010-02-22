@@ -612,7 +612,7 @@ class MainFrame(wx.Frame):
 			self.logfileNames = None
 			self.logfileInfo = None
 		else:
-			self.logfileNames.sort()
+			self.logfileNames.sort(self.SortLogFiles)
 			self.logfileInfo.sort(self.SortLogData)
 			
 			self.logfileNames.reverse()
@@ -720,8 +720,8 @@ class MainFrame(wx.Frame):
 		
 	@staticmethod
 	def SortLogData(fileinfo1, fileinfo2):
-		f1 = fileinfo1[0]*10000 + fileinfo1[1]		# run * 10000 + subrun
-		f2 = fileinfo2[0]*10000 + fileinfo2[1]
+		f1 = int(fileinfo1[0])*10000 + int(fileinfo1[1])		# run * 10000 + subrun
+		f2 = int(fileinfo2[0])*10000 + int(fileinfo2[1])
 		
 		if f1 == f2:
 			t1 = time.strptime("2010 " + fileinfo1[3], "%Y %H:%M")		# need to include a year because otherwise the 'mktime' below overflows.  which year it is is irrelevant (all we need is a difference anyway).
@@ -734,6 +734,30 @@ class MainFrame(wx.Frame):
 				return 1 if timediff > 0 else -1
 		else:
 			return 1 if f1 > f2 else -1
+			
+	@staticmethod
+	def SortLogFiles(file1, file2):
+		pattern = re.compile("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2}).txt$")
+		
+		matchdata1 = pattern.match(file1)
+		matchdata2 = pattern.match(file2)
+		
+		if matchdata1.group("run") == matchdata2.group("run"):
+			if matchdata1.group("subrun") == matchdata2.group("subrun"):		# shouldn't ever have same run/subrun combination
+				if matchdata1.group("hour") == matchdata2.group("hour"):
+					if matchdata1.group("minute") == matchdata2.group("minute"):
+						print "Run/subrun pair equal! : (", matchdata1.group("run"), ",", matchdata1.group("subrun"), ") == (", matchdata2.group("run"), ",", matchdata2.group("subrun"), ")!"
+						print "Files: '" + file1 + "', '" + file2 + "'"
+						print "Log sorting problem."
+						sys.exit(1)
+					else:
+						return 1 if matchdata1.group("minute") > matchdata2.group("minute") else -1
+				else:
+					return 1 if matchdata1.group("hour") > matchdata2.group("hour") else -1
+			else:
+				return 1 if matchdata1.group("subrun") > matchdata2.group("subrun") else -1
+		else:
+			return 1 if matchdata1.group("run") > matchdata2.group("run") else -1
 
 
 #########################################################
