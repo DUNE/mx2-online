@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from ctypes import *
-#vme = windll.CAENVMElib
+##vme = windll.CAENVMElib
 cdll.LoadLibrary("/usr/lib/libCAENVME.so")
 vme = CDLL("/usr/lib/libCAENVME.so")
 
