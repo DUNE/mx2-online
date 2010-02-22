@@ -126,7 +126,7 @@ class LIBox:
 		if not re.match("[a-dA-D]{1,4}", self.LED_groups):
 			raise LIBoxException("LED groups to use must be some combination of 'A', 'B', 'C', 'D' (your entry: '" + self.LED_groups + "').")
 
-		# the following wizardry is brought to you by the magic that powers the LI box.
+		# the following wizardry is brought to you by the black magic that powers the LI box.
 		# trust me -- it works.
 		inverseAddress = 0
 		pos = 0
