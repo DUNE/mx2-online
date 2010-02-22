@@ -9,7 +9,7 @@ class VMEDevice():
     def BaseAddress(self): return self.baseAddr
     def Type(self): return self.type
     def Description(self):
-        if (self.type==SC_Util.VMEdevTypes.CROC or self.type==SC_Util.VMEdevTypes.CRIM):
+        if (self.type==SC_Util.VMEdevTypes.CROC or self.type==SC_Util.VMEdevTypes.CRIM or self.type==SC_Util.VMEdevTypes.DIG):
             return self.type+':'+str((self.baseAddr & 0xFF0000)>>16)
         if (self.type==SC_Util.VMEdevTypes.CH):
             return self.type+':'+str(((self.baseAddr & 0x00F000)>>12)/4)
@@ -339,7 +339,7 @@ class FEB():
             rcvMessage[4] -= (theDelay) & 0xFF
             rcvMessage[5] -= (theDelay>>8) & 0xFF
             theFEB.FPGAWrite(theCROCChannel, rcvMessage)
-    def GetAllHVActual(self, vmeCROCs):
+    def GetAllHVActual(self, vmeCROCs, devVal=0):
         hvVals=[]
         for theCROC in vmeCROCs:
             for theCROCChannel in theCROC.Channels():
@@ -347,8 +347,12 @@ class FEB():
                     theFEB=FEB(febAddress)
                     rcvMessage=theFEB.FPGARead(theCROCChannel)
                     #message word 25-26: R  HV Actual, 16 bits
-                    hvVals.append('%s: HV=%s'%(theFEB.FPGADescription(theCROCChannel, theCROC), rcvMessage[25]+(rcvMessage[26]<<8)))
-        return hvVals
+                    hvActual=rcvMessage[25]+(rcvMessage[26]<<8)
+                    #message word 23-24: WR HV Target, 16 bits
+                    hvTarget=rcvMessage[23]+(rcvMessage[24]<<8)
+                    if abs(hvActual-hvTarget)>=devVal:
+                        hvVals.append('%s: Actual=%s, Target=%s, A-T=%s'%(theFEB.FPGADescription(theCROCChannel, theCROC), hvActual, hvTarget, hvActual-hvTarget))
+        return hvVals    
     def SetAllHVTarget(self, vmeCROCs, hvVal):
         for theCROC in vmeCROCs:
             for theCROCChannel in theCROC.Channels():
@@ -356,8 +360,8 @@ class FEB():
                     theFEB=FEB(febAddress)
                     rcvMessage=theFEB.FPGARead(theCROCChannel)
                     #message word 23-24: WR HV Target, 16 bits
-                    rcvMessage[23] = (int(hvVal)) & 0xFF
-                    rcvMessage[24] = (int(hvVal)>>8) & 0xFF
+                    rcvMessage[23] = (hvVal) & 0xFF
+                    rcvMessage[24] = (hvVal>>8) & 0xFF
                     theFEB.FPGAWrite(theCROCChannel, rcvMessage)
 
     def ParseMessageToFPGAtxtRegs(self, msg, txtRegs):

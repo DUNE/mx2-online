@@ -30,6 +30,7 @@ class VMEdevTypes():
     FPGA='FPGA'
     TRIP='TRIP'
     FLASH='FLASH'
+    DIG='DIG'
     
 class CROCRegs():
     RegWRTimingSetup        = 0xF000

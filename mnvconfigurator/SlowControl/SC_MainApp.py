@@ -13,11 +13,13 @@ Started October 21 2009
 
 import wx
 import sys
+import random
+import time
+
 import CAENVMEwrapper
 import SC_Frames
 import SC_Util
 from SC_MainObjects import *
-import random
 
 class SCApp(wx.App):
     """SlowControl application. Subclass of wx.App"""
@@ -25,6 +27,7 @@ class SCApp(wx.App):
         wx.App.__init__(self)                
         self.vmeCRIMs=[]
         self.vmeCROCs=[]
+        self.vmeDIGs=[]
         self.reportErrorChoice={'display':True, 'msgBox':True}
         self.controller = CAENVMEwrapper.Controller()
         try:
@@ -36,6 +39,7 @@ class SCApp(wx.App):
         except : ReportException('controller.Init', self.reportErrorChoice)
         
         self.Bind(wx.EVT_CLOSE, self.OnClose, self.frame)
+        self.Bind(wx.EVT_TIMER, self.OnMonitor)
         # Menu events ##########################################################
         self.Bind(wx.EVT_MENU, self.OnMenuLoadHardware, self.frame.menuFileLoadHardware)
         self.Bind(wx.EVT_MENU, self.OnMenuLoadFile, self.frame.menuFileLoadFromFile)
@@ -46,7 +50,8 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_MENU, self.OnMenuShowCollapseAll, self.frame.menuShowCollapseAll)
         self.Bind(wx.EVT_MENU, self.OnMenuActionsReadAllHV, self.frame.menuActionsReadAllHV)
         self.Bind(wx.EVT_MENU, self.OnMenuActionsSetAllHV, self.frame.menuActionsSetAllHV)
-        self.Bind(wx.EVT_MENU, self.OnMenuActionsMonitorAllHV, self.frame.menuActionsMonitorAllHV)
+        self.Bind(wx.EVT_MENU, self.OnMenuActionsSTARTMonitorAllHV, self.frame.menuActionsSTARTMonitorAllHV)
+        self.Bind(wx.EVT_MENU, self.OnMenuActionsSTOPMonitor, self.frame.menuActionsSTOPMonitor)
         # VME pannel events ##########################################################
         self.Bind(wx.EVT_BUTTON, self.OnVMEbtnRead, self.frame.vme.VMEReadWrite.btnRead)
         self.Bind(wx.EVT_BUTTON, self.OnVMEbtnWrite, self.frame.vme.VMEReadWrite.btnWrite)
@@ -138,8 +143,7 @@ class SCApp(wx.App):
     def OnInit(self):
         """Create instance of SC frame objects here"""
         #Called by the wx.App parent class when application starts
-        #minervaPhoto = wx.Image('minerva.jpg', wx.BITMAP_TYPE_JPEG)
-        self.frame = SC_Frames.SCMainFrame(title='Slow Control', logoPhoto=None)
+        self.frame = SC_Frames.SCMainFrame(title='Slow Control')
         self.SetTopWindow(self.frame)
         self.frame.CenterOnScreen()
         self.frame.Show()
@@ -150,13 +154,12 @@ class SCApp(wx.App):
     # MENU events ##########################################################
     def OnMenuLoadHardware(self, event):      
         try:
-            #addrListCRIMs=[128]
-            #addrListCROCs=[5,15]
             addrListCRIMs=[]
             addrListCROCs=[]
+            addrListDIGs=[]
             #CROC mapping addr is 1 to 8, register is ResetTestPulse
             #CRIM mapping addr is 9 to 255, register is InterruptMask
-            crocReg=0xF010; crimReg=0xF000  
+            crocReg=0xF010; crimReg=0xF000
             for i in range(256):
                 data=( ((i&0xF0)<<8) | ((i&0x0F)<<4) ) & 0xF0F0
                 if (i<=8): addr=((i<<16)|crocReg) & 0xFFFFFF    #CROC addr
@@ -174,15 +177,29 @@ class SCApp(wx.App):
                         self.frame.SetStatusText('Found CROC at '%hex(i), 0)
                     self.controller.WriteCycle(addr, 0)
                 except: pass
-            #now create object lists for CRIMs and CROCs found
-            self.vmeCRIMs=[]; self.vmeCROCs=[]
+            #DIG mapping addres is ??? register is VMEScratch=0xEF20
+            digReg=0xEF20
+            for i in range(256):
+                try:
+                    addr=((i<<16)|digReg) & 0xFFFFFF
+                    wdata=0x1234; rdata=0
+                    self.controller.WriteCycle(addr, wdata)
+                    rdata=self.controller.ReadCycle(addr)
+                    if rdata==wdata:
+                        print "Found DIG at ", hex(i)
+                        addrListDIGs.append(i)
+                        self.frame.SetStatusText('Found DIG at '%hex(i), 0)
+                except: pass
+            #now create object lists for CRIMs, CROCs and DIGs found
+            self.vmeCRIMs=[]; self.vmeCROCs=[]; self.vmeDIGs=[]
             for addr in addrListCRIMs: self.vmeCRIMs.append(CRIM(self.controller, addr<<16))        
             for addr in addrListCROCs: self.vmeCROCs.append(CROC(self.controller, addr<<16))
+            for addr in addrListDIGs: self.vmeDIGs.append(VMEDevice(self.controller, addr<<16, SC_Util.VMEdevTypes.DIG))
             #then take each CROC CH and find the FEBs
             for theCROC in self.vmeCROCs:
                 for theCROCChannel in theCROC.Channels():
                     FindFEBs(theCROCChannel)
-                    self.frame.SetStatusText('%s %s Finding FEs... done'%(theCROC.Description(), theCROCChannel.Description()), 0)
+                    self.frame.SetStatusText('%s %s Finding FEBs... done'%(theCROC.Description(), theCROCChannel.Description()), 0)
                     print 'Found FEBs at %s %s %s'%(theCROC.Description(), theCROCChannel.Description(), theCROCChannel.FEBs)
             #and then update self.frame.tree
             self.frame.tree.DeleteAllItems()
@@ -191,6 +208,8 @@ class SCApp(wx.App):
                 SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
             for vmedev in self.vmeCROCs:
                 SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
+            for vmedev in self.vmeDIGs:
+                SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [[vmedev.Description(), []]])
         except: ReportException('OnMenuLoadHardware', self.reportErrorChoice)
             
     def OnMenuLoadFile(self, event):
@@ -330,9 +349,13 @@ class SCApp(wx.App):
     def OnMenuShowExpandAll(self, event): self.frame.tree.ExpandAll()
     def OnMenuShowCollapseAll(self, event): self.frame.tree.CollapseAll()
     def OnMenuActionsReadAllHV(self, event):
-        try: 
-            self.frame.nb.ChangeSelection(0)
-            print '\n'.join(FEB(0).GetAllHVActual(self.vmeCROCs))
+        try:
+            dlg = wx.TextEntryDialog(self.frame, message='Enter HV Deviation from Target Value in ADC counts',
+                caption=self.frame.GetTitle(), defaultValue='0')
+            if dlg.ShowModal()==wx.ID_OK:
+                self.frame.nb.ChangeSelection(0)
+                print '\n'.join(FEB(0).GetAllHVActual(self.vmeCROCs, int(dlg.GetValue())))
+            dlg.Destroy()            
         except: ReportException('OnMenuActionsReadVoltages', self.reportErrorChoice)
     def OnMenuActionsSetAllHV(self, event):
         try:
@@ -340,10 +363,34 @@ class SCApp(wx.App):
                 caption=self.frame.GetTitle(), defaultValue='0')
             if dlg.ShowModal()==wx.ID_OK:
                 self.frame.nb.ChangeSelection(0)
-                FEB(0).SetAllHVTarget(self.vmeCROCs, dlg.GetValue())
+                FEB(0).SetAllHVTarget(self.vmeCROCs, int(dlg.GetValue()))
             dlg.Destroy()
         except: ReportException('OnMenuActionsReadVoltages', self.reportErrorChoice)
-    def OnMenuActionsMonitorAllHV(self, event): wx.MessageBox('not yet implemented')  
+    def OnMenuActionsSTARTMonitorAllHV(self, event):
+        try:
+            dlgADC = wx.TextEntryDialog(self.frame, message='Enter HV Deviation from Target Value in ADC counts',
+                caption=self.frame.GetTitle(), defaultValue='100')
+            dlgTime = wx.TextEntryDialog(self.frame, message='Enter Monitor interval in seconds',
+                caption=self.frame.GetTitle(), defaultValue='1')
+            if dlgADC.ShowModal()==wx.ID_OK:
+                if dlgTime.ShowModal()==wx.ID_OK:
+                    self.frame.nb.ChangeSelection(0)
+                    self.monitor=wx.Timer()
+                    self.monitor.Start(max(1000, float(dlgTime.GetValue())*1000))
+                    self.monitorFunc=FEB.GetAllHVActual
+                    self.monitorArgs=FEB(0), self.vmeCROCs, int(dlgADC.GetValue())
+                    self.monitorTitle='Monitor ALL FEBs HV Actual outside the Target with more than %s counts'%(int(dlgADC.GetValue()))
+                dlgTime.Destroy()
+            dlgADC.Destroy()            
+        except: ReportException('OnMenuActionsSTARTMonitorAllHV', self.reportErrorChoice)
+    def OnMenuActionsSTOPMonitor(self, event): self.monitor=None
+    def OnMonitor(self, event):
+        try:
+            self.frame.description.text.SetValue('')
+            print self.monitorTitle
+            print time.ctime()
+            print '\n'.join(self.monitorFunc(*(self.monitorArgs)))
+        except: ReportException('OnMonitor', self.reportErrorChoice)
 
     # VME pannel events ##########################################################
     def OnVMEbtnWrite(self, event):

@@ -12,32 +12,32 @@ from wx.py.filling import FillingFrame
 
 class SCMainFrame(wx.Frame):
     '''SlowControl main frame '''
-    def __init__(self, logoPhoto=None, parent=None, id=-1, title='Slow Control Main Frame'):
-        wx.Frame.__init__(self, parent, id, title, size=(850, 600)
-            , style=wx.DEFAULT_FRAME_STYLE|wx.NO_FULL_REPAINT_ON_RESIZE)
-            ###, style=wx.DEFAULT_FRAME_STYLE ^ (wx.RESIZE_BORDER))
-        #self.bmp = wx.StaticBitmap(parent=self, bitmap=logoPhoto.ConvertToBitmap())
-        #self.SetIcon(logoPhoto)
-        #self.SetIcon(images.getPyIcon())
+    def __init__(self, parent=None, id=-1, title='Slow Control Main Frame'):
+        wx.Frame.__init__(self, parent, id, title, size=(850, 600))
+        self.SetIcon(wx.Icon('minerva.jpg', wx.BITMAP_TYPE_JPEG))
+        
         self.Bind(wx.EVT_CLOSE, self.OnSCMainFrameClose)
 
         # Creating the top menu
         menuFile = wx.Menu()
-        self.menuFileLoadHardware = menuFile.Append(wx.NewId(), text="Find &Hardware", help=" Finds the VME crate hardware")
-        self.menuFileLoadFromFile =menuFile.Append(wx.NewId(), "&Load from File", " Open a file with hardware settings")
-        self.menuFileSaveToFile = menuFile.Append(wx.NewId(), "&Save to File", " Save a file with hardware settings")
+        self.menuFileLoadHardware   = menuFile.Append(wx.NewId(), text="Find &Hardware", help=" Finds the VME crate hardware")
+        self.menuFileLoadFromFile   = menuFile.Append(wx.NewId(), "&Load from File", " Open a file with hardware settings")
+        self.menuFileSaveToFile     = menuFile.Append(wx.NewId(), "&Save to File", " Save a file with hardware settings")
         menuFile.AppendSeparator()
-        self.menuFileReset = menuFile.Append(wx.NewId(), "System &Reset", " V2718/VME System Reset")
-        self.menuFileQuit = menuFile.Append(wx.NewId(), "&Quit", " Quit the application")
+        self.menuFileReset          = menuFile.Append(wx.NewId(), "System &Reset", " V2718/VME System Reset")
+        self.menuFileQuit           = menuFile.Append(wx.NewId(), "&Quit", " Quit the application")
         menuShow = wx.Menu()
-        self.menuShowExpandAll = menuShow.Append(wx.NewId(), "&Expand All", "Expand Hardware Tree")
-        self.menuShowCollapseAll = menuShow.Append(wx.NewId(), "&Collapse All", "Collapse Hardware Tree")
+        self.menuShowExpandAll      = menuShow.Append(wx.NewId(), "&Expand All", "Expand Hardware Tree")
+        self.menuShowCollapseAll    = menuShow.Append(wx.NewId(), "&Collapse All", "Collapse Hardware Tree")
         menuActions = wx.Menu()
-        self.menuActionsReadAllHV = menuActions.Append(wx.NewId(), "&Read All HVs") 
-        self.menuActionsSetAllHV = menuActions.Append(wx.NewId(), "&Set All HVs") 
-        self.menuActionsMonitorAllHV = menuActions.Append(wx.NewId(), "&Monitor All HVs") 
+        self.menuActionsReadAllHV   = menuActions.Append(wx.NewId(), "&Read All HVs") 
+        self.menuActionsSetAllHV    = menuActions.Append(wx.NewId(), "&Set All HVs") 
+        self.menuActionsSTARTMonitorAllHV   = menuActions.Append(wx.NewId(), "START Monitor All HVs\tCTRL+H")
+        self.menuActionsSTOPMonitor         = menuActions.Append(wx.NewId(), "STOP Monitor\tCTRL+K")
+        menuActions.AppendSeparator()
+        self.menuActionsClearDescription    = menuActions.Append(wx.NewId(), "&Clear Description")
         menuDebug = wx.Menu()
-        self.menuDebugShell = menuDebug.Append(wx.NewId(), "&Python Shell", "Open wxPython shell frame")
+        self.menuDebugShell     = menuDebug.Append(wx.NewId(), "&Python Shell", "Open wxPython shell frame")
         self.menuDebugNamespace = menuDebug.Append(wx.NewId(), "&Namespace Viewer", "Open namespace viewer frame")
         menuBar = wx.MenuBar()
         menuBar.Append(menuFile, "&File")
@@ -48,6 +48,7 @@ class SCMainFrame(wx.Frame):
         # Binding top menu events
         self.Bind(wx.EVT_MENU, self.OnMenuDebugShell, self.menuDebugShell)
         self.Bind(wx.EVT_MENU, self.OnMenuDebugNamespace, self.menuDebugNamespace)
+        self.Bind(wx.EVT_MENU, self.OnMenuActionsClearDescription, self.menuActionsClearDescription)
         
         # Creating the bottom status bar
         self.CreateStatusBar(number=3)
@@ -62,8 +63,8 @@ class SCMainFrame(wx.Frame):
         self.tree = wx.TreeCtrl(self.sp, style=wx.TR_DEFAULT_STYLE)
         self.nb = wx.Notebook(self.sp)        
         # Notebook page objects.
-        self.descrip = Description(self.nb)
-        self.nb.AddPage(self.descrip, "Description")
+        self.description = Description(self.nb)
+        self.nb.AddPage(self.description, "Description")
         self.vme = VME(self.nb)
         self.nb.AddPage(self.vme, "VME")
         self.crim = CRIM(self.nb)
@@ -86,6 +87,9 @@ class SCMainFrame(wx.Frame):
     def OnMenuDebugNamespace(self, event):
         frame = FillingFrame(parent=self)
         frame.Show()
+    def OnMenuActionsClearDescription(self, event):
+        self.description.text.SetValue('')
+        
     # Tree events ##########################################################
     def OnTreeSelChanged(self, event):
         items = self.tree.GetItemText(event.GetItem()).split(':')
@@ -130,7 +134,7 @@ class Description(wx.Panel):
         self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE | wx.VSCROLL)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
-        self.SetSizer(sizer)    
+        self.SetSizer(sizer)
         sys.stdout = RedirectText(self.text)
 
 

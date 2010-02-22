@@ -97,19 +97,19 @@ class Controller(CAENVMETypes):
             raise CAENErr(cvRetError)
 
     def ReadCycle(self, addr):        
-        d = c_void_p(-1)
+        data = c_void_p(-1)
         cvRetError = vme.CAENVME_ReadCycle(c_long(self.handle), c_ulong(addr), \
-            byref(d), c_int(self.addressModifier), c_int(self.dataWidth))
+            byref(data), c_int(self.addressModifier), c_int(self.dataWidth))
         if cvRetError!=CAENVMETypes.CVErrors.cvSuccess:
             raise CAENErr(cvRetError)
         if (self.dataWidth==CAENVMETypes.CVDataWidth.cvD16) | \
            (self.dataWidth==CAENVMETypes.CVDataWidth.cvD16_swapped):
-            return(d.value & 0xFFFF)
+            return(data.value & 0xFFFF)
         if (self.dataWidth==CAENVMETypes.CVDataWidth.cvD32) | \
            (self.dataWidth==CAENVMETypes.CVDataWidth.cvD32_swapped):
-            return(d.value)
+            return(data.value)
         if (self.dataWidth==CAENVMETypes.CVDataWidth.cvD8):
-            return(d.value & 0xFF)
+            return(data.value & 0xFF)
 
     def WriteCycle(self, addr, data):
         d = c_void_p(data)
@@ -117,5 +117,79 @@ class Controller(CAENVMETypes):
             byref(d), c_int(self.addressModifier), c_int(self.dataWidth))
         if cvRetError!=CAENVMETypes.CVErrors.cvSuccess:
             raise CAENErr(cvRetError)
+
+
+
+    def ReadCycleMBLT(self, addr, size):
+        print 'inside ReadCycleMBLT'
+        cubyte=c_ubyte(0)
+        pcubyte=pointer(cubyte)
+        data = c_char_p('')
+
+        count = c_int(0)
+        cvRetError = vme.CAENVME_MBLTReadCycle(c_long(self.handle), c_ulong(addr), \
+            pcubyte, c_int(size), c_int(self.addressModifier), byref(count))
+        if cvRetError!=CAENVMETypes.CVErrors.cvSuccess:
+            raise CAENErr(cvRetError)
+
+        print count, count.value
+        print pcubyte
+        print pcubyte.contents
+        for i in range(size):
+            print i, pcubyte[i], hex(pcubyte[i])
+            
+    def ReadCycleBLT(self, addr, size):
+        print 'inside ReadCycleBLT'
+        cubyte=c_ubyte(0)
+        #cubyte=create_string_buffer(size)
+        pcubyte=pointer(cubyte)
+        data = c_char_p('')
+        #print data, repr(data.value)
+
+        count = c_int(0)
+        cvRetError = vme.CAENVME_BLTReadCycle(c_long(self.handle), c_ulong(addr), \
+            pcubyte, c_int(size), c_int(self.addressModifier), c_int(self.dataWidth), byref(count))
+        if cvRetError!=CAENVMETypes.CVErrors.cvSuccess:
+            raise CAENErr(cvRetError)
+        
+        #print data, repr(data.value)
+        print count, count.value
+
+        print pcubyte, pcubyte.contents
+        #print sizeof(pcubyte.contents), repr( (pcubyte.contents).raw  )        
+        for i in range(2*size):
+            print i, pcubyte[i], hex(pcubyte[i])
+
+        #buffer_size = size * sizeof(c_char)
+        #data_buffer = create_string_buffer(buffer_size) 
+        #memmove(data_buffer, pcubyte, buffer_size)
+        #print data_buffer, data_buffer.value
+
+  
+if __name__ == '__main__':
+    try:
+        ctrl = Controller()
+        print 'CAENVME Library v.%s'%ctrl.SWRelease()
+        ctrl.Init(CAENVMETypes.CVBoardTypes.cvV2718, 0, 0)
+        print 'Controller initialized:'
+        print '\thandle = %s'%ctrl.handle
+        print '\tCAENVME software = %s'%ctrl.SWRelease()
+        #print '\tV2718   firmware = %s'%ctrl.BoardFWRelease()
+        addr=0x068000; size=8
+        ctrl.ReadCycleMBLT(addr, size)
+        #ctrl.ReadCycleBLT(addr+2, size)
+        
+        #addr = 0x06F000; data = randint(0, 0x1FFFF)
+        #print('WriteCycle: ' + ctrl.WriteCycle(addr, data))
+        #print('WriteCycle: address = ' + hex(addr) + ', Wdata = ' + str(data))
+        #addr = 0x40F000; data = 0x0
+        #print('ReadCycle : address = ' + hex(addr) + ', Rdata = ' + str(ctrl.ReadCycle(addr, data)))
+
+        #print('Controller end = ' + str(ctrl.End()))
+        #print('Controller handle = ' + str(ctrl.handle))
+
+    except:
+        import sys
+        print "Unexpected error:", sys.exc_info()[0], sys.exc_info()[1]       
 
 
