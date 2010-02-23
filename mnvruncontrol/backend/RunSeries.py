@@ -1,4 +1,4 @@
-import MetaData
+from mnvruncontrol.configuration import MetaData
 
 class RunSeries:
 	

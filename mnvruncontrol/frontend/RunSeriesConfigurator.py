@@ -1,10 +1,10 @@
 import wx
 import sys
 import os
-import RunSeries
 import shelve
 
-import MetaData
+from mnvruncontrol.configuration import MetaData
+from mnvruncontrol.backend import RunSeries
 
 class MyFrame(wx.Frame):
     """

@@ -14,21 +14,11 @@ import shelve
 import anydbm		# if a shelve database doesn't exist, this module contains the error raised
 import re			# regular expressions
 
-# other run control modules
-import MetaData
-import RunSeries
-import DataAcquisitionManager
-
-## some constants for configuration
-CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
-
-RUN_SUBRUN_DB_LOCATION_DEFAULT = "/work/conditions/next_run_subrun.db"
-LOGFILE_LOCATION_DEFAULT = "/work/data/logs"
-
-ET_SYSTEM_LOCATION_DEFAULT = "/work/data/etsys"
-RAW_DATA_LOCATION_DEFAULT = "/work/data/rawdata"
-
-LI_CONTROL_LOCATION_DEFAULT = "/work/software/LIBox"
+# run control-specific modules.  note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
+from mnvruncontrol.configuration import MetaData
+from mnvruncontrol.configuration import Defaults
+from mnvruncontrol.backend import RunSeries
+from mnvruncontrol.backend import DataAcquisitionManager
 
 #########################################################
 #    MainFrame
@@ -237,8 +227,8 @@ class MainFrame(wx.Frame):
 		topSizer.AddMany( [(configSizer, 1, wx.EXPAND | wx.RIGHT, 5), (controlBoxSizer, 1, wx.EXPAND | wx.LEFT, 5)] )
 		
 		# now the 'status' area
-		self.onImage = wx.Bitmap("LED_on.png", type=wx.BITMAP_TYPE_PNG)
-		self.offImage = wx.Bitmap("LED_off.png", type=wx.BITMAP_TYPE_PNG)
+		self.onImage = wx.Bitmap(self.runmanager.ResourceLocation + "/LED_on.png", type=wx.BITMAP_TYPE_PNG)
+		self.offImage = wx.Bitmap(self.runmanager.ResourceLocation + "/LED_off.png", type=wx.BITMAP_TYPE_PNG)
 		self.runningIndicator = wx.StaticBitmap(self.mainPage, -1)
 		self.runningIndicator.SetBitmap(self.offImage)
 
@@ -320,32 +310,32 @@ class MainFrame(wx.Frame):
 
 	def GetConfig(self):
 		try:
-			db = shelve.open(CONFIG_DB_LOCATION)
+			db = shelve.open(Defaults.CONFIG_DB_LOCATION)
 		except anydbm.error:
 			errordlg = wx.MessageDialog( None, "The configuration file does not exist.  Default values are being used.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
 
-			self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
-			self.logfileLocation = LOGFILE_LOCATION_DEFAULT
-			self.runmanager.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
-			self.runmanager.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
-			self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			self.runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
+			self.logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
+			self.runmanager.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
+			self.runmanager.rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
+			self.runmanager.ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
 			
 		else:
 			try:	self.runinfoFile = db["runinfoFile"]
-			except KeyError: self.runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
+			except KeyError: self.runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
 			
 			try:	self.logfileLocation = db["logfileLocation"]
-			except KeyError: self.logfileLocation = LOGFILE_LOCATION_DEFAULT
+			except KeyError: self.logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
 			
 			try:	self.runmanager.etSystemFileLocation = db["etSystemFileLocation"]
-			except KeyError: self.runmanager.etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			except KeyError: self.runmanager.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
 			
 			try:	self.runmanager.rawdataLocation = db["rawdataLocation"]
-			except KeyError: self.runmanager.rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+			except KeyError: self.runmanager.rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
 
-			try:	self.runmanager.LIBoxControlLocation = db["LIBoxControlLocation"]
-			except KeyError: self.runmanager.LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			try:	self.runmanager.ResourceLocation = db["ResourceLocation"]
+			except KeyError: self.runmanager.ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
 		
 		
 		
@@ -868,30 +858,30 @@ class OptionsFrame(wx.Frame):
 		self.parent = parent
 
 		try:
-			db = shelve.open(CONFIG_DB_LOCATION)
+			db = shelve.open(Defaults.CONFIG_DB_LOCATION)
 		except anydbm.error:
 			# the user has already been informed once (when the main frame was opened)
 			# if the DB is not accessible, so we'll just silently go to the defaults here.
-			runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
-			logfileLocation = LOGFILE_LOCATION_DEFAULT
-			etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
-			rawdataLocation = RAW_DATA_LOCATION_DEFAULT
-			LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
+			logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
+			etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
+			rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
+			ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
 		else:
 			try:	runinfoFile = db["runinfoFile"]
-			except KeyError: runinfoFile = RUN_SUBRUN_DB_LOCATION_DEFAULT
+			except KeyError: runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
 
 			try:	logfileLocation = db["logfileLocation"]
-			except KeyError: logfileLocation = LOGFILE_LOCATION_DEFAULT
+			except KeyError: logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
 			
 			try:	etSystemFileLocation = db["etSystemFileLocation"]
-			except KeyError: etSystemFileLocation = ET_SYSTEM_LOCATION_DEFAULT
+			except KeyError: etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
 			
 			try:	rawdataLocation = db["rawdataLocation"]
-			except KeyError: rawdataLocation = RAW_DATA_LOCATION_DEFAULT
+			except KeyError: rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
 			
-			try:	LIBoxControlLocation = db["LIBoxControlLocation"]
-			except KeyError: LIBoxControlLocation = LI_CONTROL_LOCATION_DEFAULT
+			try:	ResourceLocation = db["ResourceLocation"]
+			except KeyError: ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
 
 		panel = wx.Panel(self)
 		
@@ -909,15 +899,15 @@ class OptionsFrame(wx.Frame):
 		rawDataLocationLabel = wx.StaticText(panel, -1, "Raw data location")
 		self.rawDataLocationEntry = wx.TextCtrl(panel, -1, rawdataLocation)
 		
-		LIBoxControlLocationLabel = wx.StaticText(panel, -1, "LI box control location")
-		self.LIBoxControlLocationEntry = wx.TextCtrl(panel, -1, LIBoxControlLocation)
+		ResourceLocationLabel = wx.StaticText(panel, -1, "Resource files location")
+		self.ResourceLocationEntry = wx.TextCtrl(panel, -1, ResourceLocation)
 		
 		pathsGridSizer = wx.GridSizer(6, 2, 10, 10)
 		pathsGridSizer.AddMany( ( runInfoDBLabel,            (self.runInfoDBEntry, 1, wx.EXPAND),
 		                     logfileLocationLabel,      (self.logfileLocationEntry, 1, wx.EXPAND),
 		                     etSystemFileLocationLabel, (self.etSystemFileLocationEntry, 1, wx.EXPAND),
 		                     rawDataLocationLabel,      (self.rawDataLocationEntry, 1, wx.EXPAND),
-		                     LIBoxControlLocationLabel, (self.LIBoxControlLocationEntry, 1, wx.EXPAND) ) )
+		                     ResourceLocationLabel, (self.ResourceLocationEntry, 1, wx.EXPAND) ) )
 
 		pathsSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Paths"), orient=wx.VERTICAL)
 		pathsSizer.Add(pathsGridSizer, 1, wx.EXPAND)
@@ -957,7 +947,7 @@ class OptionsFrame(wx.Frame):
 		
 	def SaveAll(self, evt=None):
 		try:
-			db = shelve.open(CONFIG_DB_LOCATION, "w")
+			db = shelve.open(Defaults.CONFIG_DB_LOCATION, "w")
 		except anydbm.error:
 			errordlg = wx.MessageDialog( None, "The configuration file cannot be opened.  Values will not be saved.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
@@ -966,7 +956,7 @@ class OptionsFrame(wx.Frame):
 			db["logfileLocation"] = self.logfileLocationEntry.GetValue()
 			db["etSystemFileLocation"] = self.etSystemFileLocationEntry.GetValue()
 			db["rawdataLocation"] = self.rawDataLocationEntry.GetValue()
-			db["LIBoxControlLocation"] = self.LIBoxControlLocationEntry.GetValue()
+#			db["ResourceLocation"] = self.ResourceLocationEntry.GetValue()
 			
 			db.close()
 			

@@ -10,16 +10,12 @@ import threading
 import datetime
 import time
 
-import RunSeries
-import RunControl
-import MetaData
-
-# globals.
-# do these need to be calculated somehow?
-# or are they always fixed?
-EVENT_SIZE = 2048 
-FRAMES = 8
-
+# run control-specific modules.
+# note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
+from mnvruncontrol.configuration import Defaults
+from mnvruncontrol.configuration import MetaData
+from mnvruncontrol.backend import LIBox
+from mnvruncontrol.backend import RunSeries
 
 class DataAcquisitionManager(wx.EvtHandler):
 	def __init__(self, main_window):
@@ -38,9 +34,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.LIBox = None					# this will be set in StartDataAcquisition
 
 		# configuration stuff
-		self.etSystemFileLocation = RunControl.ET_SYSTEM_LOCATION_DEFAULT
-		self.rawdataLocation      = RunControl.RAW_DATA_LOCATION_DEFAULT
-		self.LIBoxControlLocation  = RunControl.LI_CONTROL_LOCATION_DEFAULT
+		self.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
+		self.rawdataLocation      = Defaults.RAW_DATA_LOCATION_DEFAULT
+#		self.LIBoxControlLocation  = RunControl.LI_CONTROL_LOCATION_DEFAULT
 
 
 		# these will need to be set by the run control window before the process is started.
@@ -65,17 +61,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.detector == None or self.run == None or self.first_subrun == None or self.febs == None:
 			raise ValueError("Run series is improperly configured.")
 
-		# the LI box module needs to be imported late
-		# because we don't know where to find it
-		# until the config has been loaded. 
-		 
-		if self.LIBox == None:
-			if not "LIBox" in dir():
-				if not self.LIBoxControlLocation in sys.path:
-					sys.path.append(self.LIBoxControlLocation)
-				import LIBox
-			
-			self.LIBox = LIBox.LIBox()
+		self.LIBox = LIBox.LIBox()
 					
 		self.CloseWindows()			# any leftover windows will need to be closed.
 
@@ -153,12 +139,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 			print "Thread count too high"
 
 	def StartETSys(self):
-		events = self.runinfo.gates * FRAMES * self.febs
+		events = self.runinfo.gates * Defaults.FRAMES * self.febs
 
 		etSysFrame = OutputFrame(self.main_window, "ET system", window_size=(600,200), window_pos=(600,0))
 		etSysFrame.Show(True)
 
-		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (os.environ["ET_HOME"], self.etSystemFileLocation, self.ET_filename, events, EVENT_SIZE)
+		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (os.environ["ET_HOME"], self.etSystemFileLocation, self.ET_filename, events, Defaults.EVENT_SIZE)
 
 		self.windows.append( etSysFrame )
 		self.UpdateWindowCount()
