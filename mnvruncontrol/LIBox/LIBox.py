@@ -22,7 +22,7 @@ LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS0"
 LIBOX_SERIAL_PORT_BAUD           = 9600
 LIBOX_SERIAL_PORT_PARITY         = serial.PARITY_NONE
 LIBOX_SERIAL_PORT_SW_FLOWCONTROL = False
-LIBOX_SERIAL_PORT_HW_FLOWCONTROL = False #True
+LIBOX_SERIAL_PORT_HW_FLOWCONTROL = False
 LIBOX_SERIAL_PORT_DATA_BITS      = serial.EIGHTBITS
 LIBOX_SERIAL_PORT_STOP_BITS      = serial.STOPBITS_ONE
 
@@ -95,7 +95,7 @@ class LIBox:
 				except serial.SerialTimeoutException:
 					raise LIBoxException("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
 
-				if LIBOX_WAIT_FOR_RESPONSE:
+				if LIBOX_WAIT_FOR_RESPONSE and command != "_X":		# box won't respond after reset command.
 					char = self.port.read(1)
 					if self.echocmds:
 						print "Received from box: '" + char + "'"
@@ -103,7 +103,7 @@ class LIBox:
 					if char != "K":
 						raise LIBoxException("The LI box didn't respond affirmatively to the command: '" + command + "'.")
 			
-				time.sleep(0.01)
+				time.sleep(0.02)
 		
 		self.command_stack = []
 			
