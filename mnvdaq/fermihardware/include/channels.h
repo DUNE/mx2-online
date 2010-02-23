@@ -37,8 +37,11 @@
 
 class channels {
 	private:
-		int channelNumber;/*!<the channel identifying index, used for retrieval */  
-		//channel numbers on the card are labled starting at 1, btw (yeah, what about it...)
+		// Channel numbers on the card are labled starting at 1.  It is a confusing problem to support 
+		// this convention.  *Chain* numbers should be indexed 0-3, and Channel number should equal Chain 
+		// number plus one (so Chain number is the proper offline software index to follow).
+		int channelNumber; /*!<the channel identifying index, used for retrieval, currently indexed 0-3 */  
+		int chainNumber;   /*!<the channel identifying index, used for retrieval, indexed 0-3 */
 		unsigned int channelBaseAddress, channelDirectAddress;/*!<channelBaseAddress is the CROC address */
 		CVAddressModifier bltAddressModifier; /*!<block transfers require a special modifier */
 		std::list<feb*> febs; /*!<each channel can have up to 15 front end boards (feb's) */
@@ -64,7 +67,8 @@ class channels {
 			febs.clear();
 		};
 
-		/*! get functions for various data members*/
+		/*! get functions for various data members*/	
+		// Currently GetChannelNumber && GetChainNumber both report "channelNumber" - actually the *chain* number!
 		int inline GetChannelNumber() {return channelNumber;}; // TODO - properly distinguish between channels and chains!
 		int inline GetChainNumber() {return channelNumber;}; // TODO - properly distinguish between channels and chains!
 		unsigned int inline GetChannelAddress() {return channelDirectAddress;};

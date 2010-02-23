@@ -21,7 +21,8 @@ channels::channels(unsigned int a, int b)
  */
 	channelBaseAddress = a; //the address for the croc which contains this channel
 	channelNumber = b; //the channel number (0-3 here, 1-4 is stenciled on the cards themselves)
-	channelDirectAddress = channelBaseAddress + 0x4000 * (unsigned int)(channelNumber);
+	chainNumber   = b; //the chain number 0-3, now and forever.
+	channelDirectAddress = channelBaseAddress + 0x4000 * (unsigned int)(chainNumber);
 	FIFOMaxSize = 2048; // bytes; largest number of bytes the FIFO buffer can hold
 	MemoryMaxSize = 6144; // bytes;  largest number of bytes the DPM Memory can hold
 	crocRegisters registerOffset = crocInput;
@@ -184,7 +185,7 @@ void channels::SetBuffer(unsigned char *b) {
  */
 
 #if DEBUG_VERBOSE
-	std::cout << "     Setting Buffer for Channel " << this->GetChannelNumber() << std::endl;
+	std::cout << "     Setting Buffer for Chain " << this->GetChainNumber() << std::endl;
 #endif
 	buffer = new unsigned char [(int)dpmPointer];
 	for (int i=0;i<(int)dpmPointer;i++) {

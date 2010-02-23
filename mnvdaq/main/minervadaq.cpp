@@ -520,7 +520,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-09-05'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-09-06'),\n"); //online, DAQ Heder, CVS Tag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -804,13 +804,15 @@ int main(int argc, char *argv[])
 			for (int i=0; i<no_crocs; i++) {
 				croc_id = i+1;
 				croc *tmpCroc = currentController->GetCroc(croc_id);
-				for (int j=0; j<4 ;j++) { // Loop over FE Channels.
+				for (int j=0; j<4 ;j++) { // Loop over FE Chains.
+					// TODO - relace GetChannel functions with GetChain functions?...
 					if ((tmpCroc->GetChannelAvailable(j))&&(tmpCroc->GetChannel(j)->GetHasFebs())) {
 						//
 						// Threaded Option
 						//
 #if DEBUG_THREAD
-						std::cout << " Launching data thread: " << croc_id << " " << j << std::endl;
+						std::cout << " Launching data thread on CROC Addr: " << 
+							(tmpCroc->GetCrocAddress()>>16) << " Chain " << j << std::endl;
 #endif
 #if THREAD_ME
 #if TIME_ME
@@ -845,7 +847,7 @@ int main(int argc, char *argv[])
 #elif NO_THREAD
 #if DEBUG_GENERAL
 						mnvdaq.debugStream() << " Reading CROC Addr: " << (tmpCroc->GetCrocAddress()>>16) << 
-							" Index: " << croc_id << " Channel: " << j;
+							" Index: " << croc_id << " Chain: " << j;
 #endif
 						try {
 							int error = TakeData(daq,evt,croc_id,j,0,attach,sys_id);
@@ -853,10 +855,10 @@ int main(int argc, char *argv[])
 						} catch (int e) {
 							std::cout << "Error in minervadaq::main()!  Cannot TakeData!" << std::endl;
 							std::cout << "Failed to execute on CROC Addr: " << 
-								(tmpCroc->GetCrocAddress()>>16) << " Channel: " << j << std::endl;
+								(tmpCroc->GetCrocAddress()>>16) << " Chain: " << j << std::endl;
 							mnvdaq.critStream() << "Error in minervadaq::main()!  Cannot TakeData!";
 							mnvdaq.critStream() << "Failed to execute on CROC Addr: " << 
-								(tmpCroc->GetCrocAddress()>>16) << " Channel: " << j;
+								(tmpCroc->GetCrocAddress()>>16) << " Chain: " << j;
 							// TODO - set error bits in DAQHeader here?
 							event_data.readoutInfo = (unsigned short)e; // Only 1 for now, "VME Error" 
 							//continueRunning = false; //?
@@ -1038,7 +1040,7 @@ int main(int argc, char *argv[])
 
 int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread, 
 	et_att_id  attach, et_sys_id  sys_id) 
-{
+{ // TODO - fix channel / chain naming snafu here too...
 /*!
  *  \fn int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread,
  *                et_att_id  attach, et_sys_id  sys_id)
@@ -1051,7 +1053,7 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
  *  \param *evt, a pointer to the event_handler structure containing information
  *               about the data being handled.
  *  \param croc_id, an integer with the CROC being serviced in this call
- *  \param channel_id, an integer with the channel number being serviced in this cal
+ *  \param channel_id, an integer with the channel (really chain) number being serviced in this cal
  *  \param thread, the thread number of this call
  *  \param attach, the ET attachemnt to which data will be stored
  *  \param sys_id, the ET system handle
@@ -1118,7 +1120,7 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 			} catch (bool e) {
 				std::cout << "Problems taking data on FEB: " << (*feb)->GetBoardNumber() << std::endl;
 				std::cout << "Leaving thread servicing CROC: " << (crocTrial->GetCrocAddress()>>16) <<
-					" channel: " << channel_id << std::endl;
+					" Chain: " << channel_id << std::endl;
 				return 1; // TODO - check error code for DAQHeader error bits.
 			}
 		} //feb loop
