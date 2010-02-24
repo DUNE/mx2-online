@@ -1,2 +1,1 @@
-ValidRequests = ("alive\?", "daq_running\?", "daq_last_exit\?", "daq_start!", "daq_stop!", "sc_setHWconfig (\w+)!", "sc_voltages\?")
-
+ValidRequests = ("(?P<request>alive)\?", "(?P<request>daq_running)\?", "(?P<request>daq_last_exit)\?", "(?P<request>daq_start)!", "(?P<request>daq_stop)!", "(?P<request>sc_setHWconfig) (?P<filename>\S+)!", "(?P<request>sc_voltages)\?")

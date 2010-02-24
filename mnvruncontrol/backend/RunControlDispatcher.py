@@ -87,7 +87,7 @@ class RunControlDispatcher:
 		while not self.quit:
 			# if we interrupt the socket system call, by receiving a signal,
 			# it throws an exception as a warning.  we should just start over then
-			# (because the only signals we're handling right now are SIGTERM and SIGINT)
+			# (because the only signals we're handling right now are SIGTERM and SIGINT).
 			try:
 				client_socket, client_address = self.server_socket.accept()
 			except socket.error:		
