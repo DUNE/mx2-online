@@ -132,7 +132,7 @@ class acquire_data {
 		int WriteCROCFastCommand(int id, unsigned char command[]);
 
 		/*! A templated function for sending messages from a generic "device" */
-		template <class X> int SendMessage(X *device, croc *crocTrial, channels *channelTrial,bool singleton);
+		template <class X> int SendMessage(X *device, croc *crocTrial, channels *channelTrial, bool singleton);
 
 		/*! A templated function for receiving messages from a generic "device" */
 		template <class X> int ReceiveMessage(X *device, croc *crocTrial, channels *channelTrial);

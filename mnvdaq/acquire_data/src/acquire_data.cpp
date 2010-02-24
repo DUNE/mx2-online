@@ -340,6 +340,7 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
  * \param nFEBchain2 an integer describing the number of FEB's on chain 2.  Defaults to 11.
  * \param nFEBchain3 an integer describing the number of FEB's on chain 3.  Defaults to 11.
  */
+// TODO - pass HW Init Flag here too...
 	std::cout << "\nEntering acquire_data::InitializeCroc for CROC " << (address>>16) << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeCroc for CROC " << (address>>16);
 #if DEBUG_THREAD
@@ -356,7 +357,7 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 
 	// Make a CROC object on this controller.
 	daqController->MakeCroc(address,crocNo); 
-	int nChannels = 4; // # of CROC FE Channels - always fixed for the real detector...
+	int nChains         = 4; // # of CROC FE Channels - always fixed for the real detector...
 	int nFEBsPerChain[] = { nFEBchain0, nFEBchain1, nFEBchain2, nFEBchain3 };
 
 	// Make sure that we can actually talk to the cards.
@@ -398,7 +399,7 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 
 	// Build the FEB list for each channel.
 	acqData.infoStream() << " Building FEB List:";
-	for (int i = 0; i < nChannels; i++) {
+	for (int i = 0; i < nChains; i++) {
 		// Now set up the channels and FEB's.
 		croc *tmpCroc = daqController->GetCroc(crocNo);
 		bool avail = false;
@@ -418,7 +419,7 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 #if THREAD_ME
 	// If we are working in multi-threaded operation we need  
 	// to wait for the each thread we launched to complete.
-	for (int i = 0; i < nChannels; i++) {
+	for (int i = 0; i < nChains; i++) {
 		chan_thread[i]->join(); // Wait for all the threads to finish up before moving on.
 #if DEBUG_THREAD
 		croc_thread << "Build FEB List: chain " << i << " thread completed." << std::endl;

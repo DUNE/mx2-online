@@ -43,7 +43,8 @@ class croc {
 			fastCommandRegister, testPulseRegister;
 
 		bool registersInitialized; /*!< a flag for the initialization state of the croc */
-		bool channel_available[4]; /*!< a flag for the channels wich are available */
+		bool channel_available[4]; /*!< a flag for the channels which are available - really indexing chains here! */
+		//bool chain_available[4];   /*!< a flag for the chains which are available (chain==channel-1)*/
 
 	public:
 		/*! the default constructor */
@@ -68,8 +69,9 @@ class croc {
 		CVDataWidth inline GetDataWidth() {return dataWidth;};
 		CVDataWidth inline GetDataWidthSwapped() {return dataWidthSwapped;};
 		unsigned int inline GetAddress() {return crocAddress;};
-		channels *GetChannel(int i); //return the ith channel
-		bool inline GetChannelAvailable(int i) {return channel_available[i];};
+		channels *GetChannel(int i); // return the ith *chain*
+		//bool inline GetChainAvailable(int i) {return chain_available[i];}; // indexed by *chain*!
+		bool inline GetChannelAvailable(int i) {return channel_available[i];}; // indexed by *chain*!
 		int inline GetCrocID() {return id;};
 		int inline GetCrocAddress() {return crocAddress;};
 
