@@ -1,5 +1,6 @@
 import SC_Util
 import wx
+import time
 
 class VMEDevice():
     def __init__(self, controller, baseAddr, moduleType):
@@ -34,7 +35,7 @@ class CROCChannel(VMEDevice):
         for feb in self.FEBs: FEBsAddresses.append("FE:"+str(feb))
         return [self.Description(), FEBsAddresses]
     def ReadDPM(self, offset):
-        if (offset>0x1FFF): raise Exception("address " + hex(offset) + " is out of rnage")
+        if (offset>0x1FFF): raise Exception("address " + hex(offset) + " is out of range")
         return int(self.controller.ReadCycle(self.RegRMemory+offset)) 
     def WriteFIFO(self, data): self.controller.WriteCycle(self.RegWInput, data)
     def SendMessage(self): self.controller.WriteCycle(self.RegWSendMessage, 0x0101)
@@ -182,11 +183,11 @@ class FEB():
     def FPGARead(self, theCROCChannel):
         sentMessage = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
             Frame.DeviceFPGA, Frame.FuncFPGARead) + Frame.NRegsFPGA*[0]
-        return WriteSendReceive(sentMessage, Frame.MessageDataLengthFPGA, self.Address, Frame.DeviceFPGA, theCROCChannel)
+        return WriteSendReceive(sentMessage, Frame.MessageDataLengthFPGA, self.Address, Frame.DeviceFPGA, theCROCChannel, useBLT=True)
     def FPGAWrite(self, theCROCChannel, sentMessageData):
         sentMessage = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
             Frame.DeviceFPGA, Frame.FuncFPGAWrite) + sentMessageData
-        return WriteSendReceive(sentMessage, Frame.MessageDataLengthFPGA, self.Address, Frame.DeviceFPGA, theCROCChannel)
+        return WriteSendReceive(sentMessage, Frame.MessageDataLengthFPGA, self.Address, Frame.DeviceFPGA, theCROCChannel, useBLT=True)
     def TRIPProgramRST(self, theCROCChannel):
         sentMessage = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
             Frame.DeviceTRIP, Frame.FuncTRIPWRAll) + [0,8,8,8,8,8,0,0]
@@ -199,7 +200,7 @@ class FEB():
                 Frame.DeviceTRIP, Frame.FuncTRIPWRAll) 
         sentMessageData = self.ParseTRIPAllRegsPhysicalToMessage(Frame.NRegsTRIPPhysical*[0], Frame.InstrTRIPRead)
         sentMessage = sentMessageHeader + sentMessageData
-        return WriteSendReceive(sentMessage, Frame.MessageDataLengthTRIPRead, self.Address, Frame.DeviceTRIP, theCROCChannel)
+        return WriteSendReceive(sentMessage, Frame.MessageDataLengthTRIPRead, self.Address, Frame.DeviceTRIP, theCROCChannel, useBLT=True)
     def TRIPWrite(self, theCROCChannel, theRegs, theTRIPIndex=None):
         if theTRIPIndex!=None:
             sentMessageHeader = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
@@ -209,22 +210,22 @@ class FEB():
         pRegs = self.ParseTRIPRegsLogicalToPhysical(theRegs)
         sentMessageData = self.ParseTRIPAllRegsPhysicalToMessage(pRegs, Frame.InstrTRIPWrite)
         sentMessage = sentMessageHeader + sentMessageData
-        WriteSendReceive(sentMessage, Frame.MessageDataLengthTRIPWrite, self.Address, Frame.DeviceTRIP, theCROCChannel)
+        WriteSendReceive(sentMessage, Frame.MessageDataLengthTRIPWrite, self.Address, Frame.DeviceTRIP, theCROCChannel, useBLT=True)
     def FLASHMainMemPageRead(self, theCROCChannel, pageAddr):
         sentMessageHeader = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
             Frame.DeviceFLASH, Frame.FuncFLASHCommand)
         sentMessageDataOpCode = Flash().MakeOpCodeMessageMainMemPageRead(pageAddr)
         sentMessage = sentMessageHeader + sentMessageDataOpCode + Flash.NBytesPerPage*[0]
-        rcvMessageData = WriteSendReceive(sentMessage, Frame.MessageDataLengthFLASHMMPRead, self.Address, Frame.DeviceFLASH, theCROCChannel)
+        rcvMessageData = WriteSendReceive(sentMessage, Frame.MessageDataLengthFLASHMMPRead, self.Address, Frame.DeviceFLASH, theCROCChannel, useBLT=True)
         return rcvMessageData[len(sentMessageDataOpCode):len(sentMessageDataOpCode)+Flash.NBytesPerPage]
     def FLASHMainMemPageProgThroughBuffer(self, theCROCChannel, pageAddr, pageBytes, bufferIndex=1):
         sentMessageHeader = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
             Frame.DeviceFLASH, Frame.FuncFLASHCommand)
         sentMessageDataOpCode = Flash().MakeOpCodeMessageMainMemPageProgThroughBuffer(bufferIndex, pageAddr)
         sentMessage = sentMessageHeader + sentMessageDataOpCode + pageBytes
-        WriteSendReceive(sentMessage, Frame.MessageDataLengthFLASHMMPPTB, self.Address, Frame.DeviceFLASH, theCROCChannel, appendData=pageBytes[0])
+        WriteSendReceive(sentMessage, Frame.MessageDataLengthFLASHMMPPTB, self.Address, Frame.DeviceFLASH, theCROCChannel, appendData=pageBytes[0], useBLT=True)
         sentMessage = sentMessageHeader + [Flash.OpStatRegRead] + 8*[0]
-        for i in range(50):
+        for i in range(100):
             rcvMessageData = WriteSendReceive(sentMessage, 9, self.Address, Frame.DeviceFLASH, theCROCChannel)
             if rcvMessageData[8]&0x80==0x80: break
         if i==50: raise Exception('MainMemPageProgThroughBuffer StatusBit NOT Ready')
@@ -255,10 +256,12 @@ class FEB():
                     for theCROCChannel in theCROC.Channels():
                         for febAddress in theCROCChannel.FEBs:
                             theFEB=FEB(febAddress)
-                            self.WritePagesToFlash(theFEB, theCROCChannel, theCROC, pagesAddrFile, pagesBytesFile, theFrame)         
+                            self.WritePagesToFlash(theFEB, theCROCChannel, theCROC, pagesAddrFile, pagesBytesFile, theFrame)
         dlg.Destroy()
     def WritePagesToFlash(self, theFEB, theCROCChannel, theCROC, pagesAddrFile, pagesBytesFile, theFrame):
         errPages=''
+        msg="%s Writing %s ..."%(time.ctime(), theFEB.FLASHDescription('', theCROCChannel, theCROC))
+        print msg; theFrame.SetStatusText(msg, 2)
         for iPage in range(Flash.NPages):
             theFEB.FLASHMainMemPageProgThroughBuffer(theCROCChannel, pagesAddrFile[iPage], pagesBytesFile[iPage])
             pageBytesRead=theFEB.FLASHMainMemPageRead(theCROCChannel, pagesAddrFile[iPage])
@@ -268,10 +271,10 @@ class FEB():
                 theFrame.Refresh(); theFrame.Update()
         theFrame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCChannel, theCROC), 0)
         if errPages:
-            print "Write ERROR on %s, page %s"%(theFEB.FLASHDescription('', theCROCChannel, theCROC), errPages)
+            print "Write ERROR %s, page %s"%(theFEB.FLASHDescription('', theCROCChannel, theCROC), errPages)
             theFrame.SetStatusText("Write ERROR on %s"%theFEB.FLASHDescription('', theCROCChannel, theCROC), 2)
         else:
-            msg="Write DONE on %s"%theFEB.FLASHDescription('', theCROCChannel, theCROC)
+            msg="%s Write DONE %s"%(time.ctime(), theFEB.FLASHDescription('', theCROCChannel, theCROC))
             print msg; theFrame.SetStatusText(msg, 2)
     def AlignGateDelays(self, theCROC, theCROCChannel, theNumberOfMeas, theLoadTimerValue, theGateStartValue):
         if theCROCChannel.FEBs==[]: return
@@ -805,12 +808,13 @@ class Frame():
         if header[3]&frameID0!=frameID0: err.append('frameI12D0!=%s'%frameID0)
         if header[4]&frameID1!=frameID1: err.append('frameID1!=%s'%frameID1)
         return err
-def WriteSendReceive(sentMessage, rcvMessageLength, theFEBAddress, theFEBDevice, theCROCChannel, appendData=0):
+def WriteSendReceive(sentMessage, rcvMessageLength, theFEBAddress, theFEBDevice, theCROCChannel, appendData=0, useBLT=False):
     ClearAndCheckStatusRegister(theCROCChannel)
     ResetAndCheckDPMPointer(theCROCChannel)
     WriteFIFOAndCheckStatus(sentMessage, theCROCChannel, appendData) 
     SendFIFOAndCheckStatus(theCROCChannel)
-    rcvMessageHeader, rcvMessageData = GetRcvMessageHeaderAndData(theCROCChannel)
+    if useBLT: rcvMessageHeader, rcvMessageData = GetRcvMessageHeaderAndDataBLT(theCROCChannel)
+    else: rcvMessageHeader, rcvMessageData = GetRcvMessageHeaderAndData(theCROCChannel)
     ###print [hex(x) for x in sentMessage], len(sentMessage)
     ###print [hex(x) for x in rcvMessageHeader], len(rcvMessageHeader)
     ###print [hex(x) for x in rcvMessageData], len(rcvMessageData)
@@ -866,7 +870,28 @@ def GetRcvMessageHeaderAndData(theCROCChannel):
         ' RcvMessageHeaderLength=' + rcvLength +' (too short)')
     rcvMessageHeader=rcvMessage[2:11]
     if rcvLength>11: rcvMessageData=rcvMessage[11:rcvLength]
+##    print 'NO BLT: %s %s'%(rcvLength, rcvMessageHeader+rcvMessageData)
+##    blt=GetRcvMessageHeaderAndDataBLT(theCROCChannel)
+##    print 'WITH BLT: %s'%(blt[0]+blt[1])  
     return (rcvMessageHeader, rcvMessageData)
+def GetRcvMessageHeaderAndDataBLT(theCROCChannel):
+    dpmPointer=theCROCChannel.DPMPointerRead()
+    rcvLength=theCROCChannel.ReadDPM(0)
+    rcvLength=((rcvLength&0xFF00)>>8) + ((rcvLength&0x00FF)<<8)
+    if rcvLength!=(dpmPointer-2): raise Exception(
+        'Error for channel ' + hex(theCROCChannel.chBaseAddr) +
+        ' DPMPointer=' + dpmPointer +' <> RcvMessageLength+2=' + rcvLength)
+    if rcvLength<(2+Frame.MessageHeaderLength) or rcvLength%2!=0: raise Exception(
+        'Error for channel ' + hex(theCROCChannel.chBaseAddr) +
+        ' RcvMessageLength=' + rcvLength)
+    rcvMessageHeader=[]
+    rcvMessageData=[]
+    addr=theCROCChannel.RegRMemory
+    size=rcvLength
+    rcvMessage = theCROCChannel.controller.ReadCycleBLT(addr, size)
+    rcvMessageHeader=rcvMessage[2:11]
+    if rcvLength>11: rcvMessageData=rcvMessage[11:rcvLength]
+    return rcvMessageHeader, rcvMessageData
 
 
    
