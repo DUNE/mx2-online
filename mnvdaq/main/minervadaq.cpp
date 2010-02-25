@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
 		case PureLightInjection:
 			fprintf(sam_file,"'triggertype':'purelightinjection',})}),\n");
 			fprintf(sam_file,"datastream='linjc',\n");
-			std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
+			//std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 			break;
 		case MixedBeamPedestal:
 			// TODO - Test mixed beam-pedestal running!
@@ -581,7 +581,7 @@ int main(int argc, char *argv[])
 			fprintf(sam_file,"'triggertype':'mixedbeamlightinjection',})}),\n");
 			fprintf(sam_file,"datastream='numil',\n");
 			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
-			std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
+			//std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 			break; 
 		default:
 			std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
@@ -729,8 +729,8 @@ int main(int argc, char *argv[])
 				break;
 			case PureLightInjection:
 				triggerType = LightInjection;
-				mnvdaq.warnStream() << "No LI control class implemented yet!";
-				std::cout << "minervadaq::main(): Warning!  No LI control class implemented yet!" << std::endl;
+				//mnvdaq.warnStream() << "No LI control class implemented yet!";
+				//std::cout << "minervadaq::main(): Warning!  No LI control class implemented yet!" << std::endl;
 				break;
 			case MixedBeamPedestal:
 				// TODO - Test mixed beam-pedestal running!
@@ -749,8 +749,8 @@ int main(int argc, char *argv[])
 					triggerType = NuMI;
 				}
 				mnvdaq.warnStream() << "Calling untested mixed mode beam-li trigger types!";
-				mnvdaq.warnStream() << "No LI control class implemented yet!";
-				std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
+				//mnvdaq.warnStream() << "No LI control class implemented yet!";
+				//std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 				break; 
 			default:
 				std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
