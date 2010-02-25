@@ -12,6 +12,7 @@
 import socket
 import signal
 import subprocess
+import time
 import sys
 import os
 import re
@@ -28,21 +29,17 @@ class RunControlDispatcher:
 	constructor checks before allowing itself to be started.
 	"""
 	def __init__(self):
-		self.logfile = open(Defaults.DISPATCHER_LOGFILE, "w")
-
-		self.check_pidfile()		# first make sure this is the only instance.
-		
+		self.logfile = None
 		self.daq_process = None
-	
-		self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.
-		self.server_socket.bind(("", Defaults.DISPATCHER_PORT))				# bind it to the port specified in the config., on any interface that will let it, on the local machine
-		self.server_socket.listen(1)										# only allow it to keep one backlogged connection
-		
-		self.quit = False
-		
+		self.port = Defaults.DISPATCHER_PORT
+
 		# make sure that the process shuts down gracefully given the right signals.
 		signal.signal(signal.SIGINT, self.shutdown)
 		signal.signal(signal.SIGTERM, self.shutdown)
+
+	def __del__(self):
+		if self.logfile:
+			self.logfile.close()
 	
 	def check_pidfile(self):
 		self.logwrite("Checking for PID file...\n")
@@ -70,10 +67,20 @@ class RunControlDispatcher:
 		pidfile.write(str(os.getpid()) +"\n")
 		pidfile.close()
 
+	def setup(self):
+		self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.
+		self.server_socket.bind(("", self.port))				# bind it to the port specified in the config., on any interface that will let it, on the local machine
+		self.server_socket.listen(1)										# only allow it to keep one backlogged connection
+
+
 	def logwrite(self, data):
 		""" Writes to the logfile.  Includes a flush so that data is written
 		    to the file even if the process doesn't shut down cleanly. """
-		self.logfile.write(data)
+		if not self.logfile:
+			self.logfile = open(Defaults.DISPATCHER_LOGFILE, "w")
+		
+		timestamp = time.strftime("[%Y-%m-%d %H:%M:%S] ", time.gmtime())
+		self.logfile.write(timestamp + data)
 		self.logfile.flush()
 	
 	def dispatch(self):
@@ -81,8 +88,13 @@ class RunControlDispatcher:
 		Performs the actual work of handling incoming requests 
 		and responding to them appropriately.
 		"""
-		
-		self.logwrite("\nDispatching starting (listening on port " + str(Defaults.DISPATCHER_PORT) + ").\n")
+		self.quit = False
+
+		self.logwrite("Starting up.\n")
+		self.check_pidfile()		# first make sure this is the only instance -- otherwise we won't be able to bind the port
+		self.setup()		
+
+		self.logwrite("Dispatching starting (listening on port " + str(self.port) + ").\n")
 		
 		while not self.quit:
 			# if we interrupt the socket system call, by receiving a signal,
@@ -117,13 +129,12 @@ class RunControlDispatcher:
 			else:
 				self.logwrite("Request is invalid.  ")
 
-			self.logwrite("Closing socket.\n\n")
+			self.logwrite("Closing socket.\n")
 			client_socket.close()
 		
-		self.logwrite("Instructed to close.  Exiting.\n")
-		self.logfile.close()
-
+		self.logwrite("Instructed to close.  Exiting dispatch mode.\n")
 		self.cleanup()
+
 			
 	def respond(self, request):
 		"""
@@ -211,11 +222,12 @@ class RunControlDispatcher:
 	def shutdown(self, signal=None, frame=None):
 		self.quit = True
 
-	def cleanup(self):
-		if os.path.isfile(Defaults.DISPATCHER_PIDFILE):
-			self.logwrite("Removing PID file.\n")
-			os.remove(Defaults.DISPATCHER_PIDFILE)
-		    
+        def cleanup(self):
+		self.server_socket.close()
+
+                if os.path.isfile(Defaults.DISPATCHER_PIDFILE):
+                        self.logwrite("Removing PID file.\n")
+                        os.remove(Defaults.DISPATCHER_PIDFILE)
 
 ####################################################################
 ####################################################################
