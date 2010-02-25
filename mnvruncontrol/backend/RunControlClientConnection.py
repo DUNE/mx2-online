@@ -50,19 +50,92 @@ class RunControlClientConnection:
 			datalen = len(data)
 			response += data
 		
-		requestname = matches.group("request")
-		if requestname == "alive":
-			return len(response) > 0			# if we got ANYTHING back, then it's alive
-		elif requestname == "daq_running":
-			if response == "1":			# "1" if it's running, "0" if not
-				return True
-			elif response == "0":
-				return False
-			else:
-				raise RunControlClientUnexpectedDataException()
-		elif requestname == "daq_last_exit":
-			if 
-			return int(response)
+		self.socket.close()
+		
+		return response
+	
+	def ping(self):
+		""" Requests confirmation from the server that it is indeed alive and well. """
+		try:
+			response = self.request("alive?")
+		except:
+			return False
+		
+		return len(response) > 0		# if we got ANYTHING back, then it's alive
+	
+	def daq_checkStatus(self):
+		""" Asks the server to check and see if its DAQ process is running. """
+		response = self.request("daq_running?")
+
+		if response == "1":
+			return True
+		elif response == "0":
+			return False
+		else:
+			raise RunControlClientUnexpectedDataException()
+	
+	def daq_checkLastExitCode(self):
+		""" Asks for the return code from the last DAQ process to run.
+		    Returns None if the DAQ hasn't yet been run yet or is still running. """
+		returnval = int(self.request("daq_running?"))
+		if returnval >= 0:
+			return returnval
+		else:					# DAQ process hasn't been run yet or is still running
+			return None
+			
+	def daq_start(self):
+		""" Asks the server to start the DAQ process.  Returns True on success,
+		    False on failure, and raises an exception if the DAQ is currently running. """
+		response = self.request("daq_start!")
+		
+		if response = "0":
+			return True
+		elif response == "1":
+			return False
+		elif response == "2":
+			raise RunControlClientException("The DAQ slave process is currently running!  You can't start it again...")
+		else:
+			raise RunControlClientUnexpectedDataException()
+
+	def daq_stop(self):
+		""" Asks the server to stop the DAQ process.  Returns True on success,
+		    False on failure, and raises an exception if no DAQ process
+		    is currently running. """
+		response = self.request("daq_stop!")
+		
+		if response == "0":
+			return True
+		elif response == "1":
+			return False
+		elif response == "2":
+			raise RunControlClientException("The DAQ slave process is not currently running, so it can't be stopped.")
+		else:
+			raise RunControlClientUnexpectedDataException()
+
+	def sc_loadHWfile(self, filename):
+		""" Asks the server to load the specified hardware configuration file. 
+		    Returns 0 on success, 1 on failure, and 2 if the file doesn't exist. """
+		response = self.request("sc_sethw " + filename + "!")	
+		
+		if response == "0":
+			return True
+		elif response == "1":
+			return False
+		elif response == "2":
+			raise RunControlClientException("The specified slow control configuration does not exist.")
+		else:
+			raise RunControlClientUnexpectedDataException()
+
+	def sc_readVoltages(self):
+		""" Asks the server for a list of the voltages on each of the FEBs.
+		    On success, returns a list of dictionaries with the following keys:
+	    		    "fpga", "croc", chain", "board", "voltage"
+	    	    On failure, returns the string "NOREAD".
+	    	"""
+		response = self.request("sc_voltages?")
+		
+		
+		
 		
 class RunControlClientException(Exception):
 	pass
