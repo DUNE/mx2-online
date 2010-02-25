@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
 
         // Process the command line argument set.  
         int optind = 1;
-        cout << "\n\nArguments to MINERvA DAQ: " << endl;
+        cout << "\n\nArguments to DAQ Master: " << endl;
         while ((optind < argc) && (argv[optind][0]=='-')) {
                 string sw = argv[optind];
                 if (sw=="-r") {
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
 	root.infoStream()   << "Starting DAQ Master. ";
 	master.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 	master.infoStream() << "Arguments to DAQ Master: ";
-	master.infoStream() << "Arguments to MINERvA DAQ: ";
+	master.infoStream() << "(Arguments passed to MINERvA DAQ.) ";
 	master.infoStream() << "  Run Number             = " << runNum[0];
 	master.infoStream() << "  Subrun Number          = " << subNum[0];
 	master.infoStream() << "  Total Gates            = " << gates[0];
