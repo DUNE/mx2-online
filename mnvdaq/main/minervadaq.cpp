@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
 		std::cout << " Ready to connect to global_gate_socket_handle: " << 
 			global_gate_socket_handle << std::endl;
 		mnvdaq.infoStream() << " Waiting for soldier node...";
-		mnvdaq.infoStream() << << " Ready to connect to global_gate_socket_handle: " << 
+		mnvdaq.infoStream() << " Ready to connect to global_gate_socket_handle: " << 
 			global_gate_socket_handle;
 		struct sockaddr_in remote_address;
 		socklen_t address_length;
