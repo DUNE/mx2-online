@@ -122,6 +122,8 @@ class RunControlDispatcher:
 		
 		self.logwrite("Instructed to close.  Exiting.\n")
 		self.logfile.close()
+
+		self.cleanup()
 			
 	def respond(self, request):
 		"""
@@ -208,6 +210,11 @@ class RunControlDispatcher:
 		
 	def shutdown(self, signal=None, frame=None):
 		self.quit = True
+
+	def cleanup(self):
+		if os.path.isfile(Defaults.DISPATCHER_PIDFILE):
+			self.logwrite("Removing PID file.\n")
+			os.remove(Defaults.DISPATCHER_PIDFILE)
 		    
 
 ####################################################################

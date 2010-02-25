@@ -20,11 +20,12 @@ class RunControlClientConnection:
 	def __init__(self, serveraddress):
 		self.socket = None
 		self.serveraddress = serveraddress
+		self.port = Defaults.DISPATCHER_PORT
 		
 		try:
 			self.request("alive?")
-		except:
-			raise RunControlClientException("The server does not appear to be responding.  Are you sure you have the right address and that the run control dispatcher has been started on the server?")
+		except socket.error:
+			raise RunControlClientException("Couldn't connect to the server.  Are you sure you have the right address and that the run control dispatcher has been started on the server?")
 		
 	def request(self, request):
 		request = request.lower()
@@ -39,14 +40,14 @@ class RunControlClientConnection:
 			raise RunControlClientException("Invalid request: '" + request + "'")
 		
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.socket.bind( (self.serveraddress, Defaults.DISPATCHER_PORT) )
+		self.socket.connect( (self.serveraddress, self.port) )
 		self.socket.send(request)
 		self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
 		
 		response = ""
 		datalen = -1
 		while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire request
-			data = client_socket.recv(1024)
+			data = self.socket.recv(1024)
 			datalen = len(data)
 			response += data
 		
