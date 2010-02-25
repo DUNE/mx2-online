@@ -77,7 +77,7 @@ class RunControlClientConnection:
 	def daq_checkLastExitCode(self):
 		""" Asks for the return code from the last DAQ process to run.
 		    Returns None if the DAQ hasn't yet been run yet or is still running. """
-		returnval = int(self.request("daq_running?"))
+		returnval = int(self.request("daq_last_exit?"))
 		if returnval >= 0:
 			return returnval
 		else:					# DAQ process hasn't been run yet or is still running
@@ -88,7 +88,7 @@ class RunControlClientConnection:
 		    False on failure, and raises an exception if the DAQ is currently running. """
 		response = self.request("daq_start!")
 		
-		if response = "0":
+		if response == "0":
 			return True
 		elif response == "1":
 			return False
@@ -130,10 +130,33 @@ class RunControlClientConnection:
 		""" Asks the server for a list of the voltages on each of the FEBs.
 		    On success, returns a list of dictionaries with the following keys:
 	    		    "fpga", "croc", chain", "board", "voltage"
-	    	    On failure, returns the string "NOREAD".
-	    	"""
+	    	    On failure, returns None.	"""
 		response = self.request("sc_voltages?")
+		if response == "NOREAD" or response == "":
+			return None
 		
+		feb_data = []
+		
+		lines = response.splitlines()
+		for line in lines:
+			febdict = {}
+			
+			board_id, voltage = line.split(": ")
+			voltage = float(voltage)
+			
+			fpga, croc, chain, board = board_id.split("-")
+			for item in (fpga, croc, chain, board):
+				item = int(item)
+			
+			febdict["fpga"] = fpga
+			febdict["croc"] = croc
+			febdict["chain"] = chain
+			febdict["board"] = board
+			febdict["voltage"] = voltage
+			
+			feb_data.append(febdict)
+		
+		return feb_data
 		
 		
 		
