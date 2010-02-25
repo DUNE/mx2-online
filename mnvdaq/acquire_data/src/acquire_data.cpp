@@ -64,10 +64,13 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	InitializeCrim(0xE00000, 1, runningMode);
 	InitializeCroc(0x030000, 1, 4, 0, 0, 0);
 #endif
-#if WH14
+#if WH14T
 	InitializeCrim(0xE00000, 1, runningMode);
-	//InitializeCrim(0xF00000, 2, runningMode);
-	InitializeCroc(0x010000, 1, 4, 4, 0, 0);
+	InitializeCroc(0x010000, 1, 4, 0, 0, 0);
+#endif
+#if WH14B
+	InitializeCrim(0xE00000, 1, runningMode);
+	InitializeCroc(0x010000, 1, 0, 4, 0, 0);
 	InitializeCroc(0x060000, 2, 0, 0, 2, 0);
 #endif
 #if NUMIUS
