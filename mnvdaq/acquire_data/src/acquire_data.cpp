@@ -68,7 +68,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	InitializeCrim(0xE00000, 1, runningMode);
 	//InitializeCrim(0xF00000, 2, runningMode);
 	InitializeCroc(0x010000, 1, 4, 4, 0, 0);
-	//InitializeCroc(0x020000, 2, 4, 5, 6, 7);
+	InitializeCroc(0x060000, 2, 0, 0, 2, 0);
 #endif
 #if NUMIUS
 	InitializeCrim(0xE00000, 1, runningMode);
