@@ -61,6 +61,12 @@ int main(int argc, char *argv[])
 	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme.py");
 	FILE *sam_file;
 	unsigned long long firstEvent, lastEvent;
+	string str_controllerID  = "0";
+#if MASTER||SINGLE_PC // Soldier Node
+	str_controllerID  = "0";
+#elif (!MASTER)&&(!SINGLE_PC) // Worker Node
+	str_controllerID  = "1";
+#endif
 
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
@@ -106,8 +112,8 @@ int main(int argc, char *argv[])
 			optind++;
 			fileroot     = argv[optind];
 			et_filename  = "/work/data/etsys/" + fileroot;
-			// TODO - Alter log filename for worker/solider node...
-			log_filename = "/work/data/logs/" + fileroot + ".txt";
+			log_filename = "/work/data/logs/" + fileroot + "_Controller" + 
+				str_controllerID + ".txt";
 			sprintf(sam_filename,"/work/data/sam/%s.py",fileroot.c_str());
 			std::cout << "\tET Filename            = " << et_filename << std::endl;
 			std::cout << "\tSAM Filename           = " << sam_filename << std::endl;
@@ -467,7 +473,7 @@ int main(int argc, char *argv[])
 
 
 	// Make an acquire data object containing functions for performing initialization and acquisition.
-	acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::INFO); 
+	acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::INFO, hardwareInit); 
 	mnvdaq.infoStream() << "Got the acquire_data functions.";
 
 	/*********************************************************************************/
@@ -520,7 +526,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-10-00'),\n"); //online, DAQ Heder, CVS Tag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-11-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

@@ -81,16 +81,19 @@ class acquire_data {
 		std::string et_filename; /*!< A string object for the Event Transfer output filename */
 		static const int numberOfHits;
 		log4cpp::Appender* acqAppender;
+		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */
 
 	public:
 		/*! Specialized constructor. */
-		acquire_data(std::string fn, log4cpp::Appender* appender, log4cpp::Priority::Value priority) {
+		acquire_data(std::string fn, log4cpp::Appender* appender, log4cpp::Priority::Value priority, 
+			int hwInit=0) {
 #if TIME_ME
 			frame_acquire_log.open("frame_data_time_log.csv"); 
 #endif
 			et_filename = fn;
 			acqAppender = appender;
 			acqData.setPriority(priority);
+			hwInitLevel = hwInit;
 		};
 		/*! Specialized destructor. */
 		~acquire_data() {

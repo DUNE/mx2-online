@@ -33,6 +33,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 #endif
 	std::cout << "\nEntering acquire_data::InitializeDaq()." << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeDaq().";
+	acqData.infoStream() << "  HW (VME Card) Init Level = " << hwInitLevel;
 
 	// Get the VME read/write access functions.
 	daqAcquire = new acquire(); 
@@ -140,13 +141,10 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
  * \param index an integer index used for internal bookkeeping.
  * \param runningMode an integer specifying what sort of run the DAQ is taking.
  */
-// TODO - Make InitializeCrim return a value!
-// TODO - Really, InitializeCrim should take a flag to allow it to just instantiate the software 
-// objects without touching the actual hardware registers - we would like any actual configuration 
-// done with the SlowControl.  The one exception to this philosophy might be interrupt configuration 
-// (certainly interrupt resets must be handled by the DAQ).
+// TODO - Make InitializeCrim return a value?
 	std::cout << "\nEntering acquire_data::InitializeCrim for address " << (address>>16) << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeCrim for address " << (address>>16);
+	acqData.infoStream() << "  HW (VME Card) Init Level = " << hwInitLevel;
 #if DEBUG_THREAD
 	std::ofstream crim_thread;
 	std::stringstream thread_number;
@@ -252,56 +250,58 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			exit(-4);
 	}
 
-	// Build Register Settings (this does not write to hardware, it only configures software objects).
-	daqController->GetCrim(index)->SetupTiming(TimingMode, Frequency);
-	daqController->GetCrim(index)->SetupGateWidth(TCALBEnable, GateWidth);
-	daqController->GetCrim(index)->SetupTCALBPulse(TCALBDelay);
-	acqData.info("  CRIM Timing Setup    = 0x%04X", daqController->GetCrim(index)->GetTimingSetup());
-	acqData.info("  CRIM GateWidth Setup = 0x%04X", daqController->GetCrim(index)->GetGateWidthSetup());
-	acqData.info("  CRIM TCALB Setup     = 0x%04X", daqController->GetCrim(index)->GetTCALBPulse());
 
 	// Now write settings to hardware.
-	// TODO - This part should be something we can do or not do according to a flag...
-	unsigned char crim_message[2];
-	// Set GateWidth.
-	try {
-		crim_message[0] = daqController->GetCrim(index)->GetGateWidthSetup() & 0xFF;
-		crim_message[1] = (daqController->GetCrim(index)->GetGateWidthSetup()>>8) & 0xFF;
-		int error = daqAcquire->WriteCycle(daqController->handle, 2, crim_message,
-			daqController->GetCrim(index)->GetSGATEWidthRegister(), AM, DW); 
-		if (error) throw error;
-	} catch (int e) {
-		std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the Gate Width register!" << std::endl;
-		daqController->ReportError(e);
-		acqData.fatalStream() << "Error in acquire_data::InitializeCrim!  Cannot write to the Gate Width register!";
-		exit (e);
-	}
-	// Setup TCALB Delay.
-	try {
-		crim_message[0] = daqController->GetCrim(index)->GetTCALBPulse() & 0xFF;
-		crim_message[1] = (daqController->GetCrim(index)->GetTCALBPulse()>>8) & 0xFF;
-		int error = daqAcquire->WriteCycle(daqController->handle, 2, crim_message,
-			daqController->GetCrim(index)->GetTCALBRegister(), AM, DW); 
-		if (error) throw error;
-	} catch (int e) {
-		std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the TCALB register!" << std::endl;
-		daqController->ReportError(e);
-		acqData.fatalStream() << "Error in acquire_data::InitializeCrim!  Cannot write to the TCALB register!";
-		exit (e);
-	}
-	// Setup Timing register.
-	try {
-		crim_message[0] = daqController->GetCrim(index)->GetTimingSetup() & 0xFF;
-		crim_message[1] = (daqController->GetCrim(index)->GetTimingSetup()>>8) & 0xFF;
-		int error = daqAcquire->WriteCycle(daqController->handle, 2, crim_message,
-			daqController->GetCrim(index)->GetTimingRegister(), AM, DW); 
-		if (error) throw error;
-	} catch (int e) {
-		std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the Timing Setup register!" << std::endl;
-		daqController->ReportError(e);
-		acqData.fatalStream() << "Error in acquire_data::InitializeCrim!  Cannot write to the Timing Setup register!";
-		exit (e);
-	}
+	if (hwInitLevel) {
+		// Build Register Settings (this does not write to hardware, it only configures software objects).
+		daqController->GetCrim(index)->SetupTiming(TimingMode, Frequency);
+		daqController->GetCrim(index)->SetupGateWidth(TCALBEnable, GateWidth);
+		daqController->GetCrim(index)->SetupTCALBPulse(TCALBDelay);
+		acqData.info("  CRIM Timing Setup    = 0x%04X", daqController->GetCrim(index)->GetTimingSetup());
+		acqData.info("  CRIM GateWidth Setup = 0x%04X", daqController->GetCrim(index)->GetGateWidthSetup());
+		acqData.info("  CRIM TCALB Setup     = 0x%04X", daqController->GetCrim(index)->GetTCALBPulse());
+
+		unsigned char crim_message[2];
+		// Set GateWidth.
+		try {
+			crim_message[0] = daqController->GetCrim(index)->GetGateWidthSetup() & 0xFF;
+			crim_message[1] = (daqController->GetCrim(index)->GetGateWidthSetup()>>8) & 0xFF;
+			int error = daqAcquire->WriteCycle(daqController->handle, 2, crim_message,
+				daqController->GetCrim(index)->GetSGATEWidthRegister(), AM, DW); 
+			if (error) throw error;
+		} catch (int e) {
+			std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the Gate Width register!" << std::endl;
+			daqController->ReportError(e);
+			acqData.fatalStream() << "Error in acquire_data::InitializeCrim!  Cannot write to the Gate Width register!";
+			exit (e);
+		}
+		// Setup TCALB Delay.
+		try {
+			crim_message[0] = daqController->GetCrim(index)->GetTCALBPulse() & 0xFF;
+			crim_message[1] = (daqController->GetCrim(index)->GetTCALBPulse()>>8) & 0xFF;
+			int error = daqAcquire->WriteCycle(daqController->handle, 2, crim_message,
+				daqController->GetCrim(index)->GetTCALBRegister(), AM, DW); 
+			if (error) throw error;
+		} catch (int e) {
+			std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the TCALB register!" << std::endl;
+			daqController->ReportError(e);
+			acqData.fatalStream() << "Error in acquire_data::InitializeCrim!  Cannot write to the TCALB register!";
+			exit (e);
+		}
+		// Setup Timing register.
+		try {
+			crim_message[0] = daqController->GetCrim(index)->GetTimingSetup() & 0xFF;
+			crim_message[1] = (daqController->GetCrim(index)->GetTimingSetup()>>8) & 0xFF;
+			int error = daqAcquire->WriteCycle(daqController->handle, 2, crim_message,
+				daqController->GetCrim(index)->GetTimingRegister(), AM, DW); 
+			if (error) throw error;
+		} catch (int e) {
+			std::cout << "Error in acquire_data::InitializeCrim!  Cannot write to the Timing Setup register!" << std::endl;
+			daqController->ReportError(e);
+			acqData.fatalStream() << "Error in acquire_data::InitializeCrim!  Cannot write to the Timing Setup register!";
+			exit (e);
+		}
+	} // endif hwInitLevel
 
 	// Now set up the IRQ handler, initializing the global enable bit for the first go-around.
 	// TODO - Be sure only the Master CRIM is our interrupt handler...
@@ -346,6 +346,7 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 // TODO - pass HW Init Flag here too...
 	std::cout << "\nEntering acquire_data::InitializeCroc for CROC " << (address>>16) << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeCroc for CROC " << (address>>16);
+	acqData.infoStream() << "  HW (VME Card) Init Level = " << hwInitLevel;
 #if DEBUG_THREAD
 	std::ofstream croc_thread;
 	std::stringstream thread_number;
@@ -376,30 +377,30 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 	}
 
 	// Set the timing mode to EXTERNAL: clock mode, test pulse enable, test pulse delay
-	// Clock Mode set to External in CROC constructor.  TODO - Make these actions controlle by a flag.
-	unsigned char croc_message[2];
-	croc_message[0] = (unsigned char)(daqController->GetCroc(crocNo)->GetTimingRegister() & 0xFF);
-	croc_message[1] = (unsigned char)( (daqController->GetCroc(crocNo)->GetTimingRegister()>>8) & 0xFF);
-	acqData.info("  Timing Register Address  = 0x%X",daqController->GetCroc(crocNo)->GetTimingAddress());
-	acqData.info("  Timing Register Message  = 0x%X",daqController->GetCroc(crocNo)->GetTimingRegister());
-	acqData.info("  Timing Message (Sending) = 0x%02X%02X",croc_message[1],croc_message[0]);
-	try {
-		int error = daqAcquire->WriteCycle(daqController->handle, 2, croc_message, 
-			daqController->GetCroc(crocNo)->GetTimingAddress(), AM, DW);
-		if (error) throw error;
-	} catch (int e) {
-		std::cout << "Unable to set the CROC timing mode!" << std::endl;
-		daqController->ReportError(e);
-		acqData.fatalStream() << "Unable to set the CROC timing mode!";
-		exit (e);
-	}
+	// Clock Mode set to External in CROC constructor.  
+	if (hwInitLevel) {
+		unsigned char croc_message[2];
+		croc_message[0] = (unsigned char)(daqController->GetCroc(crocNo)->GetTimingRegister() & 0xFF);
+		croc_message[1] = (unsigned char)( (daqController->GetCroc(crocNo)->GetTimingRegister()>>8) & 0xFF);
+		acqData.info("  Timing Register Address  = 0x%X",daqController->GetCroc(crocNo)->GetTimingAddress());
+		acqData.info("  Timing Register Message  = 0x%X",daqController->GetCroc(crocNo)->GetTimingRegister());
+		acqData.info("  Timing Message (Sending) = 0x%02X%02X",croc_message[1],croc_message[0]);
+		try {
+			int error = daqAcquire->WriteCycle(daqController->handle, 2, croc_message, 
+				daqController->GetCroc(crocNo)->GetTimingAddress(), AM, DW);
+			if (error) throw error;
+		} catch (int e) {
+			std::cout << "Unable to set the CROC timing mode!" << std::endl;
+			daqController->ReportError(e);
+			acqData.fatalStream() << "Unable to set the CROC timing mode!";
+			exit (e);
+		}
+	} // endif hwInitLevel
 
-	// Now make threads which will search all channels on the croc to 
-	// find which ones have FEB's on them.  Then set up the FEB's. 
+	// Now search all channels to find which have FEB's. 
 #if THREAD_ME
 	boost::thread *chan_thread[4];
 #endif
-
 	// Build the FEB list for each channel.
 	acqData.infoStream() << " Building FEB List:";
 	for (int i = 0; i < nChains; i++) {
