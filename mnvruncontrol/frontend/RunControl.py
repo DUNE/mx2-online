@@ -507,11 +507,11 @@ class MainFrame(wx.Frame):
 			
 	def SelectRunSeriesFile(self, evt=None):
 		fileSelector = wx.FileDialog(self, "Select a run series file", wildcard="*", style=wx.FD_OPEN)
-		fileSelector.ShowModal()
+		returnval = fileSelector.ShowModal()
 		
-		filename = fileSelector.GetFilename()
-		path = fileSelector.GetPath()
-		if filename != "":
+		if returnval == wx.ID_OK:
+			filename = fileSelector.GetFilename()
+			path = fileSelector.GetPath()
 			if not self.LoadRunSeriesFile(filename, path):
 				errordlg = wx.MessageDialog( None, "The file you selected is not a valid run series file.  Select another.", "Invalid file", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
