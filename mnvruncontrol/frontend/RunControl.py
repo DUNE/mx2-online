@@ -58,8 +58,8 @@ class MainFrame(wx.Frame):
 		menuBar.Append(fileMenu, "&File")
 
 		optionsMenu = wx.Menu()
-		self.autocloseEntry = optionsMenu.Append(ID_AUTOCLOSE, "Autoclose windows", "Autoclose the ET/DAQ windows at the end of a subrun.", kind=wx.ITEM_CHECK)
-		self.lockdownEntry = optionsMenu.Append(ID_LOCKDOWN, "Lock FEBs/init", "Lock the global configuration fields to prevent accidental changes.", kind=wx.ITEM_CHECK)
+		self.autocloseEntry = optionsMenu.Append(ID_AUTOCLOSE, "Auto-close windows", "Automatically close the ET/DAQ windows at the end of a subrun.", kind=wx.ITEM_CHECK)
+		self.lockdownEntry = optionsMenu.Append(ID_LOCKDOWN, "Lock global config", "Lock the global configuration fields to prevent accidental changes.", kind=wx.ITEM_CHECK)
 		optionsMenu.Append(ID_PATHS, "Path settings...", "Paths that the run control relies on.")
 		self.Bind(wx.EVT_MENU, self.UpdateLockedEntries, id=ID_LOCKDOWN)
 		self.Bind(wx.EVT_MENU, self.Configure, id=ID_PATHS)

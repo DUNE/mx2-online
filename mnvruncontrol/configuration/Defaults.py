@@ -1,3 +1,5 @@
+import time
+
 # Data acquisition properties.
 # do these need to be calculated somehow?
 # or are they always fixed?
