@@ -1,3 +1,14 @@
+"""
+   Defaults.py:
+   Default values for the various modules in the run control software.
+   They are centralized here for easier modification of the setup.
+   
+   Original author: J. Wolcott (jwolcott@fnal.gov)
+                    Feb. 2010
+                    
+   Address all complaints to the management.
+"""
+
 import time
 
 # Data acquisition properties.
