@@ -210,10 +210,12 @@ class MainFrame(wx.Frame):
 
 		# run control: start, stop, close windows
 		self.startButton = wx.Button(self.mainPage, ID_START, "Start")
+		self.startButton.SetBackgroundColour("green")
 		self.Bind(wx.EVT_BUTTON, self.StartRunning, self.startButton)
 		self.startButton.Disable()
 		
 		self.stopButton = wx.Button(self.mainPage, wx.ID_STOP)
+		self.stopButton.SetBackgroundColour("red")
 		self.Bind(wx.EVT_BUTTON, self.StopRunning, self.stopButton)
 		self.stopButton.Disable()		# disabled until the 'start' button is pressed
 
