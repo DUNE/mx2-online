@@ -59,7 +59,7 @@ class MainFrame(wx.Frame):
 
 		optionsMenu = wx.Menu()
 		self.autocloseEntry = optionsMenu.Append(ID_AUTOCLOSE, "Autoclose windows", "Autoclose the ET/DAQ windows at the end of a subrun.", kind=wx.ITEM_CHECK)
-		self.lockdownEntry = optionsMenu.Append(ID_LOCKDOWN, "Lock FEBs/init", "Lock the '# FEBs' and 'HW init' fields to prevent accidental changes.", kind=wx.ITEM_CHECK)
+		self.lockdownEntry = optionsMenu.Append(ID_LOCKDOWN, "Lock FEBs/init", "Lock the global configuration fields to prevent accidental changes.", kind=wx.ITEM_CHECK)
 		optionsMenu.Append(ID_PATHS, "Path settings...", "Paths that the run control relies on.")
 		self.Bind(wx.EVT_MENU, self.UpdateLockedEntries, id=ID_LOCKDOWN)
 		self.Bind(wx.EVT_MENU, self.Configure, id=ID_PATHS)
@@ -351,79 +351,60 @@ class MainFrame(wx.Frame):
 		so as to give a hopefully intelligent set of default values.
 		"""
 		
+		# default values.   they'll be updated below if the db exists and has the appropriate keys.
+		key_values = { "run"            : 1, 
+		               "subrun"         : 1,
+		               "hwinit"         : MetaData.HardwareInitLevels.index("No HW init"),
+		               "detector"       : MetaData.DetectorTypes.index("Upstream"),
+		               "febs"           : 114,
+		               "is_single_run"  : True,
+		               "gates"          : 1500,
+		               "runmode"        : "One shot",
+		               "ledgroups"      : "ABCD",
+		               "lilevel"        : "Max PE",
+		               "runseries_path" : None,
+		               "runseries_file" : None,
+		               "lockdown"       : True,
+		               "autoclose"      : True }
+
 		if not os.path.exists(self.runinfoFile):
 			errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be missing.  Default configuration will be used...", "Last run configuration database missing", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
-			has_all_keys = False
-			db = None
 		else:
 			db = shelve.open(self.runinfoFile, 'r')
 			
-			keys_to_check = ("run", "subrun", "hwinit", "detector", "febs", "is_single_run", "gates", "runmode", "ledgroups", "lilevel", "runseries_path", "runseries_file", "lockdown", "autoclose")
 			
 			has_all_keys = True
-			for key in keys_to_check:
-				if not db.has_key(key):
+			for key in key_values.keys():
+				if db.has_key(key):
+					key_values[key] = db[key]
+				else:
 					has_all_keys = False
-					break
 			
 			if not has_all_keys:
-				errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be corrupted.  Default configuration will be used...", "Last run configuration database corrupted", wx.OK | wx.ICON_WARNING )
+				errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be corrupted.  Default configuration will be used for any unreadable values...", "Last run configuration database corrupted", wx.OK | wx.ICON_WARNING )
 				errordlg.ShowModal()
 
-		if has_all_keys:
-			run = db['run']
-			subrun = db['subrun']
-			hwinit = MetaData.HardwareInitLevels.index(db["hwinit"])
-			detconfig = MetaData.DetectorTypes.index(db["detector"])
-			febs = db["febs"]
-			singlerun = db["is_single_run"]
-			
-			gates = db["gates"]
-			runmode = MetaData.RunningModes.index(db["runmode"])
-			ledgroups = db["ledgroups"]
-			lilevel = MetaData.LILevels.index(db["lilevel"])
-			runseries_path = db["runseries_path"]
-			runseries_file = db["runseries_file"]
-			
-			self.lockdownEntry.Check(db["lockdown"])
-			self.autocloseEntry.Check(db["autoclose"])
-		else:
-			run = 1
-			subrun = 1
-			hwinit = MetaData.HardwareInitLevels.index("No HW init")
-			detconfig = MetaData.DetectorTypes.index("Upstream")
-			febs = 114
-			singlerun = True
-
-			gates = 1500
-			runmode = MetaData.RunningModes.index("One shot")
-			ledgroups = "ABCD"
-			lilevel = MetaData.LILevels.index("Max PE")
-			runseries_path = None
-			runseries_file = None
-
-			self.lockdownEntry.Check(True)
-			self.autocloseEntry.Check(True)
-
-		if db:
 			db.close()
 			
-		self.runEntry.SetRange(run, 100000)
-		self.runEntry.SetValue(run)
-		self.subrunEntry.SetValue(subrun)
-		self.HWinitEntry.SetSelection(hwinit)
-		self.detConfigEntry.SetSelection(detconfig)
-		self.febsEntry.SetValue(febs)
-		self.singleRunButton.SetValue(singlerun)
-		self.runSeriesButton.SetValue(not(singlerun))
+		self.runEntry.SetRange(key_values["run"], 100000)
+		self.runEntry.SetValue(key_values["run"])
+		self.subrunEntry.SetValue(key_values["subrun"])
+		self.HWinitEntry.SetSelection(key_values["hwinit"])
+		self.detConfigEntry.SetSelection(key_values["detector"])
+		self.febsEntry.SetValue(key_values["febs"])
+		self.singleRunButton.SetValue(key_values["is_single_run"])
+		self.runSeriesButton.SetValue(not(key_values["is_single_run"]))
+		self.gatesEntry.SetValue(key_values["gates"])
 		
-		self.gatesEntry.SetValue(gates)
-		self.runModeEntry.SetSelection(runmode)
-		self.LILevelEntry.SetSelection(lilevel)
+		self.runModeEntry.SetSelection(MetaData.RunningModes.index(key_values["runmode"]))
+		self.LILevelEntry.SetSelection(MetaData.LILevels.index(key_values["lilevel"]))
+		
+		self.lockdownEntry.Check(key_values["lockdown"])
+		self.autocloseEntry.Check(key_values["autoclose"])
 	
 		for cb in self.LEDgroups:
-			if cb.GetLabelText() in ledgroups:
+			if cb.GetLabelText() in key_values["ledgroups"]:
 				cb.SetValue(True)
 			else:
 				cb.SetValue(False)
@@ -432,8 +413,8 @@ class MainFrame(wx.Frame):
 		# by LoadRunSeries if the file is valid.
 		self.seriesFilename = None
 		self.seriesPath = None
-		if runseries_path != None and runseries_file != None:
-			self.LoadRunSeriesFile(runseries_file, runseries_path)
+		if key_values["runseries_path"] != None and key_values["runseries_file"] != None:
+			self.LoadRunSeriesFile(key_values["runseries_file"], key_values["runseries_path"])
 			
 			
 		# the minimum subrun allowed for the lowest run.  
@@ -568,7 +549,7 @@ class MainFrame(wx.Frame):
 			self.LILevelEntry.Disable()
 
 	def UpdateLockedEntries(self, evt=None):
-		for entry in (self.HWinitEntry, self.febsEntry):
+		for entry in (self.HWinitEntry, self.febsEntry, self.detConfigEntry):
 			if self.lockdownEntry.IsChecked():
 				entry.Disable()
 			else:
@@ -726,13 +707,12 @@ class MainFrame(wx.Frame):
 		self.gatesEntry.Enable()
 		self.detConfigEntry.Enable()
 		self.runModeEntry.Enable()
-		self.febsEntry.Enable()
-		self.HWinitEntry.Enable()
 
 		self.singleRunButton.Enable()
 		self.runSeriesButton.Enable()
 		self.seriesFileButton.Enable()
 
+		self.UpdateLockedEntries()
 		self.lockdownEntry.Enable()
 
 		self.stopButton.Disable()
