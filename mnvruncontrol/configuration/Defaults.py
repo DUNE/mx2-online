@@ -29,7 +29,7 @@ RAW_DATA_LOCATION_DEFAULT = "/work/data/rawdata"
 RESOURCE_LOCATION_DEFAULT = "/work/software/mnvruncontrol/resources"
 
 # Socket communication defaults.
-DISPATCHER_PORT = 2376
+DISPATCHER_PORT = 1098
 
 MNVONLINE0 = "mnvonline0.fnal.gov"
 MNVONLINE1 = "mnvonline1.fnal.gov"
@@ -38,4 +38,7 @@ MNVONLINEMASTER = "mnvonlinemaster.fnal.gov"
 # dispatcher process details
 DISPATCHER_PIDFILE = "/tmp/rc_dispatcher.pid"
 DISPATCHER_LOGFILE = "/work/data/logs/dispatcher_" + time.strftime("%Y-%m-%d_%H-%M-%S", time.gmtime()) + ".log"
+
+# environment configuration
+DAQROOT_DEFAULT = "/work/software/mnvonline/mnvdaq"
 
