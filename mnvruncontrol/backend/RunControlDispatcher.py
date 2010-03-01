@@ -6,7 +6,7 @@
   in Gabe's terminology) to manage the DAQ process and slow control.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
-                    Feb. 2010
+                    Feb.-Mar. 2010
                     
    Address all complaints to the management.
 """
@@ -14,6 +14,7 @@
 import socket
 import signal
 import subprocess
+import errno
 import time
 import sys
 import os
@@ -30,7 +31,7 @@ class RunControlDispatcher:
 	This guy is the one who listens for requests and handles them.
 	There should NEVER be more than one instance running at a time!
 	(They wouldn't both be able to bind to the port...)  Thus the
-	constructor checks before allowing itself to be started.
+	start() method checks before allowing dispatching to be started.
 	"""
 	def __init__(self):
 		self.logfile = None
@@ -194,7 +195,7 @@ class RunControlDispatcher:
 		self.filehandler.close()
 
 		# Iterate through and close all open file descriptors.
-		for fd in range(0, maxfd):
+		for fd in range(maxfd):
 			try:
 				os.close(fd)
 			except OSError:	# fd wasn't open to begin with (ignored)
@@ -202,8 +203,7 @@ class RunControlDispatcher:
 		
 		# Redirect stdin to /dev/null.
 		# [os.open uses the first available file descriptor if none is given,
-		# which will be 0 here (stdin) since we closed everything but our log
-		# file (which will have a higher descriptor since it was opened later).]
+		# which will be 0 here (stdin) since we just finished closing everything.]
 		os.open(os.devnull, os.O_RDWR)	# standard input (0)
 
 		# Duplicate standard input to standard output and standard error.
@@ -241,13 +241,13 @@ class RunControlDispatcher:
 
 		os.kill(pid, signal.SIGTERM)
 		
-		self.logger.info("Waiting a maximum of 10 seconds for other process to end...")
+		self.logger.info("Waiting a maximum of 10 seconds for process " + str(pid) + " to end...")
 		secs = 0
 		while True:
 			time.sleep(1)
 			secs += 1
 			if secs > 10:
-				self.logger.info("Other instance (PID " + str(pid) + ") has not yet terminated.  Kill it manually.")
+				self.logger.info("Process " + str(pid) + " has not yet terminated.  Kill it manually.")
 				sys.exit(1)
 				
 			try:
@@ -257,43 +257,32 @@ class RunControlDispatcher:
 		self.logger.info("Process " + str(pid) + " ended.")
 		
 		
-	def logwrite(self, data):
-		""" Writes to the logfile.  Includes a flush so that data is written
-		    to the file even if the process doesn't shut down cleanly. 
-		    If in interactive mode, also echoes to the screen. """
-		if not self.logfile:
-			self.logfile = open(Defaults.DISPATCHER_LOGFILE, "w")
-		
-		timestamp = time.strftime("[%Y-%m-%d %H:%M:%S] ", time.gmtime())
-		self.logfile.write(timestamp + data)
-		self.logfile.flush()
-		
-		if self.interactive:
-			print timestamp + data
-			
 	def dispatch(self):
 		""" 
 		Performs the actual work of handling incoming requests 
 		and responding to them appropriately.
 		
-		Don't call this directly.  Use start() (for interactive
-		sessions) or daemonize()/restart() (for service operation)
-		instead (they check to make sure this process is the only
-		one trying to listen on the port before entering dispatch mode.)
+		Don't call this directly.  Use start() instead (it checks
+		to make sure this process is the only one trying to listen
+		on the port before entering dispatch mode.)
 		"""
 		self.quit = False
 
 		self.logger.info("Dispatching starting (listening on port " + str(self.port) + ").")
 
 		while not self.quit:
-			# if we interrupt the socket system call, by receiving a signal,
-			# it throws an exception as a warning.  we should just start over then,
+			# if we interrupt the socket system call by receiving a signal,
+			# the socket throws an exception as a warning.  we should just start over then,
 			# which will cause a quit (the signal handler for the only signals
-			# we're handling right now--SIGTERM and SIGINT--sets self.quit to True).
+			# we're handling--SIGTERM and SIGINT--sets self.quit to True).
 			try:
 				client_socket, client_address = self.server_socket.accept()
-			except socket.error:		
-				continue			# will need to start doing something fancier when we start handling SIGCHLD	
+			except socket.error, (errnum, msg):
+				if errnum == errno.EINTR:		# the code for an interrupted system call
+					continue
+				else:						# if it's not an interrupted system call, we need the error!
+					self.logger.exception("Error " + str(errnum) + ": " + msg)
+					raise
 
 			self.logger.info("Accepted connection from " + str(client_address) + ".")
 			
@@ -312,12 +301,11 @@ class RunControlDispatcher:
 				try:
 					client_socket.sendall(response)		# this will throw an exception if all the data can't be sent.
 				except:
-					self.logger.warning("Transmission error.")
-					pass								# what to do if it can't all be sent?  hmm...
+					self.logger.warning("Transmission error.")	# what to do if it can't all be sent?  hmm...
 				else:
 					self.logger.info("Transmission completed.")
 			else:
-				self.logger.info("Request is invalid.  ")
+				self.logger.info("Request is invalid.")
 
 			self.logger.info("Closing socket.")
 			client_socket.close()
@@ -381,8 +369,7 @@ class RunControlDispatcher:
 			return str(self.daq_process.returncode)
 
 	def daq_start(self):
-		""" Starts the DAQ slave service as a subprocess (implemented
-		    via standard UNIX fork-exec, but never mind).  First checks
+		""" Starts the DAQ slave service as a subprocess.  First checks
 		    to make sure it's not already running.  Returns 0 on success,
 		    1 on some DAQ or other error, and 2 if there is already
 		    a DAQ process running. """
@@ -393,7 +380,7 @@ class RunControlDispatcher:
 			return "2"
 		
 		try:
-			self.daq_process = subprocess.Popen("/work/software/mnvdaq/bin/daq_slave_service", env={"DAQROOT": Defaults.DAQROOT_DEFAULT})
+			self.daq_process = subprocess.Popen(Defaults.DAQROOT_DEFAULT + "/bin/daq_slave_service", env={"DAQROOT": Defaults.DAQROOT_DEFAULT})
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
@@ -453,10 +440,6 @@ class RunControlDispatcher:
 			self.logger.info("Removing PID file.")
 			os.remove(Defaults.DISPATCHER_PIDFILE)
                         
-# whew, that's a mouthful.
-class RunControlDispatcherAlreadyStartedException(Exception):
-	pass
-
 ####################################################################
 ####################################################################
 """
@@ -496,7 +479,9 @@ if __name__ == "__main__":
 			print "All log information will be echoed to the screen."
 			print "Enter 'Ctrl-C' to exit.\n\n"
 		else:
-			print "Dispatcher starting in daemon mode.  \nRun this program with the keyword 'stop' to stop it."
+			print "Dispatcher starting in daemon mode."
+			print "Run this program with the keyword 'stop' to stop it."
+			print "Also see the log file at '" + Defaults.DISPATCHER_LOGFILE + "'.\n"
 		dispatcher.start()
 	elif command == "stop":
 		dispatcher.interactive = True
