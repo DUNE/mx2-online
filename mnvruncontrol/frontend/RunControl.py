@@ -26,7 +26,9 @@ from mnvruncontrol.backend import DataAcquisitionManager
 ID_START = wx.NewId()
 ID_PICKFILE = wx.NewId()
 ID_MOREINFO = wx.NewId()
-ID_OPTIONS = wx.NewId()
+ID_PATHS = wx.NewId()
+ID_AUTOCLOSE = wx.NewId()
+ID_LOCKDOWN = wx.NewId()
 class MainFrame(wx.Frame):
 	""" The main control window. """
 	def __init__(self, parent, title):
@@ -56,8 +58,11 @@ class MainFrame(wx.Frame):
 		menuBar.Append(fileMenu, "&File")
 
 		optionsMenu = wx.Menu()
-		optionsMenu.Append(ID_OPTIONS, "Configuration settings...", "Various configuration settings.")
-		self.Bind(wx.EVT_MENU, self.Configure, id=ID_OPTIONS)
+		self.autocloseEntry = optionsMenu.Append(ID_AUTOCLOSE, "Autoclose windows", "Autoclose the ET/DAQ windows at the end of a subrun.", kind=wx.ITEM_CHECK)
+		self.lockdownEntry = optionsMenu.Append(ID_LOCKDOWN, "Lock FEBs/init", "Lock the '# FEBs' and 'HW init' fields to prevent accidental changes.", kind=wx.ITEM_CHECK)
+		optionsMenu.Append(ID_PATHS, "Path settings...", "Paths that the run control relies on.")
+		self.Bind(wx.EVT_MENU, self.UpdateLockedEntries, id=ID_LOCKDOWN)
+		self.Bind(wx.EVT_MENU, self.Configure, id=ID_PATHS)
 		menuBar.Append(optionsMenu, "&Options")
 
 		self.SetMenuBar(menuBar)
@@ -339,6 +344,7 @@ class MainFrame(wx.Frame):
 		
 		
 		
+		
 	def GetNextRunSubrun(self, evt=None):
 		"""
 		Loads up the configuration values used in the last subrun (as well as the run/subrun number)
@@ -353,7 +359,7 @@ class MainFrame(wx.Frame):
 		else:
 			db = shelve.open(self.runinfoFile, 'r')
 			
-			keys_to_check = ("run", "subrun", "hwinit", "detector", "febs", "is_single_run", "gates", "runmode", "ledgroups", "lilevel", "runseries_path", "runseries_file")
+			keys_to_check = ("run", "subrun", "hwinit", "detector", "febs", "is_single_run", "gates", "runmode", "ledgroups", "lilevel", "runseries_path", "runseries_file", "lockdown", "autoclose")
 			
 			has_all_keys = True
 			for key in keys_to_check:
@@ -379,6 +385,9 @@ class MainFrame(wx.Frame):
 			lilevel = MetaData.LILevels.index(db["lilevel"])
 			runseries_path = db["runseries_path"]
 			runseries_file = db["runseries_file"]
+			
+			self.lockdownEntry.Check(db["lockdown"])
+			self.autocloseEntry.Check(db["autoclose"])
 		else:
 			run = 1
 			subrun = 1
@@ -393,6 +402,9 @@ class MainFrame(wx.Frame):
 			lilevel = MetaData.LILevels.index("Max PE")
 			runseries_path = None
 			runseries_file = None
+
+			self.lockdownEntry.Check(True)
+			self.autocloseEntry.Check(True)
 
 		if db:
 			db.close()
@@ -409,8 +421,7 @@ class MainFrame(wx.Frame):
 		self.gatesEntry.SetValue(gates)
 		self.runModeEntry.SetSelection(runmode)
 		self.LILevelEntry.SetSelection(lilevel)
-
-		
+	
 		for cb in self.LEDgroups:
 			if cb.GetLabelText() in ledgroups:
 				cb.SetValue(True)
@@ -431,6 +442,7 @@ class MainFrame(wx.Frame):
 		# back to.
 		self.minRunSubrun = self.subrunEntry.GetValue()		
 
+		self.UpdateLockedEntries()
 		self.UpdateLEDgroups()
 		self.runEntry.Enable()
 		self.startButton.Enable()
@@ -464,6 +476,9 @@ class MainFrame(wx.Frame):
 			db["lilevel"] = MetaData.LILevels.item(self.LILevelEntry.GetSelection())
 			db["runseries_file"] = self.seriesFilename
 			db["runseries_path"] = self.seriesPath
+			
+			db["autoclose"] = self.autocloseEntry.IsChecked()
+			db["lockdown"] = self.lockdownEntry.IsChecked()
 
 			db.close()
 			
@@ -473,6 +488,9 @@ class MainFrame(wx.Frame):
 		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
 		self.StoreNextRunSubrun()
 		
+		if self.autocloseEntry.IsChecked():
+			self.CloseAllWindows()
+					
 		self.UpdateLogFiles()
 			
 	def CheckRunNumber(self, evt=None):
@@ -519,6 +537,9 @@ class MainFrame(wx.Frame):
 			self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
 			self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
 		
+		self.runmanager.subrun = 0
+		self.UpdateStatus()
+		
 		return True
 		
 	
@@ -545,7 +566,14 @@ class MainFrame(wx.Frame):
 			for cb in self.LEDgroups:
 				cb.Disable()
 			self.LILevelEntry.Disable()
-			
+
+	def UpdateLockedEntries(self, evt=None):
+		for entry in (self.HWinitEntry, self.febsEntry):
+			if self.lockdownEntry.IsChecked():
+				entry.Disable()
+			else:
+				entry.Enable()		
+
 	def UpdateCloseWindows(self, windowsOpen):
 		if windowsOpen:
 			self.closeAllButton.Enable()
@@ -680,6 +708,8 @@ class MainFrame(wx.Frame):
 
 			self.startButton.Disable()
 			self.stopButton.Enable()
+			
+			self.lockdownEntry.Enable(False)
 
 			self.SetStatusText("RUNNING", 1)
 			self.runningIndicator.SetBitmap(self.onImage)
@@ -702,6 +732,8 @@ class MainFrame(wx.Frame):
 		self.singleRunButton.Enable()
 		self.runSeriesButton.Enable()
 		self.seriesFileButton.Enable()
+
+		self.lockdownEntry.Enable()
 
 		self.stopButton.Disable()
 		self.startButton.Enable()

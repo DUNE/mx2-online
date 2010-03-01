@@ -18,6 +18,8 @@ import time
 import sys
 import os
 import re
+import logging
+import logging.handlers
 
 from mnvruncontrol.configuration import Defaults
 
@@ -37,6 +39,19 @@ class RunControlDispatcher:
 		self.interactive = False
 		self.respawn = False
 
+		# set up some logging facilites.
+		# we set up a rotating file handler here;
+		# if the session is interactive, the start() method
+		# will set up a console handler as well (which will
+		# duplicate the log contents to the screen).
+		self.logger = logging.getLogger("rc_dispatcher")
+		self.logger.setLevel(logging.DEBUG)
+		self.filehandler = logging.handlers.RotatingFileHandler(Defaults.DISPATCHER_LOGFILE, maxBytes=512000, backupCount=5)
+		self.filehandler.setLevel(logging.DEBUG)
+		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
+		self.filehandler.setFormatter(self.formatter)
+		self.logger.addHandler(self.filehandler)
+
 		# make sure that the process shuts down gracefully given the right signals.
 		# these lines set up the signal HANDLERS: which functions are called
 		# when each signal is received.
@@ -54,23 +69,32 @@ class RunControlDispatcher:
 
 	def start(self):
 		""" Starts the listener.  If you want to run it as a background
-		    service, make sure the property 'interactive' is False. """
+		    service, make sure the property 'interactive' is False. 
+		    This is normally accomplished by not setting the "-i" flag
+		    on the command line (i.e., it's the default behavior).  """
 		
-		self.logwrite("Starting up.\n")
+		# if this is an interactive session, we want to make sure that
+		# any output is duplicated to the screen.
+		if self.interactive:
+			handler = logging.StreamHandler()
+			handler.setFormatter(self.formatter)
+			self.logger.addHandler(handler)
+		
+		self.logger.info("Starting up.")
 		
 		other_instance_pid = self.other_instances()
 		if other_instance_pid:
 			if self.replace:
 				self.kill_other_instance(other_instance_pid)
 			else:
-				self.logwrite("Terminating this instance.\n")
+				self.logger.fatal("Terminating this instance.")
 				sys.exit(1)
 
 		# make sure this thing is a daemon if it needs to be
 		if not self.interactive:
 			self.daemonize()
 		
-		self.logwrite("Creating new PID file.  My PID: " + str(os.getpid()) + "\n")
+		self.logger.info("Creating new PID file.  My PID: " + str(os.getpid()) + "")
 			
 		pidfile = open(Defaults.DISPATCHER_PIDFILE, 'w')
 		pidfile.write(str(os.getpid()) +"\n")
@@ -85,18 +109,26 @@ class RunControlDispatcher:
 
 	def stop(self):
 		""" Kills another instance of the dispatcher. """
-		self.logwrite("Checking for other instances to stop...\n")
+		# we want to be sure everything gets duplicated to the screen.
+		handler = logging.StreamHandler()
+		handler.setFormatter(self.formatter)
+		self.logger.addHandler(handler)
+
+		self.logger.info("Checking for other instances to stop...")
 		other_pid = self.other_instances()
 		
 		if other_pid:
+			self.logger.info("Stopping instance with pid " + str(other_pid) + "...")
 			self.kill_other_instance(other_pid)
 		else:
-			self.logwrite("No other instances to stop.\n")
+			self.logger.info("No other instances to stop.")
 			sys.exit(0)
+			
+		self.logger.info("Shutdown completed.")
 		
 	def daemonize(self):
 		""" Starts the listener as a background service.
-		    Borrowed mostly from code.activestate.com, recipe 278731. """
+		    Modified mostly from code.activestate.com, recipe 278731. """
 		    
 		# The standard procedure in UNIX to create a daemon is to use the fork()
 		# system call twice in succession.  After the first fork(), the first
@@ -110,9 +142,21 @@ class RunControlDispatcher:
 		# the remaining process 'orphaned' -- which means that init (the master
 		# process of the system) is the only one that will give it SIGTERM when closed.
 		#
+		# There are a couple of other housekeeping details that this method takes care of:
+		#  (1) Closing file descriptors inherited from the parent process.
+		#      We don't want open file descriptors that somehow slipped through from the
+		#      parent process's controlling terminal.  So we explicitly close any
+		#      open file descriptors.
+		#  (2) Redirecting the standard input/output/error file descriptors to /dev/null.
+		#      After daemonization, the process no longer has a terminal.  That means
+		#      that where standard in/out/error point is undefined.  To make sure that
+		#      we don't get any weird side effects from programming mistakes,
+		#      we explicitly set them to the NULL device (in case I accidentally
+		#      put a 'print' statement somewhere, for example).
+		#
 		# Google for "UNIX daemonize" or some such if you want more details.
 
-		self.logwrite("Trying to daemonize...\n")
+		self.logger.info("Trying to daemonize...")
 
 		try:
 			pid = os.fork()	# returns 0 in the child process
@@ -135,7 +179,7 @@ class RunControlDispatcher:
 		else:
 			os._exit(0)	# NOT a typo -- that underscore is supposed to be there.
 
-		self.logwrite("Daemonization succeeded.\n")
+		self.logger.info("Daemonization succeeded.")
 
 		# find the maximum file descriptor number
 		import resource
@@ -143,21 +187,23 @@ class RunControlDispatcher:
 		if (maxfd == resource.RLIM_INFINITY):		# use a default if the OS doesn't want to tell us
 			maxfd = 1024
 
+		# we're about to close any open file descriptors.  this will break the pipe
+		# to our log file, as well -- so we should just close it intentionally.
+		# that way we can ensure its buffer gets flushed properly.
+		# the next time the logger is called it will reopen it with a new file descriptor.
+		self.filehandler.close()
+
 		# Iterate through and close all open file descriptors.
-		# Note that this will probably close our log file,
-		# but that's ok because logwrite() checks to make sure
-		# it's open before writing (and if it isn't, it opens it).
 		for fd in range(0, maxfd):
-			if self.logfile and fd == self.logfile.fileno():	# don't close our log file!
-				continue
 			try:
 				os.close(fd)
-			except OSError:	# ERROR, fd wasn't open to begin with (ignored)
+			except OSError:	# fd wasn't open to begin with (ignored)
 				pass
-				
-		# Want to redirect the standard in/outputs to /dev/null because there's no controlling terminal.
-		# Redirect the lowest file descriptor (which will be STDIN, 0, because everything else
-		# was closed above)
+		
+		# Redirect stdin to /dev/null.
+		# [os.open uses the first available file descriptor if none is given,
+		# which will be 0 here (stdin) since we closed everything but our log
+		# file (which will have a higher descriptor since it was opened later).]
 		os.open(os.devnull, os.O_RDWR)	# standard input (0)
 
 		# Duplicate standard input to standard output and standard error.
@@ -167,48 +213,48 @@ class RunControlDispatcher:
 		return
 
 	def other_instances(self):
-		self.logwrite("Checking for PID file...\n")
+		self.logger.info("Checking for PID file...")
 		
 		if os.path.isfile(Defaults.DISPATCHER_PIDFILE):
 			pidfile = open(Defaults.DISPATCHER_PIDFILE)
 			pid = int(pidfile.readline())
 			pidfile.close()
 
-			self.logwrite("Found PID file with PID " + str(pid) + ".\n")
+			self.logger.info("Found PID file with PID " + str(pid) + ".")
 
 			try:
-				self.logwrite("Checking if process is alive...\n")
+				self.logger.info("Checking if process is alive...")
 				os.kill(pid, 0)		# send it the null signal to check if it's there and alive.
 			except OSError:			# you get an OSError if the PID doesn't exist.  it's safe to clean up then.
-				self.logwrite("Process is dead.  Cleaning up PID file.\n")
+				self.logger.info("Process is dead.  Cleaning up PID file.")
 				os.remove(Defaults.DISPATCHER_PIDFILE)
 			else:
-				self.logwrite("Process is still alive.\n")
+				self.logger.info("Process is still alive.")
 				return pid
 		else:
-			self.logwrite("No PID file.\n")
+			self.logger.info("No PID file.")
 		
 		return None
 	
 	def kill_other_instance(self, pid):
-		self.logwrite("Instructing process " + str(pid) + " to end.\n")
+		self.logger.info("Instructing process " + str(pid) + " to end.")
 
 		os.kill(pid, signal.SIGTERM)
 		
-		self.logwrite("Waiting a maximum of 10 seconds for other process to end...\n")
+		self.logger.info("Waiting a maximum of 10 seconds for other process to end...")
 		secs = 0
 		while True:
 			time.sleep(1)
 			secs += 1
 			if secs > 10:
-				self.logwrite("Other instance (PID " + str(pid) + ") has not yet terminated.  Kill it manually.\n")
+				self.logger.info("Other instance (PID " + str(pid) + ") has not yet terminated.  Kill it manually.")
 				sys.exit(1)
 				
 			try:
 				os.kill(pid, 0)
 			except OSError:
 				break
-		self.logwrite("Process " + str(pid) + " ended.\n")
+		self.logger.info("Process " + str(pid) + " ended.")
 		
 		
 	def logwrite(self, data):
@@ -237,7 +283,7 @@ class RunControlDispatcher:
 		"""
 		self.quit = False
 
-		self.logwrite("Dispatching starting (listening on port " + str(self.port) + ").\n")
+		self.logger.info("Dispatching starting (listening on port " + str(self.port) + ").")
 
 		while not self.quit:
 			# if we interrupt the socket system call, by receiving a signal,
@@ -249,7 +295,7 @@ class RunControlDispatcher:
 			except socket.error:		
 				continue			# will need to start doing something fancier when we start handling SIGCHLD	
 
-			self.logwrite("Accepted connection from " + str(client_address) + ".\n")
+			self.logger.info("Accepted connection from " + str(client_address) + ".")
 			
 			request = ""
 			datalen = -1
@@ -258,25 +304,25 @@ class RunControlDispatcher:
 				datalen = len(data)
 				request += data
 			
-			self.logwrite("Client request: '" + request + "'\n")
+			self.logger.info("Client request: '" + request + "'")
 			
 			response = self.respond(request)
 			if response is not None:		# don't waste our time sending a response to an invalid request.
-				self.logwrite("Attempting to send response:\n===\n" + response + "\n===\n")
+				self.logger.info("Attempting to send response:\n" + response)
 				try:
 					client_socket.sendall(response)		# this will throw an exception if all the data can't be sent.
 				except:
-					self.logwrite("Transmission error.\n")
+					self.logger.warning("Transmission error.")
 					pass								# what to do if it can't all be sent?  hmm...
 				else:
-					self.logwrite("Transmission completed.\n")
+					self.logger.info("Transmission completed.")
 			else:
-				self.logwrite("Request is invalid.  ")
+				self.logger.info("Request is invalid.  ")
 
-			self.logwrite("Closing socket.\n")
+			self.logger.info("Closing socket.")
 			client_socket.close()
 		
-		self.logwrite("Instructed to close.  Exiting dispatch mode.\n")
+		self.logger.info("Instructed to close.  Exiting dispatch mode.")
 		self.cleanup()
 
 			
@@ -287,7 +333,7 @@ class RunControlDispatcher:
 		"""
 		matches = re.match("^(?P<request>\S+)\s?(?P<data>\S*)[?!]$", request)
 		if matches is None:
-			self.logwrite("Request does not match pattern.\n")
+			self.logger.info("Request does not match pattern.")
 			return None
 		
 		request = matches.group("request").lower()
@@ -312,14 +358,18 @@ class RunControlDispatcher:
 
 	def ping(self):
 		""" Returns something so that a client knows the server is alive. """
-		return "0"
+		self.logger.info("Responding to ping.")
+		return "1"
 	
 	def daq_status(self):
 		""" Returns 1 if there is a DAQ subprocess running; 0 otherwise. """
+		self.logger.info("Client wants to know if DAQ process is running.")
 		
-		if self.daq_process is None or self.daq_process.returncode != None:
+		if self.daq_process is None or self.daq_process.returncode is None:
+			self.logger.info("   ==> It ISN'T.")
 			return "0"
 		else:
+			self.logger.info("   ==> It IS.")
 			return "1"
 	
 	def daq_exitstatus(self):
@@ -336,15 +386,20 @@ class RunControlDispatcher:
 		    to make sure it's not already running.  Returns 0 on success,
 		    1 on some DAQ or other error, and 2 if there is already
 		    a DAQ process running. """
+		self.logger.info("Client wants to start the DAQ process.")
 		
 		if self.daq_process and self.daq_process.returncode is not None:
+			self.logger.info("   ==> There is already a DAQ process running.")
 			return "2"
 		
 		try:
 			self.daq_process = subprocess.Popen("/work/software/mnvdaq/bin/daq_slave_service", env={"DAQROOT": Defaults.DAQROOT_DEFAULT})
-		except:
+		except Exception, excpt:
+			self.logger.error("   ==> DAQ process can't be started!")
+			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
 			return "1"
 		else:
+			self.logger.info("    ==> Started successfully.")
 			return "0"
 	
 	def daq_stop(self):
@@ -353,21 +408,30 @@ class RunControlDispatcher:
 		    1 on some DAQ or other error, and 2 if there is no DAQ
 		    process currently running. """
 		    
+		self.logger.info("Client wants to stop the DAQ process.")
+		    
 		if self.daq_process and self.daq_process.returncode is not None:
+			self.logger.info("   ==> Attempting to stop.")
 			try:
 				self.daq_process.kill()
-			except:
+			except Exception, excpt:
+				self.logger.error("   ==> DAQ process couldn't be stopped!")
+				self.logger.error("   ==> Error message: '" + str(excpt) + "'")
 				return "1"
 		else:		# if there's a process but it's already finished
+			self.logger.info("   ==> No DAQ process to stop.")
 			return "2"
 		
+		self.logger.info("   ==> Stopped successfully.")
 		return "0"
 		
 	def sc_sethw(self, filename):
 		""" Uses the slow control library to load a hardware configuration
 		    file.  Returns 0 on success, 1 on hardware error, and 2 if 
 		    there is no such file. """
-		    
+		self.logger.info("Client wants to load slow control configuration file: '" + filename + "'.")
+		
+		self.logger.info("   ==> Loaded successfully.")
 		return "0"
 		    
 	def sc_readvoltages(self):
@@ -377,13 +441,16 @@ class RunControlDispatcher:
 		    FPGA-CROC-CHAIN-BOARD: [voltage]
 		    On failure, returns the string "NOREAD". """
 
+		self.logger.info("Client wants to know the FEB voltages.")
+
+		self.logger.info("No read happened.")
 		return "NOREAD"
 		
 	def cleanup(self):
 		self.server_socket.close()
 
 		if os.path.isfile(Defaults.DISPATCHER_PIDFILE):
-			self.logwrite("Removing PID file.\n")
+			self.logger.info("Removing PID file.")
 			os.remove(Defaults.DISPATCHER_PIDFILE)
                         
 # whew, that's a mouthful.
@@ -400,7 +467,7 @@ class RunControlDispatcherAlreadyStartedException(Exception):
   If it IS running as a stand-alone, it will need to daemonize
   and begin listening on the specified port.
   
-  Otherwise it will bail with an error.
+  Otherwise this implementation will bail with an error.
 """
 if __name__ == "__main__":
 	import optparse
@@ -425,7 +492,8 @@ if __name__ == "__main__":
 		dispatcher.replace = options.replace
 		
 		if dispatcher.interactive:
-			print "Running in interactive mode.  All log information will be echoed to the screen."
+			print "Running in interactive mode."
+			print "All log information will be echoed to the screen."
 			print "Enter 'Ctrl-C' to exit.\n\n"
 		else:
 			print "Dispatcher starting in daemon mode.  \nRun this program with the keyword 'stop' to stop it."

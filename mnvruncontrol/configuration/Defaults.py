@@ -37,7 +37,8 @@ MNVONLINEMASTER = "mnvonlinemaster.fnal.gov"
 
 # dispatcher process details
 DISPATCHER_PIDFILE = "/tmp/rc_dispatcher.pid"
-DISPATCHER_LOGFILE = "/work/data/logs/dispatcher_" + time.strftime("%Y-%m-%d_%H-%M-%S", time.gmtime()) + ".log"
+#DISPATCHER_LOGFILE = "/work/data/logs/dispatcher_" + time.strftime("%Y-%m-%d_%H-%M-%S", time.gmtime()) + ".log"
+DISPATCHER_LOGFILE = "/work/data/logs/dispatcher.log"
 
 # environment configuration
 DAQROOT_DEFAULT = "/work/software/mnvonline/mnvdaq"
