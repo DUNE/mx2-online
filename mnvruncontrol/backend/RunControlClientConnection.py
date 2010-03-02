@@ -73,16 +73,16 @@ class RunControlClientConnection:
 		elif response == "0":
 			return False
 		else:
-			raise RunControlClientUnexpectedDataException()
+			raise RunControlClientUnexpectedDataException("Unexpected response: " + response)
 	
 	def daq_checkLastExitCode(self):
 		""" Asks for the return code from the last DAQ process to run.
 		    Returns None if the DAQ hasn't yet been run yet or is still running. """
-		returnval = int(self.request("daq_last_exit?"))
-		if returnval >= 0:
-			return returnval
-		else:					# DAQ process hasn't been run yet or is still running
+		response = self.request("daq_last_exit?")
+		if response == "NONE":		# DAQ process hasn't been run yet or is still running
 			return None
+		else:					
+			return int(response)
 			
 	def daq_start(self):
 		""" Asks the server to start the DAQ process.  Returns True on success,
@@ -96,7 +96,7 @@ class RunControlClientConnection:
 		elif response == "2":
 			raise RunControlClientException("The DAQ slave process is currently running!  You can't start it again...")
 		else:
-			raise RunControlClientUnexpectedDataException()
+			raise RunControlClientUnexpectedDataException("Unexpected response: " + response)
 
 	def daq_stop(self):
 		""" Asks the server to stop the DAQ process.  Returns True on success,
@@ -111,7 +111,7 @@ class RunControlClientConnection:
 		elif response == "2":
 			raise RunControlClientException("The DAQ slave process is not currently running, so it can't be stopped.")
 		else:
-			raise RunControlClientUnexpectedDataException()
+			raise RunControlClientUnexpectedDataException("Unexpected response: " + response)
 
 	def sc_loadHWfile(self, filename):
 		""" Asks the server to load the specified hardware configuration file. 
@@ -125,7 +125,7 @@ class RunControlClientConnection:
 		elif response == "2":
 			raise RunControlClientException("The specified slow control configuration does not exist.")
 		else:
-			raise RunControlClientUnexpectedDataException()
+			raise RunControlClientUnexpectedDataException("Unexpected response: " + response)
 
 	def sc_readVoltages(self):
 		""" Asks the server for a list of the voltages on each of the FEBs.
