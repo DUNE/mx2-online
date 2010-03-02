@@ -39,6 +39,7 @@ class RunControlDispatcher:
 		self.port = Defaults.DISPATCHER_PORT
 		self.interactive = False
 		self.respawn = False
+		self.quit = False
 
 		# set up some logging facilites.
 		# we set up a rotating file handler here;
@@ -47,11 +48,15 @@ class RunControlDispatcher:
 		# duplicate the log contents to the screen).
 		self.logger = logging.getLogger("rc_dispatcher")
 		self.logger.setLevel(logging.DEBUG)
-		self.filehandler = logging.handlers.RotatingFileHandler(Defaults.DISPATCHER_LOGFILE, maxBytes=512000, backupCount=5)
-		self.filehandler.setLevel(logging.DEBUG)
+		self.filehandler = logging.handlers.RotatingFileHandler(Defaults.DISPATCHER_LOGFILE, maxBytes=204800, backupCount=5)
+		self.filehandler.setLevel(logging.INFO)
 		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
 		self.filehandler.setFormatter(self.formatter)
 		self.logger.addHandler(self.filehandler)
+
+		self.consolehandler = logging.StreamHandler()
+		self.consolehandler.setFormatter(self.formatter)
+		self.logger.addHandler(self.consolehandler)
 
 		# make sure that the process shuts down gracefully given the right signals.
 		# these lines set up the signal HANDLERS: which functions are called
@@ -64,22 +69,20 @@ class RunControlDispatcher:
 			self.logfile.close()
 	
 	def setup(self):
-		self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.
-		self.server_socket.bind(("", self.port))				# bind it to the port specified in the config., on any interface that will let it, on the local machine
-		self.server_socket.listen(1)										# only allow it to keep one backlogged connection
+		try:
+			self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.
+			self.server_socket.bind(("", self.port))				# bind it to the port specified in the config., on any interface that will let it, on the local machine
+			self.server_socket.listen(1)										# only allow it to keep one backlogged connection
+		except Exception, e:
+			self.logger.exception("Error trying to bind my listening socket:")
+			self.logger.fatal("Can't get a socket.")
+			self.shutdown()
 
 	def start(self):
 		""" Starts the listener.  If you want to run it as a background
 		    service, make sure the property 'interactive' is False. 
 		    This is normally accomplished by not setting the "-i" flag
 		    on the command line (i.e., it's the default behavior).  """
-		
-		# if this is an interactive session, we want to make sure that
-		# any output is duplicated to the screen.
-		if self.interactive:
-			handler = logging.StreamHandler()
-			handler.setFormatter(self.formatter)
-			self.logger.addHandler(handler)
 		
 		self.logger.info("Starting up.")
 		
@@ -91,6 +94,7 @@ class RunControlDispatcher:
 				self.logger.fatal("Terminating this instance.")
 				sys.exit(1)
 
+		
 		# make sure this thing is a daemon if it needs to be
 		if not self.interactive:
 			self.daemonize()
@@ -104,17 +108,13 @@ class RunControlDispatcher:
 		self.setup()
 		self.dispatch()
 		
-	def shutdown(self, signal=None, frame=None):
+	def shutdown(self, sig=None, frame=None):
 		""" Ends the dispatch loop. """
 		self.quit = True
 
 	def stop(self):
 		""" Kills another instance of the dispatcher. """
 		# we want to be sure everything gets duplicated to the screen.
-		handler = logging.StreamHandler()
-		handler.setFormatter(self.formatter)
-		self.logger.addHandler(handler)
-
 		self.logger.info("Checking for other instances to stop...")
 		other_pid = self.other_instances()
 		
@@ -157,7 +157,7 @@ class RunControlDispatcher:
 		#
 		# Google for "UNIX daemonize" or some such if you want more details.
 
-		self.logger.info("Trying to daemonize...")
+		self.logger.info("Trying to daemonize... (check the log for further output)")
 
 		try:
 			pid = os.fork()	# returns 0 in the child process
@@ -179,6 +179,9 @@ class RunControlDispatcher:
 				os._exit(0)		# Exit parent of the second child (the first child).
 		else:
 			os._exit(0)	# NOT a typo -- that underscore is supposed to be there.
+
+		# need to turn off the console handler.  it's not doing anything useful now.
+		self.logger.removeHandler(self.consolehandler)
 
 		self.logger.info("Daemonization succeeded.")
 
@@ -209,6 +212,7 @@ class RunControlDispatcher:
 		# Duplicate standard input to standard output and standard error.
 		os.dup2(0, 1)			# standard output (1)
 		os.dup2(0, 2)			# standard error (2)
+
 
 		return
 
@@ -266,9 +270,8 @@ class RunControlDispatcher:
 		to make sure this process is the only one trying to listen
 		on the port before entering dispatch mode.)
 		"""
-		self.quit = False
-
-		self.logger.info("Dispatching starting (listening on port " + str(self.port) + ").")
+		if not self.quit:		# occasionally there's an error before dispatching starts.
+			self.logger.info("Dispatching starting (listening on port " + str(self.port) + ").")
 
 		while not self.quit:
 			# if we interrupt the socket system call by receiving a signal,
@@ -283,6 +286,9 @@ class RunControlDispatcher:
 				else:						# if it's not an interrupted system call, we need the error!
 					self.logger.exception("Error " + str(errnum) + ": " + msg)
 					raise
+			except Exception, e:
+				self.logger.exception("Error trying to get socket:")
+
 
 			self.logger.info("Accepted connection from " + str(client_address) + ".")
 			
@@ -307,9 +313,9 @@ class RunControlDispatcher:
 			else:
 				self.logger.info("Request is invalid.")
 
-			self.logger.info("Closing socket.")
-			client_socket.close()
-		
+			client_socket.shutdown(socket.SHUT_RDWR)
+			self.logger.info("Socket closed.")
+	
 		self.logger.info("Instructed to close.  Exiting dispatch mode.")
 		self.cleanup()
 
@@ -353,7 +359,10 @@ class RunControlDispatcher:
 		""" Returns 1 if there is a DAQ subprocess running; 0 otherwise. """
 		self.logger.info("Client wants to know if DAQ process is running.")
 		
-		if self.daq_process is None or self.daq_process.returncode is None:
+		if self.daq_process is not None:
+			self.daq_process.poll()	
+	
+		if self.daq_process is None or self.daq_process.returncode is not None:
 			self.logger.info("   ==> It ISN'T.")
 			return "0"
 		else:
@@ -363,9 +372,19 @@ class RunControlDispatcher:
 	def daq_exitstatus(self):
 		""" Returns the exit code last given by a DAQ subprocess, or,
 		    if no DAQ process has yet exited, returns -1. """
-		if self.daq_process is None or self.daq_process.returncode is None:
-			return "-1"
+		self.logger.info("Client wants to know last DAQ process exit code.")
+
+		if self.daq_process is not None:
+			self.daq_process.poll()
+
+		if self.daq_process is None:
+			self.logger.info("   ==> DAQ has not yet been run.")
+			return "NONE"
+		elif self.daq_process.returncode is None:
+			self.logger.info("   ==> Process is currently running.  Will need to wait for it to finish.")
+			return "NONE"
 		else:
+			self.logger.info("   ==> Exit code: " + str(self.daq_process.returncode) + " (for codes < 0, this indicates the signal that stopped the process).")
 			return str(self.daq_process.returncode)
 
 	def daq_start(self):
@@ -380,13 +399,15 @@ class RunControlDispatcher:
 			return "2"
 		
 		try:
-			self.daq_process = subprocess.Popen(Defaults.DAQROOT_DEFAULT + "/bin/daq_slave_service", env={"DAQROOT": Defaults.DAQROOT_DEFAULT})
+			executable = Defaults.DAQROOT_DEFAULT + "/bin/daq_slave_service"
+			self.logger.info("    ==> Trying '" + str(executable) + "'...")
+			self.daq_process = subprocess.Popen(executable, env=environment)
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
 			return "1"
 		else:
-			self.logger.info("    ==> Started successfully.")
+			self.logger.info("    ==> Started successfully (process " + str(self.daq_process.pid) + ").")
 			return "0"
 	
 	def daq_stop(self):
@@ -396,11 +417,15 @@ class RunControlDispatcher:
 		    process currently running. """
 		    
 		self.logger.info("Client wants to stop the DAQ process.")
+		
+		if self.daq_process:
+			self.daq_process.poll()
 		    
-		if self.daq_process and self.daq_process.returncode is not None:
+		if self.daq_process and self.daq_process.returncode is None:	# processes have a None return code until they stop
 			self.logger.info("   ==> Attempting to stop.")
 			try:
-				self.daq_process.kill()
+				self.daq_process.terminate()
+				code = self.daq_process.wait()
 			except Exception, excpt:
 				self.logger.error("   ==> DAQ process couldn't be stopped!")
 				self.logger.error("   ==> Error message: '" + str(excpt) + "'")
@@ -408,8 +433,8 @@ class RunControlDispatcher:
 		else:		# if there's a process but it's already finished
 			self.logger.info("   ==> No DAQ process to stop.")
 			return "2"
-		
-		self.logger.info("   ==> Stopped successfully.")
+	
+		self.logger.info("   ==> Stopped successfully.  (Process " + str(self.daq_process.pid) + " exited with code " + str(code) + ".)")
 		return "0"
 		
 	def sc_sethw(self, filename):
@@ -453,6 +478,16 @@ class RunControlDispatcher:
   Otherwise this implementation will bail with an error.
 """
 if __name__ == "__main__":
+	environment = {}
+	try:
+		environment["DAQROOT"] = os.environ["DAQROOT"]
+		environment["ET_HOME"] = os.environ["ET_HOME"]
+		environment["ET_LIBROOT"] = os.environ["ET_LIBROOT"]
+		environment["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
+	except KeyError:
+		sys.stderr("Your environment is not properly configured.  You must run the 'setup_daqbuild.sh' script before launching the dispatcher.")
+		sys.exit(1)
+
 	import optparse
 	
 	parser = optparse.OptionParser(usage="usage: %prog [options] command\n  where 'command' is 'start' or 'stop'")
