@@ -20,6 +20,7 @@ import CAENVMEwrapper
 import SC_Frames
 import SC_Util
 from SC_MainObjects import *
+import SC_MainMethods
 
 class SCApp(wx.App):
     """SlowControl application. Subclass of wx.App"""
@@ -29,13 +30,17 @@ class SCApp(wx.App):
         self.vmeCROCs=[]
         self.vmeDIGs=[]
         self.reportErrorChoice={'display':True, 'msgBox':True}
-        self.controller = CAENVMEwrapper.Controller()
+        self.sc=SC_MainMethods.SC()
+        print self.sc
+        self.sc.CloseController()
+        print self.sc
+        self.sc=SC_MainMethods.SC()
         try:
-            self.controller.Init(CAENVMEwrapper.CAENVMETypes.CVBoardTypes.cvV2718, 0, 0) 
+            self.controller = self.sc.GetController()
             print('Controller initialized:')
-            print('\thandle = ' + str(self.controller.handle))
-            print('\tCAENVME software = ' + str(self.controller.SWRelease()))
-            print('\tV2718   firmware = ' + str(self.controller.BoardFWRelease()))
+            print('\thandle = %s' % hex(self.controller.handle))
+            print('\tCAENVME software = %s' % str(self.controller.SWRelease()))
+            print('\tV2718   firmware = %s\n' % str(self.controller.BoardFWRelease()))     
         except : ReportException('controller.Init', self.reportErrorChoice)
         
         self.Bind(wx.EVT_CLOSE, self.OnClose, self.frame)
@@ -154,53 +159,15 @@ class SCApp(wx.App):
     # MENU events ##########################################################
     def OnMenuLoadHardware(self, event):      
         try:
-            addrListCRIMs=[]
-            addrListCROCs=[]
-            addrListDIGs=[]
-            #CROC mapping addr is 1 to 8, register is ResetTestPulse
-            #CRIM mapping addr is 9 to 255, register is InterruptMask
-            crocReg=0xF010; crimReg=0xF000
-            for i in range(256):
-                data=( ((i&0xF0)<<8) | ((i&0x0F)<<4) ) & 0xF0F0
-                if (i<=8): addr=((i<<16)|crocReg) & 0xFFFFFF    #CROC addr
-                else: addr=((i<<16)|crimReg) & 0xFFFFFF         #CRIM addr
-                #print hex(i), hex(addr), hex(data), 
-                try:
-                    self.controller.WriteCycle(addr, data)
-                    if (i<=8):
-                        print "Found CROC at ", hex(i)
-                        addrListCROCs.append(i)
-                        self.frame.SetStatusText('Found CROC at '%hex(i), 0)
-                    else:
-                        print "Found CRIM at ", hex(i)
-                        addrListCRIMs.append(i)
-                        self.frame.SetStatusText('Found CROC at '%hex(i), 0)
-                    self.controller.WriteCycle(addr, 0)
-                except: pass
-            #DIG mapping addres is ??? register is VMEScratch=0xEF20
-            digReg=0xEF20
-            for i in range(256):
-                try:
-                    addr=((i<<16)|digReg) & 0xFFFFFF
-                    wdata=0x1234; rdata=0
-                    self.controller.WriteCycle(addr, wdata)
-                    rdata=self.controller.ReadCycle(addr)
-                    if rdata==wdata:
-                        print "Found DIG at ", hex(i)
-                        addrListDIGs.append(i)
-                        self.frame.SetStatusText('Found DIG at '%hex(i), 0)
-                except: pass
-            #now create object lists for CRIMs, CROCs and DIGs found
-            self.vmeCRIMs=[]; self.vmeCROCs=[]; self.vmeDIGs=[]
-            for addr in addrListCRIMs: self.vmeCRIMs.append(CRIM(self.controller, addr<<16))        
-            for addr in addrListCROCs: self.vmeCROCs.append(CROC(self.controller, addr<<16))
-            for addr in addrListDIGs: self.vmeDIGs.append(VMEDevice(self.controller, addr<<16, SC_Util.VMEdevTypes.DIG))
-            #then take each CROC CH and find the FEBs
-            for theCROC in self.vmeCROCs:
-                for theCROCChannel in theCROC.Channels():
-                    FindFEBs(theCROCChannel)
-                    self.frame.SetStatusText('%s %s Finding FEBs... done'%(theCROC.Description(), theCROCChannel.Description()), 0)
-                    print 'Found FEBs at %s %s %s'%(theCROC.Description(), theCROCChannel.Description(), theCROCChannel.FEBs)
+            #first find VME devices: CRIMs, CROCs, DIGitizers....
+            self.vmeCRIMs = self.sc.FindCRIMs()
+            self.vmeCROCs = self.sc.FindCROCs()
+            self.vmeDIGs = self.sc.FindDIGs()
+            for dev in self.vmeCRIMs+self.vmeCROCs+self.vmeDIGs:
+                print 'Found %s'%dev.Description()
+            #then find all FEBs for all CROCs (and all channels)
+            FEBs = self.sc.FindFEBs(self.vmeCROCs)
+            for feb in FEBs: print 'Found %s'%feb
             #and then update self.frame.tree
             self.frame.tree.DeleteAllItems()
             treeRoot = self.frame.tree.AddRoot("VME-BRIDGE")
@@ -218,95 +185,7 @@ class SCApp(wx.App):
             dlg = wx.FileDialog(self.frame, message='READ Hardware Configuration', defaultDir='', defaultFile='',
                 wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
-                filename=dlg.GetFilename()
-                dirname=dlg.GetDirectory()
-                f=open(filename,'r')
-                self.frame.SetStatusText('Loading Config File %s'%filename, 1)
-                for line in f:
-                    #print line
-                    lineList = line.split(':')
-                    if len(lineList)!=3: raise Exception('Wrong format in line %s wrong number of ":" characters'%line)
-                    if lineList[0]==SC_Util.VMEdevTypes.CRIM:
-                        if len(lineList[2])!=321: raise Exception('Wrong format in line %s wrong data field length <> 321'%line)
-                        if FindVMEdev(self.vmeCRIMs, int(lineList[1])<<16)==None:
-                            raise Exception('Load ERROR: CRIM:%s not present in current configuration'%lineList[1])
-                        for i in range(16):
-                            addr=str(lineList[2][3+i*20:9+i*20])
-                            data=str(lineList[2][13+i*20:17+i*20])
-                            self.controller.WriteCycle(int(addr,16), int(data,16))
-                        self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
-                        fileCRIMs.append(lineList[1])
-                    if lineList[0]==SC_Util.VMEdevTypes.CROC:
-                        if len(lineList[2])!=41: raise Exception('Wrong format in line %s wrong data field length <> 41'%line)
-                        if FindVMEdev(self.vmeCROCs, int(lineList[1])<<16)==None:
-                            raise Exception('Load ERROR: CROC:%s not present in current configuration'%lineList[1])
-                        for i in range(2):
-                            addr=lineList[2][3+i*20:9+i*20]
-                            data=lineList[2][13+i*20:17+i*20]
-                            self.controller.WriteCycle(int(addr,16), int(data,16))
-                        self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
-                        fileCROCs.append(lineList[1])
-                    if lineList[0]==SC_Util.VMEdevTypes.FPGA:
-                        if len(lineList[2])!=331: raise Exception('Wrong format in line %s wrong data field length <> 331'%line)
-                        addresses = lineList[1].split(',')
-                        if len(addresses)!=3: raise Exception('Wrong format in line %s wrong number of "," characters'%line)
-                        febNumber=int(addresses[0])
-                        chNumber=int(addresses[1])
-                        crocNumber=int(addresses[2])
-                        sentMessageData=Frame.NRegsFPGA*[0]
-                        for i in range(Frame.NRegsFPGA):
-                            data=lineList[2][2+i*6:4+i*6]
-                            sentMessageData[i]=int(data,16)
-                        theCROC=FindVMEdev(self.vmeCROCs, crocNumber<<16)
-                        if (theCROC==None) or not(chNumber in [0,1,2,3]) or not(febNumber in theCROC.Channels()[chNumber].FEBs):
-                            raise Exception('Load ERROR: FPGA:%s not present in current configuration'%lineList[1])
-                        theCROCChannel=theCROC.Channels()[chNumber]
-                        FEB(febNumber).FPGAWrite(theCROCChannel, sentMessageData)
-                        self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
-                        fileFPGAs.append(lineList[1])
-                    if lineList[0]==SC_Util.VMEdevTypes.TRIP:
-                        if len(lineList[2])!=99: raise Exception('Wrong format in line %s wrong data field length <> 99'%line)
-                        addresses = lineList[1].split(',')
-                        if len(addresses)!=4: raise Exception('Wrong format in line %s wrong number of "," characters'%line)
-                        tripNumber=addresses[0]
-                        febNumber=int(addresses[1])
-                        chNumber=int(addresses[2])
-                        crocNumber=int(addresses[3])
-                        pRegs=Frame.NRegsTRIPPhysical*[0]
-                        for i in range(Frame.NRegsTRIPPhysical):
-                            data=lineList[2][2+i*7:5+i*7]
-                            pRegs[i]=int(data,16)
-                        theCROC=FindVMEdev(self.vmeCROCs, crocNumber<<16)
-                        if (theCROC==None) or not(chNumber in [0,1,2,3]) or not(febNumber in theCROC.Channels()[chNumber].FEBs) or not(tripNumber in ['0','1','2','3','4','5','X']):
-                            raise Exception('Load ERROR: TRIP:%s not present in current configuration'%lineList[1])
-                        theCROCChannel=theCROC.Channels()[chNumber]
-                        theFEB=FEB(febNumber)
-                        if tripNumber!='X':
-                            sentMessageHeader = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, theFEB.Address,
-                                Frame.DeviceTRIP, Frame.FuncTRIPWRi[int(tripNumber)])
-                        else:sentMessageHeader = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, theFEB.Address,
-                                Frame.DeviceTRIP, Frame.FuncTRIPWRAll) 
-                        sentMessageData = theFEB.ParseTRIPAllRegsPhysicalToMessage(pRegs, Frame.InstrTRIPWrite)
-                        sentMessage = sentMessageHeader + sentMessageData
-                        WriteSendReceive(sentMessage, Frame.MessageDataLengthTRIPWrite, theFEB.Address, Frame.DeviceTRIP, theCROCChannel)
-                        self.frame.SetStatusText('%s:%s...done'%(lineList[0], lineList[1]), 0)
-                        fileTRIPs.append(lineList[1])
-                f.close()
-                matchError=[]
-                for crim in self.vmeCRIMs:
-                    crimAddr=str((crim.BaseAddress()&0xFF0000)>>16)
-                    if not(crimAddr in fileCRIMs): matchError.append('CRIM:'+crimAddr)
-                for croc in self.vmeCROCs:
-                    crocAdr=str((croc.BaseAddress()&0xFF0000)>>16)
-                    if not(crocAdr in fileCROCs): matchError.append('CROC:'+crocAdr)
-                    for ch in croc.Channels():
-                        for feb in ch.FEBs:
-                            fpga='%s,%s,%s'%(feb, ch.Number(), crocAdr)
-                            if not(fpga in fileFPGAs): matchError.append('FPGA:'+fpga)
-                            if not('X,%s'%fpga in fileTRIPs):
-                                for i in range(6):
-                                    if not('%s,%s'%(i,fpga) in fileTRIPs): matchError.append('TRIP:'+'%s,%s'%(i,fpga))
-                if matchError!=[]: raise Exception('The following devices were NOT found in file %s:\n%s'%(filename, '\n'.join(matchError)))
+                self.sc.HWcfgFileLoad(wx.FileDialog.GetPath(dlg))
             dlg.Destroy()
         except: ReportException('OnMenuLoadFile', self.reportErrorChoice)
     def OnMenuSaveFile(self, event):
@@ -314,33 +193,7 @@ class SCApp(wx.App):
             dlg = wx.FileDialog(self.frame, message='SAVE Hardware Configuration', defaultDir='', defaultFile='',
                 wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
-                filename=dlg.GetFilename()+'.hwcfg'
-                dirname=dlg.GetDirectory()
-                f=open(filename,'w')
-                for theCRIM in self.vmeCRIMs:
-                    f.write('%s:%s\n'%(theCRIM.Description(), theCRIM.GetWRRegValues()))
-                    self.frame.SetStatusText('%s...done'%theCRIM.Description(), 0)
-                for theCROC in self.vmeCROCs:
-                    f.write('%s:%s\n'%(theCROC.Description(), theCROC.GetWRRegValues()))
-                    self.frame.SetStatusText('%s...done'%theCROC.Description(), 0)
-                for theCROC in self.vmeCROCs:   
-                    for theCROCChannel in theCROC.Channels():
-                        for febAddress in theCROCChannel.FEBs:
-                            theFEB=FEB(febAddress)
-                            f.write('%s:%s\n'%(theFEB.FPGADescription(theCROCChannel, theCROC), \
-                                [hex(val)[2:].rjust(2,'0') for val in theFEB.FPGARead(theCROCChannel)]))
-                            self.frame.SetStatusText('%s...done'%theFEB.FPGADescription(theCROCChannel, theCROC), 0)
-                for theCROC in self.vmeCROCs:   
-                    for theCROCChannel in theCROC.Channels():
-                        for febAddress in theCROCChannel.FEBs:
-                            theFEB=FEB(febAddress)
-                            for theTRIPIndex in range(Frame.NTRIPs):
-                                rcvMessageData=theFEB.TRIPRead(theCROCChannel, theTRIPIndex)
-                                pRegs = theFEB.ParseMessageToTRIPRegsPhysical(rcvMessageData, theTRIPIndex)
-                                f.write('%s:%s\n'%(theFEB.TRIPDescription(theTRIPIndex, theCROCChannel, theCROC), \
-                                    [hex(val)[2:].rjust(3,'0') for val in pRegs]))
-                                self.frame.SetStatusText('%s...done'%theFEB.TRIPDescription(theTRIPIndex, theCROCChannel, theCROC), 0)
-                f.close()
+                self.sc.HWcfgFileSave(wx.FileDialog.GetPath(dlg))
             dlg.Destroy()              
         except: ReportException('OnMenuSaveFile', self.reportErrorChoice)
     def OnMenuReset(self, event):
@@ -354,7 +207,7 @@ class SCApp(wx.App):
                 caption=self.frame.GetTitle(), defaultValue='0')
             if dlg.ShowModal()==wx.ID_OK:
                 self.frame.nb.ChangeSelection(0)
-                print '\n'.join(FEB(0).GetAllHVActual(self.vmeCROCs, int(dlg.GetValue())))
+                print '\n'.join(self.sc.HVReadAll(int(dlg.GetValue())))
             dlg.Destroy()            
         except: ReportException('OnMenuActionsReadVoltages', self.reportErrorChoice)
     def OnMenuActionsSetAllHV(self, event):
@@ -363,7 +216,7 @@ class SCApp(wx.App):
                 caption=self.frame.GetTitle(), defaultValue='0')
             if dlg.ShowModal()==wx.ID_OK:
                 self.frame.nb.ChangeSelection(0)
-                FEB(0).SetAllHVTarget(self.vmeCROCs, int(dlg.GetValue()))
+                self.sc.HVSetAll(int(dlg.GetValue()))
             dlg.Destroy()
         except: ReportException('OnMenuActionsReadVoltages', self.reportErrorChoice)
     def OnMenuActionsSTARTMonitorAllHV(self, event):
@@ -1000,31 +853,6 @@ class SCApp(wx.App):
                 toThisFEB=False, toThisCH=False, toThisCROC=False, toAllCROCs=True, theFrame=self.frame)             
         except: ReportException('OnFEFLASHbtnWriteFileToFlashALL', self.reportErrorChoice)
 
-def FindVMEdev(vmeDevList, devAddr):
-    for dev in vmeDevList:
-        if (dev.BaseAddress()==devAddr): return dev
-def FindFEBs(theCROCChannel):
-    #clear the self.FEBs list
-    theCROCChannel.FEBs=[]
-    for febAddr in range(1,16):
-        for itry in range(1,4):
-            try:
-                ClearAndCheckStatusRegister(theCROCChannel)
-                ResetAndCheckDPMPointer(theCROCChannel)
-                WriteFIFOAndCheckStatus([febAddr], theCROCChannel) 
-                SendFIFOAndCheckStatus(theCROCChannel)
-                #decode first two words from DPM and check DPM pointer
-                dpmPointer=theCROCChannel.DPMPointerRead()
-                w1=theCROCChannel.ReadDPM(0)
-                w2=theCROCChannel.ReadDPM(2)
-                if (w2==(0x8000 | (febAddr<<8))) & (w1==0x0B00) & (dpmPointer==13):
-                    #print "Found feb#" + str(febAddr), "w1="+hex(w1), "dpmPointer="+str(dpmPointer)
-                    theCROCChannel.FEBs.append(febAddr)
-                    break
-                elif (w2==(0x0000 | (febAddr<<8))) & (w1==0x0400) & (dpmPointer==6): pass
-                    #print "NO    feb#" + str(feb), "w1="+hex(w1), "dpmPointer="+str(dpmPointer) 
-                else: print "FindFEBs(" + hex(theCROCChannel.chBaseAddr) + ") wrong message " + "w1="+hex(w1) + "w2="+hex(w2), "dpmPointer="+str(dpmPointer)  
-            except: ReportException('FindFEBs', {'display':True, 'msgBox':False})
 def ReportException(comment, choice):
     msg = comment + ' : ' + str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1])
     if (choice['display']): print msg

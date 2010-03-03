@@ -4,7 +4,7 @@ import ChrSocket
 client = ChrSocket.ChrSocket()
 hostname = ChrSocket.socket.gethostname()
 hostaddr = ChrSocket.socket.gethostbyname(hostname)
-port = 1098
+port = 1099
 client.connect(hostaddr, port)
 
 try:
