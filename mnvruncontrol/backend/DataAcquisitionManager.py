@@ -56,6 +56,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.Connect(-1, -1, EVT_READY_FOR_NEXT_SUBRUN_ID, self.StartNextSubrun)
 		self.Connect(-1, -1, EVT_THREAD_READY_ID, self.StartNextThread)
 		self.Connect(-1, -1, EVT_DAQQUIT_ID, self.EndSubrun)		# if the DAQ process quits, this subrun is over
+		self.Connect(-1, -1, EVT_UPDATE_ID, self.UpdateRunStatus)
 		
 	
 	def StartDataAcquisition(self, evt=None):
@@ -73,14 +74,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 		except RunControlClientConnection.RunControlClientException:
 			failed_connection = "soldier"
 		else:
-			self.main_window.soldierIndicator.SetImage(self.main_window.onImage)
+			self.main_window.soldierIndicator.SetBitmap(self.main_window.onImage)
 		
 		try:
 			self.readout_worker  = RunControlClientConnection.RunControlClientConnection(Defaults.MNVONLINE1)
 		except RunControlClientConnection.RunControlClientException:
 			failed_connection = "worker"
 		else:
-			self.main_window.workerIndicator.SetImage(self.main_window.onImage)
+			self.main_window.workerIndicator.SetBitmap(self.main_window.onImage)
 		
 		if failed_connection:
 			errordlg = wx.MessageDialog( None, "A connection cannot be made to the " + failed_connection + " node.  Check to make sure that the run control dispatcher is started on that machine.", "No connection to " + failed_connection + " node", wx.OK | wx.ICON_ERROR )
@@ -163,6 +164,29 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# start the DAQ service on the readout nodes
 		if not quitting:
 			self.main_window.UpdateRunStatus(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9))
+			
+			nodes = {"worker": self.readout_worker, "soldier": self.readout_soldier}
+			for nodename in nodes.keys():
+				try:
+					success = nodes[nodename].daq_start()
+				except RunControlClientConnection.RunControlClientException:
+					errordlg = wx.MessageDialog( None, "Somehow the DAQ service on the " + nodename + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", nodename.capitalize() + " DAQ service not yet stopped", wx.OK | wx.ICON_ERROR )
+					errordlg.ShowModal()
+
+					stop_success = nodes[nodename].daq_stop()
+					if stop_success:
+						success = nodes[nodename].daq_start()
+					else:
+						errordlg = wx.MessageDialog( None, "Couldn't stop the " + nodename +" DAQ service.  Aborting run.", nodename.capitalize() + " DAQ service couldn't be stopped", wx.OK | wx.ICON_ERROR )
+						errordlg.ShowModal()
+				
+						quitting = True
+			
+				if not success:
+					errordlg = wx.MessageDialog( None, "Couldn't start the " + nodename + " DAQ service.  Aborting run.", nodename.capitalize() + " DAQ service couldn't be started", wx.OK | wx.ICON_ERROR )
+					errordlg.ShowModal()
+			
+					quitting = True
 
 		if quitting:
 			self.running = False
@@ -222,7 +246,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		daqFrame = OutputFrame(self.main_window, "THE DAQ", window_size=(600,600), window_pos=(1200,200))
 		daqFrame.Show(True)
 		
-		daq_command = "%s/bin/minervadaq -et %s -g %d -m %d -r %d -s %d -d %d -cf %s -dc %d" % (self.environment["DAQROOT"], self.ET_filename, self.runinfo.gates, self.runinfo.runMode, self.run, self.first_subrun + self.subrun, self.detector, self.hwconfigfile, self.febs)
+		daq_command = "%s/bin/daq_master -et %s -g %d -m %d -r %d -s %d -d %d -cf %s -dc %d -hw %d" % (self.environment["DAQROOT"], self.ET_filename, self.runinfo.gates, self.runinfo.runMode, self.run, self.first_subrun + self.subrun, self.detector, self.hwconfigfile, self.febs, self.hwinit)
 		if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
 			daq_command += " -ll %d -lg %d" % (self.runinfo.ledLevel, self.runinfo.ledGroup)
 		
@@ -230,7 +254,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append(daqFrame)
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, quit_event=DAQQuitEvent, env=self.environment) )
+		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, quit_event=DAQQuitEvent, env=self.environment, update_event=UpdateEvent) )
 		
 		self.main_window.UpdateRunStatus(text="Running...", progress=(0,0))
 
@@ -260,6 +284,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		self.main_window.UpdateCloseWindows(len(self.windows) > 0)
 
+	def UpdateRunStatus(self, evt=None):
+		self.main_window.UpdateRunStatus(progress=(0,0))		# 'pulse' the progress bar
+
 	def EndSubrun(self, evt=None):
 #		print "Ending subrun."
 		for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
@@ -272,7 +299,15 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
 		self.subrun += 1
 
+		# make SURE the DAQ process has stopped.
+		for node in (self.readout_worker, self.readout_soldier):
+			try:
+				node.daq_stop()
+			except:
+				pass
 		
+		
+
 		try:
 			self.LIBox.reset()					# don't want the LI box going unless it needs to be.
 		except:
@@ -316,13 +351,15 @@ class OutputFrame(wx.Frame):
 
 class DAQthread(threading.Thread):
 	""" A thread for an ET/DAQ process. """
-	def __init__(self, process_info, output_window, owner_process, env, next_thread_delay=0, quit_event=None):
+	def __init__(self, process_info, output_window, owner_process, env, next_thread_delay=0, quit_event=None, update_event=None):
 		threading.Thread.__init__(self)
 		self.output_window = output_window
 		self.owner_process = owner_process
+		self.environment = env
 		self.command = process_info
 		self.next_thread_delay = next_thread_delay
 		self.quit_event = quit_event
+		self.update_event = update_event
 
 		self.time_to_quit = False
 
@@ -333,7 +370,7 @@ class DAQthread(threading.Thread):
 	def run(self):
 		''' The stuff to do while this thread is going.  Overridden from threading.Thread '''
 		if self.output_window:			# the user could have closed the window before the thread was ready...
-			self.process = subprocess.Popen(self.command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
+			self.process = subprocess.Popen(self.command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=self.environment)
 			self.pid = self.process.pid
 
 			wx.PostEvent(self.output_window, NewDataEvent("Started thread with PID " + str(self.pid) + "\n"))	# post a message noting the PID of this thread
@@ -348,9 +385,13 @@ class DAQthread(threading.Thread):
 
 			while True:
 				self.process.poll()		# check if the process is still alive
+				
+				if self.update_event:
+					wx.PostEvent(self.owner_process, self.update_event())
+				
 				newdata = self.process.stdout.read(2)	# not every process is careful to spit things out with line breaks, so I can't use readline()
 
-				if len(newdata) > 0:		# shouldn't be a problem since reads are BLOCKING in python, but it's always better to check
+				if len(newdata) > 0 and self.output_window:		# make sure the window is still open
 					wx.PostEvent(self.output_window, NewDataEvent(newdata))
 				elif self.process.returncode != None:	# if the buffer is empty and the process has finished, don't loop any more
 					break
@@ -461,6 +502,18 @@ class NewDataEvent(wx.PyEvent):
 		wx.PyEvent.__init__(self)
 		self.data = data	
 		self.SetEventType(EVT_NEWDATA_ID)
+		
+#########################################################
+#   UpdateEvent
+#########################################################
+
+EVT_UPDATE_ID = wx.NewId()
+class UpdateEvent(wx.PyEvent):
+	""" An event that notifies the data acquisition handler that things are still running. """
+	def __init__(self):
+		wx.PyEvent.__init__(self)
+		self.SetEventType(EVT_UPDATE_ID)
+
 
 #########################################################
 #   ThreadReadyEvent

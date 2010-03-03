@@ -713,6 +713,7 @@ class MainFrame(wx.Frame):
 		self.runmanager.first_subrun = int(self.subrunEntry.GetValue())
 		self.runmanager.detector     = MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH)
 		self.runmanager.febs         = int(self.febsEntry.GetValue())
+		self.runmanager.hwinit       = MetaData.HardwareInitLevels.item(self.HWinitEntry.GetSelection(), MetaData.HASH)
 				
 		self.runmanager.StartDataAcquisition()
 		if (self.runmanager.running):
@@ -743,6 +744,10 @@ class MainFrame(wx.Frame):
 
 		self.SetStatusText("STOPPED", 1)
 		self.runningIndicator.SetBitmap(self.offImage)
+		self.soldierIndicator.SetBitmap(self.offImage)
+		self.workerIndicator.SetBitmap(self.offImage)
+		
+		self.UpdateRunStatus(text="No run in progress", progress=(0,1))
 
 		self.runEntry.Enable()
 		self.gatesEntry.Enable()
