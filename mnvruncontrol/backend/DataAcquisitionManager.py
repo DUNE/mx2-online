@@ -16,6 +16,7 @@ from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.backend import LIBox
 from mnvruncontrol.backend import RunSeries
+from mnvruncontrol.backend import RunControlClientConnection
 
 class DataAcquisitionManager(wx.EvtHandler):
 	def __init__(self, main_window):
@@ -26,12 +27,15 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.DAQthreads = []
 		self.timerThreads = []
 		self.DAQthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartDAQ]
+		self.DAQthreadLabels = ["Starting ET system...", "Starting ET monitor...", "Starting event builder...", "Starting the DAQ master..."]
 #		self.DAQthreadStarters = [self.StartTestProcess] #, self.StartTestProcess, self.StartTestProcess]
 		self.current_DAQ_thread = 0			# the next thread to start
 		self.subrun = 0					# the next run in the series to start
 		self.windows = []					# child windows opened by the process.
 		
 		self.LIBox = None					# this will be set in StartDataAcquisition
+		self.readout_soldier = None
+		self.readout_worker  = None
 
 		# configuration stuff
 		self.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
@@ -62,6 +66,27 @@ class DataAcquisitionManager(wx.EvtHandler):
 			raise ValueError("Run series is improperly configured.")
 
 		self.LIBox = LIBox.LIBox()
+		
+		failed_connection = None
+		try:
+			self.readout_soldier = RunControlClientConnection.RunControlClientConnection(Defaults.MNVONLINE0)
+		except RunControlClientConnection.RunControlClientException:
+			failed_connection = "soldier"
+		else:
+			self.main_window.soldierIndicator.SetImage(self.main_window.onImage)
+		
+		try:
+			self.readout_worker  = RunControlClientConnection.RunControlClientConnection(Defaults.MNVONLINE1)
+		except RunControlClientConnection.RunControlClientException:
+			failed_connection = "worker"
+		else:
+			self.main_window.workerIndicator.SetImage(self.main_window.onImage)
+		
+		if failed_connection:
+			errordlg = wx.MessageDialog( None, "A connection cannot be made to the " + failed_connection + " node.  Check to make sure that the run control dispatcher is started on that machine.", "No connection to " + failed_connection + " node", wx.OK | wx.ICON_ERROR )
+			errordlg.ShowModal()
+			return
+			
 					
 		self.CloseWindows()			# any leftover windows will need to be closed.
 
@@ -78,49 +103,72 @@ class DataAcquisitionManager(wx.EvtHandler):
 		while len(self.DAQthreads) > 0:
 			if self.DAQthreads[-1].process.returncode != None:
 				self.DAQthreads.pop()
+
+		quitting = False
 				
 		if self.subrun < len(self.runseries.Runs):
 			self.runinfo = self.runseries.Runs[self.subrun]
-			self.main_window.UpdateStatus()
+			self.main_window.UpdateSeriesStatus()
 		else:		# no more runs left!  return to main panel.
+			quitting = True
+
+		self.CloseWindows()			# don't want leftover windows open.
+		
+		if not quitting:
+			self.main_window.UpdateRunStatus(text="Setting up run:\ntesting connections", progress=(0,9))
+			soldier_ok = self.readout_soldier.ping()
+			worker_ok  = self.readout_worker.ping()
+			
+			if not(soldier_ok and worker_ok):
+				errordlg = wx.MessageDialog( None, "Connection to the readout nodes was broken.  Running aborted.", "No connection to readout nodes", wx.OK | wx.ICON_ERROR )
+				errordlg.ShowModal()
+				
+				quitting = True
+
+		####
+		#### NEED TO DECIDE THE HARDWARE CONFIG FILE TO BE PASSED TO THE SLOW CONTROL HERE
+		####
+		if not quitting:
+			self.main_window.UpdateRunStatus(text="Setting up run:\nLoading hardware...", progress=(1,9))
+			self.hwconfigfile = "NOFILE"
+				
+		# set up the LI box to do what it's supposed to, if it needs to be on.
+		if not quitting:
+			if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
+				self.main_window.UpdateRunStatus(text="Setting up run:\nInitializing light injection...", progress=(2,9))
+				self.LIBox.LED_groups = MetaData.LEDGroups[self.runinfo.ledGroup]
+			
+				need_LI = True
+				if self.runinfo.ledLevel == MetaData.LILevels["One PE"]:
+					self.LIBox.pulse_height = 6.5					# THIS SHOULD BE VERIFIED
+				elif self.runinfo.ledLevel == MetaData.LILevels["Max PE"]:
+					self.LIBox.pulse_height = 12.07
+				else:
+					need_LI = False
+			
+				if need_LI:
+					try:
+						self.LIBox.initialize()
+						self.LIBox.write_configuration()	
+					except Exception as e:
+						errordlg = wx.MessageDialog( None, "The LI box does not seem to be responding.  Check the connection settings and the cable and try again.  Running aborted.", "LI box not responding", wx.OK | wx.ICON_ERROR )
+						errordlg.ShowModal()
+
+						quitting = True
+
+		#### WAIT ON THE SLOW CONTROL UNTIL IT'S READY
+		if not quitting:
+			self.main_window.UpdateRunStatus(text="Setting up run:\nWaiting on hardware...", progress=(3,9))
+									
+		# start the DAQ service on the readout nodes
+		if not quitting:
+			self.main_window.UpdateRunStatus(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9))
+
+		if quitting:
 			self.running = False
 			self.subrun = 0
 			self.main_window.StopRunning()		# tell the main window that we're done here.
 			return
-
-		self.CloseWindows()			# don't want leftover windows open.
-		
-		# set up the LI box to do what it's supposed to, if it needs to be on.
-		if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
-			self.LIBox.LED_groups = MetaData.LEDGroups[self.runinfo.ledGroup]
-			
-			need_LI = True
-			if self.runinfo.ledLevel == MetaData.LILevels["One PE"]:
-				self.LIBox.pulse_height = 6.5					# THIS SHOULD BE VERIFIED
-			elif self.runinfo.ledLevel == MetaData.LILevels["Max PE"]:
-				self.LIBox.pulse_height = 12.07
-			else:
-				need_LI = False
-			
-			if need_LI:
-				try:
-					self.LIBox.initialize()
-					self.LIBox.write_configuration()	
-				except Exception as e:
-					errordlg = wx.MessageDialog( None, "The LI box does not seem to be responding.  Check the connection settings and the cable and try again.", "LI box not responding", wx.OK | wx.ICON_ERROR )
-					errordlg.ShowModal()
-					self.running = False
-					self.subrun = 0
-					self.main_window.StopRunning()		# tell the main window that we're done here.
-					return
-							
-				
-
-		####
-		#### NEED TO DECIDE THE HARDWARE CONFIG FILE TO BE PASSED TO THE SLOW CONTROL HERE
-		#### AND THEN WAIT ON THE SLOW CONTROL UNTIL IT'S READY
-		####
-		self.hwconfigfile = "NOFILE"
 
 		self.current_DAQ_thread = 0
 
@@ -133,6 +181,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 	def StartNextThread(self, evt=None):
 		if self.current_DAQ_thread < len(self.DAQthreadStarters):
+			self.main_window.UpdateRunStatus(text="Setting up run:\n" + self.DAQthreadLabels[self.current_DAQ_thread], progress=(5+self.current_DAQ_thread,9))
 			self.DAQthreadStarters[self.current_DAQ_thread]()
 			self.current_DAQ_thread += 1
 		else:
@@ -144,36 +193,36 @@ class DataAcquisitionManager(wx.EvtHandler):
 		etSysFrame = OutputFrame(self.main_window, "ET system", window_size=(600,200), window_pos=(600,0))
 		etSysFrame.Show(True)
 
-		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (os.environ["ET_HOME"], self.etSystemFileLocation, self.ET_filename, events, Defaults.EVENT_SIZE)
+		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename, events, Defaults.EVENT_SIZE)
 
 		self.windows.append( etSysFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(etsys_command, output_window=etSysFrame, owner_process=self, next_thread_delay=2) ) 
+		self.DAQthreads.append( DAQthread(etsys_command, output_window=etSysFrame, owner_process=self, next_thread_delay=2, env=self.environment) ) 
 
 	def StartETMon(self):
 		etMonFrame = OutputFrame(self.main_window, "ET monitor", window_size=(600,600), window_pos=(600,200))
 		etMonFrame.Show(True)
 		
-		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s" % (os.environ["ET_HOME"], self.etSystemFileLocation, self.ET_filename)
+		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename)
 		self.windows.append( etMonFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(etmon_command, output_window=etMonFrame, owner_process=self, next_thread_delay=2) )
+		self.DAQthreads.append( DAQthread(etmon_command, output_window=etMonFrame, owner_process=self, next_thread_delay=2, env=self.environment) )
 
 	def StartEBSvc(self):
 		ebSvcFrame = OutputFrame(self.main_window, "Event builder service", window_size=(600,200), window_pos=(1200,0))
 		ebSvcFrame.Show(True)
 
-		eb_command = '%s/bin/event_builder %s/%s %s/%s' % (os.environ['DAQROOT'], self.etSystemFileLocation, self.ET_filename, self.rawdataLocation, self.raw_data_filename)
+		eb_command = '%s/bin/event_builder %s/%s %s/%s' % (self.environment['DAQROOT'], self.etSystemFileLocation, self.ET_filename, self.rawdataLocation, self.raw_data_filename)
 
 		self.windows.append( ebSvcFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(eb_command, output_window=ebSvcFrame, owner_process=self, next_thread_delay=15) )	
+		self.DAQthreads.append( DAQthread(eb_command, output_window=ebSvcFrame, owner_process=self, next_thread_delay=15, env=self.environment) )	
 
 	def StartDAQ(self):
 		daqFrame = OutputFrame(self.main_window, "THE DAQ", window_size=(600,600), window_pos=(1200,200))
 		daqFrame.Show(True)
 		
-		daq_command = "%s/bin/minervadaq -et %s -g %d -m %d -r %d -s %d -d %d -cf %s -dc %d" % (os.environ["DAQROOT"], self.ET_filename, self.runinfo.gates, self.runinfo.runMode, self.run, self.first_subrun + self.subrun, self.detector, self.hwconfigfile, self.febs)
+		daq_command = "%s/bin/minervadaq -et %s -g %d -m %d -r %d -s %d -d %d -cf %s -dc %d" % (self.environment["DAQROOT"], self.ET_filename, self.runinfo.gates, self.runinfo.runMode, self.run, self.first_subrun + self.subrun, self.detector, self.hwconfigfile, self.febs)
 		if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
 			daq_command += " -ll %d -lg %d" % (self.runinfo.ledLevel, self.runinfo.ledGroup)
 		
@@ -181,7 +230,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append(daqFrame)
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, quit_event=DAQQuitEvent) )
+		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, quit_event=DAQQuitEvent, env=self.environment) )
+		
+		self.main_window.UpdateRunStatus(text="Running...", progress=(0,0))
 
 	def StartTestProcess(self):
 		frame = OutputFrame(self.main_window, "test process", window_size=(600,600), window_pos=(1200,200))
@@ -265,7 +316,7 @@ class OutputFrame(wx.Frame):
 
 class DAQthread(threading.Thread):
 	""" A thread for an ET/DAQ process. """
-	def __init__(self, process_info, output_window, owner_process, next_thread_delay=0, quit_event=None):
+	def __init__(self, process_info, output_window, owner_process, env, next_thread_delay=0, quit_event=None):
 		threading.Thread.__init__(self)
 		self.output_window = output_window
 		self.owner_process = owner_process
@@ -282,7 +333,7 @@ class DAQthread(threading.Thread):
 	def run(self):
 		''' The stuff to do while this thread is going.  Overridden from threading.Thread '''
 		if self.output_window:			# the user could have closed the window before the thread was ready...
-			self.process = subprocess.Popen(self.command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			self.process = subprocess.Popen(self.command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
 			self.pid = self.process.pid
 
 			wx.PostEvent(self.output_window, NewDataEvent("Started thread with PID " + str(self.pid) + "\n"))	# post a message noting the PID of this thread

@@ -58,8 +58,8 @@ class MainFrame(wx.Frame):
 		menuBar.Append(fileMenu, "&File")
 
 		optionsMenu = wx.Menu()
-		self.autocloseEntry = optionsMenu.Append(ID_AUTOCLOSE, "Autoclose windows", "Autoclose the ET/DAQ windows at the end of a subrun.", kind=wx.ITEM_CHECK)
-		self.lockdownEntry = optionsMenu.Append(ID_LOCKDOWN, "Lock FEBs/init", "Lock the '# FEBs' and 'HW init' fields to prevent accidental changes.", kind=wx.ITEM_CHECK)
+		self.autocloseEntry = optionsMenu.Append(ID_AUTOCLOSE, "Auto-close windows", "Automatically close the ET/DAQ windows at the end of a subrun.", kind=wx.ITEM_CHECK)
+		self.lockdownEntry = optionsMenu.Append(ID_LOCKDOWN, "Lock global config", "Lock the global configuration fields to prevent accidental changes.", kind=wx.ITEM_CHECK)
 		optionsMenu.Append(ID_PATHS, "Path settings...", "Paths that the run control relies on.")
 		self.Bind(wx.EVT_MENU, self.UpdateLockedEntries, id=ID_LOCKDOWN)
 		self.Bind(wx.EVT_MENU, self.Configure, id=ID_PATHS)
@@ -210,10 +210,12 @@ class MainFrame(wx.Frame):
 
 		# run control: start, stop, close windows
 		self.startButton = wx.Button(self.mainPage, ID_START, "Start")
+		self.startButton.SetBackgroundColour("green")
 		self.Bind(wx.EVT_BUTTON, self.StartRunning, self.startButton)
 		self.startButton.Disable()
 		
 		self.stopButton = wx.Button(self.mainPage, wx.ID_STOP)
+		self.stopButton.SetBackgroundColour("red")
 		self.Bind(wx.EVT_BUTTON, self.StopRunning, self.stopButton)
 		self.stopButton.Disable()		# disabled until the 'start' button is pressed
 
@@ -234,6 +236,7 @@ class MainFrame(wx.Frame):
 		# now the 'status' area
 		self.onImage = wx.Bitmap(self.runmanager.ResourceLocation + "/LED_on.png", type=wx.BITMAP_TYPE_PNG)
 		self.offImage = wx.Bitmap(self.runmanager.ResourceLocation + "/LED_off.png", type=wx.BITMAP_TYPE_PNG)
+		
 		self.runningIndicator = wx.StaticBitmap(self.mainPage, -1)
 		self.runningIndicator.SetBitmap(self.offImage)
 
@@ -242,9 +245,34 @@ class MainFrame(wx.Frame):
 		runningIndicatorSizer = wx.BoxSizer(wx.VERTICAL)
 		runningIndicatorSizer.Add(self.runningIndicator, 0, wx.ALIGN_CENTER_HORIZONTAL)
 		runningIndicatorSizer.Add(runningIndicatorText, 0, wx.ALIGN_CENTER_HORIZONTAL)
+		
+		self.soldierIndicator = wx.StaticBitmap(self.mainPage, -1)
+		self.soldierIndicator.SetBitmap(self.offImage)
+		soldierIndicatorText = wx.StaticText(self.mainPage, -1, "Soldier\nnode")
+		
+		soldierIndicatorSizer = wx.BoxSizer(wx.VERTICAL)
+		soldierIndicatorSizer.Add(self.soldierIndicator, 0, wx.ALIGN_CENTER_HORIZONTAL)
+		soldierIndicatorSizer.Add(soldierIndicatorText, 0, wx.ALIGN_CENTER_HORIZONTAL)
+		
+		self.workerIndicator = wx.StaticBitmap(self.mainPage, -1)
+		self.workerIndicator.SetBitmap(self.offImage)
+		workerIndicatorText = wx.StaticText(self.mainPage, -1, "Worker\nnode")
+		
+		workerIndicatorSizer = wx.BoxSizer(wx.VERTICAL)
+		workerIndicatorSizer.Add(self.workerIndicator, 0, wx.ALIGN_CENTER_HORIZONTAL)
+		workerIndicatorSizer.Add(workerIndicatorText, 0, wx.ALIGN_CENTER_HORIZONTAL)
+
+		self.progressIndicator = wx.Gauge(self.mainPage, -1, range=6, name="Progress")		
+		self.progressLabel = wx.StaticText(self.mainPage, -1, "No run in progress", style=wx.ALIGN_CENTER)
+		progressSizer = wx.BoxSizer(wx.VERTICAL)
+		progressSizer.Add(self.progressIndicator, 1, wx.EXPAND)
+		progressSizer.Add(self.progressLabel, 0, wx.ALIGN_CENTER_HORIZONTAL)
 
 		statusSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Status"), wx.HORIZONTAL)
-		statusSizer.Add(runningIndicatorSizer, 1, wx.ALIGN_CENTER_HORIZONTAL)
+		statusSizer.Add(runningIndicatorSizer, 0, wx.ALIGN_LEFT | wx.LEFT | wx.RIGHT, border=15)
+		statusSizer.Add(soldierIndicatorSizer, 0, wx.ALIGN_LEFT | wx.LEFT | wx.RIGHT, border=5)
+		statusSizer.Add(workerIndicatorSizer, 0, wx.ALIGN_LEFT | wx.RIGHT, border=5)
+		statusSizer.Add(progressSizer, 1, wx.ALIGN_RIGHT | wx.LEFT | wx.RIGHT, border=5)
 
 		# one sizer to rule them all, one sizer to bind them...
 		globalSizer = wx.BoxSizer(wx.VERTICAL)
@@ -285,7 +313,7 @@ class MainFrame(wx.Frame):
 		self.Connect(-1, -1, EVT_CONFIGUPDATED_ID, self.UpdateLogFiles)
 
 	def parseLogfileName(self, filename):
-		matches = re.match("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2}).txt$", filename)
+		matches = re.match("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller[01].txt$", filename)
 		
 		if matches is None:
 			return None
@@ -351,79 +379,59 @@ class MainFrame(wx.Frame):
 		so as to give a hopefully intelligent set of default values.
 		"""
 		
+		# default values.   they'll be updated below if the db exists and has the appropriate keys.
+		key_values = { "run"            : 1, 
+		               "subrun"         : 1,
+		               "hwinit"         : MetaData.HardwareInitLevels.index("No HW init"),
+		               "detector"       : MetaData.DetectorTypes.index("Upstream"),
+		               "febs"           : 114,
+		               "is_single_run"  : True,
+		               "gates"          : 1500,
+		               "runmode"        : "One shot",
+		               "ledgroups"      : "ABCD",
+		               "lilevel"        : "Max PE",
+		               "runseries_path" : None,
+		               "runseries_file" : None,
+		               "lockdown"       : True,
+		               "autoclose"      : True }
+
 		if not os.path.exists(self.runinfoFile):
 			errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be missing.  Default configuration will be used...", "Last run configuration database missing", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
-			has_all_keys = False
-			db = None
 		else:
 			db = shelve.open(self.runinfoFile, 'r')
 			
-			keys_to_check = ("run", "subrun", "hwinit", "detector", "febs", "is_single_run", "gates", "runmode", "ledgroups", "lilevel", "runseries_path", "runseries_file", "lockdown", "autoclose")
-			
 			has_all_keys = True
-			for key in keys_to_check:
-				if not db.has_key(key):
+			for key in key_values.keys():
+				if db.has_key(key):
+					key_values[key] = db[key]
+				else:
 					has_all_keys = False
-					break
 			
 			if not has_all_keys:
-				errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be corrupted.  Default configuration will be used...", "Last run configuration database corrupted", wx.OK | wx.ICON_WARNING )
+				errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be corrupted.  Default configuration will be used for any unreadable values...", "Last run configuration database corrupted", wx.OK | wx.ICON_WARNING )
 				errordlg.ShowModal()
 
-		if has_all_keys:
-			run = db['run']
-			subrun = db['subrun']
-			hwinit = MetaData.HardwareInitLevels.index(db["hwinit"])
-			detconfig = MetaData.DetectorTypes.index(db["detector"])
-			febs = db["febs"]
-			singlerun = db["is_single_run"]
-			
-			gates = db["gates"]
-			runmode = MetaData.RunningModes.index(db["runmode"])
-			ledgroups = db["ledgroups"]
-			lilevel = MetaData.LILevels.index(db["lilevel"])
-			runseries_path = db["runseries_path"]
-			runseries_file = db["runseries_file"]
-			
-			self.lockdownEntry.Check(db["lockdown"])
-			self.autocloseEntry.Check(db["autoclose"])
-		else:
-			run = 1
-			subrun = 1
-			hwinit = MetaData.HardwareInitLevels.index("No HW init")
-			detconfig = MetaData.DetectorTypes.index("Upstream")
-			febs = 114
-			singlerun = True
-
-			gates = 1500
-			runmode = MetaData.RunningModes.index("One shot")
-			ledgroups = "ABCD"
-			lilevel = MetaData.LILevels.index("Max PE")
-			runseries_path = None
-			runseries_file = None
-
-			self.lockdownEntry.Check(True)
-			self.autocloseEntry.Check(True)
-
-		if db:
 			db.close()
 			
-		self.runEntry.SetRange(run, 100000)
-		self.runEntry.SetValue(run)
-		self.subrunEntry.SetValue(subrun)
-		self.HWinitEntry.SetSelection(hwinit)
-		self.detConfigEntry.SetSelection(detconfig)
-		self.febsEntry.SetValue(febs)
-		self.singleRunButton.SetValue(singlerun)
-		self.runSeriesButton.SetValue(not(singlerun))
+		self.runEntry.SetRange(key_values["run"], 100000)
+		self.runEntry.SetValue(key_values["run"])
+		self.subrunEntry.SetValue(key_values["subrun"])
+		self.HWinitEntry.SetSelection(key_values["hwinit"])
+		self.detConfigEntry.SetSelection(key_values["detector"])
+		self.febsEntry.SetValue(key_values["febs"])
+		self.singleRunButton.SetValue(key_values["is_single_run"])
+		self.runSeriesButton.SetValue(not(key_values["is_single_run"]))
+		self.gatesEntry.SetValue(key_values["gates"])
 		
-		self.gatesEntry.SetValue(gates)
-		self.runModeEntry.SetSelection(runmode)
-		self.LILevelEntry.SetSelection(lilevel)
+		self.runModeEntry.SetSelection(MetaData.RunningModes.index(key_values["runmode"]))
+		self.LILevelEntry.SetSelection(MetaData.LILevels.index(key_values["lilevel"]))
+		
+		self.lockdownEntry.Check(key_values["lockdown"])
+		self.autocloseEntry.Check(key_values["autoclose"])
 	
 		for cb in self.LEDgroups:
-			if cb.GetLabelText() in ledgroups:
+			if cb.GetLabelText() in key_values["ledgroups"]:
 				cb.SetValue(True)
 			else:
 				cb.SetValue(False)
@@ -432,8 +440,8 @@ class MainFrame(wx.Frame):
 		# by LoadRunSeries if the file is valid.
 		self.seriesFilename = None
 		self.seriesPath = None
-		if runseries_path != None and runseries_file != None:
-			self.LoadRunSeriesFile(runseries_file, runseries_path)
+		if key_values["runseries_path"] != None and key_values["runseries_file"] != None:
+			self.LoadRunSeriesFile(key_values["runseries_file"], key_values["runseries_path"])
 			
 			
 		# the minimum subrun allowed for the lowest run.  
@@ -507,17 +515,17 @@ class MainFrame(wx.Frame):
 			
 	def SelectRunSeriesFile(self, evt=None):
 		fileSelector = wx.FileDialog(self, "Select a run series file", wildcard="*", style=wx.FD_OPEN)
-		fileSelector.ShowModal()
+		returnval = fileSelector.ShowModal()
 		
-		filename = fileSelector.GetFilename()
-		path = fileSelector.GetPath()
-		if filename != "":
+		if returnval == wx.ID_OK:
+			filename = fileSelector.GetFilename()
+			path = fileSelector.GetPath()
 			if not self.LoadRunSeriesFile(filename, path):
 				errordlg = wx.MessageDialog( None, "The file you selected is not a valid run series file.  Select another.", "Invalid file", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
 			else:	
 				self.moreInfoButton.Enable()
-				self.UpdateStatus()
+				self.UpdateSeriesStatus()
 	
 	def LoadRunSeriesFile(self, filename, fullpath):
 		try:
@@ -538,7 +546,7 @@ class MainFrame(wx.Frame):
 			self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
 		
 		self.runmanager.subrun = 0
-		self.UpdateStatus()
+		self.UpdateSeriesStatus()
 		
 		return True
 		
@@ -568,7 +576,7 @@ class MainFrame(wx.Frame):
 			self.LILevelEntry.Disable()
 
 	def UpdateLockedEntries(self, evt=None):
-		for entry in (self.HWinitEntry, self.febsEntry):
+		for entry in (self.HWinitEntry, self.febsEntry, self.detConfigEntry):
 			if self.lockdownEntry.IsChecked():
 				entry.Disable()
 			else:
@@ -580,7 +588,21 @@ class MainFrame(wx.Frame):
 		else:
 			self.closeAllButton.Disable()
 	
-	def UpdateStatus(self):
+	def UpdateRunStatus(self, text=None, progress=(0,0)):
+		""" Updates the progress gauge text label and value.
+		    If you want the gauge in 'indeterminate' mode,
+		    set 'progress' to (0,0); otherwise, 'progress'
+		    should be (current, total). """
+		if text is not None:
+			self.progressLabel.SetLabel(text)
+		
+		if progress == (0,0):		# indeterminate mode
+			self.progressIndicator.Pulse()
+		else:
+			self.progressIndicator.SetRange(progress[1])
+			self.progressIndicator.SetValue(progress[0])
+			
+	def UpdateSeriesStatus(self):
 		symbol = ""
 		if self.runmanager.running:
 			symbol = u"\u25b7"		# a right-facing triangle: like a "play" symbol
@@ -726,18 +748,17 @@ class MainFrame(wx.Frame):
 		self.gatesEntry.Enable()
 		self.detConfigEntry.Enable()
 		self.runModeEntry.Enable()
-		self.febsEntry.Enable()
-		self.HWinitEntry.Enable()
 
 		self.singleRunButton.Enable()
 		self.runSeriesButton.Enable()
 		self.seriesFileButton.Enable()
 
+		self.UpdateLockedEntries()
 		self.lockdownEntry.Enable()
 
 		self.stopButton.Disable()
 		self.startButton.Enable()
-		self.UpdateStatus()
+		self.UpdateSeriesStatus()
 		self.UpdateLogFiles()
 		
 	@staticmethod
@@ -759,7 +780,7 @@ class MainFrame(wx.Frame):
 			
 	@staticmethod
 	def SortLogFiles(file1, file2):
-		pattern = re.compile("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2}).txt$")
+		pattern = re.compile("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w{5})_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller[01].txt$")
 		
 		matchdata1 = pattern.match(file1)
 		matchdata2 = pattern.match(file2)
@@ -1029,14 +1050,18 @@ class ConfigUpdatedEvent(wx.CommandEvent):
 class MainApp(wx.App):
 	def OnInit(self):
 		try:
-			temp = os.environ["DAQROOT"]
-			temp = os.environ["ET_HOME"]
+			environment = {}
+			environment["DAQROOT"] = os.environ["DAQROOT"]
+			environment["ET_HOME"] = os.environ["ET_HOME"]
+			environment["ET_LIBROOT"] = os.environ["ET_LIBROOT"]
+			environment["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
 		except KeyError:
 			errordlg = wx.MessageDialog( None, "Your environment appears to be missing the necessary configuration.  Did you source the appropriate setup script(s) before starting the run control?", "Incorrect environment", wx.OK | wx.ICON_ERROR )
 			errordlg.ShowModal()
 			return False
 		else:
 			frame = MainFrame(None, "Run Control")
+			frame.runmanager.environment = environment
 			self.SetTopWindow(frame)
 			frame.Show(True)
 			return True

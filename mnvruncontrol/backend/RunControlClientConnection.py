@@ -40,6 +40,7 @@ class RunControlClientConnection:
 			raise RunControlClientException("Invalid request: '" + request + "'")
 		
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.socket.settimeout(10)
 		self.socket.connect( (self.serveraddress, self.port) )
 		self.socket.send(request)
 		self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
