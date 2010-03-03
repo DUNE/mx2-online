@@ -839,7 +839,7 @@ int acquire_data::GetBlockRAM(croc *crocTrial, channels *channelTrial)
 }
 
 
-template <class X> bool acquire_data::FillDPM(croc *crocTrial, channels *channelTrial, X *frame, 
+template <class X> int acquire_data::FillDPM(croc *crocTrial, channels *channelTrial, X *frame, 
 	int outgoing_length, int incoming_length) 
 {
 /*! \fn template <class X> bool acquire_data::FillDPM(croc *crocTrial, channels *channelTrial, X *frame,
@@ -858,13 +858,12 @@ template <class X> bool acquire_data::FillDPM(croc *crocTrial, channels *channel
  *  \param int outgoing_length an integer value for the outoing message length
  *  \param int incoming_length an integer value for the maximum incoming message length
  *
- *  Returns a status bit (true for success).
+ *  Returns a status integer (0 for success).
  */
 	CVAddressModifier AM = daqController->GetAddressModifier();
 	CVDataWidth DWS      = crocTrial->GetDataWidthSwapped();
 	unsigned short dpmPointer;
-	unsigned char status[2];
-	int success;
+	unsigned char  status[2];
 
 	try {
 		int error = daqAcquire->ReadCycle(daqController->handle, status, 
@@ -878,7 +877,7 @@ template <class X> bool acquire_data::FillDPM(croc *crocTrial, channels *channel
 		acqData.critStream() << "Unable to read DPM Pointer in acquire_data::FillDPM for CROC "
 			<< (crocTrial->GetCrocAddress()>>16) << " Chain " <<
 			(channelTrial->GetChainNumber());
-		return false;
+		return e;
 	}
 	dpmPointer = (unsigned short) (status[0] | (status[1]<<0x08));
 
@@ -887,25 +886,25 @@ template <class X> bool acquire_data::FillDPM(croc *crocTrial, channels *channel
 	// a new frame to the DPM.
 	if ( (dpmPointer<dpmMax) && ((dpmMax-incoming_length)>incoming_length) ) {
 		try {
-			success = SendMessage(frame, crocTrial, channelTrial, true);
-			if (success) throw success;
+			int error = SendMessage(frame, crocTrial, channelTrial, true);
+			if (error) throw error;
 		} catch (int e) {
-			std::cout << "      Error in acquire_data::FillDPM for CROC " 
+			std::cout << "      Error sending message in acquire_data::FillDPM for CROC " 
 				<< (crocTrial->GetCrocAddress()>>16) << " Chain " <<
 				(channelTrial->GetChainNumber()) << std::endl;
-			std::cout << "      SendMessage Error Level = " << success << std::endl;
-			acqData.critStream() << "Error in acquire_data::FillDPM for CROC "
+			std::cout << "      SendMessage Error Level = " << e << std::endl;
+			acqData.critStream() << "Error sending message in acquire_data::FillDPM for CROC "
 				<< (crocTrial->GetCrocAddress()>>16) << " Chain " <<
 				(channelTrial->GetChainNumber());
-			acqData.critStream() << "->SendMessage Error Level = " << success;
-			return false; 
+			acqData.critStream() << "->SendMessage Error Level = " << e;
+			return e; 
 		}
-		return true; 
+		return 0; 
 	}
 	acqData.critStream() << "Exiting acquire_data::FillDPM; DPM is full for CROC "
 		<< (crocTrial->GetCrocAddress()>>16) << " Chain " <<
 		(channelTrial->GetChainNumber());
-	return false;
+	return 100;
 }
 
 
@@ -1381,7 +1380,7 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 	if (singleton) {
 		unsigned char reset_message[2] ={0x0A, 0x0A}; // Clear status & Reset DPM Pointer mask.
 		// Clear status & Reset DPM Pointer
-		// TODO - This makes no sense if we are coming from acquire_data::FillDPM... hence the singleton flag!
+		// This makes no sense if we are coming from acquire_data::FillDPM... hence the singleton flag!
 		try {
 			int error = daqAcquire->WriteCycle(daqController->handle, 2, reset_message, 
 				channelTrial->GetClearStatusAddress(), AM, DW);
@@ -1653,7 +1652,7 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
  *  \param channels *channelTrial a pointer to the croc channel object
  *  \param int length an integer which tells the maximum size of the data block in bytes
  *
- *  Returns a status integer.
+ *  Returns a status integer (0 for success?).
  */
 #if THREAD_ME
 	lock lock_send(send_lock);
@@ -1661,17 +1660,26 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 #if (DEBUG_VERBOSE)||(DEBUG_SENDMESSAGE)
 	acqData.debugStream() << " Entering acquire_data::AcquireDeviceData...";
 	acqData.debugStream() << "  CROC Address:   " << (crocTrial->GetCrocAddress()>>16);
-	acqData.debugStream() << "  Chain Number: " << channelTrial->GetChainNumber();
+	acqData.debugStream() << "  Chain Number:   " << channelTrial->GetChainNumber();
 	acqData.debug("  Device:         0x%X",frame->GetDeviceType());
 #endif
-	CVAddressModifier AM  = daqController->GetAddressModifier();
-	CVDataWidth       DWS = crocTrial->GetDataWidthSwapped();
-	int success           = 0;
+	CVAddressModifier AM      = daqController->GetAddressModifier();
+	CVDataWidth       DWS     = crocTrial->GetDataWidthSwapped();
+	int               success = 0;
 	// Try to add this frame's data to the DPM.
 	// TODO - Reorganize & clean-up the try-catches here...
 	try { 
 		success = FillDPM(crocTrial, channelTrial, frame, frame->GetIncomingMessageLength(), length);
-		if (!success) throw success; 
+		if (success) throw success; 
+	} catch (int e) {
+		std::cout << "Error in acquire_data::AcquireDeviceData for FillDPM!  Error code = " << e << std::endl;
+		acqData.critStream() << "Error in acquire_data::AcquireDeviceData for FillDPM!  Error code = " << e;
+		acqData.critStream() << "  CROC Address:   " << (crocTrial->GetCrocAddress()>>16);
+		acqData.critStream() << "  Chain Number:   " << channelTrial->GetChainNumber();
+		acqData.crit("  Device:         0x%X",frame->GetDeviceType());
+		return e;
+	}
+	try {
 		unsigned short dpmPointer;
 		unsigned char status[2];
 		daqAcquire->ReadCycle(daqController->handle, status, 
@@ -1694,12 +1702,12 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 		delete [] frame->message;
 		if (success) throw success; 
 	} catch (bool e) { 
-		// If unsuccessful, the DPM doesn't have enough memory, and we need to process what is there (?)
-		std::cout << "DPM Fill Failure!  DPM Should have been reset before tyring to use!" << std::endl;
-		acqData.fatalStream() << "DPM Fill Failure!  DPM Should have been reset before tyring to use!";
-		acqData.critStream() << "  Error on CROC " << (crocTrial->GetCrocAddress()>>16) <<
-			" Chain " << channelTrial->GetChainNumber();
- 		exit(-4001);
+		std::cout << "Error in acquire_data::AcquireDeviceData for GetBlockRAM!  Error code = " << e << std::endl;
+		acqData.critStream() << "Error in acquire_data::AcquireDeviceData for GetBlockRAM!  Error code = " << e;
+		acqData.critStream() << "  CROC Address:   " << (crocTrial->GetCrocAddress()>>16);
+		acqData.critStream() << "  Chain Number:   " << channelTrial->GetChainNumber();
+		acqData.crit("  Device:         0x%X",frame->GetDeviceType());
+		return 1;
 	}
 #if (DEBUG_VERBOSE)||(DEBUG_SENDMESSAGE)
 	acqData.debugStream() << "   AcquireDeviceData success: " << success;

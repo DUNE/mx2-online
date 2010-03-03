@@ -141,7 +141,7 @@ class acquire_data {
 		template <class X> int ReceiveMessage(X *device, croc *crocTrial, channels *channelTrial);
 
 		/*! A templated class for filling the DPM on each CROC channel, should that be desired */
-		template <class X> bool FillDPM(croc *crocTrial, channels *channelTrial, X *frame, 
+		template <class X> int FillDPM(croc *crocTrial, channels *channelTrial, X *frame, 
 			int outgoing_length, int incoming_length);
 
 		/*! Function which executes the acquisition sequence for a given FEB */

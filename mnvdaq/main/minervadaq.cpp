@@ -473,6 +473,7 @@ int main(int argc, char *argv[])
 
 
 	// Make an acquire data object containing functions for performing initialization and acquisition.
+	//acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::DEBUG, hardwareInit); 
 	acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::INFO, hardwareInit); 
 	mnvdaq.infoStream() << "Got the acquire_data functions.";
 
@@ -526,7 +527,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-11-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-11-01'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -723,10 +724,11 @@ int main(int argc, char *argv[])
 						if (error) throw error;
 					} catch (int e) {
 						mnvdaq.fatalStream() << "Error for CROC " <<
-							((*croc_iter)->GetCrocAddress()>>16);
+							((*croc_iter)->GetCrocAddress()>>16) << " for Gate " << gate;
 						mnvdaq.fatalStream() << "Cannot write to FastCommand register!";
 						std::cout << "Error in minervadaq::main() for CROC " <<
-							((*croc_iter)->GetCrocAddress()>>16) << std::endl;
+							((*croc_iter)->GetCrocAddress()>>16) << " for Gate " << gate 
+							<< std::endl;
 						std::cout << "Cannot write to FastCommand register!" << std::endl;
 						exit(e);
 					}
@@ -773,8 +775,8 @@ int main(int argc, char *argv[])
 			int error = TriggerDAQ(daq, triggerType, runningMode, currentController);
 			if (error) throw error;
 		} catch (int e) {
-			std::cout << "Error in minervadaq::main()!  Cannot trigger the DAQ!" << std::endl;
-			mnvdaq.critStream() << "Error in minervadaq::main()!  Cannot trigger the DAQ!";
+			std::cout << "Error in minervadaq::main()!  Cannot trigger the DAQ for Gate: " << gate << std::endl;
+			mnvdaq.critStream() << "Error in minervadaq::main()!  Cannot trigger the DAQ for Gate: " << gate;
 			//continueRunning = false; //?
 			//break; //?
 		}
@@ -857,16 +859,19 @@ int main(int argc, char *argv[])
 #endif
 						try {
 							int error = TakeData(daq,evt,croc_id,j,0,attach,sys_id);
-							if (error) throw error;
+							if (error) { throw error; }
 						} catch (int e) {
-							std::cout << "Error in minervadaq::main()!  Cannot TakeData!" << std::endl;
+							// TODO - set error bits in DAQHeader here?
+							//event_data.readoutInfo = (unsigned short)e; // Don't use "e", chain not worked out...
+							event_data.readoutInfo = (unsigned short)1; // Only 1 for now, "VME Error" 
+							std::cout << "Error Code " << e << " in minervadaq::main()!  ";
+							std::cout << "Cannot TakeData for Gate: " << gate << std::endl;
 							std::cout << "Failed to execute on CROC Addr: " << 
 								(tmpCroc->GetCrocAddress()>>16) << " Chain: " << j << std::endl;
-							mnvdaq.critStream() << "Error in minervadaq::main()!  Cannot TakeData!";
+							mnvdaq.critStream() << "Error Code " << e << " in minervadaq::main()!  ";
+							mnvdaq.critStream() << "Cannot TakeData for Gate: " << gate;
 							mnvdaq.critStream() << "Failed to execute on CROC Addr: " << 
 								(tmpCroc->GetCrocAddress()>>16) << " Chain: " << j;
-							// TODO - set error bits in DAQHeader here?
-							event_data.readoutInfo = (unsigned short)e; // Only 1 for now, "VME Error" 
 							//continueRunning = false; //?
 							//break; //?
 						}
@@ -917,11 +922,8 @@ int main(int argc, char *argv[])
 		/* Write the End-of-Event Record to the event_handler and then to the event builder. */
 		/*************************************************************************************/
 		// Build DAQ Header bank.
-		// Get Trigger Time, Timing Violation Error (obsolete), MINOS SGATE
+		// Get Trigger Time, MINOS SGATE
 		int bank = 3; //DAQ Data Bank
-		// TODO - read the CRIM MINOS register to get MINOS SGATE
-		//test//unsigned short error         = 0;
-		//test//event_data.readoutInfo = error; 
 		event_data.feb_info[1] = daq->GetController()->GetID();
 		event_data.feb_info[4] = bank; 
 		event_data.minosSGATE  = daq->GetMINOSSGATE();
@@ -1127,6 +1129,9 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 				std::cout << "Problems taking data on FEB: " << (*feb)->GetBoardNumber() << std::endl;
 				std::cout << "Leaving thread servicing CROC: " << (crocTrial->GetCrocAddress()>>16) <<
 					" Chain: " << channel_id << std::endl;
+				mnvdaq.critStream() << "Problems taking data on FEB: " << (*feb)->GetBoardNumber();
+				mnvdaq.critStream() << "Leaving thread servicing CROC: " << (crocTrial->GetCrocAddress()>>16) <<
+					" Chain: " << channel_id;
 				return 1; // TODO - check error code for DAQHeader error bits.
 			}
 		} //feb loop
