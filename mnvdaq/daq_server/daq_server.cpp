@@ -125,8 +125,8 @@ int launch_minervadaq() {
 		"-dc " + detconf.str() + " " + 
 		"-ll " + ledlevel.str() + " " + 
 		"-lg " + ledgroup.str() + " " + 
-		"-hw " + initlevel.str() + " " + 
-		"> log_file";
+		"-hw " + initlevel.str(); 
+		// + " " + "> /work/data/logs/minervadaq_log.txt";
 	cout << "launch_minervadaq command: " << command << endl;
 	slavenode.infoStream() << "launch_minervadaq command: " << command;
 	if ((system(command.c_str())!=-1)) {
