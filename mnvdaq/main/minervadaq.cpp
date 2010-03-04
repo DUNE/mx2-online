@@ -10,7 +10,6 @@
 #include "MinervaEvent.h"
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <sstream>
 
 #include <boost/ref.hpp>
@@ -290,6 +289,8 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 #if MASTER&&(!SINGLE_PC) // Soldier Node
 	// Create a TCP socket.
+	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
+	/* Try to use functions for this, cleanup...
 	gate_done_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
 	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 	if (gate_done_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
@@ -298,7 +299,10 @@ int main(int argc, char *argv[])
 		gate_done_socket_handle;
 	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC global_gate_socket_handle: " << 
 		global_gate_socket_handle;
-	// Set up the global_gate service. 
+	*/
+	// Set up the global_gate service.
+	SetupSocketService(global_gate_service, worker_node_info, "mnvonline1.fnal.gov", global_gate_port ) 
+	/* Try to use functions for this, cleanup...
 	global_gate_service.sin_family = AF_INET;
 	string hostname="mnvonline1.fnal.gov"; // The worker node will listen for the global gate.
 	worker_node_info = gethostbyname(hostname.c_str());
@@ -308,6 +312,7 @@ int main(int argc, char *argv[])
 	}
 	else global_gate_service.sin_addr = *((struct in_addr *) worker_node_info->h_addr);
 	global_gate_service.sin_port = htons (global_gate_port); 
+	*/
 
 	// Create an address for the gate_done listener.  The soldier listens for the gate done signal.
 	gate_done_socket_address.s_addr = htonl(INADDR_ANY); 
@@ -329,6 +334,8 @@ int main(int argc, char *argv[])
 #endif // end if MASTER&&(!SINGLE_PC)
 
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
+	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
+	/* Try to use functions for this, cleanup...
 	gate_done_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
 	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 	if (gate_done_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
@@ -337,7 +344,10 @@ int main(int argc, char *argv[])
 		gate_done_socket_handle;
 	mnvdaq.infoStream() << "Worker/Slave-node Multi-PC global_gate_socket_handle: " << 
 		global_gate_socket_handle;
+	*/
 	// Set up the gate_done service. 
+	SetupSocketService(gate_done_service, soldier_node_info, "mnvonline0.fnal.gov", gate_done_port ) 
+	/* Try to use functions for this, cleanup...
 	gate_done_service.sin_family = AF_INET;
 	string hostname="mnvonline0.fnal.gov"; // The soldier node will listen for the gate done signal.
 	soldier_node_info = gethostbyname(hostname.c_str());
@@ -347,6 +357,7 @@ int main(int argc, char *argv[])
 	}
 	else gate_done_service.sin_addr = *((struct in_addr *) soldier_node_info->h_addr);
 	gate_done_service.sin_port = htons (gate_done_port); 
+	*/
 
 	// Create an address for the global_gate listener.  The worker listens for the global gate data.
 	global_gate_socket_address.s_addr = htonl(INADDR_ANY); 
@@ -1312,4 +1323,43 @@ void PutGlobalGate(int ggate)
 		exit(-2000);
 	}
 	global_gate.close();
+}
+
+
+void CreateSocketPair(int &gate_done_socket_handle, int &global_gate_socket_handle )
+{
+/*! \fn void CreateSocketPair(int &gate_done_socket_handle, int &global_gate_socket_handle )
+ * 
+ * This function creates a pair of sockets for gate synchronization between a pair of MINERvA 
+ * DAQ nodes.
+ */
+	gate_done_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
+	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
+	if (gate_done_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
+	if (global_gate_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
+	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC gate_done_socket_handle  : " <<
+		gate_done_socket_handle;
+	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC global_gate_socket_handle: " <<
+		global_gate_socket_handle;
+}
+
+
+void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info, 
+        std::string hostname, const int port )
+{
+/*! \fn void void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info,
+ *			std::string hostname, const int port )
+ *
+ * This function sets up a socket service.
+ */
+	socket_service.sin_family = AF_INET;
+	//string hostname="mnvonline1.fnal.gov"; // The worker node will listen for the global gate.
+	node_info = gethostbyname(hostname.c_str());
+	if (node_info == NULL) {
+		mnvdaq.fatalStream() << "No node to connect to at " << hostname;
+		std::cout << "No worker node to connect to at " << hostname << std::endl; 
+		exit(1); 
+	}
+	else socket_service.sin_addr = *((struct in_addr *) node_info->h_addr);
+	socket_service.sin_port = htons(port); 
 }

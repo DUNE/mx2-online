@@ -1,4 +1,5 @@
 /* header file for minervadaq main. */
+#include <string>
 /*! The include files needed for the network
  *  sockets 
  */
@@ -26,6 +27,11 @@ void inline PutGlobalGate(int ggate);
 std::ofstream take_data_extime_log; /*!<an output file for tiing data */
 #endif
 std::ofstream trigger_log; /*!<an output file for trigger debuggin */
+
+// Socket Communication Functions
+void CreateSocketPair(int &gate_done_socket_handle, int &global_gate_socket_handle);
+void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info, 
+	std::string hostname, const int port );
 
 // Socket Communication Vars.
 bool               gate_done[1]; // signal for end of event readout completion from the worker -> soldier
