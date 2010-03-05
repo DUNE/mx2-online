@@ -20,7 +20,6 @@ from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import DataAcquisitionManager
 
-#########################################################
 #    MainFrame
 #########################################################
 ID_START = wx.NewId()
@@ -53,7 +52,7 @@ class MainFrame(wx.Frame):
 		fileMenu = wx.Menu()
 		fileMenu.Append(wx.ID_SAVE, "&Save values", "Save the currently-specified values for next time.")
 		fileMenu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit the run control")
-		self.Bind(wx.EVT_MENU, self.StoreNextRunSubrun, id=wx.ID_SAVE)
+	
 		self.Bind(wx.EVT_MENU, self.OnTimeToClose, id=wx.ID_EXIT)
 		menuBar.Append(fileMenu, "&File")
 
@@ -165,15 +164,18 @@ class MainFrame(wx.Frame):
 
 		# run series config: allows user to select a predefined run series file and see what's in it.
 		
-		seriesFileLabel = wx.StaticText(self.runSeriesConfigPanel, -1, "Run series file:")
-		self.seriesFile = wx.TextCtrl(self.runSeriesConfigPanel, -1, "", style=wx.TE_READONLY)
+		seriesFileLabel = wx.StaticText(self.runSeriesConfigPanel, -1, "Select run series:")
+		#self.seriesFile = wx.TextCtrl(self.runSeriesConfigPanel, -1, "", style=wx.TE_READONLY)
 
-		self.seriesFileButton = wx.Button(self.runSeriesConfigPanel, ID_PICKFILE, "Load...")
-		self.Bind(wx.EVT_BUTTON, self.SelectRunSeriesFile, self.seriesFileButton)
+		self.seriesFile = wx.Choice(self.runSeriesConfigPanel, -1, choices=MetaData.RunSeriesTypes.descriptions)
+	        self.Bind(wx.EVT_CHOICE, self.LoadRunSeriesFile, self.seriesFile)	
+
+		#self.seriesFileButton = wx.Button(self.runSeriesConfigPanel, ID_PICKFILE, "Load...")
+		#self.Bind(wx.EVT_BUTTON, self.SelectRunSeriesFile, self.seriesFileButton)
 		
 		seriesFileSizer = wx.BoxSizer(wx.HORIZONTAL)
 		seriesFileSizer.Add(self.seriesFile, 1, flag=wx.RIGHT | wx.LEFT, border=5)
-		seriesFileSizer.Add(self.seriesFileButton, 0, flag=wx.LEFT, border=5)
+		#seriesFileSizer.Add(self.seriesFileButton, 0, flag=wx.LEFT, border=5)
 		
 		self.seriesDescription = AutoSizingListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
 		self.seriesDescription.setResizeColumn(2)
@@ -412,13 +414,15 @@ class MainFrame(wx.Frame):
 				cb.SetValue(False)
 		
 		# these are initialized here to None, but will be updated
-		# by LoadRunSeries if the file is valid.
+
 		self.seriesFilename = None
 		self.seriesPath = None
-		if key_values["runseries_path"] != None and key_values["runseries_file"] != None:
-			self.LoadRunSeriesFile(key_values["runseries_file"], key_values["runseries_path"])
-			
-			
+
+		if key_values["runseries_path"] != None:
+	                self.seriesFile.SetStringSelection(MetaData.RunSeriesTypes[key_values["runseries_file"],MetaData.DESCRIPTION])
+
+		self.LoadRunSeriesFile()
+		
 		# the minimum subrun allowed for the lowest run.  
 		# if the user raises the run number, the subrun will be returned to 1,
 		# so if s/he subsequently lowers it again, we need to know what to set the the minimum
@@ -487,44 +491,50 @@ class MainFrame(wx.Frame):
 			self.subrunEntry.SetValue(self.minRunSubrun)
 		else:
 			self.subrunEntry.SetValue(1)
-			
-	def SelectRunSeriesFile(self, evt=None):
-		fileSelector = wx.FileDialog(self, "Select a run series file", wildcard="*", style=wx.FD_OPEN)
-		returnval = fileSelector.ShowModal()
-		
-		if returnval == wx.ID_OK:
-			filename = fileSelector.GetFilename()
-			path = fileSelector.GetPath()
-			if not self.LoadRunSeriesFile(filename, path):
-				errordlg = wx.MessageDialog( None, "The file you selected is not a valid run series file.  Select another.", "Invalid file", wx.OK | wx.ICON_ERROR )
-				errordlg.ShowModal()
-			else:	
-				self.moreInfoButton.Enable()
-				self.UpdateStatus()
-	
-	def LoadRunSeriesFile(self, filename, fullpath):
+
+	"""
+        def SelectRunSeriesFile(self, evt=None):
+
+                filename = MetaData.RunSeriesTypes[self.seriesFile.GetStringSelection(),MetaData.CODE]
+		if not self.LoadRunSeriesFile(filename):
+			errordlg = wx.MessageDialog( None, "Unable to load file for selected run series", "Load Error", wx.OK | wx.ICON_ERROR )
+			errordlg.ShowModal()
+		else:   
+			self.moreInfoButton.Enable()
+			self.UpdateStatus()
+	"""
+        def LoadRunSeriesFile(self, evt=None):
+
+                self.seriesDescription.DeleteAllItems()
+                self.moreInfoButton.Disable()
+
+		filename = MetaData.RunSeriesTypes[self.seriesFile.GetStringSelection(),MetaData.CODE]
+
 		try:
-			db = shelve.open(fullpath)
+			db = shelve.open(Defaults.RUN_SERIES_DB_LOCATION_DEFAULT+"/"+filename,'r')
 			self.runmanager.runseries = db["series"]
 			db.close()
 		except (anydbm.error, KeyError):
+                        errordlg = wx.MessageDialog( None, "Unable to load file for selected run series", "Load Error", wx.OK | wx.ICON_ERROR )
+                        errordlg.ShowModal()
 			return False
-		
-		self.seriesFile.SetValue(filename)
-		self.seriesFilename = filename
-		self.seriesPath = fullpath
-		
-		self.seriesDescription.DeleteAllItems()
-		for runinfo in self.runmanager.runseries.Runs:
-			index = self.seriesDescription.InsertStringItem(sys.maxint, "")		# first column is which subrun is currently being executed
-			self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-			self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
-		
-		self.runmanager.subrun = 0
-		self.UpdateStatus()
-		
-		return True
-		
+
+                self.moreInfoButton.Enable()
+                self.UpdateStatus()
+
+		#self.seriesFile.SetStringSelection(MetaData.RunSeriesTypes[filename,MetaData.DESCRIPTION])
+                self.seriesFilename = filename
+                self.seriesPath = Defaults.RUN_SERIES_DB_LOCATION_DEFAULT
+
+                for runinfo in self.runmanager.runseries.Runs:
+                        index = self.seriesDescription.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
+                        self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
+                        self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
+
+                self.runmanager.subrun = 0
+                self.UpdateStatus()
+
+                return True
 	
 	def SeriesMoreInfo(self, evt=None):
 		infowindow = RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
@@ -687,7 +697,7 @@ class MainFrame(wx.Frame):
 			
 			self.singleRunButton.Disable()
 			self.runSeriesButton.Disable()
-			self.seriesFileButton.Disable()
+			#self.seriesFileButton.Disable()
 
 			self.startButton.Disable()
 			self.stopButton.Enable()
@@ -712,7 +722,7 @@ class MainFrame(wx.Frame):
 
 		self.singleRunButton.Enable()
 		self.runSeriesButton.Enable()
-		self.seriesFileButton.Enable()
+		#self.seriesFileButton.Enable()
 
 		self.UpdateLockedEntries()
 		self.lockdownEntry.Enable()
