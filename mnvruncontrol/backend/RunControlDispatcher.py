@@ -23,6 +23,7 @@ import logging
 import logging.handlers
 
 from mnvruncontrol.configuration import Defaults
+from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import SocketRequests
 
 #from mnvconfigurator.SlowControl import SC_MainObjects.py as SlowControl
@@ -328,7 +329,8 @@ class RunControlDispatcher:
 		"""
 		is_valid_request = False
 		for valid_request in SocketRequests.ValidRequests:
-			if re.match(valid_request, request) is not None:
+			matches = re.match(valid_request, request)
+			if matches is not None:
 				is_valid_request = True
 				break
 		
@@ -414,7 +416,7 @@ class RunControlDispatcher:
 		try:
 			executable = ( environment["DAQROOT"] + "/bin/minervadaq", 
 		                    "-et", matches.group("etfile"),
-		                    "-g",  matches.group("numgates"),
+		                    "-g",  matches.group("gates"),
 		                    "-m",  matches.group("runmode"),
 		                    "-r",  matches.group("run"),
 		                    "-s",  matches.group("detector"),
