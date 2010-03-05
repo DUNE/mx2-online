@@ -394,14 +394,14 @@ class RunControlDispatcher:
 		    a DAQ process running. """
 		self.logger.info("Client wants to start the DAQ process.")
 		
-		if self.daq_process and self.daq_process.returncode is not None:
+		if self.daq_process and self.daq_process.returncode is None:
 			self.logger.info("   ==> There is already a DAQ process running.")
 			return "2"
 		
 		try:
 			executable = Defaults.DAQROOT_DEFAULT + "/bin/daq_slave_service"
 			self.logger.info("    ==> Trying '" + str(executable) + "'...")
-			self.daq_process = subprocess.Popen(executable, env=environment)
+			self.daq_process = subprocess.Popen((executable, ">" + os.devnull), env=environment)	# this process creates a fair bit of spew.  redirect it to NULL for now.
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
