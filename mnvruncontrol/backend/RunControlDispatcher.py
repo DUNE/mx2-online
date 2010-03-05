@@ -23,6 +23,7 @@ import logging
 import logging.handlers
 
 from mnvruncontrol.configuration import Defaults
+from mnvruncontrol.configuration import SocketRequests
 
 #from mnvconfigurator.SlowControl import SC_MainObjects.py as SlowControl
 
@@ -325,14 +326,17 @@ class RunControlDispatcher:
 		Decides what to do with a particular request.
 		Returns None for invalid requests.
 		"""
-		matches = re.match("^(?P<request>\S+)\s?(?P<data>\S*)[?!]$", request)
-		if matches is None:
+		is_valid_request = False
+		for valid_request in SocketRequests.ValidRequests:
+			if re.match(valid_request, request) is not None:
+				is_valid_request = True
+				break
+		
+		if not is_valid_request:
 			self.logger.info("Request does not match pattern.")
 			return None
-		
+
 		request = matches.group("request").lower()
-		data = matches.group("data")
-		
 		handlers = { "alive" : self.ping,
 		             "daq_running" : self.daq_status,
 		             "daq_last_exit" : self.daq_exitstatus,
@@ -342,20 +346,17 @@ class RunControlDispatcher:
 		             "sc_voltages" : self.sc_readvoltages }
 		
 		if request in handlers:
-			if len(data) > 0:
-				return handlers[request](data)
-			else:
-				return handlers[request]()
+			return handlers[request](matches)
 		else:
 			return None
 		
 
-	def ping(self):
+	def ping(self, matches):
 		""" Returns something so that a client knows the server is alive. """
 		self.logger.info("Responding to ping.")
 		return "1"
 	
-	def daq_status(self):
+	def daq_status(self, matches):
 		""" Returns 1 if there is a DAQ subprocess running; 0 otherwise. """
 		self.logger.info("Client wants to know if DAQ process is running.")
 		
@@ -369,7 +370,7 @@ class RunControlDispatcher:
 			self.logger.info("   ==> It IS.")
 			return "1"
 	
-	def daq_exitstatus(self):
+	def daq_exitstatus(self, matches):
 		""" Returns the exit code last given by a DAQ subprocess, or,
 		    if no DAQ process has yet exited, returns -1. """
 		self.logger.info("Client wants to know last DAQ process exit code.")
@@ -387,13 +388,11 @@ class RunControlDispatcher:
 			self.logger.info("   ==> Exit code: " + str(self.daq_process.returncode) + " (for codes < 0, this indicates the signal that stopped the process).")
 			return str(self.daq_process.returncode)
 
-	def daq_start(self, data):
+	def daq_start(self, matches):
 		""" Starts the DAQ slave service as a subprocess.  First checks
 		    to make sure it's not already running.  Returns 0 on success,
 		    1 on some DAQ or other error, and 2 if there is already
 		    a DAQ process running. """
-		    
-		matches = data.match("etfile=(?P<etfile>\S+)_run=(?P<run>\d+)_subrun=(?P<subrun>\d)_gates=(?P<gates>\d+)_runmode=(?P<runmode>\d+)_detector=(?P<detector>\d+)_nfebs=(?<nfebs>\d+)_lilevel=(?P<lilevel>\d+)_ledgroup=(?P<ledgroup>\d+)_hwinitlevel=(?P<hwinitlevel>\d+)")
 		    
 		self.logger.info("Client wants to start the DAQ process.")
 		self.logger.info("   Configuration:")
@@ -414,13 +413,13 @@ class RunControlDispatcher:
 		
 		try:
 			executable = ( environment["DAQROOT"] + "/bin/minervadaq", 
-		                    "-et", matches.group("etfile")
-		                    "-g",  matches.group("numgates")
-		                    "-m",  matches.group("runmode")
-		                    "-r",  matches.group("run")
-		                    "-s",  matches.group("detector")
-		                    "-ll", matches.group("lilevel")
-		                    "-lg", matches.group("ledgroup")
+		                    "-et", matches.group("etfile"),
+		                    "-g",  matches.group("numgates"),
+		                    "-m",  matches.group("runmode"),
+		                    "-r",  matches.group("run"),
+		                    "-s",  matches.group("detector"),
+		                    "-ll", matches.group("lilevel"),
+		                    "-lg", matches.group("ledgroup"),
 		                    "-hw", matches.group("hwinitlevel") ) 
 			self.logger.info("   minervadaq command:")
 			self.logger.info("      '" + str(executable) + "'...")
@@ -433,7 +432,7 @@ class RunControlDispatcher:
 			self.logger.info("    ==> Started successfully (process " + str(self.daq_process.pid) + ").")
 			return "0"
 	
-	def daq_stop(self):
+	def daq_stop(self, matches):
 		""" Stops a DAQ slave service.  First checks to make sure there
 		    is in fact such a service running.  Returns 0 on success,
 		    1 on some DAQ or other error, and 2 if there is no DAQ
@@ -460,16 +459,16 @@ class RunControlDispatcher:
 		self.logger.info("   ==> Stopped successfully.  (Process " + str(self.daq_process.pid) + " exited with code " + str(code) + ".)")
 		return "0"
 		
-	def sc_sethw(self, filename):
+	def sc_sethw(self, matches):
 		""" Uses the slow control library to load a hardware configuration
 		    file.  Returns 0 on success, 1 on hardware error, and 2 if 
 		    there is no such file. """
-		self.logger.info("Client wants to load slow control configuration file: '" + filename + "'.")
+		self.logger.info("Client wants to load slow control configuration file: '" + matches.group("filename") + "'.")
 		
 		self.logger.info("   ==> Loaded successfully.")
 		return "0"
 		    
-	def sc_readvoltages(self):
+	def sc_readvoltages(self, matches):
 		""" Uses the slow control library to read the FEB voltages.
 		    On success, returns a string of lines consisting of
 		    1 voltage per line, in the following format:
