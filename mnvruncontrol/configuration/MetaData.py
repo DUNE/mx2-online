@@ -242,6 +242,13 @@ RunningModes		= MetaData(( ("One shot",            0, "pdstl"),
 				             ("Mixed beam/pedestal", 4, "numip"),
 				             ("Mixed beam/LI",       5, "numil") ))
 
+RunSeriesTypes          = MetaData(( ("Beam",                0, "beam_series.db"),
+				     ("Pedestal",            1, "pedestal_series.db"),
+				     ("LI Max PE",              2, "li_max_pe_series.db"),
+				     ("LI One PE",              3, "li_one_pe_series.db"),
+				     ("Mixed Beam-Pedestal", 4, "mix_beam_ped_series.db"),
+				     ("Mixed Beam-LI",       5, "mix_beam_li_series.db"),
+				     ("Custom Series",       6, "custom_series.db") ))
         	
 #public static readonly DateTime EpochTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
