@@ -20,6 +20,7 @@ FRAMES = 8
 # Run control properties.
 CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
 
+RUN_SERIES_DB_LOCATION_DEFAULT = "/work/software/mislivec/mnvruncontrol/run_series"
 RUN_SUBRUN_DB_LOCATION_DEFAULT = "/work/conditions/next_run_subrun.db"
 LOGFILE_LOCATION_DEFAULT = "/work/data/logs"
 
