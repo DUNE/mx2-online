@@ -15,6 +15,7 @@ import socket
 
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import SocketRequests
+from mnvruncontrol.configuration import MetaData
 
 class RunControlClientConnection:
 	def __init__(self, serveraddress):
@@ -37,10 +38,10 @@ class RunControlClientConnection:
 				break
 		
 		if not is_valid_request:
-			raise RunControlClientException("Invalid request: '" + request + "'")
+			raise RunControlBadRequestException("Invalid request: '" + request + "'")
 		
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.socket.settimeout(10)
+		self.socket.settimeout(2)
 		self.socket.connect( (self.serveraddress, self.port) )
 		self.socket.send(request)
 		self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
@@ -85,10 +86,17 @@ class RunControlClientConnection:
 		else:					
 			return int(response)
 			
-	def daq_start(self):
+	def daq_start( self, etfile, runNum, subRunNum, numGates=10,
+	               runMode=MetaData.RunningModes["One shot", MetaData.HASH],
+	               detector=MetaData.DetectorTypes["Unknown", MetaData.HASH],
+	               numFEBs=114, LIlevel=MetaData.LILevels["Zero PE", MetaData.HASH],
+	               LEDgroup=MetaData.LEDGroups["All", MetaData.HASH],
+	               HWInit=MetaData.HardwareInitLevels["No HW init", MetaData.HASH] ):
 		""" Asks the server to start the DAQ process.  Returns True on success,
 		    False on failure, and raises an exception if the DAQ is currently running. """
-		response = self.request("daq_start!")
+		
+		request = "daq_start etfile=%srun=%d_subrun=%d_gates=%d_runmode=%d_detector=%d_nfebs=%d_lilevel=%d_ledgroup=%d_hwinitlevel=%d!" % (etfile, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit)
+		response = self.request(request)
 		
 		if response == "0":
 			return True
@@ -163,6 +171,9 @@ class RunControlClientConnection:
 		
 		
 class RunControlClientException(Exception):
+	pass
+
+class RunControlBadRequestException(Exception):
 	pass
 
 class RunControlClientUnexpectedDataException(Exception):

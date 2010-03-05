@@ -387,21 +387,44 @@ class RunControlDispatcher:
 			self.logger.info("   ==> Exit code: " + str(self.daq_process.returncode) + " (for codes < 0, this indicates the signal that stopped the process).")
 			return str(self.daq_process.returncode)
 
-	def daq_start(self):
+	def daq_start(self, data):
 		""" Starts the DAQ slave service as a subprocess.  First checks
 		    to make sure it's not already running.  Returns 0 on success,
 		    1 on some DAQ or other error, and 2 if there is already
 		    a DAQ process running. """
+		    
+		matches = data.match("etfile=(?P<etfile>\S+)_run=(?P<run>\d+)_subrun=(?P<subrun>\d)_gates=(?P<gates>\d+)_runmode=(?P<runmode>\d+)_detector=(?P<detector>\d+)_nfebs=(?<nfebs>\d+)_lilevel=(?P<lilevel>\d+)_ledgroup=(?P<ledgroup>\d+)_hwinitlevel=(?P<hwinitlevel>\d+)")
+		    
 		self.logger.info("Client wants to start the DAQ process.")
-		
+		self.logger.info("   Configuration:")
+		self.logger.info("      Run number: " + matches.group("run"))
+		self.logger.info("      Subrun number: " + matches.group("subrun"))
+		self.logger.info("      Number of gates: " + matches.group("gates"))
+		self.logger.info("      Run mode: " + MetaData.RunningModes[int(matches.group("runmode"))] )
+		self.logger.info("      Detector: " + MetaData.DetectorTypes[int(matches.group("detector"))] )
+		self.logger.info("      Number of FEBs: " + matches.group("nfebs") )
+		self.logger.info("      LI level: " + MetaData.LILevels[int(matches.group("lilevel"))] )
+		self.logger.info("      LED group: " + MetaData.LEDGroups[int(matches.group("ledgroup"))] )
+		self.logger.info("      HW init level: " + MetaData.HardwareInitLevels[int(matches.group("hwinitlevel"))] )
+		self.logger.info("      ET file: " + matches.group("etfile") )
+
 		if self.daq_process and self.daq_process.returncode is None:
 			self.logger.info("   ==> There is already a DAQ process running.")
 			return "2"
 		
 		try:
-			executable = Defaults.DAQROOT_DEFAULT + "/bin/daq_slave_service"
-			self.logger.info("    ==> Trying '" + str(executable) + "'...")
-			self.daq_process = subprocess.Popen((executable, ">" + os.devnull), env=environment)	# this process creates a fair bit of spew.  redirect it to NULL for now.
+			executable = ( environment["DAQROOT"] + "/bin/minervadaq", 
+		                    "-et", matches.group("etfile")
+		                    "-g",  matches.group("numgates")
+		                    "-m",  matches.group("runmode")
+		                    "-r",  matches.group("run")
+		                    "-s",  matches.group("detector")
+		                    "-ll", matches.group("lilevel")
+		                    "-lg", matches.group("ledgroup")
+		                    "-hw", matches.group("hwinitlevel") ) 
+			self.logger.info("   minervadaq command:")
+			self.logger.info("      '" + str(executable) + "'...")
+			self.daq_process = subprocess.Popen(executable, env=environment)
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")

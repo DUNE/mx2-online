@@ -7,6 +7,7 @@ import os
 import sys
 import signal
 import threading
+import select
 import datetime
 import time
 
@@ -141,7 +142,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			
 				need_LI = True
 				if self.runinfo.ledLevel == MetaData.LILevels["One PE"]:
-					self.LIBox.pulse_height = 6.5					# THIS SHOULD BE VERIFIED
+					self.LIBox.pulse_height = 5.07					# from Brandon Eberly, 3/5/2010
 				elif self.runinfo.ledLevel == MetaData.LILevels["Max PE"]:
 					self.LIBox.pulse_height = 12.07
 				else:
@@ -160,6 +161,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 		#### WAIT ON THE SLOW CONTROL UNTIL IT'S READY
 		if not quitting:
 			self.main_window.UpdateRunStatus(text="Setting up run:\nWaiting on hardware...", progress=(3,9))
+
+		now = datetime.datetime.utcnow()
+		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
+		self.raw_data_filename = self.ET_filename + '.dat'
 									
 		# start the DAQ service on the readout nodes
 		if not quitting:
@@ -168,14 +173,15 @@ class DataAcquisitionManager(wx.EvtHandler):
 			nodes = {"worker": self.readout_worker, "soldier": self.readout_soldier}
 			for nodename in nodes.keys():
 				try:
-					success = nodes[nodename].daq_start()
+					print "Attempting to connect to the " + nodename + " node."
+					success = nodes[nodename].daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
 				except RunControlClientConnection.RunControlClientException:
 					errordlg = wx.MessageDialog( None, "Somehow the DAQ service on the " + nodename + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", nodename.capitalize() + " DAQ service not yet stopped", wx.OK | wx.ICON_ERROR )
 					errordlg.ShowModal()
 
 					stop_success = nodes[nodename].daq_stop()
 					if stop_success:
-						success = nodes[nodename].daq_start()
+						success = nodes[nodename].daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
 					else:
 						errordlg = wx.MessageDialog( None, "Couldn't stop the " + nodename +" DAQ service.  Aborting run.", nodename.capitalize() + " DAQ service couldn't be stopped", wx.OK | wx.ICON_ERROR )
 						errordlg.ShowModal()
@@ -195,10 +201,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 			return
 
 		self.current_DAQ_thread = 0
-
-		now = datetime.datetime.utcnow()
-		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
-		self.raw_data_filename = self.ET_filename + '.dat'
 
 		self.StartNextThread()			# starts the first thread.  the rest will be started in turn as ThreadReadyEvents are received by the run manager.
 		
@@ -285,7 +287,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.main_window.UpdateCloseWindows(len(self.windows) > 0)
 
 	def UpdateRunStatus(self, evt=None):
-		self.main_window.UpdateRunStatus(progress=(0,0))		# 'pulse' the progress bar
+		self.main_window.UpdateRunStatus()		# 'pulse' the progress bar
 
 	def EndSubrun(self, evt=None):
 #		print "Ending subrun."
@@ -306,8 +308,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 			except:
 				pass
 		
-		
-
 		try:
 			self.LIBox.reset()					# don't want the LI box going unless it needs to be.
 		except:
@@ -383,14 +383,27 @@ class DAQthread(threading.Thread):
 				# that means that we can't count on THIS thread to do the countdown.
 				self.owner_process.timerThreads.append(TimerThread(self.next_thread_delay, self.owner_process))
 
+			last_update_time = 0
 			while True:
-				self.process.poll()		# check if the process is still alive
+				self.process.poll()				# check if the process is still alive
 				
-				if self.update_event:
+				# we need to throttle the updates so as not to overload
+				# the event dispatcher
+				time_now = time.time()
+				if self.update_event and time_now - last_update_time > 0.1:
 					wx.PostEvent(self.owner_process, self.update_event())
-				
-				newdata = self.process.stdout.read(2)	# not every process is careful to spit things out with line breaks, so I can't use readline()
+					last_update_time = time_now
 
+				# read out the data from the process.
+				# we use select() (again from the UNIX library) to check that
+				# there actually IS something in the buffer before we try to read.
+				# if we didn't do that, the thread would lock up until the specified
+				# number of characters was read out.
+				newdata = ""
+				while select.select([self.process.stdout], [], [], 0)[0]:		
+					newdata += self.process.stdout.read(1)
+
+				# now post any data from the process to its output window
 				if len(newdata) > 0 and self.output_window:		# make sure the window is still open
 					wx.PostEvent(self.output_window, NewDataEvent(newdata))
 				elif self.process.returncode != None:	# if the buffer is empty and the process has finished, don't loop any more
