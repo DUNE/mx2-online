@@ -12,8 +12,6 @@
 import time
 
 # Data acquisition properties.
-# do these need to be calculated somehow?
-# or are they always fixed?
 EVENT_SIZE = 2048 
 FRAMES = 8
 

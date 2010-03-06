@@ -27,8 +27,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		self.DAQthreads = []
 		self.timerThreads = []
-		self.DAQthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartDAQ]
-		self.DAQthreadLabels = ["Starting ET system...", "Starting ET monitor...", "Starting event builder...", "Starting the DAQ master..."]
+		self.DAQthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartDAQ, self.StartRemoteDAQService]
+		self.DAQthreadLabels = ["Starting ET system...", "Starting ET monitor...", "Starting event builder...", "Starting the DAQ master...", "Starting the DAQ on readout nodes..."]
 #		self.DAQthreadStarters = [self.StartTestProcess] #, self.StartTestProcess, self.StartTestProcess]
 		self.current_DAQ_thread = 0			# the next thread to start
 		self.subrun = 0					# the next run in the series to start
@@ -166,34 +166,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
 		self.raw_data_filename = self.ET_filename + '.dat'
 									
-		# start the DAQ service on the readout nodes
-		if not quitting:
-			self.main_window.UpdateRunStatus(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9))
-			
-			nodes = {"worker": self.readout_worker, "soldier": self.readout_soldier}
-			for nodename in nodes.keys():
-				try:
-					print "Attempting to connect to the " + nodename + " node."
-					success = nodes[nodename].daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
-				except RunControlClientConnection.RunControlClientException:
-					errordlg = wx.MessageDialog( None, "Somehow the DAQ service on the " + nodename + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", nodename.capitalize() + " DAQ service not yet stopped", wx.OK | wx.ICON_ERROR )
-					errordlg.ShowModal()
-
-					stop_success = nodes[nodename].daq_stop()
-					if stop_success:
-						success = nodes[nodename].daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
-					else:
-						errordlg = wx.MessageDialog( None, "Couldn't stop the " + nodename +" DAQ service.  Aborting run.", nodename.capitalize() + " DAQ service couldn't be stopped", wx.OK | wx.ICON_ERROR )
-						errordlg.ShowModal()
-				
-						quitting = True
-			
-				if not success:
-					errordlg = wx.MessageDialog( None, "Couldn't start the " + nodename + " DAQ service.  Aborting run.", nodename.capitalize() + " DAQ service couldn't be started", wx.OK | wx.ICON_ERROR )
-					errordlg.ShowModal()
-			
-					quitting = True
-
 		if quitting:
 			self.running = False
 			self.subrun = 0
@@ -248,7 +220,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		daqFrame = OutputFrame(self.main_window, "THE DAQ", window_size=(600,600), window_pos=(1200,200))
 		daqFrame.Show(True)
 		
-		daq_command = "%s/bin/daq_master -et %s -g %d -m %d -r %d -s %d -d %d -cf %s -dc %d -hw %d" % (self.environment["DAQROOT"], self.ET_filename, self.runinfo.gates, self.runinfo.runMode, self.run, self.first_subrun + self.subrun, self.detector, self.hwconfigfile, self.febs, self.hwinit)
+		daq_command = "%s/bin/minervadaq -et %s -g %d -m %d -r %d -s %d -d %d -cf %s -dc %d -hw %d" % (self.environment["DAQROOT"], self.ET_filename, self.runinfo.gates, self.runinfo.runMode, self.run, self.first_subrun + self.subrun, self.detector, self.hwconfigfile, self.febs, self.hwinit)
 		if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
 			daq_command += " -ll %d -lg %d" % (self.runinfo.ledLevel, self.runinfo.ledGroup)
 		
@@ -256,10 +228,36 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append(daqFrame)
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, quit_event=DAQQuitEvent, env=self.environment, update_event=UpdateEvent) )
+		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, quit_event=DAQQuitEvent, env=self.environment, update_event=UpdateEvent, next_thread_delay=2) )
 		
-		self.main_window.UpdateRunStatus(text="Running...", progress=(0,0))
+	def StartRemoteDAQService(self):
+		self.main_window.UpdateRunStatus(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9))
+	
+		nodes = {"worker": self.readout_worker, "soldier": self.readout_soldier}
+		for nodename in nodes.keys():
+			try:
+				success = nodes[nodename].daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
+			except RunControlClientConnection.RunControlClientException:
+				errordlg = wx.MessageDialog( None, "Somehow the DAQ service on the " + nodename + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", nodename.capitalize() + " DAQ service not yet stopped", wx.OK | wx.ICON_ERROR )
+				errordlg.ShowModal()
 
+				stop_success = nodes[nodename].daq_stop()
+				if stop_success:
+					success = nodes[nodename].daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
+				else:
+					errordlg = wx.MessageDialog( None, "Couldn't stop the " + nodename +" DAQ service.  Aborting run.", nodename.capitalize() + " DAQ service couldn't be stopped", wx.OK | wx.ICON_ERROR )
+					errordlg.ShowModal()
+		
+					quitting = True
+	
+			if not success:
+				errordlg = wx.MessageDialog( None, "Couldn't start the " + nodename + " DAQ service.  Aborting run.", nodename.capitalize() + " DAQ service couldn't be started", wx.OK | wx.ICON_ERROR )
+				errordlg.ShowModal()
+				
+				self.running = False
+				self.subrun = 0
+				self.main_window.StopRunning()		# tell the main window that we're done here.
+		
 	def StartTestProcess(self):
 		frame = OutputFrame(self.main_window, "test process", window_size=(600,600), window_pos=(1200,200))
 		frame.Show(True)
@@ -287,7 +285,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.main_window.UpdateCloseWindows(len(self.windows) > 0)
 
 	def UpdateRunStatus(self, evt=None):
-		self.main_window.UpdateRunStatus()		# 'pulse' the progress bar
+		self.main_window.UpdateRunStatus("Running...")		# 'pulse' the progress bar
 
 	def EndSubrun(self, evt=None):
 #		print "Ending subrun."
@@ -423,12 +421,12 @@ class DAQthread(threading.Thread):
 		self.time_to_quit = True
 		
 		if (self.process.returncode == None):			# it COULD happen that the process has already quit.
-			self.process.send_signal(signal.SIGINT)		# first, try nicely.
+			self.process.terminate()					# first, try nicely.
+			self.process.send_signal(signal.SIGINT)		# some of these processes only respond to SIGINT, strangely enough
 
 			self.process.poll()
-			if (self.process.returncode == None):		# if that doesn't work, give it a few seconds, then kill it the brute force way
-				print "Process", self.pid, "not yet exited.  Waiting 5 seconds before hard kill..."
-				self.timerthread = threading.Timer(5, self.HardKill)
+			if (self.process.returncode == None):		# they'll probably need a little time to shut down cleanly
+				self.timerthread = threading.Timer(10, self.LastCheck)
 				self.timerthread.start()
 		else:
 			# make sure there's nothing left in the buffer to read!
@@ -443,36 +441,11 @@ class DAQthread(threading.Thread):
 			if self.output_window:
 				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
 
-	def HardKill(self):
-		print "Thread " + str(self.pid) + " was unresponsive.  Checking if hard kill is necessary..."
-		
-#		self.process.stdout.flush()
-#		(newdata, tmp) = self.process.communicate()
-#		if len(newdata) > 0 and self.output_window:
-#			wx.PostEvent(self.output_window, NewDataEvent(newdata))
-		
+	def LastCheck(self):
 		self.process.poll()
 		
 		if self.process.returncode == None:
-			print "Thread " + str(self.pid) + "not responding to SIGINT.  Issuing SIGTERM..."
-			self.process.terminate()
-			
-			time.sleep(2)
-			
-			if self.process.returncode == None:
-				print "Thread " + str(self.pid) + " is deadlocked.  Issuing SIGKILL..."
-				self.process.kill()
-	
-				print "Process " + str(self.pid) + " was killed."
-				if self.output_window:
-					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread killed."))
-			else:
-				(newdata, tmp) = self.process.communicate()
-				if len(newdata) > 0 and self.output_window:
-					wx.PostEvent(self.output_window, NewDataEvent(newdata))
-				print "Thread " + str(self.pid) + " forcibly terminated but clean exit."
-				if self.output_window:
-					wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
+				print "Thread " + str(self.pid) + " is deadlocked.  Kill it manually."
 		else:
 			(newdata, tmp) = self.process.communicate()
 			if len(newdata) > 0 and self.output_window:

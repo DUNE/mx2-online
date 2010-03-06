@@ -266,7 +266,7 @@ class MainFrame(wx.Frame):
 		self.progressLabel = wx.StaticText(self.mainPage, -1, "No run in progress", style=wx.ALIGN_CENTER)
 		progressSizer = wx.BoxSizer(wx.VERTICAL)
 		progressSizer.Add(self.progressIndicator, 1, wx.EXPAND)
-		progressSizer.Add(self.progressLabel, 0, wx.ALIGN_CENTER_HORIZONTAL)
+		progressSizer.Add(self.progressLabel, 1, wx.ALIGN_CENTER_HORIZONTAL)
 
 		statusSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Status"), wx.HORIZONTAL)
 		statusSizer.Add(runningIndicatorSizer, 0, wx.ALIGN_LEFT | wx.LEFT | wx.RIGHT, border=15)
@@ -497,6 +497,7 @@ class MainFrame(wx.Frame):
 		self.StoreNextRunSubrun()
 		
 		if self.autocloseEntry.IsChecked():
+			print "Now I will close all the windows!"
 			self.CloseAllWindows()
 					
 		self.UpdateLogFiles()

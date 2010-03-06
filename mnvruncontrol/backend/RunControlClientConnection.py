@@ -29,8 +29,6 @@ class RunControlClientConnection:
 			raise RunControlClientException("Couldn't connect to the server.  Are you sure you have the right address and that the run control dispatcher has been started on the server?")
 		
 	def request(self, request):
-		request = request.lower()
-		
 		is_valid_request = False
 		for valid_request in SocketRequests.ValidRequests:
 			if re.match(valid_request, request) is not None:
@@ -95,7 +93,8 @@ class RunControlClientConnection:
 		""" Asks the server to start the DAQ process.  Returns True on success,
 		    False on failure, and raises an exception if the DAQ is currently running. """
 		
-		request = "daq_start etfile=%srun=%d_subrun=%d_gates=%d_runmode=%d_detector=%d_nfebs=%d_lilevel=%d_ledgroup=%d_hwinitlevel=%d!" % (etfile, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit)
+		request = "daq_start etfile=%s:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d!" % (etfile, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit)
+		print request
 		response = self.request(request)
 		
 		if response == "0":
