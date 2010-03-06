@@ -164,18 +164,14 @@ class MainFrame(wx.Frame):
 
 		# run series config: allows user to select a predefined run series file and see what's in it.
 		
-		seriesFileLabel = wx.StaticText(self.runSeriesConfigPanel, -1, "Select run series:")
-		#self.seriesFile = wx.TextCtrl(self.runSeriesConfigPanel, -1, "", style=wx.TE_READONLY)
+		seriesFileLabel = wx.StaticText(self.runSeriesConfigPanel, -1, "Series Type: ")
 
 		self.seriesFile = wx.Choice(self.runSeriesConfigPanel, -1, choices=MetaData.RunSeriesTypes.descriptions)
 	        self.Bind(wx.EVT_CHOICE, self.LoadRunSeriesFile, self.seriesFile)	
 
-		#self.seriesFileButton = wx.Button(self.runSeriesConfigPanel, ID_PICKFILE, "Load...")
-		#self.Bind(wx.EVT_BUTTON, self.SelectRunSeriesFile, self.seriesFileButton)
-		
 		seriesFileSizer = wx.BoxSizer(wx.HORIZONTAL)
-		seriesFileSizer.Add(self.seriesFile, 1, flag=wx.RIGHT | wx.LEFT, border=5)
-		#seriesFileSizer.Add(self.seriesFileButton, 0, flag=wx.LEFT, border=5)
+		seriesFileSizer.Add(seriesFileLabel, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL)
+		seriesFileSizer.Add(self.seriesFile, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL)
 		
 		self.seriesDescription = AutoSizingListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
 		self.seriesDescription.setResizeColumn(2)
@@ -193,11 +189,13 @@ class MainFrame(wx.Frame):
 		self.moreInfoButton.Disable()		# will be enabled when a file is loaded.
 		
 		runSeriesConfigSizer = wx.StaticBoxSizer(wx.StaticBox(self.runSeriesConfigPanel, -1, "Run series configuration"), wx.VERTICAL)
-		runSeriesConfigSizer.Add(seriesFileLabel, 0, flag=wx.RIGHT, border=5)
 		runSeriesConfigSizer.Add(seriesFileSizer, flag=wx.EXPAND)
 		runSeriesConfigSizer.Add(self.seriesDescription, 1, flag=wx.EXPAND)
 		runSeriesConfigSizer.Add(self.moreInfoButton, flag=wx.ALIGN_CENTER_HORIZONTAL)
-		
+                runSeriesConfigSizer.InsertSpacer(0,10)
+		runSeriesConfigSizer.InsertSpacer(2,10)	
+                runSeriesConfigSizer.InsertSpacer(4,10)	
+
 		self.runSeriesConfigPanel.SetSizer(runSeriesConfigSizer)
 		
 
@@ -492,17 +490,6 @@ class MainFrame(wx.Frame):
 		else:
 			self.subrunEntry.SetValue(1)
 
-	"""
-        def SelectRunSeriesFile(self, evt=None):
-
-                filename = MetaData.RunSeriesTypes[self.seriesFile.GetStringSelection(),MetaData.CODE]
-		if not self.LoadRunSeriesFile(filename):
-			errordlg = wx.MessageDialog( None, "Unable to load file for selected run series", "Load Error", wx.OK | wx.ICON_ERROR )
-			errordlg.ShowModal()
-		else:   
-			self.moreInfoButton.Enable()
-			self.UpdateStatus()
-	"""
         def LoadRunSeriesFile(self, evt=None):
 
                 self.seriesDescription.DeleteAllItems()
@@ -522,7 +509,6 @@ class MainFrame(wx.Frame):
                 self.moreInfoButton.Enable()
                 self.UpdateStatus()
 
-		#self.seriesFile.SetStringSelection(MetaData.RunSeriesTypes[filename,MetaData.DESCRIPTION])
                 self.seriesFilename = filename
                 self.seriesPath = Defaults.RUN_SERIES_DB_LOCATION_DEFAULT
 
@@ -697,7 +683,6 @@ class MainFrame(wx.Frame):
 			
 			self.singleRunButton.Disable()
 			self.runSeriesButton.Disable()
-			#self.seriesFileButton.Disable()
 
 			self.startButton.Disable()
 			self.stopButton.Enable()
@@ -722,7 +707,6 @@ class MainFrame(wx.Frame):
 
 		self.singleRunButton.Enable()
 		self.runSeriesButton.Enable()
-		#self.seriesFileButton.Enable()
 
 		self.UpdateLockedEntries()
 		self.lockdownEntry.Enable()
