@@ -84,16 +84,16 @@ class RunControlClientConnection:
 		else:					
 			return int(response)
 			
-	def daq_start( self, etfile, runNum, subRunNum, numGates=10,
+	def daq_start( self, identity, etfile, runNum, subRunNum, numGates=10,
 	               runMode=MetaData.RunningModes["One shot", MetaData.HASH],
 	               detector=MetaData.DetectorTypes["Unknown", MetaData.HASH],
 	               numFEBs=114, LIlevel=MetaData.LILevels["Zero PE", MetaData.HASH],
 	               LEDgroup=MetaData.LEDGroups["All", MetaData.HASH],
-	               HWInit=MetaData.HardwareInitLevels["No HW init", MetaData.HASH] ):
+	               HWInit=MetaData.HardwareInitLevels["No HW init", MetaData.HASH]):
 		""" Asks the server to start the DAQ process.  Returns True on success,
 		    False on failure, and raises an exception if the DAQ is currently running. """
 		
-		request = "daq_start etfile=%s:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d!" % (etfile, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit)
+		request = "daq_start etfile=%s:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d:identity=%s!" % (etfile, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit, identity)
 		print request
 		response = self.request(request)
 		

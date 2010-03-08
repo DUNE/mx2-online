@@ -27,6 +27,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		self.DAQthreads = []
 		self.timerThreads = []
+		self.socketThread = None
 		self.DAQthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartDAQ, self.StartRemoteDAQService]
 		self.DAQthreadLabels = ["Starting ET system...", "Starting ET monitor...", "Starting event builder...", "Starting the DAQ master...", "Starting the DAQ on readout nodes..."]
 #		self.DAQthreadStarters = [self.StartTestProcess] #, self.StartTestProcess, self.StartTestProcess]
@@ -70,19 +71,20 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.LIBox = LIBox.LIBox()
 		
 		failed_connection = None
-		try:
-			self.readout_soldier = RunControlClientConnection.RunControlClientConnection(Defaults.MNVONLINE0)
-		except RunControlClientConnection.RunControlClientException:
-			failed_connection = "soldier"
-		else:
-			self.main_window.soldierIndicator.SetBitmap(self.main_window.onImage)
+		self.readout_soldier = None
+		self.readout_worker = None
 		
-		try:
-			self.readout_worker  = RunControlClientConnection.RunControlClientConnection(Defaults.MNVONLINE1)
-		except RunControlClientConnection.RunControlClientException:
-			failed_connection = "worker"
-		else:
-			self.main_window.workerIndicator.SetBitmap(self.main_window.onImage)
+		for node, name, address, indicator in zip( (self.readout_soldier,              self.readout_worker),
+		                                           ("soldier",                         "worker"),
+		                                           (Defaults.SOLDIER,                  Defaults.WORKER),
+		                                           (self.main_window.soldierIndicator, self.main_window.workerIndicator) ):
+			try:
+				node = RunControlClientConnection.RunControlClientConnection(address)
+			except RunControlClientConnection.RunControlClientException:
+				failed_connection = name
+				break
+			else:
+				indicator.SetBitmap(self.main_window.onImage)
 		
 		if failed_connection:
 			errordlg = wx.MessageDialog( None, "A connection cannot be made to the " + failed_connection + " node.  Check to make sure that the run control dispatcher is started on that machine.", "No connection to " + failed_connection + " node", wx.OK | wx.ICON_ERROR )
@@ -228,7 +230,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append(daqFrame)
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, quit_event=DAQQuitEvent, env=self.environment, update_event=UpdateEvent, next_thread_delay=2) )
+		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, env=self.environment, next_thread_delay=2) )
 		
 	def StartRemoteDAQService(self):
 		self.main_window.UpdateRunStatus(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9))
@@ -236,7 +238,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		nodes = {"worker": self.readout_worker, "soldier": self.readout_soldier}
 		for nodename in nodes.keys():
 			try:
-				success = nodes[nodename].daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
+				success = nodes[nodename].daq_start(nodename, self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
 			except RunControlClientConnection.RunControlClientException:
 				errordlg = wx.MessageDialog( None, "Somehow the DAQ service on the " + nodename + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", nodename.capitalize() + " DAQ service not yet stopped", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
@@ -257,6 +259,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.running = False
 				self.subrun = 0
 				self.main_window.StopRunning()		# tell the main window that we're done here.
+		
+		self.socketThread = SocketThread(self)			# start the service that listens for the 'done' signal
 		
 	def StartTestProcess(self):
 		frame = OutputFrame(self.main_window, "test process", window_size=(600,600), window_pos=(1200,200))
@@ -299,18 +303,18 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
 		self.subrun += 1
 
-		# make SURE the DAQ process has stopped.
-		for node in (self.readout_worker, self.readout_soldier):
-			try:
-				node.daq_stop()
-			except:
-				pass
+#		# make SURE the DAQ process has stopped.
+#		for node in (self.readout_worker, self.readout_soldier):
+#			try:
+#				node.daq_stop()
+#			except:
+#				pass
 		
 		try:
 			self.LIBox.reset()					# don't want the LI box going unless it needs to be.
 		except:
 			print "Couldn't reset LI box at the end of the subrun..."
-		
+
 		self.main_window.PostSubrun()			# main window needs to update subrun #, etc.
 		
 		if self.running:
@@ -319,11 +323,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 	def StopDataAcquisition(self, evt=None):
 		self.running = False
 		self.subrun = 0
-		self.EndSubrun()
-		
-		while len(self.DAQthreads) > 0:		# won't be needing these any more.
-			self.DAQthreads.pop()
 
+		for node in (self.soldier_node, self.worker_node):
+			success = node.daq_stop()
+			
 
 #########################################################
 #   OutputFrame
@@ -358,6 +361,7 @@ class DAQthread(threading.Thread):
 		self.next_thread_delay = next_thread_delay
 		self.quit_event = quit_event
 		self.update_event = update_event
+		self.daemon = True				# this way the process will end when the main thread does
 
 		self.time_to_quit = False
 
@@ -376,22 +380,12 @@ class DAQthread(threading.Thread):
 
 			if self.next_thread_delay > 0:
 				# start a new thread to count down until the next one can be started.
-				# need to do this since the reads from STDOUT are BLOCKING, that is,
-				# they lock up the thread until they read the specified number of characters from STDOUT.
-				# that means that we can't count on THIS thread to do the countdown.
 				self.owner_process.timerThreads.append(TimerThread(self.next_thread_delay, self.owner_process))
 
 			last_update_time = 0
 			while True:
 				self.process.poll()				# check if the process is still alive
 				
-				# we need to throttle the updates so as not to overload
-				# the event dispatcher
-				time_now = time.time()
-				if self.update_event and time_now - last_update_time > 0.1:
-					wx.PostEvent(self.owner_process, self.update_event())
-					last_update_time = time_now
-
 				# read out the data from the process.
 				# we use select() (again from the UNIX library) to check that
 				# there actually IS something in the buffer before we try to read.
@@ -410,8 +404,6 @@ class DAQthread(threading.Thread):
 				if self.time_to_quit:
 					break
 				
-
-
 		# if something special is supposed to happen when this thread quits, do it.
 		if self.quit_event:
 			wx.PostEvent(self.owner_process, self.quit_event())
@@ -427,7 +419,10 @@ class DAQthread(threading.Thread):
 			self.process.poll()
 			if (self.process.returncode == None):		# they'll probably need a little time to shut down cleanly
 				self.timerthread = threading.Timer(10, self.LastCheck)
-				self.timerthread.start()
+				self.timerthread.start()		for node in (self.soldier_node, self.worker_node):
+			success = node.daq_stop()
+			
+
 		else:
 			# make sure there's nothing left in the buffer to read!
 #			self.process.stdout.flush()
@@ -454,6 +449,64 @@ class DAQthread(threading.Thread):
 			if self.output_window:
 				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
 		
+#########################################################
+#   SocketThread
+#########################################################
+
+class SocketThread(threading.Thread):
+	""" A thread that keeps open a socket to listen for
+	    the "done" signal from both worker nodes. """
+	def __init__(self, owner_process):
+		threading.Thread.__init(self)
+		
+		self.owner_process = owner_process
+		
+		self.start()
+	
+	def run(self):
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		s.bind(("", Defaults.MASTER_PORT))
+		s.setblocking(0)			# we want to be able to update the display, so we can't wait on a connection
+		s.listen(1)
+		
+		quit = False
+		node_completed = {"worker": False, "soldier": False}
+		while nodes_complete["worker"] == False and node_completed["soldier"] == False:
+			if select.select([s], [], [], 0)[0]:		
+				client_socket, client_address = s.accept()
+
+				request = ""
+				datalen = -1
+				while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire request
+					data = client_socket.recv(1024)
+					datalen = len(data)
+					request += data
+				
+				client_socket.close()
+				
+				request = request.lower()
+				
+				if request in ("worker", "soldier"):
+					nodes_completed[request] = True
+				else:
+					continue
+			else:
+				for node, indicator in zip( (self.readout_soldier,                            self.readout_worker),
+							             (self.owner_process.main_window.soldierIndicator, self.owner_process.main_window.workerIndicator) ):
+					if node.daq_checkStatus():
+						indicator.SetBitmap(self.owner_process.main_window.onImage)
+					else:
+						indicator.SetBitmap(self.owner_process.main_window.offImage)
+				
+				wx.PostEvent(self.owner_process, UpdateEvent())					
+				time.sleep(0.25)		# a little throttling so we don't overload the event dispatcher
+				
+		# both DAQs have quit: subrun is over.
+		wx.PostEvent(self.owner_process, DAQQuitEvent())
+				
+		
+	
+	
 
 
 #########################################################
