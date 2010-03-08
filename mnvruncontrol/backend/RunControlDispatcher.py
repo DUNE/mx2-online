@@ -14,6 +14,7 @@
 import socket
 import signal
 import subprocess
+import threading
 import errno
 import time
 import sys
@@ -37,7 +38,7 @@ class RunControlDispatcher:
 	"""
 	def __init__(self):
 		self.logfile = None
-		self.daq_process = None
+		self.daq_thread = None
 		self.port = Defaults.DISPATCHER_PORT
 		self.interactive = False
 		self.respawn = False
@@ -362,33 +363,27 @@ class RunControlDispatcher:
 		""" Returns 1 if there is a DAQ subprocess running; 0 otherwise. """
 		self.logger.info("Client wants to know if DAQ process is running.")
 		
-		if self.daq_process is not None:
-			self.daq_process.poll()	
-	
-		if self.daq_process is None or self.daq_process.returncode is not None:
-			self.logger.info("   ==> It ISN'T.")
-			return "0"
-		else:
+		if self.daq_thread and self.daq_thread.is_alive():
 			self.logger.info("   ==> It IS.")
 			return "1"
+		else:
+			self.logger.info("   ==> It ISN'T.")
+			return "0"
 	
 	def daq_exitstatus(self, matches):
 		""" Returns the exit code last given by a DAQ subprocess, or,
-		    if no DAQ process has yet exited, returns -1. """
+		    if no DAQ process has yet exited, returns 'NONE'. """
 		self.logger.info("Client wants to know last DAQ process exit code.")
 
-		if self.daq_process is not None:
-			self.daq_process.poll()
-
-		if self.daq_process is None:
+		if self.daq_thread is None:
 			self.logger.info("   ==> DAQ has not yet been run.")
 			return "NONE"
-		elif self.daq_process.returncode is None:
+		elif self.daq_thread.is_alive():
 			self.logger.info("   ==> Process is currently running.  Will need to wait for it to finish.")
 			return "NONE"
 		else:
 			self.logger.info("   ==> Exit code: " + str(self.daq_process.returncode) + " (for codes < 0, this indicates the signal that stopped the process).")
-			return str(self.daq_process.returncode)
+			return str(self.daq_thread.returncode)
 
 	def daq_start(self, matches):
 		""" Starts the DAQ slave service as a subprocess.  First checks
@@ -408,6 +403,7 @@ class RunControlDispatcher:
 		self.logger.info("      LED group: " + MetaData.LEDGroups[int(matches.group("ledgroup"))] )
 		self.logger.info("      HW init level: " + MetaData.HardwareInitLevels[int(matches.group("hwinitlevel"))] )
 		self.logger.info("      ET file: " + matches.group("etfile") )
+		self.logger.info("      my identity: " + matches.group("identity") + " node")
 
 		if self.daq_process and self.daq_process.returncode is None:
 			self.logger.info("   ==> There is already a DAQ process running.")
@@ -415,23 +411,23 @@ class RunControlDispatcher:
 		
 		try:
 			executable = ( environment["DAQROOT"] + "/bin/minervadaq", 
-		                    "-et", matches.group("etfile"),
-		                    "-g",  matches.group("gates"),
-		                    "-m",  matches.group("runmode"),
-		                    "-r",  matches.group("run"),
-		                    "-s",  matches.group("detector"),
-		                    "-ll", matches.group("lilevel"),
-		                    "-lg", matches.group("ledgroup"),
-		                    "-hw", matches.group("hwinitlevel") ) 
+				          "-et", matches.group("etfile"),
+				          "-g",  matches.group("gates"),
+				          "-m",  matches.group("runmode"),
+				          "-r",  matches.group("run"),
+				          "-s",  matches.group("detector"),
+				          "-ll", matches.group("lilevel"),
+				          "-lg", matches.group("ledgroup"),
+				          "-hw", matches.group("hwinitlevel") ) 
 			self.logger.info("   minervadaq command:")
 			self.logger.info("      '" + str(executable) + "'...")
-			self.daq_process = subprocess.Popen(executable, env=environment)
+			self.daq_thread = DAQThread(executable, matches.group("identity"))
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
 			return "1"
 		else:
-			self.logger.info("    ==> Started successfully (process " + str(self.daq_process.pid) + ").")
+			self.logger.info("    ==> Started successfully (process " + str(self.daq_thread.pid) + ").")
 			return "0"
 	
 	def daq_stop(self, matches):
@@ -442,17 +438,15 @@ class RunControlDispatcher:
 		    
 		self.logger.info("Client wants to stop the DAQ process.")
 		
-		if self.daq_process:
-			self.daq_process.poll()
-		    
-		if self.daq_process and self.daq_process.returncode is None:	# processes have a None return code until they stop
+		if self.daq_thread and self.daq_thread.is_alive():
 			self.logger.info("   ==> Attempting to stop.")
 			try:
-				self.daq_process.terminate()
-				code = self.daq_process.wait()
+				self.daq_thread.process.terminate()
+				self.daq_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
+				code = self.daq_thread.returncode
 			except Exception, excpt:
 				self.logger.error("   ==> DAQ process couldn't be stopped!")
-				self.logger.error("   ==> Error message: '" + str(excpt) + "'")
+				self.logger.exception("   ==> Error message:")
 				return "1"
 		else:		# if there's a process but it's already finished
 			self.logger.info("   ==> No DAQ process to stop.")
@@ -488,6 +482,44 @@ class RunControlDispatcher:
 		if os.path.isfile(Defaults.DISPATCHER_PIDFILE):
 			self.logger.info("Removing PID file.")
 			os.remove(Defaults.DISPATCHER_PIDFILE)
+
+#########################
+# DAQThread             #
+#########################
+class DAQThread(threading.Thread):
+	""" DAQ processes need to be run in a separate thread
+	    so that they can be monitored continuously.  When
+	    they terminate, a socket is opened to the master
+	    node to emit a "done" signal."""
+	def __init__(self, daq_command, my_identity):
+		threading.Thread.__init__(self)
+		
+		self.process = None
+		self.identity = my_identity	# am I the worker or the soldier?
+		
+		self.start(daq_command)		# inherited from threading.Thread.  starts run() in a separate thread.
+		
+	def run(self, daq_command):
+		self.daq_process = subprocess.Popen(daq_command, env=environment)
+		self.pid = self.daq_process.pid		# less typing.
+		
+		# throttle the updates a little to prevent CPU overload...
+		while self.daq_process.poll() is None:
+			time.sleep(0.25)	
+			
+		# open a client socket to the master node.  need to inform it we're done!
+		try:
+			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			s.settimeout(2)
+			s.connect( (Defaults.MASTER, Defaults.MASTER_PORT) )
+			s.send(self.identity)		# informs the server WHICH of the readout nodes I am (and that I'm finished).
+			s.shutdown(socket.SHUT_WR)
+			s.close()
+		except:
+			pass
+			
+		self.returncode = self.daq_process.returncode
+		
                         
 ####################################################################
 ####################################################################

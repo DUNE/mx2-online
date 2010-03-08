@@ -28,10 +28,11 @@ RESOURCE_LOCATION_DEFAULT = "/work/software/mnvruncontrol/resources"
 
 # Socket communication defaults.
 DISPATCHER_PORT = 1098
+MASTER_PORT     = 1090
 
-MNVONLINE0 = "mnvonline0.fnal.gov"
-MNVONLINE1 = "mnvonline1.fnal.gov"
-MNVONLINEMASTER = "mnvonlinemaster.fnal.gov"
+SOLDIER = "mnvonline0.fnal.gov"
+WORKER  = "mnvonline1.fnal.gov"
+MASTER  = "mnvonlinemaster.fnal.gov"
 
 # dispatcher process details
 DISPATCHER_PIDFILE = "/tmp/rc_dispatcher.pid"
