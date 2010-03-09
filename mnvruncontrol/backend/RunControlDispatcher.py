@@ -509,12 +509,18 @@ class DAQThread(threading.Thread):
 
 		stdout, stderr = self.daq_process.communicate()
 		
+		filename = Defaults.LOGFILE_LOCATION_DEFAULT + "/minervadaq.log"
+		self.owner_process.logger.info("DAQ subprocess finished.  Its output will be written to '" + filename + "'.")
 		# dump the output of minervadaq to a file so that crashes can be investigated.
 		# we only keep one copy because it will be rare that anyone is interested.
-		logfile = open(Defaults.LOGFILE_LOCATION_DEFAULT + "/minervadaq.log", "w")
-		logfile.write(stdout)
-		logfile.close()
-			
+		try:
+			with open(filename, "w") as logfile:
+				logfile.write(stdout)
+		except OSError:
+			self.owner_process.logger.exception("minervadaq log file error:")
+			self.owner_process.logger.error("   ==> log file information will be discarded.")
+		
+		self.owner_process.logger.info("Contacting master to indicate I am done.")
 		# open a client socket to the master node.  need to inform it we're done!
 		try:
 			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -522,12 +528,13 @@ class DAQThread(threading.Thread):
 			s.connect( (Defaults.MASTER, Defaults.MASTER_PORT) )
 			s.send(self.identity)		# informs the server WHICH of the readout nodes I am (and that I'm finished).
 			s.shutdown(socket.SHUT_WR)
+			self.owner_process.logger.info("'Done' signal sent successfully.")
 		except:
 			self.owner_process.logger.exception("Socket error:")
+			self.owner_process.logger.error("  ==> 'Done' signal did not make it to master.")
 		finally:
 			s.close()
 
-			
 		self.returncode = self.daq_process.returncode
 		
                         
