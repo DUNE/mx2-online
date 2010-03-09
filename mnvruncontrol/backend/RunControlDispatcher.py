@@ -405,7 +405,7 @@ class RunControlDispatcher:
 		self.logger.info("      ET file: " + matches.group("etfile") )
 		self.logger.info("      my identity: " + matches.group("identity") + " node")
 
-		if self.daq_process and self.daq_process.returncode is None:
+		if self.daq_thread and self.daq_thread.is_alive() is None:
 			self.logger.info("   ==> There is already a DAQ process running.")
 			return "2"
 		
@@ -420,14 +420,14 @@ class RunControlDispatcher:
 				          "-lg", matches.group("ledgroup"),
 				          "-hw", matches.group("hwinitlevel") ) 
 			self.logger.info("   minervadaq command:")
-			self.logger.info("      '" + str(executable) + "'...")
-			self.daq_thread = DAQThread(executable, matches.group("identity"))
+			self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
+			self.daq_thread = DAQThread(self, executable, matches.group("identity"))
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
 			return "1"
 		else:
-			self.logger.info("    ==> Started successfully (process " + str(self.daq_thread.pid) + ").")
+			self.logger.info("    ==> Started successfully.")
 			return "0"
 	
 	def daq_stop(self, matches):
@@ -491,21 +491,29 @@ class DAQThread(threading.Thread):
 	    so that they can be monitored continuously.  When
 	    they terminate, a socket is opened to the master
 	    node to emit a "done" signal."""
-	def __init__(self, daq_command, my_identity):
+	def __init__(self, owner_process, daq_command, my_identity):
 		threading.Thread.__init__(self)
 		
 		self.process = None
+		self.owner_process = owner_process
 		self.identity = my_identity	# am I the worker or the soldier?
+		self.daq_command = daq_command
 		
-		self.start(daq_command)		# inherited from threading.Thread.  starts run() in a separate thread.
+		self.start()		# inherited from threading.Thread.  starts run() in a separate thread.
 		
-	def run(self, daq_command):
-		self.daq_process = subprocess.Popen(daq_command, env=environment)
+	def run(self):
+		self.daq_process = subprocess.Popen(self.daq_command, env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		self.pid = self.daq_process.pid		# less typing.
+
+		self.owner_process.logger.info("   ==>  Process id: " + str(self.pid) + ".")
+
+		stdout, stderr = self.daq_process.communicate()
 		
-		# throttle the updates a little to prevent CPU overload...
-		while self.daq_process.poll() is None:
-			time.sleep(0.25)	
+		# dump the output of minervadaq to a file so that crashes can be investigated.
+		# we only keep one copy because it will be rare that anyone is interested.
+		logfile = open(Defaults.LOGFILE_LOCATION_DEFAULT + "/minervadaq.log", "w")
+		logfile.write(stdout)
+		logfile.close()
 			
 		# open a client socket to the master node.  need to inform it we're done!
 		try:
@@ -514,9 +522,11 @@ class DAQThread(threading.Thread):
 			s.connect( (Defaults.MASTER, Defaults.MASTER_PORT) )
 			s.send(self.identity)		# informs the server WHICH of the readout nodes I am (and that I'm finished).
 			s.shutdown(socket.SHUT_WR)
-			s.close()
 		except:
-			pass
+			self.owner_process.logger.exception("Socket error:")
+		finally:
+			s.close()
+
 			
 		self.returncode = self.daq_process.returncode
 		

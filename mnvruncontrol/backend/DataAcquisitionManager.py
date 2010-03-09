@@ -419,8 +419,10 @@ class DAQthread(threading.Thread):
 			self.process.poll()
 			if (self.process.returncode == None):		# they'll probably need a little time to shut down cleanly
 				self.timerthread = threading.Timer(10, self.LastCheck)
-				self.timerthread.start()		for node in (self.soldier_node, self.worker_node):
-			success = node.daq_stop()
+				self.timerthread.start()
+
+			for node in (self.soldier_node, self.worker_node):
+				success = node.daq_stop()
 			
 
 		else:
