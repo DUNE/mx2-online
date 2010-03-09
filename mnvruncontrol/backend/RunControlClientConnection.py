@@ -38,11 +38,15 @@ class RunControlClientConnection:
 		if not is_valid_request:
 			raise RunControlBadRequestException("Invalid request: '" + request + "'")
 		
-		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.socket.settimeout(2)
-		self.socket.connect( (self.serveraddress, self.port) )
-		self.socket.send(request)
-		self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
+		try:
+			self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			self.socket.settimeout(2)
+			self.socket.connect( (self.serveraddress, self.port) )
+			self.socket.send(request)
+			self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
+		except socket.error:
+			self.socket.close()
+			raise RunControlNoClientConnectionException()
 		
 		response = ""
 		datalen = -1
@@ -94,7 +98,7 @@ class RunControlClientConnection:
 		    False on failure, and raises an exception if the DAQ is currently running. """
 		
 		request = "daq_start etfile=%s:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d:identity=%s!" % (etfile, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit, identity)
-		print request
+		#print request
 		response = self.request(request)
 		
 		if response == "0":
@@ -176,4 +180,7 @@ class RunControlBadRequestException(Exception):
 	pass
 
 class RunControlClientUnexpectedDataException(Exception):
+	pass
+	
+class RunControlNoClientConnectionException(Exception):
 	pass

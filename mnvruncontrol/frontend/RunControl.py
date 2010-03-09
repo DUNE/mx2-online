@@ -409,7 +409,7 @@ class MainFrame(wx.Frame):
 					has_all_keys = False
 			
 			if not has_all_keys:
-				errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be corrupted.  Default configuration will be used for any unreadable values...", "Last run configuration database corrupted", wx.OK | wx.ICON_WARNING )
+				errorRunningModesdlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be corrupted.  Default configuration will be used for any unreadable values...", "Last run configuration database corrupted", wx.OK | wx.ICON_WARNING )
 				errordlg.ShowModal()
 
 			db.close()
@@ -417,8 +417,8 @@ class MainFrame(wx.Frame):
 		self.runEntry.SetRange(key_values["run"], 100000)
 		self.runEntry.SetValue(key_values["run"])
 		self.subrunEntry.SetValue(key_values["subrun"])
-		self.HWinitEntry.SetSelection(key_values["hwinit"])
-		self.detConfigEntry.SetSelection(key_values["detector"])
+		self.HWinitEntry.SetSelection(MetaData.HardwareInitLevels.index(key_values["hwinit"]))
+		self.detConfigEntry.SetSelection(MetaData.DetectorTypes.index(key_values["detector"]))
 		self.febsEntry.SetValue(key_values["febs"])
 		self.singleRunButton.SetValue(key_values["is_single_run"])
 		self.runSeriesButton.SetValue(not(key_values["is_single_run"]))
@@ -497,7 +497,6 @@ class MainFrame(wx.Frame):
 		self.StoreNextRunSubrun()
 		
 		if self.autocloseEntry.IsChecked():
-			print "Now I will close all the windows!"
 			self.CloseAllWindows()
 					
 		self.UpdateLogFiles()
@@ -602,7 +601,7 @@ class MainFrame(wx.Frame):
 		else:
 			self.progressIndicator.SetRange(progress[1])
 			self.progressIndicator.SetValue(progress[0])
-			
+		
 	def UpdateSeriesStatus(self):
 		symbol = ""
 		if self.runmanager.running:
@@ -626,7 +625,8 @@ class MainFrame(wx.Frame):
 					self.seriesDescription.Select(index, False)
 
 	def OnTimeToClose(self, evt):
-		self.runmanager.StopDataAcquisition()
+		if self.runmanager.running:
+			self.runmanager.StopDataAcquisition()
 
 		self.CloseAllWindows()
 
@@ -748,8 +748,6 @@ class MainFrame(wx.Frame):
 		self.soldierIndicator.SetBitmap(self.offImage)
 		self.workerIndicator.SetBitmap(self.offImage)
 		
-		self.UpdateRunStatus(text="No run in progress", progress=(0,1))
-
 		self.runEntry.Enable()
 		self.gatesEntry.Enable()
 		self.detConfigEntry.Enable()
@@ -767,6 +765,8 @@ class MainFrame(wx.Frame):
 		self.UpdateSeriesStatus()
 		self.UpdateLogFiles()
 		
+		self.UpdateRunStatus(text="No run in progress", progress=(0,1))
+
 	@staticmethod
 	def SortLogData(fileinfo1, fileinfo2):
 		f1 = int(fileinfo1[0])*10000 + int(fileinfo1[1])		# run * 10000 + subrun
