@@ -441,7 +441,7 @@ class RunControlDispatcher:
 		if self.daq_thread and self.daq_thread.is_alive():
 			self.logger.info("   ==> Attempting to stop.")
 			try:
-				self.daq_thread.process.terminate()
+				self.daq_thread.daq_process.terminate()
 				self.daq_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
 				code = self.daq_thread.returncode
 			except Exception, excpt:
@@ -494,7 +494,7 @@ class DAQThread(threading.Thread):
 	def __init__(self, owner_process, daq_command, my_identity):
 		threading.Thread.__init__(self)
 		
-		self.process = None
+		self.daq_process = None
 		self.owner_process = owner_process
 		self.identity = my_identity	# am I the worker or the soldier?
 		self.daq_command = daq_command
