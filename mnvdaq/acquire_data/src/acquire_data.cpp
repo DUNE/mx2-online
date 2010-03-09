@@ -1776,8 +1776,6 @@ int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
 			} catch (int e) {
 				std::cout << "Unable to set the pulse delay register in acquire_data::TriggerDAQ!" << std::endl;
 				daqController->ReportError(e);
-				//acqData.fatalStream() << "Unable to set the pulse delay register in acquire_data::TriggerDAQ!";
-				//exit(-2005);
 				acqData.critStream() << "Unable to set the pulse delay register in acquire_data::TriggerDAQ!";
 				return errorCode;
 			}

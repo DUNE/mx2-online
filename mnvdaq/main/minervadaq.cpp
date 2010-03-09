@@ -290,30 +290,8 @@ int main(int argc, char *argv[])
 #if MASTER&&(!SINGLE_PC) // Soldier Node
 	// Create a TCP socket.
 	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
-	/* Try to use functions for this, cleanup...
-	gate_done_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
-	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
-	if (gate_done_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
-	if (global_gate_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
-	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC gate_done_socket_handle  : " << 
-		gate_done_socket_handle;
-	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC global_gate_socket_handle: " << 
-		global_gate_socket_handle;
-	*/
 	// Set up the global_gate service.
-	SetupSocketService(global_gate_service, worker_node_info, "mnvonline1.fnal.gov", global_gate_port ) 
-	/* Try to use functions for this, cleanup...
-	global_gate_service.sin_family = AF_INET;
-	string hostname="mnvonline1.fnal.gov"; // The worker node will listen for the global gate.
-	worker_node_info = gethostbyname(hostname.c_str());
-	if (worker_node_info == NULL) {
-		mnvdaq.fatalStream() << "No worker node to connect to!"; 
-		std::cout << "No worker node to connect to!\n"; return 1; 
-	}
-	else global_gate_service.sin_addr = *((struct in_addr *) worker_node_info->h_addr);
-	global_gate_service.sin_port = htons (global_gate_port); 
-	*/
-
+	SetupSocketService(global_gate_service, worker_node_info, "mnvonline1.fnal.gov", global_gate_port ); 
 	// Create an address for the gate_done listener.  The soldier listens for the gate done signal.
 	gate_done_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&gate_done_service, 0, sizeof (gate_done_service));
@@ -335,30 +313,8 @@ int main(int argc, char *argv[])
 
 #if (!MASTER)&&(!SINGLE_PC) // Worker Node
 	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
-	/* Try to use functions for this, cleanup...
-	gate_done_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
-	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
-	if (gate_done_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
-	if (global_gate_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
-	mnvdaq.infoStream() << "\nWorker/Slave-node Multi-PC gate_done_socket_handle  : " << 
-		gate_done_socket_handle;
-	mnvdaq.infoStream() << "Worker/Slave-node Multi-PC global_gate_socket_handle: " << 
-		global_gate_socket_handle;
-	*/
 	// Set up the gate_done service. 
-	SetupSocketService(gate_done_service, soldier_node_info, "mnvonline0.fnal.gov", gate_done_port ) 
-	/* Try to use functions for this, cleanup...
-	gate_done_service.sin_family = AF_INET;
-	string hostname="mnvonline0.fnal.gov"; // The soldier node will listen for the gate done signal.
-	soldier_node_info = gethostbyname(hostname.c_str());
-	if (soldier_node_info == NULL) { 
-		mnvdaq.fatalStream() << "No soldier node to connect to!"; 
-		std::cout << "No soldier node to connect to!\n"; return 1; 
-	}
-	else gate_done_service.sin_addr = *((struct in_addr *) soldier_node_info->h_addr);
-	gate_done_service.sin_port = htons (gate_done_port); 
-	*/
-
+	SetupSocketService(gate_done_service, soldier_node_info, "mnvonline0.fnal.gov", gate_done_port ); 
 	// Create an address for the global_gate listener.  The worker listens for the global gate data.
 	global_gate_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&global_gate_service, 0, sizeof (global_gate_service));
@@ -538,7 +494,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-11-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-11-02'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -564,7 +520,7 @@ int main(int argc, char *argv[])
 			fprintf(sam_file,"runType='fullminerva',\n");
 			break;
 		default:
-			std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
+			std::cout << "minervadaq::main(): ERROR! Improper Detector defined!" << std::endl;
 			exit(-4);
 	}
 	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
@@ -585,21 +541,18 @@ int main(int argc, char *argv[])
 		case PureLightInjection:
 			fprintf(sam_file,"'triggertype':'purelightinjection',})}),\n");
 			fprintf(sam_file,"datastream='linjc',\n");
-			//std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 			break;
 		case MixedBeamPedestal:
 			// TODO - Test mixed beam-pedestal running!
 			fprintf(sam_file,"'triggertype':'mixedbeampedestal',})}),\n");
 			fprintf(sam_file,"datastream='numip',\n");
-			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-pedestal trigger types!" << 
-				std::endl;
+			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-pedestal trigger types!" << std::endl;
 			break;
 		case MixedBeamLightInjection:
 			// TODO - Test mixed beam-li running!
 			fprintf(sam_file,"'triggertype':'mixedbeamlightinjection',})}),\n");
 			fprintf(sam_file,"datastream='numil',\n");
 			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
-			//std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 			break; 
 		default:
 			std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
@@ -748,8 +701,6 @@ int main(int argc, char *argv[])
 				break;
 			case PureLightInjection:
 				triggerType = LightInjection;
-				//mnvdaq.warnStream() << "No LI control class implemented yet!";
-				//std::cout << "minervadaq::main(): Warning!  No LI control class implemented yet!" << std::endl;
 				break;
 			case MixedBeamPedestal:
 				// TODO - Test mixed beam-pedestal running!
@@ -768,12 +719,10 @@ int main(int argc, char *argv[])
 					triggerType = NuMI;
 				}
 				mnvdaq.warnStream() << "Calling untested mixed mode beam-li trigger types!";
-				//mnvdaq.warnStream() << "No LI control class implemented yet!";
-				//std::cout << "minervadaq::main(): Warning!  No LI control class exists yet!" << std::endl;
 				break; 
 			default:
-				std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
-				mnvdaq.fatalStream() << "Improper Running Mode defined!";
+				std::cout << "minervadaq::main(): ERROR! Improper Running Mode = " << runningMode << std::endl;
+				mnvdaq.fatalStream() << "Improper Running Mode = " << runningMode;
 				exit(-4);
 		}
 		event_data.triggerType = triggerType;
@@ -1198,9 +1147,13 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 	mnvdaq.infoStream() << " ->Setting Trigger: " << triggerType;
 #endif
 
-	/**********************************************************************************/
-	/* Let the hardware tell us when the trigger has completed.                       */
-	/**********************************************************************************/
+	/***********************************************************************************/
+	/* NOTE: For running mode == OneShot, we need to issue a software trigger on each  */
+	/* CRIM.  For other running modes, the trigger is either external or issued by the */
+	/* "master" CRIM.  For single PC mode, the master CRIM is the card with the lowest */
+	/* address.  For the multi-PC mode, the master CRIM is the card in Crate 0 with    */
+	/* the lowest address (or, at least the CRIM at the beginning of the CRIM vector). */ 
+	/***********************************************************************************/
 	vector<crim*> *crim_vector = tmpController->GetCrimVector(); 
 	vector<crim*>::iterator crim = crim_vector->begin();
 	int id = (*crim)->GetCrimID();
@@ -1217,33 +1170,43 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 					return e;
 				}
 			}  
+			try {
+				int error = daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
+				if (error) throw error;
+			} catch (int e) {
+				std::cout << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!" << std::endl;
+				mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!";
+				return e;
+			}
                        	break;
 		case NuMIBeam:
 		case Cosmics:
 		case PureLightInjection:
 		case MixedBeamPedestal:
 		case MixedBeamLightInjection:
+#if MASTER||SINGLE_PC // Soldier Node or singleton...
 			try {
-				int error = daq->TriggerDAQ(triggerType, id); // Not strictly needed.
+				int error = daq->TriggerDAQ(triggerType, id); 
 				if (error) throw error;
 			} catch (int e) {
 				std::cout << "Error in minervadaq::TriggerDAQ()!" << std::endl;
 				mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ()!";
 				return e;
 			}
+			try {
+				int error = daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
+				if (error) throw error;
+			} catch (int e) {
+				std::cout << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!" << std::endl;
+				mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!";
+				return e;
+			}
+#endif
 			break;
 		default:
-			std::cout << "ERROR! Improper Running Mode defined!" << std::endl;
-			mnvdaq.fatalStream() << "Improper Running Mode defined!";
-			exit(-4);
-	}
-	try {
-		int error = daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
-		if (error) throw error;
-	} catch (int e) {
-		std::cout << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!" << std::endl;
-		mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!";
-		return e;
+			std::cout << "ERROR! Improper Running Mode = " << runningMode << std::endl;
+			mnvdaq.critStream() << "Improper Running Mode defined = " << runningMode;
+			return -4;
 	}
 
 #if ASSERT_INTERRUPT
