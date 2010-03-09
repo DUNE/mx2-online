@@ -452,7 +452,7 @@ class RunControlDispatcher:
 			self.logger.info("   ==> No DAQ process to stop.")
 			return "2"
 	
-		self.logger.info("   ==> Stopped successfully.  (Process " + str(self.daq_process.pid) + " exited with code " + str(code) + ".)")
+		self.logger.info("   ==> Stopped successfully.  (Process " + str(self.daq_thread.pid) + " exited with code " + str(code) + ".)")
 		return "0"
 		
 	def sc_sethw(self, matches):
