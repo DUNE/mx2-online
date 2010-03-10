@@ -498,7 +498,7 @@ class SocketThread(threading.Thread):
 				
 				if request in node_completed:
 					node_completed[request] = True
-					num_completed += 1
+					num_complete += 1
 					wx.PostEvent(self.owner_process.main_window, UpdateProgressEvent( text="Cleaning up:\nWaiting on all nodes to finish...", progress=(num_complete, len(node_completed)) ) )
 			else:
 				for node in self.nodesToWatch:
