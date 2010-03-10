@@ -2,6 +2,7 @@
 
 import wx
 from wx.lib.wordwrap import wordwrap
+import wx.lib.newevent
 import subprocess
 import os
 import sys
@@ -74,7 +75,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		for node in self.readoutNodes:
 			try:
 				node.ping()
-			except ReadoutNode.RunControlClientException:
+			except ReadoutNode.ReadoutNodeException:
 				failed_connection = node.name
 				break
 			else:
@@ -110,10 +111,16 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		if not quitting:
 			self.CloseWindows()			# don't want leftover windows open.
-			self.main_window.UpdateRunStatus(text="Setting up run:\ntesting connections", progress=(0,9))
+			wx.PostEvent(self.main_window, UpdateProgressEvent(text="Setting up run:\ntesting connections", progress=(0,9)) )
 			ok = True
 			for node in self.readoutNodes:
-				ok = ok and node.ping()
+				on = node.ping()
+				ok = ok and on
+				if on:
+					self.main_window.indicators[node.name].SetBitmap(self.main_window.onImage)
+				else:
+					self.main_window.indicators[node.name].SetBitmap(self.main_window.onImage)
+					
 			
 			if not ok:
 				errordlg = wx.MessageDialog( None, "Connection to the readout node(s) was broken.  Running aborted.", "No connection to readout node(s)", wx.OK | wx.ICON_ERROR )
@@ -125,13 +132,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		#### NEED TO DECIDE THE HARDWARE CONFIG FILE TO BE PASSED TO THE SLOW CONTROL HERE
 		####
 		if not quitting:
-			self.main_window.UpdateRunStatus(text="Setting up run:\nLoading hardware...", progress=(1,9))
+			wx.PostEvent( self.main_window, UpdateProgressEvent(text="Setting up run:\nLoading hardware...", progress=(1,9)) )
 			self.hwconfigfile = "NOFILE"
 				
 		# set up the LI box to do what it's supposed to, if it needs to be on.
 		if not quitting:
 			if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
-				self.main_window.UpdateRunStatus(text="Setting up run:\nInitializing light injection...", progress=(2,9))
+				wx.PostEvent( self.main_window, UpdateProgressEvent(text="Setting up run:\nInitializing light injection...", progress=(2,9)) )
 				self.LIBox.LED_groups = MetaData.LEDGroups[self.runinfo.ledGroup]
 			
 				need_LI = True
@@ -154,7 +161,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		#### WAIT ON THE SLOW CONTROL UNTIL IT'S READY
 		if not quitting:
-			self.main_window.UpdateRunStatus(text="Setting up run:\nWaiting on hardware...", progress=(3,9))
+			wx.PostEvent(self.main_window, UpdateProgressEvent(text="Setting up run:\nWaiting on hardware...", progress=(3,9)) )
 
 		now = datetime.datetime.utcnow()
 		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
@@ -173,7 +180,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 	def StartNextThread(self, evt=None):
 		if self.current_DAQ_thread < len(self.DAQthreadStarters):
-			self.main_window.UpdateRunStatus(text="Setting up run:\n" + self.DAQthreadLabels[self.current_DAQ_thread], progress=(5+self.current_DAQ_thread,9))
+			wx.PostEvent( self.main_window, UpdateProgressEvent(text="Setting up run:\n" + self.DAQthreadLabels[self.current_DAQ_thread], progress=(5+self.current_DAQ_thread,9)) )
 			self.DAQthreadStarters[self.current_DAQ_thread]()
 			self.current_DAQ_thread += 1
 		else:
@@ -223,12 +230,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, env=self.environment, next_thread_delay=2) )
 		
 	def StartRemoteDAQService(self):
-		self.main_window.UpdateRunStatus(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9))
+		wx.PostEvent( self.main_window, UpdateProgressEvent(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9)) )
 	
 		for node in self.readoutNodes:
 			try:
+				#print self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup
 				success = node.daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
-			except ReadoutNode.RunControlClientException:
+			except ReadoutNode.ReadoutNodeException:
 				errordlg = wx.MessageDialog( None, "Somehow the DAQ service on the " + node.name + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", node.name.capitalize() + " DAQ service not yet stopped", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
 
@@ -278,7 +286,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.main_window.UpdateCloseWindows(len(self.windows) > 0)
 
 	def UpdateRunStatus(self, evt=None):
-		self.main_window.UpdateRunStatus("Running...\nSee ET windows for more information")		# 'pulse' the progress bar
+		wx.PostEvent( self.main_window, UpdateProgressEvent(text="Running...\nSee ET windows for more information", progress=(0,0)) )		# 'pulse' the progress bar
 
 	def EndSubrun(self, evt=None):
 #		print "Ending subrun."
@@ -304,13 +312,16 @@ class DataAcquisitionManager(wx.EvtHandler):
 	
 	def StopDataAcquisition(self, evt=None):
 		self.running = False
-		self.subrun = 0
+#		self.subrun = 0
 
+		needsManualStop = False
 		for node in self.readoutNodes:
 			try:
 				success = node.daq_stop()
 			except ReadoutNode.ReadoutNodeException, ReadoutNode.ReadoutNodeNoConnectionException:		# the DAQ has already quit or is unreachable
-				self.EndSubrun()								# if so, we'll never get the "DAQ quit" event.
+				needsManualStop = True				# if so, we'll never get the "DAQ quit" event.
+		if needsManualStop:
+			self.EndSubrun()								
 			
 
 #########################################################
@@ -487,7 +498,8 @@ class SocketThread(threading.Thread):
 				
 				if request in node_completed:
 					node_completed[request] = True
-					self.owner_process.main_window.UpdateRunStatus( text="Cleaning up:\nWaiting on all nodes to finish...", progress=(num_complete, len(node_completed)) )
+					num_completed += 1
+					wx.PostEvent(self.owner_process.main_window, UpdateProgressEvent( text="Cleaning up:\nWaiting on all nodes to finish...", progress=(num_complete, len(node_completed)) ) )
 			else:
 				for node in self.nodesToWatch:
 					if node.daq_checkStatus():
@@ -553,6 +565,20 @@ class UpdateEvent(wx.PyEvent):
 		wx.PyEvent.__init__(self)
 		self.SetEventType(EVT_UPDATE_ID)
 
+#########################################################
+#   UpdateProgressEvent
+#########################################################
+
+#EVT_UPDATEPROGRESS_ID = wx.NewId()
+#class UpdateProgressEvent(wx.NotifyEvent):
+	#""" An event informing the main window what progress has been made in the run. """
+	#def __init__(self, text=None, progress=(0,0)):
+		#wx.NotifyEvent.__init__(self)
+		#self.text = text
+		#self.progress = progress
+		#self.SetEventType(EVT_UPDATEPROGRESS_ID)
+
+UpdateProgressEvent, EVT_UPDATEPROGRESS_ID = wx.lib.newevent.NewEvent()
 
 #########################################################
 #   ThreadReadyEvent

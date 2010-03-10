@@ -46,6 +46,9 @@ class MainFrame(wx.Frame):
 		self.GetNextRunSubrun()
 		self.UpdateLogFiles()
 		self.UpdateRunConfig()
+		
+		# any wx events that need to be handled
+		self.Bind(DataAcquisitionManager.EVT_UPDATEPROGRESS_ID, self.UpdateRunStatus)
 
 	def BuildGraphics(self):
 		menuBar = wx.MenuBar()
@@ -495,8 +498,9 @@ class MainFrame(wx.Frame):
 			db.close()
 			
 	def PostSubrun(self, evt=None):
-		self.subrunEntry.SetValue(self.subrunEntry.GetValue() + 1)
-		self.minRunSubrun = self.subrunEntry.GetValue()
+		subrun = self.runmanager.first_subrun + self.runmanager.subrun
+		self.subrunEntry.SetValue(subrun)
+		self.minRunSubrun = subrun
 		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
 		self.StoreNextRunSubrun()
 		
@@ -529,25 +533,23 @@ class MainFrame(wx.Frame):
 			self.runmanager.runseries = db["series"]
 			db.close()
 		except (anydbm.error, KeyError):
-                        errordlg = wx.MessageDialog( None, "Unable to load file for selected run series", "Load Error", wx.OK | wx.ICON_ERROR )
+                        errordlg = wx.MessageDialog( None, "Unable to load file for selected run series.", "Load Error", wx.OK | wx.ICON_ERROR )
                         errordlg.ShowModal()
 			return False
 
-			self.moreInfoButton.Enable()
-			self.UpdateStatus()
+		self.seriesFilename = filename
+		self.seriesPath = Defaults.RUN_SERIES_DB_LOCATION_DEFAULT
 
-			self.seriesFilename = filename
-			self.seriesPath = Defaults.RUN_SERIES_DB_LOCATION_DEFAULT
+		for runinfo in self.runmanager.runseries.Runs:
+		    index = self.seriesDescription.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
+		    self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
+		    self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
 
-			for runinfo in self.runmanager.runseries.Runs:
-			    index = self.seriesDescription.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
-			    self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-			    self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
+		self.runmanager.subrun = 0
+		self.moreInfoButton.Enable()
+		self.UpdateSeriesStatus()
 
-			self.runmanager.subrun = 0
-			self.UpdateStatus()
-
-			return True
+		return True
 	
 	def SeriesMoreInfo(self, evt=None):
 		infowindow = RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
@@ -586,19 +588,19 @@ class MainFrame(wx.Frame):
 		else:
 			self.closeAllButton.Disable()
 	
-	def UpdateRunStatus(self, text=None, progress=(0,0)):
+	def UpdateRunStatus(self, evt):
 		""" Updates the progress gauge text label and value.
 		    If you want the gauge in 'indeterminate' mode,
 		    set 'progress' to (0,0); otherwise, 'progress'
 		    should be (current, total). """
-		if text is not None:
-			self.progressLabel.SetLabel(text)
+		if evt.text is not None:
+			self.progressLabel.SetLabel(evt.text)
 		
-		if progress == (0,0):		# indeterminate mode
+		if evt.progress == (0,0):		# indeterminate mode
 			self.progressIndicator.Pulse()
 		else:
-			self.progressIndicator.SetRange(progress[1])
-			self.progressIndicator.SetValue(progress[0])
+			self.progressIndicator.SetRange(evt.progress[1])
+			self.progressIndicator.SetValue(evt.progress[0])
 		
 	def UpdateSeriesStatus(self):
 		symbol = ""
@@ -764,7 +766,7 @@ class MainFrame(wx.Frame):
 		self.UpdateSeriesStatus()
 		self.UpdateLogFiles()
 		
-		self.UpdateRunStatus(text="No run in progress", progress=(0,1))
+		wx.PostEvent(self, DataAcquisitionManager.UpdateProgressEvent(text="No run in progress", progress=(0,1)) )
 
 	@staticmethod
 	def SortLogData(fileinfo1, fileinfo2):
@@ -1042,6 +1044,7 @@ class AutoSizingListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin, ListRowHighlighter
 		ListRowHighlighter.__init__(self)
 		
 	
+
 
 #########################################################
 #   ConfigUpdatedEvent
