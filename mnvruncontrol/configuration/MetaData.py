@@ -250,21 +250,4 @@ RunSeriesTypes          = MetaData(( ("Beam",                0, "beam_series.db"
 				     ("Mixed Beam-LI",       5, "mix_beam_li_series.db"),
 				     ("Custom Series",       6, "custom_series.db") ))
         	
-#public static readonly DateTime EpochTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-#public static Logger log = new Logger(true);
-
-runMinervaDAQScript    = 'runminervadaq.bat'
-dataPath               = '/home/data/'
-DAQScriptPath          = '/home/swroot/minerva/MinervaScripts/'
-daqConfigDirectoryPath = '/home/data/configurations/daqconfig/'
-liConfigDirectoryPath  = '/home/data/configurations/liconfig/'
-runLIScript            = 'yattest.bat'
-
-# Run Log (Run Number file counter) & Stop/Go Info
-HiddenRunPath = '/zHidden/'
-destroyRunLog = False;
-silentRunLog  = True;
-#public static Logger runlog = new Logger(HiddenRunPath, destroyRunLog, silentRunLog);
-#public static Logger stopgolog = new Logger(HiddenRunPath, destroyRunLog, silentRunLog);
 

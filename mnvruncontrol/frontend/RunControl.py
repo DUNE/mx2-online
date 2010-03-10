@@ -19,6 +19,7 @@ from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import DataAcquisitionManager
+from mnvruncontrol.backend import ReadoutNode
 
 #    MainFrame
 #########################################################
@@ -236,6 +237,7 @@ class MainFrame(wx.Frame):
 		# now the 'status' area
 		self.onImage = wx.Bitmap(self.runmanager.ResourceLocation + "/LED_on.png", type=wx.BITMAP_TYPE_PNG)
 		self.offImage = wx.Bitmap(self.runmanager.ResourceLocation + "/LED_off.png", type=wx.BITMAP_TYPE_PNG)
+		
 		self.runningIndicator = wx.StaticBitmap(self.mainPage, -1)
 		self.runningIndicator.SetBitmap(self.offImage)
 
@@ -244,9 +246,30 @@ class MainFrame(wx.Frame):
 		runningIndicatorSizer = wx.BoxSizer(wx.VERTICAL)
 		runningIndicatorSizer.Add(self.runningIndicator, 0, wx.ALIGN_CENTER_HORIZONTAL)
 		runningIndicatorSizer.Add(runningIndicatorText, 0, wx.ALIGN_CENTER_HORIZONTAL)
+		
+		self.indicators = {}
+		indicatorTexts = {}
+		indicatorSizers = {}
+		for node in self.runmanager.readoutNodes:
+			self.indicators[node.name] = wx.StaticBitmap(self.mainPage, -1)
+			self.indicators[node.name].SetBitmap(self.offImage)
+			indicatorTexts[node.name] = wx.StaticText(self.mainPage, -1, "%s\nnode" % node.name)
+		
+			indicatorSizers[node.name] = wx.BoxSizer(wx.VERTICAL)
+			indicatorSizers[node.name].Add(self.indicators[node.name], 0, wx.ALIGN_CENTER_HORIZONTAL)
+			indicatorSizers[node.name].Add(indicatorTexts[node.name], 0, wx.ALIGN_CENTER_HORIZONTAL)
+		
+		self.progressIndicator = wx.Gauge(self.mainPage, -1, range=6, name="Progress")		
+		self.progressLabel = wx.StaticText(self.mainPage, -1, "No run in progress", style=wx.ALIGN_CENTER)
+		progressSizer = wx.BoxSizer(wx.VERTICAL)
+		progressSizer.Add(self.progressIndicator, 1, wx.EXPAND)
+		progressSizer.Add(self.progressLabel, 1, wx.ALIGN_CENTER_HORIZONTAL)
 
 		statusSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Status"), wx.HORIZONTAL)
-		statusSizer.Add(runningIndicatorSizer, 1, wx.ALIGN_CENTER_HORIZONTAL)
+		statusSizer.Add(runningIndicatorSizer, 0, wx.ALIGN_LEFT | wx.LEFT | wx.RIGHT, border=15)
+		for nodename in indicatorSizers:
+			statusSizer.Add(indicatorSizers[nodename], 0, wx.ALIGN_LEFT | wx.LEFT | wx.RIGHT, border=5)
+		statusSizer.Add(progressSizer, 1, wx.ALIGN_RIGHT | wx.LEFT | wx.RIGHT, border=5)
 
 		# one sizer to rule them all, one sizer to bind them...
 		globalSizer = wx.BoxSizer(wx.VERTICAL)
@@ -287,7 +310,7 @@ class MainFrame(wx.Frame):
 		self.Connect(-1, -1, EVT_CONFIGUPDATED_ID, self.UpdateLogFiles)
 
 	def parseLogfileName(self, filename):
-		matches = re.match("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2}).txt$", filename)
+		matches = re.match("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller[01].txt$", filename)
 		
 		if matches is None:
 			return None
@@ -322,11 +345,12 @@ class MainFrame(wx.Frame):
 			errordlg = wx.MessageDialog( None, "The configuration file does not exist.  Default values are being used.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
 
-			self.runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
-			self.logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
+			self.runinfoFile                     = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
+			self.logfileLocation                 = Defaults.LOGFILE_LOCATION_DEFAULT
 			self.runmanager.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
-			self.runmanager.rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
-			self.runmanager.ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
+			self.runmanager.rawdataLocation      = Defaults.RAW_DATA_LOCATION_DEFAULT
+			self.runmanager.ResourceLocation     = Defaults.RESOURCE_LOCATION_DEFAULT
+			self.runmanager.readoutNodes         = [ ReadoutNode.ReadoutNode("local", "localhost") ]		# can't use Defaults because I would need to import ReadoutNode into Defaults, which imports Defaults, ...
 			
 		else:
 			try:	self.runinfoFile = db["runinfoFile"]
@@ -343,6 +367,10 @@ class MainFrame(wx.Frame):
 
 			try:	self.runmanager.ResourceLocation = db["ResourceLocation"]
 			except KeyError: self.runmanager.ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
+			
+			try: self.runmanager.readoutNodes = db["readoutNodes"]
+			except KeyError: self.runmanager.readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
+		
 		
 		
 		
@@ -375,7 +403,6 @@ class MainFrame(wx.Frame):
 		else:
 			db = shelve.open(self.runinfoFile, 'r')
 			
-			
 			has_all_keys = True
 			for key in key_values.keys():
 				if db.has_key(key):
@@ -392,8 +419,8 @@ class MainFrame(wx.Frame):
 		self.runEntry.SetRange(key_values["run"], 100000)
 		self.runEntry.SetValue(key_values["run"])
 		self.subrunEntry.SetValue(key_values["subrun"])
-		self.HWinitEntry.SetSelection(key_values["hwinit"])
-		self.detConfigEntry.SetSelection(key_values["detector"])
+		self.HWinitEntry.SetSelection(MetaData.HardwareInitLevels.index(key_values["hwinit"]))
+		self.detConfigEntry.SetSelection(MetaData.DetectorTypes.index(key_values["detector"]))
 		self.febsEntry.SetValue(key_values["febs"])
 		self.singleRunButton.SetValue(key_values["is_single_run"])
 		self.runSeriesButton.SetValue(not(key_values["is_single_run"]))
@@ -490,7 +517,7 @@ class MainFrame(wx.Frame):
 		else:
 			self.subrunEntry.SetValue(1)
 
-        def LoadRunSeriesFile(self, evt=None):
+	def LoadRunSeriesFile(self, evt=None):
 
                 self.seriesDescription.DeleteAllItems()
                 self.moreInfoButton.Disable()
@@ -506,21 +533,21 @@ class MainFrame(wx.Frame):
                         errordlg.ShowModal()
 			return False
 
-                self.moreInfoButton.Enable()
-                self.UpdateStatus()
+			self.moreInfoButton.Enable()
+			self.UpdateStatus()
 
-                self.seriesFilename = filename
-                self.seriesPath = Defaults.RUN_SERIES_DB_LOCATION_DEFAULT
+			self.seriesFilename = filename
+			self.seriesPath = Defaults.RUN_SERIES_DB_LOCATION_DEFAULT
 
-                for runinfo in self.runmanager.runseries.Runs:
-                        index = self.seriesDescription.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
-                        self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-                        self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
+			for runinfo in self.runmanager.runseries.Runs:
+			    index = self.seriesDescription.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
+			    self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
+			    self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
 
-                self.runmanager.subrun = 0
-                self.UpdateStatus()
+			self.runmanager.subrun = 0
+			self.UpdateStatus()
 
-                return True
+			return True
 	
 	def SeriesMoreInfo(self, evt=None):
 		infowindow = RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
@@ -559,7 +586,21 @@ class MainFrame(wx.Frame):
 		else:
 			self.closeAllButton.Disable()
 	
-	def UpdateStatus(self):
+	def UpdateRunStatus(self, text=None, progress=(0,0)):
+		""" Updates the progress gauge text label and value.
+		    If you want the gauge in 'indeterminate' mode,
+		    set 'progress' to (0,0); otherwise, 'progress'
+		    should be (current, total). """
+		if text is not None:
+			self.progressLabel.SetLabel(text)
+		
+		if progress == (0,0):		# indeterminate mode
+			self.progressIndicator.Pulse()
+		else:
+			self.progressIndicator.SetRange(progress[1])
+			self.progressIndicator.SetValue(progress[0])
+		
+	def UpdateSeriesStatus(self):
 		symbol = ""
 		if self.runmanager.running:
 			symbol = u"\u25b7"		# a right-facing triangle: like a "play" symbol
@@ -582,7 +623,8 @@ class MainFrame(wx.Frame):
 					self.seriesDescription.Select(index, False)
 
 	def OnTimeToClose(self, evt):
-		self.runmanager.StopDataAcquisition()
+		if self.runmanager.running:
+			self.runmanager.StopDataAcquisition()
 
 		self.CloseAllWindows()
 
@@ -670,6 +712,7 @@ class MainFrame(wx.Frame):
 		self.runmanager.first_subrun = int(self.subrunEntry.GetValue())
 		self.runmanager.detector     = MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH)
 		self.runmanager.febs         = int(self.febsEntry.GetValue())
+		self.runmanager.hwinit       = MetaData.HardwareInitLevels.item(self.HWinitEntry.GetSelection(), MetaData.HASH)
 				
 		self.runmanager.StartDataAcquisition()
 		if (self.runmanager.running):
@@ -699,7 +742,9 @@ class MainFrame(wx.Frame):
 
 		self.SetStatusText("STOPPED", 1)
 		self.runningIndicator.SetBitmap(self.offImage)
-
+		for nodename in self.indicators:
+			self.indicators[nodename].SetBitmap(self.offImage)
+		
 		self.runEntry.Enable()
 		self.gatesEntry.Enable()
 		self.detConfigEntry.Enable()
@@ -711,11 +756,16 @@ class MainFrame(wx.Frame):
 		self.UpdateLockedEntries()
 		self.lockdownEntry.Enable()
 
+		self.UpdateLockedEntries()
+		self.lockdownEntry.Enable()
+
 		self.stopButton.Disable()
 		self.startButton.Enable()
-		self.UpdateStatus()
+		self.UpdateSeriesStatus()
 		self.UpdateLogFiles()
 		
+		self.UpdateRunStatus(text="No run in progress", progress=(0,1))
+
 	@staticmethod
 	def SortLogData(fileinfo1, fileinfo2):
 		f1 = int(fileinfo1[0])*10000 + int(fileinfo1[1])		# run * 10000 + subrun
@@ -735,7 +785,7 @@ class MainFrame(wx.Frame):
 			
 	@staticmethod
 	def SortLogFiles(file1, file2):
-		pattern = re.compile("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2}).txt$")
+		pattern = re.compile("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w{5})_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller[01].txt$")
 		
 		matchdata1 = pattern.match(file1)
 		matchdata2 = pattern.match(file2)
@@ -875,6 +925,7 @@ class OptionsFrame(wx.Frame):
 			etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
 			rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
 			ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
+			readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
 		else:
 			try:	runinfoFile = db["runinfoFile"]
 			except KeyError: runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
@@ -890,6 +941,9 @@ class OptionsFrame(wx.Frame):
 			
 			try:	ResourceLocation = db["ResourceLocation"]
 			except KeyError: ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
+			
+			try: readoutNodes = db["readoutNodes"]
+			except KeyError: readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
 
 		panel = wx.Panel(self)
 		
@@ -909,6 +963,9 @@ class OptionsFrame(wx.Frame):
 		
 		ResourceLocationLabel = wx.StaticText(panel, -1, "Resource files location")
 		self.ResourceLocationEntry = wx.TextCtrl(panel, -1, ResourceLocation)
+		
+		readoutNodesLabel = wx.StaticText(panel, -1, "Readout nodes:")
+#		self.readoutNodesEntry = wx.
 		
 		pathsGridSizer = wx.GridSizer(6, 2, 10, 10)
 		pathsGridSizer.AddMany( ( runInfoDBLabel,            (self.runInfoDBEntry, 1, wx.EXPAND),
@@ -1005,14 +1062,18 @@ class ConfigUpdatedEvent(wx.CommandEvent):
 class MainApp(wx.App):
 	def OnInit(self):
 		try:
-			temp = os.environ["DAQROOT"]
-			temp = os.environ["ET_HOME"]
+			environment = {}
+			environment["DAQROOT"] = os.environ["DAQROOT"]
+			environment["ET_HOME"] = os.environ["ET_HOME"]
+			environment["ET_LIBROOT"] = os.environ["ET_LIBROOT"]
+			environment["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
 		except KeyError:
 			errordlg = wx.MessageDialog( None, "Your environment appears to be missing the necessary configuration.  Did you source the appropriate setup script(s) before starting the run control?", "Incorrect environment", wx.OK | wx.ICON_ERROR )
 			errordlg.ShowModal()
 			return False
 		else:
 			frame = MainFrame(None, "Run Control")
+			frame.runmanager.environment = environment
 			self.SetTopWindow(frame)
 			frame.Show(True)
 			return True

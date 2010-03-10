@@ -12,8 +12,6 @@
 import time
 
 # Data acquisition properties.
-# do these need to be calculated somehow?
-# or are they always fixed?
 EVENT_SIZE = 2048 
 FRAMES = 8
 
@@ -31,12 +29,17 @@ RESOURCE_LOCATION_DEFAULT = "/work/software/mnvruncontrol/resources"
 
 # Socket communication defaults.
 DISPATCHER_PORT = 1098
+MASTER_PORT     = 1090
 
-MNVONLINE0 = "mnvonline0.fnal.gov"
-MNVONLINE1 = "mnvonline1.fnal.gov"
-MNVONLINEMASTER = "mnvonlinemaster.fnal.gov"
+SOLDIER = "mnvonline0.fnal.gov"
+WORKER  = "mnvonline1.fnal.gov"
+MASTER  = "mnvonlinemaster.fnal.gov"
 
 # dispatcher process details
 DISPATCHER_PIDFILE = "/tmp/rc_dispatcher.pid"
-DISPATCHER_LOGFILE = "/work/data/logs/dispatcher_" + time.strftime("%Y-%m-%d_%H-%M-%S", time.gmtime()) + ".log"
+#DISPATCHER_LOGFILE = "/work/data/logs/dispatcher_" + time.strftime("%Y-%m-%d_%H-%M-%S", time.gmtime()) + ".log"
+DISPATCHER_LOGFILE = "/work/data/logs/dispatcher.log"
+
+# environment configuration
+DAQROOT_DEFAULT = "/work/software/mnvonline/mnvdaq"
 
