@@ -415,7 +415,7 @@ class RunControlDispatcher:
 				          "-g",  matches.group("gates"),
 				          "-m",  matches.group("runmode"),
 				          "-r",  matches.group("run"),
-					  "-s",  matches.group("subrun")
+					  "-s",  matches.group("subrun"),
 				          "-d",  matches.group("detector"),
 				          "-ll", matches.group("lilevel"),
 				          "-lg", matches.group("ledgroup"),
