@@ -19,6 +19,7 @@ from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import DataAcquisitionManager
+from mnvruncontrol.backend import ReadoutNode
 
 #########################################################
 #    MainFrame
@@ -246,22 +247,18 @@ class MainFrame(wx.Frame):
 		runningIndicatorSizer.Add(self.runningIndicator, 0, wx.ALIGN_CENTER_HORIZONTAL)
 		runningIndicatorSizer.Add(runningIndicatorText, 0, wx.ALIGN_CENTER_HORIZONTAL)
 		
-		self.soldierIndicator = wx.StaticBitmap(self.mainPage, -1)
-		self.soldierIndicator.SetBitmap(self.offImage)
-		soldierIndicatorText = wx.StaticText(self.mainPage, -1, "Soldier\nnode")
+		self.indicators = {}
+		indicatorTexts = {}
+		indicatorSizers = {}
+		for node in self.runmanager.readoutNodes:
+			self.indicators[node.name] = wx.StaticBitmap(self.mainPage, -1)
+			self.indicators[node.name].SetBitmap(self.offImage)
+			indicatorTexts[node.name] = wx.StaticText(self.mainPage, -1, "%s\nnode" % node.name)
 		
-		soldierIndicatorSizer = wx.BoxSizer(wx.VERTICAL)
-		soldierIndicatorSizer.Add(self.soldierIndicator, 0, wx.ALIGN_CENTER_HORIZONTAL)
-		soldierIndicatorSizer.Add(soldierIndicatorText, 0, wx.ALIGN_CENTER_HORIZONTAL)
+			indicatorSizers[node.name] = wx.BoxSizer(wx.VERTICAL)
+			indicatorSizers[node.name].Add(self.indicators[node.name], 0, wx.ALIGN_CENTER_HORIZONTAL)
+			indicatorSizers[node.name].Add(indicatorTexts[node.name], 0, wx.ALIGN_CENTER_HORIZONTAL)
 		
-		self.workerIndicator = wx.StaticBitmap(self.mainPage, -1)
-		self.workerIndicator.SetBitmap(self.offImage)
-		workerIndicatorText = wx.StaticText(self.mainPage, -1, "Worker\nnode")
-		
-		workerIndicatorSizer = wx.BoxSizer(wx.VERTICAL)
-		workerIndicatorSizer.Add(self.workerIndicator, 0, wx.ALIGN_CENTER_HORIZONTAL)
-		workerIndicatorSizer.Add(workerIndicatorText, 0, wx.ALIGN_CENTER_HORIZONTAL)
-
 		self.progressIndicator = wx.Gauge(self.mainPage, -1, range=6, name="Progress")		
 		self.progressLabel = wx.StaticText(self.mainPage, -1, "No run in progress", style=wx.ALIGN_CENTER)
 		progressSizer = wx.BoxSizer(wx.VERTICAL)
@@ -270,8 +267,8 @@ class MainFrame(wx.Frame):
 
 		statusSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Status"), wx.HORIZONTAL)
 		statusSizer.Add(runningIndicatorSizer, 0, wx.ALIGN_LEFT | wx.LEFT | wx.RIGHT, border=15)
-		statusSizer.Add(soldierIndicatorSizer, 0, wx.ALIGN_LEFT | wx.LEFT | wx.RIGHT, border=5)
-		statusSizer.Add(workerIndicatorSizer, 0, wx.ALIGN_LEFT | wx.RIGHT, border=5)
+		for nodename in indicatorSizers:
+			statusSizer.Add(indicatorSizers[nodename], 0, wx.ALIGN_LEFT | wx.LEFT | wx.RIGHT, border=5)
 		statusSizer.Add(progressSizer, 1, wx.ALIGN_RIGHT | wx.LEFT | wx.RIGHT, border=5)
 
 		# one sizer to rule them all, one sizer to bind them...
@@ -348,11 +345,12 @@ class MainFrame(wx.Frame):
 			errordlg = wx.MessageDialog( None, "The configuration file does not exist.  Default values are being used.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
 
-			self.runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
-			self.logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
+			self.runinfoFile                     = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
+			self.logfileLocation                 = Defaults.LOGFILE_LOCATION_DEFAULT
 			self.runmanager.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
-			self.runmanager.rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
-			self.runmanager.ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
+			self.runmanager.rawdataLocation      = Defaults.RAW_DATA_LOCATION_DEFAULT
+			self.runmanager.ResourceLocation     = Defaults.RESOURCE_LOCATION_DEFAULT
+			self.runmanager.readoutNodes         = [ ReadoutNode.ReadoutNode("local", "localhost") ]		# can't use Defaults because I would need to import ReadoutNode into Defaults, which imports Defaults, ...
 			
 		else:
 			try:	self.runinfoFile = db["runinfoFile"]
@@ -369,6 +367,9 @@ class MainFrame(wx.Frame):
 
 			try:	self.runmanager.ResourceLocation = db["ResourceLocation"]
 			except KeyError: self.runmanager.ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
+			
+			try: self.runmanager.readoutNodes = db["readoutNodes"]
+			except KeyError: self.runmanager.readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
 		
 		
 		
@@ -745,8 +746,8 @@ class MainFrame(wx.Frame):
 
 		self.SetStatusText("STOPPED", 1)
 		self.runningIndicator.SetBitmap(self.offImage)
-		self.soldierIndicator.SetBitmap(self.offImage)
-		self.workerIndicator.SetBitmap(self.offImage)
+		for nodename in self.indicators:
+			self.indicators[nodename].SetBitmap(self.offImage)
 		
 		self.runEntry.Enable()
 		self.gatesEntry.Enable()
@@ -926,6 +927,7 @@ class OptionsFrame(wx.Frame):
 			etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
 			rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
 			ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
+			readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
 		else:
 			try:	runinfoFile = db["runinfoFile"]
 			except KeyError: runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
@@ -941,6 +943,9 @@ class OptionsFrame(wx.Frame):
 			
 			try:	ResourceLocation = db["ResourceLocation"]
 			except KeyError: ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
+			
+			try: readoutNodes = db["readoutNodes"]
+			except KeyError: readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
 
 		panel = wx.Panel(self)
 		
@@ -960,6 +965,9 @@ class OptionsFrame(wx.Frame):
 		
 		ResourceLocationLabel = wx.StaticText(panel, -1, "Resource files location")
 		self.ResourceLocationEntry = wx.TextCtrl(panel, -1, ResourceLocation)
+		
+		readoutNodesLabel = wx.StaticText(panel, -1, "Readout nodes:")
+#		self.readoutNodesEntry = wx.
 		
 		pathsGridSizer = wx.GridSizer(6, 2, 10, 10)
 		pathsGridSizer.AddMany( ( runInfoDBLabel,            (self.runInfoDBEntry, 1, wx.EXPAND),

@@ -1,11 +1,13 @@
 """
-  RunControlClientConnection.py:
-  Module that handles the socket connection from the client
+  ReadoutNode.py:
+  Module that models a readout node.
+  It handles the socket connection from the client
   (the readout "queen" in Gabe's language) to the readout nodes
-  actually attached to hardware (the "soldier" and "worker" nodes).
+  actually attached to hardware (the "soldier" and "worker" nodes)
+  as well as taking care of a few other details.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
-                    Feb. 2010
+                    Mar. 2010
                     
    Address all complaints to the management.
 """
@@ -17,16 +19,12 @@ from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import MetaData
 
-class RunControlClientConnection:
-	def __init__(self, serveraddress):
+class ReadoutNode:
+	def __init__(self, name, address):
 		self.socket = None
-		self.serveraddress = serveraddress
+		self.name = name
+		self.address = address
 		self.port = Defaults.DISPATCHER_PORT
-		
-		try:
-			self.request("alive?")
-		except socket.error:
-			raise RunControlClientException("Couldn't connect to the server.  Are you sure you have the right address and that the run control dispatcher has been started on the server?")
 		
 	def request(self, request):
 		is_valid_request = False
@@ -36,17 +34,18 @@ class RunControlClientConnection:
 				break
 		
 		if not is_valid_request:
-			raise RunControlBadRequestException("Invalid request: '" + request + "'")
+			raise ReadoutNodeBadRequestException("Invalid request: '" + request + "'")
 		
 		try:
 			self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			self.socket.settimeout(2)
-			self.socket.connect( (self.serveraddress, self.port) )
+			self.socket.connect( (self.address, self.port) )
 			self.socket.send(request)
 			self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
-		except socket.error:
+		except socket.error, e:
+			print e
 			self.socket.close()
-			raise RunControlNoClientConnectionException()
+			raise ReadoutNodeNoConnectionException()
 		
 		response = ""
 		datalen = -1
@@ -77,7 +76,7 @@ class RunControlClientConnection:
 		elif response == "0":
 			return False
 		else:
-			raise RunControlClientUnexpectedDataException("Unexpected response: " + response)
+			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
 	
 	def daq_checkLastExitCode(self):
 		""" Asks for the return code from the last DAQ process to run.
@@ -88,7 +87,7 @@ class RunControlClientConnection:
 		else:					
 			return int(response)
 			
-	def daq_start( self, identity, etfile, runNum, subRunNum, numGates=10,
+	def daq_start( self, etfile, runNum, subRunNum, numGates=10,
 	               runMode=MetaData.RunningModes["One shot", MetaData.HASH],
 	               detector=MetaData.DetectorTypes["Unknown", MetaData.HASH],
 	               numFEBs=114, LIlevel=MetaData.LILevels["Zero PE", MetaData.HASH],
@@ -97,7 +96,7 @@ class RunControlClientConnection:
 		""" Asks the server to start the DAQ process.  Returns True on success,
 		    False on failure, and raises an exception if the DAQ is currently running. """
 		
-		request = "daq_start etfile=%s:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d:identity=%s!" % (etfile, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit, identity)
+		request = "daq_start etfile=%s:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d:identity=%s!" % (etfile, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit, self.name)
 		#print request
 		response = self.request(request)
 		
@@ -106,9 +105,9 @@ class RunControlClientConnection:
 		elif response == "1":
 			return False
 		elif response == "2":
-			raise RunControlClientException("The DAQ slave process is currently running!  You can't start it again...")
+			raise ReadoutNodeException("The DAQ slave process is currently running!  You can't start it again...")
 		else:
-			raise RunControlClientUnexpectedDataException("Unexpected response: " + response)
+			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
 
 	def daq_stop(self):
 		""" Asks the server to stop the DAQ process.  Returns True on success,
@@ -121,9 +120,9 @@ class RunControlClientConnection:
 		elif response == "1":
 			return False
 		elif response == "2":
-			raise RunControlClientException("The DAQ slave process is not currently running, so it can't be stopped.")
+			raise ReadoutNodeException("The DAQ slave process is not currently running, so it can't be stopped.")
 		else:
-			raise RunControlClientUnexpectedDataException("Unexpected response: " + response)
+			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
 
 	def sc_loadHWfile(self, filename):
 		""" Asks the server to load the specified hardware configuration file. 
@@ -135,9 +134,9 @@ class RunControlClientConnection:
 		elif response == "1":
 			return False
 		elif response == "2":
-			raise RunControlClientException("The specified slow control configuration does not exist.")
+			raise ReadoutNodeException("The specified slow control configuration does not exist.")
 		else:
-			raise RunControlClientUnexpectedDataException("Unexpected response: " + response)
+			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
 
 	def sc_readVoltages(self):
 		""" Asks the server for a list of the voltages on each of the FEBs.
@@ -173,14 +172,14 @@ class RunControlClientConnection:
 		
 		
 		
-class RunControlClientException(Exception):
+class ReadoutNodeException(Exception):
 	pass
 
-class RunControlBadRequestException(Exception):
+class ReadoutNodeBadRequestException(Exception):
 	pass
 
-class RunControlClientUnexpectedDataException(Exception):
+class ReadoutNodeUnexpectedDataException(Exception):
 	pass
 	
-class RunControlNoClientConnectionException(Exception):
+class ReadoutNodeNoConnectionException(Exception):
 	pass

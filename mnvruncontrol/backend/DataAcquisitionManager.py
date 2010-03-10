@@ -18,7 +18,7 @@ from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.backend import LIBox
 from mnvruncontrol.backend import RunSeries
-from mnvruncontrol.backend import RunControlClientConnection
+from mnvruncontrol.backend import ReadoutNode
 
 class DataAcquisitionManager(wx.EvtHandler):
 	def __init__(self, main_window):
@@ -37,7 +37,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.windows = []					# child windows opened by the process.
 		
 		self.LIBox = None					# this will be set in StartDataAcquisition
-		self.readout_node = {"soldier": None, "worker": None}
+		self.readoutNodes = None				# will be set in RunControl.GetConfig()
 
 		# configuration stuff
 		self.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
@@ -71,22 +71,17 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.LIBox = LIBox.LIBox()
 		
 		failed_connection = None
-		self.readout_node["soldier"] = None
-		self.readout_node["worker"] = None
-		
-		for nodename, address, indicator in zip( ("soldier",                         "worker"),
-		                                         (Defaults.SOLDIER,                  Defaults.WORKER),
-		                                         (self.main_window.soldierIndicator, self.main_window.workerIndicator) ):
+		for node in self.readoutNodes:
 			try:
-				self.readout_node[nodename] = RunControlClientConnection.RunControlClientConnection(address)
-			except RunControlClientConnection.RunControlClientException:
-				failed_connection = name
+				node.ping()
+			except ReadoutNode.RunControlClientException:
+				failed_connection = node.name
 				break
 			else:
-				indicator.SetBitmap(self.main_window.onImage)
+				self.main_window.indicators[node.name].SetBitmap(self.main_window.onImage)
 		
 		if failed_connection:
-			errordlg = wx.MessageDialog( None, "A connection cannot be made to the " + failed_connection + " node.  Check to make sure that the run control dispatcher is started on that machine.", "No connection to " + failed_connection + " node", wx.OK | wx.ICON_ERROR )
+			errordlg = wx.MessageDialog( None, "A connection cannot be made to the " + failed_connection + " readout node.  Check to make sure that the run control dispatcher is started on that machine.", "No connection to " + failed_connection + " readout node", wx.OK | wx.ICON_ERROR )
 			errordlg.ShowModal()
 			return
 			
@@ -116,11 +111,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if not quitting:
 			self.CloseWindows()			# don't want leftover windows open.
 			self.main_window.UpdateRunStatus(text="Setting up run:\ntesting connections", progress=(0,9))
-			soldier_ok = self.readout_node["soldier"].ping()
-			worker_ok  = self.readout_node["worker"].ping()
+			ok = True
+			for node in self.readoutNodes:
+				ok = ok and node.ping()
 			
-			if not(soldier_ok and worker_ok):
-				errordlg = wx.MessageDialog( None, "Connection to the readout nodes was broken.  Running aborted.", "No connection to readout nodes", wx.OK | wx.ICON_ERROR )
+			if not ok:
+				errordlg = wx.MessageDialog( None, "Connection to the readout node(s) was broken.  Running aborted.", "No connection to readout node(s)", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
 				
 				quitting = True
@@ -229,32 +225,31 @@ class DataAcquisitionManager(wx.EvtHandler):
 	def StartRemoteDAQService(self):
 		self.main_window.UpdateRunStatus(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9))
 	
-		nodes = {"worker": self.readout_node["worker"], "soldier": self.readout_node["soldier"]}
-		for nodename in nodes.keys():
+		for node in self.readoutNodes:
 			try:
-				success = nodes[nodename].daq_start(nodename, self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
-			except RunControlClientConnection.RunControlClientException:
-				errordlg = wx.MessageDialog( None, "Somehow the DAQ service on the " + nodename + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", nodename.capitalize() + " DAQ service not yet stopped", wx.OK | wx.ICON_ERROR )
+				success = node.daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
+			except ReadoutNode.RunControlClientException:
+				errordlg = wx.MessageDialog( None, "Somehow the DAQ service on the " + node.name + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", node.name.capitalize() + " DAQ service not yet stopped", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
 
-				stop_success = nodes[nodename].daq_stop()
+				stop_success = node.daq_stop()
 				if stop_success:
-					success = nodes[nodename].daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
+					success = node.daq_start(self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
 				else:
-					errordlg = wx.MessageDialog( None, "Couldn't stop the " + nodename +" DAQ service.  Aborting run.", nodename.capitalize() + " DAQ service couldn't be stopped", wx.OK | wx.ICON_ERROR )
+					errordlg = wx.MessageDialog( None, "Couldn't stop the " + node.name +" DAQ service.  Aborting run.", node.name.capitalize() + " DAQ service couldn't be stopped", wx.OK | wx.ICON_ERROR )
 					errordlg.ShowModal()
 		
 					quitting = True
 	
 			if not success:
-				errordlg = wx.MessageDialog( None, "Couldn't start the " + nodename + " DAQ service.  Aborting run.", nodename.capitalize() + " DAQ service couldn't be started", wx.OK | wx.ICON_ERROR )
+				errordlg = wx.MessageDialog( None, "Couldn't start the " + node.name + " DAQ service.  Aborting run.", node.name.capitalize() + " DAQ service couldn't be started", wx.OK | wx.ICON_ERROR )
 				errordlg.ShowModal()
 				
 				self.running = False
 				self.subrun = 0
 				self.main_window.StopRunning()		# tell the main window that we're done here.
 		
-		self.socketThread = SocketThread(self)			# start the service that listens for the 'done' signal
+		self.socketThread = SocketThread(self, self.readoutNodes)			# start the service that listens for the 'done' signal
 		
 	def StartTestProcess(self):
 		frame = OutputFrame(self.main_window, "test process", window_size=(600,600), window_pos=(1200,200))
@@ -297,13 +292,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
 		self.subrun += 1
 
-#		# make SURE the DAQ process has stopped.
-#		for node in (self.readout_node["worker"], self.readout_node["soldier"]):
-#			try:
-#				node.daq_stop()
-#			except:
-#				pass
-		
 		try:
 			self.LIBox.reset()					# don't want the LI box going unless it needs to be.
 		except:
@@ -318,10 +306,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.running = False
 		self.subrun = 0
 
-		for nodename in self.readout_node:
+		for node in self.readoutNodes:
 			try:
-				success = self.readout_node[nodename].daq_stop()
-			except RunControlClientConnection.RunControlClientException, RunControlClientConnection.RunControlNoClientConnectionException:		# the DAQ has already quit or is unreachable
+				success = node.daq_stop()
+			except ReadoutNode.ReadoutNodeException, ReadoutNode.ReadoutNodeNoConnectionException:		# the DAQ has already quit or is unreachable
 				self.EndSubrun()								# if so, we'll never get the "DAQ quit" event.
 			
 
@@ -422,9 +410,6 @@ class DAQthread(threading.Thread):
 				self.timerthread = threading.Timer(10, self.LastCheck)
 				self.timerthread.start()
 
-			for node in (self.soldier_node, self.worker_node):
-				success = node.daq_stop()
-			
 		else:
 			# make sure there's nothing left in the buffer to read!
 			newdata = self.process.stdout.read()
@@ -457,10 +442,11 @@ class DAQthread(threading.Thread):
 class SocketThread(threading.Thread):
 	""" A thread that keeps open a socket to listen for
 	    the "done" signal from all readout nodes. """
-	def __init__(self, owner_process):
+	def __init__(self, owner_process, nodesToWatch):
 		threading.Thread.__init__(self)
 		
 		self.owner_process = owner_process
+		self.nodesToWatch = nodesToWatch
 		
 		self.start()
 	
@@ -471,7 +457,9 @@ class SocketThread(threading.Thread):
 		s.listen(1)
 		
 		quit = False
-		node_completed = {"worker": False, "soldier": False}
+		node_completed = {}
+		for node in self.nodesToWatch:
+			node_completed[node.name] = False
 		while True:
 			alldone = True
 			num_complete = 0
@@ -497,19 +485,18 @@ class SocketThread(threading.Thread):
 				
 				request = request.lower()
 				
-				if request in ("worker", "soldier"):
+				if request in node_completed:
 					node_completed[request] = True
 					self.owner_process.main_window.UpdateRunStatus( text="Cleaning up:\nWaiting on all nodes to finish...", progress=(num_complete, len(node_completed)) )
 			else:
-				for node, indicator in zip( (self.owner_process.readout_node["soldier"],                            self.owner_process.readout_node["worker"]),
-							             (self.owner_process.main_window.soldierIndicator, self.owner_process.main_window.workerIndicator) ):
+				for node in self.nodesToWatch:
 					if node.daq_checkStatus():
-						indicator.SetBitmap(self.owner_process.main_window.onImage)
+						self.owner_process.main_window.indicators[node.name].SetBitmap(self.owner_process.main_window.onImage)	# whew!
 						if num_complete > 0:		# if one node has quit, we need to have the other ones quit too...
 							node.daq_stop()
 							
 					else:
-						indicator.SetBitmap(self.owner_process.main_window.offImage)
+						self.owner_process.main_window.indicators[node.name].SetBitmap(self.owner_process.main_window.offImage)
 				
 				wx.PostEvent(self.owner_process, UpdateEvent())
 				time.sleep(0.25)		# a little throttling so we don't overload the event dispatcher
