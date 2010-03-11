@@ -1,32 +1,18 @@
 #!/bin/bash
 
-# Argument List:
-#  $1 == et_system file name (should include full path)
-#  $2 == number of febs
-#  $3 == number of gates to process
-if [ $# -ne 3 ]; then
-	echo Please supply et_system file name, number of febs, and number of gates.
-	exit 1
-fi
+source $DAQROOT/setup_daqbuild.sh
+EVENT_SIZE=2048  #a kilobyte
+FEBS=4 #how many total FEB's need to be serviced
+FRAMES=8
+EVENTS=$(($2*$FRAMES*$FEBS))
 
-ETSYS=$1
-EVENT_SIZE=2048  # two kilobytes - this is the *frame* size ("events"==frames in ET)
-FEBS=$2          # how many total FEB's need to be serviced
-FRAMES=8         # this is anticipating 1 FPGA & 1 TDC & 6 ADC Frames.
-EVENTS=$(($3*$FRAMES*$FEBS))  # create space in the memory-mapped file for all events.
-
-if [ "$LOCALE" == "" ]
+if [ $LOCALE == 'RUT' ]
 then
-	echo No LOCALE defined!  It is impossible to configure the MINERvA DAQ Environment!
-	exit 1
+	$ET_HOME/Linux-x86_64-64/bin/et_start -v -f ./$1 -n $EVENTS -s $EVENT_SIZE
 fi
 
-if [ "$ET_HOME" == "" ]
+if [ $LOCALE == 'FNAL' ]
 then
-        echo No ET_HOME defined!  Please configure your environment!
-        exit 1
+	$ET_HOME/Linux-x86_64-64/bin/et_start -v -f ./$1 -n $EVENTS -s $EVENT_SIZE
 fi
-
-# The ETSYS should include the full path.
-$ET_HOME/Linux-x86_64-64/bin/et_start -v -f $ETSYS -n $EVENTS -s $EVENT_SIZE
 

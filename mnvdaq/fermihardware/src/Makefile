@@ -1,13 +1,7 @@
 CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 LDFLAGS += -shared -Wl,-soname
-
-#--DEBUG FLAGS--
-#COMPILE_OPTIONS += -DDEBUG 
-#COMPILE_OPTIONS += -DDEBUG_FEB
-#COMPILE_OPTIONS += -DDEBUG_CROC
-#COMPILE_OPTIONS += -DDEBUG_VERBOSE
-#COMPILE_OPTIONS += -DDEBUG_CRIM
-
+#COMPILE_OPTIONS = -Dv65 #-DDEBUG_FEB 
+COMPILE_OPTIONS = -Dv81 #-DDEBUG -DDEBUG_FEB 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
@@ -23,6 +17,9 @@ $(TARGET): $(OBJS)
 $(OBJS): %.o: %.cpp
 	@echo $(SRC) 
 	@echo $(INCLUDE)
+#	$(CXX) $(CPPFLAGS) $(INCLUDE) -DDEBUG_FRAME_BASE -c $< -o $@
+#	$(CXX) $(CPPFLAGS) $(INCLUDE) -DDEBUG_FEB -c $< -o $@
+#	$(CXX) $(CPPFLAGS) $(INCLUDE) -DDEBUG_CHANNELS -c $< -o $@
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(COMPILE_OPTIONS) -c $< -o $@
 
 clean:
