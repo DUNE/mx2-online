@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 	// prevents "address already in use" errors when starting the DAQ
 	// again too quickly after the last time it shut down.
 	int optval = 1;
-	setsockopt(gate_done_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval)
+	setsockopt(gate_done_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 	
 	// Bind the gate_done socket to that address for the listener.
 	if ((bind (gate_done_socket_handle, (const sockaddr*)&gate_done_service, 
