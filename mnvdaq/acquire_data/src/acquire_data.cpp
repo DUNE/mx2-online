@@ -938,7 +938,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
  *  \param et_att_id  attach the ET attachemnt to which the data will be sent
  *  \param et_sys_id  sys_id the system ID for ET which will handle the data
  *
- *  Returns a status bit.
+ *  Returns a status bit - 0 for success.
  */
 
 #if TIME_ME
@@ -1006,15 +1006,27 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			acqData.fatalStream() << "Error adding FPGA Information to DPM in acquire_data::TakeAllData!";
 			acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
 				channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
-			exit(-1001);
+			return 1; // Failure!
+			//exit(-1001);
 		}
 		febTrial->message = new unsigned char [FEB_INFO_SIZE];
 		for (int debug_index=0; debug_index<febTrial->GetIncomingMessageLength(); debug_index++) {
 			febTrial->message[debug_index] = channelTrial->GetBuffer()[debug_index];
 		}
-		// TODO - Do we really need to decode the register values?... probably not.
 		// TODO - Decoding does provide an error check of sorts, but this inefficient.
-		febTrial->DecodeRegisterValues(febTrial->GetIncomingMessageLength());
+		try {
+			int error = febTrial->DecodeRegisterValues(febTrial->GetIncomingMessageLength());
+			if (error) throw error;
+		} catch (int e) {
+			std::cout << "Error in FPGA Frame in acquire_data::TakeAllData!" << std::endl;
+			std::cout << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
+				channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber() << std::endl;
+			acqData.fatalStream() << "Error in FPGA Frame in acquire_data::TakeAllData!";
+			acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
+				channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
+			return 1; // Failure!
+			//exit(-1001);
+		}
 #if SHOW_REGISTERS
 		febTrial->ShowValues();
 #endif

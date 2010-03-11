@@ -439,8 +439,7 @@ FPGA[56]67 = ??
 
 // TODO - ? Maybe... it isn't consistent that the FPGA frame function does not print the 
 // register values while the discr and adc frame decode functions do... 
-// TODO - Make this function an int and have it return error codes?
-void feb::DecodeRegisterValues(int buffersize) 
+int feb::DecodeRegisterValues(int buffersize) 
 {
 /*! \fn********************************************************************************
  *  DecodeMessage takes the incoming message and unpacks the bits into the
@@ -698,6 +697,7 @@ void feb::DecodeRegisterValues(int buffersize)
 	} // end if initialized
 
 	// This finishes the incoming message.
+	return 0;
 }
 
 

@@ -7,6 +7,9 @@ using namespace std;
 ofstream thread_log("eb_log.txt");
 #endif
 
+static int gate_counter    =  0;
+const int  gate_print_freq = 10;
+
 int main(int argc, char **argv) 
 {
 /*! \fn The main function for running the event builder. 
@@ -26,7 +29,6 @@ int main(int argc, char **argv)
 	std::cout << "ET Filesystem   = " << argv[1] << std::endl;
 	ofstream binary_outputfile(output_filename.c_str(),ios::out|ios::app|ios::binary); 
 
-																
 	// int            event_size; // unused...
 	int            status;
 	et_openconfig  openconfig;
@@ -222,19 +224,11 @@ int main(int argc, char **argv)
 		binary_outputfile.write((char *) final_buffer, length);  
 		binary_outputfile.flush();
 		if ( !( evt_counter%10000 ) ) {
-#if DEBUG_THREAD
-			thread_log << "*****************************************************************" << std::endl; 
-			thread_log << "  event_builder::main(): Event (Frame) Processed: " << evt_counter << std::endl;
-#endif
 			std::cout << "*****************************************************************" << std::endl; 
 			std::cout << "  event_builder::main(): Event (Frame) Processed: " << evt_counter << std::endl;
 		}
 		delete event;
 	}
-#if DEBUG_THREAD
-	thread_log << "*****************************************************************" << std::endl; 
-	thread_log << "  event_builder::main(): Quitting Event Builder." << std::endl;
-#endif
 	// Detach from the station.
 	if (et_station_detach(sys_id, attach) < 0) {
 		printf("et_producer: error in station detach\n");
@@ -282,6 +276,8 @@ int event_builder(event_handler *evt)
 	// 56?  TODO 54 registers in modern feb firmware, should replace with variable argument anyway...
 	feb *dummy_feb = new feb(6,1,(febAddresses)0,56); // Make a dummy feb for access to the header decoding functions. 
 	if (evt->feb_info[4]==3) {
+		gate_counter++;
+		if (!(gate_counter%gate_print_freq)) std::cout << "Gate: " << gate_counter << std::endl;
 		// Build the "DAQ" header
 		tmp_header = new MinervaHeader(evt->feb_info[1]); //the special constructor for the DAQ bank
 		// Make the new event block

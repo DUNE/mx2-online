@@ -259,10 +259,11 @@ void Frames::DecodeHeader()
 }
 
 
-void Frames::DecodeRegisterValues(int a) 
+int Frames::DecodeRegisterValues(int a) 
 {
 	std::cout << "Must Make One of these in each frame-inheriting class!!!" << std::endl;
 	exit(-2);
+	return -1;
 }
 
 
