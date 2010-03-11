@@ -74,8 +74,8 @@ do
 	esac
 done
 
-ETSYS=/work/data/etsys/$FILEROOT
-OUTFL=/work/data/rawdata/$FILEROOT.dat
+ETSYS=/work/data/etsys/${FILEROOT}_RawData
+OUTFL=/work/data/rawdata/${FILEROOT}_RawData.dat
 
 xterm -hold -geometry 80x30+380+1 -sl 1000 -e ./start_et_system $ETSYS $NFEBS $NGATES &
 export ET_SYST_TERM_PID=$!
