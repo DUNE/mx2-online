@@ -298,6 +298,13 @@ int main(int argc, char *argv[])
 	gate_done_service.sin_family = AF_INET;
 	gate_done_service.sin_port = htons(gate_done_port); 
 	gate_done_service.sin_addr = gate_done_socket_address;
+	
+	// need to allow the socket to be reused.
+	// prevents "address already in use" errors when starting the DAQ
+	// again too quickly after the last time it shut down.
+	int optval = 1;
+	setsockopt(gate_done_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval)
+	
 	// Bind the gate_done socket to that address for the listener.
 	if ((bind (gate_done_socket_handle, (const sockaddr*)&gate_done_service, 
 			sizeof (gate_done_service)))) {
@@ -321,6 +328,13 @@ int main(int argc, char *argv[])
 	global_gate_service.sin_family = AF_INET;
 	global_gate_service.sin_port = htons(global_gate_port); 
 	global_gate_service.sin_addr = global_gate_socket_address;
+
+	// need to allow the socket to be reused.
+	// prevents "address already in use" errors when starting the DAQ
+	// again too quickly after the last time it shut down.
+	int optval = 1;
+	setsockopt(global_gate_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval)
+
 	// Bind the global_gate socket to that address for the listener.
 	if ((bind (global_gate_socket_handle, (const sockaddr*)&global_gate_service, 
 			sizeof (global_gate_service)))) { 
