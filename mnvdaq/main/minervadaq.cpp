@@ -55,9 +55,9 @@ int main(int argc, char *argv[])
 	string fileroot          = "testme";  // For logs, etc.  
 	string strtemp           = "unknown"; // For SAM, temp.
 	char config_filename[100]; sprintf(config_filename,"unknown"); // For SAM.
-	string et_filename       = "/work/data/etsys/testme";  
-	string log_filename      = "/work/data/logs/testme.txt"; 
-	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme.py");
+	string et_filename       = "/work/data/etsys/testme_RawData";  
+	string log_filename      = "/work/data/logs/testme_Log.txt"; 
+	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme_SAM.py");
 	FILE *sam_file;
 	unsigned long long firstEvent, lastEvent;
 	string str_controllerID  = "0";
@@ -110,10 +110,10 @@ int main(int argc, char *argv[])
 		else if (sw=="-et") {
 			optind++;
 			fileroot     = argv[optind];
-			et_filename  = "/work/data/etsys/" + fileroot;
+			et_filename  = "/work/data/etsys/" + fileroot + "_RawData";
 			log_filename = "/work/data/logs/" + fileroot + "_Controller" + 
-				str_controllerID + ".txt";
-			sprintf(sam_filename,"/work/data/sam/%s.py",fileroot.c_str());
+				str_controllerID + "Log.txt";
+			sprintf(sam_filename,"/work/data/sam/%s_SAM.py",fileroot.c_str());
 			std::cout << "\tET Filename            = " << et_filename << std::endl;
 			std::cout << "\tSAM Filename           = " << sam_filename << std::endl;
 			std::cout << "\tLOG Filename           = " << log_filename << std::endl;
@@ -508,7 +508,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-11-02'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-11-03'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -717,22 +717,18 @@ int main(int argc, char *argv[])
 				triggerType = LightInjection;
 				break;
 			case MixedBeamPedestal:
-				// TODO - Test mixed beam-pedestal running!
 				if (gate%2) {
 					triggerType = Pedestal;
 				} else {
 					triggerType = NuMI;
 				}
-				mnvdaq.warnStream() << "Calling untested mixed mode beam-pedestal trigger types!";
 				break;
 			case MixedBeamLightInjection:
-				// TODO - Test mixed beam-li running!
 				if (gate%2) {
 					triggerType = LightInjection;
 				} else {
 					triggerType = NuMI;
 				}
-				mnvdaq.warnStream() << "Calling untested mixed mode beam-li trigger types!";
 				break; 
 			default:
 				std::cout << "minervadaq::main(): ERROR! Improper Running Mode = " << runningMode << std::endl;
@@ -751,8 +747,8 @@ int main(int argc, char *argv[])
 		} catch (int e) {
 			std::cout << "Error in minervadaq::main()!  Cannot trigger the DAQ for Gate: " << gate << std::endl;
 			mnvdaq.critStream() << "Error in minervadaq::main()!  Cannot trigger the DAQ for Gate: " << gate;
-			//continueRunning = false; //?
-			//break; //?
+			continueRunning = false; //?
+			break; //?
 		}
 #endif 
 
@@ -846,8 +842,8 @@ int main(int argc, char *argv[])
 							mnvdaq.critStream() << "Cannot TakeData for Gate: " << gate;
 							mnvdaq.critStream() << "Failed to execute on CROC Addr: " << 
 								(tmpCroc->GetCrocAddress()>>16) << " Chain: " << j;
-							//continueRunning = false; //?
-							//break; //?
+							continueRunning = false; //?
+							break; //?
 						}
 #endif
 					} //channel has febs
@@ -1312,8 +1308,16 @@ void CreateSocketPair(int &gate_done_socket_handle, int &global_gate_socket_hand
  */
 	gate_done_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
 	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
-	if (gate_done_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
-	if (global_gate_socket_handle == -1) { perror("socket"); exit(EXIT_FAILURE); }
+	if (gate_done_socket_handle == -1) { 
+		perror("socket"); 
+		mnvdaq.fatalStream() << "gate_done_socket_handle == -1!";
+		exit(EXIT_FAILURE); 
+	}
+	if (global_gate_socket_handle == -1) { 
+		perror("socket"); 
+		mnvdaq.fatalStream() << "global_gate_socket_handle == -1!";
+		exit(EXIT_FAILURE); 
+	}
 	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC gate_done_socket_handle  : " <<
 		gate_done_socket_handle;
 	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC global_gate_socket_handle: " <<
@@ -1330,7 +1334,6 @@ void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node
  * This function sets up a socket service.
  */
 	socket_service.sin_family = AF_INET;
-	//string hostname="mnvonline1.fnal.gov"; // The worker node will listen for the global gate.
 	node_info = gethostbyname(hostname.c_str());
 	if (node_info == NULL) {
 		mnvdaq.fatalStream() << "No node to connect to at " << hostname;

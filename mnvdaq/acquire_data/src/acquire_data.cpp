@@ -71,7 +71,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 #endif
 #if WH14B
 	InitializeCrim(0xE00000, 1, runningMode);
-	InitializeCroc(0x010000, 1, 0, 4, 0, 0);
+	InitializeCroc(0x010000, 1, 0, 3, 0, 0);
 	InitializeCroc(0x060000, 2, 0, 0, 2, 0);
 #endif
 #if NUMIUS
@@ -415,7 +415,18 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 #endif
 			chan_thread[i] = new boost::thread(boost::bind(&acquire_data::BuildFEBList,this,i,crocNo,nFEBsPerChain[i]));
 #else
-			BuildFEBList(i, crocNo, nFEBsPerChain[i]);
+			try {
+				int error = BuildFEBList(i, crocNo, nFEBsPerChain[i]);
+				if (error) throw error;
+			} catch (int e) {
+				std::cout << "Cannot locate all FEB's on CROC " <<
+					(daqController->GetCroc(crocNo)->GetCrocAddress()>>16) << 
+					" Chain " << i << std::endl;
+				acqData.fatalStream() << "Cannot locate all FEB's on CROC " <<
+					(daqController->GetCroc(crocNo)->GetCrocAddress()>>16) << 
+					" Chain " << i;
+				exit(e);	
+			}
 #endif
 		}
 	}
@@ -724,7 +735,6 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 			// Clean up the memory.
 			delete tmpFEB;  
 		} else {
-		// TODO - Return an error code in this case?
 			acqData.critStream() << "FEB: " << tmpFEB->GetBoardNumber() << " is NOT available on CROC "
 				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " 
 				<< tmpChan->GetChainNumber();
@@ -738,6 +748,8 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 #endif
 			// Clean up the memory.
 			delete tmpFEB; 
+			// Return an error, stop!
+			return 1;
 		}  
 	}
 
