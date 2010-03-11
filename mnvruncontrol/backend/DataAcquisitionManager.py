@@ -164,7 +164,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			wx.PostEvent(self.main_window, UpdateProgressEvent(text="Setting up run:\nWaiting on hardware...", progress=(3,9)) )
 
 		now = datetime.datetime.utcnow()
-		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
+		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d_RawData' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
 		self.raw_data_filename = self.ET_filename + '.dat'
 									
 		if quitting:

@@ -6,6 +6,7 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.mixins.listctrl import ListRowHighlighter
 import subprocess
 import os
+import os.path
 import sys
 import signal
 import threading
@@ -38,7 +39,7 @@ class MainFrame(wx.Frame):
 
 		self.GetConfig()		# load up the configuration entries from the file.
 		self.BuildGraphics()	# build and draw the GUI panel.
-
+		
 		# now initialize some member variables we'll need:
 		self.logfileNames = None
 
@@ -73,8 +74,6 @@ class MainFrame(wx.Frame):
 		self.statusbar = self.CreateStatusBar(2)
 		self.SetStatusWidths([-6, -1])
 		self.SetStatusText("STOPPED", 1)
-
-#		panel = wx.Panel(self)
 
 		nb = wx.Notebook(self)
 
@@ -304,9 +303,11 @@ class MainFrame(wx.Frame):
 		                       
 		logPage.SetSizer(logBoxSizer)
 		
+		
 		# add the pages into the notebook.
 		nb.AddPage(self.mainPage, "Run control")
-		nb.AddPage(logPage, "Log files")
+		if len(self.runmanager.readoutNodes) == 1:		# until we get the rsync'ing of log files to the master node working...
+			nb.AddPage(logPage, "Log files")
 		
 		self.Layout()
 
@@ -373,9 +374,8 @@ class MainFrame(wx.Frame):
 			
 			try: self.runmanager.readoutNodes = db["readoutNodes"]
 			except KeyError: self.runmanager.readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
-		
-		
-		
+			
+			db.close()
 		
 		
 	def GetNextRunSubrun(self, evt=None):
