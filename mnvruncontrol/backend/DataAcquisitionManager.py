@@ -164,8 +164,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 			wx.PostEvent(self.main_window, UpdateProgressEvent(text="Setting up run:\nWaiting on hardware...", progress=(3,9)) )
 
 		now = datetime.datetime.utcnow()
-		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d_RawData' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
-		self.raw_data_filename = self.ET_filename + '.dat'
+		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
+		self.raw_data_filename = self.ET_filename + '_RawData.dat'
 									
 		if quitting:
 			self.running = False
@@ -192,7 +192,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		etSysFrame = OutputFrame(self.main_window, "ET system", window_size=(600,200), window_pos=(600,0))
 		etSysFrame.Show(True)
 
-		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename, events, Defaults.EVENT_SIZE)
+		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", events, Defaults.EVENT_SIZE)
 
 		self.windows.append( etSysFrame )
 		self.UpdateWindowCount()
@@ -202,7 +202,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		etMonFrame = OutputFrame(self.main_window, "ET monitor", window_size=(600,600), window_pos=(600,200))
 		etMonFrame.Show(True)
 		
-		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename)
+		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData")
 		self.windows.append( etMonFrame )
 		self.UpdateWindowCount()
 		self.DAQthreads.append( DAQthread(etmon_command, output_window=etMonFrame, owner_process=self, next_thread_delay=2, env=self.environment) )
@@ -211,7 +211,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		ebSvcFrame = OutputFrame(self.main_window, "Event builder service", window_size=(600,200), window_pos=(1200,0))
 		ebSvcFrame.Show(True)
 
-		eb_command = '%s/bin/event_builder %s/%s %s/%s' % (self.environment['DAQROOT'], self.etSystemFileLocation, self.ET_filename, self.rawdataLocation, self.raw_data_filename)
+		eb_command = '%s/bin/event_builder %s/%s %s/%s' % (self.environment['DAQROOT'], self.etSystemFileLocation, self.ET_filename + "_RawData", self.rawdataLocation, self.raw_data_filename)
 
 		self.windows.append( ebSvcFrame )
 		self.UpdateWindowCount()
