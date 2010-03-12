@@ -84,6 +84,23 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	InitializeCroc(0x050000, 5, 10, 10, 10,  0); // MS09W, MS10W, MS11W, Loopback
 	InitializeCroc(0x060000, 6,  9,  9,  9,  0); // MS09E, MS10E, MS11E, Loopback
 #endif
+#if CRATE0
+	InitializeCrim(0xE00000, 1, runningMode);
+	InitializeCroc(0x050000, 1,  0,  0,  0, 10); // MS09W, MS10W, MS11W, MS12W
+	InitializeCroc(0x060000, 2,  0,  0,  0,  9); // MS09E, MS10E, MS11E, MS12E
+	InitializeCroc(0x070000, 3, 10, 10, 10, 10); // MS13W, MS14W, MS15W, MS16W
+	InitializeCroc(0x080000, 4,  9,  9,  9,  9); // MS13E, MS14E, MS15E, MS16E
+#endif
+#if CRATE1
+	InitializeCrim(0xE00000, 1, runningMode);
+	InitializeCrim(0xF00000, 2, runningMode);
+	InitializeCroc(0x010000, 1, 10, 10, 10, 10); // MS17W, MS18W, MS19W, MS20W
+	InitializeCroc(0x020000, 2,  9,  9,  9,  9); // MS17E, MS18E, MS19E, MS20E
+	InitializeCroc(0x030000, 3, 10, 10,  6,  6); // MS21W, MS22W, MS23W, MS24W
+	InitializeCroc(0x040000, 4,  9,  9,  5,  5); // MS21E, MS22E, MS23E, MS24E
+	InitializeCroc(0x050000, 5,  6,  6,  6,  0); // MS25W, MS26W, MS27W, Loopback
+	InitializeCroc(0x060000, 6,  5,  5,  5,  0); // MS25E, MS26E, MS27E, Loopback
+#endif
 #endif
 
 	// Set the flags that tells us how many VME cards are installed for this controller.
