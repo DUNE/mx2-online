@@ -1,0 +1,98 @@
+This file is current as of 2009.November.26 - GNP
+
+To build the MINERvA Production DAQ (mnvdaq) you need to first install and build CAEN driver libraries 
+to interface with the CAEN v2718 VME Controller and a2818 PCI Interface Card.  These drivers are available
+on the CAEN website (http://www.caen.it/nuclear/index.php) and specific drivers for SLF4.6 and SLF5.3 have 
+been stored on the MINERvA Plone (https://plone3.fnal.gov/P0/Minerva).  Note that the drivers for SLF4.6 
+must be patched (the patch is stored on the MINERvA Plone).  
+
+The most recent CAENlib version as of 2009.November.26 is 2.11, but we currently choose to use 2.7 due to 
+some slightly funny bugs with 2.11.  Migration to 2.11 or 2.12 when it becomes available should be 
+investigated.
+
+Store the CAEN libraries in a directory named ${WORKROOT}/CAENVMElib/lib, where $WORKROOT is a directory 
+of your choosing.  If you attempt to install the CAEN drivers by untarring the packages and following the 
+contained instructions in $WORKROOT you will end up with the correct structure.  Note that even if you do 
+not intend to run the DAQ for acquisition, you still need the CAEN libraries to build the code.
+
+Once the CAEN libraries are installed, go to $WORKROOT and create a mnvonline/ directory to hold the DAQ 
+and (eventually) SlowControl code.  Within mnvonline/ run a CVS checkout on the package devdaq.  Make sure 
+you have the following environment variables set and a valid kerberos ticket to access the MINERvA CVS 
+repository:
+	CVSROOT=minervacvs@cdcvs.fnal.gov:/cvs/minervasw
+	CVS_RSH=ssh
+
+Inside the mnvdaq/ directory you will find two setup scripts.  It is a good idea to read these scripts 
+carefully before proceeding because they configure the environment for the build.  The environments can 
+be slightly different at different development locations.  The location is set by a $LOCALE environment
+variable.  Set your own $LOCALE variable or mimic the directory structure of another $LOCALE and use that
+value for your own $LOCALE.  
+
+As of 2009.November.28, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
+operation on the minervatest0X machines.  For set-up in a different environment, the default scripts will 
+need to be edited carefully.
+
+Before you build the DAQ, it is important to understand the possible architectures.  The DAQ can be run 
+either on a single PC or on a network of PC's.  Currently, we support the following options:
+1) Single PC
+2) Multi-PC with one Head Node and one Chief Readout Client.
+3) Multi-PC with one Head Node, one Chief Readout Client, and one Worker Readout Client.
+The distinguishing feature between the Readout Clients is that one and only one is responsible for attaching 
+the end-of-event DAQ Header bank.
+
+In principle, the DAQ can be extended to support an arbitrary number of Worker Clients, but this feature is 
+not currently supported (and would require some significant re-engineering of the networking).  Having three
+"tiers" of machines can make the jargon confusing, so partly for fun, we will use the following short-hand:
+- Queen : Server node (also the Single PC mode).
+- Soldier : Chief Readout Client (attaches the DAQ Header bank at the end of the gate).
+- Worker : Worker Readout Client.
+
+By default the DAQ will build in Single PC mode.  If you want to build in multi-PC mode, several options 
+need to be set in the Makefiles on the different PC's (currently, the code supports any of the roles 
+mentioned above, and the DAQ is built into one or another at compile time).  More details on this will 
+follow in future versions of this document. 
+
+Once you have configured your setup scripts, build the DAQ with the following steps:
+
+1) Go to $DAQROOT/
+
+2) source setup_daqbuild.sh; source setup_etbuild.sh - Note that the first of these actually defines 
+$DAQROOT for your environment and the second script only needs to be run when building ET (i.e., only the 
+first time the DAQ software is installed).
+
+3) Now build ET: untar et-9.0.tar.gz and copy BMS.tar.gz into et_9.0/.  (BMS is the ET build system.)
+
+4) To run ET in REMOTE MODE replace the et_start.c in the et_9.0/src/examples directory with the et_start.c
+included in mnvdaq root directory.  What this does is set the et_system_config_setserverport to 1091.  The 
+MINERvA DAQ uses the following set of ports:
+	1090 : Queen-Soldier port (on Soldier)
+	1091 : et port (on Queen)
+	1095 : Soldier-Worker communication port
+
+5) Go to et_9.0 and untar BMS.tar.gz.  Then type "gmake install"
+
+6) Check ${ET_LIBROOT}/lib and make sure you have libet.a, libet_remote.so, and libet.so.
+
+7) By default, the DAQ will build in single PC mode.  To build in multi-PC mode, you need to edit the 
+Makefiles in the event_builder and main packages.
+
+8) Return to $DAQROOT and type "gmake all"
+
+9) Check ${DAQROOT}/bin/ for 
+	daq_master
+	daq_slave_service
+	event_builder
+	minervadaq
+And check ${DAQROOT}/lib/ for 
+	libcaeninterface.so
+	libevent_structure.so
+	libhardware.so
+	libminerva_acquire.so
+
+10) If you are missing any of these, read the Makefile and try building each package one at a time and check 
+for errors.  Most likely, an environment variable has been incorrectly set.
+
+
+
+
+

@@ -78,19 +78,7 @@ clean: FORCE
 	gmake event_builder-clean;
 	gmake main-clean;
 
-relink: FORCE
-	gmake hardware-clean;
-	gmake caenint-clean;
-	gmake acquire_data-clean;
-	gmake event_structure-clean;
-	gmake event_builder-clean;
-	gmake main-clean;
-	gmake hardware-lib;
-	gmake caenint-lib;
-	gmake acquire_data-lib;
-	gmake event_structure-lib;
-	gmake event_builder;
-	gmake main;
+
 
 FORCE:
 
