@@ -227,6 +227,11 @@ int main(int argc, char **argv)
   */
   et_system_setdebug(id, et_verbose);
  
+  /* any listers to the STDOUT pipe will get all the data pushed to them now */
+  printf("flushing...\n");
+  fflush(stdout);
+  
+  exit(1); 
   /* turn this thread into a signal handler */
   sigwait(&sigwaitset, &sig_num);
   
