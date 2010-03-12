@@ -30,7 +30,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.DAQthreads = []
 		self.timerThreads = []
 		self.socketThread = None
-		self.DAQthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartDAQ, self.StartRemoteDAQService]
+		self.DAQthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartRemoteDAQService]
 		self.DAQthreadLabels = ["Starting ET system...", "Starting ET monitor...", "Starting event builder...", "Starting the DAQ master...", "Starting the DAQ on readout nodes..."]
 #		self.DAQthreadStarters = [self.StartTestProcess] #, self.StartTestProcess, self.StartTestProcess]
 		self.current_DAQ_thread = 0			# the next thread to start
