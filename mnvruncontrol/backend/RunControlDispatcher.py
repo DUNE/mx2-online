@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 """
   RunControlDispatcher.py:
@@ -75,7 +74,7 @@ class RunControlDispatcher:
 		try:
 			self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.
 			self.server_socket.bind(("", self.port))				# bind it to the port specified in the config., on any interface that will let it, on the local machine
-			self.server_socket.listen(1)										# only allow it to keep one backlogged connection
+			self.server_socket.listen(3)										# allow it to keep a few backlogged connections (that way if we're trying to talk to it too fast it'll catch up)
 		except Exception, e:
 			self.logger.exception("Error trying to bind my listening socket:")
 			self.logger.fatal("Can't get a socket.")
@@ -274,6 +273,7 @@ class RunControlDispatcher:
 		on the port before entering dispatch mode.)
 		"""
 		if not self.quit:		# occasionally there's an error before dispatching starts.
+			self.logger.info("Master node will be contacted at '" + self.master_address + "'.")
 			self.logger.info("Dispatching starting (listening on port " + str(self.port) + ").")
 
 		while not self.quit:
@@ -422,7 +422,7 @@ class RunControlDispatcher:
 				          "-hw", matches.group("hwinitlevel") ) 
 			self.logger.info("   minervadaq command:")
 			self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
-			self.daq_thread = DAQThread(self, executable, matches.group("identity"))
+			self.daq_thread = DAQThread(self, executable, matches.group("identity"), self.master_address)
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
@@ -492,12 +492,13 @@ class DAQThread(threading.Thread):
 	    so that they can be monitored continuously.  When
 	    they terminate, a socket is opened to the master
 	    node to emit a "done" signal."""
-	def __init__(self, owner_process, daq_command, my_identity):
+	def __init__(self, owner_process, daq_command, my_identity, master_address):
 		threading.Thread.__init__(self)
 		
 		self.daq_process = None
 		self.owner_process = owner_process
-		self.identity = my_identity	# am I the worker or the soldier?
+		self.identity = my_identity	# am I the worker, the soldier, a local node, etc.?
+		self.master_address = master_address
 		self.daq_command = daq_command
 		
 		self.start()		# inherited from threading.Thread.  starts run() in a separate thread.
@@ -526,7 +527,7 @@ class DAQThread(threading.Thread):
 		try:
 			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			s.settimeout(2)
-			s.connect( (Defaults.MASTER, Defaults.MASTER_PORT) )
+			s.connect( (self.master_address, Defaults.MASTER_PORT) )
 			s.send(self.identity)		# informs the server WHICH of the readout nodes I am (and that I'm finished).
 			s.shutdown(socket.SHUT_WR)
 			self.owner_process.logger.info("'Done' signal sent successfully.")
@@ -567,6 +568,7 @@ if __name__ == "__main__":
 	parser = optparse.OptionParser(usage="usage: %prog [options] command\n  where 'command' is 'start' or 'stop'")
 	parser.add_option("-r", "--replace", dest="replace", action="store_true", help="Replace a currently-running instance of the service with a new one. Default: %default.", default=False)
 	parser.add_option("-i", "--interactive", dest="interactive", action="store_true", help="Run in an interactive session (don't daemonize).  Default: %default.", default=False)
+	parser.add_option("-m", "--master-address", dest="masterAddress", help="The internet address of the master node.  Default: %default.", default=Defaults.MASTER)
 	
 	(options, commands) = parser.parse_args()
 	
@@ -582,6 +584,7 @@ if __name__ == "__main__":
 	if command == "start":
 		dispatcher.interactive = options.interactive
 		dispatcher.replace = options.replace
+		dispatcher.master_address = options.masterAddress
 		
 		if dispatcher.interactive:
 			print "Running in interactive mode."

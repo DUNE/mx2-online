@@ -38,7 +38,7 @@ class ReadoutNode:
 		
 		try:
 			self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			self.socket.settimeout(2)
+			self.socket.settimeout(0.25)
 			self.socket.connect( (self.address, self.port) )
 			self.socket.send(request)
 			self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff

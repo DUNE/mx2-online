@@ -508,6 +508,8 @@ class MainFrame(wx.Frame):
 			self.CloseAllWindows()
 					
 		self.UpdateLogFiles()
+		
+		print "Finished post-subrun stuff."
 			
 	def CheckRunNumber(self, evt=None):
 		if self.runEntry.GetValue() < self.runEntry.GetMin():
