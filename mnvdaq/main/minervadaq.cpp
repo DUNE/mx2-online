@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
 	// prevents "address already in use" errors when starting the DAQ
 	// again too quickly after the last time it shut down.
 	int optval = 1;
-	setsockopt(global_gate_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval)
+	setsockopt(global_gate_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
 	// Bind the global_gate socket to that address for the listener.
 	if ((bind (global_gate_socket_handle, (const sockaddr*)&global_gate_service, 
@@ -508,7 +508,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-11-05'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v04-12-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -1203,6 +1203,7 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 				mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ()!";
 				return e;
 			}
+#endif
 			try {
 				int error = daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
 				if (error) throw error;
@@ -1211,7 +1212,6 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 				mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!";
 				return e;
 			}
-#endif
 			break;
 		default:
 			std::cout << "ERROR! Improper Running Mode = " << runningMode << std::endl;
