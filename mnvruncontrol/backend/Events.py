@@ -1,3 +1,6 @@
+import wx
+import wx.lib.newevent
+
 #########################################################
 #   ConfigUpdatedEvent
 #########################################################
@@ -13,12 +16,14 @@ class ConfigUpdatedEvent(wx.CommandEvent):
 #   ErrorMsgEvent
 #########################################################
 
-EVT_ERRORMSG_ID = wx.NewId()
-class ErrorMsgEvent(wx.CommandEvent):
-	""" An event requesting an error message from the main window. """
-	def __init__(self):
-		wx.CommandEvent.__init__(self)
-		self.SetEventType(EVT_ERRORMSG_ID)
+#EVT_ERRORMSG_ID = wx.NewId()
+#class ErrorMsgEvent(wx.CommandEvent):
+#	""" An event requesting an error message from the main window. """
+#	def __init__(self):
+#		wx.CommandEvent.__init__(self)
+#		self.SetEventType(EVT_ERRORMSG_ID)
+
+ErrorMsgEvent, EVT_ERRORMSG_ID = wx.lib.newevent.NewEvent()
 
 #########################################################
 #   NewDataEvent

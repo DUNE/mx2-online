@@ -52,7 +52,7 @@ class MainFrame(wx.Frame):
 		
 		# any wx events that need to be handled
 		self.Bind(Events.EVT_UPDATEPROGRESS_ID, self.UpdateRunStatus)
-		self.Bind(Events.EVT_UPDATEPROGRESS_ID, self.ShowErrorMsg)
+		self.Bind(Events.EVT_ERRORMSG_ID, self.ShowErrorMsg)
 
 	def BuildGraphics(self):
 		menuBar = wx.MenuBar()
@@ -314,7 +314,7 @@ class MainFrame(wx.Frame):
 		
 		self.Layout()
 
-		self.Connect(-1, -1, EVT_CONFIGUPDATED_ID, self.UpdateLogFiles)
+		self.Connect(-1, -1, Events.EVT_CONFIGUPDATED_ID, self.UpdateLogFiles)
 
 	def parseLogfileName(self, filename):
 		matches = re.match("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller[01].txt$", filename)
@@ -689,7 +689,7 @@ class MainFrame(wx.Frame):
 		logframe.Show()
 
 	def ShowErrorMsg(self, evt):
-		errordlg = wx.MessageDialog( None, evt.title, evt.msg, wx.OK | wx.ICON_ERROR )
+		errordlg = wx.MessageDialog( self, evt.title, evt.text, wx.OK | wx.ICON_ERROR )
 		errordlg.ShowModal()
 		
 

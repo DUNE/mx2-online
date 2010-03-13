@@ -2,7 +2,6 @@
 
 import wx
 from wx.lib.wordwrap import wordwrap
-import wx.lib.newevent
 import subprocess
 import os
 import sys
@@ -84,8 +83,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.main_window.indicators[node.name].SetBitmap(self.main_window.onImage)
 		
 		if failed_connection:
-			errordlg = wx.MessageDialog( None, "A connection cannot be made to the " + failed_connection + " readout node.  Check to make sure that the run control dispatcher is started on that machine.", "No connection to " + failed_connection + " readout node", wx.OK | wx.ICON_ERROR )
-			errordlg.ShowModal()
+			wx.PostEvent(self.main_window, "A connection cannot be made to the " + failed_connection + " readout node.  Check to make sure that the run control dispatcher is started on that machine.", "No connection to " + failed_connection + " readout node")
 			return
 			
 					
@@ -131,10 +129,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 				else:
 					self.main_window.indicators[node.name].SetBitmap(self.main_window.onImage)
 					
-			
 			if not ok:
-				errordlg = wx.MessageDialog( None, "Connection to the readout node(s) was broken.  Running aborted.", "No connection to readout node(s)", wx.OK | wx.ICON_ERROR )
-				errordlg.ShowModal()
+				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Connection to the readout node(s) was broken.  Running aborted.", title="No connection to readout node(s)") )
 				
 				quitting = True
 
@@ -194,7 +190,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			self.DAQthreadStarters[self.current_DAQ_thread]()
 			self.current_DAQ_thread += 1
 		else:
-			print "Thread count too high"
+			print "Note: requested a new thread but no more threads to start..."
 
 	def StartETSys(self):
 		events = self.runinfo.gates * Defaults.FRAMES * self.febs
@@ -204,11 +200,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", events, Defaults.EVENT_SIZE)
 
-#		print etsys_command
-
 		self.windows.append( etSysFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(etsys_command, "ET system" output_window=etSysFrame, owner_process=self, next_thread_delay=2, env=self.environment) ) 
+		self.DAQthreads.append( DAQthread(etsys_command, "ET system", output_window=etSysFrame, owner_process=self, next_thread_delay=2, env=self.environment) ) 
 
 	def StartETMon(self):
 		etMonFrame = OutputFrame(self.main_window, "ET monitor", window_size=(600,600), window_pos=(600,200))
@@ -299,7 +293,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 	def EndSubrun(self, evt=None):
 #		print "Ending subrun."
-		wx.P
+		
 		for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
 			thread.Abort()
 			
@@ -346,7 +340,7 @@ class OutputFrame(wx.Frame):
 			wx.Frame.__init__(self, parent, -1, title, size=window_size, pos=window_pos)
 		self.textarea = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE | wx.TE_READONLY)
 
-		self.Connect(-1, -1, EVT_NEWDATA_ID, self.OnNewData)
+		self.Connect(-1, -1, Events.EVT_NEWDATA_ID, self.OnNewData)
 		
 	def OnNewData(self, data_event):
 		self.textarea.AppendText(data_event.data)
@@ -464,7 +458,7 @@ class DAQthread(threading.Thread):
 				break
 			data += newdata
 			
-		return newdata
+		return data
 	
 		
 	def Abort(self):
