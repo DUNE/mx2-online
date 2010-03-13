@@ -52,10 +52,20 @@ int main(int argc, char **argv)
   int event_size = 3000;            /* size of event in bytes */
   char *et_filename = NULL;
   char  et_name[ET_FILENAME_LENGTH];
-
+  int networkPort = 1091;
   
-  while ((c = getopt(argc, argv, "vdn:s:f:")) != EOF) {
+  while ((c = getopt(argc, argv, "vdn:s:f:p:")) != EOF) {
     switch (c) {
+    case 'p':
+      i_tmp = atoi(optarg);
+      if  ( (i_tmp == 1091) || (i_tmp == 1092) ) {
+	networkPort = i_tmp;
+      } else {
+	printf("Invalid argument to -p. Valid ports are 1091 and 1092.\n");
+	exit(-1);
+      }
+      break;
+
     case 'n':
       i_tmp = atoi(optarg);
       if (i_tmp > 0) {
@@ -103,12 +113,13 @@ int main(int argc, char **argv)
   }
     
   if (optind < argc || errflg){
-    fprintf(stderr, "usage: %s -v -r [-n events] [-s event_size] [-f file]\n", argv[0]);
+    fprintf(stderr, "usage: %s -v -r [-n events] [-s event_size] [-f file] [-p port]\n", argv[0]);
     fprintf(stderr, "          -v for verbose output\n");
     fprintf(stderr, "          -d deletes an existing file first\n");
     fprintf(stderr, "          -n sets number of events\n");
     fprintf(stderr, "          -s sets event size in bytes\n");
     fprintf(stderr, "          -f sets memory-mapped file name\n");
+    fprintf(stderr, "          -p sets the network port (default is 1091 - 1092 also valid)\n");
     exit(2);
   }
 
@@ -134,6 +145,7 @@ int main(int argc, char **argv)
   if (et_verbose) {
     printf("et_start: asking for %d byte events.\n", event_size);
     printf("et_start: asking for %d events.\n", nevents);
+    printf("et_start: using port %d.\n", networkPort);
   }
 
   if (deleteFile) {
@@ -168,7 +180,8 @@ int main(int argc, char **argv)
   et_system_config_setprocs(config, 20);
     
   /* set TCP server port */
-  /* et_system_config_setserverport(config, 11222); */
+  //et_system_config_setserverport(config, 1091); 
+  et_system_config_setserverport(config, networkPort); 
   
   /* add multicast address to listen to  */
   /* et_system_config_addmulticast(config, ET_MULTICAST_ADDR); */
@@ -227,6 +240,10 @@ int main(int argc, char **argv)
   */
   et_system_setdebug(id, et_verbose);
  
+  /* any listers to the STDOUT pipe will get all the data pushed to them now */
+  //printf("flushing...\n");
+  fflush(stdout);
+  
   /* turn this thread into a signal handler */
   sigwait(&sigwaitset, &sig_num);
   
