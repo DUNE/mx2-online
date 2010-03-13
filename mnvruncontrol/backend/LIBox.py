@@ -1,4 +1,4 @@
-!/usr/bin/python
+#!/usr/bin/python
 """
 MINERvA light injection system manager.
 Adapted from the original (C#) script by J. Meyer
