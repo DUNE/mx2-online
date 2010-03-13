@@ -58,10 +58,10 @@ int main(int argc, char **argv)
     switch (c) {
     case 'p':
       i_tmp = atoi(optarg);
-      if  ( (i_tmp == 1091) || (i_tmp == 1092) ) {
+      if  ( (i_tmp > 1090) && (i_tmp < 1095) ) {
 	networkPort = i_tmp;
       } else {
-	printf("Invalid argument to -p. Valid ports are 1091 and 1092.\n");
+	printf("Invalid argument to -p. Valid ports are 1091-1094.\n");
 	exit(-1);
       }
       break;
@@ -180,7 +180,6 @@ int main(int argc, char **argv)
   et_system_config_setprocs(config, 20);
     
   /* set TCP server port */
-  //et_system_config_setserverport(config, 1091); 
   et_system_config_setserverport(config, networkPort); 
   
   /* add multicast address to listen to  */

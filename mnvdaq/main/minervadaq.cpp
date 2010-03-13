@@ -240,20 +240,25 @@ int main(int argc, char *argv[])
 	// Configuring the ET system is the first thing we must do.
 	et_open_config_init(&openconfig);
 
-//#if MULTIPC
 	// Set the remote host.
 	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // Remote (multi-pc) mode only.
 
 	// Set to the current host machine name. 
-	//et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote (multi-pc) mode only.
+#if CRATE0||CRATE1
+	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote (multi-pc) mode only.
+#endif
+#if NUMIUS
+	et_open_config_sethost(openconfig, "mnvonline2.fnal.gov");  // Remote (multi-pc) mode only.
+#endif
+#if WH14T||WH14B
 	et_open_config_sethost(openconfig, "minervatest02.fnal.gov");  // Remote (multi-pc) mode only.
+#endif
 
 	// Set direct connection.
 	et_open_config_setcast(openconfig, ET_DIRECT);  // Remote (multi-pc) mode only.
 
 	// Set the server port.
 	et_open_config_setserverport(openconfig, networkPort); // Remote (multi-pc) mode only.
-//#endif
 
 	// Open it.
 	if (et_open(&sys_id, et_filename.c_str(), openconfig) != ET_OK) {
@@ -267,32 +272,6 @@ int main(int argc, char *argv[])
 
 	// Set the debug level for output (everything).
 	et_system_setdebug(sys_id, ET_DEBUG_INFO);
-
-#if SINGLEPC
-	/*
-	// Set up the heartbeat to make sure ET starts correctly.
-	unsigned int oldheartbeat, newheartbeat;
-	id = (et_id *) sys_id;
-	oldheartbeat = id->sys->heartbeat;
-	int counter = 0; 
-	do {
-		system("sleep 1s");
-		if (!counter) {
-			newheartbeat = id->sys->heartbeat;
-		} else {
-			oldheartbeat=newheartbeat;
-			newheartbeat = id->sys->heartbeat;
-		}
-		counter++;
-	} while ((newheartbeat==oldheartbeat)&&(counter!=50)); 
-	// Notify the user if ET did not start properly & exit.
-	if (counter==50) {
-		std::cout << "ET System did not start properly!" << std::endl;
-		mnvdaq.fatalStream() << "ET System did not start properly - bad heartbeat!";
-		exit(-5);
-	} 
-	*/  
-#endif 
 
 	// Attach to GRANDCENTRAL station since we are producing events.
 	if (et_station_attach(sys_id, ET_GRANDCENTRAL, &attach) < 0) {
@@ -527,7 +506,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-00-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-00-01'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

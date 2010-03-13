@@ -3,9 +3,9 @@
 # Argument List:
 #  $1 == et_system file name
 #  $2 == output file name
-#  $3 == port (1091 or 1092)
+#  $3 == port (1091-1094)
 if [ $# -ne 3 ]; then
-	echo "Please supply et_system file name, output file name, and port (1091 or 1092)."
+	echo "Please supply et_system file name, output file name, and port (1091-1094)."
 	exit 1
 fi
 
