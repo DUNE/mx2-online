@@ -24,6 +24,7 @@ int detConf[2];      // Detector Config - # of FEB's
 int ledLevel[2];     // LED light level (only stored in DAQ Header, not used).
 int ledGroup[2];     // LED group (only stored in DAQ Header, not used).
 int initLevel[2];    // HW init level (0 does nothing, non-zero does something).
+int netPort[2];      // ET Network Port
 char et_file[100];   // Really just the base file root (used for ET, SAM, logging).
 // Official MINERvA Base file name: DD_RRRRRRRR_SSSS_YYYYY_vVV_TTTTTTTTTT
 // D = Detector

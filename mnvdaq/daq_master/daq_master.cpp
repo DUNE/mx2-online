@@ -129,6 +129,11 @@ int main(int argc, char* argv[]) {
 			for (int i=0;i<daq_slaves;i++) initLevel[i] = atoi(argv[optind]);
 			cout << "\tVME Card Init. Level        = " << initLevel[0] << endl;
 		}
+		else if (sw=="-p") {
+			optind++;
+			for (int i=0;i<daq_slaves;i++) netPort[i] = atoi(argv[optind]);
+			cout << "\tET System Port              = " << netPort[0] << endl;
+		}
                 else
                         cout << "Unknown switch: " << argv[optind] << endl;
                 optind++;
@@ -155,6 +160,7 @@ int main(int argc, char* argv[]) {
 	master.infoStream() << "  ET Filename            = " << et_file;
 	master.infoStream() << "  Configuration File     = " << conf_file;
 	master.infoStream() << "  VME Card Init. Level   = " << initLevel[0];
+	master.infoStream() << "  ET System Port         = " << netPort[0];
 	master.infoStream() << "See Event/MinervaEvent/xml/DAQHeader.xml for codes.";
 	master.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
@@ -230,6 +236,7 @@ int write_setup_data() {
 		write( socket_handle[i], &ledLevel[i],  sizeof(ledLevel[i])); 
 		write( socket_handle[i], &ledGroup[i],  sizeof(ledGroup[i])); 
 		write( socket_handle[i], &initLevel[i], sizeof(initLevel[i])); 
+		write( socket_handle[i], &netPort[i],   sizeof(netPort[i])); 
 		write( socket_handle[i], et_file,       sizeof(et_file));
 		write( socket_handle[i], &done[i], 1);  //send the status
 	}
