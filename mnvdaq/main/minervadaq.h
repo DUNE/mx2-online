@@ -48,7 +48,7 @@ struct in_addr     global_gate_socket_address;
 int                global_gate_socket_connection; 
 bool               global_gate_socket_is_live;
 
-#if MASTER&&(!SINGLE_PC) // Soldier Node
+#if MASTER&&(!SINGLEPC) // Soldier Node
 /* minervadaq server for "master" (soldier node) DAQ */
 struct sockaddr_in          gate_done_service;
 struct sockaddr_in          global_gate_service;
@@ -59,7 +59,7 @@ const static unsigned short gate_done_port   = 1095; //the port number for our T
 const static unsigned short global_gate_port = 1096; //the port number for our TCP service
 #endif
 
-#if (!MASTER)&&(!SINGLE_PC) // Worker Node
+#if (!MASTER)&&(!SINGLEPC) // Worker Node
 /* minervadaq client for "slave" (worker node) DAQ */
 struct sockaddr_in          gate_done_service;
 struct sockaddr_in          global_gate_service;
