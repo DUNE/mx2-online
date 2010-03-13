@@ -303,6 +303,7 @@ int event_builder(event_handler *evt)
 		if (!(gate_counter%gate_print_freq)) { 
 			printf("  Gate: %5d ; Trigger Time = %llu ; Trigger Type = %d\n", 
 				gate_counter, evt->triggerTime, evt->triggerType);
+			fflush(stdout);
 		}
 		// Build the "DAQ" header
 		tmp_header = new MinervaHeader(evt->feb_info[1]); //the special constructor for the DAQ bank
