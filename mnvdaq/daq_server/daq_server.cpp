@@ -103,7 +103,7 @@ int make_socket() {
 /* Write setup information to the command line - this starts a run */
 int launch_minervadaq() {
 	stringstream process_gates, rmode, runn, subr, dtctr, totsec, detconf, 
-		ledlevel, ledgroup, initlevel;
+		ledlevel, ledgroup, initlevel, netport;
 	process_gates << gates[0];
 	rmode         << runMode[0];
 	runn          << runNum[0];
@@ -114,19 +114,20 @@ int launch_minervadaq() {
 	ledlevel      << ledLevel[0];
 	ledgroup      << ledGroup[0];
 	initlevel     << initLevel[0];
+	netport       << netPort[0];
 	string command = "$DAQROOT/bin/minervadaq -et " + string(et_file) + " " +
-		"-g " + process_gates.str() + " " + 
-		"-m " + rmode.str() + " " + 
-		"-r " + runn.str() + " " + 
-		"-s " + subr.str() + " " +  
-		"-d " + dtctr.str() + " " + 
-		"-t " + totsec.str() + " " + 
-		"-cf " + string(conf_file) + " " +
-		"-dc " + detconf.str() + " " + 
-		"-ll " + ledlevel.str() + " " + 
-		"-lg " + ledgroup.str() + " " + 
-		"-hw " + initlevel.str(); 
-		// + " " + "> /work/data/logs/minervadaq_log.txt";
+		"-g "  + process_gates.str() + " " + 
+		"-m "  + rmode.str()         + " " + 
+		"-r "  + runn.str()          + " " + 
+		"-s "  + subr.str()          + " " +  
+		"-d "  + dtctr.str()         + " " + 
+		"-t "  + totsec.str()        + " " + 
+		"-cf " + string(conf_file)   + " " +
+		"-dc " + detconf.str()       + " " + 
+		"-ll " + ledlevel.str()      + " " + 
+		"-lg " + ledgroup.str()      + " " + 
+		"-hw " + initlevel.str()     + " " + 
+		"-p "  + netport.str()       ; 
 	cout << "launch_minervadaq command: " << command << endl;
 	slavenode.infoStream() << "launch_minervadaq command: " << command;
 	if ((system(command.c_str())!=-1)) {
@@ -292,6 +293,15 @@ int read_setup_data(int master_connection) {
 	cout << " VME Card Init. Level   : " << initLevel[0] << endl;
 
 	/********************************************************************************/
+	// Read the ET Server Port
+	if ((read(master_connection,netPort,sizeof(netPort)))!=sizeof(netPort)) {
+		perror("server read error: ET Network Port");
+		slavenode.fatalStream() << "Error in daq_server::read_setup_data() parsing ET Network Port data!";
+		exit(EXIT_FAILURE);
+	}
+	cout << " ET Network Port        : " << netPort[0] << endl;
+
+	/********************************************************************************/
 	// Read the ET filename for data storagea
 	if ((read(master_connection,et_file,sizeof(et_file)))!=sizeof(et_file)) {  
 		perror("server read error: et_file"); 
@@ -321,6 +331,7 @@ int read_setup_data(int master_connection) {
 	slavenode.infoStream() << " Name of ET file        : " << et_file;
 	slavenode.infoStream() << " Name of config file    : " << conf_file;
 	slavenode.infoStream() << " VME Card Init. Level   : " << initLevel[0];
+	slavenode.infoStream() << " ET Network Port        : " << netPort[0];
 	slavenode.infoStream() << "See Event/MinervaEvent/xml/DAQHeader.xml for codes.";
 	slavenode.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
