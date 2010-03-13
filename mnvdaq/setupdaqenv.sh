@@ -28,10 +28,18 @@ else
 	exit 1
 fi
 
+export BMS_HOME=${DAQROOT}/et_9.0/BMS
+export INSTALL_DIR=$ET_HOME
+export ET_USE64BITS=1
+
 echo Your DAQROOT is $DAQROOT
 echo Your CAEN_DIR is $CAEN_DIR
+echo Your BMS_HOME is $BMS_HOME
+echo Your ET INSTALL_DIR is $INSTALL_DIR
 echo Your ET_HOME is $ET_HOME
 echo Your ET_LIBROOT is $ET_LIBROOT
+echo Your ET_USE64BITS is $ET_USE64BITS
 echo Your LD_LIBRARY_PATH is $LD_LIBRARY_PATH
+
 echo ---------------------------------------------------------------------------
 
