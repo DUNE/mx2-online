@@ -18,6 +18,7 @@ import time
 # note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
+from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import LIBox
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import ReadoutNode
@@ -57,9 +58,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		self.running = False
 
-		self.Connect(-1, -1, EVT_READY_FOR_NEXT_SUBRUN_ID, self.StartNextSubrun)
-		self.Connect(-1, -1, EVT_THREAD_READY_ID, self.StartNextThread)
-		self.Connect(-1, -1, EVT_DAQQUIT_ID, self.EndSubrun)		# if the DAQ process quits, this subrun is over
+		self.Connect(-1, -1, Events.EVT_READY_FOR_NEXT_SUBRUN_ID, self.StartNextSubrun)
+		self.Connect(-1, -1, Events.EVT_THREAD_READY_ID, self.StartNextThread)
+		self.Connect(-1, -1, Events.EVT_DAQQUIT_ID, self.EndSubrun)		# if the DAQ process quits, this subrun is over
 #		self.Connect(-1, -1, EVT_UPDATE_ID, self.UpdateRunStatus)
 		
 	
@@ -76,7 +77,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		for node in self.readoutNodes:
 			try:
 				node.ping()
-			except ReadoutNode.ReadoutNodeException:
+			except ReadoutNode.ReadoutNodeNoConnectionException:
 				failed_connection = node.name
 				break
 			else:
@@ -100,7 +101,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# before we actually start the next subrun.
 		quitting = False
 
-		wx.PostEvent(self.main_window, UpdateProgressEvent(text="Setting up run:\ncleaning up any prior ET processes...", progress=(0,9)) )
+		wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\ncleaning up any prior ET processes...", progress=(0,9)) )
 		starttime = time.time()
 		while len(self.DAQthreads) > 0:
 			if self.DAQthreads[-1].process.poll() != None:
@@ -120,7 +121,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		if not quitting:
 			self.CloseWindows()			# don't want leftover windows open.
-			wx.PostEvent(self.main_window, UpdateProgressEvent(text="Setting up run:\ntesting connections", progress=(1,9)) )
+			wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\ntesting connections", progress=(1,9)) )
 			ok = True
 			for node in self.readoutNodes:
 				on = node.ping()
@@ -141,13 +142,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		#### NEED TO DECIDE THE HARDWARE CONFIG FILE TO BE PASSED TO THE SLOW CONTROL HERE
 		####
 		if not quitting:
-			wx.PostEvent( self.main_window, UpdateProgressEvent(text="Setting up run:\nLoading hardware...", progress=(1,9)) )
+			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nLoading hardware...", progress=(1,9)) )
 			self.hwconfigfile = "NOFILE"
 				
 		# set up the LI box to do what it's supposed to, if it needs to be on.
 		if not quitting:
 			if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
-				wx.PostEvent( self.main_window, UpdateProgressEvent(text="Setting up run:\nInitializing light injection...", progress=(2,9)) )
+				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nInitializing light injection...", progress=(2,9)) )
 				self.LIBox.LED_groups = MetaData.LEDGroups[self.runinfo.ledGroup]
 			
 				need_LI = True
@@ -170,7 +171,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		#### WAIT ON THE SLOW CONTROL UNTIL IT'S READY
 		if not quitting:
-			wx.PostEvent(self.main_window, UpdateProgressEvent(text="Setting up run:\nWaiting on hardware...", progress=(3,9)) )
+			wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nWaiting on hardware...", progress=(3,9)) )
 
 		now = datetime.datetime.utcnow()
 		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
@@ -189,7 +190,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 	def StartNextThread(self, evt=None):
 		if self.current_DAQ_thread < len(self.DAQthreadStarters):
-			wx.PostEvent( self.main_window, UpdateProgressEvent(text="Setting up run:\n" + self.DAQthreadLabels[self.current_DAQ_thread], progress=(5+self.current_DAQ_thread,9)) )
+			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\n" + self.DAQthreadLabels[self.current_DAQ_thread], progress=(5+self.current_DAQ_thread,9)) )
 			self.DAQthreadStarters[self.current_DAQ_thread]()
 			self.current_DAQ_thread += 1
 		else:
@@ -203,11 +204,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", events, Defaults.EVENT_SIZE)
 
-		print etsys_command
+#		print etsys_command
 
 		self.windows.append( etSysFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(etsys_command, output_window=etSysFrame, owner_process=self, next_thread_delay=2, env=self.environment) ) 
+		self.DAQthreads.append( DAQthread(etsys_command, "ET system" output_window=etSysFrame, owner_process=self, next_thread_delay=2, env=self.environment) ) 
 
 	def StartETMon(self):
 		etMonFrame = OutputFrame(self.main_window, "ET monitor", window_size=(600,600), window_pos=(600,200))
@@ -216,7 +217,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData")
 		self.windows.append( etMonFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(etmon_command, output_window=etMonFrame, owner_process=self, next_thread_delay=2, env=self.environment) )
+		self.DAQthreads.append( DAQthread(etmon_command, "ET monitor", output_window=etMonFrame, owner_process=self, next_thread_delay=2, env=self.environment) )
 
 	def StartEBSvc(self):
 		ebSvcFrame = OutputFrame(self.main_window, "Event builder service", window_size=(600,200), window_pos=(1200,0))
@@ -226,7 +227,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append( ebSvcFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(eb_command, output_window=ebSvcFrame, owner_process=self, next_thread_delay=15, env=self.environment) )	
+		self.DAQthreads.append( DAQthread(eb_command, "event builder", output_window=ebSvcFrame, owner_process=self, next_thread_delay=15, env=self.environment) )	
 
 	def StartDAQ(self):
 		daqFrame = OutputFrame(self.main_window, "THE DAQ", window_size=(600,600), window_pos=(1200,200))
@@ -238,10 +239,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append(daqFrame)
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(daq_command, output_window=daqFrame, owner_process=self, env=self.environment, next_thread_delay=2) )
+		self.DAQthreads.append( DAQthread(daq_command, "DAQ", output_window=daqFrame, owner_process=self, env=self.environment, next_thread_delay=2) )
 		
 	def StartRemoteDAQService(self):
-		wx.PostEvent( self.main_window, UpdateProgressEvent(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9)) )
+		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9)) )
 	
 		for node in self.readoutNodes:
 			try:
@@ -278,7 +279,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append(frame)
 		self.UpdateWindowCount()
-		self.DAQthreads.append( DAQthread(command, output_window=frame, owner_process=self, next_thread_delay=3, quit_event=DAQQuitEvent) )
+		self.DAQthreads.append( DAQthread(command, "test process", output_window=frame, owner_process=self, next_thread_delay=3, is_essential_service=True) )
 		
 	def CloseWindows(self):
 		while len(self.windows) > 0:		
@@ -297,7 +298,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.main_window.UpdateCloseWindows(len(self.windows) > 0)
 
 	def EndSubrun(self, evt=None):
-		print "Ending subrun."
+#		print "Ending subrun."
+		wx.P
 		for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
 			thread.Abort()
 			
@@ -316,7 +318,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.main_window.PostSubrun()			# main window needs to update subrun #, etc.
 		
 		if self.running:
-			wx.PostEvent(self, ReadyForNextSubrunEvent())
+			wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
 	
 	def StopDataAcquisition(self, evt=None):
 		self.running = False
@@ -356,91 +358,114 @@ class OutputFrame(wx.Frame):
 
 class DAQthread(threading.Thread):
 	""" A thread for an ET/DAQ process. """
-	def __init__(self, process_info, output_window, owner_process, env, next_thread_delay=0, quit_event=None, update_event=None):
+	def __init__(self, process_info, process_identity, output_window, owner_process, env, next_thread_delay=0, is_essential_service=False, update_event=None):
 		threading.Thread.__init__(self)
+		self.process_identity = process_identity
 		self.output_window = output_window
 		self.owner_process = owner_process
 		self.environment = env
 		self.command = process_info
 		self.next_thread_delay = next_thread_delay
-		self.quit_event = quit_event
+		self.is_essential_service = is_essential_service
 		self.update_event = update_event
 		self.name = self.command.split()[0] + "Thread"
 		self.daemon = True				# this way the process will end when the main thread does
 
 		self.time_to_quit = False
+		self.have_cleaned_up = False
 
 		self.timerthread = None			# used to count down to a hard kill if necessary
 
 		self.start()				# starts the run() function in a separate thread.  (inherited from threading.Thread)
 	
 	def run(self):
-		''' The stuff to do while this thread is going.  Overridden from threading.Thread '''
-		if self.output_window:			# the user could have closed the window before the thread was ready...
-			self.process = subprocess.Popen(self.command.split(), bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=self.environment)
-			self.pid = self.process.pid
+		''' The stuff to do while this thread is going.  Overridden from threading.Thread. '''
+		self.process = subprocess.Popen(self.command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=self.environment)
+		self.pid = self.process.pid
 
-			wx.PostEvent(self.output_window, NewDataEvent("Started thread with PID " + str(self.pid) + "\n"))	# post a message noting the PID of this thread
-			#wx.PostEvent(self.output_window, NewDataEvent("using command '" + self.command + "'...\n"))
+		if self.next_thread_delay > 0:
+			# start a new thread to count down until the next DAQ process can be started.
+			self.owner_process.timerThreads.append(TimerThread(self.next_thread_delay, self.owner_process))
 
-			if self.next_thread_delay > 0:
-				# start a new thread to count down until the next one can be started.
-				self.owner_process.timerThreads.append(TimerThread(self.next_thread_delay, self.owner_process))
-
-			last_update_time = 0
-			while not self.time_to_quit:
-				# read out the data from the process.
-				# we use select() (again from the UNIX library) to check that
-				# there actually IS something in the buffer before we try to read.
-				# if we didn't do that, the thread would lock up until the specified
-				# number of characters was read out.
-				#
-				# note that the reading loop includes a poll() of the process.
-				# this is so that if LastCheck() is called on this process,
-				# and the communicate() finishes, we don't try to read from stdout
-				# any more.  (communicate() closes stdout, so we'd get an exception
-				# if we let it do that.)
-				newdata = ""
-				while self.process.poll() is None and select.select([self.process.stdout], [], [], 0)[0]:		
-#					newdata += self.process.stdout.read(1)
-					data = os.read(self.process.stdout.fileno(), 1024)
-					if data == "":
-						break
-#					else:
-#						print "read: '" + data + "'"
-					newdata += data
+		if self.output_window:
+			wx.PostEvent(self.output_window, Events.NewDataEvent("Started thread with PID " + str(self.pid) + "\n"))	# post a message noting the PID of this thread
 
 
-				# now post any data from the process to its output window
-				if len(newdata) > 0 and self.output_window:		# make sure the window is still open
-#					print "new data incoming: '" + newdata + "'"
-					wx.PostEvent(self.output_window, NewDataEvent(newdata))
-				elif self.process.returncode is not None:	# if the buffer is empty and the process has finished, don't loop any more
-					break
-		
+		while not self.time_to_quit and self.process.poll() is None:
+			newdata = self.read()
 
-		if self.process.poll() is None:				# it COULD happen that the process has already quit.
+			# now post any data from the process to its output window
+			if len(newdata) > 0 and self.output_window:		# make sure the window is still open
+				wx.PostEvent(self.output_window, Events.NewDataEvent(newdata))
+					
+
+		if self.process.poll() is None:				# if this process hasn't been stopped yet, it needs to be
 			self.process.terminate()					# first, try nicely.
-			self.process.send_signal(signal.SIGINT)		# some of these processes only respond to SIGINT, strangely enough
+			print "Warning: not sending SIGINT.  Fix et_start!"
+#			self.process.send_signal(signal.SIGINT)		# some of these processes only respond to SIGINT, strangely enough
 
 			if self.process.poll() is None:		# they'll probably need a little time to shut down cleanly
 				self.timerthread = threading.Timer(10, self.LastCheck)
 				self.timerthread.start()
 		else:
-			# make sure there's nothing left in the buffer to read!
-			newdata = self.process.stdout.read()
-			if len(newdata) > 0 and self.output_window:
-				wx.PostEvent(self.output_window, NewDataEvent(newdata))
+			data = self.read(want_cleanup_read = True)
+			if len(data) > 0 and self.output_window:
+				wx.PostEvent(self.output_window, Events.NewDataEvent(data))
 		
 			if (self.timerthread):
 				self.timerthread.cancel()
 			#print "Process " + str(self.pid) + " has quit."
 			if self.output_window:
-				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
+				wx.PostEvent(self.output_window, Events.NewDataEvent("\n\nThread terminated cleanly."))
 
-		# if something special is supposed to happen when this thread quits, do it.
-		if self.quit_event and self.process.poll() is not None:
-			wx.PostEvent(self.owner_process, self.quit_event())
+		# if this an essential service and it's not being terminated
+		# due to some external signal, it's the first thing to quit.
+		# the other processes should be stopped, the user should be informed,
+		# and the run stopped since further data is expected to be useless.
+		if self.is_essential_service and self.process.poll() is not None and not self.time_to_quit:
+			wx.PostEvent(self.owner_process, Events.DAQQuitEvent(process_identity))
+			
+	def read(self, want_cleanup_read = False):
+		""" Read out the data from the process.  This method attempts
+		    to be intelligent about its reads from stdout: it
+		    is non-blocking (won't lock up if there's nothing there),
+		    and stops reading if the process has finished. """
+		    
+		#	We use select() (again from the UNIX library) to check that
+		#	there actually IS something in the buffer before we try to read.
+		#	If we didn't do that, the thread would lock up until the specified
+		#	number of characters was read out.
+
+		#	Note that the reading loop includes a poll() of the process.
+		#	This is so that if LastCheck() is called on this process,
+		#	and this loop is somehow still running, we stop trying to read
+		#    as soon as the process finishes.  Here's why:
+		#	when the communicate() in LastCheck() finishes,
+		#	it will close the pipe to stdout, and if we continue to try
+		#	reading, we'll get an exception.
+		#    This condition is lifted if this read is explicitly called
+		#    as a "cleanup" read -- that is, if it's intended to be the
+		#    last read after the process is dead.  This is only allowed to
+		#    happen once (controlled by self.have_cleaned_up), which will
+		#	hopefully prevent race conditions between run() and LastCheck().
+		
+		do_cleanup_read = want_cleanup_read and not self.have_cleaned_up
+		if do_cleanup_read:
+			self.have_cleaned_up = True
+		
+		data = ""
+		while select.select([self.process.stdout], [], [], 0)[0] and (self.process.poll() is None or do_cleanup_read):
+			try:	
+				newdata = os.read(self.process.stdout.fileno(), 1024)
+			except OSError:		# if the pipe is closed mid-read
+				break
+				
+			if data == "":
+				break
+			data += newdata
+			
+		return newdata
+	
 		
 	def Abort(self):
 		''' When the Stop button is pressed, we gotta quit! '''
@@ -451,17 +476,16 @@ class DAQthread(threading.Thread):
 		""" One last check to see if the process has finished gracefully.
 		    If not, the user is instructed that s/he should do a manual kill. """
 		if self.process.poll() is None:
-			print "Thread " + str(self.pid) + " is deadlocked.  Kill it manually."
+			print "Thread " + str(self.pid) + " seems to be deadlocked.  Kill it manually."
 		else:
-			newdata = self.process.stdout.read()
-			if len(newdata) > 0 and self.output_window:
-				wx.PostEvent(self.output_window, NewDataEvent(newdata))
-#			print "Process " + str(self.pid) + " has quit."
+			data = self.read(do_cleanup_read = True)
 			if self.output_window:
-				wx.PostEvent(self.output_window, NewDataEvent("\n\nThread terminated cleanly."))
+				if len(data) > 0:
+					wx.PostEvent(self.output_window, Events.NewDataEvent(data))
+				wx.PostEvent(self.output_window, Events.NewDataEvent("\n\nThread terminated cleanly."))
 
-		if self.quit_event and self.process.poll() is not None:
-			wx.PostEvent(self.owner_process, self.quit_event())
+		if self.is_essential_service and self.process.poll() is not None:
+			wx.PostEvent(self.owner_process, Events.DAQQuitEvent(process_identity))
 		
 #########################################################
 #   SocketThread
@@ -524,7 +548,7 @@ class SocketThread(threading.Thread):
 #				print "run update"
 				lastupdate = time.time()
 				if num_complete > 0:
-					wx.PostEvent(self.owner_process.main_window, UpdateProgressEvent( text="Cleaning up:\nWaiting on all nodes to finish...", progress=(num_complete, len(node_completed)) ) )
+					wx.PostEvent(self.owner_process.main_window, Events.UpdateProgressEvent( text="Cleaning up:\nWaiting on all nodes to finish...", progress=(num_complete, len(node_completed)) ) )
 				else:
 
 					for node in self.nodesToWatch:
@@ -538,17 +562,14 @@ class SocketThread(threading.Thread):
 							node_completed[node.name] = True
 							num_complete += 1
 
-					wx.PostEvent(self.owner_process.main_window, UpdateProgressEvent( text="Running...\nSee ET windows for more information", progress=(0,0)) )
+					wx.PostEvent(self.owner_process.main_window, Events.UpdateProgressEvent( text="Running...\nSee ET windows for more information", progress=(0,0)) )
 
 		s.close()
 		
-		# all DAQs have quit: subrun is over.
-		wx.PostEvent(self.owner_process, DAQQuitEvent())
+		# all DAQs have ended properly: subrun is over.
+		# note that we don't pass anything to DAQQuitEvent to signal this.
+		wx.PostEvent(self.owner_process, Events.DAQQuitEvent())
 				
-		
-	
-	
-
 
 #########################################################
 #   TimerThread
@@ -566,81 +587,9 @@ class TimerThread(threading.Thread):
 		time.sleep(self.time)
 
 		if self.postback_window and not(self.time_to_quit):		# make sure the user didn't close the window while we were waiting
-			wx.PostEvent(self.postback_window, ThreadReadyEvent())
+			wx.PostEvent(self.postback_window, Events.ThreadReadyEvent())
 			
 	def Abort(self):
 		self.time_to_quit = True
-
-#########################################################
-#   NewDataEvent
-#########################################################
-
-EVT_NEWDATA_ID = wx.NewId()
-class NewDataEvent(wx.PyEvent):
-	""" An event to carry data between the threaded processes and the windows built to display their output. """
-	def __init__(self, data):
-		wx.PyEvent.__init__(self)
-		self.data = data	
-		self.SetEventType(EVT_NEWDATA_ID)
-		
-#########################################################
-#   UpdateEvent
-#########################################################
-
-EVT_UPDATE_ID = wx.NewId()
-class UpdateEvent(wx.PyEvent):
-	""" An event that notifies the data acquisition handler that things are still running. """
-	def __init__(self):
-		wx.PyEvent.__init__(self)
-		self.SetEventType(EVT_UPDATE_ID)
-
-#########################################################
-#   UpdateProgressEvent
-#########################################################
-
-#EVT_UPDATEPROGRESS_ID = wx.NewId()
-#class UpdateProgressEvent(wx.NotifyEvent):
-	#""" An event informing the main window what progress has been made in the run. """
-	#def __init__(self, text=None, progress=(0,0)):
-		#wx.NotifyEvent.__init__(self)
-		#self.text = text
-		#self.progress = progress
-		#self.SetEventType(EVT_UPDATEPROGRESS_ID)
-
-UpdateProgressEvent, EVT_UPDATEPROGRESS_ID = wx.lib.newevent.NewEvent()
-
-#########################################################
-#   ThreadReadyEvent
-#########################################################
-
-EVT_THREAD_READY_ID = wx.NewId()
-class ThreadReadyEvent(wx.CommandEvent):
-	""" An event that informs the next process that it's done """
-	def __init__(self):
-		wx.CommandEvent.__init__(self)
-		self.SetEventType(EVT_THREAD_READY_ID)
-
-#########################################################
-#   DAQQuitEvent
-#########################################################
-
-EVT_DAQQUIT_ID = wx.NewId()
-class DAQQuitEvent(wx.CommandEvent):
-	""" An event informing the main window that the DAQ has quit (and thus all other processes should be stopped). """
-	def __init__(self):
-		wx.CommandEvent.__init__(self)
-		self.SetEventType(EVT_DAQQUIT_ID)
-
-
-#########################################################
-#   ReadyForNextSubrunEvent
-#########################################################
-
-EVT_READY_FOR_NEXT_SUBRUN_ID = wx.NewId()
-class ReadyForNextSubrunEvent(wx.CommandEvent):
-	""" An event used internally to indicate that the manager is ready to start the next subrun. """
-	def __init__(self):
-		wx.CommandEvent.__init__(self)
-		self.SetEventType(EVT_READY_FOR_NEXT_SUBRUN_ID)
 
 

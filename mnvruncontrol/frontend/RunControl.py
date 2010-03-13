@@ -18,10 +18,12 @@ import re			# regular expressions
 # run control-specific modules.  note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Defaults
+from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import DataAcquisitionManager
 from mnvruncontrol.backend import ReadoutNode
 
+#########################################################
 #    MainFrame
 #########################################################
 ID_START = wx.NewId()
@@ -49,7 +51,8 @@ class MainFrame(wx.Frame):
 		self.UpdateRunConfig()
 		
 		# any wx events that need to be handled
-		self.Bind(DataAcquisitionManager.EVT_UPDATEPROGRESS_ID, self.UpdateRunStatus)
+		self.Bind(Events.EVT_UPDATEPROGRESS_ID, self.UpdateRunStatus)
+		self.Bind(Events.EVT_UPDATEPROGRESS_ID, self.ShowErrorMsg)
 
 	def BuildGraphics(self):
 		menuBar = wx.MenuBar()
@@ -685,6 +688,11 @@ class MainFrame(wx.Frame):
 		logframe = LogFrame(self, filenames)
 		logframe.Show()
 
+	def ShowErrorMsg(self, evt):
+		errordlg = wx.MessageDialog( None, evt.title, evt.msg, wx.OK | wx.ICON_ERROR )
+		errordlg.ShowModal()
+		
+
 	def CloseAllWindows(self, evt=None):
 		self.runmanager.CloseWindows()
 		self.runmanager.UpdateWindowCount()
@@ -768,7 +776,7 @@ class MainFrame(wx.Frame):
 		self.UpdateSeriesStatus()
 		self.UpdateLogFiles()
 		
-		wx.PostEvent(self, DataAcquisitionManager.UpdateProgressEvent(text="No run in progress", progress=(0,1)) )
+		wx.PostEvent(self, Events.UpdateProgressEvent(text="No run in progress", progress=(0,1)) )
 
 	@staticmethod
 	def SortLogData(fileinfo1, fileinfo2):
@@ -1029,7 +1037,7 @@ class OptionsFrame(wx.Frame):
 			
 			db.close()
 			
-		wx.PostEvent(self.parent, ConfigUpdatedEvent())
+		wx.PostEvent(self.parent, Events.ConfigUpdatedEvent())
 
 		self.Close()
 		
@@ -1046,20 +1054,6 @@ class AutoSizingListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin, ListRowHighlighter
 		ListRowHighlighter.__init__(self)
 		
 	
-
-
-#########################################################
-#   ConfigUpdatedEvent
-#########################################################
-
-EVT_CONFIGUPDATED_ID = wx.NewId()
-class ConfigUpdatedEvent(wx.CommandEvent):
-	""" An event informing the main window that the configuration database has been updated. """
-	def __init__(self):
-		wx.CommandEvent.__init__(self)
-		self.SetEventType(EVT_CONFIGUPDATED_ID)
-
-
 #########################################################
 #   MainApp
 #########################################################
