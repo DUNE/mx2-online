@@ -1,4 +1,4 @@
-#!/usr/bin/python
+!/usr/bin/python
 """
 MINERvA light injection system manager.
 Adapted from the original (C#) script by J. Meyer
@@ -176,8 +176,6 @@ class LIBox:
 		if (self.trigger_internal):
 			if self.trigger_rate == None:
 				raise LIBoxException("If you intend to use internal triggering, you must manually set the trigger rate.")
-				
-			self.command_stack.append("aK")
 
 			self.trigger_rate = int(self.trigger_rate, 16)		# no decimals.  need it in hexadecimal, too.
 			if self.trigger_rate < 0 or self.trigger_rate > 0xffff:
@@ -198,6 +196,8 @@ class LIBox:
 			lowNum1 = "%x" % lowNum1
 			lowNum2 = "%x" % lowNum2
 			self.command_stack.append("aI" + lowNum1 + lowNum2)
+
+			self.command_stack.append("aK")			
 		else:
 			self.command_stack.append("aQ")
 		
