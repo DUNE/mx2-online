@@ -1,5 +1,7 @@
 #include "event_builder.h"
 #include "event_builder_templates.h"
+#include <ctime>
+#include <sys/time.h>
 
 using namespace std;
 
@@ -8,7 +10,7 @@ ofstream thread_log("eb_log.txt");
 #endif
 
 static int gate_counter    =  0;
-const int  gate_print_freq = 10;
+const int  gate_print_freq =  5;
 
 int main(int argc, char **argv) 
 {
@@ -16,8 +18,8 @@ int main(int argc, char **argv)
  * This function is the MINERvA-specific implementation 
  * of the generic et_producer class.  
  */
-	if (argc != 3) {
-		printf("Usage: event_builder <et_filename> <rawdata_filename>\n");
+	if (argc != 4) {
+		printf("Usage: event_builder <et_filename> <rawdata_filename> <network port>\n");
 		printf("  Please supply the full path!\n");
 		exit(1);
 	}
@@ -28,6 +30,27 @@ int main(int argc, char **argv)
 	std::cout << "Ouptut Filename = " << output_filename << std::endl;
 	std::cout << "ET Filesystem   = " << argv[1] << std::endl;
 	ofstream binary_outputfile(output_filename.c_str(),ios::out|ios::app|ios::binary); 
+	int networkPort = atoi(argv[2]);
+	std::cout << "ET Network Port = " << networkPort << std::endl;
+#if MULTIPC
+        std::cout << "Configured for a Multi-PC Build..." << std::endl;
+#endif
+#if SINGLEPC
+        std::cout << "Configured for a Single-PC Build..." << std::endl;
+#endif
+	char hostName[100];
+#if NUMIUS
+	sprintf(hostName, "mnvonline2.fnal.gov");
+	std::cout << "ET system host machine = mnvonline2.fnal.gov" << std::endl;
+#endif
+#if CRATE0||CRATE1
+	sprintf(hostName, "mnvonlinemaster.fnal.gov");
+	std::cout << "ET system host machine = mnvonlinemaster.fnal.gov" << std::endl;
+#endif
+#if WH14T||WH14B
+	sprintf(hostName, "minervatest02.fnal.gov");
+	std::cout << "ET system host machine = minervatest02.fnal.gov" << std::endl;
+#endif
 
 	// int            event_size; // unused...
 	int            status;
@@ -46,25 +69,20 @@ int main(int argc, char **argv)
 	et_station_config_setuser(sconfig,ET_STATION_USER_SINGLE);
 	et_station_config_setrestore(sconfig,ET_STATION_RESTORE_OUT);
 
-	// The station name for the DAQ Event Builder.
-	// For some reason, using this creates problems for the DAQ.  Keep it commented out for now.
-	//std::string station_name("CHICAGO_UNION");
-
 	// Opening the ET system is the first thing we must do...
 	et_open_config_init(&openconfig);
-#if MULTI_PC
+//#if MULTIPC
 	et_open_config_setmode(&openconfig, ET_HOST_AS_REMOTE);
 	et_open_config_setcast(openconfig, ET_DIRECT);
-	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov"); // Adjust, etc.
-	et_open_config_setserverport(openconfig, 1091); 
-#endif
+	et_open_config_sethost(openconfig, hostName); // Adjust, etc.
+	et_open_config_setserverport(openconfig, networkPort); 
+//#endif
 
 #if NEARLINE
 	et_open_config_setmode(&openconfig, ET_HOST_AS_REMOTE);
 	et_open_config_setcast(openconfig, ET_DIRECT);
 	et_open_config_sethost(openconfig, "mnvonline1.fnal.gov"); // Adjust, etc.
 	et_open_config_setserverport(openconfig, 1091);
-	//station_name = "RIODEJANEIRO"; // For some reason, the DAQ has problems if we use these...
 #endif
 
 	if (et_open(&sys_id, argv[1], openconfig) != ET_OK) {
@@ -74,8 +92,6 @@ int main(int argc, char **argv)
 	et_open_config_destroy(openconfig);
 
 	// Check if ET is up and running.
-	// This evidently does not work for NearOnline stations?
-	// It seems to work for both multi and single PC DAQ running...
 #if !NEARLINE
 	std::cout << "Running a DAQ Station..." << std::endl;
 	unsigned int oldheartbeat, newheartbeat;
@@ -223,10 +239,12 @@ int main(int argc, char **argv)
 		// Now write the event to the binary output file.
 		binary_outputfile.write((char *) final_buffer, length);  
 		binary_outputfile.flush();
+#if DEBUG_VERBOSE
 		if ( !( evt_counter%10000 ) ) {
 			std::cout << "*****************************************************************" << std::endl; 
 			std::cout << "  event_builder::main(): Event (Frame) Processed: " << evt_counter << std::endl;
 		}
+#endif
 		delete event;
 	}
 	// Detach from the station.
@@ -277,7 +295,16 @@ int event_builder(event_handler *evt)
 	feb *dummy_feb = new feb(6,1,(febAddresses)0,56); // Make a dummy feb for access to the header decoding functions. 
 	if (evt->feb_info[4]==3) {
 		gate_counter++;
-		if (!(gate_counter%gate_print_freq)) std::cout << "Gate: " << gate_counter << std::endl;
+		// Set the "Trigger Time"
+		struct timeval triggerNow;
+		gettimeofday(&triggerNow, NULL);
+		unsigned long long totaluseconds = ((unsigned long long)(triggerNow.tv_sec))*1000000 +
+			(unsigned long long)(triggerNow.tv_usec);
+		evt->triggerTime = totaluseconds;
+		if (!(gate_counter%gate_print_freq)) { 
+			printf("  Gate: %5d ; Trigger Time = %llu ; Trigger Type = %d\n", 
+				gate_counter, evt->triggerTime, evt->triggerType);
+		}
 		// Build the "DAQ" header
 		tmp_header = new MinervaHeader(evt->feb_info[1]); //the special constructor for the DAQ bank
 		// Make the new event block
