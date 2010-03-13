@@ -1,0 +1,12 @@
+#
+# ET-specific Makefile options
+#
+
+ifndef ET_INSTALL
+  ET_INSTALL = $(INSTALL_DIR)
+endif
+
+CFLAGS    += -I$(ET_INSTALL)/include
+CXXFLAGS  += -I$(ET_INSTALL)/include
+
+MISC_LIBS += -L$(ET_INSTALL)/$(BMS_OSNAME)/lib -let$(DEBUG_SUFFIX)

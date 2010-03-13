@@ -1,0 +1,8 @@
+include $(BMS_HOME)/Makefile.GNU
+
+LD_SO_FLAGS += -shared
+
+MISC_LIBS += -lieee -lrt -lpthread -lz -lm -lnsl -lresolv -ldl
+
+CFLAGS   += -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
+CXXFLAGS += -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS

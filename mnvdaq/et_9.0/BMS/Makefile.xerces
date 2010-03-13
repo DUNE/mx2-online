@@ -1,0 +1,9 @@
+#
+# Makefile for Xercex XML parsing package
+#
+
+CFLAGS    += -I$(XERCESCROOT)/include
+CXXFLAGS  += -I$(XERCESCROOT)/include
+MISC_LIBS += -L$(XERCESCROOT)/$(BMS_OSNAME)/lib
+MISC_LIBS += -L$(XERCESCROOT)/lib -lxerces-c
+

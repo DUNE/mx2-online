@@ -1,0 +1,12 @@
+#
+# ET-specific Makefile options
+#
+
+ifndef EMU_INSTALL
+  EMU_INSTALL = $(INSTALL_DIR)
+endif
+
+CFLAGS    += -I$(EMU_INSTALL)/include
+CXXFLAGS  += -I$(EMU_INSTALL)/include
+
+MISC_LIBS += -L$(EMU_INSTALL)/$(BMS_OSNAME)/lib -lemu$(DEBUG_SUFFIX)

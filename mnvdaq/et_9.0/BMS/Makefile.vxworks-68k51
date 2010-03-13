@@ -1,0 +1,16 @@
+#
+# $Header: /tmp/mnvsoft/Online/mnvdaq/et_9.0/BMS/Makefile.vxworks-68k51,v 1.1 2010/03/13 00:22:22 perdue Exp $
+#
+
+CC     = cc68k
+CPP    = c++68k
+LD     = ld68k -r
+AR     = ar68k
+RANLIB = ranlib68k
+
+CFLAGS   += -I$(WIND_BASE)/target/h
+CXXFLAGS += $(CFLAGS)
+
+# older version of GNU (vx 5.5) does NOT have -MT option,
+DCC  = $(CC)  -MM
+DCXX = $(CXX) -MM

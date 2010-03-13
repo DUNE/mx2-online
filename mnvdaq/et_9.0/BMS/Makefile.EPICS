@@ -1,0 +1,29 @@
+#
+# $Header: /tmp/mnvsoft/Online/mnvdaq/et_9.0/BMS/Makefile.EPICS,v 1.1 2010/03/13 00:22:22 perdue Exp $
+#
+
+ifndef EPICS_HOME
+  EPICS_HOME = /site/epics/R3.13.4/base
+endif
+
+CFLAGS   += -I$(EPICS_HOME)/include
+CXXFLAGS += -I$(EPICS_HOME)/include
+
+ifeq ($(BMS_OS),Linux)
+  CFLAGS   += -I$(EPICS_HOME)/include/os/Linux 
+  CXXFLAGS += -I$(EPICS_HOME)/include/os/Linux 
+  LD_LIBS  += -L$(EPICS_HOME)/lib/Linux
+endif
+
+ifeq ($(BMS_OS),SunOS)
+  CFLAGS   += -I$(EPICS_HOME)/include/os/solaris 
+  CXXFLAGS += -I$(EPICS_HOME)/include/os/solaris 
+  LD_LIBS  += -L$(EPICS_HOME)/lib/solaris
+endif
+
+ifeq ($(BMS_OS),vxworks)
+  CFLAGS    += -I$(EPICS_HOME)/include/os/vxWorks 
+  CXXFLAGS  += -I$(EPICS_HOME)/include/os/vxWorks 
+endif
+
+MISC_LIBS += -lca -lCom -lcas -lgdd -lAs -lDb

@@ -1,0 +1,12 @@
+#
+# codaObject-specific Makefile options
+#
+
+ifndef CODAOBJECT_INSTALL
+  CODAOBJECT_INSTALL = $(INSTALL_DIR)
+endif
+
+CFLAGS    += -I$(CODAOBJECT_INSTALL)/include
+CXXFLAGS  += -I$(CODAOBJECT_INSTALL)/include
+
+MISC_LIBS += -L$(CODAOBJECT_INSTALL)/$(BMS_OSNAME)/lib -lcodaObject
