@@ -2,13 +2,16 @@
 
 # Argument List:
 #  $1 == et_system file name
-if [ $# -ne 2 ]; then
-	echo Please supply et_system file name and output file name.
+#  $2 == output file name
+#  $3 == port (1091 or 1092)
+if [ $# -ne 3 ]; then
+	echo "Please supply et_system file name, output file name, and port (1091 or 1092)."
 	exit 1
 fi
 
 ETSYS=$1
 OUTFL=$2
+PORT=$3
 
 if [ "$LOCALE" == "" ]
 then
@@ -23,4 +26,4 @@ then
 fi
 
 # We pass both the system name and output file - must contain the full path! 
-nice ${DAQROOT}/bin/event_builder $ETSYS $OUTFL 
+nice ${DAQROOT}/bin/event_builder $ETSYS $OUTFL $PORT
