@@ -30,13 +30,11 @@ repository:
 	CVSROOT=minervacvs@cdcvs.fnal.gov:/cvs/minervasw
 	CVS_RSH=ssh
 
-Inside the mnvdaq/ directory you will find two setup scripts.  It is a good idea to read these scripts 
-carefully before proceeding because they configure the environment for the build.  The environments can 
-be slightly different at different development locations.  The location is set by a $LOCALE environment
-variable.  Set your own $LOCALE variable or mimic the directory structure of another $LOCALE and use that
-value for your own $LOCALE.  
+Inside the mnvdaq/ directory you will find a setup script.  It is a good idea to read this script 
+carefully before proceeding.  The "location" is set by a $LOCALE environment variable.  Set your own $LOCALE 
+variable or mimic the directory structure of another $LOCALE and use that value for your own $LOCALE.  
 
-As of 2009.December.30, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
+As of 2010.March.12, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
 operation on the mnvonline machines.  For set-up in a different environment, the default scripts will 
 need to be edited carefully.
 
@@ -55,46 +53,32 @@ not currently supported (and would require some significant re-engineering of th
 - Soldier : Chief Readout Client (attaches the DAQ Header bank at the end of the gate).
 - Worker : Worker Readout Client.
 
-By default the DAQ will build in Single PC mode.  If you want to build in multi-PC mode, several options 
-need to be set in the Makefiles on the different PC's (currently, the code supports any of the roles 
-mentioned above, and the DAQ is built into one or another at compile time).  In particular, the 
-event_builder package requires the MULTIPC flag to be set in the Makefile for all nodes.  The main 
-Makefile must also be configured as follows:
+By default the DAQ will build in Single PC mode.  If you want to build in multi-PC mode, configure the 
+options in the Make.options as follows:
 	Queen  : COMPILE_OPTIONS += -DMULTIPC -DMASTER 
 	Soldier: COMPILE_OPTIONS += -DMULTIPC -DMASTER 
 	Worker : COMPILE_OPTIONS += -DMULTIPC  
-Comments in those Makefiles help direct their configuration.
+(The Queen options are actually irrelevant.  The master node does not run an acquisition task.)
 
 Once you have configured your setup scripts, build the DAQ with the following steps:
 
 1) Go to $DAQROOT/
 
-2) source setup_daqbuild.sh; source setup_etbuild.sh - Note that the first of these actually defines 
-$DAQROOT for your environment and the second script only needs to be run when building ET (i.e., only the 
-first time the DAQ software is installed).
+2) source setupdaqenv.sh
 
-3) Now build ET: untar et-9.0.tar.gz and copy BMS.tar.gz into et_9.0/.  (BMS is the ET build system.)
+3) Now build ET.  Go to the et_9.0 directory and type "gmake install".
 
-4) To run ET in REMOTE MODE replace the et_start.c in the et_9.0/src/examples directory with the et_start.c
-included in mnvdaq root directory.  What this does is set the et_system_config_setserverport to 1091.  The 
-MINERvA DAQ uses the following set of ports:
+4) MINERvA DAQ uses the following set of ports:
 	1090 : Queen-Soldier port (on Soldier)
 	1091 : et port (on Queen)
 	1095 : Soldier-Worker communication port
-It is a good idea to configure your firewall such that these ports are kept open if you want to run in 
-networked mode.  Note that you don't need to worry about this step if you only plan on running the DAQ 
-on one PC and don't need a networked version of ET.
+It is a good idea to configure your firewall such that these ports are kept open. 
 
-5) Go to et_9.0 and untar BMS.tar.gz.  Then type "gmake install"
+5) Check ${ET_LIBROOT}/lib and make sure you have libet.a, libet_remote.so, and libet.so.
 
-6) Check ${ET_LIBROOT}/lib and make sure you have libet.a, libet_remote.so, and libet.so.
+6) Return to $DAQROOT and type "gmake all"
 
-7) By default, the DAQ will build in single PC mode.  To build in multi-PC mode, you need to edit the 
-Makefiles in the event_builder and main packages (see above).
-
-8) Return to $DAQROOT and type "gmake all"
-
-9) Check ${DAQROOT}/bin/ for 
+7) Check ${DAQROOT}/bin/ for 
 	daq_master
 	daq_slave_service
 	event_builder
@@ -105,7 +89,7 @@ And check ${DAQROOT}/lib/ for
 	libhardware.so
 	libminerva_acquire.so
 
-10) If you are missing any of these, read the Makefile and try building each package one at a time and check 
+8) If you are missing any of these, read the Makefile and try building each package one at a time and check 
 for errors.  Most likely, an environment variable has been incorrectly set.
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -120,6 +104,4 @@ size of unsigned long      = 8
 size of unsigned long long = 8
 
 (Size is shown in bytes.)
-
-
 
