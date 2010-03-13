@@ -19,13 +19,6 @@ COMPILE_OPTIONS += -DPOLL_INTERRUPT
 #--READOUT FLAGS--
 COMPILE_OPTIONS += -DREAD_DISC
 COMPILE_OPTIONS += -DREAD_ADC
-#--DETECTOR FLAGS--
-COMPILE_OPTIONS += -DCRATE0
-#COMPILE_OPTIONS += -DCRATE1
-#COMPILE_OPTIONS += -DWH14T    # 14sxo top crate
-#COMPILE_OPTIONS += -DWH14B    # 14sxo bottom crate
-#COMPILE_OPTIONS += -DNUMIUS  # Upstream Detector
-#COMPILE_OPTIONS += -DPMTTEST  # Lab F Test Stand
 
 LDFLAGS += -shared -Wl,-soname
 CXX = g++
@@ -35,6 +28,7 @@ TARGET=libminerva_acquire.so
 
 LDLIBS += -L$(DAQROOT)/lib -lhardware -lcaeninterface -L$(ET_LIBROOT)/lib -let
 include $(DAQROOT)/Make.include
+include $(DAQROOT)/Make.options
 
 $(TARGET): $(OBJS)
 	@echo $(OBJS)
