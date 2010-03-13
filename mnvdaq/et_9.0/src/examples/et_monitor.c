@@ -221,6 +221,9 @@ printf("LOCALITY = %d\n", locality);
         printf("*****************************************\n\n");
       }
     }
+    
+    fflush(stdout);
+    
     /*  wait for "period" before looking at another round of data */
     nanosleep(&period, NULL);
   }

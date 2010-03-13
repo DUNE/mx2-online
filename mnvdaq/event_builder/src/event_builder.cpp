@@ -18,8 +18,8 @@ int main(int argc, char **argv)
  * This function is the MINERvA-specific implementation 
  * of the generic et_producer class.  
  */
-	if (argc != 4) {
-		printf("Usage: event_builder <et_filename> <rawdata_filename> <network port>\n");
+	if (argc < 3) {
+		printf("Usage: event_builder <et_filename> <rawdata_filename> <network port (default 1091)>\n");
 		printf("  Please supply the full path!\n");
 		exit(1);
 	}
@@ -28,7 +28,8 @@ int main(int argc, char **argv)
 	string output_filename(argv[2]);
 	// Open the file for binary output.
 	ofstream binary_outputfile(output_filename.c_str(),ios::out|ios::app|ios::binary); 
-	int networkPort = atoi(argv[3]);
+	int networkPort = 1091;
+	if (argc > 3) networkPort = atoi(argv[3]);
 	std::cout << "ET Network Port        = " << networkPort << std::endl;
 	char hostName[100];
 #if NUMIUS
