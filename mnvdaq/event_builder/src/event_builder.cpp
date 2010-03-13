@@ -24,20 +24,12 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	// Open the file for binary output.
+	std::cout << "ET Filesystem          = " << argv[1] << std::endl;
 	string output_filename(argv[2]);
-	//output_filename = "/work/data/rawdata/" + output_filename + ".dat"; // this doesn't work for some reason...
-	std::cout << "Ouptut Filename = " << output_filename << std::endl;
-	std::cout << "ET Filesystem   = " << argv[1] << std::endl;
+	// Open the file for binary output.
 	ofstream binary_outputfile(output_filename.c_str(),ios::out|ios::app|ios::binary); 
-	int networkPort = atoi(argv[2]);
-	std::cout << "ET Network Port = " << networkPort << std::endl;
-#if MULTIPC
-        std::cout << "Configured for a Multi-PC Build..." << std::endl;
-#endif
-#if SINGLEPC
-        std::cout << "Configured for a Single-PC Build..." << std::endl;
-#endif
+	int networkPort = atoi(argv[3]);
+	std::cout << "ET Network Port        = " << networkPort << std::endl;
 	char hostName[100];
 #if NUMIUS
 	sprintf(hostName, "mnvonline2.fnal.gov");
@@ -51,8 +43,14 @@ int main(int argc, char **argv)
 	sprintf(hostName, "minervatest02.fnal.gov");
 	std::cout << "ET system host machine = minervatest02.fnal.gov" << std::endl;
 #endif
+	std::cout << "Ouptut Filename        = " << output_filename << std::endl;
+#if MULTIPC
+        std::cout << "Configured for a Multi-PC Build..." << std::endl;
+#endif
+#if SINGLEPC
+        std::cout << "Configured for a Single-PC Build..." << std::endl;
+#endif
 
-	// int            event_size; // unused...
 	int            status;
 	et_openconfig  openconfig;
 	et_att_id      attach;
