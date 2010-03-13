@@ -202,6 +202,7 @@ int main(int argc, char **argv)
   }
   sigemptyset(&sigwaitset);
   sigaddset(&sigwaitset, SIGINT);
+  sigaddset(&sigwaitset, SIGTERM);
   
   /*************************/
   /*    start ET system    */
