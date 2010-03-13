@@ -58,11 +58,11 @@ not currently supported (and would require some significant re-engineering of th
 By default the DAQ will build in Single PC mode.  If you want to build in multi-PC mode, several options 
 need to be set in the Makefiles on the different PC's (currently, the code supports any of the roles 
 mentioned above, and the DAQ is built into one or another at compile time).  In particular, the 
-event_builder package requires the MULTI_PC flag to be set in the Makefile for all nodes.  The main 
+event_builder package requires the MULTIPC flag to be set in the Makefile for all nodes.  The main 
 Makefile must also be configured as follows:
-	Queen  : COMPILE_OPTIONS += -DMULTI_PC -DMASTER 
-	Soldier: COMPILE_OPTIONS += -DMULTI_PC -DMASTER 
-	Worker : COMPILE_OPTIONS += -DMULTI_PC  
+	Queen  : COMPILE_OPTIONS += -DMULTIPC -DMASTER 
+	Soldier: COMPILE_OPTIONS += -DMULTIPC -DMASTER 
+	Worker : COMPILE_OPTIONS += -DMULTIPC  
 Comments in those Makefiles help direct their configuration.
 
 Once you have configured your setup scripts, build the DAQ with the following steps:
