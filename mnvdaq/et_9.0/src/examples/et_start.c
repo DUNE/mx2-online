@@ -80,6 +80,7 @@ int main(int argc, char **argv)
          printf("Invalid argument to -c: process does not exist.\n");
          exit(-1);
       }
+      break;
 
     case 'n':
       i_tmp = atoi(optarg);
@@ -156,6 +157,9 @@ int main(int argc, char **argv)
   for ( ; optind < argc; optind++) {
     printf("%s\n", argv[optind]);
   }
+  
+  printf("Starting an ET system.  This may take a moment.\n");
+  fflush(stdout);
 
   if (et_verbose) {
     printf("et_start: asking for %d byte events.\n", event_size);

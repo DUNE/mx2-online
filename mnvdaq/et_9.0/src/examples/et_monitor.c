@@ -86,6 +86,7 @@ int main(int argc,char **argv)
          printf("Invalid argument to -c: process does not exist.\n");
          exit(-1);
       }
+      break;
       
       case 't':
 	tmparg = atoi(optarg);
