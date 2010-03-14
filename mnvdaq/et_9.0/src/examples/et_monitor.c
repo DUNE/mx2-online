@@ -26,6 +26,7 @@
 #include <time.h>
 #include <errno.h>
 #include <pthread.h>
+#include <signal.h>
 
 #include "et_private.h"
 #include "et_data.h"
@@ -52,6 +53,7 @@ int main(int argc,char **argv)
   char            hostname[ET_MAXHOSTNAMELEN];
   char            etname[ET_FILENAME_LENGTH];
   char            *tmp_etname=NULL, *tmp_hostname=NULL;
+  int             callback_pid = 0;
   
   /* defaults */
   mode = ET_HOST_AS_LOCAL;
@@ -61,7 +63,7 @@ int main(int argc,char **argv)
   hbperiod = ET_BEAT_SEC   + (1.e-9)*ET_BEAT_NSEC;
   
   /* decode command line options */
-  while ((c = getopt(argc, argv, "Hrf:t:p:h:")) != EOF) {
+  while ((c = getopt(argc, argv, "Hrf:t:p:h:c:")) != EOF) {
     switch (c) {
       case 'f':
 	if (strlen(optarg) >= ET_FILENAME_LENGTH) {
@@ -72,6 +74,19 @@ int main(int argc,char **argv)
 	tmp_etname = etname;
 	break;
 
+     case 'c':
+      callback_pid = atoi(optarg);
+      if (callback_pid <= 1)
+      {
+         printf("Invalid argument to -c.  Process must have id >= 2.\n");
+         exit(-1);
+      }
+      if (kill(callback_pid, 0) == ESRCH)
+      {
+         printf("Invalid argument to -c: process does not exist.\n");
+         exit(-1);
+      }
+      
       case 't':
 	tmparg = atoi(optarg);
 	if (tmparg <= 0) {
@@ -192,6 +207,10 @@ printf("LOCALITY = %d\n", locality);
   prev_out = 0ULL;
   counter  = 0;
   etdead   = 0;
+  
+  /* send the SIGCONT signal to the specified process signalling that ET is ready */
+  if (callback_pid)
+     kill(callback_pid, SIGCONT);
   
   while (1) {
     if (locality == ET_REMOTE) {

@@ -24,6 +24,7 @@
 #include <strings.h>
 #include <signal.h>
 #include <unistd.h>
+#include <errno.h>
 #include "et.h"
 
 int main(int argc, char **argv)
@@ -53,8 +54,9 @@ int main(int argc, char **argv)
   char *et_filename = NULL;
   char  et_name[ET_FILENAME_LENGTH];
   int networkPort = 1091;
+  int callback_pid = 0;            /* PID of process that will be contacted when the ET system has been set up. */
   
-  while ((c = getopt(argc, argv, "vdn:s:f:p:")) != EOF) {
+  while ((c = getopt(argc, argv, "vdn:s:f:p:c:")) != EOF) {
     switch (c) {
     case 'p':
       i_tmp = atoi(optarg);
@@ -65,6 +67,19 @@ int main(int argc, char **argv)
 	exit(-1);
       }
       break;
+    
+    case 'c':
+      callback_pid = atoi(optarg);
+      if (callback_pid <= 1)
+      {
+         printf("Invalid argument to -c.  Process must have id >= 2.\n");
+         exit(-1);
+      }
+      if (kill(callback_pid, 0) == ESRCH)
+      {
+         printf("Invalid argument to -c: process does not exist.\n");
+         exit(-1);
+      }
 
     case 'n':
       i_tmp = atoi(optarg);
@@ -241,15 +256,18 @@ int main(int argc, char **argv)
   et_system_setdebug(id, et_verbose);
  
   /* any listers to the STDOUT pipe will get all the data pushed to them now */
-  //printf("flushing...\n");
   fflush(stdout);
+  
+  /* send the SIGCONT signal to the specified process signalling that ET is ready */
+  if (callback_pid)
+     kill(callback_pid, SIGCONT);
   
   /* turn this thread into a signal handler */
   sigwait(&sigwaitset, &sig_num);
   
 
-  printf("Interrupted by CONTROL-C\n");
-  printf("ET is exiting\n");
+  printf("Asked to close.\n");
+  printf("ET is exiting.\n");
   et_system_close(id);
 
   exit(0);  

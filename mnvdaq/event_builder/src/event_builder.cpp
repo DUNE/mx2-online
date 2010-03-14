@@ -2,6 +2,8 @@
 #include "event_builder_templates.h"
 #include <ctime>
 #include <sys/time.h>
+#include <signal.h>
+#include <errno.h>
 
 using namespace std;
 
@@ -19,7 +21,7 @@ int main(int argc, char **argv)
  * of the generic et_producer class.  
  */
 	if (argc < 3) {
-		printf("Usage: event_builder <et_filename> <rawdata_filename> <network port (default 1091)>\n");
+		printf("Usage: event_builder <et_filename> <rawdata_filename> <network port (default 1091)> <callback PID (default: no PID)>\n");
 		printf("  Please supply the full path!\n");
 		exit(1);
 	}
@@ -31,6 +33,14 @@ int main(int argc, char **argv)
 	int networkPort = 1091;
 	if (argc > 3) networkPort = atoi(argv[3]);
 	std::cout << "ET Network Port        = " << networkPort << std::endl;
+	
+	int callback_pid = 0;
+	if (argc > 4)
+	{
+		callback_pid = atoi(argv[4]);
+		std::cout << "Notifying process " << callback_pid << " when I am ready to take events." << std::endl;
+	}
+	
 	char hostName[100];
 #if NUMIUS
 	sprintf(hostName, "mnvonline2.fnal.gov");
@@ -93,6 +103,7 @@ int main(int argc, char **argv)
 	// Check if ET is up and running.
 #if !NEARLINE
 	std::cout << "Running a DAQ Station..." << std::endl;
+	std::cout << "  Waiting for ET..." << std::endl;
 	unsigned int oldheartbeat, newheartbeat;
 	id = (et_id *) sys_id;
 	oldheartbeat = id->sys->heartbeat;
@@ -128,6 +139,11 @@ int main(int argc, char **argv)
 		system("sleep 10s");
 		exit(1);
 	}
+	
+	/* send the SIGCONT signal to the specified process signalling that ET is ready */
+	if (callback_pid)
+		kill(callback_pid, SIGCONT);
+  
 
 	// Request an event from the ET service.
 	int evt_counter = 0;
