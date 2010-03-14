@@ -140,16 +140,27 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	
-	/* send the SIGCONT signal to the specified process signalling that ET is ready */
+	/* send the SIGUSR1 signal to the specified process signalling that ET is ready */
+	int failure;
 	if (callback_pid)
-		kill(callback_pid, SIGCONT);
-  
+	{
+		failure = kill(callback_pid, SIGUSR1);
+		if (failure)
+		{
+			printf("Warning: signal was not delivered to parent process.  Errno: %d\n", failure);
+			fflush(stdout);
+		}
+			
+     }
 
 	// Request an event from the ET service.
 	int evt_counter = 0;
 	while ((et_alive(sys_id))) {
 		struct timespec time;
 		time.tv_sec = 60;
+		time.tv_nsec = 0;
+		
+//		printf("time: %d.%i\n", time.tv_sec, time.tv_nsec);
 		status = et_event_get(sys_id, attach, &pe, ET_TIMED|ET_MODIFY, &time);
 		if (status==ET_ERROR_TIMEOUT) break;
 		if (status == ET_ERROR_DEAD) {

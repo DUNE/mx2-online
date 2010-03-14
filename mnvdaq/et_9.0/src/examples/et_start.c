@@ -262,9 +262,9 @@ int main(int argc, char **argv)
   /* any listers to the STDOUT pipe will get all the data pushed to them now */
   fflush(stdout);
   
-  /* send the SIGCONT signal to the specified process signalling that ET is ready */
+  /* send the SIGUSR1 signal to the specified process signalling that ET is ready */
   if (callback_pid)
-     kill(callback_pid, SIGCONT);
+     kill(callback_pid, SIGUSR1);
   
   /* turn this thread into a signal handler */
   sigwait(&sigwaitset, &sig_num);

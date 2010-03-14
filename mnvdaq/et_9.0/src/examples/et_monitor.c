@@ -209,9 +209,9 @@ printf("LOCALITY = %d\n", locality);
   counter  = 0;
   etdead   = 0;
   
-  /* send the SIGCONT signal to the specified process signalling that ET is ready */
+  /* send the SIGUSR1 signal to the specified process signalling that ET is ready */
   if (callback_pid)
-     kill(callback_pid, SIGCONT);
+     kill(callback_pid, SIGUSR1);
   
   while (1) {
     if (locality == ET_REMOTE) {
