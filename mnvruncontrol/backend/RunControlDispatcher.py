@@ -312,6 +312,9 @@ class RunControlDispatcher:
 				request += data
 			
 			self.logger.info("Client request: '" + request + "'")
+			if request == "":
+				self.logger.info("Blank request.  Assuming pipe was broken and ignoring.")
+				continue
 			
 			response = self.respond(request)
 			if response is not None:		# don't waste our time sending a response to an invalid request.

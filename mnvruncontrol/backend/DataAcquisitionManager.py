@@ -125,8 +125,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.DAQthreads.pop()
 			
 			if starttime - time.time() > 5:
-				errordlg = wx.MessageDialog( None, "The ET processes seem to be unwilling to end.  You may have to kill them manually.", "ET processes not ending...", wx.OK | wx.ICON_ERROR )
-				errordlg.ShowModal()
+				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The ET processes seem to be unwilling to end.  You may have to kill them manually.", title="ET processes not ending...") )
 				quitting = True
 				break
 				
@@ -156,13 +155,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		#### NEED TO DECIDE THE HARDWARE CONFIG FILE TO BE PASSED TO THE SLOW CONTROL HERE
 		####
 		if not quitting:
-			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nLoading hardware...", progress=(1,9)) )
+			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nLoading hardware...", progress=(2,9)) )
 			self.hwconfigfile = "NOFILE"
 				
 		# set up the LI box to do what it's supposed to, if it needs to be on.
 		if not quitting:
 			if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
-				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nInitializing light injection...", progress=(2,9)) )
+				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nInitializing light injection...", progress=(3,9)) )
 				self.LIBox.LED_groups = MetaData.LEDGroups[self.runinfo.ledGroup]
 			
 				need_LI = True
@@ -185,7 +184,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		#### WAIT ON THE SLOW CONTROL UNTIL IT'S READY
 		if not quitting:
-			wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nWaiting on hardware...", progress=(3,9)) )
+			wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nWaiting on hardware...", progress=(4,9)) )
 
 		now = datetime.datetime.utcnow()
 		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
@@ -212,6 +211,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.running = self.running and dialog.ShowModal()
 			else:			
 				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be aborted.") )
+				self.running = False
 			
 		numsteps = len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
 		step = 0
@@ -268,6 +268,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		if self.running:
 			wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
+		else:
+			wx.PostEvent(self.main_window, Events.StopRunningEvent())
 
 
 	##########################################
@@ -280,7 +282,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    as the signal handler for SIGCONT
 		    (otherwise race conditions will result)! """
 		if self.current_DAQ_thread < len(self.DAQthreadStarters):
-			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\n" + self.DAQthreadLabels[self.current_DAQ_thread], progress=(5+self.current_DAQ_thread,9)) )
+			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\n" + self.DAQthreadLabels[self.current_DAQ_thread], progress=(4+self.current_DAQ_thread, 4+len(self.DAQthreadStarters) )) )
 			self.DAQthreadStarters[self.current_DAQ_thread]()
 			self.current_DAQ_thread += 1
 		else:
