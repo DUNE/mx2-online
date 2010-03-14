@@ -23,4 +23,7 @@ fi
 
 # Pass the full path to the ET system!
 $ET_HOME/Linux-x86_64-64/bin/et_monitor -f $ETSYS 
+export ET_MON_PID=$!
+echo ET_MON_PID=${ET_MON_PID}
+echo $ET_MON_PID > $ETMONPIDFILE
 

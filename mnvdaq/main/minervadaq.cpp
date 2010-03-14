@@ -249,15 +249,12 @@ int main(int argc, char *argv[])
 	// Set to the current host machine name. 
 #if CRATE0||CRATE1
 	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote (multi-pc) mode only.
-	mnvdaq.infoStream() << "Setting ET host to mnvonlinemaster.fnal.gov.";	
 #endif
 #if NUMIUS
 	et_open_config_sethost(openconfig, "mnvonline2.fnal.gov");  // Remote (multi-pc) mode only.
-	mnvdaq.infoStream() << "Setting ET host to mnvonline2.fnal.gov.";	
 #endif
 #if WH14T||WH14B
 	et_open_config_sethost(openconfig, "minervatest02.fnal.gov");  // Remote (multi-pc) mode only.
-	mnvdaq.infoStream() << "Setting ET host to minervatest02.fnal.gov.";	
 #endif
 
 	// Set direct connection.
@@ -265,16 +262,13 @@ int main(int argc, char *argv[])
 
 	// Set the server port.
 	et_open_config_setserverport(openconfig, networkPort); // Remote (multi-pc) mode only.
-	mnvdaq.infoStream() << "Set ET server port to " << networkPort;	
 
 	// Open it.
-	mnvdaq.infoStream() << "Trying to open ET system...";	
 	if (et_open(&sys_id, et_filename.c_str(), openconfig) != ET_OK) {
 		printf("et_producer: et_open problems\n");
 		mnvdaq.fatalStream() << "et_producer: et_open problems!";
 		exit(1);
 	}
-	mnvdaq.infoStream() << "...Opened ET system!";	
 
 	// Clean up.
 	et_open_config_destroy(openconfig);
@@ -289,7 +283,6 @@ int main(int argc, char *argv[])
 		system("sleep 10s");
 		exit(1);
 	} 
-	mnvdaq.infoStream() << "Successfully attached to GRANDCENTRAL Station.";	
 
 
 	/*********************************************************************************/
