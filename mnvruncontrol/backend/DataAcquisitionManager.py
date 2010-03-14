@@ -10,6 +10,7 @@ import signal
 import threading
 import select
 import socket
+import errno
 import datetime
 import time
 
@@ -120,8 +121,15 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Cleaning up any prior ET processes...", progress=(0,9)) )
 		starttime = time.time()
+		starting_threads = 0
 		while len(self.DAQthreads) > 0:
-			if self.DAQthreads[-1].process.poll() != None:
+#			if self.DAQthreads[-1].process is None:		# these threads are just starting.  don't want to kill them!
+#				if starting_threads == len(self.DAQthreads):
+#					break
+#				tmp = self.DAQthreads.pop()			# move it to the front of the list.
+#				self.DAQthreads.insert(tmp, 0)
+#				starting_threads += 1
+			if self.DAQthreads[-1].process is None or self.DAQthreads[-1].process.poll() != None:
 				self.DAQthreads.pop()
 			
 			if starttime - time.time() > 5:
@@ -129,12 +137,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 				quitting = True
 				break
 				
-		if self.subrun < len(self.runseries.Runs):
-			self.runinfo = self.runseries.Runs[self.subrun]
-			wx.PostEvent(self.main_window, Events.UpdateSeriesEvent())
-		else:		# no more runs left!  return to main panel.
-			quitting = True
-			
+		self.runinfo = self.runseries.Runs[self.subrun]
+		wx.PostEvent(self.main_window, Events.UpdateSeriesEvent())
+
 		self.runinfo.ETport = 1091 + (self.first_subrun + self.subrun) % 4		# ET needs to use a rotating port number to avoid blockages.
 
 		if not quitting:
@@ -177,8 +182,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 						self.LIBox.initialize()
 						self.LIBox.write_configuration()	
 					except Exception as e:
-						errordlg = wx.MessageDialog( None, "The LI box does not seem to be responding.  Check the connection settings and the cable and try again.  Running aborted.", "LI box not responding", wx.OK | wx.ICON_ERROR )
-						errordlg.ShowModal()
+						wx.PostEvent( self.main_window, Events.ErrorMsgtEvent(text="The LI box does not seem to be responding.  Check the connection settings and the cable and try again.  Running aborted.", title="LI box not responding") )
 
 						quitting = True
 
@@ -198,7 +202,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.current_DAQ_thread = 0
 
-		signal.signal(signal.SIGCONT, self.StartNextThread)
+		signal.signal(signal.SIGUSR1, self.StartNextThread)
 		self.StartNextThread()			# starts the first thread.  the rest will be started in turn as SIGCONT signals are received by the program.
 
 	def EndSubrun(self, evt):
@@ -208,7 +212,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if hasattr(evt, "processname") and evt.processname is not None:
 			if len(self.runseries.Runs) > 1:
 				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be aborted.  Do you want to abort the whole run series?", evt.processname + " quit prematurely",   wx.YES_NO | wx.YES_DEFAULT | wx.ICON_QUESTION)
-				self.running = self.running and dialog.ShowModal()
+				self.running = self.running and (dialog.ShowModal() == wx.ID_NO)
 			else:			
 				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be aborted.") )
 				self.running = False
@@ -266,6 +270,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun completed.", progress=(numsteps, numsteps)) )
 		wx.PostEvent( self.main_window, Events.SubrunOverEvent() )
 		
+		if self.subrun >= len(self.runseries.Runs):		# no more runs left!  return to main panel.
+			self.running = False
+			self.subrun = 0
+
 		if self.running:
 			wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
 		else:
@@ -447,6 +455,7 @@ class DAQthread(threading.Thread):
 		self.is_essential_service = is_essential_service
 		self.update_event = update_event
 		self.name = self.command.split()[0] + "Thread"
+		self.process = None
 		self.daemon = True				# this way the process will end when the main thread does
 
 		self.time_to_quit = False
@@ -532,20 +541,29 @@ class DAQthread(threading.Thread):
 			self.have_cleaned_up = True
 		
 		data = ""
-		while select.select([self.process.stdout], [], [], 0)[0] and (self.process.poll() is None or do_cleanup_read):
+		while self.process.poll() is None or do_cleanup_read:
+			try:
+				ready_to_read = select.select([self.process.stdout], [], [], 0)[0]
+			except select.error, (errnum, msg):
+				if errnum == errno.EINTR:		# the code for an interrupted system call
+					continue
+				else:
+					raise
+
+			if not ready_to_read:
+				break
+
 			try:	
 				newdata = os.read(self.process.stdout.fileno(), 1024)
 			except OSError:		# if the pipe is closed mid-read
 				break
-				
+			
 			if newdata == "":
 				break
 			data += newdata
 		
-			
 		return data
 	
-		
 	def Abort(self):
 		''' When the Stop button is pressed, we gotta quit! '''
 		self.time_to_quit = True

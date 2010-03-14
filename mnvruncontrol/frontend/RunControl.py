@@ -808,7 +808,7 @@ class MainFrame(wx.Frame):
 			
 	@staticmethod
 	def SortLogFiles(file1, file2):
-		pattern = re.compile("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w{5})_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller[01].txt$")
+		pattern = re.compile("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w{5})_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_RawData_Controller[01].txt$")
 		
 		matchdata1 = pattern.match(file1)
 		matchdata2 = pattern.match(file2)
