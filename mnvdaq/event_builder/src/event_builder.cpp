@@ -317,9 +317,42 @@ int event_builder(event_handler *evt)
 			(unsigned long long)(triggerNow.tv_usec);
 		evt->triggerTime = totaluseconds;
 		if (!(gate_counter%gate_print_freq)) { 
-			printf("  Gate: %5d ; Trigger Time = %llu ; Trigger Type = %d\n", 
-				gate_counter, evt->triggerTime, evt->triggerType);
+			printf("Gate: %5d ; Trigger Time = %llu ; ", gate_counter, evt->triggerTime);
 			fflush(stdout);
+			switch(evt->triggerType) {
+				case 0:
+					printf("Trigger =  Unknown\n"); fflush(stdout);
+					break;
+				case 1:
+					printf("Trigger =  OneShot\n"); fflush(stdout);
+					break;
+				case 2:
+					printf("Trigger = LightInj\n"); fflush(stdout);
+					break;
+				case 8:
+					printf("Trigger =   Cosmic\n"); fflush(stdout);
+					break;
+				case 16:
+					printf("Trigger =     NuMI\n"); fflush(stdout);
+					break;
+				default:
+					printf("Trigger incorrctly set!\n"); fflush(stdout);
+			}
+		}
+		if (evt->readoutInfo) {
+			switch (evt->readoutInfo) {
+				case 2:
+					printf("  Found an error on VME Crate 0!");
+					fflush(stdout);
+					break;
+				case 4:
+					printf("  Found an error on VME Crate 1!");
+					fflush(stdout);
+					break;
+				default:
+					printf("  Found an error with unknown code %d",evt->readoutInfo);
+					fflush(stdout);
+			}
 		}
 		// Build the "DAQ" header
 		tmp_header = new MinervaHeader(evt->feb_info[1]); //the special constructor for the DAQ bank

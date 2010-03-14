@@ -60,12 +60,15 @@ int main(int argc, char *argv[])
 	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme_SAM.py");
 	FILE *sam_file;
 	unsigned long long firstEvent, lastEvent;
-	string str_controllerID  = "0";
 	int networkPort          = 1091; // 1091 and 1092 currently open.
+	int controllerErrCode;
+	string str_controllerID  = "0";
 #if MASTER||SINGLEPC // Soldier Node
 	str_controllerID  = "0";
+	controllerErrCode = 2;
 #elif (!MASTER)&&(!SINGLEPC) // Worker Node
 	str_controllerID  = "1";
+	controllerErrCode = 4;
 #endif
 
 	/*********************************************************************************/
@@ -506,7 +509,7 @@ int main(int argc, char *argv[])
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-00-03'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-01-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -833,7 +836,8 @@ int main(int argc, char *argv[])
 						} catch (int e) {
 							// TODO - set error bits in DAQHeader here?
 							//event_data.readoutInfo = (unsigned short)e; // Don't use "e", chain not worked out...
-							event_data.readoutInfo = (unsigned short)1; // Only 1 for now, "VME Error" 
+							//event_data.readoutInfo = (unsigned short)1; // "VME Error"
+							event_data.readoutInfo = (unsigned short)controllerErrCode; 
 							std::cout << "Error Code " << e << " in minervadaq::main()!  ";
 							std::cout << "Cannot TakeData for Gate: " << gate << std::endl;
 							std::cout << "Failed to execute on CROC Addr: " << 
