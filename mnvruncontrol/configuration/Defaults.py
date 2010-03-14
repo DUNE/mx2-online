@@ -30,6 +30,7 @@ RESOURCE_LOCATION_DEFAULT = "/work/software/mnvruncontrol/resources"
 # Socket communication defaults.
 DISPATCHER_PORT = 1098
 MASTER_PORT     = 1090
+ET_PORT_BASE    = 1091
 
 SOLDIER = "mnvonline0.fnal.gov"
 WORKER  = "mnvonline1.fnal.gov"

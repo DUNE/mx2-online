@@ -51,9 +51,15 @@ class MainFrame(wx.Frame):
 		self.UpdateRunConfig()
 		
 		# any wx events that need to be handled
-		self.Bind(Events.EVT_UPDATEPROGRESS_ID, self.UpdateRunStatus)
-		self.Bind(Events.EVT_ERRORMSG_ID, self.ShowErrorMsg)
+		self.Bind(Events.EVT_SUBRUN_OVER, self.PostSubrun)
+		self.Bind(Events.EVT_STOP_RUNNING, self.StopRunning)
+		self.Bind(Events.EVT_UPDATE_NODE, self.UpdateNodeStatus)
+		self.Bind(Events.EVT_UPDATE_PROGRESS, self.UpdateRunStatus)
+		self.Bind(Events.EVT_UPDATE_SERIES, self.UpdateSeriesStatus)
+		self.Bind(Events.EVT_UPDATE_WINDOW_COUNT, self.UpdateCloseWindows)
 
+		self.Bind(Events.EVT_ERRORMSG, self.ShowErrorMsg)
+		
 	def BuildGraphics(self):
 		menuBar = wx.MenuBar()
 
@@ -314,7 +320,7 @@ class MainFrame(wx.Frame):
 		
 		self.Layout()
 
-		self.Connect(-1, -1, Events.EVT_CONFIGUPDATED_ID, self.UpdateLogFiles)
+		self.Bind(Events.EVT_CONFIGUPDATED, self.UpdateLogFiles)
 
 	def parseLogfileName(self, filename):
 		matches = re.match("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller[01].txt$", filename)
@@ -357,7 +363,7 @@ class MainFrame(wx.Frame):
 			self.runmanager.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
 			self.runmanager.rawdataLocation      = Defaults.RAW_DATA_LOCATION_DEFAULT
 			self.runmanager.ResourceLocation     = Defaults.RESOURCE_LOCATION_DEFAULT
-			self.runmanager.readoutNodes         = [ ReadoutNode.ReadoutNode("local", "localhost") ]		# can't use Defaults because I would need to import ReadoutNode into Defaults, which imports Defaults, ...
+			self.runmanager.readoutNodes         = [ ReadoutNode.ReadoutNode("local", "localhost") ]		# can't use Defaults because I would need to import ReadoutNode into Defaults, which imports Defaults, which imports ReadoutNode ...
 			
 		else:
 			try:	self.runinfoFile = db["runinfoFile"]
@@ -512,7 +518,7 @@ class MainFrame(wx.Frame):
 					
 		self.UpdateLogFiles()
 		
-		print "Finished post-subrun stuff."
+#		print "Finished post-subrun stuff."
 			
 	def CheckRunNumber(self, evt=None):
 		if self.runEntry.GetValue() < self.runEntry.GetMin():
@@ -587,12 +593,16 @@ class MainFrame(wx.Frame):
 			else:
 				entry.Enable()		
 
-	def UpdateCloseWindows(self, windowsOpen):
-		if windowsOpen:
+	def UpdateCloseWindows(self, evt):
+		if evt.count > 0:
 			self.closeAllButton.Enable()
 		else:
 			self.closeAllButton.Disable()
 	
+	def UpdateNodeStatus(self, evt):
+		img = self.onImage if evt.on else self.offImage
+		self.indicators[evt.node].SetBitmap(img)
+
 	def UpdateRunStatus(self, evt):
 		""" Updates the progress gauge text label and value.
 		    If you want the gauge in 'indeterminate' mode,
@@ -607,7 +617,7 @@ class MainFrame(wx.Frame):
 			self.progressIndicator.SetRange(evt.progress[1])
 			self.progressIndicator.SetValue(evt.progress[0])
 		
-	def UpdateSeriesStatus(self):
+	def UpdateSeriesStatus(self, evt=None):
 		symbol = ""
 		if self.runmanager.running:
 			symbol = u"\u25b7"		# a right-facing triangle: like a "play" symbol
@@ -628,6 +638,7 @@ class MainFrame(wx.Frame):
 				else:
 					self.seriesDescription.SetStringItem(index, 0, "")
 					self.seriesDescription.Select(index, False)
+	
 
 	def OnTimeToClose(self, evt):
 		if self.runmanager.running:
@@ -639,7 +650,7 @@ class MainFrame(wx.Frame):
 		
 
 	def UpdateLogFiles(self, evt=None):
-		if evt is not None and evt.GetEventType() == EVT_CONFIGUPDATED_ID:		# we only need to reload the config if it's changed!
+		if evt is not None and evt.GetEventType() == EVT_CONFIGUPDATED:		# we only need to reload the config if it's changed!
 			self.GetConfig()
 
 		self.logfileList.DeleteAllItems()
@@ -689,7 +700,7 @@ class MainFrame(wx.Frame):
 		logframe.Show()
 
 	def ShowErrorMsg(self, evt):
-		errordlg = wx.MessageDialog( self, evt.title, evt.text, wx.OK | wx.ICON_ERROR )
+		errordlg = wx.MessageDialog( self, evt.text, evt.title, wx.OK | wx.ICON_ERROR )
 		errordlg.ShowModal()
 		
 
@@ -776,7 +787,7 @@ class MainFrame(wx.Frame):
 		self.UpdateSeriesStatus()
 		self.UpdateLogFiles()
 		
-		wx.PostEvent(self, Events.UpdateProgressEvent(text="No run in progress", progress=(0,1)) )
+		self.UpdateRunStatus( Events.UpdateProgressEvent(text="No run in progress", progress=(0,1)) )
 
 	@staticmethod
 	def SortLogData(fileinfo1, fileinfo2):

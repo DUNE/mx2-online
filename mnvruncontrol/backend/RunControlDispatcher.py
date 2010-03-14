@@ -73,11 +73,22 @@ class RunControlDispatcher:
 	def setup(self):
 		try:
 			self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.
-			self.server_socket.bind(("", self.port))				# bind it to the port specified in the config., on any interface that will let it, on the local machine
+			
+			# only bind a local socket if that's all we need.  otherwise, make sure we handle connections from far-off lands
+			if self.master_address.lower() in ("localhost", "127.0.0.1"):
+				bindaddr = "localhost"
+			else:
+				bindaddr = socket.gethostname()
+			self.server_socket.bind((bindaddr, self.port))
+
 			self.server_socket.listen(3)										# allow it to keep a few backlogged connections (that way if we're trying to talk to it too fast it'll catch up)
-		except Exception, e:
+		except socket.error, e:
 			self.logger.exception("Error trying to bind my listening socket:")
 			self.logger.fatal("Can't get a socket.")
+			self.shutdown()
+		except Exception, e:
+			self.logger.exception("An error occurred while trying to bind the socket:")
+			self.logger.fatal("Quitting.")		
 			self.shutdown()
 
 	def start(self):
@@ -288,10 +299,8 @@ class RunControlDispatcher:
 					continue
 				else:						# if it's not an interrupted system call, we need the error!
 					self.logger.exception("Error " + str(errnum) + ": " + msg)
-					raise
 			except Exception, e:
 				self.logger.exception("Error trying to get socket:")
-
 
 			self.logger.info("Accepted connection from " + str(client_address) + ".")
 			
@@ -316,8 +325,14 @@ class RunControlDispatcher:
 			else:
 				self.logger.info("Request is invalid.")
 
-			client_socket.shutdown(socket.SHUT_RDWR)
-			self.logger.info("Socket closed.")
+			try:
+				client_socket.shutdown(socket.SHUT_RDWR)
+				self.logger.info("Socket closed.")
+			except socket.error:
+				self.logger.exception("Socket error on socket shutdown:")
+				self.logger.error("   ==> Data transmission was interrupted!")
+			finally:
+				client_socket.close()
 	
 		self.logger.info("Instructed to close.  Exiting dispatch mode.")
 		self.cleanup()
@@ -403,6 +418,7 @@ class RunControlDispatcher:
 		self.logger.info("      LED group: " + MetaData.LEDGroups[int(matches.group("ledgroup"))] )
 		self.logger.info("      HW init level: " + MetaData.HardwareInitLevels[int(matches.group("hwinitlevel"))] )
 		self.logger.info("      ET file: " + matches.group("etfile") )
+		self.logger.info("      ET port: " + matches.group("etport") )
 		self.logger.info("      my identity: " + matches.group("identity") + " node")
 
 		if self.daq_thread and self.daq_thread.is_alive() is None:
@@ -412,10 +428,11 @@ class RunControlDispatcher:
 		try:
 			executable = ( environment["DAQROOT"] + "/bin/minervadaq", 
 				          "-et", matches.group("etfile"),
+				          "-p",  matches.group("etport"),
 				          "-g",  matches.group("gates"),
 				          "-m",  matches.group("runmode"),
 				          "-r",  matches.group("run"),
-					  "-s",  matches.group("subrun"),
+					     "-s",  matches.group("subrun"),
 				          "-d",  matches.group("detector"),
 				          "-ll", matches.group("lilevel"),
 				          "-lg", matches.group("ledgroup"),

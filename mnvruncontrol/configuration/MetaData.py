@@ -68,15 +68,13 @@ class MetaData:
 		keylocation = None
 
 		for location in self.locations:
-#			if location is None:
-#				continue
 			if key in location:
 				keylocation = location
 				
 		if keylocation is None:
 			raise KeyError("Key '" + str(key) + "' is not found in any hash, code, or description.")
 		
-		if returntype != ANY and returntype in (DESCRIPTION, HASH, CODE):
+		if returntype in (DESCRIPTION, HASH, CODE):
 			return self.locations[returntype][keylocation.index(key)]
 		elif returntype != ANY:
 			raise ValueError("Invalid return type requested for key '" + str(key) + "'")	
@@ -129,8 +127,7 @@ class MetaData:
 		for location in self.locations:
 			if key in location:
 				return location.index(key)
-		
-		
+				
 		
 # need variable "daqStop"
 
