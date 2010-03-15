@@ -507,7 +507,10 @@ class MainFrame(wx.Frame):
 			db.close()
 			
 	def PostSubrun(self, evt=None):
-		subrun = self.runmanager.first_subrun + self.runmanager.subrun
+		if evt:
+			subrun = evt.subrun
+		else:
+			subrun = self.runmanager.first_subrun + self.runmanager.subrun
 		self.subrunEntry.SetValue(subrun)
 		self.minRunSubrun = subrun
 		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)

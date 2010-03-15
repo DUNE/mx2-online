@@ -253,6 +253,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
 		self.subrun += 1
+#		print self.first_subrun, self.subrun
 
 		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
 
@@ -268,7 +269,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			self.socketThread.Abort()
 
 		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun completed.", progress=(numsteps, numsteps)) )
-		wx.PostEvent( self.main_window, Events.SubrunOverEvent() )
+		wx.PostEvent( self.main_window, Events.SubrunOverEvent(subrun=self.first_subrun + self.subrun) )
 		
 		if self.subrun >= len(self.runseries.Runs):		# no more runs left!  need to bail.
 			self.running = False
@@ -614,7 +615,7 @@ class SocketThread(threading.Thread):
 		bindaddr = "localhost"		
 		for node in self.nodesToWatch:
 			if not node.address in ("localhost", "127.0.0.1"):
-				bindaddr = socket.gethostname()
+				bindaddr = ""		# allow any incoming connections on the right port number
 				break
 		s.bind((bindaddr, Defaults.MASTER_PORT))
 
