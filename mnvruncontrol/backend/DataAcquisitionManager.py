@@ -270,7 +270,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun completed.", progress=(numsteps, numsteps)) )
 		wx.PostEvent( self.main_window, Events.SubrunOverEvent() )
 		
-		if self.subrun >= len(self.runseries.Runs):		# no more runs left!  return to main panel.
+		if self.subrun >= len(self.runseries.Runs):		# no more runs left!  need to bail.
 			self.running = False
 			self.subrun = 0
 
@@ -667,13 +667,13 @@ class SocketThread(threading.Thread):
 						try:
 							node_running = node.daq_checkStatus()
 						except ReadoutNode.ReadoutNodeNoConnectionException:
-							wx.PostEvent(self.owner_process.main_window, Events.ErrorMsgEvent(title="Connection to " + node.name + " broken", text="The connection to the " + node.name + " node was broken.  The run will be aborted.") )
+							wx.PostEvent(self.owner_process.main_window, Events.ErrorMsgEvent(title="Connection to " + node.name + " node broken", text="The connection to the " + node.name + " node was broken.  The subrun will be aborted.") )
 							node_running = False
+
 						if node_running:
-							self.owner_process.main_window.indicators[node.name].SetBitmap(self.owner_process.main_window.onImage)	# whew!
+							wx.PostEvent(self.owner_process.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
 							if num_complete > 0:		# if one node has quit, we need to have the other ones quit too...
 								node.daq_stop()
-							
 						else:
 							wx.PostEvent(self.owner_process.main_window, Events.UpdateNodeEvent(node=node.name, on=False) )
 							node_completed[node.name] = True
