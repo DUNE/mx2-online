@@ -51,6 +51,7 @@ class MainFrame(wx.Frame):
 		self.UpdateRunConfig()
 		
 		# any wx events that need to be handled
+		self.Bind(Events.EVT_SUBRUN_STARTING, self.PreSubrun)
 		self.Bind(Events.EVT_SUBRUN_OVER, self.PostSubrun)
 		self.Bind(Events.EVT_STOP_RUNNING, self.StopRunning)
 		self.Bind(Events.EVT_UPDATE_NODE, self.UpdateNodeStatus)
@@ -484,7 +485,8 @@ class MainFrame(wx.Frame):
 			errordlg.ShowModal()
 		else:
 			db["run"] = int(self.runEntry.GetValue())
-			db["subrun"] = int(self.subrunEntry.GetValue())
+			subrun = evt.subrun if (evt and hasattr(evt, "subrun")) else int(self.subrunEntry.GetValue())
+			db["subrun"] = subrun + 1		# INCREMENT it to avoid data overwriting in the event of a crash
 			db["hwinit"] = int(MetaData.HardwareInitLevels.item(self.HWinitEntry.GetSelection(), MetaData.HASH))
 			db["detector"] = int(MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH))
 			db["febs"] = int(self.febsEntry.GetValue())
@@ -505,17 +507,16 @@ class MainFrame(wx.Frame):
 			db["lockdown"] = self.lockdownEntry.IsChecked()
 
 			db.close()
+
+	def PreSubrun(self, evt):
+		self.StoreNextRunSubrun(evt)
+		
 			
 	def PostSubrun(self, evt=None):
-		if evt:
-			subrun = evt.subrun
-		else:
-			subrun = self.runmanager.first_subrun + self.runmanager.subrun
-		self.subrunEntry.SetValue(subrun)
-		self.minRunSubrun = subrun
-		self.runEntry.SetRange(self.runEntry.GetValue(), 100000)
-		self.StoreNextRunSubrun()
-		
+		self.subrunEntry.SetValue(evt.subrun)
+		self.minRunSubrun = evt.subrun
+		self.runEntry.SetRange(self.runmanager.run, 100000)
+
 		if self.autocloseEntry.IsChecked():
 			self.CloseAllWindows()
 					
@@ -573,6 +574,9 @@ class MainFrame(wx.Frame):
 		showSingleRun = self.singleRunButton.GetValue()
 		self.singleRunConfigPanel.Show(showSingleRun)
 		self.runSeriesConfigPanel.Show(not(showSingleRun))
+
+		if not showSingleRun:
+			self.LoadRunSeriesFile()
 
 		self.mainPage.Layout()
 		self.mainPage.Refresh()

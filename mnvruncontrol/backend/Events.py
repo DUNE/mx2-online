@@ -15,6 +15,8 @@ StopRunningEvent,        EVT_STOP_RUNNING          = wx.lib.newevent.NewEvent()
 
 SubrunOverEvent,         EVT_SUBRUN_OVER           = wx.lib.newevent.NewEvent()
 
+SubrunStartingEvent,     EVT_SUBRUN_STARTING       = wx.lib.newevent.NewEvent()
+
 ThreadReadyEvent,        EVT_THREAD_READY          = wx.lib.newevent.NewEvent()
 
 UpdateNodeEvent,         EVT_UPDATE_NODE           = wx.lib.newevent.NewEvent()

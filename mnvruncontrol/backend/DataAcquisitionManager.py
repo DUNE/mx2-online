@@ -200,6 +200,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 			wx.PostEvent(self.main_window, Events.StopRunningEvent())		# tell the main window that we're done here.
 			return
 
+		wx.PostEvent(self.main_window, Events.SubrunStartingEvent(subrun=self.first_subrun + self.subrun))
+
 		self.current_DAQ_thread = 0
 
 		signal.signal(signal.SIGUSR1, self.StartNextThread)
