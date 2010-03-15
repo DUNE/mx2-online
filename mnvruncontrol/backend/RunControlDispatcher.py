@@ -78,7 +78,7 @@ class RunControlDispatcher:
 			if self.master_address.lower() in ("localhost", "127.0.0.1"):
 				bindaddr = "localhost"
 			else:
-				bindaddr = socket.gethostname()
+				bindaddr = ""  		# accept any incoming connections to the port
 			self.server_socket.bind((bindaddr, self.port))
 
 			self.server_socket.listen(3)										# allow it to keep a few backlogged connections (that way if we're trying to talk to it too fast it'll catch up)
