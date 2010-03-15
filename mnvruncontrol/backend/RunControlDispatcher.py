@@ -580,7 +580,7 @@ if __name__ == "__main__":
 		environment["ET_LIBROOT"] = os.environ["ET_LIBROOT"]
 		environment["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
 	except KeyError:
-		sys.stderr("Your environment is not properly configured.  You must run the 'setup_daqbuild.sh' script before launching the dispatcher.")
+		sys.stderr.write("Your environment is not properly configured.  You must run the 'setup_daqbuild.sh' script before launching the dispatcher.")
 		sys.exit(1)
 
 	import optparse
