@@ -813,6 +813,9 @@ class MainFrame(wx.Frame):
 		matchdata1 = pattern.match(file1)
 		matchdata2 = pattern.match(file2)
 		
+		if not matchdata1 or not matchdata2:		# maybe the files don't match the pattern.
+			return 0
+		
 		if matchdata1.group("run") == matchdata2.group("run"):
 			if matchdata1.group("subrun") == matchdata2.group("subrun"):		# shouldn't ever have same run/subrun combination
 				if matchdata1.group("hour") == matchdata2.group("hour"):
