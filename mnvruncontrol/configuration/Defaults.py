@@ -36,9 +36,12 @@ SOLDIER = "mnvonline0.fnal.gov"
 WORKER  = "mnvonline1.fnal.gov"
 MASTER  = "mnvonlinemaster.fnal.gov"
 
+MAX_CONNECTION_ATTEMPTS = 5
+CONNECTION_ATTEMPT_INTERVAL = 0.2	# in seconds
+SOCKET_TIMEOUT = 0.25
+
 # dispatcher process details
 DISPATCHER_PIDFILE = "/tmp/rc_dispatcher.pid"
-#DISPATCHER_LOGFILE = "/work/data/logs/dispatcher_" + time.strftime("%Y-%m-%d_%H-%M-%S", time.gmtime()) + ".log"
 DISPATCHER_LOGFILE = "/work/data/logs/dispatcher.log"
 
 # environment configuration

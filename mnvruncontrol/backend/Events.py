@@ -3,7 +3,7 @@ import wx.lib.newevent
 
 ConfigUpdatedEvent,      EVT_CONFIGUPDATED         = wx.lib.newevent.NewEvent()
 
-DAQQuitEvent,            EVT_DAQQUIT               = wx.lib.newevent.NewEvent()
+EndSubrunEvent,          EVT_END_SUBRUN            = wx.lib.newevent.NewEvent()
 
 ErrorMsgEvent,           EVT_ERRORMSG              = wx.lib.newevent.NewEvent()
 

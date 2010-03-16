@@ -542,20 +542,31 @@ class DAQThread(threading.Thread):
 			self.owner_process.logger.exception("minervadaq log file error:")
 			self.owner_process.logger.error("   ==> log file information will be discarded.")
 		
-		self.owner_process.logger.info("Contacting master to indicate I am done.")
 		# open a client socket to the master node.  need to inform it we're done!
-		try:
-			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			s.settimeout(2)
-			s.connect( (self.master_address, Defaults.MASTER_PORT) )
-			s.send(self.identity)		# informs the server WHICH of the readout nodes I am (and that I'm finished).
-			s.shutdown(socket.SHUT_WR)
-			self.owner_process.logger.info("'Done' signal sent successfully.")
-		except:
-			self.owner_process.logger.exception("Socket error:")
-			self.owner_process.logger.error("  ==> 'Done' signal did not make it to master.")
-		finally:
-			s.close()
+		tries = 0
+		success = False
+		while tries < Defaults.MAX_CONNECTION_ATTEMPTS and not success:
+			self.owner_process.logger.info("Attempting to contact master to indicate I am done.")
+			try:
+				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				s.settimeout(Defaults.SOCKET_TIMEOUT)
+				s.connect( (self.master_address, Defaults.MASTER_PORT) )
+				s.send(self.identity)		# informs the server WHICH of the readout nodes I am (and that I'm finished).
+				s.shutdown(socket.SHUT_WR)
+				self.owner_process.logger.info("'Done' signal sent successfully.")
+				success = True
+			except:
+				self.owner_process.logger.exception("Socket error:")
+				self.owner_process.logger.info("  ==> 'Done' communication interrupted.")
+				tries += 1
+				if tries < Defaults.MAX_CONNECTION_ATTEMPTS:
+					self.owner_process.logger.info("  ==> Will try again in 1s.")
+				time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)
+			finally:
+				s.close()
+				
+		if tries == Defaults.MAX_CONNECTION_ATTEMPTS:
+			self.owner_process.logger.error("  ==> Could not communicate 'done' to master.")
 
 		self.returncode = self.daq_process.returncode
 		

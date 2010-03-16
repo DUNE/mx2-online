@@ -1,4 +1,14 @@
 #!/usr/bin/python
+"""
+  RunControl.py:
+  Main wxPython objects for the presentation of a graphical
+  run control interface to the user.
+  
+   Original author: J. Wolcott (jwolcott@fnal.gov)
+                    Feb.-Mar. 2010
+                    
+   Address all complaints to the management.
+"""
 
 import wx
 from wx.lib.wordwrap import wordwrap
@@ -222,22 +232,28 @@ class MainFrame(wx.Frame):
 		configSizer.Add(runConfigSizer, proportion=1, flag=wx.EXPAND)
 
 		# run control: start, stop, close windows
-		self.startButton = wx.Button(self.mainPage, ID_START, "Start")
+		self.startButton = wx.Button(self.mainPage, ID_START, "S&tart")
 		self.startButton.SetBackgroundColour("green")
 		self.Bind(wx.EVT_BUTTON, self.StartRunning, self.startButton)
 		self.startButton.Disable()
+		
+		self.skipButton = wx.Button(self.mainPage, wx.ID_FORWARD, "Skip to &next subrun")
+		self.skipButton.SetBackgroundColour("yellow")
+		self.Bind(wx.EVT_BUTTON, self.SkipToNextSubrun, self.skipButton)
+		self.skipButton.Disable()
 		
 		self.stopButton = wx.Button(self.mainPage, wx.ID_STOP)
 		self.stopButton.SetBackgroundColour("red")
 		self.Bind(wx.EVT_BUTTON, self.StopRunning, self.stopButton)
 		self.stopButton.Disable()		# disabled until the 'start' button is pressed
 
-		self.closeAllButton = wx.Button(self.mainPage, wx.ID_CLOSE, "Close ET/DAQ windows")
+		self.closeAllButton = wx.Button(self.mainPage, wx.ID_CLOSE, "&Close ET/DAQ windows")
 		self.Bind(wx.EVT_BUTTON, self.CloseAllWindows, self.closeAllButton)
 		self.closeAllButton.Disable()
 		
 		controlBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Run Control"), wx.VERTICAL)
 		controlBoxSizer.AddMany( [ (self.startButton, 1, wx.ALIGN_CENTER_HORIZONTAL),
+		                           (self.skipButton, 1, wx.ALIGN_CENTER_HORIZONTAL),
 		                           (self.stopButton, 1, wx.ALIGN_CENTER_HORIZONTAL),
 		                           (self.closeAllButton, 1, wx.ALIGN_CENTER_HORIZONTAL) ] )
 		
@@ -484,9 +500,16 @@ class MainFrame(wx.Frame):
 			errordlg = wx.MessageDialog( None, "The database storing the run/subrun data cannot be accessed.  Run/subrun will not be retained...", "Run/subrun database inaccessible", wx.OK | wx.ICON_ERROR )
 			errordlg.ShowModal()
 		else:
+			if hasattr(evt, "first_subrun") and hasattr(evt, "current_subrun"):
+				subrun = evt.first_subrun + evt.current_subrun
+			else:
+				subrun = int(self.subrunEntry.GetValue())
+				
+			if self.runmanager.running:		# this function can be called from the menu, too
+				subrun += 1	# INCREMENT it to avoid data overwriting in the event of a crash
+
 			db["run"] = int(self.runEntry.GetValue())
-			subrun = evt.subrun if (evt and hasattr(evt, "subrun")) else int(self.subrunEntry.GetValue())
-			db["subrun"] = subrun + 1		# INCREMENT it to avoid data overwriting in the event of a crash
+			db["subrun"] = subrun
 			db["hwinit"] = int(MetaData.HardwareInitLevels.item(self.HWinitEntry.GetSelection(), MetaData.HASH))
 			db["detector"] = int(MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH))
 			db["febs"] = int(self.febsEntry.GetValue())
@@ -511,18 +534,25 @@ class MainFrame(wx.Frame):
 	def PreSubrun(self, evt):
 		self.StoreNextRunSubrun(evt)
 		
+		if evt.num_subruns > 1 and evt.current_subrun + 1 < evt.num_subruns:
+			self.skipButton.Enable()
+		else:
+			self.skipButton.Disable()
+		
+		
 			
 	def PostSubrun(self, evt=None):
 		self.subrunEntry.SetValue(evt.subrun)
 		self.minRunSubrun = evt.subrun
-		self.runEntry.SetRange(self.runmanager.run, 100000)
+		self.runEntry.SetRange(evt.run, 1000000)
 
 		if self.autocloseEntry.IsChecked():
 			self.CloseAllWindows()
 					
 		self.UpdateLogFiles()
 		
-#		print "Finished post-subrun stuff."
+	def SkipToNextSubrun(self, evt):
+		wx.PostEvent(self.runmanager, Events.EndSubrunEvent())		# tell the run manager that it's time to move on
 			
 	def CheckRunNumber(self, evt=None):
 		if self.runEntry.GetValue() < self.runEntry.GetMin():
@@ -574,10 +604,11 @@ class MainFrame(wx.Frame):
 		showSingleRun = self.singleRunButton.GetValue()
 		self.singleRunConfigPanel.Show(showSingleRun)
 		self.runSeriesConfigPanel.Show(not(showSingleRun))
+		self.skipButton.Show(not(showSingleRun))
 
 		if not showSingleRun:
 			self.LoadRunSeriesFile()
-
+		
 		self.mainPage.Layout()
 		self.mainPage.Refresh()
 		self.mainPage.Update()
@@ -1092,7 +1123,7 @@ class MainApp(wx.App):
 			errordlg.ShowModal()
 			return False
 		else:
-			frame = MainFrame(None, "Run Control")
+			frame = MainFrame(None, "MINERvA run control")
 			frame.runmanager.environment = environment
 			self.SetTopWindow(frame)
 			frame.Show(True)

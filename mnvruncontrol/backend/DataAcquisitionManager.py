@@ -1,4 +1,13 @@
-#!/usr/bin/python
+"""
+  DataAcquisitionManager.py:
+  Infrastructural objects to manage a data acquisition run.
+  Used by the run control.
+  
+   Original author: J. Wolcott (jwolcott@fnal.gov)
+                    Feb.-Mar. 2010
+                    
+   Address all complaints to the management.
+"""
 
 import wx
 from wx.lib.wordwrap import wordwrap
@@ -30,6 +39,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.main_window = main_window
 		
 		self.DAQthreads = []
+		self.DAQthreadWatcher = None
 		self.timerThreads = []
 		self.socketThread = None
 		self.DAQthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartRemoteDAQService]
@@ -56,10 +66,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.febs = None
 		
 		self.running = False
+		self.can_shutdown = False		# used in between subruns to prevent shutting down twice for different reasons
 
 		self.Bind(Events.EVT_READY_FOR_NEXT_SUBRUN, self.StartNextSubrun)
 		self.Bind(Events.EVT_THREAD_READY, self.StartNextThread)
-		self.Bind(Events.EVT_DAQQUIT, self.EndSubrun)		# if the DAQ process quits, this subrun is over
+		self.Bind(Events.EVT_END_SUBRUN, self.EndSubrun)		# if the DAQ process quits, this subrun is over
 #		self.Connect(-1, -1, EVT_UPDATE_ID, self.UpdateRunStatus)
 		
 	##########################################
@@ -106,45 +117,72 @@ class DataAcquisitionManager(wx.EvtHandler):
 			except ReadoutNode.ReadoutNodeException, ReadoutNode.ReadoutNodeNoConnectionException:		# the DAQ has already quit or is unreachable
 				needsManualStop = True				# if so, we'll never get the "DAQ quit" event from the SocketThread.
 		if needsManualStop:
-			wx.PostEvent(self, Events.DAQQuitEvent())								
+			wx.PostEvent(self, Events.EndSubrunEvent())								
 
 	##########################################
 	# Subrun starters and stoppers
 	##########################################
 		
 	def StartNextSubrun(self, evt=None):
+		""" Prepares to start the next subrun: waits for
+		    the DAQ system to be ready, notifies the main 
+		    window what run we're in, prepares the LI box
+		    and slow controls, and finally initiates the
+		    acquisition sequence. """
+	
+		quitting = False
+		self.CloseWindows()			# don't want leftover windows open.
+		
+		numsteps = 4 + len(self.DAQthreadStarters)
+
+		wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nCleaning up any prior ET processes...", progress=(0,numsteps)) )
 		# need to be careful here.
 		# ET & the DAQ shouldn't be running in two separate sets of processes.
 		# therefore, we need to make sure we let them completely close
-		# before we actually start the next subrun.
-		quitting = False
+		# before we actually start the next subrun.  however, we can't wait
+		# on them in this method, because it runs as part of the main thread,
+		# and if we did, the whole program would appear to lock up: since wx also
+		# runs in the main thread, the graphical interface wouldn't be updated.
+		# instead, we spawn a separate thread to watch these processes and
+		# issue the ReadyForNextSubrun event to the DataAcquisitionManager
+		# when they are done.
+		
+		# if the event contains a list of PIDs that have finished, then
+		# this signal is coming from the thread watcher.
+		# clear out the corresponding elements in the list.
+		if hasattr(evt, "pids_cleared"):
+			for pid in evt.pids_cleared:
+				self.DAQthreads.remove(pid)
+		
+		if len(self.DAQthreads) > 0:
+			if self.DAQthreadWatcher is None or not self.DAQthreadWatcher.is_alive():
+				self.DAQthreadWatcher = DAQWatcherThread(self)
 
-		wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Cleaning up any prior ET processes...", progress=(0,9)) )
-		starttime = time.time()
-		starting_threads = 0
-		while len(self.DAQthreads) > 0:
-#			if self.DAQthreads[-1].process is None:		# these threads are just starting.  don't want to kill them!
-#				if starting_threads == len(self.DAQthreads):
-#					break
-#				tmp = self.DAQthreads.pop()			# move it to the front of the list.
-#				self.DAQthreads.insert(tmp, 0)
-#				starting_threads += 1
-			if self.DAQthreads[-1].process is None or self.DAQthreads[-1].process.poll() != None:
-				self.DAQthreads.pop()
-			
-			if starttime - time.time() > 5:
-				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The ET processes seem to be unwilling to end.  You may have to kill them manually.", title="ET processes not ending...") )
-				quitting = True
-				break
-				
+				# transfer all the thread references to the DAQthreadWatcher
+				# to prevent race conditions.  replace them with PIDs in the
+				# DataAcquisitionManager's list as placeholders.
+				pids = []
+				while len(self.DAQthreads) > 0:
+					tmp = self.DAQthreads.pop()
+					self.DAQthreadWatcher.threadsToWatch.append(tmp)
+					pids.append(tmp.pid)
+				self.DAQthreads = pids
+
+				# now watch them.
+				self.DAQthreadWatcher.start()
+
+			# we can't do anything more until they're done, so exit this method.
+			return
+		
+		self.can_shutdown = True
+		
 		self.runinfo = self.runseries.Runs[self.subrun]
 		wx.PostEvent(self.main_window, Events.UpdateSeriesEvent())
 
 		self.runinfo.ETport = 1091 + (self.first_subrun + self.subrun) % 4		# ET needs to use a rotating port number to avoid blockages.
 
 		if not quitting:
-			self.CloseWindows()			# don't want leftover windows open.
-			wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\ntesting connections", progress=(1,9)) )
+			wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\ntesting connections", progress=(1,numsteps)) )
 			ok = True
 			for node in self.readoutNodes:
 				on = node.ping()
@@ -160,13 +198,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		#### NEED TO DECIDE THE HARDWARE CONFIG FILE TO BE PASSED TO THE SLOW CONTROL HERE
 		####
 		if not quitting:
-			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nLoading hardware...", progress=(2,9)) )
+			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nLoading hardware...", progress=(2,numsteps)) )
 			self.hwconfigfile = "NOFILE"
 				
 		# set up the LI box to do what it's supposed to, if it needs to be on.
 		if not quitting:
 			if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
-				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nInitializing light injection...", progress=(3,9)) )
+				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nInitializing light injection...", progress=(3,numsteps)) )
 				self.LIBox.LED_groups = MetaData.LEDGroups[self.runinfo.ledGroup]
 			
 				need_LI = True
@@ -188,7 +226,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		#### WAIT ON THE SLOW CONTROL UNTIL IT'S READY
 		if not quitting:
-			wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nWaiting on hardware...", progress=(4,9)) )
+			wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nWaiting on hardware...", progress=(4,numsteps)) )
 
 		now = datetime.datetime.utcnow()
 		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
@@ -200,17 +238,23 @@ class DataAcquisitionManager(wx.EvtHandler):
 			wx.PostEvent(self.main_window, Events.StopRunningEvent())		# tell the main window that we're done here.
 			return
 
-		wx.PostEvent(self.main_window, Events.SubrunStartingEvent(subrun=self.first_subrun + self.subrun))
+		wx.PostEvent(self.main_window, Events.SubrunStartingEvent(first_subrun=self.first_subrun, current_subrun=self.subrun, num_subruns=len(self.runseries.Runs)))
 
 		self.current_DAQ_thread = 0
 
 		signal.signal(signal.SIGUSR1, self.StartNextThread)
 		self.StartNextThread()			# starts the first thread.  the rest will be started in turn as SIGCONT signals are received by the program.
-
+		
 	def EndSubrun(self, evt):
 		""" Performs the jobs that need to be done when a subrun ends.
-		    This method should only be called when the Manager object
-		    receives a DAQQuitEvent. """
+		    This method should only be called as the event handler
+		    for the EndSubrunEvent. """
+
+		if not self.can_shutdown:
+			return
+
+		self.can_shutdown = False
+		
 		if hasattr(evt, "processname") and evt.processname is not None:
 			if len(self.runseries.Runs) > 1:
 				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be aborted.  Do you want to abort the whole run series?", evt.processname + " quit prematurely",   wx.YES_NO | wx.YES_DEFAULT | wx.ICON_QUESTION)
@@ -223,7 +267,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		step = 0
 			
 		# if the subrun is being stopped for some other reason than
-		# all readout nodes exited cleanly, then we need to make sure
+		# all readout nodes exiting cleanly, then we need to make sure
 		# they ARE stopped.
 		if not hasattr(evt, "allclear") or not evt.allclear:
 			success = True
@@ -245,7 +289,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping ET threads...", progress=(step, numsteps)) )
-			thread.Abort()
+
+			# we might have clicked the 'stop' button while the DAQthreadWatcher is watching these threads,
+			# in which case the list only contains a list of PIDs as placeholders.
+			# in that case, we need to abort the DAQthreadWatcher instead.
+			if hasattr(thread, "Abort"):		
+				thread.Abort()
+			else:
+				self.DAQthreadWatcher.Abort()
 			
 			step += 1
 			
@@ -253,8 +304,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 			thread = self.timerThreads.pop()	# the countdown timers would start more threads.  get rid of them.
 			thread.Abort()
 
-		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
-		self.subrun += 1
 #		print self.first_subrun, self.subrun
 
 		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
@@ -270,9 +319,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.socketThread:
 			self.socketThread.Abort()
 
-		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun completed.", progress=(numsteps, numsteps)) )
-		wx.PostEvent( self.main_window, Events.SubrunOverEvent(subrun=self.first_subrun + self.subrun) )
+		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
+		self.subrun += 1
 		
+		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun completed.", progress=(numsteps, numsteps)) )
+		wx.PostEvent( self.main_window, Events.SubrunOverEvent(run=self.run, subrun=self.first_subrun + self.subrun) )
+
 		if self.subrun >= len(self.runseries.Runs):		# no more runs left!  need to bail.
 			self.running = False
 			self.subrun = 0
@@ -281,7 +333,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
 		else:
 			wx.PostEvent(self.main_window, Events.StopRunningEvent())
-
+		
 
 	##########################################
 	# Subprocess starters
@@ -511,9 +563,12 @@ class DAQthread(threading.Thread):
 		# due to some external signal, it's the first thing to quit.
 		# the other processes should be stopped, the user should be informed,
 		# and the run stopped since further data is expected to be useless.
+		# however, if this thread is being watched by the thread watcher,
+		# we don't need this event because the thread watcher will issue it
+		# when ALL the DAQ threads are done.
 		if self.is_essential_service and self.process.poll() is not None and not self.time_to_quit:
 			self.timer_cancel = True
-			wx.PostEvent(self.owner_process, Events.DAQQuitEvent(processname=self.process_identity))
+			wx.PostEvent(self.owner_process, Events.EndSubrunEvent(processname=self.process_identity))
 			
 	def read(self, want_cleanup_read = False):
 		""" Read out the data from the process.  This method attempts
@@ -588,7 +643,42 @@ class DAQthread(threading.Thread):
 				wx.PostEvent(self.output_window, Events.NewDataEvent(data="\n\nThread terminated cleanly."))
 
 		if self.is_essential_service and self.process.poll() is not None and not self.time_to_quit:
-			wx.PostEvent(self.owner_process, Events.DAQQuitEvent(processname=self.process_identity))
+			wx.PostEvent(self.owner_process, Events.EndSubrunEvent(processname=self.process_identity))
+	
+#########################################################
+#   DAQWatcherThread
+#########################################################
+
+class DAQWatcherThread(threading.Thread):
+	""" A thread whose sole purpose is to watch the other
+	    DAQ threads (which contain subprocesses) until
+	    their subprocesses finish, and then report that
+	    information back to the main thread. """
+	def __init__(self, postback_object):
+		threading.Thread.__init__(self)
+		self.name="DAQWatcherThread"
+
+		self.threadsToWatch = []
+		self.postback_object = postback_object
+	
+	def run(self):
+		self.time_to_quit = False
+		if len(self.threadsToWatch) == 0:
+			return
+	 		
+		while not self.time_to_quit:
+			threads_done = [thread.process.poll() is not None for thread in self.threadsToWatch]
+			
+#			print threads_done
+			
+			self.time_to_quit = self.time_to_quit or not False in threads_done
+		
+		pidlist = [thread.pid for thread in self.threadsToWatch]
+		self.threadsToWatch = []
+		wx.PostEvent(self.postback_object, Events.ReadyForNextSubrunEvent(pids_cleared=pidlist))
+		
+	def Abort(self):
+		self.time_to_quit = True
 		
 #########################################################
 #   SocketThread
@@ -690,7 +780,7 @@ class SocketThread(threading.Thread):
 		# the subrun needs to end then.
 		# we pass 'allclear = True' to signify this.
 		if num_complete == len(self.nodesToWatch):
-			wx.PostEvent(self.owner_process, Events.DAQQuitEvent(allclear=True))
+			wx.PostEvent(self.owner_process, Events.EndSubrunEvent(allclear=True))
 		
 	def Abort(self):
 		self.time_to_quit = True

@@ -13,6 +13,7 @@
 """
 
 import re
+import time
 import socket
 
 from mnvruncontrol.configuration import Defaults
@@ -36,29 +37,42 @@ class ReadoutNode:
 		if not is_valid_request:
 			raise ReadoutNodeBadRequestException("Invalid request: '" + request + "'")
 		
-		try:
-			self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			self.socket.settimeout(0.25)
-			self.socket.connect( (self.address, self.port) )
-			self.socket.send(request)
-			self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
-		except socket.error, e:
-			print e
-			self.socket.close()
+		tries = 0
+		success = False
+		while tries < Defaults.MAX_CONNECTION_ATTEMPTS and not success:
+			try:
+				self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				self.socket.settimeout(Defaults.SOCKET_TIMEOUT)
+				self.socket.connect( (self.address, self.port) )
+				self.socket.send(request)
+				self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
+
+				response = ""
+				datalen = -1
+				while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire response
+					data = self.socket.recv(1024)
+					datalen = len(data)
+					response += data
+
+				success = True
+			except (socket.error, socket.timeout), e:
+#				print e
+				tries += 1
+				time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)
+			finally:
+				self.socket.close()
+				
+			# an empty response is the sign of a broken connection.
+			# (none of the queries will return with nothing.)
+			# we'll want to try again.
+			if response == "":
+				success = False
+				tries += 1
+				continue
+
+		if tries == Defaults.MAX_CONNECTION_ATTEMPTS:
 			raise ReadoutNodeNoConnectionException()
-		
-		response = ""
-		datalen = -1
-		try:
-			while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire request
-				data = self.socket.recv(1024)
-				datalen = len(data)
-				response += data
-		except socket.timeout:
-			raise ReadoutNodeNoConnectionException()
-		finally:
-			self.socket.close()
-		
+
 		return response
 	
 	def ping(self):

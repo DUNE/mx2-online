@@ -1,3 +1,12 @@
+"""
+  RunSeriesConfigurator.py:
+  Graphical tool for creating run series for use
+  with the run control.
+  
+   Original author: A. Mislivec (mislivec@pas.rochester.edu)
+                    Feb.-Mar. 2010
+"""
+
 import wx
 import sys
 import os
