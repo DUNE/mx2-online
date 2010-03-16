@@ -95,10 +95,15 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	std::cout            << "Initializing hardware for the " << detectorString << std::endl; 
 	acqData.infoStream() << "Initializing hardware for the " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
-	InitializeCroc(0x050000, 1,  0,  0,  0, 10); // MS09W, MS10W, MS11W, MS12W
-	InitializeCroc(0x060000, 2,  0,  0,  0,  9); // MS09E, MS10E, MS11E, MS12E
-	InitializeCroc(0x070000, 3, 10, 10, 10, 10); // MS13W, MS14W, MS15W, MS16W
-	InitializeCroc(0x080000, 4,  9,  9,  9,  9); // MS13E, MS14E, MS15E, MS16E
+	InitializeCrim(0xF00000, 2, runningMode);
+	InitializeCroc(0x010000, 1, 10, 10, 10,  6); // MS01W, MS02W, MS03W, MS04W
+	InitializeCroc(0x020000, 2, 10, 10,  9,  5); // MS01E, MS02E, MS03E, MS04E
+	InitializeCroc(0x030000, 3, 10, 10, 10, 10); // MS05W, MS06W, MS07W, MS08W
+	InitializeCroc(0x040000, 4,  9,  9,  9,  9); // MS05E, MS06E, MS07E, MS08E
+	InitializeCroc(0x050000, 5, 10, 10, 10, 10); // MS09W, MS10W, MS11W, MS12W
+	InitializeCroc(0x060000, 6,  9,  9,  9,  9); // MS09E, MS10E, MS11E, MS12E
+	InitializeCroc(0x070000, 7, 10, 10, 10, 10); // MS13W, MS14W, MS15W, MS16W
+	InitializeCroc(0x080000, 8,  9,  9,  9,  9); // MS13E, MS14E, MS15E, MS16E
 #endif
 #if CRATE1
 	detectorString        = "NuMI Crate 1.";
@@ -112,6 +117,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	InitializeCroc(0x040000, 4,  9,  9,  5,  5); // MS21E, MS22E, MS23E, MS24E
 	InitializeCroc(0x050000, 5,  6,  6,  6,  0); // MS25W, MS26W, MS27W, Loopback
 	InitializeCroc(0x060000, 6,  5,  5,  5,  0); // MS25E, MS26E, MS27E, Loopback
+	//InitializeCroc(0x060000, 7, 10, 10, 10, 10); // MS00W, MS00E, MS-1W, MS-1E
 #endif
 #endif
 
