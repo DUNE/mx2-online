@@ -65,12 +65,6 @@ class LIBox:
 		else:
 			print "Warning: LI box communication is disabled.  Edit LIBox.py and set 'DISABLE_LIBOX' to False near the top of the file to enable it."
 		
-
-#		try:
-#			self.port.read(1)
-#		except serial.SerialException:
-#			raise LIBoxException("The LI box does not seem to be connected.  Check the settings and the cable connection.")
-		
 	def reset(self):
 		self.command_stack = ["_X"]
 		self.communicate()
@@ -118,6 +112,12 @@ class LIBox:
 			if command_ok == False:
 				raise LIBoxException("Command '" + command + "' is invalid and cannot be sent to the LI box.")
 				
+				
+	def get_command_history(self):
+		tmp = [cmd for cmd in self.command_log]		# can't just make a direct assignment or we'll only get a reference
+		self.command_log = []
+		return tmp
+				
 	def write_configuration(self):
 		""" Builds a stack of commands based on this object's parameters, then calls communicate(). """
 		
@@ -127,11 +127,15 @@ class LIBox:
 			self.initialize()
 		
 		# first, LED group.
-		self.LED_groups = self.LED_groups.upper()
+		# remove whitespace, capitalize, and alphabetize for easy processing.
 		self.LED_groups = self.LED_groups.replace(" ", "")
+		self.LED_groups = self.LED_groups.upper()
+		tmp = [char for char in self.LED_groups]
+		tmp.sort()
+		self.LED_groups = "".join(tmp)
 		
-		if not re.match("[a-dA-D]{1,4}", self.LED_groups):
-			raise LIBoxException("LED groups to use must be some combination of 'A', 'B', 'C', 'D' (your entry: '" + self.LED_groups + "').")
+		if not re.match("^A?B?C?D?$", self.LED_groups):
+			raise LIBoxBadConfigException("LED groups to use must be some combination of 'A', 'B', 'C', 'D' (your entry: '" + self.LED_groups + "').")
 
 		# the following wizardry is brought to you by the black magic that powers the LI box.
 		# trust me -- it works.
@@ -203,6 +207,9 @@ class LIBox:
 		
 		self.communicate()
 			
+
+class LIBoxBadConfigException(Exception):
+	pass
 
 class LIBoxException(Exception):
 	pass
