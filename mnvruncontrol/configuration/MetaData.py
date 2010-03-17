@@ -160,7 +160,7 @@ LILevels			= MetaData(( ("Zero PE", 0, None),
 				             ("One PE",  1, None),
 				             ("Max PE",  2, None) ))
 
-LEDGroups			= MetaData(( ("All",   2**3,    "0"),
+LEDGroups			= MetaData(( ("ABCD",   2**3,    "0"),
 				             ("BCD",   2**4,    "a"),
 				             ("ACD",   2**5,    "b"),
 				             ("CD",    2**6,    "c"),
