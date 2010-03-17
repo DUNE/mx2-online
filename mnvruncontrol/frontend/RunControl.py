@@ -79,6 +79,7 @@ class MainFrame(wx.Frame):
 		fileMenu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit the run control")
 	
 		self.Bind(wx.EVT_MENU, self.OnTimeToClose, id=wx.ID_EXIT)
+		self.Bind(wx.EVT_MENU, self.StoreNextRunSubrun, id=wx.ID_SAVE)
 		menuBar.Append(fileMenu, "&File")
 
 		optionsMenu = wx.Menu()
@@ -796,7 +797,6 @@ class MainFrame(wx.Frame):
 			self.SetStatusText("RUNNING", 1)
 			self.runningIndicator.SetBitmap(self.onImage)
 			
-	
 	def StopRunning(self, evt=None):
 		if self.runmanager.running:		
 			self.runmanager.StopDataAcquisition()

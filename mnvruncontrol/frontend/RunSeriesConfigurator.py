@@ -276,8 +276,8 @@ class MyFrame(wx.Frame):
 		if cb.GetValue() == True:
 			leds += cb.GetLabelText()
 
-	if leds == "ABCD":
-		leds = "All"
+#	if leds == "ABCD":
+#		leds = "All"
 
 	return leds	
 
@@ -285,8 +285,8 @@ class MyFrame(wx.Frame):
 
 	leds = MetaData.LEDGroups[run.ledGroup,MetaData.DESCRIPTION]	
 
-	if leds == "All":
-		leds = "ABCD"
+#	if leds == "All":
+#		leds = "ABCD"
 
 	for cb in self.ledGroups:
 		if cb.GetLabelText() in leds:
