@@ -108,7 +108,7 @@ class ReadoutNode:
 	               runMode=MetaData.RunningModes["One shot", MetaData.HASH],
 	               detector=MetaData.DetectorTypes["Unknown", MetaData.HASH],
 	               numFEBs=114, LIlevel=MetaData.LILevels["Zero PE", MetaData.HASH],
-	               LEDgroup=MetaData.LEDGroups["All", MetaData.HASH],
+	               LEDgroup=MetaData.LEDGroups["ABCD", MetaData.HASH],
 	               HWInit=MetaData.HardwareInitLevels["No HW init", MetaData.HASH]):
 		""" Asks the server to start the DAQ process.  Returns True on success,
 		    False on failure, and raises an exception if the DAQ is currently running. """

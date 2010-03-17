@@ -22,6 +22,8 @@ import socket
 import errno
 import datetime
 import time
+import logging
+import logging.handlers
 
 # run control-specific modules.
 # note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
@@ -56,6 +58,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
 		self.rawdataLocation      = Defaults.RAW_DATA_LOCATION_DEFAULT
 
+		# logging facilities
+		self.logger = logging.getLogger("rc_dispatcher")
+		self.logger.setLevel(logging.DEBUG)
+		self.filehandler = logging.handlers.RotatingFileHandler(Defaults.RC_LOGFILE_DEFAULT, maxBytes=204800, backupCount=5)
+		self.filehandler.setLevel(logging.INFO)
+		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
+		self.filehandler.setFormatter(self.formatter)
+		self.logger.addHandler(self.filehandler)
 
 		# these will need to be set by the run control window before the process is started.
 		# that way we can be sure it's properly configured.
@@ -71,7 +81,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.Bind(Events.EVT_READY_FOR_NEXT_SUBRUN, self.StartNextSubrun)
 		self.Bind(Events.EVT_THREAD_READY, self.StartNextThread)
 		self.Bind(Events.EVT_END_SUBRUN, self.EndSubrun)		# if the DAQ process quits, this subrun is over
-#		self.Connect(-1, -1, EVT_UPDATE_ID, self.UpdateRunStatus)
 		
 	##########################################
 	# Global starters and stoppers
@@ -100,6 +109,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 			wx.PostEvent(self.main_window, Events.ErrorMsg(text="A connection cannot be made to the " + failed_connection + " readout node.  Check to make sure that the run control dispatcher is started on that machine.", title="No connection to " + failed_connection + " readout node") )
 			return
 			
+		self.logger.info("Beginning data acquisition sequence...")
+		self.logger.info( "  Run: " + str(self.run) + "; starting subrun: " + str(self.first_subrun) + "; number of subruns to take: " + str(len(self.runseries.Runs)) )
 					
 		self.subrun = 0
 		self.running = True
@@ -108,6 +119,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 	def StopDataAcquisition(self, evt=None):
 		self.running = False
 #		self.subrun = 0
+
+		self.logger.info("Stopping data acquisition sequence...")
 
 		# the run will need a manual stop if the readout nodes can't be properly contacted.
 		needsManualStop = False
@@ -129,6 +142,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    window what run we're in, prepares the LI box
 		    and slow controls, and finally initiates the
 		    acquisition sequence. """
+	
+		self.logger.debug("StartNextSubrun() called.")
 	
 		quitting = False
 		self.CloseWindows()			# don't want leftover windows open.
@@ -174,12 +189,15 @@ class DataAcquisitionManager(wx.EvtHandler):
 			# we can't do anything more until they're done, so exit this method.
 			return
 		
+		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " begun.")
+		
 		self.can_shutdown = True
 		
 		self.runinfo = self.runseries.Runs[self.subrun]
 		wx.PostEvent(self.main_window, Events.UpdateSeriesEvent())
 
 		self.runinfo.ETport = 1091 + (self.first_subrun + self.subrun) % 4		# ET needs to use a rotating port number to avoid blockages.
+		self.logger.info("  ET port for this subrun: " + str(self.runinfo.ETport))
 
 		if not quitting:
 			wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\ntesting connections", progress=(1,numsteps)) )
@@ -200,12 +218,15 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if not quitting:
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nLoading hardware...", progress=(2,numsteps)) )
 			self.hwconfigfile = "NOFILE"
+			self.logger.info("  Using hardware config file: " + self.hwconfigfile)
 				
 		# set up the LI box to do what it's supposed to, if it needs to be on.
 		if not quitting:
 			if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
+				self.logger.info("  Setting up LI:")
 				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nInitializing light injection...", progress=(3,numsteps)) )
 				self.LIBox.LED_groups = MetaData.LEDGroups[self.runinfo.ledGroup]
+				self.logger.info("     Configured for LED groups: " + MetaData.LEDGroups[self.runinfo.ledGroup])
 			
 				need_LI = True
 				if self.runinfo.ledLevel == MetaData.LILevels["One PE"]:
@@ -214,15 +235,20 @@ class DataAcquisitionManager(wx.EvtHandler):
 					self.LIBox.pulse_height = 12.07
 				else:
 					need_LI = False
-			
+					
+				
 				if need_LI:
+					self.logger.info("     LI level: " + MetaData.LILevels[self.runinfo.ledLevel])
 					try:
-						self.LIBox.initialize()
-						self.LIBox.write_configuration()	
-					except Exception as e:
-						wx.PostEvent( self.main_window, Events.ErrorMsgtEvent(text="The LI box does not seem to be responding.  Check the connection settings and the cable and try again.  Running aborted.", title="LI box not responding") )
-
+#						self.LIBox.initialize()
+						self.LIBox.write_configuration()
+					except LIBox.LIBoxException as e:
+						wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The LI box does not seem to be responding.  Check the connection settings and the cable and try again.  Running aborted.", title="LI box not responding") )
+						self.logger.warning("  LI Box is not responding...")
 						quitting = True
+					finally:
+						self.logger.info( "     Commands issued to the LI box:\n" + "\n".join(self.LIBox.get_command_history()) )
+					
 
 		#### WAIT ON THE SLOW CONTROL UNTIL IT'S READY
 		if not quitting:
@@ -233,6 +259,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.raw_data_filename = self.ET_filename + '_RawData.dat'
 									
 		if quitting:
+			self.logger.warning("Subrun " + str(self.first_subrun + self.subrun) + " aborted.")
 			self.running = False
 			self.subrun = 0
 			wx.PostEvent(self.main_window, Events.StopRunningEvent())		# tell the main window that we're done here.
@@ -254,6 +281,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 			return
 
 		self.can_shutdown = False
+
+		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finalizing...")
 		
 		if hasattr(evt, "processname") and evt.processname is not None:
 			if len(self.runseries.Runs) > 1:
@@ -325,6 +354,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun completed.", progress=(numsteps, numsteps)) )
 		wx.PostEvent( self.main_window, Events.SubrunOverEvent(run=self.run, subrun=self.first_subrun + self.subrun) )
 
+		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finished.")
+
 		if self.subrun >= len(self.runseries.Runs):		# no more runs left!  need to bail.
 			self.running = False
 			self.subrun = 0
@@ -332,6 +363,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.running:
 			wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
 		else:
+			self.logger.info("Data acquisition finished.")
 			wx.PostEvent(self.main_window, Events.StopRunningEvent())
 		
 
@@ -407,7 +439,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				# for non-LI run modes, these values are irrelevant, so we set them to some well-defined defaults.
 				if not (self.runinfo.runMode in (MetaData.RunningModes["Light injection", MetaData.HASH], MetaData.RunningModes["Mixed beam/LI", MetaData.HASH])):
 					self.runinfo.ledLevel = MetaData.LILevels["Zero PE"]
-					self.runinfo.ledGroup = MetaData.LEDGroups["All", MetaData.HASH]
+					self.runinfo.ledGroup = MetaData.LEDGroups["ABCD", MetaData.HASH]
 
 #				print self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup
 					
@@ -437,8 +469,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.StopDataAcquisition()
 			else:
 				wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
-		
+	
 		if self.running:
+			self.logger.info("  All DAQ services started.  Data acquisition underway.")
 			self.socketThread = SocketThread(self, self.readoutNodes)			# start the service that listens for the 'done' signal
 		
 	def StartTestProcess(self):
