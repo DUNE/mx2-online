@@ -12,7 +12,7 @@ ofstream thread_log("eb_log.txt");
 #endif
 
 static int gate_counter    =  0;
-const int  gate_print_freq =  5;
+const int  gate_print_freq =  1;
 
 int main(int argc, char **argv) 
 {
