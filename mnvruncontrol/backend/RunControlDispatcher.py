@@ -42,6 +42,12 @@ class RunControlDispatcher:
 		self.interactive = False
 		self.respawn = False
 		self.quit = False
+		
+		# we don't need to print EVERY request when a client
+		# is requesting the same thing many times in a row.
+		# we'll use these properties to keep track.
+		self.last_request = {}
+		self.request_count = {}
 
 		# set up some logging facilites.
 		# we set up a rotating file handler here;
@@ -78,7 +84,7 @@ class RunControlDispatcher:
 			if self.master_address.lower() in ("localhost", "127.0.0.1"):
 				bindaddr = "localhost"
 			else:
-				bindaddr = ""  		# accept any incoming connections to the port
+				bindaddr = ""  		# accept any incoming connections to the port regardless of origin
 			self.server_socket.bind((bindaddr, self.port))
 
 			self.server_socket.listen(3)										# allow it to keep a few backlogged connections (that way if we're trying to talk to it too fast it'll catch up)
@@ -223,6 +229,7 @@ class RunControlDispatcher:
 		os.open(os.devnull, os.O_RDWR)	# standard input (0)
 
 		# Duplicate standard input to standard output and standard error.
+		# That way they also go to /dev/null.
 		os.dup2(0, 1)			# standard output (1)
 		os.dup2(0, 2)			# standard error (2)
 
@@ -281,7 +288,7 @@ class RunControlDispatcher:
 		
 		Don't call this directly.  Use start() instead (it checks
 		to make sure this process is the only one trying to listen
-		on the port before entering dispatch mode.)
+		on the port before entering dispatch mode).
 		"""
 		if not self.quit:		# occasionally there's an error before dispatching starts.
 			self.logger.info("Master node will be contacted at '" + self.master_address + "'.")
@@ -294,6 +301,7 @@ class RunControlDispatcher:
 			# we're handling--SIGTERM and SIGINT--sets self.quit to True).
 			try:
 				client_socket, client_address = self.server_socket.accept()
+				client_address = client_address[0]	# we can discard the port number.  it's not important.
 			except socket.error, (errnum, msg):
 				if errnum == errno.EINTR:		# the code for an interrupted system call
 					continue
@@ -302,8 +310,6 @@ class RunControlDispatcher:
 			except Exception, e:
 				self.logger.exception("Error trying to get socket:")
 
-			self.logger.info("Accepted connection from " + str(client_address) + ".")
-			
 			request = ""
 			datalen = -1
 			while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire request
@@ -311,26 +317,42 @@ class RunControlDispatcher:
 				datalen = len(data)
 				request += data
 			
-			self.logger.info("Client request: '" + request + "'")
 			if request == "":
-				self.logger.info("Blank request.  Assuming pipe was broken and ignoring.")
+				self.logger.info("Blank request from " + client_address + ".  Assuming pipe was broken and ignoring.")
+				client_socket.close()
 				continue
+			elif client_address in self.last_request and request == self.last_request[client_address]:
+				self.request_count[client_address] += 1
+			else:
+				self.last_request[client_address] = request
+				self.request_count[client_address] = 1
+				
+			show_request_details = self.request_count[client_address] <= Defaults.MAX_REPEATED_REQUEST_LOGS
+			if show_request_details:
+				self.logger.info("Received request from client " + client_address + ": '" + request + "'")
 			
-			response = self.respond(request)
+			if self.request_count[client_address] == Defaults.MAX_REPEATED_REQUEST_LOGS:
+				self.logger.info("Note: request repeated " + str(Defaults.MAX_REPEATED_REQUEST_LOGS) + " times.  Further consecutive repeats of this request from this client will not be logged.")
+			
+			
+			response = self.respond(request, show_request_details)
 			if response is not None:		# don't waste our time sending a response to an invalid request.
-				self.logger.info("Attempting to send response:\n" + response)
+				if show_request_details:
+					self.logger.info("Attempting to send response:\n" + response)
 				try:
 					client_socket.sendall(response)		# this will throw an exception if all the data can't be sent.
 				except:
 					self.logger.warning("Transmission error.")	# what to do if it can't all be sent?  hmm...
 				else:
-					self.logger.info("Transmission completed.")
+					if show_request_details:
+						self.logger.info("Transmission completed.")
 			else:
 				self.logger.info("Request is invalid.")
 
 			try:
 				client_socket.shutdown(socket.SHUT_RDWR)
-				self.logger.info("Socket closed.")
+				if show_request_details:
+					self.logger.info("Socket closed.")
 			except socket.error:
 				self.logger.exception("Socket error on socket shutdown:")
 				self.logger.error("   ==> Data transmission was interrupted!")
@@ -341,7 +363,7 @@ class RunControlDispatcher:
 		self.cleanup()
 
 			
-	def respond(self, request):
+	def respond(self, request, show_request_details = True):
 		"""
 		Decides what to do with a particular request.
 		Returns None for invalid requests.
@@ -367,65 +389,74 @@ class RunControlDispatcher:
 		             "sc_voltages" : self.sc_readvoltages }
 		
 		if request in handlers:
-			return handlers[request](matches)
+			return handlers[request](matches, show_request_details)
 		else:
 			return None
 		
 
-	def ping(self, matches):
+	def ping(self, matches, show_details):
 		""" Returns something so that a client knows the server is alive. """
-		self.logger.info("Responding to ping.")
+		if show_details:
+			self.logger.info("Responding to ping.")
 		return "1"
 	
-	def daq_status(self, matches):
+	def daq_status(self, matches, show_details):
 		""" Returns 1 if there is a DAQ subprocess running; 0 otherwise. """
-		self.logger.info("Client wants to know if DAQ process is running.")
+		if show_details:
+			self.logger.info("Client wants to know if DAQ process is running.")
 		
 		if self.daq_thread and self.daq_thread.is_alive():
-			self.logger.info("   ==> It IS.")
+			if show_details:
+				self.logger.info("   ==> It IS.")
 			return "1"
 		else:
-			self.logger.info("   ==> It ISN'T.")
+			if show_details:
+				self.logger.info("   ==> It ISN'T.")
 			return "0"
 	
-	def daq_exitstatus(self, matches):
+	def daq_exitstatus(self, matches, show_details):
 		""" Returns the exit code last given by a DAQ subprocess, or,
 		    if no DAQ process has yet exited, returns 'NONE'. """
 		self.logger.info("Client wants to know last DAQ process exit code.")
 
 		if self.daq_thread is None:
-			self.logger.info("   ==> DAQ has not yet been run.")
+			if show_details:
+				self.logger.info("   ==> DAQ has not yet been run.")
 			return "NONE"
 		elif self.daq_thread.is_alive():
-			self.logger.info("   ==> Process is currently running.  Will need to wait for it to finish.")
+			if show_details:
+				self.logger.info("   ==> Process is currently running.  Will need to wait for it to finish.")
 			return "NONE"
 		else:
-			self.logger.info("   ==> Exit code: " + str(self.daq_process.returncode) + " (for codes < 0, this indicates the signal that stopped the process).")
+			if show_details:
+				self.logger.info("   ==> Exit code: " + str(self.daq_process.returncode) + " (for codes < 0, this indicates the signal that stopped the process).")
 			return str(self.daq_thread.returncode)
 
-	def daq_start(self, matches):
+	def daq_start(self, matches, show_details):
 		""" Starts the DAQ slave service as a subprocess.  First checks
 		    to make sure it's not already running.  Returns 0 on success,
 		    1 on some DAQ or other error, and 2 if there is already
 		    a DAQ process running. """
 		    
-		self.logger.info("Client wants to start the DAQ process.")
-		self.logger.info("   Configuration:")
-		self.logger.info("      Run number: " + matches.group("run"))
-		self.logger.info("      Subrun number: " + matches.group("subrun"))
-		self.logger.info("      Number of gates: " + matches.group("gates"))
-		self.logger.info("      Run mode: " + MetaData.RunningModes[int(matches.group("runmode"))] )
-		self.logger.info("      Detector: " + MetaData.DetectorTypes[int(matches.group("detector"))] )
-		self.logger.info("      Number of FEBs: " + matches.group("nfebs") )
-		self.logger.info("      LI level: " + MetaData.LILevels[int(matches.group("lilevel"))] )
-		self.logger.info("      LED group: " + MetaData.LEDGroups[int(matches.group("ledgroup"))] )
-		self.logger.info("      HW init level: " + MetaData.HardwareInitLevels[int(matches.group("hwinitlevel"))] )
-		self.logger.info("      ET file: " + matches.group("etfile") )
-		self.logger.info("      ET port: " + matches.group("etport") )
-		self.logger.info("      my identity: " + matches.group("identity") + " node")
+		if show_details:
+			self.logger.info("Client wants to start the DAQ process.")
+			self.logger.info("   Configuration:")
+			self.logger.info("      Run number: " + matches.group("run"))
+			self.logger.info("      Subrun number: " + matches.group("subrun"))
+			self.logger.info("      Number of gates: " + matches.group("gates"))
+			self.logger.info("      Run mode: " + MetaData.RunningModes[int(matches.group("runmode"))] )
+			self.logger.info("      Detector: " + MetaData.DetectorTypes[int(matches.group("detector"))] )
+			self.logger.info("      Number of FEBs: " + matches.group("nfebs") )
+			self.logger.info("      LI level: " + MetaData.LILevels[int(matches.group("lilevel"))] )
+			self.logger.info("      LED group: " + MetaData.LEDGroups[int(matches.group("ledgroup"))] )
+			self.logger.info("      HW init level: " + MetaData.HardwareInitLevels[int(matches.group("hwinitlevel"))] )
+			self.logger.info("      ET file: " + matches.group("etfile") )
+			self.logger.info("      ET port: " + matches.group("etport") )
+			self.logger.info("      my identity: " + matches.group("identity") + " node")
 
 		if self.daq_thread and self.daq_thread.is_alive() is None:
-			self.logger.info("   ==> There is already a DAQ process running.")
+			if show_details:
+				self.logger.info("   ==> There is already a DAQ process running.")
 			return "2"
 		
 		try:
@@ -440,27 +471,31 @@ class RunControlDispatcher:
 				          "-ll", matches.group("lilevel"),
 				          "-lg", matches.group("ledgroup"),
 				          "-hw", matches.group("hwinitlevel") ) 
-			self.logger.info("   minervadaq command:")
-			self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
+			if show_details:
+				self.logger.info("   minervadaq command:")
+				self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
 			self.daq_thread = DAQThread(self, executable, matches.group("identity"), self.master_address)
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
 			return "1"
 		else:
-			self.logger.info("    ==> Started successfully.")
+			if show_details:
+				self.logger.info("    ==> Started successfully.")
 			return "0"
 	
-	def daq_stop(self, matches):
+	def daq_stop(self, matches, show_details):
 		""" Stops a DAQ slave service.  First checks to make sure there
 		    is in fact such a service running.  Returns 0 on success,
 		    1 on some DAQ or other error, and 2 if there is no DAQ
 		    process currently running. """
 		    
-		self.logger.info("Client wants to stop the DAQ process.")
+		if show_details:
+			self.logger.info("Client wants to stop the DAQ process.")
 		
 		if self.daq_thread and self.daq_thread.is_alive():
-			self.logger.info("   ==> Attempting to stop.")
+			if show_details:
+				self.logger.info("   ==> Attempting to stop.")
 			try:
 				self.daq_thread.daq_process.terminate()
 				self.daq_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
@@ -470,31 +505,38 @@ class RunControlDispatcher:
 				self.logger.exception("   ==> Error message:")
 				return "1"
 		else:		# if there's a process but it's already finished
-			self.logger.info("   ==> No DAQ process to stop.")
+			if show_details:
+				self.logger.info("   ==> No DAQ process to stop.")
 			return "2"
-	
-		self.logger.info("   ==> Stopped successfully.  (Process " + str(self.daq_thread.pid) + " exited with code " + str(code) + ".)")
+
+		if show_details:
+			self.logger.info("   ==> Stopped successfully.  (Process " + str(self.daq_thread.pid) + " exited with code " + str(code) + ".)")
 		return "0"
 		
-	def sc_sethw(self, matches):
+	def sc_sethw(self, matches, show_details):
 		""" Uses the slow control library to load a hardware configuration
 		    file.  Returns 0 on success, 1 on hardware error, and 2 if 
 		    there is no such file. """
-		self.logger.info("Client wants to load slow control configuration file: '" + matches.group("filename") + "'.")
+		if show_details:
+			self.logger.info("Client wants to load slow control configuration file: '" + matches.group("filename") + "'.")
 		
-		self.logger.info("   ==> Loaded successfully.")
+
+		if show_details:
+			self.logger.info("   ==> Loaded successfully.")
 		return "0"
 		    
-	def sc_readvoltages(self, matches):
+	def sc_readvoltages(self, matches, show_details):
 		""" Uses the slow control library to read the FEB voltages.
 		    On success, returns a string of lines consisting of
 		    1 voltage per line, in the following format:
 		    FPGA-CROC-CHAIN-BOARD: [voltage]
 		    On failure, returns the string "NOREAD". """
 
-		self.logger.info("Client wants to know the FEB voltages.")
+		if show_details:
+			self.logger.info("Client wants to know the FEB voltages.")
 
-		self.logger.info("No read happened.")
+		if show_details:
+			self.logger.info("No read happened.")
 		return "NOREAD"
 		
 	def cleanup(self):
