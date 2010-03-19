@@ -198,7 +198,9 @@ class SCApp(wx.App):
             if dlg.ShowModal()==wx.ID_OK:
                 self.frame.nb.ChangeSelection(0)
                 hvs=FEB(0).GetAllHVActual(self.vmeCROCs, int(dlg.GetValue()))
-                hv=['%s: Actual=%s, Target=%s, A-T=%s'%(dictHV['FPGA'],dictHV['Actual'],dictHV['Target'],dictHV['A-T']) for dictHV in hvs]
+                hv=['FPGA:%s,%s,%s: Actual=%s, Target=%s, A-T=%s'% \
+                    (dictHV['FPGA']['FEB'], dictHV['FPGA']['Channel'], dictHV['FPGA']['CROC'], \
+                    dictHV['Actual'], dictHV['Target'], dictHV['A-T']) for dictHV in hvs]
                 print '\n'.join(hv)
             dlg.Destroy()            
         except: ReportException('OnMenuActionsReadVoltages', self.reportErrorChoice)
@@ -235,7 +237,9 @@ class SCApp(wx.App):
             print self.monitorTitle
             print time.ctime()
             hvs=self.monitorFunc(*(self.monitorArgs))
-            hv=['%s: Actual=%s, Target=%s, A-T=%s'%(dictHV['FPGA'],dictHV['Actual'],dictHV['Target'],dictHV['A-T']) for dictHV in hvs]
+            hv=['FPGA:%s,%s,%s: Actual=%s, Target=%s, A-T=%s'% \
+                (dictHV['FPGA']['FEB'], dictHV['FPGA']['Channel'], dictHV['FPGA']['CROC'], \
+                dictHV['Actual'], dictHV['Target'], dictHV['A-T']) for dictHV in hvs]
             print '\n'.join(hv)
         except: ReportException('OnMonitor', self.reportErrorChoice)
 

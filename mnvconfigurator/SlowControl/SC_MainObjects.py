@@ -358,8 +358,8 @@ class FEB():
                     #message word 23-24: WR HV Target, 16 bits
                     hvTarget=rcvMessage[23]+(rcvMessage[24]<<8)
                     if abs(hvActual-hvTarget)>=devVal:
-                        hvVals.append({'FPGA':theFEB.FPGADescription(theCROCChannel, theCROC), \
-                            'Actual':hvActual, 'Target':hvTarget, 'A-T':hvActual-hvTarget})
+                        descr={'FEB':febAddress, 'Channel':theCROCChannel.chNumber, 'CROC':theCROC.baseAddr>>16}
+                        hvVals.append({'FPGA':descr, 'Actual':hvActual, 'Target':hvTarget, 'A-T':hvActual-hvTarget})
         return hvVals    
     def SetAllHVTarget(self, vmeCROCs, hvVal):
         for theCROC in vmeCROCs:
