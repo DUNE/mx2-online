@@ -20,7 +20,7 @@ import CAENVMEwrapper
 import SC_Frames
 import SC_Util
 from SC_MainObjects import *
-import SC_MainMethods
+from SC_MainMethods import SC
 
 class SCApp(wx.App):
     """SlowControl application. Subclass of wx.App"""
@@ -30,19 +30,9 @@ class SCApp(wx.App):
         self.vmeCROCs=[]
         self.vmeDIGs=[]
         self.reportErrorChoice={'display':True, 'msgBox':True}
-        self.sc=SC_MainMethods.SC()
-        print self.sc
-        self.sc.CloseController()
-        print self.sc
-        self.sc=SC_MainMethods.SC()
         try:
-            self.controller = self.sc.GetController()
-            print('Controller initialized:')
-            print('\thandle = %s' % hex(self.controller.handle))
-            print('\tCAENVME software = %s' % str(self.controller.SWRelease()))
-            print('\tV2718   firmware = %s\n' % str(self.controller.BoardFWRelease()))     
-        except : ReportException('controller.Init', self.reportErrorChoice)
-        
+            self.sc=SC()
+        except: ReportException('controller.Init', self.reportErrorChoice)
         self.Bind(wx.EVT_CLOSE, self.OnClose, self.frame)
         self.Bind(wx.EVT_TIMER, self.OnMonitor)
         # Menu events ##########################################################
@@ -159,15 +149,15 @@ class SCApp(wx.App):
     # MENU events ##########################################################
     def OnMenuLoadHardware(self, event):      
         try:
-            #first find VME devices: CRIMs, CROCs, DIGitizers....
-            self.vmeCRIMs = self.sc.FindCRIMs()
-            self.vmeCROCs = self.sc.FindCROCs()
-            self.vmeDIGs = self.sc.FindDIGs()
-            for dev in self.vmeCRIMs+self.vmeCROCs+self.vmeDIGs:
-                print 'Found %s'%dev.Description()
-            #then find all FEBs for all CROCs (and all channels)
-            FEBs = self.sc.FindFEBs(self.vmeCROCs)
-            for feb in FEBs: print 'Found %s'%feb
+            #find vme (hardware) devics
+            self.vmeCRIMs=self.sc.FindCRIMs()
+            self.vmeCROCs=self.sc.FindCROCs()
+            self.vmeDIGs=self.sc.FindDIGs()
+            FEBs=self.sc.FindFEBs(self.vmeCROCs)
+            print '\n'.join(['Found '+crim.Description() for crim in self.vmeCRIMs])
+            print '\n'.join(['Found '+croc.Description() for croc in self.vmeCROCs])
+            print '\n'.join(['Found '+dig.Description() for dig in self.vmeDIGs])
+            print '\n'.join(['Found '+feb for feb in FEBs])
             #and then update self.frame.tree
             self.frame.tree.DeleteAllItems()
             treeRoot = self.frame.tree.AddRoot("VME-BRIDGE")
@@ -177,8 +167,7 @@ class SCApp(wx.App):
                 SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
             for vmedev in self.vmeDIGs:
                 SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [[vmedev.Description(), []]])
-        except: ReportException('OnMenuLoadHardware', self.reportErrorChoice)
-            
+        except: ReportException('OnMenuLoadHardware', self.reportErrorChoice)        
     def OnMenuLoadFile(self, event):
         try:
             fileCRIMs=[];fileCROCs=[];fileFPGAs=[];fileTRIPs=[]
@@ -193,11 +182,12 @@ class SCApp(wx.App):
             dlg = wx.FileDialog(self.frame, message='SAVE Hardware Configuration', defaultDir='', defaultFile='',
                 wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
+                #filename=dlg.GetFilename()+'.hwcfg'; dirname=dlg.GetDirectory(); fullpath=wx.FileDialog.GetPath(dlg)
                 self.sc.HWcfgFileSave(wx.FileDialog.GetPath(dlg))
             dlg.Destroy()              
         except: ReportException('OnMenuSaveFile', self.reportErrorChoice)
     def OnMenuReset(self, event):
-        try: self.controller.SystemReset()
+        try: self.sc.controller.SystemReset()
         except: ReportException('OnMenuReset', self.reportErrorChoice)
     def OnMenuShowExpandAll(self, event): self.frame.tree.ExpandAll()
     def OnMenuShowCollapseAll(self, event): self.frame.tree.CollapseAll()
@@ -207,7 +197,9 @@ class SCApp(wx.App):
                 caption=self.frame.GetTitle(), defaultValue='0')
             if dlg.ShowModal()==wx.ID_OK:
                 self.frame.nb.ChangeSelection(0)
-                print '\n'.join(self.sc.HVReadAll(int(dlg.GetValue())))
+                hvs=FEB(0).GetAllHVActual(self.vmeCROCs, int(dlg.GetValue()))
+                hv=['%s: Actual=%s, Target=%s, A-T=%s'%(dictHV['FPGA'],dictHV['Actual'],dictHV['Target'],dictHV['A-T']) for dictHV in hvs]
+                print '\n'.join(hv)
             dlg.Destroy()            
         except: ReportException('OnMenuActionsReadVoltages', self.reportErrorChoice)
     def OnMenuActionsSetAllHV(self, event):
@@ -216,7 +208,7 @@ class SCApp(wx.App):
                 caption=self.frame.GetTitle(), defaultValue='0')
             if dlg.ShowModal()==wx.ID_OK:
                 self.frame.nb.ChangeSelection(0)
-                self.sc.HVSetAll(int(dlg.GetValue()))
+                FEB(0).SetAllHVTarget(self.vmeCROCs, int(dlg.GetValue()))
             dlg.Destroy()
         except: ReportException('OnMenuActionsReadVoltages', self.reportErrorChoice)
     def OnMenuActionsSTARTMonitorAllHV(self, event):
@@ -242,7 +234,9 @@ class SCApp(wx.App):
             self.frame.description.text.SetValue('')
             print self.monitorTitle
             print time.ctime()
-            print '\n'.join(self.monitorFunc(*(self.monitorArgs)))
+            hvs=self.monitorFunc(*(self.monitorArgs))
+            hv=['%s: Actual=%s, Target=%s, A-T=%s'%(dictHV['FPGA'],dictHV['Actual'],dictHV['Target'],dictHV['A-T']) for dictHV in hvs]
+            print '\n'.join(hv)
         except: ReportException('OnMonitor', self.reportErrorChoice)
 
     # VME pannel events ##########################################################
@@ -250,12 +244,12 @@ class SCApp(wx.App):
         try:
             addr=int(str(self.frame.vme.VMEReadWrite.txtWriteAddr.GetValue()), 16)
             data=int(self.frame.vme.VMEReadWrite.txtWriteData.GetValue(), 16)
-            self.controller.WriteCycle(addr, data)
+            self.sc.controller.WriteCycle(addr, data)
         except: ReportException('OnVMEbtnWrite', self.reportErrorChoice)
     def OnVMEbtnRead(self, event):
         try:          
             addr=int(self.frame.vme.VMEReadWrite.txtReadAddr.GetValue(), 16)
-            data=int(self.controller.ReadCycle(addr))
+            data=int(self.sc.controller.ReadCycle(addr))
             data=hex(data)[2:]
             if data[-1]=='L': data=data[:-1]
             self.frame.vme.VMEReadWrite.txtReadData.SetValue(data)

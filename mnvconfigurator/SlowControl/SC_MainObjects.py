@@ -5,7 +5,7 @@ import time
 def FindVMEdev(vmeDevList, devAddr):
     for dev in vmeDevList:
         if (dev.BaseAddress()==devAddr): return dev
-        
+
 class VMEDevice():
     def __init__(self, controller, baseAddr, moduleType):
         self.controller=controller
@@ -358,7 +358,8 @@ class FEB():
                     #message word 23-24: WR HV Target, 16 bits
                     hvTarget=rcvMessage[23]+(rcvMessage[24]<<8)
                     if abs(hvActual-hvTarget)>=devVal:
-                        hvVals.append('%s: Actual=%s, Target=%s, A-T=%s'%(theFEB.FPGADescription(theCROCChannel, theCROC), hvActual, hvTarget, hvActual-hvTarget))
+                        hvVals.append({'FPGA':theFEB.FPGADescription(theCROCChannel, theCROC), \
+                            'Actual':hvActual, 'Target':hvTarget, 'A-T':hvActual-hvTarget})
         return hvVals    
     def SetAllHVTarget(self, vmeCROCs, hvVal):
         for theCROC in vmeCROCs:
