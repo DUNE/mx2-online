@@ -8,8 +8,6 @@ COMPILE_OPTIONS += -DNO_THREAD
 #COMPILE_OPTIONS += -DDEBUG_BUFFERS
 #COMPILE_OPTIONS += -DDEBUG_BANKHEADER
 #COMPILE_OPTIONS += -DDEBUG_REPORT_EVENT
-#--NEARLINE SETUP
-#COMPILE_OPTIONS += -DNEARLINE #Comment this out to make a NearOnline station.
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
