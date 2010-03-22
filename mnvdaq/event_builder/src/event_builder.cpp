@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 	sprintf(hostName, "mnvonline2.fnal.gov");
 	std::cout << "ET system host machine = mnvonline2.fnal.gov" << std::endl;
 #endif
-#if CRATE0||CRATE1
+#if CRATE0||CRATE1||NEARLINE
 	sprintf(hostName, "mnvonlinemaster.fnal.gov");
 	std::cout << "ET system host machine = mnvonlinemaster.fnal.gov" << std::endl;
 #endif
@@ -86,13 +86,6 @@ int main(int argc, char **argv)
 	et_open_config_sethost(openconfig, hostName); // Adjust, etc.
 	et_open_config_setserverport(openconfig, networkPort); 
 //#endif
-
-#if NEARLINE
-	et_open_config_setmode(&openconfig, ET_HOST_AS_REMOTE);
-	et_open_config_setcast(openconfig, ET_DIRECT);
-	et_open_config_sethost(openconfig, "mnvonline1.fnal.gov"); // Adjust, etc.
-	et_open_config_setserverport(openconfig, 1091);
-#endif
 
 	if (et_open(&sys_id, argv[1], openconfig) != ET_OK) {
 		printf("event_builder::main(): et_producer: et_open problems\n");
