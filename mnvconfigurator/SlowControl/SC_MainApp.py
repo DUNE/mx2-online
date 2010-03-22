@@ -197,7 +197,7 @@ class SCApp(wx.App):
                 caption=self.frame.GetTitle(), defaultValue='0')
             if dlg.ShowModal()==wx.ID_OK:
                 self.frame.nb.ChangeSelection(0)
-                hvs=FEB(0).GetAllHVActual(self.vmeCROCs, int(dlg.GetValue()))
+                hvs=FEB(0).GetAllHVParams(self.vmeCROCs, int(dlg.GetValue()))
                 hv=['FPGA:%s,%s,%s: Actual=%s, Target=%s, A-T=%s'% \
                     (dictHV['FPGA']['FEB'], dictHV['FPGA']['Channel'], dictHV['FPGA']['CROC'], \
                     dictHV['Actual'], dictHV['Target'], dictHV['A-T']) for dictHV in hvs]
@@ -224,7 +224,7 @@ class SCApp(wx.App):
                     self.frame.nb.ChangeSelection(0)
                     self.monitor=wx.Timer()
                     self.monitor.Start(max(1000, float(dlgTime.GetValue())*1000))
-                    self.monitorFunc=FEB.GetAllHVActual
+                    self.monitorFunc=FEB.GetAllHVParams
                     self.monitorArgs=FEB(0), self.vmeCROCs, int(dlgADC.GetValue())
                     self.monitorTitle='Monitor ALL FEBs HV Actual outside the Target with more than %s counts'%(int(dlgADC.GetValue()))
                 dlgTime.Destroy()

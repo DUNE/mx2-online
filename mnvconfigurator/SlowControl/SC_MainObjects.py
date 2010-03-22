@@ -345,22 +345,40 @@ class FEB():
             #message word 4-5: WR Gate Start, 16 bits
             rcvMessage[4] -= (theDelay) & 0xFF
             rcvMessage[5] -= (theDelay>>8) & 0xFF
-            theFEB.FPGAWrite(theCROCChannel, rcvMessage)
-    def GetAllHVActual(self, vmeCROCs, devVal=0):
+            theFEB.FPGAWrite(theCROCChannel, rcvMessage)      
+    def GetAllHVParams(self, vmeCROCs, devVal=0):
         hvVals=[]
         for theCROC in vmeCROCs:
             for theCROCChannel in theCROC.Channels():
                 for febAddress in theCROCChannel.FEBs:
                     theFEB=FEB(febAddress)
                     rcvMessage=theFEB.FPGARead(theCROCChannel)
-                    #message word 25-26: R  HV Actual, 16 bits
-                    hvActual=rcvMessage[25]+(rcvMessage[26]<<8)
                     #message word 23-24: WR HV Target, 16 bits
                     hvTarget=rcvMessage[23]+(rcvMessage[24]<<8)
+                    #message word 25-26: R  HV Actual, 16 bits
+                    hvActual=rcvMessage[25]+(rcvMessage[26]<<8)
+                    #message word 22, bit 6: WR HV Auto(0)Man(1), 1 bit
+                    hvAuto0Manual1=(rcvMessage[22]>>6)&0x01
+                    if hvAuto0Manual1==0: hvMode='Auto'
+                    if hvAuto0Manual1==1: hvMode='Manual'
+                    #message word 22, bit 7: WR HV Enable(1), 1 bit
+                    hvEnable1=(rcvMessage[22]>>7)&0x01
+                    if hvEnable1==0: hvEnabled='False'
+                    if hvEnable1==1: hvEnabled='True'
+                    #message word 31: WR HV NumAvg (bits 4-7)
+                    hvNumAvg=(rcvMessage[31]>>4)&0x0F
+                    #message word 33-34: WR HV PeriodMan, 16 bits
+                    hvPeriodMan=rcvMessage[33]+(rcvMessage[34]<<8)
+                    #message word 35-36: R  HV PeriodAuto, 16 bits
+                    hvPeriodAuto=rcvMessage[35]+(rcvMessage[36]<<8)                    
+                    #message word 37: WR HV PulseWidth, 8 bits
+                    hvPulseWidth=rcvMessage[37]                    
                     if abs(hvActual-hvTarget)>=devVal:
                         descr={'FEB':febAddress, 'Channel':theCROCChannel.chNumber, 'CROC':theCROC.baseAddr>>16}
-                        hvVals.append({'FPGA':descr, 'Actual':hvActual, 'Target':hvTarget, 'A-T':hvActual-hvTarget})
-        return hvVals    
+                        hvVals.append({'FPGA':descr, 'Actual':hvActual, 'Target':hvTarget, 'A-T':hvActual-hvTarget,
+                            'Mode':hvMode, 'Enabled':hvEnabled, 'NumAvg':hvNumAvg, 'PeriodMan':hvPeriodMan,
+                            'PeriodAuto':hvPeriodAuto, 'PulseWidth':hvPulseWidth})
+        return hvVals
     def SetAllHVTarget(self, vmeCROCs, hvVal):
         for theCROC in vmeCROCs:
             for theCROCChannel in theCROC.Channels():

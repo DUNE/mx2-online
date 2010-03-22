@@ -237,7 +237,7 @@ class SC():
     def HVReadAll(self, devVal):
         '''Read the HV of all FEBs and return a list with those FEBs 
         on which abs(HVActual-HVTarget) > devVal'''
-        return SC_MainObjects.FEB(0).GetAllHVActual(self.vmeCROCs, int(devVal))
+        return SC_MainObjects.FEB(0).GetAllHVParams(self.vmeCROCs, int(devVal))
 
     def HVSetAll(self, setVal):
         '''Set the HVTarget of all FEBs to setVal'''
