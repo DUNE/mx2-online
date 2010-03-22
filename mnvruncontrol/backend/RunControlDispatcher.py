@@ -18,6 +18,7 @@ import errno
 import time
 import sys
 import os
+import os.path
 import re
 import logging
 import logging.handlers
@@ -26,7 +27,7 @@ from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import SocketRequests
 
-#from mnvconfigurator.SlowControl import SC_MainObjects.py as SlowControl
+from mnvconfigurator.SlowControl.SC_MainMethods import SC as SlowControl
 
 class RunControlDispatcher:
 	"""
@@ -48,6 +49,10 @@ class RunControlDispatcher:
 		# we'll use these properties to keep track.
 		self.last_request = {}
 		self.request_count = {}
+		
+		# the master slow control object.  it handles
+		# the interface with the hardware.
+		self.slowcontrol = SlowControl()
 
 		# set up some logging facilites.
 		# we set up a rotating file handler here;
@@ -386,7 +391,7 @@ class RunControlDispatcher:
 		             "daq_start" : self.daq_start,
 		             "daq_stop" : self.daq_stop,
 		             "sc_sethwconfig" : self.sc_sethw,
-		             "sc_voltages" : self.sc_readvoltages }
+		             "sc_readboards" : self.sc_readboards }
 		
 		if request in handlers:
 			return handlers[request](matches, show_request_details)
@@ -520,24 +525,51 @@ class RunControlDispatcher:
 		if show_details:
 			self.logger.info("Client wants to load slow control configuration file: '" + matches.group("filename") + "'.")
 		
+		fullpath = matches.group("filename") # Defaults.SLOWCONTROL_CONFIG_LOCATION_DEFAULT + "/" + matches.group("filename")
+		
+		if not os.path.isfile(fullpath):
+			self.logger.warning("Specified slow control configuration file does not exist: " + fullpath)
+			return "2"
+
+		try:
+			self.sc_init()
+			self.slowcontrol.HWcfgFileLoad(fullpath)
+		except:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
+			self.logger.exception("Error trying to load the hardware config file:")
+			self.logger.warning("Hardware was not configured...")
+			return "1"
 
 		if show_details:
 			self.logger.info("   ==> Loaded successfully.")
 		return "0"
 		    
-	def sc_readvoltages(self, matches, show_details):
-		""" Uses the slow control library to read the FEB voltages.
+	def sc_readboards(self, matches, show_details):
+		""" Uses the slow control library to read a few parameters
+		    from the front-end boards:
+		     (1) the target - actual high voltages (in ADC counts).
+		     (2) the HV period (in seconds)
 		    On success, returns a string of lines consisting of
 		    1 voltage per line, in the following format:
-		    FPGA-CROC-CHAIN-BOARD: [voltage]
+		    CROC-CHANNEL-BOARD: [voltage_deviation_in_ADC_counts]
 		    On failure, returns the string "NOREAD". """
 
 		if show_details:
-			self.logger.info("Client wants to know the FEB voltages.")
-
-		if show_details:
-			self.logger.info("No read happened.")
-		return "NOREAD"
+			self.logger.info("Client wants high voltage details of front-end boards.")
+		try:
+			self.sc_init()
+			feblist = self.slowcontrol.HVReadAll(0)		# we want ALL boards, that is, those that deviate from target HV by at least 0...
+		except:
+			self.logger.exception("Error trying to read the voltages:")
+			self.logger.warning("No read performed.")
+			return "NOREAD"
+		
+		formatted_feblist = [ "%s-%s-%s: %s %s" % (febdetails['FPGA']["CROC"],
+		                                           febdetails["FPGA"]["Channel"],
+		                                           febdetails["FPGA"]["FEB"],
+		                                           febdetails["A-T"],
+		                                           (febdetails["PeriodMan"] if febdetails["Mode"] == "Manual" else febdetails["PeriodAuto"]) )
+		                      for febdetails in feblist ]
+		return "\n".join(formatted_feblist)
 		
 	def cleanup(self):
 		self.server_socket.close()
@@ -545,6 +577,15 @@ class RunControlDispatcher:
 		if os.path.isfile(Defaults.DISPATCHER_PIDFILE):
 			self.logger.info("Removing PID file.")
 			os.remove(Defaults.DISPATCHER_PIDFILE)
+
+	def sc_init(self):
+		# first find the appropriate VME devices: CRIMs, CROCs, DIGitizers....
+		self.slowcontrol.FindCRIMs()
+		self.slowcontrol.FindCROCs()
+		self.slowcontrol.FindDIGs()
+		
+		# then load the FEBs into their various CROCs
+		self.slowcontrol.FindFEBs(self.slowcontrol.vmeCROCs)
 
 #########################
 # DAQThread             #

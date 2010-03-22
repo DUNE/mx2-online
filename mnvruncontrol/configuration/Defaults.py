@@ -4,7 +4,7 @@
    They are centralized here for easier modification of the setup.
    
    Original author: J. Wolcott (jwolcott@fnal.gov)
-                    Feb. 2010
+                    Feb.-Mar. 2010
                     
    Address all complaints to the management.
 """
@@ -28,7 +28,6 @@ RAW_DATA_LOCATION_DEFAULT = "/work/data/rawdata"
 
 RESOURCE_LOCATION_DEFAULT = "/work/software/mnvruncontrol/resources"
 
-
 # Socket communication defaults.
 DISPATCHER_PORT = 1098
 MASTER_PORT     = 1090
@@ -48,9 +47,15 @@ SOCKET_TIMEOUT = 0.25
 MAX_REPEATED_REQUEST_LOGS = 5
 
 # dispatcher process details
-DISPATCHER_PIDFILE = "/tmp/rc_dispatcher.pid"
+DISPATCHER_PIDFILE = "/work/conditions/rc_dispatcher.pid"
 DISPATCHER_LOGFILE = "/work/data/logs/dispatcher.log"
 
-# environment configuration
-DAQROOT_DEFAULT = "/work/software/mnvonline/mnvdaq"
+# slow control
+SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
+
+# hardware files
+HW_FROZEN_CRATE0_DISCRIM   = "FrozenDetector_Crate0_HVTuned_VTH238.xml"
+HW_FROZEN_CRATE0_NODISCRIM = "FrozenDetector_Crate0_HVTuned_VTH0.xml"
+HW_FROZEN_CRATE1_DISCRIM   = "FrozenDetector_Crate1_HVTuned_VTH238.xml"
+HW_FROZEN_CRATE1_NODISCRIM = "FrozenDetector_Crate1_HVTuned_VTH0.xml"
 

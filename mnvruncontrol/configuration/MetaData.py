@@ -51,19 +51,13 @@ class MetaData:
 			self.codes.append(code)
 		
 		self.locations = (self.descriptions, self.hashes, self.codes)
-	
-	def __getitem__(self, key):
-		""" 
-		The 'operator[]' for this class.
-		Intelligently returns the hash/code/description
-		corresponding to the key it's given.
+
+	def get(self, key, returntype):
 		"""
-		returntype = ANY
-		
-		# if you provide more than one argument to the [] operator, it passes them all as a tuple
-		if isinstance(key, tuple):
-			returntype = key[1]
-			key = key[0]
+		Intelligently returns the hash/code/description
+		corresponding to the key it's given.  Looks in
+		the specified location (or all if given ANY).
+		"""
 		
 		keylocation = None
 
@@ -89,7 +83,27 @@ class MetaData:
 				raise KeyError("Description you provided corresponds to metadata with both hashes and keys: must specify return type.")
 		else:
 			return self.descriptions[keylocation.index(key)]
+			
+	def code(self, key):
+		return self.get(key, CODE)
+
+	def hash(self, key):
+		return self.get(key, HASH)
 	
+	def description(self, key):
+		return self.get(key, DESCRIPTION)
+	
+	def __getitem__(self, key):
+		""" 
+		The 'operator[]' for this class.  Calls get() implicitly.
+		"""
+
+		# if you provide more than one argument to the [] operator, it passes them all as a tuple
+		if isinstance(key, tuple):
+			return self.get(key[0], key[1])
+		else:
+			return self.get(key, ANY)
+
 	def __contains__(self, key):
 		"""
 		This function implements the 'in' operator.
@@ -129,8 +143,6 @@ class MetaData:
 				return location.index(key)
 				
 		
-# need variable "daqStop"
-
 # Format for constructor for MetaData objects:
 # ( (description1, hash1, code1),
 #   (description2, hash2, code2),
@@ -247,4 +259,6 @@ RunSeriesTypes          = MetaData(( ("Beam",                0, "beam_series.db"
 				     ("Mixed Beam-LI",       5, "mix_beam_li_series.db"),
 				     ("Custom Series",       6, "custom_series.db") ))
         	
-
+HardwareConfigurations = MetaData(( ("Current state",  None, ""),
+                                    ("Discriminators on",  None, "discriminators_on.hwcfg"),
+                                    ("Discriminators off", None, "discriminators_off.hwcfg") ))
