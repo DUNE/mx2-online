@@ -1,14 +1,6 @@
 #!/bin/sh
 
-gmake clean
-gmake
+#WH14B
+./chginj -c 1 -h 2 -f 3
+./chginj -c 6 -h 3 -f 2
 
-if [ $# -gt 0 ]; then
- if [ $1 == "v" ]; then
-  valgrind -v --log-file-exactly=valtest1.txt ./chginj
- fi
-else
-./chginj
-fi
-
-exit 0
