@@ -251,13 +251,13 @@ int main(int argc, char *argv[])
 	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote (multi-pc) mode only.
 	mnvdaq.infoStream() << "Setting ET host to mnvonlinemaster.fnal.gov.";	
 #endif
-#if NUMIUS
-	et_open_config_sethost(openconfig, "mnvonline2.fnal.gov");  // Remote (multi-pc) mode only.
-	mnvdaq.infoStream() << "Setting ET host to mnvonline2.fnal.gov.";	
-#endif
-#if WH14T||WH14B
+#if WH14T
 	et_open_config_sethost(openconfig, "minervatest02.fnal.gov");  // Remote (multi-pc) mode only.
 	mnvdaq.infoStream() << "Setting ET host to minervatest02.fnal.gov.";	
+#endif
+#if WH14B
+	et_open_config_sethost(openconfig, "minervatest04.fnal.gov");  // Remote (multi-pc) mode only.
+	mnvdaq.infoStream() << "Setting ET host to minervatest04.fnal.gov.";	
 #endif
 
 	// Set direct connection.

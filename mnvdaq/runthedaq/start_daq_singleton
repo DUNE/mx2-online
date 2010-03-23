@@ -100,7 +100,7 @@ while [ "$ETSYSPID" == "" ]; do
 	echo ET System PID = $ETSYSPID
 	echo $ETSYSPID > $ETSYSPIDFILE
 done
-sleep 20s
+sleep 10s
 
 xterm ${DEBUG} -geometry 88x60+890+1 -sl 1000 -e ./start_et_monitor $ETSYS &
 export ET_MON_TERM_PID=$!

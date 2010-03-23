@@ -42,17 +42,17 @@ int main(int argc, char **argv)
 	}
 	
 	char hostName[100];
-#if NUMIUS
-	sprintf(hostName, "mnvonline2.fnal.gov");
-	std::cout << "ET system host machine = mnvonline2.fnal.gov" << std::endl;
-#endif
 #if CRATE0||CRATE1||NEARLINE
 	sprintf(hostName, "mnvonlinemaster.fnal.gov");
 	std::cout << "ET system host machine = mnvonlinemaster.fnal.gov" << std::endl;
 #endif
-#if WH14T||WH14B
+#if WH14T
 	sprintf(hostName, "minervatest02.fnal.gov");
 	std::cout << "ET system host machine = minervatest02.fnal.gov" << std::endl;
+#endif
+#if WH14B
+	sprintf(hostName, "minervatest04.fnal.gov");
+	std::cout << "ET system host machine = minervatest04.fnal.gov" << std::endl;
 #endif
 	std::cout << "Ouptut Filename        = " << output_filename << std::endl;
 #if MULTIPC
