@@ -5,7 +5,7 @@ Help()
 	echo  "Usage : start_daq_singleton_leakchk -et <ET filename (stub)> -f <Num FEBS (same as detector config)> -g <Num Gates>"
 	echo  "          -m <Mode> -r <Run Num> -s <Sub Num> -t <n seconds (not supported)> -d <detector code (see DAQHeader class)>"
 	echo  "          -cf <slow control config file> -ll <LED Level> -lg <LED Group (encoded, 8, 16, etc.))>"
-	echo  "          -hw <vme card init. level, 0 no init, non-zero init> -p <port 1091-1094>"
+	echo  "          -hw <vme card init. level, 0 no init, non-zero init> -p <port 1091-1096>"
 }
 
 if [ $# -eq 0 ]
@@ -30,7 +30,7 @@ DETECTOR=0  # See Event/MinervaEvent/DAQHeader.xml for the detector codes.
 CONFIGFILE=unknown # This is the filename for the config loaded by the slow control.
 LEDLEVEL=0  # Defaults to zero PE.
 LEDGROUP=8  # Defaults to LEDALL.
-INITLEVEL=1 # Defaults to run INIT.  TODO - fix
+INITLEVEL=1 # Defaults to run INIT.  
 DEBUG=''
 PORT=1091
 

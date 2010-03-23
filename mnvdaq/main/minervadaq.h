@@ -21,6 +21,12 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 int inline GetGlobalGate();
 /*! Put the Global Gate value into /work/conditions/global_gate.dat */
 void inline PutGlobalGate(int ggate);
+/*! Write the (complete, as of trigger X) SAM metadata */
+int WriteSAM(const char samfilename[], 
+	const unsigned long long firstEvent, const unsigned long long lastEvent, 
+	const std::string datafilename, const int detector, const char configfilename[], 
+	const int runningMode, const int eventCount, const int runNum, const int subNum, 
+	const unsigned long long startTime, const unsigned long long stopTime);
 
 /* some logging files for debugging purposes */
 #if TIME_ME
@@ -48,6 +54,11 @@ struct in_addr     global_gate_socket_address;
 int                global_gate_socket_connection; 
 bool               global_gate_socket_is_live;
 
+
+// TODO - cycle between a set of ports
+const static unsigned short gate_done_port   = 1110;
+const static unsigned short global_gate_port = 1120; 
+
 #if MASTER&&(!SINGLEPC) // Soldier Node
 /* minervadaq server for "master" (soldier node) DAQ */
 struct sockaddr_in          gate_done_service;
@@ -55,8 +66,6 @@ struct sockaddr_in          global_gate_service;
 int                         gate_done_socket_handle;
 int                         global_gate_socket_handle;
 struct hostent *            worker_node_info; // server on worker node
-const static unsigned short gate_done_port   = 1095; //the port number for our TCP service
-const static unsigned short global_gate_port = 1096; //the port number for our TCP service
 #endif
 
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
@@ -66,6 +75,4 @@ struct sockaddr_in          global_gate_service;
 int                         gate_done_socket_handle;
 int                         global_gate_socket_handle;
 struct hostent *            soldier_node_info; // server on soldier node
-const static unsigned short gate_done_port   = 1095; //the port number for our TCP service
-const static unsigned short global_gate_port = 1096; //the port number for our TCP service
 #endif

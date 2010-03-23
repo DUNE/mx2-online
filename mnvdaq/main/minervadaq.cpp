@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
 	str_controllerID  = "1";
 	controllerErrCode = 4;
 #endif
+	unsigned long long startTime, stopTime; // For SAM
 
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
@@ -484,104 +485,15 @@ int main(int argc, char *argv[])
 	vector<croc*>::iterator croc_iter = croc_vector->begin();
 	mnvdaq.infoStream() << "Returned from electronics initialization.";
 
-
-	/*********************************************************************************/
-	/* If we've made it this far, it is safe to set up the SAM metadata file.        */
-	/*********************************************************************************/
+	// Start to setup vars for SAM metadata.
 	struct timeval runstart, runend;
 	gettimeofday(&runstart, NULL);
+	startTime = (unsigned long long)(runstart.tv_sec);
 #if SINGLEPC||MASTER // Single PC or Soldier Node
 	global_gate_data[0] = GetGlobalGate();
 	std::cout << "Opened Event Log, First Event = " << global_gate_data[0] << std::endl;
 	mnvdaq.infoStream() << "Opened Event Log, First Event = " << global_gate_data[0];
 	firstEvent = global_gate_data[0];
-
-	if ( (sam_file=fopen(sam_filename,"w")) ==NULL) {
-		std::cout << "minervadaq::main(): Error!  Cannot open SAM file for writing!" << std::endl;
-		mnvdaq.fatalStream() << "Error opening SAM file for writing!";
-		exit(1);
-	}
-	fprintf(sam_file,"from SamFile.SamDataFile import SamDataFile\n\n");
-	fprintf(sam_file,"from SamFile.SamDataFile import ApplicationFamily\n");
-	fprintf(sam_file,"from SamFile.SamDataFile import CRC\n");
-	fprintf(sam_file,"from SamFile.SamDataFile import SamTime\n");
-	fprintf(sam_file,"from SamFile.SamDataFile import RunDescriptorList\n");
-	fprintf(sam_file,"from SamFile.SamDataFile import SamSize\n\n");
-	fprintf(sam_file,"import SAM\n\n");	
-	fprintf(sam_file,"metadata = SamDataFile(\n");
-	fprintf(sam_file,"fileName = '%s.dat',\n",fileroot.c_str());
-	fprintf(sam_file,"fileType = SAM.DataFileType_ImportedDetector,\n");
-	fprintf(sam_file,"fileFormat = SAM.DataFileFormat_BINARY,\n");
-	fprintf(sam_file,"crc=CRC(666L,SAM.CRC_Adler32Type),\n");
-	fprintf(sam_file,"group='minerva',\n");
-	fprintf(sam_file,"dataTier='raw',\n");
-	fprintf(sam_file,"runNumber=%d%04d,\n",runNumber,subRunNumber);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-01-00'),\n"); //online, DAQ Heder, CVSTag
-	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
-	fprintf(sam_file,"filePartition=1L,\n");
-	switch (detector) { // Enumerations set by the DAQHeader class.
-		case 0:
-			fprintf(sam_file,"runType='unknowndetector',\n");
-			break;
-		case 1:
-			fprintf(sam_file,"runType='pmtteststand',\n");
-			break;
-		case 2:
-			fprintf(sam_file,"runType='trackingprototype',\n");
-			break;
-		case 4:
-			fprintf(sam_file,"runType='testbeam',\n");
-			break;
-		case 8:
-			fprintf(sam_file,"runType='frozendetector',\n");
-			break;
-		case 16:
-			fprintf(sam_file,"runType='upstreamdetector',\n");
-			break;
-		case 32:
-			fprintf(sam_file,"runType='fullminerva',\n");
-			break;
-		default:
-			std::cout << "minervadaq::main(): ERROR! Improper Detector defined!" << std::endl;
-			exit(-4);
-	}
-	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
-	fprintf(sam_file,"({'triggerconfig':'%s',",config_filename); 
-	switch (runningMode) {
-		case OneShot:
-			fprintf(sam_file,"'triggertype':'oneshot',})}),\n");
-			fprintf(sam_file,"datastream='pdstl',\n");
-                       	break;
-		case NuMIBeam:
-			fprintf(sam_file,"'triggertype':'numibeam',})}),\n");
-			fprintf(sam_file,"datastream='numib',\n");
-			break;
-		case Cosmics:
-			fprintf(sam_file,"'triggertype':'cosmics',})}),\n");
-			fprintf(sam_file,"datastream='cosmc',\n");
-			break;
-		case PureLightInjection:
-			fprintf(sam_file,"'triggertype':'purelightinjection',})}),\n");
-			fprintf(sam_file,"datastream='linjc',\n");
-			break;
-		case MixedBeamPedestal:
-			// TODO - Test mixed beam-pedestal running!
-			fprintf(sam_file,"'triggertype':'mixedbeampedestal',})}),\n");
-			fprintf(sam_file,"datastream='numip',\n");
-			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-pedestal trigger types!" << std::endl;
-			break;
-		case MixedBeamLightInjection:
-			// TODO - Test mixed beam-li running!
-			fprintf(sam_file,"'triggertype':'mixedbeamlightinjection',})}),\n");
-			fprintf(sam_file,"datastream='numil',\n");
-			std::cout << "minervadaq::main(): Warning!  Calling untested mixed mode beam-li trigger types!" << std::endl;
-			break; 
-		default:
-			std::cout << "minervadaq::main(): ERROR! Improper Running Mode defined!" << std::endl;
-			exit(-4);
-	}
-	fprintf(sam_file,"startTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n",
-		(unsigned long long)(runstart.tv_sec));
 #endif
 
 	/*********************************************************************************/
@@ -964,24 +876,34 @@ int main(int argc, char *argv[])
 		// Increment the Global Gate value and log it.
 		PutGlobalGate(++event_data.globalGate);
 #endif
+
+		// Get end of "run" time for end of gate...
+		gettimeofday(&runend, NULL);
+		stopTime = (unsigned long long)(runend.tv_sec);
+		// Write the SAM File.
+#if SINGLEPC||MASTER
+		lastEvent = event_data.globalGate - 1; // Fencepost, etc.
+		WriteSAM(sam_filename, firstEvent, lastEvent, fileroot, detector, 
+			config_filename, runningMode, gate, runNumber, subRunNumber,
+			startTime, stopTime);
+#endif
 	} //end of gates loop
 
+	// Close sockets for multi-PC synchronization.
 #if !SINGLEPC
 	close(gate_done_socket_handle);
 	close(global_gate_socket_handle);
 #endif
-#if SINGLEPC||(MASTER&&(!SINGLEPC)) // Single PC or Soldier Node
-	lastEvent = GetGlobalGate() - 1; // Fencepost, etc.
+	// Report end of subrun...
+#if SINGLEPC||MASTER // Single PC or Soldier Node
 	std::cout << " Last Event = " << lastEvent << std::endl;
 	mnvdaq.infoStream() << "Last Event = " << lastEvent;
-#endif // end if SINGLEPC||((!MASTER)&&(!SINGLEPC))
-
-	gettimeofday(&runend, NULL);
+#endif 
+	// Report total run time in awkward units...
 	unsigned long long totalstart = ((unsigned long long)(runstart.tv_sec))*1000000 +
                         (unsigned long long)(runstart.tv_usec);
 	unsigned long long totalend   = ((unsigned long long)(runend.tv_sec))*1000000 +
                         (unsigned long long)(runend.tv_usec);
-
 	unsigned long long totaldiff  = totalend - totalstart;
 	printf(" \n\nTotal acquisition time was %llu microseconds.\n\n",totaldiff);
 	mnvdaq.info("Total acquisition time was %llu microseconds.",totaldiff);
@@ -1005,18 +927,6 @@ int main(int argc, char *argv[])
 		<<(stop_time.tv_sec*1e6+stop_time.tv_usec)<<" Run Time: "<<(duration/1e6)<<endl;
 #endif
 
-	// Close the SAM File.
-#if SINGLEPC||MASTER
-	fprintf(sam_file,"endTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n",
-		(unsigned long long)(runend.tv_sec));
-	fprintf(sam_file,"eventCount=%d,\n",gate);
-	fprintf(sam_file,"firstEvent=%llu,\n",firstEvent);
-	fprintf(sam_file,"lastEvent=%llu,\n",lastEvent);
-	fprintf(sam_file,"lumBlockRangeList=LumBlockRangeList([LumBlockRange(%llu,%llu)])\n",
-		firstEvent, lastEvent);
-	fprintf(sam_file,")\n");
-	fclose(sam_file);
-#endif
 	// Clean up the log4cpp file.
 	log4cpp::Category::shutdown();
 
@@ -1339,8 +1249,8 @@ void CreateSocketPair(int &gate_done_socket_handle, int &global_gate_socket_hand
 void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info, 
         std::string hostname, const int port )
 {
-/*! \fn void void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info,
- *			std::string hostname, const int port )
+/*! \fn void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info,
+ *		std::string hostname, const int port )
  *
  * This function sets up a socket service.
  */
@@ -1354,3 +1264,115 @@ void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node
 	else socket_service.sin_addr = *((struct in_addr *) node_info->h_addr);
 	socket_service.sin_port = htons(port); 
 }
+
+int WriteSAM(const char samfilename[], 
+	const unsigned long long firstEvent, const unsigned long long lastEvent, 
+	const string datafilename, const int detector, const char configfilename[], 
+	const int runningMode, const int eventCount, const int runNum, const int subNum,  
+	const unsigned long long startTime, const unsigned long long stopTime)
+{
+/*! \fn int WriteSAM(const char samfilename[], 
+ * 		const unsigned long long firstEvent, const unsigned long long lastEvent,
+ *		const string datafilename, const int detector, const char configfilename[],
+ *		const int runningMode, const int eventCount,
+ *		const unsigned long long startTime, const unsigned long long stopTime)
+ *
+ * Write the metadata file for the current subrun.  Returns a success int (0 for success).
+ */
+	FILE *sam_file;
+
+	if ( (sam_file=fopen(samfilename,"w")) ==NULL) {
+		std::cout << "minervadaq::main(): Error!  Cannot open SAM file for writing!" << std::endl;
+		mnvdaq.fatalStream() << "Error opening SAM file for writing!";
+		return 1;
+	}
+
+	fprintf(sam_file,"from SamFile.SamDataFile import SamDataFile\n\n");
+	fprintf(sam_file,"from SamFile.SamDataFile import ApplicationFamily\n");
+	fprintf(sam_file,"from SamFile.SamDataFile import CRC\n");
+	fprintf(sam_file,"from SamFile.SamDataFile import SamTime\n");
+	fprintf(sam_file,"from SamFile.SamDataFile import RunDescriptorList\n");
+	fprintf(sam_file,"from SamFile.SamDataFile import SamSize\n\n");
+	fprintf(sam_file,"import SAM\n\n");
+	fprintf(sam_file,"metadata = SamDataFile(\n");
+	fprintf(sam_file,"fileName = '%s.dat',\n",datafilename.c_str());
+	fprintf(sam_file,"fileType = SAM.DataFileType_ImportedDetector,\n");
+	fprintf(sam_file,"fileFormat = SAM.DataFileFormat_BINARY,\n");
+	fprintf(sam_file,"crc=CRC(666L,SAM.CRC_Adler32Type),\n");
+	fprintf(sam_file,"group='minerva',\n");
+	fprintf(sam_file,"dataTier='raw',\n");
+	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
+	fprintf(sam_file,"filePartition=1L,\n");
+	switch (detector) { // Enumerations set by the DAQHeader class.
+		case 0:
+			fprintf(sam_file,"runType='unknowndetector',\n");
+			break;
+		case 1:
+			fprintf(sam_file,"runType='pmtteststand',\n");
+			break;
+		case 2:
+			fprintf(sam_file,"runType='trackingprototype',\n");
+			break;
+		case 4:
+			fprintf(sam_file,"runType='testbeam',\n");
+			break;
+		case 8:
+			fprintf(sam_file,"runType='frozendetector',\n");
+			break;
+		case 16:
+			fprintf(sam_file,"runType='upstreamdetector',\n");
+			break;
+		case 32:
+			fprintf(sam_file,"runType='fullminerva',\n");
+			break;
+		default:
+			std::cout << "minervadaq::WriteSAM(): ERROR! Improper Detector defined!" << std::endl;
+			mnvdaq.critStream() << "minervadaq::WriteSAM(): ERROR! Improper Detector defined!";
+			return 1;
+	}
+	fprintf(sam_file,"params = Params({'Online':CaseInsensitiveDictionary");
+	fprintf(sam_file,"({'triggerconfig':'%s',",configfilename);
+	switch (runningMode) {
+		case 0: //OneShot:
+			fprintf(sam_file,"'triggertype':'oneshot',})}),\n");
+			fprintf(sam_file,"datastream='pdstl',\n");
+			break;
+		case 1: //NuMIBeam:
+			fprintf(sam_file,"'triggertype':'numibeam',})}),\n");
+			fprintf(sam_file,"datastream='numib',\n");
+			break;
+		case 2: //Cosmics:
+			fprintf(sam_file,"'triggertype':'cosmics',})}),\n");
+			fprintf(sam_file,"datastream='cosmc',\n");
+			break;
+		case 3: //PureLightInjection:
+			fprintf(sam_file,"'triggertype':'purelightinjection',})}),\n");
+			fprintf(sam_file,"datastream='linjc',\n");
+			break;
+		case 4: //MixedBeamPedestal:
+			fprintf(sam_file,"'triggertype':'mixedbeampedestal',})}),\n");
+			fprintf(sam_file,"datastream='numip',\n");
+			break;
+		case 5: //MixedBeamLightInjection:
+			fprintf(sam_file,"'triggertype':'mixedbeamlightinjection',})}),\n");
+			fprintf(sam_file,"datastream='numil',\n");
+			break;
+		default:
+			std::cout << "minervadaq::WriteSAM(): ERROR! Improper Running Mode defined!" << std::endl;
+			mnvdaq.critStream() << "minervadaq::WriteSAM(): ERROR! Improper Running Mode defined!";
+			return 1;
+	}
+	fprintf(sam_file,"startTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", startTime);
+	fprintf(sam_file,"endTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", stopTime);
+	fprintf(sam_file,"eventCount=%d,\n",eventCount);
+	fprintf(sam_file,"firstEvent=%llu,\n",firstEvent);
+	fprintf(sam_file,"lastEvent=%llu,\n",lastEvent);
+	fprintf(sam_file,"lumBlockRangeList=LumBlockRangeList([LumBlockRange(%llu,%llu)])\n", firstEvent, lastEvent);
+	fprintf(sam_file,")\n");
+	fclose(sam_file);
+
+	return 0;
+}
+
