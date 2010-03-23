@@ -21,6 +21,7 @@ import SC_Frames
 import SC_Util
 from SC_MainObjects import *
 from SC_MainMethods import SC
+import v1720config
 
 class SCApp(wx.App):
     """SlowControl application. Subclass of wx.App"""
@@ -131,6 +132,10 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnWriteFileToFlashThisCH, self.frame.fe.flash.FlashButtons.btnWriteFileToFlashThisCH)
         self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnWriteFileToFlashThisCROC, self.frame.fe.flash.FlashButtons.btnWriteFileToFlashThisCROC)
         self.Bind(wx.EVT_BUTTON, self.OnFEFLASHbtnWriteFileToFlashALL, self.frame.fe.flash.FlashButtons.btnWriteFileToFlashALL)
+        # DIG pannel events ##########################################################
+        self.Bind(wx.EVT_BUTTON, self.OnDIGbtnLoadConfigFile, self.frame.dig.btnLoadConfigFile)
+        self.Bind(wx.EVT_BUTTON, self.OnDIGbtnReadAllRegs, self.frame.dig.btnReadAllRegs)
+        self.Bind(wx.EVT_BUTTON, self.OnDIGbtnTakeNEvents, self.frame.dig.btnTakeNEvents)
         
         self.OnMenuLoadHardware(None)
         self.OnMenuShowExpandAll(None)        
@@ -850,6 +855,34 @@ class SCApp(wx.App):
             theFEB.WriteFileToFlash(theCROCChannel=None, theCROC=None, theVMECROCs=self.vmeCROCs,
                 toThisFEB=False, toThisCH=False, toThisCROC=False, toAllCROCs=True, theFrame=self.frame)             
         except: ReportException('OnFEFLASHbtnWriteFileToFlashALL', self.reportErrorChoice)
+
+
+
+    # DIG pannel events ##########################################################
+    def OnDIGbtnLoadConfigFile(self, event):
+        try:
+            dlg = wx.FileDialog(self.frame, message='READ V1720 Configuration', defaultDir='', defaultFile='',
+                wildcard='DIG Config (*.digcfg)|*.digcfg|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+            if dlg.ShowModal()==wx.ID_OK:
+                #self.sc.HWcfgFileLoad(wx.FileDialog.GetPath(dlg))
+                flags, lines = v1720config.DIGcfgFileLoad(wx.FileDialog.GetPath(dlg))
+                self.frame.dig.display.SetValue('\n'.join(lines) + str(flags))
+                print '\n'.join(lines)
+                print
+                print flags 
+            dlg.Destroy()
+        except: ReportException('OnDIGbtnLoadConfigFile', self.reportErrorChoice)  
+    def OnDIGbtnReadAllRegs(self, event):
+        try:
+            wx.MessageBox('not yet implemented')             
+        except: ReportException('OnDIGbtnReadAllRegs', self.reportErrorChoice)
+    def OnDIGbtnTakeNEvents(self, event):
+        try:
+            wx.MessageBox('not yet implemented')             
+        except: ReportException('OnDIGbtnTakeNEvents', self.reportErrorChoice)  
+
+
+
 
 def ReportException(comment, choice):
     msg = comment + ' : ' + str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1])

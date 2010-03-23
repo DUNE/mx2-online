@@ -18,6 +18,163 @@ class VMEDevice():
             return self.type+':'+str((self.baseAddr & 0xFF0000)>>16)
         if (self.type==SC_Util.VMEdevTypes.CH):
             return self.type+':'+str(((self.baseAddr & 0x00F000)>>12)/4)
+        if (self.type==SC_Util.VMEdevTypes.DIGCH):
+            return self.type+':'+str(((self.baseAddr & 0x000F00)>>12)/4)
+
+
+
+
+
+class DIGChannel(VMEDevice):
+    def __init__(self, chNumber, baseAddr, controller):
+        self.chBaseAddr=baseAddr+(chNumber<<8)
+        self.chNumber=chNumber;
+        VMEDevice.__init__(self, controller, self.chBaseAddr, SC_Util.VMEdevTypes.DIGCH)
+        addrWRZSThres           = 0x1024 + self.chBaseAddr
+        addrWRZSNSamp           = 0x1028 + self.chBaseAddr
+        addrWRThresholdValue    = 0x1080 + self.chBaseAddr
+        addrWRThresholdOverUnder= 0x1084 + self.chBaseAddr
+        addrROStatus            = 0x1088 + self.chBaseAddr
+        addrROAMCFPGAFirmware   = 0x108C + self.chBaseAddr
+        addrROBufferOccupancy   = 0x1094 + self.chBaseAddr
+        addrWRDACOffset         = 0x1098 + self.chBaseAddr
+        addrWRADCConfiguration  = 0x109C + self.chBaseAddr
+        self.RegsWR={'WRZSThres':{'addr':addrWRZSThres, 'val':0},
+            'WRZSNSamp':{'addr':addrWRZSNSamp, 'val':0},
+            'WRThresholdValue':{'addr':addrWRThresholdValue, 'val':0},
+            'WRThresholdOverUnder':{'addr':addrWRThresholdOverUnder, 'val':0},
+            'WRDACOffset':{'addr':addrWRDACOffset, 'val':0},
+            'WRADCConfiguration':{'addr':addrWRADCConfiguration, 'val':0}}
+        self.RegsWO={}
+        self.RegsRO={'ROStatus':{'addr':addrROStatus, 'val':0},
+            'ROAMCFPGAFirmware':{'addr':addrROAMCFPGAFirmware, 'val':0},
+            'ROBufferOccupancy':{'addr':addrROBufferOccupancy, 'val':0}}
+        self.FEBs=[]
+    def Number(self): return self.chNumber
+    def NodeList(self):
+        FEBsAddresses=[]
+        #for feb in self.FEBs: FEBsAddresses.append("FE:"+str(feb.Address))
+        for feb in self.FEBs: FEBsAddresses.append("FE:"+str(feb))
+        return [self.Description(), FEBsAddresses]
+    def ReadDPM(self, offset):
+        if (offset>0x1FFF): raise Exception("address " + hex(offset) + " is out of range")
+        return int(self.controller.ReadCycle(self.RegRMemory+offset)) 
+    def WriteFIFO(self, data): self.controller.WriteCycle(self.RegWInput, data)
+    def SendMessage(self): self.controller.WriteCycle(self.RegWSendMessage, 0x0101)
+    def ReadStatus(self): return int(self.controller.ReadCycle(self.RegRStatus))
+    def ClearStatus(self): self.controller.WriteCycle(self.RegWClearStatus, 0x0202)
+    def ReadLoopDelay(self): return int(self.controller.ReadCycle(self.RegRLoopDelay)) 
+    def DPMPointerReset(self): self.controller.WriteCycle(self.RegWClearStatus, 0x0808)
+    def DPMPointerRead(self):
+        data=int(self.controller.ReadCycle(self.RegRDPMPointer))
+        datasw=int(((data&0xFF)<<8) | ((data&0xFF00)>>8))
+        return datasw
+
+class DIG(VMEDevice):
+    def __init__(self, controller, baseAddr):
+        VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMEdevTypes.DIG)
+        #ROEventReadoutBuffer          = 0x0000-0x0FFC    //R
+        addrWRChannelConfiguration          = 0x8000
+        addrWOChannelConfigurationBitSet    = 0x8004
+        addrWOChannelConfigurationBitClear  = 0x8008
+        addrWRBufferOrganization            = 0x800C
+        addrWRBufferFree                    = 0x8010
+        addrWRCustomSize                    = 0x8020
+        addrWRAcquisitionControl            = 0x8100
+        addrROAcquisitionStatus             = 0x8104
+        addrWOSWTrigger                     = 0x8108
+        addrWRTriggerSourceEnableMask       = 0x810C
+        addrWRFrontPanelTriggerOutEnableMask= 0x8110
+        addrWRPostTriggerSetting            = 0x8114
+        addrWRFrontPanelIOData              = 0x8118
+        addrWRFrontPanelIOControl           = 0x811C
+        addrWRChannelEnableMask             = 0x8120
+        addrROCFPGAFirmwareRevision         = 0x8124
+        addrROEventStored                   = 0x812C
+        addrWRSetMonitorDAC                 = 0x8138
+        addrROBoardInfo                     = 0x8140
+        #WRMonitorMode = 0x8144,//RW  CAEN Note : To be implemented
+        addrROEventSize                     = 0x814C
+        addrWRVMEControl                    = 0xEF00
+        addrROVMEStatus                     = 0xEF04
+        addrWRBoardId                       = 0xEF08
+        addrWRMulticastBaseAddrAndCtrl      = 0xEF0C
+        addrWRRelocationAddress             = 0xEF10
+        addrWRInterruptStatusId             = 0xEF14
+        addrWRInterruptEventNumber          = 0xEF18
+        addrWRBLTEventNumber                = 0xEF1C
+        addrWRVMEScratch                    = 0xEF20
+        addrWOSWReset                       = 0xEF24
+        addrWOSWClear                       = 0xEF28
+        addrWRFlashEnable                   = 0xEF2C
+        addrWRFlashData                     = 0xEF30
+        addrWOConfigurationReload           = 0xEF34
+        #ROConfigurationROM = 0xF000-0xF3FC //R
+        self.RegsWR={'WRChannelConfiguration':{'addr':addrWRChannelConfiguration, 'val':0},
+            'WRBufferOrganization':{'addr':addrWRBufferOrganization, 'val':0},
+            'WRBufferFree':{'addr':addrWRBufferFree, 'val':0},
+            'WRCustomSize':{'addr':addrWRCustomSize, 'val':0},
+            'WRAcquisitionControl':{'addr':addrWRAcquisitionControl, 'val':0},
+            'WRTriggerSourceEnableMask':{'addr':addrWRTriggerSourceEnableMask, 'val':0},
+            'WRFrontPanelTriggerOutEnableMask':{'addr':addrWRFrontPanelTriggerOutEnableMask, 'val':0},
+            'WRPostTriggerSetting':{'addr':addrWRPostTriggerSetting, 'val':0},
+            'WRFrontPanelIOData':{'addr':addrWRFrontPanelIOData, 'val':0},
+            'WRFrontPanelIOControl':{'addr':addrWRFrontPanelIOControl, 'val':0},
+            'WRChannelEnableMask':{'addr':addrWRChannelEnableMask, 'val':0},
+            'WRSetMonitorDAC':{'addr':addrWRSetMonitorDAC, 'val':0},
+            'WRVMEControl':{'addr':addrWRVMEControl, 'val':0},
+            'WRBoardId':{'addr':addrWRBoardId, 'val':0},
+            'WRMulticastBaseAddrAndCtrl':{'addr':addrWRMulticastBaseAddrAndCtrl, 'val':0},
+            'WRRelocationAddress':{'addr':addrWRRelocationAddress, 'val':0},
+            'WRInterruptStatusId':{'addr':addrWRInterruptStatusId, 'val':0},
+            'WRInterruptEventNumber':{'addr':addrWRInterruptEventNumber, 'val':0},
+            'WRBLTEventNumber':{'addr':addrWRBLTEventNumber, 'val':0},
+            'WRVMEScratch':{'addr':addrWRVMEScratch, 'val':0},
+            'WRFlashEnable':{'addr':addrWRFlashEnable, 'val':0},
+            'addrWRFlashData':{'addr':addraddrWRFlashData, 'val':0}}
+        self.RegsWO={'WOChannelConfigurationBitSet':{'addr':addrWOChannelConfigurationBitSet, 'val':0},
+            'WOChannelConfigurationBitClear':{'addr':addrWOChannelConfigurationBitClear, 'val':0},
+            'WOSWTrigger':{'addr':addrWOSWTrigger, 'val':0},
+            'WOSWReset':{'addr':addrWOSWReset, 'val':0},
+            'WOSWClear':{'addr':addrWOSWClear, 'val':0},
+            'WOConfigurationReload':{'addr':addrWOConfigurationReload, 'val':0}}
+        self.RegsRO={'ROAcquisitionStatus':{'addr':addrROAcquisitionStatus, 'val':0},
+            'ROCFPGAFirmwareRevision':{'addr':addrROCFPGAFirmwareRevision, 'val':0},
+            'ROEventStored':{'addr':addrROEventStored, 'val':0},
+            'ROBoardInfo':{'addr':addrROBoardInfo, 'val':0},
+            'ROEventSize':{'addr':addrROEventSize, 'val':0},
+            'ROVMEStatus':{'addr':addrROVMEStatus, 'val':0}}
+
+        self.RegWRTimingSetup       = baseAddr + SC_Util.CROCRegs.RegWRTimingSetup
+        self.RegWRResetAndTestMask  = baseAddr + SC_Util.CROCRegs.RegWRResetAndTestMask
+        self.RegWChannelReset      = baseAddr + SC_Util.CROCRegs.RegWChannelReset
+        self.RegWFastCommand       = baseAddr + SC_Util.CROCRegs.RegWFastCommand
+        self.RegWTestPulse         = baseAddr + SC_Util.CROCRegs.RegWTestPulse 
+        self.channels=[]
+        for chNumber in range(4):
+            self.channels.append(CROCChannel(chNumber, baseAddr, controller))
+        #self.channels[0].FEBs=[FEB(1), FEB(2), FEB(3), FEB(4)]
+        #self.channels[1].FEBs=[FEB(5), FEB(6), FEB(7), FEB(8)]
+        #self.channels[2].FEBs=[FEB(9), FEB(10), FEB(11), FEB(12)]
+        #self.channels[3].FEBs=[FEB(13), FEB(14), FEB(15), FEB(16), FEB(17)]
+    def Channels(self): return self.channels
+    def NodeList(self): return [self.Description(), 
+        [self.channels[0].NodeList(), self.channels[1].NodeList(),
+        self.channels[2].NodeList(), self.channels[3].NodeList()]]
+    def ReadTimingSetup(self): return int(self.controller.ReadCycle(self.RegWRTimingSetup))
+    def WriteTimingSetup(self, data): self.controller.WriteCycle(self.RegWRTimingSetup, data)
+    def SendFastCommand(self, data): self.controller.WriteCycle(self.RegWFastCommand, data)
+    def WriteRSTTP(self, data): self.controller.WriteCycle(self.RegWRResetAndTestMask, data)
+    def ReadRSTTP(self): return int(self.controller.ReadCycle(self.RegWRResetAndTestMask))
+    def SendRSTOnly(self): self.controller.WriteCycle(self.RegWChannelReset, 0x0202)
+    def SendTPOnly(self): self.controller.WriteCycle(self.RegWTestPulse, 0x0404)
+    def GetWRRegValues(self):
+        return [(hex(self.RegWRTimingSetup)[2:].rjust(6, '0'),  hex(self.ReadTimingSetup())[2:].rjust(4, '0')),
+                (hex(self.RegWRResetAndTestMask)[2:].rjust(6, '0'), hex(self.ReadRSTTP())[2:].rjust(4, '0'))]
+
+
+
+
 
 class CROCChannel(VMEDevice):
     def __init__(self, chNumber, baseAddr, controller):

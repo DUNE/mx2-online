@@ -31,7 +31,58 @@ class VMEdevTypes():
     TRIP='TRIP'
     FLASH='FLASH'
     DIG='DIG'
-    
+    DIGCH='DIGCH'
+
+##class DIGRegs():
+##    //ROEventReadoutBuffer          = 0x0000-0x0FFC    //R
+##    WRChannelConfiguration          = 0x8000
+##    WOChannelConfigurationBitSet    = 0x8004
+##    WOChannelConfigurationBitClear  = 0x8008
+##    WRBufferOrganization            = 0x800C
+##    WRBufferFree                    = 0x8010
+##    WRCustomSize                    = 0x8020
+##    WRAcquisitionControl            = 0x8100
+##    ROAcquisitionStatus             = 0x8104
+##    WOSWTrigger                     = 0x8108
+##    WRTriggerSourceEnableMask       = 0x810C
+##    WRFrontPanelTriggerOutEnableMask= 0x8110
+##    WRPostTriggerSetting            = 0x8114
+##    WRFrontPanelIOData              = 0x8118
+##    WRFrontPanelIOControl           = 0x811C
+##    WRChannelEnableMask             = 0x8120
+##    ROCFPGAFirmwareRevision         = 0x8124
+##    ROEventStored                   = 0x812C
+##    WRSetMonitorDAC                 = 0x8138
+##    ROBoardInfo                     = 0x8140
+##    //WRMonitorMode = 0x8144,//RW  CAEN Note : To be implemented
+##    ROEventSize                     = 0x814C
+##    WRVMEControl                    = 0xEF00
+##    ROVMEStatus                     = 0xEF04
+##    WRBoardId                       = 0xEF08
+##    WRMulticastBaseAddrAndCtrl      = 0xEF0C
+##    WRRelocationAddress             = 0xEF10
+##    WRInterruptStatusId             = 0xEF14
+##    WRInterruptEventNumber          = 0xEF18
+##    WRBLTEventNumber                = 0xEF1C
+##    WRVMEScratch                    = 0xEF20
+##    WOSWReset                       = 0xEF24
+##    WOSWClear                       = 0xEF28
+##    WRFlashEnable                   = 0xEF2C
+##    WRFlashData                     = 0xEF30
+##    WOConfigurationReload           = 0xEF34
+##    //ROConfigurationROM = 0xF000-0xF3FC //R
+##    
+##class DIGCHRegs():
+##    WRZSThres           = 0x1024
+##    WRZSNSamp           = 0x1028
+##    WRThresholdValue    = 0x1080
+##    WRThresholdOverUnder= 0x1084
+##    ROStatus            = 0x1088
+##    ROAMCFPGAFirmware   = 0x108C
+##    ROBufferOccupancy   = 0x1094
+##    WRDACOffset         = 0x1098
+##    WRADCConfiguration  = 0x109C
+
 class CROCRegs():
     RegWRTimingSetup        = 0xF000
     RegWRResetAndTestMask   = 0xF010

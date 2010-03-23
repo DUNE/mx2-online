@@ -7,6 +7,7 @@ Started October 21 2009
 import wx
 import sys
 import SC_Util
+import v1720config
 from wx.py.shell import ShellFrame
 from wx.py.filling import FillingFrame
 
@@ -68,13 +69,15 @@ class SCMainFrame(wx.Frame):
         self.vme = VME(self.nb)
         self.nb.AddPage(self.vme, "VME")
         self.crim = CRIM(self.nb)
-        self.nb.AddPage(self.crim, "CRIM")
+        self.nb.AddPage(self.crim, SC_Util.VMEdevTypes.CRIM)
         self.croc = CROC(self.nb)
-        self.nb.AddPage(self.croc, "CROC")
+        self.nb.AddPage(self.croc, SC_Util.VMEdevTypes.CROC)
         self.ch = CH(self.nb)
-        self.nb.AddPage(self.ch, "CH")
+        self.nb.AddPage(self.ch, SC_Util.VMEdevTypes.CH)
         self.fe = FE(self.nb)
-        self.nb.AddPage(self.fe, "FE")
+        self.nb.AddPage(self.fe, SC_Util.VMEdevTypes.FE)
+        self.dig = DIG(self.nb)
+        self.nb.AddPage(self.dig, SC_Util.VMEdevTypes.DIG)
         # Adding Tree and Notebook instances to Splitter
         self.sp.SplitVertically(self.tree, self.nb, sashPosition=150)
         # Binding tree events
@@ -95,21 +98,21 @@ class SCMainFrame(wx.Frame):
         items = self.tree.GetItemText(event.GetItem()).split(':')
         if items[0]==self.tree.GetItemText(self.tree.GetRootItem()):
             self.nb.ChangeSelection(1)    
-        if items[0]==CRIM.__name__:
+        if items[0]==SC_Util.VMEdevTypes.CRIM:
             self.nb.ChangeSelection(2)
             self.crim.SetAddress(items[1])
             self.crim.ResetControls()
-        if items[0]==CROC.__name__:
+        if items[0]==SC_Util.VMEdevTypes.CROC:
             self.nb.ChangeSelection(3)
             self.croc.SetAddress(items[1])
             self.croc.ResetControls()
-        if items[0]==CH.__name__:
+        if items[0]==SC_Util.VMEdevTypes.CH:
             self.nb.ChangeSelection(4)
             parent=self.tree.GetItemParent(event.GetItem())
             self.ch.SetAddress(items[1],
                 self.tree.GetItemText(parent).split(':')[1])
             self.ch.ResetControls()
-        if items[0]==FE.__name__: 
+        if items[0]==SC_Util.VMEdevTypes.FE:
             self.nb.ChangeSelection(5)
             parent=self.tree.GetItemParent(event.GetItem())
             grandparent=self.tree.GetItemParent(parent)
@@ -117,6 +120,9 @@ class SCMainFrame(wx.Frame):
                 self.tree.GetItemText(parent).split(':')[1],
                 self.tree.GetItemText(grandparent).split(':')[1])
             self.fe.ResetControls()
+        if items[0]==SC_Util.VMEdevTypes.DIG:
+            self.nb.ChangeSelection(6)
+            self.dig.SetAddress(items[1])
     
     def OnSCMainFrameClose(self, event):
         #self.Close(True)
@@ -556,6 +562,109 @@ class FLASH(wx.Panel):
         #sizerALL.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
         self.SetSizer(sizerALL)
         self.Fit()
+
+
+class DIG(wx.Panel):
+    def __init__(self, parent):
+        """Creates the CROC tab in the Notebook."""
+        wx.Panel.__init__(self, parent)
+        self.btnShowAdvancedGUI=SC_Util.CreateButton(self, "Show Advanced GUI",
+            (5,5), (120, 20), 'AdvancedGUI', SC_Util.colorButton)
+        TopLabelsData=(('DIG', (0, 0),(40, 16), 'lbl', SC_Util.colorLabel),
+            ('', (40, 0), (40, 16), 'digID', SC_Util.colorText))
+        self.TopLabels = SC_Util.CreateTextCtrls(self, TopLabelsData, offset=(130, 7))
+        for txt in self.TopLabels: txt.Enable(False)
+        szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
+        self.btnLoadConfigFile=SC_Util.CreateButton(self, 'Load Config File',
+            pos=(0,0), size=(120,20), name='', bckcolor=SC_Util.colorButton)
+        self.btnReadAllRegs=SC_Util.CreateButton(self, 'Read All Regs',
+            pos=(0,0), size=(120,20), name='', bckcolor=SC_Util.colorButton)
+        self.btnTakeNEvents=SC_Util.CreateButton(self, 'Take N Events',
+            pos=(0,0), size=(80,20), name='', bckcolor=SC_Util.colorButton)
+        self.txtNEvents=SC_Util.CreateTextCtrl(self, label='N',
+            pos=(0,0), size=(30, 20), name='', bckcolor=SC_Util.colorText)
+        self.btncontrols=[self.btnLoadConfigFile, self.btnReadAllRegs,
+            self.btnTakeNEvents, self.txtNEvents]
+        szH1=wx.BoxSizer(wx.HORIZONTAL)
+        szH1.Add(self.btnTakeNEvents, 0, wx.ALL, 1)
+        szH1.Add(self.txtNEvents, 1, wx.ALL, 1)
+        szV1=wx.BoxSizer(wx.VERTICAL)
+        szV1.Add(self.btnLoadConfigFile, 0, wx.ALL, 2)
+        szV1.Add(self.btnReadAllRegs, 0, wx.ALL, 2)
+        szV1.Add(szH1, 0, wx.ALL|wx.EXPAND, 2)
+        WriteToFile=v1720config.WriteToFile.keys(); WriteToFile.sort()
+        self.choiceWriteToFile=wx.Choice(self, size=(125,20), choices=WriteToFile)
+        self.choiceWriteToFile.SetFont(SC_Util.myFont(SC_Util.fontSizeChoice))
+        self.choiceWriteToFile.SetStringSelection('Do Not Write')
+        AppendMode=v1720config.AppendMode.keys(); AppendMode.sort()
+        self.choiceAppendMode=wx.Choice(self, size=(125,20), choices=AppendMode)
+        self.choiceAppendMode.SetFont(SC_Util.myFont(SC_Util.fontSizeChoice))
+        self.choiceAppendMode.SetStringSelection('Overwrite')
+        ReadoutMode=v1720config.ReadoutMode.keys(); ReadoutMode.sort()
+        self.choiceReadoutMode=wx.Choice(self, size=(125,20), choices=ReadoutMode)
+        self.choiceReadoutMode.SetFont(SC_Util.myFont(SC_Util.fontSizeChoice))
+        self.choiceReadoutMode.SetStringSelection('Single D32')
+        self.choicecontrols=[self.choiceWriteToFile, self.choiceAppendMode,
+            self.choiceReadoutMode]
+        szV2=wx.BoxSizer(wx.VERTICAL)
+        szV2.Add(self.choiceWriteToFile, 0, wx.ALL, 2)
+        szV2.Add(self.choiceAppendMode, 0, wx.ALL, 2)
+        szV2.Add(self.choiceReadoutMode, 0, wx.ALL, 2)
+        StaticBox=wx.StaticBox(self, -1, 'Output Format')
+        StaticBox.SetFont(SC_Util.myFont(SC_Util.fontSizeStaticBox))
+        StaticBox.SetForegroundColour(SC_Util.colorForeground)
+        self.chkWriteData=SC_Util.CreateCheckBox(self, 'Data',
+            pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
+        self.chkWriteOneLineCH=SC_Util.CreateCheckBox(self, 'OneLineCH',
+            pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
+        self.chkWriteHeader=SC_Util.CreateCheckBox(self, 'Header',
+            pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
+        self.chkWriteEventData=SC_Util.CreateCheckBox(self, 'EventData',
+            pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
+        self.chkWriteConfigInfo=SC_Util.CreateCheckBox(self, 'ConfigInfo',
+            pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
+        self.chkWriteEventStat=SC_Util.CreateCheckBox(self, 'EventStat',
+            pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
+        self.chkcontrols=[self.chkWriteData, self.chkWriteOneLineCH,
+            self.chkWriteHeader, self.chkWriteEventData,
+            self.chkWriteConfigInfo, self.chkWriteEventStat, StaticBox]
+        szGrid=wx.FlexGridSizer(rows=3, cols=2, hgap=2, vgap=1)
+        szGrid.Add(self.chkWriteData, 0, 0, 0)
+        szGrid.Add(self.chkWriteHeader, 0, 0, 0)
+        szGrid.Add(self.chkWriteConfigInfo, 0, 0, 0)
+        szGrid.Add(self.chkWriteOneLineCH, 0, 0, 0)
+        szGrid.Add(self.chkWriteEventData, 0, 0, 0)
+        szGrid.Add(self.chkWriteEventStat, 0, 0, 0)
+        szV3=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        szV3.Add(szGrid, 0, wx.ALL, 2) 
+        szH2=wx.BoxSizer(wx.HORIZONTAL)
+        szH2.Add(szV1, 0, wx.ALL, 2)
+        szH2.Add(szV2, 0, wx.ALL, 2)
+        szH2.Add(szV3, 0, wx.ALL, 2)
+        self.display = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE | wx.VSCROLL)
+        self.display.SetFont(SC_Util.myFont(SC_Util.fontSizeTextCtrl))
+        sizerALL=wx.BoxSizer(wx.VERTICAL)
+        sizerALL.Add(szTop, 0, wx.ALL, 5)
+        sizerALL.Add(szH2, 0, wx.ALL, 5)
+        sizerALL.Add(self.display, 1, wx.ALL|wx.EXPAND, 7)
+        self.SetSizer(sizerALL)
+        self.Fit()
+        self.Bind(wx.EVT_BUTTON, self.OnbtnShowAdvancedGUI, self.btnShowAdvancedGUI)
+        self.showAdvanced=False
+        #self.OnbtnShowAdvancedGUI(None)
+    def SetAddress(self, digNumber):
+        '''Sets crocNumber variables and GUI labels'''
+        self.digNumber=int(digNumber)
+        self.FindWindowByName('digID').SetValue(digNumber)        
+    def OnbtnShowAdvancedGUI(self, event): 
+        self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
+            self.btncontrols, self.choicecontrols, self.chkcontrols, [self.display])
+        self.Fit()
+
+
+
+
+
 
 
 if __name__=='__main__':
