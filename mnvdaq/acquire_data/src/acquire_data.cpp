@@ -15,6 +15,7 @@
 
 const int acquire_data::dpmMax       = 1024*6; //we have only 6 Kb of space in the DPM Memory per channel
 const int acquire_data::numberOfHits = 6;
+const int acquire_data::timeOutSec   = 3600; // be careful shortening this w.r.t. multi-PC sync issues
 
 void acquire_data::InitializeDaq(int id, RunningModes runningMode) 
 {
@@ -1859,10 +1860,11 @@ int acquire_data::WaitOnIRQ()
  * Returns a status integer (0 for success);
  */
 	int error;
-	int errorCode = 2;
+	int success = 0;
 #if DEBUG_IRQ
 	acqData.debugStream() << "  Entering acquire_data::WaitOnIRQ: IRQLevel = " << daqController->GetCrim()->GetIRQLevel();
 #endif
+// Note, we have not exercised asserting interrrupts very thoroughly.  Expect trouble if you use this!
 #if ASSERT_INTERRUPT
 #if DEBUG_IRQ
 	acqData.debugStream() << "  Asserting Interrupt!";
@@ -1878,10 +1880,8 @@ int acquire_data::WaitOnIRQ()
 		}
 	} catch (int e) {
 		std::cout << "The IRQ Wait probably timed-out..." << e << std::endl;
-		//acqData.fatalStream() << "The IRQ Wait probably timed-out..." << e;
-		//exit(-3000);
 		acqData.critStream() << "The IRQ Wait probably timed-out..." << e;  
-		return errorCode;
+		return e;
 	}
 #endif
 // endif - ASSERT_INTERRUPT
@@ -1891,9 +1891,15 @@ int acquire_data::WaitOnIRQ()
 	acqData.debugStream() << "  Polling Interrupt!";
 	int intcounter = 0;
 #endif
+	// Wait length vars... (don't want to spend forever waiting around).
+	unsigned long long startTime, nowTime;
+	struct timeval waitstart, waitnow;
+	gettimeofday(&waitstart, NULL);
+	startTime = (unsigned long long)(waitstart.tv_sec);
+	// VME manip.
 	unsigned short interrupt_status = 0;
 	unsigned char crim_send[2];
-	// TODO - Add a break condition to get out of the interrupt polling...
+
 	while (!(interrupt_status&0x04)) { //0x04 is the IRQ Line of interest
 		try {
 			crim_send[0] = 0; crim_send[1] = 0;
@@ -1909,14 +1915,20 @@ int acquire_data::WaitOnIRQ()
 			}
 #endif
 			if (error) throw error;
+			gettimeofday(&waitnow, NULL);
+			nowTime = (unsigned long long)(waitnow.tv_sec);
 			interrupt_status =  (crim_send[0]|(crim_send[1]<<0x08));
+			if ( (nowTime-startTime) > timeOutSec) { 
+				//std::cout << "Waiting... " << (nowTime-startTime) << std::endl;
+				//std::cout << " Interrupt status = " << interrupt_status << std::endl; 
+				success = 1;
+				break; 
+			}
 		} catch (int e) {
 			std::cout << "Error getting crim interrupt status in acquire_data::WaitOnIRQ!" << std::endl;
 			daqController->ReportError(e);
-			//acqData.fatalStream() << "Error getting crim interrupt status in acquire_data::WaitOnIRQ!";
-			//exit(-5);
 			acqData.critStream() << "Error getting crim interrupt status in acquire_data::WaitOnIRQ!";
-			return errorCode;
+			return e;
 		}
 	}
 	// Clear the interrupt after acknowledging it.
@@ -1931,14 +1943,12 @@ int acquire_data::WaitOnIRQ()
 	} catch (int e) {
 		std::cout << "Error clearing crim interrupts in acquire_data::WaitOnIRQ!" << std::endl;
 		daqController->ReportError(e);
-		//acqData.fatalStream() << "Error clearing crim interrupts in acquire_data::WaitOnIRQ!";
-		//exit(-6);
 		acqData.critStream() << "Error clearing crim interrupts in acquire_data::WaitOnIRQ!";
-		return errorCode;
+		return e;
 	}
 #endif
 // endif - POLL_INTERRUPT
-	return 0;
+	return success;
 }
 
 

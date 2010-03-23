@@ -513,10 +513,12 @@ int main(int argc, char *argv[])
 	/*      The top of the Event Loop.  Events here are referred to as GATES.        */
 	/*      Be mindful of this jargon - in ET, "events" are actually FRAMES.         */
 	/*********************************************************************************/
-	int  gate            = 0;
+	int  gate            = 0; // Increments only for successful readout. 
+	int  triggerCounter  = 0; // Increments on every attempt...
 	bool continueRunning = true;
 	while ( (gate<record_gates) && continueRunning ) {
-		gate++;
+		//gate++; // Increments only for successful readout!
+		triggerCounter++;
 		//continueRunning = true; //reset? TODO - fix
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
@@ -534,10 +536,10 @@ int main(int argc, char *argv[])
 		/*                                  3: chan_no, 4: bank 5: buffer length          */
 		/*                                  6: feb number, 7: feb firmware, 8: hits       */
 		/**********************************************************************************/
-		event_data.gate        = gate; // Record gate number.
-		event_data.triggerTime = 0;    // Set after returning from the Trigger function.
-		event_data.readoutInfo = 0;    // Error bits.
-		event_data.minosSGATE  = 0;    // MINOS Start GATE in their time coordinates.
+		event_data.gate        = 0;  // Set only after successful readout. // TODO - Special value for failures?
+		event_data.triggerTime = 0;  // Set after returning from the Trigger function.
+		event_data.readoutInfo = 0;  // Error bits.
+		event_data.minosSGATE  = 0;  // MINOS Start GATE in their time coordinates.
 		event_data.ledLevel    = (unsigned char)LEDLevel; 
 		event_data.ledGroup    = (unsigned char)LEDGroup; 
 		for (int i=0;i<9;i++) {
@@ -637,14 +639,14 @@ int main(int argc, char *argv[])
 				triggerType = LightInjection;
 				break;
 			case MixedBeamPedestal:
-				if (gate%2) {
+				if (triggerCounter%2) {
 					triggerType = Pedestal;
 				} else {
 					triggerType = NuMI;
 				}
 				break;
 			case MixedBeamLightInjection:
-				if (gate%2) {
+				if (triggerCounter%2) {
 					triggerType = LightInjection;
 				} else {
 					triggerType = NuMI;
@@ -661,31 +663,25 @@ int main(int argc, char *argv[])
 		// TODO - find how to make boost thread functions return values.
 		boost::thread trigger_thread(boost::bind(&TriggerDAQ,daq,triggerType,runningMode,currentController));
 #elif NO_THREAD
+		// TODO - Have the DAQ handle "timeouts" differently from real VME errors!
 		try {
 			int error = TriggerDAQ(daq, triggerType, runningMode, currentController);
 			if (error) throw error;
 		} catch (int e) {
-			std::cout << "Error in minervadaq::main()!  Cannot trigger the DAQ for Gate: " << gate << std::endl;
-			mnvdaq.critStream() << "Error in minervadaq::main()!  Cannot trigger the DAQ for Gate: " << gate;
-			continueRunning = false; //?
-			break; //?
+			std::cout << "Warning in minervadaq::main()!  Cannot trigger the DAQ for Gate = " << gate << 
+				" and Trigger Type = " << triggerType << std::endl;
+			std::cout << "  Error Code = " << e << ".  Skipping this attempt and trying again..." << std::endl;
+			mnvdaq.warnStream() << "Warning in minervadaq::main()!  Cannot trigger the DAQ for Gate = " << gate << 
+				" and Trigger Type = " << triggerType;
+			mnvdaq.warnStream() << "  Error Code = " << e << ".  Skipping this attempt and trying again...";
+			continue; 
 		}
 #endif 
 
 		// Make the event_handler pointer.
 		event_handler *evt = &event_data;
 
-		// Set the trigger time.
-		/*
-		struct timeval triggerNow;
-		gettimeofday(&triggerNow, NULL);
-		unsigned long long totaluseconds = ((unsigned long long)(triggerNow.tv_sec))*1000000 + 
-			(unsigned long long)(triggerNow.tv_usec);
-#if DEBUG_GENERAL
-		mnvdaq.debugStream() << " ->Recording Trigger Time (gpsTime) = " << totaluseconds;
-#endif
-		event_data.triggerTime = totaluseconds;
-		*/
+		// Set the trigger time. - Obsolete - moved to event builder for now...
 
 		/**********************************************************************************/
 		/*  Initialize loop counter variables                                             */
@@ -792,11 +788,18 @@ int main(int argc, char *argv[])
 		}
 #endif // endif THREAD_ME
 
+		// Successfully read the electronics, increment the event counter!
+		// Record the event counter value into the event data structure.	
+		event_data.gate = ++gate; // Record "gate" number.
+
 		/**********************************************************************************/
 		/*  re-enable the IRQ for the next trigger                                        */
 		/**********************************************************************************/
 		// TODO - Take care we are only doing interrrupt *config* on master CRIMs...
 		// Interrupt configuration is already stored in the CRIM objects.
+#if DEBUG_GENERAL
+		mnvdaq.infoStream() << "Re-enabling global IRQ bits...";
+#endif
 		for (int i=1; i<=currentController->GetCrimVectorLength(); i++) {
 			try {
 				int error = daq->ResetGlobalIRQEnable(i); 
@@ -1105,8 +1108,8 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 				int error = daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
 				if (error) throw error;
 			} catch (int e) {
-				std::cout << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!" << std::endl;
-				mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!";
+				std::cout << "Warning in minervadaq::TriggerDAQ!  IRQ Wait failed or timed out!" << std::endl;
+				mnvdaq.warnStream() << "Warning in minervadaq::TriggerDAQ!  IRQ Wait failed or timed out!";
 				return e;
 			}
                        	break;
@@ -1129,8 +1132,8 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 				int error = daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
 				if (error) throw error;
 			} catch (int e) {
-				std::cout << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!" << std::endl;
-				mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ!  IRQ Wait failed!";
+				std::cout << "Warning in minervadaq::TriggerDAQ!  IRQ Wait failed or timed out!" << std::endl;
+				mnvdaq.warnStream() << "Warning in minervadaq::TriggerDAQ!  IRQ Wait failed or timed out!";
 				return e;
 			}
 			break;

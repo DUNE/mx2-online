@@ -11,7 +11,6 @@ using namespace std;
 ofstream thread_log("eb_log.txt");
 #endif
 
-static int gate_counter    =  0;
 const int  gate_print_freq =  1;
 
 int main(int argc, char **argv) 
@@ -40,7 +39,7 @@ int main(int argc, char **argv)
 		callback_pid = atoi(argv[4]);
 		std::cout << "Notifying process " << callback_pid << " when I am ready to take events." << std::endl;
 	}
-	
+
 	char hostName[100];
 #if CRATE0||CRATE1||NEARLINE
 	sprintf(hostName, "mnvonlinemaster.fnal.gov");
@@ -310,10 +309,11 @@ int event_builder(event_handler *evt)
         std::cout << "    DUMMY BYTE ----: " << (int)evt->event_data[10] << std::endl;
 #endif
 	MinervaHeader *tmp_header;
+	int gate_counter = 0;	
 	// 56?  TODO 54 registers in modern feb firmware, should replace with variable argument anyway...
 	feb *dummy_feb = new feb(6,1,(febAddresses)0,56); // Make a dummy feb for access to the header decoding functions. 
 	if (evt->feb_info[4]==3) {
-		gate_counter++;
+		gate_counter = evt->gate;
 		// Set the "Trigger Time"
 		struct timeval triggerNow;
 		gettimeofday(&triggerNow, NULL);
