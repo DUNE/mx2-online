@@ -52,10 +52,5 @@ DISPATCHER_LOGFILE = "/work/data/logs/dispatcher.log"
 
 # slow control
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
-
-# hardware files
-HW_FROZEN_CRATE0_DISCRIM   = "FrozenDetector_Crate0_HVTuned_VTH238.xml"
-HW_FROZEN_CRATE0_NODISCRIM = "FrozenDetector_Crate0_HVTuned_VTH0.xml"
-HW_FROZEN_CRATE1_DISCRIM   = "FrozenDetector_Crate1_HVTuned_VTH238.xml"
-HW_FROZEN_CRATE1_NODISCRIM = "FrozenDetector_Crate1_HVTuned_VTH0.xml"
-
+SLOWCONTROL_ALLOWED_HV_THRESHOLDS = {300: 0, 100: 3, 60: 15}	# that is, { threshold : num allowed over that threshold, ... }
+SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD = 15000

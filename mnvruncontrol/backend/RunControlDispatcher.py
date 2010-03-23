@@ -329,6 +329,8 @@ class RunControlDispatcher:
 			elif client_address in self.last_request and request == self.last_request[client_address]:
 				self.request_count[client_address] += 1
 			else:
+				if client_address in self.last_request and self.request_count[client_address] > Defaults.MAX_REPEATED_REQUEST_LOGS:
+					self.logger.info("Note: previous request received from client " + client_address + " " + str(self.request_count[client_address] - Defaults.MAX_REPEATED_REQUEST_LOGS) + " more times...")
 				self.last_request[client_address] = request
 				self.request_count[client_address] = 1
 				
@@ -337,7 +339,9 @@ class RunControlDispatcher:
 				self.logger.info("Received request from client " + client_address + ": '" + request + "'")
 			
 			if self.request_count[client_address] == Defaults.MAX_REPEATED_REQUEST_LOGS:
-				self.logger.info("Note: request repeated " + str(Defaults.MAX_REPEATED_REQUEST_LOGS) + " times.  Further consecutive repeats of this request from this client will not be logged.")
+				self.logger.info("Note: request repeated " + str(Defaults.MAX_REPEATED_REQUEST_LOGS) + " times.")
+				self.logger.info("      Further consecutive repeats of this request")
+				self.logger.info("      from this client will not be logged.")
 			
 			
 			response = self.respond(request, show_request_details)
@@ -525,7 +529,7 @@ class RunControlDispatcher:
 		if show_details:
 			self.logger.info("Client wants to load slow control configuration file: '" + matches.group("filename") + "'.")
 		
-		fullpath = matches.group("filename") # Defaults.SLOWCONTROL_CONFIG_LOCATION_DEFAULT + "/" + matches.group("filename")
+		fullpath = Defaults.SLOWCONTROL_CONFIG_LOCATION_DEFAULT + "/" + matches.group("filename")
 		
 		if not os.path.isfile(fullpath):
 			self.logger.warning("Specified slow control configuration file does not exist: " + fullpath)

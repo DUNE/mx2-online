@@ -26,13 +26,14 @@ import re			# regular expressions
 # run control-specific modules.  note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Defaults
+
 from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import DataAcquisitionManager
 from mnvruncontrol.backend import ReadoutNode
 
-from mnvruncontrol.frontend.Frames import *
-from mnvruncontrol.frontend.Tools import *
+from mnvruncontrol.frontend import Frames
+from mnvruncontrol.frontend import Tools
 
 
 #########################################################
@@ -63,6 +64,7 @@ class MainFrame(wx.Frame):
 		self.UpdateRunConfig()
 		
 		# any wx events that need to be handled
+		self.Bind(Events.EVT_NEED_USER_HV_CHECK, Frames.HVConfirmationFrame)
 		self.Bind(Events.EVT_SUBRUN_STARTING, self.PreSubrun)
 		self.Bind(Events.EVT_SUBRUN_OVER, self.PostSubrun)
 		self.Bind(Events.EVT_STOP_RUNNING, self.StopRunning)
@@ -202,7 +204,7 @@ class MainFrame(wx.Frame):
 		seriesFileSizer.Add(seriesFileLabel, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL)
 		seriesFileSizer.Add(self.seriesFile, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL)
 		
-		self.seriesDescription = AutoSizingListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
+		self.seriesDescription = Tools.AutoSizingListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
 		self.seriesDescription.setResizeColumn(2)
 		self.seriesDescription.InsertColumn(0, "", width=20)		# which subrun is currently being executed
 		self.seriesDescription.InsertColumn(1, "Run mode")#, width=150)
@@ -316,7 +318,7 @@ class MainFrame(wx.Frame):
 		logPage = wx.Panel(nb)
 
 		logfileText = wx.StaticText( logPage, -1, wordwrap("Select log files you want to view (ctrl+click for multiple selections) and click the \"View log file(s)\" button below...", 400, wx.ClientDC(self)) )
-		self.logfileList = AutoSizingListCtrl(logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
+		self.logfileList = Tools.AutoSizingListCtrl(logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
 		self.logfileList.setResizeColumn(6)
 		self.logfileList.InsertColumn(0, "Run")
 		self.logfileList.InsertColumn(1, "Subrun")
@@ -599,7 +601,7 @@ class MainFrame(wx.Frame):
 		return True
 	
 	def SeriesMoreInfo(self, evt=None):
-		infowindow = RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
+		infowindow = Frames.RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
 		infowindow.Show()
 
 	def UpdateRunConfig(self, evt=None):
@@ -736,7 +738,7 @@ class MainFrame(wx.Frame):
 			
 			filenames.append(self.logfileLocation + "/" + self.logfileNames[index])
 	
-		logframe = LogFrame(self, filenames)
+		logframe = Frames.LogFrame(self, filenames)
 		logframe.Show()
 
 	def ShowErrorMsg(self, evt):
@@ -760,9 +762,9 @@ class MainFrame(wx.Frame):
 
 			gates    = int(self.gatesEntry.GetValue())
 			runMode  = MetaData.RunningModes.item(int(self.runModeEntry.GetSelection()), MetaData.HASH)
-			hwcfg    = MetaData.HardwareConfigurations.item(int(self.hwConfigEntry.GetSelection()), MetaData.HASH)
+			hwcfg    = MetaData.HardwareConfigurations.item(int(self.hwConfigEntry.GetSelection()), MetaData.CODE)
 			LIlevel  = MetaData.LILevels.item(int(self.LILevelEntry.GetSelection()), MetaData.HASH)
-			
+
 			run = RunSeries.RunInfo(gates, runMode, hwcfg, LIlevel, LEDcode)
 			self.runmanager.runseries.Runs.append(run)
 		else:										# if it's a run series

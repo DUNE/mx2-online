@@ -12,12 +12,15 @@
 
 import threading
 import wx
+import os
+import time
 import socket
 import select
 import fcntl
 import errno
 import subprocess
 
+from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import ReadoutNode
 
@@ -277,7 +280,6 @@ class SocketThread(threading.Thread):
 					node_completed[nodeclosed] = True
 					num_complete += 1
 				
-
 			if time.time() - lastupdate > 0.25:			# some throttling to make sure we don't overload the event dispatcher
 #				print "run update"
 				lastupdate = time.time()

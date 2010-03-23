@@ -14,6 +14,7 @@ from wx.lib.wordwrap import wordwrap
 import sys
 
 from mnvruncontrol.configuration import MetaData
+from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.backend import Events
 from mnvruncontrol.frontend import Tools
 
@@ -22,14 +23,15 @@ from mnvruncontrol.frontend import Tools
 #########################################################
 
 class HVConfirmationFrame(wx.Frame):
-	def __init__(self, parent, nodes):
-		wx.Frame.__init__(self, parent, -1, "PMT voltages are not clearly ok", size=(600,400))
+	def __init__(self, evt):
+		wx.Frame.__init__(self, evt.daqmgr.main_window, -1, "PMTs are not clearly ready", size=(600,400))
 		
-		self.nodes = nodes
+		self.DAQmgr = evt.daqmgr
+		self.nodes = self.DAQmgr.readoutNodes
 
 		panel = wx.Panel(self)
 		
-		warningtext = wx.StaticText(panel, -1, wordwrap("The run control isn't sure if it's safe to start the run.  Below is a list of PMTs that might be worrisome:", 350, wx.ClientDC(self)))
+		warningtext = wx.StaticText(panel, -1, wordwrap("The run control isn't sure if it's safe to start the run.  Below is a list of the PMTs with those that might be worrisome highlighted (red is worst, then orange, then yellow):", 350, wx.ClientDC(self)))
 		
 		self.pmtlist = Tools.AutoSizingListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
 		self.pmtlist.InsertColumn(0, "Node")
@@ -60,50 +62,62 @@ class HVConfirmationFrame(wx.Frame):
 		
 		panel.SetSizer(mainSizer)
 		
-	def Read(self, evt):
+		self.Show(True)
+		self.Read()
+		
+	def Read(self, evt=None):
 		febStatuses = {}
 		for node in self.nodes:
 			febStatuses[node.name] = node.sc_readBoards()
 		
 		self.pmtlist.DeleteAllItems()
 		
+		colors = ["red", "orange", "yellow"]		# used to demarcate the boards that have exceeded certain thresholds
+		
 		# eventually we'll want to do some sorting, but for now ...
-		over300 = 0
-		over100 = 0
-		over60 = 0
-		badPeriod = 0
-		for node in febStatus:
-			for board in febStatuses[node]:
+		thresholds = sorted(Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS.keys(), reverse=True)
+		over = {}
+		needs_intervention = False
+		for node in self.nodes:
+			for board in febStatuses[node.name]:
 				index = self.pmtlist.InsertStringItem(sys.maxint, node.name)
 				self.pmtlist.SetStringItem(index, 1, board["croc"])
 				self.pmtlist.SetStringItem(index, 2, board["chain"])
 				self.pmtlist.SetStringItem(index, 3, board["board"])
 				self.pmtlist.SetStringItem(index, 4, board["hv_dev"])
 				self.pmtlist.SetStringItem(index, 5, board["hv_period"])
-				
-				dev = abs(int(board["hv_dev"]))
-				period = int(board["hv_period"])
-				
-				if dev > 300:
-					over300 += 1
-					self.pmtlist.SetItemBackgroundColour(index, wx.Color("red"))
-				elif dev > 100:
-					over100 += 1
-					self.pmtlist.SetItemBackgroundColour(index, wx.Color("orange"))
-				elif dev > 60:
-					over60 += 1
-					self.pmtlist.SetItemBackgroundColour(index, wx.Color("yellow"))
-				
-				if period < 15000:
-					badPeriod += 1
-					self.pmtlist.SetItemBackgroundColour(index, wx.Color("blue"))
-	
+
+
+
+		index = self.pmtlist.GetNextItem(-1)
+		while index != -1:
+			listitem = self.pmtlist.GetItem(index, 4)
+			dev = abs(int(listitem.GetText()))
+			listitem = self.pmtlist.GetItem(index, 5)
+			period = int(listitem.GetText())
+			
+			for threshold in thresholds:
+				if dev > threshold:
+					self.pmtlist.SetItemBackgroundColour(index, wx.NamedColour(colors[thresholds.index(threshold)]))
+					if threshold in over:
+						over[threshold] += 1
+					else:
+						over[threshold] = 1
+					
+					break
+					
+			if period < Defaults.SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD:
+				self.pmtlist.SetItemBackgroundColour(index, wx.Color("blue"))
+			
+			index = self.pmtlist.GetNextItem(index)
+
 	def OnContinue(self, evt):
-		pass
+		wx.PostEvent(self.DAQmgr, Events.ReadyForNextSubrunEvent())
+		self.Close()
 	
 	def OnCancel(self, evt):
-		pass
-
+		wx.PostEvent(self.DAQmgr, Events.StopRunningEvent())
+		self.Close()
 
 #########################################################
 #   LogFrame

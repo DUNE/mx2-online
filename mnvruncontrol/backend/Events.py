@@ -7,6 +7,8 @@ EndSubrunEvent,          EVT_END_SUBRUN            = wx.lib.newevent.NewEvent()
 
 ErrorMsgEvent,           EVT_ERRORMSG              = wx.lib.newevent.NewEvent()
 
+NeedUserHVCheckEvent,    EVT_NEED_USER_HV_CHECK    = wx.lib.newevent.NewEvent()
+
 NewDataEvent,            EVT_NEWDATA               = wx.lib.newevent.NewEvent()
 
 ReadyForNextSubrunEvent, EVT_READY_FOR_NEXT_SUBRUN = wx.lib.newevent.NewEvent()
