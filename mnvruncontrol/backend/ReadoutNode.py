@@ -63,7 +63,7 @@ class ReadoutNode:
 				self.socket.close()
 				
 			# an empty response is the sign of a broken connection.
-			# (none of the queries will return with nothing.)
+			# (none of the queries will return with a blank response.)
 			# we'll want to try again.
 			if response == "":
 				success = False
@@ -144,7 +144,7 @@ class ReadoutNode:
 	def sc_loadHWfile(self, filename):
 		""" Asks the server to load the specified hardware configuration file. 
 		    Returns 0 on success, 1 on failure, and 2 if the file doesn't exist. """
-		response = self.request("sc_sethw " + filename + "!")	
+		response = self.request("sc_setHWconfig '" + filename + "'!")	
 		
 		if response == "0":
 			return True
@@ -155,35 +155,25 @@ class ReadoutNode:
 		else:
 			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
 
-	def sc_readVoltages(self):
-		""" Asks the server for a list of the voltages on each of the FEBs.
+	def sc_readBoards(self):
+		""" Asks the server for a list of the HV information on each of the FEBs.
 		    On success, returns a list of dictionaries with the following keys:
-	    		    "fpga", "croc", chain", "board", "voltage"
+	    		    "croc", chain", "board", "voltage_dev", "period"
 	    	    On failure, returns None.	"""
-		response = self.request("sc_voltages?")
+		response = self.request("sc_readboards?")
 		if response == "NOREAD" or response == "":
 			return None
 		
 		feb_data = []
 		
 		lines = response.splitlines()
+		pattern = re.compile("^(?P<croc>\d+)-(?P<chain>\d+)-(?P<board>\d+): (?P<hv_dev>-?\d+) (?P<hv_period>\d+)$")
 		for line in lines:
-			febdict = {}
+			matches = pattern.match(line)
+			if matches == None:		# skip any lines that don't make sense... dangerous to fail quietly?
+				continue
 			
-			board_id, voltage = line.split(": ")
-			voltage = float(voltage)
-			
-			fpga, croc, chain, board = board_id.split("-")
-			for item in (fpga, croc, chain, board):
-				item = int(item)
-			
-			febdict["fpga"] = fpga
-			febdict["croc"] = croc
-			febdict["chain"] = chain
-			febdict["board"] = board
-			febdict["voltage"] = voltage
-			
-			feb_data.append(febdict)
+			feb_data.append(matches.groupdict())
 		
 		return feb_data
 		

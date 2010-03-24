@@ -12,8 +12,6 @@
 
 import wx
 from wx.lib.wordwrap import wordwrap
-from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
-from wx.lib.mixins.listctrl import ListRowHighlighter
 import subprocess
 import os
 import os.path
@@ -28,10 +26,15 @@ import re			# regular expressions
 # run control-specific modules.  note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Defaults
+
 from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import DataAcquisitionManager
 from mnvruncontrol.backend import ReadoutNode
+
+from mnvruncontrol.frontend import Frames
+from mnvruncontrol.frontend import Tools
+
 
 #########################################################
 #    MainFrame
@@ -46,7 +49,7 @@ class MainFrame(wx.Frame):
 	""" The main control window. """
 	def __init__(self, parent, title):
 		wx.Frame.__init__(self, parent, -1, title,
-				      pos=(0, 0), size=(600, 600) ) 
+				      pos=(0, 0), size=(600, 650) ) 
 		self.runmanager = DataAcquisitionManager.DataAcquisitionManager(self)
 
 		self.GetConfig()		# load up the configuration entries from the file.
@@ -61,6 +64,7 @@ class MainFrame(wx.Frame):
 		self.UpdateRunConfig()
 		
 		# any wx events that need to be handled
+		self.Bind(Events.EVT_NEED_USER_HV_CHECK, Frames.HVConfirmationFrame)
 		self.Bind(Events.EVT_SUBRUN_STARTING, self.PreSubrun)
 		self.Bind(Events.EVT_SUBRUN_OVER, self.PostSubrun)
 		self.Bind(Events.EVT_STOP_RUNNING, self.StopRunning)
@@ -85,9 +89,7 @@ class MainFrame(wx.Frame):
 		optionsMenu = wx.Menu()
 		self.autocloseEntry = optionsMenu.Append(ID_AUTOCLOSE, "Auto-close windows", "Automatically close the ET/DAQ windows at the end of a subrun.", kind=wx.ITEM_CHECK)
 		self.lockdownEntry = optionsMenu.Append(ID_LOCKDOWN, "Lock global config", "Lock the global configuration fields to prevent accidental changes.", kind=wx.ITEM_CHECK)
-		optionsMenu.Append(ID_PATHS, "Path settings...", "Paths that the run control relies on.")
 		self.Bind(wx.EVT_MENU, self.UpdateLockedEntries, id=ID_LOCKDOWN)
-		self.Bind(wx.EVT_MENU, self.Configure, id=ID_PATHS)
 		menuBar.Append(optionsMenu, "&Options")
 
 		self.SetMenuBar(menuBar)
@@ -157,6 +159,9 @@ class MainFrame(wx.Frame):
 		self.runModeEntry =  wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.RunningModes.descriptions)
 		self.Bind(wx.EVT_CHOICE, self.UpdateLEDgroups, self.runModeEntry)
 
+		hwConfigEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "HW config")
+		self.hwConfigEntry = wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.HardwareConfigurations.descriptions)
+
 		LEDgroupLabel = wx.StaticText(self.singleRunConfigPanel, -1, "LED groups used in LI")
 		LEDgroupSizer = wx.GridSizer(2, 2)
 		self.LEDgroups = []
@@ -177,6 +182,8 @@ class MainFrame(wx.Frame):
 		                               (self.gatesEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
 		                               (runModeEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
 		                               (self.runModeEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
+		                               (hwConfigEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
+		                               (self.hwConfigEntry, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
 		                               (LEDgroupLabel, 0, wx.ALIGN_CENTER_VERTICAL),
 		                               (LEDgroupSizer, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL),
 		                               (LILevelEntryLabel, 0, wx.ALIGN_CENTER_VERTICAL),
@@ -197,7 +204,7 @@ class MainFrame(wx.Frame):
 		seriesFileSizer.Add(seriesFileLabel, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL)
 		seriesFileSizer.Add(self.seriesFile, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL)
 		
-		self.seriesDescription = AutoSizingListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
+		self.seriesDescription = Tools.AutoSizingListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
 		self.seriesDescription.setResizeColumn(2)
 		self.seriesDescription.InsertColumn(0, "", width=20)		# which subrun is currently being executed
 		self.seriesDescription.InsertColumn(1, "Run mode")#, width=150)
@@ -311,7 +318,7 @@ class MainFrame(wx.Frame):
 		logPage = wx.Panel(nb)
 
 		logfileText = wx.StaticText( logPage, -1, wordwrap("Select log files you want to view (ctrl+click for multiple selections) and click the \"View log file(s)\" button below...", 400, wx.ClientDC(self)) )
-		self.logfileList = AutoSizingListCtrl(logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
+		self.logfileList = Tools.AutoSizingListCtrl(logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
 		self.logfileList.setResizeColumn(6)
 		self.logfileList.InsertColumn(0, "Run")
 		self.logfileList.InsertColumn(1, "Subrun")
@@ -364,10 +371,6 @@ class MainFrame(wx.Frame):
 			return None
 
 		return fileinfo
-
-	def Configure(self, evt):
-		wnd = OptionsFrame(self)
-		wnd.Show()
 
 	def GetConfig(self):
 		try:
@@ -598,7 +601,7 @@ class MainFrame(wx.Frame):
 		return True
 	
 	def SeriesMoreInfo(self, evt=None):
-		infowindow = RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
+		infowindow = Frames.RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
 		infowindow.Show()
 
 	def UpdateRunConfig(self, evt=None):
@@ -735,7 +738,7 @@ class MainFrame(wx.Frame):
 			
 			filenames.append(self.logfileLocation + "/" + self.logfileNames[index])
 	
-		logframe = LogFrame(self, filenames)
+		logframe = Frames.LogFrame(self, filenames)
 		logframe.Show()
 
 	def ShowErrorMsg(self, evt):
@@ -755,13 +758,14 @@ class MainFrame(wx.Frame):
 			for cb in self.LEDgroups:
 				if cb.GetValue() == True:
 					LEDgroups += cb.GetLabelText()
-			LEDcode = MetaData.LEDGroups[MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups), MetaData.HASH]
+			LEDcode = MetaData.LEDGroups.hash(MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups))
 
 			gates    = int(self.gatesEntry.GetValue())
 			runMode  = MetaData.RunningModes.item(int(self.runModeEntry.GetSelection()), MetaData.HASH)
+			hwcfg    = MetaData.HardwareConfigurations.item(int(self.hwConfigEntry.GetSelection()), MetaData.CODE)
 			LIlevel  = MetaData.LILevels.item(int(self.LILevelEntry.GetSelection()), MetaData.HASH)
-			
-			run = RunSeries.RunInfo(gates, runMode, LIlevel, LEDcode)
+
+			run = RunSeries.RunInfo(gates, runMode, hwcfg, LIlevel, LEDcode)
 			self.runmanager.runseries.Runs.append(run)
 		else:										# if it's a run series
 			if self.runmanager.runseries == None:
@@ -872,239 +876,7 @@ class MainFrame(wx.Frame):
 			return 1 if matchdata1.group("run") > matchdata2.group("run") else -1
 
 
-#########################################################
-#   LogFrame
-#########################################################
 
-class LogFrame(wx.Frame):
-	def __init__(self, parent, filenames):
-		try:
-			for filename in filenames:
-				f = open(filename)
-				f.close()
-		except IOError:
-			errordlg = wx.MessageDialog( None, "Couldn't open file '" + filename + "'.  Sorry...", "Log file inaccessible", wx.OK | wx.ICON_ERROR )
-			errordlg.ShowModal()
-			self.ok = False			
-			
-			return
-
-		self.ok = True
-		
-		wx.Frame.__init__(self, parent, -1, "DAQ log", size=(800,600))
-		panel = wx.Panel(self)
-		
-		nb = wx.Notebook(panel)
-		for filename in filenames:
-			textarea = wx.TextCtrl(nb, -1, style = wx.TE_MULTILINE | wx.TE_READONLY)
-
-			f = open(filename)
-			for line in f:
-				textarea.AppendText(line)
-			f.close()
-			
-			nb.AddPage(textarea, filename)
-			
-		okButton = wx.Button(panel, wx.ID_OK)
-
-		sizer = wx.BoxSizer(wx.VERTICAL)
-		sizer.Add(nb, 1, wx.EXPAND | wx.ALIGN_TOP)
-		sizer.Add(okButton, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM)
-
-		panel.SetSizer(sizer)
-
-		self.Bind(wx.EVT_BUTTON, self.CloseOut, okButton)
-		
-	def CloseOut(self, evt=None):
-		self.Close()
-		
-#########################################################
-#   RunSeriesInfoFrame
-#########################################################
-
-class RunSeriesInfoFrame(wx.Frame):
-	""" A window for configuration of paths, etc. """
-	def __init__(self, parent, filename, runseries):
-		wx.Frame.__init__(self, parent, -1, "Run series: " + filename, size=(600,400))
-
-		panel = wx.Panel(self)
-
-		infoList = AutoSizingListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
-		infoList.setResizeColumn(2)
-
-		infoList.InsertColumn(0, "# gates")
-		infoList.InsertColumn(1, "Running mode")
-		infoList.InsertColumn(2, "LI level")
-		infoList.InsertColumn(3, "LED group(s)")
-		
-		# center the columns
-		col = wx.ListItem()
-		col.SetAlign(wx.LIST_FORMAT_CENTER)
-		for i in range(4):
-			infoList.SetColumn(i, col)
-
-		for runinfo in runseries.Runs:
-			index = infoList.InsertStringItem(sys.maxint, str(runinfo.gates))
-			infoList.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-			if runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
-				infoList.SetStringItem(index, 2, MetaData.LILevels[runinfo.ledLevel])
-				infoList.SetStringItem(index, 3, MetaData.LEDGroups[runinfo.ledGroup])
-			else:
-				infoList.SetStringItem(index, 2, "--")
-				infoList.SetStringItem(index, 3, "--")
-			
-		
-		okButton = wx.Button(panel, wx.ID_OK)
-
-		sizer = wx.BoxSizer(wx.VERTICAL)
-		sizer.Add(infoList, 1, wx.EXPAND | wx.ALIGN_TOP)
-		sizer.Add(okButton, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_BOTTOM)
-
-		panel.SetSizer(sizer)
-
-		self.Bind(wx.EVT_BUTTON, self.CloseOut, okButton)
-		
-	def CloseOut(self, evt=None):
-		self.Close()
-		
-
-#########################################################
-#   OptionsFrame
-#########################################################
-
-class OptionsFrame(wx.Frame):
-	""" A window for configuration of paths, etc. """
-	def __init__(self, parent):
-		wx.Frame.__init__(self, parent, -1, "Configuration", size=(600,400))
-		
-		self.parent = parent
-
-		try:
-			db = shelve.open(Defaults.CONFIG_DB_LOCATION)
-		except anydbm.error:
-			# the user has already been informed once (when the main frame was opened)
-			# if the DB is not accessible, so we'll just silently go to the defaults here.
-			runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
-			logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
-			etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
-			rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
-			ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
-			readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
-		else:
-			try:	runinfoFile = db["runinfoFile"]
-			except KeyError: runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
-
-			try:	logfileLocation = db["logfileLocation"]
-			except KeyError: logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
-			
-			try:	etSystemFileLocation = db["etSystemFileLocation"]
-			except KeyError: etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
-			
-			try:	rawdataLocation = db["rawdataLocation"]
-			except KeyError: rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
-			
-			try:	ResourceLocation = db["ResourceLocation"]
-			except KeyError: ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
-			
-			try: readoutNodes = db["readoutNodes"]
-			except KeyError: readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
-
-		panel = wx.Panel(self)
-		
-		warningText = wx.StaticText(panel, -1, "** PLEASE don't change these values unless you know what you're doing! **")
-		
-		runInfoDBLabel = wx.StaticText(panel, -1, "Run/subrun info database file")
-		self.runInfoDBEntry = wx.TextCtrl(panel, -1, runinfoFile)
-		
-		logfileLocationLabel = wx.StaticText(panel, -1, "Log file location")
-		self.logfileLocationEntry = wx.TextCtrl(panel, -1, logfileLocation)
-
-		etSystemFileLocationLabel = wx.StaticText(panel, -1, "ET system file location")
-		self.etSystemFileLocationEntry = wx.TextCtrl(panel, -1, etSystemFileLocation)
-		
-		rawDataLocationLabel = wx.StaticText(panel, -1, "Raw data location")
-		self.rawDataLocationEntry = wx.TextCtrl(panel, -1, rawdataLocation)
-		
-		ResourceLocationLabel = wx.StaticText(panel, -1, "Resource files location")
-		self.ResourceLocationEntry = wx.TextCtrl(panel, -1, ResourceLocation)
-		
-		readoutNodesLabel = wx.StaticText(panel, -1, "Readout nodes:")
-#		self.readoutNodesEntry = wx.
-		
-		pathsGridSizer = wx.GridSizer(6, 2, 10, 10)
-		pathsGridSizer.AddMany( ( runInfoDBLabel,            (self.runInfoDBEntry, 1, wx.EXPAND),
-		                     logfileLocationLabel,      (self.logfileLocationEntry, 1, wx.EXPAND),
-		                     etSystemFileLocationLabel, (self.etSystemFileLocationEntry, 1, wx.EXPAND),
-		                     rawDataLocationLabel,      (self.rawDataLocationEntry, 1, wx.EXPAND),
-		                     ResourceLocationLabel, (self.ResourceLocationEntry, 1, wx.EXPAND) ) )
-
-		pathsSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Paths"), orient=wx.VERTICAL)
-		pathsSizer.Add(pathsGridSizer, 1, wx.EXPAND)
-		
-		DAQrootLabel = wx.StaticText(panel, -1, "$DAQROOT")
-		DAQrootText = wx.TextCtrl(panel, -1, os.environ["DAQROOT"], style=wx.TE_READONLY)
-		DAQrootText.Disable()
-		
-		EThomeLabel = wx.StaticText(panel, -1, "$ET_HOME")
-		EThomeText = wx.TextCtrl(panel, -1, os.environ["ET_HOME"], style=wx.TE_READONLY)
-		EThomeText.Disable()
-		
-		environGridSizer = wx.GridSizer(2, 2, 10, 10)
-		environGridSizer.AddMany( ( DAQrootLabel, (DAQrootText, 1, wx.EXPAND),
-		                            EThomeLabel,  (EThomeText, 1, wx.EXPAND) ) )
-		
-		environSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Environment"), orient=wx.VERTICAL)
-		environSizer.Add(environGridSizer, flag = wx.EXPAND)
-		
-		saveButton = wx.Button(panel, wx.ID_SAVE)
-		self.Bind(wx.EVT_BUTTON, self.SaveAll, saveButton)
-
-		cancelButton = wx.Button(panel, wx.ID_CANCEL)
-		self.Bind(wx.EVT_BUTTON, self.Cancel, cancelButton)
-
-		buttonSizer = wx.GridSizer(1, 2, 10, 10)
-		buttonSizer.AddMany( ( (saveButton, 1, wx.ALIGN_CENTER_HORIZONTAL), (cancelButton, 1, wx.ALIGN_CENTER_HORIZONTAL) ) )
-
-		globalSizer = wx.BoxSizer(wx.VERTICAL)
-		globalSizer.Add(warningText, flag=wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL, border=10)
-		globalSizer.Add(pathsSizer, flag=wx.ALL | wx.EXPAND, border=10)
-		globalSizer.Add(environSizer, flag=wx.ALL | wx.EXPAND, border=10)
-		globalSizer.Add(buttonSizer, flag=wx.ALIGN_CENTER_HORIZONTAL)		
-		panel.SetSizer(globalSizer)
-		
-		self.Layout()
-		
-	def SaveAll(self, evt=None):
-		try:
-			db = shelve.open(Defaults.CONFIG_DB_LOCATION, "w")
-		except anydbm.error:
-			errordlg = wx.MessageDialog( None, "The configuration file cannot be opened.  Values will not be saved.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
-			errordlg.ShowModal()
-		else:
-			db["runinfoFile"] = self.runInfoDBEntry.GetValue()
-			db["logfileLocation"] = self.logfileLocationEntry.GetValue()
-			db["etSystemFileLocation"] = self.etSystemFileLocationEntry.GetValue()
-			db["rawdataLocation"] = self.rawDataLocationEntry.GetValue()
-#			db["ResourceLocation"] = self.ResourceLocationEntry.GetValue()
-			
-			db.close()
-			
-		wx.PostEvent(self.parent, Events.ConfigUpdatedEvent())
-
-		self.Close()
-		
-	def Cancel(self, evt=None):
-		self.Close()
-
-#########################################################
-#   AutoSizingListCtrl
-#########################################################
-class AutoSizingListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin, ListRowHighlighter):
-	def __init__(self, parent, id=-1, style=wx.LC_REPORT):
-		wx.ListCtrl.__init__(self, parent, id, style=style)
-		ListCtrlAutoWidthMixin.__init__(self)
-		ListRowHighlighter.__init__(self)
-		
 	
 #########################################################
 #   MainApp
