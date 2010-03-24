@@ -1,4 +1,4 @@
-This file is current as of 2009.December.30 - GNP
+This file is current as of 2010.March.24 - GNP
 
 To build the MINERvA Production DAQ (mnvdaq) you need to first install and build CAEN driver libraries 
 to interface with the CAEN v2718 VME Controller and a2818 PCI Interface Card.  These drivers are available
@@ -41,10 +41,9 @@ need to be edited carefully.
 Before you build the DAQ, it is important to understand the possible architectures.  The DAQ can be run 
 either on a single PC or on a network of PC's.  Currently, we support the following options:
 1) Single PC
-2) Multi-PC with one Head Node and one Chief Readout Client.
-3) Multi-PC with one Head Node, one Chief Readout Client, and one Worker Readout Client.
+2) Multi-PC with one Head Node, one Soldier (Chief) Readout Client, and one Worker Readout Client.
 The distinguishing feature between the Readout Clients is that one and only one is responsible for attaching 
-the end-of-event DAQ Header bank.
+the end-of-event DAQ Header bank (the Soldier).
 
 In principle, the DAQ can be extended to support an arbitrary number of Worker Clients, but this feature is 
 not currently supported (and would require some significant re-engineering of the networking).  Having three
@@ -58,7 +57,8 @@ options in the Make.options as follows:
 	Queen  : COMPILE_OPTIONS += -DMULTIPC -DMASTER 
 	Soldier: COMPILE_OPTIONS += -DMULTIPC -DMASTER 
 	Worker : COMPILE_OPTIONS += -DMULTIPC  
-(The Queen options are actually irrelevant.  The master node does not run an acquisition task.)
+The Queen actually is ambivalent about the MASTER flag - we only run the event_builder task on the Queen, not 
+any of the acquisition tasks.
 
 Once you have configured your setup scripts, build the DAQ with the following steps:
 
@@ -70,8 +70,9 @@ Once you have configured your setup scripts, build the DAQ with the following st
 
 4) MINERvA DAQ uses the following set of ports:
 	1090 : Queen-Soldier port (on Soldier)
-	1091 : et port (on Queen)
-	1095 : Soldier-Worker communication port
+	1091-1096 : et port (on Queen)
+	1098 : Run Control
+	1110-1113, 1120-1123: Worker-Solider synchronization ports.
 It is a good idea to configure your firewall such that these ports are kept open. 
 
 5) Check ${ET_LIBROOT}/lib and make sure you have libet.a, libet_remote.so, and libet.so.

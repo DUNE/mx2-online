@@ -56,8 +56,8 @@ bool               global_gate_socket_is_live;
 
 
 // TODO - cycle between a set of ports
-const static unsigned short gate_done_port   = 1110;
-const static unsigned short global_gate_port = 1120; 
+unsigned short gate_done_port   = 1110;
+unsigned short global_gate_port = 1120; 
 
 #if MASTER&&(!SINGLEPC) // Soldier Node
 /* minervadaq server for "master" (soldier node) DAQ */

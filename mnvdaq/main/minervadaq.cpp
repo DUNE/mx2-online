@@ -296,6 +296,12 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/*  Basic Socket Configuration for Worker && Soldier Nodes.                      */
 	/*********************************************************************************/
+//#if MULTIPC
+	gate_done_port   += (unsigned short)(subRunNumber % 4); 
+	global_gate_port += (unsigned short)(subRunNumber % 4);
+	mnvdaq.infoStream() << "Gate-Done Network Port   = " << gate_done_port;
+	mnvdaq.infoStream() << "Global-Gate Network Port = " << global_gate_port;
+//#endif
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Create a TCP socket.
 	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
@@ -527,8 +533,8 @@ int main(int argc, char *argv[])
 #if DEBUG_GENERAL
 		mnvdaq.debugStream() << "->Top of the Event Loop, starting Gate: " << gate;
 #endif
-		if (!(gate%100)) { std::cout << "   Acquiring Gate: " << gate << std::endl; }
-		if (!(gate%1000)) { mnvdaq.infoStream() << "   Acquiring Gate: " << gate; }
+		if (!((gate+1)%100)) { std::cout << "   Acquiring Gate: " << gate+1 << std::endl; }
+		if (!((gate+1)%1000)) { mnvdaq.infoStream() << "   Acquiring Gate: " << gate+1; }
 		/**********************************************************************************/
 		/*  Initialize the following data members of the event_handler structure          */
 		/*    event_data:                                                                 */
@@ -1305,7 +1311,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-01'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
