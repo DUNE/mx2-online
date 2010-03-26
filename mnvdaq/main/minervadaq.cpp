@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 	int detectorConfig       = 0;
 	int LEDLevel             = 0;
 	int LEDGroup             = 0;
-	int hardwareInit         = 1;         // Default to "init." (This will set VME card timing modes, etc., but not touch FEB's). TODO fix
+	int hardwareInit         = 1;         // Default to "init." (This will set VME card timing modes, etc., but not touch FEB's).
 	string fileroot          = "testme";  // For logs, etc.  
 	string strtemp           = "unknown"; // For SAM, temp.
 	char config_filename[100]; sprintf(config_filename,"unknown"); // For SAM.
@@ -75,7 +75,6 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
 	/*********************************************************************************/
-	// TODO - Add support for the total seconds flag?...
 	int optind = 1;
 	// Decode Arguments
 	std::cout << "\nArguments to MINERvA DAQ: \n";
@@ -245,24 +244,24 @@ int main(int argc, char *argv[])
 	et_open_config_init(&openconfig);
 
 	// Set the remote host.
-	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // Remote (multi-pc) mode only.
+	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // Remote mode only.
 
 	// Set to the current host machine name. 
 #if CRATE0||CRATE1
-	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote (multi-pc) mode only.
+	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote mode only.
 	mnvdaq.infoStream() << "Setting ET host to mnvonlinemaster.fnal.gov.";	
 #endif
 #if WH14T
-	et_open_config_sethost(openconfig, "minervatest02.fnal.gov");  // Remote (multi-pc) mode only.
+	et_open_config_sethost(openconfig, "minervatest02.fnal.gov");  // Remote mode only.
 	mnvdaq.infoStream() << "Setting ET host to minervatest02.fnal.gov.";	
 #endif
 #if WH14B
-	et_open_config_sethost(openconfig, "minervatest04.fnal.gov");  // Remote (multi-pc) mode only.
+	et_open_config_sethost(openconfig, "minervatest04.fnal.gov");  // Remote mode only.
 	mnvdaq.infoStream() << "Setting ET host to minervatest04.fnal.gov.";	
 #endif
 
 	// Set direct connection.
-	et_open_config_setcast(openconfig, ET_DIRECT);  // Remote (multi-pc) mode only.
+	et_open_config_setcast(openconfig, ET_DIRECT);  // Remote mode only.
 
 	// Set the server port.
 	et_open_config_setserverport(openconfig, networkPort); // Remote (multi-pc) mode only.
@@ -296,12 +295,12 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/*  Basic Socket Configuration for Worker && Soldier Nodes.                      */
 	/*********************************************************************************/
-//#if MULTIPC
+#if MULTIPC
 	gate_done_port   += (unsigned short)(subRunNumber % 4); 
 	global_gate_port += (unsigned short)(subRunNumber % 4);
 	mnvdaq.infoStream() << "Gate-Done Network Port   = " << gate_done_port;
 	mnvdaq.infoStream() << "Global-Gate Network Port = " << global_gate_port;
-//#endif
+#endif
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Create a TCP socket.
 	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
@@ -489,6 +488,10 @@ int main(int argc, char *argv[])
 	// Vector of the CROC's we initialized - we will loop over these when we record data.
 	vector<croc*> *croc_vector = currentController->GetCrocVector();
 	vector<croc*>::iterator croc_iter = croc_vector->begin();
+	// Vector of the CRIM's we initialized - we use these for interrupt & cosmic configuration.
+	vector<crim*> *crim_vector = currentController->GetCrimVector();
+	vector<crim*>::iterator crim_iter   = crim_vector->begin();
+	vector<crim*>::iterator crim_master = crim_vector->begin(); // Use two in case we increment...
 	mnvdaq.infoStream() << "Returned from electronics initialization.";
 
 	// Start to setup vars for SAM metadata.
@@ -639,6 +642,21 @@ int main(int argc, char *argv[])
 						exit(e);
 					}
 				}
+				// We need to reset the sequencer latch on the CRIM in Cosmic mode...
+				try {
+					int crimID = (*crim_master)->GetCrimID(); // Only the master!
+					int error = daq->ResetCRIMSequencerLatch(crimID);
+					if (error) throw error;
+				} catch (int e) {
+					mnvdaq.fatalStream() << "Error for CRIM " << 
+						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate;
+					mnvdaq.fatalStream() << "Cannot reset sequencer latch in Cosmic mode!";
+					std::cout << "Error for CRIM " << 
+						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate
+						<< std::endl;
+					std::cout << "Cannot reset sequencer latch in Cosmic mode!" << std::endl;
+					exit(e);
+				}
 				triggerType = Cosmic;
 				break;
 			case PureLightInjection:
@@ -755,8 +773,6 @@ int main(int argc, char *argv[])
 							int error = TakeData(daq,evt,croc_id,j,0,attach,sys_id);
 							if (error) { throw error; }
 						} catch (int e) {
-							// TODO - set error bits in DAQHeader here?
-							//event_data.readoutInfo = (unsigned short)e; // Don't use "e", chain not worked out...
 							//event_data.readoutInfo = (unsigned short)1; // "VME Error"
 							event_data.readoutInfo = (unsigned short)controllerErrCode; 
 							std::cout << "Error Code " << e << " in minervadaq::main()!  ";
@@ -767,8 +783,8 @@ int main(int argc, char *argv[])
 							mnvdaq.critStream() << "Cannot TakeData for Gate: " << gate;
 							mnvdaq.critStream() << "Failed to execute on CROC Addr: " << 
 								(tmpCroc->GetCrocAddress()>>16) << " Chain: " << j;
-							continueRunning = false; //?
-							break; //?
+							continueRunning = false;  // "Stop" gate loop.
+							break;                    // Exit readout loop.
 						}
 #endif
 					} //channel has febs
@@ -799,13 +815,14 @@ int main(int argc, char *argv[])
 		event_data.gate = ++gate; // Record "gate" number.
 
 		/**********************************************************************************/
-		/*  re-enable the IRQ for the next trigger                                        */
+		/*  Re-enable the IRQ for the next trigger.                                       */
 		/**********************************************************************************/
 		// TODO - Take care we are only doing interrrupt *config* on master CRIMs...
 		// Interrupt configuration is already stored in the CRIM objects.
 #if DEBUG_GENERAL
 		mnvdaq.infoStream() << "Re-enabling global IRQ bits...";
 #endif
+		// Loop over CRIM indices...
 		for (int i=1; i<=currentController->GetCrimVectorLength(); i++) {
 			try {
 				int error = daq->ResetGlobalIRQEnable(i); 
@@ -823,9 +840,8 @@ int main(int argc, char *argv[])
 		/*************************************************************************************/
 		/* Write the End-of-Event Record to the event_handler and then to the event builder. */
 		/*************************************************************************************/
-		// Build DAQ Header bank.
-		// Get Trigger Time, MINOS SGATE
-		int bank = 3; //DAQ Data Bank
+		// Build DAQ Header bank.  
+		int bank = 3; //DAQ Data Bank (DAQ Header)
 		event_data.feb_info[1] = daq->GetController()->GetID();
 		event_data.feb_info[4] = bank; 
 		event_data.minosSGATE  = daq->GetMINOSSGATE();
@@ -1311,7 +1327,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-02'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
