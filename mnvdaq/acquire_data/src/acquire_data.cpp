@@ -75,8 +75,8 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	std::cout            << "Initializing hardware for the " << detectorString << std::endl; 
 	acqData.infoStream() << "Initializing hardware for the " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
-	InitializeCroc(0x010000, 1, 0, 3, 0, 0);
-	InitializeCroc(0x060000, 2, 0, 0, 2, 0);
+	InitializeCroc(0x010000, 1, 4, 0, 0, 0);
+	//InitializeCroc(0x060000, 2, 1, 0, 0, 0);
 #endif
 #if CRATE0 // Current as of March 22 Begin-Of-Run  
 	detectorString        = "NuMI Crate 0.";
