@@ -1320,14 +1320,14 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"from SamFile.SamDataFile import SamSize\n\n");
 	fprintf(sam_file,"import SAM\n\n");
 	fprintf(sam_file,"metadata = SamDataFile(\n");
-	fprintf(sam_file,"fileName = '%s.dat',\n",datafilename.c_str());
+	fprintf(sam_file,"fileName = '%s_RawData.dat',\n",datafilename.c_str());
 	fprintf(sam_file,"fileType = SAM.DataFileType_ImportedDetector,\n");
 	fprintf(sam_file,"fileFormat = 'binary',\n");
 	fprintf(sam_file,"crc=CRC(666L,SAM.CRC_Adler32Type),\n");
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-05'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-06'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
