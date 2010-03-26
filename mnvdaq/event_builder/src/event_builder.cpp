@@ -79,12 +79,11 @@ int main(int argc, char **argv)
 
 	// Opening the ET system is the first thing we must do...
 	et_open_config_init(&openconfig);
-//#if MULTIPC
+	// We operate the DAQ exclusively in "remote" mode.
 	et_open_config_setmode(&openconfig, ET_HOST_AS_REMOTE);
 	et_open_config_setcast(openconfig, ET_DIRECT);
-	et_open_config_sethost(openconfig, hostName); // Adjust, etc.
+	et_open_config_sethost(openconfig, hostName); 
 	et_open_config_setserverport(openconfig, networkPort); 
-//#endif
 
 	if (et_open(&sys_id, argv[1], openconfig) != ET_OK) {
 		printf("event_builder::main(): et_producer: et_open problems\n");
@@ -149,10 +148,10 @@ int main(int argc, char **argv)
 	int evt_counter = 0;
 	while ((et_alive(sys_id))) {
 		struct timespec time;
-		time.tv_sec = 60;
-		time.tv_nsec = 0;
+		time.tv_sec  = 1200; // Wait 20 minutes before the event builder times out?
+		time.tv_nsec =    0;
 		
-//		printf("time: %d.%i\n", time.tv_sec, time.tv_nsec);
+		//printf("time: %d.%i\n", time.tv_sec, time.tv_nsec);
 		status = et_event_get(sys_id, attach, &pe, ET_TIMED|ET_MODIFY, &time);
 		if (status==ET_ERROR_TIMEOUT) break;
 		if (status == ET_ERROR_DEAD) {

@@ -161,6 +161,13 @@ int main(int argc, char **argv)
   printf("Starting an ET system.  This may take a moment.\n");
   fflush(stdout);
 
+  struct tm *local;
+  time_t starttime;
+  starttime = time(NULL);
+  local = localtime(&starttime);
+  printf("Start time (local): %s\n", asctime(local));
+  fflush(stdout);
+
   if (et_verbose) {
     printf("et_start: asking for %d byte events.\n", event_size);
     printf("et_start: asking for %d events.\n", nevents);

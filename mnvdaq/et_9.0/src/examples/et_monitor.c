@@ -57,7 +57,7 @@ int main(int argc,char **argv)
   
   /* defaults */
   mode = ET_HOST_AS_LOCAL;
-  period.tv_sec = 5;
+  period.tv_sec  = 4;
   period.tv_nsec = 0;
   tperiod  = period.tv_sec + (1.e-9)*period.tv_nsec;
   hbperiod = ET_BEAT_SEC   + (1.e-9)*ET_BEAT_NSEC;
