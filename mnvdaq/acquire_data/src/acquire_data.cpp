@@ -787,7 +787,15 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 
 int acquire_data::WriteCROCFastCommand(int id, unsigned char command[])
 {
-#if DEBUG_FASTCOMMAND
+/*! \fn acquire_data::WriteCROCFastCommand(int id, unsigned char command[])
+ *  \param int id - the CROC index
+ *  \param unsigned char command[] - array containing the fast command to be executed
+ *
+ * This function writes a message to the CROC fast command register.  Be careful!  Only 
+ * certain messages are allowed and only a subset of those will be interpreted.  Please 
+ * consult B. Baldin and C. Gingu for details.
+ */
+#if (DEBUG_FASTCOMMAND)||(DEBUG_COSMICS)
 	acqData.debugStream() << "Entering WriteCROCFastCommand for CROC " <<
 		(daqController->GetCroc(id)->GetCrocAddress()>>16) << 
 		" and " << sizeof(*command)/sizeof(unsigned char) << " command(s): "; 
@@ -807,6 +815,36 @@ int acquire_data::WriteCROCFastCommand(int id, unsigned char command[])
 		daqController->ReportError(e);
 		acqData.critStream() << "Error in acquire_data::WriteCROCFastCommand for CROC " <<
 			(daqController->GetCroc(id)->GetCrocAddress()>>16);
+		return e;
+	}
+	return 0;
+}
+
+
+int acquire_data::ResetCRIMSequencerLatch(int id)
+{
+/*! \fn int acquire_data::ResetCRIMSequencerLatch(int id)
+ *  \param int id - the CRIM index
+ *
+ * This function resets the CRIM sequencer latch in cosmic mode to restart the seqeuncer in 
+ * internal timing mode.  This only affects CRIMs with v5 firmware.
+ */
+#if DEBUG_COSMICS
+	acqData.debugStream() << "Entering ResetCRIMSequencerLatch for CRIM " <<
+		(daqController->GetCrim(id)->GetCrimAddress()>>16);
+#endif
+	unsigned char message[] = { 0x02, 0x02 };
+	try {
+		int error = daqAcquire->WriteCycle(daqController->handle, 2, message, 
+			daqController->GetCrim(id)->GetSequencerResetRegister(),
+			daqController->GetAddressModifier(), daqController->GetDataWidth());
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in acquire_data::ResetCRIMSequencerLatch for CRIM " << 
+			(daqController->GetCrim(id)->GetCrimAddress()>>16) << std::endl;
+		daqController->ReportError(e);
+		acqData.critStream() << "Error in acquire_data::ResetCRIMSequencerLatch for CRIM " << 
+			(daqController->GetCrim(id)->GetCrimAddress()>>16);
 		return e;
 	}
 	return 0;

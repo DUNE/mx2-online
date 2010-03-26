@@ -135,6 +135,9 @@ class acquire_data {
 		// Passing an array like this is a bit old fashioned, but there it is...
 		int WriteCROCFastCommand(int id, unsigned char command[]);
 
+		/*! Reset the CRIM sequencer latch (only needed in Cosmic mode) */
+		int ResetCRIMSequencerLatch(int id);
+
 		/*! A templated function for sending messages from a generic "device" */
 		template <class X> int SendMessage(X *device, croc *crocTrial, channels *channelTrial, bool singleton);
 
