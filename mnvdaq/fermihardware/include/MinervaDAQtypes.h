@@ -90,7 +90,7 @@ typedef enum crimRegisters { //cast this to unsigned int
 	crimSoftwareTrigger        = 0xC040,
 	crimSoftwareTCALB          = 0xC050,
 	crimSoftwareSGATE          = 0xC060,
-	crimSequencerControlLatch  = 0xC070, // Register for external trigger modes (cosmic - obsolete?)
+	crimSequencerControlLatch  = 0xC070, // Register for external trigger modes (cosmic - v5 firmware only) 
 	crimSoftwareCNRST          = 0xC080,
 	crimTimingOverlapViolation = 0xC090, // Readonly check for timing signal overlaps (obsolete)
 	crimTestRegister           = 0xC0A0, // CG, Synch Test facility?
