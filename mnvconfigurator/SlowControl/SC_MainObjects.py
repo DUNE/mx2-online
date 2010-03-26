@@ -1,4 +1,5 @@
 import SC_Util
+import CAENVMEwrapper
 import wx
 import time
 
@@ -19,11 +20,7 @@ class VMEDevice():
         if (self.type==SC_Util.VMEdevTypes.CH):
             return self.type+':'+str(((self.baseAddr & 0x00F000)>>12)/4)
         if (self.type==SC_Util.VMEdevTypes.DIGCH):
-            return self.type+':'+str(((self.baseAddr & 0x000F00)>>12)/4)
-
-
-
-
+            return self.type+':'+str((self.baseAddr & 0x000F00)>>8)
 
 class DIGChannel(VMEDevice):
     def __init__(self, chNumber, baseAddr, controller):
@@ -39,142 +36,283 @@ class DIGChannel(VMEDevice):
         addrROBufferOccupancy   = 0x1094 + self.chBaseAddr
         addrWRDACOffset         = 0x1098 + self.chBaseAddr
         addrWRADCConfiguration  = 0x109C + self.chBaseAddr
-        self.RegsWR={'WRZSThres':{'addr':addrWRZSThres, 'val':0},
-            'WRZSNSamp':{'addr':addrWRZSNSamp, 'val':0},
-            'WRThresholdValue':{'addr':addrWRThresholdValue, 'val':0},
-            'WRThresholdOverUnder':{'addr':addrWRThresholdOverUnder, 'val':0},
-            'WRDACOffset':{'addr':addrWRDACOffset, 'val':0},
-            'WRADCConfiguration':{'addr':addrWRADCConfiguration, 'val':0}}
+        self.RegsWR={
+            addrWRZSThres:{'name':'WRZSThres', 'value':0x0,
+                'sects':{0x00000FFF:{'name':'Threshold', 'offset':0},
+                         0x7FFFF000:{'name':'reserved', 'offset':12},
+                         0x80000000:{'name':'NegativeLogic', 'offset':31}}},
+            addrWRZSNSamp:{'name':'WRZSNSamp', 'value':0x0,
+                'sects':{0x001FFFFF:{'name':'ZSAMP-NsubsOvUnThrs', 'offset':0},
+                         0x0000FFFF:{'name':'ZLE-NafterThrs', 'offset':0},
+                         0xFFFF0000:{'name':'ZLE-NbeforeThrs', 'offset':16}}},
+            addrWRThresholdValue:{'name':'WRThresholdValue', 'value':0x0,
+                'sects':{0x00000FFF:{'name':'Thrs', 'offset':0},
+                         0xFFFFF000:{'name':'reserved', 'offset':12}}},
+            addrWRThresholdOverUnder:{'name':'WRThresholdOverUnder', 'value':0x0,
+                'sects':{0x00000FFF:{'name':'ThrsOvUn', 'offset':0},
+                         0xFFFFF000:{'name':'reserved', 'offset':12}}},
+            addrWRDACOffset:{'name':'WRDACOffset', 'value':0x0,
+                'sects':{0x0000FFFF:{'name':'Offset', 'offset':0},
+                         0xFFFF0000:{'name':'reserved', 'offset':16}}},
+            addrWRADCConfiguration:{'name':'WRADCConfiguration', 'value':0x0,
+                'sects':{0x0000FFFF:{'name':'ADCConfig', 'offset':0},
+                         0xFFFF0000:{'name':'reserved', 'offset':16}}}
+            }
         self.RegsWO={}
-        self.RegsRO={'ROStatus':{'addr':addrROStatus, 'val':0},
-            'ROAMCFPGAFirmware':{'addr':addrROAMCFPGAFirmware, 'val':0},
-            'ROBufferOccupancy':{'addr':addrROBufferOccupancy, 'val':0}}
-        self.FEBs=[]
+        self.RegsRO={
+            addrROBufferOccupancy:{'name':'ROBufferOccupancy', 'value':0x0,
+                'sects':{0x000003FF:{'name':'Occupied', 'offset':0}}},
+            addrROStatus:{'name':'ROStatus', 'value':0x0,
+                'sects':{0x00000001:{'name':'MemFull', 'offset':0},
+                         0x00000002:{'name':'MemEmpty', 'offset':1},
+                         0x00000004:{'name':'Busy', 'offset':2},
+                         0x00000018:{'name':'reserved', 'offset':3},
+                         0x00000020:{'name':'Error', 'offset':5}}},
+            addrROAMCFPGAFirmware:{'name':'ROFPGAFirmware', 'value':0x0,
+                'sects':{0x000000FF:{'name':'Minor', 'offset':0},
+                         0x0000FF00:{'name':'Major', 'offset':8},
+                         0x00FF0000:{'name':'Day', 'offset':16},
+                         0x0F000000:{'name':'Month', 'offset':24},
+                         0xF0000000:{'name':'Year', 'offset':28}}}
+            }
     def Number(self): return self.chNumber
-    def NodeList(self):
-        FEBsAddresses=[]
-        #for feb in self.FEBs: FEBsAddresses.append("FE:"+str(feb.Address))
-        for feb in self.FEBs: FEBsAddresses.append("FE:"+str(feb))
-        return [self.Description(), FEBsAddresses]
-    def ReadDPM(self, offset):
-        if (offset>0x1FFF): raise Exception("address " + hex(offset) + " is out of range")
-        return int(self.controller.ReadCycle(self.RegRMemory+offset)) 
-    def WriteFIFO(self, data): self.controller.WriteCycle(self.RegWInput, data)
-    def SendMessage(self): self.controller.WriteCycle(self.RegWSendMessage, 0x0101)
-    def ReadStatus(self): return int(self.controller.ReadCycle(self.RegRStatus))
-    def ClearStatus(self): self.controller.WriteCycle(self.RegWClearStatus, 0x0202)
-    def ReadLoopDelay(self): return int(self.controller.ReadCycle(self.RegRLoopDelay)) 
-    def DPMPointerReset(self): self.controller.WriteCycle(self.RegWClearStatus, 0x0808)
-    def DPMPointerRead(self):
-        data=int(self.controller.ReadCycle(self.RegRDPMPointer))
-        datasw=int(((data&0xFF)<<8) | ((data&0xFF00)>>8))
-        return datasw
+    def NodeList(self): return [self.Description(), []]
+    def ReadAll(self):
+        dReadAll={}; dReadAll.update(self.RegsWR); dReadAll.update(self.RegsRO)
+        prevDataWidth=self.controller.dataWidth
+        self.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD32
+        for addr in dReadAll.keys(): dReadAll[addr]['value']=self.controller.ReadCycle(addr)
+        self.controller.dataWidth=prevDataWidth
+        return dReadAll
 
 class DIG(VMEDevice):
     def __init__(self, controller, baseAddr):
         VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMEdevTypes.DIG)
         #ROEventReadoutBuffer          = 0x0000-0x0FFC    //R
-        addrWRChannelConfiguration          = 0x8000
-        addrWOChannelConfigurationBitSet    = 0x8004
-        addrWOChannelConfigurationBitClear  = 0x8008
-        addrWRBufferOrganization            = 0x800C
-        addrWRBufferFree                    = 0x8010
-        addrWRCustomSize                    = 0x8020
-        addrWRAcquisitionControl            = 0x8100
-        addrROAcquisitionStatus             = 0x8104
-        addrWOSWTrigger                     = 0x8108
-        addrWRTriggerSourceEnableMask       = 0x810C
-        addrWRFrontPanelTriggerOutEnableMask= 0x8110
-        addrWRPostTriggerSetting            = 0x8114
-        addrWRFrontPanelIOData              = 0x8118
-        addrWRFrontPanelIOControl           = 0x811C
-        addrWRChannelEnableMask             = 0x8120
-        addrROCFPGAFirmwareRevision         = 0x8124
-        addrROEventStored                   = 0x812C
-        addrWRSetMonitorDAC                 = 0x8138
-        addrROBoardInfo                     = 0x8140
+        addrWRChannelConfiguration          = 0x8000 + baseAddr
+        addrWOChannelConfigurationBitSet    = 0x8004 + baseAddr
+        addrWOChannelConfigurationBitClear  = 0x8008 + baseAddr
+        addrWRBufferOrganization            = 0x800C + baseAddr
+        addrWRBufferFree                    = 0x8010 + baseAddr     #Cristian's Note: CAEN say it's WR but I found it's WOnly
+        addrWRCustomSize                    = 0x8020 + baseAddr
+        addrWRAcquisitionControl            = 0x8100 + baseAddr
+        addrROAcquisitionStatus             = 0x8104 + baseAddr
+        addrWOSWTrigger                     = 0x8108 + baseAddr
+        addrWRTriggerSourceEnableMask       = 0x810C + baseAddr
+        addrWRFrontPanelTriggerOutEnableMask= 0x8110 + baseAddr
+        addrWRPostTriggerSetting            = 0x8114 + baseAddr
+        addrWRFrontPanelIOData              = 0x8118 + baseAddr     #Cristian's Note: CAEN say it's WR but I found it's ROnly
+        addrWRFrontPanelIOControl           = 0x811C + baseAddr
+        addrWRChannelEnableMask             = 0x8120 + baseAddr
+        addrROFPGAFirmwareRevision          = 0x8124 + baseAddr
+        addrROEventStored                   = 0x812C + baseAddr
+        addrWRSetMonitorDAC                 = 0x8138 + baseAddr
+        addrROBoardInfo                     = 0x8140 + baseAddr
         #WRMonitorMode = 0x8144,//RW  CAEN Note : To be implemented
-        addrROEventSize                     = 0x814C
-        addrWRVMEControl                    = 0xEF00
-        addrROVMEStatus                     = 0xEF04
-        addrWRBoardId                       = 0xEF08
-        addrWRMulticastBaseAddrAndCtrl      = 0xEF0C
-        addrWRRelocationAddress             = 0xEF10
-        addrWRInterruptStatusId             = 0xEF14
-        addrWRInterruptEventNumber          = 0xEF18
-        addrWRBLTEventNumber                = 0xEF1C
-        addrWRVMEScratch                    = 0xEF20
-        addrWOSWReset                       = 0xEF24
-        addrWOSWClear                       = 0xEF28
-        addrWRFlashEnable                   = 0xEF2C
-        addrWRFlashData                     = 0xEF30
-        addrWOConfigurationReload           = 0xEF34
+        addrROEventSize                     = 0x814C + baseAddr
+        addrWRVMEControl                    = 0xEF00 + baseAddr
+        addrROVMEStatus                     = 0xEF04 + baseAddr
+        addrWRBoardId                       = 0xEF08 + baseAddr
+        addrWRMulticastBaseAddrAndCtrl      = 0xEF0C + baseAddr
+        addrWRRelocationAddress             = 0xEF10 + baseAddr
+        addrWRInterruptStatusId             = 0xEF14 + baseAddr
+        addrWRInterruptEventNumber          = 0xEF18 + baseAddr
+        addrWRBLTEventNumber                = 0xEF1C + baseAddr
+        addrWRVMEScratch                    = 0xEF20 + baseAddr
+        addrWOSWReset                       = 0xEF24 + baseAddr
+        addrWOSWClear                       = 0xEF28 + baseAddr
+        addrWRFlashEnable                   = 0xEF2C + baseAddr
+        addrWRFlashData                     = 0xEF30 + baseAddr
+        addrWOConfigurationReload           = 0xEF34 + baseAddr
         #ROConfigurationROM = 0xF000-0xF3FC //R
-        self.RegsWR={'WRChannelConfiguration':{'addr':addrWRChannelConfiguration, 'val':0},
-            'WRBufferOrganization':{'addr':addrWRBufferOrganization, 'val':0},
-            'WRBufferFree':{'addr':addrWRBufferFree, 'val':0},
-            'WRCustomSize':{'addr':addrWRCustomSize, 'val':0},
-            'WRAcquisitionControl':{'addr':addrWRAcquisitionControl, 'val':0},
-            'WRTriggerSourceEnableMask':{'addr':addrWRTriggerSourceEnableMask, 'val':0},
-            'WRFrontPanelTriggerOutEnableMask':{'addr':addrWRFrontPanelTriggerOutEnableMask, 'val':0},
-            'WRPostTriggerSetting':{'addr':addrWRPostTriggerSetting, 'val':0},
-            'WRFrontPanelIOData':{'addr':addrWRFrontPanelIOData, 'val':0},
-            'WRFrontPanelIOControl':{'addr':addrWRFrontPanelIOControl, 'val':0},
-            'WRChannelEnableMask':{'addr':addrWRChannelEnableMask, 'val':0},
-            'WRSetMonitorDAC':{'addr':addrWRSetMonitorDAC, 'val':0},
-            'WRVMEControl':{'addr':addrWRVMEControl, 'val':0},
-            'WRBoardId':{'addr':addrWRBoardId, 'val':0},
-            'WRMulticastBaseAddrAndCtrl':{'addr':addrWRMulticastBaseAddrAndCtrl, 'val':0},
-            'WRRelocationAddress':{'addr':addrWRRelocationAddress, 'val':0},
-            'WRInterruptStatusId':{'addr':addrWRInterruptStatusId, 'val':0},
-            'WRInterruptEventNumber':{'addr':addrWRInterruptEventNumber, 'val':0},
-            'WRBLTEventNumber':{'addr':addrWRBLTEventNumber, 'val':0},
-            'WRVMEScratch':{'addr':addrWRVMEScratch, 'val':0},
-            'WRFlashEnable':{'addr':addrWRFlashEnable, 'val':0},
-            'addrWRFlashData':{'addr':addraddrWRFlashData, 'val':0}}
-        self.RegsWO={'WOChannelConfigurationBitSet':{'addr':addrWOChannelConfigurationBitSet, 'val':0},
-            'WOChannelConfigurationBitClear':{'addr':addrWOChannelConfigurationBitClear, 'val':0},
-            'WOSWTrigger':{'addr':addrWOSWTrigger, 'val':0},
-            'WOSWReset':{'addr':addrWOSWReset, 'val':0},
-            'WOSWClear':{'addr':addrWOSWClear, 'val':0},
-            'WOConfigurationReload':{'addr':addrWOConfigurationReload, 'val':0}}
-        self.RegsRO={'ROAcquisitionStatus':{'addr':addrROAcquisitionStatus, 'val':0},
-            'ROCFPGAFirmwareRevision':{'addr':addrROCFPGAFirmwareRevision, 'val':0},
-            'ROEventStored':{'addr':addrROEventStored, 'val':0},
-            'ROBoardInfo':{'addr':addrROBoardInfo, 'val':0},
-            'ROEventSize':{'addr':addrROEventSize, 'val':0},
-            'ROVMEStatus':{'addr':addrROVMEStatus, 'val':0}}
-
-        self.RegWRTimingSetup       = baseAddr + SC_Util.CROCRegs.RegWRTimingSetup
-        self.RegWRResetAndTestMask  = baseAddr + SC_Util.CROCRegs.RegWRResetAndTestMask
-        self.RegWChannelReset      = baseAddr + SC_Util.CROCRegs.RegWChannelReset
-        self.RegWFastCommand       = baseAddr + SC_Util.CROCRegs.RegWFastCommand
-        self.RegWTestPulse         = baseAddr + SC_Util.CROCRegs.RegWTestPulse 
+        self.RegsWR={
+            addrWRChannelConfiguration:{'name':'WRChConfig', 'value':0x0,
+                'sects':{0x00000001:{'name':'reserved', 'offset':0},
+                         0x00000002:{'name':'TrgOverlapEn', 'offset':1},
+                         0x00000004:{'name':'reserved', 'offset':2},
+                         0x00000008:{'name':'TestPattGenEn', 'offset':3},
+                         0x00000010:{'name':'MemAccesRnd0Seq1', 'offset':4},
+                         0x00000020:{'name':'reserved', 'offset':5},
+                         0x00000040:{'name':'TrgOutOnInpOver0Under1Thr', 'offset':6},
+                         0x00000780:{'name':'reserved', 'offset':7},
+                         0x00000800:{'name':'Pack25En', 'offset':11},
+                         0x0000F000:{'name':'reserved', 'offset':12},
+                         0x000F0000:{'name':'ZSAlgorithm', 'offset':16},
+                         0xFFF00000:{'name':'reserved', 'offset':20}}},
+            addrWRBufferOrganization:{'name':'WRBufferOrganiz', 'value':0x0,
+                'sects':{0x0000000F:{'name':'BufferCode', 'offset':0},
+                         0xFFFFFFF0:{'name':'reserved', 'offset':4}}},
+            #Cristian's Note: CAEN say it's WR but I found it's WOnly
+            #addrWRBufferFree:{'name':'WRBufferFree', 'value':0x0,
+            #    'sects':{0x00000FFF:{'name':'FreesFistNBuffers', 'offset':0},
+            #             0xFFFFF000:{'name':'reserved', 'offset':12}}},
+            addrWRCustomSize:{'name':'WRCustomSize', 'value':0x0, 'sects':{}},
+            addrWRAcquisitionControl:{'name':'WRAcqControl', 'value':0x0,
+                'sects':{0x00000003:{'name':'Mode', 'offset':0},
+                         0x00000004:{'name':'Stop0Run1', 'offset':2},
+                         0x00000008:{'name':'CountTrgAcc0All1', 'offset':3},
+                         0xFFFFFFF0:{'name':'reserved', 'offset':4}}},
+            addrWRTriggerSourceEnableMask:{'name':'WRTrgSourceEnMask', 'value':0x0,
+                'sects':{0x000000FF:{'name':'ChNTrgEn', 'offset':0},
+                         0x00FFFF00:{'name':'reserved', 'offset':8},
+                         0x07000000:{'name':'LocalTrgCoincLevel', 'offset':24},
+                         0x38000000:{'name':'reserved', 'offset':27},
+                         0x40000000:{'name':'ExtTrgEn', 'offset':30},
+                         0x80000000:{'name':'SWTrgEn', 'offset':31}}},
+            addrWRFrontPanelTriggerOutEnableMask:{'name':'WRPanelTrgOutEnMask', 'value':0x0,
+                'sects':{0x000000FF:{'name':'ChNTrgEn', 'offset':0},
+                         0x3FFFFF00:{'name':'reserved', 'offset':8},
+                         0x40000000:{'name':'ExtTrgEn', 'offset':30},
+                         0x80000000:{'name':'SWTrgEn', 'offset':31}}},
+            addrWRPostTriggerSetting:{'name':'WRPostTrgSetting', 'value':0x0, 'sects':{}},
+            #Cristian's Note: CAEN say it's WR but I found it's ROnly
+            #addrWRFrontPanelIOData:{'name':'WRPanelIOData', 'value':0x0,
+            #    'sects':{0x0000FFFF:{'name':'PanelIOdata', 'offset':0},
+            #             0xFFFF0000:{'name':'reserved', 'offset':16}}},
+            addrWRFrontPanelIOControl:{'name':'WRPanelIOControl', 'value':0x0,
+                'sects':{0x00000001:{'name':'TrgClkNIM0TTL1', 'offset':0},
+                         0x00000002:{'name':'PanelOutEn0HiZ1', 'offset':1},
+                         0x00000004:{'name':'LVDS3-0In0Out1', 'offset':2},
+                         0x00000008:{'name':'LVDS7-4In0Out1', 'offset':3},
+                         0x00000010:{'name':'LVDS11-8In0Out1', 'offset':4},
+                         0x00000020:{'name':'LVDS15-12In0Out1', 'offset':5},
+                         0x000000C0:{'name':'Mode', 'offset':6},
+                         0x00003F00:{'name':'reserved', 'offset':8},
+                         0x00004000:{'name':'TrgOutTestMode', 'offset':14},
+                         0x00008000:{'name':'TrgOutMode', 'offset':15},
+                         0xFFFF0000:{'name':'reserved', 'offset':16}}},
+            addrWRChannelEnableMask:{'name':'WRChEnMask', 'value':0x0,
+                'sects':{0x000000FF:{'name':'ChNEn', 'offset':0},
+                         0xFFFFFF00:{'name':'reserved', 'offset':8}}},
+            addrWRSetMonitorDAC:{'name':'WRSetMonitorDAC', 'value':0x0,
+                'sects':{0x00000FFF:{'name':'DACValue', 'offset':0},
+                         0xFFFFF000:{'name':'reserved', 'offset':12}}},
+            addrWRVMEControl:{'name':'WRVMEControl', 'value':0x0,
+                'sects':{0x00000007:{'name':'InterruptLevel', 'offset':0},
+                         0x00000008:{'name':'OpticalIntEn', 'offset':3},
+                         0x00000010:{'name':'BERREn', 'offset':4},
+                         0x00000020:{'name':'ALIGN64En', 'offset':5},
+                         0x00000040:{'name':'RELOCEn', 'offset':6},
+                         0x00000080:{'name':'RlsIntMode', 'offset':7},
+                         0xFFFFFF00:{'name':'reserved', 'offset':8}}},
+            addrWRBoardId:{'name':'WRBoardId', 'value':0x0,
+                'sects':{0x0000001F:{'name':'GEO', 'offset':0},
+                         0xFFFFFFE0:{'name':'reserved', 'offset':5}}},
+            addrWRMulticastBaseAddrAndCtrl:{'name':'WRMCSTAddrAndCtrl', 'value':0x0,
+                'sects':{0x000000FF:{'name':'MCST/CBLT', 'offset':0},
+                         0x00000300:{'name':'DaisyChain', 'offset':8},
+                         0xFFFFFC00:{'name':'reserved', 'offset':10}}},
+            addrWRRelocationAddress:{'name':'WRRelocationAddr', 'value':0x0,
+                'sects':{0x0000FFFF:{'name':'A31-A16AddrBits', 'offset':0},
+                         0xFFFF0000:{'name':'reserved', 'offset':0}}},
+            addrWRInterruptStatusId:{'name':'WRInterrStatusId', 'value':0x0, 'sects':{}},
+            addrWRInterruptEventNumber:{'name':'WRInterrEventNumber', 'value':0x0,
+                'sects':{0x000003FF:{'name':'EventNumber', 'offset':0},
+                         0xFFFFFC00:{'name':'reserved', 'offset':10}}},
+            addrWRBLTEventNumber:{'name':'WRBLTEventNumber', 'value':0x0,
+                'sects':{0x000000FF:{'name':'CompleteEvents', 'offset':0},
+                         0xFFFFFF00:{'name':'reserved', 'offset':8}}},
+            addrWRVMEScratch:{'name':'WRVMEScratch', 'value':0x0, 'sects':{}}
+            #Cristian's Note: I commented out the addrWRFlash ON PURPOSE (SAFETY) 
+            #addrWRFlashEnable:{'name':'WRFlashEnable', 'value':0x0, 'sects':{}},
+            #addrWRFlashData:{'name':'addrWRFlashData', 'value':0x0, 
+            #    'sects':{0x000000FF:{'name':'SPIdata', 'offset':0},
+            #             0xFFFFFF00:{'name':'reserved', 'offset':8}}}
+            }
+        self.RegsWO={
+            addrWOChannelConfigurationBitSet:{'name':'WOChannelConfigurationBitSet', 'value':0x0,
+                'sects':{0x000000FF:{'name':'SetBits', 'offset':0},
+                         0xFFFFFF00:{'name':'reserved', 'offset':8}}},
+            addrWOChannelConfigurationBitClear:{'name':'WOChannelConfigurationBitClear', 'value':0x0,
+                'sects':{0x000000FF:{'name':'ClearBits', 'offset':0},
+                         0xFFFFFF00:{'name':'reserved', 'offset':8}}},
+            #Cristian's Note: CAEN say it's WR but I found it's WOnly
+            addrWRBufferFree:{'name':'WOBufferFree', 'value':0x0,
+                'sects':{0x00000FFF:{'name':'FreesFistNBuffers', 'offset':0},
+                         0xFFFFF000:{'name':'reserved', 'offset':12}}},
+            addrWOSWTrigger:{'name':'WOSWTrigger', 'value':0x0, 'sects':{}},
+            addrWOSWReset:{'name':'WOSWReset', 'value':0x0, 'sects':{}},
+            addrWOSWClear:{'name':'WOSWClear', 'value':0x0, 'sects':{}},
+            addrWOConfigurationReload:{'name':'WOConfigurationReload', 'value':0x0, 'sects':{}}
+            }
+        self.RegsRO={
+            addrROAcquisitionStatus:{'name':'ROAcqStatus', 'value':0x0,
+                'sects':{0x00000003:{'name':'reserved', 'offset':0},
+                         0x00000004:{'name':'RunOff0On1', 'offset':2},
+                         0x00000008:{'name':'EventReady', 'offset':3},
+                         0x00000010:{'name':'EventFull', 'offset':4},
+                         0x00000020:{'name':'ClkExternal', 'offset':5},
+                         0x00000040:{'name':'PLLBypass', 'offset':6},
+                         0x00000080:{'name':'PLLLocked', 'offset':7},
+                         0x00000100:{'name':'BoardReady', 'offset':8},
+                         0xFFFFFE00:{'name':'reserved', 'offset':9}}},
+            #Cristian's Note: CAEN say it's WR but I found it's ROnly
+            addrWRFrontPanelIOData:{'name':'ROPanelIOData', 'value':0x0,
+                'sects':{0x0000FFFF:{'name':'PanelIOdata', 'offset':0},
+                         0xFFFF0000:{'name':'reserved', 'offset':16}}},
+            addrROFPGAFirmwareRevision:{'name':'ROFPGAFirmwareRev', 'value':0x0,
+                'sects':{0x000000FF:{'name':'Minor', 'offset':0},
+                         0x0000FF00:{'name':'Major', 'offset':8},
+                         0x00FF0000:{'name':'Day', 'offset':16},
+                         0x0F000000:{'name':'Month', 'offset':24},
+                         0xF0000000:{'name':'Year', 'offset':28}}},
+            addrROEventStored:{'name':'ROEventStored', 'value':0x0, 'sects':{}},
+            addrROBoardInfo:{'name':'ROBoardInfo', 'value':0x0,
+                'sects':{0x000000FF:{'name':'BoardType', 'offset':0},
+                         0x0000FF00:{'name':'MemorySize', 'offset':8},
+                         0xFFFF0000:{'name':'reserved', 'offset':16}}},
+            addrROEventSize:{'name':'ROEventSize', 'value':0x0, 'sects':{}},
+            addrROVMEStatus:{'name':'ROVMEStatus', 'value':0x0,
+                'sects':{0x00000001:{'name':'EventReady', 'offset':0},
+                         0x00000002:{'name':'OutBufferFull', 'offset':1},
+                         0x00000004:{'name':'BussError', 'offset':2},
+                         0xFFFFFFF8:{'name':'reserved', 'offset':0}}}
+            }
         self.channels=[]
-        for chNumber in range(4):
-            self.channels.append(CROCChannel(chNumber, baseAddr, controller))
-        #self.channels[0].FEBs=[FEB(1), FEB(2), FEB(3), FEB(4)]
-        #self.channels[1].FEBs=[FEB(5), FEB(6), FEB(7), FEB(8)]
-        #self.channels[2].FEBs=[FEB(9), FEB(10), FEB(11), FEB(12)]
-        #self.channels[3].FEBs=[FEB(13), FEB(14), FEB(15), FEB(16), FEB(17)]
+        for chNumber in range(8):
+            self.channels.append(DIGChannel(chNumber, baseAddr, controller))
     def Channels(self): return self.channels
-    def NodeList(self): return [self.Description(), 
-        [self.channels[0].NodeList(), self.channels[1].NodeList(),
-        self.channels[2].NodeList(), self.channels[3].NodeList()]]
-    def ReadTimingSetup(self): return int(self.controller.ReadCycle(self.RegWRTimingSetup))
-    def WriteTimingSetup(self, data): self.controller.WriteCycle(self.RegWRTimingSetup, data)
-    def SendFastCommand(self, data): self.controller.WriteCycle(self.RegWFastCommand, data)
-    def WriteRSTTP(self, data): self.controller.WriteCycle(self.RegWRResetAndTestMask, data)
-    def ReadRSTTP(self): return int(self.controller.ReadCycle(self.RegWRResetAndTestMask))
-    def SendRSTOnly(self): self.controller.WriteCycle(self.RegWChannelReset, 0x0202)
-    def SendTPOnly(self): self.controller.WriteCycle(self.RegWTestPulse, 0x0404)
-    def GetWRRegValues(self):
-        return [(hex(self.RegWRTimingSetup)[2:].rjust(6, '0'),  hex(self.ReadTimingSetup())[2:].rjust(4, '0')),
-                (hex(self.RegWRResetAndTestMask)[2:].rjust(6, '0'), hex(self.ReadRSTTP())[2:].rjust(4, '0'))]
+    def NodeList(self):
+        return [self.Description(), [theCh.NodeList() for theCh in self.channels]]
+    def ReadAll(self):
+        dReadAll={}; dReadAll.update(self.RegsRO); dReadAll.update(self.RegsWR);
+        prevDataWidth=self.controller.dataWidth
+        self.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD32
+        for addr in dReadAll.keys(): dReadAll[addr]['value']=self.controller.ReadCycle(addr)
+        self.controller.dataWidth=prevDataWidth
+        return dReadAll
 
-
-
-
+def DIGDictOfRegsToString(dRegs):
+    lines=[]
+    lineHeader = str('%s%s%s%s'%(
+        'RegAddr'.ljust(10,' '),'RegName'.ljust(20,' '),
+        'RegValue'.ljust(10,' '), 'RegSections -->'.ljust(20,' ')))
+    lines.append(lineHeader)
+    dRegsKeys=dRegs.keys(); dRegsKeys.sort()
+    for key in dRegsKeys:
+        lineBody = str('%s%s%s'%(
+            hex(key)[2:].rjust(6,'0').ljust(10,' ').upper(),
+            dRegs[key]['name'].ljust(20, ' '),
+            hex(dRegs[key]['value'])[2:-1].rjust(8,'0').ljust(10,' ').upper()))
+        lineSections=''
+        if dRegs[key]['sects']!={}:
+            sectsKeys=dRegs[key]['sects'].keys()
+            sectsKeys.sort()           
+##            # USE THIS SECTION FOR MULTIPLE LINE
+##            iSection=0
+##            for skey in sectsKeys:
+##                theSection=str('%s(%s)=%s'%(dRegs[key]['sects'][skey]['name'],hex(skey),
+##                    (dRegs[key]['value'] & skey)>>dRegs[key]['sects'][skey]['offset'])).ljust(35,' ')
+##                if iSection==0: lineSections += theSection
+##                else: lineSections += str('\n'+' '*40) + theSection
+##                iSection+=1
+            # USE THIS SECTION FOR ONLY ONE LINE
+            for skey in sectsKeys:
+                theSection=str('%s(%s)=%s'%(dRegs[key]['sects'][skey]['name'],hex(skey),
+                    (dRegs[key]['value'] & skey)>>dRegs[key]['sects'][skey]['offset'])).ljust(35,' ')
+                lineSections += theSection
+        lines.append(lineBody+lineSections)
+    return lines
 
 class CROCChannel(VMEDevice):
     def __init__(self, chNumber, baseAddr, controller):
@@ -923,7 +1061,6 @@ class Flash():
         byte2=((pageAddress&0x7F)<<1) + ((byteAddress&0x100)>>8)
         byte3=byteAddress&0xFF
         return [byte0, byte1, byte2, byte3]
-
         
 class Frame():
     DirectionMask=0x80

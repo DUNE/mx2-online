@@ -7,7 +7,7 @@ Started October 21 2009
 import wx
 import sys
 import SC_Util
-import v1720config
+import V1720Config
 from wx.py.shell import ShellFrame
 from wx.py.filling import FillingFrame
 
@@ -112,6 +112,7 @@ class SCMainFrame(wx.Frame):
             self.ch.SetAddress(items[1],
                 self.tree.GetItemText(parent).split(':')[1])
             self.ch.ResetControls()
+            print items[1], self.tree.GetItemText(parent).split(':')[1]
         if items[0]==SC_Util.VMEdevTypes.FE:
             self.nb.ChangeSelection(5)
             parent=self.tree.GetItemParent(event.GetItem())
@@ -122,7 +123,13 @@ class SCMainFrame(wx.Frame):
             self.fe.ResetControls()
         if items[0]==SC_Util.VMEdevTypes.DIG:
             self.nb.ChangeSelection(6)
-            self.dig.SetAddress(items[1])
+            self.dig.SetAddress('-1', items[1])
+        if items[0]==SC_Util.VMEdevTypes.DIGCH:
+            self.nb.ChangeSelection(6)
+            parent=self.tree.GetItemParent(event.GetItem())
+            self.dig.SetAddress(items[1],
+                self.tree.GetItemText(parent).split(':')[1])
+            print items[1], self.tree.GetItemText(parent).split(':')[1]
     
     def OnSCMainFrameClose(self, event):
         #self.Close(True)
@@ -137,7 +144,7 @@ class Description(wx.Panel):
         in this program, but trivial to send a message to be displayed
         in the Description."""
         wx.Panel.__init__(self, parent)
-        self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE | wx.VSCROLL)
+        self.text = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE | wx.VSCROLL)  
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.text, proportion=1, flag=wx.EXPAND|wx.ALL, border=0)
         self.SetSizer(sizer)
@@ -571,7 +578,9 @@ class DIG(wx.Panel):
         self.btnShowAdvancedGUI=SC_Util.CreateButton(self, "Show Advanced GUI",
             (5,5), (120, 20), 'AdvancedGUI', SC_Util.colorButton)
         TopLabelsData=(('DIG', (0, 0),(40, 16), 'lbl', SC_Util.colorLabel),
-            ('', (40, 0), (40, 16), 'digID', SC_Util.colorText))
+            ('', (40, 0), (40, 16), 'digID', SC_Util.colorText),
+            ('DIGCH', (0, 0),(40, 16), 'lbl', SC_Util.colorLabel),
+            ('', (40, 0), (40, 16), 'digchID', SC_Util.colorText))
         self.TopLabels = SC_Util.CreateTextCtrls(self, TopLabelsData, offset=(130, 7))
         for txt in self.TopLabels: txt.Enable(False)
         szTop=SC_Util.SizerTop(self.btnShowAdvancedGUI, self.TopLabels)
@@ -592,57 +601,64 @@ class DIG(wx.Panel):
         szV1.Add(self.btnLoadConfigFile, 0, wx.ALL, 2)
         szV1.Add(self.btnReadAllRegs, 0, wx.ALL, 2)
         szV1.Add(szH1, 0, wx.ALL|wx.EXPAND, 2)
-        WriteToFile=v1720config.WriteToFile.keys(); WriteToFile.sort()
-        self.choiceWriteToFile=wx.Choice(self, size=(125,20), choices=WriteToFile)
+        lblChoicesData=(
+            ('Write To File', (0, 0),(80, 16), 'lbl', SC_Util.colorLabel),
+            ('Append Mode', (0, 0), (80, 16), 'digID', SC_Util.colorText),
+            ('Readout Mode', (0, 0),(80, 16), 'lbl', SC_Util.colorLabel))
+        self.lblChoices = SC_Util.CreateLabels(self, lblChoicesData, offset=(0, 0))
+        szV2=wx.BoxSizer(wx.VERTICAL)
+        szV2.Add(self.lblChoices[0], 0, wx.ALL, 4)
+        szV2.Add(self.lblChoices[1], 0, wx.ALL, 4)
+        szV2.Add(self.lblChoices[2], 0, wx.ALL, 4)
+        WriteToFileStr=V1720Config.WriteToFile.values(); WriteToFileStr.sort()
+        self.choiceWriteToFile=wx.Choice(self, size=(120,20), choices=WriteToFileStr)
         self.choiceWriteToFile.SetFont(SC_Util.myFont(SC_Util.fontSizeChoice))
-        self.choiceWriteToFile.SetStringSelection('Do Not Write')
-        AppendMode=v1720config.AppendMode.keys(); AppendMode.sort()
-        self.choiceAppendMode=wx.Choice(self, size=(125,20), choices=AppendMode)
+        AppendModeStr=V1720Config.AppendMode.values(); AppendModeStr.sort()
+        self.choiceAppendMode=wx.Choice(self, size=(120,20), choices=AppendModeStr)
         self.choiceAppendMode.SetFont(SC_Util.myFont(SC_Util.fontSizeChoice))
-        self.choiceAppendMode.SetStringSelection('Overwrite')
-        ReadoutMode=v1720config.ReadoutMode.keys(); ReadoutMode.sort()
-        self.choiceReadoutMode=wx.Choice(self, size=(125,20), choices=ReadoutMode)
+        ReadoutModeStr=V1720Config.ReadoutMode.values(); ReadoutModeStr.sort()
+        self.choiceReadoutMode=wx.Choice(self, size=(120,20), choices=ReadoutModeStr)
         self.choiceReadoutMode.SetFont(SC_Util.myFont(SC_Util.fontSizeChoice))
-        self.choiceReadoutMode.SetStringSelection('Single D32')
         self.choicecontrols=[self.choiceWriteToFile, self.choiceAppendMode,
             self.choiceReadoutMode]
-        szV2=wx.BoxSizer(wx.VERTICAL)
-        szV2.Add(self.choiceWriteToFile, 0, wx.ALL, 2)
-        szV2.Add(self.choiceAppendMode, 0, wx.ALL, 2)
-        szV2.Add(self.choiceReadoutMode, 0, wx.ALL, 2)
+        szV3=wx.BoxSizer(wx.VERTICAL)
+        szV3.Add(self.choiceWriteToFile, 0, wx.ALL, 2)
+        szV3.Add(self.choiceAppendMode, 0, wx.ALL, 2)
+        szV3.Add(self.choiceReadoutMode, 0, wx.ALL, 2)
         StaticBox=wx.StaticBox(self, -1, 'Output Format')
         StaticBox.SetFont(SC_Util.myFont(SC_Util.fontSizeStaticBox))
         StaticBox.SetForegroundColour(SC_Util.colorForeground)
-        self.chkWriteData=SC_Util.CreateCheckBox(self, 'Data',
+        self.chkOutputData=SC_Util.CreateCheckBox(self, V1720Config.FormatData,
             pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
-        self.chkWriteOneLineCH=SC_Util.CreateCheckBox(self, 'OneLineCH',
+        self.chkOutputOneLineCH=SC_Util.CreateCheckBox(self, V1720Config.FormatOneLineCH,
             pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
-        self.chkWriteHeader=SC_Util.CreateCheckBox(self, 'Header',
+        self.chkOutputHeader=SC_Util.CreateCheckBox(self, V1720Config.FormatHeader,
             pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
-        self.chkWriteEventData=SC_Util.CreateCheckBox(self, 'EventData',
+        self.chkOutputEventData=SC_Util.CreateCheckBox(self, V1720Config.FormatEventData,
             pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
-        self.chkWriteConfigInfo=SC_Util.CreateCheckBox(self, 'ConfigInfo',
+        self.chkOutputConfigInfo=SC_Util.CreateCheckBox(self, V1720Config.FormatConfigInfo,
             pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
-        self.chkWriteEventStat=SC_Util.CreateCheckBox(self, 'EventStat',
+        self.chkOutputEventStat=SC_Util.CreateCheckBox(self, V1720Config.FormatEventStat,
             pos=(0,0), size=(80,16), name='', bckcolor=SC_Util.colorButton)
-        self.chkcontrols=[self.chkWriteData, self.chkWriteOneLineCH,
-            self.chkWriteHeader, self.chkWriteEventData,
-            self.chkWriteConfigInfo, self.chkWriteEventStat, StaticBox]
+        self.chkcontrols=[self.chkOutputData, self.chkOutputOneLineCH,
+            self.chkOutputHeader, self.chkOutputEventData,
+            self.chkOutputConfigInfo, self.chkOutputEventStat, StaticBox]
         szGrid=wx.FlexGridSizer(rows=3, cols=2, hgap=2, vgap=1)
-        szGrid.Add(self.chkWriteData, 0, 0, 0)
-        szGrid.Add(self.chkWriteHeader, 0, 0, 0)
-        szGrid.Add(self.chkWriteConfigInfo, 0, 0, 0)
-        szGrid.Add(self.chkWriteOneLineCH, 0, 0, 0)
-        szGrid.Add(self.chkWriteEventData, 0, 0, 0)
-        szGrid.Add(self.chkWriteEventStat, 0, 0, 0)
-        szV3=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
-        szV3.Add(szGrid, 0, wx.ALL, 2) 
+        szGrid.Add(self.chkOutputData, 0, 0, 0)
+        szGrid.Add(self.chkOutputHeader, 0, 0, 0)
+        szGrid.Add(self.chkOutputConfigInfo, 0, 0, 0)
+        szGrid.Add(self.chkOutputOneLineCH, 0, 0, 0)
+        szGrid.Add(self.chkOutputEventData, 0, 0, 0)
+        szGrid.Add(self.chkOutputEventStat, 0, 0, 0)
+        szV4=wx.StaticBoxSizer(StaticBox, wx.VERTICAL)
+        szV4.Add(szGrid, 0, wx.ALL, 2) 
         szH2=wx.BoxSizer(wx.HORIZONTAL)
         szH2.Add(szV1, 0, wx.ALL, 2)
         szH2.Add(szV2, 0, wx.ALL, 2)
         szH2.Add(szV3, 0, wx.ALL, 2)
-        self.display = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE | wx.VSCROLL)
-        self.display.SetFont(SC_Util.myFont(SC_Util.fontSizeTextCtrl))
+        szH2.Add(szV4, 0, wx.ALL, 2)
+        self.display = wx.TextCtrl(self, -1, style = wx.TE_MULTILINE | wx.VSCROLL | wx.HSCROLL)
+        self.display.SetFont(wx.Font(SC_Util.fontSizeTextCtrl, family=wx.MODERN, style=wx.NORMAL, weight=wx.NORMAL))        
         sizerALL=wx.BoxSizer(wx.VERTICAL)
         sizerALL.Add(szTop, 0, wx.ALL, 5)
         sizerALL.Add(szH2, 0, wx.ALL, 5)
@@ -652,13 +668,15 @@ class DIG(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.OnbtnShowAdvancedGUI, self.btnShowAdvancedGUI)
         self.showAdvanced=False
         #self.OnbtnShowAdvancedGUI(None)
-    def SetAddress(self, digNumber):
+    def SetAddress(self, digchNumber, digNumber):
         '''Sets crocNumber variables and GUI labels'''
+        self.digchNumber=int(digchNumber)
         self.digNumber=int(digNumber)
-        self.FindWindowByName('digID').SetValue(digNumber)        
+        self.FindWindowByName('digchID').SetValue(digchNumber)
+        self.FindWindowByName('digID').SetValue(digNumber)
     def OnbtnShowAdvancedGUI(self, event): 
         self.showAdvanced=SC_Util.ShowControls(self.btnShowAdvancedGUI, self.showAdvanced,
-            self.btncontrols, self.choicecontrols, self.chkcontrols, [self.display])
+            self.btncontrols, self.choicecontrols, self.chkcontrols, [self.display], self.lblChoices)
         self.Fit()
 
 

@@ -1,6 +1,7 @@
 import SC_MainObjects
 import SC_Util
 import CAENVMEwrapper
+import V1720Config
 
 class SC():
     '''This SlowControll class should be used for non GUI interface with
@@ -85,7 +86,7 @@ class SC():
         #now create object lists for DIGs
         self.vmeDIGs=[]
         for addr in addrListDIGs:
-            self.vmeDIGs.append(SC_MainObjects.VMEDevice(self.controller, addr<<16, SC_Util.VMEdevTypes.DIG))
+            self.vmeDIGs.append(SC_MainObjects.DIG(self.controller, addr<<16))
         return self.vmeDIGs
 
     def FindFEBs(self, theCROCs):
@@ -242,4 +243,19 @@ class SC():
     def HVSetAll(self, setVal):
         '''Set the HVTarget of all FEBs to setVal'''
         SC_MainObjects.FEB(0).SetAllHVTarget(self.vmeCROCs, int(setVal))
+
+    def DIGcfgFileLoad(self, fullpathname, thisDIG):
+        '''Read a V1720 configuration file.
+        Return tuple (flags, lines) where lines is a list of all config file's (parsed) lines and flags is a dictionary
+        flags={FileKeyWriteToFile:None, FileKeyAppendMode:None, FileKeyReadoutMode:None,
+           FileKeyBLTSize:None, FileKeyOutputFormat:None, FileKeyWriteRegister:[]}'''
+        #first call the parsing method
+        flags, lines = V1720Config.DIGcfgFileLoad(fullpathname)
+        #then write into V170 registers. Note that V1720 needs 32bit data width!!!
+        prevDataWidth=self.controller.dataWidth
+        self.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD32
+        for (addr, data) in flags[V1720Config.FileKeyWriteRegister]:
+            self.controller.WriteCycle(thisDIG.BaseAddress()+addr, data)
+        self.controller.dataWidth=prevDataWidth
+        return flags, lines
         
