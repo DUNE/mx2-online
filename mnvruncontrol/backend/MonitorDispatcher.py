@@ -23,7 +23,7 @@ from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import SocketRequests
 
-from mnvruncontrol.backend import Dispatcher
+from mnvruncontrol.backend.Dispatcher import Dispatcher
 
 class MonitorDispatcher(Dispatcher):
 	"""
@@ -42,9 +42,10 @@ class MonitorDispatcher(Dispatcher):
 
 		# we need to specify what requests we know how to handle.
 		self.valid_requests += SocketRequests.MonitorRequests
-		self.handlers += { "om_start" : self.om_start,
-		                   "om_stop"  : self.om_stop,
-		                   "om_alive" : self.om_alive }
+		self.handlers.update( { "om_start" : self.om_start,
+		                        "om_stop"  : self.om_stop } )
+		                        
+		self.pidfilename = Defaults.OM_DISPATCHER_PIDFILE
 		                   
 		self.om_eb_thread = None
 		self.om_Gaudi_thread = None
@@ -80,7 +81,7 @@ class MonitorDispatcher(Dispatcher):
 		""" Start the event builder process. """
 		executable = ( "%s/bin/event_builder %s %s %s" % (environment["DAQROOT"], etfile, self.evbfile, etport) ) 
 		self.logger.info("   event_builder command:")
-		self.logger.info("      '" + (executable + "'...")
+		self.logger.info("      '" + executable + "'...")
 		signal.signal(signal.SIGUSR1, self.om_start_Gaudi)
 		self.om_eb_thread = OMThread(executable)
 	
@@ -111,7 +112,7 @@ class MonitorDispatcher(Dispatcher):
 		if show_details:
 			self.logger.info("Client wants to stop the OM processes.")
 		
-		if self.om_eb_thread and self.om_thread.is_alive()
+		if self.om_eb_thread and self.om_thread.is_alive():
 			if show_details:
 				self.logger.info("   ==> Attempting to stop the event builder thread.")
 			try:
@@ -122,7 +123,7 @@ class MonitorDispatcher(Dispatcher):
 				self.logger.exception("   ==> Error message:")
 				return "1"
 
-		if self.om_Gaudi_thread and self.om_Gaudi_thread.is_alive()
+		if self.om_Gaudi_thread and self.om_Gaudi_thread.is_alive():
 			if show_details:
 				self.logger.info("   ==> Attempting to stop the Gaudi thread.")
 			try:

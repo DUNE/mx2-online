@@ -41,7 +41,7 @@ class Dispatcher:
 
 		# basic requests and methods.
 		# derived classes can extend these if they want to.
-		self.valid_requests = Defaults.GlobalRequests
+		self.valid_requests = SocketRequests.GlobalRequests
 		self.handlers = { "alive"        : self.ping,
 		                  "get_lock"     : self.get_lock,
 		                  "release_lock" : self.release_lock }
@@ -145,6 +145,13 @@ class Dispatcher:
 			
 		self.logger.info("Shutdown completed.")
 		
+	def cleanup(self):
+		self.server_socket.close()
+
+		if os.path.isfile(self.pidfilename):
+			self.logger.info("Removing PID file.")
+			os.remove(self.pidfilename)
+
 	def daemonize(self):
 		""" Starts the listener as a background service.
 		    Modified mostly from code.activestate.com, recipe 278731. """
@@ -253,7 +260,7 @@ class Dispatcher:
 				os.kill(pid, 0)		# send it the null signal to check if it's there and alive.
 			except OSError:			# you get an OSError if the PID doesn't exist.  it's safe to clean up then.
 				self.logger.info("Process is dead.  Cleaning up PID file.")
-				os.remove(Defaults.DISPATCHER_PIDFILE)
+				os.remove(self.pidfilename)
 			else:
 				self.logger.info("Process is still alive.")
 				return pid
@@ -476,8 +483,8 @@ class Dispatcher:
 			else:
 				print "Dispatcher starting in daemon mode."
 				print "Run this program with the keyword 'stop' to stop it."
-				print "Also see the log file at '" + Defaults.DISPATCHER_LOGFILE + "'.\n"
-			dispatcher.start()
+				print "Also see the log file.\n"
+			self.start()
 		elif command == "stop":
 			self.interactive = True
 			self.replace = False
