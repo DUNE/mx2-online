@@ -37,6 +37,7 @@ SOLDIER = "mnvonline0.fnal.gov"
 WORKER  = "mnvonline1.fnal.gov"
 #MASTER  = "mnvonlinemaster.fnal.gov"
 MASTER = "localhost"
+MONITOR = "mnvnearline1.fnal.gov"
 
 MAX_CONNECTION_ATTEMPTS = 5
 CONNECTION_ATTEMPT_INTERVAL = 0.5	# in seconds
@@ -51,8 +52,10 @@ MAX_REPEATED_REQUEST_LOGS = 5
 MAX_REPEATED_REQUEST_LOGS = 5
 
 # dispatcher process details
-DISPATCHER_PIDFILE = "/work/conditions/rc_dispatcher.pid"
-DISPATCHER_LOGFILE = "/work/data/logs/dispatcher.log"
+READOUT_DISPATCHER_PIDFILE = "/work/conditions/readout_dispatcher.pid"
+READOUT_DISPATCHER_LOGFILE = "/work/data/logs/readout_dispatcher.log"
+OM_DISPATCHER_PIDFILE = "/work/conditions/om_dispatcher.pid"
+OM_DISPATCHER_LOGFILE = "/work/data/logs/om_dispatcher.log"
 
 # slow control
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
