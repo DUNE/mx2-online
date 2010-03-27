@@ -45,6 +45,7 @@ int main(int argc, char **argv)
 	sprintf(hostName, "mnvonlinemaster.fnal.gov");
 	std::cout << "ET system host machine = mnvonlinemaster.fnal.gov" << std::endl;
 #endif
+#if SINGLEPC
 #if WH14T
 	sprintf(hostName, "minervatest02.fnal.gov");
 	std::cout << "ET system host machine = minervatest02.fnal.gov" << std::endl;
@@ -52,6 +53,13 @@ int main(int argc, char **argv)
 #if WH14B
 	sprintf(hostName, "minervatest04.fnal.gov");
 	std::cout << "ET system host machine = minervatest04.fnal.gov" << std::endl;
+#endif
+#endif
+#if MULTIPC
+#if WH14T||WH14B
+	sprintf(hostName, "minervatest03.fnal.gov");
+	std::cout << "ET system host machine = minervatest04.fnal.gov" << std::endl;
+#endif
 #endif
 	std::cout << "Ouptut Filename        = " << output_filename << std::endl;
 #if MULTIPC

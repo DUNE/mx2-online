@@ -255,6 +255,7 @@ int main(int argc, char *argv[])
 	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote mode only.
 	mnvdaq.infoStream() << "Setting ET host to mnvonlinemaster.fnal.gov.";	
 #endif
+#if SINGLEPC
 #if WH14T
 	et_open_config_sethost(openconfig, "minervatest02.fnal.gov");  // Remote mode only.
 	mnvdaq.infoStream() << "Setting ET host to minervatest02.fnal.gov.";	
@@ -263,7 +264,13 @@ int main(int argc, char *argv[])
 	et_open_config_sethost(openconfig, "minervatest04.fnal.gov");  // Remote mode only.
 	mnvdaq.infoStream() << "Setting ET host to minervatest04.fnal.gov.";	
 #endif
-
+#endif
+#if MULTIPC
+#if WH14T||WH14B
+	et_open_config_sethost(openconfig, "minervatest03.fnal.gov");  // Remote mode only.
+	mnvdaq.infoStream() << "Setting ET host to minervatest04.fnal.gov.";	
+#endif
+#endif
 	// Set direct connection.
 	et_open_config_setcast(openconfig, ET_DIRECT);  // Remote mode only.
 
@@ -309,7 +316,12 @@ int main(int argc, char *argv[])
 	// Create a TCP socket.
 	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
 	// Set up the global_gate service.
+#if CRATE0||CRATE1
 	SetupSocketService(global_gate_service, worker_node_info, "mnvonline1.fnal.gov", global_gate_port ); 
+#endif
+#if WH14T||WH14B
+	SetupSocketService(global_gate_service, worker_node_info, "minervatest04.fnal.gov", global_gate_port ); 
+#endif
 	// Create an address for the gate_done listener.  The soldier listens for the gate done signal.
 	gate_done_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&gate_done_service, 0, sizeof (gate_done_service));
@@ -339,7 +351,12 @@ int main(int argc, char *argv[])
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
 	// Set up the gate_done service. 
+#if CRATE0||CRATE1
 	SetupSocketService(gate_done_service, soldier_node_info, "mnvonline0.fnal.gov", gate_done_port ); 
+#endif
+#if WH14T||WH14B
+	SetupSocketService(gate_done_service, soldier_node_info, "minervatest02.fnal.gov", gate_done_port ); 
+#endif
 	// Create an address for the global_gate listener.  The worker listens for the global gate data.
 	global_gate_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&global_gate_service, 0, sizeof (global_gate_service));
@@ -1331,7 +1348,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-07'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-08'),\n"); //online, DAQ Heder, CVSTag
 	// Basically can't trust this...
 	//struct stat st;
 	//size_t fileSize = 0;
