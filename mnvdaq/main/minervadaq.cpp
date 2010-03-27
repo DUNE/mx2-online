@@ -16,6 +16,8 @@
 #include <boost/thread/mutex.hpp>
 #include <ctime>
 #include <sys/time.h>
+#include <sys/stat.h> // for file sizes
+#include <stdlib.h>   // for file sizes
 
 #define THREAD_COUNT 4  /*!< a thread count var if we aren't finding the # of threads needed */
 #if MASTER||SINGLEPC // Soldier Node
@@ -58,7 +60,8 @@ int main(int argc, char *argv[])
 	string et_filename       = "/work/data/etsys/testme_RawData";  
 	string log_filename      = "/work/data/logs/testme_Log.txt"; 
 	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme_SAM.py");
-	FILE *sam_file;
+	char data_filename[100]; sprintf(data_filename,"/work/data/sam/testme_RawData.dat");
+	//FILE *sam_file; //unused in main
 	unsigned long long firstEvent, lastEvent;
 	int networkPort          = 1091; // 1091 and 1092 currently open.
 	int controllerErrCode;
@@ -118,6 +121,7 @@ int main(int argc, char *argv[])
 			log_filename = "/work/data/logs/" + fileroot + "_Controller" + 
 				str_controllerID + "Log.txt";
 			sprintf(sam_filename,"/work/data/sam/%s_SAM.py",fileroot.c_str());
+			sprintf(data_filename,"/work/data/rawdata/%s_RawData.dat",fileroot.c_str());
 			std::cout << "\tET Filename            = " << et_filename << std::endl;
 			std::cout << "\tSAM Filename           = " << sam_filename << std::endl;
 			std::cout << "\tLOG Filename           = " << log_filename << std::endl;
@@ -237,7 +241,7 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	et_att_id      attach;
 	et_sys_id      sys_id;
-	et_id          *id;
+	//et_id          *id; //unused in main
 	et_openconfig  openconfig;
 
 	// Configuring the ET system is the first thing we must do.
@@ -908,8 +912,8 @@ int main(int argc, char *argv[])
 		// Write the SAM File.
 #if SINGLEPC||MASTER
 		lastEvent = event_data.globalGate - 1; // Fencepost, etc.
-		WriteSAM(sam_filename, firstEvent, lastEvent, fileroot, detector, 
-			config_filename, runningMode, gate, runNumber, subRunNumber,
+		WriteSAM(sam_filename, firstEvent, lastEvent, fileroot,  
+			detector, config_filename, runningMode, gate, runNumber, subRunNumber,
 			startTime, stopTime);
 #endif
 	} //end of gates loop
@@ -1328,6 +1332,17 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
 	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-07'),\n"); //online, DAQ Heder, CVSTag
+	// Basically can't trust this...
+	//struct stat st;
+	//size_t fileSize = 0;
+	//if(stat(fullpathdatafilename,&st) ){
+	//	// actually, this should generate panic eventually?
+	//	fileSize = st.st_size;
+	//	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
+	//}else{
+	//	fileSize = st.st_size;
+	//	fprintf(sam_file,"fileSize=SamSize('%dB'),\n",fileSize);
+	//}
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

@@ -27,6 +27,13 @@ int WriteSAM(const char samfilename[],
 	const std::string datafilename, const int detector, const char configfilename[], 
 	const int runningMode, const int eventCount, const int runNum, const int subNum, 
 	const unsigned long long startTime, const unsigned long long stopTime);
+// This version is no good - can't trust the file size, sadly.
+//int WriteSAM(const char samfilename[], 
+//	const unsigned long long firstEvent, const unsigned long long lastEvent, 
+//	const std::string datafilename, const char fullpathdatafilename[],  
+//	const int detector, const char configfilename[], 
+//	const int runningMode, const int eventCount, const int runNum, const int subNum, 
+//	const unsigned long long startTime, const unsigned long long stopTime);
 
 /* some logging files for debugging purposes */
 #if TIME_ME
