@@ -467,7 +467,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			if board_statuses == 0:
 				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The " + node.name + " node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty...", title="No boards attached to " + node.name + " node") )
 				self.logger.warning(node.name + " node reports that it has no FEBs...")
-				return True	# it's still ok to go on, but user should know what's happening
+				continue	# it's still ok to go on, but user should know what's happening
 			
 			for board in board_statuses:
 				dev = abs(int(board["hv_dev"]))
