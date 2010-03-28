@@ -248,34 +248,36 @@ int main(int argc, char *argv[])
 	et_open_config_init(&openconfig);
 
 	// Set the remote host.
+	// We operate the DAQ exclusively in "remote" mode even when running on only one PC.
 	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // Remote mode only.
 
 	// Set to the current host machine name. 
-#if CRATE0||CRATE1
-	et_open_config_sethost(openconfig, "mnvonlinemaster.fnal.gov");  // Remote mode only.
-	mnvdaq.infoStream() << "Setting ET host to mnvonlinemaster.fnal.gov.";	
-#endif
+	char hostName[100];
 #if SINGLEPC
-#if WH14T
-	et_open_config_sethost(openconfig, "minervatest02.fnal.gov");  // Remote mode only.
-	mnvdaq.infoStream() << "Setting ET host to minervatest02.fnal.gov.";	
-#endif
-#if WH14B
-	et_open_config_sethost(openconfig, "minervatest04.fnal.gov");  // Remote mode only.
-	mnvdaq.infoStream() << "Setting ET host to minervatest04.fnal.gov.";	
-#endif
+	sprintf(hostName, "localhost");
 #endif
 #if MULTIPC
+	char soldierName[100];
+	char workerName[100];
 #if WH14T||WH14B
-	et_open_config_sethost(openconfig, "minervatest03.fnal.gov");  // Remote mode only.
-	mnvdaq.infoStream() << "Setting ET host to minervatest04.fnal.gov.";	
+	sprintf(hostName,    "minervatest03.fnal.gov");
+	sprintf(soldierName, "minervatest02.fnal.gov");
+	sprintf(workerName,  "minervatest04.fnal.gov");
+#endif
+#if CRATE0||CRATE1
+	sprintf(hostName,    "mnvonlinemaster.fnal.gov");
+	sprintf(soldierName, "mnvonline0.fnal.gov");
+	sprintf(workerName,  "mnvonline1.fnal.gov");
 #endif
 #endif
+	et_open_config_sethost(openconfig, hostName);  
+	mnvdaq.infoStream() << "Setting ET host to " << hostName;	
+
 	// Set direct connection.
 	et_open_config_setcast(openconfig, ET_DIRECT);  // Remote mode only.
 
 	// Set the server port.
-	et_open_config_setserverport(openconfig, networkPort); // Remote (multi-pc) mode only.
+	et_open_config_setserverport(openconfig, networkPort); // Remote mode only.
 	mnvdaq.infoStream() << "Set ET server port to " << networkPort;	
 
 	// Open it.
@@ -316,12 +318,7 @@ int main(int argc, char *argv[])
 	// Create a TCP socket.
 	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
 	// Set up the global_gate service.
-#if CRATE0||CRATE1
-	SetupSocketService(global_gate_service, worker_node_info, "mnvonline1.fnal.gov", global_gate_port ); 
-#endif
-#if WH14T||WH14B
-	SetupSocketService(global_gate_service, worker_node_info, "minervatest04.fnal.gov", global_gate_port ); 
-#endif
+	SetupSocketService(global_gate_service, worker_node_info, workerName, global_gate_port ); 
 	// Create an address for the gate_done listener.  The soldier listens for the gate done signal.
 	gate_done_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&gate_done_service, 0, sizeof (gate_done_service));
@@ -351,12 +348,7 @@ int main(int argc, char *argv[])
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
 	// Set up the gate_done service. 
-#if CRATE0||CRATE1
-	SetupSocketService(gate_done_service, soldier_node_info, "mnvonline0.fnal.gov", gate_done_port ); 
-#endif
-#if WH14T||WH14B
-	SetupSocketService(gate_done_service, soldier_node_info, "minervatest02.fnal.gov", gate_done_port ); 
-#endif
+	SetupSocketService(gate_done_service, soldier_node_info, soldierName, gate_done_port ); 
 	// Create an address for the global_gate listener.  The worker listens for the global gate data.
 	global_gate_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&global_gate_service, 0, sizeof (global_gate_service));
@@ -388,7 +380,6 @@ int main(int argc, char *argv[])
 	gate_done_socket_is_live = false;
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	std::cout << "\nPreparing make new server connection for gate_done synchronization...\n";
-	std::cout << " gate_done_socket_is_live = " << gate_done_socket_is_live << std::endl; 
 	mnvdaq.infoStream() << "Preparing make new server connection for gate_done synchronization...";
 	mnvdaq.infoStream() << " gate_done_socket_is_live = " << gate_done_socket_is_live; 
 	// Accept connection from worker node to supply end of event signalling.
@@ -450,7 +441,6 @@ int main(int argc, char *argv[])
 #endif // end if MASTER&&(!SINGLEPC)
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	std::cout << "\nPreparing make new server connection for global_gate synchronization...\n";
-	std::cout << " global_gate_socket_is_live = " << global_gate_socket_is_live << std::endl; 
 	mnvdaq.infoStream() << "Preparing make new server connection for global_gate synchronization...";
 	mnvdaq.infoStream() << " global_gate_socket_is_live = " << global_gate_socket_is_live; 
 	// Accept connection from worker node to supply global gate signalling.
@@ -1207,6 +1197,7 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 	// This sleep is here because we return too quickly - the FEBs are still digitizing.
 	// Smallest possible time with "sleep" command is probably something like ~1 ms
 	// TODO - Put in a more clever wait function so we don't step on digitization on the FEBs.
+	// One milisecond is too long - digitization only takes 300 microseconds.
 	system("sleep 1e-3");
 #endif
 
@@ -1349,17 +1340,6 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
 	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-08'),\n"); //online, DAQ Heder, CVSTag
-	// Basically can't trust this...
-	//struct stat st;
-	//size_t fileSize = 0;
-	//if(stat(fullpathdatafilename,&st) ){
-	//	// actually, this should generate panic eventually?
-	//	fileSize = st.st_size;
-	//	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
-	//}else{
-	//	fileSize = st.st_size;
-	//	fprintf(sam_file,"fileSize=SamSize('%dB'),\n",fileSize);
-	//}
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

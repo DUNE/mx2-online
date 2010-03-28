@@ -1,5 +1,4 @@
-# Note, to compile the DAQ, after you pull the package down from CVS, you need to untar the ET code first!
-# Set your LOCALE.  One Valid choice right now: "FNAL" for Fermilab.  Currently on the FNAL mnvonline
+# Set your LOCALE.  Currently on the FNAL mnvonline and minervatest
 # machines, the LOCALE is set in the mnvonline user .bash_profile.
 if [ "$LOCALE" == "" ]
 then
@@ -10,12 +9,16 @@ fi
 echo ---------------------------------------------------------------------------
 echo Welcome to the MINERvA DAQ Software Environment.
 echo
-echo Your LOCALE is $LOCALE
+echo Your LOCALE is $LOCALE.
+echo Note, when you run this script you may supply the DAQROOT as an argument.
 echo ---------------------------------------------------------------------------
 
 if [ $LOCALE == 'FNAL' ]
 then
 	export DAQROOT=/work/software/mnvonline/mnvdaq
+	if [ $# -gt 0 ]; then
+		export DAQROOT=$1
+	fi
         export CAEN_DIR=/work/software/CAENVMElib
 	export ET_HOME=$DAQROOT/et_9.0/Linux-x86_64-64
 	export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
@@ -26,6 +29,9 @@ then
 elif [ $LOCALE == 'NEARLINE' ]
 then
 	export DAQROOT=/scratch/nearonline/mnvdaq
+	if [ $# -gt 0 ]; then
+		export DAQROOT=$1
+	fi
 	export CAEN_DIR=/scratch/nearonline/CAENVMElib
 	export ET_HOME=$DAQROOT/et_9.0/Linux-x86_64-64
 	export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
@@ -50,6 +56,5 @@ echo Your ET_HOME is $ET_HOME
 echo Your ET_LIBROOT is $ET_LIBROOT
 echo Your ET_USE64BITS is $ET_USE64BITS
 echo Your LD_LIBRARY_PATH is $LD_LIBRARY_PATH
-
 echo ---------------------------------------------------------------------------
 

@@ -37,37 +37,26 @@ int main(int argc, char **argv)
 	if (argc > 4)
 	{
 		callback_pid = atoi(argv[4]);
-		std::cout << "Notifying process " << callback_pid << " when I am ready to take events." << std::endl;
+		std::cout << "Notifying process " << callback_pid << " when ready to accept events." << std::endl;
 	}
 
 	char hostName[100];
-#if CRATE0||CRATE1||NEARLINE
-	sprintf(hostName, "mnvonlinemaster.fnal.gov");
-	std::cout << "ET system host machine = mnvonlinemaster.fnal.gov" << std::endl;
-#endif
 #if SINGLEPC
-#if WH14T
-	sprintf(hostName, "minervatest02.fnal.gov");
-	std::cout << "ET system host machine = minervatest02.fnal.gov" << std::endl;
+	sprintf(hostName, "localhost");
+        std::cout << "Configured for a Single-PC Build..." << std::endl;
 #endif
-#if WH14B
-	sprintf(hostName, "minervatest04.fnal.gov");
-	std::cout << "ET system host machine = minervatest04.fnal.gov" << std::endl;
-#endif
-#endif
+
 #if MULTIPC
 #if WH14T||WH14B
 	sprintf(hostName, "minervatest03.fnal.gov");
-	std::cout << "ET system host machine = minervatest04.fnal.gov" << std::endl;
 #endif
+#if CRATE0||CRATE1||NEARLINE
+	sprintf(hostName, "mnvonlinemaster.fnal.gov");
 #endif
-	std::cout << "Ouptut Filename        = " << output_filename << std::endl;
-#if MULTIPC
         std::cout << "Configured for a Multi-PC Build..." << std::endl;
 #endif
-#if SINGLEPC
-        std::cout << "Configured for a Single-PC Build..." << std::endl;
-#endif
+	std::cout << "ET system host machine = " << hostName << std::endl;
+	std::cout << "Ouptut Filename        = " << output_filename << std::endl;
 
 	int            status;
 	et_openconfig  openconfig;
@@ -108,7 +97,7 @@ int main(int argc, char **argv)
 	oldheartbeat = id->sys->heartbeat;
 	int counter = 0;
 	do {
-		system("sleep 10s"); // Give ET a chance to start...
+		system("sleep 5s"); // Give ET a chance to start...
 		if (!counter) {
 			newheartbeat = id->sys->heartbeat;
 		} else {
