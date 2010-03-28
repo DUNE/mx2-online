@@ -51,7 +51,12 @@ class RunControlDispatcher:
 		
 		# the master slow control object.  it handles
 		# the interface with the hardware.
-		self.slowcontrol = SlowControl()
+		# we can't initialize it here because it seems to
+		# use file descriptors to interact with the hardware,
+		# which means that during daemonization the
+		# hardware link would get broken.
+		# it will be initialized when used.
+		self.slowcontrol = None
 
 		# set up some logging facilites.
 		# we set up a rotating file handler here;
@@ -555,7 +560,9 @@ class RunControlDispatcher:
 		    On success, returns a string of lines consisting of
 		    1 voltage per line, in the following format:
 		    CROC-CHANNEL-BOARD: [voltage_deviation_in_ADC_counts]
-		    On failure, returns the string "NOREAD". """
+		    On failure, returns the string "NOREAD". 
+                    If the slow control modules return an empty list
+                    (no FEBs), this method returns "NOBOARDS". """
 
 		if show_details:
 			self.logger.info("Client wants high voltage details of front-end boards.")
@@ -586,7 +593,10 @@ class RunControlDispatcher:
 			os.remove(Defaults.DISPATCHER_PIDFILE)
 
 	def sc_init(self):
-		# first find the appropriate VME devices: CRIMs, CROCs, DIGitizers....
+		if self.slowcontrol is None:
+			self.slowcontrol = SlowControl()
+
+		# find the appropriate VME devices: CRIMs, CROCs, DIGitizers....
 		self.slowcontrol.FindCRIMs()
 		self.slowcontrol.FindCROCs()
 		self.slowcontrol.FindDIGs()
