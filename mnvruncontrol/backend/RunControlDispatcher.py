@@ -566,6 +566,9 @@ class RunControlDispatcher:
 			self.logger.exception("Error trying to read the voltages:")
 			self.logger.warning("No read performed.")
 			return "NOREAD"
+
+		if len(feblist) == 0:
+			return "NOBOARDS"
 		
 		formatted_feblist = [ "%s-%s-%s: %s %s" % (febdetails['FPGA']["CROC"],
 		                                           febdetails["FPGA"]["Channel"],

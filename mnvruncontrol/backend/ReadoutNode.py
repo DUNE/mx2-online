@@ -161,9 +161,12 @@ class ReadoutNode:
 	    		    "croc", chain", "board", "voltage_dev", "period"
 	    	    On failure, returns None.	"""
 		response = self.request("sc_readboards?")
-		if response == "NOREAD" or response == "":
+		if response == "NOREAD":
 			return None
-		
+	
+		if response == "NOBOARDS":
+			return 0
+	
 		feb_data = []
 		
 		lines = response.splitlines()
