@@ -565,7 +565,7 @@ int main(int argc, char *argv[])
 		for (int i=0;i<9;i++) {
 			event_data.feb_info[i] = 0; // Initialize the FEB information block. 
 		}
-#if SINGLEPC||(MASTER&&(!SINGLEPC)) // Single PC or Soldier Node
+#if SINGLEPC||MASTER // Single PC or Soldier Node
 		global_gate_data[0] = GetGlobalGate();
 #if DEBUG_GENERAL
 		mnvdaq.debugStream() << "    Global Gate: " << global_gate_data[0];
@@ -578,39 +578,12 @@ int main(int argc, char *argv[])
 
 		// soldier-worker global gate data synchronization.
 #if MASTER&&(!SINGLEPC) // Soldier Node
-#if DEBUG_SOCKETS
-		mnvdaq.debugStream() << " Writing global gate to soldier node to indicate readiness of trigger...";
+		SynchWrite(global_gate_socket_handle, global_gate_data);
 #endif
-		if (write(global_gate_socket_handle,global_gate_data,sizeof(global_gate_data)) == -1) { 
-			mnvdaq.fatalStream() << "socket write error: global_gate!";
-			perror("write error: global_gate"); 
-			exit(EXIT_FAILURE);
-		}
-#if DEBUG_SOCKETS
-		mnvdaq.debugStream() << " Finished writing global gate to worker node.";
-#endif
-#endif // end if MASTER && !SINGLEPC
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
-#if DEBUG_SOCKETS
-		mnvdaq.debugStream() << " Reading global gate from soldier node to indicate start of trigger...";
-		mnvdaq.debugStream() << "  Initial global_gate_data   = " << global_gate_data[0];
-		mnvdaq.debugStream() << "  global_gate_socket_is_live = " << global_gate_socket_is_live; 
-#endif
-		while (!global_gate_data[0]) { 
-			// Read global gate data from the worker node 
-			int read_val = read(global_gate_socket_connection,global_gate_data,sizeof(global_gate_data));
-			if ( read_val != sizeof(global_gate_data) ) { 
-				mnvdaq.fatalStream() << "server read error: cannot get global_gate!";
-				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;
-				perror("server read error: done"); 
-				exit(EXIT_FAILURE);
-			}
-#if DEBUG_SOCKETS
-			mnvdaq.debugStream() << "  ->After read, new global_gate_data: " << global_gate_data[0];
-#endif
-		}
+		SynchListen(global_gate_socket_connection, global_gate_data);
 		event_data.globalGate = global_gate_data[0];
-#endif // end if (!MASTER)&&(!SINGLEPC)
+#endif 
 
 		// Set the data_ready flag to false, we have not yet taken any data.
 		data_ready = false; 
@@ -618,9 +591,6 @@ int main(int argc, char *argv[])
 		// Reset the thread count if in threaded operation.
 #if THREAD_ME
 		thread_count = 0;
-#endif
-#if DEBUG_THREAD
-		std::cout << "Launching the trigger thread." << std::endl;
 #endif
 
 		/**********************************************************************************/
@@ -864,23 +834,8 @@ int main(int argc, char *argv[])
 		// worker node before attaching the end-of-event header bank.
 #if !SINGLEPC   // Soldier Node
 		gate_done[0] = false;
-#if DEBUG_SOCKETS
-		mnvdaq.debugStream() << "Preparing to end event...";
-		mnvdaq.debugStream() << " Initial gate_done        = " << gate_done[0];
-		mnvdaq.debugStream() << " gate_done_socket_is_live = " << gate_done_socket_is_live; 
+		SynchListen(gate_done_socket_connection, gate_done);
 #endif
-		while (!gate_done[0]) { 
-			// Read "done" from the worker node 
-			if ((read(gate_done_socket_connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) { 
-				mnvdaq.fatalStream() << "server read error: cannot get gate_done!";
-				perror("server read error: gate_done"); 
-				exit(EXIT_FAILURE);
-			}
-#if DEBUG_SOCKETS
-			mnvdaq.debugStream() << " After read, new gate_done: " << gate_done[0];
-#endif
-		}
-#endif // end if !SINGLEPC
 		// Contact event builder service.
 		daq->ContactEventBuilder(&event_data, -1, attach, sys_id);
 
@@ -897,16 +852,9 @@ int main(int argc, char *argv[])
 #endif // end if SINGLEPC || MASTER
 
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
-#if DEBUG_SOCKETS
-		mnvdaq.debugStream() << " Writing to soldier node to indicate end of gate...";
-#endif
 		gate_done[0]=true;
-		if (write(gate_done_socket_handle,gate_done,sizeof(gate_done)) == -1) { 
-			mnvdaq.fatalStream() << "server write error: cannot put gate_done!";
-			perror("server write error: gate_done"); 
-			exit(EXIT_FAILURE);
-		}
-#endif // end if !MASTER && !SINGLEPC
+		SynchWrite(gate_done_socket_handle, gate_done);
+#endif 
 
 #if SINGLEPC||(MASTER&&(!SINGLEPC)) // Single PC or Soldier Node
 		// Increment the Global Gate value and log it.
@@ -1412,4 +1360,77 @@ int WriteSAM(const char samfilename[],
 
 	return 0;
 }
+
+
+void SynchWrite(int socket_handle, unsigned long long data[])
+{
+#if DEBUG_SOCKETS
+	mnvdaq.debugStream() << " Entering SynchWrite for handle " << socket_handle << " and data " << data[0];
+#endif          
+	if (write(socket_handle,data,sizeof(data)) == -1) {
+		mnvdaq.fatalStream() << "socket write error: SynchWrite!";
+		perror("write error");
+		exit(EXIT_FAILURE);
+	}
+#if DEBUG_SOCKETS
+	mnvdaq.debugStream() << " Finished SynchWrite.";
+#endif 
+}
+
+
+void SynchWrite(int socket_handle, bool data[])
+{
+#if DEBUG_SOCKETS
+	mnvdaq.debugStream() << " Entering SynchWrite for handle " << socket_handle << " and data " << data[0];
+#endif
+	if (write(socket_handle,data,sizeof(data)) == -1) {
+		mnvdaq.fatalStream() << "socket write error: SynchWrite!";
+		perror("write error");
+		exit(EXIT_FAILURE);
+	}       
+#if DEBUG_SOCKETS
+	mnvdaq.debugStream() << " Finished SynchWrite.";
+#endif
+}
+
+
+void SynchListen(int socket_connection, unsigned long long data[])
+{
+#if DEBUG_SOCKETS
+	mnvdaq.debugStream() << " Reading data in SynchListen...";
+#endif          
+	while (!data[0]) { 
+		int read_val = read(socket_connection, data, sizeof(data));
+		if ( read_val != sizeof(data) ) {
+			mnvdaq.fatalStream() << "Server read error in SynchListen!";
+			perror("server read error: done");
+			exit(EXIT_FAILURE);
+		}
+#if DEBUG_SOCKETS
+		mnvdaq.debugStream() << "  ->After read, new data: " << data[0];
+#endif
+	}
+}
+
+
+void SynchListen(int socket_connection, bool data[])
+{
+#if DEBUG_SOCKETS
+	mnvdaq.debugStream() << " Reading data in SynchListen...";
+#endif          
+	while (!data[0]) { 
+		int read_val = read(socket_connection, data, sizeof(data));
+		if ( read_val != sizeof(data) ) {
+			mnvdaq.fatalStream() << "Server read error in SynchListen!";
+			perror("server read error: done");
+			exit(EXIT_FAILURE);
+		}
+#if DEBUG_SOCKETS
+		mnvdaq.debugStream() << "  ->After read, new data: " << data[0];
+#endif
+	}
+}
+
+
+
 
