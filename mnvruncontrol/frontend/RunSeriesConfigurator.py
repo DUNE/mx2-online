@@ -19,7 +19,7 @@ class MyFrame(wx.Frame):
 
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, -1, title,
-                          pos=(0, 0), size=(600, 800))
+                          pos=(0, 0), size=(800, 800))
 
         menuBar = wx.MenuBar()
         menu = wx.Menu()
@@ -41,6 +41,9 @@ class MyFrame(wx.Frame):
 	gatesLabel = wx.StaticText(self.mainPage, -1, "Gates")
         self.gatesEntry = wx.SpinCtrl(self.mainPage, -1, "1500", size=(125, -1), min=0, max=10000)
 
+        hardwareConfigLabel = wx.StaticText(self.mainPage, -1, "Hardware Configuration")
+        self.hardwareConfigEntry = wx.Choice(self.mainPage, -1, choices=MetaData.HardwareConfigurations.descriptions)
+	
 	ledLevelLabel = wx.StaticText(self.mainPage, -1, "LED Level")
         self.ledLevelEntry = wx.Choice(self.mainPage, -1, choices=MetaData.LILevels.descriptions)
 
@@ -88,8 +91,9 @@ class MyFrame(wx.Frame):
         self.runList.InsertColumn(0, "Seq. No.", wx.LIST_FORMAT_CENTER)
         self.runList.InsertColumn(1, "Run Mode", wx.LIST_FORMAT_CENTER)
         self.runList.InsertColumn(2, "Gates", wx.LIST_FORMAT_CENTER)
-        self.runList.InsertColumn(3, "LED Level", wx.LIST_FORMAT_CENTER)
-        self.runList.InsertColumn(4, "LED Group", wx.LIST_FORMAT_CENTER)
+        self.runList.InsertColumn(3, "Hardware Configuration", wx.LIST_FORMAT_CENTER)
+        self.runList.InsertColumn(4, "LED Level", wx.LIST_FORMAT_CENTER)
+        self.runList.InsertColumn(5, "LED Group", wx.LIST_FORMAT_CENTER)
 
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.ListItemSelected, self.runList)
         self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.ListItemDeselected, self.runList)
@@ -99,8 +103,9 @@ class MyFrame(wx.Frame):
         self.runList.SetColumnWidth(0, 75)
         self.runList.SetColumnWidth(1, 200)
         self.runList.SetColumnWidth(2, 75)
-        self.runList.SetColumnWidth(3, 100)
+        self.runList.SetColumnWidth(3, 200)
         self.runList.SetColumnWidth(4, 100)
+        self.runList.SetColumnWidth(5, 100)
 
         seriesButtonSizer = wx.GridSizer(3, 1, 10, 10)
         seriesButtonSizer.AddMany([     (self.b_openRunSeries, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL),
@@ -113,6 +118,7 @@ class MyFrame(wx.Frame):
         runParameterSizer = wx.GridSizer(2, 2, 10, 10)
         runParameterSizer.AddMany([     (runModeLabel, 0, wx.ALIGN_CENTER_VERTICAL),             (self.runModeEntry, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL),
 					(gatesLabel, 0, wx.ALIGN_CENTER_VERTICAL),		 (self.gatesEntry, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL),
+                                        (hardwareConfigLabel, 0, wx.ALIGN_CENTER_VERTICAL),      (self.hardwareConfigEntry, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL),
                                         (ledLevelLabel, 0, wx.ALIGN_CENTER_VERTICAL),            (self.ledLevelEntry, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL),  
                                         (ledGroupLabel, 0, wx.ALIGN_CENTER_VERTICAL),          	 (ledGroupSizer, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ])
 				
@@ -322,31 +328,34 @@ class MyFrame(wx.Frame):
 	
         self.runList.SetStringItem(index, 1, MetaData.RunningModes[run.runMode,MetaData.DESCRIPTION])
         self.runList.SetStringItem(index, 2, str(run.gates))
+	self.runList.SetStringItem(index, 3, MetaData.HardwareConfigurations[run.hwConfig,MetaData.DESCRIPTION])
 
         if self.isLIRunMode(run.runMode):
-                self.runList.SetStringItem(index, 3, MetaData.LILevels[run.ledLevel,MetaData.DESCRIPTION])
-                self.runList.SetStringItem(index, 4, MetaData.LEDGroups[run.ledGroup,MetaData.DESCRIPTION])
+                self.runList.SetStringItem(index, 4, MetaData.LILevels[run.ledLevel,MetaData.DESCRIPTION])
+                self.runList.SetStringItem(index, 5, MetaData.LEDGroups[run.ledGroup,MetaData.DESCRIPTION])
         else:
-                self.runList.SetStringItem(index, 3, "--")
                 self.runList.SetStringItem(index, 4, "--")
+                self.runList.SetStringItem(index, 5, "--")
 
     def GetRunFromGUI(self):
 
-	gates = self.gatesEntry.GetValue()
-	runMode = MetaData.RunningModes[self.runModeEntry.GetStringSelection(),MetaData.HASH]
+	gates    = self.gatesEntry.GetValue()
+	runMode  = MetaData.RunningModes[self.runModeEntry.GetStringSelection(),MetaData.HASH]
+	hwConfig = MetaData.HardwareConfigurations[self.hardwareConfigEntry.GetStringSelection(),MetaData.CODE]
 	ledLevel = "--"
-	leds = "--"
+	leds     = "--"
 
 	if self.isLIRunMode(runMode):
 		ledLevel = MetaData.LILevels[self.ledLevelEntry.GetStringSelection(),MetaData.HASH]
 		leds = MetaData.LEDGroups[self.ReadLEDGroups(),MetaData.HASH]
         
-	return RunSeries.RunInfo(gates, runMode, ledLevel, leds)
+	return RunSeries.RunInfo(gates, runMode, hwConfig, ledLevel, leds)
 
     def UpdateGUIFromRun(self,run):
 
         self.gatesEntry.SetValue(run.gates)
         self.runModeEntry.SetSelection(self.runModeEntry.FindString(MetaData.RunningModes[run.runMode,MetaData.DESCRIPTION]))
+	self.hardwareConfigEntry.SetSelection(self.hardwareConfigEntry.FindString(MetaData.HardwareConfigurations[run.hwConfig,MetaData.DESCRIPTION]))
 	
 	if self.isLIRunMode(run.runMode):
 		self.ledLevelEntry.SetSelection(self.ledLevelEntry.FindString(MetaData.LILevels[run.ledLevel,MetaData.DESCRIPTION]))
