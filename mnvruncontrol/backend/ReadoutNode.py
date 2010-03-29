@@ -153,7 +153,7 @@ class ReadoutNode:
 		elif response == "2":
 			raise ReadoutNodeException("The specified slow control configuration does not exist.")
 		else:
-			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
+			raise ReadoutNodeUnexpectedDataException("Unexpected response: '%s'" % response)
 
 	def sc_readBoards(self):
 		""" Asks the server for a list of the HV information on each of the FEBs.
