@@ -467,7 +467,7 @@ class RunControlDispatcher:
 			self.logger.info("      ET port: " + matches.group("etport") )
 			self.logger.info("      my identity: " + matches.group("identity") + " node")
 
-		if self.daq_thread and self.daq_thread.is_alive() is None:
+		if self.daq_thread and self.daq_thread.is_alive() is True:
 			if show_details:
 				self.logger.info("   ==> There is already a DAQ process running.")
 			return "2"
