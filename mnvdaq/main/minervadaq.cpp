@@ -679,7 +679,21 @@ int main(int argc, char *argv[])
 			mnvdaq.warnStream() << "Warning in minervadaq::main()!  Cannot trigger the DAQ for Gate = " << gate << 
 				" and Trigger Type = " << triggerType;
 			mnvdaq.warnStream() << "  Error Code = " << e << ".  Skipping this attempt and trying again...";
-			continue; 
+			// This is subtle... need to be careful with this approach. 
+			// TODO - Basically, fix this.  Timeout is causing trigger confusion & half-readout - very bad!
+			/*
+#if MASTER&&(!SINGLEPC)   // Soldier Node
+			gate_done[0] = false;
+			SynchListen(gate_done_socket_connection, gate_done);
+#endif 
+#if (!MASTER)&&(!SINGLEPC) // Worker Node
+			gate_done[0]=true;
+			SynchWrite(gate_done_socket_handle, gate_done);
+#endif 
+			continue;
+			*/ 
+			mnvdaq.fatalStream() << "Not sure how to handle timeouts yet!  Bailing!";
+			exit(1);
 		}
 #endif 
 
