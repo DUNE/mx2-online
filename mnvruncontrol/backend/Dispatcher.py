@@ -48,6 +48,7 @@ class Dispatcher:
 		
 		# does someone have a command lock on us?
 		self.lock_id = None
+		self.lock_address = None
 		
 		# we don't need to print EVERY request when a client
 		# is requesting the same thing many times in a row.
@@ -76,12 +77,8 @@ class Dispatcher:
 		try:
 			self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.
 			
-			# only bind a local socket if that's all we need.  otherwise, make sure we handle connections from far-off lands
-			if self.master_address.lower() in ("localhost", "127.0.0.1"):
-				bindaddr = "localhost"
-			else:
-				bindaddr = ""  		# accept any incoming connections to the port regardless of origin
-			self.server_socket.bind((bindaddr, self.port))
+			# accept any incoming connections to the port regardless of origin
+			self.server_socket.bind(("", self.port))
 
 			self.server_socket.listen(3)										# allow it to keep a few backlogged connections (that way if we're trying to talk to it too fast it'll catch up)
 		except socket.error, e:
@@ -300,7 +297,7 @@ class Dispatcher:
 		on the port before entering dispatch mode).
 		"""
 		if not self.quit:		# occasionally there's an error before dispatching starts.
-			self.logger.info("Master node will be contacted at '" + self.master_address + "'.")
+#			self.logger.info("Master node will be contacted at '" + self.master_address + "'.")
 			self.logger.info("Dispatching starting (listening on port " + str(self.port) + ").")
 
 		while not self.quit:
@@ -347,7 +344,7 @@ class Dispatcher:
 				self.logger.info("      Further consecutive repeats of this request")
 				self.logger.info("      from this client will not be logged.")
 			
-			response = self.respond(request, show_request_details)
+			response = self.respond(request, client_address, show_request_details)
 			if response is not None:		# don't waste our time sending a response to an invalid request.
 				if show_request_details:
 					self.logger.info("Attempting to send response:\n" + response)
@@ -375,7 +372,7 @@ class Dispatcher:
 		self.cleanup()
 
 			
-	def respond(self, request, show_request_details = True):
+	def respond(self, request, client_address, show_request_details = True):
 		"""
 		Decides what to do with a particular request.
 		Returns None for invalid requests.
@@ -399,10 +396,10 @@ class Dispatcher:
 				return "NOTALLOWED"
 			
 			# now remove the ID from the request so that it matches the pattern.
-			request = request.replace(" %s" % id)
+			request = request.replace(" %s" % id, "")
 		
 		is_valid_request = False
-		for valid_request in SocketRequests.valid_requests:
+		for valid_request in self.valid_requests:
 			matches = re.match(valid_request, request)
 			if matches is not None:
 				is_valid_request = True
@@ -416,9 +413,9 @@ class Dispatcher:
 		
 		if request in self.handlers:
 			if id is not None:
-				return handlers[request](matches, show_request_details, lock_id=id)
+				return self.handlers[request](matches, show_details=show_request_details, lock_id=id, client_address=client_address)
 			else:
-				return handlers[request](matches, show_request_details)
+				return self.handlers[request](matches, show_details=show_request_details)
 		else:
 			return None
 		
@@ -429,17 +426,24 @@ class Dispatcher:
 			self.logger.info("Responding to ping.")
 		return "1"
 	
-	def get_lock(self, matches, show_details, lock_id):
+	def get_lock(self, matches, show_details, lock_id, client_address, **kwargs):
+		""" Tries to get a run lock for this client.
+		    Returns 1 on success and 0 on failure. """
 		self.logger.info("Client wants a command lock.")
 		if self.lock_id is None:
 			self.lock_id = lock_id
+			self.lock_address = client_address
 			self.logger.info("   ==> Lock granted to client with id '%s'." % self.lock_id)
 			return "1"
 		else:
 			self.logger.info("   ==> Another client already has a lock.  Lock denied.")
 			return "0"
 	
-	def release_lock(self, matches, show_details, lock_id):
+	def release_lock(self, matches, show_details, lock_id, **kwargs):
+		""" Releases the run lock.
+		    Returns 0 if this client doesn't own the lock,
+		    1 if release was successful,
+		    and -1 if there is no lock currently in place. """
 		self.logger.info("Client wants to release the command lock.")
 		if self.lock_id is None:
 			self.logger.info("   ==> No lock to release.")
@@ -461,7 +465,7 @@ class Dispatcher:
 		parser = optparse.OptionParser(usage="usage: %prog [options] command\n  where 'command' is 'start' or 'stop'")
 		parser.add_option("-r", "--replace", dest="replace", action="store_true", help="Replace a currently-running instance of the service with a new one. Default: %default.", default=False)
 		parser.add_option("-i", "--interactive", dest="interactive", action="store_true", help="Run in an interactive session (don't daemonize).  Default: %default.", default=False)
-		parser.add_option("-m", "--master-address", dest="masterAddress", help="The internet address of the master node.  Default: %default.", default=Defaults.MASTER)
+#		parser.add_option("-m", "--master-address", dest="masterAddress", help="The internet address of the master node.  Default: %default.", default=Defaults.MASTER)
 	
 		(options, commands) = parser.parse_args()
 	
@@ -474,7 +478,7 @@ class Dispatcher:
 		if command == "start":
 			self.interactive = options.interactive
 			self.replace = options.replace
-			self.master_address = options.masterAddress
+#			self.master_address = options.masterAddress
 		
 			if self.interactive:
 				print "Running in interactive mode."

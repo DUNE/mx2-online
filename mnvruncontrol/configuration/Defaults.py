@@ -55,7 +55,10 @@ MAX_REPEATED_REQUEST_LOGS = 5
 READOUT_DISPATCHER_PIDFILE = "/work/conditions/readout_dispatcher.pid"
 READOUT_DISPATCHER_LOGFILE = "/work/data/logs/readout_dispatcher.log"
 OM_DISPATCHER_PIDFILE = "/tmp/om_dispatcher.pid"
-OM_DISPATCHER_LOGFILE = "/work/logs/om_dispatcher.log"
+OM_LOGFILE_LOCATION_DEFAULT = "/work/logs"
+OM_DISPATCHER_LOGFILE = "%s/om_dispatcher.log" % OM_LOGFILE_LOCATION_DEFAULT
+OM_GAUDI_OPTIONSFILE = "/home/nearonline/output.opts"
+OM_DATAFILE_LOCATION_DEFAULT = "/home/nearonline/data"
 
 # slow control
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"

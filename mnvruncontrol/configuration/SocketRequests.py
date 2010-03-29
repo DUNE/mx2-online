@@ -9,6 +9,6 @@ ReadoutRequests = [ "(?P<request>daq_running)\?",
                     "(?P<request>sc_setHWconfig) '(?P<filename>.+)'!",
                     "(?P<request>sc_readboards)\?" ]
 
-MonitorRequests = [ "(?P<request>om_start etfile=(?P<etfile>\S+):etport=(?P<etport>\d+)!",
+MonitorRequests = [ "(?P<request>om_start) etpattern=(?P<etpattern>\S+):etport=(?P<etport>\d+)!",
                     "(?P<request>om_stop)!",
-                    "(?P>request>om_alive)\?" ]
+                    "(?P<request>om_alive)\?" ]

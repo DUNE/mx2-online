@@ -53,11 +53,12 @@ class MonitorDispatcher(Dispatcher):
 		self.evbfile = None
 			
 
-	def om_start(self, matches, show_details):
+	def om_start(self, matches, show_details, **kwargs):
 		""" Starts the online monitoring services as subprocesses.  First checks
 		    to make sure it's not already running, and if it is, does nothing.
 
-		    Returns 0 on success and 1 on error."""
+		    Returns 0 since the run control doesn't actually care if 
+		    the processes are started correctly.  """
 		    
 		if show_details:
 			self.logger.info("Client wants to start the OM processes.")
@@ -67,32 +68,36 @@ class MonitorDispatcher(Dispatcher):
 			self.om_eb_thread.terminate()
 			self.om_eb_thread.join()
 			
-		self.evbfile = "/home/nearonline/data/%s.dat" % matches.group("etfile")
+		self.evbfile = "%s/%s_RawData.dat" % ( Defaults.OM_DATAFILE_LOCATION_DEFAULT, matches.group("etpattern") )
+		self.raweventfile = "%s/%s_RawEvent.dat" % ( Defaults.OM_DATAFILE_LOCATION_DEFAULT, matches.group("etpattern") )
+		self.rawhistosfile = "%s/%s_RawHistos.dat" % ( Defaults.OM_DATAFILE_LOCATION_DEFAULT, matches.group("etpattern") )
 		
 		try:
-			self.om_start_eb(etfile=matches.group("etfile"), etport=matches.group("etport"))
+			self.om_start_eb(etfile="%s_RawData" % matches.group("etpattern"), etport=matches.group("etport"))
 		except Exception, excpt:
 			self.logger.error("   ==> The event builder process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
 		
-		return None		# the run control doesn't care whether this has started correctly.
+		return "0"		# the run control doesn't care whether this has started correctly.
 	
 	def om_start_eb(self, etfile, etport):
 		""" Start the event builder process. """
-		executable = ( "%s/bin/event_builder %s %s %s" % (environment["DAQROOT"], etfile, self.evbfile, etport) ) 
+		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Defaults.ET_SYSTEM_LOCATION_DEFAULT, etfile, self.evbfile, etport, os.getpid()) ) 
 		self.logger.info("   event_builder command:")
 		self.logger.info("      '" + executable + "'...")
 		signal.signal(signal.SIGUSR1, self.om_start_Gaudi)
-		self.om_eb_thread = OMThread(executable)
+		self.om_eb_thread = OMThread(executable, "eventbuilder")
 	
-	def om_start_Gaudi(self):
+	def om_start_Gaudi(self, signum=None, sigframe=None):
 		""" Start the Gaudi process. """
 		# first clear the signal handler so an accidental call wouldn't restart the service.
-		signal.signal(signal.SIGUSR1, self.om_start_Gaudi)
+		signal.signal(signal.SIGUSR1, signal.SIG_IGN)
 		
 		# replace the options file so that we get the new event builder output.
 		with open(Defaults.OM_GAUDI_OPTIONSFILE, "w") as optsfile:
 			optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\";" % self.evbfile)
+			optsfile.write("Event.Output = \"DATAFILE='PFN:%s' TYP='POOL_ROOTTREE' OPT='RECREATE'\";" % self.raweventfile)
+			optsfile.write("HistogramPersistencySvc.Outputfile = \"%s\";" % self.rawhistosfile)
 		
 		# if the Gaudi thread is still running, just have DIM stop and restart it.
 		if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
@@ -101,18 +106,22 @@ class MonitorDispatcher(Dispatcher):
 		# otherwise, start it fresh.
 		else:
 			executable = ("$DAQRECVROOT/$CMTCONFIG/OnlineMonitor.exe $GAUDIONLINEROOT/$CMTCONFIG/libGaudiOnline.so OnlineTask -tasktype=LHCb::Class2Task -main=$GAUDIONLINEROOT/options/Main.opts -opt=$DAQRECVROOT/options/Nearonline.opts -auto")
-			self.om_Gaudi_thread = OMThread(executable)
+			self.om_Gaudi_thread = OMThread(executable, "gaudi")
+
+			self.logger.info("   OnlineMonitor command:")
+			self.logger.info("      '" + executable + "'...")
 	
-	def om_stop(self, matches, show_details):
+	def om_stop(self, matches, show_details, **kwargs):
 		""" Stops the online monitor processes.  Only really needed
-		    if the dispatcher is going to be stopped. 
+		    if the dispatcher is going to be stopped since the om_start()
+		    method closes any open threads before proceeding. 
 		    
 		    Returns 0 on success and 1 on failure. """
 		    
 		if show_details:
 			self.logger.info("Client wants to stop the OM processes.")
 		
-		if self.om_eb_thread and self.om_thread.is_alive():
+		if self.om_eb_thread and self.om_eb_thread.is_alive():
 			if show_details:
 				self.logger.info("   ==> Attempting to stop the event builder thread.")
 			try:
