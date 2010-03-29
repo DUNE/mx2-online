@@ -38,9 +38,9 @@ WORKER  = "mnvonline1.fnal.gov"
 #MASTER  = "mnvonlinemaster.fnal.gov"
 MASTER = "localhost"
 
-MAX_CONNECTION_ATTEMPTS = 5
-CONNECTION_ATTEMPT_INTERVAL = 1.0	# in seconds
-SOCKET_TIMEOUT = 1.0  # in seconds
+MAX_CONNECTION_ATTEMPTS = 3
+CONNECTION_ATTEMPT_INTERVAL = 0.5	# in seconds
+SOCKET_TIMEOUT = 2.5  # in seconds
 
 # number of times in a row to log the same request
 # in the dispatcher before suppressing
