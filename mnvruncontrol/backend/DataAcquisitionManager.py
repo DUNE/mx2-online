@@ -468,44 +468,46 @@ class DataAcquisitionManager(wx.EvtHandler):
 		If not, control is passed to a window that asks
 		the user for input.
 		"""
+		# we don't need to do the check unless this subrun is the first one of its type
+		if self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig:
 		
-		thresholds = sorted(Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS.keys(), reverse=True)
-		over = {}
-		needs_intervention = False
-		for node in self.readoutNodes:
-			board_statuses = node.sc_readBoards()
+			thresholds = sorted(Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS.keys(), reverse=True)
+			over = {}
+			needs_intervention = False
+			for node in self.readoutNodes:
+				board_statuses = node.sc_readBoards()
 
-			# this method returns 0 if there are no boards to read
-			if board_statuses == 0:
-				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The " + node.name + " node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty...", title="No boards attached to " + node.name + " node") )
-				self.logger.warning(node.name + " node reports that it has no FEBs...")
-				continue	# it's still ok to go on, but user should know what's happening
+				# this method returns 0 if there are no boards to read
+				if board_statuses == 0:
+					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The " + node.name + " node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty...", title="No boards attached to " + node.name + " node") )
+					self.logger.warning(node.name + " node reports that it has no FEBs...")
+					continue	# it's still ok to go on, but user should know what's happening
 			
-			for board in board_statuses:
-				dev = abs(int(board["hv_dev"]))
-				period = int(board["hv_period"])
+				for board in board_statuses:
+					dev = abs(int(board["hv_dev"]))
+					period = int(board["hv_period"])
 				
-				for threshold in thresholds:
-					if dev > threshold:
-						if threshold in over:
-							over[threshold] += 1
-						else:
-							over[threshold] = 1
+					for threshold in thresholds:
+						if dev > threshold:
+							if threshold in over:
+								over[threshold] += 1
+							else:
+								over[threshold] = 1
 						
-						if over[threshold] > Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS[threshold]:
-							needs_intervention = True
-							break
+							if over[threshold] > Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS[threshold]:
+								needs_intervention = True
+								break
 						
-				if period < Defaults.SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD:
-					needs_intervention = True
-					break
+					if period < Defaults.SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD:
+						needs_intervention = True
+						break
 
-		# does the user need to look at it?
-		# if so, send control back to the main thread.
-		if needs_intervention:
-			wx.PostEvent(self.main_window, Events.NeedUserHVCheckEvent(daqmgr=self))
-			return None
-	
+			# does the user need to look at it?
+			# if so, send control back to the main thread.
+			if needs_intervention:
+				wx.PostEvent(self.main_window, Events.NeedUserHVCheckEvent(daqmgr=self))
+				return None
+		
 		# ok to proceed to next step
 		return True
 
