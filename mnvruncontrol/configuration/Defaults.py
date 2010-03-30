@@ -29,9 +29,10 @@ RAW_DATA_LOCATION_DEFAULT = "/work/data/rawdata"
 RESOURCE_LOCATION_DEFAULT = "/work/software/mnvruncontrol/resources"
 
 # Socket communication defaults.
-DISPATCHER_PORT = 1098
-MASTER_PORT     = 1090
-ET_PORT_BASE    = 1091
+DISPATCHER_PORT     = 1098
+MASTER_PORT         = 1090
+ET_PORT_BASE        = 1091
+NUM_ET_PORTS_TO_USE = 4
 
 SOLDIER = "mnvonline0.fnal.gov"
 WORKER  = "mnvonline1.fnal.gov"
@@ -42,10 +43,6 @@ MONITOR = "mnvnearline1.fnal.gov"
 MAX_CONNECTION_ATTEMPTS = 5
 CONNECTION_ATTEMPT_INTERVAL = 0.5	# in seconds
 SOCKET_TIMEOUT = 0.5  # in seconds
-
-# number of times in a row to log the same request
-# in the dispatcher before suppressing
-MAX_REPEATED_REQUEST_LOGS = 5
 
 # number of times in a row to log the same request
 # in the dispatcher before suppressing
