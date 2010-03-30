@@ -80,14 +80,23 @@ class HVConfirmationFrame(wx.Frame):
 		needs_intervention = False
 		for node in self.nodes:
 			for board in febStatuses[node.name]:
+				# if this board isn't an alarm, don't show it.
+				if abs(int(board["hv_dev"])) < min(thresholds) and int(board["hv_period"]) >= Defaults.SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD:
+					continue
+					
 				index = self.pmtlist.InsertStringItem(sys.maxint, node.name)
 				self.pmtlist.SetStringItem(index, 1, board["croc"])
 				self.pmtlist.SetStringItem(index, 2, board["chain"])
 				self.pmtlist.SetStringItem(index, 3, board["board"])
 				self.pmtlist.SetStringItem(index, 4, board["hv_dev"])
 				self.pmtlist.SetStringItem(index, 5, board["hv_period"])
-
-
+				
+				# low-HV period boards will probably show up at the top this way.
+				if int(board["hv_period"]) < Defaults.SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD:
+					self.pmtlist.SetItemData(index, int(board["hv_period"]))
+				else:
+					data = abs(int(board["hv_dev"]))
+					self.pmtlist.SetItemData(index, data)
 
 		index = self.pmtlist.GetNextItem(-1)
 		while index != -1:
@@ -110,6 +119,9 @@ class HVConfirmationFrame(wx.Frame):
 				self.pmtlist.SetItemBackgroundColour(index, wx.Color("blue"))
 			
 			index = self.pmtlist.GetNextItem(index)
+			
+		# sort them in descending order.
+		self.pmtlist.SortItems(lambda a,b : 0 if a == b else (-1 if a > b else 1))
 
 	def OnContinue(self, evt):
 		wx.PostEvent(self.DAQmgr, Events.ReadyForNextSubrunEvent())
