@@ -40,6 +40,7 @@ class ReadoutNode:
 		tries = 0
 		success = False
 		while tries < Defaults.MAX_CONNECTION_ATTEMPTS and not success:
+			response = ""
 			try:
 				self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 				self.socket.settimeout(Defaults.SOCKET_TIMEOUT)
@@ -47,7 +48,6 @@ class ReadoutNode:
 				self.socket.send(request)
 				self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
 
-				response = ""
 				datalen = -1
 				while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire response
 					data = self.socket.recv(1024)
@@ -56,9 +56,7 @@ class ReadoutNode:
 
 				success = True
 			except (socket.error, socket.timeout), e:
-#				print e
-				tries += 1
-				time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)
+				time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)		# wait a little to make sure we don't overload the dispatcher
 			finally:
 				self.socket.close()
 				
@@ -70,7 +68,7 @@ class ReadoutNode:
 				tries += 1
 				continue
 
-		if tries == Defaults.MAX_CONNECTION_ATTEMPTS:
+		if tries >= Defaults.MAX_CONNECTION_ATTEMPTS:
 			raise ReadoutNodeNoConnectionException()
 
 		return response
@@ -153,7 +151,7 @@ class ReadoutNode:
 		elif response == "2":
 			raise ReadoutNodeException("The specified slow control configuration does not exist.")
 		else:
-			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
+			raise ReadoutNodeUnexpectedDataException("Unexpected response: '%s'" % response)
 
 	def sc_readBoards(self):
 		""" Asks the server for a list of the HV information on each of the FEBs.
@@ -161,9 +159,12 @@ class ReadoutNode:
 	    		    "croc", chain", "board", "voltage_dev", "period"
 	    	    On failure, returns None.	"""
 		response = self.request("sc_readboards?")
-		if response == "NOREAD" or response == "":
+		if response == "NOREAD":
 			return None
-		
+	
+		if response == "NOBOARDS":
+			return 0
+	
 		feb_data = []
 		
 		lines = response.splitlines()
