@@ -51,7 +51,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		                          { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
 		                          { "method": self.ReadoutNodeHWConfig,       "message": "Loading hardware..." },
 		                          { "method": self.LIBoxSetup,                "message": "Initializing light injection..." },
-		                          { "method": self.ReadoutNodeHVCheck,        "message": "Waiting on hardware..." } ]
+		                          { "method": self.ReadoutNodeHVCheck,        "message": "Checking hardware..." } ]
 
 		# counters
 		self.current_DAQ_thread = 0			# the next thread to start
@@ -316,6 +316,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finished.")
 
+		# need to make sure all the tasks are marked "not yet completed" so that they are run for the next subrun
+		for task in self.SubrunStartTasks:
+			task["completed"] = False
+
 		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
 		self.subrun += 1
 		
@@ -380,7 +384,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.runinfo = self.runseries.Runs[self.subrun]
 		wx.PostEvent(self.main_window, Events.UpdateSeriesEvent())
 
-		self.runinfo.ETport = 1091 + (self.first_subrun + self.subrun) % 4		# ET needs to use a rotating port number to avoid blockages.
+		# ET needs to use a rotating port number to avoid blockages.
+		self.runinfo.ETport = Defaults.ET_PORT_BASE + (self.first_subrun + self.subrun) % Defaults.NUM_ET_PORTS_TO_USE
 		self.logger.info("  ET port for this subrun: " + str(self.runinfo.ETport))
 
 		ok = True
@@ -408,10 +413,17 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# state" version, in which case the user doesn't want
 		# to use any configuration file at all (so that custom
 		# configurations via the slow control can be used for testing).
-		if self.runinfo.hwConfig != MetaData.HardwareConfigurations["Current state"] and (self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[subrun - 1].hwConfig):
+		if self.runinfo.hwConfig != MetaData.HardwareConfigurations["Current state"] and (self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig):
 			for node in self.readoutNodes:
-				if not node.sc_loadHWfile(self.runinfo.hwConfig):		# returns False on failure
-					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Could not configure the hardware for the " + node.name + " readout node.  This subrun will need to be aborted.", title="Hardware configuration problem") )
+				success = False
+				tries = 0
+				while not success and tries < Defaults.SLOWCONTROL_NUM_WRITE_ATTEMPTS:
+					success = node.sc_loadHWfile(self.runinfo.hwConfig)
+					tries += 1
+					time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)
+					
+				if not success:
+					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Could not configure the hardware for the " + node.name + " readout node.  This subrun will be stopped.", title="Hardware configuration problem") )
 					self.logger.error("Could not set the hardware for the " + node.name + " readout node.  This subrun will be aborted.")
 					# need to stop the run startup sequence.
 					return False
@@ -428,9 +440,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 			need_LI = True
 			if self.runinfo.ledLevel == MetaData.LILevels["One PE"]:
-				self.LIBox.pulse_height = 5.07					# from Brandon Eberly, 3/5/2010
+				self.LIBox.pulse_height = Defaults.LI_ONE_PE_VOLTAGE					
 			elif self.runinfo.ledLevel == MetaData.LILevels["Max PE"]:
-				self.LIBox.pulse_height = 12.07
+				self.LIBox.pulse_height = Defaults.LI_MAX_PE_VOLTAGE
 			else:
 				need_LI = False
 				
