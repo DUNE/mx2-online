@@ -16,7 +16,7 @@ bool data_ready, evt_record_available;   /*!<data status variables */
 int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode, controller *tmpController); 
 /*! the function which governs the entire data acquisition sequence */
 int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,int thread, 
-              et_att_id  attach, et_sys_id  sys_id); //the data taking routine
+              et_att_id  attach, et_sys_id  sys_id, bool readFPGA=true, int nReadoutADC=8); 
 /*! Get the Global Gate value indexed in /work/conditions/global_gate.dat */
 int inline GetGlobalGate();
 /*! Put the Global Gate value into /work/conditions/global_gate.dat */

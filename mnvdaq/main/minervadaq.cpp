@@ -479,8 +479,8 @@ int main(int argc, char *argv[])
 
 
 	// Make an acquire data object containing functions for performing initialization and acquisition.
-	//acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::DEBUG, hardwareInit); 
-	acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::INFO, hardwareInit); 
+	acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::DEBUG, hardwareInit); 
+	//acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::INFO, hardwareInit); 
 	mnvdaq.infoStream() << "Got the acquire_data functions.";
 
 	/*********************************************************************************/
@@ -535,6 +535,8 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	int  gate            = 0; // Increments only for successful readout. 
 	int  triggerCounter  = 0; // Increments on every attempt...
+	bool readFPGA        = true; 
+	int  nReadoutADC     = 8;
 	bool continueRunning = true;
 	while ( (gate<record_gates) && continueRunning ) {
 		//gate++; // Increments only for successful readout!
@@ -597,9 +599,13 @@ int main(int argc, char *argv[])
 		/* Trigger the DAQ, threaded or unthreaded.                                       */
 		/**********************************************************************************/
 		unsigned short int triggerType;
+		// For now, just use full readout.  TODO - test the others more carefully...
+		readFPGA    = true; // default to reading the FPGA programming registers
+		nReadoutADC = 8;    // default to maximum possible
 		switch (runningMode) {
 			case OneShot:
 				triggerType = Pedestal;
+				readFPGA    = false;
                         	break;
 			case NuMIBeam:
 				triggerType = NuMI;
@@ -646,6 +652,8 @@ int main(int argc, char *argv[])
 			case MixedBeamPedestal:
 				if (triggerCounter%2) {
 					triggerType = Pedestal;
+					readFPGA    = false;
+					nReadoutADC = 2; // Deepest only.
 				} else {
 					triggerType = NuMI;
 				}
@@ -653,6 +661,7 @@ int main(int argc, char *argv[])
 			case MixedBeamLightInjection:
 				if (triggerCounter%2) {
 					triggerType = LightInjection;
+					nReadoutADC = 1; // Deepest only.
 				} else {
 					triggerType = NuMI;
 				}
@@ -765,7 +774,7 @@ int main(int argc, char *argv[])
 							" Index: " << croc_id << " Chain: " << j;
 #endif
 						try {
-							int error = TakeData(daq,evt,croc_id,j,0,attach,sys_id);
+							int error = TakeData(daq,evt,croc_id,j,0,attach,sys_id,readFPGA,nReadoutADC);
 							if (error) { throw error; }
 						} catch (int e) {
 							//event_data.readoutInfo = (unsigned short)1; // "VME Error"
@@ -936,11 +945,11 @@ int main(int argc, char *argv[])
 
 
 int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread, 
-	et_att_id  attach, et_sys_id  sys_id) 
+	et_att_id  attach, et_sys_id  sys_id, bool readFPGA, int nReadoutADC) 
 { // TODO - fix channel / chain naming snafu here too...
 /*!
  *  \fn int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread,
- *                et_att_id  attach, et_sys_id  sys_id)
+ *                et_att_id  attach, et_sys_id  sys_id, bool readFPGA, int nReadoutADC)
  *
  *  This function executes the necessary commands to complete an acquisition sequence.
  *
@@ -954,6 +963,8 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
  *  \param thread, the thread number of this call
  *  \param attach, the ET attachemnt to which data will be stored
  *  \param sys_id, the ET system handle
+ *  \param readFPGA, flag that determines whether we read the FPGA programming registers
+ *  \param nReadoutADC, number of deepest pipeline hits to read
  * 
  * Returns a success integer (0 for success).
  */
@@ -1009,7 +1020,8 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 			/*          Take all data on the feb                                              */
 			/**********************************************************************************/
 			try {
-				data_taken = daq->TakeAllData((*feb),channelTrial,crocTrial,evt,thread,attach,sys_id); 
+				data_taken = daq->TakeAllData((*feb), channelTrial, crocTrial, evt, thread, 
+					attach, sys_id, readFPGA, nReadoutADC); 
 #if DEBUG_THREAD
 				data_monitor << "TakeAllData Returned" << std::endl;
 #endif
@@ -1301,7 +1313,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-02-08'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-03-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

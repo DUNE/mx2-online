@@ -15,7 +15,7 @@
 
 const int acquire_data::dpmMax       = 1024*6; //we have only 6 Kb of space in the DPM Memory per channel
 const int acquire_data::numberOfHits = 6;
-const int acquire_data::timeOutSec   = 3600; // be careful shortening this w.r.t. multi-PC sync issues
+const unsigned int acquire_data::timeOutSec   = 3600; // be careful shortening this w.r.t. multi-PC sync issues
 
 void acquire_data::InitializeDaq(int id, RunningModes runningMode) 
 {
@@ -982,10 +982,12 @@ template <class X> int acquire_data::FillDPM(croc *crocTrial, channels *channelT
 
 
 bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *crocTrial, 
-	event_handler *evt, int thread, et_att_id attach, et_sys_id sys_id) 
+	event_handler *evt, int thread, et_att_id attach, et_sys_id sys_id, 
+	bool readFPGA, int nReadoutADC) 
 {
 /*! \fn bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *crocTrial,
- *                                event_handler *evt, int thread, et_att_id  attach, et_sys_id sys_id)
+ *		event_handler *evt, int thread, et_att_id  attach, et_sys_id sys_id, 
+ *		bool readFPGA, int nReadoutADC)
  *
  *  The main acquisition sequence.  This function organizes all of the incoming and outgoing 
  *  messages to the data acquisition electronics, collects those messages, fills a structure
@@ -998,6 +1000,8 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
  *  \param int thread   an integer value for the thread executing
  *  \param et_att_id  attach the ET attachemnt to which the data will be sent
  *  \param et_sys_id  sys_id the system ID for ET which will handle the data
+ *  \param bool readFPGA a flag that determines whether we read the FPGA programming registers data
+ *  \param int nReadoutADC sets the maximum number of ADC frames to read (deepest first)
  *
  *  Returns a status bit - 0 for success.
  */
@@ -1014,8 +1018,8 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 	take_data_log.open(filename.c_str());
 	lock.unlock();
 #endif
-#if DEBUG_VERBOSE
-	acqData.debugStream() << "--Entering acquire_data::TakeAllData--" << std::endl;
+#if DEBUG_VERBOSE||DEBUG_LIMITEDBANKS
+	acqData.debugStream() << "--Entering acquire_data::TakeAllData--";
 #endif
 #if THREAD_ME
 	// Set up some threads for using the event builder.
@@ -1026,6 +1030,8 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 	int success       = 0;
 	bool memory_reset = false;
 	int hits          = -1;
+	// If !READ_ADC, deepestRead > hits-1 always.	
+	int deepestRead   = numberOfHits; // 6>ReadHit5, 8>ReadHit7 
 
 	// Fill entries in the event_handler structure for this event -> The sourceID.
 	evt->new_event   = false; // We are always processing an existing event with this function!!!
@@ -1034,7 +1040,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 	evt->feb_info[2] = (crocTrial->GetCrocAddress()>>16);
 	evt->feb_info[3] = channelTrial->GetChainNumber(); 
 	evt->feb_info[6] = febTrial->GetFEBNumber();
-#if DEBUG_VERBOSE 
+#if DEBUG_VERBOSE||DEBUG_LIMITEDBANKS 
 	acqData.debugStream() << "    CROC  : " << evt->feb_info[2];
         acqData.debugStream() << "    CHAIN : " << evt->feb_info[3];
         acqData.debugStream() << "    FEB   : " << evt->feb_info[6];
@@ -1042,137 +1048,138 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 	// Make sure the DPM is reset for taking the FEB INFO Frames.
 	memory_reset = ResetDPM(crocTrial, channelTrial);
 
-	// Begin reading FEB frame information.
+	// Read all the data.
 	try {
 		if (!memory_reset) throw memory_reset;
 
+		// Begin reading FEB frame information.
+		if (readFPGA) {
 #if TIME_ME
-		struct timeval start_time, stop_time;
-		gettimeofday(&start_time, NULL);
+			struct timeval start_time, stop_time;
+			gettimeofday(&start_time, NULL);
 #endif
-		// Compose an FPGA read frame.
-		Devices dev = FPGA;
-		Broadcasts b = None;
-		Directions d = MasterToSlave;
-		FPGAFunctions f = Read;
-		febTrial->MakeDeviceFrameTransmit(dev,b,d,f,(unsigned int) febTrial->GetBoardNumber());
-		febTrial->MakeMessage();
-		try {
-			success = AcquireDeviceData(febTrial, crocTrial, channelTrial, FEB_INFO_SIZE);
-			if (success) throw success;
-		} catch (bool e) {
-			std::cout << "Error adding FPGA Information to DPM in acquire_data::TakeAllData!" << std::endl;
-			std::cout << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
-				channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber() << std::endl;
-			acqData.fatalStream() << "Error adding FPGA Information to DPM in acquire_data::TakeAllData!";
-			acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
-				channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
-			return 1; // Failure!
-			//exit(-1001);
-		}
-		febTrial->message = new unsigned char [FEB_INFO_SIZE];
-		for (int debug_index=0; debug_index<febTrial->GetIncomingMessageLength(); debug_index++) {
-			febTrial->message[debug_index] = channelTrial->GetBuffer()[debug_index];
-		}
-		// TODO - Decoding does provide an error check of sorts, but this inefficient.
-		try {
-			int error = febTrial->DecodeRegisterValues(febTrial->GetIncomingMessageLength());
-			if (error) throw error;
-		} catch (int e) {
-			std::cout << "Error in FPGA Frame in acquire_data::TakeAllData!" << std::endl;
-			std::cout << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
-				channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber() << std::endl;
-			acqData.fatalStream() << "Error in FPGA Frame in acquire_data::TakeAllData!";
-			acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
-				channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
-			return 1; // Failure!
-			//exit(-1001);
-		}
+			// Compose an FPGA read frame.
+			Devices dev = FPGA;
+			Broadcasts b = None;
+			Directions d = MasterToSlave;
+			FPGAFunctions f = Read;
+			febTrial->MakeDeviceFrameTransmit(dev,b,d,f,(unsigned int) febTrial->GetBoardNumber());
+			febTrial->MakeMessage();
+			try {
+				success = AcquireDeviceData(febTrial, crocTrial, channelTrial, FEB_INFO_SIZE);
+				if (success) throw success;
+			} catch (bool e) {
+				std::cout << "Error adding FPGA Information to DPM in acquire_data::TakeAllData!" << std::endl;
+				std::cout << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
+					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber() << std::endl;
+				acqData.fatalStream() << "Error adding FPGA Information to DPM in acquire_data::TakeAllData!";
+				acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
+					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
+				return 1; // Failure!
+			}
+			febTrial->message = new unsigned char [FEB_INFO_SIZE];
+			for (int debug_index=0; debug_index<febTrial->GetIncomingMessageLength(); debug_index++) {
+				febTrial->message[debug_index] = channelTrial->GetBuffer()[debug_index];
+			}
+			// TODO - Decoding does provide an error check of sorts, but this inefficient.
+			try {
+				int error = febTrial->DecodeRegisterValues(febTrial->GetIncomingMessageLength());
+				if (error) throw error;
+			} catch (int e) {
+				std::cout << "Error in FPGA Frame in acquire_data::TakeAllData!" << std::endl;
+				std::cout << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
+					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber() << std::endl;
+				acqData.fatalStream() << "Error in FPGA Frame in acquire_data::TakeAllData!";
+				acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
+					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
+				return 1; // Failure!
+			}
 #if SHOW_REGISTERS
-		febTrial->ShowValues();
+			febTrial->ShowValues();
 #endif
-		delete [] febTrial->message;
-		febTrial->DeleteOutgoingMessage(); // Required after MakeMessage()
+			delete [] febTrial->message;
+			febTrial->DeleteOutgoingMessage(); // Required after MakeMessage()
 #if TIME_ME
-		lock.lock();
-		gettimeofday(&stop_time,NULL);
-		duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
-			(start_time.tv_sec*1e6+start_time.tv_usec);
-		take_data_log << "******************FEB FRAMES*********************************" << std::endl; 
-		take_data_log << "Start Time: "<<(start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
-			<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
-		take_data_log << "*************************************************************" << std::endl; 
-		frame_acquire_log << evt->gate << "\t" << thread << "\t" << "2" << "\t" << 
-			(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
-			(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
-		lock.unlock();
+			lock.lock();
+			gettimeofday(&stop_time,NULL);
+			duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
+				(start_time.tv_sec*1e6+start_time.tv_usec);
+			take_data_log << "******************FEB FRAMES*********************************" << std::endl; 
+			take_data_log << "Start Time: "<<(start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
+				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
+			take_data_log << "*************************************************************" << std::endl; 
+			frame_acquire_log << evt->gate << "\t" << thread << "\t" << "2" << "\t" << 
+				(start_time.tv_sec*1000000+start_time.tv_usec) << "\t" << 
+				(stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
+			lock.unlock();
 #endif
+#if DEBUG_VERBOSE||DEBUG_LIMITEDBANKS
+			acqData.debugStream() << "  Acquired FPGA programming data for:";
+			acqData.debugStream() << "    CROC:  " << (crocTrial->GetCrocAddress()>>16);
+			acqData.debugStream() << "    CHAIN: " << channelTrial->GetChainNumber();
+			acqData.debugStream() << "    FEB:   " << febTrial->GetBoardNumber();
+#endif
+#if TIME_ME
+			gettimeofday(&start_time, NULL);
+#endif
+			// Fill the event_handler structure with the newly acquired data
+			FillEventStructure(evt, 2, febTrial, channelTrial);
+#if TIME_ME
+			lock.lock();
+			gettimeofday(&stop_time,NULL);
+			duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
+				(start_time.tv_sec*1e6+start_time.tv_usec);
+			take_data_log << "******************FEB FILL EVENT STRUCTURE********************" << std::endl; 
+			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
+				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
+			take_data_log << "**************************************************************" << std::endl; 
+			frame_acquire_log << evt->gate << "\t" << thread << "\t" << "10" << "\t"
+				<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
+				<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
+			lock.unlock();
+#endif
+			evt->feb_info[7]=(int)febTrial->GetFirmwareVersion();
 #if DEBUG_VERBOSE
-		acqData.debugStream() << "  Acquired FPGA programming data for:";
-		acqData.debugStream() << "    CROC:  " << (crocTrial->GetCrocAddress()>>16);
-		acqData.debugStream() << "    CHAIN: " << channelTrial->GetChainNumber();
-		acqData.debugStream() << "    FEB:   " << febTrial->GetBoardNumber();
+			acqData.debugStream() << "  Firmware Version (header val): " << (int)evt->feb_info[7];
+			acqData.debugStream() << "  Data Length (header val)     : " << evt->feb_info[5];
+			acqData.debugStream() << "  Bank Type (header val)       : " << evt->feb_info[4];
 #endif
-#if TIME_ME
-		gettimeofday(&start_time, NULL);
-#endif
-		// Fill the event_handler structure with the newly acquired data
-		FillEventStructure(evt, 2, febTrial, channelTrial);
-#if TIME_ME
-		lock.lock();
-		gettimeofday(&stop_time,NULL);
-		duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
-			(start_time.tv_sec*1e6+start_time.tv_usec);
-		take_data_log << "******************FEB FILL EVENT STRUCTURE********************" << std::endl; 
-		take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
-			<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
-		take_data_log << "**************************************************************" << std::endl; 
-		frame_acquire_log << evt->gate << "\t" << thread << "\t" << "10" << "\t"
-			<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
-			<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
-		lock.unlock();
-#endif
-		evt->feb_info[7]=(int)febTrial->GetFirmwareVersion();
+			// Send the data to the EB via ET.
 #if DEBUG_VERBOSE
-		acqData.debugStream() << "  Firmware Version (header val): " << (int)evt->feb_info[7];
-		acqData.debugStream() << "  Data Length (header val)     : " << evt->feb_info[5];
-		acqData.debugStream() << "  Bank Type (header val)       : " << evt->feb_info[4];
-#endif
-
-		// Send the data to the EB via ET.
-#if DEBUG_VERBOSE
-		acqData.debugStream() << "  Contacting the Event Builder Service.";
-		acqData.debugStream() << "   Bank  : " << evt->feb_info[4];
-		acqData.debugStream() << "   Thread: " << thread;
+			acqData.debugStream() << "  Contacting the Event Builder Service.";
+			acqData.debugStream() << "   Bank  : " << evt->feb_info[4];
+			acqData.debugStream() << "   Thread: " << thread;
 #endif
 #if TIME_ME
-		gettimeofday(&start_time, NULL);
+			gettimeofday(&start_time, NULL);
 #endif
 #if NO_THREAD
-		ContactEventBuilder(evt, thread, attach, sys_id); 
-		channelTrial->DeleteBuffer();
+			ContactEventBuilder(evt, thread, attach, sys_id); 
+			channelTrial->DeleteBuffer();
 #elif THREAD_ME
-		eb_threads[0] = new boost::thread((boost::bind(&acquire_data::ContactEventBuilder,this,
-			boost::ref(evt),thread,attach,sys_id)));
-		channelTrial->DeleteBuffer();
+			eb_threads[0] = new boost::thread((boost::bind(&acquire_data::ContactEventBuilder,this,
+				boost::ref(evt),thread,attach,sys_id)));
+			channelTrial->DeleteBuffer();
 #endif
 #if TIME_ME
-		lock.lock();
-		gettimeofday(&stop_time,NULL);
-		duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
-			(start_time.tv_sec*1e6+start_time.tv_usec);
-		take_data_log << "******************FEB FRAMES: CONTACT_EB****************************" << std::endl; 
-		take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
-			<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
-		take_data_log << "********************************************************************" << std::endl; 
-		frame_acquire_log << evt->gate << "\t" << thread << "\t" << "20" << "\t"
-			<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
-			<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
-		lock.unlock();
+			lock.lock();
+			gettimeofday(&stop_time,NULL);
+			duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
+				(start_time.tv_sec*1e6+start_time.tv_usec);
+			take_data_log << "******************FEB FRAMES: CONTACT_EB****************************" << std::endl; 
+			take_data_log << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec) << " Stop Time: "
+				<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
+			take_data_log << "********************************************************************" << std::endl; 
+			frame_acquire_log << evt->gate << "\t" << thread << "\t" << "20" << "\t"
+				<< (start_time.tv_sec*1000000+start_time.tv_usec) << "\t"
+				<< (stop_time.tv_sec*1000000+stop_time.tv_usec) << std::endl;
+			lock.unlock();
 #endif 
 #if DEBUG_VERBOSE
-		acqData.debugStream() << "  Back from EB after FPGA read...";
+			acqData.debugStream() << "  Back from EB after FPGA read...";
 #endif
+		} // End if readFPGA
+
 		// Read a discriminator frame.
 		// First, decide if the discriminators are on.
 		bool disc_set = false;
@@ -1180,17 +1187,17 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		disc_set = true;
 #endif
 		if (disc_set) { 
-#if DEBUG_VERBOSE
+#if DEBUG_VERBOSE||DEBUG_LIMITEDBANKS
 			acqData.debugStream() << "--Discriminator Frame";
 #endif
 			if (!(memory_reset = ResetDPM(crocTrial, channelTrial))) {
 				std::cout << "Unable to reset DPM in acquire_data::TakeAllData for DISC readout." << std::endl;
 				std::cout << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
 					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber() << std::endl;
-				acqData.fatalStream() << "Unable to reset DPM in acquire_data::TakeAllData for DISC readout";
-				acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
+				acqData.critStream() << "Unable to reset DPM in acquire_data::TakeAllData for DISC readout";
+				acqData.critStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
 					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
-				exit(-1004);
+				return 1; // Failure!
 			} 
 #if TIME_ME
 			gettimeofday(&start_time, NULL);
@@ -1202,10 +1209,10 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 				std::cout << "Error in acquire_data::TakeAllData adding DISC Information to DPM!" << std::endl;
 				std::cout << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
 					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber() << std::endl;
-				acqData.fatalStream()<< "Error in acquire_data::TakeAllData adding DISC Information to DPM!";
-				acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
+				acqData.critStream()<< "Error in acquire_data::TakeAllData adding DISC Information to DPM!";
+				acqData.critStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
 					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
-				exit(-1002);
+				return 1;
 			}
 #if TIME_ME
 			lock.lock();
@@ -1247,7 +1254,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 				boost::ref(evt),thread,attach,sys_id)));
 			channelTrial->DeleteBuffer();
 #endif
-#if DEBUG_VERBOSE
+#if DEBUG_VERBOSE||DEBUG_LIMITEDBANKS
 			acqData.debugStream() << "  Acquired DISC data for: ";
 			acqData.debugStream() << "    CROC:  " << crocTrial->GetCrocID();
 			acqData.debugStream() << "    Chain: " << channelTrial->GetChainNumber();
@@ -1273,40 +1280,44 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		} // End discriminators-on check.
 
 		// Now read the ADC Frames.
+		if (hits == -1) hits = 1; // If we did not read the Discriminators.
 #if READ_ADC
-#if DEBUG_VERBOSE
+		// If !READ_ADC, deepestRead > hits-1 always.
+		deepestRead = (hits-nReadoutADC) >= 0 ? (hits-nReadoutADC) : 0; 
+#if DEBUG_VERBOSE||DEBUG_LIMITEDBANKS
 		acqData.debugStream() << "--ADC Frames ";
+		acqData.debugStream() << " deepestRead   = " << deepestRead;
 #endif
-		if (hits == -1) hits = 1; 
-#else
-		hits = -1; // Don't read the ADC's...
 #endif		
-		for (int i=0; i<hits; i++) {
-
-			// Set the hit id... we read the last hit pushed first, so increment sourceID hit in reverse.
+		//test//for (int i=0; i<hits; i++) {
+		for (int i=hits-1; i>=deepestRead; i--) {
+			// Set the hit id.  Increment sourceID hit in "reverse" - sourceID hit 0 is earliest in physical time.
 			evt->feb_info[8] = (unsigned int)(hits - 1 - i);
-
+#if DEBUG_VERBOSE||DEBUG_LIMITEDBANKS
+			acqData.debugStream() << " Loop counter  = " << i;
+			acqData.debugStream() << "  sourceID hit = " << evt->feb_info[8];
+#endif
 			// Reset the DPM pointer & clear the status.
 			// TODO - Use a try-catch block here.
 			if (!(memory_reset = ResetDPM(crocTrial, channelTrial))) {
 				std::cout << "Unable to reset DPM in acquire_data::TakeAllData for ADC readout." << std::endl;
 				std::cout << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
 					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber() << std::endl;
-				acqData.fatalStream() << "Unable to reset DPM in acquire_data::TakeAllData for ADC readout";
-				acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
+				acqData.critStream() << "Unable to reset DPM in acquire_data::TakeAllData for ADC readout";
+				acqData.critStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
 					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
-				exit(-1004);
+				return 1; // Failure!
 			} 
 			// Read an ADC block...
 			try {
-				success = AcquireDeviceData(febTrial->GetADC(i), crocTrial, channelTrial,FEB_HITS_SIZE);
+				success = AcquireDeviceData(febTrial->GetADC(i), crocTrial, channelTrial, FEB_HITS_SIZE);
 				if (success) throw success;
 			} catch (bool e) {
 				std::cout << "Error adding ADC Information to the DPM in acquire_data::TakeAllData!" << std::endl;
-				acqData.fatalStream() << "Error adding ADC Information to the DPM in acquire_data::TakeAllData!";
-				acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
+				acqData.critStream() << "Error adding ADC Information to the DPM in acquire_data::TakeAllData!";
+				acqData.critStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
 					channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
-				exit(-1003);
+				return 1; // Faiure!
 			}
 #if TIME_ME
 			gettimeofday(&start_time, NULL);
@@ -1350,7 +1361,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 				boost::ref(evt),thread,attach,sys_id)));
 			channelTrial->DeleteBuffer();
 #endif
-#if DEBUG_VERBOSE
+#if DEBUG_VERBOSE||DEBUG_LIMITEDBANKS
 			acqData.debugStream() << "  Acquired ADC data for:";
 			acqData.debugStream() << "    CROC:  " << crocTrial->GetCrocID();
 			acqData.debugStream() << "    Chain: " << channelTrial->GetChainNumber();
@@ -1362,10 +1373,10 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		std::cout << "The DPM wasn't reset at the start of acquire_data::TakeAllData!" << std::endl;
 		std::cout << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
 			channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber() << std::endl;
-		acqData.fatalStream() << "The DPM wasn't reset at the start of acquire_data::TakeAllData!";
-		acqData.fatalStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
+		acqData.critStream() << "The DPM wasn't reset at the start of acquire_data::TakeAllData!";
+		acqData.critStream() << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " << 
 			channelTrial->GetChainNumber() << ", " << febTrial->GetBoardNumber();
-		exit(-1000);
+		return 1;
 	}
 
 	// Wait for threads to join if nedessary.
@@ -1375,7 +1386,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 	eb_threads[2]->join();
 #endif 
 
-#if DEBUG_VERBOSE
+#if DEBUG_VERBOSE||DEBUG_LIMITEDBANKS
 	acqData.debugStream() << "--Exiting  acquire_data::TakeAllData--";
 #endif
 	return success;
@@ -2004,7 +2015,7 @@ int acquire_data::AcknowledgeIRQ()
 #endif
 	CVDataWidth DW = daqController->GetDataWidth();
 	int error;
-	int errorCode = 3;
+	//unused//int errorCode = 3;
 	try {
 		unsigned short vec;
 		error = CAENVME_IACKCycle(daqController->handle, daqController->GetCrim()->GetIRQLevel(), 
@@ -2062,8 +2073,8 @@ int acquire_data::AcknowledgeIRQ()
 		}
 		if (error) throw error;
 		try {
-			CVIRQLevels irqLevel = daqController->GetCrim()->GetIRQLevel();
 #if DEBUG_IRQ
+			CVIRQLevels irqLevel = daqController->GetCrim()->GetIRQLevel();
 			acqData.debugStream() << "Set IRQ LEVEL: " << irqLevel << " Returned IRQ LEVEL: " << vec;
 #endif
 			if (vec!=0x0A) throw (int)vec; //for SGATEFall

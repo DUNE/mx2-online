@@ -80,7 +80,7 @@ class acquire_data {
 		std::ofstream frame_acquire_log; /*!< log file streamer for timing output */
 		std::string et_filename; /*!< A string object for the Event Transfer output filename */
 		static const int numberOfHits;
-		static const int timeOutSec; /*!< How long we will wait for a beam spill before moving on... */
+		static const unsigned int timeOutSec; /*!< How long we will wait for a beam spill before moving on... */
 		log4cpp::Appender* acqAppender;
 		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */
 
@@ -148,9 +148,11 @@ class acquire_data {
 		template <class X> int FillDPM(croc *crocTrial, channels *channelTrial, X *frame, 
 			int outgoing_length, int incoming_length);
 
-		/*! Function which executes the acquisition sequence for a given FEB */
+		/*! Function which executes the acquisition sequence for a given FEB.
+		    We pass a boolean flag and hit depth integer to control the "readout level" for 
+		    each FEB. */
 		bool TakeAllData(feb *febTrial, channels *channelTrial, croc *crocTrial, event_handler *evt, int thread, 
-			et_att_id  attach, et_sys_id  sys_id);
+			et_att_id  attach, et_sys_id  sys_id, bool readFPGA=true, int nReadoutADC=8);
 
 		/*! Function which fills an event structure for further data handling by the event builder; templated */
 		template <class X> void FillEventStructure(event_handler *evt, int bank, X *frame, 
