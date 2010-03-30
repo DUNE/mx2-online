@@ -14,7 +14,7 @@ import sys
 
 # for testing purposes.
 LIBOX_WAIT_FOR_RESPONSE = True
-LIBOX_DISABLE = True
+LIBOX_DISABLE = False
 
 # configuration for the serial port.
 # these probably will never need to be changed.
