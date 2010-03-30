@@ -15,6 +15,10 @@ import time
 EVENT_SIZE = 2048 
 FRAMES = 8
 
+# LI settings
+LI_ONE_PE_VOLTAGE = 5.07		# from Brandon Eberly (eberly@fnal.gov), 3/5/2010
+LI_MAX_PE_VOLTAGE = 12.07	# currently the maximum the LI box can output.
+
 # Run control properties.
 CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
 
@@ -29,14 +33,16 @@ RAW_DATA_LOCATION_DEFAULT = "/work/data/rawdata"
 RESOURCE_LOCATION_DEFAULT = "/work/software/mnvruncontrol/resources"
 
 # Socket communication defaults.
-DISPATCHER_PORT = 1098
-MASTER_PORT     = 1090
-ET_PORT_BASE    = 1091
+DISPATCHER_PORT     = 1098
+MASTER_PORT         = 1090
+ET_PORT_BASE        = 1091
+NUM_ET_PORTS_TO_USE = 4
 
 SOLDIER = "mnvonline0.fnal.gov"
 WORKER  = "mnvonline1.fnal.gov"
 #MASTER  = "mnvonlinemaster.fnal.gov"
 MASTER = "localhost"
+MONITOR = "mnvnearline1.fnal.gov"
 
 MAX_CONNECTION_ATTEMPTS = 3
 CONNECTION_ATTEMPT_INTERVAL = 0.5	# in seconds
@@ -46,15 +52,17 @@ SOCKET_TIMEOUT = 2.5  # in seconds
 # in the dispatcher before suppressing
 MAX_REPEATED_REQUEST_LOGS = 5
 
-# number of times in a row to log the same request
-# in the dispatcher before suppressing
-MAX_REPEATED_REQUEST_LOGS = 5
-
 # dispatcher process details
-DISPATCHER_PIDFILE = "/work/conditions/rc_dispatcher.pid"
-DISPATCHER_LOGFILE = "/work/data/logs/dispatcher.log"
+READOUT_DISPATCHER_PIDFILE = "/work/conditions/readout_dispatcher.pid"
+READOUT_DISPATCHER_LOGFILE = "/work/data/logs/readout_dispatcher.log"
+OM_DISPATCHER_PIDFILE = "/tmp/om_dispatcher.pid"
+OM_LOGFILE_LOCATION_DEFAULT = "/work/logs"
+OM_DISPATCHER_LOGFILE = "%s/om_dispatcher.log" % OM_LOGFILE_LOCATION_DEFAULT
+OM_GAUDI_OPTIONSFILE = "/home/nearonline/output.opts"
+OM_DATAFILE_LOCATION_DEFAULT = "/home/nearonline/data"
 
 # slow control
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
 SLOWCONTROL_ALLOWED_HV_THRESHOLDS = {300: 0, 100: 3, 60: 15}	# that is, { threshold : num allowed over that threshold, ... }
 SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD = 15000
+SLOWCONTROL_NUM_WRITE_ATTEMPTS = 3
