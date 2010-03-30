@@ -65,7 +65,7 @@ class RunControlDispatcher:
 		# duplicate the log contents to the screen).
 		self.logger = logging.getLogger("rc_dispatcher")
 		self.logger.setLevel(logging.DEBUG)
-		self.filehandler = logging.handlers.RotatingFileHandler(Defaults.DISPATCHER_LOGFILE, maxBytes=204800, backupCount=5)
+		self.filehandler = logging.handlers.RotatingFileHandler(Defaults.READOUT_DISPATCHER_LOGFILE, maxBytes=204800, backupCount=5)
 		self.filehandler.setLevel(logging.INFO)
 		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
 		self.filehandler.setFormatter(self.formatter)
@@ -129,7 +129,7 @@ class RunControlDispatcher:
 		
 		self.logger.info("Creating new PID file.  My PID: " + str(os.getpid()) + "")
 			
-		pidfile = open(Defaults.DISPATCHER_PIDFILE, 'w')
+		pidfile = open(Defaults.READOUT_DISPATCHER_PIDFILE, 'w')
 		pidfile.write(str(os.getpid()) +"\n")
 		pidfile.close()
 		
@@ -248,8 +248,8 @@ class RunControlDispatcher:
 	def other_instances(self):
 		self.logger.info("Checking for PID file...")
 		
-		if os.path.isfile(Defaults.DISPATCHER_PIDFILE):
-			pidfile = open(Defaults.DISPATCHER_PIDFILE)
+		if os.path.isfile(Defaults.READOUT_DISPATCHER_PIDFILE):
+			pidfile = open(Defaults.READOUT_DISPATCHER_PIDFILE)
 			pid = int(pidfile.readline())
 			pidfile.close()
 
@@ -260,7 +260,7 @@ class RunControlDispatcher:
 				os.kill(pid, 0)		# send it the null signal to check if it's there and alive.
 			except OSError:			# you get an OSError if the PID doesn't exist.  it's safe to clean up then.
 				self.logger.info("Process is dead.  Cleaning up PID file.")
-				os.remove(Defaults.DISPATCHER_PIDFILE)
+				os.remove(Defaults.READOUT_DISPATCHER_PIDFILE)
 			else:
 				self.logger.info("Process is still alive.")
 				return pid
@@ -588,9 +588,9 @@ class RunControlDispatcher:
 	def cleanup(self):
 		self.server_socket.close()
 
-		if os.path.isfile(Defaults.DISPATCHER_PIDFILE):
+		if os.path.isfile(Defaults.READOUT_DISPATCHER_PIDFILE):
 			self.logger.info("Removing PID file.")
-			os.remove(Defaults.DISPATCHER_PIDFILE)
+			os.remove(Defaults.READOUT_DISPATCHER_PIDFILE)
 
 	def sc_init(self):
 		if self.slowcontrol is None:
@@ -724,7 +724,7 @@ if __name__ == "__main__":
 		else:
 			print "Dispatcher starting in daemon mode."
 			print "Run this program with the keyword 'stop' to stop it."
-			print "Also see the log file at '" + Defaults.DISPATCHER_LOGFILE + "'.\n"
+			print "Also see the log file at '" + Defaults.READOUT_DISPATCHER_LOGFILE + "'.\n"
 		dispatcher.start()
 	elif command == "stop":
 		dispatcher.interactive = True
