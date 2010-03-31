@@ -1,14 +1,8 @@
-GlobalRequests =  [ "(?P<request>alive)\?",
-                    "(?P<request>get_lock)!",
-                    "(?P<request>release_lock)!" ]
+ValidRequests = ( "(?P<request>alive)\?",
+                  "(?P<request>daq_running)\?",
+                  "(?P<request>daq_last_exit)\?",
+                  "(?P<request>daq_start) etfile=(?P<etfile>\S+):etport=(?P<etport>\d+):run=(?P<run>\d+):subrun=(?P<subrun>\d+):gates=(?P<gates>\d+):runmode=(?P<runmode>\d+):detector=(?P<detector>\d+):nfebs=(?P<nfebs>\d+):lilevel=(?P<lilevel>\d+):ledgroup=(?P<ledgroup>\d+):hwinitlevel=(?P<hwinitlevel>\d+):identity=(?P<identity>\w+)!",
+                  "(?P<request>daq_stop)!",
+                  "(?P<request>sc_setHWconfig) '(?P<filename>.+)'!",
+                  "(?P<request>sc_readboards)\?" )
 
-ReadoutRequests = [ "(?P<request>daq_running)\?",
-                    "(?P<request>daq_last_exit)\?",
-                    "(?P<request>daq_start) etfile=(?P<etfile>\S+):etport=(?P<etport>\d+):run=(?P<run>\d+):subrun=(?P<subrun>\d+):gates=(?P<gates>\d+):runmode=(?P<runmode>\d+):detector=(?P<detector>\d+):nfebs=(?P<nfebs>\d+):lilevel=(?P<lilevel>\d+):ledgroup=(?P<ledgroup>\d+):hwinitlevel=(?P<hwinitlevel>\d+):identity=(?P<identity>\w+)!",
-                    "(?P<request>daq_stop)!",
-                    "(?P<request>sc_setHWconfig) '(?P<filename>.+)'!",
-                    "(?P<request>sc_readboards)\?" ]
-
-MonitorRequests = [ "(?P<request>om_start) etpattern=(?P<etpattern>\S+):etport=(?P<etport>\d+)!",
-                    "(?P<request>om_stop)!",
-                    "(?P<request>om_alive)\?" ]
