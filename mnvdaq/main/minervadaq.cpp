@@ -265,7 +265,11 @@ int main(int argc, char *argv[])
 	sprintf(workerName,  "minervatest04.fnal.gov");
 #endif
 #if CRATE0||CRATE1
+#if BACKUPNODE
+	sprintf(hostName,    "mnvonlinebck1.fnal.gov");
+#else
 	sprintf(hostName,    "mnvonlinemaster.fnal.gov");
+#endif
 	sprintf(soldierName, "mnvonline0.fnal.gov");
 	sprintf(workerName,  "mnvonline1.fnal.gov");
 #endif
@@ -605,7 +609,6 @@ int main(int argc, char *argv[])
 		switch (runningMode) {
 			case OneShot:
 				triggerType = Pedestal;
-				readFPGA    = false;
                         	break;
 			case NuMIBeam:
 				triggerType = NuMI;
@@ -653,7 +656,6 @@ int main(int argc, char *argv[])
 				if (triggerCounter%2) {
 					triggerType = Pedestal;
 					readFPGA    = false;
-					nReadoutADC = 2; // Deepest only.
 				} else {
 					triggerType = NuMI;
 				}
@@ -1313,7 +1315,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-03-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-03-01'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

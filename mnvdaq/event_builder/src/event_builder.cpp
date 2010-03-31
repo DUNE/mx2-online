@@ -51,7 +51,11 @@ int main(int argc, char **argv)
 	sprintf(hostName, "minervatest03.fnal.gov");
 #endif
 #if CRATE0||CRATE1||NEARLINE
+#if BACKUPNODE
+	sprintf(hostName, "mnvonlinebck1.fnal.gov");
+#else
 	sprintf(hostName, "mnvonlinemaster.fnal.gov");
+#endif
 #endif
         std::cout << "Configured for a Multi-PC Build..." << std::endl;
 #endif
