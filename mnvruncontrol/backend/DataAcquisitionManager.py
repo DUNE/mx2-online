@@ -63,13 +63,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.readoutNodes = None				# will be set in RunControl.GetConfig()
 
 		# configuration stuff
-		self.etSystemFileLocation = Configuration["Front end"]["etSystemFileLocation"]
-		self.rawdataLocation      = Configuration["Front end"]["master_rawdataLocation"]
+		self.etSystemFileLocation = Configuration.params["Front end"]["etSystemFileLocation"]
+		self.rawdataLocation      = Configuration.params["Front end"]["master_rawdataLocation"]
 
 		# logging facilities
 		self.logger = logging.getLogger("rc_dispatcher")
 		self.logger.setLevel(logging.DEBUG)
-		self.filehandler = logging.handlers.RotatingFileHandler(Configuration["Front end"]["master_logfileName"], maxBytes=204800, backupCount=5)
+		self.filehandler = logging.handlers.RotatingFileHandler(Configuration.params["Front end"]["master_logfileName"], maxBytes=204800, backupCount=5)
 		self.filehandler.setLevel(logging.INFO)
 		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
 		self.filehandler.setFormatter(self.formatter)
@@ -253,8 +253,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		if hasattr(evt, "processname") and evt.processname is not None:
 			if len(self.runseries.Runs) > 1:
-				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be need to be terminated.  Do you want to continue with the rest of the run series?  (Selecting 'no' will stop the run series and return you to the idle state.)", evt.processname + " quit prematurely",   wx.YES_NO | wx.YES_DEFAULT | wx.ICON_QUESTION)
-				self.running = self.running and (dialog.ShowModal() == wx.ID_NO)
+				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be need to be terminated.  Do you want to continue with the rest of the run series?  (Selecting 'no' will stop the run series and return you to the idle state.)", evt.processname + " quit prematurely",   wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+				self.running = self.running and (dialog.ShowModal() == wx.ID_YES)
 			else:			
 				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
 				self.running = False
@@ -419,7 +419,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 				success = False
 				tries = 0
 				while not success and tries < Defaults.SLOWCONTROL_NUM_WRITE_ATTEMPTS:
-					success = node.sc_loadHWfile(self.runinfo.hwConfig)
+					try:
+						success = node.sc_loadHWfile(self.runinfo.hwConfig)
+					except ReadoutNode.ReadoutNodeNoConnectionException:
+						success = False
 					tries += 1
 					time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)
 					
@@ -472,7 +475,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# we don't need to do the check unless this subrun is the first one of its type
 		if self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig:
 		
-			thresholds = sorted(Configuration["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
+			thresholds = sorted(Configuration.params["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
 			over = {}
 			needs_intervention = False
 			for node in self.readoutNodes:
@@ -495,11 +498,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 							else:
 								over[threshold] = 1
 						
-							if over[threshold] > Configuration["Readout nodes"]["SCHVthresholds"][threshold]
+							if over[threshold] > Configuration.params["Readout nodes"]["SCHVthresholds"][threshold]:
 								needs_intervention = True
 								break
 						
-					if period < Configuration["Readout nodes"]["SCperiodThreshold"]
+					if period < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
 						needs_intervention = True
 						break
 
