@@ -9,26 +9,22 @@
    Address all complaints to the management.
 """
 
-import socket
-import signal
 import subprocess
 import threading
-import errno
 import time
 import sys
 import os
 import os.path
-import re
 import logging
 import logging.handlers
 
-from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import SocketRequests
+from mnvruncontrol.configuration import Configuration
 
 from mnvruncontrol.backend.Dispatcher import Dispatcher
 
-#from mnvconfigurator.SlowControl.SC_MainMethods import SC as SlowControl
+from mnvconfigurator.SlowControl.SC_MainMethods import SC as SlowControl
 
 
 class RunControlDispatcher(Dispatcher):
@@ -52,22 +48,22 @@ class RunControlDispatcher(Dispatcher):
 
 		# Dispatcher() maintains a central logger.
 		# We want a file output, so we'll set that up here.
-		self.filehandler = logging.handlers.RotatingFileHandler(Defaults.READOUT_DISPATCHER_LOGFILE, maxBytes=204800, backupCount=5)
+		self.filehandler = logging.handlers.RotatingFileHandler(Configuration.params["Readout nodes"]["readout_logfileName"], maxBytes=204800, backupCount=5)
 		self.filehandler.setLevel(logging.INFO)
 		self.filehandler.setFormatter(self.formatter)		# self.formatter is set up in the Dispatcher superclass
 		self.logger.addHandler(self.filehandler)
 
 		# we need to specify what requests we know how to handle.
 		self.valid_requests += SocketRequests.ReadoutRequests
-		self.handlers.update( { "alive" : self.ping,
-		                        "daq_running" : self.daq_status,
-		                        "daq_last_exit" : self.daq_exitstatus,
-		                        "daq_start" : self.daq_start,
-		                        "daq_stop" : self.daq_stop,
+		self.handlers.update( { "alive"          : self.ping,
+		                        "daq_running"    : self.daq_status,
+		                        "daq_last_exit"  : self.daq_exitstatus,
+		                        "daq_start"      : self.daq_start,
+		                        "daq_stop"       : self.daq_stop,
 		                        "sc_sethwconfig" : self.sc_sethw,
-		                        "sc_readboards" : self.sc_readboards } )
+		                        "sc_readboards"  : self.sc_readboards } )
 		
-		self.pidfilename = Defaults.READOUT_DISPATCHER_PIDFILE
+		self.pidfilename = Configuration.params["Readout nodes"]["readout_PIDfileLocation"]
 
 		self.daq_thread = None
 
@@ -191,7 +187,7 @@ class RunControlDispatcher(Dispatcher):
 		if show_details:
 			self.logger.info("Client wants to load slow control configuration file: '" + matches.group("filename") + "'.")
 		
-		fullpath = Defaults.SLOWCONTROL_CONFIG_LOCATION_DEFAULT + "/" + matches.group("filename")
+		fullpath = "%s/%s" % (Configuration.params["Readout nodes"]["SCfileLocation"], matches.group("filename"))
 		
 		if not os.path.isfile(fullpath):
 			self.logger.warning("Specified slow control configuration file does not exist: " + fullpath)
@@ -282,7 +278,7 @@ class DAQThread(threading.Thread):
 
 		stdout, stderr = self.daq_process.communicate()
 		
-		filename = Defaults.LOGFILE_LOCATION_DEFAULT + "/minervadaq.log"
+		filename = "%s/minervadaq.log" % Configuration.params["Readout nodes"]["readout_logfileLocation"]
 		self.owner_process.logger.info("DAQ subprocess finished.  Its output will be written to '" + filename + "'.")
 		# dump the output of minervadaq to a file so that crashes can be investigated.
 		# we only keep one copy because it will be rare that anyone is interested.
@@ -296,12 +292,12 @@ class DAQThread(threading.Thread):
 		# open a client socket to the master node.  need to inform it we're done!
 		tries = 0
 		success = False
-		while tries < Defaults.MAX_CONNECTION_ATTEMPTS and not success:
+		while tries < Configuration.params["Socket setup"]["maxConnectionAttempts"] and not success:
 			self.owner_process.logger.info("Attempting to contact master to indicate I am done.")
 			try:
 				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				s.settimeout(Defaults.SOCKET_TIMEOUT)
-				s.connect( (self.master_address, Defaults.MASTER_PORT) )
+				s.settimeout(Configuration.params["Socket setup"]["socketTimeout"]
+				s.connect( (self.master_address, Configuration.params["Socket setup"]["masterPort"]) )
 				s.send(self.identity)		# informs the server WHICH of the readout nodes I am (and that I'm finished).
 				s.shutdown(socket.SHUT_WR)
 				self.owner_process.logger.info("'Done' signal sent successfully.")
@@ -310,13 +306,13 @@ class DAQThread(threading.Thread):
 				self.owner_process.logger.exception("Socket error:")
 				self.owner_process.logger.info("  ==> 'Done' communication interrupted.")
 				tries += 1
-				if tries < Defaults.MAX_CONNECTION_ATTEMPTS:
+				if tries < Configuration.params["Socket setup"]["maxConnectionAttempts"]:
 					self.owner_process.logger.info("  ==> Will try again in 1s.")
-				time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)
+				time.sleep(Configuration.params["Socket setup"]["connAttemptInterval"])
 			finally:
 				s.close()
 				
-		if tries == Defaults.MAX_CONNECTION_ATTEMPTS:
+		if tries == Configuration.params["Socket setup"]["maxConnectionAttempts"]:
 			self.owner_process.logger.error("  ==> Could not communicate 'done' to master.")
 
 		self.returncode = self.daq_process.returncode
@@ -329,9 +325,6 @@ class DAQThread(threading.Thread):
   It's designed to run directly as a background process that handles
   incoming requests for the DAQ slave service and slow control.
   
-  If it IS running as a stand-alone, it will need to daemonize
-  and begin listening on the specified port.
-  
   Otherwise this implementation will bail with an error.
 """
 if __name__ == "__main__":
@@ -342,45 +335,11 @@ if __name__ == "__main__":
 		environment["ET_LIBROOT"] = os.environ["ET_LIBROOT"]
 		environment["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
 	except KeyError:
-		sys.stderr.write("Your environment is not properly configured.  You must run the 'setup_daqbuild.sh' script before launching the dispatcher.\n")
+		sys.stderr.write("Your environment is not properly configured.  You must run the 'setupdaqenv.sh' script before launching the dispatcher.\n")
 		sys.exit(1)
 
-	import optparse
-	
-	parser = optparse.OptionParser(usage="usage: %prog [options] command\n  where 'command' is 'start' or 'stop'")
-	parser.add_option("-r", "--replace", dest="replace", action="store_true", help="Replace a currently-running instance of the service with a new one. Default: %default.", default=False)
-	parser.add_option("-i", "--interactive", dest="interactive", action="store_true", help="Run in an interactive session (don't daemonize).  Default: %default.", default=False)
-	parser.add_option("-m", "--master-address", dest="masterAddress", help="The internet address of the master node.  Default: %default.", default=Defaults.MASTER)
-	
-	(options, commands) = parser.parse_args()
-	
-	if len(commands) != 1 or not(commands[0].lower() in ("start", "stop")):
-		parser.print_help()
-		sys.exit(0)
-
-	command = commands[0].lower()
-	
 	dispatcher = RunControlDispatcher()
-	
-	
-	if command == "start":
-		dispatcher.interactive = options.interactive
-		dispatcher.replace = options.replace
-		dispatcher.master_address = options.masterAddress
-		
-		if dispatcher.interactive:
-			print "Running in interactive mode."
-			print "All log information will be echoed to the screen."
-			print "Enter 'Ctrl-C' to exit.\n\n"
-		else:
-			print "Dispatcher starting in daemon mode."
-			print "Run this program with the keyword 'stop' to stop it."
-			print "Also see the log file at '" + Defaults.DISPATCHER_LOGFILE + "'.\n"
-		dispatcher.start()
-	elif command == "stop":
-		dispatcher.interactive = True
-		dispatcher.replace = False
-		dispatcher.stop()
+	dispatcher.bootstrap()
 	
 	sys.exit(0)
 else:

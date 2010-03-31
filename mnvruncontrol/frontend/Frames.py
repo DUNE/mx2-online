@@ -15,6 +15,7 @@ import sys
 
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Defaults
+from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.backend import Events
 from mnvruncontrol.frontend import Tools
 
@@ -75,19 +76,28 @@ class HVConfirmationFrame(wx.Frame):
 		colors = ["red", "orange", "yellow"]		# used to demarcate the boards that have exceeded certain thresholds
 		
 		# eventually we'll want to do some sorting, but for now ...
-		thresholds = sorted(Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS.keys(), reverse=True)
+		thresholds = sorted(Configuration.params["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
 		over = {}
 		needs_intervention = False
 		for node in self.nodes:
 			for board in febStatuses[node.name]:
+				# if this board isn't an alarm, don't show it.
+				if abs(int(board["hv_dev"])) < min(thresholds) and int(board["hv_period"]) >= Configuration.params["Readout nodes"]["SCperiodThreshold"]:
+					continue
+					
 				index = self.pmtlist.InsertStringItem(sys.maxint, node.name)
 				self.pmtlist.SetStringItem(index, 1, board["croc"])
 				self.pmtlist.SetStringItem(index, 2, board["chain"])
 				self.pmtlist.SetStringItem(index, 3, board["board"])
 				self.pmtlist.SetStringItem(index, 4, board["hv_dev"])
 				self.pmtlist.SetStringItem(index, 5, board["hv_period"])
-
-
+				
+				# low-HV period boards will probably show up at the top this way.
+				if int(board["hv_period"]) < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
+					self.pmtlist.SetItemData(index, int(board["hv_period"]))
+				else:
+					data = abs(int(board["hv_dev"]))
+					self.pmtlist.SetItemData(index, data)
 
 		index = self.pmtlist.GetNextItem(-1)
 		while index != -1:
@@ -106,10 +116,13 @@ class HVConfirmationFrame(wx.Frame):
 					
 					break
 					
-			if period < Defaults.SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD:
+			if period < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
 				self.pmtlist.SetItemBackgroundColour(index, wx.Color("blue"))
 			
 			index = self.pmtlist.GetNextItem(index)
+			
+		# sort them in descending order.
+		self.pmtlist.SortItems(lambda a,b : 0 if a == b else (-1 if a > b else 1))
 
 	def OnContinue(self, evt):
 		wx.PostEvent(self.DAQmgr, Events.ReadyForNextSubrunEvent())

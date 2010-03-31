@@ -12,10 +12,6 @@ import time
 import re
 import sys
 
-# for testing purposes.
-LIBOX_WAIT_FOR_RESPONSE = True
-LIBOX_DISABLE = False
-
 # configuration for the serial port.
 # these probably will never need to be changed.
 LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS0"
@@ -28,13 +24,16 @@ LIBOX_SERIAL_PORT_STOP_BITS      = serial.STOPBITS_ONE
 
 class LIBox:
 	""" Control class for the LI box. """
-	def __init__(self, pulse_height = 12.07, pulse_width = 7, LED_groups = "ABCD", trigger_internal = False, trigger_rate = None, echocmds=False):
+	def __init__(self, pulse_height = 12.07, pulse_width = 7, LED_groups = "ABCD", trigger_internal = False, trigger_rate = None, echocmds=False, wait_response = True, disable_LI = False):
 		self.pulse_height     = pulse_height
 		self.pulse_width      = pulse_width
 		self.LED_groups       = LED_groups
 		self.trigger_internal = trigger_internal
 		self.trigger_rate     = trigger_rate
 		self.echocmds         = echocmds
+		
+		self.disable = disable_LI
+		self.wait_response = wait_response
 		
 		self.command_stack = []
 		
@@ -51,7 +50,7 @@ class LIBox:
 		# this will throw an exception if the port's not properly configured.
 		# that's ok -- it needs to be fixed in that case!
 		# (the 'timeout' parameter is how long the process will wait for a read, in seconds.)
-		if not LIBOX_DISABLE:
+		if not self.disable:
 			self.port = serial.Serial( port     = LIBOX_SERIAL_PORT_DEVICE,
 				                      baudrate = LIBOX_SERIAL_PORT_BAUD,
 				                      bytesize = LIBOX_SERIAL_PORT_DATA_BITS,
@@ -79,7 +78,7 @@ class LIBox:
 		""" Sends the commands in the command stack to the LI box. """
 		self.check_commands()
 		
-		if not LIBOX_DISABLE:
+		if not self.disable:
 			for command in self.command_stack:
 				self.command_log.append(command)		# store this in a log for later review.
 				try:
@@ -89,7 +88,7 @@ class LIBox:
 				except serial.SerialTimeoutException:
 					raise LIBoxException("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
 
-				if LIBOX_WAIT_FOR_RESPONSE and command != "_X":		# box won't respond after reset command.
+				if self.wait_response and command != "_X":		# box won't respond after reset command.
 					char = self.port.read(1)
 					if self.echocmds:
 						print "Received from box: '" + char + "'"

@@ -10,7 +10,7 @@
 
 from mnvruncontrol.configuration import SocketRequests
 
-from mnvruncontrol.backend import RemoteNode
+from mnvruncontrol.backend.RemoteNode import RemoteNode
 
 class MonitorNode(RemoteNode):
 	def __init__(self, name, address):

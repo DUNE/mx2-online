@@ -19,9 +19,9 @@ import os
 import logging
 import logging.handlers
 
-from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import SocketRequests
+from mnvruncontrol.configuration import Configuration
 
 from mnvruncontrol.backend.Dispatcher import Dispatcher
 
@@ -35,7 +35,7 @@ class MonitorDispatcher(Dispatcher):
 	
 		# Dispatcher() maintains a central logger.
 		# We want a file output, so we'll set that up here.
-		self.filehandler = logging.handlers.RotatingFileHandler(Defaults.OM_DISPATCHER_LOGFILE, maxBytes=204800, backupCount=5)
+		self.filehandler = logging.handlers.RotatingFileHandler(Configuration.params["Monitoring nodes"]["om_logfileName"], maxBytes=204800, backupCount=5)
 		self.filehandler.setLevel(logging.INFO)
 		self.filehandler.setFormatter(self.formatter)		# self.formatter is set up in the Dispatcher superclass
 		self.logger.addHandler(self.filehandler)
@@ -45,7 +45,7 @@ class MonitorDispatcher(Dispatcher):
 		self.handlers.update( { "om_start" : self.om_start,
 		                        "om_stop"  : self.om_stop } )
 		                        
-		self.pidfilename = Defaults.OM_DISPATCHER_PIDFILE
+		self.pidfilename = Configuration.params["Monitoring nodes"]["om_PIDfileLocation"]
 		                   
 		self.om_eb_thread = None
 		self.om_Gaudi_thread = None
@@ -68,9 +68,9 @@ class MonitorDispatcher(Dispatcher):
 			self.om_eb_thread.terminate()
 			self.om_eb_thread.join()
 			
-		self.evbfile = "%s/%s_RawData.dat" % ( Defaults.OM_DATAFILE_LOCATION_DEFAULT, matches.group("etpattern") )
-		self.raweventfile = "%s/%s_RawEvent.dat" % ( Defaults.OM_DATAFILE_LOCATION_DEFAULT, matches.group("etpattern") )
-		self.rawhistosfile = "%s/%s_RawHistos.dat" % ( Defaults.OM_DATAFILE_LOCATION_DEFAULT, matches.group("etpattern") )
+		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
+		self.raweventfile = "%s/%s_RawEvent.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
+		self.rawhistosfile = "%s/%s_RawHistos.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
 		
 		try:
 			self.om_start_eb(etfile="%s_RawData" % matches.group("etpattern"), etport=matches.group("etport"))
@@ -82,7 +82,7 @@ class MonitorDispatcher(Dispatcher):
 	
 	def om_start_eb(self, etfile, etport):
 		""" Start the event builder process. """
-		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Defaults.ET_SYSTEM_LOCATION_DEFAULT, etfile, self.evbfile, etport, os.getpid()) ) 
+		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Configuration.params["Front end"]["etSystemFileLocation"], etfile, self.evbfile, etport, os.getpid()) ) 
 		self.logger.info("   event_builder command:")
 		self.logger.info("      '" + executable + "'...")
 		signal.signal(signal.SIGUSR1, self.om_start_Gaudi)
@@ -94,7 +94,7 @@ class MonitorDispatcher(Dispatcher):
 		signal.signal(signal.SIGUSR1, signal.SIG_IGN)
 		
 		# replace the options file so that we get the new event builder output.
-		with open(Defaults.OM_GAUDI_OPTIONSFILE, "w") as optsfile:
+		with open(Configuration.params["Monitoring nodes"]["om_GaudiOptionsFile"], "w") as optsfile:
 			optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\";" % self.evbfile)
 			optsfile.write("Event.Output = \"DATAFILE='PFN:%s' TYP='POOL_ROOTTREE' OPT='RECREATE'\";" % self.raweventfile)
 			optsfile.write("HistogramPersistencySvc.Outputfile = \"%s\";" % self.rawhistosfile)
@@ -171,7 +171,7 @@ class OMThread(threading.Thread):
 
 		stdout, stderr = self.process.communicate()
 		
-		filename = "%s/%s.log" % (Defaults.OM_LOGFILE_LOCATION_DEFAULT, self.processname)
+		filename = "%s/%s.log" % (Configuration.params["Front end"]["om_logfileName"], self.processname)
 		# dump the output of the process to a file so that crashes can be investigated.
 		# we only keep one copy because it will be rare that anyone is interested.
 		try:

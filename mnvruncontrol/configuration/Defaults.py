@@ -61,3 +61,4 @@ OM_DATAFILE_LOCATION_DEFAULT = "/home/nearonline/data"
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
 SLOWCONTROL_ALLOWED_HV_THRESHOLDS = {300: 0, 100: 3, 60: 15}	# that is, { threshold : num allowed over that threshold, ... }
 SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD = 15000
+SLOWCONTROL_NUM_WRITE_ATTEMPTS = 3

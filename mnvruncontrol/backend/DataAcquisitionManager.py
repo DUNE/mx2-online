@@ -22,6 +22,7 @@ import logging.handlers
 # note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
+from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import LIBox
 from mnvruncontrol.backend import RunSeries
@@ -52,7 +53,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		                          { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
 		                          { "method": self.ReadoutNodeHWConfig,       "message": "Loading hardware..." },
 		                          { "method": self.LIBoxSetup,                "message": "Initializing light injection..." },
-		                          { "method": self.ReadoutNodeHVCheck,        "message": "Waiting on hardware..." } ]
+		                          { "method": self.ReadoutNodeHVCheck,        "message": "Checking hardware..." } ]
 
 		# counters
 		self.current_DAQ_thread = 0			# the next thread to start
@@ -63,13 +64,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.readoutNodes = None				# will be set in RunControl.GetConfig()
 
 		# configuration stuff
-		self.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
-		self.rawdataLocation      = Defaults.RAW_DATA_LOCATION_DEFAULT
+		self.etSystemFileLocation = Configuration.params["Front end"]["etSystemFileLocation"]
+		self.rawdataLocation      = Configuration.params["Front end"]["master_rawdataLocation"]
 
 		# logging facilities
 		self.logger = logging.getLogger("rc_dispatcher")
 		self.logger.setLevel(logging.DEBUG)
-		self.filehandler = logging.handlers.RotatingFileHandler(Defaults.RC_LOGFILE_DEFAULT, maxBytes=204800, backupCount=5)
+		self.filehandler = logging.handlers.RotatingFileHandler(Configuration.params["Front end"]["master_logfileName"], maxBytes=204800, backupCount=5)
 		self.filehandler.setLevel(logging.INFO)
 		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
 		self.filehandler.setFormatter(self.formatter)
@@ -102,7 +103,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.detector == None or self.run == None or self.first_subrun == None or self.febs == None:
 			raise ValueError("Run series is improperly configured.")
 
-		self.LIBox = LIBox.LIBox()
+		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Front end"]["LIBoxEnabled"]), wait_response=Configuration.params["Front end"]["LIBoxWaitForResponse"])
 		
 		# try to get a lock on each of the readout nodes.
 		failed_connection = None
@@ -255,8 +256,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		if hasattr(evt, "processname") and evt.processname is not None:
 			if len(self.runseries.Runs) > 1:
-				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be need to be terminated.  Do you want to continue with the rest of the run series?  (Selecting 'no' will stop the run series and return you to the idle state.)", evt.processname + " quit prematurely",   wx.YES_NO | wx.YES_DEFAULT | wx.ICON_QUESTION)
-				self.running = self.running and (dialog.ShowModal() == wx.ID_NO)
+				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be need to be terminated.  Do you want to continue with the rest of the run series?  (Selecting 'no' will stop the run series and return you to the idle state.)", evt.processname + " quit prematurely",   wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+				self.running = self.running and (dialog.ShowModal() == wx.ID_YES)
 			else:			
 				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
 				self.running = False
@@ -318,6 +319,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 			self.socketThread.Abort()
 
 		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finished.")
+
+		# need to make sure all the tasks are marked "not yet completed" so that they are run for the next subrun
+		for task in self.SubrunStartTasks:
+			task["completed"] = False
 
 		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
 		self.subrun += 1
@@ -384,7 +389,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		wx.PostEvent(self.main_window, Events.UpdateSeriesEvent())
 
 		# ET needs to use a rotating port number to avoid blockages.
-		self.runinfo.ETport = Defaults.ET_PORT_BASE + (self.first_subrun + self.subrun) % Defaults.NUM_ET_PORTS_TO_USE		
+		self.runinfo.ETport = Configuration.params["Socket setup"]["etPortBase"] + (self.first_subrun + self.subrun) % Configuration.params["Socket setup"]["numETports"]		
 		self.logger.info("  ET port for this subrun: " + str(self.runinfo.ETport))
 
 		ok = True
@@ -412,10 +417,20 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# state" version, in which case the user doesn't want
 		# to use any configuration file at all (so that custom
 		# configurations via the slow control can be used for testing).
-		if self.runinfo.hwConfig != MetaData.HardwareConfigurations["Current state"] and (self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[subrun - 1].hwConfig):
+		if self.runinfo.hwConfig != MetaData.HardwareConfigurations["Current state"] and (self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig):
 			for node in self.readoutNodes:
-				if not node.sc_loadHWfile(self.runinfo.hwConfig):		# returns False on failure
-					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Could not configure the hardware for the " + node.name + " readout node.  This subrun will need to be aborted.", title="Hardware configuration problem") )
+				success = False
+				tries = 0
+				while not success and tries < Configuration.params["Readout nodes"]["SCHWwriteAttempts"]:
+					try:
+						success = node.sc_loadHWfile(self.runinfo.hwConfig)
+					except ReadoutNode.ReadoutNodeNoConnectionException:
+						success = False
+					tries += 1
+					time.sleep(Configuration.params["Socket setup"]["connAttemptInterval"]
+					
+				if not success:
+					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Could not configure the hardware for the " + node.name + " readout node.  This subrun will be stopped.", title="Hardware configuration problem") )
 					self.logger.error("Could not set the hardware for the " + node.name + " readout node.  This subrun will be aborted.")
 					# need to stop the run startup sequence.
 					return False
@@ -432,9 +447,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 			need_LI = True
 			if self.runinfo.ledLevel == MetaData.LILevels["One PE"]:
-				self.LIBox.pulse_height = 5.07					# from Brandon Eberly, 3/5/2010
+				self.LIBox.pulse_height = Defaults.LI_ONE_PE_VOLTAGE					
 			elif self.runinfo.ledLevel == MetaData.LILevels["Max PE"]:
-				self.LIBox.pulse_height = 12.07
+				self.LIBox.pulse_height = Defaults.LI_MAX_PE_VOLTAGE
 			else:
 				need_LI = False
 				
@@ -460,43 +475,44 @@ class DataAcquisitionManager(wx.EvtHandler):
 		If not, control is passed to a window that asks
 		the user for input.
 		"""
-		
-		thresholds = sorted(Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS.keys(), reverse=True)
-		over = {}
-		needs_intervention = False
-		for node in self.readoutNodes:
-			board_statuses = node.sc_readBoards()
+		# we don't need to do the check unless this subrun is the first one of its type
+		if self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig:
+			thresholds = sorted(Configuration.params["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
+			over = {}
+			needs_intervention = False
+			for node in self.readoutNodes:
+				board_statuses = node.sc_readBoards()
 
-			# this method returns 0 if there are no boards to read
-			if board_statuses == 0:
-				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The " + node.name + " node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty...", title="No boards attached to " + node.name + " node") )
-				self.logger.warning(node.name + " node reports that it has no FEBs...")
-				continue	# it's still ok to go on, but user should know what's happening
+				# this method returns 0 if there are no boards to read
+				if board_statuses == 0:
+					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The " + node.name + " node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty...", title="No boards attached to " + node.name + " node") )
+					self.logger.warning(node.name + " node reports that it has no FEBs...")
+					continue	# it's still ok to go on, but user should know what's happening
 			
-			for board in board_statuses:
-				dev = abs(int(board["hv_dev"]))
-				period = int(board["hv_period"])
+				for board in board_statuses:
+					dev = abs(int(board["hv_dev"]))
+					period = int(board["hv_period"])
 				
-				for threshold in thresholds:
-					if dev > threshold:
-						if threshold in over:
-							over[threshold] += 1
-						else:
-							over[threshold] = 1
+					for threshold in thresholds:
+						if dev > threshold:
+							if threshold in over:
+								over[threshold] += 1
+							else:
+								over[threshold] = 1
 						
-						if over[threshold] > Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS[threshold]:
-							needs_intervention = True
-							break
+							if over[threshold] > Configuration.params["Readout nodes"]["SCHVthresholds"][threshold]:
+								needs_intervention = True
+								break
 						
-				if period < Defaults.SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD:
-					needs_intervention = True
-					break
+					if period < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
+						needs_intervention = True
+						break
 
-		# does the user need to look at it?
-		# if so, send control back to the main thread.
-		if needs_intervention:
-			wx.PostEvent(self.main_window, Events.NeedUserHVCheckEvent(daqmgr=self))
-			return None
+			# does the user need to look at it?
+			# if so, send control back to the main thread.
+			if needs_intervention:
+				wx.PostEvent(self.main_window, Events.NeedUserHVCheckEvent(daqmgr=self))
+				return None
 	
 		# ok to proceed to next step
 		return True

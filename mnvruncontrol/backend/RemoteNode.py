@@ -22,9 +22,9 @@
 
 import uuid
 
-from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import MetaData
+from mnvruncontrol.configuration import Configuration
 
 
 class RemoteNode:
@@ -34,7 +34,7 @@ class RemoteNode:
 		self.socket = None
 		self.name = name
 		self.address = address
-		self.port = Defaults.DISPATCHER_PORT
+		self.port = Configuration.params["Socket setup"]["dispatcherPort"]
 		self.ValidRequests = SocketRequests.GlobalRequests	# derived classes can add more to this if they want to
 		
 		self.own_lock = False
@@ -57,14 +57,14 @@ class RemoteNode:
 		
 		tries = 0
 		success = False
-		while tries < Defaults.MAX_CONNECTION_ATTEMPTS and not success:
+		while tries < Configuration.params["Socket setup"]["maxConnectionAttempts"] and not success:
 			# if this is a later attempt, we should wait a little to give the network a chance to catch up.
 			if tries > 0:
-				time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)
+				time.sleep(Configuration.params["Socket setup"]["connAttemptInterval"])
 				
 			try:
 				self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				self.socket.settimeout(Defaults.SOCKET_TIMEOUT)
+				self.socket.settimeout(Configuration.params["Socket setup"]["socketTimeout"])
 				self.socket.connect( (self.address, self.port) )
 				self.socket.send(request)
 				self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
@@ -92,7 +92,7 @@ class RemoteNode:
 				tries += 1
 				continue
 
-		if tries == Defaults.MAX_CONNECTION_ATTEMPTS:
+		if tries == Configuration.params["Socket setup"]["maxConnectionAttempts"]:
 			raise RemoteNodeNoConnectionException()
 
 		return response

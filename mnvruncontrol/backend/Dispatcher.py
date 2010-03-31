@@ -20,8 +20,8 @@ import re
 import logging
 import logging.handlers
 
-from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import SocketRequests
+from mnvruncontrol.configuration import Configuration
 
 class Dispatcher:
 	"""
@@ -31,7 +31,7 @@ class Dispatcher:
 	start() method checks before allowing dispatching to be started.
 	"""
 	def __init__(self):
-		self.port = Defaults.DISPATCHER_PORT
+		self.port = Configuration.params["Socket setup"]["dispatcherPort"]
 		self.interactive = False
 		self.respawn = False
 		self.quit = False
@@ -330,17 +330,17 @@ class Dispatcher:
 			elif client_address in self.last_request and request == self.last_request[client_address]:
 				self.request_count[client_address] += 1
 			else:
-				if client_address in self.last_request and self.request_count[client_address] > Defaults.MAX_REPEATED_REQUEST_LOGS:
-					self.logger.info("Note: previous request received from client " + client_address + " " + str(self.request_count[client_address] - Defaults.MAX_REPEATED_REQUEST_LOGS) + " more times...")
+				if client_address in self.last_request and self.request_count[client_address] > Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]:
+					self.logger.info("Note: previous request received from client " + client_address + " " + str(self.request_count[client_address] - Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]) + " more times...")
 				self.last_request[client_address] = request
 				self.request_count[client_address] = 1
 				
-			show_request_details = self.request_count[client_address] <= Defaults.MAX_REPEATED_REQUEST_LOGS
+			show_request_details = self.request_count[client_address] <= Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]
 			if show_request_details:
 				self.logger.info("Received request from client " + client_address + ": '" + request + "'")
 			
-			if self.request_count[client_address] == Defaults.MAX_REPEATED_REQUEST_LOGS:
-				self.logger.info("Note: request repeated " + str(Defaults.MAX_REPEATED_REQUEST_LOGS) + " times.")
+			if self.request_count[client_address] == Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]:
+				self.logger.info("Note: request repeated " + str(Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]) + " times.")
 				self.logger.info("      Further consecutive repeats of this request")
 				self.logger.info("      from this client will not be logged.")
 			
