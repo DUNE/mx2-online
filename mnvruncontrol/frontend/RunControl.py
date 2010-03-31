@@ -25,7 +25,7 @@ import re			# regular expressions
 
 # run control-specific modules.  note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
 from mnvruncontrol.configuration import MetaData
-from mnvruncontrol.configuration import Defaults
+from mnvruncontrol.configuration import Configuration
 
 from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import RunSeries
@@ -373,40 +373,16 @@ class MainFrame(wx.Frame):
 		return fileinfo
 
 	def GetConfig(self):
-		try:
-			db = shelve.open(Defaults.CONFIG_DB_LOCATION)
-		except anydbm.error:
+		if Configuration.config_file_inaccessible:
 			errordlg = wx.MessageDialog( None, "The configuration file does not exist.  Default values are being used.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
 
-			self.runinfoFile                     = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
-			self.logfileLocation                 = Defaults.LOGFILE_LOCATION_DEFAULT
-			self.runmanager.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
-			self.runmanager.rawdataLocation      = Defaults.RAW_DATA_LOCATION_DEFAULT
-			self.runmanager.ResourceLocation     = Defaults.RESOURCE_LOCATION_DEFAULT
-			self.runmanager.readoutNodes         = [ ReadoutNode.ReadoutNode("local", "localhost") ]		# can't use Defaults because I would need to import ReadoutNode into Defaults, which imports Defaults, which imports ReadoutNode ...
-			
-		else:
-			try:	self.runinfoFile = db["runinfoFile"]
-			except KeyError: self.runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
-			
-			try:	self.logfileLocation = db["logfileLocation"]
-			except KeyError: self.logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
-			
-			try:	self.runmanager.etSystemFileLocation = db["etSystemFileLocation"]
-			except KeyError: self.runmanager.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
-			
-			try:	self.runmanager.rawdataLocation = db["rawdataLocation"]
-			except KeyError: self.runmanager.rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
-
-			try:	self.runmanager.ResourceLocation = db["ResourceLocation"]
-			except KeyError: self.runmanager.ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
-			
-			try: self.runmanager.readoutNodes = db["readoutNodes"]
-			except KeyError: self.runmanager.readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
-			
-			db.close()
-		
+		self.runinfoFile                     = Configuration.params["Front end"]["runinfoFile"]
+		self.logfileLocation                 = Configuration.params["Front end"]["master_logfileLocation"]
+		self.runmanager.etSystemFileLocation = Configuration.params["Front end"]["etSystemFileLocation"]
+		self.runmanager.rawdataLocation      = Configuration.params["Front end"]["master_rawdataLocation"]
+		self.runmanager.ResourceLocation     = Configuration.params["Front end"]["ResourceLocation"]
+		self.runmanager.readoutNodes         = Configuration.params["Front end"]["readoutNodes"]
 		
 	def GetNextRunSubrun(self, evt=None):
 		"""
@@ -578,7 +554,7 @@ class MainFrame(wx.Frame):
 		filename = MetaData.RunSeriesTypes[self.seriesFile.GetStringSelection(),MetaData.CODE]
 
 		try:
-			db = shelve.open(Defaults.RUN_SERIES_DB_LOCATION_DEFAULT+"/"+filename,'r')
+			db = shelve.open(Configuration.params["Front end"]["runSeriesLocation"]+"/"+filename,'r')
 			self.runmanager.runseries = db["series"]
 			db.close()
 		except (anydbm.error, KeyError):
@@ -587,7 +563,7 @@ class MainFrame(wx.Frame):
 			return False
 
 		self.seriesFilename = filename
-		self.seriesPath = Defaults.RUN_SERIES_DB_LOCATION_DEFAULT
+		self.seriesPath = Configuration.params["Front end"]["runSeriesLocation"]
 
 		for runinfo in self.runmanager.runseries.Runs:
 		    index = self.seriesDescription.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed

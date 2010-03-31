@@ -22,6 +22,7 @@ import logging.handlers
 # note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
+from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import LIBox
 from mnvruncontrol.backend import RunSeries
@@ -62,13 +63,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.readoutNodes = None				# will be set in RunControl.GetConfig()
 
 		# configuration stuff
-		self.etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
-		self.rawdataLocation      = Defaults.RAW_DATA_LOCATION_DEFAULT
+		self.etSystemFileLocation = Configuration["Front end"]["etSystemFileLocation"]
+		self.rawdataLocation      = Configuration["Front end"]["master_rawdataLocation"]
 
 		# logging facilities
 		self.logger = logging.getLogger("rc_dispatcher")
 		self.logger.setLevel(logging.DEBUG)
-		self.filehandler = logging.handlers.RotatingFileHandler(Defaults.RC_LOGFILE_DEFAULT, maxBytes=204800, backupCount=5)
+		self.filehandler = logging.handlers.RotatingFileHandler(Configuration["Front end"]["master_logfileName"], maxBytes=204800, backupCount=5)
 		self.filehandler.setLevel(logging.INFO)
 		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
 		self.filehandler.setFormatter(self.formatter)
@@ -101,7 +102,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.detector == None or self.run == None or self.first_subrun == None or self.febs == None:
 			raise ValueError("Run series is improperly configured.")
 
-		self.LIBox = LIBox.LIBox()
+		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Front end"]["LIBoxEnabled"]), wait_response=Configuration.params["Front end"]["LIBoxWaitForResponse"])
 		
 		failed_connection = None
 		for node in self.readoutNodes:
@@ -471,7 +472,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# we don't need to do the check unless this subrun is the first one of its type
 		if self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig:
 		
-			thresholds = sorted(Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS.keys(), reverse=True)
+			thresholds = sorted(Configuration["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
 			over = {}
 			needs_intervention = False
 			for node in self.readoutNodes:
@@ -494,11 +495,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 							else:
 								over[threshold] = 1
 						
-							if over[threshold] > Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS[threshold]:
+							if over[threshold] > Configuration["Readout nodes"]["SCHVthresholds"][threshold]
 								needs_intervention = True
 								break
 						
-					if period < Defaults.SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD:
+					if period < Configuration["Readout nodes"]["SCperiodThreshold"]
 						needs_intervention = True
 						break
 
@@ -507,7 +508,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			if needs_intervention:
 				wx.PostEvent(self.main_window, Events.NeedUserHVCheckEvent(daqmgr=self))
 				return None
-		
+	
 		# ok to proceed to next step
 		return True
 
