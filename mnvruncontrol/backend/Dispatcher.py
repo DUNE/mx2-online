@@ -382,6 +382,7 @@ class Dispatcher:
 		# the requester's ID to make sure they're allowed to make it.
 		id = None
 		if request[-1] == "!":
+			imperative_request = True
 			matches = re.match("^.* (?P<id>[\d\w]+)!$", request)
 			if matches is None:
 				self.logger.info("Imperative request did not contain requester ID:")
@@ -391,12 +392,22 @@ class Dispatcher:
 			id = matches.group("id")
 			
 			if self.lock_id is not None and id != self.lock_id:
-				self.logger.info("Imperative request from requester other than the one who has the lock:")
-				self.logger.info(request)
+				self.logger.warning("Imperative request from requester other than the one who has the lock:")
+				self.logger.warning(request)
+				self.logger.warning("Request ignored.")
+				return "NOTALLOWED"
+			# this is definitely not a very secure ID check, but at least it prevents
+			# basic spoofing.  we verify that the provided ID is a UUID.
+			elif self.lock_id is None and re.match("^[\da-f]{8}(-[\da-f]{4}){3}-[\da-f]{12}$", id) is None:
+				self.logger.warning("Imperative request received with invalid ID:")
+				self.logger.warning(request)
+				self.logger.warning("Request ignored.")
 				return "NOTALLOWED"
 			
 			# now remove the ID from the request so that it matches the pattern.
 			request = request.replace(" %s" % id, "")
+		else:
+			imperative_request = False
 		
 		is_valid_request = False
 		for valid_request in self.valid_requests:
@@ -411,6 +422,15 @@ class Dispatcher:
 
 		request = matches.group("request").lower()
 		
+		# if this is an imperative request and the ID is ok, but there is currently no lock,
+		# then we need to implicitly give one.  (otherwise we could still get conflicting directives).
+		# we should ignore requests that are in the GlobalRequests, though, because their handlers
+		# are the MANAGERS of the locks and thus already know about them -- they don't need help.
+		# (other request handlers don't and need to have the locking mechanism managed for them.)
+		if imperative_request and self.lock_id is None and request not in SocketRequests.GlobalRequests:
+			self.logger.info("Imperative request received with no lock present.  Requesting one first.")
+			self.get_lock(lock_id=id, client_address=client_address)
+
 		if request in self.handlers:
 			if id is not None:
 				return self.handlers[request](matches, show_details=show_request_details, lock_id=id, client_address=client_address)
@@ -426,7 +446,7 @@ class Dispatcher:
 			self.logger.info("Responding to ping.")
 		return "1"
 	
-	def get_lock(self, matches, show_details, lock_id, client_address, **kwargs):
+	def get_lock(self, matches=None, show_details=None, lock_id, client_address, **kwargs):
 		""" Tries to get a run lock for this client.
 		    Returns 1 on success and 0 on failure. """
 		self.logger.info("Client wants a command lock.")

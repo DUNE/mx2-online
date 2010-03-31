@@ -26,6 +26,7 @@ from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import LIBox
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import ReadoutNode
+from mnvruncontrol.backend import RemoteNode
 from mnvruncontrol.backend import Threads
 from mnvruncontrol.frontend import Frames
 
@@ -43,8 +44,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		# methods that will be started sequentially
 		# by various processes and accompanying messages
-		self.DAQthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartRemoteDAQService]
-		self.DAQthreadLabels = ["Starting ET system...", "Starting ET monitor...", "Starting event builder...", "Starting the DAQ on readout node(s)..."]
+		self.DAQthreadStarters = [self.StartETSys, self.StartETMon, self.StartEBSvc, self.StartRemoteServices]
+		self.DAQthreadLabels = ["Starting ET system...", "Starting ET monitor...", "Starting event builder...", "Starting remote services..."]
 #		self.DAQthreadStarters = [self.StartTestProcess] #, self.StartTestProcess, self.StartTestProcess]
 
 		self.SubrunStartTasks = [ { "method": self.ETCleanup,                 "message": "Cleaning up any prior ET processes..." },
@@ -103,18 +104,17 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.LIBox = LIBox.LIBox()
 		
+		# try to get a lock on each of the readout nodes.
 		failed_connection = None
 		for node in self.readoutNodes:
-			try:
-				node.ping()
-			except ReadoutNode.ReadoutNodeNoConnectionException:
+			if node.get_lock():
+				wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
+			else:
 				failed_connection = node.name
 				break
-			else:
-				wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
 		
 		if failed_connection:
-			wx.PostEvent(self.main_window, Events.ErrorMsg(text="A connection cannot be made to the " + failed_connection + " readout node.  Check to make sure that the run control dispatcher is started on that machine.", title="No connection to " + failed_connection + " readout node") )
+			wx.PostEvent(self.main_window, Events.ErrorMsg(text="Cannot get control of dispatcher on the " + failed_connection + " readout node.  Check to make sure that the readout dispatcher is started on that machine and that there are no other run control processes connected to it.", title="No lock on " + failed_connection + " readout node") )
 			return
 			
 		# need to make sure all the tasks are marked "not yet completed"
@@ -141,7 +141,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 			except ReadoutNode.ReadoutNodeException, ReadoutNode.ReadoutNodeNoConnectionException:		# the DAQ has already quit or is unreachable
 				needsManualStop = True				# if so, we'll never get the "DAQ quit" event from the SocketThread.
 		if needsManualStop:
-			wx.PostEvent(self, Events.EndSubrunEvent())								
+			wx.PostEvent(self, Events.EndSubrunEvent())
+
+		for node in self.readoutNodes:
+			node.release_lock()										
 
 	##########################################
 	# Subrun starters and stoppers
@@ -380,7 +383,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.runinfo = self.runseries.Runs[self.subrun]
 		wx.PostEvent(self.main_window, Events.UpdateSeriesEvent())
 
-		self.runinfo.ETport = 1091 + (self.first_subrun + self.subrun) % 4		# ET needs to use a rotating port number to avoid blockages.
+		# ET needs to use a rotating port number to avoid blockages.
+		self.runinfo.ETport = Defaults.ET_PORT_BASE + (self.first_subrun + self.subrun) % Defaults.NUM_ET_PORTS_TO_USE		
 		self.logger.info("  ET port for this subrun: " + str(self.runinfo.ETport))
 
 		ok = True
@@ -560,9 +564,22 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.UpdateWindowCount()
 		self.DAQthreads.append( Threads.DAQthread(daq_command, "DAQ", output_window=daqFrame, owner_process=self, env=self.environment, next_thread_delay=2) )
 		
-	def StartRemoteDAQService(self):
-		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Setting up run:\nStarting DAQ service on readout nodes...", progress=(4,9)) )
-	
+	def StartRemoteServices(self):
+		""" Notify all the remote services that we're ready to go.
+		    Currently this includes the online monitoring system
+		    as well as the DAQ on the readout nodes. """
+		    
+		# the ET system is all set up, so the online monitoring nodes
+		# can be told to connect.  the run control doesn't care if they
+		# actually start up properly; all it does is try to send the
+		# appropriate signal.
+		for node in self.monitorNodes:
+			try:
+				node.om_start(self.ET_filename, self.runinfo.ETport)
+			except:
+				self.logger.exception("Online monitoring couldn't be started on node %s.  Ignoring." % name)
+				continue
+		    
 		for node in self.readoutNodes:
 			errmsg = None
 			errtitle = None

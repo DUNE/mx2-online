@@ -402,6 +402,9 @@ class MainFrame(wx.Frame):
 			try:	self.runmanager.ResourceLocation = db["ResourceLocation"]
 			except KeyError: self.runmanager.ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
 			
+			try: self.runmanager.monitorNodes = db["monitorNodes"]
+			except KeyError: self.runmanager.monitorNodes = []
+			
 			try: self.runmanager.readoutNodes = db["readoutNodes"]
 			except KeyError: self.runmanager.readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
 			

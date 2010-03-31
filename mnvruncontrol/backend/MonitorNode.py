@@ -8,13 +8,7 @@
    Address all complaints to the management.
 """
 
-import re
-import time
-import socket
-
-from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import SocketRequests
-from mnvruncontrol.configuration import MetaData
 
 from mnvruncontrol.backend import RemoteNode
 
@@ -24,10 +18,10 @@ class MonitorNode(RemoteNode):
 		
 		self.ValidRequests += SocketRequests.MonitorRequests
 						
-	def om_start(self, etfile, etport):
+	def om_start(self, etpattern, etport):
 		""" Asks the server to start the OM processes. """
 		
-		request = "om_start etfile=%s:etport=%d!" % (etfile, etport)
+		request = "om_start etpattern=%s:etport=%d!" % (etpattern, etport)
 		#print request
 		self.request(request)
 

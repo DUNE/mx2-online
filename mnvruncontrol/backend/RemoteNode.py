@@ -8,6 +8,11 @@
     making this particular instance the only one
     that can issue commands to the node that will
     change its behavior).
+    
+    Dispatchers expect this instance's ID to be
+    sent along with any 'imperative' request
+    (i.e., one that will result in a change in
+    state), so that is done transparently here.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Mar.-Apr. 2010
@@ -31,6 +36,8 @@ class RemoteNode:
 		self.address = address
 		self.port = Defaults.DISPATCHER_PORT
 		self.ValidRequests = SocketRequests.GlobalRequests	# derived classes can add more to this if they want to
+		
+		self.own_lock = False
 		
 	def request(self, request):
 		is_valid_request = False	
@@ -105,23 +112,33 @@ class RemoteNode:
 		    
 		    Returns True on success and False on failure.  """
 		
+		# don't need another one if I've already got one.
+		if self.own_lock:
+			return True
+		
 		try:
 			response = self.request("get_lock %s" % self.id)
 		except RemoteNodeNoConnectionException:
 			return False
 		
-		return response == "1"
+		self.own_lock = response == "1"
+		return self.own_lock
 
 	def release_lock(self):
 		""" Releases a lock gotten by get_lock().
 		    Returns True on success and False on failure.  """
+		
+		# if I don't already own a lock, I don't need to do anything more.
+		if not self.own_lock:
+			return True
 		
 		try:
 			response = self.request("release_lock %s" % self.id)
 		except RemoteNodeNoConnectionException:
 			return False
 		
-		return response == "1"
+		self.own_lock = not(response == "1")
+		return not(self.own_lock)
 
 class RemoteNodeNotConfiguredException(Exception):
 	pass

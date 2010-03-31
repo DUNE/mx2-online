@@ -1,10 +1,10 @@
 """
   ReadoutNode.py:
   Module that models a readout node.
-  It handles the socket connection from the client
+  It wraps the socket connection from the client
   (the readout "queen" in Gabe's language) to the readout nodes
   actually attached to hardware (the "soldier" and "worker" nodes)
-  as well as taking care of a few other details.
+  using the RemoteNode base class.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Mar. 2010
@@ -13,75 +13,18 @@
 """
 
 import re
-import time
-import socket
 
-from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import MetaData
 
-class ReadoutNode:
+from mnvruncontrol.backend.RemoteNode import RemoteNode
+
+class ReadoutNode(RemoteNode):
 	def __init__(self, name, address):
-		self.socket = None
-		self.name = name
-		self.address = address
-		self.port = Defaults.DISPATCHER_PORT
+		RemoteNode.__init__(self)
 		
-	def request(self, request):
-		is_valid_request = False
-		for valid_request in SocketRequests.ValidRequests:
-			if re.match(valid_request, request) is not None:
-				is_valid_request = True
-				break
+		self.ValidRequests += SocketRequests.ReadoutRequests
 		
-		if not is_valid_request:
-			raise ReadoutNodeBadRequestException("Invalid request: '" + request + "'")
-		
-		tries = 0
-		success = False
-		while tries < Defaults.MAX_CONNECTION_ATTEMPTS and not success:
-			response = ""
-			try:
-				self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				self.socket.settimeout(Defaults.SOCKET_TIMEOUT)
-				self.socket.connect( (self.address, self.port) )
-				self.socket.send(request)
-				self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
-
-				datalen = -1
-				while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire response
-					data = self.socket.recv(1024)
-					datalen = len(data)
-					response += data
-
-				success = True
-			except (socket.error, socket.timeout), e:
-				time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)		# wait a little to make sure we don't overload the dispatcher
-			finally:
-				self.socket.close()
-				
-			# an empty response is the sign of a broken connection.
-			# (none of the queries will return with a blank response.)
-			# we'll want to try again.
-			if response == "":
-				success = False
-				tries += 1
-				continue
-
-		if tries >= Defaults.MAX_CONNECTION_ATTEMPTS:
-			raise ReadoutNodeNoConnectionException()
-
-		return response
-	
-	def ping(self):
-		""" Requests confirmation from the server that it is indeed alive and well. """
-		try:
-			response = self.request("alive?")
-		except:
-			return False
-		
-		return len(response) > 0		# if we got ANYTHING back, then it's alive
-	
 	def daq_checkStatus(self):
 		""" Asks the server to check and see if its DAQ process is running. """
 		response = self.request("daq_running?")
