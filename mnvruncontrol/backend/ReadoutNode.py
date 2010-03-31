@@ -27,7 +27,7 @@ class ReadoutNode:
 		self.address = address
 		self.port = Defaults.DISPATCHER_PORT
 		
-	def request(self, request):
+	def request(self, request, use_timeout=False):
 		is_valid_request = False
 		for valid_request in SocketRequests.ValidRequests:
 			if re.match(valid_request, request) is not None:
@@ -43,7 +43,8 @@ class ReadoutNode:
 			response = ""
 			try:
 				self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				self.socket.settimeout(Defaults.SOCKET_TIMEOUT)
+				if use_timeout:
+					self.socket.settimeout(Defaults.SOCKET_TIMEOUT)
 				self.socket.connect( (self.address, self.port) )
 				self.socket.send(request)
 				self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
@@ -55,8 +56,10 @@ class ReadoutNode:
 					response += data
 
 				success = True
-			except (socket.error, socket.timeout), e:
+			except socket.timeout, e:
 				time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)		# wait a little to make sure we don't overload the dispatcher
+			except socket.error, e:
+				print e
 			finally:
 				self.socket.close()
 				
@@ -76,7 +79,7 @@ class ReadoutNode:
 	def ping(self):
 		""" Requests confirmation from the server that it is indeed alive and well. """
 		try:
-			response = self.request("alive?")
+			response = self.request("alive?", use_timeout=True)
 		except:
 			return False
 		
