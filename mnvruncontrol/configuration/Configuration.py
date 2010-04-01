@@ -21,17 +21,20 @@ import anydbm
 
 from mnvruncontrol.configuration import Defaults
 
-configuration = { "Front end"     : {    "runinfoFile"             : ( Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT,       "Run/subrun info database file",                   str   ),
+configuration = { "Front end"       : {  "runinfoFile"             : ( Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT,       "Run/subrun info database file",                   str   ),
                                          "master_logfileLocation"  : ( Defaults.LOGFILE_LOCATION_DEFAULT,             "Run control (frontend) log file location",        str   ),
                                          "master_logfileName"      : ( Defaults.RC_LOGFILE_DEFAULT,                   "Run control (frontend) log file name",            str   ),
                                          "etSystemFileLocation"    : ( Defaults.ET_SYSTEM_LOCATION_DEFAULT,           "ET system file location",                         str   ),
                                          "master_rawdataLocation"  : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (master node)",                 str   ),
                                          "ResourceLocation"        : ( Defaults.RESOURCE_LOCATION_DEFAULT,            "Resource files location",                         str   ),
                                          "runSeriesLocation"       : ( Defaults.RUN_SERIES_DB_LOCATION_DEFAULT,       "Run series file location",                        str   ),
-                                         "LIBoxEnabled"            : ( True,                                          "LI box is enabled",                               bool  ),
-                                         "LIBoxWaitForResponse"    : ( True,                                          "Wait for response from LI box",                   bool  ),
                                          "readoutNodes"            : ( [],                                            "Readout nodes",                                   list  ),
                                          "monitorNodes"            : ( [],                                            "Online monitoring nodes",                         list  )  },
+
+                  "Hardware"         : { "eventFrames"             : ( Defaults.FRAMES,                               "Number of frames in an event",                    int   ),
+                                         "franeSize"               : ( Defaults.EVENT_SIZE,                           "Size of one frame (bytes)",                       int   ),
+                                         "LIBoxEnabled"            : ( True,                                          "LI box is enabled",                               bool  ),
+                                         "LIBoxWaitForResponse"    : ( True,                                          "Wait for response from LI box",                   bool  )  },
 
                   "Socket setup"     : { "dispatcherPort"          : ( Defaults.DISPATCHER_PORT,                      "Dispatcher port number",                          int   ),
                                          "masterPort"              : ( Defaults.MASTER_PORT,                          "Master port number",                              int   ),
