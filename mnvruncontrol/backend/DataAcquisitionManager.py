@@ -102,7 +102,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.detector == None or self.run == None or self.first_subrun == None or self.febs == None:
 			raise ValueError("Run series is improperly configured.")
 
-		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Front end"]["LIBoxEnabled"]), wait_response=Configuration.params["Front end"]["LIBoxWaitForResponse"])
+		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
 		
 		failed_connection = None
 		for node in self.readoutNodes:
@@ -534,12 +534,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 			print "Note: requested a new thread but no more threads to start..."
 
 	def StartETSys(self):
-		events = self.runinfo.gates * Defaults.FRAMES * self.febs
+		events = self.runinfo.gates * Configuration.params["Hardware"]["eventFrames"] * self.febs
 
 		etSysFrame = Frames.OutputFrame(self.main_window, "ET system", window_size=(600,200), window_pos=(600,0))
 		etSysFrame.Show(True)
 
-		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d -c %d -p %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", events, Defaults.EVENT_SIZE, os.getpid(), self.runinfo.ETport)
+		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d -c %d -p %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", events, Configuration.params["Hardware"]["frameSize"], os.getpid(), self.runinfo.ETport)
 
 #		print etsys_command
 
