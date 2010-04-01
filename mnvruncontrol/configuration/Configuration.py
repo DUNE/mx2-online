@@ -32,7 +32,7 @@ configuration = { "Front end"       : {  "runinfoFile"             : ( Defaults.
                                          "monitorNodes"            : ( [],                                            "Online monitoring nodes",                         list  )  },
 
                   "Hardware"         : { "eventFrames"             : ( Defaults.FRAMES,                               "Number of frames in an event",                    int   ),
-                                         "franeSize"               : ( Defaults.EVENT_SIZE,                           "Size of one frame (bytes)",                       int   ),
+                                         "frameSize"               : ( Defaults.EVENT_SIZE,                           "Size of one frame (bytes)",                       int   ),
                                          "LIBoxEnabled"            : ( True,                                          "LI box is enabled",                               bool  ),
                                          "LIBoxWaitForResponse"    : ( True,                                          "Wait for response from LI box",                   bool  )  },
 
