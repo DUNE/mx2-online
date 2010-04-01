@@ -13,8 +13,8 @@ import re
 import sys
 
 # for testing purposes.
-LIBOX_WAIT_FOR_RESPONSE = False
-LIBOX_DISABLE = True
+LIBOX_WAIT_FOR_RESPONSE = True
+LIBOX_DISABLE = False
 
 # configuration for the serial port.
 # these probably will never need to be changed.
@@ -22,18 +22,19 @@ LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS0"
 LIBOX_SERIAL_PORT_BAUD           = 9600
 LIBOX_SERIAL_PORT_PARITY         = serial.PARITY_NONE
 LIBOX_SERIAL_PORT_SW_FLOWCONTROL = False
-LIBOX_SERIAL_PORT_HW_FLOWCONTROL = True
+LIBOX_SERIAL_PORT_HW_FLOWCONTROL = False
 LIBOX_SERIAL_PORT_DATA_BITS      = serial.EIGHTBITS
 LIBOX_SERIAL_PORT_STOP_BITS      = serial.STOPBITS_ONE
 
 class LIBox:
 	""" Control class for the LI box. """
-	def __init__(self, pulse_height = 12.07, pulse_width = 7, LED_groups = "ABCD", trigger_internal = False, trigger_rate = None):
+	def __init__(self, pulse_height = 12.07, pulse_width = 7, LED_groups = "ABCD", trigger_internal = False, trigger_rate = None, echocmds=False):
 		self.pulse_height     = pulse_height
 		self.pulse_width      = pulse_width
 		self.LED_groups       = LED_groups
 		self.trigger_internal = trigger_internal
 		self.trigger_rate     = trigger_rate
+		self.echocmds         = echocmds
 		
 		self.command_stack = []
 		
@@ -58,10 +59,13 @@ class LIBox:
 				                      stopbits = LIBOX_SERIAL_PORT_STOP_BITS,
 				                      xonxoff  = LIBOX_SERIAL_PORT_SW_FLOWCONTROL,
 				                      rtscts   = LIBOX_SERIAL_PORT_HW_FLOWCONTROL,
-				                      timeout  = 0.1 )
+				                      timeout  = 1.0 )
 
 			self.port.writeTimeout = 0.1
+		else:
+			print "Warning: LI box communication is disabled.  Edit LIBox.py and set 'DISABLE_LIBOX' to False near the top of the file to enable it."
 		
+
 #		try:
 #			self.port.read(1)
 #		except serial.SerialException:
@@ -85,18 +89,21 @@ class LIBox:
 			for command in self.command_stack:
 				self.command_log.append(command)		# store this in a log for later review.
 				try:
-	#				print "Writing command '" + command + "'..."
+					if self.echocmds:
+						print "Sending command:   '" + command + "'"
 					self.port.write(command + "\n")
 				except serial.SerialTimeoutException:
 					raise LIBoxException("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
 
-				if LIBOX_WAIT_FOR_RESPONSE:
+				if LIBOX_WAIT_FOR_RESPONSE and command != "_X":		# box won't respond after reset command.
 					char = self.port.read(1)
+					if self.echocmds:
+						print "Received from box: '" + char + "'"
 			
 					if char != "K":
 						raise LIBoxException("The LI box didn't respond affirmatively to the command: '" + command + "'.")
 			
-				time.sleep(0.01)
+				time.sleep(0.02)
 		
 		self.command_stack = []
 			
@@ -126,7 +133,7 @@ class LIBox:
 		if not re.match("[a-dA-D]{1,4}", self.LED_groups):
 			raise LIBoxException("LED groups to use must be some combination of 'A', 'B', 'C', 'D' (your entry: '" + self.LED_groups + "').")
 
-		# the following wizardry is brought to you by the magic that powers the LI box.
+		# the following wizardry is brought to you by the black magic that powers the LI box.
 		# trust me -- it works.
 		inverseAddress = 0
 		pos = 0
@@ -212,6 +219,7 @@ if __name__ == "__main__":
 	parser.add_option("-l", "--led-groups", dest="led_groups", help="Set the LED groups that will fire.  Valid values: some combination of 'A', 'B', 'C', 'D'.  Default: %default.", default="ABCD")
 	parser.add_option("-i", "--trigger-internal", dest="trigger_internal", action="store_true", help="Use internal triggering for the LI pulses instead of the usual external trigger from the pulser.  (You should also set -r if you use this option.)  Default: %default", default=False)
 	parser.add_option("-r", "--trigger-rate", dest="trigger_rate", help="Set the triggering rate for internal triggering.  (You should only use this option in conjunction with -i.)  Valid values: 0-FFFF (hex).  Default: None.", default=None)
+	parser.add_option("-v", "--verbose", dest="verbose", action="store_true", help="Verbose mode.  Echoes all commands sent to the box to STDOUT.  Default: %default.", default=False)
 	
 	(options, commands) = parser.parse_args()
 	
@@ -223,14 +231,15 @@ if __name__ == "__main__":
 	
 #	print options
 	
+
 	if command == "initialize":
-		box = LIBox()
+		box = LIBox(echocmds=options.verbose)
 		box.initialize()
 	elif command == "reset":
-		box = LIBox()
+		box = LIBox(echocmds=options.verbose)
 		box.reset()
 	else:
-		box = LIBox(options.pulse_height, options.pulse_width, options.led_groups, options.trigger_internal, options.trigger_rate)
+		box = LIBox(options.pulse_height, options.pulse_width, options.led_groups, options.trigger_internal, options.trigger_rate, echocmds=options.verbose)
 		box.write_configuration()
 		
 	sys.exit(0)
