@@ -3,7 +3,7 @@
 if test -z "$DAQROOT"
 then
 	echo "No DAQROOT defined.  Sourcing the setup script..."
-	source $HOME/mnvdaqrunscripts/setupdaqenv.sh /work/software/mnvsingle/mnvdaaq
+	source $HOME/mnvdaqrunscripts/setupdaqenv.sh /work/software/mnvsingle/mnvdaq
 fi
 
 pushd /work/software/mnvruncontrol/frontend
