@@ -13,7 +13,7 @@ import time
 
 # Data acquisition properties.
 EVENT_SIZE = 2048 
-FRAMES = 8
+FRAMES = 5
 
 # Run control properties.
 CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
