@@ -99,18 +99,25 @@ int main(int argc, char **argv)
 	unsigned int oldheartbeat, newheartbeat;
 	id = (et_id *) sys_id;
 	oldheartbeat = id->sys->heartbeat;
+	//std::cout << "  Old heartbeat = " << oldheartbeat << std::endl;
 	int counter = 0;
 	do {
-		system("sleep 5s"); // Give ET a chance to start...
+		// Give ET a chance to start...
+		// For modern DAQ operations, we take care of this beforehand.
+		// So set this check to use a very short sleep period!
+		std::cout << "  Synching heartbeat..." << std::endl;
+		system("sleep 1s"); 
 		if (!counter) {
 			newheartbeat = id->sys->heartbeat;
 		} else {
 			oldheartbeat=newheartbeat;
 			newheartbeat = id->sys->heartbeat;
 		}
+		//std::cout << "  New heartbeat = " << newheartbeat << " on try " 
+		//	<< counter << std::endl;
 		counter++;  
-	} while ((newheartbeat==oldheartbeat)&&(counter!=20));
-	if (counter==20) {
+	} while ((newheartbeat==oldheartbeat)&&(counter!=60));
+	if (counter==60) {
 		std::cout << "Error in event_builder::main()!" << std::endl;
 		std::cout << "ET System did not start properly!  Exiting..." << std::endl;
 		exit(-5);
@@ -118,14 +125,17 @@ int main(int argc, char **argv)
 #endif
 
 	// Set the level of debug output that we want (everything).
+	std::cout << "Setting debug level..." << std::endl;
 	et_system_setdebug(sys_id, ET_DEBUG_INFO);
 
 	// Create & attach to a new station for making the final output file.
+	std::cout << "Creating new station for output..." << std::endl;
 #if NEARLINE
 	et_station_create(sys_id,&cu_station,"RIODEJANEIRO",sconfig);
 #else
 	et_station_create(sys_id,&cu_station,"CHICAGO_UNION",sconfig);
 #endif
+	std::cout << "Attaching to new station..." << std::endl;
 	if (et_station_attach(sys_id, cu_station, &attach) < 0) {
 		printf("event_builder::main(): et_producer: error in station attach\n");
 		system("sleep 10s");
@@ -133,6 +143,7 @@ int main(int argc, char **argv)
 	}
 	
 	/* send the SIGUSR1 signal to the specified process signalling that ET is ready */
+	std::cout << "Sending ready signal to ET system..." << std::endl;
 	int failure;
 	if (callback_pid)
 	{
@@ -143,9 +154,10 @@ int main(int argc, char **argv)
 			fflush(stdout);
 		}
 			
-     }
+	}
 
 	// Request an event from the ET service.
+	std::cout << "Starting!" << std::endl;
 	int evt_counter = 0;
 	while ((et_alive(sys_id))) {
 		struct timespec time;

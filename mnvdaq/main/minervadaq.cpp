@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 	char data_filename[100]; sprintf(data_filename,"/work/data/sam/testme_RawData.dat");
 	//FILE *sam_file; //unused in main
 	unsigned long long firstEvent, lastEvent;
-	int networkPort          = 1091; // 1091 and 1092 currently open.
+	int networkPort          = 1091; // 1091-1096 (inclusive) currently open.
 	int controllerErrCode;
 	string str_controllerID  = "0";
 #if MASTER||SINGLEPC // Soldier Node
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	et_att_id      attach;
 	et_sys_id      sys_id;
-	//et_id          *id; //unused in main
+	et_id          *id;  // Unused in main?
 	et_openconfig  openconfig;
 
 	// Configuring the ET system is the first thing we must do.
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 
 	// Set the remote host.
 	// We operate the DAQ exclusively in "remote" mode even when running on only one PC.
-	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); // Remote mode only.
+	et_open_config_setmode(openconfig, ET_HOST_AS_REMOTE); 
 
 	// Set to the current host machine name. 
 	char hostName[100];
@@ -1315,7 +1315,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-03-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-03-02'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
