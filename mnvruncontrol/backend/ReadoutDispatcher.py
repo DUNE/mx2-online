@@ -119,7 +119,6 @@ class RunControlDispatcher(Dispatcher):
 			self.logger.info("      HW init level: " + MetaData.HardwareInitLevels[int(matches.group("hwinitlevel"))] )
 			self.logger.info("      ET file: " + matches.group("etfile") )
 			self.logger.info("      ET port: " + matches.group("etport") )
-			self.logger.info("      my identity: " + matches.group("identity") + " node")
 
 		if self.daq_thread and self.daq_thread.is_alive() is True:
 			if show_details:
@@ -182,7 +181,7 @@ class RunControlDispatcher(Dispatcher):
 		
 	def sc_sethw(self, matches, show_details, **kwargs):
 		""" Uses the slow control library to load a hardware configuration
-		    file.  Returns 0 on success, 1 on hardware error, and 2 if 
+		    file.  Returns 0 on success, 1 on error, and 2 if 
 		    there is no such file. """
 		if show_details:
 			self.logger.info("Client wants to load slow control configuration file: '" + matches.group("filename") + "'.")
@@ -192,17 +191,10 @@ class RunControlDispatcher(Dispatcher):
 		if not os.path.isfile(fullpath):
 			self.logger.warning("Specified slow control configuration file does not exist: " + fullpath)
 			return "2"
-
-		try:
-			self.sc_init()
-			self.slowcontrol.HWcfgFileLoad(fullpath)
-		except:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
-			self.logger.exception("Error trying to load the hardware config file:")
-			self.logger.warning("Hardware was not configured...")
-			return "1"
-
-		if show_details:
-			self.logger.info("   ==> Loaded successfully.")
+			
+		self.sc_init()
+		
+		SCSetupThread(self, self.slowcontrol, fullpath)
 
 		return "0"
 		    
@@ -285,39 +277,46 @@ class DAQThread(threading.Thread):
 		try:
 			with open(filename, "w") as logfile:
 				logfile.write(stdout)
-		except OSError:
-			self.owner_process.logger.exception("minervadaq log file error:")
-			self.owner_process.logger.error("   ==> log file information will be discarded.")
+		except OSError as e:
+			self.owner_process.queue.put(Dispatcher.Message("minervadaq log file error: %s" % e.message))
+			self.owner_process.queue.put(Dispatcher.Message("   ==> log file information will be discarded."))
 		
-		# open a client socket to the master node.  need to inform it we're done!
-		tries = 0
-		success = False
-		while tries < Configuration.params["Socket setup"]["maxConnectionAttempts"] and not success:
-			self.owner_process.logger.info("Attempting to contact master to indicate I am done.")
-			try:
-				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				s.settimeout(Configuration.params["Socket setup"]["socketTimeout"]
-				s.connect( (self.master_address, Configuration.params["Socket setup"]["masterPort"]) )
-				s.send(self.identity)		# informs the server WHICH of the readout nodes I am (and that I'm finished).
-				s.shutdown(socket.SHUT_WR)
-				self.owner_process.logger.info("'Done' signal sent successfully.")
-				success = True
-			except:
-				self.owner_process.logger.exception("Socket error:")
-				self.owner_process.logger.info("  ==> 'Done' communication interrupted.")
-				tries += 1
-				if tries < Configuration.params["Socket setup"]["maxConnectionAttempts"]:
-					self.owner_process.logger.info("  ==> Will try again in 1s.")
-				time.sleep(Configuration.params["Socket setup"]["connAttemptInterval"])
-			finally:
-				s.close()
 				
 		if tries == Configuration.params["Socket setup"]["maxConnectionAttempts"]:
-			self.owner_process.logger.error("  ==> Could not communicate 'done' to master.")
+			self.owner_process.queue.put(Dispatcher.Message("  ==> Could not communicate 'done' to master."))
 
 		self.returncode = self.daq_process.returncode
+
+#########################
+# SCHWSetupThread       #
+#########################
+class SCHWSetupThread(threading.Thread):
+	""" Thread to take care of the initialization of the slow control.
+	    Sends a message to the master node when it's done. """
+	def __init__(self, dispatcher, slowcontrol, filename):
+		threading.Thread.__init__(self)
 		
-                        
+		self.dispatcher = dispatcher
+		self.slowcontrol = slowcontrol
+		self.filename = filename
+		
+		self.start()
+	
+	def run(self):
+		try:
+			self.slowcontrol.HWcfgFileLoad(self.filename)
+		except Exception as e:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
+			self.dispatcher.queue.put(Dispatcher.Message("Error trying to load the hardware config file: %s", e.message))
+			self.dispatcher.queue.put(Dispatcher.Message("Hardware was not configured..."))
+			self.dispatcher.queue.put(Dispatcher.Message("hw_error", Dispatcher.MASTER))
+		else:
+			self.dispatcher.queue.put(Dispatcher.Message("Error trying to load the hardware config file."))
+			self.dispatcher.queue.put(Dispatcher.Message("hw_ready", Dispatcher.MASTER))
+		
+
+
+
+                       
 ####################################################################
 ####################################################################
 """

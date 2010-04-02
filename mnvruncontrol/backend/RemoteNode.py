@@ -117,7 +117,7 @@ class RemoteNode:
 			return True
 		
 		try:
-			response = self.request("get_lock %s" % self.id)
+			response = self.request("get_lock %s %s!" % (self.name, self.id))
 		except RemoteNodeNoConnectionException:
 			return False
 		
@@ -133,7 +133,7 @@ class RemoteNode:
 			return True
 		
 		try:
-			response = self.request("release_lock %s" % self.id)
+			response = self.request("release_lock %s!" % self.id)
 		except RemoteNodeNoConnectionException:
 			return False
 		

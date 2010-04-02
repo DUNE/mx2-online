@@ -13,7 +13,11 @@ import time
 
 # Data acquisition properties.
 EVENT_SIZE = 2048 
-FRAMES = 8
+FRAMES = 5
+
+# LI settings
+LI_ONE_PE_VOLTAGE = 5.07		# from Brandon Eberly (eberly@fnal.gov), 3/5/2010
+LI_MAX_PE_VOLTAGE = 12.07	# currently the maximum the LI box can output.
 
 # Run control properties.
 CONFIG_DB_LOCATION = "/work/conditions/run_control_config.db"
@@ -40,13 +44,9 @@ WORKER  = "mnvonline1.fnal.gov"
 MASTER = "localhost"
 MONITOR = "mnvnearline1.fnal.gov"
 
-MAX_CONNECTION_ATTEMPTS = 5
+MAX_CONNECTION_ATTEMPTS = 3
 CONNECTION_ATTEMPT_INTERVAL = 0.5	# in seconds
-SOCKET_TIMEOUT = 0.5  # in seconds
-
-# number of times in a row to log the same request
-# in the dispatcher before suppressing
-MAX_REPEATED_REQUEST_LOGS = 5
+SOCKET_TIMEOUT = 2.5  # in seconds
 
 # dispatcher process details
 READOUT_DISPATCHER_PIDFILE = "/work/conditions/readout_dispatcher.pid"

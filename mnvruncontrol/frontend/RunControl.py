@@ -5,7 +5,7 @@
   run control interface to the user.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
-                    Feb.-Mar. 2010
+                    Feb.-Apr. 2010
                     
    Address all complaints to the management.
 """
@@ -121,7 +121,7 @@ class MainFrame(wx.Frame):
 
 		detConfigEntryLabel = wx.StaticText(self.mainPage, -1, "Detector")
 		self.detConfigEntry = wx.Choice(self.mainPage, -1, choices=MetaData.DetectorTypes.descriptions)
-		self.detConfigEntry.SetSelection(MetaData.DetectorTypes.index("Upstream"))
+		self.detConfigEntry.SetSelection(MetaData.DetectorTypes.index("Full MINERvA"))
 
 		febsEntryLabel = wx.StaticText(self.mainPage, -1, "FEBs")
 		self.febsEntry = wx.SpinCtrl(self.mainPage, -1, "4", size=(125, -1), min=1, max=10000)
@@ -198,7 +198,7 @@ class MainFrame(wx.Frame):
 		seriesFileLabel = wx.StaticText(self.runSeriesConfigPanel, -1, "Series Type: ")
 
 		self.seriesFile = wx.Choice(self.runSeriesConfigPanel, -1, choices=MetaData.RunSeriesTypes.descriptions)
-	        self.Bind(wx.EVT_CHOICE, self.LoadRunSeriesFile, self.seriesFile)	
+		self.Bind(wx.EVT_CHOICE, self.LoadRunSeriesFile, self.seriesFile)	
 
 		seriesFileSizer = wx.BoxSizer(wx.HORIZONTAL)
 		seriesFileSizer.Add(seriesFileLabel, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL)
@@ -223,9 +223,9 @@ class MainFrame(wx.Frame):
 		runSeriesConfigSizer.Add(seriesFileSizer, flag=wx.EXPAND)
 		runSeriesConfigSizer.Add(self.seriesDescription, 1, flag=wx.EXPAND)
 		runSeriesConfigSizer.Add(self.moreInfoButton, flag=wx.ALIGN_CENTER_HORIZONTAL)
-                runSeriesConfigSizer.InsertSpacer(0,10)
+		runSeriesConfigSizer.InsertSpacer(0,10)
 		runSeriesConfigSizer.InsertSpacer(2,10)	
-                runSeriesConfigSizer.InsertSpacer(4,10)	
+		runSeriesConfigSizer.InsertSpacer(4,10)	
 
 		self.runSeriesConfigPanel.SetSizer(runSeriesConfigSizer)
 		
@@ -453,7 +453,7 @@ class MainFrame(wx.Frame):
 		self.seriesPath = None
 
 		if key_values["runseries_path"] != None:
-	                self.seriesFile.SetStringSelection(MetaData.RunSeriesTypes[key_values["runseries_file"],MetaData.DESCRIPTION])
+			self.seriesFile.SetStringSelection(MetaData.RunSeriesTypes[key_values["runseries_file"],MetaData.DESCRIPTION])
 
 		self.LoadRunSeriesFile()
 		
@@ -547,9 +547,8 @@ class MainFrame(wx.Frame):
 			self.subrunEntry.SetValue(1)
 
 	def LoadRunSeriesFile(self, evt=None):
-
-                self.seriesDescription.DeleteAllItems()
-                self.moreInfoButton.Disable()
+		self.seriesDescription.DeleteAllItems()
+		self.moreInfoButton.Disable()
 
 		filename = MetaData.RunSeriesTypes[self.seriesFile.GetStringSelection(),MetaData.CODE]
 
@@ -558,17 +557,17 @@ class MainFrame(wx.Frame):
 			self.runmanager.runseries = db["series"]
 			db.close()
 		except (anydbm.error, KeyError):
-                        errordlg = wx.MessageDialog( None, "Unable to load file for selected run series.", "Load Error", wx.OK | wx.ICON_ERROR )
-                        errordlg.ShowModal()
+			errordlg = wx.MessageDialog( None, "Unable to load file for selected run series.", "Load Error", wx.OK | wx.ICON_ERROR )
+			errordlg.ShowModal()
 			return False
 
 		self.seriesFilename = filename
 		self.seriesPath = Configuration.params["Front end"]["runSeriesLocation"]
 
 		for runinfo in self.runmanager.runseries.Runs:
-		    index = self.seriesDescription.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
-		    self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-		    self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
+			index = self.seriesDescription.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
+			self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
+			self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
 
 		self.runmanager.subrun = 0
 		self.moreInfoButton.Enable()
@@ -755,7 +754,7 @@ class MainFrame(wx.Frame):
 		self.runmanager.detector     = MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH)
 		self.runmanager.febs         = int(self.febsEntry.GetValue())
 		self.runmanager.hwinit       = MetaData.HardwareInitLevels.item(self.HWinitEntry.GetSelection(), MetaData.HASH)
-				
+		
 		self.runmanager.StartDataAcquisition()
 		if (self.runmanager.running):
 			self.runEntry.Disable()

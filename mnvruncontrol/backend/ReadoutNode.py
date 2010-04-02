@@ -25,6 +25,9 @@ class ReadoutNode(RemoteNode):
 		
 		self.ValidRequests += SocketRequests.ReadoutRequests
 		
+		self.configured = False
+		self.completed = False
+		
 	def daq_checkStatus(self):
 		""" Asks the server to check and see if its DAQ process is running. """
 		response = self.request("daq_running?")
@@ -54,7 +57,7 @@ class ReadoutNode(RemoteNode):
 		""" Asks the server to start the DAQ process.  Returns True on success,
 		    False on failure, and raises an exception if the DAQ is currently running. """
 		
-		request = "daq_start etfile=%s:etport=%d:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d:identity=%s!" % (etfile, etport, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit, self.name)
+		request = "daq_start etfile=%s:etport=%d:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d!" % (etfile, etport, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit)
 		#print request
 		response = self.request(request)
 		
@@ -84,7 +87,11 @@ class ReadoutNode(RemoteNode):
 
 	def sc_loadHWfile(self, filename):
 		""" Asks the server to load the specified hardware configuration file. 
-		    Returns 0 on success, 1 on failure, and 2 if the file doesn't exist. """
+		    Returns 0 on success, 1 on failure, and 2 if the file doesn't exist. 
+		    Note that the return value only indicates receipt of the message and
+		    ability to start: it takes a while for the slow control initialization
+		    to actually finish.  When it does, the dispatcher sends a message
+		    back to the master node. """
 		response = self.request("sc_setHWconfig '" + filename + "'!")	
 		
 		if response == "0":

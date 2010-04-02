@@ -112,7 +112,7 @@ class ConfigurationFrame(wx.Frame):
 			gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
 
 		# these are added like this so that they show up in a predictable order
-		for name in ("Front end", "Socket setup", "Dispatchers", "Readout nodes", "Monitoring nodes"):
+		for name in ("Front end", "Hardware", "Socket setup", "Dispatchers", "Readout nodes", "Monitoring nodes"):
 			nb.AddPage(self.pages[name], name)
 			
 		saveButton = wx.Button(panel, wx.ID_SAVE)

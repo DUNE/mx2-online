@@ -14,7 +14,7 @@
    Address all complaints to the management.
 """
 
-# this file is much easier to look at and/or edit on a wide screen ...
+# this file is much easier to look at and/or edit on a wide-ish screen ...
 
 import shelve
 import anydbm
@@ -28,10 +28,13 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "master_rawdataLocation"  : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (master node)",                 str   ),
                                          "ResourceLocation"        : ( Defaults.RESOURCE_LOCATION_DEFAULT,            "Resource files location",                         str   ),
                                          "runSeriesLocation"       : ( Defaults.RUN_SERIES_DB_LOCATION_DEFAULT,       "Run series file location",                        str   ),
-                                         "LIBoxEnabled"            : ( True,                                          "LI box is enabled",                               bool  ),
-                                         "LIBoxWaitForResponse"    : ( True,                                          "Wait for response from LI box",                   bool  ),
                                          "readoutNodes"            : ( [],                                            "Readout nodes",                                   list  ),
                                          "monitorNodes"            : ( [],                                            "Online monitoring nodes",                         list  )  },
+
+                  "Hardware"         : { "eventFrames"             : ( Defaults.FRAMES,                               "Number of frames in an event",                    int   ),
+                                         "frameSize"               : ( Defaults.EVENT_SIZE,                           "Size of one frame (bytes)",                       int   ),
+                                         "LIBoxEnabled"            : ( True,                                          "LI box is enabled",                               bool  ),
+                                         "LIBoxWaitForResponse"    : ( True,                                          "Wait for response from LI box",                   bool  )  },
 
                   "Socket setup"     : { "dispatcherPort"          : ( Defaults.DISPATCHER_PORT,                      "Dispatcher port number",                          int   ),
                                          "masterPort"              : ( Defaults.MASTER_PORT,                          "Master port number",                              int   ),
@@ -58,7 +61,23 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "om_GaudiOptionsFile"     : ( Defaults.OM_GAUDI_OPTIONSFILE,                 "OM Gaudi process options file",                   str   ),
                                          "om_rawdataLocation"      : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                            str   )  }  }
 
-# the above dictionary is structured a bit deep
+
+config_file_inaccessible = False
+
+try:
+	db = shelve.open(Defaults.CONFIG_DB_LOCATION)
+except anydbm.error:
+	config_file_inaccessible = True
+else:
+	for param_set in params:
+		for param_name in params[param_set]:
+			try:
+				params[param_set][param_name] = db[param_name]
+			except KeyError:
+				pass		# the default is already set
+
+
+# the basic dictionary is structured a bit deep
 # (though it's nice for entering data).
 # below it's reworked for easier access
 # (can write Configuration.params[]... in other modules).
@@ -75,18 +94,5 @@ for param_set in configuration:
 		params[param_set][param_name] = configuration[param_set][param_name][0]
 		names[param_set][param_name]  = configuration[param_set][param_name][1]
 		types[param_set][param_name]  = configuration[param_set][param_name][2]
-
-config_file_inaccessible = False
-
-try:
-	db = shelve.open(Defaults.CONFIG_DB_LOCATION)
-except anydbm.error:
-	config_file_inaccessible = True
-else:
-	for param_set in params:
-		for param_name in params[param_set]:
-			try:
-				params[param_set][param_name] = db[param_name]
-			except KeyError:
-				pass		# the default is already set
+			
 

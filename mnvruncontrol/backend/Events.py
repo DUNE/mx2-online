@@ -13,6 +13,8 @@ NewDataEvent,            EVT_NEWDATA               = wx.lib.newevent.NewEvent()
 
 ReadyForNextSubrunEvent, EVT_READY_FOR_NEXT_SUBRUN = wx.lib.newevent.NewEvent()
 
+SocketReceiptEvent,      EVT_SOCKET_RECEIPT        = wx.lib.newevent.NewEvent()
+
 StopRunningEvent,        EVT_STOP_RUNNING          = wx.lib.newevent.NewEvent()
 
 SubrunOverEvent,         EVT_SUBRUN_OVER           = wx.lib.newevent.NewEvent()

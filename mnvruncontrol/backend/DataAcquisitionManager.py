@@ -41,7 +41,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.DAQthreads = []
 		self.DAQthreadWatcher = None
 		self.timerThreads = []
-		self.socketThread = None
 
 		# methods that will be started sequentially
 		# by various processes and accompanying messages
@@ -87,6 +86,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.running = False
 		self.can_shutdown = False		# used in between subruns to prevent shutting down twice for different reasons
 
+		self.socketThread = Threads.SocketThread()
+		self.logger.info("Started master node listener on port %d." % Configuration.params["Socket setup"]["masterPort"])
+
+		self.Bind(Events.EVT_SOCKET_RECEIPT, self.HandleSocketMessage)
+		self.Bind(Events.EVT_UPDATE_PROGRESS, self.RelayProgressToDisplay)
+
 		self.Bind(Events.EVT_READY_FOR_NEXT_SUBRUN, self.StartNextSubrun)
 		self.Bind(Events.EVT_THREAD_READY, self.StartNextThread)
 		self.Bind(Events.EVT_END_SUBRUN, self.EndSubrun)		# if the DAQ process quits, this subrun is over
@@ -121,7 +126,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# need to make sure all the tasks are marked "not yet completed"
 		for task in self.SubrunStartTasks:
 			task["completed"] = False
-			
+		
 		self.logger.info("Beginning data acquisition sequence...")
 		self.logger.info( "  Run: " + str(self.run) + "; starting subrun: " + str(self.first_subrun) + "; number of subruns to take: " + str(len(self.runseries.Runs)) )
 					
@@ -314,9 +319,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		finally:
 			step += 1
 		
-		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping the listener socket...", progress=(step, numsteps)) )
-		if self.socketThread:
-			self.socketThread.Abort()
+		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping listeners...", progress=(step, numsteps)) )
+		for node in self.readoutNodes:
+			self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Running...")
 
 		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finished.")
 
@@ -536,12 +541,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 			print "Note: requested a new thread but no more threads to start..."
 
 	def StartETSys(self):
-		events = self.runinfo.gates * Defaults.FRAMES * self.febs
+		events = self.runinfo.gates * Configuration.params["Hardware"]["eventFrames"] * self.febs
 
 		etSysFrame = Frames.OutputFrame(self.main_window, "ET system", window_size=(600,200), window_pos=(600,0))
 		etSysFrame.Show(True)
 
-		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d -c %d -p %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", events, Defaults.EVENT_SIZE, os.getpid(), self.runinfo.ETport)
+		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d -c %d -p %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", events, Configuration.params["Hardware"]["frameSize"], os.getpid(), self.runinfo.ETport)
 
 #		print etsys_command
 
@@ -635,6 +640,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 				wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
 	
 		if self.running:
+			self.logger.info("  Booking a subscription for 'DAQ stop' messages from readout nodes...")
+			for node in self.readoutNodes:
+				self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Running...")
+				self.logger.info("    ... subscribed the %s node." % node.name)
+			
 			self.logger.info("  All DAQ services started.  Data acquisition underway.")
 			self.socketThread = Threads.SocketThread(self, self.readoutNodes)			# start the service that listens for the 'done' signal
 		
