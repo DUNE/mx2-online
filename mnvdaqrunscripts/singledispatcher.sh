@@ -1,16 +1,10 @@
 #!/bin/sh
 
-MASTER=minervatest03.fnal.gov
-DISPAF=/work/conditions/readout_dispatcher.pid
-if [ $# -gt 0 ]; then
-	$MASTER=$1
-fi
-
 # Setup environment for LinDAQ.
 if test -z "$DAQROOT"
 then
         echo "No DAQROOT defined.  Sourcing the setup script..."
-        source $HOME/mnvdaqrunscripts/setupdaqenv.sh /work/software/mnvonline/mnvdaq
+        source $HOME/mnvdaqrunscripts/setupdaqenv.sh /work/software/mnvsingle/mnvdaq
 fi
 
 # Check to see if the dispatcher is running.  If it is, kill it.
@@ -19,8 +13,9 @@ python RunControlDispatcher.py stop
 popd
 
 # Start the dispatcher.
+# Defaults to local host as the master.
 pushd /work/software/mnvruncontrol/backend
-python RunControlDispatcher.py -m ${MASTER} start &
+python RunControlDispatcher.py start &
 popd
 
 

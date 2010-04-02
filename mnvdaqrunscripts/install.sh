@@ -6,6 +6,7 @@ if [ $HOSTNAME == "minervatest01.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/minervatest_sngl_runcontrol.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/singledaqenv.sh
+	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/dispatcher.sh
 fi
 
 # minervatest02 - Single & multi-node DAQ with hardware.  
@@ -16,6 +17,7 @@ if [ $HOSTNAME == "minervatest02.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/singledaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/multidaqenv.sh
+	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/sngl_dispatcher.sh
 fi
 
 # minervatest03 - Multi-node DAQ with no hardware.
@@ -33,6 +35,7 @@ if [ $HOSTNAME == "minervatest04.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/singledaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/multidaqenv.sh
+	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/sngl_dispatcher.sh
 fi
 
 # mnvonline0 - Multi-node DAQ with hardware.  
