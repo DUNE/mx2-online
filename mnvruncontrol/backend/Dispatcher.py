@@ -376,7 +376,7 @@ class Dispatcher:
 						self.logger.error("   ==> Data transmission was interrupted!")
 					finally:
 						client_socket.close()
-			except socket.error, (errnum, msg):
+			except (socket.error, select.error), (errnum, msg):
 				if errnum == errno.EINTR:		# the code for an interrupted system call
 					continue
 				else:						# if it's not an interrupted system call, we need the error!
@@ -388,7 +388,7 @@ class Dispatcher:
 				
 				if item.recipient == MASTER:
 					if self.lock_address is not None:
-						self.send_message("FOR:%s FROM:%s MSG:%s", (self.lock_id, self.identity, item.message))
+						self.send_message("FOR:%s FROM:%s MSG:%s" % (self.lock_id, self.identity, item.message), self.lock_address, Configuration.params["Socket setup"]["masterPort"])
 					else:
 						self.logger.warning("Can't send message to master because no one has a client lock...")
 				else:
@@ -588,8 +588,8 @@ class MasterMessageSenderThread(threading.Thread):
 		success = False
 		    
 		while tries < Configuration.params["Socket setup"]["maxConnectionAttempts"] and not success:
-			self.logger.info("Attempting to send a message to '%s':" % recipient)
-			self.logger.info(message)
+			self.logger.info("Attempting to send a message to '%s':" % str(self.recipient))
+			self.logger.info(self.message)
 			try:
 				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 				s.settimeout(Configuration.params["Socket setup"]["socketTimeout"])

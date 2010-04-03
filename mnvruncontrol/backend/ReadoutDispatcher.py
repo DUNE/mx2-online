@@ -22,12 +22,12 @@ from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import Configuration
 
-from mnvruncontrol.backend.Dispatcher import Dispatcher
+from mnvruncontrol.backend import Dispatcher
 
 from mnvconfigurator.SlowControl.SC_MainMethods import SC as SlowControl
 
 
-class RunControlDispatcher(Dispatcher):
+class RunControlDispatcher(Dispatcher.Dispatcher):
 	"""
 	This guy is the one who listens for requests and handles them.
 	There should NEVER be more than one instance running at a time!
@@ -35,7 +35,7 @@ class RunControlDispatcher(Dispatcher):
 	start() method checks before allowing dispatching to be started.
 	"""
 	def __init__(self):
-		Dispatcher.__init__(self)
+		Dispatcher.Dispatcher.__init__(self)
 	
 		# the master slow control object.  it handles
 		# the interface with the hardware.
@@ -140,7 +140,7 @@ class RunControlDispatcher(Dispatcher):
 			if show_details:
 				self.logger.info("   minervadaq command:")
 				self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
-			self.daq_thread = DAQThread(self, self.logger, executable, matches.group("identity"), self.lock_address)
+			self.daq_thread = DAQThread(self, self.logger, executable, self.lock_address)
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
@@ -194,7 +194,7 @@ class RunControlDispatcher(Dispatcher):
 			
 		self.sc_init()
 		
-		SCSetupThread(self, self.slowcontrol, fullpath)
+		SCHWSetupThread(self, self.slowcontrol, fullpath)
 
 		return "0"
 		    
@@ -251,13 +251,12 @@ class DAQThread(threading.Thread):
 	    so that they can be monitored continuously.  When
 	    they terminate, a socket is opened to the master
 	    node to emit a "done" signal."""
-	def __init__(self, owner_process, logger, daq_command, my_identity, master_address):
+	def __init__(self, owner_process, logger, daq_command, master_address):
 		threading.Thread.__init__(self)
 		
 		self.daq_process = None
 		self.logger = logger		# since loggers are thread-safe, we'll just use it directly.
 		self.owner_process = owner_process
-		self.identity = my_identity	# am I the worker, the soldier, a local node, etc.?
 		self.master_address = master_address
 		self.daq_command = daq_command
 		
@@ -282,11 +281,8 @@ class DAQThread(threading.Thread):
 			self.logger.exception("minervadaq log file error: %s" % e.message)
 			self.logger.warning("   ==> log file information will be discarded.")
 		
-		self.owner_process.send_message("daq_finished")
+		self.owner_process.queue.put(Dispatcher.Message(message="daq_finished", recipient=Dispatcher.MASTER))
 				
-		if tries == Configuration.params["Socket setup"]["maxConnectionAttempts"]:
-			self.logger.warning("  ==> Could not communicate 'done' to master.")
-
 		self.returncode = self.daq_process.returncode
 
 #########################
