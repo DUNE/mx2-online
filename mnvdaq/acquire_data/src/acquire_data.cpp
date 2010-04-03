@@ -265,7 +265,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			Frequency    = F4; // The fastest setting is a function of FEB firmware.
 			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
-			daqController->GetCrim(index)->SetIRQLine((crimInterrupts)0x01); // Trigger
+			daqController->GetCrim(index)->SetIRQLine(Trigger); //crimInterrupts type
 			break;
 		default:
 			std::cout << "Error in acquire_data::InitializeCrim()! No Running Mode defined!" << std::endl;
@@ -1947,11 +1947,15 @@ int acquire_data::WaitOnIRQ()
 	startTime = (unsigned long long)(waitstart.tv_sec);
 	// VME manip.
 	unsigned short interrupt_status = 0;
+	unsigned short iline = (unsigned short)daqController->GetCrim()->GetIRQLine();
 	unsigned char crim_send[2];
+#if DEBUG_IRQ
+	acqData.debugStream() << "  Interrupt line = " << iline;
+#endif
 
-	while (!(interrupt_status&0x04)) { //0x04 is the IRQ Line of interest
+	while ( !( interrupt_status & iline ) ) {
 		try {
-			crim_send[0] = 0; crim_send[1] = 0;
+			crim_send[0] = crim_send[1] = 0;
 			error = daqAcquire->ReadCycle(daqController->handle, crim_send,
 				daqController->GetCrim()->GetInterruptStatusAddress(), 
 				daqController->GetAddressModifier(),

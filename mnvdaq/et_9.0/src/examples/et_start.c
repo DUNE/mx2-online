@@ -158,20 +158,21 @@ int main(int argc, char **argv)
     printf("%s\n", argv[optind]);
   }
   
-  printf("Starting an ET system.  This may take a moment.\n");
+  printf("Starting an ET system.  This may take a couple of minutes...\n");
   fflush(stdout);
 
   struct tm *local;
   time_t starttime;
   starttime = time(NULL);
   local = localtime(&starttime);
-  printf("Start time (local): %s\n", asctime(local));
+  printf("Starting to open the systeam at time (local): %s\n", asctime(local));
   fflush(stdout);
 
   if (et_verbose) {
-    printf("et_start: asking for %d byte events.\n", event_size);
-    printf("et_start: asking for %d events.\n", nevents);
+    printf("et_start: asking for %d byte frames.\n", event_size);
+    printf("et_start: asking for %d frames.\n", nevents);
     printf("et_start: using port %d.\n", networkPort);
+    fflush(stdout);
   }
 
   if (deleteFile) {
@@ -240,6 +241,10 @@ int main(int argc, char **argv)
     printf("et_start: error in starting ET system\n");
     exit(1);
   }
+  starttime = time(NULL);
+  local = localtime(&starttime);
+  printf("System opened at time (local): %s\n", asctime(local));
+  fflush(stdout);
   
   /* in CODA usage, most want the TAPE station to be first
    * as that is the station used by the event recorder to
