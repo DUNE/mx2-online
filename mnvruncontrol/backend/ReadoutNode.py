@@ -28,6 +28,8 @@ class ReadoutNode(RemoteNode):
 		self.configured = False
 		self.completed = False
 		
+		self.shutting_down = False
+		
 	def daq_checkStatus(self):
 		""" Asks the server to check and see if its DAQ process is running. """
 		response = self.request("daq_running?")
@@ -74,6 +76,9 @@ class ReadoutNode(RemoteNode):
 		""" Asks the server to stop the DAQ process.  Returns True on success,
 		    False on failure, and raises an exception if no DAQ process
 		    is currently running. """
+		    
+		self.shutting_down = True
+		
 		response = self.request("daq_stop!")
 		
 		if response == "0":
