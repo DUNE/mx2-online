@@ -62,21 +62,6 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "om_rawdataLocation"      : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                            str   )  }  }
 
 
-config_file_inaccessible = False
-
-try:
-	db = shelve.open(Defaults.CONFIG_DB_LOCATION)
-except anydbm.error:
-	config_file_inaccessible = True
-else:
-	for param_set in params:
-		for param_name in params[param_set]:
-			try:
-				params[param_set][param_name] = db[param_name]
-			except KeyError:
-				pass		# the default is already set
-
-
 # the basic dictionary is structured a bit deep
 # (though it's nice for entering data).
 # below it's reworked for easier access
@@ -94,5 +79,23 @@ for param_set in configuration:
 		params[param_set][param_name] = configuration[param_set][param_name][0]
 		names[param_set][param_name]  = configuration[param_set][param_name][1]
 		types[param_set][param_name]  = configuration[param_set][param_name][2]
+
+config_file_inaccessible = False
+
+
+# now update using any values that are set in the DB.
+try:
+	db = shelve.open(Defaults.CONFIG_DB_LOCATION)
+except anydbm.error:
+	config_file_inaccessible = True
+else:
+	for param_set in params:
+		for param_name in params[param_set]:
+			try:
+				params[param_set][param_name] = db[param_name]
+			except KeyError:
+				pass		# the default is already set
+
+
 			
 
