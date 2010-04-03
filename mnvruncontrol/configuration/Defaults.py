@@ -48,6 +48,10 @@ MAX_CONNECTION_ATTEMPTS = 3
 CONNECTION_ATTEMPT_INTERVAL = 0.5	# in seconds
 SOCKET_TIMEOUT = 2.5  # in seconds
 
+# number of times in a row to log the same request
+# in the dispatcher before suppressing
+MAX_REPEATED_REQUEST_LOGS = 5
+
 # dispatcher process details
 READOUT_DISPATCHER_PIDFILE = "/work/conditions/readout_dispatcher.pid"
 READOUT_DISPATCHER_LOGFILE = "/work/data/logs/readout_dispatcher.log"
