@@ -140,7 +140,7 @@ class RunControlDispatcher(Dispatcher):
 			if show_details:
 				self.logger.info("   minervadaq command:")
 				self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
-			self.daq_thread = DAQThread(self, executable, matches.group("identity"), self.lock_address)
+			self.daq_thread = DAQThread(self, self.logger, executable, matches.group("identity"), self.lock_address)
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
@@ -251,10 +251,11 @@ class DAQThread(threading.Thread):
 	    so that they can be monitored continuously.  When
 	    they terminate, a socket is opened to the master
 	    node to emit a "done" signal."""
-	def __init__(self, owner_process, daq_command, my_identity, master_address):
+	def __init__(self, owner_process, logger, daq_command, my_identity, master_address):
 		threading.Thread.__init__(self)
 		
 		self.daq_process = None
+		self.logger = logger		# since loggers are thread-safe, we'll just use it directly.
 		self.owner_process = owner_process
 		self.identity = my_identity	# am I the worker, the soldier, a local node, etc.?
 		self.master_address = master_address
@@ -278,12 +279,13 @@ class DAQThread(threading.Thread):
 			with open(filename, "w") as logfile:
 				logfile.write(stdout)
 		except OSError as e:
-			self.owner_process.queue.put(Dispatcher.Message("minervadaq log file error: %s" % e.message))
-			self.owner_process.queue.put(Dispatcher.Message("   ==> log file information will be discarded."))
+			self.logger.exception("minervadaq log file error: %s" % e.message)
+			self.logger.warning("   ==> log file information will be discarded.")
 		
+		self.owner_process.send_message("daq_finished")
 				
 		if tries == Configuration.params["Socket setup"]["maxConnectionAttempts"]:
-			self.owner_process.queue.put(Dispatcher.Message("  ==> Could not communicate 'done' to master."))
+			self.logger.warning("  ==> Could not communicate 'done' to master.")
 
 		self.returncode = self.daq_process.returncode
 
@@ -305,12 +307,12 @@ class SCHWSetupThread(threading.Thread):
 	def run(self):
 		try:
 			self.slowcontrol.HWcfgFileLoad(self.filename)
-		except Exception as e:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
-			self.dispatcher.queue.put(Dispatcher.Message("Error trying to load the hardware config file: %s", e.message))
-			self.dispatcher.queue.put(Dispatcher.Message("Hardware was not configured..."))
+		except:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
+			self.dispatcher.logger.exception("Error trying to load the hardware config file")
+			self.dispatcher.logger.warning("Hardware was not configured...")
 			self.dispatcher.queue.put(Dispatcher.Message("hw_error", Dispatcher.MASTER))
 		else:
-			self.dispatcher.queue.put(Dispatcher.Message("Error trying to load the hardware config file."))
+			self.dispatcher.logger.info("HW file %s was loaded." % self.filename)
 			self.dispatcher.queue.put(Dispatcher.Message("hw_ready", Dispatcher.MASTER))
 		
 
