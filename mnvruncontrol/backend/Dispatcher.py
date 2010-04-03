@@ -384,9 +384,7 @@ class Dispatcher:
 			if not self.queue.empty():
 				item = self.queue.get()
 				
-				if item.recipient is None:
-					self.logger.info(item.message)
-				elif item.recipient == MASTER:
+				if item.recipient == MASTER:
 					if self.lock_address is not None:
 						self.send_message("FOR:%s FROM:%s MSG:%s", (self.lock_id, self.identity, item.message))
 					else:
@@ -515,7 +513,7 @@ class Dispatcher:
 			self.logger.warning("Asked to send a mesage but no lock and recipient not specified.  Ignoring...")
 			return
 		
-		MasterMessageSenderThread(self, (recipient_addr, recipient_port), message)
+		MasterMessageSenderThread(self.logger, (recipient_addr, recipient_port), message)
 		
 
 	def bootstrap(self):
@@ -564,10 +562,11 @@ class Dispatcher:
 class MasterMessageSenderThread(threading.Thread):
 	""" Thread to take care of the sending messages to the master node.
 	    (This could block so it needs a separate thread.) """
-	def __init__(self, dispatcher, recipient, message):
+	def __init__(self, logger, recipient, message):
 		threading.Thread.__init__(self)
 		
-		self.dispatcher = dispatcher
+		self.logger = logger		# loggers are thread-safe, so we can just use it directly.
+		
 		self.recipient = recipient
 		self.message = message
 		
@@ -578,21 +577,21 @@ class MasterMessageSenderThread(threading.Thread):
 		success = False
 		    
 		while tries < Configuration.params["Socket setup"]["maxConnectionAttempts"] and not success:
-			self.dispatcher.queue.put(Message("Attempting to send a message to '%s':" % recipient))
-			self.dispatcher.queue.put(Message(message))
+			self.logger.info("Attempting to send a message to '%s':" % recipient)
+			self.logger.info(message)
 			try:
 				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 				s.settimeout(Configuration.params["Socket setup"]["socketTimeout"])
 				s.connect( self.recipient )
 				s.send(self.message)
 				s.shutdown(socket.SHUT_WR)
-				self.dispatcher.queue.put(Message("Message sent successfully."))
+				self.logger.info("Message sent successfully.")
 				success = True
 			except:
-				self.dispatcher.queue.put(Message("  ==> Communication interrupted."))
+				self.logger.info("  ==> Communication interrupted.")
 				tries += 1
 				if tries < Configuration.params["Socket setup"]["maxConnectionAttempts"]:
-					self.dispatcher.queue.put(Message("  ==> Will try again in 1s."))
+					self.logger.info("  ==> Will try again in 1s.")
 				time.sleep(Configuration.params["Socket setup"]["connAttemptInterval"])
 			finally:
 				s.close()
