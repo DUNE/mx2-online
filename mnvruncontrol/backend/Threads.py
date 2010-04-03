@@ -221,9 +221,11 @@ class DAQWatcherThread(threading.Thread):
 class SocketThread(threading.Thread):
 	""" A thread that keeps open a socket to listen for
 	    the "done" signal from all readout nodes. """
-	def __init__(self):
+	def __init__(self, logger):
 		threading.Thread.__init__(self)
 		
+		self.logger = logger		# loggers are thread-safe!
+
 		self.name = "SocketThread"
 		self.time_to_quit = False
 		
@@ -259,14 +261,19 @@ class SocketThread(threading.Thread):
 				lastupdate = time.time()
 				
 				# issue an event to any callback objects waiting on updates.
+				# note that we will only issue ONE message per cycle per callback
+				# (otherwise we could overload the event dispatcher)
+				# so whoever's first on the subscription list will be the lucky one.
+				callbacks_notified = []
 				for subscription in self.subscriptions:		# loops on lists are thread-safe.
-					if subscription.waiting:
+					if subscription.waiting and subscription.notice is not None and subscription.callback not in callbacks_notified:
 						wx.PostEvent(subscription.callback, Events.UpdateProgressEvent( text=subscription.notice, progress=(0,0)) )
+						callbacks_notified.append(subscription.callback)
 		subscription = SocketSubscription(node_name, message, callback)
 
 		s.close()
 					
-	def Subscribe(self, node_name, message, callback, waiting=False, notice=False):
+	def Subscribe(self, node_name, message, callback, waiting=False, notice=None):
 		""" Clients should use this method to book a subscription
 		    for messages from the readout nodes. """
 		subscription = SocketSubscription(node_name, message, callback)
@@ -284,18 +291,31 @@ class SocketThread(threading.Thread):
 		    issues an event to the callback object. """
 		matches = re.match(SocketRequests.Notification, message)
 		if matches is None:
+			self.logger.info("Received garbled message:")
+			self.logger.info(message)
+			self.logger.info("Ignoring.")
 			return
+		else:
+			self.logger.info("Received message:")
+			self.logger.info(message)
 		
+		matched = False
 		for subscription in self.subscriptions:
 			if     matches.group("addressee") == subscription.recipient \
 			   and matches.group("sender") == subscription.node_name \
 			   and matches.group("message") == subscription.message:
+			     matched = True
 				wx.PostEvent( subscription.callback, Events.SocketReceiptEvent(addressee=matches.group("addressee"), sender=matches.group("sender"), message=matches.group("message")) )
+				self.logger.info("Message matched subscription.  Delivering.")
+		
+		if not matched:
+			self.logger.info("Message didn't match any subscriptions.  Discarding.")
 		
 	def Abort(self):
 		self.time_to_quit = True
 
 class SocketSubscription:
+	""" A simple class to model socket subscriptions. """
 	def __init__(self, recipient, node_name, message, callback, waiting=False, notice=None):
 		self.recipient = recipient
 		self.node_name = node_name
