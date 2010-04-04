@@ -2,16 +2,10 @@
 
 # Argument List:
 #  $1 == et_system file name
-#  $2 == output file name
-#  $3 == port (1091-1096)
-if [ $# -ne 3 ]; then
-	echo "Please supply et_system file name, output file name, and port (1091-1096)."
+if [ $# -ne 1 ]; then
+	echo Please supply et_system file name.
 	exit 1
 fi
-
-ETSYS=$1
-OUTFL=$2
-PORT=$3
 
 if [ "$LOCALE" == "" ]
 then
@@ -25,6 +19,5 @@ then
 	exit 1
 fi
 
-# We pass both the system name and output file - must contain the full path! 
-nice ${DAQROOT}/bin/event_builder $ETSYS $OUTFL $PORT
-
+#source /work/software/mnvonline/mnvdaq/setup_daqbuild.sh
+nice ${DAQROOT}/bin/event_builder $1  

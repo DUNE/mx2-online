@@ -16,32 +16,25 @@ void controller::ReportError(int error)
 {
 	switch(error) {
 		case cvSuccess:
-			controllerLog.critStream() << "VME Error: Success!?";  
-			std::cout                  << "VME Error: Success!?" << std::endl;  
+			std::cout << "VME Error: Success!?" << std::endl; 
 			break;					
 		case cvBusError: 
-			controllerLog.critStream() << "VME Error: Bus Error!";  
-			std::cout                  << "VME Error: Bus Error!" << std::endl; 
+			std::cout << "VME Error: Bus Error!" << std::endl; 
 			break;	
 		case cvCommError: 
-			controllerLog.critStream() << "VME Error: Comm Error!";  
-			std::cout                  << "VME Error: Comm Error!" << std::endl; 
+			std::cout << "VME Error: Comm Error!" << std::endl; 
 			break;	
 		case cvGenericError: 
-			controllerLog.critStream() << "VME Error: Generic Error!";  
-			std::cout                  << "VME Error: Generic Error!" << std::endl; 
+			std::cout << "VME Error: Generic Error!" << std::endl; 
 			break;	
 		case cvInvalidParam: 
-			controllerLog.critStream() << "VME Error: Invalid Parameter!";  
-			std::cout                  << "VME Error: Invalid Parameter!" << std::endl; 
+			std::cout << "VME Error: Invalid Parameter!" << std::endl; 
 			break;	
 		case cvTimeoutError: 
-			controllerLog.critStream() << "VME Error: Timeout Error!";  
-			std::cout                  << "VME Error: Timeout Error!" << std::endl; 
+			std::cout << "VME Error: Timeout Error!" << std::endl; 
 			break;	
 		default:
-			controllerLog.critStream() << "VME Error: Unknown Error!";  
-			std::cout                  << "VME Error: Unknown Error!" << std::endl; 
+			std::cout << "VME Error: Unknown Error!" << std::endl; 
 			break;			
 	}
 }
@@ -64,19 +57,10 @@ int controller::ContactController()
 	} catch (int e) {
 		ReportError(e);
 		std::cout << "Unable to contact the v2718 VME controller!" << std::endl; 
-		std::cout << "Are you sure the a2818 module is loaded?  Check /proc/a2818." << std::endl;
-		std::cout << "If there is no entry for /proc/a2818, execute the following: " << std::endl;
-		std::cout << "  cd /work/software/CAENVMElib/driver/v2718" << std::endl;
-		std::cout << "  sudo sh a2818_load.2.6" << std::endl;
-		controllerLog.critStream() << "Unable to contact the v2718 VME controller!";
-		controllerLog.critStream() << "Are you sure the a2818 module is loaded?  Check /proc/a2818.";
-		controllerLog.critStream() << "If there is no entry for /proc/a2818, execute the following: ";
-		controllerLog.critStream() << "  cd /work/software/CAENVMElib/driver/v2718";
-		controllerLog.critStream() << "  sudo sh a2818_load.2.6";
+		std::cout << "Are you sure the a2818 module is loaded?  Check /proc/a2818..." << std::endl;
 		return e;
 	} 
-	//suppress//std::cout << "Controller " << controller_id << " is initialized." << std::endl; 
-	controllerLog.infoStream() << "Controller " << controller_id << " is initialized.";
+	std::cout << "The controller is now initialized." << std::endl; 
 
 	// Get the firmware version of the controller card.
 	try {
@@ -84,12 +68,11 @@ int controller::ContactController()
 		if (error) throw error;
 	} catch (int e) {
 		ReportError(e);
-		std::cout << "Unable to obtain the controller firmware version!" << std::endl;
-		controllerLog.critStream() << "Unable to obtain the controller firmware version!";
+		std::cout << "Unable to obtain the firmware version" << std::endl;
+		std::cout << "The error code was: " << e << std::endl;
 		return e;
 	}
-	//suppress//std::cout << "The controller firmware version is: " << firmware << std::endl; 
-	controllerLog.infoStream() << "The controller firmware version is: " << firmware; 
+	std::cout << "The controller firmware version is: " << firmware << std::endl; 
 
 	// Get the status of the controller.
 	CVRegisters registerAddress = cvStatusReg; 
@@ -99,8 +82,8 @@ int controller::ContactController()
 		if (error) throw error;
 	} catch (int e) {
 		ReportError(e);
-		std::cout << "Unable to read the status register!" << std::endl;
-		controllerLog.critStream() << "Unable to read the status register!";
+		std::cout << "Unable to obtain status register: " << std::endl;
+		std::cout << "The error code was: " << e << std::endl;
 		delete shortBuffer;
 		return e;
 	} 
@@ -115,9 +98,9 @@ int controller::ContactController()
 int controller::GetCardStatus() 
 {
 /*! \fn
- * CRIM version, assuming a 1-crim set-up -> i.e., only access *first* element in the card vector. 
+ * CRIM version, assuming a 1-crim set-up -> i.e., only access *first* element in theh card vector. 
  * This function returns the status of the crim associated with the current controller object.  This 
- * is basically a LEGACY function.  Do not use it except to access the "master" CRIM! 
+ * is a LEGACY function.  Do not use it! 
  */
 	if (interfaceModule.size() < 1) { return 1; } // No crims!
 	long_m registerAddress = interfaceModule[0]->GetStatusRegisterAddress(); 
@@ -129,9 +112,9 @@ int controller::GetCardStatus()
 			interfaceModule[0]->GetDataWidth()); 
 		if (error) throw error;
 	} catch (int e) {
-		std::cout << "Error in controller()::GetCardStatus()!" << std::endl;
-		controllerLog.critStream() << "Error in controller()::GetCardStatus()!";
 		ReportError(e);
+		std::cout << "Unable to obtain status register: " << std::endl;
+		std::cout << "The error code was: " << e << std::endl;
 		delete shortBuffer; //clean up 
 		return e;
 	}
@@ -162,11 +145,9 @@ int controller::GetCrimStatus(int a)
 					(*p)->GetDataWidth()); 
 				if (error)  throw error;
 			} catch (int e) {
-				std::cout << "Error in controller()::GetCrimStatus() for Addr " << 
-					((*p)->GetCrimAddress()>>16) << std::endl;
-				controllerLog.critStream() << "Error in controller()::GetCrimStatus() for Addr " << 
-					((*p)->GetCrimAddress()>>16);
 				ReportError(e);
+				std::cout << "Unable to obtain status register: " << std::endl;
+				std::cout << "The errror code was: " << e << std::endl;
 				foundModule = false;
 				delete shortBuffer; //clean up 
 				continue;
@@ -217,11 +198,10 @@ int controller::GetCrocStatus(int a)
 					(*p)->SetChannelAvailable(i); //load that this channel is available for later polling
 					(*p)->GetChannel(i)->SetChannelStatus((*shortBuffer)); 
 				} catch (int e) {
-					std::cout << "Error in controller()::GetCrocStatus() for Addr " << 
-						((*p)->GetCrocAddress()>>16) << " Channel " << (i+1)  << std::endl;
-					controllerLog.critStream() << "Error in controller()::GetCrocStatus() for Addr " << 
-						((*p)->GetCrocAddress()>>16) << " Channel " << (i+1);
 					ReportError(e);
+					std::cout << "Unable to read status register on CROC " << (*p)->GetCrocAddress() 
+						<< " CHANNEL " << (i+1) << std::endl;
+					std::cout << "The errror code was: " << e << std::endl;
 					foundModule = false;
 					delete shortBuffer; //clean up 
 					continue;
@@ -244,7 +224,6 @@ void controller::MakeCrim(unsigned int crimAddress, int id)
  */
 	crim *tmp = new crim(crimAddress, id, addressModifier, dataWidth);
 	interfaceModule.push_back(tmp);
-	controllerLog.infoStream() << "Added a CRIM with id=" << id << " and Address=" << (crimAddress>>16);
 }
 
 
@@ -252,12 +231,12 @@ void controller::MakeCrim(unsigned int crimAddress)
 {
 /*! \fn
  * This function instantiates a crim object belonging to the current controller object - it is 
- * LEGACY code and should not be called.  A crim with id==1 is created. 
+ * LEGACY code and should not be called.
  * \param crimAddress the physical VME address of the crim
+ *    - If we do not supply an id, a crim with id==1 is created.
  */
 	crim *tmp = new crim(crimAddress, (int)1, addressModifier, dataWidth);
 	interfaceModule.push_back(tmp);
-	controllerLog.infoStream() << "Added a CRIM with id=1 and Address=" << (crimAddress>>16);
 }
 
 
@@ -270,8 +249,6 @@ void controller::MakeCroc(unsigned int crocAddress, int a)
  */
 	croc *tmp = new croc(crocAddress, a, addressModifier, dataWidth, cvD16_swapped);
 	readOutController.push_back(tmp); 
-	controllerLog.infoStream() << "Added a CROC with id=" << a << " and Address=" << 
-		(crocAddress>>16);
 }
 
 
@@ -290,25 +267,17 @@ croc *controller::GetCroc(int a)
 		if (id==a) tmp=(*p); //assign that croc fro return by the function
 	}
 	return tmp; //return the pointer to the croc extracted from the vector
-	// TODO - Add error handling if we don't find the croc.
 }
 
 
 crim *controller::GetCrim() 
 {
 /*! \fn 
- * Returns a pointer to the *first* CRIM object.  This is by convention & construction 
- * the master CRIM for a given crate and is our designated interrupt handler. 
+ * Returns a pointer to a CRIM object, if only one CRIM is in a crate.
+ * This is a LEGACY function and should not be called!
  */
 	crim *tmp = 0; // temp object, have to return something...
-	if (interfaceModule.size() > 0) { 
-		tmp = interfaceModule[0]; 
-	} else {
-		controllerLog.critStream() << "Error in controller::GetCrim()!";
-		std::cout << "Error in controller::GetCrim()!" << std::endl;
-		std::cout << "CRIM interfaceModule vector has size zero!" << std::endl;
-		exit (-1);
-	}  
+	if (interfaceModule.size() == 1) { tmp = interfaceModule[0]; }
 	return tmp;
 }
 
@@ -328,7 +297,6 @@ crim *controller::GetCrim(int a)
 		if (id==a) tmp=(*p); //assign that crim for return by the function
 	}
 	return tmp; //return the pointer to the crim extracted from the vector
-	// TODO - Add error handling in case we don't find the CRIM.
 }
 
 #endif

@@ -1,4 +1,4 @@
-namespace SlowControl
+namespace MinervaGUI
 {
     partial class frmSlowControl
     {
@@ -244,30 +244,6 @@ namespace SlowControl
             this.label18 = new System.Windows.Forms.Label();
             this.label19 = new System.Windows.Forms.Label();
             this.tabCH = new System.Windows.Forms.TabPage();
-            this.groupBoxCH_DEBUG = new System.Windows.Forms.GroupBox();
-            this.btn_CHDebugUpdatePattern = new System.Windows.Forms.Button();
-            this.cmb_CHDebugBroadcastCMD = new System.Windows.Forms.ComboBox();
-            this.cmb_CHDebugFEID = new System.Windows.Forms.ComboBox();
-            this.cmb_CHDebugFunctionID = new System.Windows.Forms.ComboBox();
-            this.cmb_CHDebugDeviceID = new System.Windows.Forms.ComboBox();
-            this.cmb_CHDebugDirection = new System.Windows.Forms.ComboBox();
-            this.txt_CHDebugFrameStatusID = new System.Windows.Forms.TextBox();
-            this.txt_CHDebugFrameIDByte0 = new System.Windows.Forms.TextBox();
-            this.label85 = new System.Windows.Forms.Label();
-            this.label84 = new System.Windows.Forms.Label();
-            this.label81 = new System.Windows.Forms.Label();
-            this.label80 = new System.Windows.Forms.Label();
-            this.txt_CHDebugFrameIDByte1 = new System.Windows.Forms.TextBox();
-            this.label77 = new System.Windows.Forms.Label();
-            this.label76 = new System.Windows.Forms.Label();
-            this.label69 = new System.Windows.Forms.Label();
-            this.txt_CHDebugFillDPMPattern = new System.Windows.Forms.TextBox();
-            this.txt_CHDebugFillDPMPRepeat = new System.Windows.Forms.TextBox();
-            this.btn_CHDebugFillDPM = new System.Windows.Forms.Button();
-            this.rtb_CHDebug = new System.Windows.Forms.RichTextBox();
-            this.txt_CHDebugNTests = new System.Windows.Forms.TextBox();
-            this.label73 = new System.Windows.Forms.Label();
-            this.btn_CHDebugInitializeCROCs = new System.Windows.Forms.Button();
             this.groupBoxCH_Frame = new System.Windows.Forms.GroupBox();
             this.btn_CHFIFOWriteMessage = new System.Windows.Forms.Button();
             this.rtb_CHDPMRead = new System.Windows.Forms.RichTextBox();
@@ -328,7 +304,6 @@ namespace SlowControl
             this.label16 = new System.Windows.Forms.Label();
             this.tabFE = new System.Windows.Forms.TabPage();
             this.tabFPGARegs = new System.Windows.Forms.TabPage();
-            this.fpgaDevRegControl1 = new MinervaUserControls.FPGADevRegControl();
             this.btn_AllFEsFPGARegWrite = new System.Windows.Forms.Button();
             this.btn_FPGAAdvancedGUI = new System.Windows.Forms.Button();
             this.lblFPGA_CROCID = new System.Windows.Forms.Label();
@@ -339,6 +314,7 @@ namespace SlowControl
             this.btn_FPGARegRead = new System.Windows.Forms.Button();
             this.btn_FPGARegWrite = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
+            this.fpgaDevRegControl1 = new MinervaUserControls.FPGADevRegControl();
             this.tabTRIPRegs = new System.Windows.Forms.TabPage();
             this.btn_AllFEsTRIPRegWrite = new System.Windows.Forms.Button();
             this.cmb_TripID = new System.Windows.Forms.ComboBox();
@@ -363,7 +339,6 @@ namespace SlowControl
             this.label13 = new System.Windows.Forms.Label();
             this.btn_FLASHReadSPIToFile = new System.Windows.Forms.Button();
             this.tabReadHV = new System.Windows.Forms.TabPage();
-            this.richTextBoxHVRead = new System.Windows.Forms.RichTextBox();
             this.btnMonitorHV = new System.Windows.Forms.Button();
             this.label27 = new System.Windows.Forms.Label();
             this.textBoxMonitorTimer = new System.Windows.Forms.TextBox();
@@ -371,6 +346,7 @@ namespace SlowControl
             this.textBoxADCThreshold = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.btnReadHV = new System.Windows.Forms.Button();
+            this.richTextBoxHVRead = new System.Windows.Forms.RichTextBox();
             this.tabLIBox = new System.Windows.Forms.TabPage();
             this.btn_LIBoxAdvancedGUI = new System.Windows.Forms.Button();
             this.groupBoxLIBox_LICommands = new System.Windows.Forms.GroupBox();
@@ -415,17 +391,6 @@ namespace SlowControl
             this.cmb_LIBoxPortName = new System.Windows.Forms.ComboBox();
             this.btn_LIBoxFindSerialPorts = new System.Windows.Forms.Button();
             this.btn_LIBoxConfigureSerialPort = new System.Windows.Forms.Button();
-            this.tabV1720 = new System.Windows.Forms.TabPage();
-            this.btn_V1720ReadAllRegisters = new System.Windows.Forms.Button();
-            this.chk_V1720PrintEventStat = new System.Windows.Forms.CheckBox();
-            this.chk_V1720PrintEventData = new System.Windows.Forms.CheckBox();
-            this.txt_V1720TakeNEvents = new System.Windows.Forms.TextBox();
-            this.btn_V1720TakeNEvents = new System.Windows.Forms.Button();
-            this.richTextBoxV1720 = new System.Windows.Forms.RichTextBox();
-            this.lblV1720_V1720ID = new System.Windows.Forms.Label();
-            this.label72 = new System.Windows.Forms.Label();
-            this.btn_V1720AdvancedGUI = new System.Windows.Forms.Button();
-            this.btn_V1720LoadConfigFile = new System.Windows.Forms.Button();
             this.errMain = new System.Windows.Forms.ErrorProvider(this.components);
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -433,10 +398,10 @@ namespace SlowControl
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolStripMenuItemFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.loadHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.LoadHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadConfigXmlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveConfigXmlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.writeXmlToHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.WriteXMLToHardwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.expandAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.collapseAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -454,7 +419,6 @@ namespace SlowControl
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.timerMonitorHV = new System.Windows.Forms.Timer(this.components);
-            this.button1 = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabDescription.SuspendLayout();
             this.tabVME.SuspendLayout();
@@ -479,7 +443,6 @@ namespace SlowControl
             this.groupBoxCROC_TimingSetup.SuspendLayout();
             this.groupBoxCROC_FLASH.SuspendLayout();
             this.tabCH.SuspendLayout();
-            this.groupBoxCH_DEBUG.SuspendLayout();
             this.groupBoxCH_Frame.SuspendLayout();
             this.groupBoxCH_StatusRegister.SuspendLayout();
             this.groupBoxCH_FLASH.SuspendLayout();
@@ -493,7 +456,6 @@ namespace SlowControl
             this.groupBoxLIBox_LICommandsHardcoded.SuspendLayout();
             this.groupBoxLIBox_RS232Commands.SuspendLayout();
             this.groupBoxLIBox_RS232Settings.SuspendLayout();
-            this.tabV1720.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errMain)).BeginInit();
             this.contextMenuStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
@@ -502,8 +464,7 @@ namespace SlowControl
             // 
             // tabControl1
             // 
-            this.tabControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
+            this.tabControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.tabControl1.Controls.Add(this.tabDescription);
             this.tabControl1.Controls.Add(this.tabVME);
@@ -516,11 +477,10 @@ namespace SlowControl
             this.tabControl1.Controls.Add(this.tabFLASHPages);
             this.tabControl1.Controls.Add(this.tabReadHV);
             this.tabControl1.Controls.Add(this.tabLIBox);
-            this.tabControl1.Controls.Add(this.tabV1720);
-            this.tabControl1.Location = new System.Drawing.Point(211, 27);
+            this.tabControl1.Location = new System.Drawing.Point(282, 27);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(907, 528);
+            this.tabControl1.Size = new System.Drawing.Size(395, 533);
             this.tabControl1.TabIndex = 0;
             // 
             // tabDescription
@@ -529,7 +489,7 @@ namespace SlowControl
             this.tabDescription.Location = new System.Drawing.Point(4, 22);
             this.tabDescription.Name = "tabDescription";
             this.tabDescription.Padding = new System.Windows.Forms.Padding(3);
-            this.tabDescription.Size = new System.Drawing.Size(899, 502);
+            this.tabDescription.Size = new System.Drawing.Size(387, 507);
             this.tabDescription.TabIndex = 3;
             this.tabDescription.Text = "Description";
             this.tabDescription.UseVisualStyleBackColor = true;
@@ -537,11 +497,11 @@ namespace SlowControl
             // richTextBoxDescription
             // 
             this.richTextBoxDescription.AutoWordSelection = true;
-            this.richTextBoxDescription.BackColor = System.Drawing.Color.LightSteelBlue;
+            this.richTextBoxDescription.BackColor = System.Drawing.SystemColors.InactiveCaptionText;
             this.richTextBoxDescription.Dock = System.Windows.Forms.DockStyle.Fill;
             this.richTextBoxDescription.Location = new System.Drawing.Point(3, 3);
             this.richTextBoxDescription.Name = "richTextBoxDescription";
-            this.richTextBoxDescription.Size = new System.Drawing.Size(893, 496);
+            this.richTextBoxDescription.Size = new System.Drawing.Size(381, 501);
             this.richTextBoxDescription.TabIndex = 0;
             this.richTextBoxDescription.Text = "";
             // 
@@ -550,7 +510,7 @@ namespace SlowControl
             this.tabVME.Controls.Add(this.groupBoxVME_WriteRead);
             this.tabVME.Location = new System.Drawing.Point(4, 22);
             this.tabVME.Name = "tabVME";
-            this.tabVME.Size = new System.Drawing.Size(899, 502);
+            this.tabVME.Size = new System.Drawing.Size(387, 507);
             this.tabVME.TabIndex = 10;
             this.tabVME.Text = "VME";
             this.tabVME.UseVisualStyleBackColor = true;
@@ -658,7 +618,7 @@ namespace SlowControl
             this.tabCRIM.Controls.Add(this.btn_CRIMReportGateAlignmentsAllCROCs);
             this.tabCRIM.Location = new System.Drawing.Point(4, 22);
             this.tabCRIM.Name = "tabCRIM";
-            this.tabCRIM.Size = new System.Drawing.Size(899, 502);
+            this.tabCRIM.Size = new System.Drawing.Size(387, 507);
             this.tabCRIM.TabIndex = 4;
             this.tabCRIM.Text = "CRIM";
             this.tabCRIM.UseVisualStyleBackColor = true;
@@ -2153,7 +2113,7 @@ namespace SlowControl
                         | System.Windows.Forms.AnchorStyles.Left)));
             this.rtb_CRIMFELoopQueryDisplay.Location = new System.Drawing.Point(9, 106);
             this.rtb_CRIMFELoopQueryDisplay.Name = "rtb_CRIMFELoopQueryDisplay";
-            this.rtb_CRIMFELoopQueryDisplay.Size = new System.Drawing.Size(352, 312);
+            this.rtb_CRIMFELoopQueryDisplay.Size = new System.Drawing.Size(352, 136);
             this.rtb_CRIMFELoopQueryDisplay.TabIndex = 106;
             this.rtb_CRIMFELoopQueryDisplay.Text = "";
             // 
@@ -2164,7 +2124,7 @@ namespace SlowControl
             this.btn_CRIMFELoopQueryDoQuery.Name = "btn_CRIMFELoopQueryDoQuery";
             this.btn_CRIMFELoopQueryDoQuery.Size = new System.Drawing.Size(160, 20);
             this.btn_CRIMFELoopQueryDoQuery.TabIndex = 104;
-            this.btn_CRIMFELoopQueryDoQuery.Text = "START Query FEs (N times)";
+            this.btn_CRIMFELoopQueryDoQuery.Text = "START Querry FEs (N times)";
             this.btn_CRIMFELoopQueryDoQuery.UseVisualStyleBackColor = false;
             this.btn_CRIMFELoopQueryDoQuery.Click += new System.EventHandler(this.btn_CRIMFELoopQueryDoQuery_Click);
             // 
@@ -2238,7 +2198,7 @@ namespace SlowControl
             this.tabCROC.Controls.Add(this.label19);
             this.tabCROC.Location = new System.Drawing.Point(4, 22);
             this.tabCROC.Name = "tabCROC";
-            this.tabCROC.Size = new System.Drawing.Size(899, 502);
+            this.tabCROC.Size = new System.Drawing.Size(387, 507);
             this.tabCROC.TabIndex = 5;
             this.tabCROC.Text = "CROC";
             this.tabCROC.UseVisualStyleBackColor = true;
@@ -2846,7 +2806,6 @@ namespace SlowControl
             // 
             // tabCH
             // 
-            this.tabCH.Controls.Add(this.groupBoxCH_DEBUG);
             this.tabCH.Controls.Add(this.groupBoxCH_Frame);
             this.tabCH.Controls.Add(this.groupBoxCH_StatusRegister);
             this.tabCH.Controls.Add(this.groupBoxCH_FLASH);
@@ -2860,308 +2819,10 @@ namespace SlowControl
             this.tabCH.Controls.Add(this.label16);
             this.tabCH.Location = new System.Drawing.Point(4, 22);
             this.tabCH.Name = "tabCH";
-            this.tabCH.Size = new System.Drawing.Size(899, 502);
+            this.tabCH.Size = new System.Drawing.Size(387, 507);
             this.tabCH.TabIndex = 6;
             this.tabCH.Text = "CH";
             this.tabCH.UseVisualStyleBackColor = true;
-            // 
-            // groupBoxCH_DEBUG
-            // 
-            this.groupBoxCH_DEBUG.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBoxCH_DEBUG.Controls.Add(this.button1);
-            this.groupBoxCH_DEBUG.Controls.Add(this.btn_CHDebugUpdatePattern);
-            this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugBroadcastCMD);
-            this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugFEID);
-            this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugFunctionID);
-            this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugDeviceID);
-            this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugDirection);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugFrameStatusID);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugFrameIDByte0);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label85);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label84);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label81);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label80);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugFrameIDByte1);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label77);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label76);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label69);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugFillDPMPattern);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugFillDPMPRepeat);
-            this.groupBoxCH_DEBUG.Controls.Add(this.btn_CHDebugFillDPM);
-            this.groupBoxCH_DEBUG.Controls.Add(this.rtb_CHDebug);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugNTests);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label73);
-            this.groupBoxCH_DEBUG.Controls.Add(this.btn_CHDebugInitializeCROCs);
-            this.groupBoxCH_DEBUG.Location = new System.Drawing.Point(373, 16);
-            this.groupBoxCH_DEBUG.Name = "groupBoxCH_DEBUG";
-            this.groupBoxCH_DEBUG.Size = new System.Drawing.Size(513, 425);
-            this.groupBoxCH_DEBUG.TabIndex = 90;
-            this.groupBoxCH_DEBUG.TabStop = false;
-            this.groupBoxCH_DEBUG.Text = "DEBUG Tools";
-            this.groupBoxCH_DEBUG.Visible = false;
-            // 
-            // btn_CHDebugUpdatePattern
-            // 
-            this.btn_CHDebugUpdatePattern.BackColor = System.Drawing.Color.Coral;
-            this.btn_CHDebugUpdatePattern.Location = new System.Drawing.Point(327, 59);
-            this.btn_CHDebugUpdatePattern.Name = "btn_CHDebugUpdatePattern";
-            this.btn_CHDebugUpdatePattern.Size = new System.Drawing.Size(175, 55);
-            this.btn_CHDebugUpdatePattern.TabIndex = 113;
-            this.btn_CHDebugUpdatePattern.Text = "Update Pattern";
-            this.btn_CHDebugUpdatePattern.UseVisualStyleBackColor = false;
-            this.btn_CHDebugUpdatePattern.Click += new System.EventHandler(this.btn_CHDebugUpdatePattern_Click);
-            // 
-            // cmb_CHDebugBroadcastCMD
-            // 
-            this.cmb_CHDebugBroadcastCMD.FormattingEnabled = true;
-            this.cmb_CHDebugBroadcastCMD.Items.AddRange(new object[] {
-            "0 NA",
-            "1 LoadTimer",
-            "2 ResetTimer",
-            "3 OpenGate",
-            "4 SoftwRST",
-            "5 NA",
-            "6 NA",
-            "7 NA"});
-            this.cmb_CHDebugBroadcastCMD.Location = new System.Drawing.Point(340, 11);
-            this.cmb_CHDebugBroadcastCMD.Name = "cmb_CHDebugBroadcastCMD";
-            this.cmb_CHDebugBroadcastCMD.Size = new System.Drawing.Size(97, 21);
-            this.cmb_CHDebugBroadcastCMD.TabIndex = 112;
-            // 
-            // cmb_CHDebugFEID
-            // 
-            this.cmb_CHDebugFEID.FormattingEnabled = true;
-            this.cmb_CHDebugFEID.Items.AddRange(new object[] {
-            "0 NA",
-            "1 FE1",
-            "2 FE2",
-            "3 FE3",
-            "4 FE4",
-            "5 FE5",
-            "6 FE6",
-            "7 FE7",
-            "8 FE8",
-            "9 FE9",
-            "10 FE10",
-            "11 FE11",
-            "12 FE12",
-            "13 FE13",
-            "14 FE14",
-            "15 FE15"});
-            this.cmb_CHDebugFEID.Location = new System.Drawing.Point(437, 11);
-            this.cmb_CHDebugFEID.Name = "cmb_CHDebugFEID";
-            this.cmb_CHDebugFEID.Size = new System.Drawing.Size(65, 21);
-            this.cmb_CHDebugFEID.TabIndex = 111;
-            // 
-            // cmb_CHDebugFunctionID
-            // 
-            this.cmb_CHDebugFunctionID.FormattingEnabled = true;
-            this.cmb_CHDebugFunctionID.Location = new System.Drawing.Point(387, 32);
-            this.cmb_CHDebugFunctionID.Name = "cmb_CHDebugFunctionID";
-            this.cmb_CHDebugFunctionID.Size = new System.Drawing.Size(115, 21);
-            this.cmb_CHDebugFunctionID.TabIndex = 110;
-            // 
-            // cmb_CHDebugDeviceID
-            // 
-            this.cmb_CHDebugDeviceID.FormattingEnabled = true;
-            this.cmb_CHDebugDeviceID.Items.AddRange(new object[] {
-            "0 NA",
-            "1 TRIP",
-            "2 REG",
-            "3 BRAM",
-            "4 FLASH",
-            "5 NA",
-            "6 NA",
-            "7 NA",
-            "8 NA",
-            "9 NA",
-            "10 NA",
-            "11 NA",
-            "12 NA",
-            "13 NA",
-            "14 NA",
-            "15 NA"});
-            this.cmb_CHDebugDeviceID.Location = new System.Drawing.Point(287, 32);
-            this.cmb_CHDebugDeviceID.Name = "cmb_CHDebugDeviceID";
-            this.cmb_CHDebugDeviceID.Size = new System.Drawing.Size(100, 21);
-            this.cmb_CHDebugDeviceID.TabIndex = 109;
-            this.cmb_CHDebugDeviceID.SelectedIndexChanged += new System.EventHandler(this.cmb_CHDebugDeviceID_SelectedIndexChanged);
-            // 
-            // cmb_CHDebugDirection
-            // 
-            this.cmb_CHDebugDirection.FormattingEnabled = true;
-            this.cmb_CHDebugDirection.Items.AddRange(new object[] {
-            "0 M2S",
-            "1 S2M"});
-            this.cmb_CHDebugDirection.Location = new System.Drawing.Point(287, 11);
-            this.cmb_CHDebugDirection.Name = "cmb_CHDebugDirection";
-            this.cmb_CHDebugDirection.Size = new System.Drawing.Size(53, 21);
-            this.cmb_CHDebugDirection.TabIndex = 108;
-            // 
-            // txt_CHDebugFrameStatusID
-            // 
-            this.txt_CHDebugFrameStatusID.Location = new System.Drawing.Point(287, 53);
-            this.txt_CHDebugFrameStatusID.Name = "txt_CHDebugFrameStatusID";
-            this.txt_CHDebugFrameStatusID.Size = new System.Drawing.Size(34, 20);
-            this.txt_CHDebugFrameStatusID.TabIndex = 107;
-            // 
-            // txt_CHDebugFrameIDByte0
-            // 
-            this.txt_CHDebugFrameIDByte0.Location = new System.Drawing.Point(287, 74);
-            this.txt_CHDebugFrameIDByte0.Name = "txt_CHDebugFrameIDByte0";
-            this.txt_CHDebugFrameIDByte0.Size = new System.Drawing.Size(34, 20);
-            this.txt_CHDebugFrameIDByte0.TabIndex = 106;
-            // 
-            // label85
-            // 
-            this.label85.BackColor = System.Drawing.Color.Coral;
-            this.label85.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label85.Location = new System.Drawing.Point(208, 97);
-            this.label85.Name = "label85";
-            this.label85.Size = new System.Drawing.Size(73, 17);
-            this.label85.TabIndex = 105;
-            this.label85.Text = "Byte4 ID (0x)";
-            this.label85.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label84
-            // 
-            this.label84.BackColor = System.Drawing.Color.Coral;
-            this.label84.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label84.Location = new System.Drawing.Point(208, 76);
-            this.label84.Name = "label84";
-            this.label84.Size = new System.Drawing.Size(73, 17);
-            this.label84.TabIndex = 104;
-            this.label84.Text = "Byte3 ID (0x)";
-            this.label84.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label81
-            // 
-            this.label81.BackColor = System.Drawing.Color.Coral;
-            this.label81.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label81.Location = new System.Drawing.Point(208, 55);
-            this.label81.Name = "label81";
-            this.label81.Size = new System.Drawing.Size(73, 17);
-            this.label81.TabIndex = 103;
-            this.label81.Text = "Byte2 ST (0x)";
-            this.label81.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label80
-            // 
-            this.label80.BackColor = System.Drawing.Color.Coral;
-            this.label80.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label80.Location = new System.Drawing.Point(208, 34);
-            this.label80.Name = "label80";
-            this.label80.Size = new System.Drawing.Size(73, 17);
-            this.label80.TabIndex = 102;
-            this.label80.Text = "Byte1 DevF";
-            this.label80.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // txt_CHDebugFrameIDByte1
-            // 
-            this.txt_CHDebugFrameIDByte1.Location = new System.Drawing.Point(287, 95);
-            this.txt_CHDebugFrameIDByte1.Name = "txt_CHDebugFrameIDByte1";
-            this.txt_CHDebugFrameIDByte1.Size = new System.Drawing.Size(34, 20);
-            this.txt_CHDebugFrameIDByte1.TabIndex = 101;
-            // 
-            // label77
-            // 
-            this.label77.BackColor = System.Drawing.Color.Coral;
-            this.label77.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label77.Location = new System.Drawing.Point(208, 13);
-            this.label77.Name = "label77";
-            this.label77.Size = new System.Drawing.Size(73, 17);
-            this.label77.TabIndex = 100;
-            this.label77.Text = "Byte0 Start";
-            this.label77.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label76
-            // 
-            this.label76.BackColor = System.Drawing.Color.Coral;
-            this.label76.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label76.Location = new System.Drawing.Point(110, 80);
-            this.label76.Name = "label76";
-            this.label76.Size = new System.Drawing.Size(89, 17);
-            this.label76.TabIndex = 99;
-            this.label76.Text = "Repeat (dec)";
-            this.label76.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label69
-            // 
-            this.label69.BackColor = System.Drawing.Color.Coral;
-            this.label69.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label69.Location = new System.Drawing.Point(10, 80);
-            this.label69.Name = "label69";
-            this.label69.Size = new System.Drawing.Size(89, 17);
-            this.label69.TabIndex = 98;
-            this.label69.Text = "Pattern (0x)";
-            this.label69.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // txt_CHDebugFillDPMPattern
-            // 
-            this.txt_CHDebugFillDPMPattern.Location = new System.Drawing.Point(10, 97);
-            this.txt_CHDebugFillDPMPattern.Name = "txt_CHDebugFillDPMPattern";
-            this.txt_CHDebugFillDPMPattern.Size = new System.Drawing.Size(89, 20);
-            this.txt_CHDebugFillDPMPattern.TabIndex = 97;
-            // 
-            // txt_CHDebugFillDPMPRepeat
-            // 
-            this.txt_CHDebugFillDPMPRepeat.Location = new System.Drawing.Point(110, 97);
-            this.txt_CHDebugFillDPMPRepeat.Name = "txt_CHDebugFillDPMPRepeat";
-            this.txt_CHDebugFillDPMPRepeat.Size = new System.Drawing.Size(89, 20);
-            this.txt_CHDebugFillDPMPRepeat.TabIndex = 96;
-            // 
-            // btn_CHDebugFillDPM
-            // 
-            this.btn_CHDebugFillDPM.BackColor = System.Drawing.Color.Coral;
-            this.btn_CHDebugFillDPM.Location = new System.Drawing.Point(10, 61);
-            this.btn_CHDebugFillDPM.Name = "btn_CHDebugFillDPM";
-            this.btn_CHDebugFillDPM.Size = new System.Drawing.Size(189, 20);
-            this.btn_CHDebugFillDPM.TabIndex = 95;
-            this.btn_CHDebugFillDPM.Text = "START FillDPM";
-            this.btn_CHDebugFillDPM.UseVisualStyleBackColor = false;
-            this.btn_CHDebugFillDPM.Click += new System.EventHandler(this.btn_CHDebugFillDPM_Click);
-            // 
-            // rtb_CHDebug
-            // 
-            this.rtb_CHDebug.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.rtb_CHDebug.Location = new System.Drawing.Point(10, 147);
-            this.rtb_CHDebug.Name = "rtb_CHDebug";
-            this.rtb_CHDebug.Size = new System.Drawing.Size(494, 262);
-            this.rtb_CHDebug.TabIndex = 94;
-            this.rtb_CHDebug.Text = "";
-            // 
-            // txt_CHDebugNTests
-            // 
-            this.txt_CHDebugNTests.Location = new System.Drawing.Point(102, 12);
-            this.txt_CHDebugNTests.Name = "txt_CHDebugNTests";
-            this.txt_CHDebugNTests.Size = new System.Drawing.Size(97, 20);
-            this.txt_CHDebugNTests.TabIndex = 92;
-            // 
-            // label73
-            // 
-            this.label73.BackColor = System.Drawing.Color.Coral;
-            this.label73.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label73.Location = new System.Drawing.Point(10, 14);
-            this.label73.Name = "label73";
-            this.label73.Size = new System.Drawing.Size(89, 17);
-            this.label73.TabIndex = 88;
-            this.label73.Text = "Number of Tests";
-            this.label73.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // btn_CHDebugInitializeCROCs
-            // 
-            this.btn_CHDebugInitializeCROCs.BackColor = System.Drawing.Color.Coral;
-            this.btn_CHDebugInitializeCROCs.Location = new System.Drawing.Point(10, 35);
-            this.btn_CHDebugInitializeCROCs.Name = "btn_CHDebugInitializeCROCs";
-            this.btn_CHDebugInitializeCROCs.Size = new System.Drawing.Size(192, 20);
-            this.btn_CHDebugInitializeCROCs.TabIndex = 80;
-            this.btn_CHDebugInitializeCROCs.Text = "START FEsEnumeration";
-            this.btn_CHDebugInitializeCROCs.UseVisualStyleBackColor = false;
-            this.btn_CHDebugInitializeCROCs.Click += new System.EventHandler(this.btn_CHDebugInitializeCROCs_Click);
             // 
             // groupBoxCH_Frame
             // 
@@ -3781,14 +3442,13 @@ namespace SlowControl
             // 
             this.tabFE.Location = new System.Drawing.Point(4, 22);
             this.tabFE.Name = "tabFE";
-            this.tabFE.Size = new System.Drawing.Size(899, 502);
+            this.tabFE.Size = new System.Drawing.Size(387, 507);
             this.tabFE.TabIndex = 7;
             this.tabFE.Text = "FE";
             this.tabFE.UseVisualStyleBackColor = true;
             // 
             // tabFPGARegs
             // 
-            this.tabFPGARegs.Controls.Add(this.fpgaDevRegControl1);
             this.tabFPGARegs.Controls.Add(this.btn_AllFEsFPGARegWrite);
             this.tabFPGARegs.Controls.Add(this.btn_FPGAAdvancedGUI);
             this.tabFPGARegs.Controls.Add(this.lblFPGA_CROCID);
@@ -3799,138 +3459,14 @@ namespace SlowControl
             this.tabFPGARegs.Controls.Add(this.btn_FPGARegRead);
             this.tabFPGARegs.Controls.Add(this.btn_FPGARegWrite);
             this.tabFPGARegs.Controls.Add(this.label1);
+            this.tabFPGARegs.Controls.Add(this.fpgaDevRegControl1);
             this.tabFPGARegs.Location = new System.Drawing.Point(4, 22);
             this.tabFPGARegs.Name = "tabFPGARegs";
             this.tabFPGARegs.Padding = new System.Windows.Forms.Padding(3);
-            this.tabFPGARegs.Size = new System.Drawing.Size(899, 502);
+            this.tabFPGARegs.Size = new System.Drawing.Size(387, 507);
             this.tabFPGARegs.TabIndex = 0;
             this.tabFPGARegs.Text = "FPGA Regs";
             this.tabFPGARegs.UseVisualStyleBackColor = true;
-            // 
-            // fpgaDevRegControl1
-            // 
-            this.fpgaDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
-            this.fpgaDevRegControl1.AutoScroll = true;
-            this.fpgaDevRegControl1.FPGARegValues = new uint[] {
-        ((uint)(12u)),
-        ((uint)(65488u)),
-        ((uint)(1024u)),
-        ((uint)(63u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(1u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(32768u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(415029u)),
-        ((uint)(415029u)),
-        ((uint)(415029u)),
-        ((uint)(415029u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u))};
-            this.fpgaDevRegControl1.Location = new System.Drawing.Point(6, 40);
-            this.fpgaDevRegControl1.Name = "fpgaDevRegControl1";
-            this.fpgaDevRegControl1.RegisterBoardID = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM1Lock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM1NoClock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2Lock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2NoClock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2PhaseDone = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2PhaseTotal = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip0 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip1 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip2 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip3 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterExtTriggFound = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterExtTriggRearm = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterFirmwareVersion = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterGateLength = ((uint)(1024u));
-            this.fpgaDevRegControl1.RegisterGateStart = ((uint)(65488u));
-            this.fpgaDevRegControl1.RegisterGateTimeStamp = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVActual = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVAutoManual = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVControl = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVEnabled = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVNumAvg = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVPeriodAuto = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVPeriodManual = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVPulseWidth = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVTarget = ((uint)(32768u));
-            this.fpgaDevRegControl1.RegisterInjectCount = new uint[] {
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u))};
-            this.fpgaDevRegControl1.RegisterInjectDACDone = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectDACMode = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectDACStart = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectDACValue = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectEnable = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectPhase = ((uint)(1u));
-            this.fpgaDevRegControl1.RegisterInjectRange = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterPhaseIncrement = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterPhaseStart = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterPhaseTicks = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusFCMDUnknown = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusRXLock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusSCMDUnknown = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusTXSyncLock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTemperature = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTestPulse2Bit = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTestPulseCount = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTimer = ((uint)(12u));
-            this.fpgaDevRegControl1.RegisterTripPowerOff = ((uint)(63u));
-            this.fpgaDevRegControl1.RegisterTripXComparators = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTripXThreshold = ((uint)(0u));
-            this.fpgaDevRegControl1.Size = new System.Drawing.Size(258, 456);
-            this.fpgaDevRegControl1.TabIndex = 26;
             // 
             // btn_AllFEsFPGARegWrite
             // 
@@ -4033,6 +3569,126 @@ namespace SlowControl
             this.label1.TabIndex = 1;
             this.label1.Text = "FE";
             // 
+            // fpgaDevRegControl1
+            // 
+            this.fpgaDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.fpgaDevRegControl1.AutoScroll = true;
+            this.fpgaDevRegControl1.FPGARegValues = new uint[] {
+        ((uint)(12u)),
+        ((uint)(65488u)),
+        ((uint)(1024u)),
+        ((uint)(63u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(1u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(32768u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(1u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(15u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(0u))};
+            this.fpgaDevRegControl1.Location = new System.Drawing.Point(6, 37);
+            this.fpgaDevRegControl1.Name = "fpgaDevRegControl1";
+            this.fpgaDevRegControl1.RegisterBoardID = ((uint)(15u));
+            this.fpgaDevRegControl1.RegisterDCM1Lock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM1NoClock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2Lock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2NoClock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2PhaseDone = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2PhaseTotal = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip0 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip1 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip2 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip3 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterExtTriggFound = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterExtTriggRearm = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterFirmwareVersion = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterGateLength = ((uint)(1024u));
+            this.fpgaDevRegControl1.RegisterGateStart = ((uint)(65488u));
+            this.fpgaDevRegControl1.RegisterGateTimeStamp = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVActual = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVAutoManual = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVControl = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVEnabled = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVNumAvg = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVPeriodAuto = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVPeriodManual = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVPulseWidth = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVTarget = ((uint)(32768u));
+            this.fpgaDevRegControl1.RegisterInjectCount = new uint[] {
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u))};
+            this.fpgaDevRegControl1.RegisterInjectDACDone = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectDACMode = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectDACStart = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectDACValue = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectEnable = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectPhase = ((uint)(1u));
+            this.fpgaDevRegControl1.RegisterInjectRange = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseIncrement = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseSpare = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseStart = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseTicks = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTemperature = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTestPulse2Bit = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTestPulseCount = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTimer = ((uint)(12u));
+            this.fpgaDevRegControl1.RegisterTripPowerOff = ((uint)(63u));
+            this.fpgaDevRegControl1.RegisterTripXComparators = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTripXThreshold = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterVXOMuxSelect = ((uint)(1u));
+            this.fpgaDevRegControl1.Size = new System.Drawing.Size(291, 418);
+            this.fpgaDevRegControl1.TabIndex = 23;
+            // 
             // tabTRIPRegs
             // 
             this.tabTRIPRegs.Controls.Add(this.btn_AllFEsTRIPRegWrite);
@@ -4050,7 +3706,7 @@ namespace SlowControl
             this.tabTRIPRegs.Location = new System.Drawing.Point(4, 22);
             this.tabTRIPRegs.Name = "tabTRIPRegs";
             this.tabTRIPRegs.Padding = new System.Windows.Forms.Padding(3);
-            this.tabTRIPRegs.Size = new System.Drawing.Size(899, 502);
+            this.tabTRIPRegs.Size = new System.Drawing.Size(387, 507);
             this.tabTRIPRegs.TabIndex = 1;
             this.tabTRIPRegs.Text = "TRIP Regs";
             this.tabTRIPRegs.UseVisualStyleBackColor = true;
@@ -4174,8 +3830,9 @@ namespace SlowControl
             // 
             // tripDevRegControl1
             // 
-            this.tripDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.tripDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
             this.tripDevRegControl1.AutoScroll = true;
             this.tripDevRegControl1.Location = new System.Drawing.Point(6, 37);
             this.tripDevRegControl1.Name = "tripDevRegControl1";
@@ -4199,7 +3856,7 @@ namespace SlowControl
             this.tripDevRegControl1.RegisterPIPEDEL = ((uint)(1u));
             this.tripDevRegControl1.RegisterVREF = ((uint)(20u));
             this.tripDevRegControl1.RegisterVTH = ((uint)(0u));
-            this.tripDevRegControl1.Size = new System.Drawing.Size(250, 467);
+            this.tripDevRegControl1.Size = new System.Drawing.Size(265, 244);
             this.tripDevRegControl1.TabIndex = 35;
             this.tripDevRegControl1.TRIPRegValues = new uint[] {
         ((uint)(100u)),
@@ -4237,7 +3894,7 @@ namespace SlowControl
             this.tabFLASHPages.Location = new System.Drawing.Point(4, 22);
             this.tabFLASHPages.Name = "tabFLASHPages";
             this.tabFLASHPages.Padding = new System.Windows.Forms.Padding(3);
-            this.tabFLASHPages.Size = new System.Drawing.Size(899, 502);
+            this.tabFLASHPages.Size = new System.Drawing.Size(387, 507);
             this.tabFLASHPages.TabIndex = 2;
             this.tabFLASHPages.Text = "FLASH";
             this.tabFLASHPages.UseVisualStyleBackColor = true;
@@ -4336,7 +3993,6 @@ namespace SlowControl
             // 
             // tabReadHV
             // 
-            this.tabReadHV.Controls.Add(this.richTextBoxHVRead);
             this.tabReadHV.Controls.Add(this.btnMonitorHV);
             this.tabReadHV.Controls.Add(this.label27);
             this.tabReadHV.Controls.Add(this.textBoxMonitorTimer);
@@ -4344,28 +4000,18 @@ namespace SlowControl
             this.tabReadHV.Controls.Add(this.textBoxADCThreshold);
             this.tabReadHV.Controls.Add(this.label2);
             this.tabReadHV.Controls.Add(this.btnReadHV);
+            this.tabReadHV.Controls.Add(this.richTextBoxHVRead);
             this.tabReadHV.Location = new System.Drawing.Point(4, 22);
             this.tabReadHV.Name = "tabReadHV";
-            this.tabReadHV.Size = new System.Drawing.Size(899, 502);
+            this.tabReadHV.Size = new System.Drawing.Size(387, 507);
             this.tabReadHV.TabIndex = 8;
             this.tabReadHV.Text = "Read HV";
             this.tabReadHV.UseVisualStyleBackColor = true;
             // 
-            // richTextBoxHVRead
-            // 
-            this.richTextBoxHVRead.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
-            this.richTextBoxHVRead.Location = new System.Drawing.Point(3, 3);
-            this.richTextBoxHVRead.Name = "richTextBoxHVRead";
-            this.richTextBoxHVRead.Size = new System.Drawing.Size(366, 446);
-            this.richTextBoxHVRead.TabIndex = 11;
-            this.richTextBoxHVRead.Text = "";
-            // 
             // btnMonitorHV
             // 
-            this.btnMonitorHV.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnMonitorHV.Enabled = false;
-            this.btnMonitorHV.Location = new System.Drawing.Point(158, 479);
+            this.btnMonitorHV.Location = new System.Drawing.Point(158, 427);
             this.btnMonitorHV.Name = "btnMonitorHV";
             this.btnMonitorHV.Size = new System.Drawing.Size(76, 20);
             this.btnMonitorHV.TabIndex = 10;
@@ -4375,9 +4021,8 @@ namespace SlowControl
             // 
             // label27
             // 
-            this.label27.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label27.AutoSize = true;
-            this.label27.Location = new System.Drawing.Point(56, 483);
+            this.label27.Location = new System.Drawing.Point(56, 431);
             this.label27.Name = "label27";
             this.label27.Size = new System.Drawing.Size(97, 13);
             this.label27.TabIndex = 9;
@@ -4385,9 +4030,8 @@ namespace SlowControl
             // 
             // textBoxMonitorTimer
             // 
-            this.textBoxMonitorTimer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.textBoxMonitorTimer.Enabled = false;
-            this.textBoxMonitorTimer.Location = new System.Drawing.Point(13, 480);
+            this.textBoxMonitorTimer.Location = new System.Drawing.Point(13, 428);
             this.textBoxMonitorTimer.Name = "textBoxMonitorTimer";
             this.textBoxMonitorTimer.Size = new System.Drawing.Size(37, 20);
             this.textBoxMonitorTimer.TabIndex = 8;
@@ -4395,9 +4039,8 @@ namespace SlowControl
             // 
             // btnSwitchToAuto
             // 
-            this.btnSwitchToAuto.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnSwitchToAuto.Enabled = false;
-            this.btnSwitchToAuto.Location = new System.Drawing.Point(240, 455);
+            this.btnSwitchToAuto.Location = new System.Drawing.Point(240, 403);
             this.btnSwitchToAuto.Name = "btnSwitchToAuto";
             this.btnSwitchToAuto.Size = new System.Drawing.Size(102, 20);
             this.btnSwitchToAuto.TabIndex = 7;
@@ -4407,18 +4050,16 @@ namespace SlowControl
             // 
             // textBoxADCThreshold
             // 
-            this.textBoxADCThreshold.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.textBoxADCThreshold.Enabled = false;
-            this.textBoxADCThreshold.Location = new System.Drawing.Point(13, 455);
+            this.textBoxADCThreshold.Location = new System.Drawing.Point(13, 403);
             this.textBoxADCThreshold.Name = "textBoxADCThreshold";
             this.textBoxADCThreshold.Size = new System.Drawing.Size(68, 20);
             this.textBoxADCThreshold.TabIndex = 6;
             // 
             // label2
             // 
-            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(87, 458);
+            this.label2.Location = new System.Drawing.Point(87, 406);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(65, 13);
             this.label2.TabIndex = 5;
@@ -4426,15 +4067,22 @@ namespace SlowControl
             // 
             // btnReadHV
             // 
-            this.btnReadHV.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnReadHV.Enabled = false;
-            this.btnReadHV.Location = new System.Drawing.Point(158, 455);
+            this.btnReadHV.Location = new System.Drawing.Point(158, 403);
             this.btnReadHV.Name = "btnReadHV";
             this.btnReadHV.Size = new System.Drawing.Size(76, 20);
             this.btnReadHV.TabIndex = 3;
             this.btnReadHV.Text = "Read";
             this.btnReadHV.UseVisualStyleBackColor = true;
             this.btnReadHV.Click += new System.EventHandler(this.btnReadHV_Click);
+            // 
+            // richTextBoxHVRead
+            // 
+            this.richTextBoxHVRead.Location = new System.Drawing.Point(0, 3);
+            this.richTextBoxHVRead.Name = "richTextBoxHVRead";
+            this.richTextBoxHVRead.Size = new System.Drawing.Size(384, 394);
+            this.richTextBoxHVRead.TabIndex = 0;
+            this.richTextBoxHVRead.Text = "";
             // 
             // tabLIBox
             // 
@@ -4444,7 +4092,7 @@ namespace SlowControl
             this.tabLIBox.Controls.Add(this.groupBoxLIBox_RS232Settings);
             this.tabLIBox.Location = new System.Drawing.Point(4, 22);
             this.tabLIBox.Name = "tabLIBox";
-            this.tabLIBox.Size = new System.Drawing.Size(899, 502);
+            this.tabLIBox.Size = new System.Drawing.Size(387, 507);
             this.tabLIBox.TabIndex = 9;
             this.tabLIBox.Text = "LI Box";
             this.tabLIBox.UseVisualStyleBackColor = true;
@@ -4972,132 +4620,6 @@ namespace SlowControl
             this.btn_LIBoxConfigureSerialPort.UseVisualStyleBackColor = false;
             this.btn_LIBoxConfigureSerialPort.Click += new System.EventHandler(this.btn_LIBoxConfigureSerialPort_Click);
             // 
-            // tabV1720
-            // 
-            this.tabV1720.Controls.Add(this.btn_V1720ReadAllRegisters);
-            this.tabV1720.Controls.Add(this.chk_V1720PrintEventStat);
-            this.tabV1720.Controls.Add(this.chk_V1720PrintEventData);
-            this.tabV1720.Controls.Add(this.txt_V1720TakeNEvents);
-            this.tabV1720.Controls.Add(this.btn_V1720TakeNEvents);
-            this.tabV1720.Controls.Add(this.richTextBoxV1720);
-            this.tabV1720.Controls.Add(this.lblV1720_V1720ID);
-            this.tabV1720.Controls.Add(this.label72);
-            this.tabV1720.Controls.Add(this.btn_V1720AdvancedGUI);
-            this.tabV1720.Controls.Add(this.btn_V1720LoadConfigFile);
-            this.tabV1720.Location = new System.Drawing.Point(4, 22);
-            this.tabV1720.Name = "tabV1720";
-            this.tabV1720.Size = new System.Drawing.Size(899, 502);
-            this.tabV1720.TabIndex = 11;
-            this.tabV1720.Text = "V1720";
-            this.tabV1720.UseVisualStyleBackColor = true;
-            // 
-            // btn_V1720ReadAllRegisters
-            // 
-            this.btn_V1720ReadAllRegisters.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btn_V1720ReadAllRegisters.BackColor = System.Drawing.Color.Coral;
-            this.btn_V1720ReadAllRegisters.Location = new System.Drawing.Point(16, 477);
-            this.btn_V1720ReadAllRegisters.Name = "btn_V1720ReadAllRegisters";
-            this.btn_V1720ReadAllRegisters.Size = new System.Drawing.Size(106, 20);
-            this.btn_V1720ReadAllRegisters.TabIndex = 104;
-            this.btn_V1720ReadAllRegisters.Text = "Read All Registers";
-            this.btn_V1720ReadAllRegisters.UseVisualStyleBackColor = false;
-            this.btn_V1720ReadAllRegisters.Visible = false;
-            this.btn_V1720ReadAllRegisters.Click += new System.EventHandler(this.btn_V1720ReadAllRegisters_Click);
-            // 
-            // chk_V1720PrintEventStat
-            // 
-            this.chk_V1720PrintEventStat.AutoSize = true;
-            this.chk_V1720PrintEventStat.Location = new System.Drawing.Point(292, 39);
-            this.chk_V1720PrintEventStat.Name = "chk_V1720PrintEventStat";
-            this.chk_V1720PrintEventStat.Size = new System.Drawing.Size(73, 17);
-            this.chk_V1720PrintEventStat.TabIndex = 103;
-            this.chk_V1720PrintEventStat.Text = "event stat";
-            this.chk_V1720PrintEventStat.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.chk_V1720PrintEventStat.UseVisualStyleBackColor = true;
-            // 
-            // chk_V1720PrintEventData
-            // 
-            this.chk_V1720PrintEventData.AutoSize = true;
-            this.chk_V1720PrintEventData.Location = new System.Drawing.Point(201, 39);
-            this.chk_V1720PrintEventData.Name = "chk_V1720PrintEventData";
-            this.chk_V1720PrintEventData.Size = new System.Drawing.Size(77, 17);
-            this.chk_V1720PrintEventData.TabIndex = 102;
-            this.chk_V1720PrintEventData.Text = "event data";
-            this.chk_V1720PrintEventData.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.chk_V1720PrintEventData.UseVisualStyleBackColor = true;
-            // 
-            // txt_V1720TakeNEvents
-            // 
-            this.txt_V1720TakeNEvents.Location = new System.Drawing.Point(145, 37);
-            this.txt_V1720TakeNEvents.Name = "txt_V1720TakeNEvents";
-            this.txt_V1720TakeNEvents.Size = new System.Drawing.Size(45, 20);
-            this.txt_V1720TakeNEvents.TabIndex = 97;
-            this.txt_V1720TakeNEvents.Text = "10";
-            // 
-            // btn_V1720TakeNEvents
-            // 
-            this.btn_V1720TakeNEvents.BackColor = System.Drawing.Color.Coral;
-            this.btn_V1720TakeNEvents.Location = new System.Drawing.Point(16, 37);
-            this.btn_V1720TakeNEvents.Name = "btn_V1720TakeNEvents";
-            this.btn_V1720TakeNEvents.Size = new System.Drawing.Size(130, 20);
-            this.btn_V1720TakeNEvents.TabIndex = 96;
-            this.btn_V1720TakeNEvents.Text = "START Take N Events";
-            this.btn_V1720TakeNEvents.UseVisualStyleBackColor = false;
-            this.btn_V1720TakeNEvents.Click += new System.EventHandler(this.btn_V1720TakeNEvents_Click);
-            // 
-            // richTextBoxV1720
-            // 
-            this.richTextBoxV1720.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.richTextBoxV1720.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.richTextBoxV1720.Location = new System.Drawing.Point(1, 63);
-            this.richTextBoxV1720.Name = "richTextBoxV1720";
-            this.richTextBoxV1720.Size = new System.Drawing.Size(455, 398);
-            this.richTextBoxV1720.TabIndex = 95;
-            this.richTextBoxV1720.Text = "";
-            // 
-            // lblV1720_V1720ID
-            // 
-            this.lblV1720_V1720ID.BackColor = System.Drawing.Color.White;
-            this.lblV1720_V1720ID.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.lblV1720_V1720ID.Location = new System.Drawing.Point(54, 16);
-            this.lblV1720_V1720ID.Name = "lblV1720_V1720ID";
-            this.lblV1720_V1720ID.Size = new System.Drawing.Size(30, 18);
-            this.lblV1720_V1720ID.TabIndex = 94;
-            // 
-            // label72
-            // 
-            this.label72.BackColor = System.Drawing.Color.Coral;
-            this.label72.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label72.Location = new System.Drawing.Point(16, 16);
-            this.label72.Name = "label72";
-            this.label72.Size = new System.Drawing.Size(40, 18);
-            this.label72.TabIndex = 93;
-            this.label72.Text = "V1720";
-            // 
-            // btn_V1720AdvancedGUI
-            // 
-            this.btn_V1720AdvancedGUI.BackColor = System.Drawing.Color.Coral;
-            this.btn_V1720AdvancedGUI.Location = new System.Drawing.Point(248, 16);
-            this.btn_V1720AdvancedGUI.Name = "btn_V1720AdvancedGUI";
-            this.btn_V1720AdvancedGUI.Size = new System.Drawing.Size(120, 20);
-            this.btn_V1720AdvancedGUI.TabIndex = 92;
-            this.btn_V1720AdvancedGUI.Text = "Show Advanced GUI";
-            this.btn_V1720AdvancedGUI.UseVisualStyleBackColor = false;
-            this.btn_V1720AdvancedGUI.Click += new System.EventHandler(this.btn_V1720AdvancedGUI_Click);
-            // 
-            // btn_V1720LoadConfigFile
-            // 
-            this.btn_V1720LoadConfigFile.BackColor = System.Drawing.Color.Coral;
-            this.btn_V1720LoadConfigFile.Location = new System.Drawing.Point(87, 16);
-            this.btn_V1720LoadConfigFile.Name = "btn_V1720LoadConfigFile";
-            this.btn_V1720LoadConfigFile.Size = new System.Drawing.Size(155, 20);
-            this.btn_V1720LoadConfigFile.TabIndex = 91;
-            this.btn_V1720LoadConfigFile.Text = "Load Configuration File";
-            this.btn_V1720LoadConfigFile.UseVisualStyleBackColor = false;
-            this.btn_V1720LoadConfigFile.Click += new System.EventHandler(this.btn_V1720LoadConfigFile_Click);
-            // 
             // errMain
             // 
             this.errMain.ContainerControl = this;
@@ -5105,14 +4627,15 @@ namespace SlowControl
             // treeView1
             // 
             this.treeView1.AccessibleDescription = "";
-            this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
             this.treeView1.ContextMenuStrip = this.contextMenuStrip1;
             this.treeView1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.treeView1.Location = new System.Drawing.Point(5, 27);
             this.treeView1.Name = "treeView1";
             this.treeView1.ShowNodeToolTips = true;
-            this.treeView1.Size = new System.Drawing.Size(200, 528);
+            this.treeView1.Size = new System.Drawing.Size(271, 533);
             this.treeView1.TabIndex = 1;
             this.treeView1.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView1_AfterSelect);
             // 
@@ -5122,19 +4645,19 @@ namespace SlowControl
             this.toolStripMenuItemUpdateStatusString,
             this.toolStripSeparator2});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(182, 32);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(186, 32);
             // 
             // toolStripMenuItemUpdateStatusString
             // 
             this.toolStripMenuItemUpdateStatusString.Name = "toolStripMenuItemUpdateStatusString";
-            this.toolStripMenuItemUpdateStatusString.Size = new System.Drawing.Size(181, 22);
+            this.toolStripMenuItemUpdateStatusString.Size = new System.Drawing.Size(185, 22);
             this.toolStripMenuItemUpdateStatusString.Text = "Update Status String";
             this.toolStripMenuItemUpdateStatusString.Click += new System.EventHandler(this.toolStripMenuItemUpdateStatusString_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(178, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(182, 6);
             // 
             // menuStrip1
             // 
@@ -5144,33 +4667,33 @@ namespace SlowControl
             this.actionsToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1130, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(689, 24);
             this.menuStrip1.TabIndex = 2;
             this.menuStrip1.Text = "menuStrip1";
             // 
             // toolStripMenuItemFile
             // 
             this.toolStripMenuItemFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.loadHardwareToolStripMenuItem,
+            this.LoadHardwareToolStripMenuItem,
             this.loadConfigXmlToolStripMenuItem,
             this.saveConfigXmlToolStripMenuItem,
-            this.writeXmlToHardwareToolStripMenuItem});
+            this.WriteXMLToHardwareToolStripMenuItem});
             this.toolStripMenuItemFile.Name = "toolStripMenuItemFile";
             this.toolStripMenuItemFile.ShowShortcutKeys = false;
-            this.toolStripMenuItemFile.Size = new System.Drawing.Size(37, 20);
+            this.toolStripMenuItemFile.Size = new System.Drawing.Size(35, 20);
             this.toolStripMenuItemFile.Text = "File";
             // 
-            // loadHardwareToolStripMenuItem
+            // LoadHardwareToolStripMenuItem
             // 
-            this.loadHardwareToolStripMenuItem.Name = "loadHardwareToolStripMenuItem";
-            this.loadHardwareToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
-            this.loadHardwareToolStripMenuItem.Text = "Load Hardware";
-            this.loadHardwareToolStripMenuItem.Click += new System.EventHandler(this.loadHardwareToolStripMenuItem_Click);
+            this.LoadHardwareToolStripMenuItem.Name = "LoadHardwareToolStripMenuItem";
+            this.LoadHardwareToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.LoadHardwareToolStripMenuItem.Text = "Load Hardware";
+            this.LoadHardwareToolStripMenuItem.Click += new System.EventHandler(this.LoadHardwareToolStripMenuItem_Click);
             // 
             // loadConfigXmlToolStripMenuItem
             // 
             this.loadConfigXmlToolStripMenuItem.Name = "loadConfigXmlToolStripMenuItem";
-            this.loadConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
+            this.loadConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
             this.loadConfigXmlToolStripMenuItem.Text = "Load Config Xml";
             this.loadConfigXmlToolStripMenuItem.Click += new System.EventHandler(this.loadConfigXmlToolStripMenuItem_Click);
             // 
@@ -5178,17 +4701,17 @@ namespace SlowControl
             // 
             this.saveConfigXmlToolStripMenuItem.Enabled = false;
             this.saveConfigXmlToolStripMenuItem.Name = "saveConfigXmlToolStripMenuItem";
-            this.saveConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
+            this.saveConfigXmlToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
             this.saveConfigXmlToolStripMenuItem.Text = "Save Config Xml";
             this.saveConfigXmlToolStripMenuItem.Click += new System.EventHandler(this.saveConfigXmlToolStripMenuItem_Click);
             // 
-            // writeXmlToHardwareToolStripMenuItem
+            // WriteXMLToHardwareToolStripMenuItem
             // 
-            this.writeXmlToHardwareToolStripMenuItem.Enabled = false;
-            this.writeXmlToHardwareToolStripMenuItem.Name = "writeXmlToHardwareToolStripMenuItem";
-            this.writeXmlToHardwareToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
-            this.writeXmlToHardwareToolStripMenuItem.Text = "Write Xml To Hardware";
-            this.writeXmlToHardwareToolStripMenuItem.Click += new System.EventHandler(this.writeXmlToHardwareToolStripMenuItem_Click);
+            this.WriteXMLToHardwareToolStripMenuItem.Enabled = false;
+            this.WriteXMLToHardwareToolStripMenuItem.Name = "WriteXMLToHardwareToolStripMenuItem";
+            this.WriteXMLToHardwareToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.WriteXMLToHardwareToolStripMenuItem.Text = "Write XML to Hardware";
+            this.WriteXMLToHardwareToolStripMenuItem.Click += new System.EventHandler(this.WriteXMLToHardwareToolStripMenuItem_Click);
             // 
             // showToolStripMenuItem
             // 
@@ -5200,50 +4723,47 @@ namespace SlowControl
             this.bluePathsToolStripMenuItem,
             this.greenPathsToolStripMenuItem});
             this.showToolStripMenuItem.Name = "showToolStripMenuItem";
-            this.showToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
+            this.showToolStripMenuItem.Size = new System.Drawing.Size(45, 20);
             this.showToolStripMenuItem.Text = "Show";
             // 
             // expandAllToolStripMenuItem
             // 
             this.expandAllToolStripMenuItem.Name = "expandAllToolStripMenuItem";
-            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.expandAllToolStripMenuItem.Text = "Expand All";
             this.expandAllToolStripMenuItem.Click += new System.EventHandler(this.expandAllToolStripMenuItem_Click);
             // 
             // collapseAllToolStripMenuItem
             // 
             this.collapseAllToolStripMenuItem.Name = "collapseAllToolStripMenuItem";
-            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.collapseAllToolStripMenuItem.Text = "Collapse All";
             this.collapseAllToolStripMenuItem.Click += new System.EventHandler(this.collapseAllToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(141, 6);
             // 
             // redPathsToolStripMenuItem
             // 
             this.redPathsToolStripMenuItem.Name = "redPathsToolStripMenuItem";
-            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.redPathsToolStripMenuItem.Text = "Red paths";
-            this.redPathsToolStripMenuItem.Visible = false;
             this.redPathsToolStripMenuItem.Click += new System.EventHandler(this.redPathsToolStripMenuItem_Click);
             // 
             // bluePathsToolStripMenuItem
             // 
             this.bluePathsToolStripMenuItem.Name = "bluePathsToolStripMenuItem";
-            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.bluePathsToolStripMenuItem.Text = "Blue paths";
-            this.bluePathsToolStripMenuItem.Visible = false;
             this.bluePathsToolStripMenuItem.Click += new System.EventHandler(this.bluePathsToolStripMenuItem_Click);
             // 
             // greenPathsToolStripMenuItem
             // 
             this.greenPathsToolStripMenuItem.Name = "greenPathsToolStripMenuItem";
-            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.greenPathsToolStripMenuItem.Text = "Green paths";
-            this.greenPathsToolStripMenuItem.Visible = false;
             this.greenPathsToolStripMenuItem.Click += new System.EventHandler(this.greenPathsToolStripMenuItem_Click);
             // 
             // actionsToolStripMenuItem
@@ -5254,7 +4774,7 @@ namespace SlowControl
             this.monitorVoltagesToolStripMenuItem,
             this.lightInjectionToolStripMenuItem});
             this.actionsToolStripMenuItem.Name = "actionsToolStripMenuItem";
-            this.actionsToolStripMenuItem.Size = new System.Drawing.Size(59, 20);
+            this.actionsToolStripMenuItem.Size = new System.Drawing.Size(54, 20);
             this.actionsToolStripMenuItem.Text = "Actions";
             // 
             // readVoltagesToolStripMenuItem
@@ -5293,9 +4813,9 @@ namespace SlowControl
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.prgStatus,
             this.lblStatus});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 558);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 566);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(1130, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(689, 22);
             this.statusStrip1.TabIndex = 3;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -5307,7 +4827,7 @@ namespace SlowControl
             // lblStatus
             // 
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(1013, 17);
+            this.lblStatus.Size = new System.Drawing.Size(572, 17);
             this.lblStatus.Spring = true;
             this.lblStatus.Text = "lblStatus";
             // 
@@ -5323,30 +4843,19 @@ namespace SlowControl
             // 
             this.timerMonitorHV.Tick += new System.EventHandler(this.timerMonitorHV_Tick);
             // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(10, 119);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(89, 24);
-            this.button1.TabIndex = 114;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
             // frmSlowControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1130, 580);
+            this.ClientSize = new System.Drawing.Size(689, 588);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.treeView1);
-            this.Controls.Add(this.menuStrip1);
             this.Controls.Add(this.tabControl1);
+            this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "frmSlowControl";
             this.Text = "Minerva Slow Control";
             this.Load += new System.EventHandler(this.frmSlowControl_Load);
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.frmSlowControl_FormClosing);
             this.tabControl1.ResumeLayout(false);
             this.tabDescription.ResumeLayout(false);
             this.tabVME.ResumeLayout(false);
@@ -5379,8 +4888,6 @@ namespace SlowControl
             this.groupBoxCROC_TimingSetup.PerformLayout();
             this.groupBoxCROC_FLASH.ResumeLayout(false);
             this.tabCH.ResumeLayout(false);
-            this.groupBoxCH_DEBUG.ResumeLayout(false);
-            this.groupBoxCH_DEBUG.PerformLayout();
             this.groupBoxCH_Frame.ResumeLayout(false);
             this.groupBoxCH_Frame.PerformLayout();
             this.groupBoxCH_StatusRegister.ResumeLayout(false);
@@ -5398,8 +4905,6 @@ namespace SlowControl
             this.groupBoxLIBox_RS232Commands.ResumeLayout(false);
             this.groupBoxLIBox_RS232Settings.ResumeLayout(false);
             this.groupBoxLIBox_RS232Settings.PerformLayout();
-            this.tabV1720.ResumeLayout(false);
-            this.tabV1720.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errMain)).EndInit();
             this.contextMenuStrip1.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
@@ -5421,7 +4926,7 @@ namespace SlowControl
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemFile;
         private System.Windows.Forms.ToolStripMenuItem loadConfigXmlToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveConfigXmlToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem loadHardwareToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem LoadHardwareToolStripMenuItem;
         private System.Windows.Forms.TabPage tabFLASHPages;
         private System.Windows.Forms.TabPage tabDescription;
         private System.Windows.Forms.RichTextBox richTextBoxDescription;
@@ -5452,6 +4957,7 @@ namespace SlowControl
         private System.Windows.Forms.Button btn_TRIPRegRead;
         private System.Windows.Forms.Button btn_TRIPRegWrite;
         private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.ToolStripMenuItem WriteXMLToHardwareToolStripMenuItem;
         private System.Windows.Forms.TabPage tabFPGARegs;
         private System.Windows.Forms.Button btn_FPGAAdvancedGUI;
         private System.Windows.Forms.Label lblFPGA_CROCID;
@@ -5462,7 +4968,9 @@ namespace SlowControl
         private System.Windows.Forms.Button btn_FPGARegRead;
         private System.Windows.Forms.Button btn_FPGARegWrite;
         private System.Windows.Forms.Label label1;
+        private MinervaUserControls.FPGADevRegControl fpgaDevRegControl1;
         private System.Windows.Forms.TabPage tabReadHV;
+        private System.Windows.Forms.RichTextBox richTextBoxHVRead;
         private System.Windows.Forms.Button btnReadHV;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private System.Windows.Forms.ToolStripMenuItem actionsToolStripMenuItem;
@@ -5800,45 +5308,6 @@ namespace SlowControl
         private System.Windows.Forms.Button btn_CRIMTimingGateTimeRead;
         private System.Windows.Forms.Label label68;
         private System.Windows.Forms.Label lbl_CRIMTimingGateTimeRead;
-        private System.Windows.Forms.ToolStripMenuItem writeXmlToHardwareToolStripMenuItem;
-        private System.Windows.Forms.TabPage tabV1720;
-        private System.Windows.Forms.Label lblV1720_V1720ID;
-        private System.Windows.Forms.Label label72;
-        private System.Windows.Forms.Button btn_V1720AdvancedGUI;
-        private System.Windows.Forms.Button btn_V1720LoadConfigFile;
-        private System.Windows.Forms.RichTextBox richTextBoxV1720;
-        private System.Windows.Forms.TextBox txt_V1720TakeNEvents;
-        private System.Windows.Forms.Button btn_V1720TakeNEvents;
-        private System.Windows.Forms.CheckBox chk_V1720PrintEventStat;
-        private System.Windows.Forms.CheckBox chk_V1720PrintEventData;
-        private System.Windows.Forms.Button btn_V1720ReadAllRegisters;
-        private System.Windows.Forms.GroupBox groupBoxCH_DEBUG;
-        private System.Windows.Forms.Button btn_CHDebugInitializeCROCs;
-        private System.Windows.Forms.TextBox txt_CHDebugNTests;
-        private System.Windows.Forms.Label label73;
-        private System.Windows.Forms.RichTextBox rtb_CHDebug;
-        private System.Windows.Forms.Button btn_CHDebugFillDPM;
-        private System.Windows.Forms.TextBox txt_CHDebugFillDPMPattern;
-        private System.Windows.Forms.TextBox txt_CHDebugFillDPMPRepeat;
-        private System.Windows.Forms.Label label76;
-        private System.Windows.Forms.Label label69;
-        private System.Windows.Forms.TextBox txt_CHDebugFrameIDByte1;
-        private System.Windows.Forms.Label label77;
-        private System.Windows.Forms.Label label85;
-        private System.Windows.Forms.Label label84;
-        private System.Windows.Forms.Label label81;
-        private System.Windows.Forms.Label label80;
-        private System.Windows.Forms.TextBox txt_CHDebugFrameStatusID;
-        private System.Windows.Forms.TextBox txt_CHDebugFrameIDByte0;
-        private System.Windows.Forms.ComboBox cmb_CHDebugBroadcastCMD;
-        private System.Windows.Forms.ComboBox cmb_CHDebugFEID;
-        private System.Windows.Forms.ComboBox cmb_CHDebugFunctionID;
-        private System.Windows.Forms.ComboBox cmb_CHDebugDeviceID;
-        private System.Windows.Forms.ComboBox cmb_CHDebugDirection;
-        private System.Windows.Forms.Button btn_CHDebugUpdatePattern;
-        private System.Windows.Forms.RichTextBox richTextBoxHVRead;
-        private MinervaUserControls.FPGADevRegControl fpgaDevRegControl1;
-        private System.Windows.Forms.Button button1;
 
     }
 }

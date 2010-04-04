@@ -4,7 +4,6 @@
 #include "controller.h" 
 #include "adctdc.h" // This class isn't included in the contoller, but we need it for reads & writes.
 #include "acquire.h" 
-#include "log4cppHeaders.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
@@ -46,8 +45,6 @@ typedef enum TriggerType {
 	MonteCarlo      = 0x0080  // Obviously, the DAQ should not write this type, ever!
 };
 
-log4cpp::Category& acqData = log4cpp::Category::getInstance(std::string("acqData"));
-
 /*! \class acquire_data
  *  \brief The class containing all methods necessary for 
  *  requesting and manipulating data from teh MINERvA detector.
@@ -80,21 +77,12 @@ class acquire_data {
 		std::ofstream frame_acquire_log; /*!< log file streamer for timing output */
 		std::string et_filename; /*!< A string object for the Event Transfer output filename */
 		static const int numberOfHits;
-		static const unsigned int timeOutSec; /*!< How long we will wait for a beam spill before moving on... */
-		log4cpp::Appender* acqAppender;
-		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */
 
 	public:
-		/*! Specialized constructor. */
-		acquire_data(std::string fn, log4cpp::Appender* appender, log4cpp::Priority::Value priority, 
-			int hwInit=0) {
-#if TIME_ME
+		/*! Specialized constructor which takes a string for the et filesystem. */
+		acquire_data(std::string fn) {
 			frame_acquire_log.open("frame_data_time_log.csv"); 
-#endif
 			et_filename = fn;
-			acqAppender = appender;
-			acqData.setPriority(priority);
-			hwInitLevel = hwInit;
 		};
 		/*! Specialized destructor. */
 		~acquire_data() {
@@ -116,43 +104,40 @@ class acquire_data {
 		/*! Function to initialize a CRIM at the given VME address w/ index & running mode */
 		void InitializeCrim(int address, int index, RunningModes runningMode); 
 
-		/*! Function to initialize a CROC at the given VME address; requires an index. 
-		    Additionally, we pass the number of FEB's to search for on each channel.  
-		    (These are passed this way for formatting convenience.)  11 is the default 
-		    (instead of 15) because 11 is the maximum number we will install on a chain.  */
-		void InitializeCroc(int address, int crocNo, int nFEBchain0=11, int nFEBchain1=11, int nFEBchain2=11, int nFEBchain3=11); 
+		/*! Function to initialize a CROC at the given VME address; requires an identifier */
+		void InitializeCroc(int address, int a); 
 
-		/*! Function to set up the interrupt handler on CRIM index */
-		int SetupIRQ(int index);
+		/*! Function to set up the interrupt handler */
+		int SetupIRQ();
 
-		/*! Function to re-enable the interrupt handler for CRIM index */
-		int ResetGlobalIRQEnable(int index);
+		/*! Function to re-enable the interrupt handler */
+		int ResetGlobalIRQEnable();
 
-		/*! Function to build a list of FEB objects for use in data acquisition. */
-		int BuildFEBList(int chainID, int crocNo, int nFEBs=11);
+		/*! Function to build a list of FEB objects for use in data acquisition */
+		int BuildFEBList(int i, int j);
 
-		/*! Write to the CROC Fast Command register. */
-		// Passing an array like this is a bit old fashioned, but there it is...
-		int WriteCROCFastCommand(int id, unsigned char command[]);
+		/*! Function to initialize TRiP-t chips on FEB's */
+		int InitializeTrips(feb *tmpFEB, croc *tmpCroc, channels *tmpChan);
 
-		/*! Reset the CRIM sequencer latch (only needed in Cosmic mode) */
-		int ResetCRIMSequencerLatch(int id);
+		/*! Function to set the high voltage on a given FEB */
+		int SetHV(feb *febTrial, croc *crocTrial, channels *channelTrial, int newHV, int newPulse, int hvEnable);
+
+		/*! Function to monitor the high voltage on a given FEB */
+		int MonitorHV(feb *febTrial, croc *tmpCroc, channels *tmpChan);
 
 		/*! A templated function for sending messages from a generic "device" */
-		template <class X> int SendMessage(X *device, croc *crocTrial, channels *channelTrial, bool singleton);
+		template <class X> int SendMessage(X *device, croc *crocTrial, channels *channelTrial,bool singleton);
 
 		/*! A templated function for receiving messages from a generic "device" */
 		template <class X> int ReceiveMessage(X *device, croc *crocTrial, channels *channelTrial);
 
 		/*! A templated class for filling the DPM on each CROC channel, should that be desired */
-		template <class X> int FillDPM(croc *crocTrial, channels *channelTrial, X *frame, 
+		template <class X> bool FillDPM(croc *crocTrial, channels *channelTrial, X *frame, 
 			int outgoing_length, int incoming_length);
 
-		/*! Function which executes the acquisition sequence for a given FEB.
-		    We pass a boolean flag and hit depth integer to control the "readout level" for 
-		    each FEB. */
+		/*! Function which executes the acquisition sequence for a given FEB */
 		bool TakeAllData(feb *febTrial, channels *channelTrial, croc *crocTrial, event_handler *evt, int thread, 
-			et_att_id  attach, et_sys_id  sys_id, bool readFPGA=true, int nReadoutADC=8);
+			et_att_id  attach, et_sys_id  sys_id);
 
 		/*! Function which fills an event structure for further data handling by the event builder; templated */
 		template <class X> void FillEventStructure(event_handler *evt, int bank, X *frame, 
@@ -173,20 +158,17 @@ class acquire_data {
 		/*! Function to reset a CROC channel's DPM */
 		bool ResetDPM(croc*, channels*);
 
-		/*!  Function which runs the "trigger" (only executes a VME command for "OneShot"). */
-		int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
+		/*!  Function which sets up a designated "trigger" */
+		void TriggerDAQ(unsigned short int a);
 
 		/*! Function which waits for the interrupt handler to raise an interrupt */
-		int WaitOnIRQ();
+		void WaitOnIRQ();
 
 		/*! Function which acknowledges the interrupt and resets the interrupt handler */
-		int AcknowledgeIRQ();
+		void AcknowledgeIRQ();
 
 		/*! Function which sends data to the event builder via ET */
 		void ContactEventBuilder(event_handler *evt,int thread, et_att_id  attach, et_sys_id  sys_id);
-
-		/*! Function that gets the MINOS SGATE value from the CRIM registers.  Check the "master" CRIM. */
-		unsigned int GetMINOSSGATE();
 };
 
 #endif

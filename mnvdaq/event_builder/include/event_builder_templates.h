@@ -23,14 +23,13 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
 		std::cout << "Should not have passed DAQ block to BuildBlockHeader!" << std::endl;
 		exit (-1);
 	} else {
-#if DEBUG_BANKHEADER
+#if DEBUG_VERBOSE
 		std::cout << "  ----------BuildBankHeader----------" << std::endl;
 		std::cout << "  crateID                       : " << evt->feb_info[1] << std::endl;
 		std::cout << "  crocID                        : " << evt->feb_info[2] << std::endl;
 		std::cout << "  chanID                        : " << evt->feb_info[3] << std::endl;
 		std::cout << "  bank                          : " << evt->feb_info[4] << std::endl;
 		std::cout << "  feb_number (from frame header): " << feb_number << std::endl;
-		std::cout << "  feb_number (from feb_info)    : " << evt->feb_info[6] << std::endl;
 		std::cout << "  firmware                      : " << evt->feb_info[7] << std::endl;
 		std::cout << "  hit                           : " << evt->feb_info[8] << std::endl;
 		std::cout << "  length                        : " << length << std::endl;
