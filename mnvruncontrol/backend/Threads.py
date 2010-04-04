@@ -235,10 +235,10 @@ class SocketThread(threading.Thread):
 		
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	
-#		try:
-		self.socket.bind(("", Configuration.params["Socket setup"]["masterPort"]))		# allow any incoming connections on the right port number
-#		except socket.error:
-#			raise SocketAlreadyBoundException
+		try:
+			self.socket.bind(("", Configuration.params["Socket setup"]["masterPort"]))		# allow any incoming connections on the right port number
+		except socket.error:
+			raise SocketAlreadyBoundException
 
 		self.socket.setblocking(0)			# we want to be able to update the display, so we can't wait on a connection
 		self.socket.listen(3)				# we might have more than one node contact us simultaneously, so allow multiple backlogged connections

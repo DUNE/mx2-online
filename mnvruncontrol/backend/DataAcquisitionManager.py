@@ -92,6 +92,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		try:
 			self.socketThread = Threads.SocketThread(self.logger)
 		except Threads.SocketAlreadyBoundException:
+			self.socketThread = None
 			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Can't bind a local listening socket.  Synchronization between readout nodes and the run control will be impossible.  Check that there isn't another run control process running on this machine.", title="Can't bind local socket") )
 			
 		self.logger.info("Started master node listener on port %d." % Configuration.params["Socket setup"]["masterPort"])
@@ -106,8 +107,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.Bind(Events.EVT_STOP_RUNNING, self.StopDataAcquisition)
 		
 	def Cleanup(self):
-		self.socketThread.Abort()
-		self.socketThread.join()
+		if self.socketThread is not None:
+			self.socketThread.Abort()
+			self.socketThread.join()
 		
 	##########################################
 	# Global starters and stoppers
@@ -166,7 +168,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					success = node.daq_stop()
 				except ReadoutNode.ReadoutNodeNoDAQRunningException, ReadoutNode.ReadoutNodeNoConnectionException:		# the DAQ has already quit or is unreachable
 					needsManualStop = True				# if so, we'll never get the "DAQ quit" event from the SocketThread.
-			if needsManualStop:
+			if not success or needsManualStop:
 				wx.PostEvent(self, Events.EndSubrunEvent())
 		for node in self.readoutNodes:
 			node.release_lock()										
@@ -737,12 +739,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 	def HandleSocketMessage(self, evt):
 		""" Decides what to do with messages received from remote nodes. """
 		#addressee=matches.group("addressee"), sender=matches.group("sender"), message=matches.group("message")
-		
-		# first of all, messages that arrive while we're not runing
-		# are irrelevant.
-		if not self.running:
-			return
-		
+				
 		# need a lock to prevent race conditions (for example, a second node sending a "daq_finished" event
 		# while the "daq_finished" event for a previous node is still being processed)
 		self.logger.debug("Acquiring message handler lock...")
@@ -784,6 +781,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 					self.logger.debug("    ==> %s node reports it's done taking data." % node.name)
 					node.completed = True
 					node.shutting_down = False
+					
+					self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", self)
 					
 				# we DON'T force the other nodes to shut down because
 				# the nodes depend on each other for gate synchronization
