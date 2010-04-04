@@ -117,7 +117,7 @@ class HVConfirmationFrame(wx.Frame):
 					break
 					
 			if period < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
-				self.pmtlist.SetItemBackgroundColour(index, wx.Color("blue"))
+				self.pmtlist.SetItemBackgroundColour(index, wx.NamedColour("blue"))
 			
 			index = self.pmtlist.GetNextItem(index)
 			
