@@ -21,7 +21,7 @@ from mnvruncontrol.backend.RemoteNode import RemoteNode
 
 class ReadoutNode(RemoteNode):
 	def __init__(self, name, address):
-		RemoteNode.__init__(self)
+		RemoteNode.__init__(self, name, address)
 		
 		self.ValidRequests += SocketRequests.ReadoutRequests
 		
@@ -86,7 +86,7 @@ class ReadoutNode(RemoteNode):
 		elif response == "1":
 			return False
 		elif response == "2":
-			raise ReadoutNodeException("The DAQ slave process is not currently running, so it can't be stopped.")
+			raise ReadoutNodeNoDAQRunningException("The DAQ slave process is not currently running, so it can't be stopped.")
 		else:
 			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
 
@@ -136,6 +136,9 @@ class ReadoutNode(RemoteNode):
 		
 		
 class ReadoutNodeException(Exception):
+	pass
+	
+class ReadoutNodeNoDAQRunningException(Exception):
 	pass
 
 class ReadoutNodeBadRequestException(Exception):
