@@ -20,7 +20,10 @@
    Address all complaints to the management.
 """
 
+import re
 import uuid
+import time
+import socket
 
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import MetaData
@@ -29,7 +32,7 @@ from mnvruncontrol.configuration import Configuration
 
 class RemoteNode:
 	def __init__(self, name, address):
-		self.id = uuid.uuid4()		# create a random unique identifier for this instance.
+		self.id = str(uuid.uuid4())		# create a random unique identifier for this instance.
 	
 		self.socket = None
 		self.name = name
@@ -41,6 +44,7 @@ class RemoteNode:
 		
 	def request(self, request):
 		is_valid_request = False	
+		is_global_request = False
 		for valid_request in self.ValidRequests:
 			if re.match(valid_request, request) is not None:
 				is_valid_request = True
@@ -77,10 +81,14 @@ class RemoteNode:
 					response += data
 
 				success = True
-			except (socket.error, socket.timeout), e:
+			except (socket.error, socket.timeout) as e:
+#				print "socket error..."
 #				print e
 				tries += 1
 				continue
+#			except:
+#				print "a different error..."
+#				#print e
 			finally:
 				self.socket.close()
 				
@@ -117,7 +125,7 @@ class RemoteNode:
 			return True
 		
 		try:
-			response = self.request("get_lock %s %s!" % (self.name, self.id))
+			response = self.request("get_lock %s!" % self.name)
 		except RemoteNodeNoConnectionException:
 			return False
 		
@@ -133,12 +141,16 @@ class RemoteNode:
 			return True
 		
 		try:
-			response = self.request("release_lock %s!" % self.id)
+			response = self.request("release_lock!")
 		except RemoteNodeNoConnectionException:
 			return False
 		
 		self.own_lock = not(response == "1")
 		return not(self.own_lock)
+
+
+class RemoteNodeBadRequestException(Exception):
+	pass
 
 class RemoteNodeNotConfiguredException(Exception):
 	pass
