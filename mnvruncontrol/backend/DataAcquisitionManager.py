@@ -15,6 +15,7 @@ import signal
 import errno
 import datetime
 import time
+import threading
 import logging
 import logging.handlers
 
@@ -62,6 +63,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		self.LIBox = None					# this will be set in StartDataAcquisition
 		self.readoutNodes = None				# will be set in RunControl.GetConfig()
+		self.monitorNodes = None				# ditto.
 
 		# configuration stuff
 		self.etSystemFileLocation = Configuration.params["Front end"]["etSystemFileLocation"]
@@ -71,7 +73,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.logger = logging.getLogger("rc_dispatcher")
 		self.logger.setLevel(logging.DEBUG)
 		self.filehandler = logging.handlers.RotatingFileHandler(Configuration.params["Front end"]["master_logfileName"], maxBytes=204800, backupCount=5)
-		self.filehandler.setLevel(logging.INFO)
+		self.filehandler.setLevel(logging.DEBUG)
 		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
 		self.filehandler.setFormatter(self.formatter)
 		self.logger.addHandler(self.filehandler)
@@ -87,7 +89,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.running = False
 		self.can_shutdown = False		# used in between subruns to prevent shutting down twice for different reasons
 
-		self.socketThread = Threads.SocketThread()
+		try:
+			self.socketThread = Threads.SocketThread(self.logger)
+		except Threads.SocketAlreadyBoundException:
+			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Can't bind a local listening socket.  Synchronization between readout nodes and the run control will be impossible.  Check that there isn't another run control process running on this machine.", title="Can't bind local socket") )
+			
 		self.logger.info("Started master node listener on port %d." % Configuration.params["Socket setup"]["masterPort"])
 		self.messageHandlerLock = threading.Lock()
 
@@ -98,6 +104,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.Bind(Events.EVT_THREAD_READY, self.StartNextThread)
 		self.Bind(Events.EVT_END_SUBRUN, self.EndSubrun)		# if the DAQ process quits, this subrun is over
 		self.Bind(Events.EVT_STOP_RUNNING, self.StopDataAcquisition)
+		
+	def Cleanup(self):
+		self.socketThread.Abort()
+		self.socketThread.join()
 		
 	##########################################
 	# Global starters and stoppers
@@ -110,7 +120,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.detector == None or self.run == None or self.first_subrun == None or self.febs == None:
 			raise ValueError("Run series is improperly configured.")
 
-		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Front end"]["LIBoxEnabled"]), wait_response=Configuration.params["Front end"]["LIBoxWaitForResponse"])
+		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
 		
 		# try to get a lock on each of the readout nodes.
 		failed_connection = None
@@ -122,7 +132,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				break
 		
 		if failed_connection:
-			wx.PostEvent(self.main_window, Events.ErrorMsg(text="Cannot get control of dispatcher on the " + failed_connection + " readout node.  Check to make sure that the readout dispatcher is started on that machine and that there are no other run control processes connected to it.", title="No lock on " + failed_connection + " readout node") )
+			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Cannot get control of dispatcher on the " + failed_connection + " readout node.  Check to make sure that the readout dispatcher is started on that machine and that there are no other run control processes connected to it.", title="No lock on " + failed_connection + " readout node") )
 			return
 			
 		# need to make sure all the tasks are marked "not yet completed"
@@ -137,22 +147,32 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.StartNextSubrun()
 		
 	def StopDataAcquisition(self, evt=None):
+		""" Stop data acquisition altogether. """
 		self.running = False
+		self.subrun = 0
 
 		self.logger.info("Stopping data acquisition sequence...")
 
-		# the run will need a manual stop if the readout nodes can't be properly contacted.
-		needsManualStop = False
-		for node in self.readoutNodes:
-			try:
-				success = node.daq_stop()
-			except ReadoutNode.ReadoutNodeException, ReadoutNode.ReadoutNodeNoConnectionException:		# the DAQ has already quit or is unreachable
-				needsManualStop = True				# if so, we'll never get the "DAQ quit" event from the SocketThread.
-		if needsManualStop:
-			wx.PostEvent(self, Events.EndSubrunEvent())
-
+		# this method can be initiated either from the main GUI
+		# or by EndSubrun() on the last subrun of the series.
+		# in the latter case, the event contains an attribute
+		# 'allclear', which signifies that we don't need to
+		# do any more checking on the readout nodes.
+		if not( evt is not None and hasattr(evt, "allclear") ):
+			# the run will need a manual stop if the readout nodes can't be properly contacted.
+			needsManualStop = False
+			for node in self.readoutNodes:
+				try:
+					success = node.daq_stop()
+				except ReadoutNode.ReadoutNodeNoDAQRunningException, ReadoutNode.ReadoutNodeNoConnectionException:		# the DAQ has already quit or is unreachable
+					needsManualStop = True				# if so, we'll never get the "DAQ quit" event from the SocketThread.
+			if needsManualStop:
+				wx.PostEvent(self, Events.EndSubrunEvent())
 		for node in self.readoutNodes:
 			node.release_lock()										
+
+		wx.PostEvent(self.main_window, Events.StopRunningEvent())		# tell the main window that we're done here.
+
 
 	##########################################
 	# Subrun starters and stoppers
@@ -188,6 +208,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			#  to settle down).  in that case we don't want to run the
 			# startup tasks more than once.
 			if not task["completed"]:
+				self.logger.debug("Starting task: %s" % task["message"])
 				# notify the main window which step we're on so that the user has some feedback.
 				wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\n" + task["message"], progress=(self.startup_step, self.num_startup_steps)) )
 				
@@ -219,14 +240,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 				if status == False:
 					quitting = True
 					break
+			else:
+				self.logger.debug("Skipping task (already done): %s" % task["message"])
 			self.startup_step += 1
 			
 		# if running needs to end, there's some cleanup we need to do first.
 		if quitting:
 			self.logger.warning("Subrun " + str(self.first_subrun + self.subrun) + " aborted.")
-			self.running = False
-			self.subrun = 0
-			wx.PostEvent(self.main_window, Events.StopRunningEvent())		# tell the main window that we're done here.
+			wx.PostEvent(self, Events.StopRunningEvent(allclear=True))		# tell the main window that we're done here.
 			return
 
 		# all the startup tasks were successful.
@@ -283,7 +304,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					success = success and node.daq_stop()
 				except ReadoutNode.ReadoutNodeNoConnectionException:
 					success = False
-				except ReadoutNode.ReadoutNodeException:		# raised if the DAQ is not running on the node
+				except ReadoutNode.ReadoutNodeNoDAQRunningException:		# raised if the DAQ is not running on the node.  not a big deal.
 					pass
 				
 				wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=False) )
@@ -323,7 +344,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping listeners...", progress=(step, numsteps)) )
 		for node in self.readoutNodes:
-			self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Running...")
+			self.socketThread.UnsubscribeAll(node.id)
 
 		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finished.")
 
@@ -337,15 +358,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun completed.", progress=(numsteps, numsteps)) )
 		wx.PostEvent( self.main_window, Events.SubrunOverEvent(run=self.run, subrun=self.first_subrun + self.subrun) )
 
-		if self.subrun >= len(self.runseries.Runs):		# no more runs left!  need to bail.
-			self.running = False
-			self.subrun = 0
-
-		if self.running:
+		if self.running and self.subrun < len(self.runseries.Runs):
 			wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
 		else:
 			self.logger.info("Data acquisition finished.")
-			wx.PostEvent(self.main_window, Events.StopRunningEvent())
+			wx.PostEvent(self, Events.StopRunningEvent(allclear=True))
 		
 
 	##########################################
@@ -403,6 +420,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		for node in self.readoutNodes:
 			on = node.ping()
 			ok = ok and on
+			node.configured = False
+			node.completed = False
+			node.shutting_down = False
 			wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=on) )
 				
 		if not ok:
@@ -424,32 +444,43 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# state" version, in which case the user doesn't want
 		# to use any configuration file at all (so that custom
 		# configurations via the slow control can be used for testing).
+		self.logger.debug("  HW config check.")
 		if self.runinfo.hwConfig != MetaData.HardwareConfigurations["Current state"] and (self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig):
+			# NOTE: DON'T consolidate this loop together with the next one.
+			# the subscriptions need to ALL be booked before any of the nodes
+			# gets a "HW configure" command.  otherwise there will be race conditions.
 			for node in self.readoutNodes:
+				self.logger.info("  Booking a subscription for 'HW ready' and 'HW error' messages from readout nodes...")
+				for node in self.readoutNodes:
+					self.socketThread.Subscribe(node.id, node.name, "hw_ready", callback=self, waiting=True, notice="Configuring HW...")
+					self.socketThread.Subscribe(node.id, node.name, "hw_error", callback=self)
+					self.logger.debug("    ... subscribed the %s node." % node.name)
+			
+			for node in self.readoutNodes:
+				self.logger.info("  Configuring the %s node..." % node.name)
 				success = False
 				tries = 0
 				while not success and tries < Configuration.params["Readout nodes"]["SCHWwriteAttempts"]:
 					try:
 						success = node.sc_loadHWfile(self.runinfo.hwConfig)
 					except ReadoutNode.ReadoutNodeNoConnectionException:
+						self.logger.info("    ... no connection.")
+						if tries < Configuration.params["Readout nodes"]["SCHWwriteAttempts"]:
+							self.logger.info("   ... will make another attempt in %ds." % Configuration.params["Socket setup"]["connAttemptInterval"])
 						success = False
 					tries += 1
-					time.sleep(Configuration.params["Socket setup"]["connAttemptInterval"]
+					time.sleep(Configuration.params["Socket setup"]["connAttemptInterval"])
 					
 				if not success:
 					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Could not configure the hardware for the " + node.name + " readout node.  This subrun will be stopped.", title="Hardware configuration problem") )
 					self.logger.error("Could not set the hardware for the " + node.name + " readout node.  This subrun will be aborted.")
 					# need to stop the run startup sequence.
 					return False
-				else:
-					self.logger.info("  Booking a subscription for 'HW ready' and 'HW error' messages from readout nodes...")
-					for node in self.readoutNodes:
-						self.socketThread.Subscribe(node.id, node.name, "hw_ready", callback=self, waiting=True, notice="Configuring HW...")
-						self.socketThread.Subscribe(node.id, node.name, "hw_error", callback=self)
-						self.logger.info("    ... subscribed the %s node." % node.name)
-
+		else:
+			self.logger.info("No HW configuration necessary.")
+			return True
 		
-		# need to wait on HW init (it takes a while).  don't proceed to next step yet.
+		# need to wait on HW init (it can take a while).  don't proceed to next step yet.
 		return None
 		
 	def LIBoxSetup(self):
@@ -489,6 +520,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 		If not, control is passed to a window that asks
 		the user for input.
 		"""
+		# first cancel the 'HW ready/error' subscriptions.  if we got this far, we've received them all.
+		for node in self.readoutNodes:
+			self.socketThread.Unsubscribe(node.id, node.name, "hw_ready", self)
+			self.socketThread.Unsubscribe(node.id, node.name, "hw_error", self)
+		
 		# we don't need to do the check unless this subrun is the first one of its type
 		if self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig:
 			thresholds = sorted(Configuration.params["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
@@ -609,53 +645,63 @@ class DataAcquisitionManager(wx.EvtHandler):
 			except:
 				self.logger.exception("Online monitoring couldn't be started on node %s.  Ignoring." % name)
 				continue
-		    
+
+		# DON'T consolidate this loop together with the next one.
+		# ALL the subscriptions need to be booked before *any* of
+		# the readout nodes is told to start (in case there's a problem
+		# and it returns immediately).		    
+		self.logger.info("  Booking subscriptions for 'DAQ finished' messages from readout nodes...")
 		for node in self.readoutNodes:
-			errmsg = None
-			errtitle = None
-			try:
-				# for non-LI run modes, these values are irrelevant, so we set them to some well-defined defaults.
-				if not (self.runinfo.runMode in (MetaData.RunningModes["Light injection", MetaData.HASH], MetaData.RunningModes["Mixed beam/LI", MetaData.HASH])):
-					self.runinfo.ledLevel = MetaData.LILevels["Zero PE"]
-					self.runinfo.ledGroup = MetaData.LEDGroups["ABCD", MetaData.HASH]
+			self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Running...")
+			self.logger.info("    ... subscribed the %s node." % node.name)
 
-#				print self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup
+		# we use a lock to block message reading until all nodes have been initially contacted.
+		# this will ensure that even if one readout node dies right away, things still happen
+		# in the proper sequence.
+		# the 'with' statement ensures that the lock is always released when this block is exited,
+		# even if there's an uncaught exception.
+		with self.messageHandlerLock:
+			for node in self.readoutNodes:
+				errmsg = None
+				errtitle = None
+
+				try:
+					# for non-LI run modes, these values are irrelevant, so we set them to some well-defined defaults.
+					if not (self.runinfo.runMode in (MetaData.RunningModes["Light injection", MetaData.HASH], MetaData.RunningModes["Mixed beam/LI", MetaData.HASH])):
+						self.runinfo.ledLevel = MetaData.LILevels["Zero PE"]
+						self.runinfo.ledGroup = MetaData.LEDGroups["ABCD", MetaData.HASH]
+
+	#				print self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup
 					
-				success = node.daq_start(self.ET_filename, self.runinfo.ETport, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
-			except ReadoutNode.ReadoutNodeException:
-				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Somehow the DAQ service on the " + node.name + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", title=node.name.capitalize() + " DAQ service not yet stopped") )
-
-				stop_success = node.daq_stop()
-				if stop_success:
 					success = node.daq_start(self.ET_filename, self.runinfo.ETport, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
-				else:
-					errmsg = "Couldn't stop the " + node.name +" DAQ service.  Aborting run."
-					errtitle =  title=node.name.capitalize() + " DAQ service couldn't be stopped"
-					success = False
-			except ReadoutNode.ReadoutNodeNoConnectionException:
-				errmsg = "The connect to the " + node.name + " couldn't be established!  Run will be aborted."
-				errtitle = "No connection to the " + node.name + " node"
-				success = False
-	
-			if not success:
-				errmsg = errmsg if errmsg is not None else "Couldn't start the " + node.name + " DAQ service.  Aborting run."
-				errtitle = errtitle if errtitle is not None else node.name.capitalize() + " DAQ service couldn't be started"
-				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=errtitle, text=errmsg) )
 				
-				self.running = False
-				self.subrun = 0
-				self.StopDataAcquisition()
-			else:
-				wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
+					self.logger.info("Started DAQ on %s node (address: %s)" % (node.name, node.address))
+				except ReadoutNode.ReadoutNodeException:
+					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Somehow the DAQ service on the " + node.name + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", title=node.name.capitalize() + " DAQ service not yet stopped") )
+
+					stop_success = node.daq_stop()
+					if stop_success:
+						success = node.daq_start(self.ET_filename, self.runinfo.ETport, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
+					else:
+						errmsg = "Couldn't stop the " + node.name +" DAQ service.  Aborting run."
+						errtitle =  title=node.name.capitalize() + " DAQ service couldn't be stopped"
+						success = False
+				except ReadoutNode.ReadoutNodeNoConnectionException:
+					errmsg = "The connect to the " + node.name + " couldn't be established!  Run will be aborted."
+					errtitle = "No connection to the " + node.name + " node"
+					success = False
+	
+				if not success:
+					errmsg = errmsg if errmsg is not None else "Couldn't start the " + node.name + " DAQ service.  Aborting run."
+					errtitle = errtitle if errtitle is not None else node.name.capitalize() + " DAQ service couldn't be started"
+					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=errtitle, text=errmsg) )
+				
+					self.StopDataAcquisition()
+				else:
+					wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
 	
 		if self.running:
-			self.logger.info("  Booking a subscription for 'DAQ stop' messages from readout nodes...")
-			for node in self.readoutNodes:
-				self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Running...")
-				self.logger.info("    ... subscribed the %s node." % node.name)
-			
 			self.logger.info("  All DAQ services started.  Data acquisition underway.")
-			self.socketThread = Threads.SocketThread(self, self.readoutNodes)			# start the service that listens for the 'done' signal
 		
 	def StartTestProcess(self):
 		frame = Frames.OutputFrame(self.main_window, "test process", window_size=(600,600), window_pos=(1200,200))
@@ -699,9 +745,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		# need a lock to prevent race conditions (for example, a second node sending a "daq_finished" event
 		# while the "daq_finished" event for a previous node is still being processed)
-		self.logger.info("Acquiring message handler lock...")
+		self.logger.debug("Acquiring message handler lock...")
 		self.messageHandlerLock.acquire()
-		self.logger.info("Successfully acquired message handler lock.")
+		self.logger.debug("Successfully acquired message handler lock.")
 		
 		# if it's a HW error message, we need to abort the subrun.
 		if evt.message == "hw_error" :	
@@ -709,9 +755,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			self.logger.error("There was a hardware error on the " + node.name + " readout node.  This subrun will be aborted.")
 			
 			self.logger.warning("Subrun " + str(self.first_subrun + self.subrun) + " aborted.")
-			self.running = False
-			self.subrun = 0
-			wx.PostEvent(self.main_window, Events.StopRunningEvent())		# tell the main window that we're done here.
+			wx.PostEvent(self, Events.StopRunningEvent(allclear=True))
 
 		# if it's a HW ready message, then we should see if all the other nodes are ready too
 		elif evt.message == "hw_ready":
@@ -719,6 +763,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			for node in self.readoutNodes:
 				# first set the node we've been notified about to "configured."
 				if node.name == evt.sender:
+					self.logger.debug("    ==> %s node reports it's ready." % node.name)
 					node.configured = True
 				# now, check if any other ones are still unconfigured.
 				elif not node.configured:
@@ -726,6 +771,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 			# if everybody's configured, we're ready to move on to the next step.
 			if allconfigured:
+				self.logger.info("    ==> all nodes ready.")
 				wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
 
 		# if it's a DAQ finished message, we need to make sure all the nodes stop
@@ -735,36 +781,87 @@ class DataAcquisitionManager(wx.EvtHandler):
 			for node in self.readoutNodes:
 				# first set the node we've been notified about to "done."
 				if node.name == evt.sender:
+					self.logger.debug("    ==> %s node reports it's done taking data." % node.name)
 					node.completed = True
 					node.shutting_down = False
-				# now, check if any other ones are still running.
-				elif not node.completed:
-					# makes sure that if this is an abnormal shutdown,
-					# all the other nodes are shut down too.
-					if not node.shutting_down:
-						success = node.daq_stop()
-						
-						if not success:
-							wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Couldn't stop the %s node.  The dispatcher on that node will probably need to be restarted and any leftover DAQ processes killed." % node.name, title="Couldn't stop %s DAQ" % node.name) )
-							self.logger.error("Couldn't stop the DAQ on the %s node!")
-							
-							# we mark this one as shut down because otherwise we'll never stop!
-							# however, we DON'T set alldone to False here because this node is effectively "done" now.
-							node.completed = True
-							node.shutting_down = False
-						else:
-							alldone = False
-					else:
-						alldone = False
-			
+					
+				# we DON'T force the other nodes to shut down because
+				# the nodes depend on each other for gate synchronization
+				# (when there are more than one).  therefore they SHOULD
+				# all shut down when the first one goes down anyway.
+				#
+				# this can of course be re-implemented if necessary, but
+				# it suffers from a synchronization problem that will need
+				# to be addressed:
+				#    this method needs to use a lock to make sure it
+				#    doesn't try to process two messages simultaneously
+				#    and interfere with itself.  however, usually the
+				#    second node to finish finishes (and sends its message)
+				#    while the message from the first node is still being
+				#    processed.  that means that daq_stop() command in
+				#    the implementation below arrives AFTER the node has
+				#    already finished -- and so we SHOULD wait for that signal
+				#    to arrive (which will mean one more call of this method)
+				#    rather than stopping it like this since it's already
+				#    stopped.
+				#
+				# another question is whether waiting on the remote nodes
+				# is the right method for deciding whether a subrun is done
+				# altogether.  if communication is too fast, we might stop
+				# the event builder before it has completely assembled the
+				# last gate ...
+				
+				else:
+					alldone = alldone and node.completed
+
+#				# now, check if any other ones are still running.
+#				elif not node.completed:
+#					# makes sure that if this is an abnormal shutdown,
+#					# all the other nodes are shut down too.
+#					if not node.daq_checkStatus():
+#						
+#					
+#					if not node.shutting_down:
+#						try:
+#							success = node.daq_stop()
+#						
+#							if not success:
+#								wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Couldn't stop the %s node.  The dispatcher on that node will probably need to be restarted and any leftover DAQ processes killed." % node.name, title="Couldn't stop %s DAQ" % node.name) )
+#								self.logger.error("Couldn't stop the DAQ on the %s node!")
+#						
+#								# we mark this one as shut down because otherwise we'll never stop!
+#								# however, we DON'T set alldone to False here because this node is effectively "done" now.
+#								node.completed = True
+#								node.shutting_down = False
+#							# if we successfully got through to the node to tell it to stop,
+#							# we'll need to wait on it to give us the right signal.
+#							# that will mean this method will be called again ==> not done.
+#							else:
+#								alldone = False
+#						except ReadoutNode.ReadoutNodeNoDAQRunningException:			# if it's already closed, then it's no problem.  (see above.)
+#							node.completed = True
+#					else:
+#						alldone = False
+				
+#				if node.completed:
+#					print "%s node is done." % node.name
+#				else:
+#					print "%s node is not done yet." % node.name
+#				
+#				print "alldone? %d" % alldone
+				
 			if alldone:
 				# all DAQs have been closed cleanly.
 				# the subrun needs to end then.
 				# we pass 'allclear = True' to signify this.
-				wx.PostEvent(self.owner_process, Events.EndSubrunEvent(allclear=True))
+				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True))
+
+		else:
+			self.logger.debug("Got a message I don't know how to handle.  Ignoring.")
+			
 
 		self.messageHandlerLock.release()
-		self.logger.info("Released message handler lock.")
+		self.logger.debug("Released message handler lock.")
 
 	def RelayProgressToDisplay(self, evt):
 		# just pass the event along.
