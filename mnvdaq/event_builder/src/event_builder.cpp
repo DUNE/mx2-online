@@ -106,7 +106,7 @@ int main(int argc, char **argv)
 		// For modern DAQ operations, we take care of this beforehand.
 		// So set this check to use a very short sleep period!
 		std::cout << "  Synching heartbeat..." << std::endl;
-		system("sleep 1s"); 
+		system("sleep 5s"); 
 		if (!counter) {
 			newheartbeat = id->sys->heartbeat;
 		} else {
