@@ -23,7 +23,7 @@ import subprocess
 
 from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration import SocketRequests
-from mnvruncontrol.backend import Event
+from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import ReadoutNode
 
 #########################################################
@@ -233,20 +233,23 @@ class SocketThread(threading.Thread):
 
 		self.daemon = True
 		
+		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	
+#		try:
+		self.socket.bind(("", Configuration.params["Socket setup"]["masterPort"]))		# allow any incoming connections on the right port number
+#		except socket.error:
+#			raise SocketAlreadyBoundException
+
+		self.socket.setblocking(0)			# we want to be able to update the display, so we can't wait on a connection
+		self.socket.listen(3)				# we might have more than one node contact us simultaneously, so allow multiple backlogged connections
+
 		self.start()
 	
 	def run(self):
-		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		
-		s.bind(("", Configuration.params["Socket setup"]["masterPort"]))		# allow any incoming connections on the right port number
-
-		s.setblocking(0)			# we want to be able to update the display, so we can't wait on a connection
-		s.listen(3)				# we might have more than one node contact us simultaneously, so allow multiple backlogged connections
-		
 		lastupdate = 0
 		while not self.time_to_quit:
-			if select.select([s], [], [], 0)[0]:		
-				client_socket, client_address = s.accept()
+			if select is not None and select.select([self.socket], [], [], 0)[0]:		# the first part is to ensure that we don't get messed up when shutting things down
+				client_socket, client_address = self.socket.accept()
 
 				request = ""
 				datalen = -1
@@ -269,47 +272,62 @@ class SocketThread(threading.Thread):
 					if subscription.waiting and subscription.notice is not None and subscription.callback not in callbacks_notified:
 						wx.PostEvent(subscription.callback, Events.UpdateProgressEvent( text=subscription.notice, progress=(0,0)) )
 						callbacks_notified.append(subscription.callback)
-		subscription = SocketSubscription(node_name, message, callback)
+#					else:
+#						print "(%d, %d, %d)" % (subscription.waiting, subscription.notice is not None, subscription.callback not in callbacks_notified)
 
-		s.close()
+		self.socket.close()
 					
-	def Subscribe(self, node_name, message, callback, waiting=False, notice=None):
+	def Subscribe(self, addressee, node_name, message, callback, waiting=False, notice=None):
 		""" Clients should use this method to book a subscription
 		    for messages from the readout nodes. """
-		subscription = SocketSubscription(node_name, message, callback)
+		subscription = SocketSubscription(addressee, node_name, message, callback, waiting, notice)
 		if subscription not in self.subscriptions:
 			self.subscriptions.append(subscription)		# append() is thread-safe.
+			self.logger.debug("New socket message subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
 			
-	def Unsubscribe(self, node_name, message, callback):
+	def Unsubscribe(self, addressee, node_name, message, callback):
 		""" Cancel a subscription previously booked using Subscribe(). """
-		subscription = SocketSubscription(node_name, message, callback)
+		subscription = SocketSubscription(addressee, node_name, message, callback)
 		if subscription in self.subscriptions:
 			self.subscriptions.remove(subscription)		# remove() is thread-safe.
+			self.logger.debug("Released socket subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
+	
+	def UnsubscribeAll(self, addressee):
+		""" Unsubscribe all messages intended for a certain host. """
+		for subscription in self.subscriptions:
+			if subscription.recipient == addressee:
+				self.subscriptions.remove(subscription)		# remove() is thread-safe.
+				self.logger.debug("Released socket subscription: (addressee, node name, message)\n(%s, %s, %s)" % (subscription.recipient, subscription.node_name, subscription.message))
+#			else:
+#				print "Subscription didn't match: %s, %s" % (str(subscription), addressee)
+		
 			
 	def DispatchMessage(self, message):
 		""" Checks if this message matches any subscriptions, and if so,
 		    issues an event to the callback object. """
 		matches = re.match(SocketRequests.Notification, message)
 		if matches is None:
-			self.logger.info("Received garbled message:")
-			self.logger.info(message)
-			self.logger.info("Ignoring.")
+			self.logger.debug("Received garbled message:\n%s" % message)
+			self.logger.debug("Ignoring.")
 			return
 		else:
-			self.logger.info("Received message:")
-			self.logger.info(message)
+			self.logger.debug("Received message:")
+			self.logger.debug(message)
 		
 		matched = False
 		for subscription in self.subscriptions:
 			if     matches.group("addressee") == subscription.recipient \
 			   and matches.group("sender") == subscription.node_name \
 			   and matches.group("message") == subscription.message:
-			     matched = True
+				matched = True
 				wx.PostEvent( subscription.callback, Events.SocketReceiptEvent(addressee=matches.group("addressee"), sender=matches.group("sender"), message=matches.group("message")) )
-				self.logger.info("Message matched subscription.  Delivering.")
+				self.logger.debug("Message matched subscription.  Delivered.")
+#			else:
+#				print "(%d, %d, %d)" % (matches.group("addressee") == str(subscription.recipient), matches.group("sender") == subscription.node_name, matches.group("message") == subscription.message)
+#				print "no match."
 		
 		if not matched:
-			self.logger.info("Message didn't match any subscriptions.  Discarding.")
+			self.logger.debug("Message didn't match any subscriptions.  Discarding.")
 		
 	def Abort(self):
 		self.time_to_quit = True
@@ -317,19 +335,25 @@ class SocketThread(threading.Thread):
 class SocketSubscription:
 	""" A simple class to model socket subscriptions. """
 	def __init__(self, recipient, node_name, message, callback, waiting=False, notice=None):
-		self.recipient = recipient
-		self.node_name = node_name
-		self.message = message
+		self.recipient = str(recipient)
+		self.node_name = str(node_name)
+		self.message = str(message)
 		self.callback = callback
 		self.waiting = waiting
 		self.notice = notice
 	
 	def __eq__(self, other):
 		try:
-			return (self.recipient == other.recipient and self.node_name == other.node_name and self.callback == other.callback)
+			return (self.recipient == other.recipient and self.message == other.message and self.node_name == other.node_name and self.callback == other.callback)
 		except AttributeError:		# if other doesn't have one of these properties, it can't be equal!
 			return False
+			
+	def __repr__(self):
+		return "(%s, %s, %s)" % (self.recipient, self.node_name, self.message)
 
+class SocketAlreadyBoundException(Exception):
+	pass
+	
 #########################################################
 #   TimerThread
 #########################################################
