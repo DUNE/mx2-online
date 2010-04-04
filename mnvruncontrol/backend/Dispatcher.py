@@ -11,6 +11,7 @@
 
 import socket
 import signal
+import select
 import errno
 import time
 import sys
@@ -19,9 +20,14 @@ import os.path
 import re
 import logging
 import logging.handlers
+import threading
+from Queue import Queue
 
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import Configuration
+
+# an enumeration.
+MASTER = 0
 
 class Dispatcher:
 	"""
@@ -36,6 +42,9 @@ class Dispatcher:
 		self.respawn = False
 		self.quit = False
 		
+		# so that I can receive messages from other threads without hanging.
+		self.queue = Queue()
+		
 		# derived classes must override this.
 		self.pidfilename = None
 
@@ -46,7 +55,8 @@ class Dispatcher:
 		                  "get_lock"     : self.get_lock,
 		                  "release_lock" : self.release_lock }
 		
-		# does someone have a command lock on us?
+		# keeps track of client that has a lock (and the name it's using for this node)
+		self.identity = None
 		self.lock_id = None
 		self.lock_address = None
 		
@@ -80,7 +90,8 @@ class Dispatcher:
 			# accept any incoming connections to the port regardless of origin
 			self.server_socket.bind(("", self.port))
 
-			self.server_socket.listen(3)										# allow it to keep a few backlogged connections (that way if we're trying to talk to it too fast it'll catch up)
+			self.server_socket.setblocking(0)			# need to be able to handle messages.  don't block!
+			self.server_socket.listen(3)				# allow it to keep a few backlogged connections (that way if we're trying to talk to it too fast it'll catch up)
 		except socket.error, e:
 			self.logger.exception("Error trying to bind my listening socket:")
 			self.logger.fatal("Can't get a socket.")
@@ -285,8 +296,8 @@ class Dispatcher:
 			except OSError:
 				break
 		self.logger.info("Process " + str(pid) + " ended.")
-		
-		
+	
+	
 	def dispatch(self):
 		""" 
 		Performs the actual work of handling incoming requests 
@@ -301,72 +312,87 @@ class Dispatcher:
 			self.logger.info("Dispatching starting (listening on port " + str(self.port) + ").")
 
 		while not self.quit:
-			# if we interrupt the socket system call by receiving a signal,
-			# the socket throws an exception as a warning.  we should just start over then,
+			# if we interrupt the select() or socket accept() system calls by receiving a signal,
+			# they throw an exception as a warning.  we should just start over then,
 			# which will cause a quit (the signal handler for the only signals
 			# we're handling--SIGTERM and SIGINT--sets self.quit to True).
 			try:
-				client_socket, client_address = self.server_socket.accept()
-				client_address = client_address[0]	# we can discard the port number.  it's not important.
-			except socket.error, (errnum, msg):
+				# use select() to see if there's a client trying to connect
+				if select.select([self.server_socket], [], [], 0)[0]:		
+					try:
+						client_socket, client_address = self.server_socket.accept()
+						client_address = client_address[0]	# we can discard the port number.  it's not important.
+					except Exception, e:
+						self.logger.exception("Error trying to get socket:")
+
+					request = ""
+					datalen = -1
+					while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire request
+						data = client_socket.recv(1024)
+						datalen = len(data)
+						request += data
+			
+					if request == "":
+						self.logger.info("Blank request from " + client_address + ".  Assuming pipe was broken and ignoring.")
+						client_socket.close()
+						continue
+					elif client_address in self.last_request and request == self.last_request[client_address]:
+						self.request_count[client_address] += 1
+					else:
+						if client_address in self.last_request and self.request_count[client_address] > Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]:
+							self.logger.info("Note: previous request received from client " + client_address + " " + str(self.request_count[client_address] - Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]) + " more times...")
+						self.last_request[client_address] = request
+						self.request_count[client_address] = 1
+				
+					show_request_details = self.request_count[client_address] <= Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]
+					if show_request_details:
+						self.logger.info("Received request from client " + client_address + ": '" + request + "'")
+			
+					if self.request_count[client_address] == Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]:
+						self.logger.info("Note: request repeated " + str(Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]) + " times.")
+						self.logger.info("      Further consecutive repeats of this request")
+						self.logger.info("      from this client will not be logged.")
+			
+					response = self.respond(request, client_address, show_request_details)
+					if response is not None:		# don't waste our time sending a response to an invalid request.
+						if show_request_details:
+							self.logger.info("Attempting to send response:\n" + response)
+						try:
+							client_socket.sendall(response)		# this will throw an exception if all the data can't be sent.
+						except:
+							self.logger.warning("Transmission error.")	# what to do if it can't all be sent?  hmm...
+						else:
+							if show_request_details:
+								self.logger.info("Transmission completed.")
+					else:
+						self.logger.info("Request is invalid.")
+
+					try:
+						client_socket.shutdown(socket.SHUT_RDWR)
+						if show_request_details:
+							self.logger.info("Socket closed.")
+					except socket.error:
+						self.logger.exception("Socket error on socket shutdown:")
+						self.logger.error("   ==> Data transmission was interrupted!")
+					finally:
+						client_socket.close()
+			except (socket.error, select.error), (errnum, msg):
 				if errnum == errno.EINTR:		# the code for an interrupted system call
 					continue
 				else:						# if it's not an interrupted system call, we need the error!
 					self.logger.exception("Error " + str(errnum) + ": " + msg)
-			except Exception, e:
-				self.logger.exception("Error trying to get socket:")
-
-			request = ""
-			datalen = -1
-			while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire request
-				data = client_socket.recv(1024)
-				datalen = len(data)
-				request += data
-			
-			if request == "":
-				self.logger.info("Blank request from " + client_address + ".  Assuming pipe was broken and ignoring.")
-				client_socket.close()
-				continue
-			elif client_address in self.last_request and request == self.last_request[client_address]:
-				self.request_count[client_address] += 1
-			else:
-				if client_address in self.last_request and self.request_count[client_address] > Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]:
-					self.logger.info("Note: previous request received from client " + client_address + " " + str(self.request_count[client_address] - Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]) + " more times...")
-				self.last_request[client_address] = request
-				self.request_count[client_address] = 1
+					
+			# check for messages on the queue
+			if not self.queue.empty():
+				item = self.queue.get()
 				
-			show_request_details = self.request_count[client_address] <= Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]
-			if show_request_details:
-				self.logger.info("Received request from client " + client_address + ": '" + request + "'")
-			
-			if self.request_count[client_address] == Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]:
-				self.logger.info("Note: request repeated " + str(Configuration.params["Dispatchers"]["maxRepeatedRequestLogs"]) + " times.")
-				self.logger.info("      Further consecutive repeats of this request")
-				self.logger.info("      from this client will not be logged.")
-			
-			response = self.respond(request, client_address, show_request_details)
-			if response is not None:		# don't waste our time sending a response to an invalid request.
-				if show_request_details:
-					self.logger.info("Attempting to send response:\n" + response)
-				try:
-					client_socket.sendall(response)		# this will throw an exception if all the data can't be sent.
-				except:
-					self.logger.warning("Transmission error.")	# what to do if it can't all be sent?  hmm...
+				if item.recipient == MASTER:
+					if self.lock_address is not None:
+						self.send_message("FOR:%s FROM:%s MSG:%s" % (self.lock_id, self.identity, item.message), self.lock_address, Configuration.params["Socket setup"]["masterPort"])
+					else:
+						self.logger.warning("Can't send message to master because no one has a client lock...")
 				else:
-					if show_request_details:
-						self.logger.info("Transmission completed.")
-			else:
-				self.logger.info("Request is invalid.")
-
-			try:
-				client_socket.shutdown(socket.SHUT_RDWR)
-				if show_request_details:
-					self.logger.info("Socket closed.")
-			except socket.error:
-				self.logger.exception("Socket error on socket shutdown:")
-				self.logger.error("   ==> Data transmission was interrupted!")
-			finally:
-				client_socket.close()
+					self.send_message(item.message, item.recipient)
 	
 		self.logger.info("Instructed to close.  Exiting dispatch mode.")
 		self.cleanup()
@@ -383,7 +409,7 @@ class Dispatcher:
 		id = None
 		if request[-1] == "!":
 			imperative_request = True
-			matches = re.match("^.* (?P<id>[\d\w]+)!$", request)
+			matches = re.match("^.* (?P<id>[\d\w\-]+)!$", request)
 			if matches is None:
 				self.logger.info("Imperative request did not contain requester ID:")
 				self.logger.info(request)
@@ -393,7 +419,7 @@ class Dispatcher:
 			
 			if self.lock_id is not None and id != self.lock_id:
 				self.logger.warning("Imperative request from requester other than the one who has the lock:")
-				self.logger.warning(request)
+				self.logger.warning("'%s'" % request)
 				self.logger.warning("Request ignored.")
 				return "NOTALLOWED"
 			# this is definitely not a very secure ID check, but at least it prevents
@@ -410,10 +436,13 @@ class Dispatcher:
 			imperative_request = False
 		
 		is_valid_request = False
+		is_global_request = False
 		for valid_request in self.valid_requests:
 			matches = re.match(valid_request, request)
 			if matches is not None:
 				is_valid_request = True
+				if valid_request in SocketRequests.GlobalRequests:
+					is_global_request = True
 				break
 		
 		if not is_valid_request:
@@ -427,9 +456,9 @@ class Dispatcher:
 		# we should ignore requests that are in the GlobalRequests, though, because their handlers
 		# are the MANAGERS of the locks and thus already know about them -- they don't need help.
 		# (other request handlers don't and need to have the locking mechanism managed for them.)
-		if imperative_request and self.lock_id is None and request not in SocketRequests.GlobalRequests:
+		if imperative_request and self.lock_id is None and not is_global_request:
 			self.logger.info("Imperative request received with no lock present.  Requesting one first.")
-			self.get_lock(lock_id=id, client_address=client_address)
+			self.get_lock(matches=matches, lock_id=id, client_address=client_address)
 
 		if request in self.handlers:
 			if id is not None:
@@ -446,14 +475,20 @@ class Dispatcher:
 			self.logger.info("Responding to ping.")
 		return "1"
 	
-	def get_lock(self, matches=None, show_details=None, lock_id, client_address, **kwargs):
+	def get_lock(self, matches=None, show_details=None, lock_id=None, client_address=None, **kwargs):
 		""" Tries to get a run lock for this client.
 		    Returns 1 on success and 0 on failure. """
 		self.logger.info("Client wants a command lock.")
 		if self.lock_id is None:
 			self.lock_id = lock_id
 			self.lock_address = client_address
-			self.logger.info("   ==> Lock granted to client with id '%s'." % self.lock_id)
+			
+			if "identity" in matches.groupdict():
+				self.identity = matches.group("identity")
+			else:
+				self.logger.warning("   No identity supplied!  Identity will be blank...")
+				self.identity = ""
+			self.logger.info("   ==> Lock granted to client with id '%s'.  My identity: '%s' node." % (self.lock_id, self.identity))
 			return "1"
 		else:
 			self.logger.info("   ==> Another client already has a lock.  Lock denied.")
@@ -472,8 +507,25 @@ class Dispatcher:
 			self.logger.info("   ==> Lock is owned by a different client.  Lock retained.")
 			return "0"
 
-		self.logger.info("   ==> Lock released.")
 		self.lock_id = None
+		self.lock_address = None
+		self.identity = None
+		self.logger.info("   ==> Lock released.")
+		return "1"
+		
+	
+	def send_message(self, message, recipient_addr=None, recipient_port=None):
+		""" Sends a message to the master node that currently has a lock,
+		    or, if there is currently no lock, to the specified recipient. """
+		
+		recipient_addr = recipient_addr if recipient_addr is not None else self.lock_address
+		recipient_port = recipient_port if recipient_port is not None else Configuration.params["Socket setup"]["masterPort"]
+		if recipient_addr is None:
+			self.logger.warning("Asked to send a mesage but no lock and recipient not specified.  Ignoring...")
+			return
+		
+		MasterMessageSenderThread(self.logger, (recipient_addr, recipient_port), message)
+		
 
 	def bootstrap(self):
 		""" Handles the processing of command-line arguments
@@ -514,3 +566,50 @@ class Dispatcher:
 			self.replace = False
 			self.stop()
 
+
+##################################################
+# MasterMessageSenderThread                      #
+##################################################
+class MasterMessageSenderThread(threading.Thread):
+	""" Thread to take care of the sending messages to the master node.
+	    (This could block so it needs a separate thread.) """
+	def __init__(self, logger, recipient, message):
+		threading.Thread.__init__(self)
+		
+		self.logger = logger		# loggers are thread-safe, so we can just use it directly.
+		
+		self.recipient = recipient
+		self.message = message
+		
+		self.start()
+	
+	def run(self):
+		tries = 0
+		success = False
+		    
+		while tries < Configuration.params["Socket setup"]["maxConnectionAttempts"] and not success:
+			self.logger.info("Attempting to send a message to '%s':" % str(self.recipient))
+			self.logger.info(self.message)
+			try:
+				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				s.settimeout(Configuration.params["Socket setup"]["socketTimeout"])
+				s.connect( self.recipient )
+				s.send(self.message)
+				s.shutdown(socket.SHUT_WR)
+				self.logger.info("Message sent successfully.")
+				success = True
+			except:
+				self.logger.info("  ==> Communication interrupted.")
+				tries += 1
+				if tries < Configuration.params["Socket setup"]["maxConnectionAttempts"]:
+					self.logger.info("  ==> Will try again in 1s.")
+				time.sleep(Configuration.params["Socket setup"]["connAttemptInterval"])
+			finally:
+				s.close()
+	
+
+class Message:
+	""" A message (put this into the queue). """
+	def __init__(self, message, recipient=None):
+		self.recipient = recipient		# None is for messages sent to the log
+		self.message = message

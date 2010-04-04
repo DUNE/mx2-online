@@ -171,7 +171,7 @@ class OMThread(threading.Thread):
 
 		stdout, stderr = self.process.communicate()
 		
-		filename = "%s/%s.log" % (Configuration.params["Front end"]["om_logfileName"], self.processname)
+		filename = "%s/%s.log" % (Configuration.params["Monitoring nodes"]["om_logfileLocation"], self.processname)
 		# dump the output of the process to a file so that crashes can be investigated.
 		# we only keep one copy because it will be rare that anyone is interested.
 		try:

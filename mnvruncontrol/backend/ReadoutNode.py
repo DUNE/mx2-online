@@ -1,10 +1,10 @@
 """
   ReadoutNode.py:
   Module that models a readout node.
-  It handles the socket connection from the client
+  It wraps the socket connection from the client
   (the readout "queen" in Gabe's language) to the readout nodes
   actually attached to hardware (the "soldier" and "worker" nodes)
-  as well as taking care of a few other details.
+  using the RemoteNode base class.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Mar. 2010
@@ -13,78 +13,23 @@
 """
 
 import re
-import time
-import socket
 
-from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import MetaData
 
-class ReadoutNode:
+from mnvruncontrol.backend.RemoteNode import RemoteNode
+
+class ReadoutNode(RemoteNode):
 	def __init__(self, name, address):
-		self.socket = None
-		self.name = name
-		self.address = address
-		self.port = Defaults.DISPATCHER_PORT
+		RemoteNode.__init__(self, name, address)
 		
-	def request(self, request, use_timeout=False):
-		is_valid_request = False
-		for valid_request in SocketRequests.ValidRequests:
-			if re.match(valid_request, request) is not None:
-				is_valid_request = True
-				break
+		self.ValidRequests += SocketRequests.ReadoutRequests
 		
-		if not is_valid_request:
-			raise ReadoutNodeBadRequestException("Invalid request: '" + request + "'")
+		self.configured = False
+		self.completed = False
 		
-		tries = 0
-		success = False
-		while tries < Defaults.MAX_CONNECTION_ATTEMPTS and not success:
-			response = ""
-			try:
-				self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				if use_timeout:
-					self.socket.settimeout(Defaults.SOCKET_TIMEOUT)
-				self.socket.connect( (self.address, self.port) )
-				self.socket.send(request)
-				self.socket.shutdown(socket.SHUT_WR)		# notifies the server that I'm done sending stuff
-
-				datalen = -1
-				while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire response
-					data = self.socket.recv(1024)
-					datalen = len(data)
-					response += data
-
-				success = True
-			except socket.timeout, e:
-				time.sleep(Defaults.CONNECTION_ATTEMPT_INTERVAL)		# wait a little to make sure we don't overload the dispatcher
-			except socket.error, e:
-				print e
-			finally:
-				self.socket.close()
-				
-			# an empty response is the sign of a broken connection.
-			# (none of the queries will return with a blank response.)
-			# we'll want to try again.
-			if response == "":
-				success = False
-				tries += 1
-				continue
-
-		if tries >= Defaults.MAX_CONNECTION_ATTEMPTS:
-			raise ReadoutNodeNoConnectionException()
-
-		return response
-	
-	def ping(self):
-		""" Requests confirmation from the server that it is indeed alive and well. """
-		try:
-			response = self.request("alive?", use_timeout=True)
-		except:
-			return False
+		self.shutting_down = False
 		
-		return len(response) > 0		# if we got ANYTHING back, then it's alive
-	
 	def daq_checkStatus(self):
 		""" Asks the server to check and see if its DAQ process is running. """
 		response = self.request("daq_running?")
@@ -114,7 +59,7 @@ class ReadoutNode:
 		""" Asks the server to start the DAQ process.  Returns True on success,
 		    False on failure, and raises an exception if the DAQ is currently running. """
 		
-		request = "daq_start etfile=%s:etport=%d:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d:identity=%s!" % (etfile, etport, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit, self.name)
+		request = "daq_start etfile=%s:etport=%d:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d!" % (etfile, etport, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit)
 		#print request
 		response = self.request(request)
 		
@@ -131,6 +76,9 @@ class ReadoutNode:
 		""" Asks the server to stop the DAQ process.  Returns True on success,
 		    False on failure, and raises an exception if no DAQ process
 		    is currently running. """
+		    
+		self.shutting_down = True
+		
 		response = self.request("daq_stop!")
 		
 		if response == "0":
@@ -138,13 +86,17 @@ class ReadoutNode:
 		elif response == "1":
 			return False
 		elif response == "2":
-			raise ReadoutNodeException("The DAQ slave process is not currently running, so it can't be stopped.")
+			raise ReadoutNodeNoDAQRunningException("The DAQ slave process is not currently running, so it can't be stopped.")
 		else:
 			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
 
 	def sc_loadHWfile(self, filename):
 		""" Asks the server to load the specified hardware configuration file. 
-		    Returns 0 on success, 1 on failure, and 2 if the file doesn't exist. """
+		    Returns 0 on success, 1 on failure, and 2 if the file doesn't exist. 
+		    Note that the return value only indicates receipt of the message and
+		    ability to start: it takes a while for the slow control initialization
+		    to actually finish.  When it does, the dispatcher sends a message
+		    back to the master node. """
 		response = self.request("sc_setHWconfig '" + filename + "'!")	
 		
 		if response == "0":
@@ -184,6 +136,9 @@ class ReadoutNode:
 		
 		
 class ReadoutNodeException(Exception):
+	pass
+	
+class ReadoutNodeNoDAQRunningException(Exception):
 	pass
 
 class ReadoutNodeBadRequestException(Exception):

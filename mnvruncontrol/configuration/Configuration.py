@@ -14,14 +14,14 @@
    Address all complaints to the management.
 """
 
-# this file is much easier to look at and/or edit on a wide screen ...
+# this file is much easier to look at and/or edit on a wide-ish screen ...
 
 import shelve
 import anydbm
 
 from mnvruncontrol.configuration import Defaults
 
-configuration = { "Front end"       : {  "runinfoFile"             : ( Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT,       "Run/subrun info database file",                   str   ),
+configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT,       "Run/subrun info database file",                   str   ),
                                          "master_logfileLocation"  : ( Defaults.LOGFILE_LOCATION_DEFAULT,             "Run control (frontend) log file location",        str   ),
                                          "master_logfileName"      : ( Defaults.RC_LOGFILE_DEFAULT,                   "Run control (frontend) log file name",            str   ),
                                          "etSystemFileLocation"    : ( Defaults.ET_SYSTEM_LOCATION_DEFAULT,           "ET system file location",                         str   ),
@@ -61,7 +61,8 @@ configuration = { "Front end"       : {  "runinfoFile"             : ( Defaults.
                                          "om_GaudiOptionsFile"     : ( Defaults.OM_GAUDI_OPTIONSFILE,                 "OM Gaudi process options file",                   str   ),
                                          "om_rawdataLocation"      : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                            str   )  }  }
 
-# the above dictionary is structured a bit deep
+
+# the basic dictionary is structured a bit deep
 # (though it's nice for entering data).
 # below it's reworked for easier access
 # (can write Configuration.params[]... in other modules).
@@ -81,6 +82,8 @@ for param_set in configuration:
 
 config_file_inaccessible = False
 
+
+# now update using any values that are set in the DB.
 try:
 	db = shelve.open(Defaults.CONFIG_DB_LOCATION)
 except anydbm.error:
@@ -92,4 +95,7 @@ else:
 				params[param_set][param_name] = db[param_name]
 			except KeyError:
 				pass		# the default is already set
+
+
+			
 

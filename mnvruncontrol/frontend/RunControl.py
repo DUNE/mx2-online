@@ -31,6 +31,7 @@ from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import DataAcquisitionManager
 from mnvruncontrol.backend import ReadoutNode
+from mnvruncontrol.backend import MonitorNode
 
 from mnvruncontrol.frontend import Frames
 from mnvruncontrol.frontend import Tools
@@ -64,6 +65,8 @@ class MainFrame(wx.Frame):
 		self.UpdateRunConfig()
 		
 		# any wx events that need to be handled
+		self.Bind(wx.EVT_CLOSE, self.OnTimeToClose, self)
+		
 		self.Bind(Events.EVT_NEED_USER_HV_CHECK, Frames.HVConfirmationFrame)
 		self.Bind(Events.EVT_SUBRUN_STARTING, self.PreSubrun)
 		self.Bind(Events.EVT_SUBRUN_OVER, self.PostSubrun)
@@ -382,7 +385,8 @@ class MainFrame(wx.Frame):
 		self.runmanager.etSystemFileLocation = Configuration.params["Front end"]["etSystemFileLocation"]
 		self.runmanager.rawdataLocation      = Configuration.params["Front end"]["master_rawdataLocation"]
 		self.runmanager.ResourceLocation     = Configuration.params["Front end"]["ResourceLocation"]
-		self.runmanager.readoutNodes         = Configuration.params["Front end"]["readoutNodes"]
+		self.runmanager.readoutNodes         = [ReadoutNode.ReadoutNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["readoutNodes"]]
+		self.runmanager.monitorNodes         = [MonitorNode.MonitorNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["monitorNodes"]]
 		
 	def GetNextRunSubrun(self, evt=None):
 		"""
@@ -399,6 +403,7 @@ class MainFrame(wx.Frame):
 		               "is_single_run"  : True,
 		               "gates"          : 1500,
 		               "runmode"        : "One shot",
+		               "hwconfig"       : "Current state",
 		               "ledgroups"      : "ABCD",
 		               "lilevel"        : "Max PE",
 		               "runseries_path" : None,
@@ -428,14 +433,15 @@ class MainFrame(wx.Frame):
 		self.runEntry.SetRange(key_values["run"], 100000)
 		self.runEntry.SetValue(key_values["run"])
 		self.subrunEntry.SetValue(key_values["subrun"])
-		self.HWinitEntry.SetSelection(MetaData.HardwareInitLevels.index(key_values["hwinit"]))
-		self.detConfigEntry.SetSelection(MetaData.DetectorTypes.index(key_values["detector"]))
+		self.HWinitEntry.SetSelection(key_values["hwinit"])
+		self.detConfigEntry.SetSelection(key_values["detector"])
 		self.febsEntry.SetValue(key_values["febs"])
 		self.singleRunButton.SetValue(key_values["is_single_run"])
 		self.runSeriesButton.SetValue(not(key_values["is_single_run"]))
 		self.gatesEntry.SetValue(key_values["gates"])
 		
 		self.runModeEntry.SetSelection(MetaData.RunningModes.index(key_values["runmode"]))
+		self.hwConfigEntry.SetSelection(MetaData.HardwareConfigurations.index(key_values["hwconfig"]))
 		self.LILevelEntry.SetSelection(MetaData.LILevels.index(key_values["lilevel"]))
 		
 		self.lockdownEntry.Check(key_values["lockdown"])
@@ -496,6 +502,7 @@ class MainFrame(wx.Frame):
 			db["is_single_run"] = self.singleRunButton.GetValue()
 			db["gates"] = int(self.gatesEntry.GetValue())
 			db["runmode"] = MetaData.RunningModes.item(self.runModeEntry.GetSelection())
+			db["hwconfig"] = MetaData.HardwareConfigurations.item(self.hwConfigEntry.GetSelection())
 
 			LEDgroups = ""
 			for cb in self.LEDgroups:
@@ -661,9 +668,11 @@ class MainFrame(wx.Frame):
 		if self.runmanager.running:
 			self.runmanager.StopDataAcquisition()
 
+		self.runmanager.Cleanup()
+			
 		self.CloseAllWindows()
 
-		self.Close()
+		self.Destroy()
 		
 
 	def UpdateLogFiles(self, evt=None):
@@ -763,6 +772,7 @@ class MainFrame(wx.Frame):
 			self.gatesEntry.Disable()
 			self.detConfigEntry.Disable()
 			self.runModeEntry.Disable()
+			self.hwConfigEntry.Disable()
 			self.febsEntry.Disable()
 			
 			self.singleRunButton.Disable()
@@ -789,6 +799,7 @@ class MainFrame(wx.Frame):
 		self.gatesEntry.Enable()
 		self.detConfigEntry.Enable()
 		self.runModeEntry.Enable()
+		self.hwConfigEntry.Enable()
 
 		self.singleRunButton.Enable()
 		self.runSeriesButton.Enable()

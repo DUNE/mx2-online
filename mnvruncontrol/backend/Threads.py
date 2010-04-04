@@ -13,6 +13,7 @@
 import threading
 import wx
 import os
+import re
 import time
 import socket
 import select
@@ -20,7 +21,8 @@ import fcntl
 import errno
 import subprocess
 
-from mnvruncontrol.configuration import Defaults
+from mnvruncontrol.configuration import Configuration
+from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import ReadoutNode
 
@@ -219,51 +221,35 @@ class DAQWatcherThread(threading.Thread):
 class SocketThread(threading.Thread):
 	""" A thread that keeps open a socket to listen for
 	    the "done" signal from all readout nodes. """
-	def __init__(self, owner_process, nodesToWatch):
+	def __init__(self, logger):
 		threading.Thread.__init__(self)
 		
-		self.owner_process = owner_process
-		self.nodesToWatch = nodesToWatch
+		self.logger = logger		# loggers are thread-safe!
+
 		self.name = "SocketThread"
 		self.time_to_quit = False
+		
+		self.subscriptions = []
 
 		self.daemon = True
 		
+		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	
+		try:
+			self.socket.bind(("", Configuration.params["Socket setup"]["masterPort"]))		# allow any incoming connections on the right port number
+		except socket.error:
+			raise SocketAlreadyBoundException
+
+		self.socket.setblocking(0)			# we want to be able to update the display, so we can't wait on a connection
+		self.socket.listen(3)				# we might have more than one node contact us simultaneously, so allow multiple backlogged connections
+
 		self.start()
 	
 	def run(self):
-		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)	# make this socket reusable.
-		
-		# we only want to bind a local socket if that's all that's necessary
-		bindaddr = "localhost"		
-		for node in self.nodesToWatch:
-			if not node.address in ("localhost", "127.0.0.1"):
-				bindaddr = ""		# allow any incoming connections on the right port number
-				break
-		s.bind((bindaddr, Defaults.MASTER_PORT))
-
-		s.setblocking(0)			# we want to be able to update the display, so we can't wait on a connection
-		s.listen(3)				# we might have more than one node contact us at a time, so allow multiple backlogged connections
-		
-		quit = False
 		lastupdate = 0
-		node_completed = {}
-		for node in self.nodesToWatch:
-			node_completed[node.name] = False
 		while not self.time_to_quit:
-			alldone = True
-			num_complete = 0
-			for nodename in node_completed:
-				if not node_completed[nodename]:
-					alldone = False
-				else:
-					num_complete += 1
-			if alldone:
-				break
-
-			if select.select([s], [], [], 0)[0]:		
-				client_socket, client_address = s.accept()
+			if select is not None and select.select([self.socket], [], [], 0)[0]:		# the first part is to ensure that we don't get messed up when shutting things down
+				client_socket, client_address = self.socket.accept()
 
 				request = ""
 				datalen = -1
@@ -272,51 +258,102 @@ class SocketThread(threading.Thread):
 					datalen = len(data)
 					request += data
 				
-#				client_socket.close()
+				self.DispatchMessage(request)
 				
-				nodeclosed = request.lower()
-				
-				if nodeclosed in node_completed:
-					node_completed[nodeclosed] = True
-					num_complete += 1
-				
-			if time.time() - lastupdate > 0.25:			# some throttling to make sure we don't overload the event dispatcher
-#				print "run update"
+			if len(self.subscriptions) > 0 and time.time() - lastupdate > 0.25:			# some throttling to make sure we don't overload the event dispatcher
 				lastupdate = time.time()
-				if num_complete > 0:
-					wx.PostEvent(self.owner_process.main_window, Events.UpdateProgressEvent( text="Cleaning up:\nWaiting on all nodes to finish...", progress=(num_complete, len(node_completed)) ) )
-				else:
+				
+				# issue an event to any callback objects waiting on updates.
+				# note that we will only issue ONE message per cycle per callback
+				# (otherwise we could overload the event dispatcher)
+				# so whoever's first on the subscription list will be the lucky one.
+				callbacks_notified = []
+				for subscription in self.subscriptions:		# loops on lists are thread-safe.
+					if subscription.waiting and subscription.notice is not None and subscription.callback not in callbacks_notified:
+						wx.PostEvent(subscription.callback, Events.UpdateProgressEvent( text=subscription.notice, progress=(0,0)) )
+						callbacks_notified.append(subscription.callback)
+#					else:
+#						print "(%d, %d, %d)" % (subscription.waiting, subscription.notice is not None, subscription.callback not in callbacks_notified)
 
-					for node in self.nodesToWatch:
-						try:
-							node_running = node.daq_checkStatus()
-						except ReadoutNode.ReadoutNodeNoConnectionException:
-							wx.PostEvent(self.owner_process.main_window, Events.ErrorMsgEvent(title="Connection to " + node.name + " node broken", text="The connection to the " + node.name + " node was broken.  The subrun will be aborted.") )
-							node_running = False
-
-						if node_running:
-							wx.PostEvent(self.owner_process.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
-							if num_complete > 0:		# if one node has quit, we need to have the other ones quit too...
-								node.daq_stop()
-						else:
-							wx.PostEvent(self.owner_process.main_window, Events.UpdateNodeEvent(node=node.name, on=False) )
-							node_completed[node.name] = True
-							num_complete += 1
-
-					wx.PostEvent(self.owner_process.main_window, Events.UpdateProgressEvent( text="Running...\nSee ET windows for more information", progress=(0,0)) )
-
-		s.close()
+		self.socket.close()
+					
+	def Subscribe(self, addressee, node_name, message, callback, waiting=False, notice=None):
+		""" Clients should use this method to book a subscription
+		    for messages from the readout nodes. """
+		subscription = SocketSubscription(addressee, node_name, message, callback, waiting, notice)
+		if subscription not in self.subscriptions:
+			self.subscriptions.append(subscription)		# append() is thread-safe.
+			self.logger.debug("New socket message subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
+			
+	def Unsubscribe(self, addressee, node_name, message, callback):
+		""" Cancel a subscription previously booked using Subscribe(). """
+		subscription = SocketSubscription(addressee, node_name, message, callback)
+		if subscription in self.subscriptions:
+			self.subscriptions.remove(subscription)		# remove() is thread-safe.
+			self.logger.debug("Released socket subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
+	
+	def UnsubscribeAll(self, addressee):
+		""" Unsubscribe all messages intended for a certain host. """
+		for subscription in self.subscriptions:
+			if subscription.recipient == addressee:
+				self.subscriptions.remove(subscription)		# remove() is thread-safe.
+				self.logger.debug("Released socket subscription: (addressee, node name, message)\n(%s, %s, %s)" % (subscription.recipient, subscription.node_name, subscription.message))
+#			else:
+#				print "Subscription didn't match: %s, %s" % (str(subscription), addressee)
 		
-		# all DAQs have been closed cleanly.
-		# the subrun needs to end then.
-		# we pass 'allclear = True' to signify this.
-		if num_complete == len(self.nodesToWatch):
-			wx.PostEvent(self.owner_process, Events.EndSubrunEvent(allclear=True))
+			
+	def DispatchMessage(self, message):
+		""" Checks if this message matches any subscriptions, and if so,
+		    issues an event to the callback object. """
+		matches = re.match(SocketRequests.Notification, message)
+		if matches is None:
+			self.logger.debug("Received garbled message:\n%s" % message)
+			self.logger.debug("Ignoring.")
+			return
+		else:
+			self.logger.debug("Received message:")
+			self.logger.debug(message)
+		
+		matched = False
+		for subscription in self.subscriptions:
+			if     matches.group("addressee") == subscription.recipient \
+			   and matches.group("sender") == subscription.node_name \
+			   and matches.group("message") == subscription.message:
+				matched = True
+				wx.PostEvent( subscription.callback, Events.SocketReceiptEvent(addressee=matches.group("addressee"), sender=matches.group("sender"), message=matches.group("message")) )
+				self.logger.debug("Message matched subscription.  Delivered.")
+#			else:
+#				print "(%d, %d, %d)" % (matches.group("addressee") == str(subscription.recipient), matches.group("sender") == subscription.node_name, matches.group("message") == subscription.message)
+#				print "no match."
+		
+		if not matched:
+			self.logger.debug("Message didn't match any subscriptions.  Discarding.")
 		
 	def Abort(self):
 		self.time_to_quit = True
-				
 
+class SocketSubscription:
+	""" A simple class to model socket subscriptions. """
+	def __init__(self, recipient, node_name, message, callback, waiting=False, notice=None):
+		self.recipient = str(recipient)
+		self.node_name = str(node_name)
+		self.message = str(message)
+		self.callback = callback
+		self.waiting = waiting
+		self.notice = notice
+	
+	def __eq__(self, other):
+		try:
+			return (self.recipient == other.recipient and self.message == other.message and self.node_name == other.node_name and self.callback == other.callback)
+		except AttributeError:		# if other doesn't have one of these properties, it can't be equal!
+			return False
+			
+	def __repr__(self):
+		return "(%s, %s, %s)" % (self.recipient, self.node_name, self.message)
+
+class SocketAlreadyBoundException(Exception):
+	pass
+	
 #########################################################
 #   TimerThread
 #########################################################

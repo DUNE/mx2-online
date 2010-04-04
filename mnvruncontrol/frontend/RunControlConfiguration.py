@@ -93,8 +93,8 @@ class ConfigurationFrame(wx.Frame):
 			self.entries["Front end"][nodetype].InsertColumn(1, "Address (IPv4/DNS)")
 			
 			for node in Configuration.params["Front end"][nodetype]:
-				index = self.entries["Front end"][nodetype].InsertStringItem(sys.maxint, node.name)
-				self.entries["Front end"][nodetype].SetStringItem(index, 1, node.address)
+				index = self.entries["Front end"][nodetype].InsertStringItem(sys.maxint, node["name"])
+				self.entries["Front end"][nodetype].SetStringItem(index, 1, node["address"])
 
 			self.AddButtons[nodetype] = wx.Button(self.pages["Front end"], wx.ID_ADD, style=wx.BU_EXACTFIT)
 			self.pages["Front end"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons[nodetype])
@@ -171,9 +171,9 @@ class ConfigurationFrame(wx.Frame):
 						db[param_name] = Configuration.types[param_set][param_name](self.entries[param_set][param_name].GetValue())
 			
 			# now any that need to be handled in a particular way
-			nodeobjects = {"readoutNodes" : ReadoutNode, "monitorNodes" : MonitorNode}
+			nodetypes = ["readoutNodes", "monitorNodes"]
 			nodelist = {}
-			for nodetype in nodeobjects:
+			for nodetype in nodetypes:
 				nodelist[nodetype] = []
 				index = -1
 				while True:
@@ -182,7 +182,8 @@ class ConfigurationFrame(wx.Frame):
 					if index == -1:
 						break
 					
-					nodelist[nodetype].append( nodeobjects[nodetype](self.entries["Front end"][nodetype].GetItem(index, 0).GetText(), self.entries["Front end"][nodetype].GetItem(index, 1).GetText()) )
+					nodedescr = {"name": self.entries["Front end"][nodetype].GetItem(index, 0).GetText(), "address" : self.entries["Front end"][nodetype].GetItem(index, 1).GetText()}
+					nodelist[nodetype].append(nodedescr)
 					
 				db[nodetype] = nodelist[nodetype]
 			
