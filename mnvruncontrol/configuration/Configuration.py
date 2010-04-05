@@ -23,12 +23,9 @@ import os.path
 from mnvruncontrol.configuration import Defaults
 
 configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT,       "Run/subrun info database file",                   str   ),
-                                         "master_logfileLocation"  : ( Defaults.LOGFILE_LOCATION_DEFAULT,             "Run control (frontend) log file location",        str   ),
-                                         "master_logfileName"      : ( Defaults.RC_LOGFILE_DEFAULT,                   "Run control (frontend) log file name",            str   ),
-                                         "etSystemFileLocation"    : ( Defaults.ET_SYSTEM_LOCATION_DEFAULT,           "ET system file location",                         str   ),
-                                         "master_rawdataLocation"  : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (master node)",                 str   ),
                                          "ResourceLocation"        : ( Defaults.RESOURCE_LOCATION_DEFAULT,            "Resource files location",                         str   ),
                                          "runSeriesLocation"       : ( Defaults.RUN_SERIES_DB_LOCATION_DEFAULT,       "Run series file location",                        str   ),
+                                         "logFileLocations"        : ( [],                                            "Where to look for log files",                     list  ),
                                          "readoutNodes"            : ( [],                                            "Readout nodes",                                   list  ),
                                          "monitorNodes"            : ( [],                                            "Online monitoring nodes",                         list  )  },
 
@@ -46,6 +43,11 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "socketTimeout"           : ( Defaults.SOCKET_TIMEOUT,                       "Socket timeout (s)",                              float )  },
                                          
                   "Dispatchers"      : { "maxRepeatedRequestLogs"  : ( Defaults.MAX_REPEATED_REQUEST_LOGS,            "Max number of consecutive same requests logged",  int   )  },
+                  
+                  "Master node"      : { "master_logfileLocation"  : ( Defaults.LOGFILE_LOCATION_DEFAULT,             "Run control (frontend) log file location",        str   ),
+                                         "master_logfileName"      : ( Defaults.RC_LOGFILE_DEFAULT,                   "Run control (frontend) log file name",            str   ),
+                                         "etSystemFileLocation"    : ( Defaults.ET_SYSTEM_LOCATION_DEFAULT,           "ET system file location",                         str   ),
+                                         "master_rawdataLocation"  : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (master node)",                 str   )  },
 
                   "Readout nodes"    : { "readout_rawdataLocation" : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (readout nodes)",               str   ),
                                          "readout_PIDfileLocation" : ( Defaults.READOUT_DISPATCHER_PIDFILE,           "Readout dispatcher PID file location",            str   ),
