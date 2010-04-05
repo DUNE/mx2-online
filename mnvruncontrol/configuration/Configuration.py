@@ -85,10 +85,14 @@ config_file_inaccessible = False
 
 # now update using any values that are set in the DB.
 try:
-	db = shelve.open(Defaults.CONFIG_DB_LOCATION)
+	db = shelve.open(os.path.abspath(Defaults.CONFIG_DB_NAME))		# first look in the current directory.
 except anydbm.error:
-	config_file_inaccessible = True
-else:
+	try:
+		db = shelve.open("%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME))		# now try the default location
+	except anydbm.error:
+		config_file_inaccessible = True
+
+if not config_file_inaccessible:
 	for param_set in params:
 		for param_name in params[param_set]:
 			try:
