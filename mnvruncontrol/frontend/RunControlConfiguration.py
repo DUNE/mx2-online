@@ -158,7 +158,8 @@ class ConfigurationFrame(wx.Frame):
 		
 	def SaveAll(self, evt=None):
 		try:
-			db = shelve.open(Defaults.CONFIG_DB_LOCATION, "w")
+			location = "%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME)
+			db = shelve.open(location, "w")  
 		except anydbm.error:
 			errordlg = wx.MessageDialog( None, "The configuration file cannot be opened.  Values will not be saved.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
@@ -192,6 +193,8 @@ class ConfigurationFrame(wx.Frame):
 		
 		if self.parent is not None:	
 			wx.PostEvent(self.parent, Events.ConfigUpdatedEvent())
+		else:
+			print "Wrote configuration to '%s'." % location
 
 		self.Close()
 		
