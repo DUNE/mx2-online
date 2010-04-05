@@ -64,6 +64,7 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		                        "sc_readboards"  : self.sc_readboards } )
 		
 		self.pidfilename = Configuration.params["Readout nodes"]["readout_PIDfileLocation"]
+		self.current_HW_file = "NOFILE"
 
 		self.daq_thread = None
 
@@ -136,7 +137,8 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 				          "-d",  matches.group("detector"),
 				          "-ll", matches.group("lilevel"),
 				          "-lg", matches.group("ledgroup"),
-				          "-hw", matches.group("hwinitlevel") ) 
+				          "-hw", matches.group("hwinitlevel")
+				          "-cf", self.current_HW_file ) 
 			if show_details:
 				self.logger.info("   minervadaq command:")
 				self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
@@ -195,6 +197,8 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		self.sc_init()
 		
 		SCHWSetupThread(self, self.slowcontrol, fullpath)
+		
+		self.current_HW_file = matches.group("filename")
 
 		return "0"
 		    
