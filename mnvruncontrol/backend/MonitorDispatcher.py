@@ -121,16 +121,17 @@ class MonitorDispatcher(Dispatcher):
 		if show_details:
 			self.logger.info("Client wants to stop the OM processes.")
 		
+		errors = False
 		if self.om_eb_thread and self.om_eb_thread.is_alive():
 			if show_details:
 				self.logger.info("   ==> Attempting to stop the event builder thread.")
 			try:
-				self.om_eb_thread.daq_process.terminate()
+				self.om_eb_thread.process.terminate()
 				self.om_eb_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
 			except Exception, excpt:
 				self.logger.error("   ==> event builder process couldn't be stopped!")
 				self.logger.exception("   ==> Error message:")
-				return "1"
+				errors = True
 
 		if self.om_Gaudi_thread and self.om_Gaudi_thread.is_alive():
 			if show_details:
@@ -141,11 +142,12 @@ class MonitorDispatcher(Dispatcher):
 			except Exception, excpt:
 				self.logger.error("   ==> Gaudi process couldn't be stopped!")
 				self.logger.exception("   ==> Error message:")
-				return "1"
+				errors = True
 
 		if show_details:
 			self.logger.info("   ==> Stopped successfully.")
-		return "0"
+		
+		return "0" if not errors else "1"
 		
 
 #########################
