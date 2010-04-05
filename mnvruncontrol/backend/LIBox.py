@@ -62,7 +62,7 @@ class LIBox:
 
 			self.port.writeTimeout = 0.1
 		else:
-			print "Warning: LI box communication is disabled.  Edit LIBox.py and set 'DISABLE_LIBOX' to False near the top of the file to enable it."
+			print "Warning: LI box communication is disabled..."
 		
 	def reset(self):
 		self.command_stack = ["_X"]
