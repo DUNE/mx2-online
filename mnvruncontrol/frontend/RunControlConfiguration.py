@@ -86,6 +86,31 @@ class ConfigurationFrame(wx.Frame):
 		
 		self.AddButtons = {}
 		self.DeleteButtons = {}
+
+		# first: log file locations
+		labels["Front end"]["logFileLocations"] = wx.StaticText(self.pages["Front end"], -1, Configuration.names["Front end"]["logFileLocations"])
+		self.entries["Front end"]["logFileLocations"] = AutoSizingEditableListCtrl(self.pages["Front end"], style=wx.LC_REPORT | wx.LC_HRULES)
+		self.entries["Front end"]["logFileLocations"].InsertColumn(0, "Location")
+		
+		for location in Configuration.params["Front end"]["logFileLocations"]:
+			self.entries["Front end"]["logFileLocations"].InsertStringItem(sys.maxint, location)
+
+		self.AddButtons["logFileLocations"] = wx.Button(self.pages["Front end"], wx.ID_ADD, style=wx.BU_EXACTFIT)
+		self.pages["Front end"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["logFileLocations"])
+
+		self.DeleteButtons["logFileLocations"] = wx.Button(self.pages["Front end"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
+		self.pages["Front end"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["logFileLocations"])
+		
+		buttonSizer = wx.BoxSizer(wx.VERTICAL)
+		buttonSizer.AddMany ( ( (self.AddButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
+		
+		entrySizer = wx.BoxSizer(wx.HORIZONTAL)
+		entrySizer.AddMany( ( (self.entries["Front end"]["logFileLocations"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
+		
+		gridSizers["Front end"].Add(labels["Front end"]["logFileLocations"], flag=wx.ALIGN_CENTER_VERTICAL)
+		gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
+
+		# next: remote node config
 		for nodetype in ("readoutNodes", "monitorNodes"):
 			labels["Front end"][nodetype] = wx.StaticText(self.pages["Front end"], -1, Configuration.names["Front end"][nodetype])
 			self.entries["Front end"][nodetype] = AutoSizingEditableListCtrl(self.pages["Front end"], style=wx.LC_REPORT | wx.LC_HRULES)
@@ -110,9 +135,10 @@ class ConfigurationFrame(wx.Frame):
 			
 			gridSizers["Front end"].Add(labels["Front end"][nodetype], flag=wx.ALIGN_CENTER_VERTICAL)
 			gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
+	
 
 		# these are added like this so that they show up in a predictable order
-		for name in ("Front end", "Hardware", "Socket setup", "Dispatchers", "Readout nodes", "Monitoring nodes"):
+		for name in ("Front end", "Hardware", "Socket setup", "Dispatchers", "Master node", "Readout nodes", "Monitoring nodes"):
 			nb.AddPage(self.pages[name], name)
 			
 		saveButton = wx.Button(panel, wx.ID_SAVE)
@@ -133,10 +159,11 @@ class ConfigurationFrame(wx.Frame):
 		self.Layout()
 		
 	def AddNode(self, evt):
-		for nodename in self.AddButtons:
-			if evt.EventObject == self.AddButtons[nodename]:
-				index = self.entries["Front end"][nodename].InsertStringItem(sys.maxint, "[new node]")
-				self.entries["Front end"][nodename].SetStringItem(index, 1, "[new node address]")
+		for itemname in self.AddButtons:
+			if evt.EventObject == self.AddButtons[itemname]:
+				index = self.entries["Front end"][itemname].InsertStringItem(sys.maxint, "[text]")
+				for col in range(1, self.entries["Front end"][itemname].GetColumnCount()):
+					self.entries["Front end"][itemname].SetStringItem(index, 1, "[text]")
 	
 	def DeleteNodes(self, evt):
 		for nodename in self.DeleteButtons:
@@ -172,6 +199,21 @@ class ConfigurationFrame(wx.Frame):
 						db[param_name] = Configuration.types[param_set][param_name](self.entries[param_set][param_name].GetValue())
 			
 			# now any that need to be handled in a particular way
+			
+			# first: log file locations
+			loglist = []
+			index = -1
+			while True:
+				index = self.entries["Front end"]["logFileLocations"].GetNextItem(index)
+				
+				if index == -1:
+					break
+				loglist.append(self.entries["Front end"]["logFileLocations"].GetItem(index, 0).GetText())
+			
+			db["logFileLocations"] = loglist
+			
+			
+			# now remote nodes
 			nodetypes = ["readoutNodes", "monitorNodes"]
 			nodelist = {}
 			for nodetype in nodetypes:
