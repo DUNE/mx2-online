@@ -26,6 +26,7 @@ import re			# regular expressions
 # run control-specific modules.  note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Configuration
+from mnvruncontrol.configuration import Defaults
 
 from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import RunSeries
@@ -329,6 +330,7 @@ class MainFrame(wx.Frame):
 		self.logfileList.InsertColumn(3, "Time (GMT)")
 		self.logfileList.InsertColumn(4, "Run type")
 		self.logfileList.InsertColumn(5, "Detector")
+		self.logfileList.InsertColumn(6, "Controller")
 		
 		self.logFileButton = wx.Button(logPage, -1, "View selected log files")
 		self.Bind(wx.EVT_BUTTON, self.ShowLogFiles, self.logFileButton)
@@ -343,35 +345,35 @@ class MainFrame(wx.Frame):
 		
 		# add the pages into the notebook.
 		nb.AddPage(self.mainPage, "Run control")
-		if len(self.runmanager.readoutNodes) == 1:		# until we get the rsync'ing of log files to the master node working...
-			nb.AddPage(logPage, "Log files")
+		nb.AddPage(logPage, "Log files")
 		
 		self.Layout()
 
 		self.Bind(Events.EVT_CONFIGUPDATED, self.UpdateLogFiles)
 
 	def parseLogfileName(self, filename):
-		matches = re.match("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w+)_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller[01].txt$", filename)
+		matches = re.match(Defaults.LOGFILE_NAME_PATTERN, filename)
 		
 		if matches is None:
 			return None
 		
-		fileinfo = []
-
-		fileinfo.append(matches.group("run").lstrip('0'))
-		fileinfo.append(matches.group("subrun").lstrip('0'))
-		fileinfo.append(matches.group("month") + "/" + matches.group("day") + "/20" + matches.group("year"))
-		fileinfo.append( matches.group("hour") + ":" + matches.group("minute") )
+		fileinfo = {}
+		fileinfo["run"]    = matches.group("run").lstrip('0')
+		fileinfo["subrun"] = matches.group("subrun").lstrip('0')
+		fileinfo["date"]   = matches.group("month") + "/" + matches.group("day") + "/20" + matches.group("year")
+		fileinfo["time"]   = matches.group("hour") + ":" + matches.group("minute")
 
 		if matches.group("type") in MetaData.RunningModes:
-			fileinfo.append( MetaData.RunningModes[matches.group("type")] )
+			fileinfo["type"] = MetaData.RunningModes[matches.group("type")]
 		else:
 			return None
 	
 		if matches.group("detector") in MetaData.DetectorTypes:
-			fileinfo.append( MetaData.DetectorTypes[matches.group("detector")] )	
+			fileinfo["detector"] = MetaData.DetectorTypes[matches.group("detector")]
 		else:
 			return None
+		
+		fileinfo["controller"] = matches.group("controller")
 
 		return fileinfo
 
@@ -381,9 +383,9 @@ class MainFrame(wx.Frame):
 			errordlg.ShowModal()
 
 		self.runinfoFile                     = Configuration.params["Front end"]["runinfoFile"]
-		self.logfileLocation                 = Configuration.params["Front end"]["master_logfileLocation"]
-		self.runmanager.etSystemFileLocation = Configuration.params["Front end"]["etSystemFileLocation"]
-		self.runmanager.rawdataLocation      = Configuration.params["Front end"]["master_rawdataLocation"]
+#		self.logfileLocation                 = Configuration.params["Master node"]["master_logfileLocation"]
+		self.runmanager.etSystemFileLocation = Configuration.params["Master node"]["etSystemFileLocation"]
+		self.runmanager.rawdataLocation      = Configuration.params["Master node"]["master_rawdataLocation"]
 		self.runmanager.ResourceLocation     = Configuration.params["Front end"]["ResourceLocation"]
 		self.runmanager.readoutNodes         = [ReadoutNode.ReadoutNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["readoutNodes"]]
 		self.runmanager.monitorNodes         = [MonitorNode.MonitorNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["monitorNodes"]]
@@ -688,36 +690,47 @@ class MainFrame(wx.Frame):
 		self.logfileNames = []
 		self.logfileInfo = []
 		
-		try:
-			for filename in os.listdir(self.logfileLocation):
-				if os.path.isdir(filename):
-					continue
-				fileinfo = self.parseLogfileName(filename)
-				if fileinfo is not None:
-					self.logfileNames.append(filename)
-					self.logfileInfo.append(fileinfo)
-		except OSError:
-			self.logfileNames = None
-			self.logfileInfo = None
-		else:
+		for path in Configuration.params["Front end"]["logFileLocations"]:
+			try:
+				for filename in os.listdir(path):
+					if os.path.isdir(filename):
+						continue
+					fileinfo = self.parseLogfileName(filename)
+					if fileinfo is not None:
+						fileinfo["path"] = path
+						self.logfileNames.append(filename)
+						self.logfileInfo.append(fileinfo)
+			except OSError:
+				continue
+				
+		if len(self.logfileNames) > 0:
 			self.logfileNames.sort(self.SortLogFiles)
 			self.logfileInfo.sort(self.SortLogData)
 			
 			self.logfileNames.reverse()
 			self.logfileInfo.reverse()
+		else:
+			self.logfileNames = None
+			self.logfileInfo = None
+			
+		column_map = {0: "run", 1: "subrun", 2: "date", 3: "time", 4: "type", 5: "detector", 6: "controller"}
 
 		if self.logfileNames is not None and len(self.logfileNames) > 0:
 			for fileinfo in self.logfileInfo:
-				index = self.logfileList.InsertStringItem(sys.maxint, fileinfo[0])
-				for i in range(1,len(fileinfo)):
-					self.logfileList.SetStringItem(index, i, fileinfo[i])
+				index = self.logfileList.InsertStringItem(sys.maxint, fileinfo["run"])
+				for i in range(1,len(column_map)):
+					self.logfileList.SetStringItem(index, i, fileinfo[column_map[i]])
 		else:
 			self.logfileList.InsertStringItem(0, "Log directory is empty or inaccessible.")
 		
 			
 	def ShowLogFiles(self, evt=None):
+		# if there are no log files in the display...
+		if self.logfileNames is None:
+			return
+	
 		filenames = []
-
+		
 		index = -1
 		while True:
 			index = self.logfileList.GetNextSelected(index)
@@ -725,7 +738,7 @@ class MainFrame(wx.Frame):
 			if index == -1:
 				break
 			
-			filenames.append(self.logfileLocation + "/" + self.logfileNames[index])
+			filenames.append(self.logfileInfo[index]["path"] + "/" + self.logfileNames[index])
 	
 		logframe = Frames.LogFrame(self, filenames)
 		logframe.Show()
@@ -748,6 +761,12 @@ class MainFrame(wx.Frame):
 				if cb.GetValue() == True:
 					LEDgroups += cb.GetLabelText()
 			LEDcode = MetaData.LEDGroups.hash(MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups))
+
+			if LEDgroups == "ABC":
+				errordlg = wx.MessageDialog( None, "The LED group combination \"ABC\" is not supported by the LI cards.  You probably want to use \"ABCD\" instead.", "LED group \"ABC\" not supported", wx.OK | wx.ICON_ERROR )
+				errordlg.ShowModal()
+				
+				return
 
 			gates    = int(self.gatesEntry.GetValue())
 			runMode  = MetaData.RunningModes.item(int(self.runModeEntry.GetSelection()), MetaData.HASH)
@@ -824,12 +843,12 @@ class MainFrame(wx.Frame):
 
 	@staticmethod
 	def SortLogData(fileinfo1, fileinfo2):
-		f1 = int(fileinfo1[0])*10000 + int(fileinfo1[1])		# run * 10000 + subrun
-		f2 = int(fileinfo2[0])*10000 + int(fileinfo2[1])
+		f1 = int(fileinfo1["run"])*10000 + int(fileinfo1["subrun"])		# run * 10000 + subrun
+		f2 = int(fileinfo2["run"])*10000 + int(fileinfo2["subrun"])
 		
 		if f1 == f2:
-			t1 = time.strptime("2010 " + fileinfo1[3], "%Y %H:%M")		# need to include a year because otherwise the 'mktime' below overflows.  which year it is is irrelevant (all we need is a difference anyway).
-			t2 = time.strptime("2010 " + fileinfo2[3], "%Y %H:%M")
+			t1 = time.strptime("2010 " + fileinfo1["date"], "%Y %H:%M")		# need to include a year because otherwise the 'mktime' below overflows.  which year it is is irrelevant (all we need is a difference anyway).
+			t2 = time.strptime("2010 " + fileinfo2["date"], "%Y %H:%M")
 			
 			timediff = time.mktime(t1) - time.mktime(t2)
 			if timediff == 0:		# this should never happen.
@@ -841,7 +860,7 @@ class MainFrame(wx.Frame):
 			
 	@staticmethod
 	def SortLogFiles(file1, file2):
-		pattern = re.compile("^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w{5})_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_RawData_Controller[01].txt$")
+		pattern = re.compile(Defaults.LOGFILE_NAME_PATTERN)
 		
 		matchdata1 = pattern.match(file1)
 		matchdata2 = pattern.match(file2)
