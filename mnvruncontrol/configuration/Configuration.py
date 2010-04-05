@@ -18,6 +18,7 @@
 
 import shelve
 import anydbm
+import os.path
 
 from mnvruncontrol.configuration import Defaults
 
@@ -85,7 +86,9 @@ config_file_inaccessible = False
 
 # now update using any values that are set in the DB.
 try:
-	db = shelve.open(os.path.abspath(Defaults.CONFIG_DB_NAME))		# first look in the current directory.
+	location = os.path.abspath(Defaults.CONFIG_DB_NAME) 
+	db = shelve.open(location, "r")		# first look in the current directory.
+#	print "Using config DB in '%s'..." % location
 except anydbm.error:
 	try:
 		db = shelve.open("%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME))		# now try the default location
@@ -99,6 +102,8 @@ if not config_file_inaccessible:
 				params[param_set][param_name] = db[param_name]
 			except KeyError:
 				pass		# the default is already set
+else:
+	print "Note: configuration file is inaccessible.  Defaults are in use."
 
 
 			
