@@ -82,7 +82,7 @@ class MonitorDispatcher(Dispatcher):
 	
 	def om_start_eb(self, etfile, etport):
 		""" Start the event builder process. """
-		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Configuration.params["Front end"]["etSystemFileLocation"], etfile, self.evbfile, etport, os.getpid()) ) 
+		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Configuration.params["Master node"]["etSystemFileLocation"], etfile, self.evbfile, etport, os.getpid()) ) 
 		self.logger.info("   event_builder command:")
 		self.logger.info("      '" + executable + "'...")
 		signal.signal(signal.SIGUSR1, self.om_start_Gaudi)

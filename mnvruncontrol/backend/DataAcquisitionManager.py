@@ -66,13 +66,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.monitorNodes = None				# ditto.
 
 		# configuration stuff
-		self.etSystemFileLocation = Configuration.params["Front end"]["etSystemFileLocation"]
-		self.rawdataLocation      = Configuration.params["Front end"]["master_rawdataLocation"]
+		self.etSystemFileLocation = Configuration.params["Master node"]["etSystemFileLocation"]
+		self.rawdataLocation      = Configuration.params["Master node"]["master_rawdataLocation"]
 
 		# logging facilities
 		self.logger = logging.getLogger("rc_dispatcher")
 		self.logger.setLevel(logging.DEBUG)
-		self.filehandler = logging.handlers.RotatingFileHandler(Configuration.params["Front end"]["master_logfileName"], maxBytes=204800, backupCount=5)
+		self.filehandler = logging.handlers.RotatingFileHandler(Configuration.params["Master node"]["master_logfileName"], maxBytes=204800, backupCount=5)
 		self.filehandler.setLevel(logging.DEBUG)
 		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
 		self.filehandler.setFormatter(self.formatter)
@@ -162,13 +162,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# do any more checking on the readout nodes.
 		if not( evt is not None and hasattr(evt, "allclear") ):
 			# the run will need a manual stop if the readout nodes can't be properly contacted.
-			needsManualStop = False
+			success = False
 			for node in self.readoutNodes:
 				try:
 					success = node.daq_stop()
 				except ReadoutNode.ReadoutNodeNoDAQRunningException, ReadoutNode.ReadoutNodeNoConnectionException:		# the DAQ has already quit or is unreachable
-					needsManualStop = True				# if so, we'll never get the "DAQ quit" event from the SocketThread.
-			if not success or needsManualStop:
+					pass				# if so, we'll never get the "DAQ quit" event from the SocketThread.  don't indicate 'success'.
+			if not success:
 				wx.PostEvent(self, Events.EndSubrunEvent())
 		for node in self.readoutNodes:
 			node.release_lock()										
