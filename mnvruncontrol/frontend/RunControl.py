@@ -643,10 +643,13 @@ class MainFrame(wx.Frame):
 		
 	def UpdateSeriesStatus(self, evt=None):
 		symbol = ""
+		color = ""
 		if self.runmanager.running:
 			symbol = u"\u25b7"		# a right-facing triangle: like a "play" symbol
+			color = wx.NamedColour("green")
 		else:
 			symbol = u"\u25a1"		# a square: like a "stop" symbol
+			color = wx.NamedColour("yellow")
 
 		if self.runSeriesButton.GetValue() == True:		# if this is a run SERIES
 			index = -1
@@ -658,10 +661,12 @@ class MainFrame(wx.Frame):
 			
 				if index == self.runmanager.subrun:
 					self.seriesDescription.SetStringItem(index, 0, symbol)
-					self.seriesDescription.Select(index)
+					self.seriesDescription.SetItemBackgroundColour(index, color)
+#					self.seriesDescription.Select(index)
 				else:
 					self.seriesDescription.SetStringItem(index, 0, "")
-					self.seriesDescription.Select(index, False)
+					self.seriesDescription.SetItemBackgroundColour(index, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+#					self.seriesDescription.Select(index, False)
 	
 
 	def OnTimeToClose(self, evt):
