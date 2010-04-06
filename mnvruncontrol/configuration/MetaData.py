@@ -259,7 +259,7 @@ RunSeriesTypes          = MetaData(( ("Beam",                0, "beam_series.db"
 				                 ("Mixed Beam-LI",       5, "mix_beam_li_series.db"),
 				                 ("Custom Series",       6, "custom_series.db") ))
         	
-HardwareConfigurations = MetaData(( ("Current state",          None, "[no HW file -- current configuration]"),
-                                    ("Beam settings",          None, "beam.hwcfg"),
-                                    ("LI settings",            None, "li.hwcfg"),
-                                    ("LI with discriminators", None, "li_with_discriminators.hwcfg") ))
+HardwareConfigurations = MetaData(( ("Current state",          0, "[no HW file -- current configuration]"),
+                                    ("Beam settings",          1, "SCBeamFile"),
+                                    ("LI settings",            2, "SCLIFile"),
+                                    ("LI with discriminators", 3, "SCLIDiscriminatorsFile") ))

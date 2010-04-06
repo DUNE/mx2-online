@@ -185,10 +185,11 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		""" Uses the slow control library to load a hardware configuration
 		    file.  Returns 0 on success, 1 on error, and 2 if 
 		    there is no such file. """
+		hwconfig_hash = int(matches.group("hwconfig"))
 		if show_details:
-			self.logger.info("Client wants to load slow control configuration file: '" + matches.group("filename") + "'.")
+			self.logger.info("Client wants to load slow control configuration file: '" + MetaData.HardwareConfigurations.description(hwconfig_hash) + "'.")
 		
-		fullpath = "%s/%s" % (Configuration.params["Readout nodes"]["SCfileLocation"], matches.group("filename"))
+		fullpath = "%s/%s" % (Configuration.params["Readout nodes"]["SCfileLocation"], Configuration.params["Readout nodes"][MetaData.HardwareConfigurations.code(hwconfig_hash)])
 		
 		if not os.path.isfile(fullpath):
 			self.logger.warning("Specified slow control configuration file does not exist: " + fullpath)

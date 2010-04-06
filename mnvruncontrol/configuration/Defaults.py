@@ -69,3 +69,7 @@ SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/har
 SLOWCONTROL_ALLOWED_HV_THRESHOLDS = {300: 0, 100: 3, 60: 15}	# that is, { threshold : num allowed over that threshold, ... }
 SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD = 15000
 SLOWCONTROL_NUM_WRITE_ATTEMPTS = 3
+SLOWCONTROL_BEAM_FILE              = "beam.hwcfg"
+SLOWCONTROL_LI_FILE                = "li.hwcfg"
+SLOWCONTROL_LI_DISCRIMINATORS_FILE = "li_with_discriminators.hwcfg"
+ 

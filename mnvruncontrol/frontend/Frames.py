@@ -209,17 +209,18 @@ class RunSeriesInfoFrame(wx.Frame):
 		panel = wx.Panel(self)
 
 		infoList = Tools.AutoSizingListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
-		infoList.setResizeColumn(2)
+		infoList.setResizeColumn(5)
 
 		infoList.InsertColumn(0, "# gates")
-		infoList.InsertColumn(1, "Running mode")
+		infoList.InsertColumn(1, "Run mode")
 		infoList.InsertColumn(2, "LI level")
 		infoList.InsertColumn(3, "LED group(s)")
+		infoList.InsertColumn(4, "HW config")
 		
 		# center the columns
 		col = wx.ListItem()
 		col.SetAlign(wx.LIST_FORMAT_CENTER)
-		for i in range(4):
+		for i in range(5):
 			infoList.SetColumn(i, col)
 
 		for runinfo in runseries.Runs:
@@ -231,6 +232,7 @@ class RunSeriesInfoFrame(wx.Frame):
 			else:
 				infoList.SetStringItem(index, 2, "--")
 				infoList.SetStringItem(index, 3, "--")
+			infoList.SetStringItem(index, 4, MetaData.HardwareConfigurations.description(runinfo.hwConfig))
 			
 		
 		okButton = wx.Button(panel, wx.ID_OK)

@@ -770,7 +770,7 @@ class MainFrame(wx.Frame):
 
 			gates    = int(self.gatesEntry.GetValue())
 			runMode  = MetaData.RunningModes.item(int(self.runModeEntry.GetSelection()), MetaData.HASH)
-			hwcfg    = MetaData.HardwareConfigurations.item(int(self.hwConfigEntry.GetSelection()), MetaData.CODE)
+			hwcfg    = MetaData.HardwareConfigurations.item(int(self.hwConfigEntry.GetSelection()), MetaData.HASH)
 			LIlevel  = MetaData.LILevels.item(int(self.LILevelEntry.GetSelection()), MetaData.HASH)
 
 			run = RunSeries.RunInfo(gates, runMode, hwcfg, LIlevel, LEDcode)

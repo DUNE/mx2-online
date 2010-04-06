@@ -90,14 +90,14 @@ class ReadoutNode(RemoteNode):
 		else:
 			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
 
-	def sc_loadHWfile(self, filename):
+	def sc_loadHWfile(self, filehash):
 		""" Asks the server to load the specified hardware configuration file. 
 		    Returns 0 on success, 1 on failure, and 2 if the file doesn't exist. 
 		    Note that the return value only indicates receipt of the message and
 		    ability to start: it takes a while for the slow control initialization
 		    to actually finish.  When it does, the dispatcher sends a message
 		    back to the master node. """
-		response = self.request("sc_setHWconfig '" + filename + "'!")	
+		response = self.request("sc_setHWconfig " + filehash + "!")	
 		
 		if response == "0":
 			return True

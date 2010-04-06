@@ -186,7 +186,7 @@ class MyFrame(wx.Frame):
 			self.UpdateRunList()
 			if len(self.runSeries.Runs) > 0:
 				firstRun = self.runSeries.GetRun(0)
-		        	self.hardwareConfigEntry.SetSelection(self.hardwareConfigEntry.FindString(MetaData.HardwareConfigurations[firstRun.hwConfig,MetaData.DESCRIPTION]))
+		        	self.hardwareConfigEntry.SetSelection(MetaData.HardwareConfigurations.index(firstRun.hwConfig))
                 except:
                         message  = "Could not retrieve run series from "+path[0]+"\n"
 			message += "Possible reasons are:\n"
@@ -194,6 +194,7 @@ class MyFrame(wx.Frame):
 			message += "2) The database does not contain the key \"series\"\n"
 			message += "3) The keyed value is not a RunSeries object\n"
 			print message
+				pass
 
 		
 
@@ -352,7 +353,6 @@ class MyFrame(wx.Frame):
 	self.WriteRunToList(index,run)
 
     def WriteRunToList(self,index,run):
-	
         self.runList.SetStringItem(index, 1, MetaData.RunningModes[run.runMode,MetaData.DESCRIPTION])
         self.runList.SetStringItem(index, 2, str(run.gates))
 	self.runList.SetStringItem(index, 3, MetaData.HardwareConfigurations[run.hwConfig,MetaData.DESCRIPTION])
@@ -368,7 +368,7 @@ class MyFrame(wx.Frame):
 
 	gates    = self.gatesEntry.GetValue()
 	runMode  = MetaData.RunningModes[self.runModeEntry.GetStringSelection(),MetaData.HASH]
-	hwConfig = MetaData.HardwareConfigurations[self.hardwareConfigEntry.GetStringSelection(),MetaData.CODE]
+	hwConfig = MetaData.HardwareConfigurations[self.hardwareConfigEntry.GetStringSelection(), MetaData.HASH]
 	ledLevel = "--"
 	leds     = "--"
 
