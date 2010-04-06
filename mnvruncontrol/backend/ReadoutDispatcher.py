@@ -137,7 +137,7 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 				          "-d",  matches.group("detector"),
 				          "-ll", matches.group("lilevel"),
 				          "-lg", matches.group("ledgroup"),
-				          "-hw", matches.group("hwinitlevel")
+				          "-hw", matches.group("hwinitlevel"),
 				          "-cf", self.current_HW_file ) 
 			if show_details:
 				self.logger.info("   minervadaq command:")
