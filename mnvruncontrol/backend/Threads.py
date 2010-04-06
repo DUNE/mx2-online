@@ -274,7 +274,7 @@ class SocketThread(threading.Thread):
 						callbacks_notified.append(subscription.callback)
 #					else:
 #						print "(%d, %d, %d)" % (subscription.waiting, subscription.notice is not None, subscription.callback not in callbacks_notified)
-
+		self.socket.shutdown(socket.SHUT_RDWR)
 		self.socket.close()
 					
 	def Subscribe(self, addressee, node_name, message, callback, waiting=False, notice=None):

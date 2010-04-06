@@ -673,7 +673,11 @@ class MainFrame(wx.Frame):
 
 	def OnTimeToClose(self, evt):
 		if self.runmanager.running:
-			self.runmanager.StopDataAcquisition()
+			# try to stop things nicely.
+			try:
+				self.runmanager.StopDataAcquisition()
+			except:
+				pass		# if we can't, oh well.  we're closing anyway.
 
 		self.runmanager.Cleanup()
 			

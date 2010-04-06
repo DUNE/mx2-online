@@ -97,7 +97,7 @@ class ReadoutNode(RemoteNode):
 		    ability to start: it takes a while for the slow control initialization
 		    to actually finish.  When it does, the dispatcher sends a message
 		    back to the master node. """
-		response = self.request("sc_setHWconfig " + filehash + "!")	
+		response = self.request("sc_setHWconfig %d!" % filehash)	
 		
 		if response == "0":
 			return True

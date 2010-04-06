@@ -133,6 +133,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 				failed_connection = node.name
 				break
 		
+		for node in self.monitorNodes:
+			node.get_lock()
+		
 		if failed_connection:
 			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Cannot get control of dispatcher on the " + failed_connection + " readout node.  Check to make sure that the readout dispatcher is started on that machine and that there are no other run control processes connected to it.", title="No lock on " + failed_connection + " readout node") )
 			return
@@ -171,7 +174,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 			if not success:
 				wx.PostEvent(self, Events.EndSubrunEvent())
 		for node in self.readoutNodes:
-			node.release_lock()										
+			node.release_lock()
+			
+		for node in self.monitorNodes:
+			try:
+				node.om_stop()
+				node.release_lock()									
+			except:		# don't worry about it.  
+				pass
 
 		wx.PostEvent(self.main_window, Events.StopRunningEvent())		# tell the main window that we're done here.
 
@@ -437,7 +447,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		return True
 	
 	def ReadoutNodeHWConfig(self):
-		self.logger.info("  Using hardware configuration: " + self.runinfo.hwConfig)
+		self.logger.info("  Using hardware configuration: " + MetaData.HardwareConfigurations.description(self.runinfo.hwConfig))
 		
 		# if this is the first subrun, it's the only subrun,
 		# or it has a different HW config from the one before,
@@ -447,7 +457,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# to use any configuration file at all (so that custom
 		# configurations via the slow control can be used for testing).
 		self.logger.debug("  HW config check.")
-		if self.runinfo.hwConfig != MetaData.HardwareConfigurations["Current state"] and (self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig):
+		if self.runinfo.hwConfig != MetaData.HardwareConfigurations.hash("Current state") and (self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig):
 			# NOTE: DON'T consolidate this loop together with the next one.
 			# the subscriptions need to ALL be booked before any of the nodes
 			# gets a "HW configure" command.  otherwise there will be race conditions.
@@ -645,7 +655,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			try:
 				node.om_start(self.ET_filename, self.runinfo.ETport)
 			except:
-				self.logger.exception("Online monitoring couldn't be started on node %s.  Ignoring." % name)
+				self.logger.exception("Online monitoring couldn't be started on node '%s'.  Ignoring." % node.name)
 				continue
 
 		# DON'T consolidate this loop together with the next one.
