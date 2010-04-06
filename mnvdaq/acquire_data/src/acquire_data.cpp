@@ -63,6 +63,13 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	// Add look-up functions here - one for file content look-up and one by address scanning 
 	std::string detectorString = "Unknown Detector.";
 #if NO_THREAD
+#if MTEST
+	detectorString        = "MTest.";
+	std::cout            << "Initializing hardware for " << detectorString << std::endl; 
+	acqData.infoStream() << "Initializing hardware for " << detectorString; 
+	InitializeCrim(0xE00000, 1, runningMode);
+	InitializeCroc(0x010000, 1, 2, 0, 0, 0);
+#endif
 #if WH14T
 	detectorString        = "WH14 Top Crate.";
 	std::cout            << "Initializing hardware for the " << detectorString << std::endl; 
