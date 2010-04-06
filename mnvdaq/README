@@ -108,6 +108,24 @@ And check ${DAQROOT}/lib/ for
 10) If you are missing any of these, read the Makefile and try building each package one at a time and check 
 for errors.  Most likely, an environment variable has been incorrectly set.
 
+11) To run the DAQ in single PC mode go to $DAQROOT/runthedaq and use the start_daq_singleton script.  Note you 
+can pass the following flagged commands to the script:
+	-et	ET Filename (default is "testme")
+	-f)	Number of FEBs (default is 4)
+	-g)	Number of Gates (default is 10)
+	-m)	Run Mode (default is 0 - OneShot)
+	-r)	Run Number (default is 1337)
+	-s)	Subrun Number (default is 391)
+So, for example, to run the DAQ you might type:
+	$DAQROOT/runthedaq> ./start_daq_singleton -et myfile -g 1000 -r 100 -s 1
+to run the DAQ taking 1000 gates using run number 100 and subrun number 1.  The ET system name will be myfile 
+and the Minerva RawData (decodable wih BuildRawEventsAlg) will be recorded in myfile.dat.  Note that the 
+running mode would default to OneShot. 
+
+12) To run the DAQ in multi-PC mode, go to the bin/ directory on the readout nodes (soldier and worker) and 
+start the process "daq_slave_service."  Then, go to the runthedaq/ directory on the head node and run the 
+start_daq_master script.  It accepts the same argument flags as start_daq_singleton.
+
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Note about data sizes!  If you run the DAQ on an OS besides 64-bit SLF5.3, be sure to check the data sizes 
 your compiler uses for variables.  The code currently assumes the following (check with sizeOfTest in the 
