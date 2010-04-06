@@ -209,10 +209,11 @@ class MainFrame(wx.Frame):
 		seriesFileSizer.Add(self.seriesFile, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL)
 		
 		self.seriesDescription = Tools.AutoSizingListCtrl(self.runSeriesConfigPanel, -1, style=wx.LC_REPORT | wx.LC_VRULES)
-		self.seriesDescription.setResizeColumn(2)
+		self.seriesDescription.setResizeColumn(3)
 		self.seriesDescription.InsertColumn(0, "", width=20)		# which subrun is currently being executed
-		self.seriesDescription.InsertColumn(1, "Run mode")#, width=150)
-		self.seriesDescription.InsertColumn(2, "Number of gates", width=125)
+		self.seriesDescription.InsertColumn(1, "#", width=25)
+		self.seriesDescription.InsertColumn(2, "Run mode")#, width=150)
+		self.seriesDescription.InsertColumn(3, "# gates")#, width=125)
 
 		# center the "currently running indicator" column
 		col = wx.ListItem()
@@ -575,8 +576,9 @@ class MainFrame(wx.Frame):
 
 		for runinfo in self.runmanager.runseries.Runs:
 			index = self.seriesDescription.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
-			self.seriesDescription.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-			self.seriesDescription.SetStringItem(index, 2, str(runinfo.gates))
+			self.seriesDescription.SetStringItem(index, 1, str(self.runmanager.runseries.Runs.index(runinfo)+1))
+			self.seriesDescription.SetStringItem(index, 2, MetaData.RunningModes[runinfo.runMode])
+			self.seriesDescription.SetStringItem(index, 3, str(runinfo.gates))
 
 		self.runmanager.subrun = 0
 		self.moreInfoButton.Enable()
@@ -664,7 +666,7 @@ class MainFrame(wx.Frame):
 				if index == self.runmanager.subrun:
 					self.seriesDescription.SetStringItem(index, 0, symbol)
 					self.seriesDescription.SetItemBackgroundColour(index, color)
-#					self.seriesDescription.Select(index)
+					self.seriesDescription.EnsureVisible(index)
 				else:
 					self.seriesDescription.SetStringItem(index, 0, "")
 					self.seriesDescription.SetItemBackgroundColour(index, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
