@@ -186,10 +186,11 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		    file.  Returns 0 on success, 1 on error, and 2 if 
 		    there is no such file. """
 		hwconfig_hash = int(matches.group("hwconfig"))
+		hwfile = Configuration.params["Readout nodes"][MetaData.HardwareConfigurations.code(hwconfig_hash)] 
 		if show_details:
-			self.logger.info("Client wants to load slow control configuration file: '" + MetaData.HardwareConfigurations.description(hwconfig_hash) + "'.")
+			self.logger.info("Client wants to load slow control configuration file: '%s'." % MetaData.HardwareConfigurations.description(hwconfig_hash))
 		
-		fullpath = "%s/%s" % (Configuration.params["Readout nodes"]["SCfileLocation"], Configuration.params["Readout nodes"][MetaData.HardwareConfigurations.code(hwconfig_hash)])
+		fullpath = "%s/%s" % (Configuration.params["Readout nodes"]["SCfileLocation"], hwfile)
 		
 		if not os.path.isfile(fullpath):
 			self.logger.warning("Specified slow control configuration file does not exist: " + fullpath)
@@ -199,7 +200,7 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		
 		SCHWSetupThread(self, self.slowcontrol, fullpath)
 		
-		self.current_HW_file = matches.group("filename")
+		self.current_HW_file = hwfile
 
 		return "0"
 		    
