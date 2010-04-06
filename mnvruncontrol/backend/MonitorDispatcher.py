@@ -99,17 +99,19 @@ class MonitorDispatcher(Dispatcher):
 			optsfile.write("Event.Output = \"DATAFILE='PFN:%s' TYP='POOL_ROOTTREE' OPT='RECREATE'\";" % self.raweventfile)
 			optsfile.write("HistogramPersistencySvc.Outputfile = \"%s\";" % self.rawhistosfile)
 		
-		# if the Gaudi thread is still running, just have DIM stop and restart it.
+		# if the Gaudi thread is still running, it needs to be stopped.
+		# the DIM command is supposed to help it shut down cleanly.  
 		if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
 			subprocess.call("dim_send_command.exe NEARONLINE stop", shell=True)
-			subprocess.call("dim_send_command.exe NEARONLINE start", shell=True)
-		# otherwise, start it fresh.
-		else:
-			executable = ("$DAQRECVROOT/$CMTCONFIG/OnlineMonitor.exe $GAUDIONLINEROOT/$CMTCONFIG/libGaudiOnline.so OnlineTask -tasktype=LHCb::Class2Task -main=$GAUDIONLINEROOT/options/Main.opts -opt=$DAQRECVROOT/options/Nearonline.opts -auto")
-			self.om_Gaudi_thread = OMThread(executable, "gaudi")
+			self.om_Gaudi_thread.process.terminate()
+			self.om_Gaudi_thread.join()
 
-			self.logger.info("   OnlineMonitor command:")
-			self.logger.info("      '" + executable + "'...")
+		# now start a new copy
+		executable = ("$DAQRECVROOT/$CMTCONFIG/OnlineMonitor.exe $GAUDIONLINEROOT/$CMTCONFIG/libGaudiOnline.so OnlineTask -tasktype=LHCb::Class2Task -main=$GAUDIONLINEROOT/options/Main.opts -opt=$DAQRECVROOT/options/Nearonline.opts -auto")
+		self.om_Gaudi_thread = OMThread(executable, "gaudi")
+
+		self.logger.info("   OnlineMonitor command:")
+		self.logger.info("      '" + executable + "'...")
 	
 	def om_stop(self, matches, show_details, **kwargs):
 		""" Stops the online monitor processes.  Only really needed
