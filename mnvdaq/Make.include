@@ -3,31 +3,23 @@
 #	CAEN_DIR
 # environment variables.
 
+CPPFLAGS += -g -Wall 
 LDLIBS += -L/usr/lib64 -ldl
 
 #CAEN libraries & drivers needed
 INCLUDE += -I$(CAEN_DIR)/include
 LDLIBS += -L$(CAEN_DIR)/lib/x86_64 -lCAENVME
 
-# log4cpp Classes and Libraries
-ifeq ($(LOCALE),NEARLINE)
-	INCLUDE += -I/scratch/nearonline/log4cpp/include
-	LDLIBS += -L/scratch/nearonline/log4cpp/lib -llog4cpp -L/usr/lib64 -lpthread 
-else
-	INCLUDE += -I/usr/local/include
-	LDLIBS += -L/usr/local/lib -llog4cpp -L/usr/lib64 -lpthread 
-endif
-
 #BOOST libraries for the threading
-ifeq ($(LOCALE),RUTGERS)
+ifeq ($(LOCALE),FNAL)
+#FNAL
+	LDLIBS += -L/usr/lib64 -lboost_thread
+else
 #Rutgers
 	LDLIBS += -L/usr/lib64 -lboost_thread-mt
-else
-#FNAL & Nearline
-	LDLIBS += -L/usr/lib64 -lboost_thread
 endif
 
-INCLUDE += -I/usr/include/boost/thread -I/usr/include/boost
+INCLUDE += /usr/include/boost/thread /usr/include/boost
 
 #MINERvA DAQ Libraries
 #Electronics drive code
@@ -51,3 +43,4 @@ INCLUDE += -I$(DAQROOT)/event_builder/include
 #Event Transver
 INCLUDE += -I$(DAQROOT)/et_9.0/src/libsrc
 
+CPPFLAGS += $(INCLUDE)

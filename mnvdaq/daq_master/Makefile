@@ -1,11 +1,18 @@
 CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 
+# daq_master does not appear to use any of these...
+#COMPILE_OPTIONS += -DTHREAD_ME
+COMPILE_OPTIONS += -DNO_THREAD
+#COMPILE_OPTIONS += -DDEBUG_ME 
+#COMPILE_OPTIONS += -DDEBUG_THREAD
+COMPILE_OPTIONS += -DRECORD_EVENT
+#COMPILE_OPTIONS += -DASSERT_INTERRUPT
+#COMPILE_OPTIONS += -DTIME_ME
+
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
 TARGET=daq_master
-
-include $(DAQROOT)/Make.include
 
 $(TARGET): $(OBJS)
 	@echo $(OBJS)

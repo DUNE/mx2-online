@@ -115,16 +115,6 @@ crim::crim(unsigned int ca, int crimid, CVAddressModifier a, CVDataWidth w)
 	statusRegister         = crimClearStatus;
 	clearStatusRegister    = crimAddress + (unsigned int)statusRegister;
 
-	// External data registers
-	statusRegister          = crimGateTimeWordLow;
-	gateTimeWordLowAddress  = crimAddress + (unsigned int)statusRegister;
-	statusRegister          = crimGateTimeWordHigh;
-	gateTimeWordHighAddress = crimAddress + (unsigned int)statusRegister;
-
-	// Cosmic mode control (only meaningful for v5 CRIM firmware
-	statusRegister		= crimSequencerControlLatch;
-	sequencerResetRegister  = crimAddress + (unsigned int)crimSequencerControlLatch;
-
 	//register value for control register (DAQ Mode control)
 	controlRegister = ControlRegisterCRCMask | ControlRegisterSendMask 
 		& ~ControlRegisterRetransmitMask; //set crc & send to true and retransmit to false
@@ -179,7 +169,6 @@ void crim::SetReTransmitEnable(bool a)
 }
 
 
-// TODO - This function is now basically obsolete?... Should probably remove it.
 void crim::SetupOneShot() 
 {
 /*! \fn

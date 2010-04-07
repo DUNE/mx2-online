@@ -21,8 +21,7 @@ channels::channels(unsigned int a, int b)
  */
 	channelBaseAddress = a; //the address for the croc which contains this channel
 	channelNumber = b; //the channel number (0-3 here, 1-4 is stenciled on the cards themselves)
-	chainNumber   = b; //the chain number 0-3, now and forever.
-	channelDirectAddress = channelBaseAddress + 0x4000 * (unsigned int)(chainNumber);
+	channelDirectAddress = channelBaseAddress + 0x4000 * (unsigned int)(channelNumber);
 	FIFOMaxSize = 2048; // bytes; largest number of bytes the FIFO buffer can hold
 	MemoryMaxSize = 6144; // bytes;  largest number of bytes the DPM Memory can hold
 	crocRegisters registerOffset = crocInput;
@@ -42,34 +41,37 @@ channels::channels(unsigned int a, int b)
 
 	channelStatus = 0; //the channel starts out with no status information kept
 	has_febs=false; //and no feb's loaded
+
+	// std::string filename;
+	// std::stringstream channel_no;
+	// channel_no<<channelDirectAddress;
+	// filename = "channel_"+channel_no.str();
+	// log_file.open(filename.c_str());
 }
 
 
-void channels::SetFEBs(int a, int nHits, log4cpp::Appender* appender) 
+void channels::SetFEBs(int a, int nHits) 
 {
 /*! \fn
  * This function loads FEB's belonging to this channel into a vector of febs once
  * the feb has been found
  * \param a the FEB number
- * \param nHits max Hits
- * \param appender log4cpp Appender
  */
 	// if we found this feb on this channel, put it into the list 
-	febs.push_back(new feb(nHits, false, (febAddresses)a, 54, appender)); 
+	febs.push_back(new feb(nHits, false, (febAddresses)a, 54)); 
 	return;
 }
 
 
-feb *channels::MakeTrialFEB(int a, int nHits, log4cpp::Appender* appender) 
+feb *channels::MakeTrialFEB(int a, int nHits) 
 {
 /*! \fn 
  * This function creates a disposable "trial" FEB.
  * \param a the FEB number
  * \param nHits max Hits
- * \param appender log4cpp Appender
  */
 	febAddresses f = (febAddresses)a; //store the trial feb address
-	feb *trialFeb = new feb(nHits, false, f, 54, appender); //make up the trial feb
+	feb *trialFeb = new feb(nHits, false, f, 54); //make up the trial feb
 	trialFeb->SetFEBDefaultValues(); //set default values for convenience; be careful about *writing*!
 	return trialFeb;
 }
@@ -185,7 +187,7 @@ void channels::SetBuffer(unsigned char *b) {
  */
 
 #if DEBUG_VERBOSE
-	std::cout << "     Setting Buffer for Chain " << this->GetChainNumber() << std::endl;
+	std::cout << "     Setting Buffer for Channel " << this->GetChannelNumber() << std::endl;
 #endif
 	buffer = new unsigned char [(int)dpmPointer];
 	for (int i=0;i<(int)dpmPointer;i++) {
