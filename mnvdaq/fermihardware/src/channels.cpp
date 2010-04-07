@@ -4,200 +4,176 @@
 #include "channels.h"
 
 /*********************************************************************************
-* Class for creating Chain Read-Out Controller channel objects for use with the 
-* MINERvA data acquisition system and associated software projects.
-*
-* Elaine Schulte, Rutgers University
-* Gabriel Perdue, The University of Rochester
-*
-**********************************************************************************/
+ * Class for creating Chain Read-Out Controller channel objects for use with the 
+ * MINERvA data acquisition system and associated software projects.
+ *
+ * Elaine Schulte, Rutgers University
+ * April 22, 2009
+ *
+ **********************************************************************************/
 
-channels::channels(unsigned int a, int b) 
-{
-/*! \fn 
+channels::channels(unsigned int a, int b) {
+  /*! \fn ********************************************************************************
  * constructor takes the following arguments:
  * \param a:  The channel base address 
  * \param b:  The channel number
- */
-	channelBaseAddress = a; //the address for the croc which contains this channel
-	channelNumber = b; //the channel number (0-3 here, 1-4 is stenciled on the cards themselves)
-	chainNumber   = b; //the chain number 0-3, now and forever.
-	channelDirectAddress = channelBaseAddress + 0x4000 * (unsigned int)(chainNumber);
-	FIFOMaxSize = 2048; // bytes; largest number of bytes the FIFO buffer can hold
-	MemoryMaxSize = 6144; // bytes;  largest number of bytes the DPM Memory can hold
-	crocRegisters registerOffset = crocInput;
-	fifoAddress = channelDirectAddress + (unsigned int)registerOffset; //FIFO address
-	registerOffset = crocMemory;
-	dpmAddress = channelDirectAddress + (unsigned int)registerOffset; //DPM Address
-	registerOffset = crocSendMessage;
-	sendMessageAddress = channelDirectAddress + (unsigned int)registerOffset; //Send message register
-	registerOffset = crocStatus;
-	statusAddress = channelDirectAddress + (unsigned int)registerOffset; //status register
-	registerOffset = crocDPMPointer;
-	dpmPointerAddress = channelDirectAddress + (unsigned int)registerOffset; //DPM Pointer register
-	registerOffset = crocClearStatus;
-	clearStatusAddress = channelDirectAddress + (unsigned int)registerOffset; //clear status register
+ *********************************************************************************/
+  channelBaseAddress = a; //the address for the croc which contains this channel
+  channelNumber = b; //the channel number (0-3) there are 4 and only 4 channels
+                     //per croc board in the current configuration
+  channelDirectAddress = channelBaseAddress + 
+     0x4000 * (unsigned int)(channelNumber);
+     //Set the channel's address; 
+     //    I'm not entirely sure where 0x4000 comes from, but there you have it!
+  FIFOMaxSize = 2048; // bytes; largest number of bytes the FIFO buffer can hold
+  MemoryMaxSize = 6144; // bytes;  largest number of bytes the DPM Memory can hold
+  crocRegisters registerOffset = crocInput;
+  fifoAddress = channelDirectAddress + (unsigned int)registerOffset; //FIFO address
+  registerOffset = crocMemory;
+  dpmAddress = channelDirectAddress + (unsigned int)registerOffset; //DPM Address
+  registerOffset = crocSendMessage;
+  sendMessageAddress = channelDirectAddress + (unsigned int)registerOffset; //Send message register
+  registerOffset = crocStatus;
+  statusAddress = channelDirectAddress + (unsigned int)registerOffset; //status register
+  registerOffset = crocDPMPointer;
+  dpmPointerAddress = channelDirectAddress + (unsigned int)registerOffset; //DPM Pointer register
+  registerOffset = crocClearStatus;
+  clearStatusAddress = channelDirectAddress + (unsigned int)registerOffset; //clear status register
 
-	bltAddressModifier = cvA24_U_BLT; //the Block Transfer Reads (BLT's) require a special address modifier
+  bltAddressModifier = cvA24_U_BLT; //the Block Transfer Reads (BLT's) require a special address modifier
 
-	channelStatus = 0; //the channel starts out with no status information kept
-	has_febs=false; //and no feb's loaded
+  channelStatus = 0; //the channel starts out with no status information kept
+  has_febs=false; //and no feb's loaded
+  std::string filename;
+  std::stringstream channel_no;
+  channel_no<<channelDirectAddress;
+  filename = "channel_"+channel_no.str();
+  log_file.open(filename.c_str());
+
 }
 
-
-void channels::SetFEBs(int a, int nHits, log4cpp::Appender* appender) 
-{
-/*! \fn
+void channels::SetFEBs(int a) {
+  /*! \fn********************************************************************************
  * This function loads FEB's belonging to this channel into a vector of febs once
  * the feb has been found
  * \param a the FEB number
- * \param nHits max Hits
- * \param appender log4cpp Appender
- */
-	// if we found this feb on this channel, put it into the list 
-	febs.push_back(new feb(nHits, false, (febAddresses)a, 54, appender)); 
-	return;
+ *********************************************************************************/
+  //if we found this feb on this channel, put it into the list 
+  #if v65
+    // febs.push_back(new feb(1,false,(febAddresses)a,42,log_file)); 
+	febs.push_back(new feb(1,false,(febAddresses)a,42)); 
+  #else 
+     febs.push_back(new feb(1,false,(febAddresses)a,54,log_file)); 
+    //febs.push_back(new feb(1,false,(febAddresses)a,54)); 
+  #endif
+  return;
 }
 
-
-feb *channels::MakeTrialFEB(int a, int nHits, log4cpp::Appender* appender) 
-{
-/*! \fn 
- * This function creates a disposable "trial" FEB.
+feb *channels::MakeTrialFEB(int a) {
+  /*! \fn ********************************************************************************
+ * This function makes up an feb to try to load into this channel's list
+ * The feb has address a, passed as an integer
+ * Additionally, the number of 1-byte registers in the FPGA firmware is required.
  * \param a the FEB number
- * \param nHits max Hits
- * \param appender log4cpp Appender
- */
-	febAddresses f = (febAddresses)a; //store the trial feb address
-	feb *trialFeb = new feb(nHits, false, f, 54, appender); //make up the trial feb
-	trialFeb->SetFEBDefaultValues(); //set default values for convenience; be careful about *writing*!
-	return trialFeb;
+ *********************************************************************************/
+  febAddresses f = (febAddresses)a; //store the trial feb address
+  #if v65
+    // feb *trialFeb = new feb(1, false, f, 42, log_file); //make up the trial feb
+    feb *trialFeb = new feb(1, false, f, 42); //make up the trial feb
+  #else
+     feb *trialFeb = new feb(1, false, f, 54, log_file); //make up the trial feb
+    //feb *trialFeb = new feb(1, false, f, 54); //make up the trial feb
+  #endif
+  trialFeb->SetFEBDefaultValues(); //set up the default values
+  return trialFeb;
 }
 
-
-int channels::DecodeStatusMessage() 
-{
-/*! \fn 
+int channels::DecodeStatusMessage() {
+  /*! \fn ********************************************************************************
  * This function decodes the status message for this channel.
- */
-	// TODO - Actually, we don't want this function returning anything or exiting.  Error 
-	// handling decisions should be made in the function that calls this one...
-	bool error = false;
-
-	StatusBits checkValue = MessageSent; 
-	error = ( (channelStatus & checkValue)!=0 ); // bit should be HIGH
-	try {
-#if DEBUG_VERBOSE
-		std::cout << "\tMessage Sent? " << error << std::endl; 
-#endif
-		if (!error) throw error;
-	} catch (bool e) {
-#if DEBUG_VERBOSE
-		std::cout << "\tMessage was not sent." << std::endl;
-#endif
-		// return -103; // Do not want to return on 0x3700...
-	}
-	
-	checkValue = MessageReceived;
-	error = ( (channelStatus & checkValue)!=0 ); // bit should be HIGH
-	try {
-#if DEBUG_VERBOSE
-		std::cout << "\tMessage Received? " << error << std::endl; 
-#endif
-		if (!error) throw error;
-	} catch (bool e) {
-#if DEBUG_VERBOSE
-		std::cout << "\tMessage was not received." << std::endl;
-#endif
-		// return -104; // Do not want to return on 0x3700...
-	}
-
-	checkValue = CRCError;
-	error = ( (channelStatus & checkValue)==0 ); // bit should be LOW
-	try  {
-#if DEBUG_VERBOSE
-		std::cout << "\tCRC Error? " << !error << std::endl; 
-#endif
-		if (!error) throw error;
-	} catch (bool e) {
-		std::cout << "\tCRC Error!" << std::endl;
-		exit(-105); 
-	}
-	
-	checkValue = TimeoutError;
-	error = ( (channelStatus & checkValue)==0 ); // bit should be LOW
-	try  {
-#if DEBUG_VERBOSE
-		std::cout << "\tTimeout Error? " << !error << std::endl;
-#endif
-		if (!error) throw error;
-	} catch (bool e) {
-		std::cout << "\tTimeout Error!" << std::endl;
-		exit(-106); 
-	}
-	
-	checkValue = FIFONotEmpty;
-	error = ( (channelStatus & checkValue)==0 ); // Check FIFO buffer status; bit should be LOW
-	try  {
-#if DEBUG_VERBOSE
-		std::cout << "\tFIFO Empty? " << !error << std::endl;
-#endif
-		if (!error) throw error;
-	} catch (bool e) {
-		std::cout << "\tFIFO Not Empty!" << std::endl;
-		exit(-107); 
-	}
-
-	checkValue = FIFOFull;
-	error = ( (channelStatus & checkValue)==0 ); // Check FIFO buffer status; bit should be LOW
-	try  {
-#if DEBUG_VERBOSE
-		std::cout << "\tFIFO Full? " << !error << std::endl;
-#endif
-		if (!error) throw error;
-	} catch (bool e) {
-		std::cout << "\tFIFO Full!" << std::endl;
-		exit(-108); 
-	}
-
-	checkValue = DPMFull;
-	error = ( (channelStatus & checkValue)==0 ); // Check DPM status; bit should be LOW
-	try  {
-#if DEBUG_VERBOSE
-		std::cout << "\tDPM Full? " << !error << std::endl;
-#endif
-		if (!error) throw error;
-	} catch (bool e) {
-		std::cout << "\tDPM Full!" << std::endl;
-		exit(-109); 
-	}
-	
-	// PLL?, etc.?
-
-	return 0;
+ *********************************************************************************/
+  StatusBits checkValue = MessageSent; //a mask to check if the message was send
+  bool error = (channelStatus & checkValue)!=0; //bit should be high
+  try {
+  #if DEBUG_FEB
+    log_file<<"Message Sent? "<<error<<std::endl; //success!
+  #endif
+    if (!error) throw error;
+  } catch (bool e) {
+    log_file<<"Message was not sent."<<std::endl;
+    return -103; //if the message was not send, stop execution
+  }
+  checkValue = MessageReceived;
+  error = (channelStatus & checkValue)!=0; //bit should be high
+  try {
+  #if DEBUG_FEB
+    log_file<<"Message Received? "<<error<<std::endl; //success!
+  #endif
+    if (!error) throw error;
+  } catch (bool e) {
+    log_file<<"Message was not received."<<std::endl;
+    return -104; //if the message was not received, stop execution
+  }
+  checkValue = CRCError;
+  error = (channelStatus & checkValue)==0; //bit should be low
+  try  {
+  #if DEBUG_FEB
+    log_file<<"CRC Error? "<<error<<std::endl; //success!
+  #endif
+    if (!error) throw error;
+  } catch (bool e) {
+    log_file<<"CRC Error."<<std::endl;
+    exit(-105); //if the CRC error bit was set, the there's a hardware/message fault and the 
+                //execution should be stopped
+  }
+  checkValue = TimeoutError;
+  error = (channelStatus & checkValue)==0; //bit should be low
+  try  {
+  #if DEBUG_FEB
+    log_file<<"Timeout Error? "<<error<<std::endl; //success!
+  #endif
+    if (!error) throw error;
+  } catch (bool e) {
+    log_file<<"Timeout Error."<<std::endl;
+    exit(-106); //stop execution if a timeout occured in passing messages
+  }
+  checkValue = FIFONotEmpty;
+  error = (channelStatus & checkValue)==0; //Check FIFO buffer status; bit should be low
+  #if DEBUG_FEB
+    log_file<<"FIFO Empty? "<<!error<<std::endl;
+  #endif
+  checkValue = FIFOFull;
+  error = (channelStatus & checkValue)==0; //Check FIFO buffer status; bit should be low
+  #if DEBUG_FEB
+    log_file<<"FIFO Full? "<<error<<std::endl;
+  #endif
+  checkValue = DPMFull;
+  error = (channelStatus & checkValue)==0; //Check DPM status; bit should be low
+  #if DEBUG_FEB
+    log_file<<"DPM Full? "<<!error<<std::endl;
+  #endif
+  return 0;
 }
-
 
 void channels::SetBuffer(unsigned char *b) {
-/*! \fn 
+  /*! \fn 
  * Puts data into the data buffer assigned to this channel.
  * \param b the data buffer
  */
 
-#if DEBUG_VERBOSE
-	std::cout << "     Setting Buffer for Chain " << this->GetChainNumber() << std::endl;
-#endif
-	buffer = new unsigned char [(int)dpmPointer];
-	for (int i=0;i<(int)dpmPointer;i++) {
-		buffer[i]=b[i];
-#if DEBUG_VERBOSE
-		printf("       SetBuffer: buffer[%03d] = 0x%02X\n",i,buffer[i]);
-#endif
-	}
-#if DEBUG_VERBOSE
-	std::cout << "     Done with SetBuffer... Returning..." << std::endl;
-#endif
-	return; 
+  #if DEBUG_FEB
+    log_file<<"Setting Buffer"<<std::endl;
+  #endif
+  buffer = new unsigned char [(int)dpmPointer];
+  for (int i=0;i<(int)dpmPointer;i++) {
+    buffer[i]=b[i];
+  #if DEBUG_FEB
+    log_file<<"SetBuffer: "<<buffer[i]<<" i: "<<i<<std::endl;
+  #endif
+  }
+  #if DEBUG_FEB
+    log_file<<"Done with SetBuffer...Returning"<<std::endl;
+  #endif
+  return; 
 }
-
 #endif

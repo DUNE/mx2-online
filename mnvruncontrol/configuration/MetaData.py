@@ -51,24 +51,32 @@ class MetaData:
 			self.codes.append(code)
 		
 		self.locations = (self.descriptions, self.hashes, self.codes)
-
-	def get(self, key, returntype):
-		"""
+	
+	def __getitem__(self, key):
+		""" 
+		The 'operator[]' for this class.
 		Intelligently returns the hash/code/description
-		corresponding to the key it's given.  Looks in
-		the specified location (or all if given ANY).
+		corresponding to the key it's given.
 		"""
+		returntype = ANY
+		
+		# if you provide more than one argument to the [] operator, it passes them all as a tuple
+		if isinstance(key, tuple):
+			returntype = key[1]
+			key = key[0]
 		
 		keylocation = None
 
 		for location in self.locations:
+#			if location is None:
+#				continue
 			if key in location:
 				keylocation = location
 				
 		if keylocation is None:
 			raise KeyError("Key '" + str(key) + "' is not found in any hash, code, or description.")
 		
-		if returntype in (DESCRIPTION, HASH, CODE):
+		if returntype != ANY and returntype in (DESCRIPTION, HASH, CODE):
 			return self.locations[returntype][keylocation.index(key)]
 		elif returntype != ANY:
 			raise ValueError("Invalid return type requested for key '" + str(key) + "'")	
@@ -83,27 +91,7 @@ class MetaData:
 				raise KeyError("Description you provided corresponds to metadata with both hashes and keys: must specify return type.")
 		else:
 			return self.descriptions[keylocation.index(key)]
-			
-	def code(self, key):
-		return self.get(key, CODE)
-
-	def hash(self, key):
-		return self.get(key, HASH)
 	
-	def description(self, key):
-		return self.get(key, DESCRIPTION)
-	
-	def __getitem__(self, key):
-		""" 
-		The 'operator[]' for this class.  Calls get() implicitly.
-		"""
-
-		# if you provide more than one argument to the [] operator, it passes them all as a tuple
-		if isinstance(key, tuple):
-			return self.get(key[0], key[1])
-		else:
-			return self.get(key, ANY)
-
 	def __contains__(self, key):
 		"""
 		This function implements the 'in' operator.
@@ -141,28 +129,30 @@ class MetaData:
 		for location in self.locations:
 			if key in location:
 				return location.index(key)
-				
 		
+		
+		
+# need variable "daqStop"
+
 # Format for constructor for MetaData objects:
-# ( (IDENTIFIER1, description1, hash1, code1),
-#   (IDENTIFIER2, description2, hash2, code2),
+# ( (description1, hash1, code1),
+#   (description2, hash2, code2),
 #   ...
-#   (IDENTIFIERN, descriptionN, hashN, codeN) )
+#   (descriptionN, hashN, codeN) )
 #
 # If you want to omit either a hash or a code 
 # (you need to have a description and at least one of hash or code every time)
 # you should pass None in that position.  e.g.:
-# ( (IDENTIFIER1, description1, hash1, code1),
-#   (IDENTIFIER2, description2, None,  code2),
-#   (IDENTIFIER3, description3, hash3, None ),
+# ( (description1, hash1, code1),
+#   (description2, None,  code2),
+#   (description3, hash3, None ),
 #   ...
-#   (IDENTIFIERN, descriptionN, None,  codeN) )
+#   (descriptionN, None,  codeN) )
 #
 # etc.
 #
 # Note that if you pass only a hash for one item and only a code for another,
 # the program will print out a warning because it assumes you probably didn't mean to do that.
-#
 		
 SpecialGUI		= MetaData( tuple([("Deprecated", 0, None)]) )
 
@@ -173,7 +163,7 @@ LILevels			= MetaData(( ("Zero PE", 0, None),
 				             ("One PE",  1, None),
 				             ("Max PE",  2, None) ))
 
-LEDGroups			= MetaData(( ("ABCD",   2**3,    "0"),
+LEDGroups			= MetaData(( ("All",   2**3,    "0"),
 				             ("BCD",   2**4,    "a"),
 				             ("ACD",   2**5,    "b"),
 				             ("CD",    2**6,    "c"),
@@ -252,15 +242,22 @@ RunningModes		= MetaData(( ("One shot",            0, "pdstl"),
 				             ("Mixed beam/pedestal", 4, "numip"),
 				             ("Mixed beam/LI",       5, "numil") ))
 
-RunSeriesTypes          = MetaData(( ("Beam",                0, "beam_series.db"),
-				                 ("Pedestal",            1, "pedestal_series.db"),
-				                 ("LI Max PE",              2, "li_max_pe_series.db"),
-				                 ("LI One PE",              3, "li_one_pe_series.db"),
-				                 ("Mixed Beam-Pedestal", 4, "mix_beam_ped_series.db"),
-				                 ("Mixed Beam-LI",       5, "mix_beam_li_series.db"),
-				                 ("Custom Series",       6, "custom_series.db") ))
         	
-HardwareConfigurations = MetaData(( ("Current state",          0, "[no HW file -- current configuration]"),
-                                    ("Beam settings",          1, "SCBeamFile"),
-                                    ("LI settings",            2, "SCLIFile"),
-                                    ("LI with discriminators", 3, "SCLIDiscriminatorsFile") ))
+#public static readonly DateTime EpochTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+#public static Logger log = new Logger(true);
+
+runMinervaDAQScript    = 'runminervadaq.bat'
+dataPath               = '/home/data/'
+DAQScriptPath          = '/home/swroot/minerva/MinervaScripts/'
+daqConfigDirectoryPath = '/home/data/configurations/daqconfig/'
+liConfigDirectoryPath  = '/home/data/configurations/liconfig/'
+runLIScript            = 'yattest.bat'
+
+# Run Log (Run Number file counter) & Stop/Go Info
+HiddenRunPath = '/zHidden/'
+destroyRunLog = False;
+silentRunLog  = True;
+#public static Logger runlog = new Logger(HiddenRunPath, destroyRunLog, silentRunLog);
+#public static Logger stopgolog = new Logger(HiddenRunPath, destroyRunLog, silentRunLog);
+

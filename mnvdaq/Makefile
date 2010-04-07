@@ -45,10 +45,6 @@ main-clean: FORCE
 	cd ../;
 	cd daq_server; gmake clean;
 	cd ../;
-	cd bin; rm minervadaq; rm daq_master; rm daq_slave_service; rm event_builder;
-	cd ../;
-	cd lib; rm *.so;
-	cd ../;
 
 hardware-clean: FORCE
 	cd fermihardware/src; make clean;
@@ -78,19 +74,7 @@ clean: FORCE
 	gmake event_builder-clean;
 	gmake main-clean;
 
-relink: FORCE
-	gmake hardware-clean;
-	gmake caenint-clean;
-	gmake acquire_data-clean;
-	gmake event_structure-clean;
-	gmake event_builder-clean;
-	gmake main-clean;
-	gmake hardware-lib;
-	gmake caenint-lib;
-	gmake acquire_data-lib;
-	gmake event_structure-lib;
-	gmake event_builder;
-	gmake main;
+
 
 FORCE:
 

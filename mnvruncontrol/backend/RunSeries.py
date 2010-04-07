@@ -43,22 +43,19 @@ class RunInfo(object):
 	def __init__(   self,
                         gates      = 0,
                         runMode    = MetaData.RunningModes.item(0,MetaData.HASH),
-                        hwcfg      = MetaData.HardwareConfigurations.item(0),
                         ledLevel   = MetaData.LILevels.item(0,MetaData.HASH),
                         ledGroup   = MetaData.LEDGroups.item(0,MetaData.HASH)):
 
 		self.gates      = gates
 		self.runMode    = runMode
-		self.hwConfig   = hwcfg
 		self.ledLevel   = ledLevel
 		self.ledGroup   = ledGroup
 
 	def ToString(self):
 
-                dump  = 'Run Mode               = %s\n' % MetaData.RunningModes.description(self.runMode)
-                dump += 'Gates                  = %d\n' % self.gates
-                dump += 'Hardware configuration = %s\n' % MetaData.HardwareConfigurations.description(self.hwConfig)
-                dump += 'LED Level              = %s\n' % MetaData.LILevels.description(self.ledLevel)
-                dump += 'LED Group              = %s\n' % MetaData.LEDGroups.description(self.ledGroup)
+                dump  = 'Run Mode              = %s\n' % MetaData.RunningModes[self.runMode,MetaData.DESCRIPTION]
+		dump += 'Gates                 = %s\n' % self.gates
+                dump += 'LED Level             = %s\n' % MetaData.LILevels[self.ledLevel,MetaData.DESCRIPTION]
+                dump += 'LED Group             = %s\n' % MetaData.LEDGroups[self.ledGroup,MetaData.DESCRIPTION]
 		
 		return dump
