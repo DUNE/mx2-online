@@ -606,6 +606,26 @@ int main(int argc, char *argv[])
 		// For now, just use full readout.  TODO - test the others more carefully...
 		readFPGA    = true; // default to reading the FPGA programming registers
 		nReadoutADC = 8;    // default to maximum possible
+		// We need to reset the external trigger latch for v85 (cosmic) FEB firmware.
+#if MTEST||WH14B
+		for (croc_iter = croc_vector->begin(); croc_iter != croc_vector->end(); croc_iter++) {
+			int crocID = (*croc_iter)->GetCrocID();
+			try {
+				unsigned char command[] = {0x85};
+				int error = daq->WriteCROCFastCommand(crocID, command);
+				if (error) throw error;
+			} catch (int e) {
+				mnvdaq.fatalStream() << "Error for CROC " <<
+					((*croc_iter)->GetCrocAddress()>>16) << " for Gate " << gate;
+				mnvdaq.fatalStream() << "Cannot write to FastCommand register!";
+				std::cout << "Error in minervadaq::main() for CROC " <<
+					((*croc_iter)->GetCrocAddress()>>16) << " for Gate " << gate 
+					<< std::endl;
+				std::cout << "Cannot write to FastCommand register!" << std::endl;
+				exit(e);
+			}
+		}
+#endif
 		switch (runningMode) {
 			case OneShot:
 				triggerType = Pedestal;
@@ -614,24 +634,6 @@ int main(int argc, char *argv[])
 				triggerType = NuMI;
 				break;
 			case Cosmics:
-				// We need to reset the external trigger latch in Cosmic mode...
-				for (croc_iter = croc_vector->begin(); croc_iter != croc_vector->end(); croc_iter++) {
-					int crocID = (*croc_iter)->GetCrocID();
-					try {
-						unsigned char command[] = {0x85};
-						int error = daq->WriteCROCFastCommand(crocID, command);
-						if (error) throw error;
-					} catch (int e) {
-						mnvdaq.fatalStream() << "Error for CROC " <<
-							((*croc_iter)->GetCrocAddress()>>16) << " for Gate " << gate;
-						mnvdaq.fatalStream() << "Cannot write to FastCommand register!";
-						std::cout << "Error in minervadaq::main() for CROC " <<
-							((*croc_iter)->GetCrocAddress()>>16) << " for Gate " << gate 
-							<< std::endl;
-						std::cout << "Cannot write to FastCommand register!" << std::endl;
-						exit(e);
-					}
-				}
 				// We need to reset the sequencer latch on the CRIM in Cosmic mode...
 				try {
 					int crimID = (*crim_master)->GetCrimID(); // Only the master!
@@ -1315,7 +1317,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-04-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-04-02'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
