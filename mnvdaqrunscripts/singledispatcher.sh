@@ -18,4 +18,4 @@ pushd /work/software/mnvruncontrol/backend
 python RunControlDispatcher.py start &
 popd
 
-
+ps -leaf | grep ReadoutDispatcher | grep -v grep
