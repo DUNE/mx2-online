@@ -9,13 +9,13 @@ fi
 
 # Check to see if the dispatcher is running.  If it is, kill it.
 pushd /work/software/mnvruncontrol/backend
-python RunControlDispatcher.py stop
+python ReadoutDispatcher.py stop
 popd
 
 # Start the dispatcher.
 # Defaults to local host as the master.
 pushd /work/software/mnvruncontrol/backend
-python RunControlDispatcher.py start &
+python ReadoutDispatcher.py start 
 popd
 
 ps -leaf | grep ReadoutDispatcher | grep -v grep
