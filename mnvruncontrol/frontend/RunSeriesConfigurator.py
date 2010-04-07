@@ -194,7 +194,7 @@ class MyFrame(wx.Frame):
 			message += "2) The database does not contain the key \"series\"\n"
 			message += "3) The keyed value is not a RunSeries object\n"
 			print message
-				pass
+			pass
 
 		
 
