@@ -436,8 +436,8 @@ class MainFrame(wx.Frame):
 		self.runEntry.SetRange(key_values["run"], 100000)
 		self.runEntry.SetValue(key_values["run"])
 		self.subrunEntry.SetValue(key_values["subrun"])
-		self.HWinitEntry.SetSelection(key_values["hwinit"])
-		self.detConfigEntry.SetSelection(key_values["detector"])
+		self.HWinitEntry.SetSelection(MetaData.HardwareInitLevels.index(key_values["hwinit"]))
+		self.detConfigEntry.SetSelection(MetaData.DetectorTypes.index(key_values["detector"]))
 		self.febsEntry.SetValue(key_values["febs"])
 		self.singleRunButton.SetValue(key_values["is_single_run"])
 		self.runSeriesButton.SetValue(not(key_values["is_single_run"]))
@@ -451,13 +451,9 @@ class MainFrame(wx.Frame):
 		self.autocloseEntry.Check(key_values["autoclose"])
 	
 		for cb in self.LEDgroups:
-			if cb.GetLabelText() in key_values["ledgroups"]:
-				cb.SetValue(True)
-			else:
-				cb.SetValue(False)
+			cb.SetValue(cb.GetLabelText() in key_values["ledgroups"])
 		
 		# these are initialized here to None, but will be updated
-
 		self.seriesFilename = None
 		self.seriesPath = None
 
