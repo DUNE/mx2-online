@@ -200,7 +200,7 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		
 		SCHWSetupThread(self, self.slowcontrol, fullpath)
 		
-		self.current_HW_file = fullpath
+		self.current_HW_file = hwfile
 
 		return "0"
 		    
