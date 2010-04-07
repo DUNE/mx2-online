@@ -235,12 +235,11 @@ void trips::SortNSet(bool reset, long_m data, int bits, bool control, bool lowTo
 }
 
 
-int trips::DecodeRegisterValues(int messageLength) 
+void trips::DecodeRegisterValues(int messageLength) 
 {
 /*! \fn 
  *  This function decodes an incoming message into the values of the
- *  particular settings on a trip.  It returns a success integer (0 for 
- *  success).
+ *  particular settings on a trip.
  *
  *  Input:
  *  \param messageLength:  the length of the incoming message as produred from the 
@@ -299,9 +298,8 @@ int trips::DecodeRegisterValues(int messageLength)
 		}
 	} else {
 		std::cout << "Errors Found in Trip Message" << std::endl;
-		return 1;
+		exit(1);
 	}
-	return 0;
 }
 
 

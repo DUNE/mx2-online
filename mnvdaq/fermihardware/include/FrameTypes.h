@@ -26,22 +26,20 @@
  * \brief The message handling direction.
  * */
 typedef enum Directions { //typecast to unsigned char
-	MasterToSlave = 0x00,
-	SlaveToMaster = 0x80
+    MasterToSlave = 0x00,
+    SlaveToMaster = 0x80
 };
-
 
 /*! \enum Broadcasts 
  * \brief What type of message 
  */
 typedef enum Broadcasts { //typecast to unsigned char
-	None        = 0x00,
-	LoadTimer   = 0x10,
-	ResetTimer  = 0x20,
-	OpenGate    = 0x30,
-	SoftReset   = 0x40
+    None        = 0x00,
+    LoadTimer   = 0x10,
+    ResetTimer  = 0x20,
+    OpenGate    = 0x30,
+    SoftReset   = 0x40
 };
-
 
 /*!
  * The second byte of an outgoing message indicates the device (on the FEB) and function:
@@ -49,17 +47,16 @@ typedef enum Broadcasts { //typecast to unsigned char
  * Bits 4-7:  Device
  */
 
-
 /*! \enum Devices
  * \brief Which device is being addressed 
  *
  */
 typedef enum Devices { //typecast to unsigned char
-	NoDevices  = 0x00,
-	TRiP  	   = 0x10,
-	FPGA       = 0x20,
-	RAM        = 0x30,
-	Flash      = 0x40
+    NoDevices  = 0x00,
+    TRiP  = 0x10,
+    FPGA  = 0x20,
+    RAM   = 0x30,
+    Flash = 0x40
 };
 
 
@@ -68,11 +65,10 @@ typedef enum Devices { //typecast to unsigned char
  *
  */
 typedef enum FPGAFunctions { //typecast to unsigned char
-	NoFPGA = 0x00,
-	Write  = 0x01,
-	Read   = 0x02
+    NoFPGA  = 0x00,
+    Write = 0x01,
+    Read  = 0x02
 };
-
 
 /*! \enum RAMFunctionsHit
  *
@@ -80,67 +76,64 @@ typedef enum FPGAFunctions { //typecast to unsigned char
  *
  */
 typedef enum RAMFunctionsHit { //typecast to unsigned char
-	NoRAM        = 0x00,
-	ReadHit0     = 0x01,
-	ReadHit1     = 0x02,
-	ReadHit2     = 0x03,
-	ReadHit3     = 0x04,
-	ReadHit4     = 0x05,
-	ReadHit5     = 0x06,
-	ReadHitDiscr = 0x07,
-	ReadHit6     = 0x0E,
-	ReadHit7     = 0x0F
+	NoRAM = 0x00,
+    ReadHit0     = 0x01,
+    ReadHit1     = 0x02,
+    ReadHit2     = 0x03,
+    ReadHit3     = 0x04,
+    ReadHit4     = 0x05,
+    ReadHit5     = 0x06,
+    ReadHitDiscr = 0x07
 };
-
-
 /*! \enum RAMFunctionsChip
  *
- * \brief  Depricated - DO NOT USE!
+ * \brief  Depricated
  *
  */
-typedef enum RAMFunctionsChip { //typecast to unsigned char
-	NoChip       = 0x00,
-	ReadChip0    = 0x08,
-	ReadChip1    = 0x09,
-	ReadChip2    = 0x0A,
-	ReadChip3    = 0x0B,
-	ReadChip4    = 0x0C,
-	ReadChip5    = 0x0D,
-	ReadDigital0 = 0x0E,
-	ReadDigital1 = 0x0F
-};
 
+typedef enum RAMFunctionsChip { //typecast to unsigned char
+    NoChip = 0x00,
+    ReadChip0 = 0x08,
+    ReadChip1 = 0x09,
+    ReadChip2 = 0x0A,
+    ReadChip3 = 0x0B,
+    ReadChip4 = 0x0C,
+    ReadChip5 = 0x0D,
+    ReadDigital0 = 0x0E,
+    ReadDigital1 = 0x0F
+};
 
 /*! \enum FlashFunctions
  *
  * \brief For writing firmware to flash memory 
  *
  */
-typedef enum FlashFunctions { //typecast to unsigned char
-	NoFlash  = 0x00,
-	Command  = 0x01,
-	SetReset = 0x02
-};
 
+typedef enum FlashFunctions { //typecast to unsigned char
+    NoFlash = 0x00,
+    Command = 0x01,
+    SetReset = 0x02
+};
 
 /*! \enum ResponseWords
  *
  * \brief Useful for decoding returning frame headers 
  *
  */
+
 typedef enum ResponseWords { //typecast to unsigned char
-	ResponseLength0 = 0,
-	ResponseLength1 = 1,
-	FrameStart      = 2,
-	DeviceStatus    = 3,
-	FrameStatus     = 4,
-	FrameID0        = 5,
-	FrameID1        = 6,
-	Timestamp0      = 7,
-	Timestamp1      = 8,
-	Timestamp2      = 9,
-	Timestamp3      = 10,
-	Data            = 11
+    ResponseLength0 = 0,
+    ResponseLength1 = 1,
+    FrameStart = 2,
+    DeviceStatus = 3,
+    FrameStatus = 4,
+    FrameID0 = 5,
+    FrameID1 = 6,
+    Timestamp0 = 7,
+    Timestamp1 = 8,
+    Timestamp2 = 9,
+    Timestamp3 = 10,
+    Data = 11
 };
 
 
@@ -150,17 +143,16 @@ typedef enum ResponseWords { //typecast to unsigned char
  *
  */
 typedef enum HeaderWords { //typecast to unsigned char
-	hwFrameStart     = 0,
-	hwDeviceFunction = 1,
-	hWord2           = 2,
-	hwFrameID0       = 3,
-	hwFrameID1       = 4,
-	hWord5           = 5,
-	hWord6           = 6,
-	hWord7           = 7,
-	hWord8           = 8
+    hwFrameStart = 0,
+    hwDeviceFunction = 1,
+    hWord2 = 2,
+    hwFrameID0 = 3,
+    hwFrameID1 = 4,
+    hWord5 = 5,
+    hWord6 = 6,
+    hWord7 = 7,
+    hWord8 = 8
 };
-
 
 /*! \enum ResponseFlags
  *
@@ -168,20 +160,20 @@ typedef enum HeaderWords { //typecast to unsigned char
  *
  */
 typedef enum ResponseFlags { //typecast to unsigned char
-	// in Frame Start
-	Direction = 0x80, //slave-to-master
-	Broadcast = (0x10 | 0x30 | 0x20 | 0x40), //LoadTimer | OpenGate| ResetTimer | SoftReset
-	// in Device Status
-	DeviceOK   = 0x01,
-	FunctionOK = 0x02,
-	// in Frame Status
-	CRCOK       = 0x01,
-	EndHeader   = 0x02,
-	MaxLen      = 0x04,
-	SecondStart = 0x08,
-	NAHeader    = 0x10
-};
+    // in Frame Start
+    Direction = 0x80, //slave-to-master
+    Broadcast = (0x10 | 0x30 | 0x20 | 0x40), //LoadTimer | OpenGate| ResetTimer | SoftReset
 
+    // in Device Status
+    DeviceOK = 0x01,
+    FunctionOK = 0x02,
+    // in Frame Status
+    CRCOK = 0x01,
+    EndHeader = 0x02,
+    MaxLen = 0x04,
+    SecondStart = 0x08,
+    NAHeader = 0x10
+};
 
 /*! \enum febAddress
  *
@@ -189,22 +181,22 @@ typedef enum ResponseFlags { //typecast to unsigned char
  *
  * */
 typedef enum febAddresses {
-	febAll = 0,
-	FE1    = 1,
-	FE2    = 2,
-	FE3    = 3,
-	FE4    = 4,
-	FE5    = 5,
-	FE6    = 6,
-	FE7    = 7,	
-	FE8    = 8,
-	FE9    = 9,
-	FE10   =10,
-	FE11   =11,
-	FE12   =12,
-	FE13   =13,
-	FE14   =14,
-	FE15   =15
+    febAll = 0,
+    FE1 = 1,
+    FE2 = 2,
+    FE3 = 3,
+    FE4 = 4,
+    FE5 = 5,
+    FE6 = 6,
+    FE7 = 7,
+    FE8 = 8,
+    FE9 = 9,
+    FE10=10,
+    FE11=11,
+    FE12=12,
+    FE13=13,
+    FE14=14,
+    FE15=15
 };
 
 

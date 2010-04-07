@@ -244,30 +244,6 @@ namespace SlowControl
             this.label18 = new System.Windows.Forms.Label();
             this.label19 = new System.Windows.Forms.Label();
             this.tabCH = new System.Windows.Forms.TabPage();
-            this.groupBoxCH_DEBUG = new System.Windows.Forms.GroupBox();
-            this.btn_CHDebugUpdatePattern = new System.Windows.Forms.Button();
-            this.cmb_CHDebugBroadcastCMD = new System.Windows.Forms.ComboBox();
-            this.cmb_CHDebugFEID = new System.Windows.Forms.ComboBox();
-            this.cmb_CHDebugFunctionID = new System.Windows.Forms.ComboBox();
-            this.cmb_CHDebugDeviceID = new System.Windows.Forms.ComboBox();
-            this.cmb_CHDebugDirection = new System.Windows.Forms.ComboBox();
-            this.txt_CHDebugFrameStatusID = new System.Windows.Forms.TextBox();
-            this.txt_CHDebugFrameIDByte0 = new System.Windows.Forms.TextBox();
-            this.label85 = new System.Windows.Forms.Label();
-            this.label84 = new System.Windows.Forms.Label();
-            this.label81 = new System.Windows.Forms.Label();
-            this.label80 = new System.Windows.Forms.Label();
-            this.txt_CHDebugFrameIDByte1 = new System.Windows.Forms.TextBox();
-            this.label77 = new System.Windows.Forms.Label();
-            this.label76 = new System.Windows.Forms.Label();
-            this.label69 = new System.Windows.Forms.Label();
-            this.txt_CHDebugFillDPMPattern = new System.Windows.Forms.TextBox();
-            this.txt_CHDebugFillDPMPRepeat = new System.Windows.Forms.TextBox();
-            this.btn_CHDebugFillDPM = new System.Windows.Forms.Button();
-            this.rtb_CHDebug = new System.Windows.Forms.RichTextBox();
-            this.txt_CHDebugNTests = new System.Windows.Forms.TextBox();
-            this.label73 = new System.Windows.Forms.Label();
-            this.btn_CHDebugInitializeCROCs = new System.Windows.Forms.Button();
             this.groupBoxCH_Frame = new System.Windows.Forms.GroupBox();
             this.btn_CHFIFOWriteMessage = new System.Windows.Forms.Button();
             this.rtb_CHDPMRead = new System.Windows.Forms.RichTextBox();
@@ -328,7 +304,6 @@ namespace SlowControl
             this.label16 = new System.Windows.Forms.Label();
             this.tabFE = new System.Windows.Forms.TabPage();
             this.tabFPGARegs = new System.Windows.Forms.TabPage();
-            this.fpgaDevRegControl1 = new MinervaUserControls.FPGADevRegControl();
             this.btn_AllFEsFPGARegWrite = new System.Windows.Forms.Button();
             this.btn_FPGAAdvancedGUI = new System.Windows.Forms.Button();
             this.lblFPGA_CROCID = new System.Windows.Forms.Label();
@@ -339,6 +314,7 @@ namespace SlowControl
             this.btn_FPGARegRead = new System.Windows.Forms.Button();
             this.btn_FPGARegWrite = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
+            this.fpgaDevRegControl1 = new MinervaUserControls.FPGADevRegControl();
             this.tabTRIPRegs = new System.Windows.Forms.TabPage();
             this.btn_AllFEsTRIPRegWrite = new System.Windows.Forms.Button();
             this.cmb_TripID = new System.Windows.Forms.ComboBox();
@@ -363,7 +339,6 @@ namespace SlowControl
             this.label13 = new System.Windows.Forms.Label();
             this.btn_FLASHReadSPIToFile = new System.Windows.Forms.Button();
             this.tabReadHV = new System.Windows.Forms.TabPage();
-            this.richTextBoxHVRead = new System.Windows.Forms.RichTextBox();
             this.btnMonitorHV = new System.Windows.Forms.Button();
             this.label27 = new System.Windows.Forms.Label();
             this.textBoxMonitorTimer = new System.Windows.Forms.TextBox();
@@ -371,6 +346,7 @@ namespace SlowControl
             this.textBoxADCThreshold = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.btnReadHV = new System.Windows.Forms.Button();
+            this.richTextBoxHVRead = new System.Windows.Forms.RichTextBox();
             this.tabLIBox = new System.Windows.Forms.TabPage();
             this.btn_LIBoxAdvancedGUI = new System.Windows.Forms.Button();
             this.groupBoxLIBox_LICommands = new System.Windows.Forms.GroupBox();
@@ -454,7 +430,6 @@ namespace SlowControl
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.timerMonitorHV = new System.Windows.Forms.Timer(this.components);
-            this.button1 = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabDescription.SuspendLayout();
             this.tabVME.SuspendLayout();
@@ -479,7 +454,6 @@ namespace SlowControl
             this.groupBoxCROC_TimingSetup.SuspendLayout();
             this.groupBoxCROC_FLASH.SuspendLayout();
             this.tabCH.SuspendLayout();
-            this.groupBoxCH_DEBUG.SuspendLayout();
             this.groupBoxCH_Frame.SuspendLayout();
             this.groupBoxCH_StatusRegister.SuspendLayout();
             this.groupBoxCH_FLASH.SuspendLayout();
@@ -520,7 +494,7 @@ namespace SlowControl
             this.tabControl1.Location = new System.Drawing.Point(211, 27);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(907, 528);
+            this.tabControl1.Size = new System.Drawing.Size(466, 536);
             this.tabControl1.TabIndex = 0;
             // 
             // tabDescription
@@ -529,7 +503,7 @@ namespace SlowControl
             this.tabDescription.Location = new System.Drawing.Point(4, 22);
             this.tabDescription.Name = "tabDescription";
             this.tabDescription.Padding = new System.Windows.Forms.Padding(3);
-            this.tabDescription.Size = new System.Drawing.Size(899, 502);
+            this.tabDescription.Size = new System.Drawing.Size(458, 510);
             this.tabDescription.TabIndex = 3;
             this.tabDescription.Text = "Description";
             this.tabDescription.UseVisualStyleBackColor = true;
@@ -541,7 +515,7 @@ namespace SlowControl
             this.richTextBoxDescription.Dock = System.Windows.Forms.DockStyle.Fill;
             this.richTextBoxDescription.Location = new System.Drawing.Point(3, 3);
             this.richTextBoxDescription.Name = "richTextBoxDescription";
-            this.richTextBoxDescription.Size = new System.Drawing.Size(893, 496);
+            this.richTextBoxDescription.Size = new System.Drawing.Size(452, 504);
             this.richTextBoxDescription.TabIndex = 0;
             this.richTextBoxDescription.Text = "";
             // 
@@ -550,7 +524,7 @@ namespace SlowControl
             this.tabVME.Controls.Add(this.groupBoxVME_WriteRead);
             this.tabVME.Location = new System.Drawing.Point(4, 22);
             this.tabVME.Name = "tabVME";
-            this.tabVME.Size = new System.Drawing.Size(899, 502);
+            this.tabVME.Size = new System.Drawing.Size(458, 510);
             this.tabVME.TabIndex = 10;
             this.tabVME.Text = "VME";
             this.tabVME.UseVisualStyleBackColor = true;
@@ -658,7 +632,7 @@ namespace SlowControl
             this.tabCRIM.Controls.Add(this.btn_CRIMReportGateAlignmentsAllCROCs);
             this.tabCRIM.Location = new System.Drawing.Point(4, 22);
             this.tabCRIM.Name = "tabCRIM";
-            this.tabCRIM.Size = new System.Drawing.Size(899, 502);
+            this.tabCRIM.Size = new System.Drawing.Size(458, 510);
             this.tabCRIM.TabIndex = 4;
             this.tabCRIM.Text = "CRIM";
             this.tabCRIM.UseVisualStyleBackColor = true;
@@ -2238,7 +2212,7 @@ namespace SlowControl
             this.tabCROC.Controls.Add(this.label19);
             this.tabCROC.Location = new System.Drawing.Point(4, 22);
             this.tabCROC.Name = "tabCROC";
-            this.tabCROC.Size = new System.Drawing.Size(899, 502);
+            this.tabCROC.Size = new System.Drawing.Size(458, 510);
             this.tabCROC.TabIndex = 5;
             this.tabCROC.Text = "CROC";
             this.tabCROC.UseVisualStyleBackColor = true;
@@ -2846,7 +2820,6 @@ namespace SlowControl
             // 
             // tabCH
             // 
-            this.tabCH.Controls.Add(this.groupBoxCH_DEBUG);
             this.tabCH.Controls.Add(this.groupBoxCH_Frame);
             this.tabCH.Controls.Add(this.groupBoxCH_StatusRegister);
             this.tabCH.Controls.Add(this.groupBoxCH_FLASH);
@@ -2860,308 +2833,10 @@ namespace SlowControl
             this.tabCH.Controls.Add(this.label16);
             this.tabCH.Location = new System.Drawing.Point(4, 22);
             this.tabCH.Name = "tabCH";
-            this.tabCH.Size = new System.Drawing.Size(899, 502);
+            this.tabCH.Size = new System.Drawing.Size(458, 510);
             this.tabCH.TabIndex = 6;
             this.tabCH.Text = "CH";
             this.tabCH.UseVisualStyleBackColor = true;
-            // 
-            // groupBoxCH_DEBUG
-            // 
-            this.groupBoxCH_DEBUG.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBoxCH_DEBUG.Controls.Add(this.button1);
-            this.groupBoxCH_DEBUG.Controls.Add(this.btn_CHDebugUpdatePattern);
-            this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugBroadcastCMD);
-            this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugFEID);
-            this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugFunctionID);
-            this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugDeviceID);
-            this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugDirection);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugFrameStatusID);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugFrameIDByte0);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label85);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label84);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label81);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label80);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugFrameIDByte1);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label77);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label76);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label69);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugFillDPMPattern);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugFillDPMPRepeat);
-            this.groupBoxCH_DEBUG.Controls.Add(this.btn_CHDebugFillDPM);
-            this.groupBoxCH_DEBUG.Controls.Add(this.rtb_CHDebug);
-            this.groupBoxCH_DEBUG.Controls.Add(this.txt_CHDebugNTests);
-            this.groupBoxCH_DEBUG.Controls.Add(this.label73);
-            this.groupBoxCH_DEBUG.Controls.Add(this.btn_CHDebugInitializeCROCs);
-            this.groupBoxCH_DEBUG.Location = new System.Drawing.Point(373, 16);
-            this.groupBoxCH_DEBUG.Name = "groupBoxCH_DEBUG";
-            this.groupBoxCH_DEBUG.Size = new System.Drawing.Size(513, 425);
-            this.groupBoxCH_DEBUG.TabIndex = 90;
-            this.groupBoxCH_DEBUG.TabStop = false;
-            this.groupBoxCH_DEBUG.Text = "DEBUG Tools";
-            this.groupBoxCH_DEBUG.Visible = false;
-            // 
-            // btn_CHDebugUpdatePattern
-            // 
-            this.btn_CHDebugUpdatePattern.BackColor = System.Drawing.Color.Coral;
-            this.btn_CHDebugUpdatePattern.Location = new System.Drawing.Point(327, 59);
-            this.btn_CHDebugUpdatePattern.Name = "btn_CHDebugUpdatePattern";
-            this.btn_CHDebugUpdatePattern.Size = new System.Drawing.Size(175, 55);
-            this.btn_CHDebugUpdatePattern.TabIndex = 113;
-            this.btn_CHDebugUpdatePattern.Text = "Update Pattern";
-            this.btn_CHDebugUpdatePattern.UseVisualStyleBackColor = false;
-            this.btn_CHDebugUpdatePattern.Click += new System.EventHandler(this.btn_CHDebugUpdatePattern_Click);
-            // 
-            // cmb_CHDebugBroadcastCMD
-            // 
-            this.cmb_CHDebugBroadcastCMD.FormattingEnabled = true;
-            this.cmb_CHDebugBroadcastCMD.Items.AddRange(new object[] {
-            "0 NA",
-            "1 LoadTimer",
-            "2 ResetTimer",
-            "3 OpenGate",
-            "4 SoftwRST",
-            "5 NA",
-            "6 NA",
-            "7 NA"});
-            this.cmb_CHDebugBroadcastCMD.Location = new System.Drawing.Point(340, 11);
-            this.cmb_CHDebugBroadcastCMD.Name = "cmb_CHDebugBroadcastCMD";
-            this.cmb_CHDebugBroadcastCMD.Size = new System.Drawing.Size(97, 21);
-            this.cmb_CHDebugBroadcastCMD.TabIndex = 112;
-            // 
-            // cmb_CHDebugFEID
-            // 
-            this.cmb_CHDebugFEID.FormattingEnabled = true;
-            this.cmb_CHDebugFEID.Items.AddRange(new object[] {
-            "0 NA",
-            "1 FE1",
-            "2 FE2",
-            "3 FE3",
-            "4 FE4",
-            "5 FE5",
-            "6 FE6",
-            "7 FE7",
-            "8 FE8",
-            "9 FE9",
-            "10 FE10",
-            "11 FE11",
-            "12 FE12",
-            "13 FE13",
-            "14 FE14",
-            "15 FE15"});
-            this.cmb_CHDebugFEID.Location = new System.Drawing.Point(437, 11);
-            this.cmb_CHDebugFEID.Name = "cmb_CHDebugFEID";
-            this.cmb_CHDebugFEID.Size = new System.Drawing.Size(65, 21);
-            this.cmb_CHDebugFEID.TabIndex = 111;
-            // 
-            // cmb_CHDebugFunctionID
-            // 
-            this.cmb_CHDebugFunctionID.FormattingEnabled = true;
-            this.cmb_CHDebugFunctionID.Location = new System.Drawing.Point(387, 32);
-            this.cmb_CHDebugFunctionID.Name = "cmb_CHDebugFunctionID";
-            this.cmb_CHDebugFunctionID.Size = new System.Drawing.Size(115, 21);
-            this.cmb_CHDebugFunctionID.TabIndex = 110;
-            // 
-            // cmb_CHDebugDeviceID
-            // 
-            this.cmb_CHDebugDeviceID.FormattingEnabled = true;
-            this.cmb_CHDebugDeviceID.Items.AddRange(new object[] {
-            "0 NA",
-            "1 TRIP",
-            "2 REG",
-            "3 BRAM",
-            "4 FLASH",
-            "5 NA",
-            "6 NA",
-            "7 NA",
-            "8 NA",
-            "9 NA",
-            "10 NA",
-            "11 NA",
-            "12 NA",
-            "13 NA",
-            "14 NA",
-            "15 NA"});
-            this.cmb_CHDebugDeviceID.Location = new System.Drawing.Point(287, 32);
-            this.cmb_CHDebugDeviceID.Name = "cmb_CHDebugDeviceID";
-            this.cmb_CHDebugDeviceID.Size = new System.Drawing.Size(100, 21);
-            this.cmb_CHDebugDeviceID.TabIndex = 109;
-            this.cmb_CHDebugDeviceID.SelectedIndexChanged += new System.EventHandler(this.cmb_CHDebugDeviceID_SelectedIndexChanged);
-            // 
-            // cmb_CHDebugDirection
-            // 
-            this.cmb_CHDebugDirection.FormattingEnabled = true;
-            this.cmb_CHDebugDirection.Items.AddRange(new object[] {
-            "0 M2S",
-            "1 S2M"});
-            this.cmb_CHDebugDirection.Location = new System.Drawing.Point(287, 11);
-            this.cmb_CHDebugDirection.Name = "cmb_CHDebugDirection";
-            this.cmb_CHDebugDirection.Size = new System.Drawing.Size(53, 21);
-            this.cmb_CHDebugDirection.TabIndex = 108;
-            // 
-            // txt_CHDebugFrameStatusID
-            // 
-            this.txt_CHDebugFrameStatusID.Location = new System.Drawing.Point(287, 53);
-            this.txt_CHDebugFrameStatusID.Name = "txt_CHDebugFrameStatusID";
-            this.txt_CHDebugFrameStatusID.Size = new System.Drawing.Size(34, 20);
-            this.txt_CHDebugFrameStatusID.TabIndex = 107;
-            // 
-            // txt_CHDebugFrameIDByte0
-            // 
-            this.txt_CHDebugFrameIDByte0.Location = new System.Drawing.Point(287, 74);
-            this.txt_CHDebugFrameIDByte0.Name = "txt_CHDebugFrameIDByte0";
-            this.txt_CHDebugFrameIDByte0.Size = new System.Drawing.Size(34, 20);
-            this.txt_CHDebugFrameIDByte0.TabIndex = 106;
-            // 
-            // label85
-            // 
-            this.label85.BackColor = System.Drawing.Color.Coral;
-            this.label85.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label85.Location = new System.Drawing.Point(208, 97);
-            this.label85.Name = "label85";
-            this.label85.Size = new System.Drawing.Size(73, 17);
-            this.label85.TabIndex = 105;
-            this.label85.Text = "Byte4 ID (0x)";
-            this.label85.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label84
-            // 
-            this.label84.BackColor = System.Drawing.Color.Coral;
-            this.label84.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label84.Location = new System.Drawing.Point(208, 76);
-            this.label84.Name = "label84";
-            this.label84.Size = new System.Drawing.Size(73, 17);
-            this.label84.TabIndex = 104;
-            this.label84.Text = "Byte3 ID (0x)";
-            this.label84.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label81
-            // 
-            this.label81.BackColor = System.Drawing.Color.Coral;
-            this.label81.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label81.Location = new System.Drawing.Point(208, 55);
-            this.label81.Name = "label81";
-            this.label81.Size = new System.Drawing.Size(73, 17);
-            this.label81.TabIndex = 103;
-            this.label81.Text = "Byte2 ST (0x)";
-            this.label81.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label80
-            // 
-            this.label80.BackColor = System.Drawing.Color.Coral;
-            this.label80.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label80.Location = new System.Drawing.Point(208, 34);
-            this.label80.Name = "label80";
-            this.label80.Size = new System.Drawing.Size(73, 17);
-            this.label80.TabIndex = 102;
-            this.label80.Text = "Byte1 DevF";
-            this.label80.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // txt_CHDebugFrameIDByte1
-            // 
-            this.txt_CHDebugFrameIDByte1.Location = new System.Drawing.Point(287, 95);
-            this.txt_CHDebugFrameIDByte1.Name = "txt_CHDebugFrameIDByte1";
-            this.txt_CHDebugFrameIDByte1.Size = new System.Drawing.Size(34, 20);
-            this.txt_CHDebugFrameIDByte1.TabIndex = 101;
-            // 
-            // label77
-            // 
-            this.label77.BackColor = System.Drawing.Color.Coral;
-            this.label77.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label77.Location = new System.Drawing.Point(208, 13);
-            this.label77.Name = "label77";
-            this.label77.Size = new System.Drawing.Size(73, 17);
-            this.label77.TabIndex = 100;
-            this.label77.Text = "Byte0 Start";
-            this.label77.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label76
-            // 
-            this.label76.BackColor = System.Drawing.Color.Coral;
-            this.label76.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label76.Location = new System.Drawing.Point(110, 80);
-            this.label76.Name = "label76";
-            this.label76.Size = new System.Drawing.Size(89, 17);
-            this.label76.TabIndex = 99;
-            this.label76.Text = "Repeat (dec)";
-            this.label76.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label69
-            // 
-            this.label69.BackColor = System.Drawing.Color.Coral;
-            this.label69.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label69.Location = new System.Drawing.Point(10, 80);
-            this.label69.Name = "label69";
-            this.label69.Size = new System.Drawing.Size(89, 17);
-            this.label69.TabIndex = 98;
-            this.label69.Text = "Pattern (0x)";
-            this.label69.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // txt_CHDebugFillDPMPattern
-            // 
-            this.txt_CHDebugFillDPMPattern.Location = new System.Drawing.Point(10, 97);
-            this.txt_CHDebugFillDPMPattern.Name = "txt_CHDebugFillDPMPattern";
-            this.txt_CHDebugFillDPMPattern.Size = new System.Drawing.Size(89, 20);
-            this.txt_CHDebugFillDPMPattern.TabIndex = 97;
-            // 
-            // txt_CHDebugFillDPMPRepeat
-            // 
-            this.txt_CHDebugFillDPMPRepeat.Location = new System.Drawing.Point(110, 97);
-            this.txt_CHDebugFillDPMPRepeat.Name = "txt_CHDebugFillDPMPRepeat";
-            this.txt_CHDebugFillDPMPRepeat.Size = new System.Drawing.Size(89, 20);
-            this.txt_CHDebugFillDPMPRepeat.TabIndex = 96;
-            // 
-            // btn_CHDebugFillDPM
-            // 
-            this.btn_CHDebugFillDPM.BackColor = System.Drawing.Color.Coral;
-            this.btn_CHDebugFillDPM.Location = new System.Drawing.Point(10, 61);
-            this.btn_CHDebugFillDPM.Name = "btn_CHDebugFillDPM";
-            this.btn_CHDebugFillDPM.Size = new System.Drawing.Size(189, 20);
-            this.btn_CHDebugFillDPM.TabIndex = 95;
-            this.btn_CHDebugFillDPM.Text = "START FillDPM";
-            this.btn_CHDebugFillDPM.UseVisualStyleBackColor = false;
-            this.btn_CHDebugFillDPM.Click += new System.EventHandler(this.btn_CHDebugFillDPM_Click);
-            // 
-            // rtb_CHDebug
-            // 
-            this.rtb_CHDebug.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.rtb_CHDebug.Location = new System.Drawing.Point(10, 147);
-            this.rtb_CHDebug.Name = "rtb_CHDebug";
-            this.rtb_CHDebug.Size = new System.Drawing.Size(494, 262);
-            this.rtb_CHDebug.TabIndex = 94;
-            this.rtb_CHDebug.Text = "";
-            // 
-            // txt_CHDebugNTests
-            // 
-            this.txt_CHDebugNTests.Location = new System.Drawing.Point(102, 12);
-            this.txt_CHDebugNTests.Name = "txt_CHDebugNTests";
-            this.txt_CHDebugNTests.Size = new System.Drawing.Size(97, 20);
-            this.txt_CHDebugNTests.TabIndex = 92;
-            // 
-            // label73
-            // 
-            this.label73.BackColor = System.Drawing.Color.Coral;
-            this.label73.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label73.Location = new System.Drawing.Point(10, 14);
-            this.label73.Name = "label73";
-            this.label73.Size = new System.Drawing.Size(89, 17);
-            this.label73.TabIndex = 88;
-            this.label73.Text = "Number of Tests";
-            this.label73.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // btn_CHDebugInitializeCROCs
-            // 
-            this.btn_CHDebugInitializeCROCs.BackColor = System.Drawing.Color.Coral;
-            this.btn_CHDebugInitializeCROCs.Location = new System.Drawing.Point(10, 35);
-            this.btn_CHDebugInitializeCROCs.Name = "btn_CHDebugInitializeCROCs";
-            this.btn_CHDebugInitializeCROCs.Size = new System.Drawing.Size(192, 20);
-            this.btn_CHDebugInitializeCROCs.TabIndex = 80;
-            this.btn_CHDebugInitializeCROCs.Text = "START FEsEnumeration";
-            this.btn_CHDebugInitializeCROCs.UseVisualStyleBackColor = false;
-            this.btn_CHDebugInitializeCROCs.Click += new System.EventHandler(this.btn_CHDebugInitializeCROCs_Click);
             // 
             // groupBoxCH_Frame
             // 
@@ -3781,14 +3456,13 @@ namespace SlowControl
             // 
             this.tabFE.Location = new System.Drawing.Point(4, 22);
             this.tabFE.Name = "tabFE";
-            this.tabFE.Size = new System.Drawing.Size(899, 502);
+            this.tabFE.Size = new System.Drawing.Size(458, 510);
             this.tabFE.TabIndex = 7;
             this.tabFE.Text = "FE";
             this.tabFE.UseVisualStyleBackColor = true;
             // 
             // tabFPGARegs
             // 
-            this.tabFPGARegs.Controls.Add(this.fpgaDevRegControl1);
             this.tabFPGARegs.Controls.Add(this.btn_AllFEsFPGARegWrite);
             this.tabFPGARegs.Controls.Add(this.btn_FPGAAdvancedGUI);
             this.tabFPGARegs.Controls.Add(this.lblFPGA_CROCID);
@@ -3799,138 +3473,14 @@ namespace SlowControl
             this.tabFPGARegs.Controls.Add(this.btn_FPGARegRead);
             this.tabFPGARegs.Controls.Add(this.btn_FPGARegWrite);
             this.tabFPGARegs.Controls.Add(this.label1);
+            this.tabFPGARegs.Controls.Add(this.fpgaDevRegControl1);
             this.tabFPGARegs.Location = new System.Drawing.Point(4, 22);
             this.tabFPGARegs.Name = "tabFPGARegs";
             this.tabFPGARegs.Padding = new System.Windows.Forms.Padding(3);
-            this.tabFPGARegs.Size = new System.Drawing.Size(899, 502);
+            this.tabFPGARegs.Size = new System.Drawing.Size(458, 510);
             this.tabFPGARegs.TabIndex = 0;
             this.tabFPGARegs.Text = "FPGA Regs";
             this.tabFPGARegs.UseVisualStyleBackColor = true;
-            // 
-            // fpgaDevRegControl1
-            // 
-            this.fpgaDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
-            this.fpgaDevRegControl1.AutoScroll = true;
-            this.fpgaDevRegControl1.FPGARegValues = new uint[] {
-        ((uint)(12u)),
-        ((uint)(65488u)),
-        ((uint)(1024u)),
-        ((uint)(63u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(1u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(32768u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(415029u)),
-        ((uint)(415029u)),
-        ((uint)(415029u)),
-        ((uint)(415029u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u))};
-            this.fpgaDevRegControl1.Location = new System.Drawing.Point(6, 40);
-            this.fpgaDevRegControl1.Name = "fpgaDevRegControl1";
-            this.fpgaDevRegControl1.RegisterBoardID = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM1Lock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM1NoClock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2Lock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2NoClock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2PhaseDone = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2PhaseTotal = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip0 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip1 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip2 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip3 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterExtTriggFound = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterExtTriggRearm = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterFirmwareVersion = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterGateLength = ((uint)(1024u));
-            this.fpgaDevRegControl1.RegisterGateStart = ((uint)(65488u));
-            this.fpgaDevRegControl1.RegisterGateTimeStamp = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVActual = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVAutoManual = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVControl = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVEnabled = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVNumAvg = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVPeriodAuto = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVPeriodManual = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVPulseWidth = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVTarget = ((uint)(32768u));
-            this.fpgaDevRegControl1.RegisterInjectCount = new uint[] {
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u))};
-            this.fpgaDevRegControl1.RegisterInjectDACDone = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectDACMode = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectDACStart = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectDACValue = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectEnable = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectPhase = ((uint)(1u));
-            this.fpgaDevRegControl1.RegisterInjectRange = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterPhaseIncrement = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterPhaseStart = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterPhaseTicks = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusFCMDUnknown = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusRXLock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusSCMDUnknown = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusTXSyncLock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTemperature = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTestPulse2Bit = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTestPulseCount = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTimer = ((uint)(12u));
-            this.fpgaDevRegControl1.RegisterTripPowerOff = ((uint)(63u));
-            this.fpgaDevRegControl1.RegisterTripXComparators = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTripXThreshold = ((uint)(0u));
-            this.fpgaDevRegControl1.Size = new System.Drawing.Size(258, 456);
-            this.fpgaDevRegControl1.TabIndex = 26;
             // 
             // btn_AllFEsFPGARegWrite
             // 
@@ -4033,6 +3583,125 @@ namespace SlowControl
             this.label1.TabIndex = 1;
             this.label1.Text = "FE";
             // 
+            // fpgaDevRegControl1
+            // 
+            this.fpgaDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.fpgaDevRegControl1.AutoScroll = true;
+            this.fpgaDevRegControl1.FPGARegValues = new uint[] {
+        ((uint)(12u)),
+        ((uint)(65488u)),
+        ((uint)(1024u)),
+        ((uint)(63u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(1u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(32768u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(1u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(15u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(0u))};
+            this.fpgaDevRegControl1.Location = new System.Drawing.Point(6, 37);
+            this.fpgaDevRegControl1.Name = "fpgaDevRegControl1";
+            this.fpgaDevRegControl1.RegisterBoardID = ((uint)(15u));
+            this.fpgaDevRegControl1.RegisterDCM1Lock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM1NoClock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2Lock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2NoClock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2PhaseDone = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2PhaseTotal = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip0 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip1 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip2 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip3 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterExtTriggFound = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterExtTriggRearm = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterFirmwareVersion = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterGateLength = ((uint)(1024u));
+            this.fpgaDevRegControl1.RegisterGateStart = ((uint)(65488u));
+            this.fpgaDevRegControl1.RegisterGateTimeStamp = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVActual = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVAutoManual = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVControl = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVEnabled = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVNumAvg = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVPeriodAuto = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVPeriodManual = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVPulseWidth = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVTarget = ((uint)(32768u));
+            this.fpgaDevRegControl1.RegisterInjectCount = new uint[] {
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u))};
+            this.fpgaDevRegControl1.RegisterInjectDACDone = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectDACMode = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectDACStart = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectDACValue = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectEnable = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectPhase = ((uint)(1u));
+            this.fpgaDevRegControl1.RegisterInjectRange = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseIncrement = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseSpare = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseStart = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseTicks = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTemperature = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTestPulse2Bit = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTestPulseCount = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTimer = ((uint)(12u));
+            this.fpgaDevRegControl1.RegisterTripPowerOff = ((uint)(63u));
+            this.fpgaDevRegControl1.RegisterTripXComparators = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTripXThreshold = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterVXOMuxSelect = ((uint)(1u));
+            this.fpgaDevRegControl1.Size = new System.Drawing.Size(250, 467);
+            this.fpgaDevRegControl1.TabIndex = 23;
+            // 
             // tabTRIPRegs
             // 
             this.tabTRIPRegs.Controls.Add(this.btn_AllFEsTRIPRegWrite);
@@ -4050,7 +3719,7 @@ namespace SlowControl
             this.tabTRIPRegs.Location = new System.Drawing.Point(4, 22);
             this.tabTRIPRegs.Name = "tabTRIPRegs";
             this.tabTRIPRegs.Padding = new System.Windows.Forms.Padding(3);
-            this.tabTRIPRegs.Size = new System.Drawing.Size(899, 502);
+            this.tabTRIPRegs.Size = new System.Drawing.Size(458, 510);
             this.tabTRIPRegs.TabIndex = 1;
             this.tabTRIPRegs.Text = "TRIP Regs";
             this.tabTRIPRegs.UseVisualStyleBackColor = true;
@@ -4237,7 +3906,7 @@ namespace SlowControl
             this.tabFLASHPages.Location = new System.Drawing.Point(4, 22);
             this.tabFLASHPages.Name = "tabFLASHPages";
             this.tabFLASHPages.Padding = new System.Windows.Forms.Padding(3);
-            this.tabFLASHPages.Size = new System.Drawing.Size(899, 502);
+            this.tabFLASHPages.Size = new System.Drawing.Size(458, 510);
             this.tabFLASHPages.TabIndex = 2;
             this.tabFLASHPages.Text = "FLASH";
             this.tabFLASHPages.UseVisualStyleBackColor = true;
@@ -4336,7 +4005,6 @@ namespace SlowControl
             // 
             // tabReadHV
             // 
-            this.tabReadHV.Controls.Add(this.richTextBoxHVRead);
             this.tabReadHV.Controls.Add(this.btnMonitorHV);
             this.tabReadHV.Controls.Add(this.label27);
             this.tabReadHV.Controls.Add(this.textBoxMonitorTimer);
@@ -4344,22 +4012,13 @@ namespace SlowControl
             this.tabReadHV.Controls.Add(this.textBoxADCThreshold);
             this.tabReadHV.Controls.Add(this.label2);
             this.tabReadHV.Controls.Add(this.btnReadHV);
+            this.tabReadHV.Controls.Add(this.richTextBoxHVRead);
             this.tabReadHV.Location = new System.Drawing.Point(4, 22);
             this.tabReadHV.Name = "tabReadHV";
-            this.tabReadHV.Size = new System.Drawing.Size(899, 502);
+            this.tabReadHV.Size = new System.Drawing.Size(458, 510);
             this.tabReadHV.TabIndex = 8;
             this.tabReadHV.Text = "Read HV";
             this.tabReadHV.UseVisualStyleBackColor = true;
-            // 
-            // richTextBoxHVRead
-            // 
-            this.richTextBoxHVRead.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
-            this.richTextBoxHVRead.Location = new System.Drawing.Point(3, 3);
-            this.richTextBoxHVRead.Name = "richTextBoxHVRead";
-            this.richTextBoxHVRead.Size = new System.Drawing.Size(366, 446);
-            this.richTextBoxHVRead.TabIndex = 11;
-            this.richTextBoxHVRead.Text = "";
             // 
             // btnMonitorHV
             // 
@@ -4436,6 +4095,17 @@ namespace SlowControl
             this.btnReadHV.UseVisualStyleBackColor = true;
             this.btnReadHV.Click += new System.EventHandler(this.btnReadHV_Click);
             // 
+            // richTextBoxHVRead
+            // 
+            this.richTextBoxHVRead.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.richTextBoxHVRead.Location = new System.Drawing.Point(0, 3);
+            this.richTextBoxHVRead.Name = "richTextBoxHVRead";
+            this.richTextBoxHVRead.Size = new System.Drawing.Size(455, 446);
+            this.richTextBoxHVRead.TabIndex = 0;
+            this.richTextBoxHVRead.Text = "";
+            // 
             // tabLIBox
             // 
             this.tabLIBox.Controls.Add(this.btn_LIBoxAdvancedGUI);
@@ -4444,7 +4114,7 @@ namespace SlowControl
             this.tabLIBox.Controls.Add(this.groupBoxLIBox_RS232Settings);
             this.tabLIBox.Location = new System.Drawing.Point(4, 22);
             this.tabLIBox.Name = "tabLIBox";
-            this.tabLIBox.Size = new System.Drawing.Size(899, 502);
+            this.tabLIBox.Size = new System.Drawing.Size(458, 510);
             this.tabLIBox.TabIndex = 9;
             this.tabLIBox.Text = "LI Box";
             this.tabLIBox.UseVisualStyleBackColor = true;
@@ -4986,7 +4656,7 @@ namespace SlowControl
             this.tabV1720.Controls.Add(this.btn_V1720LoadConfigFile);
             this.tabV1720.Location = new System.Drawing.Point(4, 22);
             this.tabV1720.Name = "tabV1720";
-            this.tabV1720.Size = new System.Drawing.Size(899, 502);
+            this.tabV1720.Size = new System.Drawing.Size(458, 510);
             this.tabV1720.TabIndex = 11;
             this.tabV1720.Text = "V1720";
             this.tabV1720.UseVisualStyleBackColor = true;
@@ -5112,7 +4782,7 @@ namespace SlowControl
             this.treeView1.Location = new System.Drawing.Point(5, 27);
             this.treeView1.Name = "treeView1";
             this.treeView1.ShowNodeToolTips = true;
-            this.treeView1.Size = new System.Drawing.Size(200, 528);
+            this.treeView1.Size = new System.Drawing.Size(200, 536);
             this.treeView1.TabIndex = 1;
             this.treeView1.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView1_AfterSelect);
             // 
@@ -5144,7 +4814,7 @@ namespace SlowControl
             this.actionsToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1130, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(689, 24);
             this.menuStrip1.TabIndex = 2;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -5206,26 +4876,26 @@ namespace SlowControl
             // expandAllToolStripMenuItem
             // 
             this.expandAllToolStripMenuItem.Name = "expandAllToolStripMenuItem";
-            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.expandAllToolStripMenuItem.Text = "Expand All";
             this.expandAllToolStripMenuItem.Click += new System.EventHandler(this.expandAllToolStripMenuItem_Click);
             // 
             // collapseAllToolStripMenuItem
             // 
             this.collapseAllToolStripMenuItem.Name = "collapseAllToolStripMenuItem";
-            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.collapseAllToolStripMenuItem.Text = "Collapse All";
             this.collapseAllToolStripMenuItem.Click += new System.EventHandler(this.collapseAllToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(134, 6);
             // 
             // redPathsToolStripMenuItem
             // 
             this.redPathsToolStripMenuItem.Name = "redPathsToolStripMenuItem";
-            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.redPathsToolStripMenuItem.Text = "Red paths";
             this.redPathsToolStripMenuItem.Visible = false;
             this.redPathsToolStripMenuItem.Click += new System.EventHandler(this.redPathsToolStripMenuItem_Click);
@@ -5233,7 +4903,7 @@ namespace SlowControl
             // bluePathsToolStripMenuItem
             // 
             this.bluePathsToolStripMenuItem.Name = "bluePathsToolStripMenuItem";
-            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.bluePathsToolStripMenuItem.Text = "Blue paths";
             this.bluePathsToolStripMenuItem.Visible = false;
             this.bluePathsToolStripMenuItem.Click += new System.EventHandler(this.bluePathsToolStripMenuItem_Click);
@@ -5241,7 +4911,7 @@ namespace SlowControl
             // greenPathsToolStripMenuItem
             // 
             this.greenPathsToolStripMenuItem.Name = "greenPathsToolStripMenuItem";
-            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.greenPathsToolStripMenuItem.Text = "Green paths";
             this.greenPathsToolStripMenuItem.Visible = false;
             this.greenPathsToolStripMenuItem.Click += new System.EventHandler(this.greenPathsToolStripMenuItem_Click);
@@ -5293,9 +4963,9 @@ namespace SlowControl
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.prgStatus,
             this.lblStatus});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 558);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 566);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(1130, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(689, 22);
             this.statusStrip1.TabIndex = 3;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -5307,7 +4977,7 @@ namespace SlowControl
             // lblStatus
             // 
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(1013, 17);
+            this.lblStatus.Size = new System.Drawing.Size(572, 17);
             this.lblStatus.Spring = true;
             this.lblStatus.Text = "lblStatus";
             // 
@@ -5323,21 +4993,11 @@ namespace SlowControl
             // 
             this.timerMonitorHV.Tick += new System.EventHandler(this.timerMonitorHV_Tick);
             // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(10, 119);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(89, 24);
-            this.button1.TabIndex = 114;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
             // frmSlowControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1130, 580);
+            this.ClientSize = new System.Drawing.Size(689, 588);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.treeView1);
             this.Controls.Add(this.menuStrip1);
@@ -5379,8 +5039,6 @@ namespace SlowControl
             this.groupBoxCROC_TimingSetup.PerformLayout();
             this.groupBoxCROC_FLASH.ResumeLayout(false);
             this.tabCH.ResumeLayout(false);
-            this.groupBoxCH_DEBUG.ResumeLayout(false);
-            this.groupBoxCH_DEBUG.PerformLayout();
             this.groupBoxCH_Frame.ResumeLayout(false);
             this.groupBoxCH_Frame.PerformLayout();
             this.groupBoxCH_StatusRegister.ResumeLayout(false);
@@ -5462,7 +5120,9 @@ namespace SlowControl
         private System.Windows.Forms.Button btn_FPGARegRead;
         private System.Windows.Forms.Button btn_FPGARegWrite;
         private System.Windows.Forms.Label label1;
+        private MinervaUserControls.FPGADevRegControl fpgaDevRegControl1;
         private System.Windows.Forms.TabPage tabReadHV;
+        private System.Windows.Forms.RichTextBox richTextBoxHVRead;
         private System.Windows.Forms.Button btnReadHV;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private System.Windows.Forms.ToolStripMenuItem actionsToolStripMenuItem;
@@ -5812,33 +5472,6 @@ namespace SlowControl
         private System.Windows.Forms.CheckBox chk_V1720PrintEventStat;
         private System.Windows.Forms.CheckBox chk_V1720PrintEventData;
         private System.Windows.Forms.Button btn_V1720ReadAllRegisters;
-        private System.Windows.Forms.GroupBox groupBoxCH_DEBUG;
-        private System.Windows.Forms.Button btn_CHDebugInitializeCROCs;
-        private System.Windows.Forms.TextBox txt_CHDebugNTests;
-        private System.Windows.Forms.Label label73;
-        private System.Windows.Forms.RichTextBox rtb_CHDebug;
-        private System.Windows.Forms.Button btn_CHDebugFillDPM;
-        private System.Windows.Forms.TextBox txt_CHDebugFillDPMPattern;
-        private System.Windows.Forms.TextBox txt_CHDebugFillDPMPRepeat;
-        private System.Windows.Forms.Label label76;
-        private System.Windows.Forms.Label label69;
-        private System.Windows.Forms.TextBox txt_CHDebugFrameIDByte1;
-        private System.Windows.Forms.Label label77;
-        private System.Windows.Forms.Label label85;
-        private System.Windows.Forms.Label label84;
-        private System.Windows.Forms.Label label81;
-        private System.Windows.Forms.Label label80;
-        private System.Windows.Forms.TextBox txt_CHDebugFrameStatusID;
-        private System.Windows.Forms.TextBox txt_CHDebugFrameIDByte0;
-        private System.Windows.Forms.ComboBox cmb_CHDebugBroadcastCMD;
-        private System.Windows.Forms.ComboBox cmb_CHDebugFEID;
-        private System.Windows.Forms.ComboBox cmb_CHDebugFunctionID;
-        private System.Windows.Forms.ComboBox cmb_CHDebugDeviceID;
-        private System.Windows.Forms.ComboBox cmb_CHDebugDirection;
-        private System.Windows.Forms.Button btn_CHDebugUpdatePattern;
-        private System.Windows.Forms.RichTextBox richTextBoxHVRead;
-        private MinervaUserControls.FPGADevRegControl fpgaDevRegControl1;
-        private System.Windows.Forms.Button button1;
 
     }
 }
