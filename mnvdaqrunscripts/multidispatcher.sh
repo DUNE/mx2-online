@@ -1,11 +1,5 @@
 #!/bin/sh
 
-MASTER=mnvonlinemaster.fnal.gov
-DISPAF=/work/conditions/readout_dispatcher.pid
-if [ $# -gt 0 ]; then
-	$MASTER=$1
-fi
-
 # Setup environment for LinDAQ.
 if test -z "$DAQROOT"
 then
@@ -15,12 +9,12 @@ fi
 
 # Check to see if the dispatcher is running.  If it is, kill it.
 pushd /work/software/mnvruncontrol/backend
-python RunControlDispatcher.py -m ${MASTER} stop
+python ReadoutDispatcher.py stop
 popd
 
 # Start the dispatcher.
 pushd /work/software/mnvruncontrol/backend
-python RunControlDispatcher.py -m ${MASTER} start &
+python ReadoutDispatcher.py start
 popd
 
 
