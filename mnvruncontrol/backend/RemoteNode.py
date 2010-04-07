@@ -31,8 +31,11 @@ from mnvruncontrol.configuration import Configuration
 
 
 class RemoteNode:
-	def __init__(self, name, address):
-		self.id = str(uuid.uuid4())		# create a random unique identifier for this instance.
+	def __init__(self, name, address, id=None):
+		if id is not None:
+			self.id = id
+		else:
+			self.id = str(uuid.uuid4())		# create a random unique identifier for this instance.
 	
 		self.socket = None
 		self.name = name

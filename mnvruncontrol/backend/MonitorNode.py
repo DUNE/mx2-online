@@ -9,12 +9,13 @@
 """
 
 from mnvruncontrol.configuration import SocketRequests
+from mnvruncontrol.configuration import Configuration
 
 from mnvruncontrol.backend.RemoteNode import RemoteNode
 
 class MonitorNode(RemoteNode):
-	def __init__(self, name, address):
-		RemoteNode.__init__(self, name, address)
+	def __init__(self, name, address, id=None):
+		RemoteNode.__init__(self, name, address, id)
 		
 		self.ValidRequests += SocketRequests.MonitorRequests
 						
@@ -27,4 +28,6 @@ class MonitorNode(RemoteNode):
 
 	def om_stop(self):
 		""" Asks the server to stop the OM processes. """
-		self.request("om_stop!")
+		response = self.request("om_stop!")
+		
+		return response == "0"

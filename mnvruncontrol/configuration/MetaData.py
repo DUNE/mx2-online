@@ -144,24 +144,25 @@ class MetaData:
 				
 		
 # Format for constructor for MetaData objects:
-# ( (description1, hash1, code1),
-#   (description2, hash2, code2),
+# ( (IDENTIFIER1, description1, hash1, code1),
+#   (IDENTIFIER2, description2, hash2, code2),
 #   ...
-#   (descriptionN, hashN, codeN) )
+#   (IDENTIFIERN, descriptionN, hashN, codeN) )
 #
 # If you want to omit either a hash or a code 
 # (you need to have a description and at least one of hash or code every time)
 # you should pass None in that position.  e.g.:
-# ( (description1, hash1, code1),
-#   (description2, None,  code2),
-#   (description3, hash3, None ),
+# ( (IDENTIFIER1, description1, hash1, code1),
+#   (IDENTIFIER2, description2, None,  code2),
+#   (IDENTIFIER3, description3, hash3, None ),
 #   ...
-#   (descriptionN, None,  codeN) )
+#   (IDENTIFIERN, descriptionN, None,  codeN) )
 #
 # etc.
 #
 # Note that if you pass only a hash for one item and only a code for another,
 # the program will print out a warning because it assumes you probably didn't mean to do that.
+#
 		
 SpecialGUI		= MetaData( tuple([("Deprecated", 0, None)]) )
 

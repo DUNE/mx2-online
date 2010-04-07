@@ -132,9 +132,18 @@ class DataAcquisitionManager(wx.EvtHandler):
 			else:
 				failed_connection = node.name
 				break
-		
+		try:
+			omfile = open(Configuration.params["Master node"]["monitor_idfile"], "w")
+		except OSError:
+			omfile = None
+
 		for node in self.monitorNodes:
+			if omfile is not None:
+				omfile.write( "%s %s\n" % (node.id, node.address) )
 			node.get_lock()
+		
+		if omfile is not None:
+			omfile.close()
 		
 		if failed_connection:
 			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Cannot get control of dispatcher on the " + failed_connection + " readout node.  Check to make sure that the readout dispatcher is started on that machine and that there are no other run control processes connected to it.", title="No lock on " + failed_connection + " readout node") )
@@ -169,7 +178,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			for node in self.readoutNodes:
 				try:
 					success = node.daq_stop()
-				except ReadoutNode.ReadoutNodeNoDAQRunningException, ReadoutNode.ReadoutNodeNoConnectionException:		# the DAQ has already quit or is unreachable
+				except ReadoutNode.ReadoutNodeNoDAQRunningException, RemoteNode.RemoteNodeNoConnectionException:		# the DAQ has already quit or is unreachable
 					pass				# if so, we'll never get the "DAQ quit" event from the SocketThread.  don't indicate 'success'.
 			if not success:
 				wx.PostEvent(self, Events.EndSubrunEvent())
@@ -713,7 +722,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
 	
 		if self.running:
-			self.logger.info("  All DAQ services started.  Data acquisition underway.")
+			self.logger.info("  All DAQ services started.  Data acquisition for subrun %d underway." % (self.subrun + self.first_subrun) )
 		
 	def StartTestProcess(self):
 		frame = Frames.OutputFrame(self.main_window, "test process", window_size=(600,600), window_pos=(1200,200))

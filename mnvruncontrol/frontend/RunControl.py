@@ -553,6 +553,10 @@ class MainFrame(wx.Frame):
 			self.subrunEntry.SetValue(1)
 
 	def LoadRunSeriesFile(self, evt=None):
+		# don't want to switch run series in the middle of a run!
+		if self.runmanager.running:
+			return
+			
 		self.seriesDescription.DeleteAllItems()
 		self.moreInfoButton.Disable()
 
@@ -803,6 +807,9 @@ class MainFrame(wx.Frame):
 			
 			self.singleRunButton.Disable()
 			self.runSeriesButton.Disable()
+			
+			self.seriesFile.Disable()
+			self.moreInfoButton.Disable()
 
 			self.startButton.Disable()
 			self.stopButton.Enable()
@@ -829,6 +836,10 @@ class MainFrame(wx.Frame):
 
 		self.singleRunButton.Enable()
 		self.runSeriesButton.Enable()
+			
+		self.seriesFile.Enable()
+		if self.runSeriesButton.GetValue() == True:
+			self.moreInfoButton.Enable()
 
 		self.UpdateLockedEntries()
 		self.lockdownEntry.Enable()
