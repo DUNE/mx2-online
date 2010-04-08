@@ -269,7 +269,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			acqData.infoStream() << " Running Mode is Cosmic.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
-			Frequency    = F4; // The fastest setting is a function of FEB firmware.
+			Frequency    = F4; 
 			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
 			daqController->GetCrim(index)->SetIRQLine(Trigger); //crimInterrupts type
@@ -598,8 +598,8 @@ int acquire_data::SetupIRQ(int index)
 	crim_send[0] = (daqController->GetCrim(index)->GetInterruptConfig()) & 0xff;
 	crim_send[1] = ((daqController->GetCrim(index)->GetInterruptConfig())>>0x08) & 0xff;
 #if DEBUG_IRQ
-	acqData.debug("     IRQ CONFIG = 0x%04X\n",daqController->GetCrim(index)->GetInterruptConfig());
-	acqData.debug("     IRQ ADDR   = 0x%04X\n",daqController->GetCrim(index)->GetInterruptsConfigAddress());
+	acqData.debug("     IRQ CONFIG = 0x%04X",daqController->GetCrim(index)->GetInterruptConfig());
+	acqData.debug("     IRQ ADDR   = 0x%04X",daqController->GetCrim(index)->GetInterruptsConfigAddress());
 #endif
 	try {
 		error = daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
@@ -809,6 +809,8 @@ int acquire_data::WriteCROCFastCommand(int id, unsigned char command[])
 	for (int i = 0; i<(sizeof(*command)/sizeof(unsigned char)); i++) { 
 		acqData.debug("   0x%02X",command[i]);
 	}
+	//acqData.debug("  Write address is 0x%06X",
+	//	daqController->GetCroc(id)->GetFastCommandAddress());
 #endif
 	int ml = sizeof(*command)/sizeof(unsigned char);
 	try {
@@ -842,6 +844,10 @@ int acquire_data::ResetCRIMSequencerLatch(int id)
 #endif
 	unsigned char message[] = { 0x02, 0x02 };
 	try {
+#if DEBUG_COSMICS
+		acqData.debug(" Trying to write to address: 0x%06X", 
+			daqController->GetCrim(id)->GetSequencerResetRegister());
+#endif
 		int error = daqAcquire->WriteCycle(daqController->handle, 2, message, 
 			daqController->GetCrim(id)->GetSequencerResetRegister(),
 			daqController->GetAddressModifier(), daqController->GetDataWidth());
@@ -854,6 +860,10 @@ int acquire_data::ResetCRIMSequencerLatch(int id)
 			(daqController->GetCrim(id)->GetCrimAddress()>>16);
 		return e;
 	}
+#if DEBUG_COSMICS
+	acqData.debugStream() << "Exiting ResetCRIMSequencerLatch for CRIM " <<
+		(daqController->GetCrim(id)->GetCrimAddress()>>16);
+#endif
 	return 0;
 }
 
@@ -1885,6 +1895,9 @@ int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
 #if DEBUG_TRIGGER
 			acqData.debugStream() << "    ->Sent Sequencer Init. Signal!";
 #endif
+			break;
+		// The Cosmic trigger is initiated via an external signal.
+		case Cosmic:
 			break;
 		// The NuMI Beam trigger is initiated via an external signal.
 		case NuMI:
