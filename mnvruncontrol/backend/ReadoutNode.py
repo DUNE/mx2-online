@@ -1,10 +1,10 @@
 """
   ReadoutNode.py:
-  Module that models a readout node.
-  It wraps the socket connection from the client
-  (the readout "queen" in Gabe's language) to the readout nodes
-  actually attached to hardware (the "soldier" and "worker" nodes)
-  using the RemoteNode base class.
+   Module that models a readout node.
+   It wraps the socket connection from the client
+   (the readout "queen" in Gabe's language) to the readout nodes
+   actually attached to hardware (the "soldier" and "worker" nodes)
+   using the RemoteNode base class.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Mar. 2010
@@ -51,11 +51,11 @@ class ReadoutNode(RemoteNode):
 			return int(response)
 			
 	def daq_start( self, etfile, etport, runNum, subRunNum, numGates=10,
-	               runMode=MetaData.RunningModes["One shot", MetaData.HASH],
-	               detector=MetaData.DetectorTypes["Unknown", MetaData.HASH],
-	               numFEBs=114, LIlevel=MetaData.LILevels["Zero PE", MetaData.HASH],
-	               LEDgroup=MetaData.LEDGroups["ABCD", MetaData.HASH],
-	               HWInit=MetaData.HardwareInitLevels["No HW init", MetaData.HASH]):
+	               runMode=MetaData.RunningModes.ONE_SHOT.hash,
+	               detector=MetaData.DetectorTypes.UNKNOWN.hash,
+	               numFEBs=114, LIlevel=MetaData.LILevels.ZERO_PE.hash,
+	               LEDgroup=MetaData.LEDGroups.ABCD.hash,
+	               HWInit=MetaData.HardwareInitLevels.NO_HW_INIT.hash ):
 		""" Asks the server to start the DAQ process.  Returns True on success,
 		    False on failure, and raises an exception if the DAQ is currently running. """
 		

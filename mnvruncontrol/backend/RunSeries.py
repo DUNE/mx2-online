@@ -1,3 +1,13 @@
+"""
+  RunSeries.py:
+   Objects modelling a collection of runs of similar configuration
+   (known elsewhere as a "run series").
+  
+   Original author: A. Mislivec (mislivec@pas.rochester.edu)
+                    Feb. 2010
+                    
+   Address all complaints to the management.
+"""
 from mnvruncontrol.configuration import MetaData
 
 class RunSeries:
@@ -42,10 +52,10 @@ class RunInfo(object):
 
 	def __init__(   self,
                         gates      = 0,
-                        runMode    = MetaData.RunningModes.item(0,MetaData.HASH),
-                        hwcfg      = MetaData.HardwareConfigurations.item(0),
-                        ledLevel   = MetaData.LILevels.item(0,MetaData.HASH),
-                        ledGroup   = MetaData.LEDGroups.item(0,MetaData.HASH)):
+                        runMode    = MetaData.RunningModes.ONE_SHOT.hash,
+                        hwcfg      = MetaData.HardwareConfigurations.NOFILE.hash,
+                        ledLevel   = MetaData.LILevels.ZERO_PE.hash,
+                        ledGroup   = MetaData.LEDGroups.ABCD.hash ):
 
 		self.gates      = gates
 		self.runMode    = runMode

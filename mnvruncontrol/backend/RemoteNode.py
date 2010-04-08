@@ -26,7 +26,6 @@ import time
 import socket
 
 from mnvruncontrol.configuration import SocketRequests
-from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Configuration
 
 

@@ -21,7 +21,6 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.mixins.listctrl import ListRowHighlighter
 from wx.lib.mixins.listctrl import TextEditMixin
 from mnvruncontrol.configuration import Defaults
-from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.backend import Events
 
@@ -159,6 +158,7 @@ class ConfigurationFrame(wx.Frame):
 		self.Layout()
 		
 	def AddNode(self, evt):
+		""" Add a node to the list. """
 		for itemname in self.AddButtons:
 			if evt.EventObject == self.AddButtons[itemname]:
 				index = self.entries["Front end"][itemname].InsertStringItem(sys.maxint, "[text]")
@@ -166,6 +166,7 @@ class ConfigurationFrame(wx.Frame):
 					self.entries["Front end"][itemname].SetStringItem(index, 1, "[text]")
 	
 	def DeleteNodes(self, evt):
+		""" Delete all selected nodes from the list. """
 		for nodename in self.DeleteButtons:
 			if evt.EventObject == self.DeleteButtons[nodename]:
 				index = -1
@@ -184,6 +185,7 @@ class ConfigurationFrame(wx.Frame):
 					self.entries["Front end"][nodename].DeleteItem(item)
 		
 	def SaveAll(self, evt=None):
+		""" Save the configuration. """
 		try:
 			location = "%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME)
 			db = shelve.open(location, "w")  

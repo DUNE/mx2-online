@@ -1,3 +1,15 @@
+"""
+  OMReset.py:
+   A simple tool designed to reset online monitoring
+   nodes if their underlying processes crash but
+   the dispatcher is still running.
+  
+   Original author: J. Wolcott (jwolcott@fnal.gov)
+                    Apr. 2010
+                    
+   Address all complaints to the management.
+"""
+
 import wx
 import re
 

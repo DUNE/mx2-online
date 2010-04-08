@@ -1,8 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
   RunControl.py:
-  Main wxPython objects for the presentation of a graphical
-  run control interface to the user.
+   Main wxPython objects for the presentation of a graphical
+   run control interface to the user.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Feb.-Apr. 2010
@@ -33,6 +33,7 @@ from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import DataAcquisitionManager
 from mnvruncontrol.backend import ReadoutNode
 from mnvruncontrol.backend import MonitorNode
+from mnvruncontrol.backend import SortTools
 
 from mnvruncontrol.frontend import Frames
 from mnvruncontrol.frontend import Tools
@@ -49,19 +50,40 @@ ID_AUTOCLOSE = wx.NewId()
 ID_LOCKDOWN = wx.NewId()
 class MainFrame(wx.Frame):
 	""" The main control window. """
+	
+	### Note:
+	###   this class is pretty long and has a lot of methods.
+	###   to make them easier to find, they're loosely grouped by category:
+	###    * initialization                (begin around line 75)
+	###    * "master" run control          ( ...         line 375)
+	###    * "mid-run"                     ( ...         line 475)
+	###    * configuration                 ( ...         line 525)
+	###    * GUI-related (+ evt. handling) ( ...         line 675)
+	###    * new window/dialog creators    ( ...         line 900)
+	###  within each category (which is indicated by a block comment like the one below),
+	###  they are sorted alphabetically.
+	### You can also get a sense of what they do by importing this module
+	###  into an interactive Python session and doing "help(MainFrame)".
+	###  Note that the 'help' function arranges everything alphabetically though.
+
+	################################################################################################
+	# Initialization methods :
+	#   __init__ and graphics initialization
+	################################################################################################
+
 	def __init__(self, parent, title):
 		wx.Frame.__init__(self, parent, -1, title,
 				      pos=(0, 0), size=(600, 650) ) 
 		self.runmanager = DataAcquisitionManager.DataAcquisitionManager(self)
 
-		self.GetConfig()		# load up the configuration entries from the file.
+		self.GetGlobalConfig()		# load up the configuration entries from the file.
 		self.BuildGraphics()	# build and draw the GUI panel.
 		
 		# now initialize some member variables we'll need:
 		self.logfileNames = None
 
 		# finally, make sure the display is current
-		self.GetNextRunSubrun()
+		self.GetLastRunConfig()
 		self.UpdateLogFiles()
 		self.UpdateRunConfig()
 		
@@ -80,6 +102,7 @@ class MainFrame(wx.Frame):
 		self.Bind(Events.EVT_ERRORMSG, self.ShowErrorMsg)
 		
 	def BuildGraphics(self):
+		""" Constructs the wxPython graphics for the run control. """
 		menuBar = wx.MenuBar()
 
 		fileMenu = wx.Menu()
@@ -87,7 +110,7 @@ class MainFrame(wx.Frame):
 		fileMenu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit the run control")
 	
 		self.Bind(wx.EVT_MENU, self.OnTimeToClose, id=wx.ID_EXIT)
-		self.Bind(wx.EVT_MENU, self.StoreNextRunSubrun, id=wx.ID_SAVE)
+		self.Bind(wx.EVT_MENU, self.StoreLastRunConfig, id=wx.ID_SAVE)
 		menuBar.Append(fileMenu, "&File")
 
 		optionsMenu = wx.Menu()
@@ -121,11 +144,11 @@ class MainFrame(wx.Frame):
 		self.subrunEntry.Disable()
 
 		HWinitEntryLabel = wx.StaticText(self.mainPage, -1, "HW init level")
-		self.HWinitEntry =  wx.Choice(self.mainPage, -1, choices=MetaData.HardwareInitLevels.descriptions)
+		self.HWinitEntry =  wx.Choice(self.mainPage, -1, choices=MetaData.HardwareInitLevels.descriptions())
 
 		detConfigEntryLabel = wx.StaticText(self.mainPage, -1, "Detector")
-		self.detConfigEntry = wx.Choice(self.mainPage, -1, choices=MetaData.DetectorTypes.descriptions)
-		self.detConfigEntry.SetSelection(MetaData.DetectorTypes.index("Full MINERvA"))
+		self.detConfigEntry = wx.Choice(self.mainPage, -1, choices=MetaData.DetectorTypes.descriptions())
+		self.detConfigEntry.SetSelection(MetaData.DetectorTypes.MINERVA.index())
 
 		febsEntryLabel = wx.StaticText(self.mainPage, -1, "FEBs")
 		self.febsEntry = wx.SpinCtrl(self.mainPage, -1, "4", size=(125, -1), min=1, max=10000)
@@ -160,11 +183,11 @@ class MainFrame(wx.Frame):
 		self.gatesEntry = wx.SpinCtrl(self.singleRunConfigPanel, -1, "10", size=(125, -1), min=1, max=10000)
 
 		runModeEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "Run Mode")
-		self.runModeEntry =  wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.RunningModes.descriptions)
+		self.runModeEntry =  wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.RunningModes.descriptions())
 		self.Bind(wx.EVT_CHOICE, self.UpdateLEDgroups, self.runModeEntry)
 
 		hwConfigEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "HW config")
-		self.hwConfigEntry = wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.HardwareConfigurations.descriptions)
+		self.hwConfigEntry = wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.HardwareConfigurations.descriptions())
 
 		LEDgroupLabel = wx.StaticText(self.singleRunConfigPanel, -1, "LED groups used in LI")
 		LEDgroupSizer = wx.GridSizer(2, 2)
@@ -177,8 +200,8 @@ class MainFrame(wx.Frame):
 			LEDgroupSizer.Add(cb)
 
 		LILevelEntryLabel = wx.StaticText(self.singleRunConfigPanel, -1, "LI light level")
-		self.LILevelEntry = wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.LILevels.descriptions)
-		self.LILevelEntry.SetSelection(MetaData.LILevels.index("Max PE"))
+		self.LILevelEntry = wx.Choice(self.singleRunConfigPanel, -1, choices=MetaData.LILevels.descriptions())
+		self.LILevelEntry.SetSelection(MetaData.LILevels.MAX_PE.index())
 		self.LILevelEntry.Disable()		# will be enabled when necessary
 
 		singleRunConfigSizer = wx.GridSizer(3, 2, 10, 10)
@@ -201,7 +224,7 @@ class MainFrame(wx.Frame):
 		
 		seriesFileLabel = wx.StaticText(self.runSeriesConfigPanel, -1, "Series Type: ")
 
-		self.seriesFile = wx.Choice(self.runSeriesConfigPanel, -1, choices=MetaData.RunSeriesTypes.descriptions)
+		self.seriesFile = wx.Choice(self.runSeriesConfigPanel, -1, choices=MetaData.RunSeriesTypes.descriptions())
 		self.Bind(wx.EVT_CHOICE, self.LoadRunSeriesFile, self.seriesFile)	
 
 		seriesFileSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -351,34 +374,157 @@ class MainFrame(wx.Frame):
 		self.Layout()
 
 		self.Bind(Events.EVT_CONFIGUPDATED, self.UpdateLogFiles)
-
-	def parseLogfileName(self, filename):
-		matches = re.match(Defaults.LOGFILE_NAME_PATTERN, filename)
-		
-		if matches is None:
-			return None
-		
-		fileinfo = {}
-		fileinfo["run"]    = matches.group("run").lstrip('0')
-		fileinfo["subrun"] = matches.group("subrun").lstrip('0')
-		fileinfo["date"]   = matches.group("month") + "/" + matches.group("day") + "/20" + matches.group("year")
-		fileinfo["time"]   = matches.group("hour") + ":" + matches.group("minute")
-
-		if matches.group("type") in MetaData.RunningModes:
-			fileinfo["type"] = MetaData.RunningModes[matches.group("type")]
-		else:
-			return None
 	
-		if matches.group("detector") in MetaData.DetectorTypes:
-			fileinfo["detector"] = MetaData.DetectorTypes[matches.group("detector")]
-		else:
-			return None
+	################################################################################################
+	# "Master" run control methods:
+	#   starting and stopping data acquisition.
+	################################################################################################
+
+	def StartRunning(self, evt=None):
+		""" Initiates the data acquisition process and disables the graphical controls.
+		    Also does some preliminary checking to make sure values are sane. 
+
+		    This method is usually called as the event handler for the "button" event
+		    generated by clicking the green "Start" button.  """
+		    
+		if (self.singleRunButton.GetValue() == True):		# if this is a single run
+			self.runmanager.runseries = RunSeries.RunSeries()
+			
+			LEDgroups = ""
+			for cb in self.LEDgroups:
+				if cb.GetValue() == True:
+					LEDgroups += cb.GetLabelText()
+			LEDcode = MetaData.LEDGroups.hash(MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups))
+
+			if LEDgroups == "ABC":
+				errordlg = wx.MessageDialog( None, "The LED group combination \"ABC\" is not supported by the LI cards.  You probably want to use \"ABCD\" instead.", "LED group \"ABC\" not supported", wx.OK | wx.ICON_ERROR )
+				errordlg.ShowModal()
+				
+				return
+
+			gates    = int(self.gatesEntry.GetValue())
+			runMode  = MetaData.RunningModes.item(int(self.runModeEntry.GetSelection()), MetaData.HASH)
+			hwcfg    = MetaData.HardwareConfigurations.item(int(self.hwConfigEntry.GetSelection()), MetaData.HASH)
+			LIlevel  = MetaData.LILevels.item(int(self.LILevelEntry.GetSelection()), MetaData.HASH)
+
+			run = RunSeries.RunInfo(gates, runMode, hwcfg, LIlevel, LEDcode)
+			self.runmanager.runseries.Runs.append(run)
+		else:										# if it's a run series
+			if self.runmanager.runseries == None:
+				errordlg = wx.MessageDialog( None, "You must load a run series file before beginning the run!", "Must load run series before starting run", wx.OK | wx.ICON_ERROR )
+				errordlg.ShowModal()
+				
+				return
+
+		self.runmanager.run          = int(self.runEntry.GetValue())
+		self.runmanager.first_subrun = int(self.subrunEntry.GetValue())
+		self.runmanager.detector     = MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH)
+		self.runmanager.febs         = int(self.febsEntry.GetValue())
+		self.runmanager.hwinit       = MetaData.HardwareInitLevels.item(self.HWinitEntry.GetSelection(), MetaData.HASH)
 		
-		fileinfo["controller"] = matches.group("controller")
+		self.runmanager.StartDataAcquisition()
+		if (self.runmanager.running):
+			self.runEntry.Disable()
+			self.subrunEntry.Disable()
+			self.HWinitEntry.Disable()
+			self.gatesEntry.Disable()
+			self.detConfigEntry.Disable()
+			self.runModeEntry.Disable()
+			self.hwConfigEntry.Disable()
+			self.febsEntry.Disable()
+			
+			self.singleRunButton.Disable()
+			self.runSeriesButton.Disable()
+			
+			self.seriesFile.Disable()
 
-		return fileinfo
+			self.startButton.Disable()
+			self.stopButton.Enable()
+			
+			self.lockdownEntry.Enable(False)
 
-	def GetConfig(self):
+			self.SetStatusText("RUNNING", 1)
+			self.runningIndicator.SetBitmap(self.onImage)
+			
+	def StopRunning(self, evt=None):
+		""" Stops the data acquisition sequence and re-enables the controls.
+		    Usually invoked as the event handler for the "button" event
+		    generated by clicking the red "Stop" button. """
+		    
+		if self.runmanager.running:		
+			self.runmanager.StopDataAcquisition()
+
+		self.SetStatusText("STOPPED", 1)
+		self.runningIndicator.SetBitmap(self.offImage)
+		for nodename in self.indicators:
+			self.indicators[nodename].SetBitmap(self.offImage)
+		
+		self.runEntry.Enable()
+		self.gatesEntry.Enable()
+		self.detConfigEntry.Enable()
+		self.runModeEntry.Enable()
+		self.hwConfigEntry.Enable()
+
+		self.singleRunButton.Enable()
+		self.runSeriesButton.Enable()
+			
+		self.seriesFile.Enable()
+
+		self.UpdateLockedEntries()
+		self.lockdownEntry.Enable()
+
+		self.UpdateLockedEntries()
+		self.lockdownEntry.Enable()
+
+		self.stopButton.Disable()
+		self.startButton.Enable()
+		self.UpdateSeriesStatus()
+		self.UpdateLogFiles()
+		
+		self.UpdateRunStatus( Events.UpdateProgressEvent(text="No run in progress", progress=(0,1)) )
+
+	################################################################################################
+	# "Mid-run" methods:
+	#   pre-subrun, post-subrun, skipping to next subrun
+	################################################################################################
+
+	def PreSubrun(self, evt):
+		""" Front-panel stuff that needs to happen before every subrun. """
+		self.StoreLastRunConfig(evt)
+		
+		if evt.num_subruns > 1 and evt.current_subrun + 1 < evt.num_subruns:
+			self.skipButton.Enable()
+		else:
+			self.skipButton.Disable()
+		
+	def PostSubrun(self, evt=None):
+		""" Front-panel stuff that needs to happen after every subrun. """
+		self.subrunEntry.SetValue(evt.subrun)
+		self.minRunSubrun = evt.subrun
+		self.runEntry.SetRange(evt.run, 1000000)
+
+		if self.autocloseEntry.IsChecked():
+			self.CloseAllWindows()
+					
+		self.UpdateLogFiles()
+		
+	def SkipToNextSubrun(self, evt):
+		""" Front-panel stuff that needs to happen when skipping to the next subrun. 
+
+		    Usually invoked as the event handler for the "button" event generated
+		    by clicking the yellow "Skip to next subrun" button in run series mode. """
+		wx.PostEvent(self.runmanager, Events.EndSubrunEvent())		# tell the run manager that it's time to move on
+
+	################################################################################################
+	# Methods dealing with configuration:
+	#   global config, last run config
+	################################################################################################
+
+	def GetGlobalConfig(self):
+		"""
+		Loads up configuration values from the master configuration database
+		and configures the run manager appropriately.
+		"""
 		if Configuration.config_file_inaccessible:
 			errordlg = wx.MessageDialog( None, "The configuration file does not exist.  Default values are being used.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
 			errordlg.ShowModal()
@@ -391,7 +537,7 @@ class MainFrame(wx.Frame):
 		self.runmanager.readoutNodes         = [ReadoutNode.ReadoutNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["readoutNodes"]]
 		self.runmanager.monitorNodes         = [MonitorNode.MonitorNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["monitorNodes"]]
 		
-	def GetNextRunSubrun(self, evt=None):
+	def GetLastRunConfig(self, evt=None):
 		"""
 		Loads up the configuration values used in the last subrun (as well as the run/subrun number)
 		so as to give a hopefully intelligent set of default values.
@@ -400,8 +546,8 @@ class MainFrame(wx.Frame):
 		# default values.   they'll be updated below if the db exists and has the appropriate keys.
 		key_values = { "run"            : 1, 
 		               "subrun"         : 1,
-		               "hwinit"         : MetaData.HardwareInitLevels.index("No HW init"),
-		               "detector"       : MetaData.DetectorTypes.index("Upstream"),
+		               "hwinit"         : MetaData.HardwareInitLevels.NO_HW_INIT.index(),
+		               "detector"       : MetaData.DetectorTypes.UPSTREAM.index(),
 		               "febs"           : 114,
 		               "is_single_run"  : True,
 		               "gates"          : 1500,
@@ -458,7 +604,7 @@ class MainFrame(wx.Frame):
 		self.seriesPath = None
 
 		if key_values["runseries_path"] != None:
-			self.seriesFile.SetStringSelection(MetaData.RunSeriesTypes[key_values["runseries_file"],MetaData.DESCRIPTION])
+			self.seriesFile.SetStringSelection(MetaData.RunSeriesTypes.description((key_values["runseries_file"])))
 
 		self.LoadRunSeriesFile()
 		
@@ -473,7 +619,7 @@ class MainFrame(wx.Frame):
 		self.runEntry.Enable()
 		self.startButton.Enable()
 	
-	def StoreNextRunSubrun(self, evt=None):
+	def StoreLastRunConfig(self, evt=None):
 		"""
 		Stores the currently selected configuration for use as default values the next time.
 		Prevents shifters from having to necessarily remember the settings between runs.
@@ -500,8 +646,8 @@ class MainFrame(wx.Frame):
 			db["febs"] = int(self.febsEntry.GetValue())
 			db["is_single_run"] = self.singleRunButton.GetValue()
 			db["gates"] = int(self.gatesEntry.GetValue())
-			db["runmode"] = MetaData.RunningModes.item(self.runModeEntry.GetSelection())
-			db["hwconfig"] = MetaData.HardwareConfigurations.item(self.hwConfigEntry.GetSelection())
+			db["runmode"] = MetaData.RunningModes.item(self.runModeEntry.GetSelection(), MetaData.HASH)
+			db["hwconfig"] = MetaData.HardwareConfigurations.item(self.hwConfigEntry.GetSelection(), MetaData.HASH)
 
 			LEDgroups = ""
 			for cb in self.LEDgroups:
@@ -517,30 +663,16 @@ class MainFrame(wx.Frame):
 
 			db.close()
 
-	def PreSubrun(self, evt):
-		self.StoreNextRunSubrun(evt)
-		
-		if evt.num_subruns > 1 and evt.current_subrun + 1 < evt.num_subruns:
-			self.skipButton.Enable()
-		else:
-			self.skipButton.Disable()
-		
-		
-			
-	def PostSubrun(self, evt=None):
-		self.subrunEntry.SetValue(evt.subrun)
-		self.minRunSubrun = evt.subrun
-		self.runEntry.SetRange(evt.run, 1000000)
-
-		if self.autocloseEntry.IsChecked():
-			self.CloseAllWindows()
-					
-		self.UpdateLogFiles()
-		
-	def SkipToNextSubrun(self, evt):
-		wx.PostEvent(self.runmanager, Events.EndSubrunEvent())		# tell the run manager that it's time to move on
+	################################################################################################
+	# GUI-related methods (mostly handling events)
+	#  
+	################################################################################################
 			
 	def CheckRunNumber(self, evt=None):
+		""" Ensures that the run number can't be lowered
+		    past the current run number, and sets the 
+		    subrun number accordingly. """
+		    
 		if self.runEntry.GetValue() < self.runEntry.GetMin():
 			self.runEntry.SetValue(self.runEntry.GetMin())
 		
@@ -552,7 +684,18 @@ class MainFrame(wx.Frame):
 		else:
 			self.subrunEntry.SetValue(1)
 
+	def CloseAllWindows(self, evt=None):
+		""" Closes any open ET/DAQ windows and disables the 'close windows' button. """
+		self.runmanager.CloseWindows()
+		self.runmanager.UpdateWindowCount()
+
 	def LoadRunSeriesFile(self, evt=None):
+		""" Loads the run series file corresponding to the selection
+		    the user has made in the drop-down box.
+		    
+		    Usually invoked as the event handler for the wx.CHOICE event
+		    generated by making a selection in the list. """
+		    
 		# don't want to switch run series in the middle of a run!
 		if self.runmanager.running:
 			return
@@ -560,8 +703,8 @@ class MainFrame(wx.Frame):
 		self.seriesDescription.DeleteAllItems()
 		self.moreInfoButton.Disable()
 
-		filename = MetaData.RunSeriesTypes[self.seriesFile.GetStringSelection(),MetaData.CODE]
-
+		filename = MetaData.RunSeriesTypes.code(self.seriesFile.GetStringSelection())
+		
 		try:
 			db = shelve.open(Configuration.params["Front end"]["runSeriesLocation"]+"/"+filename,'r')
 			self.runmanager.runseries = db["series"]
@@ -577,7 +720,7 @@ class MainFrame(wx.Frame):
 		for runinfo in self.runmanager.runseries.Runs:
 			index = self.seriesDescription.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
 			self.seriesDescription.SetStringItem(index, 1, str(self.runmanager.runseries.Runs.index(runinfo)+1))
-			self.seriesDescription.SetStringItem(index, 2, MetaData.RunningModes[runinfo.runMode])
+			self.seriesDescription.SetStringItem(index, 2, MetaData.RunningModes.description(runinfo.runMode))
 			self.seriesDescription.SetStringItem(index, 3, str(runinfo.gates))
 
 		self.runmanager.subrun = 0
@@ -585,12 +728,122 @@ class MainFrame(wx.Frame):
 		self.UpdateSeriesStatus()
 
 		return True
-	
-	def SeriesMoreInfo(self, evt=None):
-		infowindow = Frames.RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
-		infowindow.Show()
+
+	def OnTimeToClose(self, evt):
+		""" The event handler invoked when exiting via the menu
+		    or via the 'close' button on the window border. 
+		    
+		    Tries to make sure any running is stopped and the
+		    run manager has been shut down cleanly before allowing
+		    itself to be closed.  """
+		    
+		if self.runmanager.running:
+			# try to stop things nicely.
+			try:
+				self.runmanager.StopDataAcquisition()
+			except:
+				pass		# if we can't, oh well.  we're closing anyway.
+
+		self.runmanager.Cleanup()
+			
+		self.CloseAllWindows()
+
+		self.Destroy()
+		
+	def UpdateCloseWindows(self, evt):
+		""" Enables/disables the "close all windows" button
+		    according to how many windows are open. """
+		    
+		if evt.count > 0:
+			self.closeAllButton.Enable()
+		else:
+			self.closeAllButton.Disable()
+
+	def UpdateLEDgroups(self, evt=None):
+		""" Enables/disables the LED selection checkboxes
+		    based on whether or not the current run type
+		    includes light injection. """
+		   
+		runMode = self.runModeEntry.GetSelection()
+		if runMode == MetaData.RunningModes.LI.index() or runMode == MetaData.RunningModes.MIXED_NUMI_LI.index():
+			for cb in self.LEDgroups:
+				cb.Enable()
+			self.LILevelEntry.Enable()
+		else:
+			for cb in self.LEDgroups:
+				cb.Disable()
+			self.LILevelEntry.Disable()
+
+	def UpdateLockedEntries(self, evt=None):
+		""" Enables/disables the "global" configuration options
+		    based on whether the "lock down global entries" menu
+		    option is checked. """
+		    
+		for entry in (self.HWinitEntry, self.febsEntry, self.detConfigEntry):
+			if self.lockdownEntry.IsChecked():
+				entry.Disable()
+			else:
+				entry.Enable()		
+
+	def UpdateLogFiles(self, evt=None):
+		""" Updates the log files shown in the list on the log file tab. """
+		
+		if evt is not None and evt.GetEventType() == EVT_CONFIGUPDATED:		# we only need to reload the config if it's changed!
+			self.GetGlobalConfig()
+
+		self.logfileList.DeleteAllItems()
+		self.logfileNames = []
+		self.logfileInfo = []
+		
+		for path in Configuration.params["Front end"]["logFileLocations"]:
+			try:
+				for filename in os.listdir(path):
+					if os.path.isdir(filename):
+						continue
+					fileinfo = SortTools.parseLogfileName(filename)
+					if fileinfo is not None:
+						fileinfo["path"] = path
+						self.logfileNames.append(filename)
+						self.logfileInfo.append(fileinfo)
+			except OSError:
+				continue
+				
+		if len(self.logfileNames) > 0:
+			self.logfileNames.sort(SortTools.SortLogFiles)
+			self.logfileInfo.sort(SortTools.SortLogData)
+			
+			self.logfileNames.reverse()
+			self.logfileInfo.reverse()
+		else:
+			self.logfileNames = None
+			self.logfileInfo = None
+			
+		column_map = {0: "run", 1: "subrun", 2: "date", 3: "time", 4: "type", 5: "detector", 6: "controller"}
+
+		if self.logfileNames is not None and len(self.logfileNames) > 0:
+			for fileinfo in self.logfileInfo:
+				index = self.logfileList.InsertStringItem(sys.maxint, fileinfo["run"])
+				for i in range(1,len(column_map)):
+					self.logfileList.SetStringItem(index, i, fileinfo[column_map[i]])
+		else:
+			self.logfileList.InsertStringItem(0, "Log directory is empty or inaccessible.")
+		
+	def UpdateNodeStatus(self, evt):
+		""" Updates the 'LED' indicating the status of a particular readout node. 
+		
+		    The event passed should contain two attributes:
+		        'node', the name of the node,
+		    and 'on',   a boolean indicating whether this node's 'LED' should be on or not. """
+		img = self.onImage if evt.on else self.offImage
+		self.indicators[evt.node].SetBitmap(img)
 
 	def UpdateRunConfig(self, evt=None):
+		""" Shows either the 'single run' or 'run series' panel
+		    depending on which radio button is selected.
+		    
+		    Usually invoked as the event handler for the EVT_RADIO
+		    that's generated by picking one or the other of the buttons. """
+		    
 		showSingleRun = self.singleRunButton.GetValue()
 		self.singleRunConfigPanel.Show(showSingleRun)
 		self.runSeriesConfigPanel.Show(not(showSingleRun))
@@ -603,36 +856,12 @@ class MainFrame(wx.Frame):
 		self.mainPage.Refresh()
 		self.mainPage.Update()
 
-	def UpdateLEDgroups(self, evt=None):
-		runMode = self.runModeEntry.GetSelection()
-		if runMode == MetaData.RunningModes.index("Light injection") or runMode == MetaData.RunningModes.index("Mixed beam/LI"):
-			for cb in self.LEDgroups:
-				cb.Enable()
-			self.LILevelEntry.Enable()
-		else:
-			for cb in self.LEDgroups:
-				cb.Disable()
-			self.LILevelEntry.Disable()
-
-	def UpdateLockedEntries(self, evt=None):
-		for entry in (self.HWinitEntry, self.febsEntry, self.detConfigEntry):
-			if self.lockdownEntry.IsChecked():
-				entry.Disable()
-			else:
-				entry.Enable()		
-
-	def UpdateCloseWindows(self, evt):
-		if evt.count > 0:
-			self.closeAllButton.Enable()
-		else:
-			self.closeAllButton.Disable()
-	
-	def UpdateNodeStatus(self, evt):
-		img = self.onImage if evt.on else self.offImage
-		self.indicators[evt.node].SetBitmap(img)
-
 	def UpdateRunStatus(self, evt):
 		""" Updates the progress gauge text label and value.
+		
+		    Values are set via the attributes of the event:
+		    any text to be displayed below the progress bar
+		    should be contained in the attribute 'text'.
 		    If you want the gauge in 'indeterminate' mode,
 		    set 'progress' to (0,0); otherwise, 'progress'
 		    should be (current, total). """
@@ -646,6 +875,13 @@ class MainFrame(wx.Frame):
 			self.progressIndicator.SetValue(evt.progress[0])
 		
 	def UpdateSeriesStatus(self, evt=None):
+		""" Updates the run series list so that the run
+		    that is currently executing is highlighted in green
+		    and has a little 'play' symbol next to it.
+		    
+		    If the run is stopped, the next subrun to be
+		    executed is highlighted in yellow and a 'stop'
+		    symbol is displayed next to it."""
 		symbol = ""
 		color = ""
 		if self.runmanager.running:
@@ -670,67 +906,19 @@ class MainFrame(wx.Frame):
 				else:
 					self.seriesDescription.SetStringItem(index, 0, "")
 					self.seriesDescription.SetItemBackgroundColour(index, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-#					self.seriesDescription.Select(index, False)
 	
+	################################################################################################
+	# Methods that create new windows or dialogs
+	#  
+	################################################################################################
 
-	def OnTimeToClose(self, evt):
-		if self.runmanager.running:
-			# try to stop things nicely.
-			try:
-				self.runmanager.StopDataAcquisition()
-			except:
-				pass		# if we can't, oh well.  we're closing anyway.
-
-		self.runmanager.Cleanup()
-			
-		self.CloseAllWindows()
-
-		self.Destroy()
-		
-
-	def UpdateLogFiles(self, evt=None):
-		if evt is not None and evt.GetEventType() == EVT_CONFIGUPDATED:		# we only need to reload the config if it's changed!
-			self.GetConfig()
-
-		self.logfileList.DeleteAllItems()
-		self.logfileNames = []
-		self.logfileInfo = []
-		
-		for path in Configuration.params["Front end"]["logFileLocations"]:
-			try:
-				for filename in os.listdir(path):
-					if os.path.isdir(filename):
-						continue
-					fileinfo = self.parseLogfileName(filename)
-					if fileinfo is not None:
-						fileinfo["path"] = path
-						self.logfileNames.append(filename)
-						self.logfileInfo.append(fileinfo)
-			except OSError:
-				continue
-				
-		if len(self.logfileNames) > 0:
-			self.logfileNames.sort(self.SortLogFiles)
-			self.logfileInfo.sort(self.SortLogData)
-			
-			self.logfileNames.reverse()
-			self.logfileInfo.reverse()
-		else:
-			self.logfileNames = None
-			self.logfileInfo = None
-			
-		column_map = {0: "run", 1: "subrun", 2: "date", 3: "time", 4: "type", 5: "detector", 6: "controller"}
-
-		if self.logfileNames is not None and len(self.logfileNames) > 0:
-			for fileinfo in self.logfileInfo:
-				index = self.logfileList.InsertStringItem(sys.maxint, fileinfo["run"])
-				for i in range(1,len(column_map)):
-					self.logfileList.SetStringItem(index, i, fileinfo[column_map[i]])
-		else:
-			self.logfileList.InsertStringItem(0, "Log directory is empty or inaccessible.")
-		
+	def SeriesMoreInfo(self, evt=None):
+		""" Opens a new window giving more info about the currently-selected run series. """
+		infowindow = Frames.RunSeriesInfoFrame(self, self.seriesFilename, self.runmanager.runseries)
+		infowindow.Show()
 			
 	def ShowLogFiles(self, evt=None):
+		""" Opens a new window with a tabbed interface displaying all of the selected log files. """
 		# if there are no log files in the display...
 		if self.logfileNames is None:
 			return
@@ -750,158 +938,13 @@ class MainFrame(wx.Frame):
 		logframe.Show()
 
 	def ShowErrorMsg(self, evt):
+		""" Shows an error notification window to the user.
+		
+		    The dialog title should be passed as 'evt.title' and 
+		    text to be displayed should be passed as 'evt.text'. """
 		errordlg = wx.MessageDialog( self, evt.text, evt.title, wx.OK | wx.ICON_ERROR )
 		errordlg.ShowModal()
 		
-
-	def CloseAllWindows(self, evt=None):
-		self.runmanager.CloseWindows()
-		self.runmanager.UpdateWindowCount()
-	
-	def StartRunning(self, evt=None):
-		if (self.singleRunButton.GetValue() == True):		# if this is a single run
-			self.runmanager.runseries = RunSeries.RunSeries()
-			
-			LEDgroups = ""
-			for cb in self.LEDgroups:
-				if cb.GetValue() == True:
-					LEDgroups += cb.GetLabelText()
-			LEDcode = MetaData.LEDGroups.hash(MetaData.LEDGroups.LEDgroupsToLIgroupCode(LEDgroups))
-
-			if LEDgroups == "ABC":
-				errordlg = wx.MessageDialog( None, "The LED group combination \"ABC\" is not supported by the LI cards.  You probably want to use \"ABCD\" instead.", "LED group \"ABC\" not supported", wx.OK | wx.ICON_ERROR )
-				errordlg.ShowModal()
-				
-				return
-
-			gates    = int(self.gatesEntry.GetValue())
-			runMode  = MetaData.RunningModes.item(int(self.runModeEntry.GetSelection()), MetaData.HASH)
-			hwcfg    = MetaData.HardwareConfigurations.item(int(self.hwConfigEntry.GetSelection()), MetaData.HASH)
-			LIlevel  = MetaData.LILevels.item(int(self.LILevelEntry.GetSelection()), MetaData.HASH)
-
-			run = RunSeries.RunInfo(gates, runMode, hwcfg, LIlevel, LEDcode)
-			self.runmanager.runseries.Runs.append(run)
-		else:										# if it's a run series
-			if self.runmanager.runseries == None:
-				errordlg = wx.MessageDialog( None, "You must load a run series file before beginning the run!", "Must load run series before starting run", wx.OK | wx.ICON_ERROR )
-				errordlg.ShowModal()
-				
-				return
-
-		self.runmanager.run          = int(self.runEntry.GetValue())
-		self.runmanager.first_subrun = int(self.subrunEntry.GetValue())
-		self.runmanager.detector     = MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH)
-		self.runmanager.febs         = int(self.febsEntry.GetValue())
-		self.runmanager.hwinit       = MetaData.HardwareInitLevels.item(self.HWinitEntry.GetSelection(), MetaData.HASH)
-		
-		self.runmanager.StartDataAcquisition()
-		if (self.runmanager.running):
-			self.runEntry.Disable()
-			self.subrunEntry.Disable()
-			self.HWinitEntry.Disable()
-			self.gatesEntry.Disable()
-			self.detConfigEntry.Disable()
-			self.runModeEntry.Disable()
-			self.hwConfigEntry.Disable()
-			self.febsEntry.Disable()
-			
-			self.singleRunButton.Disable()
-			self.runSeriesButton.Disable()
-			
-			self.seriesFile.Disable()
-			self.moreInfoButton.Disable()
-
-			self.startButton.Disable()
-			self.stopButton.Enable()
-			
-			self.lockdownEntry.Enable(False)
-
-			self.SetStatusText("RUNNING", 1)
-			self.runningIndicator.SetBitmap(self.onImage)
-			
-	def StopRunning(self, evt=None):
-		if self.runmanager.running:		
-			self.runmanager.StopDataAcquisition()
-
-		self.SetStatusText("STOPPED", 1)
-		self.runningIndicator.SetBitmap(self.offImage)
-		for nodename in self.indicators:
-			self.indicators[nodename].SetBitmap(self.offImage)
-		
-		self.runEntry.Enable()
-		self.gatesEntry.Enable()
-		self.detConfigEntry.Enable()
-		self.runModeEntry.Enable()
-		self.hwConfigEntry.Enable()
-
-		self.singleRunButton.Enable()
-		self.runSeriesButton.Enable()
-			
-		self.seriesFile.Enable()
-		if self.runSeriesButton.GetValue() == True:
-			self.moreInfoButton.Enable()
-
-		self.UpdateLockedEntries()
-		self.lockdownEntry.Enable()
-
-		self.UpdateLockedEntries()
-		self.lockdownEntry.Enable()
-
-		self.stopButton.Disable()
-		self.startButton.Enable()
-		self.UpdateSeriesStatus()
-		self.UpdateLogFiles()
-		
-		self.UpdateRunStatus( Events.UpdateProgressEvent(text="No run in progress", progress=(0,1)) )
-
-	@staticmethod
-	def SortLogData(fileinfo1, fileinfo2):
-		f1 = int(fileinfo1["run"])*10000 + int(fileinfo1["subrun"])		# run * 10000 + subrun
-		f2 = int(fileinfo2["run"])*10000 + int(fileinfo2["subrun"])
-		
-		if f1 == f2:
-			t1 = time.strptime("2010 " + fileinfo1["time"], "%Y %H:%M")		# need to include a year because otherwise the 'mktime' below overflows.  which year it is is irrelevant (all we need is a difference anyway).
-			t2 = time.strptime("2010 " + fileinfo2["time"], "%Y %H:%M")
-			
-			timediff = time.mktime(t1) - time.mktime(t2)
-			if timediff == 0:		# this should never happen.
-				return 1 if fileinfo1["controller"] > fileinfo2["controller"] else -1
-			else:
-				return 1 if timediff > 0 else -1
-		else:
-			return 1 if f1 > f2 else -1
-			
-	@staticmethod
-	def SortLogFiles(file1, file2):
-		pattern = re.compile(Defaults.LOGFILE_NAME_PATTERN)
-		
-		matchdata1 = pattern.match(file1)
-		matchdata2 = pattern.match(file2)
-		
-		if not matchdata1 or not matchdata2:		# maybe the files don't match the pattern.
-			return 0
-		
-		if matchdata1.group("run") == matchdata2.group("run"):
-			if matchdata1.group("subrun") == matchdata2.group("subrun"):		# shouldn't ever have same run/subrun combination
-				if matchdata1.group("hour") == matchdata2.group("hour"):
-					if matchdata1.group("minute") == matchdata2.group("minute"):
-						if matchdata1.group("controller") == matchdata2.group("controller"):
-							print "Run/subrun pair equal! : (", matchdata1.group("run"), ",", matchdata1.group("subrun"), ") == (", matchdata2.group("run"), ",", matchdata2.group("subrun"), ")!"
-							print "Files: '" + file1 + "', '" + file2 + "'"
-							print "Log sorting problem."
-							sys.exit(1)
-						else:
-							return 1 if matchdata1.group("controller") > matchdata2.group("controller") else -1
-					else:
-						return 1 if matchdata1.group("minute") > matchdata2.group("minute") else -1
-				else:
-					return 1 if matchdata1.group("hour") > matchdata2.group("hour") else -1
-			else:
-				return 1 if matchdata1.group("subrun") > matchdata2.group("subrun") else -1
-		else:
-			return 1 if matchdata1.group("run") > matchdata2.group("run") else -1
-
-
 
 	
 #########################################################

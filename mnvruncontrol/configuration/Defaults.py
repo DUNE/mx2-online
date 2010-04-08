@@ -1,15 +1,13 @@
 """
    Defaults.py:
-   Default values for the various modules in the run control software.
-   They are centralized here for easier modification of the setup.
+    Default values for the various modules in the run control software.
+    They are centralized here for easier modification of the setup.
    
-   Original author: J. Wolcott (jwolcott@fnal.gov)
-                    Feb.-Mar. 2010
+    Original author: J. Wolcott (jwolcott@fnal.gov)
+                     Feb.-Apr. 2010
                     
-   Address all complaints to the management.
+    Address all complaints to the management.
 """
-
-import time
 
 # Data acquisition properties.
 EVENT_SIZE = 2048 

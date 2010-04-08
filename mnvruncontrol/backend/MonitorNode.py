@@ -1,6 +1,8 @@
 """
   MonitorNode.py:
-  Module that models an online monitoring node.
+   Module that models an online monitoring node.
+   Inherits most of its functionality from RemoteNode.
+
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Mar.-Apr. 2010

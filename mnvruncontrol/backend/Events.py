@@ -1,3 +1,13 @@
+"""
+  Events.py:
+  Event objects used internally by the run control.
+  
+   Original author: J. Wolcott (jwolcott@fnal.gov)
+                    Feb.-Apr. 2010
+                    
+   Address all complaints to the management.
+"""
+
 import wx
 import wx.lib.newevent
 

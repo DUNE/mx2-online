@@ -1,4 +1,16 @@
-# Meta Data Module
+"""
+  MetaData.py:
+   Class & objects representing the "metadata" of the MINERvA
+   data stream: run modes, LI modes, etc.
+  
+   Original author: A. Mislivec (mislivec@pas.rochester.edu)
+                    Jan. 2010
+   
+   New object interface: J. Wolcott (jwolcott@fnal.gov)
+                         Feb.-Apr. 2010
+                    
+   Address all complaints to the management.
+"""
 
 # some module constants
 DESCRIPTION = 0
@@ -9,33 +21,27 @@ ANY = 3
 
 class MetaData:
 	""" 
-	Metadata type.  Used to replace the corresponding C++ enumerations.
-	It has the cool feature of being able to guess what sort of thing
-	(hash, code, description) you want back when you write 'MetaDataInstance[thing]'.
+	Metadata type.  Used to replace the corresponding C++ enumerations in the old run control software.
 	"""
 	
-	# now methods.
 	def __init__(self, data):
-		self.descriptions = []
-		self.hashes = []
-		self.codes = []
-		
+		self.data = []
+
 		omittedHashes = 0
 		omittedCodes = 0
 		warned = False
 		for entry in data:
-			if len(entry) != 3:
-				raise ValueError("Metadata entries must be lists or tuples of 3 entries: (description, hash, code).  Length you provided: " + str(len(entry)))
-			description = entry[0]
-			hashitem = entry[1]
-			code = entry[2]
+			if len(entry) != 4:
+				raise ValueError("Metadata entries must be lists or tuples of 4 entries: (identifier, description, hash, code).  Length you provided: " + str(len(entry)))
+			identifier = entry[0]
+			description = entry[1]
+			hashitem = entry[2]
+			code = entry[3]
 			
-			if description == None:
-				raise ValueError("A description must be provided for each metadata item.")
-			else:
-				self.descriptions.append(description)
+			if identifier is None or description is None:
+				raise ValueError("An identifier and a description must be provided for each metadata item.")
 				
-			if hashitem == None and code == None:
+			if hashitem is None and code is None:
 				raise ValueError("Either a code or a hash (or both) must be provided for each metadata item.")
 			
 			if hashitem == None:
@@ -47,10 +53,35 @@ class MetaData:
 				print "Warning: you omitted a code in one entry of this metadata and a hash in another.  Did you really mean to do that?..."
 				warned = True
 			
-			self.hashes.append(hashitem)
-			self.codes.append(code)
+			datum = MetaDatum(self, identifier, description, hashitem, code)	
+			self.data.append(datum)
+			self.__dict__[identifier] = datum
+
+	def __contains__(self, key):
+		"""
+		This function implements the 'in' operator.
+		Allows you to easily check if a description/code/hash is in the metadata.
+		"""
+		for item in self.data:
+			if item == key:
+				return True
 		
-		self.locations = (self.descriptions, self.hashes, self.codes)
+		return False
+
+	def descriptions(self):
+		"""
+		Returns a list of the descriptions of the items in this particular MetaData.
+		Handy if you need an ordered list of them (for a selection drop-down list, for example).
+		"""
+		return [item.description for item in self.data]
+
+	def hashes(self):
+		""" Same as descriptions() except returns hashes instead. """
+		return [item.hash for item in self.data]
+
+	def codes(self):
+		""" Same as descriptions() except returns codes instead. """
+		return [item.code for item in self.data]
 
 	def get(self, key, returntype):
 		"""
@@ -59,64 +90,49 @@ class MetaData:
 		the specified location (or all if given ANY).
 		"""
 		
-		keylocation = None
-
-		for location in self.locations:
-			if key in location:
-				keylocation = location
-				
-		if keylocation is None:
+		datum = None
+		for item in self.data:
+			if item == key:
+				datum = item
+		
+		if datum is None:
 			raise KeyError("Key '" + str(key) + "' is not found in any hash, code, or description.")
+
+		getters = { DESCRIPTION: datum.description, HASH: datum.hash, CODE: datum.code }
 		
-		if returntype in (DESCRIPTION, HASH, CODE):
-			return self.locations[returntype][keylocation.index(key)]
-		elif returntype != ANY:
-			raise ValueError("Invalid return type requested for key '" + str(key) + "'")	
-		
-		# now we know that the user didn't specify which return type.  do something intelligent.
-		if keylocation == self.descriptions:
-			if self.codes[keylocation.index(key)] is not None and self.hashes[keylocation.index(key)] is None:
-				return self.codes[keylocation.index(key)]
-			elif self.codes[keylocation.index(key)] is None and self.hashes[keylocation.index(key)] is not None:
-				return self.hashes[keylocation.index(key)]
-			else:
-				raise KeyError("Description you provided corresponds to metadata with both hashes and keys: must specify return type.")
+		if returntype in getters:
+			return getters[returntype]
 		else:
-			return self.descriptions[keylocation.index(key)]
+			raise ValueError("Invalid return type requested for key '" + str(key) + "'")	
+
+
+		# I've given up on the 'smart' type guessing as being useful.
+		# it's left here in case somebody in the future thinks it's relevant. 
+				
+#		# now we know that the user didn't specify which return type.  do something intelligent.
+#		if keylocation == self.descriptions:
+#			if self.codes[keylocation.index(key)] is not None and self.hashes[keylocation.index(key)] is None:
+#				return self.codes[keylocation.index(key)]
+#			elif self.codes[keylocation.index(key)] is None and self.hashes[keylocation.index(key)] is not None:
+#				return self.hashes[keylocation.index(key)]
+#			else:
+#				raise KeyError("Description you provided corresponds to metadata with both hashes and keys: must specify return type.")
+#		else:
+#			return self.descriptions[keylocation.index(key)]
 			
 	def code(self, key):
+		""" Uses get() to get the code you want. """
 		return self.get(key, CODE)
 
 	def hash(self, key):
+		""" Uses get() to get the hash you want. """
 		return self.get(key, HASH)
 	
 	def description(self, key):
+		""" Uses get() to get the description you want. """
 		return self.get(key, DESCRIPTION)
 	
-	def __getitem__(self, key):
-		""" 
-		The 'operator[]' for this class.  Calls get() implicitly.
-		"""
-
-		# if you provide more than one argument to the [] operator, it passes them all as a tuple
-		if isinstance(key, tuple):
-			return self.get(key[0], key[1])
-		else:
-			return self.get(key, ANY)
-
-	def __contains__(self, key):
-		"""
-		This function implements the 'in' operator.
-		Allows you to easily check if a description/code/hash is in the metadata
-		without having to know which one of the three areas to look in.
-		"""
-		
-		for location in self.locations:
-			if key in location:
-				return True
-		return False
-		
-	def item(self, index, returntype = ANY):
+	def item(self, index, returntype):
 		"""
 		Allows you to get information based on the position in the array.
 		It's sort of the inverse of index() below.
@@ -124,10 +140,15 @@ class MetaData:
 		one of the lists (descriptions, hashes, codes) as input and the indexing
 		by position is maintained when you are figuring out what is selected.
 		"""
-		if returntype != ANY and returntype in (DESCRIPTION, HASH, CODE):
-			return self.locations[returntype][index]
-		elif returntype == ANY:	# defaults to returning the DESCRIPTION
-			return self.descriptions[index]
+		if index >= 0 and index < len(self.data):
+			datum = self.data[index]
+			getters = { DESCRIPTION: datum.description, HASH: datum.hash, CODE: datum.code }
+			if returntype in getters:
+				return getters[returntype]
+			else:
+				raise ValueError("Invalid returntype specified: '" + str(index) + "'...")
+		else:
+			raise ValueError("Invalid index specified: '" + str(index) + "'...")
 			
 	def index(self, key):
 		"""
@@ -137,12 +158,45 @@ class MetaData:
 		"""
 		if not key in self:
 			raise ValueError("Key not found in this metadata.")
-		
-		for location in self.locations:
-			if key in location:
-				return location.index(key)
+		else:
+			for i in range(len(self.data)):
+				if key == self.data[i]:
+					return i
 				
+class MetaDatum:
+	""" Wraps a particular piece of MetaData information. """
+	def __init__(self, parent, identifier, description, itemhash=None, code=None):
+		if code is None and itemhash is None:
+			raise ValueError("Either a code or a hash (or both) must be provided for each MetaDatum.")
 		
+		self.parent = parent
+		self.identifier = identifier
+		self.description = description
+		self.code = code
+		self.hash = itemhash
+	
+	def __eq__(self, other):
+		# if other has ANY of the same attributes, we should judge equality based on that.
+		if hasattr(other, "parent") or hasattr(other, "identifier") or hasattr(other, "description") or hasattr(other, "code") or hasattr(other, "hash"):
+			try:
+				return other.parent == self.parent and other.identifier == self.identifier and other.description == self.description and other.code == self.code and other.hash == self.hash
+			except KeyError:
+				return False
+
+		# otherwise, it's probably a simple type.
+		if other == self.identifier or other == self.description or other == self.code or other == self.hash:
+			return True
+		
+		
+		return False
+
+	def index(self):
+		return self.parent.index(self)
+	
+########################################################################################################
+#
+#   Now the actual metadata.
+#		
 # Format for constructor for MetaData objects:
 # ( (IDENTIFIER1, description1, hash1, code1),
 #   (IDENTIFIER2, description2, hash2, code2),
@@ -163,39 +217,69 @@ class MetaData:
 # Note that if you pass only a hash for one item and only a code for another,
 # the program will print out a warning because it assumes you probably didn't mean to do that.
 #
+########################################################################################################
 		
-SpecialGUI		= MetaData( tuple([("Deprecated", 0, None)]) )
-
-HardwareInitLevels	= MetaData(( ("No HW init",   0, None),
-				             ("Full HW init", 1, None) ))
+HardwareInitLevels	= MetaData(( ("NO_HW_INIT",   "No HW init",   0, None),
+				             ("FULL_HW_INIT", "Full HW init", 1, None) ))
 				             
-LILevels			= MetaData(( ("Zero PE", 0, None),
-				             ("One PE",  1, None),
-				             ("Max PE",  2, None) ))
+LILevels			= MetaData(( ("ZERO_PE", "Zero PE", 0, None),
+				             ("ONE_PE",  "One PE",  1, None),
+				             ("MAX_PE",  "Max PE",  2, None) ))
 
-LEDGroups			= MetaData(( ("ABCD",   2**3,    "0"),
-				             ("BCD",   2**4,    "a"),
-				             ("ACD",   2**5,    "b"),
-				             ("CD",    2**6,    "c"),
-				             ("ABD",   2**7,    "d"),
-				             ("BD",    2**8,    "e"),
-				             ("AD",    2**9,    "f"),
-				             ("D",     2**10,   "g"),
-				             ("" ,     2**11,   "h"),
-				             ("BC",    2**12,   "i"),
-				             ("AC",    2**13,   "j"),
-				             ("C",     2**14,   "k"),
-				             ("AB",    2**15,   "l"),
-				             ("B",     2**16,   "m"),
-				             ("A",     2**17,   "n"),
-				             ("",      2**18,   "o"),
-				             ("",      2**19,   "p"),
-				             ("BCD",   2**20,   "q"),
-				             ("ACD",   2**21,   "r"),
-				             ("CD",    2**22,   "s"),
-				             ("ABD",   2**23,   "t"),
-				             ("BD",    2**24,   "u") ))
+LEDGroups			= MetaData(( ("ABCD",            "ABCD",  2**3,    "0"),
+				             ("BCD",             "BCD",   2**4,    "a"),
+				             ("ACD",             "ACD",   2**5,    "b"),
+				             ("CD",              "CD",    2**6,    "c"),
+				             ("ABD",             "ABD",   2**7,    "d"),
+				             ("BD",              "BD",    2**8,    "e"),
+				             ("AD",              "AD",    2**9,    "f"),
+				             ("D",               "D",     2**10,   "g"),
+				             ("NOT_IMPLEMENTED", "" ,     2**11,   "h"),
+				             ("BC",              "BC",    2**12,   "i"),
+				             ("AC",              "AC",    2**13,   "j"),
+				             ("C",               "C",     2**14,   "k"),
+				             ("AB",              "AB",    2**15,   "l"),
+				             ("B",               "B",     2**16,   "m"),
+				             ("A",               "A",     2**17,   "n") ))
+				             
+# These are technically supported by the LI box but are redundant
+#				             ("",      2**18,   "o"),
+#				             ("",      2**19,   "p"),
+#				             ("BCD",   2**20,   "q"),
+#				             ("ACD",   2**21,   "r"),
+#				             ("CD",    2**22,   "s"),
+#				             ("ABD",   2**23,   "t"),
+#				             ("BD",    2**24,   "u") ))
 
+
+DetectorTypes		= MetaData(( ("UNKNOWN",        "Unknown",            0,  "UN"),
+				             ("PMT_TEST_STAND", "PMT test stand",     1,  "FT"),
+				             ("TP",             "Tracking prototype", 2,  "TP"),
+				             ("TEST_BEAM",      "Test beam",          4,  "TB"),
+				             ("FROZEN",         "Frozen",             8,  "MN"),
+				             ("UPSTREAM",       "Upstream",           16, "US"),
+				             ("MINERVA",        "Full MINERvA",       32, "MV") ))
+
+RunningModes		= MetaData(( ("ONE_SHOT",       "One shot",            0, "pdstl"),
+				             ("NUMI",           "NuMI beam",           1, "numib"),
+				             ("COSMICS",        "Cosmics",             2, "cosmc"),
+				             ("LI",             "Light injection",     3, "linjc"),
+				             ("MIXED_NUMI_PED", "Mixed beam/pedestal", 4, "numip"),
+				             ("MIXED_NUMI_LI",  "Mixed beam/LI",       5, "numil") ))
+
+RunSeriesTypes          = MetaData(( ("BEAM",           "Beam",                0, "beam_series.db"),
+				                 ("PEDESTAL",       "Pedestal",            1, "pedestal_series.db"),
+				                 ("LI_MAX_PE",      "LI Max PE",              2, "li_max_pe_series.db"),
+				                 ("LI_ONE_PE",      "LI One PE",              3, "li_one_pe_series.db"),
+				                 ("MIXED_BEAM_PED", "Mixed Beam-Pedestal", 4, "mix_beam_ped_series.db"),
+				                 ("MIXED_BEAM_LI",  "Mixed Beam-LI",       5, "mix_beam_li_series.db"),
+				                 ("CUSTOM",         "Custom Series",       6, "custom_series.db") ))
+        	
+HardwareConfigurations = MetaData(( ("NOFILE",     "Current state",          0, "[no HW file -- current configuration]"),
+                                    ("BEAM",       "Beam settings",          1, "SCBeamFile"),
+                                    ("LI",         "LI settings",            2, "SCLIFile"),
+                                    ("LI_DISCRIM", "LI with discriminators", 3, "SCLIDiscriminatorsFile") ))
+                                    
 # these are a couple of very useful translator functions
 # (they convert LED group strings like "ABD" to the appropriate code, e.g., "d",
 #  and back.)
@@ -237,30 +321,3 @@ LEDGroups.LIgroupCodeToLEDgroups = LIgroupCodeToLEDgroups
 LEDGroups.LEDgroupsToLIgroupCode = LEDgroupsToLIgroupCode
 
 
-DetectorTypes		= MetaData(( ("Unknown",            0,  "UN"),
-				             ("PMT test stand",     1,  "FT"),
-				             ("Tracking prototype", 2,  "TP"),
-				             ("Test beam",          4,  "TB"),
-				             ("Frozen",             8,  "MN"),
-				             ("Upstream",           16, "US"),
-				             ("Full MINERvA",       32, "MV") ))
-
-RunningModes		= MetaData(( ("One shot",            0, "pdstl"),
-				             ("NuMI beam",           1, "numib"),
-				             ("Cosmics",             2, "cosmc"),
-				             ("Light injection",     3, "linjc"),
-				             ("Mixed beam/pedestal", 4, "numip"),
-				             ("Mixed beam/LI",       5, "numil") ))
-
-RunSeriesTypes          = MetaData(( ("Beam",                0, "beam_series.db"),
-				                 ("Pedestal",            1, "pedestal_series.db"),
-				                 ("LI Max PE",              2, "li_max_pe_series.db"),
-				                 ("LI One PE",              3, "li_one_pe_series.db"),
-				                 ("Mixed Beam-Pedestal", 4, "mix_beam_ped_series.db"),
-				                 ("Mixed Beam-LI",       5, "mix_beam_li_series.db"),
-				                 ("Custom Series",       6, "custom_series.db") ))
-        	
-HardwareConfigurations = MetaData(( ("Current state",          0, "[no HW file -- current configuration]"),
-                                    ("Beam settings",          1, "SCBeamFile"),
-                                    ("LI settings",            2, "SCLIFile"),
-                                    ("LI with discriminators", 3, "SCLIDiscriminatorsFile") ))

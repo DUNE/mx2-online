@@ -1,7 +1,8 @@
 """
   RunControlDispatcher.py:
-  Listener service that runs on a DAQ slave ("soldier" or "worker" node
-  in Gabe's terminology) to manage the DAQ process and slow control.
+   Listener service that runs on a DAQ slave ("soldier" or "worker" node
+   in Gabe's terminology) to manage the DAQ process and slow control.
+   It inherits most of its functionality from Dispatcher.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Feb.-Mar. 2010
@@ -112,12 +113,12 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 			self.logger.info("      Run number: " + matches.group("run"))
 			self.logger.info("      Subrun number: " + matches.group("subrun"))
 			self.logger.info("      Number of gates: " + matches.group("gates"))
-			self.logger.info("      Run mode: " + MetaData.RunningModes[int(matches.group("runmode"))] )
-			self.logger.info("      Detector: " + MetaData.DetectorTypes[int(matches.group("detector"))] )
+			self.logger.info("      Run mode: " + MetaData.RunningModes.description(int(matches.group("runmode"))) )
+			self.logger.info("      Detector: " + MetaData.DetectorTypes.description(int(matches.group("detector"))) )
 			self.logger.info("      Number of FEBs: " + matches.group("nfebs") )
-			self.logger.info("      LI level: " + MetaData.LILevels[int(matches.group("lilevel"))] )
-			self.logger.info("      LED group: " + MetaData.LEDGroups[int(matches.group("ledgroup"))] )
-			self.logger.info("      HW init level: " + MetaData.HardwareInitLevels[int(matches.group("hwinitlevel"))] )
+			self.logger.info("      LI level: " + MetaData.LILevels.description(int(matches.group("lilevel"))) )
+			self.logger.info("      LED group: " + MetaData.LEDGroups.description(int(matches.group("ledgroup")) )
+			self.logger.info("      HW init level: " + MetaData.HardwareInitLevels.description(int(matches.group("hwinitlevel"))) )
 			self.logger.info("      ET file: " + matches.group("etfile") )
 			self.logger.info("      ET port: " + matches.group("etport") )
 

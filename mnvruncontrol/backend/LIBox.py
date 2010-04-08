@@ -2,7 +2,7 @@
 """
 MINERvA light injection system manager.
 Adapted from the original (C#) script by J. Meyer
-  by J. Wolcott (jwolcott@fnal.gov), 02/2010
+  by J. Wolcott (jwolcott@fnal.gov), Feb. 2010
 
 Address all complaints to the management.
 """

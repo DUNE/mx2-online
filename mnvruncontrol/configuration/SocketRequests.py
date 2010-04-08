@@ -1,3 +1,18 @@
+"""
+  SocketRequests.py:
+   The requests that are considered "valid" by the
+   dispatchers.  They are encoded in regular expression
+   form (see the Python regular expression documentation,
+       http://docs.python.org/library/re.html,
+   and the references contained therein if you are 
+   unfamiliar with it.)
+     
+   Original author: J. Wolcott (jwolcott@fnal.gov)
+                    Feb.-Apr. 2010
+                    
+   Address all complaints to the management.
+"""
+
 GlobalRequests =  [ "(?P<request>alive)\?",
                     "(?P<request>get_lock) (?P<identity>\S+)!",
                     "(?P<request>release_lock)!" ]

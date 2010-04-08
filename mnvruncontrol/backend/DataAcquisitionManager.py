@@ -1,7 +1,7 @@
 """
   DataAcquisitionManager.py:
-  Infrastructural objects to manage a data acquisition run.
-  Used by the run control.
+   Infrastructural objects to manage a data acquisition run.
+   Used by the run control.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Feb.-Apr. 2010
@@ -33,6 +33,20 @@ from mnvruncontrol.backend import Threads
 from mnvruncontrol.frontend import Frames
 
 class DataAcquisitionManager(wx.EvtHandler):
+	""" Object that does the actual coordination of data acquisition.
+	    You should only ever make one of these at a time. """
+	
+	### Notice: like the run control front end, this class is
+	### pretty large, so its methods are also grouped by category.
+	###
+	### The categories are as follows:
+	###   * initialization/teardown            (begin around line 50)
+	###   * global starters/stoppers           ( ...              125)
+	###   * subrun starters/stoppers           ( ...              200)
+	###   * helper methods for StartNextSubrun ( ...              400)
+	###   * subprocess starters                ( ...              600)
+	###   * utilities/event handlers           ( ...              750)
+	
 	def __init__(self, main_window):
 		wx.EvtHandler.__init__(self)
 
@@ -116,6 +130,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 	##########################################
 	
 	def StartDataAcquisition(self, evt=None):
+		""" Starts the data acquisition process.
+		    Called only for the first subrun in a series. """
+		    
 		if not isinstance(self.runseries, RunSeries.RunSeries):
 			raise ValueError("No run series defined!")
 
@@ -274,7 +291,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# all the startup tasks were successful.
 		# do the final preparation for the run.
 		now = datetime.datetime.utcnow()
-		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes[self.detector, MetaData.CODE], self.run, self.first_subrun + self.subrun, MetaData.RunningModes[self.runinfo.runMode, MetaData.CODE], now.year % 100, now.month, now.day, now.hour, now.minute)
+		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes.code(self.detector), self.run, self.first_subrun + self.subrun, MetaData.RunningModes.code(self.runinfo.runMode), now.year % 100, now.month, now.day, now.hour, now.minute)
 		self.raw_data_filename = self.ET_filename + '_RawData.dat'
 
 		wx.PostEvent(self.main_window, Events.SubrunStartingEvent(first_subrun=self.first_subrun, current_subrun=self.subrun, num_subruns=len(self.runseries.Runs)))
@@ -391,6 +408,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 	##########################################
 	
 	def ETCleanup(self):
+		""" Manages the cleanup of old ET/DAQ threads. """
+
 		# ET & the DAQ shouldn't be running in two separate sets of processes.
 		# therefore, we need to make sure we let them completely close
 		# before we actually start the next subrun.  however, we can't wait
@@ -426,6 +445,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		return True
 	
 	def RunInfoAndConnectionSetup(self):
+		""" Configures the run and sets up connections to the readout nodes. """
 		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " begun.")
 		
 		self.can_shutdown = True		# from here on it makes sense to call the EndSubrun() method
@@ -456,6 +476,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 		return True
 	
 	def ReadoutNodeHWConfig(self):
+		""" Initializes the hardware configuration on the readout nodes.
+		    This process takes some time on the full detector, so this
+		    method exits after starting the process.  When the SocketThread
+		    receives the appropriate message from all readout nodes then
+		    we will continue. """
+		    
 		self.logger.info("  Using hardware configuration: " + MetaData.HardwareConfigurations.description(self.runinfo.hwConfig))
 		
 		# if this is the first subrun, it's the only subrun,
@@ -466,7 +492,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# to use any configuration file at all (so that custom
 		# configurations via the slow control can be used for testing).
 		self.logger.debug("  HW config check.")
-		if self.runinfo.hwConfig != MetaData.HardwareConfigurations.hash("Current state") and (self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig):
+		if self.runinfo.hwConfig != MetaData.HardwareConfigurations.NOFILE.hash and (self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig):
 			# NOTE: DON'T consolidate this loop together with the next one.
 			# the subscriptions need to ALL be booked before any of the nodes
 			# gets a "HW configure" command.  otherwise there will be race conditions.
@@ -505,23 +531,24 @@ class DataAcquisitionManager(wx.EvtHandler):
 		return None
 		
 	def LIBoxSetup(self):
+		""" Configures the light injection box, if needed. """
 		# set up the LI box to do what it's supposed to, if it needs to be on.
-		if self.runinfo.runMode == MetaData.RunningModes.hash("Light injection") or self.runinfo.runMode == MetaData.RunningModes.hash("Mixed beam/LI"):
+		if self.runinfo.runMode == MetaData.RunningModes.LI.hash or self.runinfo.runMode == MetaData.RunningModes.MIXED_NUMI_LI.hash:
 			self.logger.info("  Setting up LI:")
-			self.LIBox.LED_groups = MetaData.LEDGroups[self.runinfo.ledGroup]
-			self.logger.info("     Configured for LED groups: " + MetaData.LEDGroups[self.runinfo.ledGroup])
+			self.LIBox.LED_groups = MetaData.LEDGroups.description(self.runinfo.ledGroup)
+			self.logger.info("     Configured for LED groups: " + MetaData.LEDGroups.description(self.runinfo.ledGroup))
 		
 			need_LI = True
-			if self.runinfo.ledLevel == MetaData.LILevels["One PE"]:
+			if self.runinfo.ledLevel == MetaData.LILevels.ONE_PE:
 				self.LIBox.pulse_height = Defaults.LI_ONE_PE_VOLTAGE					
-			elif self.runinfo.ledLevel == MetaData.LILevels["Max PE"]:
+			elif self.runinfo.ledLevel == MetaData.LILevels.MAX_PE:
 				self.LIBox.pulse_height = Defaults.LI_MAX_PE_VOLTAGE
 			else:
 				need_LI = False
 				
 			
 			if need_LI:
-				self.logger.info("     LI level: " + MetaData.LILevels[self.runinfo.ledLevel])
+				self.logger.info("     LI level: " + MetaData.LILevels.description(self.runinfo.ledLevel))
 				try:
 					self.LIBox.write_configuration()
 				except LIBox.LIBoxException, e:
@@ -607,6 +634,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			print "Note: requested a new thread but no more threads to start..."
 
 	def StartETSys(self):
+		""" Start the et_system process. """
 		events = self.runinfo.gates * Configuration.params["Hardware"]["eventFrames"] * self.febs
 
 		etSysFrame = Frames.OutputFrame(self.main_window, "ET system", window_size=(600,200), window_pos=(600,0))
@@ -621,6 +649,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.DAQthreads.append( Threads.DAQthread(etsys_command, "ET system", output_window=etSysFrame, owner_process=self, env=self.environment, is_essential_service=True) ) 
 
 	def StartETMon(self):
+		""" Start the ET monitor process.
+		
+		    Not strictly necessary for data aquisition, but
+		    is sometimes helpful for troubleshooting. """
+		    
 		etMonFrame = Frames.OutputFrame(self.main_window, "ET monitor", window_size=(600,600), window_pos=(600,200))
 		etMonFrame.Show(True)
 		
@@ -630,6 +663,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.DAQthreads.append( Threads.DAQthread(etmon_command, "ET monitor", output_window=etMonFrame, owner_process=self, env=self.environment) )
 
 	def StartEBSvc(self):
+		""" Start the event builder service.
+		
+		    (This does the work of stitching together the frames from the readout nodes.) """
+		    
 		ebSvcFrame = Frames.OutputFrame(self.main_window, "Event builder service", window_size=(600,200), window_pos=(1200,0))
 		ebSvcFrame.Show(True)
 
@@ -639,18 +676,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.UpdateWindowCount()
 		self.DAQthreads.append( Threads.DAQthread(eb_command, "event builder", output_window=ebSvcFrame, owner_process=self, env=self.environment, is_essential_service=True) )	
 
-	def StartDAQ(self):
-		daqFrame = Frames.OutputFrame(self.main_window, "THE DAQ", window_size=(600,600), window_pos=(1200,200))
-		daqFrame.Show(True)
-		
-		daq_command = "%s/bin/minervadaq -et %s -g %d -m %d -r %d -s %d -d %d -cf %s -dc %d -hw %d" % (self.environment["DAQROOT"], self.ET_filename, self.runinfo.gates, self.runinfo.runMode, self.run, self.first_subrun + self.subrun, self.detector, self.hwconfigfile, self.febs, self.hwinit)
-		if self.runinfo.runMode == MetaData.RunningModes["Light injection", MetaData.HASH] or self.runinfo.runMode == MetaData.RunningModes["Mixed beam/LI", MetaData.HASH]:
-			daq_command += " -ll %d -lg %d" % (self.runinfo.ledLevel, self.runinfo.ledGroup)
-
-		self.windows.append(daqFrame)
-		self.UpdateWindowCount()
-		self.DAQthreads.append( Threads.DAQthread(daq_command, "DAQ", output_window=daqFrame, owner_process=self, env=self.environment, next_thread_delay=2) )
-		
 	def StartRemoteServices(self):
 		""" Notify all the remote services that we're ready to go.
 		    Currently this includes the online monitoring system
@@ -688,9 +713,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 				try:
 					# for non-LI run modes, these values are irrelevant, so we set them to some well-defined defaults.
-					if not (self.runinfo.runMode in (MetaData.RunningModes["Light injection", MetaData.HASH], MetaData.RunningModes["Mixed beam/LI", MetaData.HASH])):
-						self.runinfo.ledLevel = MetaData.LILevels["Zero PE"]
-						self.runinfo.ledGroup = MetaData.LEDGroups["ABCD", MetaData.HASH]
+					if not (self.runinfo.runMode in (MetaData.RunningModes.LI.hash, MetaData.RunningModes.MIXED_NUMI_LI.hash)):
+						self.runinfo.ledLevel = MetaData.LILevels.ZERO_PE.hash
+						self.runinfo.ledGroup = MetaData.LEDGroups.ABCD.hash
 
 	#				print self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup
 					
@@ -740,6 +765,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 	##########################################
 
 	def CloseWindows(self):
+		""" Close any windows owned by ET/DAQ processes. """
 		while len(self.windows) > 0:		
 			window = self.windows.pop()
 			
@@ -882,5 +908,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.logger.debug("Released message handler lock.")
 
 	def RelayProgressToDisplay(self, evt):
+		""" Pass along an 'update progress' event (usu. from the SocketThread) to the main run control. """
 		# just pass the event along.
 		wx.PostEvent(self.main_window, evt)

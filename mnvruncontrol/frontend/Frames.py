@@ -24,6 +24,9 @@ from mnvruncontrol.frontend import Tools
 #########################################################
 
 class HVConfirmationFrame(wx.Frame):
+	""" Frame for displaying PMT HV deviations and HV update periods.
+	    Allows the user to see if there are potentially any problems
+	    and veto a run if necessary. """
 	def __init__(self, evt):
 		wx.Frame.__init__(self, evt.daqmgr.main_window, -1, "PMTs are not clearly ready", size=(600,400))
 		
@@ -67,6 +70,8 @@ class HVConfirmationFrame(wx.Frame):
 		self.Read()
 		
 	def Read(self, evt=None):
+		""" Gets the HV deviations and periods from the list of
+		    nodes passed to the frame in __init__, then displays them. """
 		febStatuses = {}
 		for node in self.nodes:
 			febStatuses[node.name] = node.sc_readBoards()
@@ -137,6 +142,7 @@ class HVConfirmationFrame(wx.Frame):
 #########################################################
 
 class LogFrame(wx.Frame):
+	""" Frame for displaying the contents of multiple log files. """
 	def __init__(self, parent, filenames):
 		try:
 			for filename in filenames:
@@ -183,6 +189,7 @@ class LogFrame(wx.Frame):
 #########################################################
 
 class OutputFrame(wx.Frame):
+	""" Frame for displaying output from a subprocess. """
 	def __init__(self, parent, title, window_size=(400,300), window_pos=None):
 		if window_pos:
 			wx.Frame.__init__(self, parent, -1, title, size=window_size)
@@ -225,10 +232,10 @@ class RunSeriesInfoFrame(wx.Frame):
 
 		for runinfo in runseries.Runs:
 			index = infoList.InsertStringItem(sys.maxint, str(runinfo.gates))
-			infoList.SetStringItem(index, 1, MetaData.RunningModes[runinfo.runMode])
-			if runinfo.runMode == MetaData.RunningModes.hash("Light injection") or runinfo.runMode == MetaData.RunningModes.hash("Mixed beam/LI"):
-				infoList.SetStringItem(index, 2, MetaData.LILevels[runinfo.ledLevel])
-				infoList.SetStringItem(index, 3, MetaData.LEDGroups[runinfo.ledGroup])
+			infoList.SetStringItem(index, 1, MetaData.RunningModes.description(runinfo.runMode))
+			if runinfo.runMode == MetaData.RunningModes.LI.hash or runinfo.runMode == MetaData.RunningModes.MIXED_NUMI_LI.hash:
+				infoList.SetStringItem(index, 2, MetaData.LILevels.description(runinfo.ledLevel))
+				infoList.SetStringItem(index, 3, MetaData.LEDGroups.description(runinfo.ledGroup))
 			else:
 				infoList.SetStringItem(index, 2, "--")
 				infoList.SetStringItem(index, 3, "--")

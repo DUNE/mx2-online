@@ -1,20 +1,22 @@
 """
    Configuration.py:
-   A module that handles the configuration of the run control.
-   It's basically just a mapping from the constants in the
-   Defaults module to some nice names that are overridden
-   by the values stored in the config database.  This loading
-   is done transparently to the user.
-   The module also specifies succinct text descriptions of each of the elements
-   (used, for example, in the RunControlConfiguration script).
+    A module that handles the configuration of the run control.
+
+    It's basically just a mapping from the constants in the
+    Defaults module to some nice names that are overridden
+    by the values stored in the config database.  This loading
+    is done transparently to the user.
+
+    The module also specifies succinct text descriptions of each of the elements
+    (used, for example, in the RunControlConfiguration script).
    
-   Original author: J. Wolcott (jwolcott@fnal.gov)
-                    Apr. 2010
+    Original author: J. Wolcott (jwolcott@fnal.gov)
+                     Apr. 2010
                     
-   Address all complaints to the management.
+    Address all complaints to the management.
 """
 
-# this file is much easier to look at and/or edit on a wide-ish screen ...
+# n.b. this file is much easier to look at and/or edit on a wide-ish screen ...
 
 import shelve
 import anydbm
