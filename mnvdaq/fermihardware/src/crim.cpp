@@ -111,6 +111,7 @@ crim::crim(unsigned int ca, int crimid, CVAddressModifier a, CVDataWidth w)
 	//
 	statusRegister         = crimStatus;
 	statusRegisterAddress  = crimAddress + (unsigned int)statusRegister;
+
 	//
 	statusRegister         = crimClearStatus;
 	clearStatusRegister    = crimAddress + (unsigned int)statusRegister;
@@ -121,9 +122,9 @@ crim::crim(unsigned int ca, int crimid, CVAddressModifier a, CVDataWidth w)
 	statusRegister          = crimGateTimeWordHigh;
 	gateTimeWordHighAddress = crimAddress + (unsigned int)statusRegister;
 
-	// Cosmic mode control (only meaningful for v5 CRIM firmware
+	// Cosmic mode control (only meaningful for v5 CRIM firmware)
 	statusRegister		= crimSequencerControlLatch;
-	sequencerResetRegister  = crimAddress + (unsigned int)crimSequencerControlLatch;
+	sequencerResetRegister  = crimAddress + (unsigned int)statusRegister;
 
 	//register value for control register (DAQ Mode control)
 	controlRegister = ControlRegisterCRCMask | ControlRegisterSendMask 

@@ -74,7 +74,7 @@ class crim {
 		unsigned short timingSetup, gateWidthSetup, TCALBDelaySetup;
 	
 		/*! cosmic mode control registers. */
-		unsigned short sequencerResetRegister;
+		unsigned int sequencerResetRegister;
 	
 		unsigned short crimStatusValue;
 
