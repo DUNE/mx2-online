@@ -81,7 +81,7 @@ class trips : public Frames {
 		/*! Function to assign a value to a logical trip_value entry */
 		void inline SetRegisterValue(int index, int value) {trip_values[index]=value;};
 		/*! Function to decode the register values (inherited from Frames) */
-		int DecodeRegisterValues(int a);
+		void DecodeRegisterValues(int a);
 		/*! Function to encode register values into special trip patters */
 		void EncodeRegisterValues();
 		/*! Function to pack the bits into the register values for trip patterns */

@@ -328,7 +328,6 @@ namespace SlowControl
             this.label16 = new System.Windows.Forms.Label();
             this.tabFE = new System.Windows.Forms.TabPage();
             this.tabFPGARegs = new System.Windows.Forms.TabPage();
-            this.fpgaDevRegControl1 = new MinervaUserControls.FPGADevRegControl();
             this.btn_AllFEsFPGARegWrite = new System.Windows.Forms.Button();
             this.btn_FPGAAdvancedGUI = new System.Windows.Forms.Button();
             this.lblFPGA_CROCID = new System.Windows.Forms.Label();
@@ -339,6 +338,7 @@ namespace SlowControl
             this.btn_FPGARegRead = new System.Windows.Forms.Button();
             this.btn_FPGARegWrite = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
+            this.fpgaDevRegControl1 = new MinervaUserControls.FPGADevRegControl();
             this.tabTRIPRegs = new System.Windows.Forms.TabPage();
             this.btn_AllFEsTRIPRegWrite = new System.Windows.Forms.Button();
             this.cmb_TripID = new System.Windows.Forms.ComboBox();
@@ -454,7 +454,6 @@ namespace SlowControl
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.timerMonitorHV = new System.Windows.Forms.Timer(this.components);
-            this.button1 = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabDescription.SuspendLayout();
             this.tabVME.SuspendLayout();
@@ -2870,7 +2869,6 @@ namespace SlowControl
             this.groupBoxCH_DEBUG.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBoxCH_DEBUG.Controls.Add(this.button1);
             this.groupBoxCH_DEBUG.Controls.Add(this.btn_CHDebugUpdatePattern);
             this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugBroadcastCMD);
             this.groupBoxCH_DEBUG.Controls.Add(this.cmb_CHDebugFEID);
@@ -3788,7 +3786,6 @@ namespace SlowControl
             // 
             // tabFPGARegs
             // 
-            this.tabFPGARegs.Controls.Add(this.fpgaDevRegControl1);
             this.tabFPGARegs.Controls.Add(this.btn_AllFEsFPGARegWrite);
             this.tabFPGARegs.Controls.Add(this.btn_FPGAAdvancedGUI);
             this.tabFPGARegs.Controls.Add(this.lblFPGA_CROCID);
@@ -3799,6 +3796,7 @@ namespace SlowControl
             this.tabFPGARegs.Controls.Add(this.btn_FPGARegRead);
             this.tabFPGARegs.Controls.Add(this.btn_FPGARegWrite);
             this.tabFPGARegs.Controls.Add(this.label1);
+            this.tabFPGARegs.Controls.Add(this.fpgaDevRegControl1);
             this.tabFPGARegs.Location = new System.Drawing.Point(4, 22);
             this.tabFPGARegs.Name = "tabFPGARegs";
             this.tabFPGARegs.Padding = new System.Windows.Forms.Padding(3);
@@ -3806,131 +3804,6 @@ namespace SlowControl
             this.tabFPGARegs.TabIndex = 0;
             this.tabFPGARegs.Text = "FPGA Regs";
             this.tabFPGARegs.UseVisualStyleBackColor = true;
-            // 
-            // fpgaDevRegControl1
-            // 
-            this.fpgaDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
-            this.fpgaDevRegControl1.AutoScroll = true;
-            this.fpgaDevRegControl1.FPGARegValues = new uint[] {
-        ((uint)(12u)),
-        ((uint)(65488u)),
-        ((uint)(1024u)),
-        ((uint)(63u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(1u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(32768u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(415029u)),
-        ((uint)(415029u)),
-        ((uint)(415029u)),
-        ((uint)(415029u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u))};
-            this.fpgaDevRegControl1.Location = new System.Drawing.Point(6, 40);
-            this.fpgaDevRegControl1.Name = "fpgaDevRegControl1";
-            this.fpgaDevRegControl1.RegisterBoardID = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM1Lock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM1NoClock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2Lock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2NoClock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2PhaseDone = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDCM2PhaseTotal = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip0 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip1 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip2 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip3 = ((uint)(415029u));
-            this.fpgaDevRegControl1.RegisterExtTriggFound = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterExtTriggRearm = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterFirmwareVersion = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterGateLength = ((uint)(1024u));
-            this.fpgaDevRegControl1.RegisterGateStart = ((uint)(65488u));
-            this.fpgaDevRegControl1.RegisterGateTimeStamp = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVActual = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVAutoManual = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVControl = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVEnabled = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVNumAvg = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVPeriodAuto = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVPeriodManual = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVPulseWidth = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterHVTarget = ((uint)(32768u));
-            this.fpgaDevRegControl1.RegisterInjectCount = new uint[] {
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u)),
-        ((uint)(0u))};
-            this.fpgaDevRegControl1.RegisterInjectDACDone = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectDACMode = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectDACStart = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectDACValue = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectEnable = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterInjectPhase = ((uint)(1u));
-            this.fpgaDevRegControl1.RegisterInjectRange = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterPhaseIncrement = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterPhaseStart = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterPhaseTicks = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusFCMDUnknown = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusRXLock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusSCMDUnknown = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterStatusTXSyncLock = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTemperature = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTestPulse2Bit = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTestPulseCount = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTimer = ((uint)(12u));
-            this.fpgaDevRegControl1.RegisterTripPowerOff = ((uint)(63u));
-            this.fpgaDevRegControl1.RegisterTripXComparators = ((uint)(0u));
-            this.fpgaDevRegControl1.RegisterTripXThreshold = ((uint)(0u));
-            this.fpgaDevRegControl1.Size = new System.Drawing.Size(258, 456);
-            this.fpgaDevRegControl1.TabIndex = 26;
             // 
             // btn_AllFEsFPGARegWrite
             // 
@@ -4032,6 +3905,125 @@ namespace SlowControl
             this.label1.Size = new System.Drawing.Size(40, 18);
             this.label1.TabIndex = 1;
             this.label1.Text = "FE";
+            // 
+            // fpgaDevRegControl1
+            // 
+            this.fpgaDevRegControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.fpgaDevRegControl1.AutoScroll = true;
+            this.fpgaDevRegControl1.FPGARegValues = new uint[] {
+        ((uint)(12u)),
+        ((uint)(65488u)),
+        ((uint)(1024u)),
+        ((uint)(63u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(1u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(32768u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(1u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(15u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(415029u)),
+        ((uint)(0u))};
+            this.fpgaDevRegControl1.Location = new System.Drawing.Point(6, 37);
+            this.fpgaDevRegControl1.Name = "fpgaDevRegControl1";
+            this.fpgaDevRegControl1.RegisterBoardID = ((uint)(15u));
+            this.fpgaDevRegControl1.RegisterDCM1Lock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM1NoClock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2Lock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2NoClock = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2PhaseDone = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDCM2PhaseTotal = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip0 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip1 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip2 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterDiscrimEnableMaskTrip3 = ((uint)(415029u));
+            this.fpgaDevRegControl1.RegisterExtTriggFound = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterExtTriggRearm = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterFirmwareVersion = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterGateLength = ((uint)(1024u));
+            this.fpgaDevRegControl1.RegisterGateStart = ((uint)(65488u));
+            this.fpgaDevRegControl1.RegisterGateTimeStamp = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVActual = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVAutoManual = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVControl = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVEnabled = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVNumAvg = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVPeriodAuto = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVPeriodManual = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVPulseWidth = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterHVTarget = ((uint)(32768u));
+            this.fpgaDevRegControl1.RegisterInjectCount = new uint[] {
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u)),
+        ((uint)(0u))};
+            this.fpgaDevRegControl1.RegisterInjectDACDone = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectDACMode = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectDACStart = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectDACValue = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectEnable = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterInjectPhase = ((uint)(1u));
+            this.fpgaDevRegControl1.RegisterInjectRange = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseIncrement = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseSpare = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseStart = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterPhaseTicks = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTemperature = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTestPulse2Bit = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTestPulseCount = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTimer = ((uint)(12u));
+            this.fpgaDevRegControl1.RegisterTripPowerOff = ((uint)(63u));
+            this.fpgaDevRegControl1.RegisterTripXComparators = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterTripXThreshold = ((uint)(0u));
+            this.fpgaDevRegControl1.RegisterVXOMuxSelect = ((uint)(1u));
+            this.fpgaDevRegControl1.Size = new System.Drawing.Size(250, 459);
+            this.fpgaDevRegControl1.TabIndex = 23;
             // 
             // tabTRIPRegs
             // 
@@ -4353,11 +4345,9 @@ namespace SlowControl
             // 
             // richTextBoxHVRead
             // 
-            this.richTextBoxHVRead.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
             this.richTextBoxHVRead.Location = new System.Drawing.Point(3, 3);
             this.richTextBoxHVRead.Name = "richTextBoxHVRead";
-            this.richTextBoxHVRead.Size = new System.Drawing.Size(366, 446);
+            this.richTextBoxHVRead.Size = new System.Drawing.Size(458, 446);
             this.richTextBoxHVRead.TabIndex = 11;
             this.richTextBoxHVRead.Text = "";
             // 
@@ -5206,26 +5196,26 @@ namespace SlowControl
             // expandAllToolStripMenuItem
             // 
             this.expandAllToolStripMenuItem.Name = "expandAllToolStripMenuItem";
-            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.expandAllToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.expandAllToolStripMenuItem.Text = "Expand All";
             this.expandAllToolStripMenuItem.Click += new System.EventHandler(this.expandAllToolStripMenuItem_Click);
             // 
             // collapseAllToolStripMenuItem
             // 
             this.collapseAllToolStripMenuItem.Name = "collapseAllToolStripMenuItem";
-            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.collapseAllToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.collapseAllToolStripMenuItem.Text = "Collapse All";
             this.collapseAllToolStripMenuItem.Click += new System.EventHandler(this.collapseAllToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(134, 6);
             // 
             // redPathsToolStripMenuItem
             // 
             this.redPathsToolStripMenuItem.Name = "redPathsToolStripMenuItem";
-            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.redPathsToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.redPathsToolStripMenuItem.Text = "Red paths";
             this.redPathsToolStripMenuItem.Visible = false;
             this.redPathsToolStripMenuItem.Click += new System.EventHandler(this.redPathsToolStripMenuItem_Click);
@@ -5233,7 +5223,7 @@ namespace SlowControl
             // bluePathsToolStripMenuItem
             // 
             this.bluePathsToolStripMenuItem.Name = "bluePathsToolStripMenuItem";
-            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.bluePathsToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.bluePathsToolStripMenuItem.Text = "Blue paths";
             this.bluePathsToolStripMenuItem.Visible = false;
             this.bluePathsToolStripMenuItem.Click += new System.EventHandler(this.bluePathsToolStripMenuItem_Click);
@@ -5241,7 +5231,7 @@ namespace SlowControl
             // greenPathsToolStripMenuItem
             // 
             this.greenPathsToolStripMenuItem.Name = "greenPathsToolStripMenuItem";
-            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.greenPathsToolStripMenuItem.Size = new System.Drawing.Size(137, 22);
             this.greenPathsToolStripMenuItem.Text = "Green paths";
             this.greenPathsToolStripMenuItem.Visible = false;
             this.greenPathsToolStripMenuItem.Click += new System.EventHandler(this.greenPathsToolStripMenuItem_Click);
@@ -5322,16 +5312,6 @@ namespace SlowControl
             // timerMonitorHV
             // 
             this.timerMonitorHV.Tick += new System.EventHandler(this.timerMonitorHV_Tick);
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(10, 119);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(89, 24);
-            this.button1.TabIndex = 114;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // frmSlowControl
             // 
@@ -5462,6 +5442,7 @@ namespace SlowControl
         private System.Windows.Forms.Button btn_FPGARegRead;
         private System.Windows.Forms.Button btn_FPGARegWrite;
         private System.Windows.Forms.Label label1;
+        private MinervaUserControls.FPGADevRegControl fpgaDevRegControl1;
         private System.Windows.Forms.TabPage tabReadHV;
         private System.Windows.Forms.Button btnReadHV;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
@@ -5837,8 +5818,6 @@ namespace SlowControl
         private System.Windows.Forms.ComboBox cmb_CHDebugDirection;
         private System.Windows.Forms.Button btn_CHDebugUpdatePattern;
         private System.Windows.Forms.RichTextBox richTextBoxHVRead;
-        private MinervaUserControls.FPGADevRegControl fpgaDevRegControl1;
-        private System.Windows.Forms.Button button1;
 
     }
 }
