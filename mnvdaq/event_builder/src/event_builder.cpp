@@ -162,6 +162,9 @@ int main(int argc, char **argv)
 	std::cout << "please skip to the next subrun or stop and try again." << std::endl;
 	std::cout << "\nIf the event builder exits cleanly and no events " << std::endl;
 	std::cout << "were taken, check the electronics for errors!" << std::endl;
+	std::cout << "\nIn either case, please note the run and subrun and " << std::endl;
+	std::cout << "email them to Gabe Perdue: perdue AT fnal DOT gov" << std::endl;
+	std::cout << std::endl;
 	int evt_counter = 0;
 	while ((et_alive(sys_id))) {
 		struct timespec time;
