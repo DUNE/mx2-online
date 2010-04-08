@@ -158,8 +158,10 @@ int main(int argc, char **argv)
 
 	// Request an event from the ET service.
 	std::cout << "Starting!" << std::endl;
-	std::cout << "If 20 seconds goes by and the DAQ doesn't start, " << std::endl;
+	std::cout << "\nIf 20 seconds goes by and the DAQ doesn't start, " << std::endl;
 	std::cout << "please skip to the next subrun or stop and try again." << std::endl;
+	std::cout << "\nIf the event builder exits cleanly and no events " << std::endl;
+	std::cout << "were taken, check the electronics for errors!" << std::endl;
 	int evt_counter = 0;
 	while ((et_alive(sys_id))) {
 		struct timespec time;
