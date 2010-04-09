@@ -128,14 +128,16 @@ class DataAcquisitionManager(wx.EvtHandler):
 		""" Checks if there's a session that was already open.
 		    If so, cleans up (stops the remote nodes), etc.
 		    """
-
+		self.logger.info("Starting up: checking for leftover session...")
 		# first check for an old session.
 		# if there is one, load in the IDs from the nodes that were in use.
 		try:
 			sessionfile = open(Configuration.params["Master node"]["sessionfile"], "r")
 		except OSError:
+			self.logger.info("No previous session detected.  Starting fresh.")
 			return
 
+		self.logger.info("Old session detected.  Restoring old node IDs...")
 		# try to get a lock on the file.  that way we know it isn't being
 		# updated while we try to read it.
 		fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
@@ -156,6 +158,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		sessionfile.close()
 		
+		self.logger.info("Resetting any nodes that are still running...")
 		# now reset any nodes that were previously locked & running.
 		if do_reset:
 			# first inform the main window that it needs to wait until we're done cleaning up.
@@ -193,6 +196,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		
 	def Cleanup(self):
+		os.remove(Configuration.params["Master node"]["sessionfile"])
 		if self.socketThread is not None:
 			self.socketThread.Abort()
 			self.socketThread.join()
