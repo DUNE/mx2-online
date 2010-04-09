@@ -98,6 +98,7 @@ class MainFrame(wx.Frame):
 		self.Bind(Events.EVT_UPDATE_PROGRESS, self.UpdateRunStatus)
 		self.Bind(Events.EVT_UPDATE_SERIES, self.UpdateSeriesStatus)
 		self.Bind(Events.EVT_UPDATE_WINDOW_COUNT, self.UpdateCloseWindows)
+		self.Bind(Events.EVT_WAIT_FOR_CLEANUP, self.WaitOnCleanup)
 
 		self.Bind(Events.EVT_ERRORMSG, self.ShowErrorMsg)
 		
@@ -482,6 +483,14 @@ class MainFrame(wx.Frame):
 		self.UpdateLogFiles()
 		
 		self.UpdateRunStatus( Events.UpdateProgressEvent(text="No run in progress", progress=(0,1)) )
+	
+	def WaitOnCleanup(self, evt):
+		self.startButton.Disable()
+		self.SetStatusText("Please wait while the previous run is cleaned up...", 0)
+		self.SetStatusText("CLEANING UP", 1)
+		
+		dlg = wx.MessageDialog(self, "The last run was not stopped cleanly.  Please wait while it is cleaned up.", "Last shutdown not clean", wx.OK | wx.ICON_INFORMATION )
+		dlg.ShowModal()
 
 	################################################################################################
 	# "Mid-run" methods:
@@ -531,11 +540,7 @@ class MainFrame(wx.Frame):
 
 		self.runinfoFile                     = Configuration.params["Front end"]["runinfoFile"]
 #		self.logfileLocation                 = Configuration.params["Master node"]["master_logfileLocation"]
-		self.runmanager.etSystemFileLocation = Configuration.params["Master node"]["etSystemFileLocation"]
-		self.runmanager.rawdataLocation      = Configuration.params["Master node"]["master_rawdataLocation"]
 		self.runmanager.ResourceLocation     = Configuration.params["Front end"]["ResourceLocation"]
-		self.runmanager.readoutNodes         = [ReadoutNode.ReadoutNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["readoutNodes"]]
-		self.runmanager.monitorNodes         = [MonitorNode.MonitorNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["monitorNodes"]]
 		
 	def GetLastRunConfig(self, evt=None):
 		"""

@@ -20,6 +20,7 @@ class MonitorNode(RemoteNode):
 		RemoteNode.__init__(self, name, address, id)
 		
 		self.ValidRequests += SocketRequests.MonitorRequests
+		self.nodetype = "monitoring"
 						
 	def om_start(self, etpattern, etport):
 		""" Asks the server to start the OM processes. """

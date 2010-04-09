@@ -63,6 +63,8 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		                        "daq_stop"       : self.daq_stop,
 		                        "sc_sethwconfig" : self.sc_sethw,
 		                        "sc_readboards"  : self.sc_readboards } )
+		                        
+		self.cleanup_methods += [self.daq_stop]
 		
 		self.pidfilename = Configuration.params["Readout nodes"]["readout_PIDfileLocation"]
 		self.current_HW_file = "NOFILE"
@@ -266,6 +268,8 @@ class DAQThread(threading.Thread):
 		self.owner_process = owner_process
 		self.master_address = master_address
 		self.daq_command = daq_command
+		
+		self.daemon = True
 		
 		self.start()		# inherited from threading.Thread.  starts run() in a separate thread.
 		

@@ -40,3 +40,5 @@ UpdateProgressEvent,     EVT_UPDATE_PROGRESS       = wx.lib.newevent.NewEvent()
 UpdateSeriesEvent,       EVT_UPDATE_SERIES         = wx.lib.newevent.NewEvent()
 
 UpdateWindowCountEvent,  EVT_UPDATE_WINDOW_COUNT   = wx.lib.newevent.NewEvent()
+
+WaitForCleanupEvent,     EVT_WAIT_FOR_CLEANUP      = wx.lib.newevent.NewEvent()

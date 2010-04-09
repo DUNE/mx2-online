@@ -13,6 +13,7 @@ import wx
 import os
 import signal
 import errno
+import fcntl
 import datetime
 import time
 import threading
@@ -75,9 +76,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.subrun = 0					# the next run in the series to start
 		self.windows = []					# child windows opened by the process.
 		
-		self.LIBox = None					# this will be set in StartDataAcquisition
-		self.readoutNodes = None				# will be set in RunControl.GetConfig()
-		self.monitorNodes = None				# ditto.
+		self.readoutNodes         = [ReadoutNode.ReadoutNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["readoutNodes"]]
+		self.monitorNodes         = [MonitorNode.MonitorNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["monitorNodes"]]
+
+		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
 
 		# configuration stuff
 		self.etSystemFileLocation = Configuration.params["Master node"]["etSystemFileLocation"]
@@ -103,13 +105,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.running = False
 		self.can_shutdown = False		# used in between subruns to prevent shutting down twice for different reasons
 
-		try:
-			self.socketThread = Threads.SocketThread(self.logger)
-		except Threads.SocketAlreadyBoundException:
-			self.socketThread = None
-			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Can't bind a local listening socket.  Synchronization between readout nodes and the run control will be impossible.  Check that there isn't another run control process running on this machine.", title="Can't bind local socket") )
-			
-		self.logger.info("Started master node listener on port %d." % Configuration.params["Socket setup"]["masterPort"])
 		self.messageHandlerLock = threading.Lock()
 
 		self.Bind(Events.EVT_SOCKET_RECEIPT, self.HandleSocketMessage)
@@ -119,6 +114,83 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.Bind(Events.EVT_THREAD_READY, self.StartNextThread)
 		self.Bind(Events.EVT_END_SUBRUN, self.EndSubrun)		# if the DAQ process quits, this subrun is over
 		self.Bind(Events.EVT_STOP_RUNNING, self.StopDataAcquisition)
+
+		try:
+			self.socketThread = Threads.SocketThread(self.logger)
+			self.logger.info("Started master node listener on port %d." % Configuration.params["Socket setup"]["masterPort"])
+
+			self.OldSessionCleanup()
+		except Threads.SocketAlreadyBoundException:
+			self.socketThread = None
+			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Can't bind a local listening socket.  Synchronization between readout nodes and the run control will be impossible.  Check that there isn't another run control process running on this machine.", title="Can't bind local socket") )
+		
+	def OldSessionCleanup(self):
+		""" Checks if there's a session that was already open.
+		    If so, cleans up (stops the remote nodes), etc.
+		    """
+
+		# first check for an old session.
+		# if there is one, load in the IDs from the nodes that were in use.
+		try:
+			sessionfile = open(Configuration.params["Master node"]["sessionfile"], "r")
+		except OSError:
+			return
+
+		# try to get a lock on the file.  that way we know it isn't being
+		# updated while we try to read it.
+		fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
+		try:
+			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
+			node_map = { "readout": self.readoutNodes, "monitoring", self.monitorNodes }
+			do_reset = False
+			for line in sessionfile:
+				matches = pattern.match(line)
+				if matches is not None and matches.group("type").lower() in node_map:
+					for node in node_map[matches.group("type").lower()]:
+						if node.address == matches.group("address"):
+							node.id = matches.group("id")
+							node.own_lock = True
+							do_reset = True
+		finally:
+			fcntl.flock(sessionfile.fileno(), fcntl.LOCK_UN)
+
+		sessionfile.close()
+		
+		# now reset any nodes that were previously locked & running.
+		if do_reset:
+			# first inform the main window that it needs to wait until we're done cleaning up.
+			wx.PostEvent(self.main_window, WaitForCleanupEvent())
+			
+			# next, reset the monitoring nodes.  they're simple
+			# because we don't really care too much about whether
+			# they're actually behaving.
+			for node in self.monitorNodes:
+				if node.own_lock:
+					node.om_stop()
+
+			self.can_shutdown = True
+
+			# finally, deal with the readout nodes.
+			# remember, we need to loop twice so that all subscriptions
+			# are booked before issuing any stops.
+			for node in self.readoutNodes:
+				if node.own_lock:
+					self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Cleaning up from previous run...")
+			
+					
+			for node in self.readoutNodes:
+				if node.own_lock:
+					success = False
+					try:
+						success = node.daq_stop()
+					except ReadoutNode.ReadoutNodeNoDAQRunningException:
+						pass
+					
+					# otherwise we'll be stuck... forever...
+					if not success:
+						node.completed = True
+						self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", callback=self)
+		
 		
 	def Cleanup(self):
 		if self.socketThread is not None:
@@ -139,8 +211,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.detector == None or self.run == None or self.first_subrun == None or self.febs == None:
 			raise ValueError("Run series is improperly configured.")
 
-		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
-		
 		# try to get a lock on each of the readout nodes.
 		failed_connection = None
 		for node in self.readoutNodes:
@@ -149,19 +219,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 			else:
 				failed_connection = node.name
 				break
-		try:
-			omfile = open(Configuration.params["Master node"]["monitor_idfile"], "w")
-		except OSError:
-			omfile = None
-
-		for node in self.monitorNodes:
-			if omfile is not None:
-				omfile.write( "%s %s\n" % (node.id, node.address) )
-			node.get_lock()
-		
-		if omfile is not None:
-			omfile.close()
-		
 		if failed_connection:
 			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Cannot get control of dispatcher on the " + failed_connection + " readout node.  Check to make sure that the readout dispatcher is started on that machine and that there are no other run control processes connected to it.", title="No lock on " + failed_connection + " readout node") )
 			return
@@ -783,7 +840,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 	def HandleSocketMessage(self, evt):
 		""" Decides what to do with messages received from remote nodes. """
-		#addressee=matches.group("addressee"), sender=matches.group("sender"), message=matches.group("message")
 				
 		# need a lock to prevent race conditions (for example, a second node sending a "daq_finished" event
 		# while the "daq_finished" event for a previous node is still being processed)
@@ -842,12 +898,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 				#    and interfere with itself.  however, usually the
 				#    second node to finish finishes (and sends its message)
 				#    while the message from the first node is still being
-				#    processed.  that means that daq_stop() command in
-				#    the implementation below arrives AFTER the node has
+				#    processed.  that means that the daq_stop() command in
+				#    the implementation below is issued AFTER the node has
 				#    already finished -- and so we SHOULD wait for that signal
-				#    to arrive (which will mean one more call of this method)
-				#    rather than stopping it like this since it's already
-				#    stopped.
+				#    to arrive (which would mean one more call of this method)
+				#    rather than stopping it via daq_stop() (since it's already
+				#    stopped anyway).
 				#
 				# another question is whether waiting on the remote nodes
 				# is the right method for deciding whether a subrun is done

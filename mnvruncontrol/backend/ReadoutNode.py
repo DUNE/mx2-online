@@ -24,6 +24,7 @@ class ReadoutNode(RemoteNode):
 		RemoteNode.__init__(self, name, address)
 		
 		self.ValidRequests += SocketRequests.ReadoutRequests
+		self.nodetype = "readout"
 		
 		self.configured = False
 		self.completed = False

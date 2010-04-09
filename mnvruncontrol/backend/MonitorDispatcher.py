@@ -43,6 +43,9 @@ class MonitorDispatcher(Dispatcher):
 		self.valid_requests += SocketRequests.MonitorRequests
 		self.handlers.update( { "om_start" : self.om_start,
 		                        "om_stop"  : self.om_stop } )
+
+		# need to shut down the subprocesses...
+		self.cleanup_methods += [self.om_stop]
 		                        
 		self.pidfilename = Configuration.params["Monitoring nodes"]["om_PIDfileLocation"]
 		                   
@@ -163,6 +166,8 @@ class OMThread(threading.Thread):
 		self.process = None
 		self.command = command
 		self.processname = processname
+		
+		self.daemon = True
 		
 		self.start()		# inherited from threading.Thread.  starts run() in a separate thread.
 		

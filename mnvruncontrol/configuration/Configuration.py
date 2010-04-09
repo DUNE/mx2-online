@@ -49,7 +49,7 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                   "Master node"      : { "master_logfileLocation"  : ( Defaults.LOGFILE_LOCATION_DEFAULT,             "Run control (frontend) log file location",        str   ),
                                          "master_logfileName"      : ( Defaults.RC_LOGFILE_DEFAULT,                   "Run control (frontend) log file name",            str   ),
                                          "etSystemFileLocation"    : ( Defaults.ET_SYSTEM_LOCATION_DEFAULT,           "ET system file location",                         str   ),
-                                         "monitor_idfile"          : ( Defaults.OM_NODE_ID_FILE,                      "Where to store the OM node ID file",              str   ),
+                                         "sessionfile"             : ( Defaults.DAQMGR_SESSION_FILE,                  "Where to store the DAQ manager session file",     str   ),
                                          "master_rawdataLocation"  : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (master node)",                 str   )  },
 
                   "Readout nodes"    : { "readout_rawdataLocation" : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (readout nodes)",               str   ),

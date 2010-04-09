@@ -24,6 +24,7 @@ import re
 import uuid
 import time
 import socket
+import fcntl		# needed for file-locking operations
 
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import Configuration
@@ -39,6 +40,7 @@ class RemoteNode:
 		self.socket = None
 		self.name = name
 		self.address = address
+		self.nodetype = "unspecified"			# derived classes should overwrite this
 		self.port = Configuration.params["Socket setup"]["dispatcherPort"]
 		self.ValidRequests = SocketRequests.GlobalRequests	# derived classes can add more to this if they want to
 		
@@ -119,6 +121,7 @@ class RemoteNode:
 	def get_lock(self):
 		""" Tries to get a 'command' lock (i.e., one making this particular instance the only one
 		    that can issue commands to the node that will change its behavior). 
+		    Also updates the session file to reflect this.
 		    
 		    Returns True on success and False on failure.  """
 		
@@ -132,10 +135,31 @@ class RemoteNode:
 			return False
 		
 		self.own_lock = response == "1"
+		if self.own_lock:
+			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
+			with open(Configuration.params["Master node"]["sessionfile"], "r+") as sessionfile:
+				# we need a lock on this file so that it doesn't change under our feet
+				# (if another node gets a lock, for example).
+				# note that this blocks until the lock can be made ...
+				fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
+				lines = sessionfile.readlines()
+				try:
+					for line in lines:
+						matches = pattern.match(line)
+						# replace an old line corresponding to this id
+						if matches is not None and matches.group("id") == self.id:
+							line = "%s %s %s" % (self.nodetype, self.id, self.address)
+					sessionfile.seek(0)
+					sessionfile.writelines(lines)
+				finally:
+					fcntl.flock(sessionfile.fileno(), fcntl.LOCK_UN)
+					
 		return self.own_lock
 
 	def release_lock(self):
 		""" Releases a lock gotten by get_lock().
+		    Also updates the session file to reflect this.
+
 		    Returns True on success and False on failure.  """
 		
 		# if I don't already own a lock, I don't need to do anything more.
@@ -148,6 +172,25 @@ class RemoteNode:
 			return False
 		
 		self.own_lock = not(response == "1")
+
+		if not self.own_lock:
+			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
+			with open(Configuration.params["Master node"]["sessionfile"], "r+") as sessionfile:
+				# first lock the file (as described in get_lock())
+				fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
+				
+				# now read the file and delete any lines corresponding to this node
+				lines = sessionfile.readlines()
+				try:
+					for line in lines:
+						matches = pattern.match(line)
+						if matches is not None and matches.group("id") == self.id:
+							del line
+					sessionfile.seek(0)
+					sessionfile.writelines(lines)
+				finally:
+					fcntl.flock(sessionfile.fileno(), fcntl.LOCK_UN)
+
 		return not(self.own_lock)
 
 

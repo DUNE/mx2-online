@@ -76,6 +76,10 @@ class Dispatcher:
 		self.consolehandler = logging.StreamHandler()
 		self.consolehandler.setFormatter(self.formatter)
 		self.logger.addHandler(self.consolehandler)
+		
+		# derived classes can use this to indicate methods
+		# that should be run before shutdown (for cleanup purposes).
+		self.cleanup_methods = []
 
 		# make sure that the process shuts down gracefully given the right signals.
 		# these lines set up the signal HANDLERS: which functions are called
@@ -155,6 +159,9 @@ class Dispatcher:
 		
 	def cleanup(self):
 		self.server_socket.close()
+		
+		for cleanup_method in self.cleanup_methods:
+			cleanup_method()
 
 		if os.path.isfile(self.pidfilename):
 			self.logger.info("Removing PID file.")
