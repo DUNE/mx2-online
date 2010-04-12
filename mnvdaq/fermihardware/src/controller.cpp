@@ -16,32 +16,32 @@ void controller::ReportError(int error)
 {
 	switch(error) {
 		case cvSuccess:
-			controllerLog.critStream() << "VME Error: Success!?";  
-			std::cout                  << "VME Error: Success!?" << std::endl;  
+			root.critStream() << "VME Error: Success!?" << log4cpp::eol;  
+			std::cout         << "VME Error: Success!?" << std::endl;  
 			break;					
 		case cvBusError: 
-			controllerLog.critStream() << "VME Error: Bus Error!";  
-			std::cout                  << "VME Error: Bus Error!" << std::endl; 
+			root.critStream() << "VME Error: Bus Error!" << log4cpp::eol;  
+			std::cout         << "VME Error: Bus Error!" << std::endl; 
 			break;	
 		case cvCommError: 
-			controllerLog.critStream() << "VME Error: Comm Error!";  
-			std::cout                  << "VME Error: Comm Error!" << std::endl; 
+			root.critStream() << "VME Error: Comm Error!" << log4cpp::eol;  
+			std::cout         << "VME Error: Comm Error!" << std::endl; 
 			break;	
 		case cvGenericError: 
-			controllerLog.critStream() << "VME Error: Generic Error!";  
-			std::cout                  << "VME Error: Generic Error!" << std::endl; 
+			root.critStream() << "VME Error: Generic Error!" << log4cpp::eol;  
+			std::cout         << "VME Error: Generic Error!" << std::endl; 
 			break;	
 		case cvInvalidParam: 
-			controllerLog.critStream() << "VME Error: Invalid Parameter!";  
-			std::cout                  << "VME Error: Invalid Parameter!" << std::endl; 
+			root.critStream() << "VME Error: Invalid Parameter!" << log4cpp::eol;  
+			std::cout         << "VME Error: Invalid Parameter!" << std::endl; 
 			break;	
 		case cvTimeoutError: 
-			controllerLog.critStream() << "VME Error: Timeout Error!";  
-			std::cout                  << "VME Error: Timeout Error!" << std::endl; 
+			root.critStream() << "VME Error: Timeout Error!" << log4cpp::eol;  
+			std::cout         << "VME Error: Timeout Error!" << std::endl; 
 			break;	
 		default:
-			controllerLog.critStream() << "VME Error: Unknown Error!";  
-			std::cout                  << "VME Error: Unknown Error!" << std::endl; 
+			root.critStream() << "VME Error: Unknown Error!" << log4cpp::eol;  
+			std::cout         << "VME Error: Unknown Error!" << std::endl; 
 			break;			
 	}
 }
@@ -64,19 +64,13 @@ int controller::ContactController()
 	} catch (int e) {
 		ReportError(e);
 		std::cout << "Unable to contact the v2718 VME controller!" << std::endl; 
-		std::cout << "Are you sure the a2818 module is loaded?  Check /proc/a2818." << std::endl;
-		std::cout << "If there is no entry for /proc/a2818, execute the following: " << std::endl;
-		std::cout << "  cd /work/software/CAENVMElib/driver/v2718" << std::endl;
-		std::cout << "  sudo sh a2818_load.2.6" << std::endl;
-		controllerLog.critStream() << "Unable to contact the v2718 VME controller!";
-		controllerLog.critStream() << "Are you sure the a2818 module is loaded?  Check /proc/a2818.";
-		controllerLog.critStream() << "If there is no entry for /proc/a2818, execute the following: ";
-		controllerLog.critStream() << "  cd /work/software/CAENVMElib/driver/v2718";
-		controllerLog.critStream() << "  sudo sh a2818_load.2.6";
+		std::cout << "Are you sure the a2818 module is loaded?  Check /proc/a2818..." << std::endl;
+		root.critStream() << "Unable to contact the v2718 VME controller!" << log4cpp::eol;
+		root.critStream() << "Are you sure the a2818 module is loaded?  Check /proc/a2818..." << log4cpp::eol;
 		return e;
 	} 
-	//suppress//std::cout << "Controller " << controller_id << " is initialized." << std::endl; 
-	controllerLog.infoStream() << "Controller " << controller_id << " is initialized.";
+	std::cout << "Controller " << controller_id << " is initialized." << std::endl; 
+	root.infoStream() << "Controller " << controller_id << " is initialized." << log4cpp::eol;
 
 	// Get the firmware version of the controller card.
 	try {
@@ -85,11 +79,11 @@ int controller::ContactController()
 	} catch (int e) {
 		ReportError(e);
 		std::cout << "Unable to obtain the controller firmware version!" << std::endl;
-		controllerLog.critStream() << "Unable to obtain the controller firmware version!";
+		root.critStream() << "Unable to obtain the controller firmware version!" << log4cpp::eol;
 		return e;
 	}
-	//suppress//std::cout << "The controller firmware version is: " << firmware << std::endl; 
-	controllerLog.infoStream() << "The controller firmware version is: " << firmware; 
+	std::cout << "The controller firmware version is: " << firmware << std::endl; 
+	root.infoStream() << "The controller firmware version is: " << firmware << log4cpp::eol; 
 
 	// Get the status of the controller.
 	CVRegisters registerAddress = cvStatusReg; 
@@ -100,7 +94,7 @@ int controller::ContactController()
 	} catch (int e) {
 		ReportError(e);
 		std::cout << "Unable to read the status register!" << std::endl;
-		controllerLog.critStream() << "Unable to read the status register!";
+		root.critStream() << "Unable to read the status register!" << log4cpp::eol;
 		delete shortBuffer;
 		return e;
 	} 
@@ -130,7 +124,7 @@ int controller::GetCardStatus()
 		if (error) throw error;
 	} catch (int e) {
 		std::cout << "Error in controller()::GetCardStatus()!" << std::endl;
-		controllerLog.critStream() << "Error in controller()::GetCardStatus()!";
+		root.critStream() << "Error in controller()::GetCardStatus()!" << log4cpp::eol;
 		ReportError(e);
 		delete shortBuffer; //clean up 
 		return e;
@@ -164,8 +158,8 @@ int controller::GetCrimStatus(int a)
 			} catch (int e) {
 				std::cout << "Error in controller()::GetCrimStatus() for Addr " << 
 					((*p)->GetCrimAddress()>>16) << std::endl;
-				controllerLog.critStream() << "Error in controller()::GetCrimStatus() for Addr " << 
-					((*p)->GetCrimAddress()>>16);
+				root.critStream() << "Error in controller()::GetCrimStatus() for Addr " << 
+					((*p)->GetCrimAddress()>>16) << log4cpp::eol;
 				ReportError(e);
 				foundModule = false;
 				delete shortBuffer; //clean up 
@@ -219,8 +213,8 @@ int controller::GetCrocStatus(int a)
 				} catch (int e) {
 					std::cout << "Error in controller()::GetCrocStatus() for Addr " << 
 						((*p)->GetCrocAddress()>>16) << " Channel " << (i+1)  << std::endl;
-					controllerLog.critStream() << "Error in controller()::GetCrocStatus() for Addr " << 
-						((*p)->GetCrocAddress()>>16) << " Channel " << (i+1);
+					root.critStream() << "Error in controller()::GetCrocStatus() for Addr " << 
+						((*p)->GetCrocAddress()>>16) << " Channel " << (i+1)  << log4cpp::eol;
 					ReportError(e);
 					foundModule = false;
 					delete shortBuffer; //clean up 
@@ -244,7 +238,8 @@ void controller::MakeCrim(unsigned int crimAddress, int id)
  */
 	crim *tmp = new crim(crimAddress, id, addressModifier, dataWidth);
 	interfaceModule.push_back(tmp);
-	controllerLog.infoStream() << "Added a CRIM with id=" << id << " and Address=" << (crimAddress>>16);
+	root.infoStream() << "Added a CRIM with id=" << id << " and Address=" << 
+		(crimAddress>>16) << log4cpp::eol;
 }
 
 
@@ -257,7 +252,8 @@ void controller::MakeCrim(unsigned int crimAddress)
  */
 	crim *tmp = new crim(crimAddress, (int)1, addressModifier, dataWidth);
 	interfaceModule.push_back(tmp);
-	controllerLog.infoStream() << "Added a CRIM with id=1 and Address=" << (crimAddress>>16);
+	root.infoStream() << "Added a CRIM with id=1 and Address=" << 
+		(crimAddress>>16) << log4cpp::eol;
 }
 
 
@@ -270,8 +266,8 @@ void controller::MakeCroc(unsigned int crocAddress, int a)
  */
 	croc *tmp = new croc(crocAddress, a, addressModifier, dataWidth, cvD16_swapped);
 	readOutController.push_back(tmp); 
-	controllerLog.infoStream() << "Added a CROC with id=" << a << " and Address=" << 
-		(crocAddress>>16);
+	root.infoStream() << "Added a CROC with id=" << a << " and Address=" << 
+		(crocAddress>>16) << log4cpp::eol;
 }
 
 
@@ -304,7 +300,7 @@ crim *controller::GetCrim()
 	if (interfaceModule.size() > 0) { 
 		tmp = interfaceModule[0]; 
 	} else {
-		controllerLog.critStream() << "Error in controller::GetCrim()!";
+		root.critStream() << "Error in controller::GetCrim()!" << log4cpp::eol;
 		std::cout << "Error in controller::GetCrim()!" << std::endl;
 		std::cout << "CRIM interfaceModule vector has size zero!" << std::endl;
 		exit (-1);

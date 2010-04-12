@@ -13,6 +13,4 @@
 #include "log4cpp/Priority.hh"
 #include "log4cpp/NDC.hh"
 
-//log4cpp::Category& root = log4cpp::Category::getRoot();
-
 #endif //ifndef-define

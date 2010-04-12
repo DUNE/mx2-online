@@ -128,15 +128,15 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 	event_info_block[2] = sub_run & 0xFFFFFFFF;
 	event_info_block[3] = trig & 0xFF;
 	event_info_block[3] |= ( (ledLevel & 0x3) << 8 );
-	event_info_block[3] |= ( (ledGroup & 0xF8) << 8 );
+	event_info_block[3] |= ( (ledGroup & 0x1F) << 11 );
 	event_info_block[4] = g_gate & 0xFFFFFFFF;       // the "global gate" least sig int 
 	event_info_block[5] = (g_gate>>32) & 0xFFFFFFFF; // the "global gate" most sig int
 	event_info_block[6] = gate & 0xFFFFFFFF;         // the gate number least sig int 
 	event_info_block[7] = (gate>>32) & 0xFFFFFFFF;   // the gate number most sig int 
 	event_info_block[8] = trig_time & 0xFFFFFFFF;    // the gate time least sig int
 	event_info_block[9] = (trig_time>>32) & 0xFFFFFFFF;  // the gate time most sig int
-	event_info_block[10] = (error<<4) & 0xFFFF;          // the error bits 4-7
-	event_info_block[10] |= 0<<0x18;                 // 3 reserved bytes
+	event_info_block[10] = error & 0xFFFF;           // the error bytes
+	event_info_block[10] |= 0<<0x10;                 // 2 reserved bytes
 	event_info_block[11] = minos & 0x3FFFFFFF;       // the minos gate (only 28 bits of data)
 #if DEBUG_HEADERS
 	for (int i = 0; i < 12; i++) {
