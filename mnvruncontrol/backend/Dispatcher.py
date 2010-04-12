@@ -60,6 +60,9 @@ class Dispatcher:
 		self.lock_id = None
 		self.lock_address = None
 		
+		# workhorse socket
+		self.server_socket = None
+		
 		# we don't need to print EVERY request when a client
 		# is requesting the same thing many times in a row.
 		# we'll use these properties to keep track.
@@ -86,7 +89,7 @@ class Dispatcher:
 		# when each signal is received.
 		signal.signal(signal.SIGINT, self.shutdown)
 		signal.signal(signal.SIGTERM, self.shutdown)
-
+		
 	def setup(self):
 		try:
 			self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.
@@ -124,7 +127,8 @@ class Dispatcher:
 				self.logger.fatal("Terminating this instance.")
 				sys.exit(1)
 
-		
+		self.setup()
+
 		# make sure this thing is a daemon if it needs to be
 		if not self.interactive:
 			self.daemonize()
@@ -135,7 +139,6 @@ class Dispatcher:
 		pidfile.write(str(os.getpid()) +"\n")
 		pidfile.close()
 		
-		self.setup()
 		self.dispatch()
 		
 	def shutdown(self, sig=None, frame=None):
@@ -237,8 +240,12 @@ class Dispatcher:
 		# the next time the logger is called it will reopen it with a new file descriptor.
 		self.filehandler.close()
 
-		# Iterate through and close all open file descriptors.
+		# Iterate through and close all open file descriptors...
 		for fd in range(maxfd):
+			# ... except the one corresponding to our socket.
+			if self.server_socket is not None and fd == self.server_socket.fileno():
+				continue
+				
 			try:
 				os.close(fd)
 			except OSError:	# fd wasn't open to begin with (ignored)
