@@ -137,22 +137,46 @@ class RemoteNode:
 		self.own_lock = response == "1"
 		if self.own_lock:
 			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
-			with open(Configuration.params["Master node"]["sessionfile"], "r+") as sessionfile:
+			
+			rewrite = False
+			try:
+				sessionfile = open(Configuration.params["Master node"]["sessionfile"], "r+")
+				rewrite = True
+			except IOError:		# file not found
+				try:
+					sessionfile = open(Configuration.params["Master node"]["sessionfile"], "w")
+				except (IOError, OSError):
+					msg = "Couldn't open lock file!  %s node will need to be manually unlocked..." % self.name
+					print msg
+					self.logger.critical(msg)
+					return False
+			try:
 				# we need a lock on this file so that it doesn't change under our feet
 				# (if another node gets a lock, for example).
 				# note that this blocks until the lock can be made ...
 				fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
-				lines = sessionfile.readlines()
 				try:
-					for line in lines:
-						matches = pattern.match(line)
-						# replace an old line corresponding to this id
-						if matches is not None and matches.group("id") == self.id:
-							line = "%s %s %s" % (self.nodetype, self.id, self.address)
-					sessionfile.seek(0)
-					sessionfile.writelines(lines)
-				finally:
+					if rewrite:
+						lines = sessionfile.readlines()
+						out = []
+						matched = False
+						for line in lines:
+							matches = pattern.match(line)
+							# replace an old line corresponding to this id
+							if matches is not None and matches.group("id") == self.id:
+								line = "%s %s %s\n" % (self.nodetype, self.id, self.address)
+								matched = True
+							out.append(line)
+						if not matched:
+							out.append("%s %s %s\n" % (self.nodetype, self.id, self.address))
+						sessionfile.seek(0)
+					else:
+						out = "%s %s %s\n" % (self.nodetype, self.id, self.address)
+					sessionfile.writelines(out)
+				finally:		# be sure to ALWAYS release the lock no matter what happens
 					fcntl.flock(sessionfile.fileno(), fcntl.LOCK_UN)
+			finally:			# this file should always be closed so that we don't hang somewhere else
+				sessionfile.close()
 					
 		return self.own_lock
 
@@ -181,13 +205,14 @@ class RemoteNode:
 				
 				# now read the file and delete any lines corresponding to this node
 				lines = sessionfile.readlines()
+				out = []
 				try:
 					for line in lines:
 						matches = pattern.match(line)
-						if matches is not None and matches.group("id") == self.id:
-							del line
+						if matches is None or matches.group("id") != self.id:
+							out.append(line)
 					sessionfile.seek(0)
-					sessionfile.writelines(lines)
+					sessionfile.writelines(out)
 				finally:
 					fcntl.flock(sessionfile.fileno(), fcntl.LOCK_UN)
 

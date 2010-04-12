@@ -483,13 +483,14 @@ class MainFrame(wx.Frame):
 		self.UpdateLogFiles()
 		
 		self.UpdateRunStatus( Events.UpdateProgressEvent(text="No run in progress", progress=(0,1)) )
+		self.SetStatusText("Ready for next run.", 0)
 	
 	def WaitOnCleanup(self, evt):
 		self.startButton.Disable()
 		self.SetStatusText("Please wait while the previous run is cleaned up...", 0)
 		self.SetStatusText("CLEANING UP", 1)
 		
-		dlg = wx.MessageDialog(self, "The last run was not stopped cleanly.  Please wait while it is cleaned up.", "Last shutdown not clean", wx.OK | wx.ICON_INFORMATION )
+		dlg = wx.MessageDialog(self, "The last run was not stopped cleanly.  Please wait until it is cleaned up (the status bar will let you know when ready for next run).", "Last shutdown not clean", wx.OK | wx.ICON_INFORMATION )
 		dlg.ShowModal()
 
 	################################################################################################
@@ -508,9 +509,10 @@ class MainFrame(wx.Frame):
 		
 	def PostSubrun(self, evt=None):
 		""" Front-panel stuff that needs to happen after every subrun. """
-		self.subrunEntry.SetValue(evt.subrun)
-		self.minRunSubrun = evt.subrun
-		self.runEntry.SetRange(evt.run, 1000000)
+		if hasattr(evt, "run") and evt.run is not None and hasattr(evt, "subrun") and evt.subrun is not None:
+			self.subrunEntry.SetValue(evt.subrun)
+			self.minRunSubrun = evt.subrun
+			self.runEntry.SetRange(evt.run, 1000000)
 
 		if self.autocloseEntry.IsChecked():
 			self.CloseAllWindows()
@@ -659,7 +661,7 @@ class MainFrame(wx.Frame):
 				if cb.GetValue() == True:
 					LEDgroups += cb.GetLabelText()
 			db["ledgroups"] = LEDgroups
-			db["lilevel"] = MetaData.LILevels.item(self.LILevelEntry.GetSelection())
+			db["lilevel"] = MetaData.LILevels.item(self.LILevelEntry.GetSelection(), MetaData.HASH)
 			db["runseries_file"] = self.seriesFilename
 			db["runseries_path"] = self.seriesPath
 			

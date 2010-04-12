@@ -11,6 +11,7 @@
 
 import wx
 import os
+import re
 import signal
 import errno
 import fcntl
@@ -28,8 +29,9 @@ from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import LIBox
 from mnvruncontrol.backend import RunSeries
-from mnvruncontrol.backend import ReadoutNode
 from mnvruncontrol.backend import RemoteNode
+from mnvruncontrol.backend import ReadoutNode
+from mnvruncontrol.backend import MonitorNode
 from mnvruncontrol.backend import Threads
 from mnvruncontrol.frontend import Frames
 
@@ -133,7 +135,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# if there is one, load in the IDs from the nodes that were in use.
 		try:
 			sessionfile = open(Configuration.params["Master node"]["sessionfile"], "r")
-		except OSError:
+		except (OSError, IOError):
 			self.logger.info("No previous session detected.  Starting fresh.")
 			return
 
@@ -143,7 +145,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
 		try:
 			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
-			node_map = { "readout": self.readoutNodes, "monitoring", self.monitorNodes }
+			node_map = { "readout": self.readoutNodes, "monitoring": self.monitorNodes }
 			do_reset = False
 			for line in sessionfile:
 				matches = pattern.match(line)
@@ -162,7 +164,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# now reset any nodes that were previously locked & running.
 		if do_reset:
 			# first inform the main window that it needs to wait until we're done cleaning up.
-			wx.PostEvent(self.main_window, WaitForCleanupEvent())
+			wx.PostEvent(self.main_window, Events.WaitForCleanupEvent())
 			
 			# next, reset the monitoring nodes.  they're simple
 			# because we don't really care too much about whether
@@ -172,6 +174,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					node.om_stop()
 
 			self.can_shutdown = True
+			self.first_subrun = 0
 
 			# finally, deal with the readout nodes.
 			# remember, we need to loop twice so that all subscriptions
@@ -196,7 +199,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		
 	def Cleanup(self):
-		os.remove(Configuration.params["Master node"]["sessionfile"])
+		try:
+			os.remove(Configuration.params["Master node"]["sessionfile"])
+		except (IOError, OSError):		# if the file doesn't exist, no problem
+			pass
+			
 		if self.socketThread is not None:
 			self.socketThread.Abort()
 			self.socketThread.join()
@@ -220,8 +227,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 		for node in self.readoutNodes:
 			if node.get_lock():
 				wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
+				self.logger.info(" Got run lock on %s node (id: %s)..." % (node.name, node.id))
 			else:
 				failed_connection = node.name
+				self.logger.critical("Couldn't lock the %s node!  Aborting." % node.name)
 				break
 		if failed_connection:
 			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Cannot get control of dispatcher on the " + failed_connection + " readout node.  Check to make sure that the readout dispatcher is started on that machine and that there are no other run control processes connected to it.", title="No lock on " + failed_connection + " readout node") )
