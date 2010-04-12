@@ -119,7 +119,7 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 			self.logger.info("      Detector: " + MetaData.DetectorTypes.description(int(matches.group("detector"))) )
 			self.logger.info("      Number of FEBs: " + matches.group("nfebs") )
 			self.logger.info("      LI level: " + MetaData.LILevels.description(int(matches.group("lilevel"))) )
-			self.logger.info("      LED group: " + MetaData.LEDGroups.description(int(matches.group("ledgroup")) )
+			self.logger.info("      LED group: " + MetaData.LEDGroups.description(int(matches.group("ledgroup"))) )
 			self.logger.info("      HW init level: " + MetaData.HardwareInitLevels.description(int(matches.group("hwinitlevel"))) )
 			self.logger.info("      ET file: " + matches.group("etfile") )
 			self.logger.info("      ET port: " + matches.group("etport") )
@@ -155,7 +155,7 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 				self.logger.info("    ==> Started successfully.")
 			return "0"
 	
-	def daq_stop(self, matches, show_details, **kwargs):
+	def daq_stop(self, matches=None, show_details=True, **kwargs):
 		""" Stops a DAQ slave service.  First checks to make sure there
 		    is in fact such a service running.  Returns 0 on success,
 		    1 on some DAQ or other error, and 2 if there is no DAQ

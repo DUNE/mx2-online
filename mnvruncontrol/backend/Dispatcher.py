@@ -129,15 +129,17 @@ class Dispatcher:
 
 		self.setup()
 
-		# make sure this thing is a daemon if it needs to be
-		if not self.interactive:
-			self.daemonize()
+		# don't daemonize or make a PID file if we're quitting anyway
+		if not self.quit:
+			# make sure this thing is a daemon if it needs to be
+ 			if not self.interactive:
+				self.daemonize()
 		
-		self.logger.info("Creating new PID file.  My PID: " + str(os.getpid()) + "")
+			self.logger.info("Creating new PID file.  My PID: " + str(os.getpid()) + "")
 			
-		pidfile = open(self.pidfilename, 'w')
-		pidfile.write(str(os.getpid()) +"\n")
-		pidfile.close()
+			pidfile = open(self.pidfilename, 'w')
+			pidfile.write(str(os.getpid()) +"\n")
+			pidfile.close()
 		
 		self.dispatch()
 		
