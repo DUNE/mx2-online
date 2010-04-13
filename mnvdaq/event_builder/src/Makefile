@@ -8,6 +8,8 @@ COMPILE_OPTIONS += -DNO_THREAD
 #COMPILE_OPTIONS += -DDEBUG_BUFFERS
 #COMPILE_OPTIONS += -DDEBUG_BANKHEADER
 #COMPILE_OPTIONS += -DDEBUG_REPORT_EVENT
+#--MULTI PC SETUP--
+COMPILE_OPTIONS += -DMULTIPC  #Comment this out for single PC running.
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
@@ -16,7 +18,6 @@ TARGET=event_builder
 
 LDLIBS += -L$(DAQROOT)/lib -lhardware -levent_structure -L$(ET_LIBROOT)/lib -let
 include $(DAQROOT)/Make.include
-include $(DAQROOT)/Make.options
 
 $(TARGET): $(OBJS)
 	@echo $(OBJS)
