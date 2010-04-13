@@ -1,8 +1,8 @@
 mnvruncontrol -- the MINERvA run control
 ========================================
   Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v4r4  (April 2010)
-  Last update:      April 12, 2010
+  Last revision:    v4r4p1  (April 2010)
+  Last update:      April 13, 2010
 ========================================
 
 This document briefly describes the configuration and usage of the MINERvA run
@@ -46,16 +46,24 @@ Contents:
   * MINERvA slow control software (readout nodes only)
     For proper configuration of readout nodes, a recent version of
     mnvconfigurator/SlowControl should be installed (as well as the __init__.py
-    that lives in the mnvconfigurator base).  Its installation location must
-    be included in the $PYTHONPATH environment variable.
+    that lives in the mnvconfigurator root).  Its installation location must
+    be included in the $PYTHONPATH environment variable (on the readout nodes).
     
   Once you have all of these you should be able to install the mnvruncontrol
-  package anywhere you like (but see the first bullet under section 2 below).
+  folder anywhere you like (but see the first bullet under section 2 below).
   
 2. CONFIGURATION
   * For the application to work as designed, you MUST include the folder into
     which you install mnvruncontrol as part of the $PYTHONPATH environment
-    variable.  DO NOT SKIP THIS STEP OR THE RUN CONTROL WILL NOT WORK.
+    variable.  For example, if the folder containing the run control files is
+       /work/software/mnvruncontrol,
+    you must add 
+       /work/software
+    to the $PYTHONPATH.
+    Also note that the folder that contains this README as well as the other
+    files must be named "mnvruncontrol".
+    
+    DO NOT SKIP THIS STEP OR THE RUN CONTROL WILL NOT WORK.
     
   * The run control is fairly configurable, but it will want to store its root
     configuration file in a folder called "/work/conditions".  If such a folder
@@ -73,10 +81,27 @@ Contents:
     mnvdaq package.
   
   * Most other configuration of the run control can be done through the program
-    RunControlConfiguration.py, which lives in mnvruncontrol/frontend.
-
+    RunControlConfiguration.py, which lives in mnvruncontrol/frontend.  You
+    should run this program on every node you intend to use some run control
+    software on, because all the run control components use the same central
+    configuration system for simplicity of maintenance.
 
 3. USAGE NOTES
+  * To start the run control, first source the "setupdaqenv.sh" contained in
+    mnvdaq.  After that then you can start the run control.  For example,
+    on mnvonlinemaster:
+    
+    source /work/software/mnvonline/mnvdaq/setupdaqenv.sh
+    cd /work/software/mnvruncontrol/frontend
+    python RunControl.py
+  
+  * Most errors that the run control might encounter are handled via graphical
+    pop-up windows informing the user what has happened and suggesting a course
+    of action to resove them.  Nevertheless, occasionally the RC crashes in such
+    a way that the error wasn't caught; in these cases, a "traceback" will be
+    printed out to the console from which the RC was started.  Including the
+    traceback in any communication to the maintainer of the code is EXTREMELY
+    helpful and is requested as a matter of practice.
 
 4. HACKING
   For more detailed notes about the guts of the run control, consult the file
