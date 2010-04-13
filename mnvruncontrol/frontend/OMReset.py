@@ -48,16 +48,16 @@ class MainFrame(wx.Frame):
 		self.SetStatusText("Working...")
 		
 		try:
-			omfile = open(Configuration.params["Master node"]["monitor_idfile"])
+			omfile = open(Configuration.params["Master node"]["sessionfile"])
 		except OSError:
 			omfile = None
 		
 		all_stopped = True
 		if omfile is not None:
-			pattern = re.compile("^(?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
+			pattern = re.compile("^(?P<nodetype>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
 			for line in omfile:
 				matches = pattern.match(line)
-				if matches is not None:
+				if matches is not None and matches.group("nodetype") == "monitoring":
 					try:
 						node = MonitorNode.MonitorNode("node", matches.group("address"), matches.group("id"))
 						success = node.om_stop()

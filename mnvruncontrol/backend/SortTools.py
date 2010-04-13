@@ -11,6 +11,7 @@
 """
 
 import re
+import time
 
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
