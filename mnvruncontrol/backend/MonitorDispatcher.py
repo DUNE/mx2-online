@@ -71,8 +71,9 @@ class MonitorDispatcher(Dispatcher):
 			self.om_eb_thread.join()
 			
 		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
-		self.raweventfile = "%s/%s_RawEvent.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
-		self.rawhistosfile = "%s/%s_RawHistos.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
+		self.raweventfile = "%s/%s_RawEvent.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
+		self.rawhistosfile = "%s/%s_RawHistos.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
+		self.dstfile = "%s/%s_DST.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
 		
 		try:
 			self.om_start_eb(etfile="%s_RawData" % matches.group("etpattern"), etport=matches.group("etport"))
@@ -97,9 +98,10 @@ class MonitorDispatcher(Dispatcher):
 		
 		# replace the options file so that we get the new event builder output.
 		with open(Configuration.params["Monitoring nodes"]["om_GaudiOptionsFile"], "w") as optsfile:
-			optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\";" % self.evbfile)
-			optsfile.write("Event.Output = \"DATAFILE='PFN:%s' TYP='POOL_ROOTTREE' OPT='RECREATE'\";" % self.raweventfile)
-			optsfile.write("HistogramPersistencySvc.Outputfile = \"%s\";" % self.rawhistosfile)
+			optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\";\n" % self.evbfile)
+			optsfile.write("Event.Output = \"DATAFILE='PFN:%s' TYP='POOL_ROOTTREE' OPT='RECREATE'\";\n" % self.raweventfile)
+			optsfile.write("HistogramPersistencySvc.Outputfile = \"%s\";\n" % self.rawhistosfile)
+			optsfile.write("NTupleSvc.Output  = { \"FILE1 DATAFILE='%s' OPT='NEW' TYP='ROOT'\" };\n" % self.dstfile)
 		
 		# if the Gaudi thread is still running, it needs to be stopped.
 		# the DIM command is supposed to help it shut down cleanly.  
