@@ -29,7 +29,8 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "runSeriesLocation"       : ( Defaults.RUN_SERIES_DB_LOCATION_DEFAULT,       "Run series file location",                        str   ),
                                          "logFileLocations"        : ( [],                                            "Where to look for log files",                     list  ),
                                          "readoutNodes"            : ( [],                                            "Readout nodes",                                   list  ),
-                                         "monitorNodes"            : ( [],                                            "Online monitoring nodes",                         list  )  },
+                                         "monitorNodes"            : ( [],                                            "Online monitoring nodes",                         list  ),
+                                         "mtestbeamNodes"          : ( [],                                            "MTest beam DAQ nodes",                            list  )  },
 
                   "Hardware"         : { "eventFrames"             : ( Defaults.FRAMES,                               "Number of frames in an event",                    int   ),
                                          "frameSize"               : ( Defaults.EVENT_SIZE,                           "Size of one frame (bytes)",                       int   ),
@@ -68,7 +69,11 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "om_logfileLocation"      : ( Defaults.OM_LOGFILE_LOCATION_DEFAULT,          "OM dispatcher log file location",                 str   ),
                                          "om_logfileName"          : ( Defaults.OM_DISPATCHER_LOGFILE,                "OM dispatcher log file name",                     str   ),
                                          "om_GaudiOptionsFile"     : ( Defaults.OM_GAUDI_OPTIONSFILE,                 "OM Gaudi process options file",                   str   ),
-                                         "om_rawdataLocation"      : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                            str   )  }  }
+                                         "om_rawdataLocation"      : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                            str   )  },
+
+                  "MTest beam nodes" : { "mtest_PIDfileLocation"   : ( Defaults.MTEST_DISPATCHER_PIDFILE,             "MTest dispatcher PID file location",              str   ),
+                                         "mtest_logfileLocation"   : ( Defaults.MTEST_LOGFILE_LOCATION,               "MTest dispatcher log file location",              str   ),
+                                         "mtest_logfileName"       : ( Defaults.MTEST_DISPATCHER_LOGFILE,             "MTest dispatcher log file name",                  str   )  }  }
 
 
 # the basic dictionary is structured a bit deep

@@ -110,7 +110,7 @@ class ConfigurationFrame(wx.Frame):
 		gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
 
 		# next: remote node config
-		for nodetype in ("readoutNodes", "monitorNodes"):
+		for nodetype in ("readoutNodes", "monitorNodes", "mtestbeamNodes"):
 			labels["Front end"][nodetype] = wx.StaticText(self.pages["Front end"], -1, Configuration.names["Front end"][nodetype])
 			self.entries["Front end"][nodetype] = AutoSizingEditableListCtrl(self.pages["Front end"], style=wx.LC_REPORT | wx.LC_HRULES)
 			self.entries["Front end"][nodetype].InsertColumn(0, "Name")
@@ -137,7 +137,7 @@ class ConfigurationFrame(wx.Frame):
 	
 
 		# these are added like this so that they show up in a predictable order
-		for name in ("Front end", "Hardware", "Socket setup", "Dispatchers", "Master node", "Readout nodes", "Monitoring nodes"):
+		for name in ("Front end", "Hardware", "Socket setup", "Dispatchers", "Master node", "Readout nodes", "Monitoring nodes", "MTest beam nodes"):
 			nb.AddPage(self.pages[name], name)
 			
 		saveButton = wx.Button(panel, wx.ID_SAVE)
@@ -216,7 +216,7 @@ class ConfigurationFrame(wx.Frame):
 			
 			
 			# now remote nodes
-			nodetypes = ["readoutNodes", "monitorNodes"]
+			nodetypes = ["readoutNodes", "monitorNodes", "mtestbeamNodes"]
 			nodelist = {}
 			for nodetype in nodetypes:
 				nodelist[nodetype] = []

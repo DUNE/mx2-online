@@ -62,6 +62,10 @@ OM_LOGFILE_LOCATION_DEFAULT = "/work/logs"
 OM_DISPATCHER_LOGFILE = "%s/om_dispatcher.log" % OM_LOGFILE_LOCATION_DEFAULT
 OM_GAUDI_OPTIONSFILE = "/home/nearonline/output.opts"
 OM_DATAFILE_LOCATION_DEFAULT = "/home/nearonline/data"
+MTEST_DISPATCHER_PIDFILE = "/tmp/beamline_dispatcher.pid"
+MTEST_LOGFILE_LOCATION = "/work/logs"
+MTEST_DISPATCHER_LOGFILE = "%s/beamline_dispatcher.log" % MTEST_LOGFILE_LOCATION
+
 
 # slow control
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
