@@ -28,7 +28,4 @@ MonitorRequests = [ "(?P<request>om_start) etpattern=(?P<etpattern>\S+):etport=(
                     "(?P<request>om_stop)!",
                     "(?P<request>om_alive)\?" ]
                     
-MTestBeamRequests = [ "(?P<request>mtestbeam_start) filepattern=(?P<filepattern>\S+)!",
-                      "(?P<request>mtestbeam_stop)!" ]
-                    
 Notification = "FOR:(?P<addressee>[\d\w\-]+) FROM:(?P<sender>\S+) MSG:(?P<message>.*)"
