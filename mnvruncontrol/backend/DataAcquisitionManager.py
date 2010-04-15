@@ -46,9 +46,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 	###   * initialization/teardown            (begin around line 50)
 	###   * global starters/stoppers           ( ...              125)
 	###   * subrun starters/stoppers           ( ...              200)
-	###   * helper methods for StartNextSubrun ( ...              400)
-	###   * subprocess starters                ( ...              600)
-	###   * utilities/event handlers           ( ...              750)
+	###   * helper methods for StartNextSubrun ( ...              475)
+	###   * subprocess starters                ( ...              700)
+	###   * utilities/event handlers           ( ...              825)
 	
 	def __init__(self, main_window):
 		wx.EvtHandler.__init__(self)
@@ -863,7 +863,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# if it's a HW error message, we need to abort the subrun.
 		if evt.message == "hw_error" :	
 			wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="There was a hardware error while configuring the " + evt.sender + " readout node.  This subrun will need to be stopped.", title="Hardware configuration problem") )
-			self.logger.error("There was a hardware error on the " + node.name + " readout node.  This subrun will be aborted.")
+			self.logger.error("There was a hardware error on the " + evt.sender + " readout node.  This subrun will be aborted.")
 			
 			self.logger.warning("Subrun " + str(self.first_subrun + self.subrun) + " aborted.")
 			wx.PostEvent(self, Events.StopRunningEvent(allclear=True))
