@@ -11,4 +11,5 @@ popd
 export PATH=/work/python/bin:$PATH
 export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 export PYTHONPATH=/work:$PYTHONPATH
-
+export CORAL_AUTH_PATH=/home/nearonline/private
+export DIM_DNS_NODE=localhost

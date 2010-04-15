@@ -117,7 +117,7 @@ class MonitorDispatcher(Dispatcher):
 		self.logger.info("   OnlineMonitor command:")
 		self.logger.info("      '" + executable + "'...")
 	
-	def om_stop(self, matches, show_details, **kwargs):
+	def om_stop(self, matches=None, show_details=True, **kwargs):
 		""" Stops the online monitor processes.  Only really needed
 		    if the dispatcher is going to be stopped since the om_start()
 		    method closes any open threads before proceeding. 
@@ -143,6 +143,7 @@ class MonitorDispatcher(Dispatcher):
 			if show_details:
 				self.logger.info("   ==> Attempting to stop the Gaudi thread.")
 			try:
+				subprocess.call("dim_send_command.exe NEARONLINE stop", shell=True)
 				self.om_Gaudi_thread.process.terminate()
 				self.om_Gaudi_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
 			except Exception, excpt:
