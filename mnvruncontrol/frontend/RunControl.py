@@ -553,8 +553,8 @@ class MainFrame(wx.Frame):
 		# default values.   they'll be updated below if the db exists and has the appropriate keys.
 		key_values = { "run"            : 1, 
 		               "subrun"         : 1,
-		               "hwinit"         : MetaData.HardwareInitLevels.NO_HW_INIT.hash(),
-		               "detector"       : MetaData.DetectorTypes.UPSTREAM.hash(),
+		               "hwinit"         : MetaData.HardwareInitLevels.NO_HW_INIT.hash,
+		               "detector"       : MetaData.DetectorTypes.UPSTREAM.hash,
 		               "febs"           : 114,
 		               "is_single_run"  : True,
 		               "gates"          : 1500,
