@@ -584,10 +584,25 @@ int main(int argc, char *argv[])
 
 		// soldier-worker global gate data synchronization.
 #if MASTER&&(!SINGLEPC) // Soldier Node
-		SynchWrite(global_gate_socket_handle, global_gate_data);
+		//SynchWrite(global_gate_socket_handle, global_gate_data);  
+		if (write(global_gate_socket_handle,global_gate_data,sizeof(global_gate_data)) == -1) {	 
+			mnvdaq.fatalStream() << "socket write error: global_gate!";	 
+			perror("write error: global_gate");	 
+			exit(EXIT_FAILURE);	 
+		}
 #endif
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
-		SynchListen(global_gate_socket_connection, global_gate_data);
+		//SynchListen(global_gate_socket_connection, global_gate_data);
+		while (!global_gate_data[0]) {	 
+			// Read global gate data from the worker node	 
+			int read_val = read(global_gate_socket_connection,global_gate_data,sizeof(global_gate_data));	 
+			if ( read_val != sizeof(global_gate_data) ) {	 
+				mnvdaq.fatalStream() << "server read error: cannot get global_gate!";
+				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
+				perror("server read error: done");	 
+				exit(EXIT_FAILURE);	 
+			}
+		}
 		event_data.globalGate = global_gate_data[0];
 #endif 
 
@@ -861,7 +876,15 @@ int main(int argc, char *argv[])
 		// worker node before attaching the end-of-event header bank.
 #if !SINGLEPC   // Soldier Node
 		gate_done[0] = false;
-		SynchListen(gate_done_socket_connection, gate_done);
+		//SynchListen(gate_done_socket_connection, gate_done); 
+		while (!gate_done[0]) {	 
+			// Read "done" from the worker node	 
+			if ((read(gate_done_socket_connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) {	 
+				mnvdaq.fatalStream() << "server read error: cannot get gate_done!";	 
+				perror("server read error: gate_done");	 
+				exit(EXIT_FAILURE);	 
+			}
+		}		
 #endif
 		// Contact event builder service.
 		daq->ContactEventBuilder(&event_data, -1, attach, sys_id);
@@ -880,7 +903,12 @@ int main(int argc, char *argv[])
 
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 		gate_done[0]=true;
-		SynchWrite(gate_done_socket_handle, gate_done);
+		//SynchWrite(gate_done_socket_handle, gate_done);
+		if (write(gate_done_socket_handle,gate_done,sizeof(gate_done)) == -1) {	           
+			mnvdaq.fatalStream() << "server write error: cannot put gate_done!";	 #endif
+			perror("server write error: gate_done");	 
+			exit(EXIT_FAILURE);	 
+		}
 #endif 
 
 #if SINGLEPC||(MASTER&&(!SINGLEPC)) // Single PC or Soldier Node
@@ -1317,7 +1345,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-01'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
