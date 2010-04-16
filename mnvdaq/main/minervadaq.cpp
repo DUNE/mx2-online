@@ -905,7 +905,7 @@ int main(int argc, char *argv[])
 		gate_done[0]=true;
 		//SynchWrite(gate_done_socket_handle, gate_done);
 		if (write(gate_done_socket_handle,gate_done,sizeof(gate_done)) == -1) {	           
-			mnvdaq.fatalStream() << "server write error: cannot put gate_done!";	 #endif
+			mnvdaq.fatalStream() << "server write error: cannot put gate_done!";	 
 			perror("server write error: gate_done");	 
 			exit(EXIT_FAILURE);	 
 		}
@@ -1345,7 +1345,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-02'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
