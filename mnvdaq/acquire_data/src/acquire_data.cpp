@@ -50,9 +50,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 		exit(e);
 	} 
 
-	// TODO - Add VME card lookup by file here...
-
-	// Then we need the cards which can read the data - hardcoded for now....
+	// Hardware configurations.
 #if THREAD_ME
 	boost::thread crim_thread(boost::bind(&acquire_data::InitializeCrim, this, 0xE00000, 1, runningMode)); 
 	boost::thread croc_thread(boost::bind(&acquire_data::InitializeCroc, this, 0x010000, 1)); 
@@ -60,7 +58,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	croc_thread.join(); // Wait for the croc thread to return.
 #endif
 
-	// Add look-up functions here - one for file content look-up and one by address scanning 
+	// Hardware configurations.
 	std::string detectorString = "Unknown Detector.";
 #if NO_THREAD
 #if MTEST
