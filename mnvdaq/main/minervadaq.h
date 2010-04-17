@@ -45,6 +45,7 @@ void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node
 
 // Socket Communication Vars.
 bool               gate_done_data[1];       // end of gate complete signal from the worker -> soldier 
+unsigned long long global_gate_data[1];     // temp
 unsigned short int workerToSoldier_trig[1]; // trigger check the worker -> soldier 
 unsigned short int soldierToWorker_trig[1]; // trigger check the soldier -> worker 
 
