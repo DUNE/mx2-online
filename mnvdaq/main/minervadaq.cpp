@@ -313,10 +313,10 @@ int main(int argc, char *argv[])
 	/*  Basic Socket Configuration for Worker && Soldier Nodes.                      */
 	/*********************************************************************************/
 #if MULTIPC
-	workerToSoldier_port   += (unsigned short)(subRunNumber % 4); 
+	workerToSoldier_port += (unsigned short)(subRunNumber % 4); 
 	soldierToWorker_port += (unsigned short)(subRunNumber % 4);
-	mnvdaq.infoStream() << "Gate-Done Network Port   = " << workerToSoldier_port;
-	mnvdaq.infoStream() << "Global-Gate Network Port = " << soldierToWorker_port;
+	mnvdaq.infoStream() << "Worker to Solider Network Port = " << workerToSoldier_port;
+	mnvdaq.infoStream() << "Soldier to Worker Network Port = " << soldierToWorker_port;
 #endif
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Create a TCP socket.
@@ -749,6 +749,9 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 #endif 
+#if DEBUG_GENERAL
+		mnvdaq.infoStream() << "Returned from TriggerDAQ.";
+#endif
 
 		// Make the event_handler pointer.
 		event_handler *evt = &event_data;
