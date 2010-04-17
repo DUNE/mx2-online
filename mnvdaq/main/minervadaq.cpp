@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
 		mnvdaq.fatalStream() << "Error binding the workerToSoldier socket!"; 
 		perror ("bind"); exit(EXIT_FAILURE); 
 	} else {
-		mvdaq.infoStream() << "Finished binding the workerToSoldier socket.";
+		mnvdaq.infoStream() << "Finished binding the workerToSoldier socket.";
 	}
 	// Enable connection requests on the workerToSoldier socket for the listener.
 	if (listen (workerToSoldier_socket_handle, 10)) { 
@@ -1367,7 +1367,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-04'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-05'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
