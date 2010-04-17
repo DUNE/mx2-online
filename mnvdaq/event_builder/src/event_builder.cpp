@@ -11,7 +11,10 @@ using namespace std;
 ofstream thread_log("eb_log.txt");
 #endif
 
-const int  gate_print_freq =  1;
+const int  gate_print_freq = 1;
+static int adcFrameCount   = 0;
+static int discFrameCount  = 0;
+static int fpgaFrameCount  = 0;
 
 int main(int argc, char **argv) 
 {
@@ -344,23 +347,37 @@ int event_builder(event_handler *evt)
 			fflush(stdout);
 			switch(evt->triggerType) {
 				case 0:
-					printf("Trigger =  Unknown\n"); fflush(stdout);
+					printf("Trigger =  Unknown\n");
+					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
+						adcFrameCount, discFrameCount, fpgaFrameCount); 
 					break;
 				case 1:
-					printf("Trigger =  OneShot\n"); fflush(stdout);
+					printf("Trigger =  OneShot\n"); 
+					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
+						adcFrameCount, discFrameCount, fpgaFrameCount);
+					if (adcFrameCount > 600) {
+						printf("  WARNING - Excessive number of ADC Frames in a pedestal trigger!\n");
+					} 
 					break;
 				case 2:
-					printf("Trigger = LightInj\n"); fflush(stdout);
+					printf("Trigger = LightInj\n"); 
+					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
+						adcFrameCount, discFrameCount, fpgaFrameCount); 
 					break;
 				case 8:
-					printf("Trigger =   Cosmic\n"); fflush(stdout);
+					printf("Trigger =   Cosmic\n"); 
+					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
+						adcFrameCount, discFrameCount, fpgaFrameCount); 
 					break;
 				case 16:
-					printf("Trigger =     NuMI\n"); fflush(stdout);
+					printf("Trigger =     NuMI\n"); 
+					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
+						adcFrameCount, discFrameCount, fpgaFrameCount); 
 					break;
 				default:
-					printf("Trigger incorrctly set!\n"); fflush(stdout);
+					printf("Trigger incorrctly set!\n"); 
 			}
+			fflush(stdout);
 		}
 		if (evt->readoutInfo) {
 			switch (evt->readoutInfo) {
@@ -383,7 +400,9 @@ int event_builder(event_handler *evt)
 		event = new MinervaEvent(evt->detectorType, evt->detectorConfig, evt->runNumber, 
 			evt->subRunNumber, evt->triggerType, evt->ledLevel, evt->ledGroup, evt->globalGate, 
 			evt->gate, evt->triggerTime, evt->readoutInfo, evt->minosSGATE, tmp_header); 
-		// The call to MinervaEvent constructor automatically inserts the DAQ block into the event buffer
+		// The call to MinervaEvent constructor automatically inserts the DAQ block into the event buffer.
+		// Reset frame counters.
+		adcFrameCount = discFrameCount = fpgaFrameCount = 0;
 	} else {
 		event = new MinervaEvent();
 
@@ -391,9 +410,6 @@ int event_builder(event_handler *evt)
 		int info_length = (int)( evt->event_data[0] + (evt->event_data[1]<<8) + 2); // Data + Frame CRC
 		switch (evt->feb_info[4]) {
 			case 0: // ADC Data
-#if DEBUG_VERBOSE
-				std::cout << "\nevent_builder::main(): ADC Values" << std::endl;
-#endif
 				// Compare embedded length (data) + CRC to info_length		
 				CheckBufferLength(evt->feb_info[5]+2, info_length); 
 				for (unsigned int i=0; i<evt->feb_info[5]; i+=info_length) {
@@ -403,11 +419,9 @@ int event_builder(event_handler *evt)
 					// Build event.
 					event->MakeDataBlock(dummy_feb->GetADC(0), tmp_header);
 				}
+				adcFrameCount++;
 				break;
 			case 1: // Discriminator Data
-#if DEBUG_VERBOSE
-				std::cout << "\nevent_builder::main(): DISC Values" << std::endl;
-#endif
 				// Compare embedded length (data) + CRC to info_length	
 				CheckBufferLength(evt->feb_info[5]+2, info_length);
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
@@ -417,11 +431,9 @@ int event_builder(event_handler *evt)
 					// Build event.
 					event->MakeDataBlock(dummy_feb->GetDisc(), tmp_header);
 				}
+				discFrameCount++;
 				break;
 			case 2: // FEB Data
-#if DEBUG_VERBOSE
-				std::cout << "\nevent_builder::main(): FPGA Programming Values" << std::endl;
-#endif
 				// Compare embedded length (data) + CRC to info_length				
 				CheckBufferLength(evt->feb_info[5]+2, info_length);
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
@@ -431,6 +443,7 @@ int event_builder(event_handler *evt)
 					// Build event  
 					event->MakeDataBlock(dummy_feb, tmp_header);
 				}
+				fpgaFrameCount++;
 				break;
 			case 3: // DAQ Event Info (End of Record Bank)
 				std::cout << "Error in event_builder::main()!" << std::endl;
