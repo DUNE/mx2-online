@@ -61,7 +61,6 @@ int main(int argc, char *argv[])
 	string log_filename      = "/work/data/logs/testme_Log.txt"; 
 	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme_SAM.py");
 	char data_filename[100]; sprintf(data_filename,"/work/data/sam/testme_RawData.dat");
-	//FILE *sam_file; //unused in main
 	unsigned long long firstEvent, lastEvent;
 	int networkPort          = 1091; // 1091-1096 (inclusive) currently open.
 	int controllerErrCode;
@@ -73,7 +72,8 @@ int main(int argc, char *argv[])
 	str_controllerID  = "1";
 	controllerErrCode = 4;
 #endif
-	unsigned long long startTime, stopTime; // For SAM
+	unsigned long long startTime, stopTime;        // For SAM.  Done at second & microsecond-level precision.
+	unsigned int       startReadout, stopReadout;  // For gate monitoring.  Done at second-level precision.
 
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
@@ -330,9 +330,8 @@ int main(int argc, char *argv[])
 	gate_done_service.sin_port = htons(gate_done_port); 
 	gate_done_service.sin_addr = gate_done_socket_address;
 	
-	// need to allow the socket to be reused.
-	// prevents "address already in use" errors when starting the DAQ
-	// again too quickly after the last time it shut down.
+	// Need to allow the socket to be reused.  This prevents "address already in use" 
+	// errors when starting the DAQ again too quickly after the last time it shut down.
 	int optval = 1;
 	setsockopt(gate_done_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 	
@@ -341,11 +340,15 @@ int main(int argc, char *argv[])
 			sizeof (gate_done_service)))) {
 		mnvdaq.fatalStream() << "Error binding the gate_done socket!"; 
 		perror ("bind"); exit(EXIT_FAILURE); 
+	} else {
+		mvdaq.infoStream() << "Finished binding the gate_done socket.";
 	}
 	// Enable connection requests on the gate_done socket for the listener.
 	if (listen (gate_done_socket_handle, 10)) { 
 		mnvdaq.fatalStream() << "Error listening on the gate_done socket!"; 
 		perror("listen"); exit(EXIT_FAILURE); 
+	} else {
+		mnvdaq.infoStream() << "Enabled listening on the gate_done socket.";
 	}
 #endif // end if MASTER&&(!SINGLEPC)
 
@@ -360,9 +363,8 @@ int main(int argc, char *argv[])
 	global_gate_service.sin_port = htons(global_gate_port); 
 	global_gate_service.sin_addr = global_gate_socket_address;
 
-	// need to allow the socket to be reused.
-	// prevents "address already in use" errors when starting the DAQ
-	// again too quickly after the last time it shut down.
+	// Need to allow the socket to be reused.  This prevents "address already in use" 
+	// errors when starting the DAQ again too quickly after the last time it shut down.
 	int optval = 1;
 	setsockopt(global_gate_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
@@ -371,11 +373,15 @@ int main(int argc, char *argv[])
 			sizeof (global_gate_service)))) { 
 		mnvdaq.fatalStream() << "Error binding the global_gate socket!"; 
 		perror ("bind"); exit(EXIT_FAILURE); 
+	} else {
+		mnvdaq.infoStream() << "Finished binding the global_gate socket.";
 	}
 	// Enable connection requests on the global socket for the listener.
 	if (listen (global_gate_socket_handle, 10)) { 
 		mnvdaq.fatalStream() << "Error listening on the global_gate socket!"; 
 		perror("listen"); exit(EXIT_FAILURE); 
+	} else {
+		mnvdaq.infoStream() << "Enabled listening on the global_gate socket.";
 	}
 #endif // end if (!MASTER)&&(!SINGLEPC)
 
@@ -484,7 +490,6 @@ int main(int argc, char *argv[])
 
 	// Make an acquire data object containing functions for performing initialization and acquisition.
 	acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::DEBUG, hardwareInit); 
-	//acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::INFO, hardwareInit); 
 	mnvdaq.infoStream() << "Got the acquire_data functions.";
 
 	/*********************************************************************************/
@@ -510,9 +515,11 @@ int main(int argc, char *argv[])
 	mnvdaq.infoStream() << "Returned from electronics initialization.";
 
 	// Start to setup vars for SAM metadata.
-	struct timeval runstart, runend;
+	struct timeval runstart, gatend, gatestart;
 	gettimeofday(&runstart, NULL);
 	startTime = (unsigned long long)(runstart.tv_sec);
+	// Set initial start & stop readout times.
+	startReadout = stopReadout  = (runstart.tv_sec);
 #if SINGLEPC||MASTER // Single PC or Soldier Node
 	global_gate_data[0] = GetGlobalGate();
 	std::cout << "Opened Event Log, First Event = " << global_gate_data[0] << std::endl;
@@ -543,8 +550,7 @@ int main(int argc, char *argv[])
 	int  nReadoutADC     = 8;
 	bool continueRunning = true;
 	while ( (gate<record_gates) && continueRunning ) {
-		//gate++; // Increments only for successful readout!
-		triggerCounter++;
+		triggerCounter++; // Not a gate counter - this updates trigger type in mixed mode.
 		//continueRunning = true; //reset? TODO - fix
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
@@ -617,12 +623,13 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		/* Trigger the DAQ, threaded or unthreaded.                                       */
 		/**********************************************************************************/
+		gettimeofday(&gatestart, NULL);
+		startReadout = (gatestart.tv_sec);
 		unsigned short int triggerType;
-		// For now, just use full readout.  TODO - test the others more carefully...
 		readFPGA    = true; // default to reading the FPGA programming registers
 		nReadoutADC = 8;    // default to maximum possible
+#if MTEST
 		// We need to reset the external trigger latch for v85 (cosmic) FEB firmware.
-#if MTEST||WH14B
 		for (croc_iter = croc_vector->begin(); croc_iter != croc_vector->end(); croc_iter++) {
 			int crocID = (*croc_iter)->GetCrocID();
 			try {
@@ -641,6 +648,13 @@ int main(int argc, char *argv[])
 			}
 		}
 #endif
+		// Convert to int should be okay - we only care about the least few significant bits.
+		int readoutTimeDiff = (int)stopReadout - (int)startReadout; // stop updated at end of readout.
+#if DEBUG_MIXEDMODE
+		mnvdaq.debugStream() << "stopReadout time  = " << stopReadout;
+		mnvdaq.debugStream() << "startReadout time = " << startReadout;
+		mnvdaq.debugStream() << " time diff        = " << readoutTimeDiff;
+#endif
 		switch (runningMode) {
 			case OneShot:
 				triggerType = Pedestal;
@@ -650,6 +664,7 @@ int main(int argc, char *argv[])
 				break;
 			case Cosmics:
 				// We need to reset the sequencer latch on the CRIM in Cosmic mode...
+				// MAKE SURE CRIM FIRMWARE IS COMPATIBLE!
 				try {
 					int crimID = (*crim_master)->GetCrimID(); // Only the master!
 					int error = daq->ResetCRIMSequencerLatch(crimID);
@@ -670,20 +685,42 @@ int main(int argc, char *argv[])
 				triggerType = LightInjection;
 				break;
 			case MixedBeamPedestal:
-				if (triggerCounter%2) {
-					triggerType = Pedestal;
-					readFPGA    = false;
-				} else {
+				if (triggerCounter%2) { // Start with NuMI!
 					triggerType = NuMI;
+				} else {
+					if ( readoutTimeDiff < 1 ) {
+						triggerType = Pedestal;
+						readFPGA    = false;
+#if DEBUG_MIXEDMODE
+						mnvdaq.debugStream() << "Okay to calib trigger...";
+#endif
+					} else {
+						triggerType = NuMI;
+						mnvdaq.infoStream() << "Aborting calib trigger!";
+					}
 				}
+#if DEBUG_MIXEDMODE
+				mnvdaq.debugStream() << " triggerType = " << triggerType;
+#endif
 				break;
 			case MixedBeamLightInjection:
-				if (triggerCounter%2) {
-					triggerType = LightInjection;
-					nReadoutADC = 1; // Deepest only.
-				} else {
+				if (triggerCounter%2) { // Start with NuMI!
 					triggerType = NuMI;
+				} else {
+					if ( readoutTimeDiff < 1 ) {	
+						triggerType = LightInjection;
+						nReadoutADC = 1; // Deepest only.
+#if DEBUG_MIXEDMODE
+						mnvdaq.debugStream() << "Okay to calib trigger...";
+#endif
+					} else {
+						triggerType = NuMI;
+						mnvdaq.infoStream() << "Aborting calib trigger!";
+					}
 				}
+#if DEBUG_MIXEDMODE
+				mnvdaq.debugStream() << " triggerType = " << triggerType;
+#endif
 				break; 
 			default:
 				std::cout << "minervadaq::main(): ERROR! Improper Running Mode = " << runningMode << std::endl;
@@ -708,18 +745,6 @@ int main(int argc, char *argv[])
 				" and Trigger Type = " << triggerType;
 			mnvdaq.warnStream() << "  Error Code = " << e << ".  Skipping this attempt and trying again...";
 			// This is subtle... need to be careful with this approach. 
-			// TODO - Basically, fix this.  Timeout is causing trigger confusion & half-readout - very bad!
-			/*
-#if MASTER&&(!SINGLEPC)   // Soldier Node
-			gate_done[0] = false;
-			SynchListen(gate_done_socket_connection, gate_done);
-#endif 
-#if (!MASTER)&&(!SINGLEPC) // Worker Node
-			gate_done[0]=true;
-			SynchWrite(gate_done_socket_handle, gate_done);
-#endif 
-			continue;
-			*/ 
 			mnvdaq.fatalStream() << "Not sure how to handle timeouts yet!  Bailing!";
 			exit(1);
 		}
@@ -727,8 +752,6 @@ int main(int argc, char *argv[])
 
 		// Make the event_handler pointer.
 		event_handler *evt = &event_data;
-
-		// Set the trigger time. - Obsolete - moved to event builder for now...
 
 		/**********************************************************************************/
 		/*  Initialize loop counter variables                                             */
@@ -742,7 +765,6 @@ int main(int argc, char *argv[])
 		/* from 1->N.  The routine will fail if this is false!                            */
 		/**********************************************************************************/
 		// TODO - It would be better to iterate over the CROC vector here rather loop over ID's.
-		// TODO - Looping over the vector lets us have id's "out of order" too.
 		if (continueRunning) {
 			for (int i=0; i<no_crocs; i++) {
 				croc_id = i+1;
@@ -840,7 +862,6 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		/*  Re-enable the IRQ for the next trigger.                                       */
 		/**********************************************************************************/
-		// TODO - Take care we are only doing interrrupt *config* on master CRIMs...
 		// Interrupt configuration is already stored in the CRIM objects.
 #if DEBUG_GENERAL
 		mnvdaq.infoStream() << "Re-enabling global IRQ bits...";
@@ -873,7 +894,7 @@ int main(int argc, char *argv[])
 		mnvdaq.debugStream() << "Preparing to contact the EventBuilder from Main...";
 #endif
 		// The soldier node must wait for a "done" signal from the 
-		// worker node before attaching the end-of-event header bank.
+		// worker node before attaching the end-of-gate header bank.
 #if !SINGLEPC   // Soldier Node
 		gate_done[0] = false;
 		//SynchListen(gate_done_socket_connection, gate_done); 
@@ -916,9 +937,10 @@ int main(int argc, char *argv[])
 		PutGlobalGate(++event_data.globalGate);
 #endif
 
-		// Get end of "run" time for end of gate...
-		gettimeofday(&runend, NULL);
-		stopTime = (unsigned long long)(runend.tv_sec);
+		// Get time for end of gate & readout...
+		gettimeofday(&gatend, NULL);
+		stopTime    = (unsigned long long)(gatend.tv_sec);
+		stopReadout = (gatend.tv_sec);
 		// Write the SAM File.
 #if SINGLEPC||MASTER
 		lastEvent = event_data.globalGate - 1; // Fencepost, etc.
@@ -938,11 +960,11 @@ int main(int argc, char *argv[])
 	std::cout << " Last Event = " << lastEvent << std::endl;
 	mnvdaq.infoStream() << "Last Event = " << lastEvent;
 #endif 
-	// Report total run time in awkward units...
+	// Report total run time in awkward units... end of run time == end of last gate time.
 	unsigned long long totalstart = ((unsigned long long)(runstart.tv_sec))*1000000 +
                         (unsigned long long)(runstart.tv_usec);
-	unsigned long long totalend   = ((unsigned long long)(runend.tv_sec))*1000000 +
-                        (unsigned long long)(runend.tv_usec);
+	unsigned long long totalend   = ((unsigned long long)(gatend.tv_sec))*1000000 +
+                        (unsigned long long)(gatend.tv_usec);
 	unsigned long long totaldiff  = totalend - totalstart;
 	printf(" \n\nTotal acquisition time was %llu microseconds.\n\n",totaldiff);
 	mnvdaq.info("Total acquisition time was %llu microseconds.",totaldiff);
@@ -1345,7 +1367,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-02'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-03'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
