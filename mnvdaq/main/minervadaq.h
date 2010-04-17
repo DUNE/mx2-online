@@ -27,12 +27,10 @@ int WriteSAM(const char samfilename[],
 	const std::string datafilename, const int detector, const char configfilename[], 
 	const int runningMode, const int eventCount, const int runNum, const int subNum, 
 	const unsigned long long startTime, const unsigned long long stopTime);
-/*! Synch readout nodes - write */ //TODO - use templated function, return an int!
-void SynchWrite(int socket_handle, unsigned long long data[]);
-void SynchWrite(int socket_handle, bool data[]);
-/*! Synch readout nodes - listen */ //TODO - use templated function, return an int!
-void SynchListen(int socket_connection, unsigned long long data[]); 
-void SynchListen(int socket_connection, bool data[]); 
+/*! Synch readout nodes - write */ //TODO - return an int!
+template <typename Any> void SynchWrite(int socket_handle, Any *data);
+/*! Synch readout nodes - listen */ //TODO - return an int!
+template <typename Any> void SynchListen(int socket_connection, Any *data); 
 
 /* some logging files for debugging purposes */
 #if TIME_ME
