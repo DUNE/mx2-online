@@ -16,8 +16,8 @@
 #include <boost/thread/mutex.hpp>
 #include <ctime>
 #include <sys/time.h>
-#include <sys/stat.h> // for file sizes
-#include <stdlib.h>   // for file sizes
+#include <sys/stat.h> // for file sizes, not actually used... (can't trust answers)
+#include <stdlib.h>   // for file sizes, not actually used...
 
 #define THREAD_COUNT 4  /*!< a thread count var if we aren't finding the # of threads needed */
 #if MASTER||SINGLEPC // Soldier Node
