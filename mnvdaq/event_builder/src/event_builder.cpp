@@ -11,7 +11,12 @@ using namespace std;
 ofstream thread_log("eb_log.txt");
 #endif
 
+const int  adcFrameWarningCount = 600;
+#if !MTEST
 const int  gate_print_freq = 1;
+#else
+const int  gate_print_freq = 1;
+#endif
 static int adcFrameCount   = 0;
 static int discFrameCount  = 0;
 static int fpgaFrameCount  = 0;
@@ -348,31 +353,41 @@ int event_builder(event_handler *evt)
 			switch(evt->triggerType) {
 				case 0:
 					printf("Trigger =  Unknown\n");
+#if !MTEST
 					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
 						adcFrameCount, discFrameCount, fpgaFrameCount); 
+#endif
 					break;
 				case 1:
 					printf("Trigger =  OneShot\n"); 
+#if !MTEST
 					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
 						adcFrameCount, discFrameCount, fpgaFrameCount);
-					if (adcFrameCount > 600) {
+#endif
+					if (adcFrameCount > adcFrameWarningCount) {
 						printf("  WARNING - Excessive number of ADC Frames in a pedestal trigger!\n");
 					} 
 					break;
 				case 2:
 					printf("Trigger = LightInj\n"); 
+#if !MTEST
 					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
 						adcFrameCount, discFrameCount, fpgaFrameCount); 
+#endif
 					break;
 				case 8:
 					printf("Trigger =   Cosmic\n"); 
+#if !MTEST
 					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
 						adcFrameCount, discFrameCount, fpgaFrameCount); 
+#endif
 					break;
 				case 16:
 					printf("Trigger =     NuMI\n"); 
+#if !MTEST
 					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
 						adcFrameCount, discFrameCount, fpgaFrameCount); 
+#endif
 					break;
 				default:
 					printf("Trigger incorrctly set!\n"); 
