@@ -313,100 +313,100 @@ int main(int argc, char *argv[])
 	/*  Basic Socket Configuration for Worker && Soldier Nodes.                      */
 	/*********************************************************************************/
 #if MULTIPC
-	gate_done_port   += (unsigned short)(subRunNumber % 4); 
-	global_gate_port += (unsigned short)(subRunNumber % 4);
-	mnvdaq.infoStream() << "Gate-Done Network Port   = " << gate_done_port;
-	mnvdaq.infoStream() << "Global-Gate Network Port = " << global_gate_port;
+	workerToSoldier_port   += (unsigned short)(subRunNumber % 4); 
+	soldierToWorker_port += (unsigned short)(subRunNumber % 4);
+	mnvdaq.infoStream() << "Gate-Done Network Port   = " << workerToSoldier_port;
+	mnvdaq.infoStream() << "Global-Gate Network Port = " << soldierToWorker_port;
 #endif
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Create a TCP socket.
-	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
-	// Set up the global_gate service.
-	SetupSocketService(global_gate_service, worker_node_info, workerName, global_gate_port ); 
-	// Create an address for the gate_done listener.  The soldier listens for the gate done signal.
-	gate_done_socket_address.s_addr = htonl(INADDR_ANY); 
-	memset (&gate_done_service, 0, sizeof (gate_done_service));
-	gate_done_service.sin_family = AF_INET;
-	gate_done_service.sin_port = htons(gate_done_port); 
-	gate_done_service.sin_addr = gate_done_socket_address;
+	CreateSocketPair(workerToSoldier_socket_handle, soldierToWorker_socket_handle);
+	// Set up the soldierToWorker service.
+	SetupSocketService(soldierToWorker_service, worker_node_info, workerName, soldierToWorker_port ); 
+	// Create an address for the workerToSoldier listener.  The soldier listens for data.
+	workerToSoldier_socket_address.s_addr = htonl(INADDR_ANY); 
+	memset (&workerToSoldier_service, 0, sizeof (workerToSoldier_service));
+	workerToSoldier_service.sin_family = AF_INET;
+	workerToSoldier_service.sin_port = htons(workerToSoldier_port); 
+	workerToSoldier_service.sin_addr = workerToSoldier_socket_address;
 	
 	// Need to allow the socket to be reused.  This prevents "address already in use" 
 	// errors when starting the DAQ again too quickly after the last time it shut down.
 	int optval = 1;
-	setsockopt(gate_done_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+	setsockopt(workerToSoldier_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 	
-	// Bind the gate_done socket to that address for the listener.
-	if ((bind (gate_done_socket_handle, (const sockaddr*)&gate_done_service, 
-			sizeof (gate_done_service)))) {
-		mnvdaq.fatalStream() << "Error binding the gate_done socket!"; 
+	// Bind the workerToSoldier socket to that address for the listener.
+	if ((bind (workerToSoldier_socket_handle, (const sockaddr*)&workerToSoldier_service, 
+			sizeof (workerToSoldier_service)))) {
+		mnvdaq.fatalStream() << "Error binding the workerToSoldier socket!"; 
 		perror ("bind"); exit(EXIT_FAILURE); 
 	} else {
-		mvdaq.infoStream() << "Finished binding the gate_done socket.";
+		mvdaq.infoStream() << "Finished binding the workerToSoldier socket.";
 	}
-	// Enable connection requests on the gate_done socket for the listener.
-	if (listen (gate_done_socket_handle, 10)) { 
-		mnvdaq.fatalStream() << "Error listening on the gate_done socket!"; 
+	// Enable connection requests on the workerToSoldier socket for the listener.
+	if (listen (workerToSoldier_socket_handle, 10)) { 
+		mnvdaq.fatalStream() << "Error listening on the workerToSoldier socket!"; 
 		perror("listen"); exit(EXIT_FAILURE); 
 	} else {
-		mnvdaq.infoStream() << "Enabled listening on the gate_done socket.";
+		mnvdaq.infoStream() << "Enabled listening on the workerToSoldier socket.";
 	}
 #endif // end if MASTER&&(!SINGLEPC)
 
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
-	CreateSocketPair(gate_done_socket_handle, global_gate_socket_handle);
-	// Set up the gate_done service. 
-	SetupSocketService(gate_done_service, soldier_node_info, soldierName, gate_done_port ); 
-	// Create an address for the global_gate listener.  The worker listens for the global gate data.
-	global_gate_socket_address.s_addr = htonl(INADDR_ANY); 
-	memset (&global_gate_service, 0, sizeof (global_gate_service));
-	global_gate_service.sin_family = AF_INET;
-	global_gate_service.sin_port = htons(global_gate_port); 
-	global_gate_service.sin_addr = global_gate_socket_address;
+	CreateSocketPair(workerToSoldier_socket_handle, soldierToWorker_socket_handle);
+	// Set up the workerToSoldier service. 
+	SetupSocketService(workerToSoldier_service, soldier_node_info, soldierName, workerToSoldier_port ); 
+	// Create an address for the soldierToWorker listener.  The worker listens for data.
+	soldierToWorker_socket_address.s_addr = htonl(INADDR_ANY); 
+	memset (&soldierToWorker_service, 0, sizeof (soldierToWorker_service));
+	soldierToWorker_service.sin_family = AF_INET;
+	soldierToWorker_service.sin_port = htons(soldierToWorker_port); 
+	soldierToWorker_service.sin_addr = soldierToWorker_socket_address;
 
 	// Need to allow the socket to be reused.  This prevents "address already in use" 
 	// errors when starting the DAQ again too quickly after the last time it shut down.
 	int optval = 1;
-	setsockopt(global_gate_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+	setsockopt(soldierToWorker_socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
-	// Bind the global_gate socket to that address for the listener.
-	if ((bind (global_gate_socket_handle, (const sockaddr*)&global_gate_service, 
-			sizeof (global_gate_service)))) { 
-		mnvdaq.fatalStream() << "Error binding the global_gate socket!"; 
+	// Bind the soldierToWorker socket to that address for the listener.
+	if ((bind (soldierToWorker_socket_handle, (const sockaddr*)&soldierToWorker_service, 
+			sizeof (soldierToWorker_service)))) { 
+		mnvdaq.fatalStream() << "Error binding the soldierToWorker socket!"; 
 		perror ("bind"); exit(EXIT_FAILURE); 
 	} else {
-		mnvdaq.infoStream() << "Finished binding the global_gate socket.";
+		mnvdaq.infoStream() << "Finished binding the soldierToWorker socket.";
 	}
 	// Enable connection requests on the global socket for the listener.
-	if (listen (global_gate_socket_handle, 10)) { 
-		mnvdaq.fatalStream() << "Error listening on the global_gate socket!"; 
+	if (listen (soldierToWorker_socket_handle, 10)) { 
+		mnvdaq.fatalStream() << "Error listening on the soldierToWorker socket!"; 
 		perror("listen"); exit(EXIT_FAILURE); 
 	} else {
-		mnvdaq.infoStream() << "Enabled listening on the global_gate socket.";
+		mnvdaq.infoStream() << "Enabled listening on the soldierToWorker socket.";
 	}
 #endif // end if (!MASTER)&&(!SINGLEPC)
 
 
-	// Client-server connect - gate_done. 
-	gate_done_socket_is_live = false;
+	// Client-server connect - workerToSoldier. 
+	workerToSoldier_socket_is_live = false;
 #if MASTER&&(!SINGLEPC) // Soldier Node
-	std::cout << "\nPreparing make new server connection for gate_done synchronization...\n";
-	mnvdaq.infoStream() << "Preparing make new server connection for gate_done synchronization...";
-	mnvdaq.infoStream() << " gate_done_socket_is_live = " << gate_done_socket_is_live; 
+	std::cout << "\nPreparing make new server connection for workerToSoldier synchronization...\n";
+	mnvdaq.infoStream() << "Preparing make new server connection for workerToSoldier synchronization...";
+	mnvdaq.infoStream() << " workerToSoldier_socket_is_live = " << workerToSoldier_socket_is_live; 
 	// Accept connection from worker node to supply end of event signalling.
-	while (!gate_done_socket_is_live) {
+	while (!workerToSoldier_socket_is_live) {
 		std::cout << " Waiting for worker node...\n";
-		std::cout << " Ready to connect to gate_done_socket_handle: " << 
-			gate_done_socket_handle << std::endl;
+		std::cout << " Ready to connect to workerToSoldier_socket_handle: " << 
+			workerToSoldier_socket_handle << std::endl;
 		mnvdaq.infoStream() << " Waiting for worker node...";
-		mnvdaq.infoStream() << " Ready to connect to gate_done_socket_handle: " << 
-			gate_done_socket_handle;
+		mnvdaq.infoStream() << " Ready to connect to workerToSoldier_socket_handle: " << 
+			workerToSoldier_socket_handle;
 		struct sockaddr_in remote_address;
 		socklen_t address_length;
 		address_length = sizeof (remote_address);
 		// Accept will wait for a connection...
-		gate_done_socket_connection = 
-			accept(gate_done_socket_handle, (sockaddr*)&remote_address, &address_length);
-		if (gate_done_socket_connection == -1) {
+		workerToSoldier_socket_connection = 
+			accept(workerToSoldier_socket_handle, (sockaddr*)&remote_address, &address_length);
+		if (workerToSoldier_socket_connection == -1) {
 			// The call to accept failed. 
 			if (errno == EINTR) {
 				// The call was interrupted by a signal. Try again.
@@ -418,56 +418,56 @@ int main(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 		}
-		gate_done_socket_is_live = true;
-	} // end while !gate_done_socket_is_live
-	std::cout << " ->Connection complete at " << gate_done_socket_connection << 
-		" with live status = " << gate_done_socket_is_live << "\n";
-	mnvdaq.infoStream() << " ->Connection complete at " << gate_done_socket_connection << 
-		" with live status = " << gate_done_socket_is_live;
+		workerToSoldier_socket_is_live = true;
+	} // end while !workerToSoldier_socket_is_live
+	std::cout << " ->Connection complete at " << workerToSoldier_socket_connection << 
+		" with live status = " << workerToSoldier_socket_is_live << "\n";
+	mnvdaq.infoStream() << " ->Connection complete at " << workerToSoldier_socket_connection << 
+		" with live status = " << workerToSoldier_socket_is_live;
 #endif // end if MASTER&&(!SINGLEPC)
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	// Initiate connection with "server" (soldier node).  Connect waits for a server response.
-	if (connect(gate_done_socket_handle, (struct sockaddr*) &gate_done_service, 
+	if (connect(workerToSoldier_socket_handle, (struct sockaddr*) &workerToSoldier_service, 
 			sizeof (struct sockaddr_in)) == -1) { 
-		mnvdaq.fatalStream() << "Error in gate_done connect!";
+		mnvdaq.fatalStream() << "Error in workerToSoldier connect!";
 		perror ("connect"); exit(EXIT_FAILURE); 
 	}
-	std::cout << " ->Returned from connect to gate_done!\n";
-	mnvdaq.infoStream() << " ->Returned from connect to gate_done!";
+	std::cout << " ->Returned from connect to workerToSoldier!\n";
+	mnvdaq.infoStream() << " ->Returned from connect to workerToSoldier!";
 #endif // end if (!MASTER)&&(!SINGLEPC)
 
 	
-	// Client-server connect - global_gate. 
-	global_gate_socket_is_live = false;
+	// Client-server connect - soldierToWorker. 
+	soldierToWorker_socket_is_live = false;
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Initiate connection with "server" (worker node).  Connect waits for a server response.
-	if (connect(global_gate_socket_handle, (struct sockaddr*) &global_gate_service, 
+	if (connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
 			sizeof (struct sockaddr_in)) == -1) { 
-		mnvdaq.fatalStream() << "Error in global_gate connect!";
+		mnvdaq.fatalStream() << "Error in soldierToWorker connect!";
 		perror ("connect"); exit(EXIT_FAILURE); 
 	}
-	std::cout << " ->Returned from connect to global_gate!\n\n";
-	mnvdaq.infoStream() << " ->Returned from connect to global_gate!";
+	std::cout << " ->Returned from connect to soldierToWorker!\n\n";
+	mnvdaq.infoStream() << " ->Returned from connect to soldierToWorker!";
 #endif // end if MASTER&&(!SINGLEPC)
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
-	std::cout << "\nPreparing make new server connection for global_gate synchronization...\n";
-	mnvdaq.infoStream() << "Preparing make new server connection for global_gate synchronization...";
-	mnvdaq.infoStream() << " global_gate_socket_is_live = " << global_gate_socket_is_live; 
+	std::cout << "\nPreparing make new server connection for soldierToWorker synchronization...\n";
+	mnvdaq.infoStream() << "Preparing make new server connection for soldierToWorker synchronization...";
+	mnvdaq.infoStream() << " soldierToWorker_socket_is_live = " << soldierToWorker_socket_is_live; 
 	// Accept connection from worker node to supply global gate signalling.
-	while (!global_gate_socket_is_live) {
+	while (!soldierToWorker_socket_is_live) {
 		std::cout << " Waiting for soldier node...\n";
-		std::cout << " Ready to connect to global_gate_socket_handle: " << 
-			global_gate_socket_handle << std::endl;
+		std::cout << " Ready to connect to soldierToWorker_socket_handle: " << 
+			soldierToWorker_socket_handle << std::endl;
 		mnvdaq.infoStream() << " Waiting for soldier node...";
-		mnvdaq.infoStream() << " Ready to connect to global_gate_socket_handle: " << 
-			global_gate_socket_handle;
+		mnvdaq.infoStream() << " Ready to connect to soldierToWorker_socket_handle: " << 
+			soldierToWorker_socket_handle;
 		struct sockaddr_in remote_address;
 		socklen_t address_length;
 		address_length = sizeof (remote_address);
 		// Accept will wait for a connection...
-		global_gate_socket_connection = 
-			accept(global_gate_socket_handle, (sockaddr*)&remote_address, &address_length);
-		if (global_gate_socket_connection == -1) {
+		soldierToWorker_socket_connection = 
+			accept(soldierToWorker_socket_handle, (sockaddr*)&remote_address, &address_length);
+		if (soldierToWorker_socket_connection == -1) {
 			// The call to accept failed. 
 			if (errno == EINTR) {
 				// The call was interrupted by a signal. Try again.
@@ -479,12 +479,12 @@ int main(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 		}
-		global_gate_socket_is_live = true;
-	} // end while !global_gate_socket_is_live
-	std::cout << " ->Connection complete at " << global_gate_socket_connection << 
-		" with live status = " << global_gate_socket_is_live << "\n\n";
-	mnvdaq.infoStream() << " ->Connection complete at " << global_gate_socket_connection << 
-		" with live status = " << global_gate_socket_is_live;
+		soldierToWorker_socket_is_live = true;
+	} // end while !soldierToWorker_socket_is_live
+	std::cout << " ->Connection complete at " << soldierToWorker_socket_connection << 
+		" with live status = " << soldierToWorker_socket_is_live << "\n\n";
+	mnvdaq.infoStream() << " ->Connection complete at " << soldierToWorker_socket_connection << 
+		" with live status = " << soldierToWorker_socket_is_live;
 #endif // end if (!MASTER)&&(!SINGLEPC)
 
 
@@ -591,9 +591,9 @@ int main(int argc, char *argv[])
 		// soldier-worker global gate data synchronization.
 #if MASTER&&(!SINGLEPC) // Soldier Node
 		//SynchWrite(global_gate_socket_handle, global_gate_data);  
-		if (write(global_gate_socket_handle,global_gate_data,sizeof(global_gate_data)) == -1) {	 
-			mnvdaq.fatalStream() << "socket write error: global_gate!";	 
-			perror("write error: global_gate");	 
+		if (write(soldierToWorker_socket_handle,global_gate_data,sizeof(global_gate_data)) == -1) {	 
+			mnvdaq.fatalStream() << "socket write error: global_gate_data!";	 
+			perror("write error: global_gate_data");	 
 			exit(EXIT_FAILURE);	 
 		}
 #endif
@@ -601,11 +601,11 @@ int main(int argc, char *argv[])
 		//SynchListen(global_gate_socket_connection, global_gate_data);
 		while (!global_gate_data[0]) {	 
 			// Read global gate data from the worker node	 
-			int read_val = read(global_gate_socket_connection,global_gate_data,sizeof(global_gate_data));	 
+			int read_val = read(soldierToWorker_socket_connection,global_gate_data,sizeof(global_gate_data));	 
 			if ( read_val != sizeof(global_gate_data) ) {	 
-				mnvdaq.fatalStream() << "server read error: cannot get global_gate!";
+				mnvdaq.fatalStream() << "server read error: cannot get global_gate_data!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
-				perror("server read error: done");	 
+				perror("server read error: global_gate_data");	 
 				exit(EXIT_FAILURE);	 
 			}
 		}
@@ -896,13 +896,13 @@ int main(int argc, char *argv[])
 		// The soldier node must wait for a "done" signal from the 
 		// worker node before attaching the end-of-gate header bank.
 #if !SINGLEPC   // Soldier Node
-		gate_done[0] = false;
+		gate_done_data[0] = false;
 		//SynchListen(gate_done_socket_connection, gate_done); 
-		while (!gate_done[0]) {	 
+		while (!gate_done_data[0]) {	 
 			// Read "done" from the worker node	 
-			if ((read(gate_done_socket_connection, gate_done, sizeof (gate_done)))!=sizeof(gate_done)) {	 
-				mnvdaq.fatalStream() << "server read error: cannot get gate_done!";	 
-				perror("server read error: gate_done");	 
+			if ((read(workerToSoldier_socket_connection, gate_done_data, sizeof (gate_done_data)))!=sizeof(gate_done_data)) {	 
+				mnvdaq.fatalStream() << "server read error: cannot get gate_done_data!";	 
+				perror("server read error: gate_done_data");	 
 				exit(EXIT_FAILURE);	 
 			}
 		}		
@@ -923,11 +923,11 @@ int main(int argc, char *argv[])
 #endif // end if SINGLEPC || MASTER
 
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
-		gate_done[0]=true;
+		gate_done_data[0]=true;
 		//SynchWrite(gate_done_socket_handle, gate_done);
-		if (write(gate_done_socket_handle,gate_done,sizeof(gate_done)) == -1) {	           
-			mnvdaq.fatalStream() << "server write error: cannot put gate_done!";	 
-			perror("server write error: gate_done");	 
+		if (write(workerToSoldier_socket_handle,gate_done_data,sizeof(gate_done_data)) == -1) {	           
+			mnvdaq.fatalStream() << "server write error: cannot put gate_done_data!";	 
+			perror("server write error: gate_done_data");	 
 			exit(EXIT_FAILURE);	 
 		}
 #endif 
@@ -952,8 +952,8 @@ int main(int argc, char *argv[])
 
 	// Close sockets for multi-PC synchronization.
 #if !SINGLEPC
-	close(gate_done_socket_handle);
-	close(global_gate_socket_handle);
+	close(workerToSoldier_socket_handle);
+	close(soldierToWorker_socket_handle);
 #endif
 	// Report end of subrun...
 #if SINGLEPC||MASTER // Single PC or Soldier Node
@@ -1285,29 +1285,29 @@ void PutGlobalGate(int ggate)
 }
 
 
-void CreateSocketPair(int &gate_done_socket_handle, int &global_gate_socket_handle )
+void CreateSocketPair(int &workerToSoldier_socket_handle, int &soldierToWorker_socket_handle )
 {
-/*! \fn void CreateSocketPair(int &gate_done_socket_handle, int &global_gate_socket_handle )
+/*! \fn void CreateSocketPair(int &workerToSoldier_socket_handle, int &soldierToWorker_socket_handle )
  * 
  * This function creates a pair of sockets for gate synchronization between a pair of MINERvA 
  * DAQ nodes.
  */
-	gate_done_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
-	global_gate_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
-	if (gate_done_socket_handle == -1) { 
+	workerToSoldier_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
+	soldierToWorker_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
+	if (workerToSoldier_socket_handle == -1) { 
 		perror("socket"); 
-		mnvdaq.fatalStream() << "gate_done_socket_handle == -1!";
+		mnvdaq.fatalStream() << "workerToSoldier_socket_handle == -1!";
 		exit(EXIT_FAILURE); 
 	}
-	if (global_gate_socket_handle == -1) { 
+	if (soldierToWorker_socket_handle == -1) { 
 		perror("socket"); 
-		mnvdaq.fatalStream() << "global_gate_socket_handle == -1!";
+		mnvdaq.fatalStream() << "soldierToWorker_socket_handle == -1!";
 		exit(EXIT_FAILURE); 
 	}
-	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC gate_done_socket_handle  : " <<
-		gate_done_socket_handle;
-	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC global_gate_socket_handle: " <<
-		global_gate_socket_handle;
+	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC workerToSoldier_socket_handle  : " <<
+		workerToSoldier_socket_handle;
+	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC soldierToWorker_socket_handle: " <<
+		soldierToWorker_socket_handle;
 }
 
 
@@ -1367,7 +1367,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-03'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-04'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -1442,7 +1442,7 @@ int WriteSAM(const char samfilename[],
 }
 
 
-void SynchWrite(int socket_handle, unsigned long long data[])
+template <typename Any> void SynchWrite(int socket_handle, Any data[])
 {
 #if DEBUG_SOCKETS
 	mnvdaq.debugStream() << " Entering SynchWrite for handle " << socket_handle << " and data " << data[0];
@@ -1458,23 +1458,7 @@ void SynchWrite(int socket_handle, unsigned long long data[])
 }
 
 
-void SynchWrite(int socket_handle, bool data[])
-{
-#if DEBUG_SOCKETS
-	mnvdaq.debugStream() << " Entering SynchWrite for handle " << socket_handle << " and data " << data[0];
-#endif
-	if (write(socket_handle,data,sizeof(data)) == -1) {
-		mnvdaq.fatalStream() << "socket write error: SynchWrite!";
-		perror("write error");
-		exit(EXIT_FAILURE);
-	}       
-#if DEBUG_SOCKETS
-	mnvdaq.debugStream() << " Finished SynchWrite.";
-#endif
-}
-
-
-void SynchListen(int socket_connection, unsigned long long data[])
+template <typename Any> void SynchListen(int socket_connection, Any data[])
 {
 #if DEBUG_SOCKETS
 	mnvdaq.debugStream() << " Reading data in SynchListen...";
@@ -1491,26 +1475,5 @@ void SynchListen(int socket_connection, unsigned long long data[])
 #endif
 	}
 }
-
-
-void SynchListen(int socket_connection, bool data[])
-{
-#if DEBUG_SOCKETS
-	mnvdaq.debugStream() << " Reading data in SynchListen...";
-#endif          
-	while (!data[0]) { 
-		int read_val = read(socket_connection, data, sizeof(data));
-		if ( read_val != sizeof(data) ) {
-			mnvdaq.fatalStream() << "Server read error in SynchListen!";
-			perror("server read error: done");
-			exit(EXIT_FAILURE);
-		}
-#if DEBUG_SOCKETS
-		mnvdaq.debugStream() << "  ->After read, new data: " << data[0];
-#endif
-	}
-}
-
-
 
 
