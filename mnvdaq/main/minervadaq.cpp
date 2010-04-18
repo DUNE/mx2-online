@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	string log_filename      = "/work/data/logs/testme_Log.txt"; 
 	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme_SAM.py");
 	char data_filename[100]; sprintf(data_filename,"/work/data/sam/testme_RawData.dat");
-	unsigned long long firstEvent, lastEvent;
+	unsigned long long firstEvent, lastEvent;  //unused in main...
 	int networkPort          = 1091; // 1091-1096 (inclusive) currently open.
 	int controllerErrCode;
 	string str_controllerID  = "0";
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	et_att_id      attach;
 	et_sys_id      sys_id;
-	et_id          *id;  // Unused in main?
+	//et_id          *id;  // Unused in main?
 	et_openconfig  openconfig;
 
 	// Configuring the ET system is the first thing we must do.
@@ -521,10 +521,9 @@ int main(int argc, char *argv[])
 	// Set initial start & stop readout times.
 	startReadout = stopReadout  = (runstart.tv_sec);
 #if SINGLEPC||MASTER // Single PC or Soldier Node
-	global_gate_data[0] = GetGlobalGate();
-	std::cout << "Opened Event Log, First Event = " << global_gate_data[0] << std::endl;
-	mnvdaq.infoStream() << "Opened Event Log, First Event = " << global_gate_data[0];
-	firstEvent = global_gate_data[0];
+	firstEvent = GetGlobalGate();
+	std::cout << "Opened Event Log, First Event = " << firstEvent << std::endl;
+	mnvdaq.infoStream() << "Opened Event Log, First Event = " << firstEvent;
 #endif
 
 	/*********************************************************************************/
@@ -557,7 +556,7 @@ int main(int argc, char *argv[])
 		gettimeofday(&gate_start_time, NULL);
 #endif
 #if DEBUG_GENERAL
-		mnvdaq.debugStream() << "->Top of the Event Loop, starting Gate: " << gate;
+		mnvdaq.debugStream() << "->Top of the Event Loop, starting Gate: " << gate+1;
 #endif
 		if (!((gate+1)%100)) { std::cout << "   Acquiring Gate: " << gate+1 << std::endl; }
 		if (!((gate+1)%10)) { mnvdaq.infoStream() << "   Acquiring Gate: " << gate+1; }
@@ -578,39 +577,14 @@ int main(int argc, char *argv[])
 			event_data.feb_info[i] = 0; // Initialize the FEB information block. 
 		}
 #if SINGLEPC||MASTER // Single PC or Soldier Node
-		global_gate_data[0] = GetGlobalGate();
+		event_data.globalGate = GetGlobalGate();
 #if DEBUG_GENERAL
-		mnvdaq.debugStream() << "    Global Gate: " << global_gate_data[0];
+		mnvdaq.debugStream() << "    Global Gate: " << event_data.globalGate;
 #endif
-		event_data.globalGate = global_gate_data[0];
-#endif // end if SINGLEPC||((!MASTER)&&(!SINGLEPC))
+#endif // end if SINGLEPC||MASTER
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
-		event_data.globalGate = global_gate_data[0] = 0;
+		event_data.globalGate = 0; // Don't care, don't use this...
 #endif
-
-		// soldier-worker global gate data synchronization.
-#if MASTER&&(!SINGLEPC) // Soldier Node
-		//SynchWrite(global_gate_socket_handle, global_gate_data);  
-		if (write(soldierToWorker_socket_handle,global_gate_data,sizeof(global_gate_data)) == -1) {	 
-			mnvdaq.fatalStream() << "socket write error: global_gate_data!";	 
-			perror("write error: global_gate_data");	 
-			exit(EXIT_FAILURE);	 
-		}
-#endif
-#if (!MASTER)&&(!SINGLEPC) // Worker Node
-		//SynchListen(global_gate_socket_connection, global_gate_data);
-		while (!global_gate_data[0]) {	 
-			// Read global gate data from the worker node	 
-			int read_val = read(soldierToWorker_socket_connection,global_gate_data,sizeof(global_gate_data));	 
-			if ( read_val != sizeof(global_gate_data) ) {	 
-				mnvdaq.fatalStream() << "server read error: cannot get global_gate_data!";
-				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
-				perror("server read error: global_gate_data");	 
-				exit(EXIT_FAILURE);	 
-			}
-		}
-		event_data.globalGate = global_gate_data[0];
-#endif 
 
 		// Set the data_ready flag to false, we have not yet taken any data.
 		data_ready = false; 
@@ -651,9 +625,9 @@ int main(int argc, char *argv[])
 		// Convert to int should be okay - we only care about the least few significant bits.
 		int readoutTimeDiff = (int)stopReadout - (int)startReadout; // stop updated at end of readout.
 #if DEBUG_MIXEDMODE
-		mnvdaq.debugStream() << "stopReadout time  = " << stopReadout;
+		mnvdaq.debugStream() << "stopReadout  time = " << stopReadout;
 		mnvdaq.debugStream() << "startReadout time = " << startReadout;
-		mnvdaq.debugStream() << " time diff        = " << readoutTimeDiff;
+		mnvdaq.debugStream() << "        time diff = " << readoutTimeDiff;
 #endif
 		switch (runningMode) {
 			case OneShot:
@@ -685,10 +659,10 @@ int main(int argc, char *argv[])
 				triggerType = LightInjection;
 				break;
 			case MixedBeamPedestal:
-				if (triggerCounter%2) { // Start with NuMI!
+				if (triggerCounter%2) { // ALWAYS start with NuMI!
 					triggerType = NuMI;
 				} else {
-					if ( readoutTimeDiff < 1 ) {
+					if ( readoutTimeDiff < 1 ) { // LESS than 1
 						triggerType = Pedestal;
 						readFPGA    = false;
 #if DEBUG_MIXEDMODE
@@ -704,10 +678,10 @@ int main(int argc, char *argv[])
 #endif
 				break;
 			case MixedBeamLightInjection:
-				if (triggerCounter%2) { // Start with NuMI!
+				if (triggerCounter%2) { // ALWAYS start with NuMI!
 					triggerType = NuMI;
 				} else {
-					if ( readoutTimeDiff < 1 ) {	
+					if ( readoutTimeDiff < 1 ) { // LESS than 1
 						triggerType = LightInjection;
 						nReadoutADC = 1; // Deepest only.
 #if DEBUG_MIXEDMODE
@@ -727,7 +701,74 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "Improper Running Mode = " << runningMode;
 				exit(-4);
 		}
-		event_data.triggerType = triggerType;
+		event_data.triggerType  = triggerType;
+		soldierToWorker_trig[0] = (unsigned short int)0;
+		workerToSoldier_trig[0] = (unsigned short int)0;
+
+		// Synchronize trigger types. TODO - test synch write & listen functions w/ return values...
+		//SynchWrite(soldierToWorker_socket_handle, soldierToWorker_trig);  
+		//SynchListen(soldierToWorker_socket_connection, soldierToWorker_trig);
+#if MASTER&&(!SINGLEPC) // Soldier Node
+		soldierToWorker_trig[0] = triggerType;
+		// Write trigger type to the worker node	 
+		if (write(soldierToWorker_socket_handle,soldierToWorker_trig,sizeof(soldierToWorker_trig)) == -1) {	 
+			mnvdaq.fatalStream() << "socket write error: soldierToWorker_trig!";	 
+			perror("write error: soldierToWorker_trig");	 
+			exit(EXIT_FAILURE);	 
+		}
+#endif
+#if (!MASTER)&&(!SINGLEPC) // Worker Node
+		// Read trigger type from the soldier node	 
+		while (!soldierToWorker_trig[0]) {	 
+			int read_val = read(soldierToWorker_socket_connection,soldierToWorker_trig,sizeof(soldierToWorker_trig));	 
+			if ( read_val != sizeof(soldierToWorker_trig) ) {	 
+				mnvdaq.fatalStream() << "server read error: cannot get soldierToWorker_trig!";
+				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
+				perror("server read error: soldierToWorker_trig");	 
+				exit(EXIT_FAILURE);	 
+			}
+		}
+#if DEBUG_SOCKETS
+		mnvdaq.debugStream() << "Got the trigger type = " << soldierToWorker_trig[0];
+#endif 
+#endif
+#if (!MASTER)&&(!SINGLEPC) // Worker Node
+		workerToSoldier_trig[0] = triggerType;
+		// Write trigger type to the soldier node	 
+		if (write(workerToSoldier_socket_handle,workerToSoldier_trig,sizeof(workerToSoldier_trig)) == -1) {	 
+			mnvdaq.fatalStream() << "socket write error: workerToSoldier_trig!";	 
+			perror("write error: workerToSoldier_trig");	 
+			exit(EXIT_FAILURE);	 
+		}
+#endif
+#if MASTER&&(!SINGLEPC) // Soldier Node
+		// Read trigger type from the worker node	 
+		while (!workerToSoldier_trig[0]) {	 
+			int read_val = read(workerToSoldier_socket_connection,workerToSoldier_trig,sizeof(workerToSoldier_trig));	 
+			if ( read_val != sizeof(workerToSoldier_trig) ) {	 
+				mnvdaq.fatalStream() << "server read error: cannot get workerToSoldier_trig!";
+				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
+				perror("server read error: workerToSoldier_trig");	 
+				exit(EXIT_FAILURE);	 
+			}
+		}
+#if DEBUG_SOCKETS
+		mnvdaq.debugStream() << "Got the trigger type = " << workerToSoldier_trig[0];
+#endif 
+#endif
+#if MASTER&&(!SINGLEPC) // Soldier Node
+		if (event_data.triggerType != workerToSoldier_trig[0]) {
+			mnvdaq.warnStream() << "Trigger type disagreement between nodes!  Aborting this trigger!";
+			continue;  // Go to beginning of gate loop.
+		} 
+#endif
+#if (!MASTER)&&(!SINGLEPC) // Worker Node
+		if (event_data.triggerType != soldierToWorker_trig[0]) {
+			mnvdaq.warnStream() << "Trigger type disagreement between nodes!  Aborting this trigger!";
+			continue;  // Go to beginning of gate loop.
+		} 
+#endif
+
 #if THREAD_ME
 		// Careul about arguments with the threaded functions!  They are not exercised regularly.
 		// TODO - find how to make boost thread functions return values.
@@ -883,7 +924,77 @@ int main(int argc, char *argv[])
 			}
 		}
 
-#if SINGLEPC||MASTER // Soldier Node
+		// The soldier node must wait for a "done" signal from the worker node before attaching 
+		// the end-of-gate header bank.  We will use a cross-check on the gate value to be sure 
+		// the nodes are aligned. TODO - test synch write & listen functions w/ return values... 
+		soldierToWorker_gate[0] = 0;
+		workerToSoldier_gate[0] = 0;
+#if MASTER&&(!SINGLEPC) // Soldier Node
+		soldierToWorker_gate[0] = gate;
+		// Write gate to the worker node	 
+		if (write(soldierToWorker_socket_handle,soldierToWorker_gate,sizeof(soldierToWorker_gate)) == -1) {	 
+			mnvdaq.fatalStream() << "socket write error: soldierToWorker_gate!";	 
+			perror("write error: soldierToWorker_gate");	 
+			exit(EXIT_FAILURE);	 
+		}
+#endif
+#if (!MASTER)&&(!SINGLEPC) // Worker Node
+		// Read the gate from the soldier node	 
+		while (!soldierToWorker_gate[0]) {	 
+			int read_val = read(soldierToWorker_socket_connection,soldierToWorker_gate,sizeof(soldierToWorker_gate));	 
+			if ( read_val != sizeof(soldierToWorker_gate) ) {	 
+				mnvdaq.fatalStream() << "server read error: cannot get soldierToWorker_gate!";
+				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
+				perror("server read error: soldierToWorker_gate");	 
+				exit(EXIT_FAILURE);	 
+			}
+		}
+#if DEBUG_SOCKETS
+		mnvdaq.debugStream() << "Got the gate value = " << soldierToWorker_gate[0];
+#endif 
+#endif
+#if (!MASTER)&&(!SINGLEPC) // Worker Node
+		workerToSoldier_gate[0] = gate;
+		// Write gate to the soldier node	 
+		if (write(workerToSoldier_socket_handle,workerToSoldier_gate,sizeof(workerToSoldier_gate)) == -1) {	 
+			mnvdaq.fatalStream() << "socket write error: workerToSoldier_gate!";	 
+			perror("write error: workerToSoldier_gate");	 
+			exit(EXIT_FAILURE);	 
+		}
+#endif
+#if MASTER&&(!SINGLEPC) // Soldier Node
+		// Read the gate from the worker node	 
+		while (!workerToSoldier_gate[0]) {	 
+			int read_val = read(workerToSoldier_socket_connection,workerToSoldier_gate,sizeof(workerToSoldier_gate));	 
+			if ( read_val != sizeof(workerToSoldier_gate) ) {	 
+				mnvdaq.fatalStream() << "server read error: cannot get workerToSoldier_gate!";
+				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
+				perror("server read error: workerToSoldier_gate");	 
+				exit(EXIT_FAILURE);	 
+			}
+		}
+#if DEBUG_SOCKETS
+		mnvdaq.debugStream() << "Got the gate value = " << workerToSoldier_gate[0];
+#endif 
+#endif
+#if MASTER&&(!SINGLEPC) // Soldier Node
+		if (gate != workerToSoldier_gate[0]) {
+			mnvdaq.fatalStream() << "Gate number disagreement between nodes!  Aborting this subrun!";
+			break;  // Exit the gate loop.
+		} 
+#endif
+#if (!MASTER)&&(!SINGLEPC) // Worker Node
+		if (gate != soldierToWorker_gate[0]) {
+			mnvdaq.fatalStream() << "Gate disagreement between nodes!  Aborting this subrun!";
+			break;  // Exit the gate loop.
+		} 
+#endif
+
+		// Get time for end of gate & readout...
+		gettimeofday(&gatend, NULL);
+		stopTime    = (unsigned long long)(gatend.tv_sec);
+		stopReadout = (gatend.tv_sec);
+#if SINGLEPC||MASTER // Soldier Node or Singleton
 		/*************************************************************************************/
 		/* Write the End-of-Event Record to the event_handler and then to the event builder. */
 		/*************************************************************************************/
@@ -892,27 +1003,11 @@ int main(int argc, char *argv[])
 		event_data.feb_info[1] = daq->GetController()->GetID();
 		event_data.feb_info[4] = bank; 
 		event_data.minosSGATE  = daq->GetMINOSSGATE();
-
 #if DEBUG_GENERAL
-		mnvdaq.debugStream() << "Preparing to contact the EventBuilder from Main...";
-#endif
-		// The soldier node must wait for a "done" signal from the 
-		// worker node before attaching the end-of-gate header bank.
-#if !SINGLEPC   // Soldier Node
-		gate_done_data[0] = false;
-		//SynchListen(gate_done_socket_connection, gate_done); 
-		while (!gate_done_data[0]) {	 
-			// Read "done" from the worker node	 
-			if ((read(workerToSoldier_socket_connection, gate_done_data, sizeof (gate_done_data)))!=sizeof(gate_done_data)) {	 
-				mnvdaq.fatalStream() << "server read error: cannot get gate_done_data!";	 
-				perror("server read error: gate_done_data");	 
-				exit(EXIT_FAILURE);	 
-			}
-		}		
+		mnvdaq.debugStream() << "Contact the EventBuilder from Main...";
 #endif
 		// Contact event builder service.
 		daq->ContactEventBuilder(&event_data, -1, attach, sys_id);
-
 #if TIME_ME
 		gettimeofday(&gate_stop_time,NULL);
 		double duration = (gate_stop_time.tv_sec*1e6+gate_stop_time.tv_usec) - 
@@ -923,29 +1018,9 @@ int main(int argc, char *argv[])
 				" Run Time: " << (duration/1e6) << std::endl;
 		}
 #endif
-#endif // end if SINGLEPC || MASTER
-
-#if (!MASTER)&&(!SINGLEPC) // Worker Node
-		gate_done_data[0]=true;
-		//SynchWrite(gate_done_socket_handle, gate_done);
-		if (write(workerToSoldier_socket_handle,gate_done_data,sizeof(gate_done_data)) == -1) {	           
-			mnvdaq.fatalStream() << "server write error: cannot put gate_done_data!";	 
-			perror("server write error: gate_done_data");	 
-			exit(EXIT_FAILURE);	 
-		}
-#endif 
-
-#if SINGLEPC||(MASTER&&(!SINGLEPC)) // Single PC or Soldier Node
 		// Increment the Global Gate value and log it.
 		PutGlobalGate(++event_data.globalGate);
-#endif
-
-		// Get time for end of gate & readout...
-		gettimeofday(&gatend, NULL);
-		stopTime    = (unsigned long long)(gatend.tv_sec);
-		stopReadout = (gatend.tv_sec);
 		// Write the SAM File.
-#if SINGLEPC||MASTER
 		lastEvent = event_data.globalGate - 1; // Fencepost, etc.
 		WriteSAM(sam_filename, firstEvent, lastEvent, fileroot,  
 			detector, config_filename, runningMode, gate, runNumber, subRunNumber,
@@ -1295,7 +1370,7 @@ void CreateSocketPair(int &workerToSoldier_socket_handle, int &soldierToWorker_s
  * This function creates a pair of sockets for gate synchronization between a pair of MINERvA 
  * DAQ nodes.
  */
-	workerToSoldier_socket_handle   = socket (PF_INET, SOCK_STREAM, 0);
+	workerToSoldier_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 	soldierToWorker_socket_handle = socket (PF_INET, SOCK_STREAM, 0);
 	if (workerToSoldier_socket_handle == -1) { 
 		perror("socket"); 
@@ -1307,7 +1382,7 @@ void CreateSocketPair(int &workerToSoldier_socket_handle, int &soldierToWorker_s
 		mnvdaq.fatalStream() << "soldierToWorker_socket_handle == -1!";
 		exit(EXIT_FAILURE); 
 	}
-	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC workerToSoldier_socket_handle  : " <<
+	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC workerToSoldier_socket_handle: " <<
 		workerToSoldier_socket_handle;
 	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC soldierToWorker_socket_handle: " <<
 		soldierToWorker_socket_handle;
@@ -1370,7 +1445,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-05-05'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-06-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
