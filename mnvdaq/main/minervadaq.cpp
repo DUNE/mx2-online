@@ -550,6 +550,9 @@ int main(int argc, char *argv[])
 	bool continueRunning = true;
 	while ( (gate<record_gates) && continueRunning ) {
 		triggerCounter++; // Not a gate counter - this updates trigger type in mixed mode.
+#if DEBUG_GENERAL
+		mnvdaq.debugStream() << "triggerCounter = " << triggerCounter;
+#endif
 		//continueRunning = true; //reset? TODO - fix
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
@@ -1445,7 +1448,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-06-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-06-01'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
