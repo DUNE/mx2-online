@@ -72,8 +72,8 @@ int main(int argc, char *argv[])
 	str_controllerID  = "1";
 	controllerErrCode = 4;
 #endif
-	unsigned long long startTime, stopTime;        // For SAM.  Done at second & microsecond-level precision.
-	unsigned int       startReadout, stopReadout;  // For gate monitoring.  Done at second-level precision.
+	unsigned long long startTime, stopTime;        // For SAM.  Done at second & microsecond precision.
+	unsigned long long startReadout, stopReadout;  // For gate monitoring.  Done at microsecond precision.
 
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
@@ -515,11 +515,12 @@ int main(int argc, char *argv[])
 	mnvdaq.infoStream() << "Returned from electronics initialization.";
 
 	// Start to setup vars for SAM metadata.
-	struct timeval runstart, gatend, gatestart;
+	struct timeval runstart, readend, readstart;
 	gettimeofday(&runstart, NULL);
 	startTime = (unsigned long long)(runstart.tv_sec);
 	// Set initial start & stop readout times.
-	startReadout = stopReadout  = (runstart.tv_sec);
+	startReadout = stopReadout  = (unsigned long long)(runstart.tv_sec*1000000) 
+		+ (unsigned long long)(runstart.tv_usec);
 #if SINGLEPC||MASTER // Single PC or Soldier Node
 	firstEvent = GetGlobalGate();
 	std::cout << "Opened Event Log, First Event = " << firstEvent << std::endl;
@@ -600,11 +601,16 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		/* Trigger the DAQ, threaded or unthreaded.                                       */
 		/**********************************************************************************/
-		gettimeofday(&gatestart, NULL);
-		startReadout = (gatestart.tv_sec);
 		unsigned short int triggerType;
 		readFPGA    = true; // default to reading the FPGA programming registers
 		nReadoutADC = 8;    // default to maximum possible
+		// Convert to int should be okay - we only care about the least few significant bits.
+		int readoutTimeDiff = (int)stopReadout - (int)startReadout; // stop updated at end of LAST gate.
+#if DEBUG_MIXEDMODE
+		mnvdaq.debugStream() << "stopReadout  time = " << stopReadout;
+		mnvdaq.debugStream() << "startReadout time = " << startReadout;
+		mnvdaq.debugStream() << "        time diff = " << readoutTimeDiff;
+#endif
 #if MTEST
 		// We need to reset the external trigger latch for v85 (cosmic) FEB firmware.
 		for (croc_iter = croc_vector->begin(); croc_iter != croc_vector->end(); croc_iter++) {
@@ -624,13 +630,6 @@ int main(int argc, char *argv[])
 				exit(e);
 			}
 		}
-#endif
-		// Convert to int should be okay - we only care about the least few significant bits.
-		int readoutTimeDiff = (int)stopReadout - (int)startReadout; // stop updated at end of readout.
-#if DEBUG_MIXEDMODE
-		mnvdaq.debugStream() << "stopReadout  time = " << stopReadout;
-		mnvdaq.debugStream() << "startReadout time = " << startReadout;
-		mnvdaq.debugStream() << "        time diff = " << readoutTimeDiff;
 #endif
 		switch (runningMode) {
 			case OneShot:
@@ -665,14 +664,14 @@ int main(int argc, char *argv[])
 				if (triggerCounter%2) { // ALWAYS start with NuMI!
 					triggerType = NuMI;
 				} else {
-					if ( readoutTimeDiff < 1 ) { // LESS than 1
+					if ( readoutTimeDiff < physReadoutMicrosec ) { 
 						triggerType = Pedestal;
 						readFPGA    = false;
 #if DEBUG_MIXEDMODE
 						mnvdaq.debugStream() << "Okay to calib trigger...";
 #endif
 					} else {
-						triggerType = NuMI;
+						triggerType = NuMI; 
 						mnvdaq.infoStream() << "Aborting calib trigger!";
 					}
 				}
@@ -684,14 +683,14 @@ int main(int argc, char *argv[])
 				if (triggerCounter%2) { // ALWAYS start with NuMI!
 					triggerType = NuMI;
 				} else {
-					if ( readoutTimeDiff < 1 ) { // LESS than 1
+					if ( readoutTimeDiff < physReadoutMicrosec ) { 
 						triggerType = LightInjection;
 						nReadoutADC = 1; // Deepest only.
 #if DEBUG_MIXEDMODE
 						mnvdaq.debugStream() << "Okay to calib trigger...";
 #endif
 					} else {
-						triggerType = NuMI;
+						triggerType = NuMI; 
 						mnvdaq.infoStream() << "Aborting calib trigger!";
 					}
 				}
@@ -762,12 +761,14 @@ int main(int argc, char *argv[])
 #if MASTER&&(!SINGLEPC) // Soldier Node
 		if (event_data.triggerType != workerToSoldier_trig[0]) {
 			mnvdaq.warnStream() << "Trigger type disagreement between nodes!  Aborting this trigger!";
+			stopReadout = startReadout; // no readout, so reset counter
 			continue;  // Go to beginning of gate loop.
 		} 
 #endif
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 		if (event_data.triggerType != soldierToWorker_trig[0]) {
 			mnvdaq.warnStream() << "Trigger type disagreement between nodes!  Aborting this trigger!";
+			stopReadout = startReadout; // no readout, so reset counter
 			continue;  // Go to beginning of gate loop.
 		} 
 #endif
@@ -805,6 +806,10 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		int croc_id;
 		int no_crocs = currentController->GetCrocVectorLength(); 
+		// Now update startReadout for the next gate...
+		gettimeofday(&readstart, NULL);
+		startReadout = (unsigned long long)(readstart.tv_sec*1000000) + 
+			(unsigned long long)(readstart.tv_usec);
 
 		/**********************************************************************************/
 		/* Loop over crocs and then channels in the system.  Execute TakeData on each     */
@@ -994,9 +999,10 @@ int main(int argc, char *argv[])
 #endif
 
 		// Get time for end of gate & readout...
-		gettimeofday(&gatend, NULL);
-		stopTime    = (unsigned long long)(gatend.tv_sec);
-		stopReadout = (gatend.tv_sec);
+		gettimeofday(&readend, NULL);
+		stopTime    = (unsigned long long)(readend.tv_sec);
+		stopReadout = (unsigned long long)(readend.tv_sec*1000000) + 
+			(unsigned long long)(readend.tv_usec);
 #if SINGLEPC||MASTER // Soldier Node or Singleton
 		/*************************************************************************************/
 		/* Write the End-of-Event Record to the event_handler and then to the event builder. */
@@ -1044,8 +1050,8 @@ int main(int argc, char *argv[])
 	// Report total run time in awkward units... end of run time == end of last gate time.
 	unsigned long long totalstart = ((unsigned long long)(runstart.tv_sec))*1000000 +
                         (unsigned long long)(runstart.tv_usec);
-	unsigned long long totalend   = ((unsigned long long)(gatend.tv_sec))*1000000 +
-                        (unsigned long long)(gatend.tv_usec);
+	unsigned long long totalend   = ((unsigned long long)(readend.tv_sec))*1000000 +
+                        (unsigned long long)(readend.tv_usec);
 	unsigned long long totaldiff  = totalend - totalstart;
 	printf(" \n\nTotal acquisition time was %llu microseconds.\n\n",totaldiff);
 	mnvdaq.info("Total acquisition time was %llu microseconds.",totaldiff);
@@ -1448,7 +1454,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-06-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-07-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

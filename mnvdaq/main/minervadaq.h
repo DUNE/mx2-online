@@ -81,3 +81,7 @@ int                         workerToSoldier_socket_handle;
 int                         soldierToWorker_socket_handle;
 struct hostent *            soldier_node_info; // server on soldier node
 #endif
+
+// Mixed mode cutoff time for physics spills.  If a physics gate takes longer than this to
+// read out, we will abort the following calibration gate and skip to another physics gate.
+const int physReadoutMicrosec = 900000; //microseconds
