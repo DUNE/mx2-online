@@ -814,6 +814,7 @@ class MainFrame(wx.Frame):
 		
 		# sets the window manager hint
 		self.RequestUserAttention()
+		self.Raise()
 		
 		# now... if it's a real emergency, we need to do some other stuff.
 		if hasattr(evt, "alerttype") and evt.alerttype == "alarm":
