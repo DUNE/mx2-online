@@ -13,6 +13,8 @@ import wx.lib.newevent
 
 AlertEvent,              EVT_ALERT                 = wx.lib.newevent.NewEvent()
 
+BlinkEvent,              EVT_BLINK                 = wx.lib.newevent.NewEvent()
+
 ConfigUpdatedEvent,      EVT_CONFIGUPDATED         = wx.lib.newevent.NewEvent()
 
 EndSubrunEvent,          EVT_END_SUBRUN            = wx.lib.newevent.NewEvent()

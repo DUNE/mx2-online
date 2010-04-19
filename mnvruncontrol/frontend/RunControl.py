@@ -34,6 +34,7 @@ from mnvruncontrol.backend import DataAcquisitionManager
 from mnvruncontrol.backend import ReadoutNode
 from mnvruncontrol.backend import MonitorNode
 from mnvruncontrol.backend import SortTools
+from mnvruncontrol.backend import Threads
 
 from mnvruncontrol.frontend import Frames
 from mnvruncontrol.frontend import Tools
@@ -81,6 +82,7 @@ class MainFrame(wx.Frame):
 		
 		# now initialize some member variables we'll need:
 		self.logfileNames = None
+		self.blinkThread = None
 
 		# finally, make sure the display is current
 		self.GetLastRunConfig()
@@ -91,6 +93,7 @@ class MainFrame(wx.Frame):
 		self.Bind(wx.EVT_CLOSE, self.OnTimeToClose, self)
 		
 		self.Bind(Events.EVT_ALERT,               self.UserAlert)
+		self.Bind(Events.EVT_BLINK,               self.BlinkWindow)
 		self.Bind(Events.EVT_NEED_USER_HV_CHECK,  Frames.HVConfirmationFrame)
 		self.Bind(Events.EVT_SUBRUN_STARTING,     self.PreSubrun)
 		self.Bind(Events.EVT_SUBRUN_OVER,         self.PostSubrun)
@@ -675,6 +678,16 @@ class MainFrame(wx.Frame):
 	# GUI-related methods (mostly handling events)
 	#  
 	################################################################################################
+	
+	def BlinkWindow(self, evt=None):
+		""" Makes the window "blink" by alternating
+		    the normal background color with an obnoxious one. """
+		
+		colors = (wx.RED, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+		bg = self.GetBackgroundColour()
+		newcolor = colors[0] if bg == colors[1] else colors[1]
+		
+		self.SetBackgroundColour(newcolor)		
 			
 	def CheckRunNumber(self, evt=None):
 		""" Ensures that the run number can't be lowered
@@ -760,7 +773,17 @@ class MainFrame(wx.Frame):
 		
 	def UserAlert(self, evt):
 		""" Gets the user's attention. """
-		pass 
+		
+		# sets the window manager hint
+		self.GetUserAttention()
+		
+		# now... if it's a real emergency, we need to do some other stuff.
+		if hasattr(evt, "alerttype") and evt.alert == "alarm":
+			if self.blinkThread is not None and self.blinkThread.is_alive():
+				self.blinkThread.Abort()
+				self.blinkThread.join()
+			
+			self.blinkThread = Threads.BlinkThread(self)
 		
 	def UpdateCloseWindows(self, evt):
 		""" Enables/disables the "close all windows" button
