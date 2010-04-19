@@ -392,9 +392,13 @@ class BlinkThread(threading.Thread):
 
 	def run(self):
 		lastupdate = 0
-		if self.postback_window and not(self.time_to_quit) and time.time() - lastupdate > 0.5:
-			lastupdate = time.time()
-			wx.PostEvent(self.postback_window, Events.BlinkEvent())
+		while not self.time_to_quit:
+			if not self.postback_window:
+				return
+				
+			if not self.time_to_quit and time.time() - lastupdate > 0.5:
+				lastupdate = time.time()
+				wx.PostEvent(self.postback_window, Events.BlinkEvent())
 			
 	def Abort(self):
 		self.time_to_quit = True

@@ -183,7 +183,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				if node.own_lock:
 					self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Cleaning up from previous run...")
 			
-					
+			wait_for_reset = False	
 			for node in self.readoutNodes:
 				if node.own_lock:
 					success = False
@@ -192,11 +192,17 @@ class DataAcquisitionManager(wx.EvtHandler):
 					except ReadoutNode.ReadoutNodeNoDAQRunningException:
 						pass
 					
+					if success:
+						wait_for_reset = True
 					# otherwise we'll be stuck... forever...
-					if not success:
+					else:
 						node.completed = True
 						self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", callback=self)
-		
+				else:
+					node.completed = True
+			
+			if not wait_for_reset:
+				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True))
 		
 	def Cleanup(self):
 		try:
@@ -397,7 +403,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			else:			
 				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
 				self.running = False
-			wx.PostEvent(self.main_window, Events.AlertEvent(alarmtype="alarm"))
+			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm"))
 			
 		numsteps = len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
 		step = 0

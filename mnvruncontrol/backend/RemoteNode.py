@@ -204,7 +204,7 @@ class RemoteNode:
 		if not self.own_lock:
 			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
 			try:
-				sessionfile = open(Configuration.params["Master node"]["sessionfile"], "w")
+				sessionfile = open(Configuration.params["Master node"]["sessionfile"], "r+")
 			except (IOError, OSError):
 				msg = "Couldn't open lock file!...  Where did it go?"
 				print msg

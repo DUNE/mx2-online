@@ -83,6 +83,7 @@ class MainFrame(wx.Frame):
 		# now initialize some member variables we'll need:
 		self.logfileNames = None
 		self.blinkThread = None
+		self.default_background = None
 
 		# finally, make sure the display is current
 		self.GetLastRunConfig()
@@ -130,10 +131,10 @@ class MainFrame(wx.Frame):
 		self.SetStatusWidths([-6, -1])
 		self.SetStatusText("STOPPED", 1)
 
-		nb = wx.Notebook(self)
+		self.nb = wx.Notebook(self)
 
 		# the main page (main config / run controls)
-		self.mainPage = wx.Panel(nb)
+		self.mainPage = wx.Panel(self.nb)
 		self.singleRunConfigPanel = wx.Panel(self.mainPage)
 		self.runSeriesConfigPanel = wx.Panel(self.mainPage)
 		self.runSeriesConfigPanel.Show(False)
@@ -348,10 +349,10 @@ class MainFrame(wx.Frame):
 		self.mainPage.SetSizer(globalSizer)
 
 		# now the log page panel.
-		logPage = wx.Panel(nb)
+		self.logPage = wx.Panel(self.nb)
 
-		logfileText = wx.StaticText( logPage, -1, wordwrap("Select log files you want to view (ctrl+click for multiple selections) and click the \"View log file(s)\" button below...", 400, wx.ClientDC(self)) )
-		self.logfileList = Tools.AutoSizingListCtrl(logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
+		logfileText = wx.StaticText( self.logPage, -1, wordwrap("Select log files you want to view (ctrl+click for multiple selections) and click the \"View log file(s)\" button below...", 400, wx.ClientDC(self)) )
+		self.logfileList = Tools.AutoSizingListCtrl(self.logPage, -1, style=wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_DESCENDING)
 		self.logfileList.setResizeColumn(6)
 		self.logfileList.InsertColumn(0, "Run")
 		self.logfileList.InsertColumn(1, "Subrun")
@@ -361,20 +362,19 @@ class MainFrame(wx.Frame):
 		self.logfileList.InsertColumn(5, "Detector")
 		self.logfileList.InsertColumn(6, "Controller")
 		
-		self.logFileButton = wx.Button(logPage, -1, "View selected log files")
+		self.logFileButton = wx.Button(self.logPage, -1, "View selected log files")
 		self.Bind(wx.EVT_BUTTON, self.ShowLogFiles, self.logFileButton)
 		
-		logBoxSizer = wx.StaticBoxSizer(wx.StaticBox(logPage, -1, "Logs"), orient=wx.VERTICAL)
+		logBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.logPage, -1, "Logs"), orient=wx.VERTICAL)
 		logBoxSizer.AddMany( [ (logfileText, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM, 10),
 		                       (self.logfileList, 1, wx.EXPAND),
 		                       (self.logFileButton, 0, wx.ALIGN_CENTER_HORIZONTAL) ] )
 		                       
-		logPage.SetSizer(logBoxSizer)
-		
+		self.logPage.SetSizer(logBoxSizer)
 		
 		# add the pages into the notebook.
-		nb.AddPage(self.mainPage, "Run control")
-		nb.AddPage(logPage, "Log files")
+		self.nb.AddPage(self.mainPage, "Run control")
+		self.nb.AddPage(self.logPage, "Log files")
 		
 		self.Layout()
 
@@ -683,11 +683,38 @@ class MainFrame(wx.Frame):
 		""" Makes the window "blink" by alternating
 		    the normal background color with an obnoxious one. """
 		
-		colors = (wx.RED, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-		bg = self.GetBackgroundColour()
-		newcolor = colors[0] if bg == colors[1] else colors[1]
+		if self.default_background is None:
+			self.default_background = self.mainPage.GetBackgroundColour()		
+
+		# create a new tab in the notebook
+		# to receive the acknowledgement
+		if self.nb.GetPageCount() == 2:
+			self.notificationPage = wx.Panel(self.nb)
+			text1 = wx.StaticText(self.notificationPage, -1, "    Data taking \nwas interrupted!")
+			font1 = text1.GetFont()
+			font1.SetPointSize(24)
+			text1.SetFont(font1)
+			text2 = wx.StaticText(self.notificationPage, -1, "Click the button to acknowledge and begin a new run.")
+			acknowledgeButton = wx.Button(self.notificationPage, -1, "Acknowledge data taking stoppage")
+			self.Bind(wx.EVT_BUTTON, self.StopBlinking, acknowledgeButton)
 		
-		self.SetBackgroundColour(newcolor)		
+			sizer = wx.BoxSizer(wx.VERTICAL)
+			sizer.Add(text1, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.TOP, border = 100)
+			sizer.Add(acknowledgeButton, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM | wx.TOP, border=25)
+			sizer.Add(text2, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL)
+			self.notificationPage.SetSizer(sizer)
+			self.nb.AddPage(self.notificationPage, "Data taking interrupted")
+			
+		if self.default_background is None:
+			self.default_background = self.mainPage.GetBackgroundColour()		
+
+		self.nb.ChangeSelection(2)
+		
+		colors = (wx.RED, self.default_background)
+		bg = self.notificationPage.GetBackgroundColour()
+		newcolor = colors[0] if bg == colors[1] else colors[1]
+
+		self.notificationPage.SetBackgroundColour(newcolor)
 			
 	def CheckRunNumber(self, evt=None):
 		""" Ensures that the run number can't be lowered
@@ -764,6 +791,9 @@ class MainFrame(wx.Frame):
 				self.runmanager.StopDataAcquisition()
 			except:
 				pass		# if we can't, oh well.  we're closing anyway.
+		if self.blinkThread is not None and self.blinkThread.is_alive():
+			self.blinkThread.Abort()
+			self.blinkThread.join()
 
 		self.runmanager.Cleanup()
 			
@@ -771,14 +801,22 @@ class MainFrame(wx.Frame):
 
 		self.Destroy()
 		
+	def StopBlinking(self, evt=None):
+		self.blinkThread.Abort()
+		self.blinkThread.join()
+		
+		self.nb.DeletePage(2)
+		self.nb.ChangeSelection(0)
+		
+		
 	def UserAlert(self, evt):
 		""" Gets the user's attention. """
 		
 		# sets the window manager hint
-		self.GetUserAttention()
+		self.RequestUserAttention()
 		
 		# now... if it's a real emergency, we need to do some other stuff.
-		if hasattr(evt, "alerttype") and evt.alert == "alarm":
+		if hasattr(evt, "alerttype") and evt.alerttype == "alarm":
 			if self.blinkThread is not None and self.blinkThread.is_alive():
 				self.blinkThread.Abort()
 				self.blinkThread.join()
