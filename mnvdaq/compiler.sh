@@ -2,6 +2,9 @@
 
 # single node build
 if [ $DAQROOT == "/work/software/mnvsingle/mnvdaq" ]; then
+	if [ $HOSTNAME == "mnvtbonline1.fnal.gov" ]; then 
+		cp ${DAQROOT}/options/mnvtbonline1single.opts $DAQROOT/Make.options
+	fi
 	if [ $HOSTNAME == "minervatest01.fnal.gov" ]; then 
 		cp ${DAQROOT}/options/minervatest01single.opts $DAQROOT/Make.options
 	fi

@@ -61,6 +61,13 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	// Hardware configurations.
 	std::string detectorString = "Unknown Detector.";
 #if NO_THREAD
+#if PMTTEST
+	detectorString        = "LabF PMT X-talk Stand.";
+	std::cout            << "Initializing hardware for the " << detectorString << std::endl; 
+	acqData.infoStream() << "Initializing hardware for the " << detectorString; 
+	InitializeCrim(0xE00000, 1, runningMode);
+	InitializeCroc(0x030000, 1, 2, 0, 0, 0);
+#endif
 #if MTEST
 	detectorString        = "MTest.";
 	std::cout            << "Initializing hardware for " << detectorString << std::endl; 
