@@ -47,6 +47,10 @@ class RemoteNode:
 		self.own_lock = False
 		
 	def request(self, request):
+		""" The workhorse method that actually contacts the remote node,
+		    delivers the request, gets the response, and sends that back
+		    to the method that processes it. """
+		    
 		is_valid_request = False	
 		is_global_request = False
 		for valid_request in self.ValidRequests:
@@ -199,14 +203,20 @@ class RemoteNode:
 
 		if not self.own_lock:
 			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
-			with open(Configuration.params["Master node"]["sessionfile"], "r+") as sessionfile:
+			try:
+				sessionfile = open(Configuration.params["Master node"]["sessionfile"], "w")
+			except (IOError, OSError):
+				msg = "Couldn't open lock file!...  Where did it go?"
+				print msg
+				self.logger.warning(msg)
+			else:
 				# first lock the file (as described in get_lock())
 				fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
 				
 				# now read the file and delete any lines corresponding to this node
-				lines = sessionfile.readlines()
-				out = []
 				try:
+					lines = sessionfile.readlines()
+					out = []
 					for line in lines:
 						matches = pattern.match(line)
 						if matches is None or matches.group("id") != self.id:

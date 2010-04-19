@@ -90,15 +90,16 @@ class MainFrame(wx.Frame):
 		# any wx events that need to be handled
 		self.Bind(wx.EVT_CLOSE, self.OnTimeToClose, self)
 		
-		self.Bind(Events.EVT_NEED_USER_HV_CHECK, Frames.HVConfirmationFrame)
-		self.Bind(Events.EVT_SUBRUN_STARTING, self.PreSubrun)
-		self.Bind(Events.EVT_SUBRUN_OVER, self.PostSubrun)
-		self.Bind(Events.EVT_STOP_RUNNING, self.StopRunning)
-		self.Bind(Events.EVT_UPDATE_NODE, self.UpdateNodeStatus)
-		self.Bind(Events.EVT_UPDATE_PROGRESS, self.UpdateRunStatus)
-		self.Bind(Events.EVT_UPDATE_SERIES, self.UpdateSeriesStatus)
+		self.Bind(Events.EVT_ALERT,               self.UserAlert)
+		self.Bind(Events.EVT_NEED_USER_HV_CHECK,  Frames.HVConfirmationFrame)
+		self.Bind(Events.EVT_SUBRUN_STARTING,     self.PreSubrun)
+		self.Bind(Events.EVT_SUBRUN_OVER,         self.PostSubrun)
+		self.Bind(Events.EVT_STOP_RUNNING,        self.StopRunning)
+		self.Bind(Events.EVT_UPDATE_NODE,         self.UpdateNodeStatus)
+		self.Bind(Events.EVT_UPDATE_PROGRESS,     self.UpdateRunStatus)
+		self.Bind(Events.EVT_UPDATE_SERIES,       self.UpdateSeriesStatus)
 		self.Bind(Events.EVT_UPDATE_WINDOW_COUNT, self.UpdateCloseWindows)
-		self.Bind(Events.EVT_WAIT_FOR_CLEANUP, self.WaitOnCleanup)
+		self.Bind(Events.EVT_WAIT_FOR_CLEANUP,    self.WaitOnCleanup)
 
 		self.Bind(Events.EVT_ERRORMSG, self.ShowErrorMsg)
 		
@@ -756,6 +757,10 @@ class MainFrame(wx.Frame):
 		self.CloseAllWindows()
 
 		self.Destroy()
+		
+	def UserAlert(self, evt):
+		""" Gets the user's attention. """
+		pass 
 		
 	def UpdateCloseWindows(self, evt):
 		""" Enables/disables the "close all windows" button

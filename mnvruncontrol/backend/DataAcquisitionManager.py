@@ -397,6 +397,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			else:			
 				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
 				self.running = False
+			wx.PostEvent(self.main_window, Events.AlertEvent(alarmtype="alarm"))
 			
 		numsteps = len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
 		step = 0
