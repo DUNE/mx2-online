@@ -47,8 +47,6 @@ fi
 
 if [ $# -gt 0 ]; then
 	gmake all
-	echo $1
 else
 	gmake relink
-	echo $1
 fi

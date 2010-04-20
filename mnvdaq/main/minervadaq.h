@@ -84,4 +84,12 @@ struct hostent *            soldier_node_info; // server on soldier node
 
 // Mixed mode cutoff time for physics spills.  If a physics gate takes longer than this to
 // read out, we will abort the following calibration gate and skip to another physics gate.
-const int physReadoutMicrosec = 900000; //microseconds
+#if WH14T||WH14B
+const int physReadoutMicrosec = 12750; //microseconds, useful test stand value
+#else
+const int physReadoutMicrosec = 925000; //microseconds, good MINERvA value (testing)
+#endif
+
+
+
+

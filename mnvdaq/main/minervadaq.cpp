@@ -196,17 +196,20 @@ int main(int argc, char *argv[])
 	mnvdaq.infoStream() << "  ET System Port         = " << networkPort;	
 	mnvdaq.infoStream() << "See Event/MinervaEvent/xml/DAQHeader.xml for codes.";
 	mnvdaq.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+	mnvdaq.infoStream() << "Additional Parameters: ";
+	mnvdaq.infoStream() << "  Mixed Mode Physics Gate Cutoff Time  = " << physReadoutMicrosec;	
 #if MULTIPC
-	mnvdaq.infoStream() << "Configured for a Multi-PC Build...";	
+	mnvdaq.infoStream() << "  Configured for a Multi-PC Build...";	
 #if MASTER
-	mnvdaq.infoStream() << "->Configured as a Soldier Node...";	
+	mnvdaq.infoStream() << "  ->Configured as a Soldier Node...";	
 #else
-	mnvdaq.infoStream() << "->Configured as a Worker Node...";	
+	mnvdaq.infoStream() << "  ->Configured as a Worker Node...";	
 #endif
 #endif
 #if SINGLEPC
-	mnvdaq.infoStream() << "Configured for a Single-PC Build...";	
+	mnvdaq.infoStream() << "  Configured for a Single-PC Build...";	
 #endif
+	mnvdaq.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
 	// Log files for threading in the main routine. 
 #if (THREAD_ME)&&(TIME_ME)
@@ -611,6 +614,9 @@ int main(int argc, char *argv[])
 		mnvdaq.debugStream() << "startReadout time = " << startReadout;
 		mnvdaq.debugStream() << "        time diff = " << readoutTimeDiff;
 #endif
+#if DEBUG_TIMING&&(!MTEST)
+		mnvdaq.debugStream() << "\tReadout Time (previous gate = " << gate << ") = " << readoutTimeDiff;
+#endif
 #if MTEST
 		// We need to reset the external trigger latch for v85 (cosmic) FEB firmware.
 		for (croc_iter = croc_vector->begin(); croc_iter != croc_vector->end(); croc_iter++) {
@@ -706,6 +712,9 @@ int main(int argc, char *argv[])
 		event_data.triggerType  = triggerType;
 		soldierToWorker_trig[0] = (unsigned short int)0;
 		workerToSoldier_trig[0] = (unsigned short int)0;
+#if DEBUG_TIMING&&(!MTEST)
+		mnvdaq.debugStream() << "\tTrigger Type = " << triggerType << " for gate " << gate+1;
+#endif
 
 		// Synchronize trigger types. TODO - test synch write & listen functions w/ return values...
 		//SynchWrite(soldierToWorker_socket_handle, soldierToWorker_trig);  
@@ -1454,7 +1463,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-07-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-07-02'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
