@@ -53,11 +53,10 @@ class Frames {
 		int IncomingMessageLength, OutgoingMessageLength;
 
 		// log4cpp appender for printing log statements.
-                log4cpp::Appender* frmsAppender;
+                log4cpp::Appender* appender;
 	
 	public:
 		Frames(); 
-		Frames(log4cpp::Appender* appender);
 		virtual ~Frames() { };
 
 		unsigned char *message; //the message that will be sent or received.
@@ -66,7 +65,7 @@ class Frames {
 		void MakeDeviceFrameTransmit(Devices, Broadcasts, Directions, unsigned int, unsigned int); 
 		void MakeHeader();
 		virtual void MakeMessage();
-		virtual int DecodeRegisterValues(int a);
+		virtual void DecodeRegisterValues(int a);
 		void DecodeHeader();
 		bool CheckForErrors();
 		inline unsigned char *GetOutgoingMessage() {return outgoingMessage;};
