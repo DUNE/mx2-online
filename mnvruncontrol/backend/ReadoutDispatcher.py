@@ -138,6 +138,7 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 				          "-r",  matches.group("run"),
 					     "-s",  matches.group("subrun"),
 				          "-d",  matches.group("detector"),
+				          "-dc", matches.group("nfebs"),
 				          "-ll", matches.group("lilevel"),
 				          "-lg", matches.group("ledgroup"),
 				          "-hw", matches.group("hwinitlevel"),
