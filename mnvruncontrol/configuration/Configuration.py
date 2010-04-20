@@ -72,6 +72,8 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "om_rawdataLocation"      : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                            str   )  },
 
                   "MTest beam nodes" : { "mtest_PIDfileLocation"   : ( Defaults.MTEST_DISPATCHER_PIDFILE,             "MTest dispatcher PID file location",              str   ),
+                                         "mtest_installLocation"   : ( Defaults.MTEST_INSTALL_LOCATION,               "MTest software installation location",            str   ),
+                                         "mtest_dataLocation"      : ( Defaults.MTEST_DATA_LOCATION,                  "MTest beamline data location",                    str   ),
                                          "mtest_logfileLocation"   : ( Defaults.MTEST_LOGFILE_LOCATION,               "MTest dispatcher log file location",              str   ),
                                          "mtest_logfileName"       : ( Defaults.MTEST_DISPATCHER_LOGFILE,             "MTest dispatcher log file name",                  str   )  }  }
 

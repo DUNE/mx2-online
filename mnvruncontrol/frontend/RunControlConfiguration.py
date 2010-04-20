@@ -4,7 +4,7 @@
   Contains the graphical implementation of an options
   setter for the run control.  Mainly intended to be
   run as a standalone program, but can also be imported
-  into another wx application.
+  into another wx application as necessary.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Feb.-Mar. 2010
@@ -71,10 +71,12 @@ class ConfigurationFrame(wx.Frame):
 				else:
 					self.entries[param_set][param_name] = wx.TextCtrl(self.pages[param_set], -1, str(Configuration.params[param_set][param_name]))
 					
-			gridSizers[param_set] = wx.GridSizer(len(labels), 2, 5, 5)
+			gridSizers[param_set] = wx.FlexGridSizer(len(labels), 2, 5, 5)
 			for param_name in labels[param_set]:
 				gridSizers[param_set].Add(labels[param_set][param_name], flag=wx.ALIGN_CENTER_VERTICAL)
 				gridSizers[param_set].Add(self.entries[param_set][param_name], proportion=0, flag=wx.EXPAND)
+				gridSizers[param_set].SetFlexibleDirection(wx.HORIZONTAL)
+				gridSizers[param_set].AddGrowableCol(1)
 				
 			self.pages[param_set].SetSizer(gridSizers[param_set])
 			
@@ -135,6 +137,7 @@ class ConfigurationFrame(wx.Frame):
 			gridSizers["Front end"].Add(labels["Front end"][nodetype], flag=wx.ALIGN_CENTER_VERTICAL)
 			gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
 	
+		gridSizers["Front end"].SetFlexibleDirection(wx.BOTH)
 
 		# these are added like this so that they show up in a predictable order
 		for name in ("Front end", "Hardware", "Socket setup", "Dispatchers", "Master node", "Readout nodes", "Monitoring nodes", "MTest beam nodes"):

@@ -44,47 +44,80 @@ class MTestBeamDispatcher(Dispatcher):
 		                        "mtestbeam_stop"  : self.stop } )
 
 		# need to shut down the subprocesses...
-		self.cleanup_methods += [self.om_stop]
+		self.cleanup_methods += [self.stop]
 		                        
 		self.pidfilename = Configuration.params["MTest beam nodes"]["mtest_PIDfileLocation"]
 		                   
 		self.daq_threads = {"wire chamber": None, "tof": None}
-		self.daq_commands = {"wire chamber": "command %s", "tof": "command %s"}
+		self.daq_starters = { "wire chamber": self.start_wire_chamber,
+		                      "tof":          self.start_tof           }
 		
 
 	def start(self, matches, show_details, **kwargs):
-		""" Starts the test beam DAQ service as a subprocess.
+		""" Starts the test beam DAQ services as subprocesses.
 		
 		    Returns 0 on success, 1 on failure. """
 		    
 		if show_details:
 			self.logger.info("Client wants to start the beamline DAQ processes.")
 
-		# first clear up any old event builder processes.
-		try:
-			for thread in self.daq_threads:
-				if self.daq_threads[thread] is not None and self.daq_threads[thread].is_alive() is None:
-					self.daq_threads[thread].terminate()
-					self.daq_threads[thread].join()
-		except:
-			self.logger.exception("Couldn't stop previous threads:")
-			return "1"
-			
+		# first clear up any old processes.
+		for thread in self.daq_threads:
+			if self.daq_threads[thread] is not None and self.daq_threads[thread].is_alive():
+				self.logger.info("Clearing up old threads first...")
+				success = self.stop() == "0"
+				
+				if not success:
+					return "1"
+				break
+		
+		# need some initialization stuff...
+		self.crate_initialize(matches)		# first, crate initialization
+		self.gate_inhibit(matches, True)		# then a gate inhibit (don't let it trigger gates while we're configuring...)
+		
+		# now start the DAQ processes
 		for thread in self.daq_threads:
 			try:
-				command = self.daq_commands[thread] % matches.group("filepattern")
-				self.logger.info("Trying to start the %s thread using command:\n%s" % (thread, command) )
-				self.daq_threads[thread] = DAQThread(command, thread)
+				self.logger.info("Trying to start the %s thread..." )
+				self.daq_threads[thread] = self.daq_starters[thread](matches)
 			except:
 				self.logger.exception("  ==> failed.")
 				return "1"
 			else:
 				self.logger.info("  ==> success.")
+		
+		# set a timer to cancel the gate inhibit in 3 seconds.
+		timer = threading.Timer(3, self.gate_inhibit, (matches, False) )
+		timer.start()
 				
 		return "0"
-
 	
-	def stop(self, matches, show_details, **kwargs):
+	def crate_initialize(self, matches, **kwargs):
+		subprocess.call("%s/camac/example/cz %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("type")), shell=True)
+		
+	def gate_inhibit(self, matches, inhibit_status, **kwargs):
+		inhibit_status = 1 if inhibit_status == True else 0
+		subprocess.call("%s/misc/gateinhibit/gate_inhibit %s %s %s %s %d" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("type"), matches.group("gate_slot"), inhibit_status) )
+	
+	def start_wire_chamber(self, matches, **kwargs):
+		""" Starts the wire chamber process.
+		
+		    Returns a DAQThread containing the subprocess it was started in. """
+		    
+		command = "%s/PCOS/PCOS_readout_sync %s %s %s %s %s %s/wc/%s_wc.dat" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("mem_slot"), matches.group("type"), matches.group("num_events"), Configuration.params["MTest beam nodes"]["mtest_dataLocation"], matches.group("filepattern"))
+		self.logger.info("  ==> Using command: '%s'" % command)
+		return DAQThread(command, thread)
+
+	def start_tof(self, matches, **kwargs):
+		""" Starts the time-of-flight process.
+		
+		    Returns a DAQThread containing the subprocess it was started in. """
+		    
+		command = "%s/tof/src/run_rik_t977_sync %s %s/tof/%s_tof.dat" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("num_events"), Configuration.params["MTest beam nodes"]["mtest_dataLocation"], matches.group("filepattern"))
+		self.logger.info("  ==> Using command: '%s'" % command)
+		return DAQThread(command, thread)
+	
+	def stop(self, matches=None, show_details=True, **kwargs):
 		""" Stops the beamline DAQ processes. 
 				    
 		    Returns 0 on success and 1 on failure. """
@@ -115,8 +148,8 @@ class MTestBeamDispatcher(Dispatcher):
 # OMThread             #
 #########################
 class DAQThread(threading.Thread):
-	""" DAQ process needs to be run in a separate thread
-	    so that we know if it finishes. """
+	""" Each DAQ process needs to be run in a separate thread
+	    so that it doesn't hold up the dispatcher while it goes. """
 	def __init__(self, command, processname):
 		threading.Thread.__init__(self)
 		

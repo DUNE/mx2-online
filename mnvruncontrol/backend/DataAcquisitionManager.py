@@ -32,6 +32,7 @@ from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import RemoteNode
 from mnvruncontrol.backend import ReadoutNode
 from mnvruncontrol.backend import MonitorNode
+from mnvruncontrol.backend import MTestBeamNode
 from mnvruncontrol.backend import Threads
 from mnvruncontrol.frontend import Frames
 
@@ -80,6 +81,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		self.readoutNodes         = [ReadoutNode.ReadoutNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["readoutNodes"]]
 		self.monitorNodes         = [MonitorNode.MonitorNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["monitorNodes"]]
+		self.mtestBeamDAQNodes    = [MTestBeamNode.MTestBeamNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["mtestbeamNodes"]]
 
 		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
 
@@ -103,6 +105,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.run = None
 		self.first_subrun = None
 		self.febs = None
+		
+		self.mtest_branch = None
+		self.mtest_crate = None
+		self.mtest_controller_type = None
+		self.mtest_mem_slot = None
+		self.mtest_gate_slot = None
 		
 		self.running = False
 		self.can_shutdown = False		# used in between subruns to prevent shutting down twice for different reasons
@@ -145,7 +153,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
 		try:
 			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
-			node_map = { "readout": self.readoutNodes, "monitoring": self.monitorNodes }
+			node_map = { "readout": self.readoutNodes, "monitoring": self.monitorNodes, "mtestbeam": self.mtestBeamNodes }
 			do_reset = False
 			for line in sessionfile:
 				matches = pattern.match(line)
@@ -173,9 +181,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 				if node.own_lock:
 					node.om_stop()
 
+			# now any MTest beamline DAQ nodes
+			for node in self.mtestBeamNodes:
+				if node.own_lock:
+					node.stop()
+
 			self.can_shutdown = True
 			self.first_subrun = 0
-
+			
 			# finally, deal with the readout nodes.
 			# remember, we need to loop twice so that all subscriptions
 			# are booked before issuing any stops.
@@ -198,6 +211,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 					else:
 						node.completed = True
 						self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", callback=self)
+				# if it's not locked, then we can't stop it, so it may as well be "completed"
+				# (otherwise we'll stuck waiting forever)
 				else:
 					node.completed = True
 			
@@ -228,9 +243,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.detector == None or self.run == None or self.first_subrun == None or self.febs == None:
 			raise ValueError("Run series is improperly configured.")
 
-		# try to get a lock on each of the readout nodes.
+		# try to get a lock on each of the readout nodes
+		# as well as any MTest beamline DAQ nodes
 		failed_connection = None
-		for node in self.readoutNodes:
+		for node in self.readoutNodes + self.mtestBeamNodes:
 			if node.get_lock():
 				wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
 				self.logger.info(" Got run lock on %s node (id: %s)..." % (node.name, node.id))
@@ -239,8 +255,16 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.logger.critical("Couldn't lock the %s node!  Aborting." % node.name)
 				break
 		if failed_connection:
-			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Cannot get control of dispatcher on the " + failed_connection + " readout node.  Check to make sure that the readout dispatcher is started on that machine and that there are no other run control processes connected to it.", title="No lock on " + failed_connection + " readout node") )
+			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Cannot get control of dispatcher on the " + failed_connection + " node.  Check to make sure that the dispatcher is started on that machine and that there are no other run control processes connected to it.", title="No lock on " + failed_connection + " node") )
 			return
+		
+		# also try to get a lock on any monitor nodes
+		# here it's not a tragedy if we can't, so no erroring.
+		for node in self.monitorNodes:
+			if node.get_lock():
+				self.logger.info(" Got run lock on %s node (id: %s)..." % (node.name, node.id))
+			else:
+				self.logger.warning("Couldn't lock the %s monitoring node.  Ignoring..." % node.name)
 			
 		# need to make sure all the tasks are marked "not yet completed"
 		for task in self.SubrunStartTasks:
@@ -266,7 +290,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# 'allclear', which signifies that we don't need to
 		# do any more checking on the readout nodes.
 		if not( evt is not None and hasattr(evt, "allclear") ):
-			# the run will need a manual stop if the readout nodes can't be properly contacted.
+			# the run will need a manual stop if the readout/beamline DAQ nodes can't be properly contacted.
 			success = False
 			for node in self.readoutNodes:
 				try:
@@ -277,7 +301,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 				wx.PostEvent(self, Events.EndSubrunEvent())
 		for node in self.readoutNodes:
 			node.release_lock()
-			
+		
+		for node in self.mtestBeamNodes:
+			try:
+				node.stop()
+				node.release_lock()
+			except:
+				self.logger.exception("Error stopping the MTest beamline DAQ:")
+		
 		for node in self.monitorNodes:
 			try:
 				node.om_stop()
@@ -405,7 +436,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.running = False
 			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm"))
 			
-		numsteps = len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
+		numsteps = len(self.mtestBeamNodes) + len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the beamline DAQ nodes, readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
 		step = 0
 			
 		# if the subrun is being stopped for some other reason than
@@ -427,7 +458,15 @@ class DataAcquisitionManager(wx.EvtHandler):
 				step += 1
 			
 			if not success:
-				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Not all nodes could be stopped.  The next subrun could be problematic...", title="Not all nodes stopped") )
+				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Not all readout nodes could be stopped.  The next subrun could be problematic...", title="Not all nodes stopped") )
+		
+		success = True
+		for node in self.mtestBeamNodes:
+			success = success and node.stop()
+			step += 1
+		
+		if not success:
+			wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The beamline DAQ node(s) could be stopped.  The next subrun could be problematic...", title="Beamline DAQ node(s) not stopped") )
 		
 		for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping ET threads...", progress=(step, numsteps)) )
@@ -756,7 +795,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 	def StartRemoteServices(self):
 		""" Notify all the remote services that we're ready to go.
 		    Currently this includes the online monitoring system
-		    as well as the DAQ on the readout nodes. """
+		    as well as the DAQs on the MTest beamline node (if
+		    configured) and the readout node(s). """
 		    
 		# the ET system is all set up, so the online monitoring nodes
 		# can be told to connect.  the run control doesn't care if they
@@ -768,6 +808,15 @@ class DataAcquisitionManager(wx.EvtHandler):
 			except:
 				self.logger.exception("Online monitoring couldn't be started on node '%s'.  Ignoring." % node.name)
 				continue
+
+		for node in self.mtestBeamNodes:
+			try:
+				node.start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.runinfo.gates, "beamline_DAQ_%08d_%04d" % (self.run, self.first_subrun + self.subrun))
+			except:
+				self.logger.exception("Couldn't start MTest beamline DAQ!  Aborting run.")
+				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title="Couldn't start beamline DAQ", text="Couldn't start the beamline DAQ.  Run will be aborted (see the log for more details).") )
+				self.StopDataAcquisition()
+				
 
 		# DON'T consolidate this loop together with the next one.
 		# ALL the subscriptions need to be booked before *any* of

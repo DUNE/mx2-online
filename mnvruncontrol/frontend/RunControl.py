@@ -78,7 +78,7 @@ class MainFrame(wx.Frame):
 		self.runmanager = DataAcquisitionManager.DataAcquisitionManager(self)
 
 		self.GetGlobalConfig()		# load up the configuration entries from the file.
-		self.BuildGraphics()	# build and draw the GUI panel.
+		self.BuildGraphics()		# build and draw the GUI panel.
 		
 		# now initialize some member variables we'll need:
 		self.logfileNames = None
@@ -372,9 +372,45 @@ class MainFrame(wx.Frame):
 		                       
 		self.logPage.SetSizer(logBoxSizer)
 		
+		# the MTest configuration
+		self.mtestPage = wx.Panel(self.nb)
+		
+		self.mtest_useBeamDAQEntry = wx.CheckBox(self.mtestPage, -1, "Use beamline DAQ")
+		self.mtest_useBeamDAQEntry.SetValue(True)
+		
+		self.mtest_branchEntry = wx.SpinCtrl(self.mtestPage, -1, str(Defaults.MTEST_BRANCH))
+		mtest_branchLabel = wx.StaticText(self.mtestPage, -1, "Branch")
+		self.mtest_crateEntry = wx.SpinCtrl(self.mtestPage, -1, str(Defaults.MTEST_CRATE))
+		mtest_crateLabel = wx.StaticText(self.mtestPage, -1, "Crate")
+		self.mtest_typeEntry = wx.SpinCtrl(self.mtestPage, -1, str(Defaults.MTEST_TYPE))
+		mtest_typeLabel = wx.StaticText(self.mtestPage, -1, "Controller type")
+		self.mtest_memslotEntry = wx.SpinCtrl(self.mtestPage, -1, str(Defaults.MTEST_MEM_SLOT))
+		mtest_memslotLabel = wx.StaticText(self.mtestPage, -1, "Memory slot")
+		self.mtest_gateslotEntry = wx.SpinCtrl(self.mtestPage, -1, str(Defaults.MTEST_GATE_SLOT))
+		mtest_gateslotLabel = wx.StaticText(self.mtestPage, -1, "Gate slot")
+		
+		mtestGridSizer = wx.FlexGridSizer(5, 2, 5, 5)
+		mtestGridSizer.AddMany( [ mtest_branchLabel,   self.mtest_branchEntry,
+		                          mtest_crateLabel,    self.mtest_crateEntry,    
+		                          mtest_typeLabel,     self.mtest_typeEntry,     
+		                          mtest_memslotLabel,  self.mtest_memslotEntry,  
+		                          mtest_gateslotLabel, self.mtest_gateslotEntry ] )
+		mtestGridSizer.SetFlexibleDirection(wx.HORIZONTAL)
+		mtestGridSizer.AddGrowableCol(0)
+		
+		mtestBoxSizer = wx.BoxSizer(wx.VERTICAL)
+		mtestBoxSizer.Add(self.mtest_useBeamDAQEntry, proportion=0)
+		mtestBoxSizer.Add(mtestGridSizer, proportion=1, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=25)
+		
+		self.mtestPage.SetSizer(mtestBoxSizer)
+		self.mtestPage.Layout()
+		
 		# add the pages into the notebook.
 		self.nb.AddPage(self.mainPage, "Run control")
 		self.nb.AddPage(self.logPage, "Log files")
+		if len(self.runmanager.mtestBeamDAQNodes) > 0:
+			self.nb.AddPage(self.mtestPage, "MTest settings")
+		
 		
 		self.Layout()
 
@@ -426,6 +462,12 @@ class MainFrame(wx.Frame):
 		self.runmanager.detector     = MetaData.DetectorTypes.item(self.detConfigEntry.GetSelection(), MetaData.HASH)
 		self.runmanager.febs         = int(self.febsEntry.GetValue())
 		self.runmanager.hwinit       = MetaData.HardwareInitLevels.item(self.HWinitEntry.GetSelection(), MetaData.HASH)
+		
+		self.runmanager.mtest_branch = self.mtest_branchEntry.GetValue()
+		self.runmanager.mtest_crate = self.mtest_crateEntry.GetValue()
+		self.runmanager.mtest_controller_type = self.mtest_typeEntry.GetValue()
+		self.runmanager.mtest_mem_slot = self.mtest_memslotEntry.GetValue()
+		self.runmanager.mtest_gate_slot = self.mtest_gateslotEntry.GetValue()
 		
 		self.runmanager.StartDataAcquisition()
 		if (self.runmanager.running):
@@ -555,21 +597,28 @@ class MainFrame(wx.Frame):
 		"""
 		
 		# default values.   they'll be updated below if the db exists and has the appropriate keys.
-		key_values = { "run"            : 1, 
-		               "subrun"         : 1,
-		               "hwinit"         : MetaData.HardwareInitLevels.NO_HW_INIT.hash,
-		               "detector"       : MetaData.DetectorTypes.UPSTREAM.hash,
-		               "febs"           : 114,
-		               "is_single_run"  : True,
-		               "gates"          : 1500,
-		               "runmode"        : "One shot",
-		               "hwconfig"       : "Current state",
-		               "ledgroups"      : "ABCD",
-		               "lilevel"        : "Max PE",
-		               "runseries_path" : None,
-		               "runseries_file" : None,
-		               "lockdown"       : True,
-		               "autoclose"      : True }
+		key_values = { "run"              : 1, 
+		               "subrun"           : 1,
+		               "hwinit"           : MetaData.HardwareInitLevels.NO_HW_INIT.hash,
+		               "detector"         : MetaData.DetectorTypes.UPSTREAM.hash,
+		               "febs"             : 114,
+		               "is_single_run"    : True,
+		               "gates"            : 1500,
+		               "runmode"          : "One shot",
+		               "hwconfig"         : "Current state",
+		               "ledgroups"        : "ABCD",
+		               "lilevel"          : "Max PE",
+		               "runseries_path"   : None,
+		               "runseries_file"   : None,
+		               "lockdown"         : True,
+		               "autoclose"        : True,
+		               "mtest_usebeamDAQ" : True,
+		               "mtest_branch"     : Defaults.MTEST_BRANCH,
+		               "mtest_crate"      : Defaults.MTEST_CRATE,
+		               "mtest_type"       : Defaults.MTEST_TYPE,
+		               "mtest_memslot"    : Defaults.MTEST_MEM_SLOT,
+		               "mtest_gateslot"   : Defaults.MTEST_GATE_SLOT }
+		
 
 		if not os.path.exists(self.runinfoFile):
 			errordlg = wx.MessageDialog( None, "The database storing the last run configuration data appears to be missing.  Default configuration will be used...", "Last run configuration database missing", wx.OK | wx.ICON_WARNING )
@@ -599,6 +648,13 @@ class MainFrame(wx.Frame):
 		self.singleRunButton.SetValue(key_values["is_single_run"])
 		self.runSeriesButton.SetValue(not(key_values["is_single_run"]))
 		self.gatesEntry.SetValue(key_values["gates"])
+
+		self.mtest_useBeamDAQEntry.SetValue(key_values["mtest_usebeamDAQ"])
+		self.mtest_branchEntry.SetValue(key_values["mtest_branch"])
+		self.mtest_crateEntry.SetValue(key_values["mtest_crate"])
+		self.mtest_typeEntry.SetValue(key_values["mtest_type"])
+		self.mtest_memslotEntry.SetValue(key_values["mtest_memslot"])
+		self.mtest_gateslotEntry.SetValue(key_values["mtest_gateslot"])
 		
 		self.runModeEntry.SetSelection(MetaData.RunningModes.index(key_values["runmode"]))
 		self.hwConfigEntry.SetSelection(MetaData.HardwareConfigurations.index(key_values["hwconfig"]))
@@ -606,6 +662,7 @@ class MainFrame(wx.Frame):
 		
 		self.lockdownEntry.Check(key_values["lockdown"])
 		self.autocloseEntry.Check(key_values["autoclose"])
+
 	
 		for cb in self.LEDgroups:
 			cb.SetValue(cb.GetLabelText() in key_values["ledgroups"])
@@ -659,6 +716,13 @@ class MainFrame(wx.Frame):
 			db["gates"] = int(self.gatesEntry.GetValue())
 			db["runmode"] = MetaData.RunningModes.item(self.runModeEntry.GetSelection(), MetaData.HASH)
 			db["hwconfig"] = MetaData.HardwareConfigurations.item(self.hwConfigEntry.GetSelection(), MetaData.HASH)
+
+			db["mtest_usebeamDAQ"] = self.mtest_useBeamDAQEntry.GetValue()
+			db["mtest_branch"] = int(self.mtest_branchEntry.GetValue())
+			db["mtest_crate"] = int(self.mtest_crateEntry.GetValue())
+			db["mtest_type"] = int(self.mtest_typeEntry.GetValue())
+			db["mtest_memslot"] = int(self.mtest_memslotEntry.GetValue())
+			db["mtest_gateslot"] = int(self.mtest_gateslotEntry.GetValue())
 
 			LEDgroups = ""
 			for cb in self.LEDgroups:

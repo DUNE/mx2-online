@@ -62,10 +62,18 @@ OM_LOGFILE_LOCATION_DEFAULT = "/work/logs"
 OM_DISPATCHER_LOGFILE = "%s/om_dispatcher.log" % OM_LOGFILE_LOCATION_DEFAULT
 OM_GAUDI_OPTIONSFILE = "/home/nearonline/output.opts"
 OM_DATAFILE_LOCATION_DEFAULT = "/home/nearonline/data"
+MTEST_INSTALL_LOCATION = "/home/nuhep/daq"
+MTEST_DATA_LOCATION = "/home/nuhep/daq/DATA"
 MTEST_DISPATCHER_PIDFILE = "/tmp/beamline_dispatcher.pid"
 MTEST_LOGFILE_LOCATION = "/work/logs"
 MTEST_DISPATCHER_LOGFILE = "%s/beamline_dispatcher.log" % MTEST_LOGFILE_LOCATION
 
+# mtest configuration
+MTEST_BRANCH=1
+MTEST_CRATE=0
+MTEST_TYPE=1
+MTEST_MEM_SLOT=8
+MTEST_GATE_SLOT=18
 
 # slow control
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
