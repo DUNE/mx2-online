@@ -199,7 +199,7 @@ class RemoteNode:
 		except RemoteNodeNoConnectionException:
 			return False
 		
-		self.own_lock = not(response == "1")
+		self.own_lock = response == "0"
 
 		if not self.own_lock:
 			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
