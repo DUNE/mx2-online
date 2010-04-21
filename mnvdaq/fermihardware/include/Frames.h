@@ -66,7 +66,7 @@ class Frames {
 		void MakeDeviceFrameTransmit(Devices, Broadcasts, Directions, unsigned int, unsigned int); 
 		void MakeHeader();
 		virtual void MakeMessage();
-		virtual int DecodeRegisterValues(int a);
+		virtual void DecodeRegisterValues(int a);
 		void DecodeHeader();
 		bool CheckForErrors();
 		inline unsigned char *GetOutgoingMessage() {return outgoingMessage;};
