@@ -154,7 +154,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
 		try:
 			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
-			node_map = { "readout": self.readoutNodes, "monitoring": self.monitorNodes, "mtestbeam": self.mtestBeamNodes }
+			node_map = { "readout": self.readoutNodes, "monitoring": self.monitorNodes, "mtestbeam": self.mtestBeamDAQNodes }
 			do_reset = False
 			for line in sessionfile:
 				matches = pattern.match(line)
@@ -184,7 +184,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 			# now any MTest beamline DAQ nodes
 			if self.mtest_useBeamDAQ:
-				for node in self.mtestBeamNodes:
+				for node in self.mtestBeamDAQNodes:
 					if node.own_lock:
 						node.stop()
 
@@ -248,10 +248,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# try to get a lock on each of the readout nodes
 		# as well as any MTest beamline DAQ nodes
 		failed_connection = None
-		nodelist = self.readoutNodes + self.mtestBeamNodes if self.mtest_useBeamDAQ else self.readoutNodes
+		nodelist = self.readoutNodes + self.mtestBeamDAQNodes if self.mtest_useBeamDAQ else self.readoutNodes
 		for node in nodelist:
 			if node.get_lock():
-				wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
+				if node.nodetype == "readout":
+					wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
 				self.logger.info(" Got run lock on %s node (id: %s)..." % (node.name, node.id))
 			else:
 				failed_connection = node.name
@@ -306,12 +307,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 			node.release_lock()
 		
 		if self.mtest_useBeamDAQ:
-			for node in self.mtestBeamNodes:
-				try:
-					node.stop()
-					node.release_lock()
-				except:
-					self.logger.exception("Error stopping the MTest beamline DAQ:")
+			for node in self.mtestBeamDAQNodes:
+				success = node.daq_stop()
+				success = success and node.release_lock()
+				if not success:
+					self.logger.warning("Error stopping the MTest beamline DAQ...")
 		
 		for node in self.monitorNodes:
 			try:
@@ -440,7 +440,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.running = False
 			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm"))
 		
-		num_mtest_nodes = len(self.mtestBeamNodes) if self.mtest_useBeamDAQ else 0
+		num_mtest_nodes = len(self.mtestBeamDAQNodes) if self.mtest_useBeamDAQ else 0
 		numsteps = num_mtest_nodes + len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the beamline DAQ nodes, readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
 		step = 0
 			
@@ -467,8 +467,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		if self.mtest_useBeamDAQ:
 			success = True
-			for node in self.mtestBeamNodes:
-				success = success and node.stop()
+			for node in self.mtestBeamDAQNodes:
+				success = success and node.daq_stop()
 				step += 1
 		
 			if not success:
@@ -708,6 +708,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The " + node.name + " node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty...", title="No boards attached to " + node.name + " node") )
 					self.logger.warning(node.name + " node reports that it has no FEBs...")
 					continue	# it's still ok to go on, but user should know what's happening
+				elif board_statuses is None:
+					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The " + node.name + " node says it can't read the FEBs.  This subrun will be stopped.", title="Can't read FEBs on " + node.name + " node") )
+					self.logger.warning(node.name + " node reports that can't read its FEBs.  See its log.")
+					return False
 			
 				for board in board_statuses:
 					dev = abs(int(board["hv_dev"]))
@@ -816,7 +820,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				continue
 
 		if self.mtest_useBeamDAQ:
-			for node in self.mtestBeamNodes:
+			for node in self.mtestBeamDAQNodes:
 				try:
 					node.start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.runinfo.gates, "beamline_DAQ_%08d_%04d" % (self.run, self.first_subrun + self.subrun))
 				except:

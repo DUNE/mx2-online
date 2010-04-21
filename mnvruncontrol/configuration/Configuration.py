@@ -131,7 +131,6 @@ for location in locations_to_try:
 	except anydbm.error:
 		pass
 	else:
-		print "using db: '%s'" % location
 		config_file_inaccessible = False
 		break
 

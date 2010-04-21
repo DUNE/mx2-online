@@ -39,12 +39,12 @@ class MTestBeamDispatcher(Dispatcher):
 		self.logger.addHandler(self.filehandler)
 
 		# we need to specify what requests we know how to handle.
-		self.valid_requests += SocketRequests.MonitorRequests
-		self.handlers.update( { "mtestbeam_start" : self.start,
-		                        "mtestbeam_stop"  : self.stop } )
+		self.valid_requests += SocketRequests.MTestBeamRequests
+		self.handlers.update( { "mtestbeam_start" : self.beamdaq_start,
+		                        "mtestbeam_stop"  : self.beamdaq_stop } )
 
 		# need to shut down the subprocesses...
-		self.cleanup_methods += [self.stop]
+		self.cleanup_methods += [self.beamdaq_stop]
 		                        
 		self.pidfilename = Configuration.params["MTest beam nodes"]["mtest_PIDfileLocation"]
 		                   
@@ -53,7 +53,7 @@ class MTestBeamDispatcher(Dispatcher):
 		                      "tof":          self.start_tof           }
 		
 
-	def start(self, matches, show_details, **kwargs):
+	def beamdaq_start(self, matches, show_details, **kwargs):
 		""" Starts the test beam DAQ services as subprocesses.
 		
 		    Returns 0 on success, 1 on failure. """
@@ -78,7 +78,7 @@ class MTestBeamDispatcher(Dispatcher):
 		# now start the DAQ processes
 		for thread in self.daq_threads:
 			try:
-				self.logger.info("Trying to start the %s thread..." )
+				self.logger.info("Trying to start the %s thread..." % thread )
 				self.daq_threads[thread] = self.daq_starters[thread](matches)
 			except:
 				self.logger.exception("  ==> failed.")
@@ -93,11 +93,13 @@ class MTestBeamDispatcher(Dispatcher):
 		return "0"
 	
 	def crate_initialize(self, matches, **kwargs):
+		self.logger.info("  ==> Initializing the crate...")
 		subprocess.call("%s/camac/example/cz %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("type")), shell=True)
 		
 	def gate_inhibit(self, matches, inhibit_status, **kwargs):
+		self.logger.info("  ==> Sending a gate inhibit command: inhibit " + ("on" if inhibit_status == True else "off"))
 		inhibit_status = 1 if inhibit_status == True else 0
-		subprocess.call("%s/misc/gateinhibit/gate_inhibit %s %s %s %s %d" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("type"), matches.group("gate_slot"), inhibit_status) )
+		subprocess.call("%s/misc/gateinhibit/gate_inhibit %s %s %s %s %d" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("type"), matches.group("gate_slot"), inhibit_status), shell=True)
 	
 	def start_wire_chamber(self, matches, **kwargs):
 		""" Starts the wire chamber process.
@@ -106,7 +108,7 @@ class MTestBeamDispatcher(Dispatcher):
 		    
 		command = "%s/PCOS/PCOS_readout_sync %s %s %s %s %s %s/wc/%s_wc.dat" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("mem_slot"), matches.group("type"), matches.group("num_events"), Configuration.params["MTest beam nodes"]["mtest_dataLocation"], matches.group("filepattern"))
 		self.logger.info("  ==> Using command: '%s'" % command)
-		return DAQThread(command, thread)
+		return DAQThread(command, "wire chamber")
 
 	def start_tof(self, matches, **kwargs):
 		""" Starts the time-of-flight process.
@@ -115,15 +117,15 @@ class MTestBeamDispatcher(Dispatcher):
 		    
 		command = "%s/tof/src/run_rik_t977_sync %s %s/tof/%s_tof.dat" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("num_events"), Configuration.params["MTest beam nodes"]["mtest_dataLocation"], matches.group("filepattern"))
 		self.logger.info("  ==> Using command: '%s'" % command)
-		return DAQThread(command, thread)
+		return DAQThread(command, "tof")
 	
-	def stop(self, matches=None, show_details=True, **kwargs):
+	def beamdaq_stop(self, matches=None, show_details=True, **kwargs):
 		""" Stops the beamline DAQ processes. 
 				    
 		    Returns 0 on success and 1 on failure. """
 		    
 		if show_details:
-			self.logger.info("Client wants to stop the beamline DAQ process.")
+			self.logger.info("Client wants to stop the beamline DAQ processes.")
 		
 		errors = False
 		for thread in self.daq_threads:
@@ -139,7 +141,7 @@ class MTestBeamDispatcher(Dispatcher):
 					errors = True
 
 		if show_details:
-			self.logger.info("   ==> Stopped successfully.")
+			self.logger.info("   ==> All stopped successfully.")
 		
 		return "0" if not errors else "1"
 		
@@ -196,18 +198,7 @@ class DAQThread(threading.Thread):
   Otherwise this implementation will bail with an error.
 """
 if __name__ == "__main__":
-	environment = {}
-	try:
-		environment["DAQROOT"] = os.environ["DAQROOT"]
-		environment["ET_HOME"] = os.environ["ET_HOME"]
-		environment["ET_LIBROOT"] = os.environ["ET_LIBROOT"]
-		environment["CAEN_DIR"] = os.environ["CAEN_DIR"]
-		environment["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
-	except KeyError:
-		sys.stderr.write("Your environment is not properly configured.  You must run the 'setupdaqenv.sh' script before launching the dispatcher.\n")
-		sys.exit(1)
-
-	dispatcher = MonitorDispatcher()
+	dispatcher = MTestBeamDispatcher()
 	dispatcher.bootstrap()
 	
 	sys.exit(0)
