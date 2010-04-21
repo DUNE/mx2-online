@@ -22,7 +22,6 @@ import sys
 import shelve
 import anydbm
 import os.path
-import getopt
 
 from mnvruncontrol.configuration import Defaults
 
@@ -103,16 +102,19 @@ for param_set in configuration:
 # on the command line.  (e.g. maybe there's no '/work' directory.)
 # if none is supplied, we use the default from Defaults.
 user_specified_db = None
-try:
-	opts, args = getopt.getopt(sys.argv[1:], "c:", ["config-location="])
-# there might be extra options intended for a dispatcher (for example).
-# we want to ignore those here.
-except getopt.GetoptError, e:
-	print e
-else:
-	for o, a in opts:
-		if o in ("-c", "--config-location"):
-			user_specified_db = os.path.abspath(a)
+if "-c" in sys.argv:
+	index = sys.argv.index("-c")
+	if index >= len(sys.argv) - 1:
+		sys.stderr.write(" Error: '-c' must be followed by path to config db (e.g., '-c ~/config/rc_config.db')\n\n")
+		sys.exit(1)
+	try:
+		user_specified_db = os.path.abspath(sys.argv[index + 1])
+	except:
+		pass
+	# remove "-c" and its argument from the argument list
+	# so that optparse doesn't barf on it in other modules
+	del sys.argv[index + 1]
+	del sys.argv[index]
 
 # now update using any values that are set in the DB.
 # first look in the specified location (or, if that's not
@@ -129,6 +131,7 @@ for location in locations_to_try:
 	except anydbm.error:
 		pass
 	else:
+		print "using db: '%s'" % location
 		config_file_inaccessible = False
 		break
 
@@ -141,3 +144,4 @@ if not config_file_inaccessible:
 				pass		# the default is already set
 else:
 	print "Note: configuration file is inaccessible.  Defaults are in use."
+
