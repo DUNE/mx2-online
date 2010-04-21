@@ -432,12 +432,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finalizing...")
 		
 		if hasattr(evt, "processname") and evt.processname is not None:
-			if len(self.runseries.Runs) > 1:
-				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be need to be terminated.  Do you want to continue with the rest of the run series?  (Selecting 'no' will stop the run series and return you to the idle state.)", evt.processname + " quit prematurely",   wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
-				self.running = self.running and (dialog.ShowModal() == wx.ID_YES)
-			else:			
-				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
-				self.running = False
+#			if len(self.runseries.Runs) > 1:
+#				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be need to be terminated.  Do you want to continue with the rest of the run series?  (Selecting 'no' will stop the run series and return you to the idle state.)", evt.processname + " quit prematurely",   wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+#				self.running = self.running and (dialog.ShowModal() == wx.ID_YES)
+#			else:			
+#				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
+#				self.running = False
+			self.running = False
 			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm"))
 		
 		num_mtest_nodes = len(self.mtestBeamDAQNodes) if self.mtest_useBeamDAQ else 0
