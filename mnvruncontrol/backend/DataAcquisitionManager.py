@@ -106,6 +106,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.first_subrun = None
 		self.febs = None
 		
+		self.mtest_useBeamDAQ = None
 		self.mtest_branch = None
 		self.mtest_crate = None
 		self.mtest_controller_type = None
@@ -182,9 +183,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 					node.om_stop()
 
 			# now any MTest beamline DAQ nodes
-			for node in self.mtestBeamNodes:
-				if node.own_lock:
-					node.stop()
+			if self.mtest_useBeamDAQ:
+				for node in self.mtestBeamNodes:
+					if node.own_lock:
+						node.stop()
 
 			self.can_shutdown = True
 			self.first_subrun = 0
@@ -246,7 +248,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# try to get a lock on each of the readout nodes
 		# as well as any MTest beamline DAQ nodes
 		failed_connection = None
-		for node in self.readoutNodes + self.mtestBeamNodes:
+		nodelist = self.readoutNodes + self.mtestBeamNodes if self.mtest_useBeamDAQ else self.readoutNodes
+		for node in nodelist:
 			if node.get_lock():
 				wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
 				self.logger.info(" Got run lock on %s node (id: %s)..." % (node.name, node.id))
@@ -302,12 +305,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		for node in self.readoutNodes:
 			node.release_lock()
 		
-		for node in self.mtestBeamNodes:
-			try:
-				node.stop()
-				node.release_lock()
-			except:
-				self.logger.exception("Error stopping the MTest beamline DAQ:")
+		if self.mtest_useBeamDAQ:
+			for node in self.mtestBeamNodes:
+				try:
+					node.stop()
+					node.release_lock()
+				except:
+					self.logger.exception("Error stopping the MTest beamline DAQ:")
 		
 		for node in self.monitorNodes:
 			try:
@@ -435,8 +439,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
 				self.running = False
 			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm"))
-			
-		numsteps = len(self.mtestBeamNodes) + len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the beamline DAQ nodes, readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
+		
+		num_mtest_nodes = len(self.mtestBeamNodes) if self.mtest_useBeamDAQ else 0
+		numsteps = num_mtest_nodes + len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the beamline DAQ nodes, readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
 		step = 0
 			
 		# if the subrun is being stopped for some other reason than
@@ -460,13 +465,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 			if not success:
 				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Not all readout nodes could be stopped.  The next subrun could be problematic...", title="Not all nodes stopped") )
 		
-		success = True
-		for node in self.mtestBeamNodes:
-			success = success and node.stop()
-			step += 1
+		if self.mtest_useBeamDAQ:
+			success = True
+			for node in self.mtestBeamNodes:
+				success = success and node.stop()
+				step += 1
 		
-		if not success:
-			wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The beamline DAQ node(s) could be stopped.  The next subrun could be problematic...", title="Beamline DAQ node(s) not stopped") )
+			if not success:
+				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The beamline DAQ node(s) could be stopped.  The next subrun could be problematic...", title="Beamline DAQ node(s) not stopped") )
 		
 		for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping ET threads...", progress=(step, numsteps)) )
@@ -809,13 +815,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.logger.exception("Online monitoring couldn't be started on node '%s'.  Ignoring." % node.name)
 				continue
 
-		for node in self.mtestBeamNodes:
-			try:
-				node.start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.runinfo.gates, "beamline_DAQ_%08d_%04d" % (self.run, self.first_subrun + self.subrun))
-			except:
-				self.logger.exception("Couldn't start MTest beamline DAQ!  Aborting run.")
-				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title="Couldn't start beamline DAQ", text="Couldn't start the beamline DAQ.  Run will be aborted (see the log for more details).") )
-				self.StopDataAcquisition()
+		if self.mtest_useBeamDAQ:
+			for node in self.mtestBeamNodes:
+				try:
+					node.start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.runinfo.gates, "beamline_DAQ_%08d_%04d" % (self.run, self.first_subrun + self.subrun))
+				except:
+					self.logger.exception("Couldn't start MTest beamline DAQ!  Aborting run.")
+					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title="Couldn't start beamline DAQ", text="Couldn't start the beamline DAQ.  Run will be aborted (see the log for more details).") )
+					self.StopDataAcquisition()
 				
 
 		# DON'T consolidate this loop together with the next one.

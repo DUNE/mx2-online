@@ -21,6 +21,7 @@
 import shelve
 import anydbm
 import os.path
+import optparse
 
 from mnvruncontrol.configuration import Defaults
 
@@ -96,19 +97,32 @@ for param_set in configuration:
 		names[param_set][param_name]  = configuration[param_set][param_name][1]
 		types[param_set][param_name]  = configuration[param_set][param_name][2]
 
-config_file_inaccessible = False
+config_file_inaccessible = True
 
+# first, we check if the user passed a location for the main config DB
+# on the command line.  (e.g. maybe there's no '/work' directory.)
+# if none is supplied, we use the default from Defaults.
+parser = optparse.OptionParser()
+parser.add_option("-d", "--config-location", type="string", dest="config_location")
+options, args = parser.parse_args()
 
 # now update using any values that are set in the DB.
-try:
-	location = os.path.abspath(Defaults.CONFIG_DB_NAME) 
-	db = shelve.open(location, "r")		# first look in the current directory.
-#	print "Using config DB in '%s'..." % location
-except anydbm.error:
+# first look in the specified location (or, if that's not
+# set, the default); if nothing's there or it can't be opened,
+# try the current directory.
+user_specified_db = os.path.abspath(options.config_location)
+locations_to_try = [os.path.abspath(Defaults.CONFIG_DB_NAME), "%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME)]
+if user_specified_db is not None:
+	locations_to_try = [user_specified_db] + locations_to_try
+	
+for location in locations_to_try:
 	try:
-		db = shelve.open("%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME))		# now try the default location
+		db = shelve.open(location, "r")
 	except anydbm.error:
-		config_file_inaccessible = True
+		pass
+	else:
+		config_file_inaccessible = False
+		break
 
 if not config_file_inaccessible:
 	for param_set in params:
@@ -119,7 +133,3 @@ if not config_file_inaccessible:
 				pass		# the default is already set
 else:
 	print "Note: configuration file is inaccessible.  Defaults are in use."
-
-
-			
-

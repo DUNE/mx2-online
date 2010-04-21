@@ -463,6 +463,7 @@ class MainFrame(wx.Frame):
 		self.runmanager.febs         = int(self.febsEntry.GetValue())
 		self.runmanager.hwinit       = MetaData.HardwareInitLevels.item(self.HWinitEntry.GetSelection(), MetaData.HASH)
 		
+		self.runmanager.mtest_useBeamDAQ = self.mtest_useBeamDAQEntry.GetValue()
 		self.runmanager.mtest_branch = self.mtest_branchEntry.GetValue()
 		self.runmanager.mtest_crate = self.mtest_crateEntry.GetValue()
 		self.runmanager.mtest_controller_type = self.mtest_typeEntry.GetValue()

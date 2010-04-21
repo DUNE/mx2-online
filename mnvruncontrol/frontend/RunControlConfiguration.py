@@ -16,6 +16,7 @@ import wx
 import sys
 import shelve
 import anydbm
+import os.path
 
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.mixins.listctrl import ListRowHighlighter
@@ -189,59 +190,68 @@ class ConfigurationFrame(wx.Frame):
 		
 	def SaveAll(self, evt=None):
 		""" Save the configuration. """
-		try:
-			location = "%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME)
-			db = shelve.open(location, "w")  
-		except anydbm.error:
-			errordlg = wx.MessageDialog( None, "The configuration file cannot be opened.  Values will not be saved.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
-			errordlg.ShowModal()
-		else:
-			# first do the automatic ones
-			for param_set in self.entries:
-				for param_name in self.entries[param_set]:
-					if isinstance(self.entries[param_set][param_name], wx.TextCtrl) or isinstance(self.entries[param_set][param_name], wx.CheckBox):
-						# note that this must saved as the correct type (hence the Configuration.types() call).
-						db[param_name] = Configuration.types[param_set][param_name](self.entries[param_set][param_name].GetValue())
+		
+		locations_to_try = ["%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME)]
+		if Configuration.user_specified_db:
+			locations_to_try = [Configuration.user_specified_db] + locations_to_try
 			
-			# now any that need to be handled in a particular way
+		found_location = False
+		for location in locations_to_try:
+			try:
+				db = shelve.open(os.path.abspath(location), "c")  
+			except anydbm.error, e:
+				continue
+			else:
+				found_location = True
+				# first do the automatic ones
+				for param_set in self.entries:
+					for param_name in self.entries[param_set]:
+						if isinstance(self.entries[param_set][param_name], wx.TextCtrl) or isinstance(self.entries[param_set][param_name], wx.CheckBox):
+							# note that this must saved as the correct type (hence the Configuration.types() call).
+							db[param_name] = Configuration.types[param_set][param_name](self.entries[param_set][param_name].GetValue())
 			
-			# first: log file locations
-			loglist = []
-			index = -1
-			while True:
-				index = self.entries["Front end"]["logFileLocations"].GetNextItem(index)
-				
-				if index == -1:
-					break
-				loglist.append(self.entries["Front end"]["logFileLocations"].GetItem(index, 0).GetText())
+				# now any that need to be handled in a particular way
 			
-			db["logFileLocations"] = loglist
-			
-			
-			# now remote nodes
-			nodetypes = ["readoutNodes", "monitorNodes", "mtestbeamNodes"]
-			nodelist = {}
-			for nodetype in nodetypes:
-				nodelist[nodetype] = []
+				# first: log file locations
+				loglist = []
 				index = -1
 				while True:
-					index = self.entries["Front end"][nodetype].GetNextItem(index)
-					
+					index = self.entries["Front end"]["logFileLocations"].GetNextItem(index)
+				
 					if index == -1:
 						break
-					
-					nodedescr = {"name": self.entries["Front end"][nodetype].GetItem(index, 0).GetText(), "address" : self.entries["Front end"][nodetype].GetItem(index, 1).GetText()}
-					nodelist[nodetype].append(nodedescr)
-					
-				db[nodetype] = nodelist[nodetype]
+					loglist.append(self.entries["Front end"]["logFileLocations"].GetItem(index, 0).GetText())
 			
-			# need to specifically close the DB so that it saves correctly
-			db.close()
+				db["logFileLocations"] = loglist
+			
+			
+				# now remote nodes
+				nodetypes = ["readoutNodes", "monitorNodes", "mtestbeamNodes"]
+				nodelist = {}
+				for nodetype in nodetypes:
+					nodelist[nodetype] = []
+					index = -1
+					while True:
+						index = self.entries["Front end"][nodetype].GetNextItem(index)
+					
+						if index == -1:
+							break
+					
+						nodedescr = {"name": self.entries["Front end"][nodetype].GetItem(index, 0).GetText(), "address" : self.entries["Front end"][nodetype].GetItem(index, 1).GetText()}
+						nodelist[nodetype].append(nodedescr)
+					
+					db[nodetype] = nodelist[nodetype]
+			
+				# need to specifically close the DB so that it saves correctly
+				db.close()
+				
+				break
 		
-		if self.parent is not None:	
-			wx.PostEvent(self.parent, Events.ConfigUpdatedEvent())
-		else:
-			print "Wrote configuration to '%s'." % location
+		if found_location:
+			if self.parent is not None:	
+				wx.PostEvent(self.parent, Events.ConfigUpdatedEvent())
+			else:
+				print "Wrote configuration to '%s'." % location
 
 		self.Close()
 		
