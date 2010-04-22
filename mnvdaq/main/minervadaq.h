@@ -27,10 +27,10 @@ int WriteSAM(const char samfilename[],
 	const std::string datafilename, const int detector, const char configfilename[], 
 	const int runningMode, const int eventCount, const int runNum, const int subNum, 
 	const unsigned long long startTime, const unsigned long long stopTime);
-/*! Synch readout nodes - write */ //TODO - return an int!
-template <typename Any> void SynchWrite(int socket_handle, Any *data);
-/*! Synch readout nodes - listen */ //TODO - return an int!
-template <typename Any> void SynchListen(int socket_connection, Any *data); 
+/*! Synch readout nodes - write */ 
+template <typename Any> int SynchWrite(int socket_handle, Any *data);
+/*! Synch readout nodes - listen */ 
+template <typename Any> int SynchListen(int socket_connection, Any *data); 
 
 /* some logging files for debugging purposes */
 #if TIME_ME
@@ -39,13 +39,18 @@ std::ofstream take_data_extime_log; /*!<an output file for tiing data */
 std::ofstream trigger_log; /*!<an output file for trigger debuggin */
 
 // Socket Communication Functions
-void CreateSocketPair(int &workerToSoldier_socket_handle, int &soldierToWorker_socket_handle);
-void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info, 
+int CreateSocketPair(int &workerToSoldier_socket_handle, int &soldierToWorker_socket_handle);
+int SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info, 
 	std::string hostname, const int port );
 
 // Socket Communication Vars.
+// Trigger check - be sure both nodes agree on the trigger type.
 unsigned short int workerToSoldier_trig[1]; // trigger check the worker -> soldier 
 unsigned short int soldierToWorker_trig[1]; // trigger check the soldier -> worker 
+// Error check - share information between nodes about readout / timeout errors.
+unsigned short int workerToSoldier_error[1]; // error check the worker -> soldier 
+unsigned short int soldierToWorker_error[1]; // error check the soldier -> worker 
+// Gate check - be sure both nodes agree on the gate number at end of gate.
 int workerToSoldier_gate[1]; // gate check the worker -> soldier 
 int soldierToWorker_gate[1]; // gate check the soldier -> worker 
 
@@ -85,11 +90,22 @@ struct hostent *            soldier_node_info; // server on soldier node
 // Mixed mode cutoff time for physics spills.  If a physics gate takes longer than this to
 // read out, we will abort the following calibration gate and skip to another physics gate.
 #if WH14T||WH14B
+#if SINGLEPC
 const int physReadoutMicrosec = 12750; //microseconds, useful test stand value
+#else 
+const int physReadoutMicrosec = 127500; //microseconds, useful test stand value?
+#endif // WH14
 #else
-const int physReadoutMicrosec = 925000; //microseconds, good MINERvA value (testing)
+const int physReadoutMicrosec = 999000; //microseconds, good MINERvA value (testing)
 #endif
 
-
+// Total allowed readout times (microseconds).
+int allowedReadoutTime;
+// Bail on any gate taking longer than these times and set an error flag.
+// Label by triggerType.
+const int allowedPedestal       =  1000000;  
+const int allowedNuMI           =  2100000; 
+const int allowedCosmic         = 10000000;  // UNTESTED! (Really, an MTest value.)
+const int allowedLightInjection =  1100000; 
 
 

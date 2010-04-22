@@ -322,10 +322,24 @@ int main(int argc, char *argv[])
 	mnvdaq.infoStream() << "Soldier to Worker Network Port = " << soldierToWorker_port;
 #endif
 #if MASTER&&(!SINGLEPC) // Soldier Node
-	// Create a TCP socket.
-	CreateSocketPair(workerToSoldier_socket_handle, soldierToWorker_socket_handle);
+	// Create a TCP socket pair.
+	try {
+		int error = CreateSocketPair(workerToSoldier_socket_handle, soldierToWorker_socket_handle);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Could not create socket pair!  Exiting!" << std::endl;
+		mnvdaq.fatalStream() << "Could not create socket pair!  Exiting!";
+		exit(1);
+	}
 	// Set up the soldierToWorker service.
-	SetupSocketService(soldierToWorker_service, worker_node_info, workerName, soldierToWorker_port ); 
+	try {
+		int error = SetupSocketService(soldierToWorker_service, worker_node_info, workerName, soldierToWorker_port ); 
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Could not setup socket service!  Exiting!" << std::endl;
+		mnvdaq.fatalStream() << "Could not setup socket service!  Exiting!";
+		exit(1);		
+	}
 	// Create an address for the workerToSoldier listener.  The soldier listens for data.
 	workerToSoldier_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&workerToSoldier_service, 0, sizeof (workerToSoldier_service));
@@ -356,9 +370,24 @@ int main(int argc, char *argv[])
 #endif // end if MASTER&&(!SINGLEPC)
 
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
-	CreateSocketPair(workerToSoldier_socket_handle, soldierToWorker_socket_handle);
+	// Create a TCP socket pair.
+	try {
+		int error = CreateSocketPair(workerToSoldier_socket_handle, soldierToWorker_socket_handle);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Could not create socket pair!  Exiting!" << std::endl;
+		mnvdaq.fatalStream() << "Could not create socket pair!  Exiting!";
+		exit(1);
+	}
 	// Set up the workerToSoldier service. 
-	SetupSocketService(workerToSoldier_service, soldier_node_info, soldierName, workerToSoldier_port ); 
+	try {
+		int error = SetupSocketService(workerToSoldier_service, soldier_node_info, soldierName, workerToSoldier_port ); 
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Could not setup socket service!  Exiting!" << std::endl;
+		mnvdaq.fatalStream() << "Could not setup socket service!  Exiting!";
+		exit(1);                		
+	}
 	// Create an address for the soldierToWorker listener.  The worker listens for data.
 	soldierToWorker_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&soldierToWorker_service, 0, sizeof (soldierToWorker_service));
@@ -605,8 +634,9 @@ int main(int argc, char *argv[])
 		/* Trigger the DAQ, threaded or unthreaded.                                       */
 		/**********************************************************************************/
 		unsigned short int triggerType;
-		readFPGA    = true; // default to reading the FPGA programming registers
-		nReadoutADC = 8;    // default to maximum possible
+		readFPGA    = true;     // default to reading the FPGA programming registers
+		nReadoutADC = 8;        // default to maximum possible
+		allowedReadoutTime = 0; // default to "infinity"
 		// Convert to int should be okay - we only care about the least few significant bits.
 		int readoutTimeDiff = (int)stopReadout - (int)startReadout; // stop updated at end of LAST gate.
 #if DEBUG_MIXEDMODE
@@ -640,9 +670,11 @@ int main(int argc, char *argv[])
 		switch (runningMode) {
 			case OneShot:
 				triggerType = Pedestal;
-                        	break;
+				allowedReadoutTime = allowedPedestal;
+				break;
 			case NuMIBeam:
 				triggerType = NuMI;
+				allowedReadoutTime = allowedNuMI;
 				break;
 			case Cosmics:
 				// We need to reset the sequencer latch on the CRIM in Cosmic mode...
@@ -662,47 +694,43 @@ int main(int argc, char *argv[])
 					exit(e);
 				}
 				triggerType = Cosmic;
+				allowedReadoutTime = allowedCosmic;
 				break;
 			case PureLightInjection:
 				triggerType = LightInjection;
+				allowedReadoutTime = allowedLightInjection;
 				break;
 			case MixedBeamPedestal:
 				if (triggerCounter%2) { // ALWAYS start with NuMI!
 					triggerType = NuMI;
+					allowedReadoutTime = allowedNuMI;
 				} else {
 					if ( readoutTimeDiff < physReadoutMicrosec ) { 
 						triggerType = Pedestal;
+						allowedReadoutTime = allowedPedestal;
 						readFPGA    = false;
-#if DEBUG_MIXEDMODE
-						mnvdaq.debugStream() << "Okay to calib trigger...";
-#endif
 					} else {
 						triggerType = NuMI; 
+						allowedReadoutTime = allowedNuMI;
 						mnvdaq.infoStream() << "Aborting calib trigger!";
 					}
 				}
-#if DEBUG_MIXEDMODE
-				mnvdaq.debugStream() << " triggerType = " << triggerType;
-#endif
 				break;
 			case MixedBeamLightInjection:
 				if (triggerCounter%2) { // ALWAYS start with NuMI!
 					triggerType = NuMI;
+					allowedReadoutTime = allowedNuMI;
 				} else {
 					if ( readoutTimeDiff < physReadoutMicrosec ) { 
 						triggerType = LightInjection;
+						allowedReadoutTime = allowedLightInjection;
 						nReadoutADC = 1; // Deepest only.
-#if DEBUG_MIXEDMODE
-						mnvdaq.debugStream() << "Okay to calib trigger...";
-#endif
 					} else {
 						triggerType = NuMI; 
+						allowedReadoutTime = allowedNuMI;
 						mnvdaq.infoStream() << "Aborting calib trigger!";
 					}
 				}
-#if DEBUG_MIXEDMODE
-				mnvdaq.debugStream() << " triggerType = " << triggerType;
-#endif
 				break; 
 			default:
 				std::cout << "minervadaq::main(): ERROR! Improper Running Mode = " << runningMode << std::endl;
@@ -819,6 +847,7 @@ int main(int argc, char *argv[])
 		gettimeofday(&readstart, NULL);
 		startReadout = (unsigned long long)(readstart.tv_sec*1000000) + 
 			(unsigned long long)(readstart.tv_usec);
+		event_data.readoutInfo = (unsigned short)0; // No Error
 
 		/**********************************************************************************/
 		/* Loop over crocs and then channels in the system.  Execute TakeData on each     */
@@ -879,8 +908,7 @@ int main(int argc, char *argv[])
 							int error = TakeData(daq,evt,croc_id,j,0,attach,sys_id,readFPGA,nReadoutADC);
 							if (error) { throw error; }
 						} catch (int e) {
-							//event_data.readoutInfo = (unsigned short)1; // "VME Error"
-							event_data.readoutInfo = (unsigned short)controllerErrCode; 
+							event_data.readoutInfo += (unsigned short)controllerErrCode; 
 							std::cout << "Error Code " << e << " in minervadaq::main()!  ";
 							std::cout << "Cannot TakeData for Gate: " << gate << std::endl;
 							std::cout << "Failed to execute on CROC Addr: " << 
@@ -890,13 +918,84 @@ int main(int argc, char *argv[])
 							mnvdaq.critStream() << "Failed to execute on CROC Addr: " << 
 								(tmpCroc->GetCrocAddress()>>16) << " Chain: " << j;
 							continueRunning = false;  // "Stop" gate loop.
-							break;                    // Exit readout loop.
+							break;                    // Exit chain loop.
 						}
 #endif
-					} //channel has febs
-				} //channel
-			} //croc
+					} //channel has febs check
+				} //channel loop
+				if (allowedReadoutTime) { // t==0 -> infinity
+					gettimeofday(&readend, NULL);
+					stopReadout = (unsigned long long)(readend.tv_sec*1000000) + 
+						(unsigned long long)(readend.tv_usec);
+					readoutTimeDiff = (int)stopReadout - (int)startReadout; 
+					if (readoutTimeDiff > allowedReadoutTime) {
+						event_data.readoutInfo += (unsigned short)1; // "Timeout Error"
+						mnvdaq.critStream() << "Readout is taking longer than allowed!";
+						mnvdaq.critStream() << "Terminating readout at CROC Addr: " << 
+							(tmpCroc->GetCrocAddress()>>16);
+						break; // Exit croc loop
+					}
+				}
+			} //croc loop
 		} //continueRunning Check
+		
+		// The two nodes should share error information to record in the DAQ Header.
+		soldierToWorker_error[0] = 0;
+		workerToSoldier_error[0] = 0;
+#if MASTER&&(!SINGLEPC) // Soldier Node
+		soldierToWorker_error[0] = event_data.readoutInfo;
+		// Write readout info (errors) to the worker node	 
+		if (write(soldierToWorker_socket_handle,soldierToWorker_error,sizeof(soldierToWorker_error)) == -1) {	 
+			mnvdaq.fatalStream() << "socket write error: soldierToWorker_error!";	 
+			perror("write error: soldierToWorker_error");	 
+			exit(EXIT_FAILURE);	 
+		}
+#endif
+#if (!MASTER)&&(!SINGLEPC) // Worker Node
+		// Read the readout info (errors) from the soldier node	 
+		while (!soldierToWorker_error[0]) {	 
+			int read_val = read(soldierToWorker_socket_connection,soldierToWorker_error,sizeof(soldierToWorker_error));	 
+			if ( read_val != sizeof(soldierToWorker_error) ) {	 
+				mnvdaq.fatalStream() << "server read error: cannot get soldierToWorker_error!";
+				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
+				perror("server read error: soldierToWorker_error");	 
+				exit(EXIT_FAILURE);	 
+			}
+		}
+#if DEBUG_SOCKETS
+		mnvdaq.debugStream() << " Got the error value = " << soldierToWorker_error[0];
+#endif 
+#endif
+#if (!MASTER)&&(!SINGLEPC) // Worker Node
+		workerToSoldier_error[0] = event_data.readoutInfo;
+		// Write readout info (errors) to the soldier node	 
+		if (write(workerToSoldier_socket_handle,workerToSoldier_error,sizeof(workerToSoldier_error)) == -1) {	 
+			mnvdaq.fatalStream() << "socket write error: workerToSoldier_error!";	 
+			perror("write error: workerToSoldier_error");	 
+			exit(EXIT_FAILURE);	 
+		}
+#endif
+#if MASTER&&(!SINGLEPC) // Soldier Node
+		// Read the readout info (errors) from the worker node	 
+		while (!workerToSoldier_error[0]) {	 
+			int read_val = read(workerToSoldier_socket_connection,workerToSoldier_error,sizeof(workerToSoldier_error));	 
+			if ( read_val != sizeof(workerToSoldier_error) ) {	 
+				mnvdaq.fatalStream() << "server read error: cannot get workerToSoldier_error!";
+				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
+				perror("server read error: workerToSoldier_error");	 
+				exit(EXIT_FAILURE);	 
+			}
+		}
+#if DEBUG_SOCKETS
+		mnvdaq.debugStream() << "Got the error value = " << workerToSoldier_error[0];
+#endif 
+#endif
+		// Only first three bits are valid in DAQHeader v5.
+		// bit0 = timeout error (both nodes)
+		// bit1 = error on crate 0
+		// bit2 = error on crate 1
+		event_data.readoutInfo = workerToSoldier_error[0] | soldierToWorker_error[0] ;
+
 		/**********************************************************************************/
 		/*   Wait for trigger thread to join in threaded operation.                       */
 		/**********************************************************************************/
@@ -1269,7 +1368,7 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 				mnvdaq.warnStream() << "Warning in minervadaq::TriggerDAQ!  IRQ Wait failed or timed out!";
 				return e;
 			}
-                       	break;
+			break;
 		case NuMIBeam:
 		case Cosmics:
 		case PureLightInjection:
@@ -1381,7 +1480,7 @@ void PutGlobalGate(int ggate)
 }
 
 
-void CreateSocketPair(int &workerToSoldier_socket_handle, int &soldierToWorker_socket_handle )
+int CreateSocketPair(int &workerToSoldier_socket_handle, int &soldierToWorker_socket_handle )
 {
 /*! \fn void CreateSocketPair(int &workerToSoldier_socket_handle, int &soldierToWorker_socket_handle )
  * 
@@ -1393,21 +1492,22 @@ void CreateSocketPair(int &workerToSoldier_socket_handle, int &soldierToWorker_s
 	if (workerToSoldier_socket_handle == -1) { 
 		perror("socket"); 
 		mnvdaq.fatalStream() << "workerToSoldier_socket_handle == -1!";
-		exit(EXIT_FAILURE); 
+		return 1; 
 	}
 	if (soldierToWorker_socket_handle == -1) { 
 		perror("socket"); 
 		mnvdaq.fatalStream() << "soldierToWorker_socket_handle == -1!";
-		exit(EXIT_FAILURE); 
+		return 1; 
 	}
 	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC workerToSoldier_socket_handle: " <<
 		workerToSoldier_socket_handle;
 	mnvdaq.infoStream() << "Soldier/Master-node Multi-PC soldierToWorker_socket_handle: " <<
 		soldierToWorker_socket_handle;
+	return 0; // success
 }
 
 
-void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info, 
+int SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info, 
         std::string hostname, const int port )
 {
 /*! \fn void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_info,
@@ -1420,10 +1520,11 @@ void SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node
 	if (node_info == NULL) {
 		mnvdaq.fatalStream() << "No node to connect to at " << hostname;
 		std::cout << "No worker node to connect to at " << hostname << std::endl; 
-		exit(1); 
+		return 1; 
 	}
 	else socket_service.sin_addr = *((struct in_addr *) node_info->h_addr);
 	socket_service.sin_port = htons(port); 
+	return 0; // success
 }
 
 int WriteSAM(const char samfilename[], 
@@ -1463,7 +1564,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-07-02'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-08-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -1538,7 +1639,7 @@ int WriteSAM(const char samfilename[],
 }
 
 
-template <typename Any> void SynchWrite(int socket_handle, Any data[])
+template <typename Any> int SynchWrite(int socket_handle, Any data[])
 {
 #if DEBUG_SOCKETS
 	mnvdaq.debugStream() << " Entering SynchWrite for handle " << socket_handle << " and data " << data[0];
@@ -1551,10 +1652,11 @@ template <typename Any> void SynchWrite(int socket_handle, Any data[])
 #if DEBUG_SOCKETS
 	mnvdaq.debugStream() << " Finished SynchWrite.";
 #endif 
+	return 0; // success
 }
 
 
-template <typename Any> void SynchListen(int socket_connection, Any data[])
+template <typename Any> int SynchListen(int socket_connection, Any data[])
 {
 #if DEBUG_SOCKETS
 	mnvdaq.debugStream() << " Reading data in SynchListen...";
@@ -1570,6 +1672,7 @@ template <typename Any> void SynchListen(int socket_connection, Any data[])
 		mnvdaq.debugStream() << "  ->After read, new data: " << data[0];
 #endif
 	}
+	return 0; // success
 }
 
 
