@@ -73,7 +73,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	std::cout            << "Initializing hardware for " << detectorString << std::endl; 
 	acqData.infoStream() << "Initializing hardware for " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
-	InitializeCroc(0x010000, 1, 2, 0, 0, 0);
+	InitializeCroc(0x010000, 1, 4, 4, 0, 0);
 #endif
 #if WH14T
 	detectorString        = "WH14 Top Crate.";
