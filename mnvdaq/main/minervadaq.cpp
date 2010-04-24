@@ -928,9 +928,14 @@ int main(int argc, char *argv[])
 					stopReadout = (unsigned long long)(readend.tv_sec*1000000) + 
 						(unsigned long long)(readend.tv_usec);
 					readoutTimeDiff = (int)stopReadout - (int)startReadout; 
+#if DEBUG_TIMING
+					mnvdaq.debugStream() << "Radout time at end of CROC " << (tmpCroc->GetCrocAddress()>>16) 
+						<< " = " << readoutTimeDiff;
+#endif
 					if (readoutTimeDiff > allowedReadoutTime) {
 						event_data.readoutInfo += (unsigned short)1; // "Timeout Error"
-						mnvdaq.critStream() << "Readout is taking longer than allowed!";
+						mnvdaq.critStream() << "Readout is taking longer than allowed! -> " 
+							<< readoutTimeDiff;
 						mnvdaq.critStream() << "Terminating readout at CROC Addr: " << 
 							(tmpCroc->GetCrocAddress()>>16);
 						break; // Exit croc loop
@@ -994,7 +999,12 @@ int main(int argc, char *argv[])
 		// bit0 = timeout error (both nodes)
 		// bit1 = error on crate 0
 		// bit2 = error on crate 1
+#if !SINGLEPC
 		event_data.readoutInfo = workerToSoldier_error[0] | soldierToWorker_error[0] ;
+#endif
+#if DEBUG_TIMING
+		mnvdaq.debugStream() << "Final set of ErrorFlags =  " << event_data.readoutInfo;
+#endif
 
 		/**********************************************************************************/
 		/*   Wait for trigger thread to join in threaded operation.                       */
@@ -1121,7 +1131,7 @@ int main(int argc, char *argv[])
 		event_data.feb_info[4] = bank; 
 		event_data.minosSGATE  = daq->GetMINOSSGATE();
 #if DEBUG_GENERAL
-		mnvdaq.debugStream() << "Contact the EventBuilder from Main...";
+		mnvdaq.debugStream() << "Contacting the EventBuilder from Main...";
 #endif
 		// Contact event builder service.
 		daq->ContactEventBuilder(&event_data, -1, attach, sys_id);
@@ -1564,7 +1574,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-08-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-08-01'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

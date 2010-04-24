@@ -316,7 +316,7 @@ int event_builder(event_handler *evt)
 #if DEBUG_REPORT_EVENT
 	std::cout << "*************************************************************************" << std::endl; 
 	std::cout << "Processing Event Data in event_builder::main():"<< std::endl;
-	std::cout << "  GATE : "<< evt->gate << std::endl;
+	std::cout << "  GATE : "             << evt->gate << std::endl;
 	std::cout << "    CROC ----------: " << evt->feb_info[2] << std::endl;
 	std::cout << "    CHAN ----------: " << evt->feb_info[3] << std::endl;
 	std::cout << "    FEB -----------: " << evt->feb_info[6] << std::endl;
@@ -395,18 +395,17 @@ int event_builder(event_handler *evt)
 			fflush(stdout);
 		}
 		if (evt->readoutInfo) {
-			switch (evt->readoutInfo) {
-				case 2:
-					printf("  Found an error on VME Crate 0!");
-					fflush(stdout);
-					break;
-				case 4:
-					printf("  Found an error on VME Crate 1!");
-					fflush(stdout);
-					break;
-				default:
-					printf("  Found an error with unknown code %d",evt->readoutInfo);
-					fflush(stdout);
+			if (evt->readoutInfo & 0x1) {
+				printf("  Readout took too long - stopped early!\n");
+				fflush(stdout);
+			}
+			if (evt->readoutInfo & 0x2) {
+				printf("  Found an error on VME Crate 0!\n");
+				fflush(stdout);
+			}
+			if (evt->readoutInfo & 0x4) {
+				printf("  Found an error on VME Crate 1!\n");
+				fflush(stdout);
 			}
 		}
 		// Build the "DAQ" header
