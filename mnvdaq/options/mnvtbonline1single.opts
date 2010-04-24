@@ -3,8 +3,8 @@
 #COMPILE_OPTIONS += -DCRATE1
 #COMPILE_OPTIONS += -DWH14T # 14sxo top crate
 #COMPILE_OPTIONS += -DWH14B # 14sxo bottom crate
-#COMPILE_OPTIONS += -DMTEST # 14sxo bottom crate
-COMPILE_OPTIONS += -DPMTTEST # 14sxo bottom crate
+#COMPILE_OPTIONS += -DMTEST # MTest
+COMPILE_OPTIONS += -DPMTTEST # Lab F x-talk stand
 #COMPILE_OPTIONS += -DNEARLINE # Nearline station 
 
 #--MULTI PC SETUP--
