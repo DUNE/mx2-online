@@ -176,7 +176,7 @@ int main(int argc, char **argv)
 	int evt_counter = 0;
 	while ((et_alive(sys_id))) {
 		struct timespec time;
-		time.tv_sec  = 1200; // Wait 20 minutes before the event builder times out?
+		time.tv_sec  = 3600; // Wait 60 minutes before the EB times out (MTest request).
 		time.tv_nsec =    0;
 		
 		//printf("time: %d.%i\n", time.tv_sec, time.tv_nsec);
