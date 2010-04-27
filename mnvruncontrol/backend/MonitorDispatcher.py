@@ -175,25 +175,20 @@ class OMThread(threading.Thread):
 		self.start()		# inherited from threading.Thread.  starts run() in a separate thread.
 		
 	def run(self):
-		# unfortunately we need to run these through the shell so they get all the right environment
-		# variables from this process's parent environment.
-		self.process = subprocess.Popen(self.command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-		self.pid = self.process.pid		# less typing.
-
-		stdout, stderr = self.process.communicate()
-		
+		# redirect any output to a log file
 		filename = "%s/%s.log" % (Configuration.params["Monitoring nodes"]["om_logfileLocation"], self.processname)
-		# dump the output of the process to a file so that crashes can be investigated.
-		# we only keep one copy because it will be rare that anyone is interested.
-		try:
-			with open(filename, "w") as logfile:
-				logfile.write(stdout)
-		except OSError:
-			self.owner_process.logger.exception("OM process log file error:")
-			self.owner_process.logger.error("   ==> log file information will be discarded.")
+		with open(filename, "w") as fileobj:
 
-		self.returncode = self.process.returncode
-		
+			# unfortunately we need to run these through the shell so they get all the right environment
+			# variables from this process's parent environment.
+			self.process = subprocess.Popen(self.command, shell=True, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
+			self.pid = self.process.pid		# less typing.
+
+			while self.process.poll() is None:
+				pass
+
+			self.returncode = self.process.returncode
+
                         
 ####################################################################
 ####################################################################
