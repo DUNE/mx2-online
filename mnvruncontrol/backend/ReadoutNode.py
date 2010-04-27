@@ -17,11 +17,11 @@ import re
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import MetaData
 
-from mnvruncontrol.backend.RemoteNode import RemoteNode
+from mnvruncontrol.backend import RemoteNode
 
-class ReadoutNode(RemoteNode):
+class ReadoutNode(RemoteNode.RemoteNode):
 	def __init__(self, name, address):
-		RemoteNode.__init__(self, name, address)
+		RemoteNode.RemoteNode.__init__(self, name, address)
 		
 		self.ValidRequests += SocketRequests.ReadoutRequests
 		self.nodetype = "readout"
@@ -62,7 +62,10 @@ class ReadoutNode(RemoteNode):
 		
 		request = "daq_start etfile=%s:etport=%d:run=%d:subrun=%d:gates=%d:runmode=%d:detector=%d:nfebs=%d:lilevel=%d:ledgroup=%d:hwinitlevel=%d!" % (etfile, etport, runNum, subRunNum, numGates, runMode, detector, numFEBs, LIlevel, LEDgroup, HWInit)
 		#print request
-		response = self.request(request)
+		try:
+			response = self.request(request)
+		except RemoteNode.RemoteNodeNoConnectionException:
+			raise ReadoutNodeNoConnectionException()		# this is the type of exception DAQMgr is expecting
 		
 		if response == "0":
 			return True
@@ -80,7 +83,10 @@ class ReadoutNode(RemoteNode):
 		    
 		self.shutting_down = True
 		
-		response = self.request("daq_stop!")
+		try:
+			response = self.request("daq_stop!")
+		except RemoteNode.RemoteNodeNoConnectionException:
+			return False
 		
 		if response == "0":
 			return True
