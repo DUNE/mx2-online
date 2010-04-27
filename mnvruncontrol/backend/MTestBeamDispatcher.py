@@ -65,7 +65,7 @@ class MTestBeamDispatcher(Dispatcher):
 		for thread in self.daq_threads:
 			if self.daq_threads[thread] is not None and self.daq_threads[thread].is_alive():
 				self.logger.info("Clearing up old threads first...")
-				success = self.stop() == "0"
+				success = self.beamdaq_stop() == "0"
 				
 				if not success:
 					return "1"
@@ -87,6 +87,7 @@ class MTestBeamDispatcher(Dispatcher):
 				self.logger.info("  ==> success.")
 		
 		# set a timer to cancel the gate inhibit in 3 seconds.
+		self.logger.info(" Will release gate inhibit in 3 seconds.")
 		timer = threading.Timer(3, self.gate_inhibit, (matches, False) )
 		timer.start()
 				
@@ -131,7 +132,7 @@ class MTestBeamDispatcher(Dispatcher):
 		for thread in self.daq_threads:
 			if self.daq_threads[thread] and self.daq_threads[thread].is_alive():
 				if show_details:
-					self.logger.info("   ==> Attempting to stop the DAQ thread.")
+					self.logger.info("   ==> Attempting to stop the %s DAQ thread." % thread)
 				try:
 					self.daq_threads[thread].process.terminate()
 					self.daq_threads[thread].join()		# 'merges' this thread with the other one so that we wait until it's done.
@@ -140,14 +141,14 @@ class MTestBeamDispatcher(Dispatcher):
 					self.logger.exception("   ==> Error message:")
 					errors = True
 
-		if show_details:
+		if show_details and not errors:
 			self.logger.info("   ==> All stopped successfully.")
 		
 		return "0" if not errors else "1"
 		
 
 #########################
-# OMThread             #
+# DAQThread             #
 #########################
 class DAQThread(threading.Thread):
 	""" Each DAQ process needs to be run in a separate thread
@@ -164,24 +165,18 @@ class DAQThread(threading.Thread):
 		self.start()		# inherited from threading.Thread.  starts run() in a separate thread.
 		
 	def run(self):
-		# unfortunately we need to run these through the shell so they get all the right environment
-		# variables from this process's parent environment.
-		self.process = subprocess.Popen(self.command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-		self.pid = self.process.pid		# less typing.
 
-		stdout, stderr = self.process.communicate()
-		
+		# redirect any output to a log file
 		filename = "%s/%s.log" % (Configuration.params["MTest beam nodes"]["mtest_logfileLocation"], self.processname)
-		# dump the output of the process to a file so that crashes can be investigated.
-		# we only keep one copy because it will be rare that anyone is interested.
-		try:
-			with open(filename, "w") as logfile:
-				logfile.write(stdout)
-		except OSError:
-			self.owner_process.logger.exception("DAQ process log file error:")
-			self.owner_process.logger.error("   ==> log file information will be discarded.")
+		with open(filename, "w") as fileobj:
+			# start the process
+			self.process = subprocess.Popen(self.command.split(), shell=False, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
+			self.pid = self.process.pid		# less typing.
 
-		self.returncode = self.process.returncode
+			while self.process.poll() is None:
+				pass
+
+			self.returncode = self.process.returncode
 		
                         
 ####################################################################
