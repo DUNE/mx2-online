@@ -55,7 +55,7 @@ class feb : public Frames {
 			statusSCMDUnknown[1], statusFCMDUnknown[1],PhaseCount[1], 
 			DCM1Lock[1], DCM2Lock[1], DCM1NoClock[1], DCM2NoClock[1], DCM2PhaseDone[1], 
 			TestPulse2Bit[1], FirmwareVersion[1], boardID[1],
-			HVNumAve[1], HVPulseWidth[1], TripXThresh[1], TripXCompEnc[1],
+			HVNumAve[1], HVPulseWidth[1], CosmicTrig[1], TripXCompEnc[1],
 			ExtTriggerFound[1], ExtTriggerRearm[1];
 
 		// log4cpp appender for printing log statements.
@@ -93,74 +93,79 @@ class feb : public Frames {
 		void SetFEBDefaultValues();
 		void ShowValues();
 		void MakeMessage();
-		int DecodeRegisterValues(int);
+		void DecodeRegisterValues(int);
 		int inline GetExpectedIncomingMessageLength() {return TrueIncomingMessageLength;};
 
 		/*! Get functions for FPGA read */
-		unsigned int inline   GetTimer() {return Timer;};
+		unsigned int inline GetTimer() {return Timer;};
 		unsigned short inline GetGateStart() {return GateStart;};
 		unsigned short inline GetGateLength() {return GateLength;};
-		unsigned char inline  GetTripPowerOff() {return TripPowerOff[0];};
-		unsigned char inline  GetInjCount0() {return InjectCount[0][0];};
-		unsigned char inline  GetInjCount1() {return InjectCount[1][0];};
-		unsigned char inline  GetInjCount2() {return InjectCount[2][0];};
-		unsigned char inline  GetInjCount3() {return InjectCount[3][0];};
-		unsigned char inline  GetInjCount4() {return InjectCount[4][0];};
-		unsigned char inline  GetInjCount5() {return InjectCount[5][0];};
-		unsigned char inline  GetInjEnable0() {return InjectEnable[0][0];};
-		unsigned char inline  GetInjEnable1() {return InjectEnable[1][0];};
-		unsigned char inline  GetInjEnable2() {return InjectEnable[2][0];};
-		unsigned char inline  GetInjEnable3() {return InjectEnable[3][0];};
-		unsigned char inline  GetInjEnable4() {return InjectEnable[4][0];};
-		unsigned char inline  GetInjEnable5() {return InjectEnable[5][0];};
-		unsigned char inline  GetInjectRange() {return InjectRange[0];};
-		unsigned char inline  GetInjectPhase() {return InjectPhase[0];};
+		unsigned char inline GetTripPowerOff() {return TripPowerOff[0];};
+		unsigned char inline GetInjCount0() {return InjectCount[0][0];};
+		unsigned char inline GetInjCount1() {return InjectCount[1][0];};
+		unsigned char inline GetInjCount2() {return InjectCount[2][0];};
+		unsigned char inline GetInjCount3() {return InjectCount[3][0];};
+		unsigned char inline GetInjCount4() {return InjectCount[4][0];};
+		unsigned char inline GetInjCount5() {return InjectCount[5][0];};
+		unsigned char inline GetInjEnable0() {return InjectEnable[0][0];};
+		unsigned char inline GetInjEnable1() {return InjectEnable[1][0];};
+		unsigned char inline GetInjEnable2() {return InjectEnable[2][0];};
+		unsigned char inline GetInjEnable3() {return InjectEnable[3][0];};
+		unsigned char inline GetInjEnable4() {return InjectEnable[4][0];};
+		unsigned char inline GetInjEnable5() {return InjectEnable[5][0];};
+		unsigned char inline GetInjectRange() {return InjectRange[0];};
+		unsigned char inline GetInjectPhase() {return InjectPhase[0];};
 		unsigned short inline GetInjDACValue() {return InjectDACValue;};
-		unsigned char inline  GetInjDACMode() {return InjectDACMode[0];};
-		unsigned char inline  GetInjDACStart() {return InjectDACStart[0];};
-		unsigned char inline  GetInjDACDone() {return InjectDACDone[0];};
-		unsigned char inline  GetHVEnabled() {return HVEnabled[0];};
+		unsigned char inline GetInjDACMode() {return InjectDACMode[0];};
+		unsigned char inline GetInjDACStart() {return InjectDACStart[0];};
+		unsigned char inline GetInjDACDone() {return InjectDACDone[0];};
+		unsigned char inline GetHVEnabled() {return HVEnabled[0];};
 		unsigned short inline GetHVTarget() {return HVTarget;};
 		unsigned short inline GetHVActual() {return HVActual;};
-		unsigned char inline  GetHVControl() {return HVControl[0];};
-		unsigned char inline  GetHVManual() {return HVManual[0];};
-		unsigned char inline  GetStatusRXLock() {return statusRXLock[0];};
-		unsigned char inline  GetStatusTXSyncLock() {return statusTXSyncLock[0];};
-		unsigned char inline  GetPhaseStart() {return PhaseStart[0];};
-		unsigned char inline  GetPhaseInc() {return PhaseIncrement[0];};
-		unsigned char inline  GetPhaseCount() {return PhaseCount[0];};
-		unsigned char inline  GetStatusSCMDUnknown() {return statusSCMDUnknown[0];};
-		unsigned char inline  GetStatusFCMDUnknown() {return statusFCMDUnknown[0];};
-		unsigned char inline  GetDCM1Lock() {return DCM1Lock[0];};
-		unsigned char inline  GetDCM2Lock() {return DCM2Lock[0];};
-		unsigned char inline  GetDCM1NoClock() {return DCM1NoClock[0];};
-		unsigned char inline  GetDCM2NoClock() {return DCM2NoClock[0];};
-		unsigned char inline  GetDCM2PhaseDone() {return DCM2PhaseDone[0];};
+		unsigned char inline GetHVControl() {return HVControl[0];};
+		unsigned char inline GetHVManual() {return HVManual[0];};
+		unsigned char inline GetStatusRXLock() {return statusRXLock[0];};
+		unsigned char inline GetStatusTXSyncLock() {return statusTXSyncLock[0];};
+		unsigned char inline GetPhaseStart() {return PhaseStart[0];};
+		unsigned char inline GetPhaseInc() {return PhaseIncrement[0];};
+		unsigned char inline GetPhaseCount() {return PhaseCount[0];};
+		unsigned char inline GetStatusSCMDUnknown() {return statusSCMDUnknown[0];};
+		unsigned char inline GetStatusFCMDUnknown() {return statusFCMDUnknown[0];};
+		unsigned char inline GetDCM1Lock() {return DCM1Lock[0];};
+		unsigned char inline GetDCM2Lock() {return DCM2Lock[0];};
+		unsigned char inline GetDCM1NoClock() {return DCM1NoClock[0];};
+		unsigned char inline GetDCM2NoClock() {return DCM2NoClock[0];};
+		unsigned char inline GetDCM2PhaseDone() {return DCM2PhaseDone[0];};
 		unsigned short inline GetDCM2PhaseTotal() {return DCM2PhaseTotal;};
-		unsigned char inline  GetTP2Bit() {return TestPulse2Bit[0];};
-		unsigned int inline   GetTPCount() {return TestPulseCount;};
-		unsigned char inline  GetHVNumAvg() {return HVNumAve[0];};
+		unsigned char inline GetTP2Bit() {return TestPulse2Bit[0];};
+		unsigned int inline GetTPCount() {return TestPulseCount;};
+		//unsigned char inline GetVersion() {return FirmwareVersion[0];}; // redundant.
+		unsigned char inline GetHVNumAvg() {return HVNumAve[0];};
 		unsigned short inline GetHVPeriodManual() {return HVPeriodManual;};
 		unsigned short inline GetHVPeriodAuto() {return HVPeriodAuto;};
-		unsigned char inline  GetHVPulseWidth() {return HVPulseWidth[0];};
+		unsigned char inline GetHVPulseWidth() {return HVPulseWidth[0];};
 		unsigned short inline GetTemperature() {return Temperature;};
-		unsigned char inline  GetTripXThresh() {return TripXThresh[0];};
-		unsigned char inline  GetTripXCompEnc() {return TripXCompEnc[0];};
-		unsigned char inline  GetExtTriggerFound() {return ExtTriggerFound[0];};
-		unsigned char inline  GetExtTriggerRearm() {return ExtTriggerRearm[0];};
+		unsigned char inline GetTripXCompEnc() {return TripXCompEnc[0];};
+		unsigned char inline GetExtTriggerFound() {return ExtTriggerFound[0];};
+		unsigned char inline GetExtTriggerRearm() {return ExtTriggerRearm[0];};
 		unsigned short inline GetDiscEnMask0() {return DiscrimEnableMask[0];};
 		unsigned short inline GetDiscEnMask1() {return DiscrimEnableMask[1];};
 		unsigned short inline GetDiscEnMask2() {return DiscrimEnableMask[2];};
 		unsigned short inline GetDiscEnMask3() {return DiscrimEnableMask[3];};
-		unsigned int inline   GetGateTimeStamp() {return GateTimeStamp;};
-
+		unsigned int inline GetGateTimeStamp() {return GateTimeStamp;};
 		/*! set functions for FEB setable values */
 		void inline SetTimer(unsigned int a) {Timer=a;};
+		//void inline SetTestPulseCount(unsigned int a) {TestPulseCount=a;}; //Readonly
+		//void inline SetGateTimeStamp(unsigned int a) {GateTimeStamp=a;}; //Readonly
 		void inline SetGateStart(unsigned short a) {GateStart=a;};
 		void inline SetGateLength(unsigned short a) {GateLength=a;};
 		void inline SetInjectDACValue(unsigned short a) {InjectDACValue=a;};
 		void inline SetHVTarget(unsigned short a) {HVTarget=a;};
+		//void inline SetHVActual(unsigned short a) {HVActual=a;}; //Readonly
+		//void inline SetDCM2PhaseTotal(unsigned short a) {DCM2PhaseTotal=a;}; //Readonly
+		//void inline SetHVPeriodAuto(unsigned short a) {HVPeriodAuto=a;}; //Readonly
 		void inline SetHVPeriodManual(unsigned short a) {HVPeriodManual=a;};
+		//void inline SetTemperature(unsigned short a) {Temperature=a;}; //Readonly
 		void inline SetTripPowerOff(unsigned char *a) {TripPowerOff[0]=a[0];};
 		void SetTripPowerOff(char *a);
 		void inline SetInjectCount(unsigned char *a, int i) {InjectCount[i][0]=a[0];};
@@ -173,10 +178,14 @@ class feb : public Frames {
 		void SetInjectPhase(char *a);
 		void inline SetInjectDACMode(unsigned char *a) {InjectDACMode[0]=a[0];};
 		void SetInjectDACMode(char *a);
+		//void inline SetInjectDACDone(unsigned char *a) {InjectDACDone[0]=a[0];}; //Readonly
+		//void SetInjectDACDone(char *a); //Readonly
 		void inline SetInjectDACStart(unsigned char *a) {InjectDACStart[0]=a[0];};
 		void SetInjectDACStart(char *a);
 		void inline SetHVEnabled(unsigned char *a) {HVEnabled[0]=a[0];};
 		void SetHVEnabled(char *a);
+		//void inline SetHVControl(unsigned char *a) {HVControl[0]=a[0];}; //Readonly
+		//void SetHVControl(char *a);  //Readonly
 		void inline SetHVManual(unsigned char *a) {HVManual[0]=a[0];};
 		void SetHVManual(char *a);
 		void inline SetPhaseStart(unsigned char *a) {PhaseStart[0]=a[0];};
@@ -185,12 +194,32 @@ class feb : public Frames {
 		void SetPhaseIncrement(char *a);
 		void inline SetPhaseCount(unsigned char *a) {PhaseCount[0]=a[0];};
 		void SetPhaseCount(char *a);
+		//void inline SetDCM1Lock(unsigned char *a) {DCM1Lock[0]=a[0];}; //Readonly
+		//void SetDCM1Lock(char *a);  //Readonly
+		//void inline SetDCM2Lock(unsigned char *a) {DCM2Lock[0]=a[0];}; //Readonly
+		//void SetDCM2Lock(char *a);  //Readonly
+		//void inline SetDCM1NoClock(unsigned char *a) {DCM1NoClock[0]=a[0];}; //Readonly
+		//void SetDCM1NoClock(char *a);  //Readonly
+		//void inline SetDCM2NoClock(unsigned char *a) {DCM2NoClock[0]=a[0];}; //Readonly
+		//void SetDCM2NoClock(char *a);  //Readonly
+		//void inline SetDCM2PhaseDone(unsigned char *a) {DCM2PhaseDone[0]=a[0];}; //Readonly
+		//void SetDCM2PhaseDone(char *a); //Readonly
+		//void inline SetTestPulse2Bit(unsigned char *a) {TestPulse2Bit[0]=a[0];}; //Readonly
+		//void SetTestPulse2Bit(char *a); //Readonly
+		//void inline SetBoardID(unsigned char *a) {boardID[0]=a[0];}; // Readonly
+		//void SetBoardID(char *a); // Readonly
+		//void inline SetFirmwareVersion(unsigned char *a) {FirmwareVersion[0]=a[0];}; // Readonly
+		//void SetFirmwareVersion(char *a);  // Readonly
 		void inline SetHVNumAve(unsigned char *a) {HVNumAve[0]=a[0];};
 		void SetHVNumAve(char *a);
 		void inline SetHVPulseWidth(unsigned char *a) {HVPulseWidth[0]=a[0];};
 		void SetHVPulseWidth(char *a);
-		void inline SetTripXThresh(unsigned char *a) {TripXThresh[0]=a[0];};
-		void SetTripXThresh(char *a);
+		void inline SetCosmicTrig(unsigned char *a) {CosmicTrig[0]=a[0];};
+		void SetCosmicTrig(char *a);
+		//void inline SetTripXCompEnc(unsigned char *a) {TripXCompEnc[0]=a[0];}; //Readonly
+		//void SetTripXCompEnc(char *a); //Readonly
+		//void inline SetExtTriggerFound(unsigned char *a) {ExtTriggerFound[0]=a[0];}; //Readonly
+		//void SetExtTriggerFound(char *a);  //Readonly
 		void inline SetExtTriggerRearm(unsigned char *a) {ExtTriggerRearm[0]=a[0];};
 		void SetExtTriggerRearm(char *a);
 		void inline SetDiscrimEnableMask(unsigned short a, int i) {DiscrimEnableMask[i]=a;};
