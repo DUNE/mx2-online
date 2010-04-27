@@ -382,11 +382,14 @@ class TimerThread(threading.Thread):
 #########################################################
 
 class BlinkThread(threading.Thread):
-	def __init__(self, postback_window):
+	def __init__(self, postback_window, messageheader=None, messagebody=None):
 		threading.Thread.__init__(self)
 		self.postback_window = postback_window
 		self.time_to_quit = False
 		self.daemon = True
+		
+		self.messageheader = messageheader
+		self.messagebody = messagebody
 		
 		self.start()
 
@@ -398,7 +401,7 @@ class BlinkThread(threading.Thread):
 				
 			if not self.time_to_quit and time.time() - lastupdate > 0.5:
 				lastupdate = time.time()
-				wx.PostEvent(self.postback_window, Events.BlinkEvent())
+				wx.PostEvent(self.postback_window, Events.BlinkEvent(messageheader=self.messageheader, messagebody=self.messagebody))
 			
 	def Abort(self):
 		self.time_to_quit = True

@@ -148,7 +148,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			self.logger.info("No previous session detected.  Starting fresh.")
 			return
 
-		self.logger.info("Old session detected.  Restoring old node IDs...")
+		self.logger.info("Old session detected.  Restoring any old node IDs...")
 		# try to get a lock on the file.  that way we know it isn't being
 		# updated while we try to read it.
 		fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
@@ -222,10 +222,24 @@ class DataAcquisitionManager(wx.EvtHandler):
 				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True))
 		
 	def Cleanup(self):
-		try:
-			os.remove(Configuration.params["Master node"]["sessionfile"])
-		except (IOError, OSError):		# if the file doesn't exist, no problem
-			pass
+		""" Any clean-up actions that need to be taken.
+		    Called by the RunControl right before shutdown. """
+		    
+		delete_session = True
+		# release any locks that might still be open
+		for node in self.readoutNodes:
+			if node.own_lock:
+				success = node.release_lock()
+				
+				delete_session = delete_session and success
+		
+		# remove the session file, but only if there's no more
+		# locks that are still open...
+		if delete_session:
+			try:
+				os.remove(Configuration.params["Master node"]["sessionfile"])
+			except (IOError, OSError):		# if the file doesn't exist, no problem
+				pass
 			
 		if self.socketThread is not None:
 			self.socketThread.Abort()
@@ -299,7 +313,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			for node in self.readoutNodes:
 				try:
 					success = node.daq_stop()
-				except ReadoutNode.ReadoutNodeNoDAQRunningException, RemoteNode.RemoteNodeNoConnectionException:		# the DAQ has already quit or is unreachable
+				except (ReadoutNode.ReadoutNodeNoDAQRunningException, RemoteNode.RemoteNodeNoConnectionException):		# the DAQ has already quit or is unreachable
 					pass				# if so, we'll never get the "DAQ quit" event from the SocketThread.  don't indicate 'success'.
 			if not success:
 				wx.PostEvent(self, Events.EndSubrunEvent())
@@ -401,10 +415,16 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		# all the startup tasks were successful.
 		# do the final preparation for the run.
+		
 		now = datetime.datetime.utcnow()
-		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes.code(self.detector), self.run, self.first_subrun + self.subrun, MetaData.RunningModes.code(self.runinfo.runMode), now.year % 100, now.month, now.day, now.hour, now.minute)
-		self.raw_data_filename = self.ET_filename + '_RawData.dat'
 
+		# the ET file name is the name used for the ET system file.
+		# all other data file names are based on it.
+		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes.code(self.detector), self.run, self.first_subrun + self.subrun, MetaData.RunningModes.code(self.runinfo.runMode), now.year % 100, now.month, now.day, now.hour, now.minute)
+		
+		# raw data written by the MINERvA DAQ
+		self.raw_data_filename = self.ET_filename + '_RawData.dat'
+		
 		wx.PostEvent(self.main_window, Events.SubrunStartingEvent(first_subrun=self.first_subrun, current_subrun=self.subrun, num_subruns=len(self.runseries.Runs)))
 
 		self.current_DAQ_thread = 0
@@ -455,6 +475,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				try:
 					success = success and node.daq_stop()
 				except ReadoutNode.ReadoutNodeNoConnectionException:
+					self.logger.warning("The %s node cannot be reached..." % node.name)
 					success = False
 				except ReadoutNode.ReadoutNodeNoDAQRunningException:		# raised if the DAQ is not running on the node.  not a big deal.
 					pass
@@ -473,7 +494,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				step += 1
 		
 			if not success:
-				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The beamline DAQ node(s) could be stopped.  The next subrun could be problematic...", title="Beamline DAQ node(s) not stopped") )
+				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The beamline DAQ node(s) couldn't be stopped.  The next subrun could be problematic...", title="Beamline DAQ node(s) not stopped") )
 		
 		for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping ET threads...", progress=(step, numsteps)) )
@@ -590,7 +611,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=on) )
 				
 		if not ok:
-			wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Cannot make a connection to the readout node(s).  Running aborted.", title="No connection to readout node(s)") )
+			wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="Cannot make a connection to the readout node(s).  Running aborted.", messageheader="No connection to readout node(s)") )
 			
 			# need to stop the run startup sequence.
 			return False
@@ -642,7 +663,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 					time.sleep(Configuration.params["Socket setup"]["connAttemptInterval"])
 					
 				if not success:
-					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Could not configure the hardware for the " + node.name + " readout node.  This subrun will be stopped.", title="Hardware configuration problem") )
+#					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm") )
+					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="Could not configure the hardware for the " + node.name + " readout node.  This subrun will be stopped.", messageheader="Hardware configuration problem") )
 					self.logger.error("Could not set the hardware for the " + node.name + " readout node.  This subrun will be aborted.")
 					# need to stop the run startup sequence.
 					return False
@@ -675,7 +697,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 				try:
 					self.LIBox.write_configuration()
 				except LIBox.LIBoxException, e:
-					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The LI box does not seem to be responding.  Check the connection settings and the cable and try again.  Running aborted.", title="LI box not responding") )
+#					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm") )
+					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="The LI box does not seem to be responding.  Check the connection settings and the cable and try again.  Running aborted.", messageheader="LI box not responding") )
 					self.logger.warning("  LI Box is not responding...")
 					return False
 				finally:
@@ -710,7 +733,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 					self.logger.warning(node.name + " node reports that it has no FEBs...")
 					continue	# it's still ok to go on, but user should know what's happening
 				elif board_statuses is None:
-					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The " + node.name + " node says it can't read the FEBs.  This subrun will be stopped.", title="Can't read FEBs on " + node.name + " node") )
+#					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm") )
+					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="The " + node.name + " node says it can't read the FEBs.  This subrun will be stopped.", messageheader="Can't read FEBs on " + node.name + " node") )
 					self.logger.warning(node.name + " node reports that can't read its FEBs.  See its log.")
 					return False
 			
@@ -764,7 +788,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		""" Start the et_system process. """
 		events = self.runinfo.gates * Configuration.params["Hardware"]["eventFrames"] * self.febs
 
-		etSysFrame = Frames.OutputFrame(self.main_window, "ET system", window_size=(600,200), window_pos=(600,0))
+		etSysFrame = Frames.OutputFrame(None, "ET system", window_size=(600,200), window_pos=(610,0))
 		etSysFrame.Show(True)
 
 		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d -c %d -p %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", events, Configuration.params["Hardware"]["frameSize"], os.getpid(), self.runinfo.ETport)
@@ -781,7 +805,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    Not strictly necessary for data aquisition, but
 		    is sometimes helpful for troubleshooting. """
 		    
-		etMonFrame = Frames.OutputFrame(self.main_window, "ET monitor", window_size=(600,600), window_pos=(600,200))
+		etMonFrame = Frames.OutputFrame(None, "ET monitor", window_size=(600,600), window_pos=(610,225))
 		etMonFrame.Show(True)
 		
 		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s -c %d -p %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", os.getpid(), self.runinfo.ETport)
@@ -794,7 +818,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		    (This does the work of stitching together the frames from the readout nodes.) """
 		    
-		ebSvcFrame = Frames.OutputFrame(self.main_window, "Event builder service", window_size=(600,200), window_pos=(1200,0))
+		ebSvcFrame = Frames.OutputFrame(None, "Event builder service", window_size=(600,200), window_pos=(0,700))
 		ebSvcFrame.Show(True)
 
 		eb_command = '%s/bin/event_builder %s/%s %s/%s %d %d' % (self.environment['DAQROOT'], self.etSystemFileLocation, self.ET_filename + "_RawData", self.rawdataLocation, self.raw_data_filename, self.runinfo.ETport, os.getpid())
@@ -823,7 +847,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.mtest_useBeamDAQ:
 			for node in self.mtestBeamDAQNodes:
 				try:
-					node.start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.runinfo.gates, "beamline_DAQ_%08d_%04d" % (self.run, self.first_subrun + self.subrun))
+					node.start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.runinfo.gates, self.ET_filename)
 				except:
 					self.logger.exception("Couldn't start MTest beamline DAQ!  Aborting run.")
 					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title="Couldn't start beamline DAQ", text="Couldn't start the beamline DAQ.  Run will be aborted (see the log for more details).") )
@@ -871,16 +895,18 @@ class DataAcquisitionManager(wx.EvtHandler):
 						errtitle =  title=node.name.capitalize() + " DAQ service couldn't be stopped"
 						success = False
 				except ReadoutNode.ReadoutNodeNoConnectionException:
-					errmsg = "The connect to the " + node.name + " couldn't be established!  Run will be aborted."
+					errmsg = "The connection to the " + node.name + " node couldn't be established!  Run will be aborted."
 					errtitle = "No connection to the " + node.name + " node"
 					success = False
 	
 				if not success:
-					errmsg = errmsg if errmsg is not None else "Couldn't start the " + node.name + " DAQ service.  Aborting run."
-					errtitle = errtitle if errtitle is not None else node.name.capitalize() + " DAQ service couldn't be started"
-					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=errtitle, text=errmsg) )
+					header = errtitle if errtitle is not None else node.name.capitalize() + " DAQ service couldn't be started"
+					body = errmsg if errmsg is not None else "Couldn't start the " + node.name + " DAQ service.  Aborting run."
+					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messageheader=header, messagebody=body) )
+#					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=errtitle, text=errmsg) )
 				
 					self.StopDataAcquisition()
+					break
 				else:
 					wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
 	

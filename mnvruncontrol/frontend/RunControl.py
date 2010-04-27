@@ -753,27 +753,49 @@ class MainFrame(wx.Frame):
 
 		# create a new tab in the notebook
 		# to receive the acknowledgement
-		if self.nb.GetPageCount() == 2:
+		page_num = -1
+		for page in range(self.nb.GetPageCount()):
+			if "Alert" in self.nb.GetPageText(page):
+				page_num = page
+				break
+		
+		if page_num < 0:
+			header = evt.messageheader if hasattr(evt, "messageheader") and evt.messageheader is not None else "    Data taking \nwas interrupted!"
+			body = evt.messagebody if hasattr(evt, "messagebody") and evt.messagebody is not None else "Click the button to acknowledge and begin a new run."
+			# we want a list.
+			if isinstance(body, str) or isinstance(body, unicode):
+				body = [body,]
+			
 			self.notificationPage = wx.Panel(self.nb)
-			text1 = wx.StaticText(self.notificationPage, -1, "    Data taking \nwas interrupted!")
-			font1 = text1.GetFont()
-			font1.SetPointSize(24)
-			text1.SetFont(font1)
-			text2 = wx.StaticText(self.notificationPage, -1, "Click the button to acknowledge and begin a new run.")
-			acknowledgeButton = wx.Button(self.notificationPage, -1, "Acknowledge data taking stoppage")
+			headertext = wx.StaticText(self.notificationPage, -1, header)
+			headerfont = headertext.GetFont()
+			headerfont.SetPointSize(24)
+			headertext.SetFont(headerfont)
+			
+			bodytexts = []
+			for bodytext in body:
+				bodytexts.append( wx.StaticText(self.notificationPage, -1, bodytext) )
+
+			acknowledgeButton = wx.Button(self.notificationPage, -1, "Acknowledge alert")
 			self.Bind(wx.EVT_BUTTON, self.StopBlinking, acknowledgeButton)
 		
 			sizer = wx.BoxSizer(wx.VERTICAL)
-			sizer.Add(text1, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.TOP, border = 100)
+			sizer.Add(headertext, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.TOP, border = 100)
 			sizer.Add(acknowledgeButton, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM | wx.TOP, border=25)
-			sizer.Add(text2, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL)
+			
+			for bodytext in bodytexts:
+				print "body text:", bodytext.GetLabel()
+				sizer.Add(bodytext, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL)
+
 			self.notificationPage.SetSizer(sizer)
-			self.nb.AddPage(self.notificationPage, "Data taking interrupted")
+			self.nb.AddPage(self.notificationPage, "Alert")
+			
+			page_num = self.nb.GetPageCount() - 1
 			
 		if self.default_background is None:
 			self.default_background = self.mainPage.GetBackgroundColour()		
 
-		self.nb.ChangeSelection(2)
+		self.nb.ChangeSelection(page_num)
 		
 		colors = (wx.RED, self.default_background)
 		bg = self.notificationPage.GetBackgroundColour()
@@ -870,24 +892,14 @@ class MainFrame(wx.Frame):
 		self.blinkThread.Abort()
 		self.blinkThread.join()
 		
-		self.nb.DeletePage(2)
+		page_num = -1
+		for page in range(self.nb.GetPageCount()):
+			if "Alert" in self.nb.GetPageText(page):
+				page_num = page
+				break
+		self.nb.DeletePage(page_num)
 		self.nb.ChangeSelection(0)
 		
-		
-	def UserAlert(self, evt):
-		""" Gets the user's attention. """
-		
-		# sets the window manager hint
-		self.RequestUserAttention()
-		self.Raise()
-		
-		# now... if it's a real emergency, we need to do some other stuff.
-		if hasattr(evt, "alerttype") and evt.alerttype == "alarm":
-			if self.blinkThread is not None and self.blinkThread.is_alive():
-				self.blinkThread.Abort()
-				self.blinkThread.join()
-			
-			self.blinkThread = Threads.BlinkThread(self)
 		
 	def UpdateCloseWindows(self, evt):
 		""" Enables/disables the "close all windows" button
@@ -1045,6 +1057,25 @@ class MainFrame(wx.Frame):
 				else:
 					self.seriesDescription.SetStringItem(index, 0, "")
 					self.seriesDescription.SetItemBackgroundColour(index, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+
+	def UserAlert(self, evt):
+		""" Gets the user's attention. """
+		
+		# sets the window manager hint
+		self.RequestUserAttention()
+		self.Raise()
+		
+		# now... if it's a real emergency, we need to do some other stuff.
+		if hasattr(evt, "alerttype") and evt.alerttype == "alarm":
+			if self.blinkThread is not None and self.blinkThread.is_alive():
+				self.blinkThread.Abort()
+				self.blinkThread.join()
+			
+			header = evt.messageheader if hasattr(evt, "messageheader") else None
+			body = evt.messagebody if hasattr(evt, "messagebody") else None
+			
+			self.blinkThread = Threads.BlinkThread(self, messageheader=header, messagebody=body)
+		
 	
 	################################################################################################
 	# Methods that create new windows or dialogs
