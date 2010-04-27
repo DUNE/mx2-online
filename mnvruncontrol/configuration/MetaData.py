@@ -12,6 +12,14 @@
    Address all complaints to the management.
 """
 
+############################################################################
+#
+# Note: the actual metadata itself is towards the bottom of this file,
+#       after the definition of the MetaData class that's used to store it.
+#
+############################################################################
+
+
 # some module constants
 DESCRIPTION = 0
 HASH = 1
@@ -214,7 +222,7 @@ class MetaDatum:
 #
 # etc.
 #
-# Note that if you pass only a hash for one item and only a code for another,
+# Note that if you pass only a hash for one item and only a code for another in the same metadata object,
 # the program will print out a warning because it assumes you probably didn't mean to do that.
 #
 ########################################################################################################
@@ -260,12 +268,14 @@ DetectorTypes		= MetaData(( ("UNKNOWN",        "Unknown",            0,  "UN"),
 				             ("UPSTREAM",       "Upstream",           16, "US"),
 				             ("MINERVA",        "Full MINERvA",       32, "MV") ))
 
-RunningModes		= MetaData(( ("ONE_SHOT",       "One shot",            0, "pdstl"),
-				             ("NUMI",           "NuMI beam",           1, "numib"),
-				             ("COSMICS",        "Cosmics",             2, "cosmc"),
-				             ("LI",             "Light injection",     3, "linjc"),
-				             ("MIXED_NUMI_PED", "Mixed beam/pedestal", 4, "numip"),
-				             ("MIXED_NUMI_LI",  "Mixed beam/LI",       5, "numil") ))
+RunningModes		= MetaData(( ("ONE_SHOT",       "One shot",             0, "pdstl"),
+				             ("NUMI",           "NuMI beam",            1, "numib"),
+				             ("COSMICS",        "Cosmics",              2, "cosmc"),
+				             ("LI",             "Light injection",      3, "linjc"),
+				             ("MIXED_NUMI_PED", "Mixed beam/pedestal",  4, "numip"),
+				             ("MIXED_NUMI_LI",  "Mixed beam/LI",        5, "numil"),
+				             ("TB_BEAM_MUON",   "Test beam with muons", 6, "bmuon"),
+				             ("TB_BEAM_ONLY",   "Test beam, beam only", 7, "bonly") ))
 
 RunSeriesTypes          = MetaData(( ("BEAM",           "Beam",                0, "beam_series.db"),
 				                 ("PEDESTAL",       "Pedestal",            1, "pedestal_series.db"),
