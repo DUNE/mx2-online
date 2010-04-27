@@ -28,7 +28,9 @@ typedef enum RunningModes {
 	Cosmics                 = 2, // "Cosmic" - Intneral CRIM Timing, w/ Frequency Set!
 	PureLightInjection      = 3, // MTM CRIM Timing, (No Frequency), software gates, LI Box alive
 	MixedBeamPedestal       = 4, // MTM CRIM Timing, (No Frequency), MTM && software gates
-	MixedBeamLightInjection = 5  // MTM CRIM Timing, (No Frequency), MTM && software gates, LI Box alive
+	MixedBeamLightInjection = 5, // MTM CRIM Timing, (No Frequency), MTM && software gates, LI Box alive
+	MTBFBeamMuon            = 6, // MTBF=="Cosmic" - Intneral CRIM Timing, w/ Frequency Set!
+	MTBFBeamOnly            = 7  // MTBF=="Cosmic" - Intneral CRIM Timing, w/ Frequency Set!
 };
 
 // The TriggerType dictates whether or not the DAQ issues a software gate command to the CRIM and 
@@ -41,8 +43,8 @@ typedef enum TriggerType {
 	ChargeInjection = 0x0004,
 	Cosmic          = 0x0008,
 	NuMI            = 0x0010,
-	TGReserved6     = 0x0020,
-	TGReserved7     = 0x0040,
+	MTBFMuon        = 0x0020,
+	MTBFBeam        = 0x0040,
 	MonteCarlo      = 0x0080  // Obviously, the DAQ should not write this type, ever!
 };
 

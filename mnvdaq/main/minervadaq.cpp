@@ -667,7 +667,7 @@ int main(int argc, char *argv[])
 			}
 		}
 #endif
-		switch (runningMode) {
+		switch (runningMode) { // TODO - put crim reset latch stuff into function to clean things up...
 			case OneShot:
 				triggerType = Pedestal;
 				allowedReadoutTime = allowedPedestal;
@@ -694,6 +694,46 @@ int main(int argc, char *argv[])
 					exit(e);
 				}
 				triggerType = Cosmic;
+				allowedReadoutTime = allowedCosmic;
+				break;
+			case MTBFBeamMuon:
+				// We need to reset the sequencer latch on the CRIM in Cosmic mode...
+				// MAKE SURE CRIM FIRMWARE IS COMPATIBLE!
+				try {
+					int crimID = (*crim_master)->GetCrimID(); // Only the master!
+					int error = daq->ResetCRIMSequencerLatch(crimID);
+					if (error) throw error;
+				} catch (int e) {
+					mnvdaq.fatalStream() << "Error for CRIM " << 
+						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate;
+					mnvdaq.fatalStream() << "Cannot reset sequencer latch in Cosmic mode!";
+					std::cout << "Error for CRIM " << 
+						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate
+						<< std::endl;
+					std::cout << "Cannot reset sequencer latch in Cosmic mode!" << std::endl;
+					exit(e);
+				}
+				triggerType = MTBFMuon;
+				allowedReadoutTime = allowedCosmic;
+				break;
+			case MTBFBeamOnly:
+				// We need to reset the sequencer latch on the CRIM in Cosmic mode...
+				// MAKE SURE CRIM FIRMWARE IS COMPATIBLE!
+				try {
+					int crimID = (*crim_master)->GetCrimID(); // Only the master!
+					int error = daq->ResetCRIMSequencerLatch(crimID);
+					if (error) throw error;
+				} catch (int e) {
+					mnvdaq.fatalStream() << "Error for CRIM " << 
+						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate;
+					mnvdaq.fatalStream() << "Cannot reset sequencer latch in Cosmic mode!";
+					std::cout << "Error for CRIM " << 
+						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate
+						<< std::endl;
+					std::cout << "Cannot reset sequencer latch in Cosmic mode!" << std::endl;
+					exit(e);
+				}
+				triggerType = MTBFBeam;
 				allowedReadoutTime = allowedCosmic;
 				break;
 			case PureLightInjection:
@@ -1384,6 +1424,8 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 		case PureLightInjection:
 		case MixedBeamPedestal:
 		case MixedBeamLightInjection:
+		case MTBFBeamMuon:
+		case MTBFBeamOnly:
 #if MASTER||SINGLEPC // Soldier Node or singleton...
 			try {
 				int error = daq->TriggerDAQ(triggerType, id); 
@@ -1574,7 +1616,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"group='minerva',\n");
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-08-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-09-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -1630,6 +1672,14 @@ int WriteSAM(const char samfilename[],
 		case 5: //MixedBeamLightInjection:
 			fprintf(sam_file,"'triggertype':'mixedbeamlightinjection',})}),\n");
 			fprintf(sam_file,"datastream='numil',\n");
+			break;
+		case 6: //MTBFBeamMuon:
+			fprintf(sam_file,"'triggertype':'mtbfbeammuon',})}),\n");
+			fprintf(sam_file,"datastream='bmuon',\n");
+			break;
+		case 7: //MTBFBeamOnly:
+			fprintf(sam_file,"'triggertype':'mtbfbeamonly',})}),\n");
+			fprintf(sam_file,"datastream='bonly',\n");
 			break;
 		default:
 			std::cout << "minervadaq::WriteSAM(): ERROR! Improper Running Mode defined!" << std::endl;

@@ -66,7 +66,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode)
 	std::cout            << "Initializing hardware for the " << detectorString << std::endl; 
 	acqData.infoStream() << "Initializing hardware for the " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
-	InitializeCroc(0x030000, 1, 2, 0, 0, 0);
+	InitializeCroc(0x030000, 1, 4, 0, 0, 0);
 #endif
 #if MTEST
 	detectorString        = "MTest.";
@@ -272,6 +272,28 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		case Cosmics:
 			std::cout << " Running Mode is Cosmic." << std::endl;
 			acqData.infoStream() << " Running Mode is Cosmic.";
+			GateWidth    = 0x7F;
+			TCALBDelay   = 0x3FF;
+			Frequency    = F4; 
+			TimingMode   = crimInternal; 
+			TCALBEnable  = 0x1;
+			daqController->GetCrim(index)->SetIRQLine(Trigger); //crimInterrupts type
+			break;
+		// Beam-Muon mode is equivalent to cosmic mode under the hood for the DAQ.  
+		case MTBFBeamMuon:
+			std::cout << " Running Mode is MTBFBeamMuon." << std::endl;
+			acqData.infoStream() << " Running Mode is MTBFBeamMuon.";
+			GateWidth    = 0x7F;
+			TCALBDelay   = 0x3FF;
+			Frequency    = F4; 
+			TimingMode   = crimInternal; 
+			TCALBEnable  = 0x1;
+			daqController->GetCrim(index)->SetIRQLine(Trigger); //crimInterrupts type
+			break;
+		// Beam-Only mode is equivalent to cosmic mode under the hood for the DAQ.  
+		case MTBFBeamOnly:
+			std::cout << " Running Mode is MTBFBeamOnly." << std::endl;
+			acqData.infoStream() << " Running Mode is MTBFBeamOnly.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = F4; 
@@ -1850,8 +1872,8 @@ int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
  * ChargeInjection = 0x0004,
  * Cosmic          = 0x0008,
  * NuMI            = 0x0010,
- * TGReserved6     = 0x0020,
- * TGReserved7     = 0x0040,
+ * MTBFMuon        = 0x0020,
+ * MTBFBeam        = 0x0040,
  * MonteCarlo      = 0x0080'
  *
  * \param unsigned short int triggerBit The trigger bit.
@@ -1901,8 +1923,10 @@ int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
 			acqData.debugStream() << "    ->Sent Sequencer Init. Signal!";
 #endif
 			break;
-		// The Cosmic trigger is initiated via an external signal.
+		// The "Cosmic" triggers are initiated via an external signal.
 		case Cosmic:
+		case MTBFMuon:
+		case MTBFBeam:
 			break;
 		// The NuMI Beam trigger is initiated via an external signal.
 		case NuMI:
