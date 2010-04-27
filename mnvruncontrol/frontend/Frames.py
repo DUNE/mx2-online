@@ -191,7 +191,7 @@ class LogFrame(wx.Frame):
 class OutputFrame(wx.Frame):
 	""" Frame for displaying output from a subprocess. """
 	def __init__(self, parent, title, window_size=(400,300), window_pos=None):
-		if window_pos:
+		if window_pos is None:
 			wx.Frame.__init__(self, parent, -1, title, size=window_size)
 		else:
 			wx.Frame.__init__(self, parent, -1, title, size=window_size, pos=window_pos)
