@@ -69,11 +69,12 @@ class MonitorDispatcher(Dispatcher):
 		if self.om_eb_thread and self.om_eb_thread.is_alive() is None:
 			self.om_eb_thread.terminate()
 			self.om_eb_thread.join()
-			
-		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
-		self.raweventfile = "%s/%s_RawEvent.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
-		self.rawhistosfile = "%s/%s_RawHistos.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
-		self.dstfile = "%s/%s_DST.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], matches.group("etpattern") )
+		
+		self.etpattern = matches.group("etpattern")
+		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
+		self.raweventfile = "%s/%s_RawEvent.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
+		self.rawhistosfile = "%s/%s_RawHistos.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
+		self.dstfile = "%s/%s_DST.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
 		
 		try:
 			self.om_start_eb(etfile="%s_RawData" % matches.group("etpattern"), etport=matches.group("etport"))
@@ -110,12 +111,22 @@ class MonitorDispatcher(Dispatcher):
 			self.om_Gaudi_thread.process.terminate()
 			self.om_Gaudi_thread.join()
 
-		# now start a new copy
-		executable = ("$DAQRECVROOT/$CMTCONFIG/OnlineMonitor.exe $GAUDIONLINEROOT/$CMTCONFIG/libGaudiOnline.so OnlineTask -tasktype=LHCb::Class2Task -main=$GAUDIONLINEROOT/options/Main.opts -opt=$DAQRECVROOT/options/Nearonline.opts -auto")
-		self.om_Gaudi_thread = OMThread(executable, "gaudi")
+		# now start a new copy of each of the Gaudi jobs.
+		gaudi_processes = ( {"utgid": "NEARONLINE", "processname": "presenter", "optionsfile": "NearonlinePresenter.opts"}, 
+		                    {"utgid": "NEARONLINE_%s" % self.etpattern, "processname": "dst", "optionsfile": "NearonlineDST.opts"} )
+		for process in gaudi_processes:
+			executable = "UTGID=%s $DAQRECVROOT/$CMTCONFIG/OnlineMonitor.exe $GAUDIONLINEROOT/$CMTCONFIG/libGaudiOnline.so OnlineTask -tasktype=LHCb::Class2Task -main=$GAUDIONLINEROOT/options/Main.opts -opt=$DAQRECVROOT/options/%s -auto" % (process["utgid"], process["optionsfile"])
+			
+			# we will only keep track of the presenter thread, because this one
+			# is the one that will be replaced (needs to have the same UTGID so
+			# that the Presenter can find it properly).
+			# the others will continue to run, but we'll have no handle for them
+			# (which is intentional, so that they run unmolested until they finish).
+			thread = OMThread(executable, "gaudi_%s" % process["processname"])
+			if process["processname"] == "presenter":
+				self.om_Gaudi_thread = thread
 
-		self.logger.info("   OnlineMonitor command:")
-		self.logger.info("      '" + executable + "'...")
+			self.logger.info("   Starting a copy of OnlineMonitor using the following command:\n%s", executable)
 	
 	def om_stop(self, matches=None, show_details=True, **kwargs):
 		""" Stops the online monitor processes.  Only really needed
@@ -143,7 +154,10 @@ class MonitorDispatcher(Dispatcher):
 			if show_details:
 				self.logger.info("   ==> Attempting to stop the Gaudi thread.")
 			try:
+				# both Gaudi jobs need a DIM "stop" command,
+				# but only the Presenter one will be forcibly terminated.
 				subprocess.call("dim_send_command.exe NEARONLINE stop", shell=True)
+				subprocess.call("dim_send_command.exe NEARONLINE_%s stop" % self.etpattern, shell=True)
 				self.om_Gaudi_thread.process.terminate()
 				self.om_Gaudi_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
 			except Exception, excpt:
@@ -178,7 +192,6 @@ class OMThread(threading.Thread):
 		# redirect any output to a log file
 		filename = "%s/%s.log" % (Configuration.params["Monitoring nodes"]["om_logfileLocation"], self.processname)
 		with open(filename, "w") as fileobj:
-
 			# unfortunately we need to run these through the shell so they get all the right environment
 			# variables from this process's parent environment.
 			self.process = subprocess.Popen(self.command, shell=True, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
