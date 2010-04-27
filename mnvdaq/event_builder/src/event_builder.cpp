@@ -352,14 +352,14 @@ int event_builder(event_handler *evt)
 			fflush(stdout);
 			switch(evt->triggerType) {
 				case 0:
-					printf("Trigger =  Unknown\n");
+					printf("Trigger =   Unknown\n");
 #if !MTEST
 					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
 						adcFrameCount, discFrameCount, fpgaFrameCount); 
 #endif
 					break;
 				case 1:
-					printf("Trigger =  OneShot\n"); 
+					printf("Trigger =   OneShot\n"); 
 #if !MTEST
 					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
 						adcFrameCount, discFrameCount, fpgaFrameCount);
@@ -369,21 +369,35 @@ int event_builder(event_handler *evt)
 					} 
 					break;
 				case 2:
-					printf("Trigger = LightInj\n"); 
+					printf("Trigger =  LightInj\n"); 
 #if !MTEST
 					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
 						adcFrameCount, discFrameCount, fpgaFrameCount); 
 #endif
 					break;
 				case 8:
-					printf("Trigger =   Cosmic\n"); 
+					printf("Trigger =    Cosmic\n"); 
 #if !MTEST
 					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
 						adcFrameCount, discFrameCount, fpgaFrameCount); 
 #endif
 					break;
 				case 16:
-					printf("Trigger =     NuMI\n"); 
+					printf("Trigger =      NuMI\n"); 
+#if !MTEST
+					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
+						adcFrameCount, discFrameCount, fpgaFrameCount); 
+#endif
+					break;
+				case 32:
+					printf("Trigger = MTBF Muon\n"); 
+#if !MTEST
+					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
+						adcFrameCount, discFrameCount, fpgaFrameCount); 
+#endif
+					break;
+				case 64:
+					printf("Trigger = MTBF Beam\n"); 
 #if !MTEST
 					printf("  %4d ADC Frames, %3d Disc. Frames, %3d FPGA Frames\n", 
 						adcFrameCount, discFrameCount, fpgaFrameCount); 

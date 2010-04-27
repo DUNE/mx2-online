@@ -274,7 +274,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			acqData.infoStream() << " Running Mode is Cosmic.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
-			Frequency    = F4; 
+			Frequency    = F2; 
 			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
 			daqController->GetCrim(index)->SetIRQLine(Trigger); //crimInterrupts type
@@ -285,7 +285,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			acqData.infoStream() << " Running Mode is MTBFBeamMuon.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
-			Frequency    = F4; 
+			Frequency    = F2; 
 			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
 			daqController->GetCrim(index)->SetIRQLine(Trigger); //crimInterrupts type
@@ -296,7 +296,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			acqData.infoStream() << " Running Mode is MTBFBeamOnly.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
-			Frequency    = F4; 
+			Frequency    = F2; 
 			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
 			daqController->GetCrim(index)->SetIRQLine(Trigger); //crimInterrupts type
