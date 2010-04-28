@@ -506,6 +506,9 @@ class Dispatcher:
 				self.identity = ""
 			self.logger.info("   ==> Lock granted to client with id '%s'.  My identity: '%s' node." % (self.lock_id, self.identity))
 			return "1"
+		elif self.lock_id == lock_id:
+			self.logger.info("   ==> This client already has a lock!  No action taken.")
+			return "1"
 		else:
 			self.logger.info("   ==> Another client already has a lock.  Lock denied.")
 			return "0"
