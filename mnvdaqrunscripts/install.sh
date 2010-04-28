@@ -9,15 +9,6 @@ if [ $HOSTNAME == "mnvtbonline0.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/dispatcher.sh
 fi
 
-# mnvtbonline1 - Single node DAQ with hardware.
-if [ $HOSTNAME == "mnvtbonline1.fnal.gov" ]; then
-	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/runcontrol.sh
-	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
-	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/singledaqenv.sh
-	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/dispatcher.sh
-fi
-
 # minervatest01 - Single node DAQ with hardware.
 if [ $HOSTNAME == "minervatest01.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."

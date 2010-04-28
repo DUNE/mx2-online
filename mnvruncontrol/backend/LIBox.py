@@ -2,7 +2,7 @@
 """
 MINERvA light injection system manager.
 Adapted from the original (C#) script by J. Meyer
-  by J. Wolcott (jwolcott@fnal.gov), Feb. 2010
+  by J. Wolcott (jwolcott@fnal.gov), 02/2010
 
 Address all complaints to the management.
 """
@@ -11,6 +11,10 @@ import serial
 import time
 import re
 import sys
+
+# for testing purposes.
+LIBOX_WAIT_FOR_RESPONSE = True
+LIBOX_DISABLE = False
 
 # configuration for the serial port.
 # these probably will never need to be changed.
@@ -24,16 +28,13 @@ LIBOX_SERIAL_PORT_STOP_BITS      = serial.STOPBITS_ONE
 
 class LIBox:
 	""" Control class for the LI box. """
-	def __init__(self, pulse_height = 12.07, pulse_width = 7, LED_groups = "ABCD", trigger_internal = False, trigger_rate = None, echocmds=False, wait_response = True, disable_LI = False):
+	def __init__(self, pulse_height = 12.07, pulse_width = 7, LED_groups = "ABCD", trigger_internal = False, trigger_rate = None, echocmds=False):
 		self.pulse_height     = pulse_height
 		self.pulse_width      = pulse_width
 		self.LED_groups       = LED_groups
 		self.trigger_internal = trigger_internal
 		self.trigger_rate     = trigger_rate
 		self.echocmds         = echocmds
-		
-		self.disable = disable_LI
-		self.wait_response = wait_response
 		
 		self.command_stack = []
 		
@@ -50,7 +51,7 @@ class LIBox:
 		# this will throw an exception if the port's not properly configured.
 		# that's ok -- it needs to be fixed in that case!
 		# (the 'timeout' parameter is how long the process will wait for a read, in seconds.)
-		if not self.disable:
+		if not LIBOX_DISABLE:
 			self.port = serial.Serial( port     = LIBOX_SERIAL_PORT_DEVICE,
 				                      baudrate = LIBOX_SERIAL_PORT_BAUD,
 				                      bytesize = LIBOX_SERIAL_PORT_DATA_BITS,
@@ -62,7 +63,13 @@ class LIBox:
 
 			self.port.writeTimeout = 0.1
 		else:
-			print "Warning: LI box communication is disabled..."
+			print "Warning: LI box communication is disabled.  Edit LIBox.py and set 'DISABLE_LIBOX' to False near the top of the file to enable it."
+		
+
+#		try:
+#			self.port.read(1)
+#		except serial.SerialException:
+#			raise LIBoxException("The LI box does not seem to be connected.  Check the settings and the cable connection.")
 		
 	def reset(self):
 		self.command_stack = ["_X"]
@@ -78,7 +85,7 @@ class LIBox:
 		""" Sends the commands in the command stack to the LI box. """
 		self.check_commands()
 		
-		if not self.disable:
+		if not LIBOX_DISABLE:
 			for command in self.command_stack:
 				self.command_log.append(command)		# store this in a log for later review.
 				try:
@@ -88,7 +95,7 @@ class LIBox:
 				except serial.SerialTimeoutException:
 					raise LIBoxException("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
 
-				if self.wait_response and command != "_X":		# box won't respond after reset command.
+				if LIBOX_WAIT_FOR_RESPONSE and command != "_X":		# box won't respond after reset command.
 					char = self.port.read(1)
 					if self.echocmds:
 						print "Received from box: '" + char + "'"
@@ -111,12 +118,6 @@ class LIBox:
 			if command_ok == False:
 				raise LIBoxException("Command '" + command + "' is invalid and cannot be sent to the LI box.")
 				
-				
-	def get_command_history(self):
-		tmp = [cmd for cmd in self.command_log]		# can't just make a direct assignment or we'll only get a reference
-		self.command_log = []
-		return tmp
-				
 	def write_configuration(self):
 		""" Builds a stack of commands based on this object's parameters, then calls communicate(). """
 		
@@ -126,15 +127,11 @@ class LIBox:
 			self.initialize()
 		
 		# first, LED group.
-		# remove whitespace, capitalize, and alphabetize for easy processing.
-		self.LED_groups = self.LED_groups.replace(" ", "")
 		self.LED_groups = self.LED_groups.upper()
-		tmp = [char for char in self.LED_groups]
-		tmp.sort()
-		self.LED_groups = "".join(tmp)
+		self.LED_groups = self.LED_groups.replace(" ", "")
 		
-		if not re.match("^A?B?C?D?$", self.LED_groups):
-			raise LIBoxBadConfigException("LED groups to use must be some combination of 'A', 'B', 'C', 'D' (your entry: '" + self.LED_groups + "').")
+		if not re.match("[a-dA-D]{1,4}", self.LED_groups):
+			raise LIBoxException("LED groups to use must be some combination of 'A', 'B', 'C', 'D' (your entry: '" + self.LED_groups + "').")
 
 		# the following wizardry is brought to you by the black magic that powers the LI box.
 		# trust me -- it works.
@@ -179,6 +176,8 @@ class LIBox:
 		if (self.trigger_internal):
 			if self.trigger_rate == None:
 				raise LIBoxException("If you intend to use internal triggering, you must manually set the trigger rate.")
+				
+			self.command_stack.append("aK")
 
 			self.trigger_rate = int(self.trigger_rate, 16)		# no decimals.  need it in hexadecimal, too.
 			if self.trigger_rate < 0 or self.trigger_rate > 0xffff:
@@ -199,16 +198,11 @@ class LIBox:
 			lowNum1 = "%x" % lowNum1
 			lowNum2 = "%x" % lowNum2
 			self.command_stack.append("aI" + lowNum1 + lowNum2)
-
-			self.command_stack.append("aK")			
 		else:
 			self.command_stack.append("aQ")
 		
 		self.communicate()
 			
-
-class LIBoxBadConfigException(Exception):
-	pass
 
 class LIBoxException(Exception):
 	pass
