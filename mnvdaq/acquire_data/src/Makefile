@@ -16,11 +16,12 @@ COMPILE_OPTIONS += -DPOLL_INTERRUPT
 #COMPILE_OPTIONS += -DDEBUG_TRIGGER
 #COMPILE_OPTIONS += -DDEBUG_SENDMESSAGE  
 #COMPILE_OPTIONS += -DDEBUG_FASTCOMMAND  # CROC FastCommand Register
-#COMPILE_OPTIONS += -DDEBUG_COSMICS
-#COMPILE_OPTIONS += -DDEBUG_LIMITEDBANKS
 #--READOUT FLAGS--
 COMPILE_OPTIONS += -DREAD_DISC
 COMPILE_OPTIONS += -DREAD_ADC
+#--DETECTOR FLAGS--
+COMPILE_OPTIONS += -DWH14    # 14th floor test stands
+#COMPILE_OPTIONS += -DNUMIUS  # Upstream Detector
 
 LDFLAGS += -shared -Wl,-soname
 CXX = g++
@@ -30,7 +31,6 @@ TARGET=libminerva_acquire.so
 
 LDLIBS += -L$(DAQROOT)/lib -lhardware -lcaeninterface -L$(ET_LIBROOT)/lib -let
 include $(DAQROOT)/Make.include
-include $(DAQROOT)/Make.options
 
 $(TARGET): $(OBJS)
 	@echo $(OBJS)

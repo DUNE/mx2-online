@@ -28,9 +28,7 @@ typedef enum RunningModes {
 	Cosmics                 = 2, // "Cosmic" - Intneral CRIM Timing, w/ Frequency Set!
 	PureLightInjection      = 3, // MTM CRIM Timing, (No Frequency), software gates, LI Box alive
 	MixedBeamPedestal       = 4, // MTM CRIM Timing, (No Frequency), MTM && software gates
-	MixedBeamLightInjection = 5, // MTM CRIM Timing, (No Frequency), MTM && software gates, LI Box alive
-	MTBFBeamMuon            = 6, // MTBF=="Cosmic" - Intneral CRIM Timing, w/ Frequency Set!
-	MTBFBeamOnly            = 7  // MTBF=="Cosmic" - Intneral CRIM Timing, w/ Frequency Set!
+	MixedBeamLightInjection = 5  // MTM CRIM Timing, (No Frequency), MTM && software gates, LI Box alive
 };
 
 // The TriggerType dictates whether or not the DAQ issues a software gate command to the CRIM and 
@@ -43,8 +41,8 @@ typedef enum TriggerType {
 	ChargeInjection = 0x0004,
 	Cosmic          = 0x0008,
 	NuMI            = 0x0010,
-	MTBFMuon        = 0x0020,
-	MTBFBeam        = 0x0040,
+	TGReserved6     = 0x0020,
+	TGReserved7     = 0x0040,
 	MonteCarlo      = 0x0080  // Obviously, the DAQ should not write this type, ever!
 };
 
@@ -82,21 +80,17 @@ class acquire_data {
 		std::ofstream frame_acquire_log; /*!< log file streamer for timing output */
 		std::string et_filename; /*!< A string object for the Event Transfer output filename */
 		static const int numberOfHits;
-		static const unsigned int timeOutSec; /*!< How long we will wait for a beam spill before moving on... */
 		log4cpp::Appender* acqAppender;
-		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */
 
 	public:
 		/*! Specialized constructor. */
-		acquire_data(std::string fn, log4cpp::Appender* appender, log4cpp::Priority::Value priority, 
-			int hwInit=0) {
+		acquire_data(std::string fn, log4cpp::Appender* appender, log4cpp::Priority::Value priority) {
 #if TIME_ME
 			frame_acquire_log.open("frame_data_time_log.csv"); 
 #endif
 			et_filename = fn;
 			acqAppender = appender;
 			acqData.setPriority(priority);
-			hwInitLevel = hwInit;
 		};
 		/*! Specialized destructor. */
 		~acquire_data() {
@@ -137,24 +131,19 @@ class acquire_data {
 		// Passing an array like this is a bit old fashioned, but there it is...
 		int WriteCROCFastCommand(int id, unsigned char command[]);
 
-		/*! Reset the CRIM sequencer latch (only needed in Cosmic mode) */
-		int ResetCRIMSequencerLatch(int id);
-
 		/*! A templated function for sending messages from a generic "device" */
-		template <class X> int SendMessage(X *device, croc *crocTrial, channels *channelTrial, bool singleton);
+		template <class X> int SendMessage(X *device, croc *crocTrial, channels *channelTrial,bool singleton);
 
 		/*! A templated function for receiving messages from a generic "device" */
 		template <class X> int ReceiveMessage(X *device, croc *crocTrial, channels *channelTrial);
 
 		/*! A templated class for filling the DPM on each CROC channel, should that be desired */
-		template <class X> int FillDPM(croc *crocTrial, channels *channelTrial, X *frame, 
+		template <class X> bool FillDPM(croc *crocTrial, channels *channelTrial, X *frame, 
 			int outgoing_length, int incoming_length);
 
-		/*! Function which executes the acquisition sequence for a given FEB.
-		    We pass a boolean flag and hit depth integer to control the "readout level" for 
-		    each FEB. */
+		/*! Function which executes the acquisition sequence for a given FEB */
 		bool TakeAllData(feb *febTrial, channels *channelTrial, croc *crocTrial, event_handler *evt, int thread, 
-			et_att_id  attach, et_sys_id  sys_id, bool readFPGA=true, int nReadoutADC=8);
+			et_att_id  attach, et_sys_id  sys_id);
 
 		/*! Function which fills an event structure for further data handling by the event builder; templated */
 		template <class X> void FillEventStructure(event_handler *evt, int bank, X *frame, 
@@ -176,19 +165,16 @@ class acquire_data {
 		bool ResetDPM(croc*, channels*);
 
 		/*!  Function which runs the "trigger" (only executes a VME command for "OneShot"). */
-		int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
+		void TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
 
 		/*! Function which waits for the interrupt handler to raise an interrupt */
-		int WaitOnIRQ();
+		void WaitOnIRQ();
 
 		/*! Function which acknowledges the interrupt and resets the interrupt handler */
-		int AcknowledgeIRQ();
+		void AcknowledgeIRQ();
 
 		/*! Function which sends data to the event builder via ET */
 		void ContactEventBuilder(event_handler *evt,int thread, et_att_id  attach, et_sys_id  sys_id);
-
-		/*! Function that gets the MINOS SGATE value from the CRIM registers.  Check the "master" CRIM. */
-		unsigned int GetMINOSSGATE();
 };
 
 #endif
