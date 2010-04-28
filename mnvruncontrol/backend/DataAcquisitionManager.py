@@ -955,12 +955,23 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.logger.debug("Successfully acquired message handler lock.")
 		
 		# if it's a HW error message, we need to abort the subrun.
-		if evt.message == "hw_error" :	
-			wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="There was a hardware error while configuring the " + evt.sender + " readout node.  This subrun will need to be stopped.", title="Hardware configuration problem") )
-			self.logger.error("There was a hardware error on the " + evt.sender + " readout node.  This subrun will be aborted.")
+		if evt.message == "hw_error":	
+			self.logger.error("The " + evt.sender + " readout node reports a hardware error.")
+			if self.running:
+				wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="There was a hardware error while configuring the " + evt.sender + " readout node.  Subrun stopped.", messageheader="Hardware configuration problem") )
+				self.logger.error("This subrun will be aborted.")
 			
-			self.logger.warning("Subrun " + str(self.first_subrun + self.subrun) + " aborted.")
-			wx.PostEvent(self, Events.StopRunningEvent(allclear=True))
+				self.logger.warning("Subrun " + str(self.first_subrun + self.subrun) + " aborted.")
+			
+				self.logger.info("Cancelling any message subscriptions in preparation for early shutdown...")
+				for node in self.readoutNodes:
+					self.socketThread.UnsubscribeAll(node.id)
+				
+				# if there's more than one HW error, we don't want to
+				# go through the shutdown sequence more than once.
+				self.running = False
+			
+				wx.PostEvent(self, Events.StopRunningEvent(allclear=True))
 
 		# if it's a HW ready message, then we should see if all the other nodes are ready too
 		elif evt.message == "hw_ready":

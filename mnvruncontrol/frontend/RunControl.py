@@ -491,6 +491,7 @@ class MainFrame(wx.Frame):
 			
 			self.lockdownEntry.Enable(False)
 
+			self.SetStatusText("Run in progress.")
 			self.SetStatusText("RUNNING", 1)
 			self.runningIndicator.SetBitmap(self.onImage)
 			
@@ -784,7 +785,6 @@ class MainFrame(wx.Frame):
 			sizer.Add(acknowledgeButton, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM | wx.TOP, border=25)
 			
 			for bodytext in bodytexts:
-				print "body text:", bodytext.GetLabel()
 				sizer.Add(bodytext, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL)
 
 			self.notificationPage.SetSizer(sizer)
@@ -796,6 +796,7 @@ class MainFrame(wx.Frame):
 			self.default_background = self.mainPage.GetBackgroundColour()		
 
 		self.nb.ChangeSelection(page_num)
+		self.SetStatusText("ERROR!", 0)
 		
 		colors = (wx.RED, self.default_background)
 		bg = self.notificationPage.GetBackgroundColour()
@@ -899,6 +900,8 @@ class MainFrame(wx.Frame):
 				break
 		self.nb.DeletePage(page_num)
 		self.nb.ChangeSelection(0)
+		
+		self.SetStatusText("", 0)
 		
 		
 	def UpdateCloseWindows(self, evt):

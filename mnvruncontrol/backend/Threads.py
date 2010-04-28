@@ -294,10 +294,25 @@ class SocketThread(threading.Thread):
 	
 	def UnsubscribeAll(self, addressee):
 		""" Unsubscribe all messages intended for a certain host. """
-		for subscription in self.subscriptions:
-			if subscription.recipient == addressee:
-				self.subscriptions.remove(subscription)		# remove() is thread-safe.
-				self.logger.debug("Released socket subscription: (addressee, node name, message)\n(%s, %s, %s)" % (subscription.recipient, subscription.node_name, subscription.message))
+		# I'm worried about making a copy and only sending non-removed items to it,
+		# then replacing the original with the copy.  I suspect that's not a thread-safe way to handle it
+		# (what if another thread is trying to update the list simultaneously?  
+		#  whose list is the one we get in the end?)
+		# Hence the less efficient but definitely thread-safe solution below.
+		while True:
+			list_changed = False
+			
+			# loop through the subscriptions until we find one that matches.
+			# remove that one.  then start over to make sure we don't miss any.
+			for subscription in self.subscriptions:
+				if subscription.recipient == addressee:
+					self.subscriptions.remove(subscription)		# remove() is thread-safe.
+					self.logger.debug("Released socket subscription: (addressee, node name, message)\n(%s, %s, %s)" % (subscription.recipient, subscription.node_name, subscription.message))
+					list_changed = True
+					break
+
+			if not list_changed:
+				break
 #			else:
 #				print "Subscription didn't match: %s, %s" % (str(subscription), addressee)
 		
