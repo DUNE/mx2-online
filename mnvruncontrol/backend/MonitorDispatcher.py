@@ -190,17 +190,35 @@ class OMThread(threading.Thread):
 		
 	def run(self):
 		# redirect any output to a log file
-		filename = "%s/%s.log" % (Configuration.params["Monitoring nodes"]["om_logfileLocation"], self.processname)
-		with open(filename, "w") as fileobj:
-			# unfortunately we need to run these through the shell so they get all the right environment
-			# variables from this process's parent environment.
-			self.process = subprocess.Popen(self.command, shell=True, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
-			self.pid = self.process.pid		# less typing.
+		i = 1
+		while True:
+			filename = "%s/%s.%d.log" % (Configuration.params["Monitoring nodes"]["om_logfileLocation"], self.processname, i)
+			with open(filename, "w") as fileobj:
+				# try to get a lock on the log file.
+				# this ensures we don't write to the same one via
+				# two different processes.
+				try:
+					fcntl.flock(fileobj.fileno(), fcntl.LOCK_EX | LOCK_NB)
+				# if the file is already locked, we'll try a new filename.
+				except IOError:
+					i += 1
+					continue
+				
+				try:
+					# the subprocesses need access to a bunch of environment
+					# variables from this process's startup environment:
+					# hence the 'env=os.environ'.  don't remove that.
+					self.process = subprocess.Popen(self.command.split(), shell=False, stdout=fileobj.fileno(), stderr=subprocess.STDOUT, env=os.environ)
+					self.pid = self.process.pid		# less typing.
 
-			while self.process.poll() is None:
-				pass
-
-			self.returncode = self.process.returncode
+					# now wait until the process finishes
+					# (wait() returns the process's return code)
+					self.returncode = self.process.wait()
+				# we want to release the lock no matter what happens!
+				finally:
+					fcntl.flock(fileobj.fileno(), fcntl.LOCK_UN)
+				
+				break
 
                         
 ####################################################################

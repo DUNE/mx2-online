@@ -173,10 +173,9 @@ class DAQThread(threading.Thread):
 			self.process = subprocess.Popen(self.command.split(), shell=False, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
 			self.pid = self.process.pid		# less typing.
 
-			while self.process.poll() is None:
-				pass
-
-			self.returncode = self.process.returncode
+			# now wait until the process finishes
+			# (wait() returns the process's return code)
+			self.returncode = self.process.wait()
 		
                         
 ####################################################################
