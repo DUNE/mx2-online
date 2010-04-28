@@ -13,6 +13,7 @@
 import subprocess
 import threading
 import signal
+import fcntl
 import time
 import sys
 import os
@@ -52,6 +53,8 @@ class MonitorDispatcher(Dispatcher):
 		self.om_eb_thread = None
 		self.om_Gaudi_thread = None
 		
+		self.etpattern = None
+		self.last_etpattern = None
 		self.evbfile = None
 			
 
@@ -70,6 +73,11 @@ class MonitorDispatcher(Dispatcher):
 			self.om_eb_thread.terminate()
 			self.om_eb_thread.join()
 		
+		# save the old etpattern if there is one--
+		# we'll need it to tell the last Gaudi DST job to finish properly
+		if self.etpattern is not None:
+			self.last_etpattern = self.etpattern
+			
 		self.etpattern = matches.group("etpattern")
 		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
 		self.raweventfile = "%s/%s_RawEvent.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
@@ -99,7 +107,7 @@ class MonitorDispatcher(Dispatcher):
 		
 		# replace the options file so that we get the new event builder output.
 		with open(Configuration.params["Monitoring nodes"]["om_GaudiOptionsFile"], "w") as optsfile:
-			optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\";\n" % self.evbfile)
+			optsfile.write("BuildRawEventAlg.InputFileName   = { \"%s\" };\n" % self.evbfile)
 			optsfile.write("Event.Output = \"DATAFILE='PFN:%s' TYP='POOL_ROOTTREE' OPT='RECREATE'\";\n" % self.raweventfile)
 			optsfile.write("HistogramPersistencySvc.Outputfile = \"%s\";\n" % self.rawhistosfile)
 			optsfile.write("NTupleSvc.Output  = { \"FILE1 DATAFILE='%s' OPT='NEW' TYP='ROOT'\" };\n" % self.dstfile)
@@ -108,6 +116,8 @@ class MonitorDispatcher(Dispatcher):
 		# the DIM command is supposed to help it shut down cleanly.  
 		if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
 			subprocess.call("dim_send_command.exe NEARONLINE stop", shell=True)
+			subprocess.call("dim_send_command.exe NEARONLINE_%s stop" % self.last_etpattern, shell=True)
+	
 			self.om_Gaudi_thread.process.terminate()
 			self.om_Gaudi_thread.join()
 
@@ -115,14 +125,14 @@ class MonitorDispatcher(Dispatcher):
 		gaudi_processes = ( {"utgid": "NEARONLINE", "processname": "presenter", "optionsfile": "NearonlinePresenter.opts"}, 
 		                    {"utgid": "NEARONLINE_%s" % self.etpattern, "processname": "dst", "optionsfile": "NearonlineDST.opts"} )
 		for process in gaudi_processes:
-			executable = "UTGID=%s $DAQRECVROOT/$CMTCONFIG/OnlineMonitor.exe $GAUDIONLINEROOT/$CMTCONFIG/libGaudiOnline.so OnlineTask -tasktype=LHCb::Class2Task -main=$GAUDIONLINEROOT/options/Main.opts -opt=$DAQRECVROOT/options/%s -auto" % (process["utgid"], process["optionsfile"])
+			executable = "$DAQRECVROOT/$CMTCONFIG/OnlineMonitor.exe $GAUDIONLINEROOT/$CMTCONFIG/libGaudiOnline.so OnlineTask -tasktype=LHCb::Class2Task -main=$GAUDIONLINEROOT/options/Main.opts -opt=$DAQRECVROOT/options/%s -auto" % process["optionsfile"]
 			
 			# we will only keep track of the presenter thread, because this one
 			# is the one that will be replaced (needs to have the same UTGID so
 			# that the Presenter can find it properly).
 			# the others will continue to run, but we'll have no handle for them
 			# (which is intentional, so that they run unmolested until they finish).
-			thread = OMThread(executable, "gaudi_%s" % process["processname"])
+			thread = OMThread(executable, "gaudi_%s" % process["processname"], process["utgid"])
 			if process["processname"] == "presenter":
 				self.om_Gaudi_thread = thread
 
@@ -177,11 +187,12 @@ class MonitorDispatcher(Dispatcher):
 class OMThread(threading.Thread):
 	""" OM processes need to be run in a separate thread
 	    so that we know if they finish. """
-	def __init__(self, command, processname):
+	def __init__(self, command, processname, utgid=""):
 		threading.Thread.__init__(self)
 		
 		self.process = None
-		self.command = command
+		self.command = "UTGID=%s " % utgid + command
+		self.utgid = utgid
 		self.processname = processname
 		
 		self.daemon = True
@@ -198,7 +209,7 @@ class OMThread(threading.Thread):
 				# this ensures we don't write to the same one via
 				# two different processes.
 				try:
-					fcntl.flock(fileobj.fileno(), fcntl.LOCK_EX | LOCK_NB)
+					fcntl.flock(fileobj.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
 				# if the file is already locked, we'll try a new filename.
 				except IOError:
 					i += 1
@@ -207,13 +218,30 @@ class OMThread(threading.Thread):
 				try:
 					# the subprocesses need access to a bunch of environment
 					# variables from this process's startup environment:
-					# hence the 'env=os.environ'.  don't remove that.
-					self.process = subprocess.Popen(self.command.split(), shell=False, stdout=fileobj.fileno(), stderr=subprocess.STDOUT, env=os.environ)
+					# hence the 'shell=True'.  don't remove that.
+					self.process = subprocess.Popen(self.command, shell=True, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
 					self.pid = self.process.pid		# less typing.
 
-					# now wait until the process finishes
-					# (wait() returns the process's return code)
-					self.returncode = self.process.wait()
+					# now wait until the process finishes.
+					# we need to check up on it via DIM every so often...
+					# (it doesn't quit all the way out unless killed
+					#  or sent an "unload" command via DIM) 
+					lastcheck = time.time()
+					while self.process.poll() is None:
+						# check every 60 seconds.
+						if time.time() - lastcheck > 60 and len(self.utgid) > 0:
+							lastcheck = time.time()
+							dimcmd = subprocess.Popen("dim_get_service.exe %s/status" % self.utgid, shell=True, stdout=subprocess.PIPE)
+							stdout, stderr = dimcmd.communicate()
+							
+#							print stdout
+							
+							# the DIM response includes the word "RUNNING" if
+							# the process is still going, and "READY" instead
+							# if it's done and waiting.
+							if "READY" in stdout:
+								self.process.terminate()
+					self.returncode = self.process.returncode
 				# we want to release the lock no matter what happens!
 				finally:
 					fcntl.flock(fileobj.fileno(), fcntl.LOCK_UN)
