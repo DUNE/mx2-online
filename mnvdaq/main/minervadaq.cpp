@@ -1614,9 +1614,13 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"fileFormat = 'binary',\n");
 	fprintf(sam_file,"crc=CRC(666L,SAM.CRC_Adler32Type),\n");
 	fprintf(sam_file,"group='minerva',\n");
+#if MTEST
+	fprintf(sam_file,"dataTier='binary-raw-test',\n");
+#else
 	fprintf(sam_file,"dataTier='binary-raw',\n");
+#endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-09-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-09-02'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
