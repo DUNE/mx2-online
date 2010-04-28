@@ -233,7 +233,7 @@ class SC():
                     if not('X,%s'%fpga in fileTRIPs):
                         for i in range(6):
                             if not('%s,%s'%(i,fpga) in fileTRIPs): matchError.append('TRIP:'+'%s,%s'%(i,fpga))
-        if matchError!=[]: raise Exception('The following devices were NOT found in file %s:\n%s'%(filename, '\n'.join(matchError)))
+        if matchError!=[]: raise Exception('The following devices were NOT found in file %s:\n%s'%(fullpathname, '\n'.join(matchError)))
 
     def HVReadAll(self, devVal):
         '''Read the HV of all FEBs and return a list with those FEBs 
