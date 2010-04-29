@@ -298,7 +298,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 	def StopDataAcquisition(self, evt=None):
 		""" Stop data acquisition altogether. """
 		self.running = False
-		self.subrun = 0
 
 		self.logger.info("Stopping data acquisition sequence...")
 
@@ -307,32 +306,39 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# in the latter case, the event contains an attribute
 		# 'allclear', which signifies that we don't need to
 		# do any more checking on the readout nodes.
-		if not( evt is not None and hasattr(evt, "allclear") ):
-			# the run will need a manual stop if the readout/beamline DAQ nodes can't be properly contacted.
-			success = False
-			for node in self.readoutNodes:
-				try:
-					success = node.daq_stop()
-				except (ReadoutNode.ReadoutNodeNoDAQRunningException, RemoteNode.RemoteNodeNoConnectionException):		# the DAQ has already quit or is unreachable
-					pass				# if so, we'll never get the "DAQ quit" event from the SocketThread.  don't indicate 'success'.
-			if not success:
-				wx.PostEvent(self, Events.EndSubrunEvent())
+#		if evt is None or not(hasattr(evt, "allclear")):
+#			# the run will need a manual stop if the readout/beamline DAQ nodes can't be properly contacted.
+#			success = False
+#			for node in self.readoutNodes:
+#				try:
+#					success = node.daq_stop()
+#				except (ReadoutNode.ReadoutNodeNoDAQRunningException, RemoteNode.RemoteNodeNoConnectionException):		# the DAQ has already quit or is unreachable
+#					pass				# if so, we'll never get the "DAQ quit" event from the SocketThread.  don't indicate 'success'.
+#			if not success:
+#				wx.PostEvent(self, Events.EndSubrunEvent())
+
+		if evt is None or not(hasattr(evt, "allclear")):
+			self.EndSubrun(Events.EndSubrunEvent(manual=True))
+
 		for node in self.readoutNodes:
 			node.release_lock()
 		
 		if self.mtest_useBeamDAQ:
 			for node in self.mtestBeamDAQNodes:
-				success = node.daq_stop()
-				success = success and node.release_lock()
-				if not success:
-					self.logger.warning("Error stopping the MTest beamline DAQ...")
+				node.release_lock()
+#				success = node.daq_stop()
+#				success = success and node.release_lock()
+#				if not success:
+#					self.logger.warning("Error stopping the MTest beamline DAQ...")
 		
 		for node in self.monitorNodes:
 			try:
-				node.om_stop()
+#				node.om_stop()
 				node.release_lock()									
 			except:		# don't worry about it.  
 				pass
+
+		self.subrun = 0
 
 		wx.PostEvent(self.main_window, Events.StopRunningEvent())		# tell the main window that we're done here.
 
@@ -350,7 +356,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 	
 		self.logger.debug("StartNextSubrun() called.")
 	
-		quitting = False
+		quitting = not(self.running)
 		self.CloseWindows()			# don't want leftover windows open.
 
 		# if the event contains a list of PIDs that have finished, then
@@ -440,9 +446,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.StartNextThread()			
 		
 	def EndSubrun(self, evt):
-		""" Performs the jobs that need to be done when a subrun ends.
-		    This method should only be called as the event handler
-		    for the EndSubrunEvent. """
+		""" Performs the jobs that need to be done when a subrun ends. """
 
 		if not self.can_shutdown:
 			return
@@ -451,100 +455,109 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finalizing...")
 		
-		if hasattr(evt, "processname") and evt.processname is not None:
-#			if len(self.runseries.Runs) > 1:
-#				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be need to be terminated.  Do you want to continue with the rest of the run series?  (Selecting 'no' will stop the run series and return you to the idle state.)", evt.processname + " quit prematurely",   wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
-#				self.running = self.running and (dialog.ShowModal() == wx.ID_YES)
-#			else:			
-#				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
-#				self.running = False
-			self.running = False
-			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm"))
+		# we need to prevent the delivery of messages while we're shutting down.
+		# after we're done, there won't be any subscriptions so it won't matter
+		# if messages arrive after that.
+		with self.messageHandlerLock:
+
+			if hasattr(evt, "processname") and evt.processname is not None:
+	#			if len(self.runseries.Runs) > 1:
+	#				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be need to be terminated.  Do you want to continue with the rest of the run series?  (Selecting 'no' will stop the run series and return you to the idle state.)", evt.processname + " quit prematurely",   wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+	#				self.running = self.running and (dialog.ShowModal() == wx.ID_YES)
+	#			else:			
+	#				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
+	#				self.running = False
+				self.running = False
+				wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm"))
 		
-		num_mtest_nodes = len(self.mtestBeamDAQNodes) if self.mtest_useBeamDAQ else 0
-		numsteps = num_mtest_nodes + len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the beamline DAQ nodes, readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
-		step = 0
+			num_mtest_nodes = len(self.mtestBeamDAQNodes) if self.mtest_useBeamDAQ else 0
+			numsteps = num_mtest_nodes + len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the beamline DAQ nodes, readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
+			step = 0
 			
-		# if the subrun is being stopped for some other reason than
-		# all readout nodes exiting cleanly, then we need to make sure
-		# they ARE stopped.
-		if not hasattr(evt, "allclear") or not evt.allclear:
-			success = True
-			for node in self.readoutNodes:
-				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping " + node.name + " node...", progress=(step, numsteps)) )
-				try:
+			# if the subrun is being stopped for some other reason than
+			# all readout nodes exiting cleanly, then we need to make sure
+			# they ARE stopped.
+			if not hasattr(evt, "allclear") or not evt.allclear:
+				success = True
+				for node in self.readoutNodes:
+					wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping " + node.name + " node...", progress=(step, numsteps)) )
+					try:
+						success = success and node.daq_stop()
+					except ReadoutNode.ReadoutNodeNoConnectionException:
+						self.logger.warning("The %s node cannot be reached..." % node.name)
+						success = False
+					except ReadoutNode.ReadoutNodeNoDAQRunningException:		# raised if the DAQ is not running on the node.  not a big deal.
+						pass
+				
+					wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=False) )
+				
+					step += 1
+			
+				if not success:
+					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Not all readout nodes could be stopped.  The next subrun could be problematic...", title="Not all nodes stopped") )
+		
+			if self.mtest_useBeamDAQ:
+				success = True
+				for node in self.mtestBeamDAQNodes:
 					success = success and node.daq_stop()
-				except ReadoutNode.ReadoutNodeNoConnectionException:
-					self.logger.warning("The %s node cannot be reached..." % node.name)
-					success = False
-				except ReadoutNode.ReadoutNodeNoDAQRunningException:		# raised if the DAQ is not running on the node.  not a big deal.
-					pass
-				
-				wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=False) )
-				
+					step += 1
+		
+				if not success:
+					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The beamline DAQ node(s) couldn't be stopped.  The next subrun could be problematic...", title="Beamline DAQ node(s) not stopped") )
+		
+			for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
+				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping ET threads...", progress=(step, numsteps)) )
+
+				# we might have clicked the 'stop' button while the DAQthreadWatcher is watching these threads,
+				# in which case the list only contains a list of PIDs as placeholders.
+				# in that case, we need to abort the DAQthreadWatcher instead.
+				if hasattr(thread, "Abort"):		
+					thread.Abort()
+				else:
+					self.DAQthreadWatcher.Abort()
+			
 				step += 1
 			
-			if not success:
-				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Not all readout nodes could be stopped.  The next subrun could be problematic...", title="Not all nodes stopped") )
-		
-		if self.mtest_useBeamDAQ:
-			success = True
-			for node in self.mtestBeamDAQNodes:
-				success = success and node.daq_stop()
-				step += 1
-		
-			if not success:
-				wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The beamline DAQ node(s) couldn't be stopped.  The next subrun could be problematic...", title="Beamline DAQ node(s) not stopped") )
-		
-		for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
-			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping ET threads...", progress=(step, numsteps)) )
-
-			# we might have clicked the 'stop' button while the DAQthreadWatcher is watching these threads,
-			# in which case the list only contains a list of PIDs as placeholders.
-			# in that case, we need to abort the DAQthreadWatcher instead.
-			if hasattr(thread, "Abort"):		
+			while len(self.timerThreads) > 0:
+				thread = self.timerThreads.pop()	# the countdown timers would start more threads.  get rid of them.
 				thread.Abort()
+
+	#		print self.first_subrun, self.subrun
+
+			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
+
+			try:
+				self.LIBox.reset()					# don't want the LI box going unless it needs to be.
+			except LIBox.LIBoxException:				# ... but maybe there isn't one connected, or it's not on.  that's ok.
+				pass
+			finally:
+				step += 1
+		
+			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping listeners...", progress=(step, numsteps)) )
+			for node in self.readoutNodes:
+				self.socketThread.UnsubscribeAll(node.id)
+
+			self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finished.")
+
+			# need to make sure all the tasks are marked "not yet completed" so that they are run for the next subrun
+			for task in self.SubrunStartTasks:
+				task["completed"] = False
+
+			self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
+			self.subrun += 1
+		
+			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun completed.", progress=(numsteps, numsteps)) )
+			wx.PostEvent( self.main_window, Events.SubrunOverEvent(run=self.run, subrun=self.first_subrun + self.subrun) )
+
+			if self.running and self.subrun < len(self.runseries.Runs):
+				wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
 			else:
-				self.DAQthreadWatcher.Abort()
+				self.logger.info("Data acquisition finished.")
 			
-			step += 1
-			
-		while len(self.timerThreads) > 0:
-			thread = self.timerThreads.pop()	# the countdown timers would start more threads.  get rid of them.
-			thread.Abort()
-
-#		print self.first_subrun, self.subrun
-
-		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
-
-		try:
-			self.LIBox.reset()					# don't want the LI box going unless it needs to be.
-		except LIBox.LIBoxException:				# ... but maybe there isn't one connected, or it's not on.  that's ok.
-			pass
-		finally:
-			step += 1
-		
-		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping listeners...", progress=(step, numsteps)) )
-		for node in self.readoutNodes:
-			self.socketThread.UnsubscribeAll(node.id)
-
-		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finished.")
-
-		# need to make sure all the tasks are marked "not yet completed" so that they are run for the next subrun
-		for task in self.SubrunStartTasks:
-			task["completed"] = False
-
-		self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
-		self.subrun += 1
-		
-		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun completed.", progress=(numsteps, numsteps)) )
-		wx.PostEvent( self.main_window, Events.SubrunOverEvent(run=self.run, subrun=self.first_subrun + self.subrun) )
-
-		if self.running and self.subrun < len(self.runseries.Runs):
-			wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
-		else:
-			self.logger.info("Data acquisition finished.")
-			wx.PostEvent(self, Events.StopRunningEvent(allclear=True))
+				# if this isn't a manual (user-initiated) stop,
+				# then the sequence is different
+				if not hasattr(evt, "manual") or not evt.manual:
+					wx.PostEvent(self, Events.StopRunningEvent(allclear=True))
 		
 
 	##########################################
@@ -1083,5 +1096,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 	def RelayProgressToDisplay(self, evt):
 		""" Pass along an 'update progress' event (usu. from the SocketThread) to the main run control. """
-		# just pass the event along.
-		wx.PostEvent(self.main_window, evt)
+		# just pass the event along (so long as we're running).
+		if self.running:
+			wx.PostEvent(self.main_window, evt)
