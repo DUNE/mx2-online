@@ -42,7 +42,7 @@ class HVConfirmationFrame(wx.Frame):
 		self.pmtlist.InsertColumn(1, "CROC")
 		self.pmtlist.InsertColumn(2, "Chain")
 		self.pmtlist.InsertColumn(3, "Board")
-		self.pmtlist.InsertColumn(4, "HV target-actual")
+		self.pmtlist.InsertColumn(4, "HV target-actual (volts)")
 		self.pmtlist.InsertColumn(5, "HV period")
 		self.pmtlist.setResizeColumn(5)
 		
@@ -128,6 +128,17 @@ class HVConfirmationFrame(wx.Frame):
 			
 		# sort them in descending order.
 		self.pmtlist.SortItems(lambda a,b : 0 if a == b else (-1 if a > b else 1))
+		
+		# now convert the deviations from ADC counts to volts
+		index = self.pmtlist.GetNextItem(-1)
+		while index != -1:
+			listitem = self.pmtlist.GetItem(index, 4)
+			dev = int(listitem.GetText())
+			
+			self.pmtlist.SetStringItem(index, 4, str(int(dev / 60)))
+
+			index = self.pmtlist.GetNextItem(index)
+		
 
 	def OnContinue(self, evt):
 		wx.PostEvent(self.DAQmgr, Events.ReadyForNextSubrunEvent())
