@@ -50,7 +50,7 @@ class Dispatcher:
 
 		# basic requests and methods.
 		# derived classes can extend these if they want to.
-		self.valid_requests = SocketRequests.GlobalRequests
+		self.valid_requests = SocketRequests.GlobalRequests[:]
 		self.handlers = { "alive"        : self.ping,
 		                  "get_lock"     : self.get_lock,
 		                  "release_lock" : self.release_lock }
@@ -433,7 +433,9 @@ class Dispatcher:
 			
 			id = matches.group("id")
 			
-			if self.lock_id is not None and id != self.lock_id:
+			# if there's a lock in place already, the only one who's allowed to do anything
+			# is at the SAME IP address with the SAME id.
+			if self.lock_id is not None and (id != self.lock_id or client_address != self.lock_address):
 				self.logger.warning("Imperative request from requester other than the one who has the lock:")
 				self.logger.warning("'%s'" % request)
 				self.logger.warning("Request ignored.")
@@ -468,13 +470,13 @@ class Dispatcher:
 		request = matches.group("request").lower()
 		
 		# if this is an imperative request and the ID is ok, but there is currently no lock,
-		# then we need to implicitly give one.  (otherwise we could still get conflicting directives).
-		# we should ignore requests that are in the GlobalRequests, though, because their handlers
-		# are the MANAGERS of the locks and thus already know about them -- they don't need help.
-		# (other request handlers don't and need to have the locking mechanism managed for them.)
+		# and it's not a manager request, then we don't want to allow it.  otherwise we
+		# will have no return address for commands that send feedback to the client,
+		# and we run the risk of multiple nodes trying to issue commands simultaneously.
+		# inform the client that they need a lock first.
 		if imperative_request and self.lock_id is None and not is_global_request:
-			self.logger.info("Imperative request received with no lock present.  Requesting one first.")
-			self.get_lock(matches=matches, lock_id=id, client_address=client_address)
+			self.logger.warning("Imperative request received with no lock present.  Ignoring...")
+			return "NOLOCK"
 
 		if request in self.handlers:
 			if id is not None:
