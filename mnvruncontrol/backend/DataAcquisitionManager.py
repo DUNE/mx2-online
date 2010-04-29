@@ -115,6 +115,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 		self.running = False
 		self.can_shutdown = False		# used in between subruns to prevent shutting down twice for different reasons
+		
+		self.last_HW_config = None		# this way we don't write the HW config more often than necessary
 
 		self.messageHandlerLock = threading.Lock()
 
@@ -301,24 +303,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.logger.info("Stopping data acquisition sequence...")
 
-		# this method can be initiated either from the main GUI
-		# or by EndSubrun() on the last subrun of the series.
-		# in the latter case, the event contains an attribute
-		# 'allclear', which signifies that we don't need to
-		# do any more checking on the readout nodes.
-#		if evt is None or not(hasattr(evt, "allclear")):
-#			# the run will need a manual stop if the readout/beamline DAQ nodes can't be properly contacted.
-#			success = False
-#			for node in self.readoutNodes:
-#				try:
-#					success = node.daq_stop()
-#				except (ReadoutNode.ReadoutNodeNoDAQRunningException, RemoteNode.RemoteNodeNoConnectionException):		# the DAQ has already quit or is unreachable
-#					pass				# if so, we'll never get the "DAQ quit" event from the SocketThread.  don't indicate 'success'.
-#			if not success:
-#				wx.PostEvent(self, Events.EndSubrunEvent())
-
 		if evt is None or not(hasattr(evt, "allclear")):
-			self.EndSubrun(Events.EndSubrunEvent(manual=True))
+			wx.PostEvent(self, Events.EndSubrunEvent(manual=True))
+			return
 
 		for node in self.readoutNodes:
 			node.release_lock()
@@ -326,21 +313,18 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.mtest_useBeamDAQ:
 			for node in self.mtestBeamDAQNodes:
 				node.release_lock()
-#				success = node.daq_stop()
-#				success = success and node.release_lock()
-#				if not success:
-#					self.logger.warning("Error stopping the MTest beamline DAQ...")
 		
 		for node in self.monitorNodes:
 			try:
-#				node.om_stop()
 				node.release_lock()									
 			except:		# don't worry about it.  
 				pass
 
 		self.subrun = 0
+		
+		auto = hasattr(evt, "allclear")
 
-		wx.PostEvent(self.main_window, Events.StopRunningEvent())		# tell the main window that we're done here.
+		wx.PostEvent(self.main_window, Events.StopRunningEvent(auto=auto))		# tell the main window that we're done here.
 
 
 	##########################################
@@ -641,27 +625,28 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    
 		self.logger.info("  Using hardware configuration: " + MetaData.HardwareConfigurations.description(self.runinfo.hwConfig))
 		
-		# if this is the first subrun, it's the only subrun,
-		# or it has a different HW config from the one before,
+		# if this subrun has a different HW config from the one before
+		# (which includes the cases where this is the first subrun
+		#  or it's the only subrun), then
 		# we need to ask the slow control to set up the HW.
 		# that is, unless this configuration is the "current
 		# state" version, in which case the user doesn't want
 		# to use any configuration file at all (so that custom
 		# configurations via the slow control can be used for testing).
 		self.logger.debug("  HW config check.")
-		if self.runinfo.hwConfig != MetaData.HardwareConfigurations.NOFILE.hash and (self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig):
+		if self.runinfo.hwConfig != MetaData.HardwareConfigurations.NOFILE.hash and self.runinfo.hwConfig != self.last_HW_config:
 			# NOTE: DON'T consolidate this loop together with the next one.
 			# the subscriptions need to ALL be booked before any of the nodes
 			# gets a "HW configure" command.  otherwise there will be race conditions.
 			for node in self.readoutNodes:
-				self.logger.info("  Booking a subscription for 'HW ready' and 'HW error' messages from readout nodes...")
+				self.logger.info("  ==> Booking a subscription for 'HW ready' and 'HW error' messages from readout nodes...")
 				for node in self.readoutNodes:
 					self.socketThread.Subscribe(node.id, node.name, "hw_ready", callback=self, waiting=True, notice="Configuring HW...")
 					self.socketThread.Subscribe(node.id, node.name, "hw_error", callback=self)
 					self.logger.debug("    ... subscribed the %s node." % node.name)
 			
 			for node in self.readoutNodes:
-				self.logger.info("  Configuring the %s node..." % node.name)
+				self.logger.info("   ==> Configuring the %s node..." % node.name)
 				success = False
 				tries = 0
 				while not success and tries < Configuration.params["Readout nodes"]["SCHWwriteAttempts"]:
@@ -681,8 +666,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 					self.logger.error("Could not set the hardware for the " + node.name + " readout node.  This subrun will be aborted.")
 					# need to stop the run startup sequence.
 					return False
+			
+			# record what we did so that the next time we don't have to do it again.
+			self.last_HW_config = self.runinfo.hwConfig
 		else:
-			self.logger.info("No HW configuration necessary.")
+			self.logger.info("   ==> No HW configuration necessary.")
 			return True
 		
 		# need to wait on HW init (it can take a while).  don't proceed to next step yet.
