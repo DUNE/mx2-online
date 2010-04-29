@@ -17,9 +17,9 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 /*! the function which governs the entire data acquisition sequence */
 int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,int thread, 
               et_att_id  attach, et_sys_id  sys_id, bool readFPGA=true, int nReadoutADC=8); 
-/*! Get the Global Gate value indexed in /work/conditions/soldierToWorker.dat */
+/*! Get the Global Gate value indexed in /work/conditions/global_gate.dat */
 unsigned long long inline GetGlobalGate();
-/*! Put the Global Gate value into /work/conditions/soldierToWorker.dat */
+/*! Put the Global Gate value into /work/conditions/global_gate.dat */
 void inline PutGlobalGate(unsigned long long ggate);
 /*! Write the (complete, as of trigger X) SAM metadata */
 int WriteSAM(const char samfilename[], 
