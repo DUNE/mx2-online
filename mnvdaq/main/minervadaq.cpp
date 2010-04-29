@@ -1490,14 +1490,14 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 } // end TriggerDAQ
 
 
-int GetGlobalGate()
+unsigned long long GetGlobalGate()
 {                       
-/*! \fn int GetGlobalGate()
+/*! \fn unsigned long long GetGlobalGate()
  *
  * This function gets the value of the global gate from the data file used for tracking.  
  * On mnvdaq build machines, that file is: /work/conditions/global_gate.dat.              
  */
-	int ggate;
+	unsigned long long ggate;
 	fstream global_gate("/work/conditions/global_gate.dat");
 	try {
 		if (!global_gate) throw (!global_gate);
@@ -1512,9 +1512,9 @@ int GetGlobalGate()
 } 
 
 
-void PutGlobalGate(int ggate)
+void PutGlobalGate(unsigned long long ggate)
 {
-/*! \fn void PutGlobalGate(int ggate)
+/*! \fn void PutGlobalGate(unsigned long long ggate)
  *
  * This funciton writes a new value into the global gate data log.
  * On mnvdaq build machines, that file is: /work/conditions/global_gate.dat.              
@@ -1620,7 +1620,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-09-03'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-09-04'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
