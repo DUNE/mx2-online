@@ -160,9 +160,10 @@ a few things need amplification here:
     
     When all of the processes have started, data acquisition should be underway,
     so the last process to start posts a notice to this effect to the log file,
-    then quits.  Further activity will be initiated by the HandleSocketMessage
-    method after receiving notification from the SocketThread (which by this
-    point is listening for "done" messages from the readout nodes).
+    and then control is returned to the main wx event loop.  Further activity
+    will be initiated by the HandleSocketMessage method after receiving
+    notification from the SocketThread (which by this point is listening for
+    "done" messages from the readout nodes).
     
  
  Left: DataAcquisitionManager                                         :    Right: graphics/front end
