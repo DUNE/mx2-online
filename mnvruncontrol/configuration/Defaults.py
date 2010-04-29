@@ -80,7 +80,7 @@ OM_DST_TARGET_PATH = "/minerva/data/users/minerva/data_processing/dst"		# where 
 
 # slow control
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
-SLOWCONTROL_ALLOWED_HV_THRESHOLDS = {300: 0, 100: 3, 60: 15}	# that is, { threshold : num allowed over that threshold, ... }
+SLOWCONTROL_ALLOWED_HV_THRESHOLDS = {200: 0}	# that is, { threshold : num allowed over that threshold, ... }
 SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD = 15000
 SLOWCONTROL_NUM_WRITE_ATTEMPTS = 3
 SLOWCONTROL_BEAM_FILE              = "beam.hwcfg"
