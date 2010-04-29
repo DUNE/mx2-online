@@ -13,6 +13,7 @@
 import subprocess
 import threading
 import signal
+import shutil
 import fcntl
 import time
 import sys
@@ -132,9 +133,11 @@ class MonitorDispatcher(Dispatcher):
 			# that the Presenter can find it properly).
 			# the others will continue to run, but we'll have no handle for them
 			# (which is intentional, so that they run unmolested until they finish).
-			thread = OMThread(executable, "gaudi_%s" % process["processname"], process["utgid"])
+			thread = OMThread(executable, "gaudi_%s" % process["processname"], process["utgid"], persistent=(process["processname"] == "dst"))
 			if process["processname"] == "presenter":
 				self.om_Gaudi_thread = thread
+			elif process["processname"] == "dst":
+				thread.dstfile = self.dstfile
 
 			self.logger.info("   Starting a copy of OnlineMonitor using the following command:\n%s", executable)
 	
@@ -187,13 +190,16 @@ class MonitorDispatcher(Dispatcher):
 class OMThread(threading.Thread):
 	""" OM processes need to be run in a separate thread
 	    so that we know if they finish. """
-	def __init__(self, command, processname, utgid=""):
+	def __init__(self, command, processname, utgid="", persistent=False):
 		threading.Thread.__init__(self)
 		
 		self.process = None
-		self.command = "UTGID=%s " % utgid + command
+		self.command = "UTGID=%s %s" % (utgid, command)
 		self.utgid = utgid
 		self.processname = processname
+		self.persistent = persistent		# if this thread is supposed to run until it finishes
+		
+		self.dstfile = None				# overridden as necessary by the parent process.
 		
 		self.daemon = True
 		
@@ -229,7 +235,7 @@ class OMThread(threading.Thread):
 					lastcheck = time.time()
 					while self.process.poll() is None:
 						# check every 60 seconds.
-						if time.time() - lastcheck > 60 and len(self.utgid) > 0:
+						if time.time() - lastcheck > 60 and self.persistent:
 							lastcheck = time.time()
 							dimcmd = subprocess.Popen("dim_get_service.exe %s/status" % self.utgid, shell=True, stdout=subprocess.PIPE)
 							stdout, stderr = dimcmd.communicate()
@@ -247,7 +253,10 @@ class OMThread(threading.Thread):
 					fcntl.flock(fileobj.fileno(), fcntl.LOCK_UN)
 				
 				break
-
+		
+		# copy the DST to its target location.
+		if self.persistent and self.dstfile:
+			shutil.copy2(self.dstfile, Configuration.params["Monitoring nodes"]["om_DSTTargetPath"])
                         
 ####################################################################
 ####################################################################

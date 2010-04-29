@@ -75,6 +75,9 @@ MTEST_TYPE=1
 MTEST_MEM_SLOT=8
 MTEST_GATE_SLOT=18
 
+# monitoring
+OM_DST_TARGET_PATH = "/minerva/data/users/minerva/data_processing/dst"		# where DSTs are copied when they're done being created by the dispatcher
+
 # slow control
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
 SLOWCONTROL_ALLOWED_HV_THRESHOLDS = {300: 0, 100: 3, 60: 15}	# that is, { threshold : num allowed over that threshold, ... }

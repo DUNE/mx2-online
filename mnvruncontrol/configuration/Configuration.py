@@ -70,6 +70,7 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "om_logfileLocation"      : ( Defaults.OM_LOGFILE_LOCATION_DEFAULT,          "OM dispatcher log file location",                 str   ),
                                          "om_logfileName"          : ( Defaults.OM_DISPATCHER_LOGFILE,                "OM dispatcher log file name",                     str   ),
                                          "om_GaudiOptionsFile"     : ( Defaults.OM_GAUDI_OPTIONSFILE,                 "OM Gaudi process options file",                   str   ),
+                                         "om_DSTTargetPath"        : ( Defaults.OM_DST_TARGET_PATH,                   "Copy target for DSTs created by OM dispather",    str   ),
                                          "om_rawdataLocation"      : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                            str   )  },
 
                   "MTest beam nodes" : { "mtest_PIDfileLocation"   : ( Defaults.MTEST_DISPATCHER_PIDFILE,             "MTest dispatcher PID file location",              str   ),
