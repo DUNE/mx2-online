@@ -145,15 +145,15 @@ void croc::SetupChannels()
 }
 
 
-channels *croc::GetChannel(int i) { //TODO - this should be "GetChain"
+channels *croc::GetChannel(int i) {
 /*! \fn
  * This function retrieves a specified croc channel belonging to this croc object.
- * \param i the chain number (indexed from 0)
+ * \param i the channel number (indexed from 0)
  */
 	channels *tmp=0; //a channel temporary to be returned
 	for (std::list<channels*>::iterator p=crocChannel.begin(); 
 	p!=crocChannel.end(); p++) { //loop over the list of channels belonging to this croc
-		if (((*p)->GetChainNumber())==i) tmp = (*p); //check the *chain* identifier
+		if (((*p)->GetChannelNumber())==i) tmp = (*p); //check the channel identifier
 	}
 	return tmp; //return the channel object
 }

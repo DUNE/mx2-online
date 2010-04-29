@@ -213,8 +213,8 @@ FPGA[31]42 =
 	4th bit-> HV Num Avg Bit#0 (4 bits)
 	5th bit-> HV Num Avg Bit#1
 	6th bit-> HV Num Avg Bit#2
-	7th bit-> Spare Bit (Unused)
-FPGA[32]43 = Firmware Version (8 bits)
+	7th bit-> HV Num Avg Bit#3
+FPGA[32]43 = Firmware Version (4? bits)
 FPGA[33]44 = HV Period Manual 1st byte (16 bits)
 FPGA[34]45 = HV Period Manual 2nd byte
 FPGA[35]46 = HV Period Auto 1st byte (16 bits)
@@ -222,8 +222,8 @@ FPGA[36]47 = HV Period Auto 2nd byte
 FPGA[37]48 = HV Pulse Width (8 bits)
 FPGA[38]49 = Temperature 1st byte (16 bits)
 FPGA[39]50 = Temperature 2nd byte
-FPGA[40]51 = TripX Threshold (8 bits) 
-FPGA[41]52 = TRiP X Comp Enc (8 bits - really, 6 least significant bits (2 spare))  
+FPGA[40]51 = TripX Threshold (8 bits - really, 6 least significant bits (2 spare))
+FPGA[41]52 = TRiP X Comp Enc (8 bits)
 FPGA[42]53 = Discriminator Enable Mask TRiP 0 1st byte (16 bits)
 FPGA[43]54 = Discriminator Enable Mask TRiP 0 2nd byte
 FPGA[44]55 = Discriminator Enable Mask TRiP 1 1st byte (16 bits)
@@ -359,7 +359,7 @@ FPGA[56]67 = ??
 							//shift left 4 bits to 4-7
 	/* message word 31: BoardID (bits 0-3) and HVNumAve (bits 4-7) */
 	message[31] = (boardID[0] & 0x0F); //mask off bits 0-3
-	message[31] |= (HVNumAve[0] & 0x07) << 0x04; //mask off bits 0-2 and
+	message[31] |= (HVNumAve[0] & 0x0F) << 0x04; //mask off bits 0-3 and
 						//shift left 4 bits to 4-7
 	/* message word 32:  Firmware version */
 	message[32] = (FirmwareVersion[0] & 0xFF); //the firmware version is 8 bits
@@ -379,11 +379,11 @@ FPGA[56]67 = ??
 	message[38] = (Temperature & 0xFF); //mask off bits 0-7
 	message[39] = (Temperature >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
 						//and mask off ibt 0-7
-	/* message word 40: TripX Thresh , 8 bits */
-	message[40] = (TripXThresh[0] & 0xFF); //mask off bits 0-7
+	/* message word 40: TripX Thresh , 6 bits (using 8, 2 are spare) */
+	message[40] = (TripXThresh[0] & 0x3F); //mask off bits 0-5
 
-	/* message word 41: TripXCompEnc, 6 (+2 spare) bits */
-	message[41] = (TripXCompEnc[0] & 0x3F); //mask off bits 0-5
+	/* message word 41: whatever this is...TripXCompEnc, 8 bits */
+	message[41] = (TripXCompEnc[0] & 0xFF); //mask off bits 0-7
 
 	// if (NRegisters==54)... // Firmware versions 78-84
 	/* message word 42-43 Discriminator Enable Mask Trip 0, 16 bits */
@@ -439,7 +439,7 @@ FPGA[56]67 = ??
 
 // TODO - ? Maybe... it isn't consistent that the FPGA frame function does not print the 
 // register values while the discr and adc frame decode functions do... 
-int feb::DecodeRegisterValues(int buffersize) 
+void feb::DecodeRegisterValues(int buffersize) 
 {
 /*! \fn********************************************************************************
  *  DecodeMessage takes the incoming message and unpacks the bits into the
@@ -457,16 +457,10 @@ int feb::DecodeRegisterValues(int buffersize)
 	// Check for errors
 	if ((buffersize < TrueIncomingMessageLength)&&(initialized)) { 
 		// The buffer is too short, so we need to stop execution, and notify the user!
-		std::cout << "The FPGA buffer for FEB " << (int)febNumber[0]
-			<< " is too short!" << std::endl;
-		std::cout << " Expected: " << TrueIncomingMessageLength << std::endl;
-		std::cout << " Had     : " << buffersize << std::endl;
-		if (febAppender!=0) {
-			febLog.critStream() << "The FPGA buffer for FEB " << (int)febNumber[0]
-				<< " is too short!";
-			febLog.critStream() << " Expected: " << TrueIncomingMessageLength;
-			febLog.critStream() << " Had     : " << buffersize;
-		}
+		std::cout<<"The FPGA buffer for this FEB "<<(int)febNumber[0]
+			<<" is too short"<<std::endl;
+		std::cout<<"Expected: "<<TrueIncomingMessageLength<<std::endl;
+		std::cout<<"Had: "<<buffersize<<std::endl;
 		exit(1);
 	} else if ((!initialized)&&(buffersize<TrueIncomingMessageLength)) {
 		std::cout<<"FEB: "<<(int) febNumber[0]<<" is not available on this channel."<<std::endl;
@@ -626,10 +620,10 @@ int feb::DecodeRegisterValues(int buffersize)
 			InjectRange[0] = (message[startByte] & 0x0F); //mask off bits 0-3
 			InjectPhase[0] = (message[startByte] & 0xF0) >> 0x04; //mask off bits 4-7 
 
-			/* message word 31: BoardID (bits 0-3) and HVNumAve (bits 4-6) */
+			/* message word 31: BoardID (bits 0-3) and HVNumAve (bits 4-7) */
 			startByte++;
 			boardID[0] = (message[startByte] & 0x0F); //mask off bits 0-3
-			HVNumAve[0] = (message[startByte] & 0x70) >> 0x04; //mask off bits 4-6 & shift
+			HVNumAve[0] = (message[startByte] & 0xF0) >> 0x04; //mask off bits 4-7 and
 
 			/* message word 32:  Firmware version */
 			startByte++;
@@ -658,13 +652,13 @@ int feb::DecodeRegisterValues(int buffersize)
 			Temperature |= (message[startByte] & 0xFF) << 0x08;  //shift bits 8-15 to bits 0-7
 										//and mask off ibt 0-7
 
-			/* message word 40: TripXThresh , 8 bits */
+			/* message word 40: TripXThresh , 6 bits (using 8, 2 are spare) */
 			startByte++;
-			TripXThresh[0] = (message[startByte] & 0xFF); //mask off bits 0-7
+			TripXThresh[0] = (message[startByte] & 0x3F); //mask off bits 0-5
 
-			/* message word 41: whatever this is...TripXCompEnc, 6 bits */
+			/* message word 41: whatever this is...TripXCompEnc, 8 bits */
 			startByte++;
-			TripXCompEnc[0] = (message[startByte] & 0x3F); //mask off bits 0-5
+			TripXCompEnc[0] = (message[startByte] & 0xFF); //mask off bits 0-7
 
 	
 			/* message word 42-43 Discriminator Enable Mask Trip 0, 16 bits */
@@ -689,15 +683,13 @@ int feb::DecodeRegisterValues(int buffersize)
 			GateTimeStamp |= (message[startByte] & 0xFF) << 0x18;                        
 		
 		} else { // frame error check
-			std::cout << "The FPGA frame had errors!" << std::endl;
-			if (febAppender!=0) febLog.fatalStream() << "The FPGA frame had errors!";
+			std::cout<<"The frame had errors."<<std::endl;
 			exit(1); 
 		}
 
 	} // end if initialized
 
 	// This finishes the incoming message.
-	return 0;
 }
 
 
