@@ -104,7 +104,10 @@ class ReadoutNode(RemoteNode.RemoteNode):
 		    ability to start: it takes a while for the slow control initialization
 		    to actually finish.  When it does, the dispatcher sends a message
 		    back to the master node. """
-		response = self.request("sc_setHWconfig %d!" % filehash)	
+		try:
+			response = self.request("sc_setHWconfig %d!" % filehash)	
+		except RemoteNode.RemoteNodeNoConnectionException:
+			raise ReadoutNodeNoConnectionException()		# this is the type of exception DAQMgr is expecting
 		
 		if response == "0":
 			return True

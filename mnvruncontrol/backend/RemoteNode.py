@@ -107,6 +107,16 @@ class RemoteNode:
 				success = False
 				tries += 1
 				continue
+			# on the other hand, if we THOUGHT we had a lock, and the
+			# dispatcher says there isn't one, we should re-request it first,
+			# THEN start trying the original request.
+			elif response == "NOLOCK" and self.own_lock:
+				self.own_lock = False
+				# if we can't get a lock, then there's a real problem.
+				if not self.get_lock():
+					raise RemoteNodeLockException()
+				success = False
+				continue
 
 		if tries == Configuration.params["Socket setup"]["maxConnectionAttempts"]:
 			raise RemoteNodeNoConnectionException()
@@ -152,7 +162,7 @@ class RemoteNode:
 				except (IOError, OSError):
 					msg = "Couldn't open lock file!  %s node will need to be manually unlocked..." % self.name
 					print msg
-					self.logger.critical(msg)
+#					self.logger.critical(msg)
 					return False
 			try:
 				# we need a lock on this file so that it doesn't change under our feet
@@ -208,7 +218,7 @@ class RemoteNode:
 			except (IOError, OSError):
 				msg = "Couldn't open lock file!...  Where did it go?"
 				print msg
-				self.logger.warning(msg)
+#				self.logger.warning(msg)
 			else:
 				# first lock the file (as described in get_lock())
 				fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
@@ -237,3 +247,7 @@ class RemoteNodeNotConfiguredException(Exception):
 
 class RemoteNodeNoConnectionException(Exception):
 	pass
+	
+class RemoteNodeLockException(Exception):
+	pass
+
