@@ -231,7 +231,9 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
 			break;
-		// All of the NuMI and dedicated LI modes use MTM timing.
+		// All of the NuMI and dedicated LI modes use MTM timing.  
+		// Because no MTM is available at MTest, LI there will use
+		// the internal timing mode.
 		case NuMIBeam:
 			std::cout << " Running Mode is NuMI Beam." << std::endl;
 			acqData.infoStream() << " Running Mode is NuMI Beam.";
@@ -247,7 +249,13 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = ZeroFreq;
+#if MTEST
+			TimingMode   = crimInternal;
+			acqData.infoStream() << " ->Using MTest timing (CRIM Internal).";
+#else
 			TimingMode   = MTM; 
+			acqData.infoStream() << " ->Using normal timing (CRIM MTM).";
+#endif
 			TCALBEnable  = 0x1;
 			break;
 		case MixedBeamPedestal:

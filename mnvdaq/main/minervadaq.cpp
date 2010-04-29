@@ -985,8 +985,8 @@ int main(int argc, char *argv[])
 		} //continueRunning Check
 		
 		// The two nodes should share error information to record in the DAQ Header.
-		soldierToWorker_error[0] = 0;
-		workerToSoldier_error[0] = 0;
+		soldierToWorker_error[0] = (unsigned short int)0;
+		workerToSoldier_error[0] = (unsigned short int)0;
 #if MASTER&&(!SINGLEPC) // Soldier Node
 		soldierToWorker_error[0] = event_data.readoutInfo;
 		// Write readout info (errors) to the worker node	 
@@ -1620,7 +1620,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-09-02'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-09-03'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
