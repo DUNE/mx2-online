@@ -1137,10 +1137,10 @@ class MainApp(wx.App):
 			errordlg.ShowModal()
 			return False
 		else:
-			frame = MainFrame(None, "MINERvA run control")
-			frame.runmanager.environment = environment
-			self.SetTopWindow(frame)
-			frame.Show(True)
+			self.frame = MainFrame(None, "MINERvA run control")
+			self.frame.runmanager.environment = environment
+			self.SetTopWindow(self.frame)
+			self.frame.Show(True)
 			return True
 
 #########################################################
@@ -1150,5 +1150,16 @@ class MainApp(wx.App):
 
 if __name__ == '__main__':		# make sure that this file isn't being included somewhere else
 	app = MainApp(redirect=False)
-	app.MainLoop()
+	try:
+		app.MainLoop()
+	except Exception as e:
+		# try to release the session if possible.
+		# that way if we're going down, at least we'll
+		# go down cleanly.
+		try:
+			app.frame.runmanager.Cleanup()
+		except:
+			pass
+
+		raise e
 
