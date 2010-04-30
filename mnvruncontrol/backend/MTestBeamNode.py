@@ -13,11 +13,11 @@
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import Configuration
 
-from mnvruncontrol.backend.RemoteNode import RemoteNode
+from mnvruncontrol.backend import RemoteNode
 
-class MTestBeamNode(RemoteNode):
+class MTestBeamNode(RemoteNode.RemoteNode):
 	def __init__(self, name, address, id=None):
-		RemoteNode.__init__(self, name, address, id)
+		RemoteNode.RemoteNode.__init__(self, name, address, id)
 		
 		self.ValidRequests += SocketRequests.MTestBeamRequests
 		self.nodetype = "mtestbeam"
@@ -31,6 +31,9 @@ class MTestBeamNode(RemoteNode):
 
 	def daq_stop(self):
 		""" Asks the server to stop the beamline DAQ. """
-		response = self.request("mtestbeam_stop!")
+		try:
+			response = self.request("mtestbeam_stop!")
+		except RemoteNode.RemoteNodeNoConnectionException:
+			return False
 		
 		return response == "0"

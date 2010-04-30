@@ -115,7 +115,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.mtest_adc_slot = None
 		self.mtest_tdc_slot = None
 		self.mtest_tof_rst_gate_slot = None
-		self.mtest_pcos_rst_gate_slot = None
+		self.mtest_wc_rst_gate_slot = None
 		
 		self.running = False
 		self.can_shutdown = False		# used in between subruns to prevent shutting down twice for different reasons
@@ -233,7 +233,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    
 		delete_session = True
 		# release any locks that might still be open
-		for node in self.readoutNodes:
+		for node in self.readoutNodes + self.monitorNodes + self.mTestBeamDAQNodes:
 			if node.own_lock:
 				success = node.release_lock()
 				
@@ -305,9 +305,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		""" Stop data acquisition altogether. """
 		self.running = False
 
-		self.logger.info("Stopping data acquisition sequence...")
-
 		if evt is None or not(hasattr(evt, "allclear")):
+			self.logger.info("Stopping data acquisition sequence...")
 			wx.PostEvent(self, Events.EndSubrunEvent(manual=True))
 			return
 
@@ -326,8 +325,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.subrun = 0
 		
-		auto = hasattr(evt, "allclear")
+		auto = hasattr(evt, "auto") and not evt.auto
 
+		self.logger.info("Data acquisition finished.")
 		wx.PostEvent(self.main_window, Events.StopRunningEvent(auto=auto))		# tell the main window that we're done here.
 
 
@@ -540,12 +540,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 			if self.running and self.subrun < len(self.runseries.Runs):
 				wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
 			else:
-				self.logger.info("Data acquisition finished.")
+				self.logger.debug("EndSubrun() finished...")
 			
 				# if this isn't a manual (user-initiated) stop,
 				# then the sequence is different
-				if not hasattr(evt, "manual") or not evt.manual:
-					wx.PostEvent(self, Events.StopRunningEvent(allclear=True))
+				auto = not hasattr(evt, "manual") or not evt.manual
+				wx.PostEvent(self, Events.StopRunningEvent(allclear=True, auto=auto))
 		
 
 	##########################################
@@ -852,7 +852,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.mtest_useBeamDAQ:
 			for node in self.mtestBeamDAQNodes:
 				try:
-					node.start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.mtest_adc_slot, self.mtest_tdc_slot, self.tof_rst_gate_slot, self.wc_rst_gate_slot, self.runinfo.gates, self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.runMode)
+					node.daq_start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.mtest_adc_slot, self.mtest_tdc_slot, self.mtest_tof_rst_gate_slot, self.mtest_wc_rst_gate_slot, self.runinfo.gates, self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.runMode)
 				except:
 					self.logger.exception("Couldn't start MTest beamline DAQ!  Aborting run.")
 					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title="Couldn't start beamline DAQ", text="Couldn't start the beamline DAQ.  Run will be aborted (see the log for more details).") )

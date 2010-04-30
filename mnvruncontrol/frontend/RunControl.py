@@ -488,7 +488,7 @@ class MainFrame(wx.Frame):
 		self.runmanager.mtest_adc_slot = self.mtest_adcSlotEntry.GetValue()
 		self.runmanager.mtest_tdc_slot = self.mtest_tdcSlotEntry.GetValue()
 		self.runmanager.mtest_tof_rst_gate_slot = self.mtest_tofRSTGateSlotEntry.GetValue()
-		self.runmanager.mtest_pcos_rst_gate_slot = self.mtest_wcRSTGateSlotEntry.GetValue()
+		self.runmanager.mtest_wc_rst_gate_slot = self.mtest_wcRSTGateSlotEntry.GetValue()
 		
 		self.runmanager.StartDataAcquisition()
 		if (self.runmanager.running):
