@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
 		mnvdaq.fatalStream() << "Could not setup socket service!  Exiting!";
 		exit(1);		
 	}
-	// Create an address for the workerToSoldier listener.  The soldier listens for data.
+	// Create an address for the workerToSoldier listener.  
 	workerToSoldier_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&workerToSoldier_service, 0, sizeof (workerToSoldier_service));
 	workerToSoldier_service.sin_family = AF_INET;
@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
 		mnvdaq.fatalStream() << "Could not setup socket service!  Exiting!";
 		exit(1);                		
 	}
-	// Create an address for the soldierToWorker listener.  The worker listens for data.
+	// Create an address for the soldierToWorker listener.  
 	soldierToWorker_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&soldierToWorker_service, 0, sizeof (soldierToWorker_service));
 	soldierToWorker_service.sin_family = AF_INET;
@@ -985,8 +985,9 @@ int main(int argc, char *argv[])
 		} //continueRunning Check
 		
 		// The two nodes should share error information to record in the DAQ Header.
-		soldierToWorker_error[0] = (unsigned short int)0;
-		workerToSoldier_error[0] = (unsigned short int)0;
+		// We need to use a non-zero value, so we will use a dummy bit and mask it off at the end.
+		soldierToWorker_error[0] = (unsigned short int)0x8; // dummy bit
+		workerToSoldier_error[0] = (unsigned short int)0x8; // dummy bit
 #if MASTER&&(!SINGLEPC) // Soldier Node
 		soldierToWorker_error[0] = event_data.readoutInfo;
 		// Write readout info (errors) to the worker node	 
@@ -1040,38 +1041,28 @@ int main(int argc, char *argv[])
 		// bit1 = error on crate 0
 		// bit2 = error on crate 1
 #if !SINGLEPC
-		event_data.readoutInfo = workerToSoldier_error[0] | soldierToWorker_error[0] ;
+		event_data.readoutInfo = 0x7 & ( workerToSoldier_error[0] | soldierToWorker_error[0] );
 #endif
 #if DEBUG_TIMING
 		mnvdaq.debugStream() << "Final set of ErrorFlags =  " << event_data.readoutInfo;
 #endif
 
-		/**********************************************************************************/
-		/*   Wait for trigger thread to join in threaded operation.                       */
-		/**********************************************************************************/
+		// Wait for trigger thread to join in threaded operation. 
 #if THREAD_ME
 		trigger_thread.join();
-#if DEBUG_THREAD
-		std::cout << "Getting ready to join threads..." << std::endl;
-#endif
 		for (int i=0;i<thread_count;i++) {
-#if DEBUG_THREAD
-			std::cout << " Joining thread " << i << endl;
-#endif
 			data_threads[i]->join();
-#if DEBUG_THREAD
-			std::cout << " ->Thread joined!" << std::endl;
-#endif
 		}
 #endif // endif THREAD_ME
 
 		// Successfully read the electronics, increment the event counter!
 		// Record the event counter value into the event data structure.	
 		event_data.gate = ++gate; // Record "gate" number.
+#if DEBUG_GENERAL
+		mnvdaq.debugStream() << "Updated gate value = " << gate;
+#endif
 
-		/**********************************************************************************/
-		/*  Re-enable the IRQ for the next trigger.                                       */
-		/**********************************************************************************/
+		//  Re-enable the IRQ for the next trigger. 
 		// Interrupt configuration is already stored in the CRIM objects.
 #if DEBUG_GENERAL
 		mnvdaq.infoStream() << "Re-enabling global IRQ bits...";
@@ -1089,14 +1080,18 @@ int main(int argc, char *argv[])
 				exit (e);
 			}
 		}
-
+/*
 		// The soldier node must wait for a "done" signal from the worker node before attaching 
 		// the end-of-gate header bank.  We will use a cross-check on the gate value to be sure 
 		// the nodes are aligned. TODO - test synch write & listen functions w/ return values... 
-		soldierToWorker_gate[0] = 0;
-		workerToSoldier_gate[0] = 0;
+		soldierToWorker_gate[0] = (int)0;
+		workerToSoldier_gate[0] = (int)0;
 #if MASTER&&(!SINGLEPC) // Soldier Node
 		soldierToWorker_gate[0] = gate;
+		mnvdaq.debugStream() << "Soldier internal gate value " << gate;
+		mnvdaq.debugStream() << "Soldier internal gate size  " << sizeof(gate);
+		mnvdaq.debugStream() << "Soldier sending gate value  " << soldierToWorker_gate[0];
+		mnvdaq.debugStream() << "Soldier sending gate size   " << sizeof(soldierToWorker_gate);
 		// Write gate to the worker node	 
 		if (write(soldierToWorker_socket_handle,soldierToWorker_gate,sizeof(soldierToWorker_gate)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: soldierToWorker_gate!";	 
@@ -1116,11 +1111,15 @@ int main(int argc, char *argv[])
 			}
 		}
 #if DEBUG_SOCKETS
-		mnvdaq.debugStream() << "Got the gate value = " << soldierToWorker_gate[0];
+		mnvdaq.debugStream() << "The Worker got the gate value = " << soldierToWorker_gate[0];
 #endif 
 #endif
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 		workerToSoldier_gate[0] = gate;
+		mnvdaq.debugStream() << "Worker internal gate value " << gate;
+		mnvdaq.debugStream() << "Worker internal gate size  " << sizeof(gate);
+		mnvdaq.debugStream() << "Worker sending gate value  " << workerToSoldier_gate[0];
+		mnvdaq.debugStream() << "Worker sending gate size   " << sizeof(workerToSoldier_gate);
 		// Write gate to the soldier node	 
 		if (write(workerToSoldier_socket_handle,workerToSoldier_gate,sizeof(workerToSoldier_gate)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_gate!";	 
@@ -1140,7 +1139,7 @@ int main(int argc, char *argv[])
 			}
 		}
 #if DEBUG_SOCKETS
-		mnvdaq.debugStream() << "Got the gate value = " << workerToSoldier_gate[0];
+		mnvdaq.debugStream() << "The Soldier got the gate value = " << workerToSoldier_gate[0];
 #endif 
 #endif
 #if MASTER&&(!SINGLEPC) // Soldier Node
@@ -1155,7 +1154,7 @@ int main(int argc, char *argv[])
 			break;  // Exit the gate loop.
 		} 
 #endif
-
+*/
 		// Get time for end of gate & readout...
 		gettimeofday(&readend, NULL);
 		stopTime    = (unsigned long long)(readend.tv_sec);
@@ -1620,7 +1619,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-09-04'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-09-05'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
