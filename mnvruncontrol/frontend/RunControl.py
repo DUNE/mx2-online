@@ -390,13 +390,27 @@ class MainFrame(wx.Frame):
 		mtest_memslotLabel = wx.StaticText(self.mtestPage, -1, "Memory slot")
 		self.mtest_gateslotEntry = wx.SpinCtrl(self.mtestPage, -1, str(Defaults.MTEST_GATE_SLOT))
 		mtest_gateslotLabel = wx.StaticText(self.mtestPage, -1, "Gate slot")
+		self.mtest_adcSlotEntry = wx.SpinCtrl(self.mtestPage, -1, str(Defaults.MTEST_ADC_SLOT))
+		mtest_adcSlotLabel = wx.StaticText(self.mtestPage, -1, "ADC slot")
+		self.mtest_tdcSlotEntry = wx.SpinCtrl(self.mtestPage, -1, str(Defaults.MTEST_TDC_SLOT))
+		mtest_tdcSlotLabel = wx.StaticText(self.mtestPage, -1, "TDC slot")
+		self.mtest_tofRSTGateSlotEntry = wx.SpinCtrl(self.mtestPage, -1, str(Defaults.MTEST_TOF_RST_GATE_SLOT))
+		mtest_tofRSTGateSlotLabel = wx.StaticText(self.mtestPage, -1, "TOF RST gate slot")
+		self.mtest_wcRSTGateSlotEntry = wx.SpinCtrl(self.mtestPage, -1, str(Defaults.MTEST_PCOS_RST_GATE_SLOT))
+		mtest_wcRSTGateSlotLabel = wx.StaticText(self.mtestPage, -1, "PCOS RST gate slot")
 		
 		mtestGridSizer = wx.FlexGridSizer(5, 2, 5, 5)
-		mtestGridSizer.AddMany( [ mtest_branchLabel,   self.mtest_branchEntry,
-		                          mtest_crateLabel,    self.mtest_crateEntry,    
-		                          mtest_typeLabel,     self.mtest_typeEntry,     
-		                          mtest_memslotLabel,  self.mtest_memslotEntry,  
-		                          mtest_gateslotLabel, self.mtest_gateslotEntry ] )
+		mtestGridSizer.AddMany( [ mtest_branchLabel,         self.mtest_branchEntry,
+		                          mtest_crateLabel,          self.mtest_crateEntry,    
+		                          mtest_typeLabel,           self.mtest_typeEntry,     
+		                          mtest_memslotLabel,        self.mtest_memslotEntry,  
+		                          mtest_gateslotLabel,       self.mtest_gateslotEntry,
+		                          mtest_adcSlotLabel,        self.mtest_adcSlotEntry,
+		                          mtest_tdcSlotLabel,        self.mtest_tdcSlotEntry,
+		                          mtest_tofRSTGateSlotLabel, self.mtest_tofRSTGateSlotEntry,
+		                          mtest_wcRSTGateSlotLabel,  self.mtest_wcRSTGateSlotEntry,
+		                          
+		                           ] )
 		mtestGridSizer.SetFlexibleDirection(wx.HORIZONTAL)
 		mtestGridSizer.AddGrowableCol(0)
 		
@@ -471,6 +485,10 @@ class MainFrame(wx.Frame):
 		self.runmanager.mtest_controller_type = self.mtest_typeEntry.GetValue()
 		self.runmanager.mtest_mem_slot = self.mtest_memslotEntry.GetValue()
 		self.runmanager.mtest_gate_slot = self.mtest_gateslotEntry.GetValue()
+		self.runmanager.mtest_adc_slot = self.mtest_adcSlotEntry.GetValue()
+		self.runmanager.mtest_tdc_slot = self.mtest_tdcSlotEntry.GetValue()
+		self.runmanager.mtest_tof_rst_gate_slot = self.mtest_tofRSTGateSlotEntry.GetValue()
+		self.runmanager.mtest_pcos_rst_gate_slot = self.mtest_wcRSTGateSlotEntry.GetValue()
 		
 		self.runmanager.StartDataAcquisition()
 		if (self.runmanager.running):
@@ -618,28 +636,32 @@ class MainFrame(wx.Frame):
 		"""
 		
 		# default values.   they'll be updated below if the db exists and has the appropriate keys.
-		key_values = { "run"              : 1, 
-		               "subrun"           : 1,
-		               "hwinit"           : MetaData.HardwareInitLevels.NO_HW_INIT.hash,
-		               "detector"         : MetaData.DetectorTypes.UPSTREAM.hash,
-		               "febs"             : 114,
-		               "is_single_run"    : True,
-		               "gates"            : 1500,
-		               "runmode"          : "One shot",
-		               "hwconfig"         : "Current state",
-		               "ledgroups"        : "ABCD",
-		               "lilevel"          : "Max PE",
-		               "runseries_path"   : None,
-		               "runseries_file"   : None,
-		               "lockdown"         : True,
-		               "autoclose"        : True,
-		               "autostartseries"  : True,
-		               "mtest_usebeamDAQ" : True,
-		               "mtest_branch"     : Defaults.MTEST_BRANCH,
-		               "mtest_crate"      : Defaults.MTEST_CRATE,
-		               "mtest_type"       : Defaults.MTEST_TYPE,
-		               "mtest_memslot"    : Defaults.MTEST_MEM_SLOT,
-		               "mtest_gateslot"   : Defaults.MTEST_GATE_SLOT }
+		key_values = { "run"                   : 1, 
+		               "subrun"                : 1,
+		               "hwinit"                : MetaData.HardwareInitLevels.NO_HW_INIT.hash,
+		               "detector"              : MetaData.DetectorTypes.UPSTREAM.hash,
+		               "febs"                  : 114,
+		               "is_single_run"         : True,
+		               "gates"                 : 1500,
+		               "runmode"               : "One shot",
+		               "hwconfig"              : "Current state",
+		               "ledgroups"             : "ABCD",
+		               "lilevel"               : "Max PE",
+		               "runseries_path"        : None,
+		               "runseries_file"        : None,
+		               "lockdown"              : True,
+		               "autoclose"             : True,
+		               "autostartseries"       : True,
+		               "mtest_usebeamDAQ"      : True,
+		               "mtest_branch"          : Defaults.MTEST_BRANCH,
+		               "mtest_crate"           : Defaults.MTEST_CRATE,
+		               "mtest_type"            : Defaults.MTEST_TYPE,
+		               "mtest_memslot"         : Defaults.MTEST_MEM_SLOT,
+		               "mtest_gateslot"        : Defaults.MTEST_GATE_SLOT,
+		               "mtest_adcslot"         : Defaults.MTEST_ADC_SLOT,
+		               "mtest_tdcslot"         : Defaults.MTEST_TDC_SLOT,
+		               "mtest_tofrstgateslot"  : Defaults.MTEST_TOF_RST_GATE_SLOT,
+		               "mtest_pcosrstgateslot" : Defaults.MTEST_PCOS_RST_GATE_SLOT }
 		
 
 		if not os.path.exists(self.runinfoFile):
@@ -677,6 +699,10 @@ class MainFrame(wx.Frame):
 		self.mtest_typeEntry.SetValue(key_values["mtest_type"])
 		self.mtest_memslotEntry.SetValue(key_values["mtest_memslot"])
 		self.mtest_gateslotEntry.SetValue(key_values["mtest_gateslot"])
+		self.mtest_adcSlotEntry.SetValue(key_values["mtest_adcslot"])
+		self.mtest_tdcSlotEntry.SetValue(key_values["mtest_tdcslot"])
+		self.mtest_tofRSTGateSlotEntry.SetValue(key_values["mtest_tofrstgateslot"])
+		self.mtest_wcRSTGateSlotEntry.SetValue(key_values["mtest_pcosrstgateslot"])
 		
 		self.runModeEntry.SetSelection(MetaData.RunningModes.index(key_values["runmode"]))
 		self.hwConfigEntry.SetSelection(MetaData.HardwareConfigurations.index(key_values["hwconfig"]))
@@ -745,6 +771,10 @@ class MainFrame(wx.Frame):
 			db["mtest_type"] = int(self.mtest_typeEntry.GetValue())
 			db["mtest_memslot"] = int(self.mtest_memslotEntry.GetValue())
 			db["mtest_gateslot"] = int(self.mtest_gateslotEntry.GetValue())
+			db["mtest_adcslot"] = int(self.mtest_adcSlotEntry.GetValue())
+			db["mtest_tdcslot"] = int(self.mtest_tdcSlotEntry.GetValue())
+			db["mtest_tofrstgateslot"] = int(self.mtest_tofRSTGateSlotEntry.GetValue())
+			db["mtest_pcosrstgateslot"] = int(self.mtest_wcRSTGateSlotEntry.GetValue())
 
 			LEDgroups = ""
 			for cb in self.LEDgroups:

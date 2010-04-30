@@ -28,7 +28,7 @@ MonitorRequests = [ "(?P<request>om_start) etpattern=(?P<etpattern>\S+):etport=(
                     "(?P<request>om_stop)!",
                     "(?P<request>om_alive)\?" ]
                     
-MTestBeamRequests = [ "(?P<request>mtestbeam_start) branch=(?P<branch>\d+):crate=(?P<crate>\d+):type=(?P<type>\d+):mem_slot=(?P<mem_slot>\d+):gate_slot=(?P<gate_slot>\d+):num_events=(?P<num_events>\d+):filepattern=(?P<filepattern>\S+)!",
+MTestBeamRequests = [ "(?P<request>mtestbeam_start) branch=(?P<branch>\d+):crate=(?P<crate>\d+):type=(?P<type>\d+):mem_slot=(?P<mem_slot>\d+):gate_slot=(?P<gate_slot>\d+):adc_slot=(?P<adc_slot>\d+):tdc_slot=(?P<tdc_slot>\d+):tof_rst_gate_slot=(?P<tof_rst_gate_slot>\d+):wc_rst_gate_slot=(?P<wc_rst_gate_slot>\d+):num_events=(?P<num_events>\d+):run=(?P<run>\d+):subrun=(?P<subrun>\d+):runmode=(?P<runmode>\d+):filepattern=(?P<filepattern>\S+)!",
                       "(?P<request>mtestbeam_stop)!" ]
                     
 Notification = "FOR:(?P<addressee>[\d\w\-]+) FROM:(?P<sender>\S+) MSG:(?P<message>.*)"

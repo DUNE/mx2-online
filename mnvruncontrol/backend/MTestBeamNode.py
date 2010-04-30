@@ -22,10 +22,10 @@ class MTestBeamNode(RemoteNode):
 		self.ValidRequests += SocketRequests.MTestBeamRequests
 		self.nodetype = "mtestbeam"
 						
-	def daq_start(self, branch, crate, controller_type, mem_slot, gate_slot, num_events, filepattern):
+	def daq_start(self, branch, crate, controller_type, mem_slot, gate_slot, adc_slot, tdc_slot, tof_rst_gate_slot, wc_rst_gate_slot, num_events, filepattern, run, subrun, runmode):
 		""" Asks the server to start the beamline DAQ. """
 		
-		request = "mtestbeam_start branch=%d:crate=%d:type=%d:mem_slot=%d:gate_slot=%d:num_events=%d:filepattern=%s!" % (branch, crate, controller_type, mem_slot, gate_slot, num_events, filepattern)
+		request = "mtestbeam_start branch=%d:crate=%d:type=%d:mem_slot=%d:gate_slot=%d:adc_slot=%d:tdc_slot=%d:tof_rst_gate_slot=%d:wc_rst_gate_slot=%d:num_events=%d:run=%d:subrun=%d:runmode=%d:filepattern=%s!" % (branch, crate, controller_type, mem_slot, gate_slot, adc_slot, tdc_slot, tof_rst_gate_slot, wc_rst_gate_slot, num_events, run, subrun, runmode, filepattern)
 		#print request
 		self.request(request)
 

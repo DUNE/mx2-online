@@ -74,6 +74,10 @@ MTEST_CRATE=0
 MTEST_TYPE=1
 MTEST_MEM_SLOT=8
 MTEST_GATE_SLOT=18
+MTEST_ADC_SLOT=3
+MTEST_TDC_SLOT=2
+MTEST_TOF_RST_GATE_SLOT=18
+MTEST_PCOS_RST_GATE_SLOT=20
 
 # monitoring
 OM_DST_TARGET_PATH = "/minerva/data/users/minerva/data_processing/dst"		# where DSTs are copied when they're done being created by the dispatcher

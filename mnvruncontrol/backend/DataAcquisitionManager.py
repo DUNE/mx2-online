@@ -112,6 +112,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.mtest_controller_type = None
 		self.mtest_mem_slot = None
 		self.mtest_gate_slot = None
+		self.mtest_adc_slot = None
+		self.mtest_tdc_slot = None
+		self.mtest_tof_rst_gate_slot = None
+		self.mtest_pcos_rst_gate_slot = None
 		
 		self.running = False
 		self.can_shutdown = False		# used in between subruns to prevent shutting down twice for different reasons
@@ -848,7 +852,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.mtest_useBeamDAQ:
 			for node in self.mtestBeamDAQNodes:
 				try:
-					node.start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.runinfo.gates, self.ET_filename)
+					node.start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.mtest_adc_slot, self.mtest_tdc_slot, self.tof_rst_gate_slot, self.wc_rst_gate_slot, self.runinfo.gates, self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.runMode)
 				except:
 					self.logger.exception("Couldn't start MTest beamline DAQ!  Aborting run.")
 					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title="Couldn't start beamline DAQ", text="Couldn't start the beamline DAQ.  Run will be aborted (see the log for more details).") )
