@@ -135,8 +135,8 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 	event_info_block[7] = (gate>>32) & 0xFFFFFFFF;   // the gate number most sig int 
 	event_info_block[8] = trig_time & 0xFFFFFFFF;    // the gate time least sig int
 	event_info_block[9] = (trig_time>>32) & 0xFFFFFFFF;  // the gate time most sig int
-	event_info_block[10] = (error<<4) & 0xFFFF;          // the error bits 4-7
-	event_info_block[10] |= 0<<0x18;                 // 3 reserved bytes
+	event_info_block[10] = error & 0xFFFF;           // the error bytes
+	event_info_block[10] |= 0<<0x10;                 // 2 reserved bytes
 	event_info_block[11] = minos & 0x3FFFFFFF;       // the minos gate (only 28 bits of data)
 #if DEBUG_HEADERS
 	for (int i = 0; i < 12; i++) {

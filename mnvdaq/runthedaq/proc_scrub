@@ -4,23 +4,18 @@
 
 if [ -e "${ETSYSPIDFILE}" ]; then
 	id_et_sys=`cat ${ETSYSPIDFILE}`
-	echo id_et_sys = $id_et_sys
-	if [ "${id_et_sys}" != "" ]; then
-		if [ `ps -p ${id_et_sys} | grep et_start | wc -l` -eq 1 ]; then 
-			echo "Killing ET system process with pid $id_et_sys"
-			kill ${id_et_sys}
-			if [ `ps -p ${id_et_sys} | grep xterm | wc -l` -eq 1 ]; then
-				echo "Original kill of ET unsuccessful!"
-				echo "Trying kill -9."
-				kill -9 ${id_et_sys}
-			fi
+	if [ `ps -p ${id_et_sys} | grep xterm | wc -l` -eq 1 ]; then 
+		echo "Killing ET system process with pid $id_et_sys"
+		kill ${id_et_sys}
+		if [ `ps -p ${id_et_sys} | grep xterm | wc -l` -eq 1 ]; then
+			echo "Original kill of ET unsuccessful!"
+			echo "Trying kill -9."
+			kill -9 ${id_et_sys}
 		fi
 		echo "Removing ${ETSYSPIDFILE}"
 		rm ${ETSYSPIDFILE}
 	else
 		echo "ET does not seem to be running with pid ${id_et_sys}"
-		echo "Removing ${ETSYSPIDFILE}"
-		rm ${ETSYSPIDFILE}
 	fi
 else
 	echo "${ETSYSPIDFILE} does not exist. Assume no process is running."
@@ -29,23 +24,18 @@ fi
 
 if [ -e "${ETMONPIDFILE}" ]; then
 	id_et_mon=`cat ${ETMONPIDFILE}`
-	echo id_et_mon = $id_et_mon
-	if [ "$id_et_mon" != "" ]; then 
-		if [ `ps -p ${id_et_mon} | grep et_monitor | wc -l` -eq 1 ]; then 
-			echo "Killing ET monitor process with pid $id_et_mon"
-			kill ${id_et_mon}
-			if [ `ps -p ${id_et_mon} | grep xterm | wc -l` -eq 1 ]; then
-				echo "Original kill of the monitor unsuccessful!"
-				echo "Trying kill -9."
-				kill -9 ${id_et_mon}
-			fi
+	if [ `ps -p ${id_et_mon} | grep xterm | wc -l` -eq 1 ]; then 
+		echo "Killing ET monitor process with pid $id_et_mon"
+		kill ${id_et_mon}
+		if [ `ps -p ${id_et_mon} | grep xterm | wc -l` -eq 1 ]; then
+			echo "Original kill of the monitor unsuccessful!"
+			echo "Trying kill -9."
+			kill -9 ${id_et_mon}
 		fi
 		echo "Removing ${ETMONPIDFILE}"
 		rm ${ETMONPIDFILE}
 	else
 		echo "ET does not seem to be running with pid ${id_et_mon}"
-		echo "Removing ${ETMONPIDFILE}"
-		rm ${ETMONPIDFILE}
 	fi
 else
 	echo "${ETMONPIDFILE} does not exist. Assume no process is running."
@@ -54,23 +44,18 @@ fi
 
 if [ -e "${EBSRVPIDFILE}" ]; then
 	id_eb_srv=`cat ${EBSRVPIDFILE}`
-	echo id_eb_srv = $id_eb_srv
-	if [ "$id_eb_srv" != "" ]; then
-		if [ `ps -p ${id_eb_srv} | grep event_builder | wc -l` -eq 1 ]; then 
-			echo "Killing EB service process with pid $id_eb_srv"
-			kill ${id_eb_srv}
-			if [ `ps -p ${id_eb_srv} | grep xterm | wc -l` -eq 1 ]; then
-				echo "Original kill of EB service unsuccessful!"
-				echo "Trying kill -9."
-				kill -9 ${id_et_srv}
-			fi
+	if [ `ps -p ${id_eb_srv} | grep xterm | wc -l` -eq 1 ]; then 
+		echo "Killing EB service process with pid $id_eb_srv"
+		kill ${id_eb_srv}
+		if [ `ps -p ${id_eb_srv} | grep xterm | wc -l` -eq 1 ]; then
+			echo "Original kill of EB service unsuccessful!"
+			echo "Trying kill -9."
+			kill -9 ${id_et_srv}
 		fi
 		echo "Removing ${EBSRVPIDFILE}"
 		rm ${EBSRVPIDFILE}
 	else
 		echo "EB does not seem to be running with pid ${id_eb_srv}"
-		echo "Removing ${EBSRVPIDFILE}"
-		rm ${EBSRVPIDFILE}
 	fi
 else
 	echo "${EBSRVPIDFILE} does not exist. Assume no process is running."
