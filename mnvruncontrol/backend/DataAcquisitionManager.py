@@ -233,7 +233,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    
 		delete_session = True
 		# release any locks that might still be open
-		for node in self.readoutNodes + self.monitorNodes + self.mTestBeamDAQNodes:
+		for node in self.readoutNodes + self.monitorNodes + self.mtestBeamDAQNodes:
 			if node.own_lock:
 				success = node.release_lock()
 				
