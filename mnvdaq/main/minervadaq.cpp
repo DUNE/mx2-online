@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
 		mnvdaq.fatalStream() << "Could not setup socket service!  Exiting!";
 		exit(1);		
 	}
-	// Create an address for the workerToSoldier listener.  
+	// Create an address for the workerToSoldier listener.  The soldier listens for data.
 	workerToSoldier_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&workerToSoldier_service, 0, sizeof (workerToSoldier_service));
 	workerToSoldier_service.sin_family = AF_INET;
@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
 		mnvdaq.fatalStream() << "Could not setup socket service!  Exiting!";
 		exit(1);                		
 	}
-	// Create an address for the soldierToWorker listener.  
+	// Create an address for the soldierToWorker listener.  The worker listens for data.
 	soldierToWorker_socket_address.s_addr = htonl(INADDR_ANY); 
 	memset (&soldierToWorker_service, 0, sizeof (soldierToWorker_service));
 	soldierToWorker_service.sin_family = AF_INET;
@@ -584,6 +584,7 @@ int main(int argc, char *argv[])
 	while ( (gate<record_gates) && continueRunning ) {
 		triggerCounter++; // Not a gate counter - this updates trigger type in mixed mode.
 #if DEBUG_GENERAL
+		mnvdaq.debugStream() << "\t\tNew Gate";
 		mnvdaq.debugStream() << "triggerCounter = " << triggerCounter;
 #endif
 		//continueRunning = true; //reset? TODO - fix
@@ -872,7 +873,7 @@ int main(int argc, char *argv[])
 		}
 #endif 
 #if DEBUG_GENERAL
-		mnvdaq.infoStream() << "Returned from TriggerDAQ.";
+		mnvdaq.debugStream() << "Returned from TriggerDAQ.";
 #endif
 
 		// Make the event_handler pointer.
@@ -984,10 +985,46 @@ int main(int argc, char *argv[])
 			} //croc loop
 		} //continueRunning Check
 		
+		/**********************************************************************************/
+		/*   Wait for trigger thread to join in threaded operation.                       */
+		/**********************************************************************************/
+#if THREAD_ME
+		trigger_thread.join();
+		for (int i=0;i<thread_count;i++) {
+			data_threads[i]->join();
+		}
+#endif // endif THREAD_ME
+
+		// Successfully read the electronics, increment the event counter!
+		// Record the event counter value into the event data structure.	
+		event_data.gate = ++gate; // Record "gate" number.
+
+		/**********************************************************************************/
+		/*  Re-enable the IRQ for the next trigger.                                       */
+		/**********************************************************************************/
+		// Interrupt configuration is already stored in the CRIM objects.
+#if DEBUG_GENERAL
+		mnvdaq.infoStream() << "Re-enabling global IRQ bits...";
+#endif
+		// Loop over CRIM indices...
+		for (int i=1; i<=currentController->GetCrimVectorLength(); i++) {
+			try {
+				int error = daq->ResetGlobalIRQEnable(i); 
+				if (error) throw error;
+			} catch (int e) {
+				std::cout << "Error in main!  Failed to ResetGlobalIRQ!";
+				std::cout << "  Status code = " << e << std::endl;
+				mnvdaq.fatalStream() << "Error in main!  Failed to ResetGlobalIRQ!";
+				mnvdaq.fatalStream() << "  Status code = " << e;
+				exit (e);
+			}
+		}
+
+/*
 		// The two nodes should share error information to record in the DAQ Header.
-		// We need to use a non-zero value, so we will use a dummy bit and mask it off at the end.
-		soldierToWorker_error[0] = (unsigned short int)0x8; // dummy bit
-		workerToSoldier_error[0] = (unsigned short int)0x8; // dummy bit
+		// Cannot start with 0 value (no error state is 0) - set a dummy bit.
+		soldierToWorker_error[0] = (unsigned short int)0x8;
+		workerToSoldier_error[0] = (unsigned short int)0x8;
 #if MASTER&&(!SINGLEPC) // Soldier Node
 		soldierToWorker_error[0] = event_data.readoutInfo;
 		// Write readout info (errors) to the worker node	 
@@ -1046,52 +1083,15 @@ int main(int argc, char *argv[])
 #if DEBUG_TIMING
 		mnvdaq.debugStream() << "Final set of ErrorFlags =  " << event_data.readoutInfo;
 #endif
+*/
 
-		// Wait for trigger thread to join in threaded operation. 
-#if THREAD_ME
-		trigger_thread.join();
-		for (int i=0;i<thread_count;i++) {
-			data_threads[i]->join();
-		}
-#endif // endif THREAD_ME
-
-		// Successfully read the electronics, increment the event counter!
-		// Record the event counter value into the event data structure.	
-		event_data.gate = ++gate; // Record "gate" number.
-#if DEBUG_GENERAL
-		mnvdaq.debugStream() << "Updated gate value = " << gate;
-#endif
-
-		//  Re-enable the IRQ for the next trigger. 
-		// Interrupt configuration is already stored in the CRIM objects.
-#if DEBUG_GENERAL
-		mnvdaq.infoStream() << "Re-enabling global IRQ bits...";
-#endif
-		// Loop over CRIM indices...
-		for (int i=1; i<=currentController->GetCrimVectorLength(); i++) {
-			try {
-				int error = daq->ResetGlobalIRQEnable(i); 
-				if (error) throw error;
-			} catch (int e) {
-				std::cout << "Error in main!  Failed to ResetGlobalIRQ!";
-				std::cout << "  Status code = " << e << std::endl;
-				mnvdaq.fatalStream() << "Error in main!  Failed to ResetGlobalIRQ!";
-				mnvdaq.fatalStream() << "  Status code = " << e;
-				exit (e);
-			}
-		}
-/*
 		// The soldier node must wait for a "done" signal from the worker node before attaching 
 		// the end-of-gate header bank.  We will use a cross-check on the gate value to be sure 
 		// the nodes are aligned. TODO - test synch write & listen functions w/ return values... 
-		soldierToWorker_gate[0] = (int)0;
-		workerToSoldier_gate[0] = (int)0;
+		soldierToWorker_gate[0] = 0;
+		workerToSoldier_gate[0] = 0;
 #if MASTER&&(!SINGLEPC) // Soldier Node
 		soldierToWorker_gate[0] = gate;
-		mnvdaq.debugStream() << "Soldier internal gate value " << gate;
-		mnvdaq.debugStream() << "Soldier internal gate size  " << sizeof(gate);
-		mnvdaq.debugStream() << "Soldier sending gate value  " << soldierToWorker_gate[0];
-		mnvdaq.debugStream() << "Soldier sending gate size   " << sizeof(soldierToWorker_gate);
 		// Write gate to the worker node	 
 		if (write(soldierToWorker_socket_handle,soldierToWorker_gate,sizeof(soldierToWorker_gate)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: soldierToWorker_gate!";	 
@@ -1111,15 +1111,11 @@ int main(int argc, char *argv[])
 			}
 		}
 #if DEBUG_SOCKETS
-		mnvdaq.debugStream() << "The Worker got the gate value = " << soldierToWorker_gate[0];
+		mnvdaq.debugStream() << "Got the gate value = " << soldierToWorker_gate[0];
 #endif 
 #endif
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 		workerToSoldier_gate[0] = gate;
-		mnvdaq.debugStream() << "Worker internal gate value " << gate;
-		mnvdaq.debugStream() << "Worker internal gate size  " << sizeof(gate);
-		mnvdaq.debugStream() << "Worker sending gate value  " << workerToSoldier_gate[0];
-		mnvdaq.debugStream() << "Worker sending gate size   " << sizeof(workerToSoldier_gate);
 		// Write gate to the soldier node	 
 		if (write(workerToSoldier_socket_handle,workerToSoldier_gate,sizeof(workerToSoldier_gate)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_gate!";	 
@@ -1139,22 +1135,26 @@ int main(int argc, char *argv[])
 			}
 		}
 #if DEBUG_SOCKETS
-		mnvdaq.debugStream() << "The Soldier got the gate value = " << workerToSoldier_gate[0];
+		mnvdaq.debugStream() << "Got the gate value = " << workerToSoldier_gate[0];
 #endif 
 #endif
 #if MASTER&&(!SINGLEPC) // Soldier Node
 		if (gate != workerToSoldier_gate[0]) {
+			mnvdaq.fatalStream() << "Soldier local gate = " << gate;
+			mnvdaq.fatalStream() << "Worker remote gate = " << workerToSoldier_gate[0];
 			mnvdaq.fatalStream() << "Gate number disagreement between nodes!  Aborting this subrun!";
 			break;  // Exit the gate loop.
 		} 
 #endif
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 		if (gate != soldierToWorker_gate[0]) {
+			mnvdaq.fatalStream() << "Worker local gate   = " << gate;
+			mnvdaq.fatalStream() << "Soldier remote gate = " << soldierToWorker_gate[0];
 			mnvdaq.fatalStream() << "Gate disagreement between nodes!  Aborting this subrun!";
 			break;  // Exit the gate loop.
 		} 
 #endif
-*/
+
 		// Get time for end of gate & readout...
 		gettimeofday(&readend, NULL);
 		stopTime    = (unsigned long long)(readend.tv_sec);
