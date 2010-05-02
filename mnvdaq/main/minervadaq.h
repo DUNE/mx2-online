@@ -93,7 +93,7 @@ struct hostent *            soldier_node_info; // server on soldier node
 #if SINGLEPC
 const int physReadoutMicrosec = 13500; //microseconds, useful test stand value
 #else 
-const int physReadoutMicrosec = 127500; //microseconds, useful test stand value?
+const int physReadoutMicrosec = 150000; //microseconds, useful test stand value?
 #endif // WH14
 #else
 const int physReadoutMicrosec = 999000; //microseconds, good MINERvA value (testing)
@@ -104,7 +104,7 @@ int allowedReadoutTime;
 // Bail on any gate taking longer than these times and set an error flag.
 // Label by triggerType.
 const int allowedPedestal       =  1000000;  
-//const int allowedPedestal       =  10000;  // Play-around test value.  
+//const int allowedPedestal       =  5000;  // Play-around test value.  
 const int allowedNuMI           =  2100000; 
 const int allowedCosmic         = 10000000;  // UNTESTED! (Really, an MTest value.)
 const int allowedLightInjection =  1100000; 
