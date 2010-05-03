@@ -325,7 +325,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.subrun = 0
 		
-		auto = hasattr(evt, "auto") and not evt.auto
+		auto = hasattr(evt, "auto") and evt.auto
 
 		self.logger.info("Data acquisition finished.")
 		wx.PostEvent(self.main_window, Events.StopRunningEvent(auto=auto))		# tell the main window that we're done here.

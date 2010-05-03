@@ -75,7 +75,7 @@ def SortLogFiles(file1, file2):
 						print "Run/subrun pair equal! : (", matchdata1.group("run"), ",", matchdata1.group("subrun"), ") == (", matchdata2.group("run"), ",", matchdata2.group("subrun"), ")!"
 						print "Files: '" + file1 + "', '" + file2 + "'"
 						print "Log sorting problem."
-						sys.exit(1)
+						return 0
 					else:
 						return 1 if matchdata1.group("controller") > matchdata2.group("controller") else -1
 				else:

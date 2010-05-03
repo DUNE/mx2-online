@@ -107,7 +107,7 @@ class MTestBeamDispatcher(Dispatcher):
 		
 		    Returns a DAQThread containing the subprocess it was started in. """
 		    
-		command = "%s/PCOS/PCOS_readout_sync %s %s %s %s %s %s %s/wc/%s %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("mem_slot"), matches.group("type"), matches.group("wc_rst_gate_slot"), matches.group("num_events"), Configuration.params["MTest beam nodes"]["mtest_dataLocation"], matches.group("filepattern"), matches.group("run"), matches.group("subrun"), matches.group("runmode"))
+		command = "%s/PCOS/PCOS_readout_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("mem_slot"), matches.group("type"), matches.group("wc_rst_gate_slot"), matches.group("num_events"), matches.group("filepattern"), matches.group("run"), matches.group("subrun"), matches.group("runmode"))
 		self.logger.info("  ==> Using command: '%s'" % command)
 		return DAQThread(command, "wire chamber")
 
@@ -116,7 +116,7 @@ class MTestBeamDispatcher(Dispatcher):
 		
 		    Returns a DAQThread containing the subprocess it was started in. """
 		    
-		command = "%s/tof/src/run_rik_t977_sync %s %s %s %s %s %s %s/tof/%s %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("tdc_slot"), matches.group("adc_slot"), matches.group("tof_rst_gate_slot"), matches.group("num_events"), Configuration.params["MTest beam nodes"]["mtest_dataLocation"], matches.group("filepattern"), matches.group("run"), matches.group("subrun"), matches.group("runmode"))
+		command = "%s/tof/src/run_rik_t977_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("tdc_slot"), matches.group("adc_slot"), matches.group("tof_rst_gate_slot"), matches.group("num_events"), matches.group("filepattern"), matches.group("run"), matches.group("subrun"), matches.group("runmode"))
 		self.logger.info("  ==> Using command: '%s'" % command)
 		return DAQThread(command, "tof")
 	
