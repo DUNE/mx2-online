@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
 
         // Process the command line argument set.  
         int optind = 1;
-        cout << "\n\nArguments to DAQ Master: " << endl;
+        cout << "\n\nArguments to MINERvA DAQ: " << endl;
         while ((optind < argc) && (argv[optind][0]=='-')) {
                 string sw = argv[optind];
                 if (sw=="-r") {
@@ -129,11 +129,6 @@ int main(int argc, char* argv[]) {
 			for (int i=0;i<daq_slaves;i++) initLevel[i] = atoi(argv[optind]);
 			cout << "\tVME Card Init. Level        = " << initLevel[0] << endl;
 		}
-		else if (sw=="-p") {
-			optind++;
-			for (int i=0;i<daq_slaves;i++) netPort[i] = atoi(argv[optind]);
-			cout << "\tET System Port              = " << netPort[0] << endl;
-		}
                 else
                         cout << "Unknown switch: " << argv[optind] << endl;
                 optind++;
@@ -148,7 +143,7 @@ int main(int argc, char* argv[]) {
 	root.infoStream()   << "Starting DAQ Master. ";
 	master.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 	master.infoStream() << "Arguments to DAQ Master: ";
-	master.infoStream() << "(Arguments passed to MINERvA DAQ.) ";
+	master.infoStream() << "Arguments to MINERvA DAQ: ";
 	master.infoStream() << "  Run Number             = " << runNum[0];
 	master.infoStream() << "  Subrun Number          = " << subNum[0];
 	master.infoStream() << "  Total Gates            = " << gates[0];
@@ -160,7 +155,6 @@ int main(int argc, char* argv[]) {
 	master.infoStream() << "  ET Filename            = " << et_file;
 	master.infoStream() << "  Configuration File     = " << conf_file;
 	master.infoStream() << "  VME Card Init. Level   = " << initLevel[0];
-	master.infoStream() << "  ET System Port         = " << netPort[0];
 	master.infoStream() << "See Event/MinervaEvent/xml/DAQHeader.xml for codes.";
 	master.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
@@ -236,7 +230,6 @@ int write_setup_data() {
 		write( socket_handle[i], &ledLevel[i],  sizeof(ledLevel[i])); 
 		write( socket_handle[i], &ledGroup[i],  sizeof(ledGroup[i])); 
 		write( socket_handle[i], &initLevel[i], sizeof(initLevel[i])); 
-		write( socket_handle[i], &netPort[i],   sizeof(netPort[i])); 
 		write( socket_handle[i], et_file,       sizeof(et_file));
 		write( socket_handle[i], &done[i], 1);  //send the status
 	}

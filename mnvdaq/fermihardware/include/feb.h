@@ -93,7 +93,7 @@ class feb : public Frames {
 		void SetFEBDefaultValues();
 		void ShowValues();
 		void MakeMessage();
-		int DecodeRegisterValues(int);
+		void DecodeRegisterValues(int);
 		int inline GetExpectedIncomingMessageLength() {return TrueIncomingMessageLength;};
 
 		/*! Get functions for FPGA read */

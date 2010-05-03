@@ -40,7 +40,7 @@ class adc : public Frames {
 		/*! Makes the outgoing message */
 		void MakeMessage();
 		/*! Shows the raw values from the ADC's */
-		int DecodeRegisterValues(int a); // debug function that parses an adc data block
+		void DecodeRegisterValues(int a); // debug function that parses an adc data block
 };
 
 /*! \class disc
@@ -92,7 +92,7 @@ class disc : public Frames {
 		/*! Makes the outgoing message */
 		void inline MakeMessage();  //makes the outgoing message
 		/*! Shows the raw values from the discriminators */
-		int DecodeRegisterValues(int a); // debug function that parses the discriminator block
+		void DecodeRegisterValues(int a); // debug function that parses the discriminator block
 		/*! Decodes the register to return the number of hits */
 		int GetDiscrFired(int a); //decodes the registers (so we can get the number of hits to process)
 
