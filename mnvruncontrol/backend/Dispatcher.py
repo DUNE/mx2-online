@@ -168,6 +168,10 @@ class Dispatcher:
 		for cleanup_method in self.cleanup_methods:
 			cleanup_method()
 
+		# try to make sure no child processes are left over.
+		# they are all within the dispatcher's process group, hopefully.
+		os.killpg(os.getpgrp(), signal.SIGTERM)
+
 		if os.path.isfile(self.pidfilename):
 			self.logger.info("Removing PID file.")
 			os.remove(self.pidfilename)
