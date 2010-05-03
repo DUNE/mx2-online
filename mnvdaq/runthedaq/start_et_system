@@ -4,9 +4,8 @@
 #  $1 == et_system file name (should include full path)
 #  $2 == number of febs
 #  $3 == number of gates to process
-#  $4 == port mod
-if [ $# -ne 4 ]; then
-	echo "Please supply et_system file name, number of febs, number of gates, and port (1091-1096)."
+if [ $# -ne 3 ]; then
+	echo Please supply et_system file name, number of febs, and number of gates.
 	exit 1
 fi
 
@@ -15,7 +14,6 @@ EVENT_SIZE=2048  # two kilobytes - this is the *frame* size ("events"==frames in
 FEBS=$2          # how many total FEB's need to be serviced
 FRAMES=8         # this is anticipating 1 FPGA & 1 TDC & 6 ADC Frames.
 EVENTS=$(($3*$FRAMES*$FEBS))  # create space in the memory-mapped file for all events.
-PORT=$4
 
 if [ "$LOCALE" == "" ]
 then
@@ -30,5 +28,5 @@ then
 fi
 
 # The ETSYS should include the full path.
-$ET_HOME/Linux-x86_64-64/bin/et_start -v -f $ETSYS -n $EVENTS -s $EVENT_SIZE -p $PORT 
+$ET_HOME/Linux-x86_64-64/bin/et_start -v -f $ETSYS -n $EVENTS -s $EVENT_SIZE
 
