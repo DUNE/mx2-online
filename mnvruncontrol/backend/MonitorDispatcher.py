@@ -234,6 +234,9 @@ class OMThread(threading.Thread):
 					#  or sent an "unload" command via DIM) 
 					lastcheck = time.time()
 					while self.process.poll() is None:
+						# no busy-waiting.
+						time.sleep(0.25)
+						
 						# check every 60 seconds.
 						if time.time() - lastcheck > 60 and self.persistent:
 							lastcheck = time.time()

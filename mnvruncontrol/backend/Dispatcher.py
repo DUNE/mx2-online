@@ -332,6 +332,10 @@ class Dispatcher:
 			self.logger.info("Dispatching starting (listening on port " + str(self.port) + ").")
 
 		while not self.quit:
+			# this loop is a busy-wait.  to cut down on CPU usage,
+			# we only check for events every 0.01 seconds.
+			time.sleep(0.01)
+
 			# if we interrupt the select() or socket accept() system calls by receiving a signal,
 			# they throw an exception as a warning.  we should just start over then,
 			# which will cause a quit (the signal handler for the only signals
