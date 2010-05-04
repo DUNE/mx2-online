@@ -53,13 +53,15 @@ class MinervaHeader {
 		unsigned short DAQ_event_header[4]; /*!<The End-of-Event (EOE) Record header */
 		unsigned short chan_number; /*!<the channel number for data having a header attached */
 		boost::mutex mutex; /*!<A BOOST mutual exclusion for threaded operation */
+		log4cpp::Appender* hdrAppender; //log4cpp appender for printing log statements. 
 
 	public:
 		/*! the constructor */
 		MinervaHeader(int crateID, int crocID, int chanID, 
-			int bank, int feb_number, int firmware, int hit, int length);
+			int bank, int feb_number, int firmware, int hit, int length, 
+			log4cpp::Appender* appender=0);
 		/*! default constructor */
-		MinervaHeader(unsigned char crate);
+		MinervaHeader(unsigned char crate, log4cpp::Appender* appender=0);
 		/*! default destructor */
 		~MinervaHeader() { };
 		unsigned short inline *GetDataBankHeader() {return data_bank_header;};
@@ -76,6 +78,8 @@ class MinervaEvent {
 		unsigned char *data_block; /*!<what to put the data into */
 		unsigned char event_block[DAQ_HEADER]; /*!<a special buffer to hold onto the event info while we process
 		everything else. */
+		log4cpp::Appender* evtAppender; //log4cpp appender for printing log statements. 
+
 	public:
 		/*! the default constructor */
 		MinervaEvent() { };
@@ -83,7 +87,8 @@ class MinervaEvent {
 		MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
 			unsigned short int trig, unsigned char ledGroup, unsigned char ledLevel, 
 			unsigned long long g_gate, unsigned long long gate, unsigned long long trig_time, 
-			unsigned short int error, unsigned int minos, MinervaHeader *header);
+			unsigned short int error, unsigned int minos, MinervaHeader *header, 
+			log4cpp::Appender* appender=0);
 		/*! the default destructor */
 		~MinervaEvent() { };
 		template <class X> void MakeDataBlock(X *frame, MinervaHeader *header);

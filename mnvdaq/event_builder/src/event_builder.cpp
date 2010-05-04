@@ -23,7 +23,7 @@ static int fpgaFrameCount  = 0;
 
 // log4cpp Variables - Needed throughout the event_builder functions.
 log4cpp::Appender* ebAppender;
-log4cpp::Category& root   = log4cpp::Category::getRoot();
+log4cpp::Category& root     = log4cpp::Category::getRoot();
 log4cpp::Category& ebuilder = log4cpp::Category::getInstance(std::string("ebuilder"));
 
 
@@ -503,11 +503,11 @@ int event_builder(event_handler *evt)
 			}
 		}
 		// Build the "DAQ" header
-		tmp_header = new MinervaHeader(evt->feb_info[1]); //the special constructor for the DAQ bank
+		tmp_header = new MinervaHeader(evt->feb_info[1], ebAppender); //the special constructor for the DAQ bank
 		// Make the new event block
 		event = new MinervaEvent(evt->detectorType, evt->detectorConfig, evt->runNumber, 
 			evt->subRunNumber, evt->triggerType, evt->ledLevel, evt->ledGroup, evt->globalGate, 
-			evt->gate, evt->triggerTime, evt->readoutInfo, evt->minosSGATE, tmp_header); 
+			evt->gate, evt->triggerTime, evt->readoutInfo, evt->minosSGATE, tmp_header, ebAppender); 
 		// The call to MinervaEvent constructor automatically inserts the DAQ block into the event buffer.
 		// Reset frame counters.
 		adcFrameCount = discFrameCount = fpgaFrameCount = 0;
@@ -574,7 +574,7 @@ int event_builder(event_handler *evt)
 		}
 	}
 
-#if DEBUG_VERBOSE
+#if DEBUG_REPORT_EVENT
 	ebuilder.debugStream() << "Completed event_builder::main()! Processed Event Data!";
 #endif
 	// Clean up memory.
@@ -649,8 +649,8 @@ template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame)
 		ebuilder.debugStream() << "  length                        : " << length;
 #endif          
 		tmp_header = new MinervaHeader(evt->feb_info[1], evt->feb_info[2], evt->feb_info[3],
-		evt->feb_info[4], feb_number, evt->feb_info[7],
-		evt->feb_info[8], length); // Compose a regular data block header.
+			evt->feb_info[4], feb_number, evt->feb_info[7],
+			evt->feb_info[8], length); // Compose a regular data block header.
 	}
 	return tmp_header; //return the header
 };
@@ -667,7 +667,7 @@ template <class X> void DecodeBuffer(event_handler *evt, X *frame, int i, int le
  * \param int i byte offset
  * \param int length the message length 
  */
-#if DEBUG_VERBOSE 
+#if DEBUG_DECODEBUFFER
 	ebuilder.debugStream() << "  DecodeBuffer Parameters: ";
 	ebuilder.debugStream() << "   byte offset: " << i;
 	ebuilder.debugStream() << "   msg length:  " << length;
@@ -677,27 +677,26 @@ template <class X> void DecodeBuffer(event_handler *evt, X *frame, int i, int le
 		frame->message[j] = 0;
 	}
 	for (int j = 0; j < length; j++) {
-#if DEBUG_VERBOSE
+#if DEBUG_DECODEBUFFER
 		ebuilder.debugStream() << "    byte: " << j+i;
 #endif
 		unsigned char tmp = evt->event_data[(j+i)];
 		frame->message[j]=tmp; //copy to a local buffer for processing
-#if DEBUG_VERBOSE
+#if DEBUG_DECODEBUFFER
 		ebuilder.debugStream() << "    frame->message: " << (int)frame->message[j];
 		ebuilder.debugStream() << "              data? " << (int)tmp;
 #endif
 	}
-#if DEBUG_VERBOSE 
+#if DEBUG_DECODEBUFFER
 	ebuilder.debugStream() << "    Loaded Message";
 #endif
 	frame->CheckForErrors(); //check for header errors
-#if DEBUG_VERBOSE 
+#if DEBUG_DECODEBUFFER
 	ebuilder.debugStream() << "    Checked for Errors, going to DecodeHeader";
 #endif
 	frame->DecodeHeader(); //find feb number in header
-#if DEBUG_VERBOSE 
+#if DEBUG_DECODEBUFFER
 	ebuilder.debugStream() << "  Done Decoding the Buffer";
-	//Need to set initialized for FPGA's...//frame->DecodeRegisterValues(length);
 #endif
 };
 

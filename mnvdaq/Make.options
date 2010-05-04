@@ -7,8 +7,8 @@ COMPILE_OPTIONS += -DWH14B # 14sxo bottom crate
 #COMPILE_OPTIONS += -DNEARLINE # Nearline station 
 
 #--MULTI PC SETUP--
-#COMPILE_OPTIONS += -DSINGLEPC # Comment this out for multi-pc running.
-COMPILE_OPTIONS += -DMULTIPC # Comment this out for single-pc running. 
+COMPILE_OPTIONS += -DSINGLEPC # Comment this out for multi-pc running.
+#COMPILE_OPTIONS += -DMULTIPC # Comment this out for single-pc running. 
 #COMPILE_OPTIONS += -DMASTER # Comment this out for single-pc running & on the worker node.
 
 #--BACKUP NODES?--
