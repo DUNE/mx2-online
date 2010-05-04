@@ -317,6 +317,9 @@ int main(int argc, char **argv)
 			for (int data_index = 0; data_index < length; data_index++) {
 				final_buffer[data_index] = tmp_buffer[data_index];
 			}
+			// Clean up memory - remove data_block created in MakeDataBlock
+			// Strongly suspect this is fixing a small memory leak... - 2010.May.4
+			event->DeleteDataBlock();
 		} else { 
 #if DEBUG_BUFFERS
 			ebuilder.debugStream() << " event_builder::main(): Copying DAQ Header data into final buffer.";
@@ -533,7 +536,7 @@ int event_builder(event_handler *evt)
 				// Compare embedded length (data) + CRC to info_length	
 				CheckBufferLength(evt->feb_info[5]+2, info_length);
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
-					DecodeBuffer(evt,dummy_feb->GetDisc(), i, info_length);
+					DecodeBuffer(evt, dummy_feb->GetDisc(), i, info_length);
 					// Build the data block header.
 					tmp_header = BuildBankHeader(evt, dummy_feb->GetDisc());
 					// Build event.

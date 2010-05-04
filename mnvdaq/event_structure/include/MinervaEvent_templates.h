@@ -62,6 +62,11 @@ template <class X> void MinervaEvent::MakeDataBlock(X *frame, MinervaHeader *hea
 		index++;
 	} 
 	//   InsertData(data_block); //insert the data into the event buffer   
+
+	// Clean up memory.  Delete new frame->message created in event_builder::DecodeBuffer.
+	// Strongly suspect this is fixing a small memory leak... - 2010.May.4
+	delete [] frame->message;
+
 #if DEBUG_MAKEDATABLOCK
 	std::cout << "Returning from MakeDataBlock" << std::endl;
 #endif

@@ -105,5 +105,6 @@ sleep 16s
 
 # Note we do not pass the full path of the ET system to the daq.
 # That information is attached within the process itself.
-valgrind -v --log-file-exactly=val_minervadaq.txt ${DAQROOT}/bin/minervadaq -et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -t $NSECONDS -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT
+##valgrind -v --log-file-exactly=val_minervadaq.txt ${DAQROOT}/bin/minervadaq -et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -t $NSECONDS -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT
+${DAQROOT}/bin/minervadaq -et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -t $NSECONDS -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT
 

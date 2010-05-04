@@ -93,6 +93,7 @@ class MinervaEvent {
 		~MinervaEvent() { };
 		template <class X> void MakeDataBlock(X *frame, MinervaHeader *header);
 		inline unsigned char* GetDataBlock() {return data_block;};
+		void DeleteDataBlock() {delete [] data_block;};
 		unsigned char inline GetEventBlock(int i) {return event_block[i];};
 };
 
