@@ -67,6 +67,9 @@ class DAQthread(threading.Thread):
 
 
 		while not self.time_to_quit and self.process.poll() is None:
+			# no busy-waiting.
+			time.sleep(0.1)
+			
 			newdata = self.read()
 
 			# now post any data from the process to its output window
@@ -133,6 +136,9 @@ class DAQthread(threading.Thread):
 		
 		data = ""
 		while self.process.poll() is None or do_cleanup_read:
+			# don't busy-wait.
+			time.sleep(0.01)
+			
 			try:
 				ready_to_read = select.select([self.process.stdout], [], [], 0)[0]
 			except select.error, (errnum, msg):
@@ -201,6 +207,9 @@ class DAQWatcherThread(threading.Thread):
 			return
 	 		
 		while not self.time_to_quit:
+			# don't busy-wait.
+			time.sleep(0.01)
+			
 			threads_done = [thread.process.poll() is not None for thread in self.threadsToWatch]
 			
 #			print threads_done
@@ -248,6 +257,11 @@ class SocketThread(threading.Thread):
 	def run(self):
 		lastupdate = 0
 		while not self.time_to_quit:
+			# this loop is a busy-wait-style loop.
+			# we sleep so that we bring the CPU usage
+			# down to a negligible level.
+			time.sleep(0.01)
+			
 			if select is not None and select.select([self.socket], [], [], 0)[0]:		# the first part is to ensure that we don't get messed up when shutting things down
 				client_socket, client_address = self.socket.accept()
 
@@ -411,6 +425,9 @@ class BlinkThread(threading.Thread):
 	def run(self):
 		lastupdate = 0
 		while not self.time_to_quit:
+			# don't busy-wait!
+			time.sleep(0.1)
+			
 			if not self.postback_window:
 				return
 				
