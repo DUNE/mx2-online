@@ -199,6 +199,7 @@ int main(int argc, char **argv)
 		if (failure)
 		{
 			printf("Warning: signal was not delivered to parent process.  Errno: %d\n", failure);
+			ebuilder.warnStream() << "Signal was not delivered to parent process.  Errno: " << failure;
 			fflush(stdout);
 		}
 			
@@ -251,16 +252,30 @@ int main(int argc, char **argv)
 			ebuilder.fatal("event_builder::main(): et_client: someone told me to wake up\n");
 			exit(-1);
 		}
-		else if ((status == ET_ERROR_WRITE) || (status == ET_ERROR_READ)) {
-			printf("event_builder::main(): et_client: socket communication error\n");
-			ebuilder.fatal("event_builder::main(): et_client: socket communication error\n");
-			exit(-1);
-		}
 		else if (status != ET_OK) {
 			printf("event_builder::main(): et_client: get error\n");
 			ebuilder.fatal("event_builder::main(): et_client: get error\n");
 			exit(-1);
 		}
+
+		// socket errors need to be handled differently depending on locale.
+		// for the nearline machines, it's not a tragedy if we miss an event or two.
+		// therefore under those circumstances we just go on and try to get another event.
+		// in the context of online data taking, however, it's a real problem.
+		if ((status == ET_ERROR_WRITE) || (status == ET_ERROR_READ)) {
+#if NEARLINE
+			printf("Warning: socket error in event_builder::main() calling et_event_get().  Will retry.\n");
+			ebuilder.warn("Socket error in event_builder::main() calling et_event_get().  Will retry.\n");
+			fflush(stdout);
+			continue;
+#else
+			printf("event_builder::main(): et_client: socket communication error\n");
+			ebuilder.fatal("event_builder::main(): et_client: socket communication error\n");
+			exit(-1);
+#endif
+		}
+
+
 		event_handler *evt;
 		int pri;
 		size_t len;
