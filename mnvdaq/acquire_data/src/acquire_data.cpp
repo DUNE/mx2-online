@@ -282,6 +282,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			acqData.infoStream() << " Running Mode is Cosmic.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
+			//TCALBDelay   = 0x258; //Testing on 14
 			Frequency    = F2; 
 			TimingMode   = crimInternal; 
 			TCALBEnable  = 0x1;
