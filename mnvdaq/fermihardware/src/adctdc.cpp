@@ -58,13 +58,13 @@ void adc::MakeMessage()
 }
 
 
-int adc::DecodeRegisterValues(int a)
+void adc::DecodeRegisterValues(int a)
 {	
 /*! \fn
  *
  * Based on C. Gingu's ParseInpFrameAsAnaBRAM function (from the FermiDAQ) and D. Casper's DecodeRawEvent
- * Decode the input frame data as Hit data type from all Analog BRAMs argument is dummy for now...
- * Returns 0 for success or an error code (eventually)...
+ * Decode the input frame data as Hit data type from all Analog BRAMs 
+ * argument is dummy for now...
  *
  * \param a an integer place holder (from the inheritance from Frames)
  */
@@ -73,18 +73,18 @@ int adc::DecodeRegisterValues(int a)
 	if ( ml == 0 ) {
 		std::cout << "Can't parse an empty InpFrame!" << std::endl;
 			// -> Throw exception here.
-		return 1;
+		return;
 	}
 	if ( ml != ADCFrameLength ) { 
 		std::cout << "ADC Frame length mismatch!" << std::endl;
 		// -> Throw exception here.
-		return 1;		
+		return;		
 	}
 	// Check that the dummy byte is zero...
 	if ( message[Data] != 0 ) {
 		std::cout << "Dummy byte is non-zero!" << std::endl;
 		// -> Throw exception here.
-		return 1;				
+		return;				
 	}
 
 	// Eventually put all of this into a try-catch block...
@@ -164,7 +164,6 @@ int adc::DecodeRegisterValues(int a)
 			);
 	}                
 #endif
-	return 0;
 }
 
 
@@ -201,24 +200,24 @@ void disc::MakeMessage()
 }
 
 
-int disc::DecodeRegisterValues(int a) 
+void disc::DecodeRegisterValues(int a) 
 {
 /*! \fn 
- *  Decode a discriminator frame.  Argument is dummy for now...
- *  Returns 0 for success or an error code (eventually)...
+ * Decode a discriminator frame.
+ * argument is dummy for now...
  */
 	// Check to see if the frame is more than zero length...
 	unsigned short ml = (message[ResponseLength1] << 8) | message[ResponseLength0];
 	if ( ml == 0 ) {
 		std::cout << "Can't parse an empty InpFrame!" << std::endl;
 		// -> Throw exception here.
-		return 1;
+		return;
 	}
 	// Check that the dummy byte is zero...
 	if ( message[Data] != 0 ) {
 		std::cout << "Dummy byte is non-zero!" << std::endl;
 		// -> Throw exception here.
-		return 1;				
+		return;				
 	}
 
 	int *TripXNHits = new int [4];
@@ -315,7 +314,7 @@ int disc::DecodeRegisterValues(int a)
 
 	delete [] TripXNHits;
 	delete [] TempHitArray;
-	return 0;
+
 }
 
 

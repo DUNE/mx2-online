@@ -1,10 +1,10 @@
 #!/bin/sh
 
 #rm *.csv
-rm /work/data/etsys/testm*
-rm /work/data/rawdata/testm*dat
-rm /work/data/sam/testm*py
-rm /work/data/logs/testm*.txt
+rm /work/data/etsys/testme
+rm /work/data/rawdata/testme.dat
+rm /work/data/sam/testme.py
+rm /work/data/logs/testme.txt
 #rm *.txt
 #rm channel*
 #rm controller*

@@ -439,7 +439,8 @@ FPGA[56]67 = ??
 
 // TODO - ? Maybe... it isn't consistent that the FPGA frame function does not print the 
 // register values while the discr and adc frame decode functions do... 
-int feb::DecodeRegisterValues(int buffersize) 
+// TODO - Make this function an int and have it return error codes?
+void feb::DecodeRegisterValues(int buffersize) 
 {
 /*! \fn********************************************************************************
  *  DecodeMessage takes the incoming message and unpacks the bits into the
@@ -457,16 +458,10 @@ int feb::DecodeRegisterValues(int buffersize)
 	// Check for errors
 	if ((buffersize < TrueIncomingMessageLength)&&(initialized)) { 
 		// The buffer is too short, so we need to stop execution, and notify the user!
-		std::cout << "The FPGA buffer for FEB " << (int)febNumber[0]
-			<< " is too short!" << std::endl;
-		std::cout << " Expected: " << TrueIncomingMessageLength << std::endl;
-		std::cout << " Had     : " << buffersize << std::endl;
-		if (febAppender!=0) {
-			febLog.critStream() << "The FPGA buffer for FEB " << (int)febNumber[0]
-				<< " is too short!";
-			febLog.critStream() << " Expected: " << TrueIncomingMessageLength;
-			febLog.critStream() << " Had     : " << buffersize;
-		}
+		std::cout<<"The FPGA buffer for this FEB "<<(int)febNumber[0]
+			<<" is too short"<<std::endl;
+		std::cout<<"Expected: "<<TrueIncomingMessageLength<<std::endl;
+		std::cout<<"Had: "<<buffersize<<std::endl;
 		exit(1);
 	} else if ((!initialized)&&(buffersize<TrueIncomingMessageLength)) {
 		std::cout<<"FEB: "<<(int) febNumber[0]<<" is not available on this channel."<<std::endl;
@@ -697,7 +692,6 @@ int feb::DecodeRegisterValues(int buffersize)
 	} // end if initialized
 
 	// This finishes the incoming message.
-	return 0;
 }
 
 

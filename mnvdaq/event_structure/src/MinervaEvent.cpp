@@ -17,14 +17,10 @@
 //  h[6] = Source ID LSByte
 //  h[7] = Source ID MSByte
 
-// log4cpp category hierarchy.
-log4cpp::Category& mnvevt = log4cpp::Category::getInstance(std::string("mnvevt"));
-
 /**************************MinervaHeader Class*******************************************/
 
 MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID, 
-	int bank, int feb_no, int firmware, int hit, int length, 
-	log4cpp::Appender* appender) 
+	int bank, int feb_no, int firmware, int hit, int length) 
 {
 /*! \fn 
  *
@@ -38,11 +34,7 @@ MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID,
  * \param int firmware FEB firmware
  * \param int hit hit number
  * \param int length message length
- * \param log4cpp::Appender* appender sets the log file to use
  */
-	hdrAppender  = appender; // log4cpp appender
-	if (hdrAppender!=0) mnvevt.setPriority(log4cpp::Priority::DEBUG);
-
 	unsigned short source_id = (crateID&0x03)<<0x0E; //2 bits for the crate id number
 	source_id |= (crocID&0x1F) << 0x09; //5 bits for the croc id number
 	source_id |= (chanID&0x03) << 0x07; //2 bits for the channel id number
@@ -50,17 +42,15 @@ MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID,
 	source_id |= hit&0x07; //the hit number
 
 #if DEBUG_HEADERS
-	if (hdrAppender!=0) {
-		mnvevt.debugStream() << "->Entering MinervaHeader::Minervaheader for a Data Header...";
-		mnvevt.debugStream() << " crateID:    " << crateID;
-		mnvevt.debugStream() << " crocID:     " << crocID;
-		mnvevt.debugStream() << " chanID:     " << chanID;
-		mnvevt.debugStream() << " bank:       " << bank;
-		mnvevt.debugStream() << " feb_number: " << feb_no;
-		mnvevt.debugStream() << " firmware:   " << firmware;
-		mnvevt.debugStream() << " hit:        " << hit;
-		mnvevt.debugStream() << " length:     " << length;
-	}
+	std::cout << "\n->Entering MinervaHeader::Minervaheader for a Data Header..." << std::endl;
+	std::cout << " crateID:    " << crateID << std::endl;
+	std::cout << " crocID:     " << crocID << std::endl;
+	std::cout << " chanID:     " << chanID << std::endl;
+	std::cout << " bank:       " << bank << std::endl;
+	std::cout << " feb_number: " << feb_no << std::endl;
+	std::cout << " firmware:   " << firmware << std::endl;
+	std::cout << " hit:        " << hit << std::endl;
+	std::cout << " length:     " << length << std::endl;
 #endif
 
 	unsigned short magic_pattern = 0xCBCB; 
@@ -70,27 +60,21 @@ MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID,
 	data_bank_header[3] = source_id; //and the source information
 	chan_number = (source_id & 0xFF8)>>0x07; //register the "feb number"
 #if DEBUG_HEADERS
-	if (hdrAppender!=0) {
-		mnvevt.debug("\tHeader Words:");
-		mnvevt.debug("\t  [1]0x%04X [0]0x%04X",data_bank_header[1],data_bank_header[0]);
-		mnvevt.debug("\t  [3]0x%04X [2]0x%04X",data_bank_header[3],data_bank_header[2]);
-	}
+	printf("\tHeader Words:\n");
+	printf("\t  [1]0x%04X [0]0x%04X\n",data_bank_header[1],data_bank_header[0]);
+	printf("\t  [3]0x%04X [2]0x%04X\n",data_bank_header[3],data_bank_header[2]);
 #endif
 }
 
 
-MinervaHeader::MinervaHeader(unsigned char crate, log4cpp::Appender* appender) 
+MinervaHeader::MinervaHeader(unsigned char crate) 
 {
 /*! \fn 
  *
  * Makes data header for the End-of-Event Record (DAQ header).
  */
-	hdrAppender  = appender; // log4cpp appender
-	if (hdrAppender!=0) mnvevt.setPriority(log4cpp::Priority::DEBUG);
 #if DEBUG_HEADERS
-	if (hdrAppender!=0) {
-		mnvevt.debugStream() << "->Entering MinervaHeader::Minervaheader for the DAQ Header...";
-	}
+	std::cout << "\n->Entering MinervaHeader::Minervaheader for the DAQ Header..." << std::endl;
 #endif
 	unsigned short source_id = crate; //2 bits for the crate id number? WinDAQ DAQHeader source ID?...
 	unsigned short magic_pattern = 0xCBCB; 
@@ -101,11 +85,9 @@ MinervaHeader::MinervaHeader(unsigned char crate, log4cpp::Appender* appender)
 	DAQ_event_header[2] |= (5 & 0xFF)<<0x8; // Version (5 as of 2009.Dec.17), and
 	DAQ_event_header[3] = source_id;        // the source information.
 #if DEBUG_HEADERS
-	if (hdrAppender!=0) {
-		mnvevt.debug("\tHeader Words:");
-		mnvevt.debug("\t  [1]0x%04X [0]0x%04X",DAQ_event_header[1],DAQ_event_header[0]);
-		mnvevt.debug("\t  [3]0x%04X [2]0x%04X",DAQ_event_header[3],DAQ_event_header[2]);
-	}
+	printf("\tHeader Words:\n");
+	printf("\t  [1]0x%04X [0]0x%04X\n",DAQ_event_header[1],DAQ_event_header[0]);
+	printf("\t  [3]0x%04X [2]0x%04X\n",DAQ_event_header[3],DAQ_event_header[2]);
 #endif
 }
 
@@ -114,8 +96,7 @@ MinervaHeader::MinervaHeader(unsigned char crate, log4cpp::Appender* appender)
 MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
 	unsigned short int trig, unsigned char ledLevel, unsigned char ledGroup, 
 	unsigned long long g_gate, unsigned long long gate, unsigned long long trig_time, 
-	unsigned short int error, unsigned int minos, MinervaHeader *header, 
-	log4cpp::Appender* appender)
+	unsigned short int error, unsigned int minos, MinervaHeader *header)
 {
 /*! \fn 
  *
@@ -135,12 +116,8 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
  * \param unsigned int minos minos trigger time
  * \param MinervaHeader *header data bank header
  */
-	evtAppender  = appender; // log4cpp appender
-	if (evtAppender!=0) mnvevt.setPriority(log4cpp::Priority::DEBUG);
 #if DEBUG_HEADERS
-	if (evtAppender!=0) {
-		mnvevt.debugStream() << "->Entering MinervaEvent::MinervaEvent... Building a DAQ Header.";
-	}
+	std::cout << "->Entering MinervaEvent::MinervaEvent... Building a DAQ Header." << std::endl;
 #endif
 	unsigned int event_info_block[12]; //piece up the event information
 
@@ -158,14 +135,12 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 	event_info_block[7] = (gate>>32) & 0xFFFFFFFF;   // the gate number most sig int 
 	event_info_block[8] = trig_time & 0xFFFFFFFF;    // the gate time least sig int
 	event_info_block[9] = (trig_time>>32) & 0xFFFFFFFF;  // the gate time most sig int
-	event_info_block[10] = (error<<4) & 0xFFFF;          // the error bits 4-7
-	event_info_block[10] |= 0<<0x18;                 // 3 reserved bytes
+	event_info_block[10] = error & 0xFFFF;           // the error bytes
+	event_info_block[10] |= 0<<0x10;                 // 2 reserved bytes
 	event_info_block[11] = minos & 0x3FFFFFFF;       // the minos gate (only 28 bits of data)
 #if DEBUG_HEADERS
-	if (evtAppender!=0) {
-		for (int i = 0; i < 12; i++) {
-			mnvevt.debugStream() << "   DAQHeader Data Int [" << i << "] = " << event_info_block[i];
-		}
+	for (int i = 0; i < 12; i++) {
+		std::cout << "   DAQHeader Data Int [" << i << "] = " << event_info_block[i] << std::endl;
 	}
 #endif	
 	// We need to allow room for the event header we haven't added yet.
@@ -188,11 +163,9 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 	}
 	//InsertData(event_block);
 #if DEBUG_HEADERS
-	if (evtAppender!=0) {
-		mnvevt.debugStream() << " DAQ Header Data...";
-		for (int i = 0; i < 56; i++) {
-			mnvevt.debugStream() << "   event_block[" << i << "] = " << (int)event_block[i];  
-		}
+	std::cout << " DAQ Header Data..." << std::endl;
+	for (int i = 0; i < 56; i++) {
+		std::cout << "   event_block[" << i << "] = " << (int)event_block[i] << std::endl;  
 	}
 #endif
 }

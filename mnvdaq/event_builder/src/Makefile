@@ -4,11 +4,14 @@ CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 COMPILE_OPTIONS += -DNO_THREAD
 #COMPILE_OPTIONS += -DTIME_ME
 #--DEBUG FLAGS--
-#COMPILE_OPTIONS += -DDEBUG_EBTIMING 
-#COMPILE_OPTIONS += -DDEBUG_DECODEBUFFER # CAREFUL!  This dumps a lot into the logs.
+#COMPILE_OPTIONS += -DDEBUG_VERBOSE 
 #COMPILE_OPTIONS += -DDEBUG_BUFFERS
 #COMPILE_OPTIONS += -DDEBUG_BANKHEADER
 #COMPILE_OPTIONS += -DDEBUG_REPORT_EVENT
+#--MULTI PC SETUP--
+#COMPILE_OPTIONS += -DMULTIPC  #Comment this out for single PC running.
+#--NEARLINE SETUP
+#COMPILE_OPTIONS += -DNEARLINE #Comment this out to make a NearOnline station.
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
@@ -17,7 +20,6 @@ TARGET=event_builder
 
 LDLIBS += -L$(DAQROOT)/lib -lhardware -levent_structure -L$(ET_LIBROOT)/lib -let
 include $(DAQROOT)/Make.include
-include $(DAQROOT)/Make.options
 
 $(TARGET): $(OBJS)
 	@echo $(OBJS)
