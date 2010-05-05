@@ -108,7 +108,7 @@ class MonitorDispatcher(Dispatcher):
 		
 		# replace the options file so that we get the new event builder output.
 		with open(Configuration.params["Monitoring nodes"]["om_GaudiOptionsFile"], "w") as optsfile:
-			optsfile.write("BuildRawEventAlg.InputFileName   = { \"%s\" };\n" % self.evbfile)
+			optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\" ;\n" % self.evbfile)
 			optsfile.write("Event.Output = \"DATAFILE='PFN:%s' TYP='POOL_ROOTTREE' OPT='RECREATE'\";\n" % self.raweventfile)
 			optsfile.write("HistogramPersistencySvc.Outputfile = \"%s\";\n" % self.rawhistosfile)
 			optsfile.write("NTupleSvc.Output  = { \"FILE1 DATAFILE='%s' OPT='NEW' TYP='ROOT'\" };\n" % self.dstfile)
@@ -117,29 +117,32 @@ class MonitorDispatcher(Dispatcher):
 		# the DIM command is supposed to help it shut down cleanly.  
 		if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
 			subprocess.call("dim_send_command.exe NEARONLINE stop", shell=True)
-			subprocess.call("dim_send_command.exe NEARONLINE_%s stop" % self.last_etpattern, shell=True)
 	
 			self.om_Gaudi_thread.process.terminate()
 			self.om_Gaudi_thread.join()
 
 		# now start a new copy of each of the Gaudi jobs.
-		gaudi_processes = ( {"utgid": "NEARONLINE", "processname": "presenter", "optionsfile": "NearonlinePresenter.opts"}, 
-		                    {"utgid": "NEARONLINE_%s" % self.etpattern, "processname": "dst", "optionsfile": "NearonlineDST.opts"} )
+		gaudi_processes = ( { "utgid": "NEARONLINE",
+		                      "processname": "presenter",
+		                      "executable" : "%s/%s/OnlineMonitor.exe %s/%s/libGaudiOnline.so OnlineTask -tasktype=LHCb::Class2Task -main=%s/options/Main.opts -opt=%s/options/NearonlinePresenter.opts -auto" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["GAUDIONLINEROOT"], os.environ["CMTCONFIG"], os.environ["GAUDIONLINEROOT"], os.environ["DAQRECVROOT"]),
+		                      "exe_name"   : "OnlineMonitor" }, 
+		                    { "utgid": "NEARONLINE_%s" % self.etpattern,
+		                      "processname": "dst",
+		                      "executable" : "%s/%s/DSTMaker.exe %s/options/NearonlineDST.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]), 
+		                      "exe_name"   : "DSTMaker" } )
 		for process in gaudi_processes:
-			executable = "$DAQRECVROOT/$CMTCONFIG/OnlineMonitor.exe $GAUDIONLINEROOT/$CMTCONFIG/libGaudiOnline.so OnlineTask -tasktype=LHCb::Class2Task -main=$GAUDIONLINEROOT/options/Main.opts -opt=$DAQRECVROOT/options/%s -auto" % process["optionsfile"]
-			
 			# we will only keep track of the presenter thread, because this one
 			# is the one that will be replaced (needs to have the same UTGID so
 			# that the Presenter can find it properly).
 			# the others will continue to run, but we'll have no handle for them
 			# (which is intentional, so that they run unmolested until they finish).
-			thread = OMThread(executable, "gaudi_%s" % process["processname"], process["utgid"], persistent=(process["processname"] == "dst"))
+			thread = OMThread(process["executable"], "gaudi_%s" % process["processname"], process["utgid"], persistent=(process["processname"] == "dst"))
 			if process["processname"] == "presenter":
 				self.om_Gaudi_thread = thread
 			elif process["processname"] == "dst":
 				thread.dstfile = self.dstfile
 
-			self.logger.info("   Starting a copy of OnlineMonitor using the following command:\n%s", executable)
+			self.logger.info("   Starting a copy of %s using the following command:\n%s" % (process["exe_name"], process["executable"]))
 	
 	def om_stop(self, matches=None, show_details=True, **kwargs):
 		""" Stops the online monitor processes.  Only really needed
@@ -167,10 +170,9 @@ class MonitorDispatcher(Dispatcher):
 			if show_details:
 				self.logger.info("   ==> Attempting to stop the Gaudi thread.")
 			try:
-				# both Gaudi jobs need a DIM "stop" command,
-				# but only the Presenter one will be forcibly terminated.
+				# the Presenter Gaudi job needs to be told to stop.
+				# otherwise it segfaults etc.
 				subprocess.call("dim_send_command.exe NEARONLINE stop", shell=True)
-				subprocess.call("dim_send_command.exe NEARONLINE_%s stop" % self.etpattern, shell=True)
 				self.om_Gaudi_thread.process.terminate()
 				self.om_Gaudi_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
 			except Exception, excpt:
@@ -190,11 +192,11 @@ class MonitorDispatcher(Dispatcher):
 class OMThread(threading.Thread):
 	""" OM processes need to be run in a separate thread
 	    so that we know if they finish. """
-	def __init__(self, command, processname, utgid="", persistent=False):
+	def __init__(self, command, processname, utgid=None, persistent=False):
 		threading.Thread.__init__(self)
 		
 		self.process = None
-		self.command = "UTGID=%s %s" % (utgid, command)
+		self.command = command
 		self.utgid = utgid
 		self.processname = processname
 		self.persistent = persistent		# if this thread is supposed to run until it finishes
@@ -222,35 +224,17 @@ class OMThread(threading.Thread):
 					continue
 				
 				try:
-					# the subprocesses need access to a bunch of environment
-					# variables from this process's startup environment:
-					# hence the 'shell=True'.  don't remove that.
-					self.process = subprocess.Popen(self.command, shell=True, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
+					# the online version (for the Presenter) needs to have a UTGID specified
+					# in its environment.  (this tells DIM how to address it.)
+					environment = os.environ
+					if self.utgid is not None:
+						environment["UTGID"] = self.utgid
+
+					self.process = subprocess.Popen(self.command.split(), shell=False, env=environment, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
 					self.pid = self.process.pid		# less typing.
 
-					# now wait until the process finishes.
-					# we need to check up on it via DIM every so often...
-					# (it doesn't quit all the way out unless killed
-					#  or sent an "unload" command via DIM) 
-					lastcheck = time.time()
-					while self.process.poll() is None:
-						# no busy-waiting.
-						time.sleep(0.25)
-						
-						# check every 60 seconds.
-						if time.time() - lastcheck > 60 and self.persistent:
-							lastcheck = time.time()
-							dimcmd = subprocess.Popen("dim_get_service.exe %s/status" % self.utgid, shell=True, stdout=subprocess.PIPE)
-							stdout, stderr = dimcmd.communicate()
-							
-#							print stdout
-							
-							# the DIM response includes the word "RUNNING" if
-							# the process is still going, and "READY" instead
-							# if it's done and waiting.
-							if "READY" in stdout:
-								self.process.terminate()
-					self.returncode = self.process.returncode
+					# now wait until it finishes.
+					self.returncode = self.process.wait()
 				# we want to release the lock no matter what happens!
 				finally:
 					fcntl.flock(fileobj.fileno(), fcntl.LOCK_UN)
