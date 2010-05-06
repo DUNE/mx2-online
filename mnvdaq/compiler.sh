@@ -41,12 +41,12 @@ if [ $DAQROOT == "/work/software/mnvonline/mnvdaq" ]; then
 	fi
 fi
 
-# nearline builds
-#if [ $DAQROOT == "" ]; then
-#	if [ $HOSTNAME == ".fnal.gov" ]; then 
-#		cp ${DAQROOT}/options/.opts $DAQROOT/Make.options
-#	fi
-#fi
+# nearline builds (always multi node)
+if [ $HOSTNAME == "mnvnearline0.fnal.gov" ]; then 
+	cp ${DAQROOT}/options/mnvnearline0.opts $DAQROOT/Make.options
+elif [ "$HOSTNAME" == "mnvnearline1.fnal.gov" ]; then
+	cp ${DAQROOT}/options/mnvnearline1.opts $DAQROOT/Make.options
+fi
 
 if [ $# -gt 0 ]; then
 	gmake all

@@ -28,17 +28,14 @@ then
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
 elif [ $LOCALE == 'NEARLINE' ]
 then
-	export DAQROOT=/scratch/nearonline/mnvdaq
-	if [ $# -gt 0 ]; then
-		export DAQROOT=$1
-	fi
-	export CAEN_DIR=/scratch/nearonline/CAENVMElib
+	export DAQROOT=/work/mnvdaq
+	export CAEN_DIR=/work/CAENVMElib
 	export ET_HOME=$DAQROOT/et_9.0/Linux-x86_64-64
 	export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
 	# Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
 	export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
 	# Add log4cpp support.
-	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/scratch/nearonline/log4cpp/lib
+	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
 else
 	echo Unsupported LOCALE!
 	exit 1

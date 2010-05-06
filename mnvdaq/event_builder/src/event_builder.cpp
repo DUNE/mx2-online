@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 	sprintf(log_filename,"/scratch/nearonline/logs/event_builder_nearline_%d_Log.txt",(int)hpnow.tv_sec);
 #endif
 #if NEARLINEDEV
-	sprintf(log_filename,"/work/data/logs/event_builder_nearline_%d_Log.txt",(int)hpnow.tv_sec);
+	sprintf(log_filename,"/work/logs/event_builder_nearline_%d_Log.txt",(int)hpnow.tv_sec);
 #endif
 #else
 	sprintf(log_filename,"/work/data/logs/event_builder_daq_%d_Log.txt",(int)hpnow.tv_sec);
@@ -88,18 +88,26 @@ int main(int argc, char **argv)
 #endif
 
 #if MULTIPC
+
 #if WH14T||WH14B
 	sprintf(hostName, "minervatest03.fnal.gov");
 #endif
-#if CRATE0||CRATE1||NEARLINE
+
+#if CRATE0||CRATE1||NEARLINEPRO
 #if BACKUPNODE
 	sprintf(hostName, "mnvonlinebck1.fnal.gov");
 #else
 	sprintf(hostName, "mnvonlinemaster.fnal.gov");
+// if BACKUPNODE
 #endif
+
+#elif NEARLINEDEV
+	sprintf(hostName, "mnvonlinemaster.fnal.gov");  // minervatest03.fnal.gov
+// if CRATE0||CRATE1||NEARLINEPRO
 #endif
-        std::cout << "Configured for a Multi-PC Build..." << std::endl;
-	ebuilder.infoStream() << "Configured for a Multi-PC Build..."; 
+	std::cout << "Configured for a Multi-PC Build..." << std::endl;
+	ebuilder.infoStream() << "Configured for a Multi-PC Build...";
+// if MULTIPC
 #endif
 	std::cout << "ET system host machine = " << hostName << std::endl;
 	std::cout << "Ouptut Filename        = " << output_filename << std::endl;
@@ -175,9 +183,12 @@ int main(int argc, char **argv)
 
 	// Create & attach to a new station for making the final output file.
 	std::cout << "Creating new station for output..." << std::endl;
-#if NEARLINE
+#if NEARLINEPRO
 	et_station_create(sys_id,&cu_station,"RIODEJANEIRO",sconfig);
 	ebuilder.infoStream() << "Creating new station RIODEJANEIRO for output...";
+#elif NEARLINEDEV
+	et_station_create(sys_id,&cu_station,"ROCHESTER",sconfig);
+	ebuilder.infoStream() << "Creating new station ROCHESTER for output...";
 #else
 	et_station_create(sys_id,&cu_station,"CHICAGO_UNION",sconfig);
 	ebuilder.infoStream() << "Creating new station CHICAGO_UNION for output...";
@@ -227,6 +238,24 @@ int main(int argc, char **argv)
 		//printf("time: %d.%i\n", time.tv_sec, time.tv_nsec);
 		status = et_event_get(sys_id, attach, &pe, ET_TIMED|ET_MODIFY, &time);
 		if (status==ET_ERROR_TIMEOUT) break;
+
+		// socket errors need to be handled differently depending on locale.
+		// for the nearline machines, it's not a tragedy if we miss an event or two.
+		// therefore under those circumstances we just go on and try to get another event.
+		// in the context of online data taking, however, it's a real problem.
+		if ((status == ET_ERROR_WRITE) || (status == ET_ERROR_READ)) {
+#if NEARLINE
+			printf("Warning: socket error in event_builder::main() calling et_event_get().  Will retry.\n");
+			ebuilder.warn("Socket error in event_builder::main() calling et_event_get().  Will retry.\n");
+			fflush(stdout);
+			continue;
+#else
+			printf("event_builder::main(): et_client: socket communication error\n");
+			ebuilder.fatal("event_builder::main(): et_client: socket communication error\n");
+			exit(-1);
+#endif
+		}
+
 		if (status == ET_ERROR_DEAD) {
 			printf("event_builder::main(): et_client: ET system is dead\n");
 			ebuilder.fatal("event_builder::main(): et_client: ET system is dead\n");
@@ -253,28 +282,10 @@ int main(int argc, char **argv)
 			exit(-1);
 		}
 		else if (status != ET_OK) {
-			printf("event_builder::main(): et_client: get error\n");
-			ebuilder.fatal("event_builder::main(): et_client: get error\n");
+			printf("event_builder::main(): et_client: get error.  Status code: %d\n", status);
+			ebuilder.fatalStream() << "event_builder::main(): et_client: get error.  Status code: " << status;
 			exit(-1);
 		}
-
-		// socket errors need to be handled differently depending on locale.
-		// for the nearline machines, it's not a tragedy if we miss an event or two.
-		// therefore under those circumstances we just go on and try to get another event.
-		// in the context of online data taking, however, it's a real problem.
-		if ((status == ET_ERROR_WRITE) || (status == ET_ERROR_READ)) {
-#if NEARLINE
-			printf("Warning: socket error in event_builder::main() calling et_event_get().  Will retry.\n");
-			ebuilder.warn("Socket error in event_builder::main() calling et_event_get().  Will retry.\n");
-			fflush(stdout);
-			continue;
-#else
-			printf("event_builder::main(): et_client: socket communication error\n");
-			ebuilder.fatal("event_builder::main(): et_client: socket communication error\n");
-			exit(-1);
-#endif
-		}
-
 
 		event_handler *evt;
 		int pri;
