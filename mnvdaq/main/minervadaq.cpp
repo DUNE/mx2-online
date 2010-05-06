@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	int subRunNumber         = 11;        // It goes to 11...
 	int record_seconds       = -1;	      // Run length in SECONDS (Not Supported...)
 	int detector             = 0;         // Default to UnknownDetector.
-	int detectorConfig       = 0;
+	int detectorConfig       = 0;         // Number of FEB's.
 	int LEDLevel             = 0;
 	int LEDGroup             = 0;
 	int hardwareInit         = 1;         // Default to "init." (This will set VME card timing modes, etc., but not touch FEB's).
@@ -593,16 +593,15 @@ int main(int argc, char *argv[])
 		gettimeofday(&gate_start_time, NULL);
 #endif
 #if DEBUG_GENERAL
-		mnvdaq.debugStream() << "->Top of the Event Loop, starting Gate: " << gate+1;
+		mnvdaq.debugStream() << "->Top of the Readout Loop, starting Gate: " << gate+1;
 #endif
 		if (!((gate+1)%100)) { std::cout << "   Acquiring Gate: " << gate+1 << std::endl; }
 		if (!((gate+1)%10)) { mnvdaq.infoStream() << "   Acquiring Gate: " << gate+1; }
 		/**********************************************************************************/
-		/*  Initialize the following data members of the event_handler structure          */
-		/*    event_data:                                                                 */
-		/*       event_data.feb_info[0-9] 0: link_no, 1: crate_no, 2: croc_no,            */
-		/*                                  3: chan_no, 4: bank 5: buffer length          */
-		/*                                  6: feb number, 7: feb firmware, 8: hits       */
+		/*  Initialize the following data members of the event_handler structure.         */
+		/*  event_data:                                                                   */
+		/*   event_data.feb_info[0-9] 0: link_no, 1: crate_no, 2: croc_no,                */
+		/*    3: chan_no, 4: bank 5: buffer length, 6: feb number, 7: firmware, 8: hits   */
 		/**********************************************************************************/
 		event_data.gate        = 0;  // Set only after successful readout. // TODO - Special value for failures?
 		event_data.triggerTime = 0;  // Set after returning from the Trigger function.
@@ -814,7 +813,7 @@ int main(int argc, char *argv[])
 		mnvdaq.debugStream() << "Got the trigger type from the Worker = " << workerToSoldier_trig[0];
 #endif 
 		if (event_data.triggerType != workerToSoldier_trig[0]) {
-			mnvdaq.warnStream() << "Trigger type disagreement between nodes!  Aborting this trigger!";
+			mnvdaq.warnStream() << "Trigger type disagreement between nodes!  Aborting trigger for gate " << (gate+1);
 			stopReadout = startReadout; // no readout, so reset counter
 			continue;  // Go to beginning of gate loop.
 		} 
@@ -841,7 +840,7 @@ int main(int argc, char *argv[])
 		mnvdaq.debugStream() << "Got the trigger type from the Soldier = " << soldierToWorker_trig[0];
 #endif 
 		if (event_data.triggerType != soldierToWorker_trig[0]) {
-			mnvdaq.warnStream() << "Trigger type disagreement between nodes!  Aborting this trigger!";
+			mnvdaq.warnStream() << "Trigger type disagreement between nodes!  Aborting trigger for gate " << (gate+1);
 			stopReadout = startReadout; // no readout, so reset counter
 			continue;  // Go to beginning of gate loop.
 		} 
@@ -902,10 +901,6 @@ int main(int argc, char *argv[])
 						//
 						// Threaded Option
 						//
-#if DEBUG_THREAD
-						std::cout << " Launching data thread on CROC Addr: " << 
-							(tmpCroc->GetCrocAddress()>>16) << " Chain " << j << std::endl;
-#endif
 #if THREAD_ME
 #if TIME_ME
 						struct timeval dummy;
@@ -914,17 +909,11 @@ int main(int argc, char *argv[])
 							<<(dummy.tv_sec*1000000+dummy.tv_usec)<<"\t"
 							<<(gate_start_time.tv_sec*1000000+gate_start_time.tv_usec)<<endl;
 #endif
-#if DEBUG_THREAD
-						std::cout << thread_count << std::endl;
-#endif
 						// TODO - how to get a return value from a boost thread function?
 						// TODO - can we use a try-catch here?
 						data_threads[thread_count] = 
 							new boost::thread((boost::bind(&TakeData,boost::ref(daq),boost::ref(evt),croc_id,j,
 							thread_count, attach, sys_id)));
-#if DEBUG_THREAD	
-						std::cout << "Success." << std::endl;
-#endif 
 #if TIME_ME
 						gettimeofday(&dummy,NULL);
 						thread_return_log<<thread_count<<"\t"<<gate<<"\t"
@@ -1256,18 +1245,6 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 	struct timeval start_time, stop_time;
 	gettimeofday(&start_time, NULL);
 #endif
-	// Files for monitoring acquisition.
-	// These are mostly for use with multi-threaded debugging tasks...
-#if DEBUG_THREAD
-	ofstream data_monitor;
-	stringstream threadno;
-	threadno << thread;
-	string filename;
-	filename = "data_monitor_"+threadno.str();
-	data_monitor.open(filename.c_str());
-	time_t currentTime; time(&currentTime);
-	data_monitor << "Thread Start Time:  " << ctime(&currentTime) << std::endl;
-#endif
 
 	/**********************************************************************************/
 	/*  Local croc & crim variables for ease of computational manipulation.           */
@@ -1285,11 +1262,6 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 	list<feb*> *feb_list = channelTrial->GetFebList(); //the feb's on this channel
 	list<feb*>::iterator feb; //we want to loop over them when we get the chance...
 
-#if DEBUG_THREAD
-	data_monitor << "Is data ready? " << data_ready << std::endl;
-	data_monitor << " Bank Type?    " << evt->feb_info[4] << std::endl;
-#endif
-
 	/**********************************************************************************/
 	/*   The loops which govern the acquiring of data from the FEB's.                 */
 	/*   The first waits until data is ready.                                         */
@@ -1306,9 +1278,6 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 			try {
 				data_taken = daq->TakeAllData((*feb), channelTrial, crocTrial, evt, thread, 
 					attach, sys_id, readFPGA, nReadoutADC); 
-#if DEBUG_THREAD
-				data_monitor << "TakeAllData Returned" << std::endl;
-#endif
 				if (data_taken) throw data_taken;
 			} catch (bool e) {
 				std::cout << "Problems taking data on FEB: " << (*feb)->GetBoardNumber() << std::endl;
@@ -1320,9 +1289,6 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 				return 1; // TODO - check error code for DAQHeader error bits.
 			}
 		} //feb loop
-#if DEBUG_THREAD
-		data_monitor << "Completed processing FEB's in this list." << std::endl;
-#endif
 #if TIME_ME
 		boost::mutex::scoped_lock lock(main_mutex); 
 		gettimeofday(&stop_time,NULL);
@@ -1605,7 +1571,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-11-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-11-XX'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

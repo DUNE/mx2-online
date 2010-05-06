@@ -180,15 +180,6 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	std::cout << "\nEntering acquire_data::InitializeCrim for address " << (address>>16) << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeCrim for address " << (address>>16);
 	acqData.infoStream() << "  HW (VME Card) Init Level = " << hwInitLevel;
-#if DEBUG_THREAD
-	std::ofstream crim_thread;
-	std::stringstream thread_number;
-	thread_number<<address;
-	std::string filename;
-	filename = "crim_thread_"+thread_number.str();
-	crim_thread.open(filename.c_str());
-	crim_thread << "Initializing CRIM, Start" << std::endl;
-#endif
 
 	CVAddressModifier AM = daqController->GetAddressModifier();
 	CVDataWidth       DW = daqController->GetDataWidth();
@@ -381,10 +372,6 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		acqData.fatalStream() << "Cannot SetupIRQ!";
 		exit (e);
 	}
-#if DEBUG_THREAD
-	crim_thread << "In InitializeCrim, finished initializing CRIM " << (address>>16) << std::endl;
-	crim_thread.close();
-#endif
 	std::cout << "Finished initializing CRIM " << (address>>16) << std::endl;
 	acqData.infoStream() << "Finished initializing CRIM " << (address>>16);
 }
@@ -413,15 +400,6 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 	std::cout << "\nEntering acquire_data::InitializeCroc for CROC " << (address>>16) << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeCroc for CROC " << (address>>16);
 	acqData.infoStream() << "  HW (VME Card) Init Level = " << hwInitLevel;
-#if DEBUG_THREAD
-	std::ofstream croc_thread;
-	std::stringstream thread_number;
-	thread_number << address;
-	std::string filename;
-	filename = "croc_thread_"+thread_number.str();
-	croc_thread.open(filename.c_str());
-	croc_thread << "In InitializeCrroc, Starting" << std::endl;
-#endif
 	CVAddressModifier AM = daqController->GetAddressModifier();
 	CVDataWidth       DW = daqController->GetDataWidth();
 
@@ -476,9 +454,6 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 		avail = tmpCroc->GetChannelAvailable(i);
 		if (avail) {
 #if THREAD_ME
-#if DEBUG_THREAD
-			croc_thread<<"Launching build FEB list thread "<<i<<std::endl;
-#endif
 			chan_thread[i] = new boost::thread(boost::bind(&acquire_data::BuildFEBList,this,i,crocNo,nFEBsPerChain[i]));
 #else
 			try {
@@ -502,9 +477,6 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 	// to wait for the each thread we launched to complete.
 	for (int i = 0; i < nChains; i++) {
 		chan_thread[i]->join(); // Wait for all the threads to finish up before moving on.
-#if DEBUG_THREAD
-		croc_thread << "Build FEB List: chain " << i << " thread completed." << std::endl;
-#endif
 		croc_thread.close();
 		delete chan_thread[i];
 	}  
@@ -740,15 +712,6 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 	acqData.infoStream() << "Entering BuildFEBList for CROC " << 
 		(daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " << i;
 	acqData.infoStream() << " Looking for " << nFEBs << " FEBs.";
-#if DEBUG_THREAD
-	std::ofstream build_feb_thread;
-	std::stringstream thread_number;
-	thread_number << i << "_" << croc_id;
-	std::string filename;
-	filename = "FEB_list_"+thread_number.str();
-	build_feb_thread.open(filename.c_str());
-	build_feb_thread << "Called BuildFEBList" << std::endl;
-#endif
 	// Exract the CROC object and Channel object from the controller 
 	// and assign them to a tmp of each type for ease of use.
 	croc *tmpCroc = daqController->GetCroc(croc_id);
@@ -758,21 +721,12 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 	// Addresses numbers range from 1 to Max and we'll loop
 	// over all of them and look for S2M message headers.
 	for (int j = 1; j <= nFEBs; j++) { 
-#if DEBUG_THREAD
-		build_feb_thread << " Making FEB: " << j << std::endl;
-#endif
 		acqData.infoStream() << "    Trying to make FEB " << j << " on chain " << i;
 		// Make a "trial" FEB for the current address.
 		feb *tmpFEB = tmpChan->MakeTrialFEB(j, numberOfHits, acqAppender); 
-#if DEBUG_THREAD
-		build_feb_thread << "  Made FEB " << j << " on chain " << i << std::endl;
-#endif
 		
 		// Build an outgoing message to test if an FEB of this address is available on this channel.
 		tmpFEB->MakeMessage(); 
-#if DEBUG_THREAD
-		build_feb_thread << "  Made Message & Sending on chain: " << i << std::endl;
-#endif
 
 		// Send the message & delete the outgoingMessage.
 		int success = SendMessage(tmpFEB, tmpCroc, tmpChan, true); 
@@ -787,11 +741,7 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 			acqData.infoStream() << "FEB: " << tmpFEB->GetBoardNumber() << " is available on CROC "
 				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " 
 				<< tmpChan->GetChainNumber() << " with init. level " << tmpFEB->GetInit();
-#if DEBUG_THREAD
-			build_feb_thread << "FEB: " << tmpFEB->GetBoardNumber() << " is available on CROC "
-				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " 
-				<< tmpChan->GetChainNumber() << " with init. level" << tmpFEB->GetInit() << std::endl;
-#endif
+
 			// Add the FEB to the list.
 			tmpChan->SetFEBs(j, numberOfHits, acqAppender); 
 
@@ -807,11 +757,6 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 			std::cout << "\nCRITICAL!  FEB: " << tmpFEB->GetBoardNumber() << " is NOT available on CROC "
 				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " 
 				<< tmpChan->GetChainNumber() << "\n" << std::endl;
-#if DEBUG_THREAD
-			build_feb_thread << "FEB: " << tmpFEB->GetBoardNumber() << " is not available on CROC "
-				<< (daqController->GetCroc(croc_id)->GetCrocAddress()>>16) << " Chain " 
-				<< tmpChan->GetChainNumber() << std::endl;
-#endif
 			// Clean up the memory.
 			delete tmpFEB; 
 			// Return an error, stop!
@@ -820,10 +765,6 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 	}
 
 	acqData.infoStream() << "Returning from BuildFEBList.";
-#if DEBUG_THREAD
-	build_feb_thread << "Returning from BuildFEBList." << std::endl;
-	build_feb_thread.close();
-#endif
 	return 0;
 }
 
@@ -1351,7 +1292,6 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			acqData.debugStream() << "  sourceID hit = " << evt->feb_info[8];
 #endif
 			// Reset the DPM pointer & clear the status.
-			// TODO - Use a try-catch block here.
 			if (!(memory_reset = ResetDPM(crocTrial, channelTrial))) {
 				std::cout << "Unable to reset DPM in acquire_data::TakeAllData for ADC readout." << std::endl;
 				std::cout << " CROC, CHAIN, FEB = " << (crocTrial->GetCrocAddress()>>16) << ", " <<
@@ -2169,17 +2109,6 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
  *  \param et_sys_id  sys_id the ET system id for data handling
  */
 	{ // Debug statements
-#if DEBUG_THREAD
-		std::ofstream contact_thread;
-		std::string filename;
-		std::stringstream thread_no;
-		thread_no<<thread;
-		filename = "contact_eb_"+thread_no.str();
-		contact_thread.open(filename.c_str());
-		contact_thread << "Entering acquire_data::ContactEventBuilder..." << std::endl;
-		contact_thread << " In Event Builder the bank tpye is: " << evt->feb_info[4] << std::endl;
-		contact_thread << " The bank length is:                " << evt->feb_info[5] << std::endl;
-#endif
 #if DEBUG_ET_REPORT_EVENT
 		acqData.debugStream() << "Entering acquire_data::ContactEventBuilder...";
 		acqData.debugStream() << " In Event Builder the bank type is: " << evt->feb_info[4];
