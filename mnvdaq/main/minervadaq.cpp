@@ -8,6 +8,7 @@
 #include "acquire_data.h"
 #include "eb_service.h"
 #include "MinervaEvent.h"
+#include "readoutObject.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>

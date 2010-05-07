@@ -196,7 +196,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 			((daqController->GetCrim(index)->GetCrimAddress())>>16) << std::endl;
 		acqData.fatalStream() << "Unable to read the status register for CRIM with Address " << 
 			((daqController->GetCrim(index)->GetCrimAddress())>>16);
-		exit(-3);
+		exit(e);
 	} 
 
 	// Note IRQLine is set in the CRIM constructor.  The default is SGATEFall, 
