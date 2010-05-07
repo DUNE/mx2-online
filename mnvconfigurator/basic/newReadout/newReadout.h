@@ -7,6 +7,7 @@
 #include "controller.h"
 #include "feb.h"
 #include "adctdc.h"
+#include "readoutObject.h"
 
 const CVRegisters ControllerStatusAddress = cvStatusReg;
 const CVDataWidth DW                      = cvD16;

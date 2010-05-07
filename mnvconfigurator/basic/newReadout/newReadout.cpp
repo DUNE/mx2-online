@@ -22,11 +22,7 @@ int main(int argc, char *argv[])
 
 	// Note, indices are distinct from addresses!
 	unsigned int crocCardAddress = 1 << 16;
-	unsigned int crocChannel     = 1;
 	int crocID                   = 1;
-	int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
-	int HVTarget                 = 32000;
-	int HVEnableFlag             = 0; // disable by default
 	unsigned int crimCardAddress = 224 << 16;
 	int crimID                   = 1;
 
@@ -39,20 +35,15 @@ int main(int argc, char *argv[])
 	printf("\nArguments: ");
 	while ((optind < argc) && (argv[optind][0]=='-')) {
 		std::string sw = argv[optind];
-		if (sw=="-c") {
+		if (sw=="-croc") {
 			optind++;
 			crocCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
 			printf(" CROC Address = %03d ", (crocCardAddress>>16));
 		}
-		else if (sw=="-h") {
+		else if (sw=="-crim") {
 			optind++;
-			crocChannel = (unsigned int)( atoi(argv[optind]) );
-			printf(" CROC Channel = %1d ", crocChannel);
-		}
-		else if (sw=="-f") {
-			optind++;
-			nFEBs = atoi(argv[optind]);
-			printf(" Number of FEBs = %02d ", nFEBs);
+			crimCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
+			printf(" CRIM Address = %03d ", (crimCardAddress>>16));
 		}
 		else
 			std::cout << "\nUnknown switch: " << argv[optind] << std::endl;
@@ -97,15 +88,14 @@ int main(int argc, char *argv[])
 	croc *myCroc = daqController->GetCroc(crocID);
 	InitCROC(daqController, daqAcquire, myCroc);
 
-
 	// Try a quick and dirty test.
 	int rerror;
 	for (int i=0; i<4; i++) {
-		SendClearAndReset( daqController, daqAcquire, myCroc->GetChannel(i) );
+		SendClearAndReset( daqController, daqAcquire, myCroc->GetChain(i) );
 	}
 	for (int i=0; i<4; i++) {
 		// Should not see mess rec'd after clear.	
-		rerror = ReadStatus( daqController, daqAcquire, myCroc->GetChannel(i), false ); 
+		rerror = ReadStatus( daqController, daqAcquire, myCroc->GetChain(i), false ); 
 		std::cout << "ReadStatus return value for chain " << i << " = " << rerror << std::endl;
 		newread.debugStream() << "ReadStatus return value for chain " << i << " = " << rerror;
 	}
@@ -259,7 +249,7 @@ void InitCROC(controller *daqController, acquire *daqAcquire, croc *myCroc)
 	newread.infoStream() << "Building FEB List:";
 	for (int i = 0; i < nChains; i++) {
 		// Now set up the channels and FEB's.
-		bool avail = myCroc->GetChannelAvailable(i);
+		bool avail = myCroc->GetChainAvailable(i);
 		if (avail && nFEBsPerChain[i]) {
 			try {   
 				int error = BuildFEBList(daqController, daqAcquire, myCroc, i, nFEBsPerChain[i]);
@@ -301,7 +291,7 @@ int BuildFEBList(controller *daqController, acquire *daqAcquire, croc *myCroc, i
 	newread.infoStream() << " Looking for " << nFEBs << " FEBs.";
 	// Exract the CROC object and Channel object from the controller 
 	// and assign them to a tmp of each type for ease of use.
-	//channels *tmpChan = myCroc->GetChannel(i);
+	//channels *tmpChan = myCroc->GetChain(i);
 
 	// This is a dynamic look-up of the FEB's on the channel.
 	// Addresses numbers range from 1 to Max and we'll loop

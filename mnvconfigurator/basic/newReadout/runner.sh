@@ -5,5 +5,5 @@ gmake
 rm /work/data/logs/newReadout.txt
 
 #WH14B
-./newReadout -c 1 -h 1 -f 4
+./newReadout -croc 1 -crim 224 
 
