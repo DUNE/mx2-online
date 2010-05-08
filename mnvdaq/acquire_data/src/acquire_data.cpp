@@ -417,7 +417,7 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 			(address>>16) << std::endl;
 		acqData.fatalStream() << "Error in acquire_data::InitializeCroc!  Cannot read the status register for CROC " <<
 			(address>>16);
-		exit(-2);
+		exit(e);
 	}
 
 	// Set the timing mode to EXTERNAL: clock mode, test pulse enable, test pulse delay

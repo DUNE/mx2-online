@@ -54,8 +54,10 @@ croc::croc(unsigned int a, int crocid, CVAddressModifier b, CVDataWidth c, CVDat
 	CVDataWidth dpmDataWidth = dataWidthSwapped; 
 					
 	// Initialize all channels on all crocs to false, i.e. it isn't connected
+	// note the usual chain/channel issue exists here as well...
 	for (int i=0;i<4;i++) {
-		channel_available[i]=false;  
+		chain_available[i]   = false;  
+		channel_available[i] = false;  
 	}
 
 	// initialize the CROC register data, for now, the test pulse is not set 

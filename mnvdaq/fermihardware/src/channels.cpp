@@ -12,6 +12,8 @@
 *
 **********************************************************************************/
 
+// TODO - Be careful about all the "54's" showing up for the number of registers in an FPGA frame.
+
 channels::channels(unsigned int a, int b) 
 {
 /*! \fn 

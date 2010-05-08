@@ -43,6 +43,10 @@ class croc {
 			fastCommandRegister, testPulseRegister;
 
 		bool registersInitialized; /*!< a flag for the initialization state of the croc */
+		// The channel/chain available flags are not really necessary with the way initialization 
+		// is currently handled.  In principle they can be used to allow running with "disconnected"
+		// channels (channels with no loop-back or broken chains).  Currently though, the DAQ 
+		// will exit during initialization if there are disconnected channels on a CROC.
 		bool channel_available[4]; /*!< a flag for the channels which are available - really indexing chains here! */
 		bool chain_available[4];   /*!< a flag for the chains which are available (chain==channel-1)*/
 
@@ -92,8 +96,9 @@ class croc {
 		unsigned short GetFastCommandRegister(){return fastCommandRegister;};
 
 		//we need to know which of the channels are instrumented
-		void inline SetChannelAvailable(int i) {channel_available[i]=true;}; 
-		void inline SetChainAvailable(int i) {chain_available[i]=true;}; 
+		//note the usual chain/channel confusion, sigh.
+		void inline SetChannelAvailable(int i) {channel_available[i]=true; chain_available[i]=true;}; 
+		void inline SetChainAvailable(int i) {chain_available[i]=true; channel_available[i]=true;}; 
 
 };
 
