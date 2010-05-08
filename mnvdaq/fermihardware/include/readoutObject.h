@@ -5,24 +5,20 @@
 
 class readoutObject {
 	private:
-		croc* theCroc;
-		channels* theChannel;
-		feb* theFeb;
-		int hitNumber;
+		int febID;
+		std::list<channels*> channelsList;
+		std::list<int*> hitsPerChannelList;
 	public:
-		readoutObject() { };
-		readoutObject(croc* Croc, channels* Channel, feb* Feb, int Hit) { 
-			theCroc    = Croc;
-			theChannel = Channel;
-			theFeb     = Feb;
-			hitNumber  = Hit;
+		readoutObject(int id) { 
+			febID = id;
 		};
 		~readoutObject() { };
 
-		croc inline *getTheCroc() {return theCroc;};
-		channels inline *getTheChannel() {return theChannel;};
-		feb inline *getTheFeb() {return theFeb;};
-		int inline getHitNumber() {return hitNumber;};
-
+		std::list<channels*> inline *getChannelsList() { return &channelsList; };
+		std::list<int*> inline *getHitsPerChannelList() { return &hitsPerChannelList; };
+		int inline getFebID() { return febID; };
+		void inline addChannel(channels* ch) { channelsList.push_back(ch); };
+		void inline addHits(int* h) { hitsPerChannelList.push_back(h); };
+		void inline clearHits() { hitsPerChannelList.clear(); };
 };
 #endif

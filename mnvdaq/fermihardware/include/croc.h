@@ -73,10 +73,11 @@ class croc {
 		CVDataWidth inline GetDataWidth() {return dataWidth;};
 		CVDataWidth inline GetDataWidthSwapped() {return dataWidthSwapped;};
 		unsigned int inline GetAddress() {return crocAddress;};
-		channels *GetChannel(int i); // returns the ith *chain* - should be updated to work like a channel
+		channels *GetChannel(int i); // returns the ith *chain* - should be updated to work like a channel?
 		channels *GetChain(int i); // returns the ith *chain*
 		bool inline GetChainAvailable(int i) {return chain_available[i];}; // indexed by *chain*!
 		bool inline GetChannelAvailable(int i) {return channel_available[i];}; // indexed by *chain*!
+		std::list<channels*> inline *GetChannelsList() {return &crocChannel;};
 		int inline GetCrocID() {return id;};
 		int inline GetCrocAddress() {return crocAddress;};
 

@@ -180,7 +180,8 @@ int channels::DecodeStatusMessage()
 }
 
 
-void channels::SetBuffer(unsigned char *b) {
+void channels::SetBuffer(unsigned char *b) 
+{
 /*! \fn 
  * Puts data into the data buffer assigned to this channel.
  * \param b the data buffer
@@ -202,4 +203,20 @@ void channels::SetBuffer(unsigned char *b) {
 	return; 
 }
 
+
+void channels::VectorizeFEBList() 
+{
+/*! \fn
+ * Takes list of febs created during initialization and turns them into a vector.
+ * TODO - Think about sorting, etc. to be sure indexing is right first (it is, but this is still "sloppy").
+ * Also TODO - Think about a copy instead of pushing a pointer to an existing object.
+ */
+	if (has_febs) {
+		std::list<feb*>::iterator fp;
+		for (fp = febs.begin(); fp != febs.end(); fp++) {
+			febsVector.push_back(*fp);
+		}
+	}
+
+}
 #endif
