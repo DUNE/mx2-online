@@ -32,6 +32,7 @@ int main(int argc, char *argv[])
 
 	int controllerID = 0;
 	int runningMode  = 0; // 0 == OneShot   
+	int openGate     = 0; // Don't open a gate.
 
 	// Process the command line argument set.
 	int optind = 1;
@@ -48,6 +49,9 @@ int main(int argc, char *argv[])
 			optind++;
 			crimCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
 			printf(" CRIM Address = %03d ", (crimCardAddress>>16));
+		}
+		else if (sw=="-g") {
+			openGate = 1;
 		}
 		else
 			std::cout << "\nUnknown switch: " << argv[optind] << std::endl;
@@ -92,10 +96,105 @@ int main(int argc, char *argv[])
 	croc *theCroc = daqController->GetCroc(crocID);
 	InitCROC(theCroc);
 
+	std::list<readoutObject*> readoutObjects;
+	for (int i=1; i<5; i++) {
+		readoutObjects.push_back(new readoutObject(i));
+	}
+	InitializeReadoutObjects(&readoutObjects); 
+
+	// Open a gate?
+	if (openGate) {
+		std::cout << "Opening a gate!" << std::endl;
+		if (FastCommandOpenGate(theCroc)) {
+			std::cout << "Couldn't open a gate!" << std::endl;
+			newread.critStream() << "Couldn't open a gate!";
+		}
+	} else { 
+		std::cout << "Not opening a gate." << std::endl;
+	}
+
+	std::cout << "Doing a readout..." << std::endl;
+	// Do an "FPGA read"
+	std::list<readoutObject*>::iterator rop = readoutObjects.begin();
+	for (rop = readoutObjects.begin(); rop != readoutObjects.end(); rop++) {
+		int febid = (*rop)->getFebID();
+		std::cout << "feb id == " << febid << std::endl;	
+
+		// Clear and reset all channels that have an FEB with id febid.
+		std::list<channels*> *chanList = (*rop)->getChannelsList();
+		std::list<channels*>::iterator chp;
+		for (chp = chanList->begin(); chp != chanList->end(); chp++) {
+			SendClearAndReset(*chp);
+			if (ReadStatus(*chp, doNotCheckForMessRecvd)) return 1; // Error, stop!
+			unsigned int clrstsAddr = (*chp)->GetClearStatusAddress();	
+			printf("  Clear Status Address = 0x%X\n", clrstsAddr);
+		}	
+
+		// Now send FPGA read frame request to each channel with an FEB with id febid.
+		for (chp = chanList->begin(); chp != chanList->end(); chp++) {
+
+
+		}
+	}	
+	
+
+	// Cleanup
+	delete daqAcquire;
+	delete daqController;
+	for (std::list<readoutObject*>::iterator p=readoutObjects.begin(); p!=readoutObjects.end();p++) delete (*p);
+	readoutObjects.clear();
 
 	return 0;       
 }                               
 
+
+// Initialize list of readoutObjects
+void InitializeReadoutObjects(std::list<readoutObject*> *objectList)
+{
+	std::list<readoutObject*>::iterator rop = objectList->begin();
+
+	for (rop = objectList->begin(); rop != objectList->end(); rop++) {
+		int febid = (*rop)->getFebID();
+		std::cout << "feb id == " << febid << std::endl;	
+		std::vector<croc*> *crocVector          = daqController->GetCrocVector();
+		std::vector<croc*>::iterator crocp      = crocVector->begin();
+		for (crocp = crocVector->begin(); crocp != crocVector->end(); crocp++) {
+			int crocid = (*crocp)->GetCrocID();
+			std::cout << " croc id == " << crocid << std::endl;
+			std::list<channels*> *chanList = (*crocp)->GetChannelsList();
+			std::list<channels*>::iterator chp;
+			for (chp = chanList->begin(); chp != chanList->end(); chp++) {
+				int chainid = (*chp)->GetChainNumber();
+				bool addChain = false;
+				std::cout << "  chain id == " << chainid << std::endl;
+				std::list<feb*> *febList = (*chp)->GetFebList();
+				std::list<feb*>::iterator fp;
+				for (fp = febList->begin(); fp != febList->end(); fp++) {
+					int innerfebid = (int)(*fp)->GetBoardNumber();
+					std::cout << "   innr febid == " << innerfebid << std::endl;
+					if (innerfebid == febid) { addChain = true; }
+				}
+				if (addChain) {
+					std::cout << "     should add chain" << std::endl;
+					(*rop)->addChannel(*chp);
+				}
+			}
+		}
+	}
+
+	std::cout << "After assignment..." << std::endl;
+	for (rop = objectList->begin(); rop != objectList->end(); rop++) {
+		int febid = (*rop)->getFebID();
+		std::cout << "feb id == " << febid << std::endl;	
+		std::list<channels*> *chanList = (*rop)->getChannelsList();
+		std::list<channels*>::iterator chp;
+		for (chp = chanList->begin(); chp != chanList->end(); chp++) {
+			unsigned int clrstsAddr = (*chp)->GetClearStatusAddress();	
+			printf("  Clear Status Address = 0x%X\n", clrstsAddr);
+		}	
+	}
+	 
+}
 
 // Initialize the CRIM. 
 void InitCRIM(crim *theCrim, int runningMode)
@@ -328,6 +427,11 @@ int MakeFEBList(channels *theChain, int nFEBs)
 		if (ReadStatus(theChain, doNotCheckForMessRecvd)) return 1; // Error, stop!
 	}
 
+	// Turn *list* of FEB's into a vector.  Obviously could have built a vector from the start,
+	// but starting with a list for now because of all the other functions in the DAQ that 
+	// expect to be able to access a list of FEB's.
+	theChain->VectorizeFEBList();
+
 	newread.infoStream() << "Returning from MakeFEBList for chain " << theChain->GetChainNumber();
 	return 0;
 }
@@ -462,6 +566,8 @@ int ReadStatus(channels *theChain, bool receiveCheck)
 		return (-15);
 	}
 
+	newread.debugStream() << "Executed ReadStatus for CROC " << crocAddress <<
+		" Chain " << theChain->GetChainNumber();
 	return 0;
 }
 
@@ -608,5 +714,29 @@ template <class X> int RecvFrameData(X *device, channels *theChannel)
 
 	newread.debugStream() << "   Finished RecvFrameData!  Returning " << success;
 	return ((int)success);
+}
+
+
+// Open a gate
+int FastCommandOpenGate(croc *theCroc)
+{
+	unsigned char openGateCommand[] = {0xB1};
+	int ml = sizeof(openGateCommand)/sizeof(unsigned char);
+
+	try {
+		int error = daqAcquire->WriteCycle(daqController->handle, ml, openGateCommand,
+			theCroc->GetFastCommandAddress(),
+			daqController->GetAddressModifier(), daqController->GetDataWidth());
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in acquire_data::WriteCROCFastCommand for CROC " <<
+			(theCroc->GetCrocAddress()>>16) << std::endl;
+		daqController->ReportError(e);
+		newread.critStream() << "Error in acquire_data::WriteCROCFastCommand for CROC " <<
+			(theCroc->GetCrocAddress()>>16);
+		return e;
+	}
+
+	return 0;
 }
 

@@ -31,11 +31,16 @@ void InitCROC(croc *theCroc);
 // Function to build a list of FEB objects.
 int MakeFEBList(channels *theChain, int nFEBs=11);
 
+// Open a gate
+int FastCommandOpenGate(croc *theCroc);
+
 // Send a Clear and Reset to a CROC FE Channel
 void SendClearAndReset(channels *theChain);  
 // Read the status register on a CROC FE Channel - add a flag to see if we should check for the message recv'd.
 int ReadStatus(channels *theChain, bool receiveCheck);
 
+// Initialize list of readoutObjects
+void InitializeReadoutObjects(std::list<readoutObject*> *objectList);
 
 // send messages to a generic device using normal write cycle
 // -> write the outgoing message to the CROC FIFO, send the message
