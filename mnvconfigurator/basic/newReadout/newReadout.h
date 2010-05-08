@@ -20,17 +20,34 @@ unsigned char crocDPMResetValue[]         = {0x08,0x08};
 unsigned char crocClearAndResetValue[]    = {0x0A,0x0A};
 unsigned char crocResetAndTestPulseMask[] = {0x0F,0x0F}; // enable reset (0F) and test pulse (2nd 0F) 
 
+const int numberOfHits = 6;
+const bool checkForMessRecvd      = true;
+const bool doNotCheckForMessRecvd = false;
+
 // Initialize the CRIM for basic fiddling.
-void InitCRIM(controller *daqController, acquire *daqAcquire, crim *myCrim, int runningMode=0);
+void InitCRIM(crim *theCrim, int runningMode=0);
 // Initialize the CROC for basic fiddling.
-void InitCROC(controller *daqController, acquire *daqAcquire, croc *myCroc);
+void InitCROC(croc *theCroc);
 // Function to build a list of FEB objects.
-int BuildFEBList(controller *daqController, acquire *daqAcquire, croc *myCroc, int chainID, int nFEBs=11);
+int MakeFEBList(channels *theChain, int nFEBs=11);
 
 // Send a Clear and Reset to a CROC FE Channel
-void SendClearAndReset(controller *daqController, acquire *daqAcquire, channels *theChain);  
+void SendClearAndReset(channels *theChain);  
 // Read the status register on a CROC FE Channel - add a flag to see if we should check for the message recv'd.
-int ReadStatus(controller *daqController, acquire *daqAcquire, channels *theChain, bool receiveCheck);
+int ReadStatus(channels *theChain, bool receiveCheck);
+
+
+// send messages to a generic device using normal write cycle
+// -> write the outgoing message to the CROC FIFO, send the message
+template <class X> void SendFrameData(X *device, channels *theChannel);
+
+// send messages to a generic device using FIFO BLT write cycle
+// -> write the outgoing message to the CROC FIFO, send the message (for FPGA's only)
+template <class X> void SendFrameDataFIFOBLT(X *device, channels *theChannel);
+
+// recv messages from a generic device
+// -> read DPM pointer, read BLT
+template <class X> int RecvFrameData(X *device, channels *theChannel);
 
 
 #endif
