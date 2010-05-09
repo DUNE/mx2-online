@@ -5,10 +5,10 @@ gmake
 
 if [ $# -gt 0 ]; then
  if [ $1 == "v" ]; then
-  valgrind -v --log-file-exactly=valtest1.txt ./newReadout -c 1 -h 1 -f 4
+  valgrind -v --log-file-exactly=valtest1.txt ./newReadout -croc 1 -crim 224 -g
  fi
 else
-./newReadout -c 1 -h 1 -f 4
+./newReadout -croc 1 -crim 224 -g
 fi
 
 exit 0

@@ -24,6 +24,9 @@ const int numberOfHits = 6;
 const bool checkForMessRecvd      = true;
 const bool doNotCheckForMessRecvd = false;
 
+// A buffer for handling BLT data.
+unsigned char *DPMData; 
+
 // Initialize the CRIM for basic fiddling.
 void InitCRIM(crim *theCrim, int runningMode=0);
 // Initialize the CROC for basic fiddling.
@@ -43,16 +46,20 @@ int ReadStatus(channels *theChain, bool receiveCheck);
 void InitializeReadoutObjects(std::list<readoutObject*> *objectList);
 
 // send messages to a generic device using normal write cycle
-// -> write the outgoing message to the CROC FIFO, send the message
+// -> write the outgoing message from the device to the FE Channel FIFO, send the message
 template <class X> void SendFrameData(X *device, channels *theChannel);
 
 // send messages to a generic device using FIFO BLT write cycle
-// -> write the outgoing message to the CROC FIFO, send the message (for FPGA's only)
+// -> write the outgoing message from the device to the FE Channel FIFO using BLT, send the message 
 template <class X> void SendFrameDataFIFOBLT(X *device, channels *theChannel);
 
-// recv messages from a generic device
-// -> read DPM pointer, read BLT
+// recv messages for a generic device
+// -> read DPM pointer, read BLT, store data in *device* buffer
+// -> should be used primarily for debugging and for building the FEB list.
 template <class X> int RecvFrameData(X *device, channels *theChannel);
 
+// recv messages 
+// -> read DPM pointer, read BLT, store data in *channel* buffer
+int RecvFrameData(channels *theChannel);
 
 #endif

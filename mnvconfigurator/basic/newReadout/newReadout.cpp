@@ -105,35 +105,107 @@ int main(int argc, char *argv[])
 	// Open a gate?
 	if (openGate) {
 		std::cout << "Opening a gate!" << std::endl;
+		newread.infoStream() << "Opening a gate!";
+		newread.infoStream() << "---------------";
+		newread.infoStream() << "---------------";
 		if (FastCommandOpenGate(theCroc)) {
 			std::cout << "Couldn't open a gate!" << std::endl;
 			newread.critStream() << "Couldn't open a gate!";
 		}
 	} else { 
 		std::cout << "Not opening a gate." << std::endl;
+		newread.infoStream() << "Not opening a gate.";
+		newread.infoStream() << "-------------------";
+		newread.infoStream() << "-------------------";
 	}
 
 	std::cout << "Doing a readout..." << std::endl;
-	// Do an "FPGA read"
+	newread.infoStream() << "Doing a readout...";
+
+	// Do an "FPGA read".
+	// First, send a read frame to each channel that has an FEB with the right index.
+	// Then, after sending a frame to every channel, read each of them in turn for data.
+	newread.infoStream() << "Read the FPGA's...";
 	std::list<readoutObject*>::iterator rop = readoutObjects.begin();
 	for (rop = readoutObjects.begin(); rop != readoutObjects.end(); rop++) {
-		int febid = (*rop)->getFebID();
-		std::cout << "feb id == " << febid << std::endl;	
+		int febid    = (*rop)->getFebID();
+		std::cout << "-> Top of readoutObject loop." << std::endl;	
+		std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;	
+		std::cout << "feb id    = " << febid << std::endl;	
+		newread.debugStream() << "-> Top of readoutObject loop.";	
+		newread.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";	
+		newread.debugStream() << "feb id    = " << febid;	
+		int febindex = febid - 1;
+		std::cout << "feb index = " << febindex << std::endl;	
+		newread.debugStream() << "feb index = " << febindex;
+		// Pointer for the FEB's on each channel.  Be careful about deleting!	
+		feb *tmpFEB;
 
-		// Clear and reset all channels that have an FEB with id febid.
+		// Clear and reset all channels that have an FEB with id febid first.
+		newread.debugStream() << "->Do the clear and resets for all channels with FEB's of the right id.";
 		std::list<channels*> *chanList = (*rop)->getChannelsList();
-		std::list<channels*>::iterator chp;
-		for (chp = chanList->begin(); chp != chanList->end(); chp++) {
-			SendClearAndReset(*chp);
-			if (ReadStatus(*chp, doNotCheckForMessRecvd)) return 1; // Error, stop!
-			unsigned int clrstsAddr = (*chp)->GetClearStatusAddress();	
-			printf("  Clear Status Address = 0x%X\n", clrstsAddr);
+		std::list<channels*>::iterator theChannelI;
+		for (theChannelI = chanList->begin(); theChannelI != chanList->end(); theChannelI++) {
+			SendClearAndReset(*theChannelI);
+			if (ReadStatus(*theChannelI, doNotCheckForMessRecvd)) return 1; // Error, stop!
+			// Some debugging output...
+			printf("  Clear Status Address = 0x%X\n", (*theChannelI)->GetClearStatusAddress());
 		}	
 
-		// Now send FPGA read frame request to each channel with an FEB with id febid.
-		for (chp = chanList->begin(); chp != chanList->end(); chp++) {
+		// Send an FPGA read frame request to each channel with an FEB with id febid.
+		newread.debugStream() << "->Send the read frame requests to all channels with FEB's of the right id.";
+		for (theChannelI = chanList->begin(); theChannelI != chanList->end(); theChannelI++) {
+			// Make a pointer to the FEB on the channel with board number febid
+			tmpFEB = (*theChannelI)->GetFebVector(febindex);
+			int brdnum = tmpFEB->GetBoardNumber();
+			std::cout << "  Vect FEB board num for send = " << brdnum << std::endl;
+			newread.debugStream() << "  Vect FEB board num for send = " << brdnum;
+			newread.debugStream() << "  Chain Number                = " << (*theChannelI)->GetChainNumber();
+			if (brdnum != febid) continue; // Were not supposed to read this one?
 
+			// Compose an FPGA read frame.
+			Devices dev = FPGA;
+			Broadcasts b = None;
+			Directions d = MasterToSlave;
+			FPGAFunctions f = Read;
+			tmpFEB->MakeDeviceFrameTransmit(dev,b,d,f,(unsigned int)tmpFEB->GetBoardNumber());
+			tmpFEB->MakeMessage();
 
+			// Send the message & delete the outgoingMessage.
+			SendFrameData(tmpFEB, *theChannelI);
+			tmpFEB->DeleteOutgoingMessage();
+			tmpFEB = 0; 
+		}
+
+		// Check the status for each channel to be sure the message was sent and recv'd.
+		// There should only be one frame of data (from the FEB's in the loop above).
+		// Read the data & decalre it to ET (real DAQ) or fiddle with it for debugging.
+		newread.debugStream() << "->Check the status to be sure the message was sent and recv'd.  If so, read the data & decalre it.";
+		for (theChannelI = chanList->begin(); theChannelI != chanList->end(); theChannelI++) {
+			if (ReadStatus(*theChannelI, checkForMessRecvd)) return 1; // Error, stop!
+
+			// Make a pointer to the FEB on the channel with board number febid
+			tmpFEB = (*theChannelI)->GetFebVector(febindex);
+			int brdnum = tmpFEB->GetBoardNumber();
+			std::cout << "  Vect FEB board num for recv = " << brdnum << std::endl;
+			newread.debugStream() << "  Vect FEB board num for recv = " << brdnum;
+			newread.debugStream() << "  Chain Number                = " << (*theChannelI)->GetChainNumber();
+			if (brdnum != febid) continue; // Were not supposed to read this one.
+
+			// Read the DPM.  The real DAQ should read the data into the channel instead of the device.
+			if(RecvFrameData(tmpFEB, *theChannelI)) return 1; //Error, stop!
+			// Debug check, etc.
+			tmpFEB->ShowValues();
+
+			// Fiddle with evt data.
+			// FillEventStructure here.  FES reads from the *channel's* buffer, not the frame's!
+			// ContactEventBuilder here.
+			// Real DAQ cleanup...
+			//theChannelI->DeleteBuffer();
+		
+			// Cleanup message shell.
+			delete [] tmpFEB->message;
+			tmpFEB = 0;
 		}
 	}	
 	
@@ -182,6 +254,7 @@ void InitializeReadoutObjects(std::list<readoutObject*> *objectList)
 		}
 	}
 
+	// debug only after here...
 	std::cout << "After assignment..." << std::endl;
 	for (rop = objectList->begin(); rop != objectList->end(); rop++) {
 		int febid = (*rop)->getFebID();
@@ -305,7 +378,7 @@ void InitCROC(croc *theCroc)
 	newread.infoStream() << "Initializing CROC with index " << index << " and address " << address;
 
 	int nChains         = 4; 
-	int nFEBsPerChain[] = { 4, 0, 0, 0 };
+	int nFEBsPerChain[] = { 4, 2, 1, 0 };
 
 	// Make sure that we can actually talk to the cards.
 	try {   
@@ -573,7 +646,7 @@ int ReadStatus(channels *theChain, bool receiveCheck)
 
 
 // send messages to a generic device using normal write cycle
-// -> write the outgoing message to the CROC FIFO, send the message
+// -> write the outgoing message from the device to the FE Channel FIFO, send the message
 template <class X> void SendFrameData(X *device, channels *theChannel)
 {
 	newread.debugStream() << "   -->Entering SendFrameData.";
@@ -655,11 +728,12 @@ template <class X> void SendFrameDataFIFOBLT(X *device, channels *theChannel)
 
 }
 
-// recv messages from a generic device
-// -> read DPM pointer, read BLT
+// recv messages for a generic device
+// -> read DPM pointer, read BLT, store data in *device* buffer
+// -> should be used primarily for debugging and for building the FEB list.
 template <class X> int RecvFrameData(X *device, channels *theChannel)
 {
-	newread.debugStream() << "   -->Entering RecvFrameData.";
+	newread.debugStream() << "   -->Entering RecvFrameData for devices.";
 	CVAddressModifier AM     = cvA24_U_DATA;  // *Default* Controller Address Modifier
 	CVAddressModifier AM_BLT = cvA24_U_BLT;   // *Always* Channel Address Modifier
 	CVDataWidth DWS          = cvD16_swapped; // *Always* CROC DataWidthSwapped
@@ -671,9 +745,9 @@ template <class X> int RecvFrameData(X *device, channels *theChannel)
 			theChannel->GetDPMPointerAddress(), AM, DWS);
 		if (error) throw error;
 	} catch (int e) {
-		std::cout << "Error in RecvFrameData!  Cannot read the status register!" << std::endl;
+		std::cout << "Error in RecvFrameData for devices!  Cannot read the status register!" << std::endl;
 		daqController->ReportError(e);
-		newread.critStream() << "Error in RecvFrameData!  Cannot read the status register!";
+		newread.critStream() << "Error in RecvFrameData for devices!  Cannot read the status register!";
 		return e;
 	}
 	dpmPointer = (unsigned short) (status[0] | status[1]<<0x08);
@@ -691,9 +765,9 @@ template <class X> int RecvFrameData(X *device, channels *theChannel)
 			theChannel->GetDPMAddress(), AM_BLT, DWS);
 		if (error) throw error;
 	} catch (int e) {
-		std::cout << "Error in RecvFrameData!  Cannot ReadBLT!" << std::endl;
+		std::cout << "Error in RecvFrameData for devices!  Cannot ReadBLT!" << std::endl;
 		daqController->ReportError(e);
-		newread.critStream() << "Error in RecvFrameData!  Cannot ReadBLT!";
+		newread.critStream() << "Error in RecvFrameData for devices!  Cannot ReadBLT!";
 		newread.critStream() << "  Error on CROC " << 
 			((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
 			" Chain " << theChannel->GetChainNumber();
@@ -712,8 +786,61 @@ template <class X> int RecvFrameData(X *device, channels *theChannel)
 	device->DecodeRegisterValues(dpmPointer-2);
 	//device->DecodeRegisterValues(dpmPointer);
 
-	newread.debugStream() << "   Finished RecvFrameData!  Returning " << success;
+	newread.debugStream() << "   Finished RecvFrameData for devices!  Returning " << success;
 	return ((int)success);
+}
+
+
+// recv messages for a generic device
+// -> read DPM pointer, read BLT, store data in *channel* buffer
+template <class X> int RecvFrameData(channels *theChannel)
+{
+	newread.debugStream() << "   -->Entering RecvFrameData for a channel.";
+	CVAddressModifier AM     = cvA24_U_DATA;  // *Default* Controller Address Modifier
+	CVAddressModifier AM_BLT = cvA24_U_BLT;   // *Always* Channel Address Modifier
+	CVDataWidth DWS          = cvD16_swapped; // *Always* CROC DataWidthSwapped
+	unsigned short dpmPointer;
+	unsigned char status[] = {0x0,0x0};
+
+	try {
+		int error = daqAcquire->ReadCycle(daqController->handle, status,
+			theChannel->GetDPMPointerAddress(), AM, DWS);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in RecvFrameData for a channel!  Cannot read the status register!" << std::endl;
+		daqController->ReportError(e);
+		newread.critStream() << "Error in RecvFrameData for a channel!  Cannot read the status register!";
+		return e;
+	}
+
+	dpmPointer = (unsigned short) (status[0] | status[1]<<0x08);
+	newread.debugStream() << "    RecvFrameData DPM Pointer: " << dpmPointer;
+	theChannel->SetDPMPointer(dpmPointer);
+	// We must read an even number of bytes.
+	if (dpmPointer%2) { 
+		DPMData = new unsigned char [dpmPointer+1];
+	} else {
+		DPMData = new unsigned char [dpmPointer];
+	}
+	try {
+		int error = daqAcquire->ReadBLT(daqController->handle, DPMData, dpmPointer,
+			theChannel->GetDPMAddress(), AM_BLT, DWS);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in RecvFrameData for a channel!  Cannot ReadBLT!" << std::endl;
+		daqController->ReportError(e);
+		newread.critStream() << "Error in RecvFrameData for a channel!  Cannot ReadBLT!";
+		newread.critStream() << "  Error on CROC " << 
+			((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber();
+		return e;
+	}
+	theChannel->SetBuffer(DPMData);
+
+	// Clean-up and return.
+	delete [] DPMData;
+	newread.debugStream() << "   Finished RecvFrameData for a channel!  Returning.";
+	return 0;
 }
 
 
