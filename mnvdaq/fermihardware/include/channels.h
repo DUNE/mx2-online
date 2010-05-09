@@ -104,5 +104,8 @@ class channels {
 
 		/*! Build FEB vector from existing list */
 		void VectorizeFEBList();
+		std::vector<feb*> inline *GetFebVector() {return &febsVector;};
+		feb inline *GetFebVector(int i) {return febsVector[i];};
+
 };
 #endif
