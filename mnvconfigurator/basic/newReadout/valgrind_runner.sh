@@ -2,13 +2,15 @@
 
 gmake clean
 gmake
+rm /work/data/logs/newReadout.txt
 
 if [ $# -gt 0 ]; then
- if [ $1 == "v" ]; then
-  valgrind -v --log-file-exactly=valtest1.txt ./newReadout -croc 1 -crim 224 -g
- fi
+	if [ $1 == "v" ]; then
+		rm zvaltest1.txt
+		valgrind -v --log-file-exactly=zvaltest1.txt ./newReadout -crim 224 -g
+	 fi
 else
-./newReadout -croc 1 -crim 224 -g
+	./newReadout -crim 224 -g
 fi
 
 exit 0

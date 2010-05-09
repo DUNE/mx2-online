@@ -25,8 +25,6 @@ int main(int argc, char *argv[])
 	}
 
 	// Note, indices are distinct from addresses!
-	unsigned int crocCardAddress = 1 << 16;
-	int crocID                   = 1;
 	unsigned int crimCardAddress = 224 << 16;
 	int crimID                   = 1;
 
@@ -40,12 +38,7 @@ int main(int argc, char *argv[])
 	printf("\nArguments: ");
 	while ((optind < argc) && (argv[optind][0]=='-')) {
 		std::string sw = argv[optind];
-		if (sw=="-croc") {
-			optind++;
-			crocCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
-			printf(" CROC Address = %03d ", (crocCardAddress>>16));
-		}
-		else if (sw=="-crim") {
+		if (sw=="-crim") {
 			optind++;
 			crimCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
 			printf(" CRIM Address = %03d ", (crimCardAddress>>16));
@@ -92,9 +85,16 @@ int main(int argc, char *argv[])
 	InitCRIM(theCrim, runningMode);
 
 	// Very basic CROC setup.
-	daqController->MakeCroc(crocCardAddress,(crocID));
-	croc *theCroc = daqController->GetCroc(crocID);
-	InitCROC(theCroc);
+	int nFEBsPerChain[4];
+	daqController->MakeCroc((0x01<<16),1);
+	daqController->MakeCroc((0x06<<16),2);
+	std::vector<croc*> *crocVector = daqController->GetCrocVector();
+	croc *theCroc = daqController->GetCroc(1);
+	nFEBsPerChain[0] = 4; nFEBsPerChain[1] = 2; nFEBsPerChain[2] = 1; nFEBsPerChain[3] = 0;
+	InitCROC(theCroc, nFEBsPerChain);
+	theCroc = daqController->GetCroc(2);
+	nFEBsPerChain[0] = 1; nFEBsPerChain[1] = 0; nFEBsPerChain[2] = 0; nFEBsPerChain[3] = 0;
+	InitCROC(theCroc, nFEBsPerChain);
 
 	std::list<readoutObject*> readoutObjects;
 	for (int i=1; i<5; i++) {
@@ -160,7 +160,9 @@ int main(int argc, char *argv[])
 			int brdnum = tmpFEB->GetBoardNumber();
 			std::cout << "  Vect FEB board num for send = " << brdnum << std::endl;
 			newread.debugStream() << "  Vect FEB board num for send = " << brdnum;
-			newread.debugStream() << "  Chain Number                = " << (*theChannelI)->GetChainNumber();
+			unsigned int clrstsAddr = (*theChannelI)->GetClearStatusAddress();	
+			unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+			newread.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << (*theChannelI)->GetChainNumber();
 			if (brdnum != febid) continue; // Were not supposed to read this one?
 
 			// Compose an FPGA read frame.
@@ -189,7 +191,9 @@ int main(int argc, char *argv[])
 			int brdnum = tmpFEB->GetBoardNumber();
 			std::cout << "  Vect FEB board num for recv = " << brdnum << std::endl;
 			newread.debugStream() << "  Vect FEB board num for recv = " << brdnum;
-			newread.debugStream() << "  Chain Number                = " << (*theChannelI)->GetChainNumber();
+			unsigned int clrstsAddr = (*theChannelI)->GetClearStatusAddress();	
+			unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+			newread.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << (*theChannelI)->GetChainNumber();
 			if (brdnum != febid) continue; // Were not supposed to read this one.
 
 			// Read the DPM.  The real DAQ should read the data into the channel instead of the device.
@@ -212,7 +216,7 @@ int main(int argc, char *argv[])
 
 	// Cleanup
 	delete daqAcquire;
-	delete daqController;
+	delete daqController; // cleans up crocs and crims
 	for (std::list<readoutObject*>::iterator p=readoutObjects.begin(); p!=readoutObjects.end();p++) delete (*p);
 	readoutObjects.clear();
 
@@ -255,18 +259,21 @@ void InitializeReadoutObjects(std::list<readoutObject*> *objectList)
 	}
 
 	// debug only after here...
-	std::cout << "After assignment..." << std::endl;
+	std::cout << "After readoutObject Initialization..." << std::endl;
+	newread.debugStream() << "After readoutObject Initialization...";
+	newread.debugStream() << ".....................................";
 	for (rop = objectList->begin(); rop != objectList->end(); rop++) {
 		int febid = (*rop)->getFebID();
-		std::cout << "feb id == " << febid << std::endl;	
 		std::list<channels*> *chanList = (*rop)->getChannelsList();
 		std::list<channels*>::iterator chp;
 		for (chp = chanList->begin(); chp != chanList->end(); chp++) {
 			unsigned int clrstsAddr = (*chp)->GetClearStatusAddress();	
-			printf("  Clear Status Address = 0x%X\n", clrstsAddr);
+			unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+			std::cout << "  CROC = " << crocAddr << ", ChainNum = " << (*chp)->GetChainNumber() << ", FEB = " << febid << std::endl;
+			newread.debugStream() << "  CROC = " << crocAddr << ", ChainNum = " << (*chp)->GetChainNumber() << ", FEB = " << febid;
 		}	
 	}
-	 
+	newread.debugStream() << ".....................................";
 }
 
 // Initialize the CRIM. 
@@ -371,14 +378,14 @@ void InitCRIM(crim *theCrim, int runningMode)
 
 
 // Initialize the CROC. 
-void InitCROC(croc *theCroc)
+void InitCROC(croc *theCroc, int *nFEBsPerChain)
 {
 	int crocID  = theCroc->GetCrocID();
 	int address = ( theCroc->GetAddress() )>>16;
 	newread.infoStream() << "Initializing CROC with index " << index << " and address " << address;
+	newread.infoStream() << "`````````````````````````````````````````````````````````";
 
-	int nChains         = 4; 
-	int nFEBsPerChain[] = { 4, 2, 1, 0 };
+	int nChains = sizeof(nFEBsPerChain)/sizeof(int); 
 
 	// Make sure that we can actually talk to the cards.
 	try {   
@@ -447,6 +454,7 @@ int MakeFEBList(channels *theChain, int nFEBs)
 	newread.infoStream() << "Entering MakeFEBList for CROC " <<
 		crocAddress << " Chain " << theChain->GetChainNumber();
 	newread.infoStream() << " Looking for " << nFEBs << " FEBs.";
+	newread.infoStream() << "++++++++++++++++++++++++++++++++++";
 
 	// Prep the Channel for readout.
 	SendClearAndReset(theChain);
@@ -514,9 +522,11 @@ int MakeFEBList(channels *theChain, int nFEBs)
 void SendClearAndReset(channels *theChain)
 {
 	int crocAddress = ( theChain->GetClearStatusAddress() & 0xFFFF0000 )>>16;
+#if DEBUG_VERBOSE
 	newread.debugStream() << "--> Entering SendClearAndReset for CROC " << crocAddress <<
 		" Chain " << theChain->GetChainNumber();
 	newread.debug("  Clear Status Address = 0x%X",theChain->GetClearStatusAddress());
+#endif
 	CVAddressModifier    AM  = daqController->GetAddressModifier();
 	CVDataWidth          DW  = daqController->GetDataWidth();
 	unsigned char message[2] = {0x0A, 0x0A}; // 0202 + 0808 for clear status AND reset.
@@ -533,9 +543,11 @@ void SendClearAndReset(channels *theChain)
 		newread.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
 		exit(e);
-	}	
+	}
+#if DEBUG_VERBOSE	
 	newread.debugStream() << "Executed SendClearAndReset for CROC " << crocAddress <<
 		" Chain " << theChain->GetChainNumber();
+#endif
 }
 
 
@@ -543,10 +555,11 @@ void SendClearAndReset(channels *theChain)
 int ReadStatus(channels *theChain, bool receiveCheck)
 {
 	int crocAddress = ( theChain->GetClearStatusAddress() & 0xFFFF0000 )>>16;
+#if DEBUG_VERBOSE	
 	newread.debugStream() << "--> Entering ReadStatus for CROC " << crocAddress << 
 		" Chain " << (theChain->GetChainNumber());
 	newread.debug("  Status Address = 0x%X",theChain->GetStatusAddress());
-
+#endif
 	CVAddressModifier AM = daqController->GetAddressModifier();
 	CVDataWidth DW       = daqController->GetDataWidth();
 
@@ -571,8 +584,10 @@ int ReadStatus(channels *theChain, bool receiveCheck)
 		}
 		status = (unsigned short)( statusBytes[0] | statusBytes[1]<<0x08 );
 		theChain->SetChannelStatus(status);
-		newread.debug("  Read Status - Chain %d status = 0x%04X",
+//#if DEBUG_VERBOSE	
+		newread.debug("     Read Status - Chain %d status = 0x%04X",
 			theChain->GetChainNumber(),status);
+//#endif
 	} while ( !(status & MessageReceivedCheck) && !(status & CRCError) && !(status & TimeoutError)
 		&& (status & RFPresent) && (status & SerializerSynch) && (status & DeserializerLock)
 		&& (status & PLLLocked) );
@@ -638,9 +653,10 @@ int ReadStatus(channels *theChain, bool receiveCheck)
 			" Chain " << theChain->GetChainNumber();
 		return (-15);
 	}
-
+#if DEBUG_VERBOSE
 	newread.debugStream() << "Executed ReadStatus for CROC " << crocAddress <<
 		" Chain " << theChain->GetChainNumber();
+#endif
 	return 0;
 }
 
@@ -649,7 +665,9 @@ int ReadStatus(channels *theChain, bool receiveCheck)
 // -> write the outgoing message from the device to the FE Channel FIFO, send the message
 template <class X> void SendFrameData(X *device, channels *theChannel)
 {
+#if DEBUG_VERBOSE
 	newread.debugStream() << "   -->Entering SendFrameData.";
+#endif
 	CVAddressModifier AM = cvA24_U_DATA;  // *Default* Controller Address Modifier
 	CVDataWidth DW       = cvD16;         // *Default* Controller Data Width
 	CVDataWidth DWS      = cvD16_swapped; // *Always* CROC DataWidthSwapped
@@ -683,14 +701,18 @@ template <class X> void SendFrameData(X *device, channels *theChannel)
 		// Hard exit used for thread "friendliness" later...
 		exit(e);
 	}
+#if DEBUG_VERBOSE
 	newread.debugStream() << "   Finished SendFrameData!";
+#endif
 }
 
 // send messages to a generic device using FIFO BLT write cycle
 // -> write the outgoing message to the CROC FIFO, send the message (for FPGA's only)
 template <class X> void SendFrameDataFIFOBLT(X *device, channels *theChannel)
 {
+#if DEBUG_VERBOSE
 	newread.debugStream() << "   -->Entering SendFrameDataFIFOBLT.";
+#endif
 	CVAddressModifier AM = cvA24_U_DATA;  // *Default* Controller Address Modifier
 	CVDataWidth DW       = cvD16;         // *Default* Controller Data Width
 	CVDataWidth DWS      = cvD16_swapped; // *Always* CROC DataWidthSwapped
@@ -724,8 +746,9 @@ template <class X> void SendFrameDataFIFOBLT(X *device, channels *theChannel)
 		// Hard exit used for thread "friendliness" later...
 		exit(e);
 	}
+#if DEBUG_VERBOSE
 	newread.debugStream() << "   Finished SendFrameDataFIFOBLT!";
-
+#endif
 }
 
 // recv messages for a generic device
@@ -733,7 +756,9 @@ template <class X> void SendFrameDataFIFOBLT(X *device, channels *theChannel)
 // -> should be used primarily for debugging and for building the FEB list.
 template <class X> int RecvFrameData(X *device, channels *theChannel)
 {
+#if DEBUG_VERBOSE
 	newread.debugStream() << "   -->Entering RecvFrameData for devices.";
+#endif
 	CVAddressModifier AM     = cvA24_U_DATA;  // *Default* Controller Address Modifier
 	CVAddressModifier AM_BLT = cvA24_U_BLT;   // *Always* Channel Address Modifier
 	CVDataWidth DWS          = cvD16_swapped; // *Always* CROC DataWidthSwapped
@@ -751,7 +776,9 @@ template <class X> int RecvFrameData(X *device, channels *theChannel)
 		return e;
 	}
 	dpmPointer = (unsigned short) (status[0] | status[1]<<0x08);
+#if DEBUG_VERBOSE
 	newread.debugStream() << "    RecvFrameData DPM Pointer: " << dpmPointer;
+#endif
 	device->SetIncomingMessageLength(dpmPointer-2);
 	// We must read an even number of bytes.
 	if (dpmPointer%2) {
@@ -786,7 +813,9 @@ template <class X> int RecvFrameData(X *device, channels *theChannel)
 	device->DecodeRegisterValues(dpmPointer-2);
 	//device->DecodeRegisterValues(dpmPointer);
 
+#if DEBUG_VERBOSE
 	newread.debugStream() << "   Finished RecvFrameData for devices!  Returning " << success;
+#endif
 	return ((int)success);
 }
 
@@ -795,7 +824,9 @@ template <class X> int RecvFrameData(X *device, channels *theChannel)
 // -> read DPM pointer, read BLT, store data in *channel* buffer
 template <class X> int RecvFrameData(channels *theChannel)
 {
+#if DEBUG_VERBOSE
 	newread.debugStream() << "   -->Entering RecvFrameData for a channel.";
+#endif
 	CVAddressModifier AM     = cvA24_U_DATA;  // *Default* Controller Address Modifier
 	CVAddressModifier AM_BLT = cvA24_U_BLT;   // *Always* Channel Address Modifier
 	CVDataWidth DWS          = cvD16_swapped; // *Always* CROC DataWidthSwapped
@@ -814,7 +845,9 @@ template <class X> int RecvFrameData(channels *theChannel)
 	}
 
 	dpmPointer = (unsigned short) (status[0] | status[1]<<0x08);
+#if DEBUG_VERBOSE
 	newread.debugStream() << "    RecvFrameData DPM Pointer: " << dpmPointer;
+#endif
 	theChannel->SetDPMPointer(dpmPointer);
 	// We must read an even number of bytes.
 	if (dpmPointer%2) { 
@@ -839,7 +872,9 @@ template <class X> int RecvFrameData(channels *theChannel)
 
 	// Clean-up and return.
 	delete [] DPMData;
+#if DEBUG_VERBOSE
 	newread.debugStream() << "   Finished RecvFrameData for a channel!  Returning.";
+#endif
 	return 0;
 }
 

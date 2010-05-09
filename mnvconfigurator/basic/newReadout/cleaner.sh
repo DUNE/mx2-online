@@ -1,5 +1,7 @@
 #!/bin/sh
 
 gmake clean
-rm valtest1.txt
+rm zvaltest1.txt
+rm /work/data/logs/newReadout.txt
+
 

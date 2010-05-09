@@ -1,8 +1,10 @@
-CPPFLAGS = -g -Wall
+CPPFLAGS = -g -Wall -O0 -DLINUX
 CXX = g++
 OBJS = newReadout.o
 SRC = newReadout.cpp
 TARGET = newReadout
+
+#COMPILE_OPTIONS += -DDEBUG_VERBOSE
 
 CPPFLAGS += -I/usr/include -I$(CAEN_DIR)/include -I$(DAQROOT)/fermihardware/include -I$(DAQROOT)/caeninterface/include 
 
@@ -14,7 +16,7 @@ $(TARGET): $(OBJS)
 
 $(OBJS): %.o: %.cpp
 	@echo $(SRC) 
-	$(CXX) $(CPPFLAGS) -g -fno-inline -O0 -DLINUX -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(COMPILE_OPTIONS) -c $< -o $@
 
 clean:
 	rm $(OBJS)

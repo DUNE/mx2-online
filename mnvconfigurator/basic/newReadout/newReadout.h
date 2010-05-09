@@ -30,7 +30,7 @@ unsigned char *DPMData;
 // Initialize the CRIM for basic fiddling.
 void InitCRIM(crim *theCrim, int runningMode=0);
 // Initialize the CROC for basic fiddling.
-void InitCROC(croc *theCroc);
+void InitCROC(croc *theCroc, int *nFEBsPerChain);
 // Function to build a list of FEB objects.
 int MakeFEBList(channels *theChain, int nFEBs=11);
 
