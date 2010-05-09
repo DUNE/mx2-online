@@ -20,8 +20,8 @@ using namespace std;
 #define BLOCKRAMREADLEVEL 5 // using same for adc & discr
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs on WH14NXO now.
-const int maxHits    = 6;
-const int adcHit     = 0;
+const int maxHits    = 1;
+const int ramFunc    = 0;
 
 // Note, indices are distinct from addresses!
 const unsigned int crocCardAddress = 1 << 16;
@@ -41,7 +41,7 @@ const int tripRegIFFP2      =   0;
 const int tripRegIBCOMP     =  20;
 const int tripRegVREF       = 165;
 const int tripRegVTH        =   0;
-// const int tripRegPIPEDEL    =  2*maxHits - 1;
+// const int tripRegPIPEDEL    =  11; // maxHits*2-1
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
@@ -82,9 +82,7 @@ int ReadADCTest(controller *myController, acquire *myAcquire, croc *myCroc,
 // Set up an FEB to read the Discriminators
 int ReadDiscrTest(controller *myController, acquire *myAcquire, croc *myCroc, 
 	unsigned int crocChannel, febAddresses boardID);
-// Initialize the CRIM for Data Taking
-void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int runningMode);
-
+	
 ofstream controller_log;
 ofstream feb_log;
 
@@ -92,14 +90,13 @@ int main()
 {
 	int error;		
 	int controllerID = 0;
-	int runningMode = 0; // 0 == OneShot	
-		
+	
 	bool doWriteCheck = true;
 	
-	// bool doChjInjConfig = true;
-	bool doChjInjConfig = false;
+	bool doChjInjConfig = true;
+	// bool doChjInjConfig = false;
 	
-	// Controller & Acquire class init, contact the controller
+// Controller & Acquire class init, contact the controller
 	controller_log.open("controller_log.txt");	
 	controller *myController = new controller(0x00, controllerID, controller_log);	
 	acquire *myAcquire = new acquire(); 				
@@ -111,6 +108,7 @@ int main()
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	feb_log.open("feb_log.txt");	
+	// febAddresses boardID         = FE1;
 	std::list<febAddresses> febAddr;
 	for (int nboard = 1; nboard <= nFEBs; nboard++) {
 		febAddr.push_back( (febAddresses)nboard );
@@ -119,28 +117,17 @@ int main()
 	std::cout << "Making CRIM with index == " << crimID << " && address == " 
 		<< (crimCardAddress>>16) << std::endl;
 	myController->MakeCrim(crimCardAddress,crimID);
-	try {
-		error = myController->GetCrimStatus(crimID); 
-		if (error) throw error;
-	} catch (int e)  {
-		std::cout << "Unable to read the status register for CRIM " << 
-			((myController->GetCrim(crimID)->GetCrimAddress())>>16) << std::endl;
-		exit(-3);
-	} 	
+	if ((error=myController->GetCrimStatus(crimID))!=0) { 
+		std::cout<<"Error = " <<error<<".  Cannot get CRIM status!\n"; exit(error); 
+	}
 	crim *myCrim = myController->GetCrim(crimID);
-	InitCRIM(myController, myAcquire, myCrim, runningMode);
 	
 	std::cout << "Making CROC with index == " << crocID << " && address == " 
 		<< (crocCardAddress>>16) << std::endl;
 	myController->MakeCroc(crocCardAddress,(crocID));
-	try {
-		error = myController->GetCrocStatus(crocID); 
-		if (error) throw error;
-	} catch (int e)  {
-		std::cout << "Unable to read the status register for CROC " << 
-			((myController->GetCroc(crocID)->GetCrocAddress())>>16) << std::endl;
-		exit(-3);
-	} 	
+	if ((error=myController->GetCrocStatus(crocID))!=0) { 
+		std::cout<<"Cannot get CROC status!\n"; exit(error); 
+	}
 	croc *myCroc = myController->GetCroc(crocID);    
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -202,7 +189,7 @@ int main()
 					}
 					// Read the ADC Blocks
 					{
-						error = ReadADCTest(myController, myAcquire, myCroc, crocChannel, *p, adcHit);
+						error = ReadADCTest(myController, myAcquire, myCroc, crocChannel, *p, ramFunc);
 						if (error!=0) { cout<<"Error in FEB TRiPT Test Write!\n"; exit(error); }	
 					}
 				}		  				
@@ -1639,12 +1626,4 @@ int ReadDiscrTest(controller *myController, acquire *myAcquire, croc *myCroc,
 	delete myFeb;
 
 	return 0;
-}
-
-
-// Initialize the CRIM for Data Taking
-void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int runningMode)
-{
-
-	
 }

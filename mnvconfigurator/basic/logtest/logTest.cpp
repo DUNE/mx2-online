@@ -7,21 +7,30 @@
 #include <iomanip>
 #include <cstdlib>
 
-// log4cpp Headers - included in controller.h
+// log4cpp Headers
+#include "log4cpp/Portability.hh"
+#include "log4cpp/Category.hh"
+#include "log4cpp/Appender.hh"
+#include "log4cpp/FileAppender.hh"
+#include "log4cpp/OstreamAppender.hh"
+#include "log4cpp/SyslogAppender.hh"
+#include "log4cpp/Layout.hh"
+#include "log4cpp/BasicLayout.hh"
+#include "log4cpp/Priority.hh"
+#include "log4cpp/NDC.hh"
+
 // MINERvA DAQ Headers
 #include "acquire.h"
 #include "MinervaDAQtypes.h"
 #include "controller.h"
 #include "feb.h"
 #include "adctdc.h"
-#include "log4cppHeaders.h"
 
 // Implement this interface for your own strategies for printing log statements.
-log4cpp::Appender* myAppender;
-// Return the root of the Category hierarchy?...
+log4cpp::Appender* appender;
+// Return the root of the Category hierarchy.
 log4cpp::Category& root = log4cpp::Category::getRoot();
 // Further category hierarchy.
-log4cpp::Category& logTest       = log4cpp::Category::getInstance(std::string("logTest"));
 log4cpp::Category& clearAndReset = log4cpp::Category::getInstance(std::string("clearAndReset"));
 
 #define DEBUGLEVEL 10
@@ -87,57 +96,31 @@ typedef enum {
 } PriorityLevel;
 */
 void SetPriorities() {
-	root.setPriority(log4cpp::Priority::ERROR); 
+	root.setPriority(log4cpp::Priority::INFO); 
 	clearAndReset.setPriority(log4cpp::Priority::DEBUG);
-	logTest.setPriority(log4cpp::Priority::DEBUG);
 };
 
 // Reset DPM pointer && clear status reg. for all four channels on the CROC.
 int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire, croc *myCroc);
 // Initialize the CRIM for Data Taking.
 void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int runningMode);
-// Test the message content.
-int FEBFPGATest(controller *myController, acquire *myAcquire, croc *myCroc,
-        unsigned int crocChannel, febAddresses boardID);
 
 
 int main(int argc, char** argv) 
 {
 	// FileAppender appends to named files.  Supply full path (otherwise sits in program dir).
 	if (argc < 2) {
-		myAppender = new log4cpp::FileAppender("default", "testlog.txt");
+		appender = new log4cpp::FileAppender("default", "testlog.txt");
 	} else {
-		myAppender = new log4cpp::FileAppender("default", argv[1]);
+		appender = new log4cpp::FileAppender("default", argv[1]);
 	}
 
 	// BasicLayout is a simple fixed format Layout implementation. 
-	myAppender->setLayout(new log4cpp::BasicLayout());
+	appender->setLayout(new log4cpp::BasicLayout());
 
 	// Add appender & set priorities.
-	root.addAppender(myAppender);
-	root.infoStream() << "Starting logTest." << log4cpp::eol;
-	root.emergStream() << " This is a EMERG  level statement." << log4cpp::eol;
-	root.fatalStream() << " This is a FATAL  level statement." << log4cpp::eol;
-	root.alertStream() << " This is a ALERT  level statement." << log4cpp::eol;
-	root.critStream() << " This is a CRIT   level statement." << log4cpp::eol;
-	root.errorStream() << " This is a ERROR  level statement." << log4cpp::eol;
-	root.warnStream() << " This is a WARN   level statement." << log4cpp::eol;
-	root.noticeStream() << " This is a NOTICE level statement." << log4cpp::eol;
-	root.infoStream() << " This is a INFO   level statement." << log4cpp::eol;
-	root.debugStream() << " This is a DEBUG  level statement." << log4cpp::eol;
+	root.addAppender(appender);
 	SetPriorities();
-	root.alertStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << log4cpp::eol;
-	root.alertStream() << "Set new priorities for logTest!" << log4cpp::eol;
-	root.emergStream() << " This is a EMERG  level statement." << log4cpp::eol;
-	root.fatalStream() << " This is a FATAL  level statement." << log4cpp::eol;
-	root.alertStream() << " This is a ALERT  level statement." << log4cpp::eol;
-	root.critStream() << " This is a CRIT   level statement." << log4cpp::eol;
-	root.errorStream() << " This is a ERROR  level statement." << log4cpp::eol;
-	root.warnStream() << " This is a WARN   level statement." << log4cpp::eol;
-	root.noticeStream() << " This is a NOTICE level statement." << log4cpp::eol;
-	root.infoStream() << " This is a INFO   level statement." << log4cpp::eol;
-	root.debugStream() << " This is a DEBUG  level statement." << log4cpp::eol;
-	root.alertStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << log4cpp::eol;
 	
 	// Control variables for electronics maniptulation.
 	int error;		
@@ -149,27 +132,14 @@ int main(int argc, char** argv)
 	//
 	
 	// Controller & Acquire class init, contact the controller
-	controller *myController = new controller(0x00, controllerID, myAppender);	
+	controller *myController = new controller(0x00, controllerID);	
 	acquire *myAcquire = new acquire(); 				
-	logTest.infoStream() << "Controller & Acquire Instantiated..." << log4cpp::eol;
-	root.alertStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << log4cpp::eol;
-	root.alertStream() << "Set new priorities for logTest?" << log4cpp::eol;
-	root.emergStream() << " This is a EMERG  level statement." << log4cpp::eol;
-	root.fatalStream() << " This is a FATAL  level statement." << log4cpp::eol;
-	root.alertStream() << " This is a ALERT  level statement." << log4cpp::eol;
-	root.critStream() << " This is a CRIT   level statement." << log4cpp::eol;
-	root.errorStream() << " This is a ERROR  level statement." << log4cpp::eol;
-	root.warnStream() << " This is a WARN   level statement." << log4cpp::eol;
-	root.noticeStream() << " This is a NOTICE level statement." << log4cpp::eol;
-	root.infoStream() << " This is a INFO   level statement." << log4cpp::eol;
-	root.debugStream() << " This is a DEBUG  level statement." << log4cpp::eol;
-	root.alertStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << log4cpp::eol;
 	if ((error=myController->ContactController())!=0) { 
 		std::cout << "Controller Contatc Error!\n";
-		logTest.fatalStream() << "Controller contact error: " << error << log4cpp::eol; 
+		root.critStream() << "Controller contact error: " << error << log4cpp::eol; 
 		exit(error); // Exit due to no controller!
 	}
-	logTest.infoStream() << "Controller & Acquire Initialized..." << log4cpp::eol;
+	root.infoStream() << "Controller & Acquire Initialized..." << log4cpp::eol;
 
 	// Create FEB List
 	std::list<febAddresses> febAddr;
@@ -178,7 +148,7 @@ int main(int argc, char** argv)
 	}
   
 	// Make CRIM
-	logTest.infoStream() << "Making CRIM with index == " << crimID << " && address == " 
+	root.infoStream() << "Making CRIM with index == " << crimID << " && address == " 
 		<< (crimCardAddress>>16) << log4cpp::eol;
 	myController->MakeCrim(crimCardAddress,crimID);
 	try {
@@ -186,7 +156,7 @@ int main(int argc, char** argv)
 		if (error) throw error;
 	} catch (int e)  {
 		std::cout << "CRIM Contact Error!\n";
-		logTest.critStream() << "Unable to read the status register for CRIM " << 
+		root.critStream() << "Unable to read the status register for CRIM " << 
 			((myController->GetCrim(crimID)->GetCrimAddress())>>16) << log4cpp::eol;
 		exit(-3);
 	} 	
@@ -194,7 +164,7 @@ int main(int argc, char** argv)
 	InitCRIM(myController, myAcquire, myCrim, runningMode);
 	
 	// Make CROC
-	logTest.infoStream() << "Making CROC with index == " << crocID << " && address == " 
+	root.infoStream() << "Making CROC with index == " << crocID << " && address == " 
 		<< (crocCardAddress>>16) << log4cpp::eol;
 	myController->MakeCroc(crocCardAddress,(crocID));
 	try {
@@ -202,7 +172,7 @@ int main(int argc, char** argv)
 		if (error) throw error;
 	} catch (int e)  {
 		std::cout << "CROC Contact Error!\n";
-		logTest.critStream() << "Unable to read the status register for CROC " << 
+		root.critStream() << "Unable to read the status register for CROC " << 
 			((myController->GetCroc(crocID)->GetCrocAddress())>>16) << log4cpp::eol;
 		exit(-3);
 	} 	
@@ -219,20 +189,14 @@ int main(int argc, char** argv)
 			if (error) throw error;
 		} catch (int e) {
 			std::cout << "Cannot Clear Status & Reset Pointer!\n"; 
-			logTest.critStream() << "Unable to clear the status register for CROC " << 
+			root.critStream() << "Unable to clear the status register for CROC " << 
 				((myController->GetCroc(crocID)->GetCrocAddress())>>16) << log4cpp::eol;
 			exit(error); 
 		}
 	}
 	
 	
-	// FEB message test
-	//error = FEBFPGATest(myController, myAcquire, myCroc, 0, (febAddresses)1);
-
-	
 	// ~~~ Clean Up
-	log4cpp::Category::shutdown();
-	//delete myAppender;
 	delete myAcquire;
 	delete myController; //also deletes associated crocs && crims;
 	
@@ -249,7 +213,6 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 	int error;
 	bool deserializer = false;
 	bool synch        = false;
-	clearAndReset.setPriority(log4cpp::Priority::DEBUG);
 	
 	for (unsigned int i = 0; i<4; i++) { // loop over *chains*
 		unsigned char myData[] = {0x0,0x0};
@@ -262,7 +225,7 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 			clearAndReset.critStream() << "DPMReset Flag = " << error;
 			return e;
 		}
-		clearAndReset.infoStream() << "DPMReset Flag = " << error;
+		clearAndReset.debugStream() << "DPMReset Flag = " << error;
 		// Clear Status.
 		try {
 			error = myAcquire->WriteCycle(myController->GetHandle(),2,crocChanResetValue,myAddress,AM,DW);
@@ -271,7 +234,7 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 			clearAndReset.critStream() << "Clear Status Flag = " << error;		
 			return e;
 		}
-		clearAndReset.infoStream() << "Clear Status Flag = " << error;		
+		clearAndReset.debugStream() << "Clear Status Flag = " << error;		
 		// Read Status
 		myAddress = myCroc->GetAddress() + (unsigned int)crocStatus + i*0x4000;
 		try {
@@ -281,14 +244,14 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 			clearAndReset.critStream() << "Read Status Flag = " << error;				
 			return e;
 		}
-		clearAndReset.infoStream() << "Read Status Flag = " << error;				
-		clearAndReset.info("%s%X","Address = 0x",myAddress);
-		clearAndReset.info("%s%04X","  Status = 0x",(myData[0] + myData[1]<<8));		
+		clearAndReset.debugStream() << "Read Status Flag = " << error;				
+		clearAndReset.debug("%s%X","Address = 0x",myAddress);
+		clearAndReset.debug("%s%04X","  Status = 0x",(myData[0] + myData[1]<<8));		
 		// Let's check to see if the deserializer & sync are present.
 		deserializer = myData[1] & 0x04;
 		synch        = myData[1] & 0x02;
-		clearAndReset.infoStream() <<"  deserializer = " << deserializer;
-		clearAndReset.infoStream() <<"  synch        = " << synch;
+		clearAndReset.debugStream() <<"  deserializer = " << deserializer;
+		clearAndReset.debugStream() <<"  synch        = " << synch;
 		if ( (deserializer == false) || (synch == false) ) {
 			clearAndReset.critStream() << "Error on CROC Channel " << i+1;
 			clearAndReset.critStream() << "  deserializer = " << deserializer;  
@@ -304,29 +267,5 @@ int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire,
 // Initialize the CRIM for Data Taking
 void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int runningMode)
 {
-	logTest.infoStream() << "InitCRIM is a dummy function." << log4cpp::eol;
+	root.infoStream() << "InitCRIM is a dummy function." << log4cpp::eol;
 }
-
-
-// Test to check the message content
-int FEBFPGATest(controller *myController, acquire *myAcquire, croc *myCroc,
-        unsigned int crocChannel, febAddresses boardID)
-{
-        bool init;
-
-        feb *myFeb = new feb(maxHits, init, boardID, NRegisters);
-        myFeb->SetFEBDefaultValues();
-	myFeb->MakeMessage();
-	printf("  Message Length = %d\n",myFeb->GetOutgoingMessageLength());
-	unsigned char *tempArr = new unsigned char [ myFeb->GetOutgoingMessageLength() ];
-	tempArr = myFeb->GetOutgoingMessage();
-	for (int i = 0; i<myFeb->GetOutgoingMessageLength(); i++) {
-		printf(" %02d    %02X\n",i,tempArr[i]);
-	}
-	myFeb->DeleteOutgoingMessage(); // must clean up FEB messages manually on a case-by-case basis
-	//Not needed, already remove w/ above...//delete [] tempArr;
-
-	return 0;
-}
-
-

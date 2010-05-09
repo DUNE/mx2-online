@@ -10,8 +10,9 @@
 const int FlashFrame::Spartan_3E_Npages = 1075;
 const int FlashFrame::Spartan_3E_PageSize = 264;
 
-FlashFrame::FlashFrame(febAddresses a) 
-{ 
+// Constructor
+ FlashFrame::FlashFrame(febAddresses a,std::ofstream &lf):Frames(lf) { 
+//FlashFrame::FlashFrame(febAddresses a) { 
 	boardNumber = a;
 	febNumber[0] = (unsigned char) a; //put the feb number into it's character.
 	
@@ -22,6 +23,7 @@ FlashFrame::FlashFrame(febAddresses a)
 	FlashFunctions f = NoFlash; //operation to be performed;
 
 	MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  //make up the transmission header
+
 }
 
 #endif

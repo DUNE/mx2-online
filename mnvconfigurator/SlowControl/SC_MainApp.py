@@ -21,7 +21,7 @@ import SC_Frames
 import SC_Util
 from SC_MainObjects import *
 from SC_MainMethods import SC
-import V1720Config
+import v1720config
 
 class SCApp(wx.App):
     """SlowControl application. Subclass of wx.App"""
@@ -166,8 +166,12 @@ class SCApp(wx.App):
             #and then update self.frame.tree
             self.frame.tree.DeleteAllItems()
             treeRoot = self.frame.tree.AddRoot("VME-BRIDGE")
-            for vmedev in self.vmeCRIMs + self.vmeCROCs + self.vmeDIGs:            
+            for vmedev in self.vmeCRIMs:            
                 SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
+            for vmedev in self.vmeCROCs:
+                SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [vmedev.NodeList()])
+            for vmedev in self.vmeDIGs:
+                SC_Util.AddTreeNodes(self.frame.tree, treeRoot, [[vmedev.Description(), []]])
         except: ReportException('OnMenuLoadHardware', self.reportErrorChoice)        
     def OnMenuLoadFile(self, event):
         try:
@@ -856,36 +860,22 @@ class SCApp(wx.App):
 
     # DIG pannel events ##########################################################
     def OnDIGbtnLoadConfigFile(self, event):
-        try:            
-            thisDIG=FindVMEdev(self.vmeDIGs, self.frame.dig.digNumber<<16)
+        try:
             dlg = wx.FileDialog(self.frame, message='READ V1720 Configuration', defaultDir='', defaultFile='',
                 wildcard='DIG Config (*.digcfg)|*.digcfg|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
-                flags, lines = self.sc.DIGcfgFileLoad(wx.FileDialog.GetPath(dlg), thisDIG)
-                self.frame.dig.display.WriteText('\n'.join(lines)+'\n')
-                self.frame.dig.choiceWriteToFile.SetStringSelection(V1720Config.WriteToFile[flags[V1720Config.FileKeyWriteToFile]])
-                self.frame.dig.choiceAppendMode.SetStringSelection(V1720Config.AppendMode[flags[V1720Config.FileKeyAppendMode]])
-                self.frame.dig.choiceReadoutMode.SetStringSelection(V1720Config.ReadoutMode[flags[V1720Config.FileKeyReadoutMode]])
-                self.frame.dig.chkOutputData.SetValue(flags[V1720Config.FileKeyOutputFormat] & V1720Config.OutputFormat[V1720Config.FormatData])
-                self.frame.dig.chkOutputHeader.SetValue(flags[V1720Config.FileKeyOutputFormat] & V1720Config.OutputFormat[V1720Config.FormatHeader])
-                self.frame.dig.chkOutputConfigInfo.SetValue(flags[V1720Config.FileKeyOutputFormat] & V1720Config.OutputFormat[V1720Config.FormatConfigInfo])
-                self.frame.dig.chkOutputOneLineCH.SetValue(flags[V1720Config.FileKeyOutputFormat] & V1720Config.OutputFormat[V1720Config.FormatOneLineCH])
-                self.frame.dig.chkOutputEventData.SetValue(flags[V1720Config.FileKeyOutputFormat] & V1720Config.OutputFormat[V1720Config.FormatEventData])
-                self.frame.dig.chkOutputEventStat.SetValue(flags[V1720Config.FileKeyOutputFormat] & V1720Config.OutputFormat[V1720Config.FormatEventStat])
+                #self.sc.HWcfgFileLoad(wx.FileDialog.GetPath(dlg))
+                flags, lines = v1720config.DIGcfgFileLoad(wx.FileDialog.GetPath(dlg))
+                self.frame.dig.display.SetValue('\n'.join(lines) + str(flags))
+                print '\n'.join(lines)
+                print
+                print flags 
             dlg.Destroy()
-        except:
-            self.sc.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD16
-            ReportException('OnDIGbtnLoadConfigFile', self.reportErrorChoice)  
+        except: ReportException('OnDIGbtnLoadConfigFile', self.reportErrorChoice)  
     def OnDIGbtnReadAllRegs(self, event):
         try:
-            theDIG=FindVMEdev(self.vmeDIGs, self.frame.dig.digNumber<<16)
-            if self.frame.dig.digchNumber in range(8):
-                dReadAll=theDIG.Channels()[self.frame.dig.digchNumber].ReadAll()
-            else : dReadAll=theDIG.ReadAll()                
-            for line in DIGDictOfRegsToString(dReadAll): self.frame.dig.display.WriteText(line+'\n')
-        except:
-            self.sc.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD16
-            ReportException('OnDIGbtnReadAllRegs', self.reportErrorChoice)
+            wx.MessageBox('not yet implemented')             
+        except: ReportException('OnDIGbtnReadAllRegs', self.reportErrorChoice)
     def OnDIGbtnTakeNEvents(self, event):
         try:
             wx.MessageBox('not yet implemented')             

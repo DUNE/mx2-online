@@ -1,16 +1,13 @@
-// General Headers
-#include <iostream>
-#include <iterator>
-#include <fstream>
-#include <iomanip>
-#include <cstdlib>
-
-// Minerva Headers
 #include "acquire.h"
 #include "MinervaDAQtypes.h"
 #include "controller.h"
 #include "feb.h"
 #include "adctdc.h"
+#include <iostream>
+#include <iterator>
+#include <fstream>
+#include <iomanip>
+#include <cstdlib>
 
 using namespace std;
 
@@ -20,11 +17,19 @@ using namespace std;
 #define FPGAWRITELEVEL 50
 #define TRIPTREADLEVEL 50
 #define TRIPTWRITELEVEL 50
-#define BLOCKRAMREADLEVEL 50 // using same for adc & discr
+#define BLOCKRAMREADLEVEL 5 // using same for adc & discr
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs on WH14NXO now.
 const int maxHits    = 6;
 const int adcHit     = 1;
+
+// Note, indices are distinct from addresses!
+const unsigned int crocCardAddress = 1 << 16;
+const unsigned int crocChannel     = 1;	
+const int crocID                   = 1;
+const unsigned int crimCardAddress = 224 << 16;
+const int crimID                   = 1;
+const int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
 
 const int tripRegIBP        =  60;
 const int tripRegIBBNFOLL   = 120;
@@ -40,14 +45,6 @@ const int tripRegVTH        = 240;
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
-
-// Implement this interface for your own strategies for printing log statements.
-log4cpp::Appender* myAppender;
-// Return the root of the Category hierarchy?...
-log4cpp::Category& root   = log4cpp::Category::getRoot();
-// Further category hierarchy.
-log4cpp::Category& chginj = log4cpp::Category::getInstance(std::string("chginj"));
-
 
 const CVRegisters ControllerStatusAddress = cvStatusReg;
 const CVDataWidth DW                      = cvD16;
@@ -88,95 +85,26 @@ int ReadDiscrTest(controller *myController, acquire *myAcquire, croc *myCroc,
 // Initialize the CRIM for Data Taking
 void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int runningMode);
 
-int main(int argc, char *argv[])
+
+int main() 
 {
-	if (argc < 2) {
-		cout << "Usage : chginj -c <CROC Address> -h <CHANNEL Number> ";
-		cout << "-f <Number of FEBs> ";
-		//notworking//cout << "-v <HV Target> -e <enable 1 or 0>";
-		cout << endl;
-		exit(0);
-	}
-
-	// Note, indices are distinct from addresses!
-	unsigned int crocCardAddress = 1 << 16;
-	unsigned int crocChannel     = 1;
-	int crocID                   = 1;
-	int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
-	int HVTarget                 = 32000;
-	int HVEnableFlag             = 0; // disable by default
-	unsigned int crimCardAddress = 224 << 16;
-	int crimID                   = 1;
-
-	int error;
+	int error;		
 	int controllerID = 0;
-	int runningMode  = 0; // 0 == OneShot	
+	int runningMode = 0; // 0 == OneShot	
 		
 	bool doWriteCheck = true;
 	
 	bool doChjInjConfig = true;
 	// bool doChjInjConfig = false;
-
-	// Process the command line argument set.
-	int optind = 1;
-	// Decode Arguments
-	printf("\nArguments: ");
-	while ((optind < argc) && (argv[optind][0]=='-')) {
-		string sw = argv[optind];
-		if (sw=="-c") {
-			optind++;
-			crocCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
-			printf(" CROC Address = %03d ", (crocCardAddress>>16));
-		}
-		else if (sw=="-h") {
-			optind++;
-			crocChannel = (unsigned int)( atoi(argv[optind]) );
-			printf(" CROC Channel = %1d ", crocChannel);
-		}
-		else if (sw=="-f") {
-			optind++;
-			nFEBs = atoi(argv[optind]);
-			printf(" Number of FEBs = %02d ", nFEBs);
-		}
-		else if (sw=="-v") {
-			optind++;
-			HVTarget = atoi(argv[optind]);
-			printf(" Target HV = %05d ", HVTarget);
-		}
-		else if (sw=="-e") {
-			optind++;
-			HVEnableFlag = atoi(argv[optind]);
-			printf(" HV Enable Flag = %1d ", HVEnableFlag);
-		}
-		else
-			cout << "\nUnknown switch: " << argv[optind] << endl;
-		optind++;
-	}
-	cout << endl;
-	// Report the rest of the command line...
-	if (optind < argc) {
-		cout << "There were remaining arguments!  Are you sure you set the run up correctly?" << endl;
-		cout << "  Remaining arguments = ";
-		for (;optind<argc;optind++) cout << argv[optind];
-		cout << endl;
-	}
-
-	myAppender = new log4cpp::FileAppender("default", "/work/data/logs/config.txt");
-	myAppender->setLayout(new log4cpp::BasicLayout());
-	root.addAppender(myAppender);
-	root.setPriority(log4cpp::Priority::ERROR);
-	chginj.setPriority(log4cpp::Priority::INFO);
-
-	chginj.info("--Starting chginj script.--");
 	
 	// Controller & Acquire class init, contact the controller
-	controller *myController = new controller(0x00, controllerID, myAppender);	
+	controller *myController = new controller(0x00, controllerID);	
 	acquire *myAcquire = new acquire(); 				
 	if ((error=myController->ContactController())!=0) { 
 		cout<<"Controller contact error: "<<error<<endl; exit(error); // Exit due to no controller!
 	}
-	//cout<<"Controller & Acquire Initialized..."<<endl;
-	//cout<<endl;
+	cout<<"Controller & Acquire Initialized..."<<endl;
+	cout<<endl;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::list<febAddresses> febAddr;
@@ -184,8 +112,8 @@ int main(int argc, char *argv[])
 		febAddr.push_back( (febAddresses)nboard );
 	}
   
-	//std::cout << "Making CRIM with index == " << crimID << " && address == " 
-	//	<< (crimCardAddress>>16) << std::endl;
+	std::cout << "Making CRIM with index == " << crimID << " && address == " 
+		<< (crimCardAddress>>16) << std::endl;
 	myController->MakeCrim(crimCardAddress,crimID);
 	try {
 		error = myController->GetCrimStatus(crimID); 
@@ -198,8 +126,8 @@ int main(int argc, char *argv[])
 	crim *myCrim = myController->GetCrim(crimID);
 	InitCRIM(myController, myAcquire, myCrim, runningMode);
 	
-	//std::cout << "Making CROC with index == " << crocID << " && address == " 
-	//	<< (crocCardAddress>>16) << std::endl;
+	std::cout << "Making CROC with index == " << crocID << " && address == " 
+		<< (crocCardAddress>>16) << std::endl;
 	myController->MakeCroc(crocCardAddress,(crocID));
 	try {
 		error = myController->GetCrocStatus(crocID); 
@@ -627,10 +555,7 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 		myFeb->SetInjectDACValue(dacval);
 		unsigned char injPhase[] = {0x1};
 		myFeb->SetInjectPhase(injPhase);
-    		myFeb->SetDiscrimEnableMask(0xFFFF,0);  
-    		myFeb->SetDiscrimEnableMask(0xFFFF,1);  
-    		myFeb->SetDiscrimEnableMask(0xFFFF,2);  
-    		myFeb->SetDiscrimEnableMask(0xFFFF,3);  
+    	for (int i=0;i<4;i++) { myFeb->SetDiscrimEnableMask(0xFFFF,i); } 
 		// Change FEB fpga function to write
 		Devices dev = FPGA;
 		Broadcasts b = None;
@@ -1314,8 +1239,7 @@ int FEBTRiPTWriteChargeInjection(controller *myController, acquire *myAcquire, c
 			myFeb->GetTrip(i)->SetRegisterValue(11, tripRegGAIN ); //gain
 			myFeb->GetTrip(i)->SetRegisterValue(12, tripRegIRSEL ); //irsel
 			myFeb->GetTrip(i)->SetRegisterValue(13, tripRegIWSEL ); //iwsel
-			//myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FE ); //inject, enable first word
-			myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FFFE ); //inject, enable first two words
+			myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FE ); //inject, enable first word
 			// Injection patterns:
 			// ~~~~~~~~~~~~~~~~~~~
 			// Funny structure... 34 bits... using "FermiDAQ" nomenclature...

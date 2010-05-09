@@ -13,8 +13,7 @@ import re
 import sys
 
 # for testing purposes.
-LIBOX_WAIT_FOR_RESPONSE = False
-LIBOX_DISABLE = True
+LIBOX_WAIT_FOR_RESPONSE = True
 
 # configuration for the serial port.
 # these probably will never need to be changed.
@@ -50,22 +49,16 @@ class LIBox:
 		# this will throw an exception if the port's not properly configured.
 		# that's ok -- it needs to be fixed in that case!
 		# (the 'timeout' parameter is how long the process will wait for a read, in seconds.)
-		if not LIBOX_DISABLE:
-			self.port = serial.Serial( port     = LIBOX_SERIAL_PORT_DEVICE,
-				                      baudrate = LIBOX_SERIAL_PORT_BAUD,
-				                      bytesize = LIBOX_SERIAL_PORT_DATA_BITS,
-				                      parity   = LIBOX_SERIAL_PORT_PARITY,
-				                      stopbits = LIBOX_SERIAL_PORT_STOP_BITS,
-				                      xonxoff  = LIBOX_SERIAL_PORT_SW_FLOWCONTROL,
-				                      rtscts   = LIBOX_SERIAL_PORT_HW_FLOWCONTROL,
-				                      timeout  = 0.1 )
+		self.port = serial.Serial( port     = LIBOX_SERIAL_PORT_DEVICE,
+		                           baudrate = LIBOX_SERIAL_PORT_BAUD,
+		                           bytesize = LIBOX_SERIAL_PORT_DATA_BITS,
+		                           parity   = LIBOX_SERIAL_PORT_PARITY,
+		                           stopbits = LIBOX_SERIAL_PORT_STOP_BITS,
+		                           xonxoff  = LIBOX_SERIAL_PORT_SW_FLOWCONTROL,
+		                           rtscts   = LIBOX_SERIAL_PORT_HW_FLOWCONTROL,
+		                           timeout  = 0.1 )
 
-			self.port.writeTimeout = 0.1
-		
-#		try:
-#			self.port.read(1)
-#		except serial.SerialException:
-#			raise LIBoxException("The LI box does not seem to be connected.  Check the settings and the cable connection.")
+		self.port.writeTimeout = 0.1
 		
 	def reset(self):
 		self.command_stack = ["_X"]
@@ -81,22 +74,21 @@ class LIBox:
 		""" Sends the commands in the command stack to the LI box. """
 		self.check_commands()
 		
-		if not LIBOX_DISABLE:
-			for command in self.command_stack:
-				self.command_log.append(command)		# store this in a log for later review.
-				try:
-	#				print "Writing command '" + command + "'..."
-					self.port.write(command + "\n")
-				except serial.SerialTimeoutException:
-					raise LIBoxException("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
+		for command in self.command_stack:
+			self.command_log.append(command)		# store this in a log for later review.
+			try:
+#				print "Writing command '" + command + "'..."
+				self.port.write(command + "\n")
+			except serial.SerialTimeoutException:
+				raise LIBoxException("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
 
-				if LIBOX_WAIT_FOR_RESPONSE:
-					char = self.port.read(1)
+			if LIBOX_WAIT_FOR_RESPONSE:
+				char = self.port.read(1)
 			
-					if char != "K":
-						raise LIBoxException("The LI box didn't respond affirmatively to the command: '" + command + "'.")
+				if char != "K":
+					raise LIBoxException("The LI box didn't respond affirmatively to the command: '" + command + "'.")
 			
-				time.sleep(0.01)
+			time.sleep(0.01)
 		
 		self.command_stack = []
 			
@@ -121,12 +113,11 @@ class LIBox:
 		
 		# first, LED group.
 		self.LED_groups = self.LED_groups.upper()
-		self.LED_groups = self.LED_groups.replace(" ", "")
 		
 		if not re.match("[a-dA-D]{1,4}", self.LED_groups):
-			raise LIBoxException("LED groups to use must be some combination of 'A', 'B', 'C', 'D' (your entry: '" + self.LED_groups + "').")
+			raise LIBoxException("LED groups to use must be some combination of 'A', 'B', 'C', 'D'.")
 
-		# the following wizardry is brought to you by the black magic that powers the LI box.
+		# the following wizardry is brought to you by the magic that powers the LI box.
 		# trust me -- it works.
 		inverseAddress = 0
 		pos = 0

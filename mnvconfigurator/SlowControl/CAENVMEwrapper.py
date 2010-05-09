@@ -107,7 +107,7 @@ class Controller(CAENVMETypes):
             return(data.value & 0xFFFF)
         if (self.dataWidth==CAENVMETypes.CVDataWidth.cvD32) | \
            (self.dataWidth==CAENVMETypes.CVDataWidth.cvD32_swapped):
-            return(data.value & 0xFFFFFFFF)
+            return(data.value)
         if (self.dataWidth==CAENVMETypes.CVDataWidth.cvD8):
             return(data.value & 0xFF)
 

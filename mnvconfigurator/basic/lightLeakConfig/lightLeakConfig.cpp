@@ -1,17 +1,13 @@
-// General Headers
-#include <iostream>
-#include <iterator>
-#include <fstream>
-#include <iomanip>
-#include <cstdlib>
-
-
-// Minerva Headers (log4cpp Headers contained within). 
 #include "acquire.h"
 #include "MinervaDAQtypes.h"
 #include "controller.h"
 #include "feb.h"
 #include "adctdc.h"
+#include <iostream>
+#include <iterator>
+#include <fstream>
+#include <iomanip>
+#include <cstdlib>
 
 using namespace std;
 
@@ -21,13 +17,7 @@ using namespace std;
 #define FPGAWRITELEVEL 50
 #define TRIPTREADLEVEL 50
 #define TRIPTWRITELEVEL 50
-
-// Implement this interface for your own strategies for printing log statements.
-log4cpp::Appender* myAppender;
-// Return the root of the Category hierarchy?...
-log4cpp::Category& root     = log4cpp::Category::getRoot();
-// Further category hierarchy.
-log4cpp::Category& llConfig = log4cpp::Category::getInstance(std::string("llConfig"));
+#define HVENABLE 0 // 1 to enable HV
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs now.
 const int maxHits    = 6;  // maxHits should not be changed independent of the DAQ!
@@ -64,7 +54,7 @@ int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc,
 	unsigned int crocChannel, febAddresses boardID);
 // Basic Setup of FPGA's
 int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc, 
- 	unsigned int crocChannel, febAddresses boardID, int HVTarget, int HVEnableFlag);
+ 	unsigned int crocChannel, febAddresses boardID, int HVTarget);
 // Read all 6 TRiP's
 int FEBTRiPTRead(controller *myController, acquire *myAcquire, croc *myCroc, 
 	unsigned int crocChannel, febAddresses boardID);
@@ -79,7 +69,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2) {
 		cout << "Usage : lightLeakConfig -c <CROC Address> -h <CHANNEL Number> -f <Number of FEBs> ";
-		cout << "-v <HV Target> -e <enable 1 or 0>\n";
+		cout << "-v <HV Target>\n";
 		exit(0);
 	}
 	
@@ -89,7 +79,6 @@ int main(int argc, char *argv[])
 	int crocID                   = 1;
 	int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
 	int HVTarget                 = 32000;
-	int HVEnableFlag             = 0; // disable by default
 	
 	int error;		
 	int controllerID = 0;
@@ -101,36 +90,31 @@ int main(int argc, char *argv[])
 	// Process the command line argument set.
 	int optind = 1;
 	// Decode Arguments
-	printf("\nArguments: ");
+	cout << "\n\nArguments: " << endl;
 	while ((optind < argc) && (argv[optind][0]=='-')) {
 		string sw = argv[optind];
 		if (sw=="-c") {
 			optind++;
 			crocCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
-			printf(" CROC Address = %03d ", (crocCardAddress>>16));
-        	}
+			cout << "\tCROC Address   = " << (crocCardAddress>>16) << endl;
+        }
 		else if (sw=="-h") {
 			optind++;
 			crocChannel = (unsigned int)( atoi(argv[optind]) );
-			printf(" CROC Channel = %1d ", crocChannel);
-        	}
+			cout << "\tCROC Channel   = " << crocChannel << endl;
+        }
 		else if (sw=="-f") {
 			optind++;
 			nFEBs = atoi(argv[optind]);
-			printf(" Number of FEBs = %02d ", nFEBs);
-        	}
+			cout << "\tNumber of FEBs = " << nFEBs << endl;
+        }
 		else if (sw=="-v") {
 			optind++;
 			HVTarget = atoi(argv[optind]);
-			printf(" Target HV = %05d ", HVTarget);
-        	}
-		else if (sw=="-e") {
-			optind++;
-			HVEnableFlag = atoi(argv[optind]);
-			printf(" HV Enable Flag = %1d ", HVEnableFlag);
-		}
+			cout << "\tTarget HV      = " << HVTarget << endl;
+        }
 		else
-			cout << "\nUnknown switch: " << argv[optind] << endl;
+			cout << "Unknown switch: " << argv[optind] << endl;
 		optind++;
 	}
 	cout << endl;
@@ -142,20 +126,13 @@ int main(int argc, char *argv[])
 		cout << endl;
 	}
 
-	myAppender = new log4cpp::FileAppender("default", "/work/data/logs/config.txt");
-	myAppender->setLayout(new log4cpp::BasicLayout());
-	root.addAppender(myAppender);
-	root.setPriority(log4cpp::Priority::ERROR); 	
-	llConfig.setPriority(log4cpp::Priority::INFO);
-
-	llConfig.info("--Starting lightLeakConfig script.--");	
-
 	// Controller & Acquire class init, contact the controller
-	controller *myController = new controller(0x00, controllerID, myAppender);	
+	controller *myController = new controller(0x00, controllerID);	
 	acquire *myAcquire = new acquire(); 				
 	if ((error=myController->ContactController())!=0) { 
 		cout<<"Controller contact error: "<<error<<endl; exit(error); // Exit due to no controller!
 	}
+	cout<<"Controller & Acquire Initialized..."<<endl;
 	cout<<endl;
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -164,6 +141,8 @@ int main(int argc, char *argv[])
 		febAddr.push_back( (febAddresses)nboard );
 	}
   	
+	std::cout << "Making CROC with index == " << crocID << " && address == " 
+		<< (crocCardAddress>>16) << std::endl;
 	myController->MakeCroc(crocCardAddress,(crocID));
 	try {
 		error = myController->GetCrocStatus(crocID); 
@@ -188,8 +167,10 @@ int main(int argc, char *argv[])
 				}
 				// Setup FPGA's
 				{
-					error = FEBFPGAWrite(myController, myAcquire, myCroc, crocChannel, *p, HVTarget, 
-						HVEnableFlag);
+#if HVENABLE
+					std::cout << "Enabling HV.\n";
+#endif
+					error = FEBFPGAWrite(myController, myAcquire, myCroc, crocChannel, *p, HVTarget);
 					if (error!=0) { cout<<"Error in FEB FPGA Write!\n"; exit(error); }	
 				}
 				// Setup TriPT's
@@ -385,7 +366,7 @@ int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc,
 
 // Write some stuff to the FEB FPGA Frame
 int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc, 
- 	unsigned int crocChannel, febAddresses boardID, int HVTarget, int HVEnableFlag)
+ 	unsigned int crocChannel, febAddresses boardID, int HVTarget)
 {
 #if DEBUGLEVEL > FPGAWRITELEVEL
 	printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
@@ -406,13 +387,11 @@ int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->SetTripPowerOff(val); //turn the trips on
 		myFeb->SetGateStart(43000);      
 		myFeb->SetGateLength(1702);  
-		if (HVEnableFlag) {
-			//std::cout << "HV Enable Flag is set to ON!\n";
-			val[0]=0x1; 
-		} else {
-			//std::cout << "HV Enable Flag is set to OFF!\n";
-			val[0]=0x0; 
-		}
+		val[0]=0x0; 
+#if HVENABLE
+		std::cout << "ENABLING HV!!!\n";
+		val[0]=0x1; 
+#endif
 		myFeb->SetHVEnabled(val);
 		myFeb->SetHVTarget(HVTarget);
 		val[0]=0x2; myFeb->SetHVNumAve(val);
