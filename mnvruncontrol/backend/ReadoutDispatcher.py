@@ -275,27 +275,25 @@ class DAQThread(threading.Thread):
 		self.start()		# inherited from threading.Thread.  starts run() in a separate thread.
 		
 	def run(self):
-		self.daq_process = subprocess.Popen(self.daq_command, env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-		self.pid = self.daq_process.pid		# less typing.
-
-		self.owner_process.logger.info("   ==>  Process id: " + str(self.pid) + ".")
-
-		stdout, stderr = self.daq_process.communicate()
-		
-		filename = "%s/minervadaq.log" % Configuration.params["Readout nodes"]["readout_logfileLocation"]
-		self.owner_process.logger.info("DAQ subprocess finished.  Its output will be written to '" + filename + "'.")
-		# dump the output of minervadaq to a file so that crashes can be investigated.
-		# we only keep one copy because it will be rare that anyone is interested.
 		try:
+			filename = "%s/minervadaq.log" % Configuration.params["Readout nodes"]["readout_logfileLocation"]
 			with open(filename, "w") as logfile:
-				logfile.write(stdout)
-		except OSError as e:
+				self.daq_process = subprocess.Popen(self.daq_command, env=environment, stdout=logfile.fileno(), stderr=subprocess.STDOUT)
+				self.pid = self.daq_process.pid		# less typing.
+
+				self.owner_process.logger.info("   ==>  Process id: " + str(self.pid) + ".")
+
+				self.returncode = self.daq_process.wait()
+		
+				self.owner_process.logger.info("DAQ subprocess finished.  Its output will be written to '" + filename + "'.")
+				# dump the output of minervadaq to a file so that crashes can be investigated.
+				# we only keep one copy because it will be rare that anyone is interested.
+		except (OSError, IOError) as e:
 			self.logger.exception("minervadaq log file error: %s" % e.message)
 			self.logger.warning("   ==> log file information will be discarded.")
 		
 		self.owner_process.queue.put(Dispatcher.Message(message="daq_finished", recipient=Dispatcher.MASTER))
 				
-		self.returncode = self.daq_process.returncode
 
 #########################
 # SCHWSetupThread       #
