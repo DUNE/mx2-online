@@ -34,6 +34,8 @@ DAQMGR_SESSION_FILE = "/work/conditions/daqmgr_session.dat"
 
 LOGFILE_NAME_PATTERN = "^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w{5})_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller(?P<controller>[01])Log.txt$"
 
+NOTIFICATION_INTERVAL = 2		# in seconds
+
 # Socket communication defaults.
 DISPATCHER_PORT     = 1098
 MASTER_PORT         = 1090

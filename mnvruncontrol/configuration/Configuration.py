@@ -29,6 +29,7 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "ResourceLocation"        : ( Defaults.RESOURCE_LOCATION_DEFAULT,            "Resource files location",                         str   ),
                                          "runSeriesLocation"       : ( Defaults.RUN_SERIES_DB_LOCATION_DEFAULT,       "Run series file location",                        str   ),
                                          "logFileLocations"        : ( [],                                            "Where to look for log files",                     list  ),
+                                         "notificationInterval"    : ( Defaults.NOTIFICATION_INTERVAL,                "Interval between alert notifications (s)",        float ),
                                          "readoutNodes"            : ( [],                                            "Readout nodes",                                   list  ),
                                          "monitorNodes"            : ( [],                                            "Online monitoring nodes",                         list  ),
                                          "mtestbeamNodes"          : ( [],                                            "MTest beam DAQ nodes",                            list  )  },

@@ -139,7 +139,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			self.OldSessionCleanup()
 		except Threads.SocketAlreadyBoundException:
 			self.socketThread = None
-			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Can't bind a local listening socket.  Synchronization between readout nodes and the run control will be impossible.  Check that there isn't another run control process running on this machine.", title="Can't bind local socket") )
+			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["Can't bind a local listening socket.",  "Synchronization between readout nodes and the run control will be impossible.", "Check that there isn't another run control process running on this machine.", messageheader="Can't bind local socket") )
 		
 	def OldSessionCleanup(self):
 		""" Checks if there's a session that was already open.
@@ -279,7 +279,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.logger.critical("Couldn't lock the %s node!  Aborting." % node.name)
 				break
 		if failed_connection:
-			wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Cannot get control of dispatcher on the " + failed_connection + " node.  Check to make sure that the dispatcher is started on that machine and that there are no other run control processes connected to it.", title="No lock on " + failed_connection + " node") )
+			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm", messagebody=["Cannot get control of dispatcher on the " + failed_connection + " node.",  "Check to make sure that the dispatcher is started on that machine", "and that there are no other run control processes connected to it."], messageheader="No lock on " + failed_connection + " node") )
 			return
 		
 		# also try to get a lock on any monitor nodes
@@ -456,7 +456,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 	#				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
 	#				self.running = False
 				self.running = False
-				wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm"))
+				header = evt.processname + " quit prematurely!"
+				message = ["The essential process '" + evt.processname + "' died before the subrun was over.", "Running has been halted for troubleshooting."]
+				wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm", messageheader=header, messagebody=message))
 		
 			num_mtest_nodes = len(self.mtestBeamDAQNodes) if self.mtest_useBeamDAQ else 0
 			numsteps = num_mtest_nodes + len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the beamline DAQ nodes, readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
@@ -482,7 +484,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					step += 1
 			
 				if not success:
-					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Not all readout nodes could be stopped.  The next subrun could be problematic...", title="Not all nodes stopped") )
+					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["Not all readout nodes could be stopped.",  "The next subrun could be problematic..."], messageheader="Not all nodes stopped") )
 		
 			if self.mtest_useBeamDAQ:
 				success = True
@@ -491,7 +493,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					step += 1
 		
 				if not success:
-					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The beamline DAQ node(s) couldn't be stopped.  The next subrun could be problematic...", title="Beamline DAQ node(s) not stopped") )
+					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["The beamline DAQ node(s) couldn't be stopped.",  "The next subrun could be problematic..."], messageheader="Beamline DAQ node(s) not stopped") )
 		
 			for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
 				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping ET threads...", progress=(step, numsteps)) )
@@ -734,7 +736,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 				# this method returns 0 if there are no boards to read
 				if board_statuses == 0:
-					wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="The " + node.name + " node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty...", title="No boards attached to " + node.name + " node") )
+					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["The " + node.name + " node is reporting that it has no FEBs attached.",  "Your data will appear suspiciously empty..."], messageheader="No boards attached to " + node.name + " node") )
 					self.logger.warning(node.name + " node reports that it has no FEBs...")
 					continue	# it's still ok to go on, but user should know what's happening
 				elif board_statuses is None:
@@ -855,7 +857,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					node.daq_start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.mtest_adc_slot, self.mtest_tdc_slot, self.mtest_tof_rst_gate_slot, self.mtest_wc_rst_gate_slot, self.runinfo.gates, self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.runMode)
 				except:
 					self.logger.exception("Couldn't start MTest beamline DAQ!  Aborting run.")
-					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title="Couldn't start beamline DAQ", text="Couldn't start the beamline DAQ.  Run will be aborted (see the log for more details).") )
+					wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm", messageheader="Couldn't start beamline DAQ", messagebody=["Couldn't start the beamline DAQ.",  "Run has been aborted (see the log for more details)."]) )
 					self.StopDataAcquisition()
 				
 
@@ -890,7 +892,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				
 					self.logger.info("Started DAQ on %s node (address: %s)" % (node.name, node.address))
 				except ReadoutNode.ReadoutNodeException:
-					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(text="Somehow the DAQ service on the " + node.name + " node has not yet stopped.  Stopping now -- but be on the lookout for weird behavior.", title=node.name.capitalize() + " DAQ service not yet stopped") )
+					wx.PostEvent(self.main_window, Events.AlertMessage(alerttype="notice", messagebody=["Somehow the DAQ service on the " + node.name + " node has not yet stopped.",  "Stopping now -- but be on the lookout for weird behavior."], messageheader=node.name.capitalize() + " DAQ service not yet stopped") )
 
 					stop_success = node.daq_stop()
 					if stop_success:

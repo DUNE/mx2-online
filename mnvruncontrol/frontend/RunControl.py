@@ -82,7 +82,7 @@ class MainFrame(wx.Frame):
 		
 		# now initialize some member variables we'll need:
 		self.logfileNames = None
-		self.blinkThread = None
+		self.alertThread = Threads.AlertThread(self)
 		self.default_background = None
 
 		# finally, make sure the display is current
@@ -94,8 +94,8 @@ class MainFrame(wx.Frame):
 		self.Bind(wx.EVT_CLOSE, self.OnTimeToClose, self)
 		
 		self.Bind(Events.EVT_ALERT,               self.UserAlert)
-		self.Bind(Events.EVT_BLINK,               self.BlinkWindow)
-		self.Bind(Events.EVT_NEED_USER_HV_CHECK,  Frames.HVConfirmationFrame)
+		self.Bind(Events.EVT_NEED_USER_HV_CHECK,  self.HVCheck)
+		self.Bind(Events.EVT_NOTIFY,              self.NotifyWindow)
 		self.Bind(Events.EVT_SUBRUN_STARTING,     self.PreSubrun)
 		self.Bind(Events.EVT_SUBRUN_OVER,         self.PostSubrun)
 		self.Bind(Events.EVT_START_RUNNING,       self.StartRunning)
@@ -566,6 +566,8 @@ class MainFrame(wx.Frame):
 		self.stopButton.Disable()
 		self.startButton.Enable()
 		self.UpdateSeriesStatus()
+
+		self.SetStatusText("Updating log file listing...", 0)
 		self.UpdateLogFiles()
 		
 		self.UpdateRunStatus( Events.UpdateProgressEvent(text="No run in progress", progress=(0,1)) )
@@ -797,65 +799,20 @@ class MainFrame(wx.Frame):
 	#  
 	################################################################################################
 	
-	def BlinkWindow(self, evt=None):
-		""" Makes the window "blink" by alternating
-		    the normal background color with an obnoxious one. """
+	def AcknowledgeAlert(self, evt=None):
+		""" Dismisses the first alert that is being displayed. """
+		self.alertThread.acknowledge()		# cancels this notification
 		
-		if self.default_background is None:
-			self.default_background = self.mainPage.GetBackgroundColour()		
-
-		# create a new tab in the notebook
-		# to receive the acknowledgement
 		page_num = -1
 		for page in range(self.nb.GetPageCount()):
 			if "Alert" in self.nb.GetPageText(page):
 				page_num = page
 				break
+		self.nb.DeletePage(page_num)
+		self.nb.ChangeSelection(0)
 		
-		if page_num < 0:
-			header = evt.messageheader if hasattr(evt, "messageheader") and evt.messageheader is not None else "    Data taking \nwas interrupted!"
-			body = evt.messagebody if hasattr(evt, "messagebody") and evt.messagebody is not None else "Click the button to acknowledge and begin a new run."
-			# we want a list.
-			if isinstance(body, str) or isinstance(body, unicode):
-				body = [body,]
-			
-			self.notificationPage = wx.Panel(self.nb)
-			headertext = wx.StaticText(self.notificationPage, -1, header)
-			headerfont = headertext.GetFont()
-			headerfont.SetPointSize(24)
-			headertext.SetFont(headerfont)
-			
-			bodytexts = []
-			for bodytext in body:
-				bodytexts.append( wx.StaticText(self.notificationPage, -1, bodytext) )
+		self.SetStatusText("", 0)
 
-			acknowledgeButton = wx.Button(self.notificationPage, -1, "Acknowledge alert")
-			self.Bind(wx.EVT_BUTTON, self.StopBlinking, acknowledgeButton)
-		
-			sizer = wx.BoxSizer(wx.VERTICAL)
-			sizer.Add(headertext, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.TOP, border = 100)
-			sizer.Add(acknowledgeButton, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM | wx.TOP, border=25)
-			
-			for bodytext in bodytexts:
-				sizer.Add(bodytext, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL)
-
-			self.notificationPage.SetSizer(sizer)
-			self.nb.AddPage(self.notificationPage, "Alert")
-			
-			page_num = self.nb.GetPageCount() - 1
-			
-		if self.default_background is None:
-			self.default_background = self.mainPage.GetBackgroundColour()		
-
-		self.nb.ChangeSelection(page_num)
-		self.SetStatusText("ERROR!", 0)
-		
-		colors = (wx.RED, self.default_background)
-		bg = self.notificationPage.GetBackgroundColour()
-		newcolor = colors[0] if bg == colors[1] else colors[1]
-
-		self.notificationPage.SetBackgroundColour(newcolor)
-			
 	def CheckRunNumber(self, evt=None):
 		""" Ensures that the run number can't be lowered
 		    past the current run number, and sets the 
@@ -876,6 +833,12 @@ class MainFrame(wx.Frame):
 		""" Closes any open ET/DAQ windows and disables the 'close windows' button. """
 		self.runmanager.CloseWindows()
 		self.runmanager.UpdateWindowCount()
+
+	def HVCheck(self, evt):
+		""" Solicits confirmation from the user that the PMT voltages are ok. """
+		Frames.HVConfirmationFrame(evt)
+		wx.PostEvent(self, Events.AlertEvent(alerttype="notice", messageheader="Check PMT voltages in other window", messagebody="Please review the PMT voltages in the pop-up window and indicate there if it's safe to take data."))
+		
 
 	def LoadRunSeriesFile(self, evt=None):
 		""" Loads the run series file corresponding to the selection
@@ -917,6 +880,73 @@ class MainFrame(wx.Frame):
 
 		return True
 
+	def NotifyWindow(self, evt):
+		""" Maintains a new tab in the notebook for displaying alerts to the user.
+		    'High-priority' alerts are indicated via an obnoxious 'blinking'
+		    of the background color. """
+		
+		if self.default_background is None:
+			self.default_background = self.mainPage.GetBackgroundColour()		
+
+		# is there already an "Alert" page in the nb?
+		page_num = -1
+		for page in range(self.nb.GetPageCount()):
+			if "Alert" in self.nb.GetPageText(page):
+				page_num = page
+				break
+
+		# create a new tab in the notebook
+		# to receive the acknowledgement
+		if page_num < 0:
+			header = evt.messageheader if hasattr(evt, "messageheader") and evt.messageheader is not None else "    Data taking \nwas interrupted!"
+			body = evt.messagebody if hasattr(evt, "messagebody") and evt.messagebody is not None else "Click the button to acknowledge and begin a new run."
+			# we want a list.
+			if isinstance(body, str) or isinstance(body, unicode):
+				body = [body,]
+			
+			self.notificationPage = wx.Panel(self.nb)
+			headertext = wx.StaticText(self.notificationPage, -1, header)
+			headerfont = headertext.GetFont()
+			headerfont.SetPointSize(24)
+			headertext.SetFont(headerfont)
+			
+			bodytexts = []
+			for bodytext in body:
+				bodytexts.append( wx.StaticText(self.notificationPage, -1, bodytext) )
+
+			acknowledgeButton = wx.Button(self.notificationPage, -1, "Acknowledge alert")
+			self.Bind(wx.EVT_BUTTON, self.AcknowledgeAlert, acknowledgeButton)
+		
+			sizer = wx.BoxSizer(wx.VERTICAL)
+			sizer.Add(headertext, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.TOP, border = 100)
+			sizer.Add(acknowledgeButton, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM | wx.TOP, border=25)
+			
+			for bodytext in bodytexts:
+				sizer.Add(bodytext, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL)
+
+			self.notificationPage.SetSizer(sizer)
+			self.nb.AddPage(self.notificationPage, "Alert")
+			
+			page_num = self.nb.GetPageCount() - 1
+
+		self.SetStatusText("ALERT", 0)
+		self.nb.ChangeSelection(page_num)
+
+		# if the message isn't high-priority,
+		# then we don't need to do anything more.
+		if evt.priority < Threads.AlertMessage.HIGH_PRIORITY:
+			return
+
+		# high-priority notifications get 'blinking' effects
+		if self.default_background is None:
+			self.default_background = self.mainPage.GetBackgroundColour()		
+
+		colors = (wx.RED, self.default_background)
+		bg = self.notificationPage.GetBackgroundColour()
+		newcolor = colors[0] if bg == colors[1] else colors[1]
+
+		self.notificationPage.SetBackgroundColour(newcolor)
+
 	def OnTimeToClose(self, evt):
 		""" The event handler invoked when exiting via the menu
 		    or via the 'close' button on the window border. 
@@ -931,30 +961,15 @@ class MainFrame(wx.Frame):
 				self.runmanager.StopDataAcquisition()
 			except:
 				pass		# if we can't, oh well.  we're closing anyway.
-		if self.blinkThread is not None and self.blinkThread.is_alive():
-			self.blinkThread.Abort()
-			self.blinkThread.join()
+		if self.alertThread is not None and self.alertThread.is_alive():
+			self.alertThread.Abort()
+			self.alertThread.join()
 
 		self.runmanager.Cleanup()
 			
 		self.CloseAllWindows()
 
 		self.Destroy()
-		
-	def StopBlinking(self, evt=None):
-		self.blinkThread.Abort()
-		self.blinkThread.join()
-		
-		page_num = -1
-		for page in range(self.nb.GetPageCount()):
-			if "Alert" in self.nb.GetPageText(page):
-				page_num = page
-				break
-		self.nb.DeletePage(page_num)
-		self.nb.ChangeSelection(0)
-		
-		self.SetStatusText("", 0)
-		
 		
 	def UpdateCloseWindows(self, evt):
 		""" Enables/disables the "close all windows" button
@@ -1116,21 +1131,18 @@ class MainFrame(wx.Frame):
 	def UserAlert(self, evt):
 		""" Gets the user's attention. """
 		
-		# sets the window manager hint
-		self.RequestUserAttention()
-		self.Raise()
-		
-		# now... if it's a real emergency, we need to do some other stuff.
+		header = evt.messageheader if hasattr(evt, "messageheader") else None
+		body = evt.messagebody if hasattr(evt, "messagebody") else None
+
 		if hasattr(evt, "alerttype") and evt.alerttype == "alarm":
-			if self.blinkThread is not None and self.blinkThread.is_alive():
-				self.blinkThread.Abort()
-				self.blinkThread.join()
-			
-			header = evt.messageheader if hasattr(evt, "messageheader") else None
-			body = evt.messagebody if hasattr(evt, "messagebody") else None
-			
-			self.blinkThread = Threads.BlinkThread(self, messageheader=header, messagebody=body)
+			priority = Threads.AlertMessage.HIGH_PRIORITY
+		else:
+			priority = Threads.AlertMessage.NORMAL_PRIORITY
 		
+		
+		self.alertThread.messages.put_nowait(Threads.AlertMessage(title=header, text=body, priority=priority))
+		
+
 	
 	################################################################################################
 	# Methods that create new windows or dialogs

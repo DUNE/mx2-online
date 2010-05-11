@@ -20,6 +20,7 @@ import select
 import fcntl
 import errno
 import subprocess
+from Queue import Queue
 
 from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration import SocketRequests
@@ -407,18 +408,19 @@ class TimerThread(threading.Thread):
 		self.time_to_quit = True
 
 #########################################################
-#   BlinkThread
+#   AlertThread
 #########################################################
 
-class BlinkThread(threading.Thread):
-	def __init__(self, postback_window, messageheader=None, messagebody=None):
+class AlertThread(threading.Thread):
+	def __init__(self, postback_window):
 		threading.Thread.__init__(self)
 		self.postback_window = postback_window
 		self.time_to_quit = False
 		self.daemon = True
-		
-		self.messageheader = messageheader
-		self.messagebody = messagebody
+
+		self.messages = Queue()
+		self.current_message = None
+		self.current_message_displayed = False
 		
 		self.start()
 
@@ -427,14 +429,48 @@ class BlinkThread(threading.Thread):
 		while not self.time_to_quit:
 			# don't busy-wait!
 			time.sleep(0.1)
-			
+
+			# if the place to send the alert no longer exists, then this thread is pointless.
 			if not self.postback_window:
 				return
-				
-			if not self.time_to_quit and time.time() - lastupdate > 0.5:
+
+			# if there's nothing to do, just keep looping.
+			if self.current_message is None and self.messages.empty():
+				continue
+
+			# however, if there's a message waiting, we have things to do now
+			if self.current_message is None:
+				self.current_message = self.messages.get_nowait()
+				lastupdate = 0
+
+			# update at the specified interval.
+			# high-priority messages need events every interval;
+			# lower-priority ones only need the initial push.
+			if (self.current_message.priority == AlertMessage.HIGH_PRIORITY or not self.current_message_displayed) and time.time() - lastupdate > Configuration.params["Front end"]["notificationInterval"]:
 				lastupdate = time.time()
-				wx.PostEvent(self.postback_window, Events.BlinkEvent(messageheader=self.messageheader, messagebody=self.messagebody))
+				wx.PostEvent(self.postback_window, Events.NotifyEvent(priority=self.current_message.priority, messageheader=self.current_message.title, messagebody=self.current_message.text))
+				self.current_message_displayed = True
+
+	def acknowledge(self):
+		""" Dismisses the current alert. """
+		self.current_message = None
+		self.current_message_displayed = False
+		
 			
 	def Abort(self):
 		self.time_to_quit = True
+
+class AlertMessage:
+	HIGH_PRIORITY = 2
+	NORMAL_PRIORITY = 1
+	LOW_PRIORITY = 0
+	def __init__(self, title=None, text=None, priority=NORMAL_PRIORITY):
+		if title is None and text is None:
+			raise ValueError("Title and text cannot both be blank.")
+
+		self.title = title
+		self.text = text
+		self.priority = priority
+
+		
 
