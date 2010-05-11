@@ -6,19 +6,37 @@
 class readoutObject {
 	private:
 		int febID;
-		std::list<channels*> channelsList;
-		std::list<int*> hitsPerChannelList;
+		std::vector<channels*> channelsVector;
+		std::vector<int> hitsPerChannelVector;
 	public:
-		readoutObject(int id) { 
+		readoutObject(int id) {
 			febID = id;
 		};
 		~readoutObject() { };
 
-		std::list<channels*> inline *getChannelsList() { return &channelsList; };
-		std::list<int*> inline *getHitsPerChannelList() { return &hitsPerChannelList; };
+		std::vector<channels*> inline *getChannelsVector() { return &channelsVector; };
+		std::vector<int> inline *getHitsPerChannelVector() { return &hitsPerChannelVector; };
 		int inline getFebID() { return febID; };
-		void inline addChannel(channels* ch) { channelsList.push_back(ch); };
-		void inline addHits(int* h) { hitsPerChannelList.push_back(h); };
-		void inline clearHits() { hitsPerChannelList.clear(); };
+		void inline addData(channels* ch, int h) {  // add to the end of the vector
+			channelsVector.push_back(ch); 
+			hitsPerChannelVector.push_back(h);
+		};
+		channels inline *getChannel(int indx) { return channelsVector[indx]; };
+		void inline setHitsPerChannel(int indx, int h) { hitsPerChannelVector[indx] = h; };
+		int inline getHitsPerChannel(int indx) { return hitsPerChannelVector[indx]; };
+		void inline zeroHitsPerChannel() { 
+			for (unsigned int i=0; i<hitsPerChannelVector.size(); i++) {
+				hitsPerChannelVector[i] = 0;
+			}
+		};
+		int inline getDataLength() {
+			if (hitsPerChannelVector.size() == channelsVector.size()) {
+				return hitsPerChannelVector.size();
+			} else {
+				std::cout << "Data length mismatch in readoutObject!" << std::endl;
+				return 0;
+			}
+		}
 };
 #endif
+
