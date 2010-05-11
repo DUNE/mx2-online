@@ -6,6 +6,7 @@ TARGET = newReadout
 
 #COMPILE_OPTIONS += -DSHOWFPGA
 #COMPILE_OPTIONS += -DSHOWDISC
+#COMPILE_OPTIONS += -DSHOWADC
 #COMPILE_OPTIONS += -DDEBUG_VERBOSE
 
 CPPFLAGS += -I/usr/include -I$(CAEN_DIR)/include -I$(DAQROOT)/fermihardware/include -I$(DAQROOT)/caeninterface/include 
