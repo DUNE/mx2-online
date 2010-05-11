@@ -5,6 +5,7 @@
 #include "adctdc.h" // This class isn't included in the contoller, but we need it for reads & writes.
 #include "acquire.h" 
 #include "log4cppHeaders.h"
+#include "readoutObject.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
@@ -86,6 +87,7 @@ class acquire_data {
 		log4cpp::Appender* acqAppender;
 		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */
 
+		static const bool checkForMessRecvd, doNotCheckForMessRecvd; /*!< Flags for ReadStatus. */
 	public:
 		/*! Specialized constructor. */
 		acquire_data(std::string fn, log4cpp::Appender* appender, log4cpp::Priority::Value priority, 
@@ -189,6 +191,36 @@ class acquire_data {
 
 		/*! Function that gets the MINOS SGATE value from the CRIM registers.  Check the "master" CRIM. */
 		unsigned int GetMINOSSGATE();
+
+		// New readout model functions.
+		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		/*! Send a Clear and Reset to a CROC FE Channel. */
+		void SendClearAndReset(channels *theChain);
+		/*! Read the status register on a CROC FE Channel with a flag to see if we should check for the message recv'd. */
+		int ReadStatus(channels *theChain, bool receiveCheck);
+
+		/*! Initialize a list of readoutObjects. */
+		void InitializeReadoutObjects(std::list<readoutObject*> *objectList);
+		/*! Display the contents of a list of readoutObjects. */
+		void DisplayReadoutObjects(std::list<readoutObject*> *objectList);
+
+		/*! Send messages to a generic device using normal write cycle. 
+		    -> Write the outgoing message from the device to the FE Channel FIFO, send the message. */
+		template <class X> void SendFrameData(X *device, channels *theChannel);
+
+		/*! Send messages to a generic device using FIFO BLT write cycle. 
+		    -> Write the outgoing message from the device to the FE Channel FIFO using BLT, send the message. */ 
+		template <class X> void SendFrameDataFIFOBLT(X *device, channels *theChannel);
+
+		/* Receive messages for a generic device.
+		   -> Read DPM pointer, read BLT, store data in *device* buffer.
+		   -> Should be used primarily for debugging and for building the FEB list. */
+		template <class X> int RecvFrameData(X *device, channels *theChannel);
+
+		/* Receive messages. 
+		   -> Read DPM pointer, read BLT, store data in *channel* buffer. */
+		int RecvFrameData(channels *theChannel);
 };
 
 #endif

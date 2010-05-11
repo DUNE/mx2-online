@@ -16,6 +16,9 @@
 const int acquire_data::dpmMax       = 1024*6; //we have only 6 Kb of space in the DPM Memory per channel
 const int acquire_data::numberOfHits = 6;
 const unsigned int acquire_data::timeOutSec   = 3600; // be careful shortening this w.r.t. multi-PC sync issues
+const bool acquire_data::checkForMessRecvd      = true;
+const bool acquire_data::doNotCheckForMessRecvd = false;
+
 
 void acquire_data::InitializeDaq(int id, RunningModes runningMode) 
 {
@@ -2341,6 +2344,232 @@ unsigned int acquire_data::GetMINOSSGATE()
 	
 	return gatetime;
 }
+
+
+void acquire_data::InitializeReadoutObjects(std::list<readoutObject*> *objectList)
+{
+/*! \fn InitializeReadoutObjects(std::list<readoutObject*> *objectList) 
+ *
+ * Initialize list of readoutObjects (find all FE channels that carry 
+ * each FEBID in the list.
+ *
+ * \param std::list<readoutObject*> *objectList the list of readoutObjects built elsewhere.
+ */
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "Initializing readoutObject List.";
+	acqData.debugStream() << "********************************";
+#endif
+	std::list<readoutObject*>::iterator rop = objectList->begin();
+	for (rop = objectList->begin(); rop != objectList->end(); rop++) {
+		int febid = (*rop)->getFebID();
+#if DEBUG_NEWREADOUT
+		acqData.debugStream() << "readoutObj feb id = " << febid << ", starting loop over CROCs...";
+#endif
+		std::vector<croc*> *crocVector     = daqController->GetCrocVector();
+		std::vector<croc*>::iterator crocp = crocVector->begin();
+		for (crocp = crocVector->begin(); crocp != crocVector->end(); crocp++) {
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << " CROC Addr = " << ((*crocp)->GetCrocAddress()>>16)
+				<< ", starting loop over Chains...";
+#endif
+			std::list<channels*> *chanList = (*crocp)->GetChannelsList();
+			std::list<channels*>::iterator chp;
+			for (chp = chanList->begin(); chp != chanList->end(); chp++) {
+				bool addChain = false;
+#if DEBUG_NEWREADOUT
+				acqData.debugStream() << "  Chain id = " << (*chp)->GetChainNumber() <<
+					", starting loop over FEB's on the chain...";
+#endif
+				std::list<feb*> *febList = (*chp)->GetFebList();
+				std::list<feb*>::iterator fp;
+				for (fp = febList->begin(); fp != febList->end(); fp++) {
+					int innerfebid = (int)(*fp)->GetBoardNumber();
+#if DEBUG_NEWREADOUT
+					acqData.debugStream() << "   Inner febid = " << innerfebid;
+#endif
+					if (innerfebid == febid) { addChain = true; }
+				}
+				if (addChain) {
+#if DEBUG_NEWREADOUT
+					acqData.debugStream() << "     Found a match on this chain!";
+					(*rop)->addData(*chp,0); // init with zero hits
+#endif
+					//(*rop)->addData(*chp,febid); // diagnostic
+				} // end if addChain
+			} // end for loop over channels
+		} // end for loop over crocs
+	} // end for loop over readoutObjects
+} // end InitializeReadoutObjects
+
+
+void acquire_data::DisplayReadoutObjects(std::list<readoutObject*> *objectList)
+{
+/*! \fn DisplayReadoutObjects(std::list<readoutObject*> *objectList)
+ *
+ * Display the contents of a list of readoutObjects.
+ *
+ * \param std::list<readoutObject*> *objectList the list to be explicated.
+ */
+	acqData.infoStream() << "readoutObject List Contents:";
+	acqData.infoStream() << ".....................................";
+	std::list<readoutObject*>::iterator rop = objectList->begin();
+	for (rop = objectList->begin(); rop != objectList->end(); rop++) {
+		int febid = (*rop)->getFebID();
+		acqData.infoStream() << "readoutObject febid = " << febid;
+		acqData.infoStream() << " dataLength = " << (*rop)->getDataLength();
+		for (int i=0; i<(*rop)->getDataLength(); i++) {
+			unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+			unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+			acqData.infoStream() << "  CROC = " << crocAddr << ", ChainNum = " 
+				<< (*rop)->getChannel(i)->GetChainNumber()
+				<< ", Hits on the channel = " << (*rop)->getHitsPerChannel(i);
+		}
+	}
+	acqData.infoStream() << ".....................................";
+} // end DisplayReadoutObjects
+
+
+void acquire_data::SendClearAndReset(channels *theChain)
+{
+/*! \fn SendClearAndReset(channels *theChain)
+ * Send a Clear and Reset to a CROC FE Channel.
+ *
+ * \param channels *theChain the FE channel (referenced by Chain because of likely indexing choices).
+ */
+	int crocAddress = ( theChain->GetClearStatusAddress() & 0xFFFF0000 )>>16;
+#if DEBUG_VERBOSE||DEBUG_NEWREADOUT
+	acqData.debugStream() << "--> Entering SendClearAndReset for CROC " << crocAddress <<
+		" Chain " << theChain->GetChainNumber();
+	acqData.debug("  Clear Status Address = 0x%X",theChain->GetClearStatusAddress());
+#endif
+	CVAddressModifier    AM  = daqController->GetAddressModifier();
+	CVDataWidth          DW  = daqController->GetDataWidth();
+	unsigned char message[2] = {0x0A, 0x0A}; // 0202 + 0808 for clear status AND reset.
+
+	// Clear the status & reset the pointer.
+	try {
+		int success = daqAcquire->WriteCycle(daqController->handle, 2, message,
+			theChain->GetClearStatusAddress(), AM, DW);
+		if (success) throw success;
+	} catch (int e) {
+		daqController->ReportError(e);
+		acqData.critStream() << "VME Error in SendClearAndReset!  Cannot write to the status register!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+		exit(e);
+	}
+#if DEBUG_VERBOSE||DEBUG_NEWREADOUT      
+	acqData.debugStream() << "Executed SendClearAndReset for CROC " << crocAddress <<
+		" Chain " << theChain->GetChainNumber();
+#endif
+} // end SendClearAndReset
+
+
+int acquire_data::ReadStatus(channels *theChain, bool receiveCheck)
+{
+/*! \fn ReadStatus(channels *theChain, bool receiveCheck)
+ *
+ * Read the status register on a CROC FE Channel.
+ *
+ * \param channels *theChain the FE channel (referenced by Chain because of likely indexing choices).
+ * \param bool receiveCheck flag to determine whether we should demand message received as part of the 
+ *   criteria for success.
+ */
+	int crocAddress = ( theChain->GetClearStatusAddress() & 0xFFFF0000 )>>16;
+#if DEBUG_VERBOSE||DEBUG_NEWREADOUT    
+	acqData.debugStream() << "--> Entering ReadStatus for CROC " << crocAddress <<
+		" Chain " << (theChain->GetChainNumber());
+	acqData.debug("  Status Address = 0x%X",theChain->GetStatusAddress());
+#endif
+	CVAddressModifier AM = daqController->GetAddressModifier();
+	CVDataWidth DW       = daqController->GetDataWidth();
+
+	unsigned short MessageReceivedCheck = 0xFFFF;
+	if (receiveCheck) MessageReceivedCheck = MessageReceived;
+	unsigned char statusBytes[] = {0x0,0x0};
+	unsigned short status;
+
+	do {
+		try {
+			int error = daqAcquire->ReadCycle(daqController->handle, statusBytes,
+				theChain->GetStatusAddress(), AM, DW);
+			if (error) throw error;
+		} catch (int e) {
+			daqController->ReportError(e);
+			acqData.critStream() << "VME Error in ReadStatus while reading the status register!";
+			acqData.critStream() << "  Error on CROC " << crocAddress <<
+				" Chain " << theChain->GetChainNumber();
+			return e;
+		}
+		status = (unsigned short)( statusBytes[0] | statusBytes[1]<<0x08 );
+		theChain->SetChannelStatus(status);
+#if DEBUG_VERBOSE||DEBUG_NEWREADOUT     
+		acqData.debug("     Read Status - Chain %d status = 0x%04X",
+			theChain->GetChainNumber(),status);
+#endif
+	} while ( !(status & MessageReceivedCheck) && !(status & CRCError) && !(status & TimeoutError)
+		&& (status & RFPresent) && (status & SerializerSynch) && (status & DeserializerLock)
+		&& (status & PLLLocked) );
+
+	// Check for errors & handle them.
+	if ( (status & CRCError) ) {
+		acqData.critStream() << "CRC Error in ReadStatus!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+		return (-10);
+	}
+	if ( (status & TimeoutError) ) {
+		acqData.critStream() << "Timeout Error in acquire_data::SendMessage!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+		return (-11);
+	}
+	if ( (status & FIFONotEmpty) ) {
+		acqData.critStream() << "FIFO Not Empty Error in acquire_data::SendMessage!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+	}
+	if ( (status & FIFOFull) ) {
+		acqData.critStream() << "FIFO Full Error in acquire_data::SendMessage!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+	}
+	if ( (status & DPMFull) ) {
+		acqData.critStream() << "DPM Full Error in acquire_data::SendMessage!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+	}
+	if ( !(status & RFPresent) ) {
+		acqData.critStream() << "No RF Error in acquire_data::SendMessage!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+		return (-12);
+	}
+	if ( !(status & SerializerSynch) ) {
+		acqData.critStream() << "No SerializerSynch Error in acquire_data::SendMessage!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+		return (-13);
+	}
+	if ( !(status & DeserializerLock) ) {
+		acqData.critStream() << "DeserializerLock Error in acquire_data::SendMessage!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+		return (-14);
+	}
+	if ( !(status & PLLLocked) ) {
+		acqData.critStream() << "PLLLock Error in acquire_data::SendMessage!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+		return (-15);
+	}
+#if DEBUG_VERBOSE||DEBUG_NEWREADOUT
+	acqData.debugStream() << "Executed ReadStatus for CROC " << crocAddress <<
+		" Chain " << theChain->GetChainNumber();
+#endif
+	return 0; // Success!
+}
+
 
 
 #endif
