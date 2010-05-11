@@ -30,7 +30,7 @@ unsigned char *DPMData;
 // Initialize the CRIM for basic fiddling.
 void InitCRIM(crim *theCrim, int runningMode=0);
 // Initialize the CROC for basic fiddling.
-void InitCROC(croc *theCroc, int *nFEBsPerChain);
+void InitCROC(croc *theCroc, int nFEBsPerChain[]);
 // Function to build a list of FEB objects.
 int MakeFEBList(channels *theChain, int nFEBs=11);
 
@@ -42,8 +42,9 @@ void SendClearAndReset(channels *theChain);
 // Read the status register on a CROC FE Channel - add a flag to see if we should check for the message recv'd.
 int ReadStatus(channels *theChain, bool receiveCheck);
 
-// Initialize list of readoutObjects
+// Initialize list of readoutObjects and display...
 void InitializeReadoutObjects(std::list<readoutObject*> *objectList);
+void DisplayReadoutObjects(std::list<readoutObject*> *objectList);
 
 // send messages to a generic device using normal write cycle
 // -> write the outgoing message from the device to the FE Channel FIFO, send the message
