@@ -199,8 +199,12 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		if not os.path.isfile(fullpath):
 			self.logger.warning("Specified slow control configuration file does not exist: " + fullpath)
 			return "2"
-			
-		self.sc_init()
+
+		try:			
+			self.sc_init()
+		except:
+			self.logger.exception("Hardware error while initializing:")
+			return "1"
 		
 		SCHWSetupThread(self, self.slowcontrol, fullpath)
 		
