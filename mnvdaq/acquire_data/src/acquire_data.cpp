@@ -20,7 +20,7 @@ const bool acquire_data::checkForMessRecvd      = true;
 const bool acquire_data::doNotCheckForMessRecvd = false;
 
 
-void acquire_data::InitializeDaq(int id, RunningModes runningMode) 
+void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<readoutObject*> *readoutObjs) 
 {
 /*! \fn void acquire_data::InitializeDaq()
  *
@@ -1014,6 +1014,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 	filename = "take_data_time_log_"+threadno.str();
 	take_data_log.open(filename.c_str());
 	lock.unlock();
+	struct timeval start_time, stop_time;
 #endif
 #if DEBUG_VERBOSE||DEBUG_LIMITEDBANKS
 	acqData.debugStream() << "--Entering acquire_data::TakeAllData--";
@@ -1052,7 +1053,6 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		// Begin reading FEB frame information.
 		if (readFPGA) {
 #if TIME_ME
-			struct timeval start_time, stop_time;
 			gettimeofday(&start_time, NULL);
 #endif
 			// Compose an FPGA read frame.
@@ -2453,6 +2453,9 @@ void acquire_data::SendClearAndReset(channels *theChain)
 		if (success) throw success;
 	} catch (int e) {
 		daqController->ReportError(e);
+		std::cout << "VME Error in SendClearAndReset!  Cannot write to the status register!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
 		acqData.critStream() << "VME Error in SendClearAndReset!  Cannot write to the status register!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
@@ -2496,6 +2499,9 @@ int acquire_data::ReadStatus(channels *theChain, bool receiveCheck)
 			if (error) throw error;
 		} catch (int e) {
 			daqController->ReportError(e);
+			std::cout << "VME Error in ReadStatus while reading the status register!" << std::endl;
+			std::cout << "  Error on CROC " << crocAddress <<
+				" Chain " << theChain->GetChainNumber() << std::endl;
 			acqData.critStream() << "VME Error in ReadStatus while reading the status register!";
 			acqData.critStream() << "  Error on CROC " << crocAddress <<
 				" Chain " << theChain->GetChainNumber();
@@ -2513,51 +2519,78 @@ int acquire_data::ReadStatus(channels *theChain, bool receiveCheck)
 
 	// Check for errors & handle them.
 	if ( (status & CRCError) ) {
+		std::cout << "CRC Error in ReadStatus!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
 		acqData.critStream() << "CRC Error in ReadStatus!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
 		return (-10);
 	}
 	if ( (status & TimeoutError) ) {
+		std::cout << "Timeout Error in acquire_data::SendMessage!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
 		acqData.critStream() << "Timeout Error in acquire_data::SendMessage!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
 		return (-11);
 	}
 	if ( (status & FIFONotEmpty) ) {
+		std::cout << "FIFO Not Empty Error in acquire_data::SendMessage!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
 		acqData.critStream() << "FIFO Not Empty Error in acquire_data::SendMessage!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
 	}
 	if ( (status & FIFOFull) ) {
+		std::cout << "FIFO Full Error in acquire_data::SendMessage!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
 		acqData.critStream() << "FIFO Full Error in acquire_data::SendMessage!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
 	}
 	if ( (status & DPMFull) ) {
+		std::cout << "DPM Full Error in acquire_data::SendMessage!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
 		acqData.critStream() << "DPM Full Error in acquire_data::SendMessage!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
 	}
 	if ( !(status & RFPresent) ) {
+		std::cout << "No RF Error in acquire_data::SendMessage!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
 		acqData.critStream() << "No RF Error in acquire_data::SendMessage!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
 		return (-12);
 	}
 	if ( !(status & SerializerSynch) ) {
+		std::cout << "No SerializerSynch Error in acquire_data::SendMessage!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
 		acqData.critStream() << "No SerializerSynch Error in acquire_data::SendMessage!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
 		return (-13);
 	}
 	if ( !(status & DeserializerLock) ) {
+		std::cout << "DeserializerLock Error in acquire_data::SendMessage!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
 		acqData.critStream() << "DeserializerLock Error in acquire_data::SendMessage!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
 		return (-14);
 	}
 	if ( !(status & PLLLocked) ) {
+		std::cout << "PLLLock Error in acquire_data::SendMessage!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
 		acqData.critStream() << "PLLLock Error in acquire_data::SendMessage!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
 			" Chain " << theChain->GetChainNumber();
@@ -2571,5 +2604,259 @@ int acquire_data::ReadStatus(channels *theChain, bool receiveCheck)
 }
 
 
+template <class X> void acquire_data::SendFrameData(X *device, channels *theChannel)
+{
+/*! \fn
+ *
+ * Send messages to a generic device using normal write cycle -> write the outgoing message from 
+ * the device to the FE Channel FIFO & send the message.
+ * \param X *device the frame (template)
+ * \param channels *theChannel the CROC FE Channel for the board housing the device.
+ */
+#if DEBUG_NEWREADOUT
+	newread.debugStream() << "   -->Entering SendFrameData.";
+#endif
+	CVAddressModifier AM = cvA24_U_DATA;  // *Default* Controller Address Modifier
+	CVDataWidth DW       = cvD16;         // *Default* Controller Data Width
+	CVDataWidth DWS      = cvD16_swapped; // *Always* CROC DataWidthSwapped
+	unsigned char send_message[2] = {0x01, 0x01};
+
+	// Write the message to the channel FIFO.
+	try {
+		int error = daqAcquire->WriteCycle(daqController->handle, device->GetOutgoingMessageLength(),
+			device->GetOutgoingMessage(), theChannel->GetFIFOAddress(), AM, DWS);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << " Error in SendFrameData while writing to the FIFO!" << std::endl;
+		std::cout << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber() << std::endl;
+		daqController->ReportError(e);
+		acqData.fatalStream() << "Error in SendFrameData while writing to the FIFO!";
+		acqData.fatalStream() << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber();
+		// Hard exit used for thread "friendliness" later...
+		exit(e);
+	}
+	// Send the message.
+	try {
+		int error = daqAcquire->WriteCycle(daqController->handle, 2, send_message,
+			theChannel->GetSendMessageAddress(), AM, DW);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << " Error in SendFrameData while writing to the SendMessage address!" << std::endl;
+		std::cout << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber() << std::endl;
+		daqController->ReportError(e);
+		acqData.fatalStream() << "Error in SendFrameData while writing to the SendMessage address!";
+		acqData.fatalStream() << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber();
+		// Hard exit used for thread "friendliness" later...
+		exit(e);
+	}
+#if DEBUG_NEWREADOUT
+	newread.debugStream() << "   Finished SendFrameData!";
+#endif
+}
+
+
+template <class X> void acquire_data::SendFrameDataFIFOBLT(X *device, channels *theChannel)
+{
+/*! \fn template <class X> void SendFrameDataFIFOBLT(X *device, channels *theChannel)
+ *
+ * Send messages to a generic device using FIFO BLT write cycle -> write the outgoing message to the 
+ * CROC FIFO & send the message (sensible for the long FPGA programming frames only).
+ *
+ * \param X *device the frame (template)
+ * \param channels *theChannel the CROC FE Channel for the board housing the device.
+ */     
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "   -->Entering SendFrameDataFIFOBLT.";
+#endif
+	CVAddressModifier AM = cvA24_U_DATA;  // *Default* Controller Address Modifier
+	CVDataWidth DW       = cvD16;         // *Default* Controller Data Width
+	CVDataWidth DWS      = cvD16_swapped; // *Always* CROC DataWidthSwapped
+	unsigned char send_message[2] = {0x01, 0x01};
+
+	// Write the message to the channel FIFO using BLT.
+	try {
+		int error = daqAcquire->WriteFIFOBLT(daqController->handle, device->GetOutgoingMessageLength(),
+			device->GetOutgoingMessage(), theChannel->GetFIFOAddress(), AM, DWS);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << " Error in SendFrameDataFIFOBLT while writing to the FIFO!" << std::endl;
+		std::cout << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber() << std::endl;
+		daqController->ReportError(e);
+		acqData.fatalStream() << "Error in SendFrameDataFIFOBLT while writing to the FIFO!";
+		acqData.fatalStream() << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber();
+		// Hard exit used for thread "friendliness" later...
+		exit(e);
+	}
+	// Send the message.
+	try {
+		int error = daqAcquire->WriteCycle(daqController->handle, 2, send_message,
+			theChannel->GetSendMessageAddress(), AM, DW);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << " Error in SendFrameDataFIFOBLT while writing to the SendMessage address!" << std::endl;
+		std::cout << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber() << std::endl;
+		daqController->ReportError(e);
+		acqData.fatalStream() << "Error in SendFrameDataFIFOBLT while writing to the SendMessage address!";
+		acqData.fatalStream() << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber();
+		// Hard exit used for thread "friendliness" later...
+		exit(e);
+	}
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "   Finished SendFrameDataFIFOBLT!";
+#endif
+}
+
+
+template <class X> int acquire_data::RecvFrameData(X *device, channels *theChannel)
+{
+/*! \fn template <class X> int acquire_data::RecvFrameData(X *device, channels *theChannel)
+ *
+ * Receive messages for a generic device -> read DPM pointer, read BLT, and store data in the *device* buffer.
+ * Because we use the device buffer here, this function should be used primarily for debugging and for 
+ * building the FEB list.
+ *
+ * \param X *device the frame (template)
+ * \param channels *theChannel the CROC FE Channel for the board housing the device.
+ */
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "   -->Entering RecvFrameData for devices.";
+#endif
+	CVAddressModifier AM     = cvA24_U_DATA;  // *Default* Controller Address Modifier
+	CVAddressModifier AM_BLT = cvA24_U_BLT;   // *Always* Channel Address Modifier
+	CVDataWidth DWS          = cvD16_swapped; // *Always* CROC DataWidthSwapped
+	unsigned short dpmPointer;
+	unsigned char status[] = {0x0,0x0};
+
+	try {
+		int error = daqAcquire->ReadCycle(daqController->handle, status,
+			theChannel->GetDPMPointerAddress(), AM, DWS);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in RecvFrameData for devices!  Cannot read the status register!" << std::endl;
+		daqController->ReportError(e);
+		acqData.critStream() << "Error in RecvFrameData for devices!  Cannot read the status register!";
+		return e;
+	}
+	dpmPointer = (unsigned short) (status[0] | status[1]<<0x08);
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "    RecvFrameData DPM Pointer: " << dpmPointer;
+#endif
+	device->SetIncomingMessageLength(dpmPointer-2);
+	// We must read an even number of bytes.
+	if (dpmPointer%2) {
+		device->message = new unsigned char [dpmPointer+1];
+	} else {
+		device->message = new unsigned char [dpmPointer];
+	}
+
+	try {
+		int error = daqAcquire->ReadBLT(daqController->handle, device->message, dpmPointer,
+			theChannel->GetDPMAddress(), AM_BLT, DWS);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in RecvFrameData for devices!  Cannot ReadBLT!" << std::endl;
+		std::cout << "  Error on CROC " <<
+			((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber() << std::endl;
+		daqController->ReportError(e);
+		acqData.critStream() << "Error in RecvFrameData for devices!  Cannot ReadBLT!";
+		acqData.critStream() << "  Error on CROC " <<
+			((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber();
+		return e;
+	}
+
+	// Check Device Header for error flags (S2M, etc.)
+	bool success = device->CheckForErrors();
+	if (success) {
+		return success; // There were errors.
+	}
+	// TODO - DecodeRegVals does some useful error checking (message length), but is inefficient.
+	// TODO - Split out the useful part and just call it... (make it part of CheckForErrors?  Probably no...)
+	// Also TODO - figure out the right argument to pass this function... for some reason, if we did a FIFO 
+	// write beforehand, we get back a different DPM pointer than if we had done a regular write...
+	// TODO - DecodeRegisterValues is actually a very bad idea, since it will parse full frames!
+	//device->DecodeRegisterValues(dpmPointer-2);
+	//device->DecodeRegisterValues(dpmPointer);
+
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "   Finished RecvFrameData for devices!  Returning " << success;
+#endif
+	return ((int)success);
+}
+
+
+int acquire_data::RecvFrameData(channels *theChannel)
+{
+/*! \fn int acquire_data::RecvFrameData(channels *theChannel)
+ *
+ * Receive messages from a CROC FE Channel DPM -> read DPM pointer, read the data via BLT, and store it in the
+ * *channel* buffer.
+ *
+ * \param channels *theChannel the CROC FE Channel for the board housing the device.
+ */
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "   -->Entering RecvFrameData for a channel.";
+#endif
+	CVAddressModifier AM     = cvA24_U_DATA;  // *Default* Controller Address Modifier
+	CVAddressModifier AM_BLT = cvA24_U_BLT;   // *Always* Channel Address Modifier
+	CVDataWidth DWS          = cvD16_swapped; // *Always* CROC DataWidthSwapped
+	unsigned short dpmPointer;
+	unsigned char status[] = {0x0,0x0};
+
+	try {
+		int error = daqAcquire->ReadCycle(daqController->handle, status,
+			theChannel->GetDPMPointerAddress(), AM, DWS);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in RecvFrameData for a channel!  Cannot read the status register!" << std::endl;
+		daqController->ReportError(e);
+		acqData.critStream() << "Error in RecvFrameData for a channel!  Cannot read the status register!";
+		return e;
+	}
+	dpmPointer = (unsigned short) (status[0] | status[1]<<0x08);
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "    RecvFrameData DPM Pointer: " << dpmPointer;
+#endif
+	theChannel->SetDPMPointer(dpmPointer);
+	// We must read an even number of bytes.
+	if (dpmPointer%2) {
+		DPMData = new unsigned char [dpmPointer+1];
+	} else {
+		DPMData = new unsigned char [dpmPointer];
+	}
+	try {
+		int error = daqAcquire->ReadBLT(daqController->handle, DPMData, dpmPointer,
+			theChannel->GetDPMAddress(), AM_BLT, DWS);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in RecvFrameData for a channel!  Cannot ReadBLT!" << std::endl;
+		std::cout << "  Error on CROC " <<
+			((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber() << std::endl;
+		daqController->ReportError(e);
+		acqData.critStream() << "Error in RecvFrameData for a channel!  Cannot ReadBLT!";
+		acqData.critStream() << "  Error on CROC " <<
+			((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
+			" Chain " << theChannel->GetChainNumber();
+		return e;
+	}
+	theChannel->SetBuffer(DPMData);
+
+	// Clean-up and return.
+	delete [] DPMData;
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "   Finished RecvFrameData for a channel!  Returning.";
+#endif
+	return 0;
+}
 
 #endif

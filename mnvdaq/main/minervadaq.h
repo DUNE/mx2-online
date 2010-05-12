@@ -7,6 +7,8 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <unistd.h>
+/*! "New" readout structure. */
+#include "readoutObject.h"
 
 
 boost::mutex main_mutex; /*!< A BOOST multiple exclusion for use in threaded operation */
@@ -31,6 +33,10 @@ int WriteSAM(const char samfilename[],
 template <typename Any> int SynchWrite(int socket_handle, Any *data);
 /*! Synch readout nodes - listen */ 
 template <typename Any> int SynchListen(int socket_connection, Any *data); 
+
+
+/* "New" readout structure functions and variables. */
+std::list<readoutObject*> readoutObjects; 
 
 /* some logging files for debugging purposes */
 #if TIME_ME

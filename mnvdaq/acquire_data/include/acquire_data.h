@@ -115,7 +115,7 @@ class acquire_data {
 		controller inline *GetController() {return daqController;};
 
 		/*! Function to initialize the data acquisition electronics and make up necessary functional objects */
-		void InitializeDaq(int id, RunningModes runningMode); // Pass it a controller ID & a running mode.
+		void InitializeDaq(int id, RunningModes runningMode, std::list<readoutObject*> *readoutObjs=0);
 
 		/*! Function to initialize a CRIM at the given VME address w/ index & running mode */
 		void InitializeCrim(int address, int index, RunningModes runningMode); 
