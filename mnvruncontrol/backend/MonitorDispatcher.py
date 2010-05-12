@@ -83,8 +83,30 @@ class MonitorDispatcher(Dispatcher):
 		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
 		self.raweventfile = "%s/%s_RawEvent.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
 		self.rawhistosfile = "%s/%s_RawHistos.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
-		self.dstfile = "%s/%s_DST.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
 		
+		
+		# 3 possible formats: unsuffixed (for most run modes),
+		# LI version and beam version (the latter two for numil mode
+		# since beam and LI are interleaved)
+		self.dstfiles = []
+		dstfilename_format = "%s/%s%s_DST.root"
+		# the kinds of running modes that need special attention
+		runmode_special_map = { "linjc": [ { "DSTWriter": "Linjc", "filesuffix": "" } ],
+		                        "numil": [ { "DSTWriter": "Numib", "filesuffix": "_BeamTriggers" },
+		                                   { "DSTWriter": "Linjc", "filesuffix": "_LITriggers" } ] }
+		# check if the current running mode is one of the special ones.
+		# if so, make sure that every sort of DSTWriter required is
+		# properly addressed.
+		for runmode in runmode_special_map:
+			if runmode in self.etpattern:
+				for DST_entry in runmode_special_map[runmode]:
+					self.dstfiles.append( { "DSTWriter": DST_entry["DSTWriter"], "filename": dstfilename_format % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern, DST_entry["filesuffix"] ) } )
+				break
+		
+		# if it's still empty, then it gets the default
+		if len(self.dstfiles) == 0:
+			self.dstfiles.append( { "DSTWriter": "Numib", "filename": dstfilename_format % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern, "" ) } )
+			
 		try:
 			self.om_start_eb(etfile="%s_RawData" % matches.group("etpattern"), etport=matches.group("etport"))
 		except Exception, excpt:
@@ -111,7 +133,28 @@ class MonitorDispatcher(Dispatcher):
 			optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\" ;\n" % self.evbfile)
 			optsfile.write("Event.Output = \"DATAFILE='PFN:%s' TYP='POOL_ROOTTREE' OPT='RECREATE'\";\n" % self.raweventfile)
 			optsfile.write("HistogramPersistencySvc.Outputfile = \"%s\";\n" % self.rawhistosfile)
-			optsfile.write("NTupleSvc.Output  = { \"FILE1 DATAFILE='%s' OPT='NEW' TYP='ROOT'\" };\n" % self.dstfile)
+
+
+			ntuplestrings = []
+			for i in range(len(self.dstfiles)):
+				optsfile.write("%sDSTWriter.NTupleToUse = \"FILE%d\";\n" % (self.dstfiles[i]["DSTWriter"], i+1) )
+				ntuplestrings.append( "\"FILE%d DATAFILE='%s' OPT='NEW' TYP='ROOT'\"" % (i+1, self.dstfiles[i]["filename"]) )
+			
+			# each DSTWriter is initialized every time,
+			# so even though one of them might not have 
+			# any events sent to it, we still need to 
+			# provide a file location.  the resultant file will
+			# not be copied to the destination area (it
+			# will be overwritten in the staging area
+			# the next time this situation arises).
+			i += 1
+			for DSTWriter in ("Linjc", "Numib"):
+				if DSTWriter not in [item["DSTWriter"] for item in self.dstfiles]:
+					optsfile.write( "%sDSTWriter.NTupleToUse = \"FILE%d\";\n" % (DSTWriter, i+1) )
+					ntuplestrings.append( "\"FILE%d DATAFILE='%s/%sTempDSTFile.root' OPT='NEW' TYP='ROOT'\"" % (i+1, Configuration.params["Monitoring nodes"]["om_rawdataLocation"], DSTWriter ) )
+					i += 1
+			
+			optsfile.write("NTupleSvc.Output  = { " + ", ".join(ntuplestrings) + " };\n")
 		
 		# if the Gaudi thread is still running, it needs to be stopped.
 		# the DIM command is supposed to help it shut down cleanly.  
@@ -140,9 +183,16 @@ class MonitorDispatcher(Dispatcher):
 			if process["processname"] == "presenter":
 				self.om_Gaudi_thread = thread
 			elif process["processname"] == "dst":
-				thread.dstfile = self.dstfile
+				thread.dstfiles = self.dstfiles
 
 			self.logger.info("   Starting a copy of %s using the following command:\n%s" % (process["exe_name"], process["executable"]))
+			
+			# want to record the PID.  wait until it's ready.
+			while thread.pid is None:
+				time.sleep(0.01)
+				pass
+				
+			self.logger.info("     ==> process id: %d" % thread.pid)
 	
 	def om_stop(self, matches=None, show_details=True, **kwargs):
 		""" Stops the online monitor processes.  Only really needed
@@ -180,7 +230,7 @@ class MonitorDispatcher(Dispatcher):
 				self.logger.exception("   ==> Error message:")
 				errors = True
 
-		if show_details:
+		if show_details and not errors:
 			self.logger.info("   ==> Stopped successfully.")
 		
 		return "0" if not errors else "1"
@@ -196,12 +246,13 @@ class OMThread(threading.Thread):
 		threading.Thread.__init__(self)
 		
 		self.process = None
+		self.pid = None
 		self.command = command
 		self.utgid = utgid
 		self.processname = processname
 		self.persistent = persistent		# if this thread is supposed to run until it finishes
 		
-		self.dstfile = None				# overridden as necessary by the parent process.
+		self.dstfiles = []				# overridden as necessary by the parent process.
 		
 		self.daemon = True
 		
@@ -242,8 +293,9 @@ class OMThread(threading.Thread):
 				break
 		
 		# copy the DST to its target location.
-		if self.persistent and self.dstfile:
-			shutil.copy2(self.dstfile, Configuration.params["Monitoring nodes"]["om_DSTTargetPath"])
+		if self.persistent and len(self.dstfiles) > 0:
+			for dstfile in self.dstfiles:
+				shutil.copy2(dstfile["filename"], Configuration.params["Monitoring nodes"]["om_DSTTargetPath"])
                         
 ####################################################################
 ####################################################################
