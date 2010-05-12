@@ -120,6 +120,10 @@ class MonitorDispatcher(Dispatcher):
 		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Configuration.params["Master node"]["etSystemFileLocation"], etfile, self.evbfile, etport, os.getpid()) ) 
 		self.logger.info("   event_builder command:")
 		self.logger.info("      '" + executable + "'...")
+		
+		# don't start the event builder TOO soon... or there might not be anything there!
+		time.sleep(3)
+		
 		signal.signal(signal.SIGUSR1, self.om_start_Gaudi)
 		self.om_eb_thread = OMThread(executable, "eventbuilder")
 	
