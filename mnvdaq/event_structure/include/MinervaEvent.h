@@ -86,8 +86,9 @@ class MinervaEvent {
 		/*! the constructor */
 		MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
 			unsigned short int trig, unsigned char ledGroup, unsigned char ledLevel, 
-			unsigned long long g_gate, unsigned long long gate, unsigned long long trig_time, 
+			unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 
 			unsigned short int error, unsigned int minos, MinervaHeader *header, 
+			unsigned short int nADCFrames, unsigned short int nDiscFrames,
 			log4cpp::Appender* appender=0);
 		/*! the default destructor */
 		~MinervaEvent() { };

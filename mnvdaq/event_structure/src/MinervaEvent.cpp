@@ -98,7 +98,7 @@ MinervaHeader::MinervaHeader(unsigned char crate, log4cpp::Appender* appender)
 	DAQ_event_header[0] = magic_pattern;    // add: the magic pattern to the header,
 	DAQ_event_header[1] = 48;               // the length in bytes of the DAQ header,
 	DAQ_event_header[2] = (3 & 0xFF);       // Bank Type (3 for DAQ Header),
-	DAQ_event_header[2] |= (5 & 0xFF)<<0x8; // Version (5 as of 2009.Dec.17), and
+	DAQ_event_header[2] |= (6 & 0xFF)<<0x8; // Version (6 as of 2010.May.13), and
 	DAQ_event_header[3] = source_id;        // the source information.
 #if DEBUG_HEADERS
 	if (hdrAppender!=0) {
@@ -113,27 +113,31 @@ MinervaHeader::MinervaHeader(unsigned char crate, log4cpp::Appender* appender)
 /*****************MinervaEvent Class******************************************************/ 
 MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
 	unsigned short int trig, unsigned char ledLevel, unsigned char ledGroup, 
-	unsigned long long g_gate, unsigned long long gate, unsigned long long trig_time, 
+	unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 
 	unsigned short int error, unsigned int minos, MinervaHeader *header, 
+	unsigned short int nADCFrames, unsigned short int nDiscFrames,
 	log4cpp::Appender* appender)
 {
 /*! \fn 
  *
  * Constructor for MinervaEvent event model data block.  This is the "DAQ Header."
  *
- * \param unsigned char det detector type
- * \param unsigned short config detector configuration
- * \param int run run number
- * \param int sub_run sub-run number
- * \param unsigned short trig trigger type
- * \param unsigned char ledLevel (1 or Max PE)
- * \param unsigned char ledGroup (All, A, B, C, or D)
- * \param unsigned long long g_gate global gate number
- * \param unsigned long long gate current gate number
- * \param unsigned long long trig_time trigger time
- * \param unsigned short error error flag
- * \param unsigned int minos minos trigger time
- * \param MinervaHeader *header data bank header
+ * \param unsigned char det, detector type
+ * \param unsigned short config, detector configuration (number of FEBs)
+ * \param int run, run number
+ * \param int sub_run, sub-run number
+ * \param unsigned short trig, trigger type
+ * \param unsigned char ledLevel, (1 or Max PE)
+ * \param unsigned char ledGroup, (All, A, B, C, or D)
+ * \param unsigned long long g_gate, global gate number
+ * \param unsigned int gate, current gate number
+ * \param unsigned long long trig_time, trigger time
+ * \param unsigned short error, error flag
+ * \param unsigned int minos, minos trigger time
+ * \param MinervaHeader *header, bank header
+ * \param short int nADCFrames, the number of ADC frames recorded in this gate
+ * \param short int nDiscFrames, the number of Discriminator frames recorded in this gate
+ * \param log4cpp::Appender* appender, the pointer to the log file
  */
 	evtAppender  = appender; // log4cpp appender
 	if (evtAppender!=0) mnvevt.setPriority(log4cpp::Priority::DEBUG);
@@ -155,7 +159,7 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 	event_info_block[4] = g_gate & 0xFFFFFFFF;       // the "global gate" least sig int 
 	event_info_block[5] = (g_gate>>32) & 0xFFFFFFFF; // the "global gate" most sig int
 	event_info_block[6] = gate & 0xFFFFFFFF;         // the gate number least sig int 
-	event_info_block[7] = (gate>>32) & 0xFFFFFFFF;   // the gate number most sig int 
+	event_info_block[7] = (nDiscFrames << 16) | (nADCFrames);
 	event_info_block[8] = trig_time & 0xFFFFFFFF;    // the gate time least sig int
 	event_info_block[9] = (trig_time>>32) & 0xFFFFFFFF;  // the gate time most sig int
 	event_info_block[10] = (error<<4) & 0xFFFF;          // the error bits 4-7

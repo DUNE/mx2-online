@@ -13,9 +13,9 @@ const int  gate_print_freq = 1;
 #else
 const int  gate_print_freq = 1;
 #endif
-static int adcFrameCount   = 0;
-static int discFrameCount  = 0;
-static int fpgaFrameCount  = 0;
+static unsigned short int adcFrameCount   = 0;
+static unsigned short int discFrameCount  = 0;
+static unsigned short int fpgaFrameCount  = 0;
 
 // log4cpp Variables - Needed throughout the event_builder functions.
 log4cpp::Appender* ebAppender;
@@ -532,7 +532,8 @@ int event_builder(event_handler *evt)
 		// Make the new event block
 		event = new MinervaEvent(evt->detectorType, evt->detectorConfig, evt->runNumber, 
 			evt->subRunNumber, evt->triggerType, evt->ledLevel, evt->ledGroup, evt->globalGate, 
-			evt->gate, evt->triggerTime, evt->readoutInfo, evt->minosSGATE, tmp_header, ebAppender); 
+			evt->gate, evt->triggerTime, evt->readoutInfo, evt->minosSGATE, tmp_header, 
+			adcFrameCount, discFrameCount, ebAppender); 
 		// The call to MinervaEvent constructor automatically inserts the DAQ block into the event buffer.
 		// Reset frame counters.
 		adcFrameCount = discFrameCount = fpgaFrameCount = 0;
