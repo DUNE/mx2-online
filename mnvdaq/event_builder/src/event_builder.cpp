@@ -7,10 +7,6 @@
 
 using namespace std;
 
-#if DEBUG_THREAD
-ofstream thread_log("eb_log.txt");
-#endif
-
 const int  adcFrameWarningCount = 600;
 #if !MTEST
 const int  gate_print_freq = 1;
