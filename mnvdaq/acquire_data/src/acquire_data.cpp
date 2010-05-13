@@ -739,7 +739,9 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 			return 1;
 		}  
 	}
-
+#if NEWREADOUT
+	tmpChan->VectorizeFEBList();
+#endif
 	acqData.infoStream() << "Returning from BuildFEBList.";
 	return 0;
 }
@@ -2833,6 +2835,57 @@ int acquire_data::RecvFrameData(channels *theChannel)
 }
 
 
+void acquire_data::FillEventStructure(event_handler *evt, int bank, channels *theChannel)
+{
+/*! \fn void acquire_data::FillEventStructure(event_handler *evt, int bank, channels *theChannel)
+ *
+ * Take data from the channel buffer and put it into the raw event structure for data processing by 
+ * the event builder.
+ *
+ * \param event_handler *evt a pointer to the event handler structure
+ * \param int bank an index for this data bank type
+ * \param channels *theChannel a pointer to the croc channel object being processed.
+ */
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "  Entering acquire_data::FillEventStructure with bank type " << bank
+		<< " and message length " << theChannel->GetDPMPointer();
+#endif
+	// Build sourceID
+	evt->feb_info[4] = bank;  // 0==ADC, 1==TDC, 2==FPGA, 3==DAQ Header, 4==TriP-T
+	const unsigned int buffLength = theChannel->GetDPMPointer(); // Data + Frame CRC;
+	const unsigned int dataLength = buffLength - 2; 
+	evt->feb_info[5] = dataLength;
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "   Getting Data...";
+	acqData.debugStream() << "     Link      (evt->feb_info[0]) = " << evt->feb_info[0];
+	acqData.debugStream() << "     Crate     (evt->feb_info[1]) = " << evt->feb_info[1];
+	acqData.debugStream() << "     CROC      (evt->feb_info[2]) = " << evt->feb_info[2];
+	acqData.debugStream() << "     Chain     (evt->feb_info[3]) = " << evt->feb_info[3];
+	acqData.debugStream() << "     Bank Type (evt->feb_info[4]) = " << evt->feb_info[4];
+	acqData.debugStream() << "     Frame L.  (evt->feb_info[5]) = " << evt->feb_info[5];
+	acqData.debugStream() << "     FEB Num.  (evt->feb_info[6]) = " << evt->feb_info[6];
+	acqData.debugStream() << "     Firmware  (evt->feb_info[7]) = " << evt->feb_info[7];
+	acqData.debugStream() << "     Hits      (evt->feb_info[8]) = " << evt->feb_info[8];
+#endif
+	for (unsigned int i = 0; i < buffLength; i++) {
+		evt->event_data[i] = theChannel->GetBuffer()[i];
+	}
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "   Got Data";
+	acqData.debugStream() << "    Embedded (Data) Length      = " << (int)evt->event_data[0] +
+		(int)(evt->event_data[1]<<8);
+	acqData.debugStream() << "    theChannel->GetDPMPointer() = " << theChannel->GetDPMPointer();
+	acqData.debugStream() << "    Total buffer length         = " << buffLength;
+#if SHOW_DATABYTES
+	for (unsigned int index = 0; index < buffLength; index++) {
+		acqData.debug("     FillStructure data byte %02d = 0x%02X", index,
+			(unsigned int)evt->event_data[index]);
+	}
+#endif
+#endif 
+}
+
+
 /*! \fn int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, std::list<readoutObject*> *readoutObjects)
  *
  * Run the full acquisition sequence for a gate, write the data to file. 
@@ -2851,6 +2904,270 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	acqData.debugStream() << "++++++++++++++++++++++++++++++++++++";
 	DisplayReadoutObjects(readoutObjects);
 #endif
+	bool readFPGA = true;
+	bool readDisc = true;
+	bool readADC  = false;
+
+	// Fill entries in the event_handler structure for this event -> The sourceID.
+	evt->new_event   = false; // We are always processing an existing event with this function!!!
+	evt->feb_info[0] = 0;     // Link Number. -> *Probably* ALWAYS 0.
+	evt->feb_info[1] = daqController->GetID(); // Crate ID
+
+	// Do an "FPGA read".
+	// First, send a read frame to each channel that has an FEB with the right index.
+	// Then, after sending a frame to every channel, read each of them in turn for data.
+	if (readFPGA) {
+#if DEBUG_NEWREADOUT
+		acqData.debugStream() << "==================";
+		acqData.debugStream() << "Read the FPGA's...";
+		acqData.debugStream() << "==================";
+#endif
+		std::list<readoutObject*>::iterator rop = readoutObjects->begin();
+		for (rop = readoutObjects->begin(); rop != readoutObjects->end(); rop++) {
+			int febid    = (*rop)->getFebID();
+			int febindex = febid - 1;
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "-> Top of readoutObject loop.";
+			acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+			acqData.debugStream() << "feb id    = " << febid;
+#endif
+			// Pointer for the FEB's on each channel.  Be careful about deleting!   
+			feb *tmpFEB;
+
+			// Clear and reset all channels that have an FEB with id febid first.
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "->Do the clear and resets for all channels with FEB's of the right id.";
+#endif
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				SendClearAndReset((*rop)->getChannel(i));
+				try {
+					int error = ReadStatus((*rop)->getChannel(i), doNotCheckForMessRecvd); 
+					if (error) throw error; 
+				} catch (int e) { 
+					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+						(*rop)->getChannel(i)->GetChainNumber();
+					return e; // Error, stop!
+				}
+			} // end loop over data in readout object for send clear and reset, check status
+
+			// Send an FPGA read frame request to each channel with an FEB with id febid.
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "->Send the read FPGA frame requests to all channels with FEB's of the right id.";
+#endif
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				// Make a pointer to the FEB on the channel with board number febid
+				tmpFEB = (*rop)->getChannel(i)->GetFebVector(febindex);
+				int brdnum = tmpFEB->GetBoardNumber();
+				if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+#if DEBUG_NEWREADOUT
+				unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+				unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+				acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
+					(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum;
+#endif
+				// Compose an FPGA read frame.
+				Devices dev     = FPGA;
+				Broadcasts b    = None;
+				Directions d    = MasterToSlave;
+				FPGAFunctions f = Read;
+				tmpFEB->MakeDeviceFrameTransmit(dev,b,d,f,(unsigned int)tmpFEB->GetBoardNumber());
+				tmpFEB->MakeMessage();
+				// Send the message & delete the outgoingMessage.
+				SendFrameData(tmpFEB, (*rop)->getChannel(i));
+				tmpFEB->DeleteOutgoingMessage();
+				tmpFEB = 0;
+			} // end loop over data in readout object for send read frame
+
+			// Check the status for each channel to be sure the message was sent and recv'd.
+			// There should only be one frame of data (from the FEB's in the loop above).
+			// Read the data & decalre it to ET.
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "->Check the status to be sure the message was sent and recv'd.  If so, read the data & decalre it.";
+#endif
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+				unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+				try {
+					int error = ReadStatus((*rop)->getChannel(i), checkForMessRecvd); 
+					if (error) throw error; 
+				} catch (int e) { 
+					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+						(*rop)->getChannel(i)->GetChainNumber();
+					return e; // Error, stop!
+				}
+				// Make a pointer to the FEB on the channel with board number febid
+				tmpFEB = (*rop)->getChannel(i)->GetFebVector(febindex);
+				int brdnum = tmpFEB->GetBoardNumber();
+				if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+#if DEBUG_NEWREADOUT
+				acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
+					(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum;
+#endif
+				// Read the DPM.  
+				try {
+					int error = RecvFrameData((*rop)->getChannel(i));
+					if (error) throw error; 
+				} catch (int e) { 
+					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+						(*rop)->getChannel(i)->GetChainNumber();
+					return e; // Error, stop!
+				}
+				// Fiddle with evt data.
+				evt->feb_info[2] = crocAddr;
+				evt->feb_info[3] = (*rop)->getChannel(i)->GetChainNumber();
+				evt->feb_info[6] = brdnum;
+				evt->feb_info[7] = 81; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
+				// FillEventStructure here.  FES reads from the *channel's* buffer, not the frame's!
+				FillEventStructure(evt, 2, (*rop)->getChannel(i));
+				// ContactEventBuilder here.
+				ContactEventBuilder(evt, (int)0, attach, sys_id); 
+				// Cleanup...
+				(*rop)->getChannel(i)->DeleteBuffer();
+				tmpFEB = 0;
+			} // end loop over data for reading the DPM
+		} // end loop over readout object list
+	} // end if readFPGA
+
+	// Do a "Discr read".  Loop over FEB ID's (readoutObjects) a while loop.
+	// First, send a read frame to each channel that has an FEB with the right index.
+	// Then, after sending a frame to every channel, read each of them in turn for data.
+	if (readDisc) {
+		acqData.infoStream() << "===================";
+		acqData.infoStream() << "Read the Discr's...";
+		acqData.infoStream() << "===================";
+		std::list<readoutObject*>::iterator rop = readoutObjects->begin();
+		while (rop != readoutObjects->end()) {
+			int febid    = (*rop)->getFebID();
+			int febindex = febid - 1;
+			acqData.debugStream() << "-> Top of readoutObject loop.";
+			acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+			acqData.debugStream() << "feb id    = " << febid;
+			// Pointer for the FEB's on each channel.  Be careful about deleting!   
+			feb *tmpFEB;
+
+			// Clear and reset all channels that have an FEB with id febid first.
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "->Do the clear and resets for all channels with FEB's of the right id.";
+#endif
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				SendClearAndReset((*rop)->getChannel(i));
+				try {
+					int error = ReadStatus((*rop)->getChannel(i), doNotCheckForMessRecvd); 
+					if (error) throw error; 
+				} catch (int e) { 
+					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+						(*rop)->getChannel(i)->GetChainNumber();
+					return e; // Error, stop!
+				}
+			} // end loop over data in readout object for send clear and reset, check status
+
+			// Send a Discr read frame request to each channel with an FEB with id febid.
+			acqData.debugStream() << "->Send the read Discr frame requests to all channels with FEB's of the right id.";
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				// Make a pointer to the FEB on the channel with board number febid
+				tmpFEB  = (*rop)->getChannel(i)->GetFebVector(febindex);
+				int brdnum = tmpFEB->GetBoardNumber();
+				if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+				unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+				unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+				acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
+					(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum;
+
+				// Discr. frame built correctly in class constructor (message deleted in destructor)
+				// Send the message.
+				SendFrameData(tmpFEB->GetDisc(), (*rop)->getChannel(i));
+				tmpFEB  = 0;
+			} // end loop over data in readout object for send read frame
+
+			// Check the status for each channel to be sure the message was sent and recv'd.
+			// There should only be one frame of data (from the FEB's in the loop above).
+			// Read the data & parse it for the number of hits.  Set the appropriate hitsPerChannel value. 
+			// Decalre it to ET.
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "->Check the status to be sure the message was sent and recv'd.  If so, read the data & decalre it.";
+#endif
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+				unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+				try {
+					int error = ReadStatus((*rop)->getChannel(i), checkForMessRecvd); 
+					if (error) throw error; 
+				} catch (int e) { 
+					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+						(*rop)->getChannel(i)->GetChainNumber();
+					return e; // Error, stop!
+				}
+				// Make a pointer to the FEB on the channel with board number febid
+				tmpFEB = (*rop)->getChannel(i)->GetFebVector(febindex);
+				int brdnum = tmpFEB->GetBoardNumber();
+				if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+#if DEBUG_NEWREADOUT
+				acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
+					(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum;
+#endif
+				// Read the DPM.  
+				try {
+					int error = RecvFrameData((*rop)->getChannel(i));
+					if (error) throw error; 
+				} catch (int e) { 
+					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+						(*rop)->getChannel(i)->GetChainNumber();
+					return e; // Error, stop!
+				}
+				// Hit Info in event_data for discriminator frames in indices 12 && 13.
+				//  event_data[12] = 0xWX, event_data[13] = 0xYZ
+				//  W = # of hits TriP 0, X = # of hits TriP 1, Y = # of hits TriP 2, Z = # of hits TriP 3
+				//  (Possibly the byte assignment is wrong/flipped somehow...)
+				//  Whether we are pushing in pairs or not, we always want to read a number of adc blocks
+				//  corresponding to the largest number of hits between the four plus one (end of gate).
+				// Calculate the nhits variable so we can read the correct number of ADC Frames. 
+				unsigned char maxHits = ((*rop)->getChannel(i)->GetBuffer()[12] >= (*rop)->getChannel(i)->GetBuffer()[13]) ? 
+					(*rop)->getChannel(i)->GetBuffer()[12] : (*rop)->getChannel(i)->GetBuffer()[13];
+				int nhits = ( (maxHits & 0x0F) >= ((maxHits & 0xF0)>>4) ) ?
+					((int)maxHits & 0x0F) : ((int)(maxHits & 0xF0)>>4);
+				nhits++; // add end of gate hit
+				(*rop)->setHitsPerChannel(i, nhits);
+#if DEBUG_NEWREADOUT
+				acqData.debugStream() << "   TOTAL Number of hits (" << i << ") = " << (*rop)->getHitsPerChannel(i);
+#endif
+				// Fiddle with evt data.
+				evt->feb_info[2] = crocAddr;
+				evt->feb_info[3] = (*rop)->getChannel(i)->GetChainNumber();
+				evt->feb_info[6] = brdnum;
+				evt->feb_info[7] = 81; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
+				// FillEventStructure here.  FES reads from the *channel's* buffer, not the frame's!
+				FillEventStructure(evt, 1, (*rop)->getChannel(i));
+				// ContactEventBuilder here.
+				ContactEventBuilder(evt, (int)0, attach, sys_id);
+				// Cleanup...
+				(*rop)->getChannel(i)->DeleteBuffer();
+				tmpFEB  = 0;
+			} // end loop over data for reading the dpm
+
+			// Increment the readoutObject pointer.
+			rop++;
+		} // end while loop over readout objects
+#if DEBUG_NEWREADOUT
+		acqData.debugStream() << "&&&&&&&&&&&&&&&&&&&& - End of ReadDisc";
+		acqData.debugStream() << "redoutObject Status:";
+		DisplayReadoutObjects(readoutObjects);
+#endif
+	} // end readDisc
+
+	if (readADC) {
+		acqData.critStream() << "Have not implemented!";
+		return 1;
+	}
 
 #if DEBUG_NEWREADOUT
 	acqData.debugStream() << "Exiting acquire_data::WriteAllData.";

@@ -213,16 +213,19 @@ class acquire_data {
 		    -> Write the outgoing message from the device to the FE Channel FIFO using BLT, send the message. */ 
 		template <class X> void SendFrameDataFIFOBLT(X *device, channels *theChannel);
 
-		/* Receive messages for a generic device.
+		/*! Receive messages for a generic device.
 		   -> Read DPM pointer, read BLT, store data in *device* buffer.
 		   -> Should be used primarily for debugging and for building the FEB list. */
 		template <class X> int RecvFrameData(X *device, channels *theChannel);
 
-		/* Receive messages. 
+		/*! Receive messages. 
 		   -> Read DPM pointer, read BLT, store data in *channel* buffer. */
 		int RecvFrameData(channels *theChannel);
 
-		/* Run the full acquisition sequence for a gate, write the data to file. */
+		/*! Function that fills an event structure for further data handling by the event builder. */
+		void FillEventStructure(event_handler *evt, int bank, channels *theChannel);
+
+		/*! Run the full acquisition sequence for a gate, write the data to file. */
 		int WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
 			std::list<readoutObject*> *readoutObjects);
 };
