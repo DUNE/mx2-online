@@ -221,6 +221,10 @@ class acquire_data {
 		/* Receive messages. 
 		   -> Read DPM pointer, read BLT, store data in *channel* buffer. */
 		int RecvFrameData(channels *theChannel);
+
+		/* Run the full acquisition sequence for a gate, write the data to file. */
+		int WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
+			std::list<readoutObject*> *readoutObjects);
 };
 
 #endif

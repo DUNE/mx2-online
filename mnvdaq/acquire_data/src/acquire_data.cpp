@@ -31,10 +31,6 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
  * \param int id is the controller ID (used to build the sourceID later).
  * \param RunningModes runningMode describes the run mode and therfore sets CRIM timing mode.
  */
-#if TIME_ME
-	struct timeval start_time, stop_time;
-	gettimeofday(&start_time, NULL);
-#endif
 	std::cout << "\nEntering acquire_data::InitializeDaq()." << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeDaq().";
 	acqData.infoStream() << "  HW (VME Card) Init Level = " << hwInitLevel;
@@ -54,22 +50,15 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	} 
 
 	// Hardware configurations.
-#if THREAD_ME
-	boost::thread crim_thread(boost::bind(&acquire_data::InitializeCrim, this, 0xE00000, 1, runningMode)); 
-	boost::thread croc_thread(boost::bind(&acquire_data::InitializeCroc, this, 0x010000, 1)); 
-	crim_thread.join(); // Wait for the crim thread to return.
-	croc_thread.join(); // Wait for the croc thread to return.
-#endif
-
-	// Hardware configurations.
 	std::string detectorString = "Unknown Detector.";
-#if NO_THREAD
+	int maxFebs = 11;
 #if PMTTEST
 	detectorString        = "LabF PMT X-talk Stand.";
 	std::cout            << "Initializing hardware for the " << detectorString << std::endl; 
 	acqData.infoStream() << "Initializing hardware for the " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
 	InitializeCroc(0x030000, 1, 4, 0, 0, 0);
+	maxFebs = 4;
 #endif
 #if MTEST
 	detectorString        = "MTest.";
@@ -77,6 +66,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	acqData.infoStream() << "Initializing hardware for " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
 	InitializeCroc(0x010000, 1, 4, 4, 0, 0);
+	maxFebs = 4;
 #endif
 #if WH14T
 	detectorString        = "WH14 Top Crate.";
@@ -84,6 +74,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	acqData.infoStream() << "Initializing hardware for the " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
 	InitializeCroc(0x010000, 1, 1, 0, 0, 0);
+	maxFebs = 1;
 #endif
 #if WH14B
 	detectorString        = "WH14 Bottom Crate.";
@@ -92,6 +83,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	InitializeCrim(0xE00000, 1, runningMode);
 	InitializeCroc(0x010000, 1, 4, 2, 1, 0);
 	InitializeCroc(0x060000, 2, 1, 0, 0, 0);
+	maxFebs = 4;
 #endif
 #if CRATE0 // Current as of March 22 Begin-Of-Run  
 	detectorString        = "NuMI Crate 0.";
@@ -107,6 +99,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	InitializeCroc(0x060000, 6,  9,  9,  9,  9); // MS09E, MS10E, MS11E, MS12E
 	InitializeCroc(0x070000, 7, 10, 10, 10, 10); // MS13W, MS14W, MS15W, MS16W
 	InitializeCroc(0x080000, 8,  9,  9,  9,  9); // MS13E, MS14E, MS15E, MS16E
+	maxFebs = 10;
 #endif
 #if CRATE1 // Current as of March 22 Begin-Of-Run 
 	detectorString        = "NuMI Crate 1.";
@@ -121,9 +114,8 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	InitializeCroc(0x050000, 5,  6,  6,  6,  0); // MS25W, MS26W, MS27W, Loopback
 	InitializeCroc(0x060000, 6,  5,  5,  5,  0); // MS25E, MS26E, MS27E, Loopback
 	InitializeCroc(0x070000, 7,  8,  8,  4,  4); // MS00W, MS00E, MS-1W, MS-1E
+	maxFebs = 10;
 #endif
-#endif
-
 	// Set the flags that tells us how many VME cards are installed for this controller.
 	daqController->SetCrocVectorLength(); 
 	daqController->SetCrimVectorLength();
@@ -133,6 +125,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 		daqController->GetCrocVectorLength(); 
 	acqData.infoStream() << " Master CRIM address = " <<
 			(daqController->GetCrim()->GetCrimAddress()>>16);
+	acqData.infoStream() << " Max Number of FEB's on a chain = " << maxFebs; 
 
 	// Enable the CAEN IRQ handler.
 	// Only the MASTER (first) CRIM should be the interrupt handler!
@@ -151,18 +144,15 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 		exit(-8);
 	}    
 
-	// Done with VME card initialization procedures!
-#if TIME_ME
-	gettimeofday(&stop_time,NULL);
-	double duration = (stop_time.tv_sec*1e6+stop_time.tv_usec)-
-		(start_time.tv_sec*1e6+start_time.tv_usec);
-	std::cout << "******************************************************************************"
-		<< std::endl; 
-	std::cout << "Start Time: " << (start_time.tv_sec*1e6+start_time.tv_usec)<<" Stop Time: "
-		<< (stop_time.tv_sec*1e6+stop_time.tv_usec) << " Run Time: " << (duration/1e6) << std::endl;
-	std::cout << "******************************************************************************"
-		<< std::endl; 
+	// Initialize readoutObjects list for data acquisition.
+#if NEWREADOUT
+	for (int i=1; i<=maxFebs; i++) {
+		readoutObjs->push_back(new readoutObject(i));
+	}
+	InitializeReadoutObjects(readoutObjs);
 #endif
+
+	// Done with VME card initialization procedures!
 	std::cout << "Finished Initialization!  Exiting acquire_data::InitializeDaq().\n" << std::endl;
 	acqData.infoStream() << "Finished Initialization!  Exiting acquire_data::InitializeDaq().";
 }
@@ -444,10 +434,6 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 		}
 	} // endif hwInitLevel
 
-	// Now search all channels to find which have FEB's. 
-#if THREAD_ME
-	boost::thread *chan_thread[4];
-#endif
 	// Build the FEB list for each channel.
 	acqData.infoStream() << " Building FEB List:";
 	for (int i = 0; i < nChains; i++) {
@@ -456,9 +442,6 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 		bool avail = false;
 		avail = tmpCroc->GetChannelAvailable(i);
 		if (avail) {
-#if THREAD_ME
-			chan_thread[i] = new boost::thread(boost::bind(&acquire_data::BuildFEBList,this,i,crocNo,nFEBsPerChain[i]));
-#else
 			try {
 				int error = BuildFEBList(i, crocNo, nFEBsPerChain[i]);
 				if (error) throw error;
@@ -471,19 +454,9 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 					" Chain " << i;
 				exit(e);	
 			}
-#endif
 		}
 	}
 
-#if THREAD_ME
-	// If we are working in multi-threaded operation we need  
-	// to wait for the each thread we launched to complete.
-	for (int i = 0; i < nChains; i++) {
-		chan_thread[i]->join(); // Wait for all the threads to finish up before moving on.
-		croc_thread.close();
-		delete chan_thread[i];
-	}  
-#endif
 	std::cout << "Finished initialization for CROC " << 
 		(daqController->GetCroc(crocNo)->GetCrocAddress()>>16) << std::endl;
 	acqData.infoStream() << "Finished initialization for CROC " << 
@@ -724,7 +697,7 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 	// Addresses numbers range from 1 to Max and we'll loop
 	// over all of them and look for S2M message headers.
 	for (int j = 1; j <= nFEBs; j++) { 
-		acqData.infoStream() << "    Trying to make FEB " << j << " on chain " << i;
+		acqData.debugStream() << "    Trying to make FEB " << j << " on chain " << i;
 		// Make a "trial" FEB for the current address.
 		feb *tmpFEB = tmpChan->MakeTrialFEB(j, numberOfHits, acqAppender); 
 		
@@ -2614,7 +2587,7 @@ template <class X> void acquire_data::SendFrameData(X *device, channels *theChan
  * \param channels *theChannel the CROC FE Channel for the board housing the device.
  */
 #if DEBUG_NEWREADOUT
-	newread.debugStream() << "   -->Entering SendFrameData.";
+	acqData.debugStream() << "   -->Entering SendFrameData.";
 #endif
 	CVAddressModifier AM = cvA24_U_DATA;  // *Default* Controller Address Modifier
 	CVDataWidth DW       = cvD16;         // *Default* Controller Data Width
@@ -2654,7 +2627,7 @@ template <class X> void acquire_data::SendFrameData(X *device, channels *theChan
 		exit(e);
 	}
 #if DEBUG_NEWREADOUT
-	newread.debugStream() << "   Finished SendFrameData!";
+	acqData.debugStream() << "   Finished SendFrameData!";
 #endif
 }
 
@@ -2855,6 +2828,33 @@ int acquire_data::RecvFrameData(channels *theChannel)
 	delete [] DPMData;
 #if DEBUG_NEWREADOUT
 	acqData.debugStream() << "   Finished RecvFrameData for a channel!  Returning.";
+#endif
+	return 0;
+}
+
+
+/*! \fn int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, std::list<readoutObject*> *readoutObjects)
+ *
+ * Run the full acquisition sequence for a gate, write the data to file. 
+ *
+ *  \param *evt, a pointer to the event_handler structure containing information
+ *               about the data being handled.
+ *  \param attach, the ET attachemnt to which data will be stored
+ *  \param sys_id, the ET system handle
+ *  \param std::list<readoutObject*> *readoutObjects, a pointer to the list of hardware to be read out. 
+ */
+int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
+        std::list<readoutObject*> *readoutObjects)
+{
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "Entering acquire_data::WriteAllData.";
+	acqData.debugStream() << "++++++++++++++++++++++++++++++++++++";
+	DisplayReadoutObjects(readoutObjects);
+#endif
+
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "Exiting acquire_data::WriteAllData.";
+	acqData.debugStream() << "-----------------------------------";
 #endif
 	return 0;
 }
