@@ -527,13 +527,12 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/*      Now initialize the DAQ electronics                                       */
 	/*********************************************************************************/
-#if THREAD_ME //TODO - Arguments probably wrong for threaded function here...
-	boost::thread electronics_init_thread(boost::bind(&acquire_data::InitializeDaq,daq)); 
+	std::list<readoutObject*> readoutObjects;
+#if NEWREADOUT
+	daq->InitializeDaq(CONTROLLER_ID, runningMode, &readoutObjects);
+	daq->DisplayReadoutObjects(&readoutObjects);
 #else
 	daq->InitializeDaq(CONTROLLER_ID, runningMode);
-#endif // end if THREAD_ME
-#if THREAD_ME
-	electronics_init_thread.join(); //wait for the electronics initialization to finish 
 #endif
 	// Get the controller object created during InitializeDaq.
 	controller *currentController = daq->GetController(); 
@@ -885,6 +884,10 @@ int main(int argc, char *argv[])
 			(unsigned long long)(readstart.tv_usec);
 		event_data.readoutInfo = (unsigned short)0; // No Error
 
+#if NEWREADOUT
+		// Execute the "new" readout model.
+		int success = TakeData(daq, evt, attach, sys_id, &readoutObjects);
+#else // NEWREADOUT CHECK
 		/**********************************************************************************/
 		/* Loop over crocs and then channels in the system.  Execute TakeData on each     */
 		/* Croc/Channel combination of FEB's.  Here we assume that the CROCs are indexed  */
@@ -969,7 +972,7 @@ int main(int argc, char *argv[])
 				}
 			} //croc loop
 		} //continueRunning Check
-		
+#endif // NEWREADOUT CHECK		
 		/**********************************************************************************/
 		/*   Wait for trigger thread to join in threaded operation.                       */
 		/**********************************************************************************/
@@ -1217,6 +1220,35 @@ int main(int argc, char *argv[])
 }
 
 
+int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id, 
+	std::list<readoutObject*> *readoutObjects)
+{
+/*! \fn 
+ * 
+ * Read the electronics and retrieve all requested data for one gate.
+ *
+ *  \param *daq, a pointer to the acquire_data object governing this DAQ acquisition
+ *  \param *evt, a pointer to the event_handler structure containing information
+ *               about the data being handled.
+ *  \param attach, the ET attachemnt to which data will be stored
+ *  \param sys_id, the ET system handle
+ *  \param std::list<readoutObject*> *readoutObjects, a pointer to the list of hardware to be read out.
+ */
+	int dataTaken = 0;
+
+	try {
+		dataTaken = daq->WriteAllData(evt, attach, sys_id, readoutObjects);
+		if (dataTaken) throw dataTaken;
+	} catch (int e) {
+		std::cout << "Data taking failed!" << std::endl;
+		mnvdaq.critStream() << "Data taking failed!";
+		return e; 
+	}
+
+	return dataTaken;
+}
+
+
 int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread, 
 	et_att_id  attach, et_sys_id  sys_id, bool readFPGA, int nReadoutADC) 
 { // TODO - fix channel / chain naming snafu here too...
@@ -1286,7 +1318,7 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 				mnvdaq.critStream() << "Problems taking data on FEB: " << (*feb)->GetBoardNumber();
 				mnvdaq.critStream() << "Leaving thread servicing CROC: " << (crocTrial->GetCrocAddress()>>16) <<
 					" Chain: " << channel_id;
-				return 1; // TODO - check error code for DAQHeader error bits.
+				return 1; 
 			}
 		} //feb loop
 #if TIME_ME
@@ -1571,7 +1603,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-11-02'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v05','v06-12-XX'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

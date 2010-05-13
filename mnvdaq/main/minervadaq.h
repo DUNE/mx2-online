@@ -37,6 +37,8 @@ template <typename Any> int SynchListen(int socket_connection, Any *data);
 
 /* "New" readout structure functions and variables. */
 std::list<readoutObject*> readoutObjects; 
+int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id, 
+        std::list<readoutObject*> *readoutObjects);
 
 /* some logging files for debugging purposes */
 #if TIME_ME
