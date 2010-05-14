@@ -1261,7 +1261,6 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 		acqData.debugStream() << " deepestRead   = " << deepestRead;
 #endif
 #endif		
-		//test//for (int i=0; i<hits; i++) {
 		for (int i=hits-1; i>=deepestRead; i--) {
 			// Set the hit id.  Increment sourceID hit in "reverse" - sourceID hit 0 is earliest in physical time.
 			evt->feb_info[8] = (unsigned int)(hits - 1 - i);
@@ -2330,20 +2329,20 @@ void acquire_data::InitializeReadoutObjects(std::list<readoutObject*> *objectLis
  *
  * \param std::list<readoutObject*> *objectList the list of readoutObjects built elsewhere.
  */
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "Initializing readoutObject List.";
 	acqData.debugStream() << "********************************";
 #endif
 	std::list<readoutObject*>::iterator rop = objectList->begin();
 	for (rop = objectList->begin(); rop != objectList->end(); rop++) {
 		int febid = (*rop)->getFebID();
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 		acqData.debugStream() << "readoutObj feb id = " << febid << ", starting loop over CROCs...";
 #endif
 		std::vector<croc*> *crocVector     = daqController->GetCrocVector();
 		std::vector<croc*>::iterator crocp = crocVector->begin();
 		for (crocp = crocVector->begin(); crocp != crocVector->end(); crocp++) {
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 			acqData.debugStream() << " CROC Addr = " << ((*crocp)->GetCrocAddress()>>16)
 				<< ", starting loop over Chains...";
 #endif
@@ -2351,7 +2350,7 @@ void acquire_data::InitializeReadoutObjects(std::list<readoutObject*> *objectLis
 			std::list<channels*>::iterator chp;
 			for (chp = chanList->begin(); chp != chanList->end(); chp++) {
 				bool addChain = false;
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 				acqData.debugStream() << "  Chain id = " << (*chp)->GetChainNumber() <<
 					", starting loop over FEB's on the chain...";
 #endif
@@ -2359,17 +2358,16 @@ void acquire_data::InitializeReadoutObjects(std::list<readoutObject*> *objectLis
 				std::list<feb*>::iterator fp;
 				for (fp = febList->begin(); fp != febList->end(); fp++) {
 					int innerfebid = (int)(*fp)->GetBoardNumber();
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 					acqData.debugStream() << "   Inner febid = " << innerfebid;
 #endif
 					if (innerfebid == febid) { addChain = true; }
 				}
 				if (addChain) {
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 					acqData.debugStream() << "     Found a match on this chain!";
-					(*rop)->addData(*chp,0); // init with zero hits
 #endif
-					//(*rop)->addData(*chp,febid); // diagnostic
+					(*rop)->addData(*chp,0); // init with zero hits
 				} // end if addChain
 			} // end for loop over channels
 		} // end for loop over crocs
@@ -2397,7 +2395,8 @@ void acquire_data::DisplayReadoutObjects(std::list<readoutObject*> *objectList)
 			unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
 			acqData.infoStream() << "  CROC = " << crocAddr << ", ChainNum = " 
 				<< (*rop)->getChannel(i)->GetChainNumber()
-				<< ", Hits on the channel = " << (*rop)->getHitsPerChannel(i);
+				<< ", Hits on the channel (Original) = " << (*rop)->getHitsPerChannel(i)
+				<< " (" << (*rop)->getOrigHitsPerChannel(i) << ")";
 		}
 	}
 	acqData.infoStream() << ".....................................";
@@ -2412,7 +2411,7 @@ void acquire_data::SendClearAndReset(channels *theChain)
  * \param channels *theChain the FE channel (referenced by Chain because of likely indexing choices).
  */
 	int crocAddress = ( theChain->GetClearStatusAddress() & 0xFFFF0000 )>>16;
-#if DEBUG_VERBOSE||DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "--> Entering SendClearAndReset for CROC " << crocAddress <<
 		" Chain " << theChain->GetChainNumber();
 	acqData.debug("  Clear Status Address = 0x%X",theChain->GetClearStatusAddress());
@@ -2436,7 +2435,7 @@ void acquire_data::SendClearAndReset(channels *theChain)
 			" Chain " << theChain->GetChainNumber();
 		exit(e);
 	}
-#if DEBUG_VERBOSE||DEBUG_NEWREADOUT      
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)      
 	acqData.debugStream() << "Executed SendClearAndReset for CROC " << crocAddress <<
 		" Chain " << theChain->GetChainNumber();
 #endif
@@ -2454,7 +2453,7 @@ int acquire_data::ReadStatus(channels *theChain, bool receiveCheck)
  *   criteria for success.
  */
 	int crocAddress = ( theChain->GetClearStatusAddress() & 0xFFFF0000 )>>16;
-#if DEBUG_VERBOSE||DEBUG_NEWREADOUT    
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)    
 	acqData.debugStream() << "--> Entering ReadStatus for CROC " << crocAddress <<
 		" Chain " << (theChain->GetChainNumber());
 	acqData.debug("  Status Address = 0x%X",theChain->GetStatusAddress());
@@ -2484,7 +2483,7 @@ int acquire_data::ReadStatus(channels *theChain, bool receiveCheck)
 		}
 		status = (unsigned short)( statusBytes[0] | statusBytes[1]<<0x08 );
 		theChain->SetChannelStatus(status);
-#if DEBUG_VERBOSE||DEBUG_NEWREADOUT     
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)     
 		acqData.debug("     Read Status - Chain %d status = 0x%04X",
 			theChain->GetChainNumber(),status);
 #endif
@@ -2571,7 +2570,7 @@ int acquire_data::ReadStatus(channels *theChain, bool receiveCheck)
 			" Chain " << theChain->GetChainNumber();
 		return (-15);
 	}
-#if DEBUG_VERBOSE||DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "Executed ReadStatus for CROC " << crocAddress <<
 		" Chain " << theChain->GetChainNumber();
 #endif
@@ -2588,7 +2587,7 @@ template <class X> void acquire_data::SendFrameData(X *device, channels *theChan
  * \param X *device the frame (template)
  * \param channels *theChannel the CROC FE Channel for the board housing the device.
  */
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   -->Entering SendFrameData.";
 #endif
 	CVAddressModifier AM = cvA24_U_DATA;  // *Default* Controller Address Modifier
@@ -2628,7 +2627,7 @@ template <class X> void acquire_data::SendFrameData(X *device, channels *theChan
 		// Hard exit used for thread "friendliness" later...
 		exit(e);
 	}
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   Finished SendFrameData!";
 #endif
 }
@@ -2644,7 +2643,7 @@ template <class X> void acquire_data::SendFrameDataFIFOBLT(X *device, channels *
  * \param X *device the frame (template)
  * \param channels *theChannel the CROC FE Channel for the board housing the device.
  */     
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   -->Entering SendFrameDataFIFOBLT.";
 #endif
 	CVAddressModifier AM = cvA24_U_DATA;  // *Default* Controller Address Modifier
@@ -2684,7 +2683,7 @@ template <class X> void acquire_data::SendFrameDataFIFOBLT(X *device, channels *
 		// Hard exit used for thread "friendliness" later...
 		exit(e);
 	}
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   Finished SendFrameDataFIFOBLT!";
 #endif
 }
@@ -2701,7 +2700,7 @@ template <class X> int acquire_data::RecvFrameData(X *device, channels *theChann
  * \param X *device the frame (template)
  * \param channels *theChannel the CROC FE Channel for the board housing the device.
  */
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   -->Entering RecvFrameData for devices.";
 #endif
 	CVAddressModifier AM     = cvA24_U_DATA;  // *Default* Controller Address Modifier
@@ -2721,7 +2720,7 @@ template <class X> int acquire_data::RecvFrameData(X *device, channels *theChann
 		return e;
 	}
 	dpmPointer = (unsigned short) (status[0] | status[1]<<0x08);
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "    RecvFrameData DPM Pointer: " << dpmPointer;
 #endif
 	device->SetIncomingMessageLength(dpmPointer-2);
@@ -2762,7 +2761,7 @@ template <class X> int acquire_data::RecvFrameData(X *device, channels *theChann
 	//device->DecodeRegisterValues(dpmPointer-2);
 	//device->DecodeRegisterValues(dpmPointer);
 
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   Finished RecvFrameData for devices!  Returning " << success;
 #endif
 	return ((int)success);
@@ -2778,7 +2777,7 @@ int acquire_data::RecvFrameData(channels *theChannel)
  *
  * \param channels *theChannel the CROC FE Channel for the board housing the device.
  */
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   -->Entering RecvFrameData for a channel.";
 #endif
 	CVAddressModifier AM     = cvA24_U_DATA;  // *Default* Controller Address Modifier
@@ -2798,7 +2797,7 @@ int acquire_data::RecvFrameData(channels *theChannel)
 		return e;
 	}
 	dpmPointer = (unsigned short) (status[0] | status[1]<<0x08);
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "    RecvFrameData DPM Pointer: " << dpmPointer;
 #endif
 	theChannel->SetDPMPointer(dpmPointer);
@@ -2828,7 +2827,7 @@ int acquire_data::RecvFrameData(channels *theChannel)
 
 	// Clean-up and return.
 	delete [] DPMData;
-#if DEBUG_NEWREADOUT
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   Finished RecvFrameData for a channel!  Returning.";
 #endif
 	return 0;
@@ -2886,6 +2885,9 @@ void acquire_data::FillEventStructure(event_handler *evt, int bank, channels *th
 }
 
 
+int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
+        std::list<readoutObject*> *readoutObjects)
+{
 /*! \fn int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, std::list<readoutObject*> *readoutObjects)
  *
  * Run the full acquisition sequence for a gate, write the data to file. 
@@ -2896,9 +2898,6 @@ void acquire_data::FillEventStructure(event_handler *evt, int bank, channels *th
  *  \param sys_id, the ET system handle
  *  \param std::list<readoutObject*> *readoutObjects, a pointer to the list of hardware to be read out. 
  */
-int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
-        std::list<readoutObject*> *readoutObjects)
-{
 #if DEBUG_NEWREADOUT
 	acqData.debugStream() << "Entering acquire_data::WriteAllData.";
 	acqData.debugStream() << "++++++++++++++++++++++++++++++++++++";
@@ -2906,7 +2905,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 #endif
 	bool readFPGA = true;
 	bool readDisc = true;
-	bool readADC  = false;
+	bool readADC  = true;
 
 	// Fill entries in the event_handler structure for this event -> The sourceID.
 	evt->new_event   = false; // We are always processing an existing event with this function!!!
@@ -3037,16 +3036,20 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	// First, send a read frame to each channel that has an FEB with the right index.
 	// Then, after sending a frame to every channel, read each of them in turn for data.
 	if (readDisc) {
-		acqData.infoStream() << "===================";
-		acqData.infoStream() << "Read the Discr's...";
-		acqData.infoStream() << "===================";
+#if DEBUG_NEWREADOUT
+		acqData.debugStream() << "===================";
+		acqData.debugStream() << "Read the Discr's...";
+		acqData.debugStream() << "===================";
+#endif
 		std::list<readoutObject*>::iterator rop = readoutObjects->begin();
 		while (rop != readoutObjects->end()) {
 			int febid    = (*rop)->getFebID();
 			int febindex = febid - 1;
+#if DEBUG_NEWREADOUT
 			acqData.debugStream() << "-> Top of readoutObject loop.";
 			acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 			acqData.debugStream() << "feb id    = " << febid;
+#endif
 			// Pointer for the FEB's on each channel.  Be careful about deleting!   
 			feb *tmpFEB;
 
@@ -3070,7 +3073,9 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 			} // end loop over data in readout object for send clear and reset, check status
 
 			// Send a Discr read frame request to each channel with an FEB with id febid.
+#if DEBUG_NEWREADOUT
 			acqData.debugStream() << "->Send the read Discr frame requests to all channels with FEB's of the right id.";
+#endif
 			for (int i=0; i<(*rop)->getDataLength(); i++) {
 				// Make a pointer to the FEB on the channel with board number febid
 				tmpFEB  = (*rop)->getChannel(i)->GetFebVector(febindex);
@@ -3078,9 +3083,10 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 				if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
 				unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
 				unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+#if DEBUG_NEWREADOUT
 				acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
 					(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum;
-
+#endif
 				// Discr. frame built correctly in class constructor (message deleted in destructor)
 				// Send the message.
 				SendFrameData(tmpFEB->GetDisc(), (*rop)->getChannel(i));
@@ -3137,6 +3143,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					((int)maxHits & 0x0F) : ((int)(maxHits & 0xF0)>>4);
 				nhits++; // add end of gate hit
 				(*rop)->setHitsPerChannel(i, nhits);
+				(*rop)->setOrigHitsPerChannel(i, nhits);
 #if DEBUG_NEWREADOUT
 				acqData.debugStream() << "   TOTAL Number of hits (" << i << ") = " << (*rop)->getHitsPerChannel(i);
 #endif
@@ -3164,10 +3171,157 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 #endif
 	} // end readDisc
 
+	// Do an "ADC read".  Loop over FEB ID's (readoutObjects) a while loop.  First, send a read frame to each 
+	// channel that has an FEB with the right index if there is still a hit to read.  Then, after sending a 
+	// frame to each of those channels, read each of them in turn for data.  After the read, decrement the 
+	// hit counter.
 	if (readADC) {
-		acqData.critStream() << "Have not implemented!";
-		return 1;
-	}
+#if DEBUG_NEWREADOUT
+		acqData.debugStream() << "===================";
+		acqData.debugStream() << "Read the ADC's...";
+		acqData.debugStream() << "===================";
+#endif
+		std::list<readoutObject*>::iterator rop = readoutObjects->begin();
+		while (rop != readoutObjects->end()) {
+			int febid    = (*rop)->getFebID();
+			int febindex = febid - 1;
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "-> Top of readoutObject loop.";
+			acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+			acqData.debugStream() << "feb id    = " << febid;
+#endif
+			// Pointer for the FEB's on each channel.  Be careful about deleting!   
+			feb *tmpFEB;
+
+			// Clear and reset all channels that have an FEB with id febid that still have a hit.
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "->Do the clear and resets for all channels with FEB's of the right id with a hit.";
+#endif
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				SendClearAndReset((*rop)->getChannel(i));
+				try {
+					int error = ReadStatus((*rop)->getChannel(i), doNotCheckForMessRecvd); 
+					if (error) throw error; 
+				} catch (int e) { 
+					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+						(*rop)->getChannel(i)->GetChainNumber();
+					return e; // Error, stop!
+				}
+			} // end loop for clear and reset
+
+			// Send an ADC read frame request to each channel with an FEB with id febid that still has a hit.
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "->Send the read ADC frame requests to all channels with FEB's of the right id with a hit.";
+#endif
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				int hitNum = (*rop)->getHitsPerChannel(i);
+				int hitIdx = hitNum - 1; // Explicit offset.
+				if (hitNum > 0) {
+					// Make a pointer to the FEB on the channel with board number febid
+					tmpFEB  = (*rop)->getChannel(i)->GetFebVector(febindex);
+					int brdnum = tmpFEB->GetBoardNumber();
+					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+#if DEBUG_NEWREADOUT
+					acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
+						(*rop)->getChannel(i)->GetChainNumber() <<", FEB = " << brdnum << 
+						", hits = " << (*rop)->getHitsPerChannel(i);
+#endif
+					// ADC frame built correctly in class constructor (message deleted in destructor)
+					// Send the message for the deepest hit (we will decrement the counter later)
+					SendFrameData(tmpFEB->GetADC(hitIdx), (*rop)->getChannel(i));
+					tmpFEB  = 0;
+				} // end if hitNum > 0
+			} // end loop for send read request
+
+			// Check the status for each channel to be sure the message was sent and recv'd.
+			// There should only be one frame of data (from the FEB's in the loop above).
+			// Read the data & decrement the appropriate hitsPerChannel value. 
+			// Decalre it to ET. 
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "->Check the status to be sure the message was sent and recv'd.  If so, read the data & decalre it.";
+#endif
+			bool stillHaveHits = false;
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				int hitNum = (*rop)->getHitsPerChannel(i);
+				int orgNum = (*rop)->getOrigHitsPerChannel(i) - 1;
+				int hitIdx = hitNum - 1; // Explicit offset.
+				if (hitNum > 0) {
+					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+					try {
+						int error = ReadStatus((*rop)->getChannel(i), checkForMessRecvd); 
+						if (error) throw error; 
+					} catch (int e) { 
+						acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+						acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+							(*rop)->getChannel(i)->GetChainNumber();
+						return e; // Error, stop!
+					}
+					// Make a pointer to the FEB on the channel with board number febid
+					tmpFEB = (*rop)->getChannel(i)->GetFebVector(febindex);
+					int brdnum = tmpFEB->GetBoardNumber();
+					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+#if DEBUG_NEWREADOUT
+					acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
+						(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum << 
+						", hits = " << (*rop)->getHitsPerChannel(i);
+#endif
+					// Read the DPM. 
+					try {
+						int error = RecvFrameData((*rop)->getChannel(i));
+						if (error) throw error; 
+					} catch (int e) { 
+						acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+						acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+							(*rop)->getChannel(i)->GetChainNumber();
+						return e; // Error, stop!
+					}
+					// Fiddle with evt data.
+					evt->feb_info[2] = crocAddr;
+					evt->feb_info[3] = (*rop)->getChannel(i)->GetChainNumber();
+					evt->feb_info[6] = brdnum;
+					evt->feb_info[7] = 81; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
+					// Set the hit id.  Increment sourceID hit in "reverse" - sourceID hit 0 is earliest in physical time.
+					evt->feb_info[8] = (unsigned int)(orgNum - hitIdx);
+#if DEBUG_NEWREADOUT
+					acqData.debugStream() << "   Original Max Hit Index on this board         = " << orgNum;
+					acqData.debugStream() << "   Current Hit Index (ADC block) on this board  = " << hitIdx;
+					acqData.debugStream() << "   Reported Hit ID                              = " << evt->feb_info[8];
+#endif
+					// FillEventStructure here.  FES reads from the *channel's* buffer, not the frame's!
+					FillEventStructure(evt, 0, (*rop)->getChannel(i));
+					// ContactEventBuilder here.
+					ContactEventBuilder(evt, (int)0, attach, sys_id);
+					// Cleanup...
+					(*rop)->getChannel(i)->DeleteBuffer();
+					tmpFEB  = 0;
+					// Update hit architecture
+					if (hitIdx>0) stillHaveHits = true; // only needs to be true for any one channel
+					(*rop)->setHitsPerChannel(i, hitIdx); //hitNum--
+#if DEBUG_NEWREADOUT
+					acqData.debugStream() << "   New Number of hits (" << i << ") = " << (*rop)->getHitsPerChannel(i);
+#endif
+				} // end if hit check
+			} // end for loop over readoutObject data
+
+			if (!stillHaveHits) {
+				(*rop)->zeroOrigHitsPerChannel();
+				rop++; 
+			} // else repeat the loop for the same channels & boards. 
+		} // end while
+
+#if DEBUG_NEWREADOUT
+		acqData.debugStream() << "&&&&&&&&&&&&&&&&&&&& - End of ReadADC";
+		acqData.debugStream() << "redoutObject Status:";
+		DisplayReadoutObjects(readoutObjects);
+#endif
+} // end if readADC
+
 
 #if DEBUG_NEWREADOUT
 	acqData.debugStream() << "Exiting acquire_data::WriteAllData.";
