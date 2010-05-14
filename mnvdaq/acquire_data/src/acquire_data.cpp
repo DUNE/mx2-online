@@ -2886,26 +2886,36 @@ void acquire_data::FillEventStructure(event_handler *evt, int bank, channels *th
 
 
 int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
-        std::list<readoutObject*> *readoutObjects)
+        std::list<readoutObject*> *readoutObjects, const int allowedTime)
 {
 /*! \fn int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, std::list<readoutObject*> *readoutObjects)
  *
  * Run the full acquisition sequence for a gate, write the data to file. 
  *
  *  \param *evt, a pointer to the event_handler structure containing information
- *               about the data being handled.
+ *		about the data being handled.
  *  \param attach, the ET attachemnt to which data will be stored
  *  \param sys_id, the ET system handle
  *  \param std::list<readoutObject*> *readoutObjects, a pointer to the list of hardware to be read out. 
+ *  \param const int allowedTime, allowed readout time in microseconds 
  */
 #if DEBUG_NEWREADOUT
 	acqData.debugStream() << "Entering acquire_data::WriteAllData.";
 	acqData.debugStream() << "++++++++++++++++++++++++++++++++++++";
 	DisplayReadoutObjects(readoutObjects);
 #endif
-	bool readFPGA = true;
-	bool readDisc = true;
-	bool readADC  = true;
+	struct timeval readstart, readend;
+	unsigned long long startReadout, stopReadout;
+	int readoutTimeDiff;  // For timing monitoring.  
+
+	// Update startReadout for the next gate...
+	gettimeofday(&readstart, NULL);
+	startReadout = (unsigned long long)(readstart.tv_sec*1000000) + (unsigned long long)(readstart.tv_usec);
+
+	bool continueReadout = true;
+	bool readFPGA        = true;
+	bool readDisc        = true;
+	bool readADC         = true;
 
 	// Fill entries in the event_handler structure for this event -> The sourceID.
 	evt->new_event   = false; // We are always processing an existing event with this function!!!
@@ -2915,14 +2925,14 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	// Do an "FPGA read".
 	// First, send a read frame to each channel that has an FEB with the right index.
 	// Then, after sending a frame to every channel, read each of them in turn for data.
-	if (readFPGA) {
+	if (readFPGA && continueReadout) {
 #if DEBUG_NEWREADOUT
 		acqData.debugStream() << "==================";
 		acqData.debugStream() << "Read the FPGA's...";
 		acqData.debugStream() << "==================";
 #endif
 		std::list<readoutObject*>::iterator rop = readoutObjects->begin();
-		for (rop = readoutObjects->begin(); rop != readoutObjects->end(); rop++) {
+		while (rop != readoutObjects->end() && continueReadout) {
 			int febid    = (*rop)->getFebID();
 			int febindex = febid - 1;
 #if DEBUG_NEWREADOUT
@@ -3029,20 +3039,28 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 				(*rop)->getChannel(i)->DeleteBuffer();
 				tmpFEB = 0;
 			} // end loop over data for reading the DPM
-		} // end loop over readout object list
+
+			// Increment the readoutObject pointer.
+			rop++;
+			// Check readout time - are we okay?
+			gettimeofday(&readend, NULL);
+			stopReadout = (unsigned long long)(readend.tv_sec*1000000) + (unsigned long long)(readend.tv_usec);
+			readoutTimeDiff = (int)stopReadout - (int)startReadout;
+			if (readoutTimeDiff > allowedTime) { continueReadout = false; }
+		} // end while loop over readout objects
 	} // end if readFPGA
 
 	// Do a "Discr read".  Loop over FEB ID's (readoutObjects) a while loop.
 	// First, send a read frame to each channel that has an FEB with the right index.
 	// Then, after sending a frame to every channel, read each of them in turn for data.
-	if (readDisc) {
+	if (readDisc && continueReadout) {
 #if DEBUG_NEWREADOUT
 		acqData.debugStream() << "===================";
 		acqData.debugStream() << "Read the Discr's...";
 		acqData.debugStream() << "===================";
 #endif
 		std::list<readoutObject*>::iterator rop = readoutObjects->begin();
-		while (rop != readoutObjects->end()) {
+		while (rop != readoutObjects->end() && continueReadout) {
 			int febid    = (*rop)->getFebID();
 			int febindex = febid - 1;
 #if DEBUG_NEWREADOUT
@@ -3081,9 +3099,9 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 				tmpFEB  = (*rop)->getChannel(i)->GetFebVector(febindex);
 				int brdnum = tmpFEB->GetBoardNumber();
 				if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+#if DEBUG_NEWREADOUT
 				unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
 				unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
-#if DEBUG_NEWREADOUT
 				acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
 					(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum;
 #endif
@@ -3163,6 +3181,11 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 
 			// Increment the readoutObject pointer.
 			rop++;
+			// Check readout time - are we okay?
+			gettimeofday(&readend, NULL);
+			stopReadout = (unsigned long long)(readend.tv_sec*1000000) + (unsigned long long)(readend.tv_usec);
+			readoutTimeDiff = (int)stopReadout - (int)startReadout;
+			if (readoutTimeDiff > allowedTime) { continueReadout = false; }
 		} // end while loop over readout objects
 #if DEBUG_NEWREADOUT
 		acqData.debugStream() << "&&&&&&&&&&&&&&&&&&&& - End of ReadDisc";
@@ -3175,14 +3198,14 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	// channel that has an FEB with the right index if there is still a hit to read.  Then, after sending a 
 	// frame to each of those channels, read each of them in turn for data.  After the read, decrement the 
 	// hit counter.
-	if (readADC) {
+	if (readADC && continueReadout) {
 #if DEBUG_NEWREADOUT
 		acqData.debugStream() << "===================";
 		acqData.debugStream() << "Read the ADC's...";
 		acqData.debugStream() << "===================";
 #endif
 		std::list<readoutObject*>::iterator rop = readoutObjects->begin();
-		while (rop != readoutObjects->end()) {
+		while (rop != readoutObjects->end() && continueReadout) {
 			int febid    = (*rop)->getFebID();
 			int febindex = febid - 1;
 #if DEBUG_NEWREADOUT
@@ -3224,9 +3247,9 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					tmpFEB  = (*rop)->getChannel(i)->GetFebVector(febindex);
 					int brdnum = tmpFEB->GetBoardNumber();
 					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+#if DEBUG_NEWREADOUT
 					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
 					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
-#if DEBUG_NEWREADOUT
 					acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
 						(*rop)->getChannel(i)->GetChainNumber() <<", FEB = " << brdnum << 
 						", hits = " << (*rop)->getHitsPerChannel(i);
@@ -3313,6 +3336,11 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 				(*rop)->zeroOrigHitsPerChannel();
 				rop++; 
 			} // else repeat the loop for the same channels & boards. 
+			// Check readout time - are we okay?
+			gettimeofday(&readend, NULL);
+			stopReadout = (unsigned long long)(readend.tv_sec*1000000) + (unsigned long long)(readend.tv_usec);
+			readoutTimeDiff = (int)stopReadout - (int)startReadout;
+			if (readoutTimeDiff > allowedTime) { continueReadout = false; }
 		} // end while
 
 #if DEBUG_NEWREADOUT
@@ -3320,7 +3348,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 		acqData.debugStream() << "redoutObject Status:";
 		DisplayReadoutObjects(readoutObjects);
 #endif
-} // end if readADC
+	} // end if readADC
 
 
 #if DEBUG_NEWREADOUT

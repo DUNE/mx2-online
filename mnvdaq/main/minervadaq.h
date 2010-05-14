@@ -38,7 +38,7 @@ template <typename Any> int SynchListen(int socket_connection, Any *data);
 /* "New" readout structure functions and variables. */
 std::list<readoutObject*> readoutObjects; 
 int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id, 
-        std::list<readoutObject*> *readoutObjects);
+        std::list<readoutObject*> *readoutObjects, const int allowedTime);
 
 /* some logging files for debugging purposes */
 #if TIME_ME
@@ -95,6 +95,7 @@ int                         soldierToWorker_socket_handle;
 struct hostent *            soldier_node_info; // server on soldier node
 #endif
 
+/*
 // Mixed mode cutoff time for physics spills.  If a physics gate takes longer than this to
 // read out, we will abort the following calibration gate and skip to another physics gate.
 #if WH14T||WH14B
@@ -116,5 +117,5 @@ const int allowedPedestal       =  1000000;
 const int allowedNuMI           =  2100000; 
 const int allowedCosmic         = 10000000;  // UNTESTED! (Really, an MTest value.)
 const int allowedLightInjection =  1100000; 
-
+*/
 

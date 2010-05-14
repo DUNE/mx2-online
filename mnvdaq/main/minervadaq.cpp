@@ -786,7 +786,6 @@ int main(int argc, char *argv[])
 #if DEBUG_TIMING&&(!MTEST)
 		mnvdaq.debugStream() << "\tTrigger Type = " << triggerType << " for gate " << gate+1;
 #endif
-
 		// Synchronize trigger types. TODO - test synch write & listen functions w/ return values...
 		//SynchWrite(soldierToWorker_socket_handle, soldierToWorker_trig);  
 		//SynchListen(soldierToWorker_socket_connection, soldierToWorker_trig);
@@ -844,12 +843,7 @@ int main(int argc, char *argv[])
 			continue;  // Go to beginning of gate loop.
 		} 
 #endif
-
-#if THREAD_ME
-		// Careul about arguments with the threaded functions!  They are not exercised regularly.
-		// TODO - find how to make boost thread functions return values.
-		boost::thread trigger_thread(boost::bind(&TriggerDAQ,daq,triggerType,runningMode,currentController));
-#elif NO_THREAD
+		// Trigger the DAQ (active communication with the electronics in internal timing modes only).
 		// TODO - Have the DAQ handle "timeouts" differently from real VME errors!
 		try {
 			int error = TriggerDAQ(daq, triggerType, runningMode, currentController);
@@ -865,7 +859,6 @@ int main(int argc, char *argv[])
 			mnvdaq.fatalStream() << "Not sure how to handle timeouts yet!  Bailing!";
 			exit(1);
 		}
-#endif 
 #if DEBUG_GENERAL
 		mnvdaq.debugStream() << "Returned from TriggerDAQ.";
 #endif
@@ -873,11 +866,6 @@ int main(int argc, char *argv[])
 		// Make the event_handler pointer.
 		event_handler *evt = &event_data;
 
-		/**********************************************************************************/
-		/*  Initialize loop counter variables                                             */
-		/**********************************************************************************/
-		int croc_id;
-		int no_crocs = currentController->GetCrocVectorLength(); 
 		// Now update startReadout for the next gate...
 		gettimeofday(&readstart, NULL);
 		startReadout = (unsigned long long)(readstart.tv_sec*1000000) + 
@@ -885,10 +873,40 @@ int main(int argc, char *argv[])
 		event_data.readoutInfo = (unsigned short)0; // No Error
 
 #if NEWREADOUT
-		// Execute the "new" readout model.
-		int success = TakeData(daq, evt, attach, sys_id, &readoutObjects);
-#else // NEWREADOUT CHECK
 		/**********************************************************************************/
+		/*                      Execute the "new" readout model.                          */        
+		/**********************************************************************************/
+		try {
+			int error = TakeData(daq, evt, attach, sys_id, &readoutObjects, allowedReadoutTime);
+			if (error) { throw error; }
+		} catch (int e) {
+			event_data.readoutInfo += (unsigned short)controllerErrCode;
+			std::cout << "Error Code " << e << " in minervadaq::main()!  ";
+			std::cout << "Cannot TakeData for Gate: " << gate << std::endl;
+			mnvdaq.critStream() << "Error Code " << e << " in minervadaq::main()!  ";
+			mnvdaq.critStream() << "Cannot TakeData for Gate: " << gate;
+			continueRunning = false;  // "Stop" gate loop.
+			break;                    // Exit chain loop.
+		}
+		gettimeofday(&readend, NULL);
+		stopReadout = (unsigned long long)(readend.tv_sec*1000000) + 
+			(unsigned long long)(readend.tv_usec);
+		readoutTimeDiff = (int)stopReadout - (int)startReadout; 
+#if DEBUG_TIMING
+		mnvdaq.debugStream() << "Total readout time at end = " << readoutTimeDiff;
+#endif
+		if (readoutTimeDiff > allowedReadoutTime) {
+			event_data.readoutInfo += (unsigned short)1; // "Timeout Error"
+			mnvdaq.critStream() << "Readout is taking longer than allowed! -> " 
+				<< readoutTimeDiff;
+			// No other loop to exit in this model.
+		}
+
+#else // NEWREADOUT CHECK
+		int croc_id;
+		int no_crocs = currentController->GetCrocVectorLength(); 
+		/**********************************************************************************/
+		/*                      Execute the "old" readout model.                          */        
 		/* Loop over crocs and then channels in the system.  Execute TakeData on each     */
 		/* Croc/Channel combination of FEB's.  Here we assume that the CROCs are indexed  */
 		/* from 1->N.  The routine will fail if this is false!                            */
@@ -977,7 +995,6 @@ int main(int argc, char *argv[])
 		/*   Wait for trigger thread to join in threaded operation.                       */
 		/**********************************************************************************/
 #if THREAD_ME
-		trigger_thread.join();
 		for (int i=0;i<thread_count;i++) {
 			data_threads[i]->join();
 		}
@@ -1221,7 +1238,7 @@ int main(int argc, char *argv[])
 
 
 int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id, 
-	std::list<readoutObject*> *readoutObjects)
+	std::list<readoutObject*> *readoutObjects, const int allowedTime)
 {
 /*! \fn 
  * 
@@ -1229,7 +1246,7 @@ int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id 
  *
  *  \param *daq, a pointer to the acquire_data object governing this DAQ acquisition
  *  \param *evt, a pointer to the event_handler structure containing information
- *               about the data being handled.
+ *		about the data being handled.
  *  \param attach, the ET attachemnt to which data will be stored
  *  \param sys_id, the ET system handle
  *  \param std::list<readoutObject*> *readoutObjects, a pointer to the list of hardware to be read out.
@@ -1237,11 +1254,11 @@ int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id 
 	int dataTaken = 0;
 
 	try {
-		dataTaken = daq->WriteAllData(evt, attach, sys_id, readoutObjects);
+		dataTaken = daq->WriteAllData(evt, attach, sys_id, readoutObjects, allowedTime);
 		if (dataTaken) throw dataTaken;
 	} catch (int e) {
-		std::cout << "Data taking failed!" << std::endl;
-		mnvdaq.critStream() << "Data taking failed!";
+		std::cout << "Data taking failed in minervadaq main::TakeData!" << std::endl;
+		mnvdaq.critStream() << "Data taking failed in minervadaq main::TakeData!";
 		return e; 
 	}
 
@@ -1603,7 +1620,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v07','v07-02-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v07','v07-02-01'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
