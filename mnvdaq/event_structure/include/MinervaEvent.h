@@ -88,8 +88,8 @@ class MinervaEvent {
 			unsigned short int trig, unsigned char ledGroup, unsigned char ledLevel, 
 			unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 
 			unsigned short int error, unsigned int minos, MinervaHeader *header, 
-			unsigned short int nADCFrames, unsigned short int nDiscFrames,
-			log4cpp::Appender* appender=0);
+			unsigned short int nADCFrames, unsigned short int nDiscFrames, 
+			unsigned short int nFPGAFrames ,log4cpp::Appender* appender=0);
 		/*! the default destructor */
 		~MinervaEvent() { };
 		template <class X> void MakeDataBlock(X *frame, MinervaHeader *header);

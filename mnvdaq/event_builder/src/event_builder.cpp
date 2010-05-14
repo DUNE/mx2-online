@@ -533,7 +533,7 @@ int event_builder(event_handler *evt)
 		event = new MinervaEvent(evt->detectorType, evt->detectorConfig, evt->runNumber, 
 			evt->subRunNumber, evt->triggerType, evt->ledLevel, evt->ledGroup, evt->globalGate, 
 			evt->gate, evt->triggerTime, evt->readoutInfo, evt->minosSGATE, tmp_header, 
-			adcFrameCount, discFrameCount, ebAppender); 
+			adcFrameCount, discFrameCount, fpgaFrameCount, ebAppender); 
 		// The call to MinervaEvent constructor automatically inserts the DAQ block into the event buffer.
 		// Reset frame counters.
 		adcFrameCount = discFrameCount = fpgaFrameCount = 0;

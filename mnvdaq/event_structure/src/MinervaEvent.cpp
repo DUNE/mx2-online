@@ -98,7 +98,7 @@ MinervaHeader::MinervaHeader(unsigned char crate, log4cpp::Appender* appender)
 	DAQ_event_header[0] = magic_pattern;    // add: the magic pattern to the header,
 	DAQ_event_header[1] = 48;               // the length in bytes of the DAQ header,
 	DAQ_event_header[2] = (3 & 0xFF);       // Bank Type (3 for DAQ Header),
-	DAQ_event_header[2] |= (6 & 0xFF)<<0x8; // Version (6 as of 2010.May.13), and
+	DAQ_event_header[2] |= (7 & 0xFF)<<0x8; // Version (7 as of 2010.May.14), and
 	DAQ_event_header[3] = source_id;        // the source information.
 #if DEBUG_HEADERS
 	if (hdrAppender!=0) {
@@ -116,7 +116,7 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 	unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 
 	unsigned short int error, unsigned int minos, MinervaHeader *header, 
 	unsigned short int nADCFrames, unsigned short int nDiscFrames,
-	log4cpp::Appender* appender)
+	unsigned short int nFPGAFrames, log4cpp::Appender* appender)
 {
 /*! \fn 
  *
@@ -135,8 +135,9 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
  * \param unsigned short error, error flag
  * \param unsigned int minos, minos trigger time
  * \param MinervaHeader *header, bank header
- * \param short int nADCFrames, the number of ADC frames recorded in this gate
- * \param short int nDiscFrames, the number of Discriminator frames recorded in this gate
+ * \param unsigned short nADCFrames, the number of ADC frames recorded in this gate
+ * \param unsigned short nDiscFrames, the number of Discriminator frames recorded in this gate
+ * \param unsigned short nFPGAFrames, the number of FPGA programming frames recorded in this gate
  * \param log4cpp::Appender* appender, the pointer to the log file
  */
 	evtAppender  = appender; // log4cpp appender
@@ -156,6 +157,7 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 	event_info_block[3] = trig & 0xFF;
 	event_info_block[3] |= ( (ledLevel & 0x3) << 8 );
 	event_info_block[3] |= ( (ledGroup & 0xF8) << 8 );
+	event_info_block[3] |= ( (nFPGAFrames & 0xFFFF) << 16 );
 	event_info_block[4] = g_gate & 0xFFFFFFFF;       // the "global gate" least sig int 
 	event_info_block[5] = (g_gate>>32) & 0xFFFFFFFF; // the "global gate" most sig int
 	event_info_block[6] = gate & 0xFFFFFFFF;         // the gate number least sig int 
