@@ -101,6 +101,7 @@ class channels {
 		feb *MakeTrialFEB(int a, int nHits, log4cpp::Appender* appender=0); //feb address, maxHits, log appender
 		int DecodeStatusMessage();
 		void inline ClearBuffer() {delete [] buffer;};
+		int CheckHeaderErrors(int dataLength);
 
 		/*! Build FEB vector from existing list */
 		void VectorizeFEBList();

@@ -541,11 +541,16 @@ int event_builder(event_handler *evt)
 		event = new MinervaEvent();
 
 		// Sort the event data
+		// Compute the length of the frame as encoded within itself.
 		int info_length = (int)( evt->event_data[0] + (evt->event_data[1]<<8) + 2); // Data + Frame CRC
 		switch (evt->feb_info[4]) {
 			case 0: // ADC Data
-				// Compare embedded length (data) + CRC to info_length		
-				CheckBufferLength(evt->feb_info[5]+2, info_length); 
+				// Compare DPM Pointer Value (+CRC) to frame length embedded in the data itself.		
+				if ( CheckBufferLength(evt->feb_info[5]+2, info_length) ) {
+					std::cout << "Buffer length error for the ADC's!" << std::endl;
+					ebuilder.fatalStream() << "Buffer length error for the ADC's!";
+					exit(1);
+				}
 				for (unsigned int i=0; i<evt->feb_info[5]; i+=info_length) {
 					DecodeBuffer(evt, dummy_feb->GetADC(0), i, info_length);
 					// Build the data block header.
@@ -556,8 +561,12 @@ int event_builder(event_handler *evt)
 				adcFrameCount++;
 				break;
 			case 1: // Discriminator Data
-				// Compare embedded length (data) + CRC to info_length	
-				CheckBufferLength(evt->feb_info[5]+2, info_length);
+				// Compare DPM Pointer Value (+CRC) to frame length embedded in the data itself.		
+				if ( CheckBufferLength(evt->feb_info[5]+2, info_length) ) {
+					std::cout << "Buffer length error for the Disciminators!" << std::endl;
+					ebuilder.fatalStream() << "Buffer length error for the Discriminators!";
+					exit(1);
+				}
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
 					DecodeBuffer(evt, dummy_feb->GetDisc(), i, info_length);
 					// Build the data block header.
@@ -568,8 +577,12 @@ int event_builder(event_handler *evt)
 				discFrameCount++;
 				break;
 			case 2: // FEB Data
-				// Compare embedded length (data) + CRC to info_length				
-				CheckBufferLength(evt->feb_info[5]+2, info_length);
+				// Compare DPM Pointer Value (+CRC) to frame length embedded in the data itself.		
+				if ( CheckBufferLength(evt->feb_info[5]+2, info_length) ) {
+					std::cout << "Buffer length error for the FPGA's!" << std::endl;
+					ebuilder.fatalStream() << "Buffer length error for the FPGA's!";
+					exit(1);
+				}
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
 					DecodeBuffer(evt, dummy_feb, i, info_length);
 					// Build the data block header
@@ -628,7 +641,7 @@ void HandleErrors(int success)
 } 
 
 
-void CheckBufferLength(int length, int frame_length) 
+int CheckBufferLength(int length, int frame_length) 
 {
 /*! \fn A function to make sure that the buffer length is correct. 
  *
@@ -637,9 +650,10 @@ void CheckBufferLength(int length, int frame_length)
  */
 	if (length != frame_length) {
 		std::cout << "Buffer length, frame length disparity in event_builder::CheckBufferLength!" << endl;
-		ebuilder.fatalStream() << "Buffer length, frame length disparity in event_builder::CheckBufferLength!";
-		exit(-4);
+		ebuilder.critStream() << "Buffer length, frame length disparity in event_builder::CheckBufferLength!";
+		return 1;
 	}
+	return 0;
 }
 
 

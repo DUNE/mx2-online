@@ -2695,7 +2695,7 @@ template <class X> int acquire_data::RecvFrameData(X *device, channels *theChann
  *
  * Receive messages for a generic device -> read DPM pointer, read BLT, and store data in the *device* buffer.
  * Because we use the device buffer here, this function should be used primarily for debugging and for 
- * building the FEB list.
+ * building the FEB list.  For standard acquisition, use acquire_data::RecvFrameData(channels *theChannel).
  *
  * \param X *device the frame (template)
  * \param channels *theChannel the CROC FE Channel for the board housing the device.
@@ -2754,13 +2754,10 @@ template <class X> int acquire_data::RecvFrameData(X *device, channels *theChann
 		return success; // There were errors.
 	}
 	// TODO - DecodeRegVals does some useful error checking (message length), but is inefficient.
-	// TODO - Split out the useful part and just call it... (make it part of CheckForErrors?  Probably no...)
 	// Also TODO - figure out the right argument to pass this function... for some reason, if we did a FIFO 
 	// write beforehand, we get back a different DPM pointer than if we had done a regular write...
-	// TODO - DecodeRegisterValues is actually a very bad idea, since it will parse full frames!
 	//device->DecodeRegisterValues(dpmPointer-2);
 	//device->DecodeRegisterValues(dpmPointer);
-
 #if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   Finished RecvFrameData for devices!  Returning " << success;
 #endif
@@ -2802,11 +2799,17 @@ int acquire_data::RecvFrameData(channels *theChannel)
 #endif
 	theChannel->SetDPMPointer(dpmPointer);
 	// We must read an even number of bytes.
+	int dataLength = 1;
 	if (dpmPointer%2) {
-		DPMData = new unsigned char [dpmPointer+1];
+		dataLength = dpmPointer + 1;
 	} else {
-		DPMData = new unsigned char [dpmPointer];
+		dataLength = dpmPointer;
 	}
+	if (dataLength%2) {
+		acqData.critStream() << "Error in RecvFrameData for a channel!  Invalid DPM pointer length!";
+		return 1;
+	}
+	DPMData = new unsigned char [dataLength];
 	try {
 		int error = daqAcquire->ReadBLT(daqController->handle, DPMData, dpmPointer,
 			theChannel->GetDPMAddress(), AM_BLT, DWS);
@@ -2830,7 +2833,9 @@ int acquire_data::RecvFrameData(channels *theChannel)
 #if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   Finished RecvFrameData for a channel!  Returning.";
 #endif
-	return 0;
+	// Check for errors embedded in the data.
+	// Note that this is really assuming only one frame of data is in the DPM at a time!
+	return theChannel->CheckHeaderErrors(dataLength);
 }
 
 

@@ -61,7 +61,7 @@ template <class X> void DecodeBuffer(event_handler *evt, X *frame, int i, int le
 /*! a function which build the necessary/header for each data bank */
 template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame); 
 
-void CheckBufferLength(int length, int frame_length); //just what it says
+int CheckBufferLength(int length, int frame_length); //just what it says
 
 void HandleErrors(int i); //an error handling function
 
