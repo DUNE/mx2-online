@@ -218,9 +218,9 @@ int controller::GetCrocStatus(int a)
 					(*p)->GetChannel(i)->SetChannelStatus((*shortBuffer)); 
 				} catch (int e) {
 					std::cout << "Error in controller()::GetCrocStatus() for Addr " << 
-						((*p)->GetCrocAddress()>>16) << " Chain " << i  << std::endl;
+						((*p)->GetCrocAddress()>>16) << " Channel " << (i+1)  << std::endl;
 					controllerLog.critStream() << "Error in controller()::GetCrocStatus() for Addr " << 
-						((*p)->GetCrocAddress()>>16) << " Chain " << i;
+						((*p)->GetCrocAddress()>>16) << " Channel " << (i+1);
 					ReportError(e);
 					foundModule = false;
 					delete shortBuffer; //clean up 

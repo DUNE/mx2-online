@@ -12,8 +12,6 @@
 *
 **********************************************************************************/
 
-// TODO - Be careful about all the "54's" showing up for the number of registers in an FPGA frame.
-
 channels::channels(unsigned int a, int b) 
 {
 /*! \fn 
@@ -180,8 +178,7 @@ int channels::DecodeStatusMessage()
 }
 
 
-void channels::SetBuffer(unsigned char *b) 
-{
+void channels::SetBuffer(unsigned char *b) {
 /*! \fn 
  * Puts data into the data buffer assigned to this channel.
  * \param b the data buffer
@@ -202,85 +199,5 @@ void channels::SetBuffer(unsigned char *b)
 #endif
 	return; 
 }
-
-
-void channels::VectorizeFEBList() 
-{
-/*! \fn
- * Takes list of febs created during initialization and turns them into a vector.
- * TODO - Think about sorting, etc. to be sure indexing is right first (it is, but this is still "sloppy").
- * Also TODO - Think about a copy instead of pushing a pointer to an existing object.
- */
-	if (has_febs) {
-		std::list<feb*>::iterator fp;
-		for (fp = febs.begin(); fp != febs.end(); fp++) {
-			febsVector.push_back(*fp);
-		}
-	}
-
-}
-
-
-int channels::CheckHeaderErrors(int dataLength)
-{                  
-/*! \fn channels::CheckHeaderErrors(int dataLength)
- *
- * Check incoming message header data for errors by checking the raw data buffer in the channel.
- * This function assumes the buffer begins with index 0 (there is only one frame of data in the 
- * buffer).
- *
- * \param int dataLength, the length of the buffer in memory (from the DPM Pointer value)
- */
-	int buffLen = ((buffer[ResponseLength1]<<8)|buffer[ResponseLength0]) + 2;
-	if (buffLen%2) buffLen++;
-	if ( dataLength != buffLen ) {
-		std::cout << "\tInvalid Message Length!" << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( !(buffer[FrameStart] & Direction) ) {
-		std::cout << "\tCheckForErrors: Direction: " << !(buffer[FrameStart] & Direction) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( !(buffer[DeviceStatus] & DeviceOK) ) {
-		std::cout << "\tCheckForErrors: DeviceOK: " << !(buffer[DeviceStatus] & DeviceOK) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( !(buffer[DeviceStatus] & FunctionOK) ) {
-		std::cout << "\tCheckForErrors: FunctionOK: " << !(buffer[DeviceStatus] & FunctionOK) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( !(buffer[FrameStatus] & CRCOK) ) {
-		std::cout << "\tCheckForErrors: CRCOK: " << !(buffer[FrameStatus] & CRCOK) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( !(buffer[FrameStatus] & EndHeader) ) {
-		std::cout << "\tCheckForErrors: EndHeader: " << !(buffer[FrameStatus] & EndHeader) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( (buffer[FrameStatus] & MaxLen) ) {
-		std::cout << "\tCheckForErrors: MaxLen: " << (buffer[FrameStatus] & MaxLen) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( (buffer[FrameStatus] & SecondStart) ) {
-		std::cout << "\tCheckForErrors: SecondStart: " << (buffer[FrameStatus] & SecondStart) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( (buffer[FrameStatus] & NAHeader) ) {
-		std::cout << "\tCheckForErrors: NAHeader: " << (buffer[FrameStatus] & NAHeader) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	return 0; // no errros
-}
-
-
 
 #endif

@@ -43,12 +43,8 @@ class croc {
 			fastCommandRegister, testPulseRegister;
 
 		bool registersInitialized; /*!< a flag for the initialization state of the croc */
-		// The channel/chain available flags are not really necessary with the way initialization 
-		// is currently handled.  In principle they can be used to allow running with "disconnected"
-		// channels (channels with no loop-back or broken chains).  Currently though, the DAQ 
-		// will exit during initialization if there are disconnected channels on a CROC.
 		bool channel_available[4]; /*!< a flag for the channels which are available - really indexing chains here! */
-		bool chain_available[4];   /*!< a flag for the chains which are available (chain==channel-1)*/
+		//bool chain_available[4];   /*!< a flag for the chains which are available (chain==channel-1)*/
 
 	public:
 		/*! the default constructor */
@@ -73,11 +69,9 @@ class croc {
 		CVDataWidth inline GetDataWidth() {return dataWidth;};
 		CVDataWidth inline GetDataWidthSwapped() {return dataWidthSwapped;};
 		unsigned int inline GetAddress() {return crocAddress;};
-		channels *GetChannel(int i); // returns the ith *chain* - should be updated to work like a channel?
-		channels *GetChain(int i); // returns the ith *chain*
-		bool inline GetChainAvailable(int i) {return chain_available[i];}; // indexed by *chain*!
+		channels *GetChannel(int i); // return the ith *chain*
+		//bool inline GetChainAvailable(int i) {return chain_available[i];}; // indexed by *chain*!
 		bool inline GetChannelAvailable(int i) {return channel_available[i];}; // indexed by *chain*!
-		std::list<channels*> inline *GetChannelsList() {return &crocChannel;};
 		int inline GetCrocID() {return id;};
 		int inline GetCrocAddress() {return crocAddress;};
 
@@ -97,9 +91,7 @@ class croc {
 		unsigned short GetFastCommandRegister(){return fastCommandRegister;};
 
 		//we need to know which of the channels are instrumented
-		//note the usual chain/channel confusion, sigh.
-		void inline SetChannelAvailable(int i) {channel_available[i]=true; chain_available[i]=true;}; 
-		void inline SetChainAvailable(int i) {chain_available[i]=true; channel_available[i]=true;}; 
+		void inline SetChannelAvailable(int i) {channel_available[i]=true;}; 
 
 };
 

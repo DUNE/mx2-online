@@ -45,12 +45,11 @@ class controller {
 
 		std::vector<crim*> interfaceModule; /*!< A vector of CROC Interface Module (CRIM) objects. */
 		std::vector<croc*> readOutController;  /*!< A vector of CROC objects. */
-		std::vector<channels*> feChannels;  /*!< A vector of CROC FE channel objects. */
 		/*! these are the controller registers for the VME controller */
 		unsigned short status, control, irq, irqMask, input, output,
 			clearOutput, inputMux, inputMuxClear, outPutMux;
 		char firmware[1];
-		int transferBytes, crocVectorLength, crimVectorLength, feChannelsVectorLength, controller_id;
+		int transferBytes, crocVectorLength, crimVectorLength, controller_id;
 
 		// log4cpp appender for printing log statements.
 		log4cpp::Appender* ctrlAppender;
@@ -104,9 +103,6 @@ class controller {
 			for (std::vector<croc*>::iterator p=readOutController.begin();
 				p!=readOutController.end();p++) delete (*p);
 			readOutController.clear();
-			for (std::vector<channels*>::iterator p=feChannels.begin();
-				p!=feChannels.end();p++) delete (*p);
-			feChannels.clear();
 		};
 
 		/*! Get functions */
@@ -143,8 +139,6 @@ class controller {
 		void SetCrocVectorLength() {crocVectorLength = readOutController.size();};
 		int inline GetCrimVectorLength() {return crimVectorLength;};
 		void SetCrimVectorLength() {crimVectorLength = interfaceModule.size();};
-		int inline GetFEChannelsVectorLength() {return feChannelsVectorLength;};
-		void SetFEChannelsVectorLength() {feChannelsVectorLength = interfaceModule.size();};
 		
 		void ReportError(int error);
 

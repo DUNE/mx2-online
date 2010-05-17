@@ -439,7 +439,8 @@ FPGA[56]67 = ??
 
 // TODO - ? Maybe... it isn't consistent that the FPGA frame function does not print the 
 // register values while the discr and adc frame decode functions do... 
-int feb::DecodeRegisterValues(int buffersize) 
+// TODO - Make this function an int and have it return error codes?
+void feb::DecodeRegisterValues(int buffersize) 
 {
 /*! \fn********************************************************************************
  *  DecodeMessage takes the incoming message and unpacks the bits into the
@@ -457,16 +458,10 @@ int feb::DecodeRegisterValues(int buffersize)
 	// Check for errors
 	if ((buffersize < TrueIncomingMessageLength)&&(initialized)) { 
 		// The buffer is too short, so we need to stop execution, and notify the user!
-		std::cout << "The FPGA buffer for FEB " << (int)febNumber[0]
-			<< " is too short!" << std::endl;
-		std::cout << " Expected: " << TrueIncomingMessageLength << std::endl;
-		std::cout << " Had     : " << buffersize << std::endl;
-		if (febAppender!=0) {
-			febLog.critStream() << "The FPGA buffer for FEB " << (int)febNumber[0]
-				<< " is too short!";
-			febLog.critStream() << " Expected: " << TrueIncomingMessageLength;
-			febLog.critStream() << " Had     : " << buffersize;
-		}
+		std::cout<<"The FPGA buffer for this FEB "<<(int)febNumber[0]
+			<<" is too short"<<std::endl;
+		std::cout<<"Expected: "<<TrueIncomingMessageLength<<std::endl;
+		std::cout<<"Had: "<<buffersize<<std::endl;
 		exit(1);
 	} else if ((!initialized)&&(buffersize<TrueIncomingMessageLength)) {
 		std::cout<<"FEB: "<<(int) febNumber[0]<<" is not available on this channel."<<std::endl;
@@ -696,13 +691,7 @@ int feb::DecodeRegisterValues(int buffersize)
 
 	} // end if initialized
 
-#if DEBUG_FEB           
-	std::cout << "Decoded FPGA register values:" << std::endl;
-	ShowValues();   
-#endif                  
-
 	// This finishes the incoming message.
-	return 0;
 }
 
 
@@ -761,7 +750,7 @@ void feb::SetFEBDefaultValues()
 	TripXCompEnc[0] = 0;
 	for (int i=0; i<4; i++) {DiscrimEnableMask[i]=0xFFFF;} // default to discr. enabled
 	GateTimeStamp = 0; // readonly
-#if DEBUG_FEB&&DEBUG_VERBOSE
+#if DEBUG_FEB
 	std::cout << "Default FPGA register values set." << std::endl;
 	ShowValues();
 #endif
