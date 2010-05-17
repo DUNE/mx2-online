@@ -139,7 +139,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			self.OldSessionCleanup()
 		except Threads.SocketAlreadyBoundException:
 			self.socketThread = None
-			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["Can't bind a local listening socket.",  "Synchronization between readout nodes and the run control will be impossible.", "Check that there isn't another run control process running on this machine.", messageheader="Can't bind local socket") )
+			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["Can't bind a local listening socket.",  "Synchronization between readout nodes and the run control will be impossible.", "Check that there isn't another run control process running on this machine."], messageheader="Can't bind local socket") )
 		
 	def OldSessionCleanup(self):
 		""" Checks if there's a session that was already open.
