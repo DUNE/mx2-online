@@ -93,6 +93,8 @@ class Dispatcher:
 	def setup(self):
 		try:
 			self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.
+			# allowed to be rebound before a TIME_WAIT, LAST_ACK, or FIN_WAIT state expires
+			self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			
 			# accept any incoming connections to the port regardless of origin
 			self.server_socket.bind(("", self.port))

@@ -243,7 +243,10 @@ class SocketThread(threading.Thread):
 
 		self.daemon = True
 		
-		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		# set up the socket
+		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)		# TCP/IP (only IPv4)
+		# allowed to be rebound before a TIME_WAIT, LAST_ACK, or FIN_WAIT state expires
+		self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	
 		try:
 			self.socket.bind(("", Configuration.params["Socket setup"]["masterPort"]))		# allow any incoming connections on the right port number
