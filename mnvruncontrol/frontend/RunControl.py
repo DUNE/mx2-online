@@ -905,6 +905,7 @@ class MainFrame(wx.Frame):
 				body = [body,]
 			
 			self.notificationPage = wx.Panel(self.nb)
+
 			headertext = wx.StaticText(self.notificationPage, -1, header)
 			headerfont = headertext.GetFont()
 			headerfont.SetPointSize(24)
@@ -924,8 +925,14 @@ class MainFrame(wx.Frame):
 			for bodytext in bodytexts:
 				sizer.Add(bodytext, proportion=1, flag=wx.ALIGN_CENTER_HORIZONTAL)
 
-			self.notificationPage.SetSizer(sizer)
 			self.nb.AddPage(self.notificationPage, "Alert")
+			self.notificationPage.SetSizer(sizer)
+			self.notificationPage.Layout()
+
+			# make sure the text looks ok and is nicely wrapped
+			(textwidth, textheight) = self.nb.GetClientSizeTuple()
+			for textctrl in [headertext] + bodytexts:
+				textctrl.Wrap(textwidth - 10)		# word wrapping, but leave some margin
 			
 			page_num = self.nb.GetPageCount() - 1
 
