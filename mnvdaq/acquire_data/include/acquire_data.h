@@ -103,14 +103,14 @@ class acquire_data {
 
 		unsigned char *DPMData; /*!<A buffer for handling BLT data */
 
-		boost::mutex crim_lock, croc_lock, feb_lock, data_lock,
-			send_lock, receive_lock, connect_lock; /*!< Boost multiple exclusions for threaded operation */
+		boost::mutex data_lock, send_lock; /*!< Boost multiple exclusions for threaded operation */
 
 		static const int dpmMax; /*!<Maximum number of bytes the DPM can hold */
 		std::ofstream frame_acquire_log; /*!< log file streamer for timing output */
 		std::string et_filename; /*!< A string object for the Event Transfer output filename */
 		static const int numberOfHits;
 		static const unsigned int timeOutSec; /*!< How long we will wait for a beam spill before moving on... */
+		static const int maxEBThreads; /*!< Maximum number of threads in the new readout scheme for the event builder. */
 		log4cpp::Appender* acqAppender;
 		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */
 
@@ -214,7 +214,7 @@ class acquire_data {
 		int AcknowledgeIRQ();
 
 		/*! Function which sends data to the event builder via ET */
-		void ContactEventBuilder(event_handler *evt,int thread, et_att_id  attach, et_sys_id  sys_id);
+		void ContactEventBuilder(event_handler *evt, int thread, et_att_id attach, et_sys_id sys_id);
 
 		/*! Function that gets the MINOS SGATE value from the CRIM registers.  Check the "master" CRIM. */
 		unsigned int GetMINOSSGATE();

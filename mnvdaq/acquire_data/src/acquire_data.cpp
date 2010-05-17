@@ -13,12 +13,12 @@
 #include "acquire_data.h"
 #include <sys/time.h>
 
-const int acquire_data::dpmMax       = 1024*6; //we have only 6 Kb of space in the DPM Memory per channel
-const int acquire_data::numberOfHits = 6;
-const unsigned int acquire_data::timeOutSec   = 3600; // be careful shortening this w.r.t. multi-PC sync issues
-const bool acquire_data::checkForMessRecvd      = true;
-const bool acquire_data::doNotCheckForMessRecvd = false;
-
+const int acquire_data::dpmMax                  = 1024*6; // we have only 6 Kb of space in the DPM Memory per channel
+const int acquire_data::numberOfHits            = 6;      // this is a function of the FEB firmware
+const unsigned int acquire_data::timeOutSec     = 3600;   // be careful shortening this w.r.t. multi-PC sync issues
+const bool acquire_data::checkForMessRecvd      = true;   // fixed flag
+const bool acquire_data::doNotCheckForMessRecvd = false;  // fixed flag
+const int acquire_data::maxEBThreads            = 8;      // maximum number of threads for the event builder to handle
 
 void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<readoutObject*> *readoutObjs) 
 {
@@ -2074,14 +2074,14 @@ int acquire_data::AcknowledgeIRQ()
 void acquire_data::ContactEventBuilder(event_handler *evt, int thread, 
 	et_att_id attach, et_sys_id sys_id) 
 {
-/*! \fn void acquire_data::ContactEventBuilder(event_handler *evt, int thread, et_att_id  attach,
- *                                        et_sys_id  sys_id)
+/*! \fn void acquire_data::ContactEventBuilder(event_handler *evt, int thread, et_att_id attach,
+ *                                        et_sys_id sys_id)
  *
  *  A function which sends raw data to the event builder via Event Transfer for processing into the 
  *  event model and final output file.  
  *
  *  \param event_handler *evt a pointer to the event structure holding raw data
- *  \param int thread an integer thread number
+ *  \param int thread an integer thread number, not used?
  *  \param et_att_id  attach the ET attachment to which this data will be sent
  *  \param et_sys_id  sys_id the ET system id for data handling
  */
@@ -2117,12 +2117,14 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 #endif
 		et_event *pe;         // The event.
 		event_handler *pdata; // The data for the event.
-#if THREAD_ME
+//#if THREAD_ME
+#if (THREAD_ME)||(NEWTHREAD)
 		lock eb_lock(eb_mutex);
 #endif
 		int status = et_event_new(sys_id, attach, &pe, ET_SLEEP, NULL, 
 			sizeof(struct event_handler)); // Get an event.
-#if THREAD_ME
+//#if THREAD_ME
+#if (THREAD_ME)||(NEWTHREAD)
 		eb_lock.unlock();
 #endif
 		if (status == ET_ERROR_DEAD) {
@@ -2159,7 +2161,8 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 #if DEBUG_ET_REPORT_EVENT
 			acqData.debugStream() << "    Putting Event on ET System:";
 #endif
-#if THREAD_ME
+//#if THREAD_ME
+#if (THREAD_ME)||(NEWTHREAD)
 			eb_lock.lock();
 #endif
 			et_event_getdata(pe, (void **)&pdata); // Get the event ready.
@@ -2195,16 +2198,19 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 #endif
 			memcpy (pdata, evt, sizeof(struct event_handler));
 			et_event_setlength(pe,sizeof(struct event_handler));
-#if THREAD_ME
+//#if THREAD_ME
+#if (THREAD_ME)||(NEWTHREAD)
 			eb_lock.unlock();
 #endif  
 		} // end if status == ET_OK
 		// Put the event back into the ET system.
-#if THREAD_ME
+//#if THREAD_ME
+#if (THREAD_ME)||(NEWTHREAD)
 		eb_lock.lock();
 #endif
 		status = et_event_put(sys_id, attach, pe); // Put the event away.
-#if THREAD_ME
+//#if THREAD_ME
+#if (THREAD_ME)||(NEWTHREAD)
 		eb_lock.unlock();
 #endif
 		if (status != ET_OK) {
@@ -2928,6 +2934,14 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	evt->feb_info[0] = 0;     // Link Number. -> *Probably* ALWAYS 0.
 	evt->feb_info[1] = daqController->GetID(); // Crate ID
 
+#if NEWTHREAD
+#if DEBUG_NEWTHREAD
+	acqData.debugStream() << "--- Attemping to multithread! ---";
+	acqData.debugStream() << "  Max Thread Count = " << maxEBThreads;
+#endif
+	int threadCounter = 0;
+	boost::thread *ebThreads[maxEBThreads];
+#endif
 	// Do an "FPGA read".
 	// First, send a read frame to each channel that has an FEB with the right index.
 	// Then, after sending a frame to every channel, read each of them in turn for data.
@@ -3040,12 +3054,47 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 				// FillEventStructure here.  FES reads from the *channel's* buffer, not the frame's!
 				FillEventStructure(evt, 2, (*rop)->getChannel(i));
 				// ContactEventBuilder here.
+#if NEWTHREAD
+#if DEBUG_NEWTHREAD
+				acqData.debugStream() << "Launching thread " << threadCounter;
+#endif
+				ebThreads[threadCounter] = new boost::thread((boost::bind(&acquire_data::ContactEventBuilder,
+					this, boost::ref(evt), threadCounter, attach, sys_id))); 
+				threadCounter++; // Counter value is 1 greater than index of thread!
+#else
 				ContactEventBuilder(evt, (int)0, attach, sys_id); 
+#endif
 				// Cleanup...
 				(*rop)->getChannel(i)->DeleteBuffer();
 				tmpFEB = 0;
+#if NEWTHREAD
+				if (threadCounter >= maxEBThreads) { // Should never actually be greater than...
+					acqData.debugStream() << "Surpassed maximum threads!";
+					acqData.debugStream() << "  threadCounter = " << threadCounter;
+					for (int tc=0; tc<threadCounter; tc++) {
+#if DEBUG_NEWTHREAD
+						acqData.debugStream() << "Joining thread " << tc;
+#endif
+						ebThreads[tc]->join();
+						ebThreads[tc] = 0;
+					}
+					threadCounter = 0; // Reset the thread counter.
+				}
+#endif
 			} // end loop over data for reading the DPM
 
+/*
+			// clean up any remaining threads...
+#if NEWTHREAD
+			for (int tc=0; tc<threadCounter; tc++) {
+#if DEBUG_NEWTHREAD
+				acqData.debugStream() << "Joining thread " << tc << " at cleanup.";
+#endif
+				ebThreads[tc]->join();
+			}
+			threadCounter = 0; // Reset the thread counter.
+#endif
+*/
 			// Increment the readoutObject pointer.
 			rop++;
 			// Check readout time - are we okay?
@@ -3055,6 +3104,18 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 			if (readoutTimeDiff > allowedTime) { continueReadout = false; }
 		} // end while loop over readout objects
 	} // end if readFPGA
+
+
+			// clean up any remaining threads...
+#if NEWTHREAD
+			for (int tc=0; tc<threadCounter; tc++) {
+#if DEBUG_NEWTHREAD
+				acqData.debugStream() << "Joining thread " << tc << " at cleanup.";
+#endif
+				ebThreads[tc]->join();
+			}
+			threadCounter = 0; // Reset the thread counter.
+#endif
 
 	// Do a "Discr read".  Loop over FEB ID's (readoutObjects) a while loop.
 	// First, send a read frame to each channel that has an FEB with the right index.
