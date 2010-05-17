@@ -877,7 +877,8 @@ int main(int argc, char *argv[])
 		/*                      Execute the "new" readout model.                          */        
 		/**********************************************************************************/
 		try {
-			int error = TakeData(daq, evt, attach, sys_id, &readoutObjects, allowedReadoutTime);
+			int error = TakeData(daq, evt, attach, sys_id, &readoutObjects, allowedReadoutTime, 
+				readFPGA, nReadoutADC);
 			if (error) { throw error; }
 		} catch (int e) {
 			event_data.readoutInfo += (unsigned short)controllerErrCode;
@@ -885,8 +886,7 @@ int main(int argc, char *argv[])
 			std::cout << "Cannot TakeData for Gate: " << gate << std::endl;
 			mnvdaq.critStream() << "Error Code " << e << " in minervadaq::main()!  ";
 			mnvdaq.critStream() << "Cannot TakeData for Gate: " << gate;
-			continueRunning = false;  // "Stop" gate loop.
-			break;                    // Exit chain loop.
+			continueRunning = false;  // "Stop" gate loop. (There is no chain loop.)
 		}
 		gettimeofday(&readend, NULL);
 		stopReadout = (unsigned long long)(readend.tv_sec*1000000) + 
@@ -1238,9 +1238,12 @@ int main(int argc, char *argv[])
 
 
 int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id, 
-	std::list<readoutObject*> *readoutObjects, const int allowedTime)
+	std::list<readoutObject*> *readoutObjects, const int allowedTime, const bool readFPGA, 
+	const int nReadoutADC)
 {
-/*! \fn 
+/*! \fn int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id,
+ *		std::list<readoutObject*> *readoutObjects, const int allowedTime, const bool readFPGA,
+ *		const int nReadoutADC) 
  * 
  * Read the electronics and retrieve all requested data for one gate.
  *
@@ -1250,11 +1253,16 @@ int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id 
  *  \param attach, the ET attachemnt to which data will be stored
  *  \param sys_id, the ET system handle
  *  \param std::list<readoutObject*> *readoutObjects, a pointer to the list of hardware to be read out.
+ *  \param const int allowedTime, the total allowed time to readout an event (if more is taken, readout is 
+ *	truncated and an error flag is added to the DAQ Header).
+ *  \param const bool readFPGA, a flag that dictates whether we read the FPGA's.
+ *  \param const int nReadoutADC, a flag that sets the deepest N hits to be read out.
  */
 	int dataTaken = 0;
 
 	try {
-		dataTaken = daq->WriteAllData(evt, attach, sys_id, readoutObjects, allowedTime);
+		dataTaken = daq->WriteAllData(evt, attach, sys_id, readoutObjects, allowedTime, 
+			readFPGA, nReadoutADC);
 		if (dataTaken) throw dataTaken;
 	} catch (int e) {
 		std::cout << "Data taking failed in minervadaq main::TakeData!" << std::endl;
@@ -1620,7 +1628,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v07','v07-02-02'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v07','v07-03-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

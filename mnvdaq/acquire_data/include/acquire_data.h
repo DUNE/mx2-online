@@ -59,6 +59,7 @@ log4cpp::Category& acqData = log4cpp::Category::getInstance(std::string("acqData
 #if WH14T||WH14B
 #if SINGLEPC
 const int physReadoutMicrosec = 13500; //microseconds, useful test stand value
+//const int physReadoutMicrosec = 135000; //microseconds, useful test stand value
 #else
 const int physReadoutMicrosec = 150000; //microseconds, useful test stand value?
 #endif // WH14
@@ -253,7 +254,8 @@ class acquire_data {
 
 		/*! Run the full acquisition sequence for a gate, write the data to file. */
 		int WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
-			std::list<readoutObject*> *readoutObjects, const int allowedTime);
+			std::list<readoutObject*> *readoutObjects, const int allowedTime, 
+			const bool readFPGA, const int nReadoutADC);
 };
 
 #endif

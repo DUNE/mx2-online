@@ -2891,7 +2891,8 @@ void acquire_data::FillEventStructure(event_handler *evt, int bank, channels *th
 
 
 int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
-        std::list<readoutObject*> *readoutObjects, const int allowedTime)
+        std::list<readoutObject*> *readoutObjects, const int allowedTime, 
+	const bool readFPGA, const int nReadoutADC)
 {
 /*! \fn int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, std::list<readoutObject*> *readoutObjects)
  *
@@ -2918,9 +2919,9 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	startReadout = (unsigned long long)(readstart.tv_sec*1000000) + (unsigned long long)(readstart.tv_usec);
 
 	bool continueReadout = true;
-	bool readFPGA        = true;
-	bool readDisc        = true;
+	bool readDisc        = true; // Always leave this on...
 	bool readADC         = true;
+	if (!nReadoutADC) { readADC = false; }
 
 	// Fill entries in the event_handler structure for this event -> The sourceID.
 	evt->new_event   = false; // We are always processing an existing event with this function!!!
@@ -3274,7 +3275,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 			acqData.debugStream() << "->Check the status to be sure the message was sent and recv'd.  If so, read the data & decalre it.";
 #endif
 			bool stillHaveHits = false;
-			for (int i=0; i<(*rop)->getDataLength(); i++) {
+			for (int i=0; i<(*rop)->getDataLength(); i++) { // Read the earliest in *time* first -> deepest in the pipeline.
 				int hitNum = (*rop)->getHitsPerChannel(i);
 				int orgNum = (*rop)->getOrigHitsPerChannel(i) - 1;
 				int hitIdx = hitNum - 1; // Explicit offset.
@@ -3320,6 +3321,9 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					acqData.debugStream() << "   Original Max Hit Index on this board         = " << orgNum;
 					acqData.debugStream() << "   Current Hit Index (ADC block) on this board  = " << hitIdx;
 					acqData.debugStream() << "   Reported Hit ID                              = " << evt->feb_info[8];
+					acqData.debugStream() << "     orgNum-hitIdx+1 = " << (orgNum-hitIdx+1);
+					acqData.debugStream() << "     nReadoutADC     = " << nReadoutADC;
+					if ( (orgNum-hitIdx+1) >= nReadoutADC ) { acqData.debugStream() << "     Time to cycle out."; }
 #endif
 					// FillEventStructure here.  FES reads from the *channel's* buffer, not the frame's!
 					FillEventStructure(evt, 0, (*rop)->getChannel(i));
@@ -3329,8 +3333,16 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					(*rop)->getChannel(i)->DeleteBuffer();
 					tmpFEB  = 0;
 					// Update hit architecture
-					if (hitIdx>0) stillHaveHits = true; // only needs to be true for any one channel
-					(*rop)->setHitsPerChannel(i, hitIdx); //hitNum--
+					if ( (orgNum-hitIdx+1) >= nReadoutADC ) { 
+#if DEBUG_NEWREADOUT
+						acqData.debugStream() << "   Cycling out!  We've read the deepest N hits."; 
+#endif
+						stillHaveHits = false; 
+						(*rop)->setHitsPerChannel(i, 0); // Don't read any more hits!
+					} else {
+						if (hitIdx>0) stillHaveHits = true; // only needs to be true for one channel
+						(*rop)->setHitsPerChannel(i, hitIdx); // hitNum--
+					}
 #if DEBUG_NEWREADOUT
 					acqData.debugStream() << "   New Number of hits (" << i << ") = " << (*rop)->getHitsPerChannel(i);
 #endif
