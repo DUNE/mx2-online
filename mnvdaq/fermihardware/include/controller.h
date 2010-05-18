@@ -97,7 +97,6 @@ class controller {
 
 		/*! the specialty destructor */
 		~controller() {
-			//delete appender; //TODO - check memory management here...
 			for (std::vector<crim*>::iterator p=interfaceModule.begin();
 				p!=interfaceModule.end();p++) delete (*p);
 			interfaceModule.clear();

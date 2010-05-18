@@ -18,7 +18,6 @@ const int acquire_data::numberOfHits            = 6;      // this is a function 
 const unsigned int acquire_data::timeOutSec     = 3600;   // be careful shortening this w.r.t. multi-PC sync issues
 const bool acquire_data::checkForMessRecvd      = true;   // fixed flag
 const bool acquire_data::doNotCheckForMessRecvd = false;  // fixed flag
-const int acquire_data::maxVMEThreads           = 6;      // maximum number of threads for the event builder to handle
 
 void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<readoutObject*> *readoutObjs) 
 {
@@ -163,13 +162,12 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 /*! \fn void acquire_data::InitializeCrim(int address)
  *
  * This function checks the CRIM addressed by "address" is available by reading a register.  
- * Then the interrupt handler is set up.
+ * Then the interrupt handler is set up.  In case of a failure, the DAQ exits hard.
  *
  * \param address an integer VME addres for the CRIM.
  * \param index an integer index used for internal bookkeeping.
  * \param runningMode an integer specifying what sort of run the DAQ is taking.
  */
-// TODO - Make InitializeCrim return a value?
 	std::cout << "\nEntering acquire_data::InitializeCrim for address " << (address>>16) << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeCrim for address " << (address>>16);
 	acqData.infoStream() << "  HW (VME Card) Init Level = " << hwInitLevel;
@@ -354,7 +352,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	} // endif hwInitLevel
 
 	// Now set up the IRQ handler, initializing the global enable bit for the first go-around.
-	// TODO - Be sure only the Master CRIM is our interrupt handler...
+	// Only the "Master" (first) CRIM should be our interrupt handler...
 	try {
 		int error = SetupIRQ(index);
 		if (error) throw error;
@@ -389,7 +387,7 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
  * \param nFEBchain2 an integer describing the number of FEB's on chain 2.  Defaults to 11.
  * \param nFEBchain3 an integer describing the number of FEB's on chain 3.  Defaults to 11.
  */
-// TODO - pass HW Init Flag here too...
+// TODO - Pass HW Init Flag here too?
 	std::cout << "\nEntering acquire_data::InitializeCroc for CROC " << (address>>16) << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeCroc for CROC " << (address>>16);
 	acqData.infoStream() << "  HW (VME Card) Init Level = " << hwInitLevel;
@@ -823,7 +821,6 @@ int acquire_data::ResetCRIMSequencerLatch(int id)
 }
 
 
-// TODO - GetBlockRAM has sort of a misleading name, should fix this (should be GetDPMData or something).
 int acquire_data::GetBlockRAM(croc *crocTrial, channels *channelTrial) 
 {
 /*! \fn int acquire_data::GetBlockRAM(croc *crocTrial, channels *channelTrial)
@@ -1053,7 +1050,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 			for (int debug_index=0; debug_index<febTrial->GetIncomingMessageLength(); debug_index++) {
 				febTrial->message[debug_index] = channelTrial->GetBuffer()[debug_index];
 			}
-			// TODO - Decoding does provide an error check of sorts, but this inefficient.
+			// DecodeRegisterValues does provide an error check of sorts, but this inefficient...
 			try {
 				int error = febTrial->DecodeRegisterValues(febTrial->GetIncomingMessageLength());
 				if (error) throw error;
@@ -1351,7 +1348,7 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
 
 	// Wait for threads to join if nedessary.
 #if THREAD_ME
-	// TODO - eb_threads[1]?
+	// Where is eb_threads[1]?
 	eb_threads[0]->join();
 	eb_threads[2]->join();
 #endif 
@@ -1409,7 +1406,7 @@ bool acquire_data::ResetDPM(croc *crocTrial, channels *channelTrial)
 	}
 	unsigned short dpmPointer = (unsigned short) (message[0] | (message[1]<<0x08));
 	// Need to check status register too!!
-	if (dpmPointer==2) reset = true; // Not enough! TODO - Check status register here too.
+	if (dpmPointer==2) reset = true; // Not really enough, should check status register here too...
 #if (DEBUG_VERBOSE)||(DEBUG_SENDMESSAGE)
 	acqData.debugStream() << "     Exiting acquire_data::ResetDPM.";
 #endif
@@ -1527,7 +1524,7 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 				" Chain " << channelTrial->GetChainNumber();	
 			return e;
 		}
-		// TODO - Investigate using FIFO BLT for FPGA programming frames though...
+		// Investigate using FIFO BLT for FPGA programming frames though...
 		// // FIFO BLT is a bit funky for a general class function...
 		// int count;
 		// CAENVME_FIFOBLTWriteCycle(daqController->handle, channelTrial->GetFIFOAddress(), 
@@ -1547,7 +1544,7 @@ template <class X> int acquire_data::SendMessage(X *device, croc *crocTrial,
 				" Chain " << channelTrial->GetChainNumber();	
 			return e;
 		}
-		// TODO - Fix this and setup a more general status checker...
+		// Set up a more general status checker?  This is probably okay...
 		do {
 			try {
 				int error = daqAcquire->ReadCycle(daqController->handle, reset_status, 
@@ -1733,7 +1730,7 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 	CVDataWidth       DWS     = crocTrial->GetDataWidthSwapped();
 	int               success = 0;
 	// Try to add this frame's data to the DPM.
-	// TODO - Reorganize & clean-up the try-catches here...
+	// Reorganize & clean-up the try-catches here...
 	try { 
 		success = FillDPM(crocTrial, channelTrial, frame, frame->GetIncomingMessageLength(), length);
 		if (success) throw success; 
@@ -1788,8 +1785,7 @@ int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
  *
  * A function which sets up the acquisition trigger indexed by parameter a.
  *
- * Currently, we have the following triggers defined as enumerated types in the DAQ Header (v5):
- *  TODO - Make sure trigger types and documentation stay current for new DAQ Header.
+ * Currently, we have the following triggers defined as enumerated types in the DAQ Header (v7):
  *  Note the trigger does not depend on CRIM timing mode explicity, but there is occasionally an 
  *  implicit dependence (e.g., NuMI can only run in CRIM MTM mode).
  * UnknownTrigger  = 0x0000,
@@ -1988,7 +1984,7 @@ int acquire_data::AcknowledgeIRQ()
  *
  * Returns a status integer (0 for success).
  */
-// TODO - AcknowledgeIRQ() needs a lot of try-catch polishing if we start using it...
+// AcknowledgeIRQ() needs a lot of try-catch polishing if we start using it...
 #if DEBUG_IRQ
 	acqData.debugStream() << "  Entering acquire_data::AcknowledgeIRQ...";
 #endif
@@ -2737,8 +2733,8 @@ template <class X> int acquire_data::RecvFrameData(X *device, channels *theChann
 	if (success) {
 		return success; // There were errors.
 	}
-	// TODO - DecodeRegVals does some useful error checking (message length), but is inefficient.
-	// Also TODO - figure out the right argument to pass this function... for some reason, if we did a FIFO 
+	// DecodeRegVals does some useful error checking (message length), but is inefficient.
+	// TODO - figure out the right argument to pass this function... for some reason, if we did a FIFO 
 	// write beforehand, we get back a different DPM pointer than if we had done a regular write...
 	//device->DecodeRegisterValues(dpmPointer-2);
 	//device->DecodeRegisterValues(dpmPointer);
@@ -2912,14 +2908,6 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	evt->feb_info[0] = 0;     // Link Number. -> *Probably* ALWAYS 0.
 	evt->feb_info[1] = daqController->GetID(); // Crate ID
 
-#if NEWTHREAD
-#if DEBUG_NEWTHREAD
-	acqData.debugStream() << "--- Attemping to multithread! ---";
-	acqData.debugStream() << "  Max Thread Count = " << maxVMEThreads;
-#endif
-	int threadCounter = 0;
-	boost::thread *vmeThreads[maxVMEThreads];
-#endif
 	// Do an "FPGA read".
 	// First, send a read frame to each channel that has an FEB with the right index.
 	// Then, after sending a frame to every channel, read each of them in turn for data.
@@ -2942,48 +2930,11 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 			feb *tmpFEB;
 
 			// Clear and reset all channels that have an FEB with id febid first.
-			// Test breaking into two pieces to check threading potential...
 #if DEBUG_NEWREADOUT
 			acqData.debugStream() << "->Do the clear and resets for all channels with FEB's of the right id.";
 #endif
 			for (int i=0; i<(*rop)->getDataLength(); i++) {
-#if NEWTHREAD
-#if DEBUG_NEWTHREAD
-				acqData.debugStream() << "Launching thread " << threadCounter;
-#endif
-				vmeThreads[threadCounter] = new boost::thread((boost::bind(&acquire_data::SendClearAndReset, 
-					this, (*rop)->getChannel(i))));
-				threadCounter++; // Counter value is 1 greater than index of thread!
-#else
 				SendClearAndReset((*rop)->getChannel(i));
-#endif
-#if NEWTHREAD
-				if (threadCounter >= maxVMEThreads) { // Should never actually be greater than...
-#if DEBUG_NEWTHREAD
-					acqData.debugStream() << "Surpassed maximum threads!";
-#endif
-					for (int tc=0; tc<threadCounter; tc++) {
-#if DEBUG_NEWTHREAD
-						acqData.debugStream() << "Joining thread " << tc;
-#endif
-						vmeThreads[tc]->join();
-					}
-					threadCounter = 0; // Reset the thread counter.
-				}
-#endif
-			} // end loop over data in readout object for send clear and reset
-			// Clean up any remaining threads...
-#if NEWTHREAD
-			for (int tc=0; tc<threadCounter; tc++) {
-#if DEBUG_NEWTHREAD
-				acqData.debugStream() << "Joining thread " << tc;
-#endif
-				vmeThreads[tc]->join();
-			}
-			threadCounter = 0; // Reset the thread counter.
-#endif
-
-			for (int i=0; i<(*rop)->getDataLength(); i++) {
 				try {
 					int error = ReadStatus((*rop)->getChannel(i), doNotCheckForMessRecvd); 
 					if (error) throw error; 
@@ -2995,7 +2946,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 						(*rop)->getChannel(i)->GetChainNumber();
 					return e; // Error, stop!
 				}
-			} // end loop over data in readout object for check status
+			} // end loop over data in readout object for send clear and reset and check status
 
 			// Send an FPGA read frame request to each channel with an FEB with id febid.
 #if DEBUG_NEWREADOUT

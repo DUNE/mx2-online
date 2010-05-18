@@ -110,7 +110,6 @@ class acquire_data {
 		std::string et_filename; /*!< A string object for the Event Transfer output filename */
 		static const int numberOfHits;
 		static const unsigned int timeOutSec; /*!< How long we will wait for a beam spill before moving on... */
-		static const int maxVMEThreads; /*!< Maximum number of threads in the new readout scheme for the VME. */
 		log4cpp::Appender* acqAppender;
 		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */
 
