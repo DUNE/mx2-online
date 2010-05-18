@@ -267,16 +267,21 @@ class OMThread(threading.Thread):
 		i = 1
 		while True:
 			filename = "%s/%s.%d.log" % (Configuration.params["Monitoring nodes"]["om_logfileLocation"], self.processname, i)
-			with open(filename, "w") as fileobj:
+			# open the file in append mode so that if it's locked,
+			# we don't erase the whole thing when opening it
+			with open(filename, "a") as fileobj:
 				# try to get a lock on the log file.
 				# this ensures we don't write to the same one via
 				# two different processes.
 				try:
-					fcntl.flock(fileobj.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+					fcntl.flock(fileobj, fcntl.LOCK_EX | fcntl.LOCK_NB)
 				# if the file is already locked, we'll try a new filename.
 				except IOError:
 					i += 1
 					continue
+				
+				# if we successfully locked the file, we need to start at its beginning.
+				fileobj.truncate()
 				
 				try:
 					# the online version (for the Presenter) needs to have a UTGID specified
@@ -292,7 +297,7 @@ class OMThread(threading.Thread):
 					self.returncode = self.process.wait()
 				# we want to release the lock no matter what happens!
 				finally:
-					fcntl.flock(fileobj.fileno(), fcntl.LOCK_UN)
+					fcntl.flock(fileobj, fcntl.LOCK_UN)
 				
 				break
 		
