@@ -25,7 +25,13 @@
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
+#include <time.h>
 #include "et.h"
+
+/* used by the signal handler */
+sig_atomic_t time_to_quit = 0;
+
+void quit_signal_handler(int signum);
 
 int main(int argc, char **argv)
 {  
@@ -35,12 +41,15 @@ int main(int argc, char **argv)
   int           errflg = 0;
   int           i_tmp;
   
-  int           status, sig_num;
+  int           status;
   int           et_verbose = ET_DEBUG_NONE;
   int           deleteFile = 0;
-  sigset_t      sigblockset, sigwaitset;
+  int           had_attachments = 0;
+  sigset_t      sigblockset, sighandleset;
   et_sysconfig  config;
   et_sys_id     id;
+  
+  struct timespec sleeptime;
   /*
   et_statconfig sconfig;
   et_stat_id    statid;
@@ -135,7 +144,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "          -n sets number of events\n");
     fprintf(stderr, "          -s sets event size in bytes\n");
     fprintf(stderr, "          -f sets memory-mapped file name\n");
-    fprintf(stderr, "          -p sets the network port (default is 1091 - 1092 also valid)\n");
+    fprintf(stderr, "          -p sets the network port (default is 1091; 1092-1094 also valid)\n");
     exit(2);
   }
 
@@ -221,15 +230,26 @@ int main(int argc, char **argv)
   /*************************/
   /* setup signal handling */
   /*************************/
+  
+  /* block all signals to prevent interruptions */
   sigfillset(&sigblockset);
   status = pthread_sigmask(SIG_BLOCK, &sigblockset, NULL);
   if (status != 0) {
-    printf("et_start: pthread_sigmask failure\n");
+    printf("et_start: couldn't block all signals (pthread_sigmask failure)\n");
     exit(1);
   }
-  sigemptyset(&sigwaitset);
-  sigaddset(&sigwaitset, SIGINT);
-  sigaddset(&sigwaitset, SIGTERM);
+  /* now unblock SIGINT and SIGTERM so we can handle them */
+  sigemptyset(&sighandleset);
+  sigaddset(&sighandleset, SIGINT);
+  sigaddset(&sighandleset, SIGTERM);
+  status = pthread_sigmask(SIG_UNBLOCK, &sighandleset, NULL);
+  if (status != 0) {
+    printf("et_start: couldn't unblock SIGINT and SIGTERM (pthread_sigmask failure)\n");
+    exit(1);
+  }
+  /* set the signal handler */
+  signal(SIGINT,  quit_signal_handler);
+  signal(SIGTERM, quit_signal_handler);
   
   /*************************/
   /*    start ET system    */
@@ -246,29 +266,6 @@ int main(int argc, char **argv)
   printf("System opened at time (local): %s\n", asctime(local));
   fflush(stdout);
   
-  /* in CODA usage, most want the TAPE station to be first
-   * as that is the station used by the event recorder to
-   * send events to tape.
-   */
-  /*
-  et_station_config_init(&sconfig);
-  et_station_config_setselect(sconfig,  ET_STATION_SELECT_ALL);
-  et_station_config_setblock(sconfig,   ET_STATION_BLOCKING);
-  et_station_config_setuser(sconfig,    ET_STATION_USER_MULTI);
-  et_station_config_setrestore(sconfig, ET_STATION_RESTORE_OUT);
-  et_station_config_setprescale(sconfig,1);
-
-  if ((status = et_station_create(id, &statid, "TAPE", sconfig)) < 0) {
-    if (status == ET_ERROR_EXISTS) {
-      printf("et_start: \"TAPE\" station exists\n");
-    }
-    else {
-      printf("et_start: cannot create \"TAPE\" station, error = %d\n", status);
-      exit(1);
-    }
-  }
-  et_station_config_destroy(sconfig);
-  */
   et_system_setdebug(id, et_verbose);
  
   /* any listers to the STDOUT pipe will get all the data pushed to them now */
@@ -278,14 +275,60 @@ int main(int argc, char **argv)
   if (callback_pid)
      kill(callback_pid, SIGUSR1);
   
-  /* turn this thread into a signal handler */
-  sigwait(&sigwaitset, &sig_num);
+  /*************************/
+  /*    main loop          */
+  /*************************/
+  /* monitor the number of attachments to stations.
+     once the station count has gone above 0,
+     we exit as soon as all stations have detached. */
+  sleeptime.tv_sec = 0;
+  sleeptime.tv_nsec = 1000000;	/* 10 ms */
+  int nattachments;
+  while ( ! time_to_quit )
+  {
+     /* don't busy-wait. */
+     nanosleep(&sleeptime, (struct timespec *)NULL);
+     
+     /* note that we use getattachments() here and not getstations().
+        this is because stations are not necessarily deleted if the
+        process that created them crashes.  on the other hand, in that case
+        Grand Central _does_ notice that the attachment has disappeared. */
+     status = et_system_getattachments(id, &nattachments);
+     if (status != ET_OK)
+     {
+       printf("et_start: error monitoring attachment count (errno: %d)!  quitting.\n", status);
+       time_to_quit = 1;
+     }
+     
+     if ( !had_attachments && nattachments > 0 )
+       had_attachments = 1;
+     
+     /* if we had attachments at one point and don't any longer,
+        then it's time to close down the system. */
+     if ( had_attachments && nattachments == 0 )
+     {
+       time_to_quit = 1;
+       printf("All stations detached.  System will close.\n");
+     }
+  }
   
 
-  printf("Asked to close.\n");
   printf("ET is exiting.\n");
   et_system_close(id);
 
   exit(0);  
 }
 
+/* this function is intended to be the signal handler
+   for SIGINT and SIGTERM.  all it does is set time_to_quit
+   to 1, which will cause the main program to shut down
+   gracefully. */
+   
+void quit_signal_handler(int signum)
+{
+	printf("Received SIGTERM or SIGINT.\n");
+	time_to_quit = 1;
+	
+	/* don't bother resetting the signal handler.
+	   we don't need to call this function more than once. */
+}
