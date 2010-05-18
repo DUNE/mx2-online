@@ -61,7 +61,7 @@ crim::crim(unsigned int ca, int crimid, CVAddressModifier a, CVDataWidth w)
 	crimAddress     = ca; // the crim address
 	addressModifier = a;  // the VME Address Modifier
 	dataWidth       = w;  // the VME Data Witdth
-	irqLine = SGATEFall; // TODO - add irqLine configuration options.
+	irqLine = SGATEFall;  // default, but configurable
 	// NOTE: The IRQ level must be the same as the configuration register level.  
 	// The BIT MASKS for these levels, however are not the same!
 	irqLevel             = cvIRQ5; // interrupt level 5 for the CAEN interrupt handler
@@ -180,16 +180,5 @@ void crim::SetReTransmitEnable(bool a)
 }
 
 
-// TODO - This function is now basically obsolete?... Should probably remove it.
-void crim::SetupOneShot() 
-{
-/*! \fn
- * Set the register values (but does not send them) for one-shot trigger mode
- */
-	SetInterruptMask();     //set the interupt mask using that value
-	SetupTiming(crimInternal, ZeroFreq);
-	SetupGateWidth(0x0001, 0x007F); // enable tcalb, set gate width  127
-	SetupTCALBPulse(0x03FF);  //set the tcalb pulse delay 1023
-}
 
 #endif

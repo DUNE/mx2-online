@@ -158,7 +158,6 @@ class crim {
 		unsigned short GetSoftSGATEStop() {return softSGATEstop;};
 		unsigned short GetSoftCNRST() {return softCNRST;};
 		unsigned short GetSoftCNRSTSeq() {return softCNRSTseq;};
-		void SetupOneShot();
 
 		unsigned int GetTimingRegister() {return timingRegister;};
 		unsigned int GetSGATEWidthRegister() {return SGATEWidthRegister;};

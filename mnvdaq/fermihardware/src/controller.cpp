@@ -277,9 +277,12 @@ void controller::MakeCroc(unsigned int crocAddress, int a)
 
 croc *controller::GetCroc(int a) 
 {
-/*! \fn
+/*! \fn 
  * This function returns a croc specified by INDEX from the vector of croc's belonging to this 
- * controller object. 
+ * controller object.  Note that if the CROC is not found, the return value is a pointer to 
+ * zero.  There is no error checking on this and it can lead to bizarre results!  It is the 
+ * responsibility of the rest of the code to *not* request an "un-fetchable" CROC.
+ *
  * \param a an internal index for the CROC for use in DAQ code only
  */
 	std::vector<croc*>::iterator p; //an iterator over the vector of croc's
@@ -290,7 +293,8 @@ croc *controller::GetCroc(int a)
 		if (id==a) tmp=(*p); //assign that croc fro return by the function
 	}
 	return tmp; //return the pointer to the croc extracted from the vector
-	// TODO - Add error handling if we don't find the croc.
+	// Add error handling if we don't find the croc?  Don't want to weigh this 
+	// function down...
 }
 
 
@@ -317,7 +321,10 @@ crim *controller::GetCrim(int a)
 {
 /*! \fn
  * This function returns a crim specified by INDEX from the vector of crim's belonging to this 
- * controller object. 
+ * controller object.  Note that if the CRIM is not found, the return value is a pointer to
+ * zero.  There is no error checking on this and it can lead to bizarre results!  It is the 
+ * responsibility of the rest of the code to *not* request an "un-fetchable" CRIM.
+ *
  * \param a the internal CRIM index
  */
 	std::vector<crim*>::iterator p; //an iterator over the vector of crim's
@@ -328,7 +335,8 @@ crim *controller::GetCrim(int a)
 		if (id==a) tmp=(*p); //assign that crim for return by the function
 	}
 	return tmp; //return the pointer to the crim extracted from the vector
-	// TODO - Add error handling in case we don't find the CRIM.
+	// Add error handling in case we don't find the CRIM?  Don't want to weigh 
+	// this function down...
 }
 
 #endif

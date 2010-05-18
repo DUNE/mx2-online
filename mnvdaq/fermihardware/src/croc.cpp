@@ -76,7 +76,6 @@ void croc::SetTimingRegister(unsigned short cm, unsigned short tpde, unsigned sh
  * \param tpde test pulse enable bit
  * \param tpdv test pulse delay value
  */
-// TODO - Fix the SetTimingRegister function to behave for some interface choice...
 #if (DEBUG_VERBOSE)&&(DEBUG_CROC)
 	std::cout << "  Entering croc::SetTimingRegister..." << std::endl;
 	std::cout << "    Clock Mode        = " << cm << std::endl;

@@ -586,7 +586,7 @@ int main(int argc, char *argv[])
 		mnvdaq.debugStream() << "\t\t\t\tNew Gate";
 		mnvdaq.debugStream() << "triggerCounter = " << triggerCounter;
 #endif
-		//continueRunning = true; //reset? TODO - fix
+		//continueRunning = true; // Reset? -> Our choice here is to *stop* the subrun instead. 
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
 		gettimeofday(&gate_start_time, NULL);
@@ -602,7 +602,7 @@ int main(int argc, char *argv[])
 		/*   event_data.feb_info[0-9] 0: link_no, 1: crate_no, 2: croc_no,                */
 		/*    3: chan_no, 4: bank 5: buffer length, 6: feb number, 7: firmware, 8: hits   */
 		/**********************************************************************************/
-		event_data.gate        = 0;  // Set only after successful readout. // TODO - Special value for failures?
+		event_data.gate        = 0;  // Set only after successful readout. 
 		event_data.triggerTime = 0;  // Set after returning from the Trigger function.
 		event_data.readoutInfo = 0;  // Error bits.
 		event_data.minosSGATE  = 0;  // MINOS Start GATE in their time coordinates.
@@ -648,6 +648,8 @@ int main(int argc, char *argv[])
 #endif
 #if MTEST
 		// We need to reset the external trigger latch for v85 (cosmic) FEB firmware.
+		// Precompiler flag here should really be for FEB firmware (i.e., anywhere there 
+		// is an "85" equivalent).
 		for (croc_iter = croc_vector->begin(); croc_iter != croc_vector->end(); croc_iter++) {
 			int crocID = (*croc_iter)->GetCrocID();
 			try {
@@ -666,7 +668,7 @@ int main(int argc, char *argv[])
 			}
 		}
 #endif
-		switch (runningMode) { // TODO - put crim reset latch stuff into function to clean things up...
+		switch (runningMode) { 
 			case OneShot:
 				triggerType = Pedestal;
 				allowedReadoutTime = allowedPedestal;
@@ -907,17 +909,19 @@ int main(int argc, char *argv[])
 		int no_crocs = currentController->GetCrocVectorLength(); 
 		/**********************************************************************************/
 		/*                      Execute the "old" readout model.                          */        
+		/* This model will not receive further *structural* fixes (use the new readout    */
+		/* model instead).  GNP 20100518.                                                 */
+		/*                                                                                */ 
 		/* Loop over crocs and then channels in the system.  Execute TakeData on each     */
 		/* Croc/Channel combination of FEB's.  Here we assume that the CROCs are indexed  */
 		/* from 1->N.  The routine will fail if this is false!                            */
 		/**********************************************************************************/
-		// TODO - It would be better to iterate over the CROC vector here rather loop over ID's.
+		// It would be better to iterate over the CROC vector here rather loop over ID's.
 		if (continueRunning) {
 			for (int i=0; i<no_crocs; i++) {
 				croc_id = i+1;
 				croc *tmpCroc = currentController->GetCroc(croc_id);
 				for (int j=0; j<4 ;j++) { // Loop over FE Chains.
-					// TODO - relace GetChannel functions with GetChain functions?...
 					if ((tmpCroc->GetChannelAvailable(j))&&(tmpCroc->GetChannel(j)->GetHasFebs())) {
 						//
 						// Threaded Option
@@ -930,8 +934,6 @@ int main(int argc, char *argv[])
 							<<(dummy.tv_sec*1000000+dummy.tv_usec)<<"\t"
 							<<(gate_start_time.tv_sec*1000000+gate_start_time.tv_usec)<<endl;
 #endif
-						// TODO - how to get a return value from a boost thread function?
-						// TODO - can we use a try-catch here?
 						data_threads[thread_count] = 
 							new boost::thread((boost::bind(&TakeData,boost::ref(daq),boost::ref(evt),croc_id,j,
 							thread_count, attach, sys_id)));
@@ -1276,7 +1278,7 @@ int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id 
 
 int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread, 
 	et_att_id  attach, et_sys_id  sys_id, bool readFPGA, int nReadoutADC) 
-{ // TODO - fix channel / chain naming snafu here too...
+{ // Be wary of channel / chain naming snafu here too...
 /*!
  *  \fn int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id, int thread,
  *                et_att_id  attach, et_sys_id  sys_id, bool readFPGA, int nReadoutADC)
@@ -1478,10 +1480,24 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 #endif
 #if RUN_SLEEPY
 	// This sleep is here because we return too quickly - the FEBs are still digitizing.
-	// Smallest possible time with "sleep" command is probably something like ~1 ms
-	// TODO - Put in a more clever wait function so we don't step on digitization on the FEBs.
-	// One milisecond is too long - digitization only takes 300 microseconds.
-	system("sleep 1e-3");
+	// However, digitization only takes ~300 microseconds.  All of our time function options 
+	// for sleep vary as a function of OS scheduling issues and none are very stable.
+	// A tight sleep time can only really affect MTest since it is only called once per gate.
+	//struct timeval napTime;
+	//gettimeofday(&napTime,NULL);
+	//unsigned long long t0 = (unsigned long long)(napTime.tv_sec*1000000) + (unsigned long long)(napTime.tv_usec);
+	//obsolete//system("sleep 1e-3"); // Actually measured to be something more like 3-4 ms!
+#if defined(HAVE_NANOSLEEP)
+	timespec tmReq;
+	tmReq.tv_sec = (time_t)(0);
+	tmReq.tv_nsec = 300 * 1000;
+	(void)nanosleep(&tmReq, (timespec *)NULL); // Typically ~1 ms (sometimes ~2).
+#else
+	usleep(300); // Typically ~1 ms (sometimes ~2).
+#endif
+	//gettimeofday(&napTime,NULL);
+	//unsigned long long t1 = (unsigned long long)(napTime.tv_sec*1000000) + (unsigned long long)(napTime.tv_usec);
+	//mnvdaq.debugStream() << "Sleep time (us) = " << (t1 - t0);
 #endif
 
 	// Tell the data acquiring threads that data is available for processing.	
