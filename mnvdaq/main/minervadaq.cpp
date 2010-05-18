@@ -1198,6 +1198,10 @@ int main(int argc, char *argv[])
 #endif
 	// Report end of subrun...
 #if SINGLEPC||MASTER // Single PC or Soldier Node
+	mnvdaq.infoStream() << "Sending Frame.";
+	SendSentinel(daq, &event_data, attach, sys_id);
+	std::cout << " Last Frame Type " << event_data.feb_info[4] << std::endl;
+	mnvdaq.infoStream() << " Last Frame Type " << event_data.feb_info[4];
 	std::cout << " Last Event = " << lastEvent << std::endl;
 	mnvdaq.infoStream() << "Last Event = " << lastEvent;
 #endif 
@@ -1238,6 +1242,12 @@ int main(int argc, char *argv[])
 	return success;
 }
 
+
+void SendSentinel(acquire_data *daq, event_handler *event_data, et_att_id attach, et_sys_id sys_id)
+{
+	event_data->feb_info[4] = 5; // Sentinel
+	daq->ContactEventBuilder(event_data, 0, attach, sys_id);
+}
 
 int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id, 
 	std::list<readoutObject*> *readoutObjects, const int allowedTime, const bool readFPGA, 
@@ -1644,7 +1654,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v07','v07-03-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v07','v07-04-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

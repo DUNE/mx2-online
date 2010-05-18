@@ -34,6 +34,8 @@ template <typename Any> int SynchWrite(int socket_handle, Any *data);
 /*! Synch readout nodes - listen */ 
 template <typename Any> int SynchListen(int socket_connection, Any *data); 
 
+/* Send a Sentinel Frame. */
+void SendSentinel(acquire_data *daq, event_handler *event_data, et_att_id attach, et_sys_id sys_id);
 
 /* "New" readout structure functions and variables. */
 std::list<readoutObject*> readoutObjects; 
