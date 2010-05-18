@@ -64,16 +64,16 @@ MinervaHeader::MinervaHeader(int crateID, int crocID, int chanID,
 #endif
 
 	unsigned short magic_pattern = 0xCBCB; 
-	data_bank_header[0] =  magic_pattern; //put the magic pattern for this event into the header
-	data_bank_header[1] = length; //put the buffer length into this event header
-	data_bank_header[2] = ((firmware) << 0x08) | (bank&0xFF); //load up the firmware version for the feb
-	data_bank_header[3] = source_id; //and the source information
+	bank_header[0] =  magic_pattern; //put the magic pattern for this event into the header
+	bank_header[1] = length; //put the buffer length into this event header
+	bank_header[2] = ((firmware) << 0x08) | (bank&0xFF); //load up the firmware version for the feb
+	bank_header[3] = source_id; //and the source information
 	chan_number = (source_id & 0xFF8)>>0x07; //register the "feb number"
 #if DEBUG_HEADERS
 	if (hdrAppender!=0) {
 		mnvevt.debug("\tHeader Words:");
-		mnvevt.debug("\t  [1]0x%04X [0]0x%04X",data_bank_header[1],data_bank_header[0]);
-		mnvevt.debug("\t  [3]0x%04X [2]0x%04X",data_bank_header[3],data_bank_header[2]);
+		mnvevt.debug("\t  [1]0x%04X [0]0x%04X",bank_header[1],bank_header[0]);
+		mnvevt.debug("\t  [3]0x%04X [2]0x%04X",bank_header[3],bank_header[2]);
 	}
 #endif
 }
@@ -95,16 +95,16 @@ MinervaHeader::MinervaHeader(unsigned char crate, log4cpp::Appender* appender)
 	unsigned short source_id = crate; //2 bits for the crate id number? WinDAQ DAQHeader source ID?...
 	unsigned short magic_pattern = 0xCBCB; 
 
-	DAQ_event_header[0] = magic_pattern;    // add: the magic pattern to the header,
-	DAQ_event_header[1] = 48;               // the length in bytes of the DAQ header,
-	DAQ_event_header[2] = (3 & 0xFF);       // Bank Type (3 for DAQ Header),
-	DAQ_event_header[2] |= (7 & 0xFF)<<0x8; // Version (7 as of 2010.May.14), and
-	DAQ_event_header[3] = source_id;        // the source information.
+	bank_header[0] = magic_pattern;    // add: the magic pattern to the header,
+	bank_header[1] = 48;               // the length in bytes of the DAQ header,
+	bank_header[2] = (3 & 0xFF);       // Bank Type (3 for DAQ Header),
+	bank_header[2] |= (7 & 0xFF)<<0x8; // Version (7 as of 2010.May.14), and
+	bank_header[3] = source_id;        // the source information.
 #if DEBUG_HEADERS
 	if (hdrAppender!=0) {
 		mnvevt.debug("\tHeader Words:");
-		mnvevt.debug("\t  [1]0x%04X [0]0x%04X",DAQ_event_header[1],DAQ_event_header[0]);
-		mnvevt.debug("\t  [3]0x%04X [2]0x%04X",DAQ_event_header[3],DAQ_event_header[2]);
+		mnvevt.debug("\t  [1]0x%04X [0]0x%04X",bank_header[1],bank_header[0]);
+		mnvevt.debug("\t  [3]0x%04X [2]0x%04X",bank_header[3],bank_header[2]);
 	}
 #endif
 }
@@ -184,7 +184,7 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 		event_block[buffer_index+3] = (event_info_block[i]>>24) & 0xFF;
 	}
 
-	unsigned short *tmpDAQHeader = header->GetDAQEvtHeader();
+	unsigned short *tmpDAQHeader = header->GetBankHeader();
 	buffer_index = 0; 
 	for (int i = 0; i < 4 ;i++) {
 		event_block[buffer_index] = tmpDAQHeader[i]&0xFF;

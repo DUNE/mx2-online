@@ -14,7 +14,7 @@ template <class X> void MinervaEvent::MakeDataBlock(X *frame, MinervaHeader *hea
 #if DEBUG_MAKEDATABLOCK
 	std::cout << "Entering MinervaEvent::MakeDataBlock..." << std::endl;
 #endif
-	unsigned short *bank_header = header->GetDataBankHeader();
+	unsigned short *bank_header = header->GetBankHeader();
 #if DEBUG_MAKEDATABLOCK
 	std::cout << "  Extracting Data Bank Header Complete" << std::endl;
 #endif

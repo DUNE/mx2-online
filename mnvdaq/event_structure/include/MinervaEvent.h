@@ -49,8 +49,11 @@ passing it to the event builder in order to ensure the frame length matches the 
  */
 class MinervaHeader {
 	private:
+		// These two (data_bank_header & DAQ_event_header) are obsolete, will retire soon...
 		unsigned short data_bank_header[4]; /*!<The data bank header for all data other than EOE */
 		unsigned short DAQ_event_header[4]; /*!<The End-of-Event (EOE) Record header */
+		// All we need is one bank header array...
+		unsigned short bank_header[4]; /*!<The Minerva Header for each frame */
 		unsigned short chan_number; /*!<the channel number for data having a header attached */
 		boost::mutex mutex; /*!<A BOOST mutual exclusion for threaded operation */
 		log4cpp::Appender* hdrAppender; //log4cpp appender for printing log statements. 
@@ -64,9 +67,12 @@ class MinervaHeader {
 		MinervaHeader(unsigned char crate, log4cpp::Appender* appender=0);
 		/*! default destructor */
 		~MinervaHeader() { };
+		unsigned short inline GetChanNo() {return chan_number;};
+		// All we need is one bank header array...
+		unsigned short inline *GetBankHeader() {return bank_header;};
+		// These two (data_bank_header & DAQ_event_header) are obsolete, will retire soon...
 		unsigned short inline *GetDataBankHeader() {return data_bank_header;};
 		unsigned short inline *GetDAQEvtHeader() {return DAQ_event_header;};
-		unsigned short inline GetChanNo() {return chan_number;};
 };
 
 /*! \class MinervaEvent 
