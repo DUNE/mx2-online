@@ -320,6 +320,9 @@ int main(int argc, char **argv)
 			 	ebuilder.warnStream() << "WARNING!  TriP programming frames not supported by EventBuilder yet!";
 				length = 0;
 				break;
+			case 5:
+				length = DAQ_HEADER; // Sentinel Frame
+				break;
 			default:
 				std::cout << "WARNING!  Unknown frame type in EventBuilder main!" << std::endl;
 				ebuilder.warnStream() << "WARNING!  Unknown frame type in EventBuilder main!";
@@ -331,7 +334,7 @@ int main(int argc, char **argv)
 #if DEBUG_BUFFERS
 		ebuilder.debugStream() << "   event_builder::main(): Final data buffer length = " << length;
 #endif
-		if (evt->feb_info[4]!=3) {
+		if ( (evt->feb_info[4]!=3)&&(evt->feb_info[4]!=5) ) {
 			tmp_buffer = event->GetDataBlock();
 #if DEBUG_BUFFERS
 			ebuilder.debugStream() << " event_builder::main(): Copying Data Header data into final buffer.";
@@ -344,7 +347,10 @@ int main(int argc, char **argv)
 			event->DeleteDataBlock();
 		} else { 
 #if DEBUG_BUFFERS
-			ebuilder.debugStream() << " event_builder::main(): Copying DAQ Header data into final buffer.";
+			if (evt->feb_info[4]==3)
+				ebuilder.debugStream() << " event_builder::main(): Copying DAQ Header data into final buffer.";
+			if (evt->feb_info[4]==5)
+				ebuilder.debugStream() << " event_builder::main(): Copying Sentinel frame data into final buffer.";
 #endif
 			for (int data_index = 0; data_index < length; data_index++) {
 				final_buffer[data_index] = event->GetEventBlock(data_index);
@@ -537,6 +543,15 @@ int event_builder(event_handler *evt)
 		// The call to MinervaEvent constructor automatically inserts the DAQ block into the event buffer.
 		// Reset frame counters.
 		adcFrameCount = discFrameCount = fpgaFrameCount = 0;
+	} else if (evt->feb_info[4]==5) {
+		// Build the "Sentinel" Frame
+		// Set the "firmware" version to 1, contained frame data length to 0.
+		ebuilder.infoStream() << "Making the Sentinel Frame.  Bank Type = " << evt->feb_info[4];
+		tmp_header = new MinervaHeader(evt->feb_info[1], 0, 0, evt->feb_info[4], 0, 1, 0, 0, ebAppender); 
+		// Make the new "event" block
+		event = new MinervaEvent(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, tmp_header, 0, 0, 0, ebAppender); 
+		// The call to MinervaEvent constructor automatically inserts the block into the event buffer.
+
 	} else {
 		event = new MinervaEvent();
 
