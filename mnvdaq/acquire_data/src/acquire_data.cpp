@@ -110,7 +110,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	InitializeCroc(0x020000, 2,  9,  9,  9,  9); // MS17E, MS18E, MS19E, MS20E
 	InitializeCroc(0x030000, 3, 10, 10,  6,  6); // MS21W, MS22W, MS23W, MS24W
 	InitializeCroc(0x040000, 4,  9,  9,  5,  5); // MS21E, MS22E, MS23E, MS24E
-	InitializeCroc(0x050000, 5,  6,  6,  6,  0); // MS25W, MS26W, MS27W, Loopback
+	InitializeCroc(0x050000, 5,  6,  6,  6,  2); // MS25W, MS26W, MS27W, Veto Wall 
 	InitializeCroc(0x060000, 6,  5,  5,  5,  0); // MS25E, MS26E, MS27E, Loopback
 	InitializeCroc(0x070000, 7,  8,  8,  4,  4); // MS00W, MS00E, MS-1W, MS-1E
 	maxFebs = 10;
