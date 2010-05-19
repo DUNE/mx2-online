@@ -545,9 +545,9 @@ int event_builder(event_handler *evt)
 		adcFrameCount = discFrameCount = fpgaFrameCount = 0;
 	} else if (evt->feb_info[4]==5) {
 		// Build the "Sentinel" Frame
-		// Set the "firmware" version to 1, contained frame data length to 0.
+		// Set the "firmware" version to 1, contained frame data length to 48.  (48 empty bytes right now.)
 		ebuilder.infoStream() << "Making the Sentinel Frame.  Bank Type = " << evt->feb_info[4];
-		tmp_header = new MinervaHeader(evt->feb_info[1], 0, 0, evt->feb_info[4], 0, 1, 0, 0, ebAppender); 
+		tmp_header = new MinervaHeader(evt->feb_info[1], 0, 0, evt->feb_info[4], 0, 1, 0, 48, ebAppender); 
 		// Make the new "event" block
 		event = new MinervaEvent(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, tmp_header, 0, 0, 0, ebAppender); 
 		// The call to MinervaEvent constructor automatically inserts the block into the event buffer.
