@@ -108,6 +108,16 @@ int main(int argc, char **argv)
 	std::cout << "ET system host machine = " << hostName << std::endl;
 	std::cout << "Ouptut Filename        = " << output_filename << std::endl;
 	ebuilder.infoStream() << "ET system host machine = " << hostName;
+	
+	// Set up the signal handler so we can always exit cleanly
+	struct sigaction quit_action;
+	quit_action.sa_handler = quitsignal_handler;
+	sigemptyset (&quit_action.sa_mask);
+	quit_action.sa_flags = SA_RESTART;		// restart interrupted system calls instead of failing with EINTR
+	
+	sigaction(SIGINT,  &quit_action, NULL);
+	sigaction(SIGTERM, &quit_action, NULL);
+
 
 	int            status;
 	et_openconfig  openconfig;
@@ -222,18 +232,64 @@ int main(int argc, char **argv)
 	std::cout << "email them to Gabe Perdue: perdue AT fnal DOT gov" << std::endl;
 	std::cout << std::endl;
 	int evt_counter = 0;
-	while ((et_alive(sys_id))) {
+	bool continueRunning = true;
+	while ((et_alive(sys_id)) && continueRunning) {
 		struct timespec time;
-#if MTEST
-		time.tv_sec  = 3600; // Wait 60 minutes before the EB times out.
-#else
-		time.tv_sec  = 1200; // Wait 20 minutes before the EB times out.
-#endif
-		time.tv_nsec =    0;
+//#if MTEST
+//		time.tv_sec  = 3600; // Wait 60 minutes before the EB times out.
+//#else
+//		time.tv_sec  = 1200; // Wait 20 minutes before the EB times out.
+//#endif
 		
 		//printf("time: %d.%i\n", time.tv_sec, time.tv_nsec);
-		status = et_event_get(sys_id, attach, &pe, ET_TIMED|ET_MODIFY, &time);
-		if (status==ET_ERROR_TIMEOUT) break;
+
+		// there are two different circumstances under which we will acquire events.
+		//
+		// the first is normal operation: minervadaq is running smoothly; we just
+		// take events from ET until we reach the sentinel gate, then quit.
+		//
+		// the second is when minervadaq crashes.  in this case the run control
+		// (or the user who is running the DAQ via shell scripts) will inform this
+		// process that it shouldn't expect the sentinel by sending the SIGINT (ctrl-c)
+		// or SIGTERM signal (sent by 'kill <pid>').  when that happens, we will wait
+		// a maximum of 60 seconds (customizable in event_builder.h) for new frames
+		// before declaring that no more data is coming and that the event builder
+		// should quit.
+		
+		if (!waiting_to_quit)
+		{
+			// case 1: try to get an event but return immediately.
+
+			time.tv_sec  = 0;
+			time.tv_nsec = 1000; // wait 1 microsecond
+		
+			// sleep to avoid a busy-wait.
+			nanosleep( &time, NULL );
+
+			// if no events are available, this will return ET_ERROR_EMTPY.
+			// since it's not ET_OK, it will force us to go around and ask
+			// for another event (the 'continue' is below the specific error
+			// handling that follows below).  note that the 'time' parameter
+			// is ignored in this mode.
+			status = et_event_get(sys_id, attach, &pe, ET_ASYNC, &time);
+		}
+		else if (waiting_to_quit && !quit_now)
+		{
+			// case 2: try to get an event, but time out after the specified interval.
+
+			time.tv_sec = SECONDS_BEFORE_TIMEOUT;
+			time.tv_nsec = 0;
+			status = et_event_get(sys_id, attach, &pe, ET_TIMED, &time);
+			
+			// if we did indeed time out, it's time to quit.
+			if (status == ET_ERROR_TIMEOUT)
+				continueRunning = false;
+		}
+		else
+		{
+			// the user wants to shut down ASAP.
+			break;
+		}
 
 		// socket errors need to be handled differently depending on locale.
 		// for the nearline machines, it's not a tragedy if we miss an event or two.
@@ -244,44 +300,46 @@ int main(int argc, char **argv)
 			printf("Warning: socket error in event_builder::main() calling et_event_get().  Will retry.\n");
 			ebuilder.warn("Socket error in event_builder::main() calling et_event_get().  Will retry.\n");
 			fflush(stdout);
-			continue;
 #else
 			printf("event_builder::main(): et_client: socket communication error\n");
 			ebuilder.fatal("event_builder::main(): et_client: socket communication error\n");
-			exit(-1);
+			continueRunning = false;
 #endif
 		}
 
 		if (status == ET_ERROR_DEAD) {
 			printf("event_builder::main(): et_client: ET system is dead\n");
 			ebuilder.fatal("event_builder::main(): et_client: ET system is dead\n");
-			exit(-1);
+			continueRunning = false;
 		}
 		else if (status == ET_ERROR_TIMEOUT) {
 			printf("event_builder::main(): et_client: got timeout\n");
 			ebuilder.fatal("event_builder::main(): et_client: got timeout\n");
-			exit(-1);
+			continueRunning = false;
 		}
 		else if (status == ET_ERROR_EMPTY) {
 			printf("event_builder::main(): et_client: no events\n");
 			ebuilder.fatal("event_builder::main(): et_client: no events\n");
-			exit(-1);
+			continueRunning = false;
 		}
 		else if (status == ET_ERROR_BUSY) {
 			printf("event_builder::main(): et_client: station is busy\n");
 			ebuilder.fatal("event_builder::main(): et_client: station is busy\n");
-			exit(-1);
+			continueRunning = false;
 		}
 		else if (status == ET_ERROR_WAKEUP) {
 			printf("event_builder::main(): et_client: someone told me to wake up\n");
 			ebuilder.fatal("event_builder::main(): et_client: someone told me to wake up\n");
-			exit(-1);
+			continueRunning = false;
 		}
 		else if (status != ET_OK) {
 			printf("event_builder::main(): et_client: get error.  Status code: %d\n", status);
 			ebuilder.fatalStream() << "event_builder::main(): et_client: get error.  Status code: " << status;
-			exit(-1);
+			continueRunning = false;
 		}
+		
+		if (status != ET_OK)
+			continue;
 
 		event_handler *evt;
 		int pri;
@@ -322,6 +380,7 @@ int main(int argc, char **argv)
 				break;
 			case 5:
 				length = DAQ_HEADER; // Sentinel Frame
+				continueRunning = false;
 				break;
 			default:
 				std::cout << "WARNING!  Unknown frame type in EventBuilder main!" << std::endl;
@@ -755,4 +814,38 @@ template <class X> void DecodeBuffer(event_handler *evt, X *frame, int i, int le
 #endif
 };
 
-
+void quitsignal_handler(int signum)
+/*! \fn void quitsignal_handler(int signum)
+ *
+ * Handles the SIGINT & SIGNUM signals (both of which should exit the process)
+ * by setting a flag that tells the main loop to prepare to quit.  Note though
+ * that the process will first finish with any events left in the buffer and then
+ * wait a specified number of seconds before actually closing down.
+ * If you *really* need to close down now, issue the signal a second time.
+ */
+{
+	// the use of STDERR is a bit "dangerous" in the sense that we might be inserting
+	// this message into the middle of stuff in the STDERR buffer.  the worst that
+	// can happen is that another message is broken in half with our message in the middle:
+	// hence the flushes and the extra line breaks for readability.
+	if (waiting_to_quit)
+	{
+		fflush(stderr);
+		fprintf(stderr, "\n\nShutdown request acknowledged.  Will close down as soon as possible.\n\n");
+		fflush(stderr);
+		
+		quit_now = true;
+	}
+	else
+	{
+		fflush(stderr);
+		fprintf(stderr, "\n\nInstructed to close.\nNote that any events remaining in the buffer will first be cleared, and then we will wait 60 seconds to be sure there are no more.\nIf you really MUST close down NOW, issue the signal again (ctrl-C or 'kill <this process's PID>').\n\n");
+		fflush(stderr);
+	
+		waiting_to_quit = true;
+		
+		// be sure to re-enable the signal!
+		// (it's blocked by default when the handler is called)
+		signal (signum, quitsignal_handler);
+	}
+}

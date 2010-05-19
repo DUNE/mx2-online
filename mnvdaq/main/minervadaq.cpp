@@ -18,6 +18,7 @@
 #include <sys/time.h>
 #include <sys/stat.h> // for file sizes, not actually used... (can't trust answers)
 #include <stdlib.h>   // for file sizes, not actually used...
+#include <signal.h>
 
 #define THREAD_COUNT 4  /*!< a thread count var if we aren't finding the # of threads needed */
 #if MASTER||SINGLEPC // Soldier Node
@@ -75,6 +76,17 @@ int main(int argc, char *argv[])
 	unsigned long long startTime, stopTime;        // For SAM.  Done at second & microsecond precision.
 	unsigned long long startReadout, stopReadout;  // For gate monitoring.  Done at microsecond precision.
 
+	/*********************************************************************************/
+	/* Set up the signal handler so we can always exit cleanly                       */
+	/*********************************************************************************/
+	struct sigaction quit_action;
+	quit_action.sa_handler = quitsignal_handler;
+	sigemptyset (&quit_action.sa_mask);
+	quit_action.sa_flags = SA_RESTART;		// restart interrupted system calls instead of failing with EINTR
+	
+	sigaction(SIGINT,  &quit_action, NULL);
+	sigaction(SIGTERM, &quit_action, NULL);
+	
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
 	/*********************************************************************************/
@@ -579,7 +591,7 @@ int main(int argc, char *argv[])
 	int  triggerCounter  = 0; // Increments on every attempt...
 	bool readFPGA        = true; 
 	int  nReadoutADC     = 8;
-	bool continueRunning = true;
+	continueRunning = true;		// declared in header.
 	while ( (gate<record_gates) && continueRunning ) {
 		triggerCounter++; // Not a gate counter - this updates trigger type in mixed mode.
 #if DEBUG_GENERAL
@@ -1773,4 +1785,14 @@ template <typename Any> int SynchListen(int socket_connection, Any data[])
 	return 0; // success
 }
 
-
+void quitsignal_handler(int signum)
+/*! \fn void quitsignal_handler(int signum)
+ *
+ * Handles the SIGINT & SIGNUM signals (both of which should exit the process)
+ * by setting a flag that tells the main loop to quit.  This ensures we always
+ * get a clean close and that the sentinel gate is always put into the stream
+ * (except in cases of hard crashes of this program).
+ */
+{
+	continueRunning = false;
+}
