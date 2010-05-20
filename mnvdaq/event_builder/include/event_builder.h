@@ -2,7 +2,6 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include <signal.h>
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
@@ -62,7 +61,7 @@ template <class X> void DecodeBuffer(event_handler *evt, X *frame, int i, int le
 /*! a function which build the necessary/header for each data bank */
 template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame); 
 
-int CheckBufferLength(int length, int frame_length); //just what it says
+void CheckBufferLength(int length, int frame_length); //just what it says
 
 void HandleErrors(int i); //an error handling function
 
@@ -72,15 +71,5 @@ void HandleErrors(int i); //an error handling function
  */
 
 bool quit, done;
-
-/*! How long the event builder will wait for new frames before declaring no more are coming.
- * Only relevant after receiving SIGTERM/SIGINT (otherwise we just wait until we get the
- * sentinel gate instead).
- */
-const int SECONDS_BEFORE_TIMEOUT = 60;
-
-sig_atomic_t waiting_to_quit;          /*!< Used by the SIGTERM/SIGINT signal handler to tell the main loop to quit (guaranteed atomic write) */
-sig_atomic_t quit_now;          /*!< Used by the SIGTERM/SIGINT signal handler to tell the main loop to quit NOW (guaranteed atomic write) */
-void quitsignal_handler(int signum);   /*!< The signal handler for SIGTERM/SIGINT */
 
 MinervaEvent *event;

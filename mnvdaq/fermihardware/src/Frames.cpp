@@ -110,9 +110,9 @@ void Frames::MakeMessage() { std::cout << "Hi Elaine!" << std::endl;}
 
 bool Frames::CheckForErrors() 
 {
-/*! \fn bool Frames::CheckForErrors()
- * Check incoming frame header data for errors.
- */
+/*! \fn********************************************************************************
+ * a function which checks incoming FPGA frame header data for errors.
+ *********************************************************************************/
 	bool errors[10], error;
 	error = false; //initialize error 
 	for (int i=0;i<10;i++) {
@@ -259,13 +259,11 @@ void Frames::DecodeHeader()
 }
 
 
-int Frames::DecodeRegisterValues(int a) 
+void Frames::DecodeRegisterValues(int a) 
 {
 	std::cout << "Must Make One of these in each frame-inheriting class!!!" << std::endl;
 	exit(-2);
-	return -1;
 }
-
 
 
 #endif

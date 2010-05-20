@@ -49,30 +49,22 @@ passing it to the event builder in order to ensure the frame length matches the 
  */
 class MinervaHeader {
 	private:
-		// These two (data_bank_header & DAQ_event_header) are obsolete, will retire soon...
 		unsigned short data_bank_header[4]; /*!<The data bank header for all data other than EOE */
 		unsigned short DAQ_event_header[4]; /*!<The End-of-Event (EOE) Record header */
-		// All we need is one bank header array...
-		unsigned short bank_header[4]; /*!<The Minerva Header for each frame */
 		unsigned short chan_number; /*!<the channel number for data having a header attached */
 		boost::mutex mutex; /*!<A BOOST mutual exclusion for threaded operation */
-		log4cpp::Appender* hdrAppender; //log4cpp appender for printing log statements. 
 
 	public:
 		/*! the constructor */
 		MinervaHeader(int crateID, int crocID, int chanID, 
-			int bank, int feb_number, int firmware, int hit, int length, 
-			log4cpp::Appender* appender=0);
+			int bank, int feb_number, int firmware, int hit, int length);
 		/*! default constructor */
-		MinervaHeader(unsigned char crate, log4cpp::Appender* appender=0);
+		MinervaHeader(unsigned char crate);
 		/*! default destructor */
 		~MinervaHeader() { };
-		unsigned short inline GetChanNo() {return chan_number;};
-		// All we need is one bank header array...
-		unsigned short inline *GetBankHeader() {return bank_header;};
-		// These two (data_bank_header & DAQ_event_header) are obsolete, will retire soon...
 		unsigned short inline *GetDataBankHeader() {return data_bank_header;};
 		unsigned short inline *GetDAQEvtHeader() {return DAQ_event_header;};
+		unsigned short inline GetChanNo() {return chan_number;};
 };
 
 /*! \class MinervaEvent 
@@ -84,23 +76,18 @@ class MinervaEvent {
 		unsigned char *data_block; /*!<what to put the data into */
 		unsigned char event_block[DAQ_HEADER]; /*!<a special buffer to hold onto the event info while we process
 		everything else. */
-		log4cpp::Appender* evtAppender; //log4cpp appender for printing log statements. 
-
 	public:
 		/*! the default constructor */
 		MinervaEvent() { };
 		/*! the constructor */
 		MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
 			unsigned short int trig, unsigned char ledGroup, unsigned char ledLevel, 
-			unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 
-			unsigned short int error, unsigned int minos, MinervaHeader *header, 
-			unsigned short int nADCFrames, unsigned short int nDiscFrames, 
-			unsigned short int nFPGAFrames ,log4cpp::Appender* appender=0);
+			unsigned long long g_gate, unsigned long long gate, unsigned long long trig_time, 
+			unsigned short int error, unsigned int minos, MinervaHeader *header);
 		/*! the default destructor */
 		~MinervaEvent() { };
 		template <class X> void MakeDataBlock(X *frame, MinervaHeader *header);
 		inline unsigned char* GetDataBlock() {return data_block;};
-		void DeleteDataBlock() {delete [] data_block;};
 		unsigned char inline GetEventBlock(int i) {return event_block[i];};
 };
 

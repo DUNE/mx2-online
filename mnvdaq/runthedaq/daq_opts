@@ -2,7 +2,4 @@
 ETSYSPIDFILE="/work/conditions/etsys.pid"
 ETMONPIDFILE="/work/conditions/etmon.pid"
 EBSRVPIDFILE="/work/conditions/ebsrv.pid"
-ETSYSTERMPIDFILE="/work/conditions/etsys_term.pid"
-ETMONTERMPIDFILE="/work/conditions/etmon_term.pid"
-EBSRVTERMPIDFILE="/work/conditions/ebsrv_term.pid"
 

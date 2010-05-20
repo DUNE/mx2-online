@@ -45,7 +45,6 @@ class channels {
 		unsigned int channelBaseAddress, channelDirectAddress;/*!<channelBaseAddress is the CROC address */
 		CVAddressModifier bltAddressModifier; /*!<block transfers require a special modifier */
 		std::list<feb*> febs; /*!<each channel can have up to 15 front end boards (feb's) */
-		std::vector<feb*> febsVector; /*!<need to be able to direct access an FEB by index (address/number) */
 		int FIFOMaxSize; /*!< bytes */
 		int MemoryMaxSize; /*!< bytes */
 		unsigned int fifoAddress, dpmAddress, dpmPointerAddress,
@@ -66,9 +65,6 @@ class channels {
 		~channels() {
 			for (std::list<feb*>::iterator p=febs.begin(); p!=febs.end(); p++) delete (*p);
 			febs.clear();
-			// Already deleted these objects if vectorized via pointers to the FEB objects.
-			//for (std::vector<feb*>::iterator p=febsVector.begin(); p!=febsVector.end(); p++) delete (*p);
-			febsVector.clear();
 		};
 
 		/*! get functions for various data members*/	
@@ -101,12 +97,6 @@ class channels {
 		feb *MakeTrialFEB(int a, int nHits, log4cpp::Appender* appender=0); //feb address, maxHits, log appender
 		int DecodeStatusMessage();
 		void inline ClearBuffer() {delete [] buffer;};
-		int CheckHeaderErrors(int dataLength);
-
-		/*! Build FEB vector from existing list */
-		void VectorizeFEBList();
-		std::vector<feb*> inline *GetFebVector() {return &febsVector;};
-		feb inline *GetFebVector(int i) {return febsVector[i];};
 
 };
 #endif

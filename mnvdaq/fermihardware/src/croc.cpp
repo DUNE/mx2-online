@@ -54,10 +54,8 @@ croc::croc(unsigned int a, int crocid, CVAddressModifier b, CVDataWidth c, CVDat
 	CVDataWidth dpmDataWidth = dataWidthSwapped; 
 					
 	// Initialize all channels on all crocs to false, i.e. it isn't connected
-	// note the usual chain/channel issue exists here as well...
 	for (int i=0;i<4;i++) {
-		chain_available[i]   = false;  
-		channel_available[i] = false;  
+		channel_available[i]=false;  
 	}
 
 	// initialize the CROC register data, for now, the test pulse is not set 
@@ -76,6 +74,7 @@ void croc::SetTimingRegister(unsigned short cm, unsigned short tpde, unsigned sh
  * \param tpde test pulse enable bit
  * \param tpdv test pulse delay value
  */
+// TODO - Fix the SetTimingRegister function to behave for some interface choice...
 #if (DEBUG_VERBOSE)&&(DEBUG_CROC)
 	std::cout << "  Entering croc::SetTimingRegister..." << std::endl;
 	std::cout << "    Clock Mode        = " << cm << std::endl;
@@ -146,21 +145,7 @@ void croc::SetupChannels()
 }
 
 
-channels *croc::GetChannel(int i) { //TODO - this should be fixed for a 1-4 argument set. 
-/*! \fn
- * This function retrieves a specified croc channel belonging to this croc object.
- * \param i the chain number (indexed from 0)
- */
-	channels *tmp=0; //a channel temporary to be returned
-	for (std::list<channels*>::iterator p=crocChannel.begin(); 
-	p!=crocChannel.end(); p++) { //loop over the list of channels belonging to this croc
-		if (((*p)->GetChainNumber())==i) tmp = (*p); //check the *chain* identifier
-	}
-	return tmp; //return the channel object
-}
-
-
-channels *croc::GetChain(int i) { 
+channels *croc::GetChannel(int i) { //TODO - this should be "GetChain"
 /*! \fn
  * This function retrieves a specified croc channel belonging to this croc object.
  * \param i the chain number (indexed from 0)

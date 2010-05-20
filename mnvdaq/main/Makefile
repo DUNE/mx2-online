@@ -1,14 +1,22 @@
 CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 
 COMPILE_OPTIONS = -DTAKE_DATA 
+#COMPILE_OPTIONS += -DTHREAD_ME
+COMPILE_OPTIONS += -DNO_THREAD
+COMPILE_OPTIONS += -DRECORD_EVENT
 #COMPILE_OPTIONS += -DASSERT_INTERRUPT
 
 #--DEBUG FLAGS--
+#COMPILE_OPTIONS += -DTIME_ME
 #COMPILE_OPTIONS += -DDEBUG_GENERAL
+#COMPILE_OPTIONS += -DDEBUG_THREAD
 #COMPILE_OPTIONS += -DDEBUG_SOCKETS
-#COMPILE_OPTIONS += -DDEBUG_MIXEDMODE
-#COMPILE_OPTIONS += -DDEBUG_TIMING
 COMPILE_OPTIONS += -DRUN_SLEEPY # This flag is required to for FEB digitization.  2009.Dec.16
+
+#--MULTI PC FLAGS--
+COMPILE_OPTIONS += -DSINGLE_PC # Comment this out for multi-pc running.
+#COMPILE_OPTIONS += -DMULTI_PC # Comment this out for single-pc running. 
+#COMPILE_OPTIONS += -DMASTER # Comment this out for single-pc running & on the worker node.
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
@@ -17,7 +25,6 @@ TARGET=minervadaq
 
 LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_acquire -lcaeninterface
 include $(DAQROOT)/Make.include
-include $(DAQROOT)/Make.options
 
 $(TARGET): $(OBJS)
 	@echo $(OBJS)
