@@ -302,9 +302,9 @@ class OMThread(threading.Thread):
 				break
 		
 		# copy the DST to its target location.
-		if self.persistent and len(self.dstfiles) > 0:
+		if self.persistent and len(self.dstfiles) > 0 and Configuration.params["Monitoring nodes"]["om_DSTTargetPath"] is not None:
 			for dstfile in self.dstfiles:
-				shutil.copy2(dstfile["filename"], Configuration.params["Monitoring nodes"]["om_DSTTargetPath"])
+				shutil.copy2(dstfile["filename"], Configuration.params["Monitoring nodes"]["om_DSTTargetPath"]) 
                         
 ####################################################################
 ####################################################################
