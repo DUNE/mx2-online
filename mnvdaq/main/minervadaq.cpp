@@ -682,6 +682,11 @@ int main(int argc, char *argv[])
 			}
 		}
 #endif
+
+		// don't want to keep going through and possibly spitting out garbage!
+		if (!continueRunning)
+			break;
+			
 		switch (runningMode) { 
 			case OneShot:
 				triggerType = Pedestal;
@@ -800,6 +805,11 @@ int main(int argc, char *argv[])
 //				exit(-4);
 				continueRunning = false;
 		}
+
+		// don't want to keep going through and possibly spitting out garbage!
+		if (!continueRunning)
+			break;
+
 		event_data.triggerType  = triggerType;
 		soldierToWorker_trig[0] = (unsigned short int)0;
 		workerToSoldier_trig[0] = (unsigned short int)0;
@@ -816,7 +826,7 @@ int main(int argc, char *argv[])
 			mnvdaq.fatalStream() << "socket write error: soldierToWorker_trig!";	 
 			perror("write error: soldierToWorker_trig");	 
 			//exit(EXIT_FAILURE);	 
-			continueRunning = false;
+			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 		// Read trigger type from the worker node	 
 		while (!workerToSoldier_trig[0]) {	 
@@ -830,6 +840,10 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+
+		if (!continueRunning)
+			break;
+
 #if DEBUG_SOCKETS
 		mnvdaq.debugStream() << "Got the trigger type from the Worker = " << workerToSoldier_trig[0];
 #endif 
@@ -846,8 +860,12 @@ int main(int argc, char *argv[])
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_trig!";	 
 			perror("write error: workerToSoldier_trig");	 
 //			exit(EXIT_FAILURE);	 
-			continueRunning = false;
+			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
+
+		if (!continueRunning)
+			break;
+
 		// Read trigger type from the soldier node	 
 		while (!soldierToWorker_trig[0]) {	 
 			int read_val = read(soldierToWorker_socket_connection,soldierToWorker_trig,sizeof(soldierToWorker_trig));	 
@@ -860,6 +878,10 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+
+		if (!continueRunning)
+			break;
+
 #if DEBUG_SOCKETS
 		mnvdaq.debugStream() << "Got the trigger type from the Soldier = " << soldierToWorker_trig[0];
 #endif 
@@ -884,8 +906,9 @@ int main(int argc, char *argv[])
 			// This is subtle... need to be careful with this approach. 
 			mnvdaq.fatalStream() << "Not sure how to handle timeouts yet!  Bailing!";
 //			exit(1);
-			continueRunning = false;
+			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
+
 #if DEBUG_GENERAL
 		mnvdaq.debugStream() << "Returned from TriggerDAQ.";
 #endif
@@ -1063,8 +1086,7 @@ int main(int argc, char *argv[])
 		if (write(soldierToWorker_socket_handle,soldierToWorker_error,sizeof(soldierToWorker_error)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: soldierToWorker_error!";	 
 			perror("write error: soldierToWorker_error");	 
-			continueRunning = false;
-//			exit(EXIT_FAILURE);	 
+			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 		// Read the readout info (errors) from the worker node	 
 		while (!workerToSoldier_error[0]) {	 
@@ -1078,6 +1100,10 @@ int main(int argc, char *argv[])
 //				exit(EXIT_FAILURE);	 
 			}
 		}
+
+		if (!continueRunning)
+			break;
+
 #if DEBUG_SOCKETS
 		mnvdaq.debugStream() << "Got the error value from the Worker = " << workerToSoldier_error[0];
 #endif 
@@ -1089,7 +1115,7 @@ int main(int argc, char *argv[])
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_error!";	 
 			perror("write error: workerToSoldier_error");	 
 //			exit(EXIT_FAILURE);	 
-			continueRunning = false;
+			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 		// Read the readout info (errors) from the soldier node	 
 		while (!soldierToWorker_error[0]) {	 
@@ -1103,6 +1129,10 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+
+		if (!continueRunning)
+			break;
+
 #if DEBUG_SOCKETS
 		mnvdaq.debugStream() << " Got the error value ifrom the Soldier = " << soldierToWorker_error[0];
 #endif 
@@ -1133,7 +1163,7 @@ int main(int argc, char *argv[])
 			mnvdaq.fatalStream() << "socket write error: soldierToWorker_gate!";	 
 			perror("write error: soldierToWorker_gate");	 
 //			exit(EXIT_FAILURE);	 
-			continueRunning = false;
+			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 		// Read the gate from the worker node	 
 		while (!workerToSoldier_gate[0]) {	 
@@ -1147,6 +1177,9 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+		if (!continueRunning)
+			break;
+
 #if DEBUG_SOCKETS
 		mnvdaq.debugStream() << "Got the gate value from the Worker = " << workerToSoldier_gate[0];
 #endif 
@@ -1164,7 +1197,7 @@ int main(int argc, char *argv[])
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_gate!";	 
 			perror("write error: workerToSoldier_gate");	 
 //			exit(EXIT_FAILURE);	 
-			continueRunning = false;
+			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 		// Read the gate from the soldier node	 
 		while (!soldierToWorker_gate[0]) {	 
@@ -1178,6 +1211,9 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+		if (!continueRunning)
+			break;
+		
 #if DEBUG_SOCKETS
 		mnvdaq.debugStream() << "Got the gate value from the Soldier = " << soldierToWorker_gate[0];
 #endif 

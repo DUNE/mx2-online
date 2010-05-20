@@ -317,17 +317,18 @@ int main(int argc, char **argv)
 			ebuilder.fatal("event_builder::main(): et_client: got timeout\n");
 			continueRunning = false;
 		}
-		else if (status == ET_ERROR_BUSY) {
-			printf("event_builder::main(): et_client: station is busy\n");
-			ebuilder.fatal("event_builder::main(): et_client: station is busy\n");
-			continueRunning = false;
-		}
+//		else if (status == ET_ERROR_BUSY) {
+//			printf("event_builder::main(): et_client: station is busy\n");
+//			ebuilder.fatal("event_builder::main(): et_client: station is busy\n");
+//			continueRunning = false;
+//		}
 		else if (status == ET_ERROR_WAKEUP) {
 			printf("event_builder::main(): et_client: someone told me to wake up\n");
 			ebuilder.fatal("event_builder::main(): et_client: someone told me to wake up\n");
 			continueRunning = false;
 		}
 		
+		// if we didn't successfully get a frame, go round and try again.
 		if (status != ET_OK)
 			continue;
 
