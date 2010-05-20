@@ -77,17 +77,6 @@ int main(int argc, char *argv[])
 	unsigned long long startReadout, stopReadout;  // For gate monitoring.  Done at microsecond precision.
 
 	/*********************************************************************************/
-	/* Set up the signal handler so we can always exit cleanly                       */
-	/*********************************************************************************/
-	struct sigaction quit_action;
-	quit_action.sa_handler = quitsignal_handler;
-	sigemptyset (&quit_action.sa_mask);
-	quit_action.sa_flags = SA_RESTART;		// restart interrupted system calls instead of failing with EINTR
-	
-	sigaction(SIGINT,  &quit_action, NULL);
-	sigaction(SIGTERM, &quit_action, NULL);
-	
-	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
 	/*********************************************************************************/
 	int optind = 1;
@@ -584,6 +573,17 @@ int main(int argc, char *argv[])
 	mnvdaq.infoStream() << " Attempting to record " << record_gates << " gates.";
 
 	/*********************************************************************************/
+	/* Set up the signal handler so we can always exit cleanly                       */
+	/*********************************************************************************/
+	struct sigaction quit_action;
+	quit_action.sa_handler = quitsignal_handler;
+	sigemptyset (&quit_action.sa_mask);
+	quit_action.sa_flags = SA_RESTART;		// restart interrupted system calls instead of failing with EINTR
+	
+	sigaction(SIGINT,  &quit_action, NULL);
+	sigaction(SIGTERM, &quit_action, NULL);
+
+	/*********************************************************************************/
 	/*      The top of the Event Loop.  Events here are referred to as GATES.        */
 	/*      Be mindful of this jargon - in ET, "events" are actually FRAMES.         */
 	/*********************************************************************************/
@@ -676,7 +676,8 @@ int main(int argc, char *argv[])
 					((*croc_iter)->GetCrocAddress()>>16) << " for Gate " << gate 
 					<< std::endl;
 				std::cout << "Cannot write to FastCommand register!" << std::endl;
-				exit(e);
+//				exit(e);
+				continueRunning = false;
 			}
 		}
 #endif
@@ -704,7 +705,8 @@ int main(int argc, char *argv[])
 						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate
 						<< std::endl;
 					std::cout << "Cannot reset sequencer latch in Cosmic mode!" << std::endl;
-					exit(e);
+//					exit(e);
+					continueRunning = false;
 				}
 				triggerType = Cosmic;
 				allowedReadoutTime = allowedCosmic;
@@ -724,7 +726,8 @@ int main(int argc, char *argv[])
 						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate
 						<< std::endl;
 					std::cout << "Cannot reset sequencer latch in Cosmic mode!" << std::endl;
-					exit(e);
+//					exit(e);
+					continueRunning = false;
 				}
 				triggerType = MTBFMuon;
 				allowedReadoutTime = allowedCosmic;
@@ -744,7 +747,8 @@ int main(int argc, char *argv[])
 						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate
 						<< std::endl;
 					std::cout << "Cannot reset sequencer latch in Cosmic mode!" << std::endl;
-					exit(e);
+//					exit(e);
+					continueRunning = false;
 				}
 				triggerType = MTBFBeam;
 				allowedReadoutTime = allowedCosmic;
@@ -792,7 +796,8 @@ int main(int argc, char *argv[])
 			default:
 				std::cout << "minervadaq::main(): ERROR! Improper Running Mode = " << runningMode << std::endl;
 				mnvdaq.fatalStream() << "Improper Running Mode = " << runningMode;
-				exit(-4);
+//				exit(-4);
+				continueRunning = false;
 		}
 		event_data.triggerType  = triggerType;
 		soldierToWorker_trig[0] = (unsigned short int)0;
@@ -809,7 +814,8 @@ int main(int argc, char *argv[])
 		if (write(soldierToWorker_socket_handle,soldierToWorker_trig,sizeof(soldierToWorker_trig)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: soldierToWorker_trig!";	 
 			perror("write error: soldierToWorker_trig");	 
-			exit(EXIT_FAILURE);	 
+			//exit(EXIT_FAILURE);	 
+			continueRunning = false;
 		}
 		// Read trigger type from the worker node	 
 		while (!workerToSoldier_trig[0]) {	 
@@ -818,7 +824,8 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get workerToSoldier_trig!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: workerToSoldier_trig");	 
-				exit(EXIT_FAILURE);	 
+//				exit(EXIT_FAILURE);	 
+				continueRunning = false;
 			}
 		}
 #if DEBUG_SOCKETS
@@ -836,7 +843,8 @@ int main(int argc, char *argv[])
 		if (write(workerToSoldier_socket_handle,workerToSoldier_trig,sizeof(workerToSoldier_trig)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_trig!";	 
 			perror("write error: workerToSoldier_trig");	 
-			exit(EXIT_FAILURE);	 
+//			exit(EXIT_FAILURE);	 
+			continueRunning = false;
 		}
 		// Read trigger type from the soldier node	 
 		while (!soldierToWorker_trig[0]) {	 
@@ -845,7 +853,8 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get soldierToWorker_trig!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: soldierToWorker_trig");	 
-				exit(EXIT_FAILURE);	 
+//				exit(EXIT_FAILURE);	 
+				continueRunning = false;
 			}
 		}
 #if DEBUG_SOCKETS
@@ -871,7 +880,8 @@ int main(int argc, char *argv[])
 			mnvdaq.warnStream() << "  Error Code = " << e << ".  Skipping this attempt and trying again...";
 			// This is subtle... need to be careful with this approach. 
 			mnvdaq.fatalStream() << "Not sure how to handle timeouts yet!  Bailing!";
-			exit(1);
+//			exit(1);
+			continueRunning = false;
 		}
 #if DEBUG_GENERAL
 		mnvdaq.debugStream() << "Returned from TriggerDAQ.";
@@ -1050,7 +1060,8 @@ int main(int argc, char *argv[])
 		if (write(soldierToWorker_socket_handle,soldierToWorker_error,sizeof(soldierToWorker_error)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: soldierToWorker_error!";	 
 			perror("write error: soldierToWorker_error");	 
-			exit(EXIT_FAILURE);	 
+			continueRunning = false;
+//			exit(EXIT_FAILURE);	 
 		}
 		// Read the readout info (errors) from the worker node	 
 		while (!workerToSoldier_error[0]) {	 
@@ -1059,7 +1070,8 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get workerToSoldier_error!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: workerToSoldier_error");	 
-				exit(EXIT_FAILURE);	 
+				continueRunning = false;
+//				exit(EXIT_FAILURE);	 
 			}
 		}
 #if DEBUG_SOCKETS
@@ -1072,7 +1084,8 @@ int main(int argc, char *argv[])
 		if (write(workerToSoldier_socket_handle,workerToSoldier_error,sizeof(workerToSoldier_error)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_error!";	 
 			perror("write error: workerToSoldier_error");	 
-			exit(EXIT_FAILURE);	 
+//			exit(EXIT_FAILURE);	 
+			continueRunning = false;
 		}
 		// Read the readout info (errors) from the soldier node	 
 		while (!soldierToWorker_error[0]) {	 
@@ -1081,7 +1094,8 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get soldierToWorker_error!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: soldierToWorker_error");	 
-				exit(EXIT_FAILURE);	 
+//				exit(EXIT_FAILURE);	 
+				continueRunning = false;
 			}
 		}
 #if DEBUG_SOCKETS
@@ -1113,7 +1127,8 @@ int main(int argc, char *argv[])
 		if (write(soldierToWorker_socket_handle,soldierToWorker_gate,sizeof(soldierToWorker_gate)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: soldierToWorker_gate!";	 
 			perror("write error: soldierToWorker_gate");	 
-			exit(EXIT_FAILURE);	 
+//			exit(EXIT_FAILURE);	 
+			continueRunning = false;
 		}
 		// Read the gate from the worker node	 
 		while (!workerToSoldier_gate[0]) {	 
@@ -1122,7 +1137,8 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get workerToSoldier_gate!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: workerToSoldier_gate");	 
-				exit(EXIT_FAILURE);	 
+//				exit(EXIT_FAILURE);	 
+				continueRunning = false;
 			}
 		}
 #if DEBUG_SOCKETS
@@ -1141,7 +1157,8 @@ int main(int argc, char *argv[])
 		if (write(workerToSoldier_socket_handle,workerToSoldier_gate,sizeof(workerToSoldier_gate)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_gate!";	 
 			perror("write error: workerToSoldier_gate");	 
-			exit(EXIT_FAILURE);	 
+//			exit(EXIT_FAILURE);	 
+			continueRunning = false;
 		}
 		// Read the gate from the soldier node	 
 		while (!soldierToWorker_gate[0]) {	 
@@ -1150,7 +1167,8 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get soldierToWorker_gate!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: soldierToWorker_gate");	 
-				exit(EXIT_FAILURE);	 
+//				exit(EXIT_FAILURE);	 
+				continueRunning = false;
 			}
 		}
 #if DEBUG_SOCKETS
@@ -1551,7 +1569,8 @@ unsigned long long GetGlobalGate()
 	} catch (bool e) {
 		std::cout << "Error in minervadaq::main opening global gate data!\n";
 		mnvdaq.fatalStream() << "Error opening global gate data!";
-		exit(-2000);
+//		exit(-2000);
+		continueRunning = false;
 	}
 	global_gate.close();
 	return ggate;
@@ -1572,7 +1591,8 @@ void PutGlobalGate(unsigned long long ggate)
 	} catch (bool e) {
 		std::cout << "Error in minervadaq::main opening global gate data!" << std::endl;
 		mnvdaq.fatalStream() << "Error opening global gate data!";
-		exit(-2000);
+//		exit(-2000);
+		continueRunning = false;
 	}
 	global_gate.close();
 }
@@ -1757,7 +1777,8 @@ template <typename Any> int SynchWrite(int socket_handle, Any data[])
 	if (write(socket_handle,data,sizeof(data)) == -1) {
 		mnvdaq.fatalStream() << "socket write error: SynchWrite!";
 		perror("write error");
-		exit(EXIT_FAILURE);
+//		exit(EXIT_FAILURE);
+		continueRunning = false;
 	}
 #if DEBUG_SOCKETS
 	mnvdaq.debugStream() << " Finished SynchWrite.";
@@ -1776,7 +1797,8 @@ template <typename Any> int SynchListen(int socket_connection, Any data[])
 		if ( read_val != sizeof(data) ) {
 			mnvdaq.fatalStream() << "Server read error in SynchListen!";
 			perror("server read error: done");
-			exit(EXIT_FAILURE);
+//			exit(EXIT_FAILURE);
+			continueRunning = false;
 		}
 #if DEBUG_SOCKETS
 		mnvdaq.debugStream() << "  ->After read, new data: " << data[0];
