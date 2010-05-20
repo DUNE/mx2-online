@@ -678,6 +678,7 @@ int main(int argc, char *argv[])
 				std::cout << "Cannot write to FastCommand register!" << std::endl;
 //				exit(e);
 				continueRunning = false;
+				break;
 			}
 		}
 #endif
@@ -826,6 +827,7 @@ int main(int argc, char *argv[])
 				perror("server read error: workerToSoldier_trig");	 
 //				exit(EXIT_FAILURE);	 
 				continueRunning = false;
+				break;
 			}
 		}
 #if DEBUG_SOCKETS
@@ -855,6 +857,7 @@ int main(int argc, char *argv[])
 				perror("server read error: soldierToWorker_trig");	 
 //				exit(EXIT_FAILURE);	 
 				continueRunning = false;
+				break;
 			}
 		}
 #if DEBUG_SOCKETS
@@ -1071,6 +1074,7 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: workerToSoldier_error");	 
 				continueRunning = false;
+				break;
 //				exit(EXIT_FAILURE);	 
 			}
 		}
@@ -1096,6 +1100,7 @@ int main(int argc, char *argv[])
 				perror("server read error: soldierToWorker_error");	 
 //				exit(EXIT_FAILURE);	 
 				continueRunning = false;
+				break;
 			}
 		}
 #if DEBUG_SOCKETS
@@ -1139,6 +1144,7 @@ int main(int argc, char *argv[])
 				perror("server read error: workerToSoldier_gate");	 
 //				exit(EXIT_FAILURE);	 
 				continueRunning = false;
+				break;
 			}
 		}
 #if DEBUG_SOCKETS
@@ -1169,6 +1175,7 @@ int main(int argc, char *argv[])
 				perror("server read error: soldierToWorker_gate");	 
 //				exit(EXIT_FAILURE);	 
 				continueRunning = false;
+				break;
 			}
 		}
 #if DEBUG_SOCKETS
@@ -1799,6 +1806,7 @@ template <typename Any> int SynchListen(int socket_connection, Any data[])
 			perror("server read error: done");
 //			exit(EXIT_FAILURE);
 			continueRunning = false;
+			break;
 		}
 #if DEBUG_SOCKETS
 		mnvdaq.debugStream() << "  ->After read, new data: " << data[0];
