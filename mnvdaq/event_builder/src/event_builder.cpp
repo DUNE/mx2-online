@@ -317,11 +317,6 @@ int main(int argc, char **argv)
 			ebuilder.fatal("event_builder::main(): et_client: got timeout\n");
 			continueRunning = false;
 		}
-		else if (status == ET_ERROR_EMPTY) {
-			printf("event_builder::main(): et_client: no events\n");
-			ebuilder.fatal("event_builder::main(): et_client: no events\n");
-			continueRunning = false;
-		}
 		else if (status == ET_ERROR_BUSY) {
 			printf("event_builder::main(): et_client: station is busy\n");
 			ebuilder.fatal("event_builder::main(): et_client: station is busy\n");
@@ -330,11 +325,6 @@ int main(int argc, char **argv)
 		else if (status == ET_ERROR_WAKEUP) {
 			printf("event_builder::main(): et_client: someone told me to wake up\n");
 			ebuilder.fatal("event_builder::main(): et_client: someone told me to wake up\n");
-			continueRunning = false;
-		}
-		else if (status != ET_OK) {
-			printf("event_builder::main(): et_client: get error.  Status code: %d\n", status);
-			ebuilder.fatalStream() << "event_builder::main(): et_client: get error.  Status code: " << status;
 			continueRunning = false;
 		}
 		
@@ -381,6 +371,7 @@ int main(int argc, char **argv)
 			case 5:
 				length = DAQ_HEADER; // Sentinel Frame
 				continueRunning = false;
+				ebuilder.infoStream() << "Found sentinel gate.  Ending data taking.";
 				break;
 			default:
 				std::cout << "WARNING!  Unknown frame type in EventBuilder main!" << std::endl;
