@@ -256,6 +256,11 @@ class SC():
         self.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD32
         for (addr, data) in flags[V1720Config.FileKeyWriteRegister]:
             self.controller.WriteCycle(thisDIG.BaseAddress()+addr, data)
+        #then check for NOT YET IMPLEMENTED settings...
+        self.DIGCheckNotSupportedSettings(thisDIG)
         self.controller.dataWidth=prevDataWidth
         return flags, lines
+    def DIGCheckNotSupportedSettings(self, thisDIG): 
+        ZeroSuppressionAlgorithm=(self.controller.ReadCycle(thisDIG.BaseAddress()+0x8000) & 0x000F0000) >> 16
+        if ZeroSuppressionAlgorithm != 0: raise Exception('ZeroSuppressionAlgorithm=%s NOT yet implemented'%(ZeroSuppressionAlgorithm))                                                  
         

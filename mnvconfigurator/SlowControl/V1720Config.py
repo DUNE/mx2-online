@@ -3,7 +3,7 @@ import sys
 
 FileKeyComment='#'
 FileKeyWriteToFile='WRITE_TO_FILE'
-FileKeyAppendMode='APPEND_MODE'
+#FileKeyAppendMode='APPEND_MODE'
 FileKeyReadoutMode='READOUT_MODE'
 FileKeyBLTSize='BLT_SIZE'
 FileKeyOutputFormat='OUTPUT_FORMAT'
@@ -15,8 +15,8 @@ FormatOneLineCH='OneLineCH'
 FormatEventData='EventData'
 FormatEventStat='EventStat'
 
-WriteToFile={0:'Do Not Write', 1:'On Command', 2:'Continuous'}
-AppendMode={0:'Overwrite', 1:'Append'}
+WriteToFile={0:'Do Not Write', 1:'Overwrite', 2:'Append'}
+#AppendMode={0:'Overwrite', 1:'Append'}
 ReadoutMode={0:'Single D32', 1:'BLT32', 2:'MBLT64'}
 OutputFormat={FormatData:1, FormatHeader:2, FormatConfigInfo:4, FormatOneLineCH:8, FormatEventData:16, FormatEventStat:32}
 
@@ -25,8 +25,7 @@ def DIGcfgFileLoad(fullpathname):
     Return (flags, lines) where lines is a list of all configuration file's lines and flags is a dictionary
     flags={FileKeyWriteToFile:None, FileKeyAppendMode:None, FileKeyReadoutMode:None,
            FileKeyBLTSize:None, FileKeyOutputFormat:None, FileKeyWriteRegister:[]}'''
-    flags={FileKeyWriteToFile:None, FileKeyAppendMode:None, FileKeyReadoutMode:None,
-           FileKeyBLTSize:None, FileKeyOutputFormat:None, FileKeyWriteRegister:[]}
+    flags={FileKeyWriteToFile:None, FileKeyReadoutMode:None, FileKeyBLTSize:None, FileKeyOutputFormat:None, FileKeyWriteRegister:[]}
     f=open(fullpathname,'r')
     i=0; lines=[]
     for line in f:
@@ -40,11 +39,11 @@ def DIGcfgFileLoad(fullpathname):
                 if flags[FileKeyWriteToFile]==None: flags[FileKeyWriteToFile]=int(words[1],10); continue
                 else: raise Exception('Error in line #%s: %s\n%s'%(i,line,'item already defined'))
             else: raise Exception('Error in line #%s: %s\n%s'%(i,line,WriteToFile))
-        if words[0]==FileKeyAppendMode:
-            if int(words[1],10) in AppendMode.keys():
-                if flags[FileKeyAppendMode]==None: flags[FileKeyAppendMode]=int(words[1],10); continue
-                else: raise Exception('Error in line #%s: %s\n%s'%(i,line,'item already defined'))    
-            else: raise Exception('Error in line #%s: %s\n%s'%(i,line,AppendMode))
+##        if words[0]==FileKeyAppendMode:
+##            if int(words[1],10) in AppendMode.keys():
+##                if flags[FileKeyAppendMode]==None: flags[FileKeyAppendMode]=int(words[1],10); continue
+##                else: raise Exception('Error in line #%s: %s\n%s'%(i,line,'item already defined'))    
+##            else: raise Exception('Error in line #%s: %s\n%s'%(i,line,AppendMode))
         if words[0]==FileKeyReadoutMode:
             if int(words[1],10) in ReadoutMode.keys():
                 if flags[FileKeyReadoutMode]==None: flags[FileKeyReadoutMode]=int(words[1],10); continue

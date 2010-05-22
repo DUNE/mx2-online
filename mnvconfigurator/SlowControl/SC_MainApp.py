@@ -136,6 +136,8 @@ class SCApp(wx.App):
         self.Bind(wx.EVT_BUTTON, self.OnDIGbtnLoadConfigFile, self.frame.dig.btnLoadConfigFile)
         self.Bind(wx.EVT_BUTTON, self.OnDIGbtnReadAllRegs, self.frame.dig.btnReadAllRegs)
         self.Bind(wx.EVT_BUTTON, self.OnDIGbtnTakeNEvents, self.frame.dig.btnTakeNEvents)
+        self.Bind(wx.EVT_BUTTON, self.OnDIGbtnRegRead, self.frame.dig.VMEReadWrite.btnRead)
+        self.Bind(wx.EVT_BUTTON, self.OnDIGbtnRegWrite, self.frame.dig.VMEReadWrite.btnWrite)
         
         self.OnMenuLoadHardware(None)
         self.OnMenuShowExpandAll(None)        
@@ -864,7 +866,7 @@ class SCApp(wx.App):
                 flags, lines = self.sc.DIGcfgFileLoad(wx.FileDialog.GetPath(dlg), thisDIG)
                 self.frame.dig.display.WriteText('\n'.join(lines)+'\n')
                 self.frame.dig.choiceWriteToFile.SetStringSelection(V1720Config.WriteToFile[flags[V1720Config.FileKeyWriteToFile]])
-                self.frame.dig.choiceAppendMode.SetStringSelection(V1720Config.AppendMode[flags[V1720Config.FileKeyAppendMode]])
+                #self.frame.dig.choiceAppendMode.SetStringSelection(V1720Config.AppendMode[flags[V1720Config.FileKeyAppendMode]])
                 self.frame.dig.choiceReadoutMode.SetStringSelection(V1720Config.ReadoutMode[flags[V1720Config.FileKeyReadoutMode]])
                 self.frame.dig.chkOutputData.SetValue(flags[V1720Config.FileKeyOutputFormat] & V1720Config.OutputFormat[V1720Config.FormatData])
                 self.frame.dig.chkOutputHeader.SetValue(flags[V1720Config.FileKeyOutputFormat] & V1720Config.OutputFormat[V1720Config.FormatHeader])
@@ -887,11 +889,82 @@ class SCApp(wx.App):
             self.sc.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD16
             ReportException('OnDIGbtnReadAllRegs', self.reportErrorChoice)
     def OnDIGbtnTakeNEvents(self, event):
+        event=[]
         try:
-            wx.MessageBox('not yet implemented')             
-        except: ReportException('OnDIGbtnTakeNEvents', self.reportErrorChoice)  
-
-
+            f=None
+            if self.frame.dig.choiceWriteToFile.GetStringSelection()!=V1720Config.WriteToFile[0]:
+                dlg = wx.FileDialog(self.frame, message='Write Event to File', defaultDir='', defaultFile='',
+                    wildcard='Event File (*.evt)|*.evt|All files (*)|*', style=wx.SAVE|wx.CHANGE_DIR)
+                if dlg.ShowModal()==wx.ID_OK:
+                    OutputFilePath=wx.FileDialog.GetPath(dlg)#+'.evt'
+                    if OutputFilePath[-4:]!='.evt': OutputFilePath+='.evt'
+                    self.frame.dig.display.WriteText('\nSaving Events to File %s'%OutputFilePath)
+                    if self.frame.dig.choiceWriteToFile.GetStringSelection()==V1720Config.WriteToFile[1]:
+                        f=open(OutputFilePath,'w')
+                    if self.frame.dig.choiceWriteToFile.GetStringSelection()==V1720Config.WriteToFile[2]:
+                        f=open(OutputFilePath,'a')   
+                dlg.Destroy()
+            theDIG=FindVMEdev(self.vmeDIGs, self.frame.dig.digNumber<<16)
+            ReadoutMode=self.frame.dig.choiceReadoutMode.GetStringSelection()
+            NEvents=int(self.frame.dig.txtNEvents.GetValue())
+            iEvent=0; iTry=0
+            #check the selected ReadoutMode={0:'Single D32', 1:'BLT32', 2:'MBLT64'}
+            if ReadoutMode==V1720Config.ReadoutMode[0]:
+                #check for already stored events
+                nEventsStored=theDIG.ReadNEventsStored()
+                while nEventsStored!=0:
+                    event=theDIG.ReadOneEvent()
+                    self.frame.dig.display.WriteText('\nEVENTS STORED = %s'%nEventsStored)
+                    DIGReportOneEvent(event, f)
+                    iEvent+=1
+                    if iEvent==NEvents: return
+                    nEventsStored=theDIG.ReadNEventsStored()
+                NEvents-=iEvent   
+                #START aquisition cycle
+                theDIG.AcquisitionControlRUN()
+                for iEvent in range(NEvents):
+                    self.frame.dig.display.WriteText('\nSending one software trigger...')
+                    theDIG.SendSoftwareTrigger()
+                    event=theDIG.ReadOneEvent()
+                    self.DIGReportOneEvent(event, f)
+                #STOP aquisition cycle
+                theDIG.AcquisitionControlSTOP()
+            else : 
+                wx.MessageBox('the %s readout mode is not yet implemented'%ReadoutMode)
+            if f!=None: f.close()
+        except:
+            self.frame.dig.display.WriteText('\nEXCEPTION:\n'+ str(event))
+            self.sc.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD16
+            theDIG.AcquisitionControlSTOP()
+            ReportException('OnDIGbtnTakeNEvents', self.reportErrorChoice)  
+    def DIGReportOneEvent(self, event, f):
+        if self.frame.dig.chkOutputHeader.GetValue():
+            self.frame.dig.display.WriteText('\nHEADER:\n%s'%event.ToStringHeader(0))
+            if f!=None: f.write('\nHEADER:\n%s'%event.ToStringHeader(0))
+        if self.frame.dig.chkOutputOneLineCH.GetValue(): nCols=1024*1024
+        else: nCols=32
+        if self.frame.dig.chkOutputData.GetValue():
+            self.frame.dig.display.WriteText('\nDATA  :\n'+'\n'.join(event.ToStringData(nValuesPerLine=nCols, typeHex=True)))
+            if f!=None: f.write('\nDATA  :\n'+'\n'.join(event.ToStringData(nValuesPerLine=nCols, typeHex=True)))
+    def OnDIGbtnRegRead(self, event):
+        try:
+            theDIG=FindVMEdev(self.vmeDIGs, self.frame.dig.digNumber<<16) 
+            addr=int(self.frame.dig.VMEReadWrite.txtReadAddr.GetValue(), 16)
+            data=theDIG.ReadRegister(addr)
+            data=hex(data)[2:]
+            if data[-1]=='L': data=data[:-1]
+            self.frame.dig.VMEReadWrite.txtReadData.SetValue(data)
+            ##theDIG.RegsWR[regAddr]['value']=regData
+            ##theDict={}; theDict[regAddr]=theDIG.RegsWR[regAddr]
+            ##for line in DIGDictOfRegsToString(theDict): self.frame.dig.display.WriteText(line+'\n')
+        except: ReportException('OnDIGbtnRegRead', self.reportErrorChoice)
+    def OnDIGbtnRegWrite(self, event):
+        try:
+            theDIG=FindVMEdev(self.vmeDIGs, self.frame.dig.digNumber<<16)
+            addr=int(str(self.frame.dig.VMEReadWrite.txtWriteAddr.GetValue()), 16)
+            data=int(self.frame.dig.VMEReadWrite.txtWriteData.GetValue(), 16)
+            theDIG.WriteRegister(addr, data)
+        except: ReportException('OnDIGbtnRegWrite', self.reportErrorChoice)
 
 
 def ReportException(comment, choice):

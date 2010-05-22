@@ -86,47 +86,48 @@ class DIGChannel(VMEDevice):
         return dReadAll
 
 class DIG(VMEDevice):
+    NChannels=8
     def __init__(self, controller, baseAddr):
         VMEDevice.__init__(self, controller, baseAddr, SC_Util.VMEdevTypes.DIG)
         #ROEventReadoutBuffer          = 0x0000-0x0FFC    //R
-        addrWRChannelConfiguration          = 0x8000 + baseAddr
-        addrWOChannelConfigurationBitSet    = 0x8004 + baseAddr
-        addrWOChannelConfigurationBitClear  = 0x8008 + baseAddr
-        addrWRBufferOrganization            = 0x800C + baseAddr
-        addrWRBufferFree                    = 0x8010 + baseAddr     #Cristian's Note: CAEN say it's WR but I found it's WOnly
-        addrWRCustomSize                    = 0x8020 + baseAddr
-        addrWRAcquisitionControl            = 0x8100 + baseAddr
-        addrROAcquisitionStatus             = 0x8104 + baseAddr
-        addrWOSWTrigger                     = 0x8108 + baseAddr
-        addrWRTriggerSourceEnableMask       = 0x810C + baseAddr
-        addrWRFrontPanelTriggerOutEnableMask= 0x8110 + baseAddr
-        addrWRPostTriggerSetting            = 0x8114 + baseAddr
-        addrWRFrontPanelIOData              = 0x8118 + baseAddr     #Cristian's Note: CAEN say it's WR but I found it's ROnly
-        addrWRFrontPanelIOControl           = 0x811C + baseAddr
-        addrWRChannelEnableMask             = 0x8120 + baseAddr
-        addrROFPGAFirmwareRevision          = 0x8124 + baseAddr
-        addrROEventStored                   = 0x812C + baseAddr
-        addrWRSetMonitorDAC                 = 0x8138 + baseAddr
-        addrROBoardInfo                     = 0x8140 + baseAddr
+        self.addrWRChannelConfiguration          = 0x8000 + baseAddr
+        self.addrWOChannelConfigurationBitSet    = 0x8004 + baseAddr
+        self.addrWOChannelConfigurationBitClear  = 0x8008 + baseAddr
+        self.addrWRBufferOrganization            = 0x800C + baseAddr
+        self.addrWRBufferFree                    = 0x8010 + baseAddr     #Cristian's Note: CAEN say it's WR but I found it's WOnly
+        self.addrWRCustomSize                    = 0x8020 + baseAddr
+        self.addrWRAcquisitionControl            = 0x8100 + baseAddr
+        self.addrROAcquisitionStatus             = 0x8104 + baseAddr
+        self.addrWOSWTrigger                     = 0x8108 + baseAddr
+        self.addrWRTriggerSourceEnableMask       = 0x810C + baseAddr
+        self.addrWRFrontPanelTriggerOutEnableMask= 0x8110 + baseAddr
+        self.addrWRPostTriggerSetting            = 0x8114 + baseAddr
+        self.addrWRFrontPanelIOData              = 0x8118 + baseAddr     #Cristian's Note: CAEN say it's WR but I found it's ROnly
+        self.addrWRFrontPanelIOControl           = 0x811C + baseAddr
+        self.addrWRChannelEnableMask             = 0x8120 + baseAddr
+        self.addrROFPGAFirmwareRevision          = 0x8124 + baseAddr
+        self.addrROEventStored                   = 0x812C + baseAddr
+        self.addrWRSetMonitorDAC                 = 0x8138 + baseAddr
+        self.addrROBoardInfo                     = 0x8140 + baseAddr
         #WRMonitorMode = 0x8144,//RW  CAEN Note : To be implemented
-        addrROEventSize                     = 0x814C + baseAddr
-        addrWRVMEControl                    = 0xEF00 + baseAddr
-        addrROVMEStatus                     = 0xEF04 + baseAddr
-        addrWRBoardId                       = 0xEF08 + baseAddr
-        addrWRMulticastBaseAddrAndCtrl      = 0xEF0C + baseAddr
-        addrWRRelocationAddress             = 0xEF10 + baseAddr
-        addrWRInterruptStatusId             = 0xEF14 + baseAddr
-        addrWRInterruptEventNumber          = 0xEF18 + baseAddr
-        addrWRBLTEventNumber                = 0xEF1C + baseAddr
-        addrWRVMEScratch                    = 0xEF20 + baseAddr
-        addrWOSWReset                       = 0xEF24 + baseAddr
-        addrWOSWClear                       = 0xEF28 + baseAddr
-        addrWRFlashEnable                   = 0xEF2C + baseAddr
-        addrWRFlashData                     = 0xEF30 + baseAddr
-        addrWOConfigurationReload           = 0xEF34 + baseAddr
+        self.addrROEventSize                     = 0x814C + baseAddr
+        self.addrWRVMEControl                    = 0xEF00 + baseAddr
+        self.addrROVMEStatus                     = 0xEF04 + baseAddr
+        self.addrWRBoardId                       = 0xEF08 + baseAddr
+        self.addrWRMulticastBaseAddrAndCtrl      = 0xEF0C + baseAddr
+        self.addrWRRelocationAddress             = 0xEF10 + baseAddr
+        self.addrWRInterruptStatusId             = 0xEF14 + baseAddr
+        self.addrWRInterruptEventNumber          = 0xEF18 + baseAddr
+        self.addrWRBLTEventNumber                = 0xEF1C + baseAddr
+        self.addrWRVMEScratch                    = 0xEF20 + baseAddr
+        self.addrWOSWReset                       = 0xEF24 + baseAddr
+        self.addrWOSWClear                       = 0xEF28 + baseAddr
+        self.addrWRFlashEnable                   = 0xEF2C + baseAddr
+        self.addrWRFlashData                     = 0xEF30 + baseAddr
+        self.addrWOConfigurationReload           = 0xEF34 + baseAddr
         #ROConfigurationROM = 0xF000-0xF3FC //R
         self.RegsWR={
-            addrWRChannelConfiguration:{'name':'WRChConfig', 'value':0x0,
+            self.addrWRChannelConfiguration:{'name':'WRChConfig', 'value':0x0,
                 'sects':{0x00000001:{'name':'reserved', 'offset':0},
                          0x00000002:{'name':'TrgOverlapEn', 'offset':1},
                          0x00000004:{'name':'reserved', 'offset':2},
@@ -139,37 +140,37 @@ class DIG(VMEDevice):
                          0x0000F000:{'name':'reserved', 'offset':12},
                          0x000F0000:{'name':'ZSAlgorithm', 'offset':16},
                          0xFFF00000:{'name':'reserved', 'offset':20}}},
-            addrWRBufferOrganization:{'name':'WRBufferOrganiz', 'value':0x0,
+            self.addrWRBufferOrganization:{'name':'WRBufferOrganiz', 'value':0x0,
                 'sects':{0x0000000F:{'name':'BufferCode', 'offset':0},
                          0xFFFFFFF0:{'name':'reserved', 'offset':4}}},
             #Cristian's Note: CAEN say it's WR but I found it's WOnly
             #addrWRBufferFree:{'name':'WRBufferFree', 'value':0x0,
             #    'sects':{0x00000FFF:{'name':'FreesFistNBuffers', 'offset':0},
             #             0xFFFFF000:{'name':'reserved', 'offset':12}}},
-            addrWRCustomSize:{'name':'WRCustomSize', 'value':0x0, 'sects':{}},
-            addrWRAcquisitionControl:{'name':'WRAcqControl', 'value':0x0,
+            self.addrWRCustomSize:{'name':'WRCustomSize', 'value':0x0, 'sects':{}},
+            self.addrWRAcquisitionControl:{'name':'WRAcqControl', 'value':0x0,
                 'sects':{0x00000003:{'name':'Mode', 'offset':0},
                          0x00000004:{'name':'Stop0Run1', 'offset':2},
                          0x00000008:{'name':'CountTrgAcc0All1', 'offset':3},
                          0xFFFFFFF0:{'name':'reserved', 'offset':4}}},
-            addrWRTriggerSourceEnableMask:{'name':'WRTrgSourceEnMask', 'value':0x0,
+            self.addrWRTriggerSourceEnableMask:{'name':'WRTrgSourceEnMask', 'value':0x0,
                 'sects':{0x000000FF:{'name':'ChNTrgEn', 'offset':0},
                          0x00FFFF00:{'name':'reserved', 'offset':8},
                          0x07000000:{'name':'LocalTrgCoincLevel', 'offset':24},
                          0x38000000:{'name':'reserved', 'offset':27},
                          0x40000000:{'name':'ExtTrgEn', 'offset':30},
                          0x80000000:{'name':'SWTrgEn', 'offset':31}}},
-            addrWRFrontPanelTriggerOutEnableMask:{'name':'WRPanelTrgOutEnMask', 'value':0x0,
+            self.addrWRFrontPanelTriggerOutEnableMask:{'name':'WRPanelTrgOutEnMask', 'value':0x0,
                 'sects':{0x000000FF:{'name':'ChNTrgEn', 'offset':0},
                          0x3FFFFF00:{'name':'reserved', 'offset':8},
                          0x40000000:{'name':'ExtTrgEn', 'offset':30},
                          0x80000000:{'name':'SWTrgEn', 'offset':31}}},
-            addrWRPostTriggerSetting:{'name':'WRPostTrgSetting', 'value':0x0, 'sects':{}},
+            self.addrWRPostTriggerSetting:{'name':'WRPostTrgSetting', 'value':0x0, 'sects':{}},
             #Cristian's Note: CAEN say it's WR but I found it's ROnly
             #addrWRFrontPanelIOData:{'name':'WRPanelIOData', 'value':0x0,
             #    'sects':{0x0000FFFF:{'name':'PanelIOdata', 'offset':0},
             #             0xFFFF0000:{'name':'reserved', 'offset':16}}},
-            addrWRFrontPanelIOControl:{'name':'WRPanelIOControl', 'value':0x0,
+            self.addrWRFrontPanelIOControl:{'name':'WRPanelIOControl', 'value':0x0,
                 'sects':{0x00000001:{'name':'TrgClkNIM0TTL1', 'offset':0},
                          0x00000002:{'name':'PanelOutEn0HiZ1', 'offset':1},
                          0x00000004:{'name':'LVDS3-0In0Out1', 'offset':2},
@@ -181,13 +182,13 @@ class DIG(VMEDevice):
                          0x00004000:{'name':'TrgOutTestMode', 'offset':14},
                          0x00008000:{'name':'TrgOutMode', 'offset':15},
                          0xFFFF0000:{'name':'reserved', 'offset':16}}},
-            addrWRChannelEnableMask:{'name':'WRChEnMask', 'value':0x0,
+            self.addrWRChannelEnableMask:{'name':'WRChEnMask', 'value':0x0,
                 'sects':{0x000000FF:{'name':'ChNEn', 'offset':0},
                          0xFFFFFF00:{'name':'reserved', 'offset':8}}},
-            addrWRSetMonitorDAC:{'name':'WRSetMonitorDAC', 'value':0x0,
+            self.addrWRSetMonitorDAC:{'name':'WRSetMonitorDAC', 'value':0x0,
                 'sects':{0x00000FFF:{'name':'DACValue', 'offset':0},
                          0xFFFFF000:{'name':'reserved', 'offset':12}}},
-            addrWRVMEControl:{'name':'WRVMEControl', 'value':0x0,
+            self.addrWRVMEControl:{'name':'WRVMEControl', 'value':0x0,
                 'sects':{0x00000007:{'name':'InterruptLevel', 'offset':0},
                          0x00000008:{'name':'OpticalIntEn', 'offset':3},
                          0x00000010:{'name':'BERREn', 'offset':4},
@@ -195,24 +196,24 @@ class DIG(VMEDevice):
                          0x00000040:{'name':'RELOCEn', 'offset':6},
                          0x00000080:{'name':'RlsIntMode', 'offset':7},
                          0xFFFFFF00:{'name':'reserved', 'offset':8}}},
-            addrWRBoardId:{'name':'WRBoardId', 'value':0x0,
+            self.addrWRBoardId:{'name':'WRBoardId', 'value':0x0,
                 'sects':{0x0000001F:{'name':'GEO', 'offset':0},
                          0xFFFFFFE0:{'name':'reserved', 'offset':5}}},
-            addrWRMulticastBaseAddrAndCtrl:{'name':'WRMCSTAddrAndCtrl', 'value':0x0,
+            self.addrWRMulticastBaseAddrAndCtrl:{'name':'WRMCSTAddrAndCtrl', 'value':0x0,
                 'sects':{0x000000FF:{'name':'MCST/CBLT', 'offset':0},
                          0x00000300:{'name':'DaisyChain', 'offset':8},
                          0xFFFFFC00:{'name':'reserved', 'offset':10}}},
-            addrWRRelocationAddress:{'name':'WRRelocationAddr', 'value':0x0,
+            self.addrWRRelocationAddress:{'name':'WRRelocationAddr', 'value':0x0,
                 'sects':{0x0000FFFF:{'name':'A31-A16AddrBits', 'offset':0},
                          0xFFFF0000:{'name':'reserved', 'offset':0}}},
-            addrWRInterruptStatusId:{'name':'WRInterrStatusId', 'value':0x0, 'sects':{}},
-            addrWRInterruptEventNumber:{'name':'WRInterrEventNumber', 'value':0x0,
+            self.addrWRInterruptStatusId:{'name':'WRInterrStatusId', 'value':0x0, 'sects':{}},
+            self.addrWRInterruptEventNumber:{'name':'WRInterrEventNumber', 'value':0x0,
                 'sects':{0x000003FF:{'name':'EventNumber', 'offset':0},
                          0xFFFFFC00:{'name':'reserved', 'offset':10}}},
-            addrWRBLTEventNumber:{'name':'WRBLTEventNumber', 'value':0x0,
+            self.addrWRBLTEventNumber:{'name':'WRBLTEventNumber', 'value':0x0,
                 'sects':{0x000000FF:{'name':'CompleteEvents', 'offset':0},
                          0xFFFFFF00:{'name':'reserved', 'offset':8}}},
-            addrWRVMEScratch:{'name':'WRVMEScratch', 'value':0x0, 'sects':{}}
+            self.addrWRVMEScratch:{'name':'WRVMEScratch', 'value':0x0, 'sects':{}}
             #Cristian's Note: I commented out the addrWRFlash ON PURPOSE (SAFETY) 
             #addrWRFlashEnable:{'name':'WRFlashEnable', 'value':0x0, 'sects':{}},
             #addrWRFlashData:{'name':'addrWRFlashData', 'value':0x0, 
@@ -220,23 +221,23 @@ class DIG(VMEDevice):
             #             0xFFFFFF00:{'name':'reserved', 'offset':8}}}
             }
         self.RegsWO={
-            addrWOChannelConfigurationBitSet:{'name':'WOChannelConfigurationBitSet', 'value':0x0,
+            self.addrWOChannelConfigurationBitSet:{'name':'WOChannelConfigurationBitSet', 'value':0x0,
                 'sects':{0x000000FF:{'name':'SetBits', 'offset':0},
                          0xFFFFFF00:{'name':'reserved', 'offset':8}}},
-            addrWOChannelConfigurationBitClear:{'name':'WOChannelConfigurationBitClear', 'value':0x0,
+            self.addrWOChannelConfigurationBitClear:{'name':'WOChannelConfigurationBitClear', 'value':0x0,
                 'sects':{0x000000FF:{'name':'ClearBits', 'offset':0},
                          0xFFFFFF00:{'name':'reserved', 'offset':8}}},
             #Cristian's Note: CAEN say it's WR but I found it's WOnly
-            addrWRBufferFree:{'name':'WOBufferFree', 'value':0x0,
+            self.addrWRBufferFree:{'name':'WOBufferFree', 'value':0x0,
                 'sects':{0x00000FFF:{'name':'FreesFistNBuffers', 'offset':0},
                          0xFFFFF000:{'name':'reserved', 'offset':12}}},
-            addrWOSWTrigger:{'name':'WOSWTrigger', 'value':0x0, 'sects':{}},
-            addrWOSWReset:{'name':'WOSWReset', 'value':0x0, 'sects':{}},
-            addrWOSWClear:{'name':'WOSWClear', 'value':0x0, 'sects':{}},
-            addrWOConfigurationReload:{'name':'WOConfigurationReload', 'value':0x0, 'sects':{}}
+            self.addrWOSWTrigger:{'name':'WOSWTrigger', 'value':0x0, 'sects':{}},
+            self.addrWOSWReset:{'name':'WOSWReset', 'value':0x0, 'sects':{}},
+            self.addrWOSWClear:{'name':'WOSWClear', 'value':0x0, 'sects':{}},
+            self.addrWOConfigurationReload:{'name':'WOConfigurationReload', 'value':0x0, 'sects':{}}
             }
         self.RegsRO={
-            addrROAcquisitionStatus:{'name':'ROAcqStatus', 'value':0x0,
+            self.addrROAcquisitionStatus:{'name':'ROAcqStatus', 'value':0x0,
                 'sects':{0x00000003:{'name':'reserved', 'offset':0},
                          0x00000004:{'name':'RunOff0On1', 'offset':2},
                          0x00000008:{'name':'EventReady', 'offset':3},
@@ -247,29 +248,29 @@ class DIG(VMEDevice):
                          0x00000100:{'name':'BoardReady', 'offset':8},
                          0xFFFFFE00:{'name':'reserved', 'offset':9}}},
             #Cristian's Note: CAEN say it's WR but I found it's ROnly
-            addrWRFrontPanelIOData:{'name':'ROPanelIOData', 'value':0x0,
+            self.addrWRFrontPanelIOData:{'name':'ROPanelIOData', 'value':0x0,
                 'sects':{0x0000FFFF:{'name':'PanelIOdata', 'offset':0},
                          0xFFFF0000:{'name':'reserved', 'offset':16}}},
-            addrROFPGAFirmwareRevision:{'name':'ROFPGAFirmwareRev', 'value':0x0,
+            self.addrROFPGAFirmwareRevision:{'name':'ROFPGAFirmwareRev', 'value':0x0,
                 'sects':{0x000000FF:{'name':'Minor', 'offset':0},
                          0x0000FF00:{'name':'Major', 'offset':8},
                          0x00FF0000:{'name':'Day', 'offset':16},
                          0x0F000000:{'name':'Month', 'offset':24},
                          0xF0000000:{'name':'Year', 'offset':28}}},
-            addrROEventStored:{'name':'ROEventStored', 'value':0x0, 'sects':{}},
-            addrROBoardInfo:{'name':'ROBoardInfo', 'value':0x0,
+            self.addrROEventStored:{'name':'ROEventStored', 'value':0x0, 'sects':{}},
+            self.addrROBoardInfo:{'name':'ROBoardInfo', 'value':0x0,
                 'sects':{0x000000FF:{'name':'BoardType', 'offset':0},
                          0x0000FF00:{'name':'MemorySize', 'offset':8},
                          0xFFFF0000:{'name':'reserved', 'offset':16}}},
-            addrROEventSize:{'name':'ROEventSize', 'value':0x0, 'sects':{}},
-            addrROVMEStatus:{'name':'ROVMEStatus', 'value':0x0,
+            self.addrROEventSize:{'name':'ROEventSize', 'value':0x0, 'sects':{}},
+            self.addrROVMEStatus:{'name':'ROVMEStatus', 'value':0x0,
                 'sects':{0x00000001:{'name':'EventReady', 'offset':0},
                          0x00000002:{'name':'OutBufferFull', 'offset':1},
                          0x00000004:{'name':'BussError', 'offset':2},
                          0xFFFFFFF8:{'name':'reserved', 'offset':0}}}
             }
         self.channels=[]
-        for chNumber in range(8):
+        for chNumber in range(self.__class__.NChannels):
             self.channels.append(DIGChannel(chNumber, baseAddr, controller))
     def Channels(self): return self.channels
     def NodeList(self):
@@ -281,6 +282,56 @@ class DIG(VMEDevice):
         for addr in dReadAll.keys(): dReadAll[addr]['value']=self.controller.ReadCycle(addr)
         self.controller.dataWidth=prevDataWidth
         return dReadAll
+    def ReadRegister(self, regAddr):
+        prevDataWidth=self.controller.dataWidth
+        self.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD32
+        regData=self.controller.ReadCycle(regAddr)
+        self.controller.dataWidth=prevDataWidth
+        return regData
+    def WriteRegister(self, regAddr, regData):
+        prevDataWidth=self.controller.dataWidth
+        self.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD32
+        self.controller.WriteCycle(regAddr, regData)
+        self.controller.dataWidth=prevDataWidth
+    def AcquisitionControlRUN(self):
+        data=self.ReadRegister(self.addrWRAcquisitionControl)
+        data=data or 0x4
+        self.WriteRegister(self.addrWRAcquisitionControl, data)
+    def AcquisitionControlSTOP(self):
+        data=self.ReadRegister(self.addrWRAcquisitionControl)
+        #data=data and 0xB 
+        '''I found out that after a SoftwareTrigger the [1:0] bits got set to 0xB
+            for reasons I don't understand, and this prevents the sending of other
+            software triggeres, so the work around is to set them back to 0'''
+        data=0
+        self.WriteRegister(self.addrWRAcquisitionControl, data)   
+    def ReadNEventsStored(self): return self.ReadRegister(self.addrROEventStored)
+    def ReadNextEventSize(self): return self.ReadRegister(self.addrROEventSize)
+    def ReadAcqStatus(self): return self.ReadRegister(self.addrROAcquisitionStatus)
+    def SendSoftwareTrigger(self): self.WriteRegister(self.addrWOSWTrigger, 0)   
+    def SendSoftwareReset(self): self.WriteRegister(self.addrWOSWReset, 0) 
+    def SendSoftwareClear(self): self.WriteRegister(self.addrWOSWClear, 0)
+    def ReadOneEvent(self):
+        msg=[]; iTry=1
+        while (True):
+            word0=self.ReadRegister(self.BaseAddress())
+            if word0!=0xFFFFFFFF:
+                eventSize=word0&0xFFFF
+                msg.append(word0)
+                msg.append(self.ReadRegister(self.BaseAddress()))
+                msg.append(self.ReadRegister(self.BaseAddress()))
+                msg.append(self.ReadRegister(self.BaseAddress()))
+                for i in range(eventSize-4):
+                    msg.append(self.ReadRegister(self.BaseAddress()))
+                return DIGEvent(msg, 0)
+            else:
+                iTry+=1
+                if iTry==3: raise Exception('\nUnable to find the "start" of the next Event')
+
+
+
+
+
 
 def DIGDictOfRegsToString(dRegs):
     lines=[]
@@ -298,7 +349,7 @@ def DIGDictOfRegsToString(dRegs):
         if dRegs[key]['sects']!={}:
             sectsKeys=dRegs[key]['sects'].keys()
             sectsKeys.sort()           
-##            # USE THIS SECTION FOR MULTIPLE LINE
+##            # USE THIS SECTION FOR MULTIPLE LINE FORMAT
 ##            iSection=0
 ##            for skey in sectsKeys:
 ##                theSection=str('%s(%s)=%s'%(dRegs[key]['sects'][skey]['name'],hex(skey),
@@ -306,7 +357,7 @@ def DIGDictOfRegsToString(dRegs):
 ##                if iSection==0: lineSections += theSection
 ##                else: lineSections += str('\n'+' '*40) + theSection
 ##                iSection+=1
-            # USE THIS SECTION FOR ONLY ONE LINE
+            # USE THIS SECTION FOR ONLY ONE LINE FORMAT
             for skey in sectsKeys:
                 theSection=str('%s(%s)=%s'%(dRegs[key]['sects'][skey]['name'],hex(skey),
                     (dRegs[key]['value'] & skey)>>dRegs[key]['sects'][skey]['offset'])).ljust(35,' ')
@@ -1210,5 +1261,170 @@ def GetRcvMessageHeaderAndDataBLT(theCROCChannel):
     if rcvLength>11: rcvMessageData=rcvMessage[11:rcvLength]
     return rcvMessageHeader, rcvMessageData
 
+class DIGEvent:
+    __HeaderSize=4                      # (bytes) see V1720 data sheet pages 24-28
+    __MaxNSamplesPerChannel=0xFFFFF     # (samples, 12bits) 1M=1,048,575 samples
+    __MaxNControlWordsPerChannel=14     # see V1720 data sheet pages 29-30
+    __DataFormatNormal=0                # see V1720 data sheet pages 24-28
+    __DataFormatZLE=1                   # see V1720 data sheet pages 24-28
+    __Pack25Disabled=0                  # see V1720 data sheet page 52, 4.12, ChannelCongiguration (0x8000)
+    __Pack25Enabled=1                   # see V1720 data sheet page 52, 4.12, ChannelCongiguration (0x8000)
+    def __init__(self, message, pack25):
+        self.msg=message
+        self.pack25=pack25
+        self.GetHeader()
+        self.GetData()
+    def GetHeader(self):
+        ''' Returns EventHeader information (four 32bit words) as a dicionary
+            {'EventSize':self.EventSize,
+             'BoardID':self.BoardID,'DataFormat':self.DataFormat,'Pattern':self.Pattern,'ChannelMask':self.ChannelMask, 
+             'EventCounter':self.EventCounter,
+             'TriggerTimeTag':self.TriggerTimeTag} '''
+        if len(self.msg)<DIGEvent.__HeaderSize or self.msg==[]:
+            raise Exception('EventHeader Error: EventMessage length must be at least %s 32bit words'%self.__class__.__HeaderSize)
+        if self.msg[0]&0xF0000000!=0xA0000000:
+            raise Exception('EventHeader Error: First 32bit word must be 0xAXXXXXXX')
+        self.EventSize      = int(self.msg[0] & 0x0FFFFFFF)
+        self.ChannelMask    = int(self.msg[1] & 0x000000FF)
+        self.Pattern        = int(self.msg[1] & 0x00FFFF00) >> 8
+        self.DataFormat     = int(self.msg[1] & 0x01000000) >> 24
+        self.BoardID        = int(self.msg[1] & 0xF8000000) >> 27
+        self.EventCounter   = int(self.msg[2] & 0x00FFFFFF)
+        self.TriggerTimeTag = int(self.msg[3] & 0xFFFFFFFF)
+        return {'EventSize':self.EventSize,
+                'BoardID':self.BoardID,'DataFormat':self.DataFormat,'Pattern':self.Pattern,'ChannelMask':self.ChannelMask, 
+                'EventCounter':self.EventCounter,
+                'TriggerTimeTag':self.TriggerTimeTag}
+    def GetData(self):
+        ''' Returns EventData information as a list of 8 lists, one for each DIG's channel
+            Each inner list contains NSamplesPerChannel numbers (12bit)
+            or it is an empty list if the channel is not enabled.'''
+        self.CheckDataLengthConsistency()
+        self.UncompressData()
+        return self.Data
+    def CheckDataLengthConsistency(self): 
+        DataSize=self.EventSize-DIGEvent.__HeaderSize
+        NChannelsEnabled=0
+        #counting the number of channels enabled (using self.ChannelMask) 
+        for index in range(DIG.NChannels):
+            if (self.ChannelMask & (1<<index)) !=0: NChannelsEnabled += 1
+        if NChannelsEnabled==0:
+            if DataSize<=0: return
+            else: raise Exception('EventData Error: EventHeader shows %s channels are enabled while EventData shows %s 32bit words'%(NChannelsEnabled, hex(DataSize)))
+        #we have channels enabled, thus:
+        if self.DataFormat==DIGEvent.__DataFormatNormal:
+            if DataSize % NChannelsEnabled != 0:
+                raise Exception('CheckDataLengthConsistency Error: DataSize=%s, NChannelsEnabled=%s'%(DataSize,NChannelsEnabled))
+            WordsPerChannel=int(DataSize/NChannelsEnabled)
+            self.N32bitWordsPerChannel=[]
+            self.NSamplesPerChannel=[]
+            for index in range(DIG.NChannels):
+                self.N32bitWordsPerChannel.append( WordsPerChannel * ((self.ChannelMask>>index)&0x1) )
+                #print 'index=%s, N32bitWordsPerChannel=%s'%(index,self.N32bitWordsPerChannel[index])
+                if self.pack25==DIGEvent.__Pack25Disabled:
+                    self.NSamplesPerChannel.append( 2 *  self.N32bitWordsPerChannel[index] )
+                else:
+                    if self.pack25==DIGEvent.__Pack25Enabled:
+                        self.NSamplesPerChannel.append( int(2.5 *  self.N32bitWordsPerChannel[index]) )
+                    else: raise Exception('Error: Pack value must be %s or %s'%(DIGEvent.__Pack25Disabled,DIGEvent.__Pack25Enabled))
+        if self.DataFormat==DIGEvent.__DataFormatZLE:
+            #DataLengthConsistency cannot be checked at this point
+            #It will be done by self.UncompressData()
+            raise Exception('ZeroLengthEncoding=%s NOT implemented yet...'%(self.DataFormat))
+        #print '\nCheckDataLengthConsistency():'
+        #print 'DataSize=%s, NChannelsEnabled=%s'%(DataSize,NChannelsEnabled)
+        #print 'N32bitWordsPerChannel=%s'%(self.N32bitWordsPerChannel)
+        #print 'NSamplesPerChannel=%s'%(self.NSamplesPerChannel)     
+    def UncompressData(self):
+        self.Data=[]
+        ChDataBegin = DIGEvent.__HeaderSize
+        for iCH in range(DIG.NChannels):
+            self.Data.append([])
+            if (self.ChannelMask & (1<<iCH)) !=0:
+                # see V1720 data sheet pages 26-28 Fig.3.8 Event Organization
+                if self.DataFormat==DIGEvent.__DataFormatNormal and self.pack25==DIGEvent.__Pack25Disabled:
+                    for iWord in range(self.N32bitWordsPerChannel[iCH]):
+                        self.Data[iCH].append( (self.msg[ChDataBegin + iWord] &0x00000FFF) >> 0 )
+                        self.Data[iCH].append( (self.msg[ChDataBegin + iWord] &0x0FFF0000) >> 16)                        
+                    ChDataBegin += self.N32bitWordsPerChannel[iCH]
+                    continue                   
+                # see V1720 data sheet pages 26-28 Fig.3.8 Event Organization
+                if self.DataFormat==DIGEvent.__DataFormatNormal and self.pack25==DIGEvent.__Pack25Enabled:
+                    for iWord in range(self.N32bitWordsPerChannel[iCH]):
+                        if iWord%2==0:
+                            self.Data[iCH].append( (self.msg[ChDataBegin + iWord] & 0x00000FFF) >> 0 )
+                            self.Data[iCH].append( (self.msg[ChDataBegin + iWord] & 0x00FFF000) >> 12)
+                        else:
+                            self.Data[iCH].append( ((self.msg[ChDataBegin + iWord - 1] & 0x3F000000) >> 24) + \
+                                                   ((self.msg[ChDataBegin + iWord - 0] & 0x0000003F) << 6) )
+                            self.Data[iCH].append( (self.msg[ChDataBegin + iWord] & 0x0003FFC0) >> 6)
+                            self.Data[iCH].append( (self.msg[ChDataBegin + iWord] & 0x3FFC0000) >> 18 )
+                    ChDataBegin += self.N32bitWordsPerChannel[iCH]
+                    continue 
+                # see V1720 data sheet pages 26-28 Fig.3.8 Event Organization
+                if self.DataFormat==DIGEvent.__DataFormatZLE and self.pack25==DIGEvent.__Pack25Disabled:
+                    raise Exception('ZeroLengthEncoding=%s NOT implemented yet...'%(self.DataFormat))
+                # see V1720 data sheet pages 26-28 Fig.3.8 Event Organization
+                if self.DataFormat==DIGEvent.__DataFormatZLE and self.pack25==DIGEvent.__Pack25Enabled:
+                    raise Exception('ZeroLengthEncoding=%s NOT implemented yet...'%(self.DataFormat))
+        ###print '\nUncompressData():'
+        ###print self.Data
+        
+    def ToStringHeader(self, mode=0):
+        ''' Returns the EventHeader as a string for display purpose
+            mode=0 (default) -> one line string
+            mode=1 multiple line string'''
+        if mode==0: width1=1; width2=1; frmt=7*'%s:%s  '
+        if mode==1: width1=15; width2=8; frmt=7*'%s:%s\n'
+        return str(frmt%(
+            'ChannelMask'.ljust(width1, ' '),   hex(self.ChannelMask)[2:].rjust(width2, '0').upper(), \
+            'EventSize'.ljust(width1, ' '),     hex(self.EventSize)[2:].rjust(width2, '0').upper(), \
+            'EventCounter'.ljust(width1, ' '),  hex(self.EventCounter)[2:].rjust(width2, '0').upper(), \
+            'TriggerTimeTag'.ljust(width1, ' '),hex(self.TriggerTimeTag)[2:].rjust(width2, '0').upper(), \
+            'DataFormat'.ljust(width1, ' '),    hex(self.DataFormat)[2:].rjust(width2, '0').upper(), \
+            'Pattern'.ljust(width1, ' '),       hex(self.Pattern)[2:].rjust(width2, '0').upper(), \
+            'BoardID'.ljust(width1, ' '),       hex(self.BoardID)[2:].rjust(width2, '0').upper()))
 
-   
+    def ToStringEvent(self, nValuesPerLine=1, includeHeader=False, nPad=8, cPad='0', typeHex=True):
+        ''' Returns the Event as a list of strings for display purpose'''
+        if includeHeader: msg=self.msg
+        else: msg=self.msg[4:]
+        return self.ToStringList(msg, nValuesPerLine, nPad, cPad, typeHex)
+
+    def ToStringData(self, nValuesPerLine=1, nPad=4, cPad='0', typeHex=False):
+        ''' Returns the EventData as a list of string for display purpose'''
+        lines=[]
+        for ilst in range(len(self.Data)):
+            lines.append('Channel %s'%ilst)
+            lines+=self.ToStringList(self.Data[ilst], nValuesPerLine, nPad, cPad, typeHex)
+        return lines
+            
+    def ToStringList(self, msg, nValuesPerLine, nPad=8, cPad='0', typeHex=True):
+        ###hex(dRegs[key]['value'])[2:-1].rjust(8,'0').ljust(10,' ').upper()))
+        nlines=int(len(msg)/nValuesPerLine)
+        if len(msg) % nValuesPerLine !=0: nlines+=1
+        lines=[]
+        if typeHex:
+            for i in range(nlines):
+                istart=i*nValuesPerLine
+                istop=(i+1)*nValuesPerLine
+                line=''
+                if istop<len(msg):
+                    for x in msg[istart:istop]: line+=(hex(x)[2:-1]).rjust(nPad, cPad).upper() + ' '
+                else:
+                    for x in msg[istart:]: line+=hex(x)[2:-1].rjust(nPad, cPad).upper() + ' '
+                lines.append(line)
+        else:
+            for i in range(nlines):
+                istart=i*nValuesPerLine
+                istop=(i+1)*nValuesPerLine
+                line=''
+                if istop<len(msg):
+                    for x in msg[istart:istop]: line+=str(x).rjust(nPad, cPad).upper() + ' '
+                else:
+                    for x in msg[istart:]: line+=str(x).rjust(nPad, cPad).upper() + ' '
+                lines.append(line)
+        return lines
+    
+    
+        
