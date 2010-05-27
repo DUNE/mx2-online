@@ -50,8 +50,8 @@ passing it to the event builder in order to ensure the frame length matches the 
 class MinervaHeader {
 	private:
 		// These two (data_bank_header & DAQ_event_header) are obsolete, will retire soon...
-		unsigned short data_bank_header[4]; /*!<The data bank header for all data other than EOE */
-		unsigned short DAQ_event_header[4]; /*!<The End-of-Event (EOE) Record header */
+		//unsigned short data_bank_header[4]; /*!<The data bank header for all data other than EOE */
+		//unsigned short DAQ_event_header[4]; /*!<The End-of-Event (EOE) Record header */
 		// All we need is one bank header array...
 		unsigned short bank_header[4]; /*!<The Minerva Header for each frame */
 		unsigned short chan_number; /*!<the channel number for data having a header attached */
@@ -71,8 +71,8 @@ class MinervaHeader {
 		// All we need is one bank header array...
 		unsigned short inline *GetBankHeader() {return bank_header;};
 		// These two (data_bank_header & DAQ_event_header) are obsolete, will retire soon...
-		unsigned short inline *GetDataBankHeader() {return data_bank_header;};
-		unsigned short inline *GetDAQEvtHeader() {return DAQ_event_header;};
+		//unsigned short inline *GetDataBankHeader() {return data_bank_header;};
+		//unsigned short inline *GetDAQEvtHeader() {return DAQ_event_header;};
 };
 
 /*! \class MinervaEvent 
@@ -93,8 +93,8 @@ class MinervaEvent {
 		MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
 			unsigned short int trig, unsigned char ledGroup, unsigned char ledLevel, 
 			unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 
-			unsigned short int error, unsigned int minos, MinervaHeader *header, 
-			unsigned short int nADCFrames, unsigned short int nDiscFrames, 
+			unsigned short int error, unsigned int minos, unsigned int read_time, 
+			MinervaHeader *header,  unsigned short int nADCFrames, unsigned short int nDiscFrames, 
 			unsigned short int nFPGAFrames ,log4cpp::Appender* appender=0);
 		/*! the default destructor */
 		~MinervaEvent() { };

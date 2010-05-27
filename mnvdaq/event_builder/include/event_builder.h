@@ -48,6 +48,7 @@ struct event_handler { //the structure to hold the data
 	unsigned long long	triggerTime;    // Time in microseconds after the epoch. 		
 	unsigned short int	readoutInfo;    // Readout type and errors... break these up? timingVio is obsolete
 	unsigned int 		minosSGATE;     // Only 28 significant bits.
+	unsigned int            readoutTime;    // We will only report 24 bits (DAQ Header v8+).
 	unsigned int feb_info[9]; /*!<0: link_no, 1: crate_no, 2: croc_no, 3: chan_no, 4: bank, 5: buffer length, 
                                       6: feb number, 7: feb firmware, 8: hits; //hardware info & data type */
 	unsigned char event_data[FEB_DISC_SIZE]; /*!<the data we're going to process - largest possible frame? */

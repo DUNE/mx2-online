@@ -8,11 +8,7 @@
 using namespace std;
 
 const int  adcFrameWarningCount = 600;
-#if !MTEST
-const int  gate_print_freq = 1;
-#else
-const int  gate_print_freq = 1;
-#endif
+int gate_print_freq = 1;
 static unsigned short int adcFrameCount   = 0;
 static unsigned short int discFrameCount  = 0;
 static unsigned short int fpgaFrameCount  = 0;
@@ -448,6 +444,15 @@ int main(int argc, char **argv)
 
 int event_builder(event_handler *evt) 
 {
+#if CRATE0||CRATE1
+	gate_print_freq = 1;
+#endif 
+#if (WH14T||WH14B)&&SINGLEPC
+	gate_print_freq = 10;
+#endif
+#if MTEST
+	gate_print_freq = 5;
+#endif
 #if DEBUG_REPORT_EVENT
 	ebuilder.debugStream() << "*************************************************************************"; 
 	ebuilder.debugStream() << "Processing Event Data in event_builder::main():";
@@ -466,6 +471,7 @@ int event_builder(event_handler *evt)
 	ebuilder.debugStream() << "    GLOBAL GATE ---: " << evt->globalGate;
 	ebuilder.debugStream() << "    TRIG TIME -----: " << evt->triggerTime;
 	ebuilder.debugStream() << "    ERROR ---------: " << evt->readoutInfo;
+	ebuilder.debugStream() << "    READOUT TIME --: " << evt->readoutTime;
 	ebuilder.debugStream() << "    MINOS ---------: " << evt->minosSGATE;
 	ebuilder.debugStream() << "    EMBEDDED LENGTH: " << (int)( evt->event_data[0] + (evt->event_data[1]<<8) );
         ebuilder.debugStream() << "    DUMMY BYTE ----: " << (int)evt->event_data[10];
@@ -473,6 +479,7 @@ int event_builder(event_handler *evt)
 	MinervaHeader *tmp_header;
 	int gate_counter = 0;	
 	// 56?  TODO 54 registers in modern feb firmware, should replace with variable argument anyway...
+	// Some possibility 56 is a legacy from attempts to read the FPGA's via FIFOBLT messages.
 	feb *dummy_feb = new feb(6,1,(febAddresses)0,56); // Make a dummy feb for access to the header decoding functions. 
 	if (evt->feb_info[4]==3) {
 		gate_counter = evt->gate;
@@ -589,7 +596,7 @@ int event_builder(event_handler *evt)
 		// Make the new event block
 		event = new MinervaEvent(evt->detectorType, evt->detectorConfig, evt->runNumber, 
 			evt->subRunNumber, evt->triggerType, evt->ledLevel, evt->ledGroup, evt->globalGate, 
-			evt->gate, evt->triggerTime, evt->readoutInfo, evt->minosSGATE, tmp_header, 
+			evt->gate, evt->triggerTime, evt->readoutInfo, evt->minosSGATE, evt->readoutTime, tmp_header, 
 			adcFrameCount, discFrameCount, fpgaFrameCount, ebAppender); 
 		// The call to MinervaEvent constructor automatically inserts the DAQ block into the event buffer.
 		// Reset frame counters.
@@ -600,7 +607,7 @@ int event_builder(event_handler *evt)
 		ebuilder.infoStream() << "Making the Sentinel Frame.  Bank Type = " << evt->feb_info[4];
 		tmp_header = new MinervaHeader(evt->feb_info[1], 0, 0, evt->feb_info[4], 0, 1, 0, 48, ebAppender); 
 		// Make the new "event" block
-		event = new MinervaEvent(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, tmp_header, 0, 0, 0, ebAppender); 
+		event = new MinervaEvent(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, tmp_header, 0, 0, 0, ebAppender); 
 		// The call to MinervaEvent constructor automatically inserts the block into the event buffer.
 
 	} else {

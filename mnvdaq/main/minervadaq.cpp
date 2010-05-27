@@ -238,6 +238,8 @@ int main(int argc, char *argv[])
 	event_data.detectorType   = (unsigned char)detector;
 	event_data.detectorConfig = (unsigned short)detectorConfig;
 	event_data.triggerType    = (unsigned short)0;
+	event_data.minosSGATE     = (unsigned int)0;
+	event_data.readoutTime    = (unsigned int)0;
 
 
 	/*********************************************************************************/
@@ -632,8 +634,8 @@ int main(int argc, char *argv[])
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 		event_data.globalGate = 0; // Don't care, don't use this...
 #endif
-
 		// Set the data_ready flag to false, we have not yet taken any data.
+		// Don't really use this...
 		data_ready = false; 
 
 		// Reset the thread count if in threaded operation.
@@ -711,7 +713,6 @@ int main(int argc, char *argv[])
 						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate
 						<< std::endl;
 					std::cout << "Cannot reset sequencer latch in Cosmic mode!" << std::endl;
-//					exit(e);
 					continueRunning = false;
 				}
 				triggerType = Cosmic;
@@ -732,7 +733,6 @@ int main(int argc, char *argv[])
 						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate
 						<< std::endl;
 					std::cout << "Cannot reset sequencer latch in Cosmic mode!" << std::endl;
-//					exit(e);
 					continueRunning = false;
 				}
 				triggerType = MTBFMuon;
@@ -753,7 +753,6 @@ int main(int argc, char *argv[])
 						((*crim_master)->GetCrimAddress()>>16) << " for Gate " << gate
 						<< std::endl;
 					std::cout << "Cannot reset sequencer latch in Cosmic mode!" << std::endl;
-//					exit(e);
 					continueRunning = false;
 				}
 				triggerType = MTBFBeam;
@@ -802,7 +801,6 @@ int main(int argc, char *argv[])
 			default:
 				std::cout << "minervadaq::main(): ERROR! Improper Running Mode = " << runningMode << std::endl;
 				mnvdaq.fatalStream() << "Improper Running Mode = " << runningMode;
-//				exit(-4);
 				continueRunning = false;
 		}
 
@@ -825,7 +823,6 @@ int main(int argc, char *argv[])
 		if (write(soldierToWorker_socket_handle,soldierToWorker_trig,sizeof(soldierToWorker_trig)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: soldierToWorker_trig!";	 
 			perror("write error: soldierToWorker_trig");	 
-			//exit(EXIT_FAILURE);	 
 			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 		// Read trigger type from the worker node	 
@@ -835,7 +832,6 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get workerToSoldier_trig!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: workerToSoldier_trig");	 
-//				exit(EXIT_FAILURE);	 
 				continueRunning = false;
 				break;
 			}
@@ -859,7 +855,6 @@ int main(int argc, char *argv[])
 		if (write(workerToSoldier_socket_handle,workerToSoldier_trig,sizeof(workerToSoldier_trig)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_trig!";	 
 			perror("write error: workerToSoldier_trig");	 
-//			exit(EXIT_FAILURE);	 
 			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 
@@ -873,7 +868,6 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get soldierToWorker_trig!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: soldierToWorker_trig");	 
-//				exit(EXIT_FAILURE);	 
 				continueRunning = false;
 				break;
 			}
@@ -905,7 +899,6 @@ int main(int argc, char *argv[])
 			mnvdaq.warnStream() << "  Error Code = " << e << ".  Skipping this attempt and trying again...";
 			// This is subtle... need to be careful with this approach. 
 			mnvdaq.fatalStream() << "Not sure how to handle timeouts yet!  Bailing!";
-//			exit(1);
 			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 
@@ -1097,7 +1090,6 @@ int main(int argc, char *argv[])
 				perror("server read error: workerToSoldier_error");	 
 				continueRunning = false;
 				break;
-//				exit(EXIT_FAILURE);	 
 			}
 		}
 
@@ -1114,7 +1106,6 @@ int main(int argc, char *argv[])
 		if (write(workerToSoldier_socket_handle,workerToSoldier_error,sizeof(workerToSoldier_error)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_error!";	 
 			perror("write error: workerToSoldier_error");	 
-//			exit(EXIT_FAILURE);	 
 			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 		// Read the readout info (errors) from the soldier node	 
@@ -1124,7 +1115,6 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get soldierToWorker_error!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: soldierToWorker_error");	 
-//				exit(EXIT_FAILURE);	 
 				continueRunning = false;
 				break;
 			}
@@ -1137,7 +1127,7 @@ int main(int argc, char *argv[])
 		mnvdaq.debugStream() << " Got the error value ifrom the Soldier = " << soldierToWorker_error[0];
 #endif 
 #endif
-		// Only first three bits are valid in DAQHeader v5.
+		// Only first three bits are valid in DAQHeader v5->v8.
 		// bit0 = timeout error (both nodes)
 		// bit1 = error on crate 0
 		// bit2 = error on crate 1
@@ -1150,7 +1140,6 @@ int main(int argc, char *argv[])
 		mnvdaq.debugStream() << "Final set of ErrorFlags =  " << event_data.readoutInfo;
 #endif
 
-
 		// The soldier node must wait for a "done" signal from the worker node before attaching 
 		// the end-of-gate header bank.  We will use a cross-check on the gate value to be sure 
 		// the nodes are aligned. TODO - test synch write & listen functions w/ return values... 
@@ -1162,7 +1151,6 @@ int main(int argc, char *argv[])
 		if (write(soldierToWorker_socket_handle,soldierToWorker_gate,sizeof(soldierToWorker_gate)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: soldierToWorker_gate!";	 
 			perror("write error: soldierToWorker_gate");	 
-//			exit(EXIT_FAILURE);	 
 			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 		// Read the gate from the worker node	 
@@ -1172,7 +1160,6 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get workerToSoldier_gate!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: workerToSoldier_gate");	 
-//				exit(EXIT_FAILURE);	 
 				continueRunning = false;
 				break;
 			}
@@ -1196,7 +1183,6 @@ int main(int argc, char *argv[])
 		if (write(workerToSoldier_socket_handle,workerToSoldier_gate,sizeof(workerToSoldier_gate)) == -1) {	 
 			mnvdaq.fatalStream() << "socket write error: workerToSoldier_gate!";	 
 			perror("write error: workerToSoldier_gate");	 
-//			exit(EXIT_FAILURE);	 
 			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
 		// Read the gate from the soldier node	 
@@ -1206,7 +1192,6 @@ int main(int argc, char *argv[])
 				mnvdaq.fatalStream() << "server read error: cannot get soldierToWorker_gate!";
 				mnvdaq.fatalStream() << "  socket readback data size = " << read_val;	 
 				perror("server read error: soldierToWorker_gate");	 
-//				exit(EXIT_FAILURE);	 
 				continueRunning = false;
 				break;
 			}
@@ -1230,6 +1215,8 @@ int main(int argc, char *argv[])
 		stopTime    = (unsigned long long)(readend.tv_sec);
 		stopReadout = (unsigned long long)(readend.tv_sec*1000000) + 
 			(unsigned long long)(readend.tv_usec);
+		// Update readout time diff
+		readoutTimeDiff = (int)stopReadout - (int)startReadout;
 #if SINGLEPC||MASTER // Soldier Node or Singleton
 		/*************************************************************************************/
 		/* Write the End-of-Event Record to the event_handler and then to the event builder. */
@@ -1239,6 +1226,7 @@ int main(int argc, char *argv[])
 		event_data.feb_info[1] = daq->GetController()->GetID();
 		event_data.feb_info[4] = bank; 
 		event_data.minosSGATE  = daq->GetMINOSSGATE();
+		event_data.readoutTime = readoutTimeDiff;
 #if DEBUG_GENERAL
 		mnvdaq.debugStream() << "Contacting the EventBuilder from Main...";
 #endif
@@ -1729,7 +1717,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v07','v07-04-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

@@ -98,7 +98,7 @@ MinervaHeader::MinervaHeader(unsigned char crate, log4cpp::Appender* appender)
 	bank_header[0] = magic_pattern;    // add: the magic pattern to the header,
 	bank_header[1] = 48;               // the length in bytes of the DAQ header,
 	bank_header[2] = (3 & 0xFF);       // Bank Type (3 for DAQ Header),
-	bank_header[2] |= (7 & 0xFF)<<0x8; // Version (7 as of 2010.May.14), and
+	bank_header[2] |= (8 & 0xFF)<<0x8; // Version (8, reported as 7?...), and
 	bank_header[3] = source_id;        // the source information.
 #if DEBUG_HEADERS
 	if (hdrAppender!=0) {
@@ -114,7 +114,7 @@ MinervaHeader::MinervaHeader(unsigned char crate, log4cpp::Appender* appender)
 MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
 	unsigned short int trig, unsigned char ledLevel, unsigned char ledGroup, 
 	unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 
-	unsigned short int error, unsigned int minos, MinervaHeader *header, 
+	unsigned short int error, unsigned int minos, unsigned int read_time, MinervaHeader *header, 
 	unsigned short int nADCFrames, unsigned short int nDiscFrames,
 	unsigned short int nFPGAFrames, log4cpp::Appender* appender)
 {
@@ -134,6 +134,7 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
  * \param unsigned long long trig_time, trigger time
  * \param unsigned short error, error flag
  * \param unsigned int minos, minos trigger time
+ * \param unsigned int read_time, the time required for readout in us (we will mask to use only 24 bits)
  * \param MinervaHeader *header, bank header
  * \param unsigned short nADCFrames, the number of ADC frames recorded in this gate
  * \param unsigned short nDiscFrames, the number of Discriminator frames recorded in this gate
@@ -158,15 +159,15 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 	event_info_block[3] |= ( (ledLevel & 0x3) << 8 );
 	event_info_block[3] |= ( (ledGroup & 0xF8) << 8 );
 	event_info_block[3] |= ( (nFPGAFrames & 0xFFFF) << 16 );
-	event_info_block[4] = g_gate & 0xFFFFFFFF;       // the "global gate" least sig int 
-	event_info_block[5] = (g_gate>>32) & 0xFFFFFFFF; // the "global gate" most sig int
-	event_info_block[6] = gate & 0xFFFFFFFF;         // the gate number least sig int 
+	event_info_block[4] = g_gate & 0xFFFFFFFF;            // the "global gate" least sig int 
+	event_info_block[5] = (g_gate>>32) & 0xFFFFFFFF;      // the "global gate" most sig int
+	event_info_block[6] = gate & 0xFFFFFFFF;              // the gate number least sig int 
 	event_info_block[7] = (nDiscFrames << 16) | (nADCFrames);
-	event_info_block[8] = trig_time & 0xFFFFFFFF;    // the gate time least sig int
-	event_info_block[9] = (trig_time>>32) & 0xFFFFFFFF;  // the gate time most sig int
-	event_info_block[10] = (error<<4) & 0xFFFF;          // the error bits 4-7
-	event_info_block[10] |= 0<<0x18;                 // 3 reserved bytes
-	event_info_block[11] = minos & 0x3FFFFFFF;       // the minos gate (only 28 bits of data)
+	event_info_block[8] = trig_time & 0xFFFFFFFF;         // the gate time least sig int
+	event_info_block[9] = (trig_time>>32) & 0xFFFFFFFF;   // the gate time most sig int
+	event_info_block[10] = ( (error & 0x7) << 4 ) & 0xFF; // the error bits 4-7
+	event_info_block[10] |= ( (read_time & 0xFFFFFF) << 8 ) & 0xFFFFFF00;  
+	event_info_block[11] = minos & 0x3FFFFFFF;           // the minos gate (only 28 bits of data)
 #if DEBUG_HEADERS
 	if (evtAppender!=0) {
 		for (int i = 0; i < 12; i++) {
