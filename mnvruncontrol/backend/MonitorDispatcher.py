@@ -121,9 +121,6 @@ class MonitorDispatcher(Dispatcher):
 		self.logger.info("   event_builder command:")
 		self.logger.info("      '" + executable + "'...")
 		
-		# don't start the event builder TOO soon... or there might not be anything there!
-		time.sleep(3)
-		
 		signal.signal(signal.SIGUSR1, self.om_start_Gaudi)
 		self.om_eb_thread = OMThread(executable, "eventbuilder")
 	
@@ -141,8 +138,7 @@ class MonitorDispatcher(Dispatcher):
 
 			ntuplestrings = []
 			for i in range(len(self.dstfiles)):
-				optsfile.write("%sDSTWriter.NTupleToUse = \"FILE%d\";\n" % (self.dstfiles[i]["DSTWriter"], i+1) )
-				ntuplestrings.append( "\"FILE%d DATAFILE='%s' OPT='NEW' TYP='ROOT'\"" % (i+1, self.dstfiles[i]["filename"]) )
+				optsfile.write("%sDSTWriter.OutputFile = \"%s\";\n" % (self.dstfiles[i]["DSTWriter"], self.dstfiles[i]["filename"]) )
 			
 			# each DSTWriter is initialized every time,
 			# so even though one of them might not have 
@@ -154,12 +150,9 @@ class MonitorDispatcher(Dispatcher):
 			i += 1
 			for DSTWriter in ("Linjc", "Numib"):
 				if DSTWriter not in [item["DSTWriter"] for item in self.dstfiles]:
-					optsfile.write( "%sDSTWriter.NTupleToUse = \"FILE%d\";\n" % (DSTWriter, i+1) )
-					ntuplestrings.append( "\"FILE%d DATAFILE='%s/%sTempDSTFile.root' OPT='NEW' TYP='ROOT'\"" % (i+1, Configuration.params["Monitoring nodes"]["om_rawdataLocation"], DSTWriter ) )
+					optsfile.write( "%sDSTWriter.OutputFile = \"%s/%sTempDSTFile.root\";\n" % (DSTWriter, Configuration.params["Monitoring nodes"]["om_rawdataLocation"], DSTWriter) )
 					i += 1
 			
-			optsfile.write("NTupleSvc.Output  = { " + ", ".join(ntuplestrings) + " };\n")
-		
 		# if the Gaudi thread is still running, it needs to be stopped.
 		# the DIM command is supposed to help it shut down cleanly.  
 		if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
@@ -183,6 +176,8 @@ class MonitorDispatcher(Dispatcher):
 			# that the Presenter can find it properly).
 			# the others will continue to run, but we'll have no handle for them
 			# (which is intentional, so that they run unmolested until they finish).
+			# of course, if this thread is killed, they might go with it, but that
+			# depends on whether or not they fork first.  (i can't remember.)
 			thread = OMThread(process["executable"], "gaudi_%s" % process["processname"], process["utgid"], persistent=(process["processname"] == "dst"))
 			if process["processname"] == "presenter":
 				self.om_Gaudi_thread = thread
@@ -241,7 +236,7 @@ class MonitorDispatcher(Dispatcher):
 		
 
 #########################
-# OMThread             #
+# OMThread              #
 #########################
 class OMThread(threading.Thread):
 	""" OM processes need to be run in a separate thread
@@ -281,7 +276,7 @@ class OMThread(threading.Thread):
 					continue
 				
 				# if we successfully locked the file, we need to start at its beginning.
-				fileobj.truncate()
+				fileobj.truncate(0)
 				
 				try:
 					# the online version (for the Presenter) needs to have a UTGID specified
