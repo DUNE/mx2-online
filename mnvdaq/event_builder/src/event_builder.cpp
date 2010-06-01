@@ -247,7 +247,8 @@ int main(int argc, char **argv)
 		// the second is when minervadaq crashes.  in this case the run control
 		// (or the user who is running the DAQ via shell scripts) will inform this
 		// process that it shouldn't expect the sentinel by sending the SIGINT (ctrl-c)
-		// or SIGTERM signal (sent by 'kill <pid>').  when that happens, we will wait
+		// or SIGTERM signal (sent by 'kill <pid>').  when that happens, we will collect
+		// any outstanding frames currently in the system, then wait
 		// a maximum of 60 seconds (customizable in event_builder.h) for new frames
 		// before declaring that no more data is coming and that the event builder
 		// should quit.

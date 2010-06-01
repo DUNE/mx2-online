@@ -46,6 +46,7 @@ int main(int argc, char **argv)
   int           deleteFile = 0;
   int           had_attachments = 0;
   sigset_t      sigblockset, sighandleset;
+
   et_sysconfig  config;
   et_sys_id     id;
   
@@ -275,6 +276,7 @@ int main(int argc, char **argv)
   if (callback_pid)
      kill(callback_pid, SIGUSR1);
   
+
   /*************************/
   /*    main loop          */
   /*************************/
@@ -292,7 +294,9 @@ int main(int argc, char **argv)
      /* note that we use getattachments() here and not getstations().
         this is because stations are not necessarily deleted if the
         process that created them crashes.  on the other hand, in that case
-        Grand Central _does_ notice that the attachment has disappeared. */
+        Grand Central _does_ notice that the attachment has disappeared,
+        so we can count on the attachment number correctly reflecting
+        the number of processes that are currently using the station. */
      status = et_system_getattachments(id, &nattachments);
      if (status != ET_OK)
      {
@@ -311,6 +315,7 @@ int main(int argc, char **argv)
        printf("All stations detached.  System will close.\n");
      }
   }
+>>>>>>> 1.11
   
 
   printf("ET is exiting.\n");
