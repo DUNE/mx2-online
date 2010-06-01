@@ -315,7 +315,6 @@ int main(int argc, char **argv)
        printf("All stations detached.  System will close.\n");
      }
   }
->>>>>>> 1.11
   
 
   printf("ET is exiting.\n");
