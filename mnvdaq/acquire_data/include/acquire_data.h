@@ -213,7 +213,7 @@ class acquire_data {
 		int AcknowledgeIRQ();
 
 		/*! Function which sends data to the event builder via ET */
-		void ContactEventBuilder(event_handler *evt, int thread, et_att_id attach, et_sys_id sys_id);
+		bool ContactEventBuilder(event_handler *evt, int thread, et_att_id attach, et_sys_id sys_id);
 
 		/*! Function that gets the MINOS SGATE value from the CRIM registers.  Check the "master" CRIM. */
 		unsigned int GetMINOSSGATE();

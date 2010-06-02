@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	/*********************************************************************************/
 	/*      Initialize some execution status variables                               */
 	/*********************************************************************************/
-	bool success             = false;     // Success state of the DAQ at exit,
+	bool sentSentinel        = false;     // Whether the sentinel (end-of-data signal) gate was sent to the master by this process
 	int record_gates         = -1;        // Run length in GATES.
 	RunningModes runningMode = OneShot;
 	int runMode              = 0;         // Same as OneShot...
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 	if (et_open(&sys_id, et_filename.c_str(), openconfig) != ET_OK) {
 		printf("et_producer: et_open problems\n");
 		mnvdaq.fatalStream() << "et_producer: et_open problems!";
-		exit(1);
+		exit(EXIT_UNSPECIFIED_ERROR);
 	}
 	mnvdaq.infoStream() << "...Opened ET system!";	
 
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
 		printf("et_producer: error in station attach\n");
 		mnvdaq.fatalStream() << "et_producer: error in station attach!";
 		system("sleep 10s");
-		exit(1);
+		exit(EXIT_UNSPECIFIED_ERROR);
 	} 
 	mnvdaq.infoStream() << "Successfully attached to GRANDCENTRAL Station.";	
 
@@ -332,7 +332,7 @@ int main(int argc, char *argv[])
 	} catch (int e) {
 		std::cout << "Could not create socket pair!  Exiting!" << std::endl;
 		mnvdaq.fatalStream() << "Could not create socket pair!  Exiting!";
-		exit(1);
+		exit(EXIT_UNSPECIFIED_ERROR);
 	}
 	// Set up the soldierToWorker service.
 	try {
@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
 	} catch (int e) {
 		std::cout << "Could not setup socket service!  Exiting!" << std::endl;
 		mnvdaq.fatalStream() << "Could not setup socket service!  Exiting!";
-		exit(1);		
+		exit(EXIT_UNSPECIFIED_ERROR);		
 	}
 	// Create an address for the workerToSoldier listener.  The soldier listens for data.
 	workerToSoldier_socket_address.s_addr = htonl(INADDR_ANY); 
@@ -359,14 +359,14 @@ int main(int argc, char *argv[])
 	if ((bind (workerToSoldier_socket_handle, (const sockaddr*)&workerToSoldier_service, 
 			sizeof (workerToSoldier_service)))) {
 		mnvdaq.fatalStream() << "Error binding the workerToSoldier socket!"; 
-		perror ("bind"); exit(EXIT_FAILURE); 
+		perror ("bind"); exit(EXIT_UNSPECIFIED_ERROR); 
 	} else {
 		mnvdaq.infoStream() << "Finished binding the workerToSoldier socket.";
 	}
 	// Enable connection requests on the workerToSoldier socket for the listener.
 	if (listen (workerToSoldier_socket_handle, 10)) { 
 		mnvdaq.fatalStream() << "Error listening on the workerToSoldier socket!"; 
-		perror("listen"); exit(EXIT_FAILURE); 
+		perror("listen"); exit(EXIT_UNSPECIFIED_ERROR); 
 	} else {
 		mnvdaq.infoStream() << "Enabled listening on the workerToSoldier socket.";
 	}
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
 	} catch (int e) {
 		std::cout << "Could not create socket pair!  Exiting!" << std::endl;
 		mnvdaq.fatalStream() << "Could not create socket pair!  Exiting!";
-		exit(1);
+		exit(EXIT_UNSPECIFIED_ERROR);
 	}
 	// Set up the workerToSoldier service. 
 	try {
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
 	} catch (int e) {
 		std::cout << "Could not setup socket service!  Exiting!" << std::endl;
 		mnvdaq.fatalStream() << "Could not setup socket service!  Exiting!";
-		exit(1);                		
+		exit(EXIT_UNSPECIFIED_ERROR);                		
 	}
 	// Create an address for the soldierToWorker listener.  The worker listens for data.
 	soldierToWorker_socket_address.s_addr = htonl(INADDR_ANY); 
@@ -407,14 +407,14 @@ int main(int argc, char *argv[])
 	if ((bind (soldierToWorker_socket_handle, (const sockaddr*)&soldierToWorker_service, 
 			sizeof (soldierToWorker_service)))) { 
 		mnvdaq.fatalStream() << "Error binding the soldierToWorker socket!"; 
-		perror ("bind"); exit(EXIT_FAILURE); 
+		perror ("bind"); exit(EXIT_UNSPECIFIED_ERROR); 
 	} else {
 		mnvdaq.infoStream() << "Finished binding the soldierToWorker socket.";
 	}
 	// Enable connection requests on the global socket for the listener.
 	if (listen (soldierToWorker_socket_handle, 10)) { 
 		mnvdaq.fatalStream() << "Error listening on the soldierToWorker socket!"; 
-		perror("listen"); exit(EXIT_FAILURE); 
+		perror("listen"); exit(EXIT_UNSPECIFIED_ERROR); 
 	} else {
 		mnvdaq.infoStream() << "Enabled listening on the soldierToWorker socket.";
 	}
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
 				// Something else went wrong.
 				mnvdaq.fatalStream() << "Error in socket accept!"; 
 				perror("accept");
-				exit(EXIT_FAILURE);
+				exit(EXIT_UNSPECIFIED_ERROR);
 			}
 		}
 		workerToSoldier_socket_is_live = true;
@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
 	if (connect(workerToSoldier_socket_handle, (struct sockaddr*) &workerToSoldier_service, 
 			sizeof (struct sockaddr_in)) == -1) { 
 		mnvdaq.fatalStream() << "Error in workerToSoldier connect!";
-		perror ("connect"); exit(EXIT_FAILURE); 
+		perror ("connect"); exit(EXIT_UNSPECIFIED_ERROR); 
 	}
 	std::cout << " ->Returned from connect to workerToSoldier!\n";
 	mnvdaq.infoStream() << " ->Returned from connect to workerToSoldier!";
@@ -479,7 +479,7 @@ int main(int argc, char *argv[])
 	if (connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
 			sizeof (struct sockaddr_in)) == -1) { 
 		mnvdaq.fatalStream() << "Error in soldierToWorker connect!";
-		perror ("connect"); exit(EXIT_FAILURE); 
+		perror ("connect"); exit(EXIT_UNSPECIFIED_ERROR); 
 	}
 	std::cout << " ->Returned from connect to soldierToWorker!\n\n";
 	mnvdaq.infoStream() << " ->Returned from connect to soldierToWorker!";
@@ -511,7 +511,7 @@ int main(int argc, char *argv[])
 				// Something else went wrong. 
 				mnvdaq.fatalStream() << "Error in socket accept!"; 
 				perror("accept");
-				exit(EXIT_FAILURE);
+				exit(EXIT_UNSPECIFIED_ERROR);
 			}
 		}
 		soldierToWorker_socket_is_live = true;
@@ -1260,7 +1260,8 @@ int main(int argc, char *argv[])
 	// Report end of subrun...
 #if SINGLEPC||MASTER // Single PC or Soldier Node
 	mnvdaq.infoStream() << "Sending Frame.";
-	SendSentinel(daq, &event_data, attach, sys_id);
+	sentSentinel = SendSentinel(daq, &event_data, attach, sys_id);
+	
 	std::cout << " Last Frame Type " << event_data.feb_info[4] << std::endl;
 	mnvdaq.infoStream() << " Last Frame Type " << event_data.feb_info[4];
 	std::cout << " Last Event = " << lastEvent << std::endl;
@@ -1275,11 +1276,6 @@ int main(int argc, char *argv[])
 	printf(" \n\nTotal acquisition time was %llu microseconds.\n\n",totaldiff);
 	mnvdaq.info("Total acquisition time was %llu microseconds.",totaldiff);
 #endif // end if TAKE_DATA
-
-	/**********************************************************************************/
-	/*   return the success status of the run                                         */
-	/**********************************************************************************/
-	success = true;
 
 	/**********************************************************************************/
 	/*       delete the acquire functions                                             */
@@ -1298,16 +1294,17 @@ int main(int argc, char *argv[])
 	log4cpp::Category::shutdown();
 
 	/**********************************************************************************/
-	/*              End of execution                                                  */
+	/*              End of execution.                                                 */
+	/*                let the calling process know if sentinel is coming from me      */
 	/**********************************************************************************/
-	return success;
+	return (sentSentinel) ? EXIT_CLEAN_SENTINEL : EXIT_CLEAN_NOSENTINEL;
 }
 
 
-void SendSentinel(acquire_data *daq, event_handler *event_data, et_att_id attach, et_sys_id sys_id)
+bool SendSentinel(acquire_data *daq, event_handler *event_data, et_att_id attach, et_sys_id sys_id)
 {
 	event_data->feb_info[4] = 5; // Sentinel
-	daq->ContactEventBuilder(event_data, 0, attach, sys_id);
+	return daq->ContactEventBuilder(event_data, 0, attach, sys_id);
 }
 
 int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id, 
@@ -1808,7 +1805,7 @@ template <typename Any> int SynchWrite(int socket_handle, Any data[])
 	if (write(socket_handle,data,sizeof(data)) == -1) {
 		mnvdaq.fatalStream() << "socket write error: SynchWrite!";
 		perror("write error");
-//		exit(EXIT_FAILURE);
+//		exit(EXIT_UNSPECIFIED_ERROR);
 		continueRunning = false;
 	}
 #if DEBUG_SOCKETS
@@ -1828,7 +1825,7 @@ template <typename Any> int SynchListen(int socket_connection, Any data[])
 		if ( read_val != sizeof(data) ) {
 			mnvdaq.fatalStream() << "Server read error in SynchListen!";
 			perror("server read error: done");
-//			exit(EXIT_FAILURE);
+//			exit(EXIT_UNSPECIFIED_ERROR);
 			continueRunning = false;
 			break;
 		}

@@ -2067,7 +2067,7 @@ int acquire_data::AcknowledgeIRQ()
 }
 
 
-void acquire_data::ContactEventBuilder(event_handler *evt, int thread, 
+bool acquire_data::ContactEventBuilder(event_handler *evt, int thread, 
 	et_att_id attach, et_sys_id sys_id) 
 {
 /*! \fn void acquire_data::ContactEventBuilder(event_handler *evt, int thread, et_att_id attach,
@@ -2142,7 +2142,7 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 		} if (status != ET_OK) {
 			printf("ET et_producer: error in et_event_new in acquire_data::ContactEventBuilder!\n");
 			acqData.fatal("ET et_producer: error in et_event_new in acquire_data::ContactEventBuilder!");
-			exit(0);
+			return false;
 		} 
 		// Put data into the event.
 		if (status == ET_OK) {
@@ -2189,7 +2189,7 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 		if (status != ET_OK) {
 			printf("et_producer: put error in acquire_data::ContactEventBuilder!\n");
 			acqData.fatal("et_producer: put error in acquire_data::ContactEventBuilder!");
-			exit (0);
+			return false;
 		} 
 		if (!et_alive(sys_id)) {
 			et_wait_for_alive(sys_id);
@@ -2200,6 +2200,9 @@ void acquire_data::ContactEventBuilder(event_handler *evt, int thread,
 #if DEBUG_ET_REPORT_EVENT
 	acqData.debugStream() << "  Exiting acquire_data::ContactEventBuilder...";
 #endif
+
+	// report to calling method that data transfer went ok.
+	return true;
 
 }
 
