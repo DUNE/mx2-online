@@ -30,6 +30,7 @@ class ReadoutNode(RemoteNode.RemoteNode):
 		self.completed = False
 		
 		self.shutting_down = False
+		self.sent_sentinel = False
 		
 	def daq_checkStatus(self):
 		""" Asks the server to check and see if its DAQ process is running. """

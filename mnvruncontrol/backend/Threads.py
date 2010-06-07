@@ -302,6 +302,8 @@ class SocketThread(threading.Thread):
 		if subscription not in self.subscriptions:
 			self.subscriptions.append(subscription)		# append() is thread-safe.
 			self.logger.debug("New socket message subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
+		else:
+			self.logger.warning("Not adding duplicate socket message subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
 			
 	def Unsubscribe(self, addressee, node_name, message, callback):
 		""" Cancel a subscription previously booked using Subscribe(). """
@@ -348,12 +350,18 @@ class SocketThread(threading.Thread):
 			self.logger.debug(message)
 		
 		matched = False
+		
+		# we only match based on the BASE part of the text (anything before the first space).
+		# anything after that is considered "data" that goes with the message.
+		message = matches.group("message").partition(" ")[0]
+		data = matches.group("message").partition(" ")[2]
 		for subscription in self.subscriptions:
 			if     matches.group("addressee") == subscription.recipient \
 			   and matches.group("sender") == subscription.node_name \
-			   and matches.group("message") == subscription.message:
+			   and message == subscription.message:
 				matched = True
-				wx.PostEvent( subscription.callback, Events.SocketReceiptEvent(addressee=matches.group("addressee"), sender=matches.group("sender"), message=matches.group("message")) )
+				
+				wx.PostEvent( subscription.callback, Events.SocketReceiptEvent(addressee=matches.group("addressee"), sender=matches.group("sender"), message=message, data=data) )
 				self.logger.debug("Message matched subscription.  Delivered.")
 #			else:
 #				print "(%d, %d, %d)" % (matches.group("addressee") == str(subscription.recipient), matches.group("sender") == subscription.node_name, matches.group("message") == subscription.message)
@@ -377,7 +385,11 @@ class SocketSubscription:
 	
 	def __eq__(self, other):
 		try:
-			return (self.recipient == other.recipient and self.message == other.message and self.node_name == other.node_name and self.callback == other.callback)
+			# note that this scheme means subscriptions are equivalent
+			# if the BASE part of their message (before any spaces) match.
+			# anything after that is irrelevant and not used in comparison
+			# (it's assumed to be some kind of variable data).
+			return (self.recipient == other.recipient and self.node_name == other.node_name and self.callback == other.callback and self.message.partition(" ")[0] == other.message.partition(" ")[0])
 		except AttributeError:		# if other doesn't have one of these properties, it can't be equal!
 			return False
 			
