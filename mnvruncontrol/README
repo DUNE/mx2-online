@@ -1,8 +1,8 @@
 mnvruncontrol -- the MINERvA run control
 ========================================
   Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v4r4p1  (April 2010)
-  Last update:      April 13, 2010
+  Last revision:    v4r11  (May 2010)
+  Last update:      June 1, 2010
 ========================================
 
 This document briefly describes the configuration and usage of the MINERvA run
@@ -69,9 +69,10 @@ Contents:
     configuration file in a folder called "/work/conditions".  If such a folder
     does not exist, you have a choice: (a) create it, (b) edit the file
     backend/Defaults.py and change the variables CONFIG_DB_LOCATION and
-    CONFIG_DB_NAME to suit your preferences, or (c) place a file with the name
+    CONFIG_DB_NAME to suit your preferences, (c) place a file with the name
     "run_control_config.db" (it can be empty) in the same directory as any of 
-    the run control files you want to run.
+    the run control files you want to run, or (d) pass the option
+    "-c <config_file_full_path>" at each invocation.
     
     For your sanity I recommend option (a) (or if that's not possible, (b)).
     
@@ -85,7 +86,7 @@ Contents:
     should run this program on every node you intend to use some run control
     software on, because all the run control components use the same central
     configuration system for simplicity of maintenance.
-
+    
 3. USAGE NOTES
   * To start the run control, first source the "setupdaqenv.sh" contained in
     mnvdaq.  After that then you can start the run control.  For example,
