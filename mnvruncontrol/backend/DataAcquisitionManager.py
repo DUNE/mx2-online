@@ -57,14 +57,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.main_window = main_window
 		
 		# threads that this object will be managing.
-		self.DAQthreads = []
-		self.DAQthreadWatcher = None
-		self.timerThreads = []
+		self.DAQthreads = {}
 
 		# methods that will be started sequentially
 		# by various processes and accompanying messages
-		self.SubrunStartTasks = [ { "method": self.ETCleanup,                 "message": "Cleaning up any prior ET processes..." },
-		                          { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
+		self.SubrunStartTasks = [ { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
 		                          { "method": self.LIBoxSetup,                "message": "Initializing light injection..." },
 		                          { "method": self.ReadoutNodeHWConfig,       "message": "Loading hardware..." },
 		                          { "method": self.ReadoutNodeHVCheck,        "message": "Checking hardware..." } ]
@@ -347,13 +344,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 		quitting = not(self.running)
 		self.CloseWindows()			# don't want leftover windows open.
 
-		# if the event contains a list of PIDs that have finished, then
-		# this signal is coming from the thread watcher.
-		# clear out the corresponding elements in the list.
-		if hasattr(evt, "pids_cleared"):
-			for pid in evt.pids_cleared:
-				self.DAQthreads.remove(pid)
-		
 		self.num_startup_steps = len(self.SubrunStartTasks) + len(self.DAQStartTasks)
 		self.startup_step = 0
 
@@ -510,25 +500,35 @@ class DataAcquisitionManager(wx.EvtHandler):
 				if not success:
 					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["The beamline DAQ node(s) couldn't be stopped.",  "The next subrun could be problematic..."], messageheader="Beamline DAQ node(s) not stopped") )
 		
-			for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
-				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping ET threads...", progress=(step, numsteps)) )
+			for threadname in self.DAQthreads:		
+				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nSignalling ET threads...", progress=(step, numsteps)) )
 
-				# we might have clicked the 'stop' button while the DAQthreadWatcher is watching these threads,
-				# in which case the list only contains a list of PIDs as placeholders.
-				# in that case, we need to abort the DAQthreadWatcher instead.
-				if hasattr(thread, "Abort"):		
+				thread = self.DAQthreads[threadname]
+				
+				# remove the thread from the dictionary.
+				# we don't need a handle on it any more.
+				self.DAQthreads[threadname] = None
+
+				# the ET system process stops on its own.  just cut off its display feed.
+				if threadname == "et system":
+					thread.SetRelayOutput(False)
+
+				# the event builder needs to know if it should expect a sentinel.
+				elif threadname == "event builder":
+					# only signal if there's no sentinel coming.
+					# if there isn't, send the process a SIGTERM.
+					if not hasattr(evt, "sentinel") or not evt.sentinel:
+						thread.terminate()
+					
+					# either way, we stop displaying its output.
+					thread.SetRelayOutput(False)
+					
+				# any other threads should be aborted.
+				elif hasattr(thread, "Abort"):		
 					thread.Abort()
-				else:
-					self.DAQthreadWatcher.Abort()
 			
 				step += 1
 			
-			while len(self.timerThreads) > 0:
-				thread = self.timerThreads.pop()	# the countdown timers would start more threads.  get rid of them.
-				thread.Abort()
-
-	#		print self.first_subrun, self.subrun
-
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
 
 			try:
@@ -568,43 +568,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 	##########################################
 	# Helper methods used by StartNextSubrun()
 	##########################################
-	
-	def ETCleanup(self):
-		""" Manages the cleanup of old ET/DAQ threads. """
-
-		# ET & the DAQ shouldn't be running in two separate sets of processes.
-		# therefore, we need to make sure we let them completely close
-		# before we actually start the next subrun.  however, we can't wait
-		# on them in StartNextSubrun(), because it runs as part of the main thread,
-		# and if we did, the whole program would appear to lock up: since wx also
-		# runs in the main thread, the graphical interface wouldn't be updated.
-		# instead, we spawn a separate thread to watch these processes and
-		# issue the ReadyForNextSubrun event to the DataAcquisitionManager
-		# when they are done.
-		
-		if len(self.DAQthreads) > 0:
-			if self.DAQthreadWatcher is None or not self.DAQthreadWatcher.is_alive():
-				self.DAQthreadWatcher = Threads.DAQWatcherThread(self)
-
-				# transfer all the thread references to the DAQthreadWatcher
-				# to prevent race conditions.  replace them with PIDs in the
-				# DataAcquisitionManager's list as placeholders.
-				pids = []
-				while len(self.DAQthreads) > 0:
-					tmp = self.DAQthreads.pop()
-					self.DAQthreadWatcher.threadsToWatch.append(tmp)
-					pids.append(tmp.pid)
-				self.DAQthreads = pids
-
-				# now watch them.
-				self.DAQthreadWatcher.start()
-
-			# we can't do anything more until they're done,
-			# so signal to StartNextSubrun() to exit immediately (no cleanup).
-			return None
-		
-		# it's safe to go on to the next step 
-		return True
 	
 	def RunInfoAndConnectionSetup(self):
 		""" Configures the run and sets up connections to the readout nodes. """
@@ -820,7 +783,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append( etSysFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads.append( Threads.DAQthread(etsys_command, "ET system", output_window=etSysFrame, owner_process=self, env=self.environment, is_essential_service=True) ) 
+		self.DAQthreads["et system"] = Threads.DAQthread(etsys_command, "ET system", output_window=etSysFrame, owner_process=self, env=self.environment, is_essential_service=True)
 
 	def StartETMon(self):
 		""" Start the ET monitor process.
@@ -834,7 +797,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s -c %d -p %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", os.getpid(), self.runinfo.ETport)
 		self.windows.append( etMonFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads.append( Threads.DAQthread(etmon_command, "ET monitor", output_window=etMonFrame, owner_process=self, env=self.environment) )
+		self.DAQthreads["et monitor"] = Threads.DAQthread(etmon_command, "ET monitor", output_window=etMonFrame, owner_process=self, env=self.environment)
 
 	def StartEBSvc(self):
 		""" Start the event builder service.
@@ -848,7 +811,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append( ebSvcFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads.append( Threads.DAQthread(eb_command, "event builder", output_window=ebSvcFrame, owner_process=self, env=self.environment, is_essential_service=True) )	
+		self.DAQthreads["event builder"] = Threads.DAQthread(eb_command, "event builder", output_window=ebSvcFrame, owner_process=self, env=self.environment, is_essential_service=True)
 
 	def StartRemoteServices(self):
 		""" Notify all the remote services that we're ready to go.
@@ -944,7 +907,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append(frame)
 		self.UpdateWindowCount()
-		self.DAQthreads.append( Threads.DAQthread(command, "test process", output_window=frame, owner_process=self, next_thread_delay=3, is_essential_service=True) )
+		self.DAQthreads["test process"] = Threads.DAQthread(command, "test process", output_window=frame, owner_process=self, next_thread_delay=3, is_essential_service=True)
 		
 
 	##########################################
