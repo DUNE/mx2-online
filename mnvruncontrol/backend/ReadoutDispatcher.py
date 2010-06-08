@@ -296,7 +296,7 @@ class DAQThread(threading.Thread):
 			self.logger.exception("minervadaq log file error: %s" % e.message)
 			self.logger.warning("   ==> log file information will be discarded.")
 		
-		sentinel = "YES" if self.returncode = 0 else "NO"
+		sentinel = "YES" if self.returncode == 0 else "NO"
 		
 		self.owner_process.queue.put(Dispatcher.Message(message="daq_finished sentinel=%s" % sentinel, recipient=Dispatcher.MASTER))
 				
