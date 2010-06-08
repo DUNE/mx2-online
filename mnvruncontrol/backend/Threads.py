@@ -33,7 +33,7 @@ from mnvruncontrol.backend import ReadoutNode
 
 class DAQthread(threading.Thread):
 	""" A thread for an ET/DAQ process. """
-	def __init__(self, process_info, process_identity, output_window, owner_process, env, next_thread_delay=0, is_essential_service=False, update_event=None):
+	def __init__(self, process_info, process_identity, output_window, owner_process, env, next_thread_delay=0, is_essential_service=False):
 		threading.Thread.__init__(self)
 		self.process_identity = process_identity
 		self.output_window = output_window
@@ -42,17 +42,16 @@ class DAQthread(threading.Thread):
 		self.command = process_info
 		self.next_thread_delay = next_thread_delay
 		self.is_essential_service = is_essential_service
-		self.update_event = update_event
 		self.name = self.command.split()[0] + "Thread"
 		self.process = None
 		self.daemon = True				# this way the process will end when the main thread does
 
+		self.write_output = True			# if process output should be relayed to the window
 		self.time_to_quit = False
-		self.have_cleaned_up = False
+		self.issued_quit = False			# has the subprocess been instructed to stop?
+		self.have_cleaned_up = False		# have we done a cleanup read of output text yet?
 
-		self.timerthread = None			# used to count down to a hard kill if necessary
-
-		self.start()				# starts the run() function in a separate thread.  (inherited from threading.Thread)
+		self.start()					# starts the run() function in a separate thread.  (inherited from threading.Thread)
 	
 	def run(self):
 		''' The stuff to do while this thread is going.  Overridden from threading.Thread. '''
@@ -63,38 +62,32 @@ class DAQthread(threading.Thread):
 			# start a new thread to count down until the next DAQ process can be started.
 			self.owner_process.timerThreads.append(TimerThread(self.next_thread_delay, self.owner_process))
 
-		if self.output_window:
+		if self.output_window and self.write_output:
 			wx.PostEvent(self.output_window, Events.NewDataEvent(data="Started thread with PID " + str(self.pid) + "\n"))	# post a message noting the PID of this thread
 
-
-		while not self.time_to_quit and self.process.poll() is None:
+		while self.process.poll() is None:
 			# no busy-waiting.
 			time.sleep(0.1)
+			
+			# if it's time to quit, the process should be instructed to end.
+			# then we'll keep going around this loop until it really does.
+			if self.time_to_quit and not self.issued_quit:
+				self.process.terminate()
+				self.issued_quit = True
 			
 			newdata = self.read()
 
 			# now post any data from the process to its output window
-			if len(newdata) > 0 and self.output_window:		# make sure the window is still open
+			if len(newdata) > 0 and self.write_output and self.output_window:		# make sure the window is still open
 				wx.PostEvent(self.output_window, Events.NewDataEvent(data=newdata))
 					
+		# do one final read to clean up anything left in the pipe.
+		newdata = self.read(want_cleanup_read = True)
+		if self.write_output and self.output_window:
+			if len(newdata) > 0:
+				wx.PostEvent(self.output_window, Events.NewDataEvent(data=newdata))
 
-		if self.process.poll() is None:				# if this process hasn't been stopped yet, it needs to be
-			self.process.terminate()					# first, try nicely.
-
-			if self.process.poll() is None:		# they'll probably need a little time to shut down cleanly
-				self.timer_cancel = False			# ... but if it shuts down in the interim, we should be able to cancel it!
-				self.timerthread = threading.Timer(5, self.LastCheck)
-				self.timerthread.start()
-		else:
-			data = self.read(want_cleanup_read = True)
-			if len(data) > 0 and self.output_window:
-				wx.PostEvent(self.output_window, Events.NewDataEvent(data=data))
-		
-			if (self.timerthread):
-				self.timerthread.cancel()
-			#print "Process " + str(self.pid) + " has quit."
-			if self.output_window:
-				wx.PostEvent(self.output_window, Events.NewDataEvent(data="\n\nThread terminated cleanly."))
+			wx.PostEvent(self.output_window, Events.NewDataEvent(data="\n\nThread terminated cleanly."))
 
 		# if this an essential service and it's not being terminated
 		# due to some external signal, it's the first thing to quit.
@@ -103,8 +96,7 @@ class DAQthread(threading.Thread):
 		# however, if this thread is being watched by the thread watcher,
 		# we don't need this event because the thread watcher will issue it
 		# when ALL the DAQ threads are done.
-		if self.is_essential_service and self.process.poll() is not None and not self.time_to_quit:
-			self.timer_cancel = True
+		if self.is_essential_service and not self.time_to_quit:
 			wx.PostEvent(self.owner_process, Events.EndSubrunEvent(processname=self.process_identity))
 			
 	def read(self, want_cleanup_read = False):
@@ -165,64 +157,11 @@ class DAQthread(threading.Thread):
 	def Abort(self):
 		''' When the Stop button is pressed, we gotta quit! '''
 		self.time_to_quit = True
-	
-
-	def LastCheck(self):
-		""" One last check to see if the process has finished gracefully.
-		    If not, the user is instructed that s/he should do a manual kill. """
-		if self.timer_cancel:
-			return
-			
-		if self.process.poll() is None:
-			print "Thread " + str(self.pid) + " seems to be deadlocked.  Kill it manually."
-		else:
-			data = self.read(want_cleanup_read = True)
-			if self.output_window:
-				if len(data) > 0:
-					wx.PostEvent(self.output_window, Events.NewDataEvent(data=data))
-				wx.PostEvent(self.output_window, Events.NewDataEvent(data="\n\nThread terminated cleanly."))
-
-		if self.is_essential_service and self.process.poll() is not None and not self.time_to_quit:
-			wx.PostEvent(self.owner_process, Events.EndSubrunEvent(processname=self.process_identity))
-	
-
-#########################################################
-#   DAQWatcherThread
-#########################################################
-
-class DAQWatcherThread(threading.Thread):
-	""" A thread whose sole purpose is to watch the other
-	    DAQ threads (which contain subprocesses) until
-	    their subprocesses finish, and then report that
-	    information back to the main thread. """
-	def __init__(self, postback_object):
-		threading.Thread.__init__(self)
-		self.name="DAQWatcherThread"
-
-		self.threadsToWatch = []
-		self.postback_object = postback_object
-	
-	def run(self):
-		self.time_to_quit = False
-		if len(self.threadsToWatch) == 0:
-			return
-	 		
-		while not self.time_to_quit:
-			# don't busy-wait.
-			time.sleep(0.01)
-			
-			threads_done = [thread.process.poll() is not None for thread in self.threadsToWatch]
-			
-#			print threads_done
-			
-			self.time_to_quit = self.time_to_quit or not False in threads_done
 		
-		pidlist = [thread.pid for thread in self.threadsToWatch]
-		self.threadsToWatch = []
-		wx.PostEvent(self.postback_object, Events.ReadyForNextSubrunEvent(pids_cleared=pidlist))
-		
-	def Abort(self):
-		self.time_to_quit = True
+	def SetRelayOutput(self, dowrite=True):
+		''' Sets whether subprocess output should be relayed to the window. '''
+		self.write_output = dowrite
+	
 		
 #########################################################
 #   SocketThread
@@ -398,29 +337,7 @@ class SocketSubscription:
 
 class SocketAlreadyBoundException(Exception):
 	pass
-	
-#########################################################
-#   TimerThread
-#########################################################
 
-class TimerThread(threading.Thread):
-	def __init__(self, countdown_time, postback_window):
-		threading.Thread.__init__(self)
-		self.time = countdown_time
-		self.postback_window = postback_window
-		self.time_to_quit = False
-		self.daemon = True
-		
-		self.start()
-
-	def run(self):
-		time.sleep(self.time)
-
-		if self.postback_window and not(self.time_to_quit):		# make sure the user didn't close the window while we were waiting
-			wx.PostEvent(self.postback_window, Events.ThreadReadyEvent())
-			
-	def Abort(self):
-		self.time_to_quit = True
 
 #########################################################
 #   AlertThread
