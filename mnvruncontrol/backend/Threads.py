@@ -324,11 +324,16 @@ class SocketSubscription:
 	
 	def __eq__(self, other):
 		try:
+			# allow for "*" as "matches anything"
+			recipients_match = self.recipient == "*" or other.recipient == "*" or self.recipient == other.recipient
+			node_names_match = self.node_name == "*" or other.node_name == "*" or self.node_name == other.node_name
+
 			# note that this scheme means subscriptions are equivalent
 			# if the BASE part of their message (before any spaces) match.
 			# anything after that is irrelevant and not used in comparison
 			# (it's assumed to be some kind of variable data).
-			return (self.recipient == other.recipient and self.node_name == other.node_name and self.callback == other.callback and self.message.partition(" ")[0] == other.message.partition(" ")[0])
+			return (recipients_match and node_names_match and self.callback == other.callback and self.message.partition(" ")[0] == other.message.partition(" ")[0])
+
 		except AttributeError:		# if other doesn't have one of these properties, it can't be equal!
 			return False
 			
