@@ -94,6 +94,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
 		self.filehandler.setFormatter(self.formatter)
 		self.logger.addHandler(self.filehandler)
+		
+		self.last_logged_gate = 0
 
 		# these will need to be set by the run control window before the process is started.
 		# that way we can be sure it's properly configured.
@@ -846,8 +848,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# and it returns immediately).		    
 		self.logger.info("  Booking subscriptions for 'DAQ finished' messages from readout nodes...")
 		for node in self.readoutNodes:
-			self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Running...")
+			self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self)
 			self.logger.info("    ... subscribed the %s node." % node.name)
+			
+		self.last_logged_gate = 0
+		self.logger.info("  Booking subscription for gate count messages from readout nodes...")]
+		self.socketThread.Subscribe("*", "*", "gate_count", callback=self)
+		self.logger.info("    ... done.")
 
 		# we use a lock to block message reading until all nodes have been initially contacted.
 		# this will ensure that even if one readout node dies right away, things still happen
@@ -895,6 +902,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					break
 				else:
 					wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
+		##end## with self.messageHandlerLock
 	
 		if self.running:
 			self.logger.info("  All DAQ services started.  Data acquisition for subrun %d underway." % (self.subrun + self.first_subrun) )
@@ -940,8 +948,22 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.messageHandlerLock.acquire()
 		self.logger.debug("Successfully acquired message handler lock.")
 		
+		# if it's a gate count, send the appropriate event to the front end.
+		if evt.message == "gate_count":
+			gate_count = int(evt.data)
+			
+			# we can't rely on getting a notice for every single gate
+			# (MTest in particular reads out too fast for that).
+			# so we use the integer division (//) construction below.
+			stride = Configuration.params["Master node"]["logfileGateCount"]
+			if gate_count // stride > self.last_logged_gate // stride:
+				self.logger.info("  DAQ has reached gate %d..." % gate_count)
+				self.last_logged_gate = gate_count
+				
+			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Running...\nGate %d/%d" % (gate_count, self.runinfo.gates), progress=(gate_count, self.runinfo.gates)) )
+			
 		# if it's a HW error message, we need to abort the subrun.
-		if evt.message == "hw_error":	
+		elif evt.message == "hw_error":	
 			self.logger.error("The " + evt.sender + " readout node reports a hardware error.")
 			if self.running:
 				wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="There was a hardware error while configuring the " + evt.sender + " readout node.  Subrun stopped.", messageheader="Hardware configuration problem") )
