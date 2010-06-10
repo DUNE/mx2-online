@@ -799,9 +799,16 @@ class MainFrame(wx.Frame):
 	#  
 	################################################################################################
 	
-	def AcknowledgeAlert(self, evt=None):
-		""" Dismisses the first alert that is being displayed. """
-		self.alertThread.acknowledge()		# cancels this notification
+	def AcknowledgeAlert(self, evt=None, id=None):
+		""" Dismisses the first alert that is being displayed,
+		    with optional alert ID checking. """
+
+		# if a specific notification is to be dismissed, and this one isn't it, don't do anything.
+		# it's probably coming late or something like that.
+		if id is not None and self.alertThread.current_message.id != id:
+			return
+			
+		self.alertThread.acknowledge()		# cancels current notification
 		
 		page_num = -1
 		for page in range(self.nb.GetPageCount()):
@@ -812,6 +819,7 @@ class MainFrame(wx.Frame):
 		self.nb.ChangeSelection(0)
 		
 		self.SetStatusText("", 0)
+		self.current_alert = None
 
 	def CheckRunNumber(self, evt=None):
 		""" Ensures that the run number can't be lowered
@@ -836,8 +844,10 @@ class MainFrame(wx.Frame):
 
 	def HVCheck(self, evt):
 		""" Solicits confirmation from the user that the PMT voltages are ok. """
+		messageid = self.alertThread.GetID()
+		evt.notification_id = messageid
 		Frames.HVConfirmationFrame(evt)
-		wx.PostEvent(self, Events.AlertEvent(alerttype="notice", messageheader="Check PMT voltages in other window", messagebody="Please review the PMT voltages in the pop-up window and indicate there if it's safe to take data."))
+		wx.PostEvent(self, Events.AlertEvent(alerttype="notice", messageheader="Check PMT voltages in other window", messagebody="Please review the PMT voltages in the pop-up window and indicate there if it's safe to take data.", id=messageid))
 		
 
 	def LoadRunSeriesFile(self, evt=None):
@@ -1146,8 +1156,9 @@ class MainFrame(wx.Frame):
 		else:
 			priority = Threads.AlertMessage.NORMAL_PRIORITY
 		
+		id = evt.id if hasattr(evt, id) else None
 		
-		self.alertThread.messages.put_nowait(Threads.AlertMessage(title=header, text=body, priority=priority))
+		self.alertThread.messages.put_nowait(Threads.AlertMessage(title=header, text=body, priority=priority, id=id))
 		
 
 	
