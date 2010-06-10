@@ -9,13 +9,19 @@ This document briefly summarizes the changes from version to version
 of the MINERvA run control software.  I didn't think to start it
 until most of the way through v4, so it's a bit skimpy below there...
 
-v4r12    Compatibility update for asynchronous DAQ (mnvdaq >= v7r5):
+v4r12    - Compatibility update for asynchronous DAQ (mnvdaq >= v7r5):
            * Readout dispatcher reports on sentinel frame status to main node.
            * Sends SIGTERM to event builder process if no sentinel coming.
            * Readout dispatcher now reads SAM file to get gate count
              (since event builder lags behind DAQ in asynchronous mode)
              and reports to main node for display.
-.
+         - PMT HV notification alert in main window is now dismissed
+           automatically when user selects "continue" or "close" in pop-up
+           window.
+         - HW loading is now always initiated on the next run following a HW
+           error, irrespective of whether the last run series and this one
+           have the same configuration
+. 
 .
 .
 v4       Added MTest beamline DAQ dispatcher/node architecture.
