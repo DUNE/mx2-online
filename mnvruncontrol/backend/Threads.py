@@ -349,6 +349,8 @@ class SocketAlreadyBoundException(Exception):
 #########################################################
 
 class AlertThread(threading.Thread):
+	id_count = 0		# used to give each message a unique ID
+
 	def __init__(self, postback_window):
 		threading.Thread.__init__(self)
 		self.postback_window = postback_window
@@ -358,6 +360,7 @@ class AlertThread(threading.Thread):
 		self.messages = Queue()
 		self.current_message = None
 		self.current_message_displayed = False
+		
 		
 		self.start()
 
@@ -393,17 +396,33 @@ class AlertThread(threading.Thread):
 		self.current_message = None
 		self.current_message_displayed = False
 		
-			
 	def Abort(self):
 		self.time_to_quit = True
+
+	@staticmethod
+	def GetID():
+		""" Get a unique ID for a message. """
+		AlertThread.id_count += 1
+		return AlertThread.id_count
+
 
 class AlertMessage:
 	HIGH_PRIORITY = 2
 	NORMAL_PRIORITY = 1
 	LOW_PRIORITY = 0
-	def __init__(self, title=None, text=None, priority=NORMAL_PRIORITY):
+	def __init__(self, title=None, text=None, priority=NORMAL_PRIORITY, id=None):
 		if title is None and text is None:
 			raise ValueError("Title and text cannot both be blank.")
+		
+		if id is None:
+			self.id = AlertThread.GetID()
+		elif not isinstance(id, str) or id < 1:
+			raise ValueError("Invalid message ID specified.  IDs must be positive integers...")
+		elif id < AlertThread.id_count:
+			raise ValueError("Message ID has already been assigned.  You should really be using AlertThread.GetID()...")
+		else:
+			self.id = id
+			AlertThread.id_count = id		# need to skip to whatever value was assigned to be safe
 
 		self.title = title
 		self.text = text
