@@ -651,6 +651,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 #					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm") )
 					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="Could not configure the hardware for the " + node.name + " readout node.  This subrun will be stopped.", messageheader="Hardware configuration problem") )
 					self.logger.error("Could not set the hardware for the " + node.name + " readout node.  This subrun will be aborted.")
+					# make sure we try to load hardware next time
+					self.last_HW_config = None
+					
 					# need to stop the run startup sequence.
 					return False
 			
@@ -964,6 +967,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 			
 		# if it's a HW error message, we need to abort the subrun.
 		elif evt.message == "hw_error":	
+			# make sure we try to load hardware next time
+			self.last_HW_config = None
+
 			self.logger.error("The " + evt.sender + " readout node reports a hardware error.")
 			if self.running:
 				wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="There was a hardware error while configuring the " + evt.sender + " readout node.  Subrun stopped.", messageheader="Hardware configuration problem") )
