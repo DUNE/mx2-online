@@ -4,7 +4,7 @@
    Used by the run control.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
-                    Feb.-June 2010
+                    Feb.-Apr. 2010
                     
    Address all complaints to the management.
 """
@@ -57,11 +57,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.main_window = main_window
 		
 		# threads that this object will be managing.
-		self.DAQthreads = {}
+		self.DAQthreads = []
+		self.DAQthreadWatcher = None
+		self.timerThreads = []
 
 		# methods that will be started sequentially
 		# by various processes and accompanying messages
-		self.SubrunStartTasks = [ { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
+		self.SubrunStartTasks = [ { "method": self.ETCleanup,                 "message": "Cleaning up any prior ET processes..." },
+		                          { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
 		                          { "method": self.LIBoxSetup,                "message": "Initializing light injection..." },
 		                          { "method": self.ReadoutNodeHWConfig,       "message": "Loading hardware..." },
 		                          { "method": self.ReadoutNodeHVCheck,        "message": "Checking hardware..." } ]
@@ -94,8 +97,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
 		self.filehandler.setFormatter(self.formatter)
 		self.logger.addHandler(self.filehandler)
-		
-		self.last_logged_gate = 0
 
 		# these will need to be set by the run control window before the process is started.
 		# that way we can be sure it's properly configured.
@@ -224,7 +225,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					node.completed = True
 			
 			if not wait_for_reset:
-				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True, sentinel=False))
+				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True))
 		
 	def Cleanup(self):
 		""" Any clean-up actions that need to be taken.
@@ -346,6 +347,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		quitting = not(self.running)
 		self.CloseWindows()			# don't want leftover windows open.
 
+		# if the event contains a list of PIDs that have finished, then
+		# this signal is coming from the thread watcher.
+		# clear out the corresponding elements in the list.
+		if hasattr(evt, "pids_cleared"):
+			for pid in evt.pids_cleared:
+				self.DAQthreads.remove(pid)
+		
 		self.num_startup_steps = len(self.SubrunStartTasks) + len(self.DAQStartTasks)
 		self.startup_step = 0
 
@@ -426,32 +434,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.StartNextThread()			
 		
 	def EndSubrun(self, evt):
-		""" Performs the jobs that need to be done when a subrun ends. 
-		
-		    Generally it is only executed as the event handler for an
-		    EndSubrunEvent. """
-		
-		# note: this method can be called for a lot of different reasons.
-		# here are the ones I can find (more added as I discover them):
-		#  - session cleanup from a previous unclean shutdown can't contact
-		#     all nodes to inform them they need to shutdown.  to prevent
-		#     a never-ending wait for messages that won't be coming,
-		#     OldSessionCleanup() passes us an EndSubrunEvent with "allclear"
-		#     and "sentinel".  this mimics the next item.
-		#  - 'daq_finished' messages received from all readout nodes.  
-		#      SocketThread posts us an EndSubrunEvent with "allclear" and "sentinel."
-		#  - an essential process dies.  DAQthread object posts us
-		#     an EndSubrunEvent with "processname".
-		#  - user wants to skip to the next subrun in a run series.
-		#     Run control frontend posts us an EndSubrunEvent with
-		#     no special attributes.
-		#  - user wants to stop the subrun or run series.  StopDataAcquisition()
-		#     method of this object passes us an EndSubrunEvent with
-		#     "manual".
+		""" Performs the jobs that need to be done when a subrun ends. """
 
-		# block from trying to shut down twice simultaneously
 		if not self.can_shutdown:
 			return
+
 		self.can_shutdown = False
 
 		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finalizing...")
@@ -462,6 +449,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 		with self.messageHandlerLock:
 
 			if hasattr(evt, "processname") and evt.processname is not None:
+	#			if len(self.runseries.Runs) > 1:
+	#				dialog = wx.MessageDialog(None, "The essential process '" + evt.processname + "' died.  This subrun will be need to be terminated.  Do you want to continue with the rest of the run series?  (Selecting 'no' will stop the run series and return you to the idle state.)", evt.processname + " quit prematurely",   wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+	#				self.running = self.running and (dialog.ShowModal() == wx.ID_YES)
+	#			else:			
+	#				wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=evt.processname + " quit prematurely", text="The essential process '" + evt.processname + "' died before the subrun was over.  The subrun will be need to be terminated.") )
+	#				self.running = False
 				self.running = False
 				header = evt.processname + " quit prematurely!"
 				message = ["The essential process '" + evt.processname + "' died before the subrun was over.", "Running has been halted for troubleshooting."]
@@ -502,35 +495,25 @@ class DataAcquisitionManager(wx.EvtHandler):
 				if not success:
 					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["The beamline DAQ node(s) couldn't be stopped.",  "The next subrun could be problematic..."], messageheader="Beamline DAQ node(s) not stopped") )
 		
-			for threadname in self.DAQthreads:		
-				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nSignalling ET threads...", progress=(step, numsteps)) )
+			for thread in self.DAQthreads:		# we leave these in the array so that they can completely terminate.  they'll be removed in StartNextSubrun() if necessary.
+				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping ET threads...", progress=(step, numsteps)) )
 
-				thread = self.DAQthreads[threadname]
-				
-				# remove the thread from the dictionary.
-				# we don't need a handle on it any more.
-				self.DAQthreads[threadname] = None
-
-				# the ET system process stops on its own.  just cut off its display feed.
-				if threadname == "et system":
-					thread.SetRelayOutput(False)
-
-				# the event builder needs to know if it should expect a sentinel.
-				elif threadname == "event builder":
-					# only signal if there's no sentinel coming.
-					# if there isn't, send the process a SIGTERM.
-					if not hasattr(evt, "sentinel") or not evt.sentinel:
-						thread.terminate()
-					
-					# either way, we stop displaying its output.
-					thread.SetRelayOutput(False)
-					
-				# any other threads should be aborted.
-				elif hasattr(thread, "Abort"):		
+				# we might have clicked the 'stop' button while the DAQthreadWatcher is watching these threads,
+				# in which case the list only contains a list of PIDs as placeholders.
+				# in that case, we need to abort the DAQthreadWatcher instead.
+				if hasattr(thread, "Abort"):		
 					thread.Abort()
+				else:
+					self.DAQthreadWatcher.Abort()
 			
 				step += 1
 			
+			while len(self.timerThreads) > 0:
+				thread = self.timerThreads.pop()	# the countdown timers would start more threads.  get rid of them.
+				thread.Abort()
+
+	#		print self.first_subrun, self.subrun
+
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
 
 			try:
@@ -571,6 +554,43 @@ class DataAcquisitionManager(wx.EvtHandler):
 	# Helper methods used by StartNextSubrun()
 	##########################################
 	
+	def ETCleanup(self):
+		""" Manages the cleanup of old ET/DAQ threads. """
+
+		# ET & the DAQ shouldn't be running in two separate sets of processes.
+		# therefore, we need to make sure we let them completely close
+		# before we actually start the next subrun.  however, we can't wait
+		# on them in StartNextSubrun(), because it runs as part of the main thread,
+		# and if we did, the whole program would appear to lock up: since wx also
+		# runs in the main thread, the graphical interface wouldn't be updated.
+		# instead, we spawn a separate thread to watch these processes and
+		# issue the ReadyForNextSubrun event to the DataAcquisitionManager
+		# when they are done.
+		
+		if len(self.DAQthreads) > 0:
+			if self.DAQthreadWatcher is None or not self.DAQthreadWatcher.is_alive():
+				self.DAQthreadWatcher = Threads.DAQWatcherThread(self)
+
+				# transfer all the thread references to the DAQthreadWatcher
+				# to prevent race conditions.  replace them with PIDs in the
+				# DataAcquisitionManager's list as placeholders.
+				pids = []
+				while len(self.DAQthreads) > 0:
+					tmp = self.DAQthreads.pop()
+					self.DAQthreadWatcher.threadsToWatch.append(tmp)
+					pids.append(tmp.pid)
+				self.DAQthreads = pids
+
+				# now watch them.
+				self.DAQthreadWatcher.start()
+
+			# we can't do anything more until they're done,
+			# so signal to StartNextSubrun() to exit immediately (no cleanup).
+			return None
+		
+		# it's safe to go on to the next step 
+		return True
+	
 	def RunInfoAndConnectionSetup(self):
 		""" Configures the run and sets up connections to the readout nodes. """
 		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " begun.")
@@ -591,7 +611,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 			node.configured = False
 			node.completed = False
 			node.shutting_down = False
-			node.sent_sentinel = False
 			wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=on) )
 				
 		if not ok:
@@ -651,9 +670,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 #					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm") )
 					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="Could not configure the hardware for the " + node.name + " readout node.  This subrun will be stopped.", messageheader="Hardware configuration problem") )
 					self.logger.error("Could not set the hardware for the " + node.name + " readout node.  This subrun will be aborted.")
-					# make sure we try to load hardware next time
-					self.last_HW_config = None
-					
 					# need to stop the run startup sequence.
 					return False
 			
@@ -788,7 +804,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append( etSysFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads["et system"] = Threads.DAQthread(etsys_command, "ET system", output_window=etSysFrame, owner_process=self, env=self.environment, is_essential_service=True)
+		self.DAQthreads.append( Threads.DAQthread(etsys_command, "ET system", output_window=etSysFrame, owner_process=self, env=self.environment, is_essential_service=True) ) 
 
 	def StartETMon(self):
 		""" Start the ET monitor process.
@@ -802,7 +818,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s -c %d -p %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", os.getpid(), self.runinfo.ETport)
 		self.windows.append( etMonFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads["et monitor"] = Threads.DAQthread(etmon_command, "ET monitor", output_window=etMonFrame, owner_process=self, env=self.environment)
+		self.DAQthreads.append( Threads.DAQthread(etmon_command, "ET monitor", output_window=etMonFrame, owner_process=self, env=self.environment) )
 
 	def StartEBSvc(self):
 		""" Start the event builder service.
@@ -816,7 +832,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append( ebSvcFrame )
 		self.UpdateWindowCount()
-		self.DAQthreads["event builder"] = Threads.DAQthread(eb_command, "event builder", output_window=ebSvcFrame, owner_process=self, env=self.environment, is_essential_service=True)
+		self.DAQthreads.append( Threads.DAQthread(eb_command, "event builder", output_window=ebSvcFrame, owner_process=self, env=self.environment, is_essential_service=True) )	
 
 	def StartRemoteServices(self):
 		""" Notify all the remote services that we're ready to go.
@@ -851,13 +867,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# and it returns immediately).		    
 		self.logger.info("  Booking subscriptions for 'DAQ finished' messages from readout nodes...")
 		for node in self.readoutNodes:
-			self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self)
+			self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Running...")
 			self.logger.info("    ... subscribed the %s node." % node.name)
-			
-		self.last_logged_gate = 0
-		self.logger.info("  Booking subscription for gate count messages from readout nodes...")]
-		self.socketThread.Subscribe("*", "*", "gate_count", callback=self)
-		self.logger.info("    ... done.")
 
 		# we use a lock to block message reading until all nodes have been initially contacted.
 		# this will ensure that even if one readout node dies right away, things still happen
@@ -905,7 +916,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 					break
 				else:
 					wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
-		##end## with self.messageHandlerLock
 	
 		if self.running:
 			self.logger.info("  All DAQ services started.  Data acquisition for subrun %d underway." % (self.subrun + self.first_subrun) )
@@ -918,7 +928,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.windows.append(frame)
 		self.UpdateWindowCount()
-		self.DAQthreads["test process"] = Threads.DAQthread(command, "test process", output_window=frame, owner_process=self, next_thread_delay=3, is_essential_service=True)
+		self.DAQthreads.append( Threads.DAQthread(command, "test process", output_window=frame, owner_process=self, next_thread_delay=3, is_essential_service=True) )
 		
 
 	##########################################
@@ -951,25 +961,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.messageHandlerLock.acquire()
 		self.logger.debug("Successfully acquired message handler lock.")
 		
-		# if it's a gate count, send the appropriate event to the front end.
-		if evt.message == "gate_count":
-			gate_count = int(evt.data)
-			
-			# we can't rely on getting a notice for every single gate
-			# (MTest in particular reads out too fast for that).
-			# so we use the integer division (//) construction below.
-			stride = Configuration.params["Master node"]["logfileGateCount"]
-			if gate_count // stride > self.last_logged_gate // stride:
-				self.logger.info("  DAQ has reached gate %d..." % gate_count)
-				self.last_logged_gate = gate_count
-				
-			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Running...\nGate %d/%d" % (gate_count, self.runinfo.gates), progress=(gate_count, self.runinfo.gates)) )
-			
 		# if it's a HW error message, we need to abort the subrun.
-		elif evt.message == "hw_error":	
-			# make sure we try to load hardware next time
-			self.last_HW_config = None
-
+		if evt.message == "hw_error":	
 			self.logger.error("The " + evt.sender + " readout node reports a hardware error.")
 			if self.running:
 				wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="There was a hardware error while configuring the " + evt.sender + " readout node.  Subrun stopped.", messageheader="Hardware configuration problem") )
@@ -1008,32 +1001,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# and then do the subrun shutdown stuff.
 		elif evt.message == "daq_finished":
 			alldone = True
-			haveSentinel = False
-
-			matches = re.match("sentinel=(?P<status>YES|NO)", evt.data)
-			try:
-				sentinelStatus = matches.group("status") == "YES"
-			except IndexError:		# thrown when there is no such group
-				sentinelStatus = False
-				
 			for node in self.readoutNodes:
 				# first set the node we've been notified about to "done."
 				if node.name == evt.sender:
-					sentSentinel = "DID" if sentinelStatus else "DID NOT"
-					self.logger.debug("    ==> %s node reports it's done taking data and %s send a sentinel." % (node.name, sentSentinel))
+					self.logger.debug("    ==> %s node reports it's done taking data." % node.name)
 					node.completed = True
 					node.shutting_down = False
-					node.sent_sentinel = sentinelStatus
 					
 					self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", self)
-					
-				else:
-					alldone = alldone and node.completed
-					
-				# either way, we need to know if a sentinel frame was sent.
-				haveSentinel = haveSentinel or node.sent_sentinel
-
-					
 					
 				# we DON'T force the other nodes to shut down because
 				# the nodes depend on each other for gate synchronization
@@ -1061,6 +1036,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 				# the event builder before it has completely assembled the
 				# last gate ...
 				
+				else:
+					alldone = alldone and node.completed
 
 #				# now, check if any other ones are still running.
 #				elif not node.completed:
@@ -1102,7 +1079,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				# all DAQs have been closed cleanly.
 				# the subrun needs to end then.
 				# we pass 'allclear = True' to signify this.
-				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True, sentinel=haveSentinel))
+				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True))
 
 		else:
 			self.logger.debug("Got a message I don't know how to handle.  Ignoring.")

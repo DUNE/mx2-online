@@ -51,7 +51,6 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                   
                   "Master node"      : { "master_logfileLocation"  : ( Defaults.LOGFILE_LOCATION_DEFAULT,             "Run control (frontend) log file location",        str   ),
                                          "master_logfileName"      : ( Defaults.RC_LOGFILE_DEFAULT,                   "Run control (frontend) log file name",            str   ),
-                                         "logfileGateCount"        : ( Defaults.LOGFILE_GATE_COUNT_INTERVAL,          "Interval to write gate count to log file",        int   ),
                                          "etSystemFileLocation"    : ( Defaults.ET_SYSTEM_LOCATION_DEFAULT,           "ET system file location",                         str   ),
                                          "sessionfile"             : ( Defaults.DAQMGR_SESSION_FILE,                  "Where to store the DAQ manager session file",     str   ),
                                          "master_rawdataLocation"  : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (master node)",                 str   )  },
@@ -60,7 +59,6 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "readout_PIDfileLocation" : ( Defaults.READOUT_DISPATCHER_PIDFILE,           "Readout dispatcher PID file location",            str   ),
                                          "readout_logfileLocation" : ( Defaults.LOGFILE_LOCATION_DEFAULT,             "Readout log file location",                       str   ),
                                          "readout_logfileName"     : ( Defaults.READOUT_DISPATCHER_LOGFILE,           "Readout log file name",                           str   ),
-                                         "SAMfileLocation"         : ( Defaults.SAM_FILE_LOCATION,                    "Location of SAM files",                           str   ),
                                          "SCfileLocation"          : ( Defaults.SLOWCONTROL_CONFIG_LOCATION_DEFAULT,  "Slow control HW file location",                   str   ),
                                          "SCBeamFile"              : ( Defaults.SLOWCONTROL_BEAM_FILE,                "'Beam' HW configuration file",                    str   ),
                                          "SCLIFile"                : ( Defaults.SLOWCONTROL_LI_FILE,                  "'Light injection' HW configuration file",         str   ),

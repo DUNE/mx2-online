@@ -72,10 +72,7 @@ class crim {
 
 		/*! variables for holding information about the setup of the crim for use. */
 		unsigned short timingSetup, gateWidthSetup, TCALBDelaySetup;
-	
-		/*! cosmic mode control registers. */
-		unsigned int sequencerResetRegister;
-	
+		
 		unsigned short crimStatusValue;
 
 		/*!  these are the various masks that are used to set up  running conditions */
@@ -158,6 +155,7 @@ class crim {
 		unsigned short GetSoftSGATEStop() {return softSGATEstop;};
 		unsigned short GetSoftCNRST() {return softCNRST;};
 		unsigned short GetSoftCNRSTSeq() {return softCNRSTseq;};
+		void SetupOneShot();
 
 		unsigned int GetTimingRegister() {return timingRegister;};
 		unsigned int GetSGATEWidthRegister() {return SGATEWidthRegister;};
@@ -231,10 +229,6 @@ class crim {
                 unsigned int inline GetGateTimeWordHighAddress() {
 			return gateTimeWordHighAddress;
 		}; // returns the most significant 16 bits of the MINOS GATE time address
-
-		unsigned int inline GetSequencerResetRegister() {
-			return sequencerResetRegister;
-		} // returns the sequencer reset register
 
 
 		/*! control stuff */

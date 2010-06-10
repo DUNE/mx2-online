@@ -7,7 +7,7 @@ mnvruncontrol -- the MINERvA run control
 
 This document contains a few notes on the internal operations of the run control
 software so as to give someone intending to work on it a general idea of what's
-going on (and maybe some ideas on how to avoid catastrophically destroying it).
+going on (and maybe how to avoid catastrophically destroying it).
 
 
 Most of the code is intended to be relatively well-documented inline, so only

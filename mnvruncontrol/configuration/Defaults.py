@@ -35,7 +35,6 @@ DAQMGR_SESSION_FILE = "/work/conditions/daqmgr_session.dat"
 LOGFILE_NAME_PATTERN = "^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w{5})_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller(?P<controller>[01])Log.txt$"
 
 NOTIFICATION_INTERVAL = 2		# in seconds
-LOGFILE_GATE_COUNT_INTERVAL = 50	# the master log file will get a notice every this many gates
 
 # Socket communication defaults.
 DISPATCHER_PORT     = 1098
@@ -60,7 +59,6 @@ MAX_REPEATED_REQUEST_LOGS = 5
 # dispatcher process details
 READOUT_DISPATCHER_PIDFILE = "/work/conditions/readout_dispatcher.pid"
 READOUT_DISPATCHER_LOGFILE = "/work/data/logs/readout_dispatcher.log"
-SAM_FILE_LOCATION = "/work/data/sam"
 OM_DISPATCHER_PIDFILE = "/tmp/om_dispatcher.pid"
 OM_LOGFILE_LOCATION_DEFAULT = "/work/logs"
 OM_DISPATCHER_LOGFILE = "%s/om_dispatcher.log" % OM_LOGFILE_LOCATION_DEFAULT

@@ -14,7 +14,6 @@ import subprocess
 import threading
 import time
 import sys
-import re
 import os
 import os.path
 import logging
@@ -147,7 +146,7 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 			if show_details:
 				self.logger.info("   minervadaq command:")
 				self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
-			self.daq_thread = DAQThread(owner_process=self, logger=self.logger, daq_command=executable, master_address=self.lock_address, etfile=matches.group("etfile"))
+			self.daq_thread = DAQThread(self, self.logger, executable, self.lock_address)
 		except Exception, excpt:
 			self.logger.error("   ==> DAQ process can't be started!")
 			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
@@ -266,7 +265,7 @@ class DAQThread(threading.Thread):
 	    so that they can be monitored continuously.  When
 	    they terminate, a socket is opened to the master
 	    node to emit a "done" signal."""
-	def __init__(self, owner_process, logger, daq_command, master_address, etfile):
+	def __init__(self, owner_process, logger, daq_command, master_address):
 		threading.Thread.__init__(self)
 		
 		self.daq_process = None
@@ -274,9 +273,6 @@ class DAQThread(threading.Thread):
 		self.owner_process = owner_process
 		self.master_address = master_address
 		self.daq_command = daq_command
-		self.sam_file = "%s/%s" % (Configuration.params["Readout nodes"]["SAMfileLocation"], etfile)
-		self.sam_file_last_look = 0
-		self.sam_file_misses = 0
 		
 		self.daemon = True
 		
@@ -284,8 +280,6 @@ class DAQThread(threading.Thread):
 		
 	def run(self):
 		try:
-			# dump the output of minervadaq to a file so that crashes can be investigated.
-			# we only keep one copy because it will be rare that anyone is interested.
 			filename = "%s/minervadaq.log" % Configuration.params["Readout nodes"]["readout_logfileLocation"]
 			with open(filename, "w") as logfile:
 				self.daq_process = subprocess.Popen(self.daq_command, env=environment, stdout=logfile.fileno(), stderr=subprocess.STDOUT)
@@ -293,71 +287,16 @@ class DAQThread(threading.Thread):
 
 				self.owner_process.logger.info("   ==>  Process id: " + str(self.pid) + ".")
 
-				# check the SAM file every so often
-				while self.daq_process.poll() is None:
-					# don't busy-wait
-					time.sleep(0.1)
-
-					# we've determined this node isn't producing a SAM file.
-					if self.sam_file is None:
-						continue
-				
-					# this is so ugly it would make Cinderella's stepsisters look like Angelina Jolie by comparison.
-					# unfortunately, though, I can't rely on the SAM file being there right away
-					# because the DAQ doesn't create it until it's read out one full gate.  sigh.
-					# I just hope I'm not creating undue wear on the disk by polling like this.
-						
-					try:
-						stats = os.stat(self.sam_file)
-					except OSError:
-						self.sam_file_misses += 1
-						
-						# if we get too many misses we will assume it's not going to show up (shudder)
-						# ... is two seconds too short?
-						if self.sam_file_misses > 20:
-							self.sam_file = None
-					else:
-						# if the file has been modified since the last look, report a new gate.
-						if stats.st_mtime > self.sam_file_last_look:
-							self.ReportNewGate(stats.st_mtime)
-				
-				self.returncode = self.daq_process.returncode
+				self.returncode = self.daq_process.wait()
 		
 				self.owner_process.logger.info("DAQ subprocess finished.  Its output will be written to '" + filename + "'.")
+				# dump the output of minervadaq to a file so that crashes can be investigated.
+				# we only keep one copy because it will be rare that anyone is interested.
 		except (OSError, IOError) as e:
 			self.logger.exception("minervadaq log file error: %s" % e.message)
 			self.logger.warning("   ==> log file information will be discarded.")
 		
-		sentinel = "YES" if self.returncode == 0 else "NO"
-		
-		self.owner_process.queue.put(Dispatcher.Message(message="daq_finished sentinel=%s" % sentinel, recipient=Dispatcher.MASTER))
-		
-	def ReportNewGate(self, file_mod_time):
-		""" Opens up the SAM file and parses it to find the gate count,
-		    then sends this information to the master node. """
-
-		# gotta beware.  the DAQ is writing to this file repeatedly,
-		# so we might wind up with an unsuccessful open.
-		try:
-			with open(self.sam_file, "r") as sam_file:
-				# we attempt to get the whole file at once -- it's short.
-				# this way it (hopefully) won't be changing under our feet.
-				sam_data = sam_file.read()
-				
-				# now we look for the token "eventCount=".
-				matches = re.search("eventCount=(?P<num_gates>\d+),", sam_data)
-
-				# if we find it, we report it, THEN record when we found it.
-				# notice that this way if we get an exception, or don't find
-				# the gate count in the file (maybe it's still being written),
-				# we'll wind up trying again on the next time around.
-				if matches is not None:
-					self.owner_process.queue.put(Dispatcher.Message(message="gate_count %s" % matches.group("num_gates"), recipient=Dispatcher.MASTER))
-					self.sam_file_last_look = file_mod_time
-				
-		# if we can't open the file, oh, well.  we'll be trying again in 0.1 seconds anyway.
-		except (IOError, OSError):
-			pass
+		self.owner_process.queue.put(Dispatcher.Message(message="daq_finished", recipient=Dispatcher.MASTER))
 				
 
 #########################

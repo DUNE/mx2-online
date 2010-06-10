@@ -16,7 +16,7 @@
 #include "log4cppHeaders.h"
 
 /*********************************************************************************
-* Class for creating general Frame header objects for use with the 
+* Class for creating FPGA Frame header objects for use with the 
 * MINERvA data acquisition system and associated software projects.
 *
 * Elaine Schulte, Rutgers University
@@ -26,14 +26,15 @@
 
 /*! \class Frames
 *
+*
 * \brief The base class for all LVDS data exchange frames.
 *
 */
 
 class Frames {
-/*! This class makes up the general base frames for use in communicating
- *  through the crate & cards.  
- */
+/*! this class makes up the general FPGA frames for use in communicating
+ * through the crate & cards.  */
+
 	protected:
 		static const int MaxSendLength;  
 		static const int MaxReceiveLength; 
@@ -44,7 +45,8 @@ class Frames {
 		unsigned short sequentialIndex; //for frame ID
 		unsigned char FrameID[2]; //Starts out Empty, filled on return of message
 		unsigned char frameHeader[9]; //a frame header, add this to the message
-		unsigned char *outgoingMessage; //the character string for the message sent to a device
+		unsigned char *outgoingMessage; //the character string for the message sent to
+										//a device
 		unsigned char broadcastCommand[1], febNumber[1], 
 			messageDirection[1], targetDevice[1], 
 			deviceFunction[1];

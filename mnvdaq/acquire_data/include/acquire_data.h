@@ -5,7 +5,6 @@
 #include "adctdc.h" // This class isn't included in the contoller, but we need it for reads & writes.
 #include "acquire.h" 
 #include "log4cppHeaders.h"
-#include "readoutObject.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
@@ -29,9 +28,7 @@ typedef enum RunningModes {
 	Cosmics                 = 2, // "Cosmic" - Intneral CRIM Timing, w/ Frequency Set!
 	PureLightInjection      = 3, // MTM CRIM Timing, (No Frequency), software gates, LI Box alive
 	MixedBeamPedestal       = 4, // MTM CRIM Timing, (No Frequency), MTM && software gates
-	MixedBeamLightInjection = 5, // MTM CRIM Timing, (No Frequency), MTM && software gates, LI Box alive
-	MTBFBeamMuon            = 6, // MTBF=="Cosmic" - Intneral CRIM Timing, w/ Frequency Set!
-	MTBFBeamOnly            = 7  // MTBF=="Cosmic" - Intneral CRIM Timing, w/ Frequency Set!
+	MixedBeamLightInjection = 5  // MTM CRIM Timing, (No Frequency), MTM && software gates, LI Box alive
 };
 
 // The TriggerType dictates whether or not the DAQ issues a software gate command to the CRIM and 
@@ -44,39 +41,12 @@ typedef enum TriggerType {
 	ChargeInjection = 0x0004,
 	Cosmic          = 0x0008,
 	NuMI            = 0x0010,
-	MTBFMuon        = 0x0020,
-	MTBFBeam        = 0x0040,
+	TGReserved6     = 0x0020,
+	TGReserved7     = 0x0040,
 	MonteCarlo      = 0x0080  // Obviously, the DAQ should not write this type, ever!
 };
 
-
-// Logging base.
 log4cpp::Category& acqData = log4cpp::Category::getInstance(std::string("acqData"));
-
-
-// Mixed mode cutoff time for physics spills.  If a physics gate takes longer than this to
-// read out, we will abort the following calibration gate and skip to another physics gate.
-#if WH14T||WH14B
-#if SINGLEPC
-const int physReadoutMicrosec = 13500; //microseconds, useful test stand value
-//const int physReadoutMicrosec = 135000; //microseconds, useful test stand value
-#else
-const int physReadoutMicrosec = 150000; //microseconds, useful test stand value?
-#endif // WH14
-#else
-const int physReadoutMicrosec = 999000; //microseconds, good MINERvA value (testing)
-#endif
-
-// Total allowed readout times (microseconds).
-int allowedReadoutTime;
-// Bail on any gate taking longer than these times and set an error flag.
-// Label by triggerType.
-const int allowedPedestal       =  1000000;
-//const int allowedPedestal       =  5000;  // Play-around test value.  
-const int allowedNuMI           =  2100000;
-const int allowedCosmic         = 10000000;  // UNTESTED! (Really, an MTest value.)
-const int allowedLightInjection =  1100000;
-
 
 /*! \class acquire_data
  *  \brief The class containing all methods necessary for 
@@ -103,17 +73,16 @@ class acquire_data {
 
 		unsigned char *DPMData; /*!<A buffer for handling BLT data */
 
-		boost::mutex data_lock, send_lock; /*!< Boost multiple exclusions for threaded operation */
+		boost::mutex crim_lock, croc_lock, feb_lock, data_lock,
+			send_lock, receive_lock, connect_lock; /*!< Boost multiple exclusions for threaded operation */
 
 		static const int dpmMax; /*!<Maximum number of bytes the DPM can hold */
 		std::ofstream frame_acquire_log; /*!< log file streamer for timing output */
 		std::string et_filename; /*!< A string object for the Event Transfer output filename */
 		static const int numberOfHits;
-		static const unsigned int timeOutSec; /*!< How long we will wait for a beam spill before moving on... */
 		log4cpp::Appender* acqAppender;
 		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */
 
-		static const bool checkForMessRecvd, doNotCheckForMessRecvd; /*!< Flags for ReadStatus. */
 	public:
 		/*! Specialized constructor. */
 		acquire_data(std::string fn, log4cpp::Appender* appender, log4cpp::Priority::Value priority, 
@@ -141,7 +110,7 @@ class acquire_data {
 		controller inline *GetController() {return daqController;};
 
 		/*! Function to initialize the data acquisition electronics and make up necessary functional objects */
-		void InitializeDaq(int id, RunningModes runningMode, std::list<readoutObject*> *readoutObjs=0);
+		void InitializeDaq(int id, RunningModes runningMode); // Pass it a controller ID & a running mode.
 
 		/*! Function to initialize a CRIM at the given VME address w/ index & running mode */
 		void InitializeCrim(int address, int index, RunningModes runningMode); 
@@ -165,9 +134,6 @@ class acquire_data {
 		// Passing an array like this is a bit old fashioned, but there it is...
 		int WriteCROCFastCommand(int id, unsigned char command[]);
 
-		/*! Reset the CRIM sequencer latch (only needed in Cosmic mode) */
-		int ResetCRIMSequencerLatch(int id);
-
 		/*! A templated function for sending messages from a generic "device" */
 		template <class X> int SendMessage(X *device, croc *crocTrial, channels *channelTrial, bool singleton);
 
@@ -178,11 +144,9 @@ class acquire_data {
 		template <class X> int FillDPM(croc *crocTrial, channels *channelTrial, X *frame, 
 			int outgoing_length, int incoming_length);
 
-		/*! Function which executes the acquisition sequence for a given FEB.
-		    We pass a boolean flag and hit depth integer to control the "readout level" for 
-		    each FEB. */
+		/*! Function which executes the acquisition sequence for a given FEB */
 		bool TakeAllData(feb *febTrial, channels *channelTrial, croc *crocTrial, event_handler *evt, int thread, 
-			et_att_id  attach, et_sys_id  sys_id, bool readFPGA=true, int nReadoutADC=8);
+			et_att_id  attach, et_sys_id  sys_id);
 
 		/*! Function which fills an event structure for further data handling by the event builder; templated */
 		template <class X> void FillEventStructure(event_handler *evt, int bank, X *frame, 
@@ -213,48 +177,10 @@ class acquire_data {
 		int AcknowledgeIRQ();
 
 		/*! Function which sends data to the event builder via ET */
-		bool ContactEventBuilder(event_handler *evt, int thread, et_att_id attach, et_sys_id sys_id);
+		void ContactEventBuilder(event_handler *evt,int thread, et_att_id  attach, et_sys_id  sys_id);
 
 		/*! Function that gets the MINOS SGATE value from the CRIM registers.  Check the "master" CRIM. */
 		unsigned int GetMINOSSGATE();
-
-		// New readout model functions.
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		/*! Send a Clear and Reset to a CROC FE Channel. */
-		void SendClearAndReset(channels *theChain);
-		/*! Read the status register on a CROC FE Channel with a flag to see if we should check for the message recv'd. */
-		int ReadStatus(channels *theChain, bool receiveCheck);
-
-		/*! Initialize a list of readoutObjects. */
-		void InitializeReadoutObjects(std::list<readoutObject*> *objectList);
-		/*! Display the contents of a list of readoutObjects. */
-		void DisplayReadoutObjects(std::list<readoutObject*> *objectList);
-
-		/*! Send messages to a generic device using normal write cycle. 
-		    -> Write the outgoing message from the device to the FE Channel FIFO, send the message. */
-		template <class X> void SendFrameData(X *device, channels *theChannel);
-
-		/*! Send messages to a generic device using FIFO BLT write cycle. 
-		    -> Write the outgoing message from the device to the FE Channel FIFO using BLT, send the message. */ 
-		template <class X> void SendFrameDataFIFOBLT(X *device, channels *theChannel);
-
-		/*! Receive messages for a generic device.
-		   -> Read DPM pointer, read BLT, store data in *device* buffer.
-		   -> Should be used primarily for debugging and for building the FEB list. */
-		template <class X> int RecvFrameData(X *device, channels *theChannel);
-
-		/*! Receive messages. 
-		   -> Read DPM pointer, read BLT, store data in *channel* buffer. */
-		int RecvFrameData(channels *theChannel);
-
-		/*! Function that fills an event structure for further data handling by the event builder. */
-		void FillEventStructure(event_handler *evt, int bank, channels *theChannel);
-
-		/*! Run the full acquisition sequence for a gate, write the data to file. */
-		int WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
-			std::list<readoutObject*> *readoutObjects, const int allowedTime, 
-			const bool readFPGA, const int nReadoutADC);
 };
 
 #endif

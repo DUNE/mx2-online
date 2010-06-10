@@ -696,11 +696,6 @@ int feb::DecodeRegisterValues(int buffersize)
 
 	} // end if initialized
 
-#if DEBUG_FEB           
-	std::cout << "Decoded FPGA register values:" << std::endl;
-	ShowValues();   
-#endif                  
-
 	// This finishes the incoming message.
 	return 0;
 }
@@ -761,7 +756,7 @@ void feb::SetFEBDefaultValues()
 	TripXCompEnc[0] = 0;
 	for (int i=0; i<4; i++) {DiscrimEnableMask[i]=0xFFFF;} // default to discr. enabled
 	GateTimeStamp = 0; // readonly
-#if DEBUG_FEB&&DEBUG_VERBOSE
+#if DEBUG_FEB
 	std::cout << "Default FPGA register values set." << std::endl;
 	ShowValues();
 #endif
