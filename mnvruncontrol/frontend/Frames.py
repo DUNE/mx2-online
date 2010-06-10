@@ -31,6 +31,7 @@ class HVConfirmationFrame(wx.Frame):
 		wx.Frame.__init__(self, evt.daqmgr.main_window, -1, "PMTs are not clearly ready", size=(600,400))
 		
 		self.DAQmgr = evt.daqmgr
+		self.notification_id = evt.notification_id
 		self.nodes = self.DAQmgr.readoutNodes
 
 		panel = wx.Panel(self)
@@ -126,7 +127,7 @@ class HVConfirmationFrame(wx.Frame):
 			
 			index = self.pmtlist.GetNextItem(index)
 			
-		# sort them in descending order.
+		# sort them in DESCENDING order.
 		self.pmtlist.SortItems(lambda a,b : 0 if a == b else (-1 if a > b else 1))
 		
 		# now convert the deviations from ADC counts to volts
@@ -142,10 +143,14 @@ class HVConfirmationFrame(wx.Frame):
 
 	def OnContinue(self, evt):
 		wx.PostEvent(self.DAQmgr, Events.ReadyForNextSubrunEvent())
-		self.Close()
+		self.Dismiss()
 	
 	def OnCancel(self, evt):
 		wx.PostEvent(self.DAQmgr, Events.StopRunningEvent())
+		self.Dismiss()
+		
+	def Dismiss(self):
+		self.daqmgr.main_window.AcknowledgeAlert(id=self.notification_id)
 		self.Close()
 
 #########################################################
