@@ -274,7 +274,7 @@ class DAQThread(threading.Thread):
 		self.owner_process = owner_process
 		self.master_address = master_address
 		self.daq_command = daq_command
-		self.sam_file = "%s/%s" % (Configuration.params["Readout nodes"]["SAMfileLocation"], etfile)
+		self.sam_file = "%s/%s_SAM.py" % (Configuration.params["Readout nodes"]["SAMfileLocation"], etfile)
 		self.sam_file_last_look = 0
 		self.sam_file_misses = 0
 		
@@ -292,7 +292,7 @@ class DAQThread(threading.Thread):
 				self.pid = self.daq_process.pid		# less typing.
 
 				self.owner_process.logger.info("   ==>  Process id: " + str(self.pid) + ".")
-
+				
 				# check the SAM file every so often
 				while self.daq_process.poll() is None:
 					# don't busy-wait
