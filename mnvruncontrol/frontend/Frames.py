@@ -150,7 +150,7 @@ class HVConfirmationFrame(wx.Frame):
 		self.Dismiss()
 		
 	def Dismiss(self):
-		self.daqmgr.main_window.AcknowledgeAlert(id=self.notification_id)
+		self.DAQmgr.main_window.AcknowledgeAlert(alertid=self.notification_id)
 		self.Close()
 
 #########################################################

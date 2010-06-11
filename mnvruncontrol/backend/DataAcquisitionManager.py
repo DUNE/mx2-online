@@ -492,6 +492,12 @@ class DataAcquisitionManager(wx.EvtHandler):
 			
 				if not success:
 					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["Not all readout nodes could be stopped.",  "The next subrun could be problematic..."], messageheader="Not all nodes stopped") )
+
+				# if we WERE able to reach all the nodes, then we should wait
+				# until they've signalled that they have finished data taking.
+				else:
+					self.can_shutdown = True
+					return
 		
 			if self.mtest_useBeamDAQ:
 				success = True
@@ -501,16 +507,14 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 				if not success:
 					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["The beamline DAQ node(s) couldn't be stopped.",  "The next subrun could be problematic..."], messageheader="Beamline DAQ node(s) not stopped") )
-		
+				else:
+					mtestDAQ_stopped = True
+			
 			for threadname in self.DAQthreads:		
 				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nSignalling ET threads...", progress=(step, numsteps)) )
 
 				thread = self.DAQthreads[threadname]
 				
-				# remove the thread from the dictionary.
-				# we don't need a handle on it any more.
-				self.DAQthreads[threadname] = None
-
 				# the ET system process stops on its own.  just cut off its display feed.
 				if threadname == "et system":
 					thread.SetRelayOutput(False)
@@ -520,16 +524,26 @@ class DataAcquisitionManager(wx.EvtHandler):
 					# only signal if there's no sentinel coming.
 					# if there isn't, send the process a SIGTERM.
 					if not hasattr(evt, "sentinel") or not evt.sentinel:
-						thread.terminate()
+						try:
+							thread.process.terminate()
+						# the process might have crashed.
+						except OSError:
+							pass
 					
 					# either way, we stop displaying its output.
 					thread.SetRelayOutput(False)
 					
 				# any other threads should be aborted.
-				elif hasattr(thread, "Abort"):		
+				elif hasattr(thread, "Abort"):
+					self.logger.info("Stopping thread '%s'..." % threadname)	
 					thread.Abort()
 			
 				step += 1
+			
+			# remove the threads from the dictionary.
+			# we don't need a handle on them any more.
+			self.DAQthreads = {}
+			
 			
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
 
@@ -543,6 +557,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping listeners...", progress=(step, numsteps)) )
 			for node in self.readoutNodes:
 				self.socketThread.UnsubscribeAll(node.id)
+			self.socketThread.UnsubscribeAll("*")
 
 			self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finished.")
 
@@ -855,7 +870,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			self.logger.info("    ... subscribed the %s node." % node.name)
 			
 		self.last_logged_gate = 0
-		self.logger.info("  Booking subscription for gate count messages from readout nodes...")]
+		self.logger.info("  Booking subscription for gate count messages from readout nodes...")
 		self.socketThread.Subscribe("*", "*", "gate_count", callback=self)
 		self.logger.info("    ... done.")
 
@@ -1102,6 +1117,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				# all DAQs have been closed cleanly.
 				# the subrun needs to end then.
 				# we pass 'allclear = True' to signify this.
+				self.logger.info("All nodes finished.  Sentinel status: %s" % str(haveSentinel))
 				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True, sentinel=haveSentinel))
 
 		else:

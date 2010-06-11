@@ -799,13 +799,13 @@ class MainFrame(wx.Frame):
 	#  
 	################################################################################################
 	
-	def AcknowledgeAlert(self, evt=None, id=None):
+	def AcknowledgeAlert(self, evt=None, alertid=None):
 		""" Dismisses the first alert that is being displayed,
 		    with optional alert ID checking. """
 
 		# if a specific notification is to be dismissed, and this one isn't it, don't do anything.
 		# it's probably coming late or something like that.
-		if id is not None and self.alertThread.current_message.id != id:
+		if alertid is not None and self.alertThread.current_message.id != alertid:
 			return
 			
 		self.alertThread.acknowledge()		# cancels current notification
@@ -1156,9 +1156,9 @@ class MainFrame(wx.Frame):
 		else:
 			priority = Threads.AlertMessage.NORMAL_PRIORITY
 		
-		id = evt.id if hasattr(evt, id) else None
+		alertid = evt.id if hasattr(evt, "id") else None
 		
-		self.alertThread.messages.put_nowait(Threads.AlertMessage(title=header, text=body, priority=priority, id=id))
+		self.alertThread.messages.put_nowait(Threads.AlertMessage(title=header, text=body, priority=priority, alertid=alertid))
 		
 
 	

@@ -148,9 +148,9 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 				self.logger.info("   minervadaq command:")
 				self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
 			self.daq_thread = DAQThread(owner_process=self, logger=self.logger, daq_command=executable, master_address=self.lock_address, etfile=matches.group("etfile"))
-		except Exception, excpt:
+		except:
 			self.logger.error("   ==> DAQ process can't be started!")
-			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
+			self.logger.exception("   ==> Error message: ")
 			return "1"
 		else:
 			if show_details:

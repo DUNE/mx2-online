@@ -93,10 +93,9 @@ class DAQthread(threading.Thread):
 		# due to some external signal, it's the first thing to quit.
 		# the other processes should be stopped, the user should be informed,
 		# and the run stopped since further data is expected to be useless.
-		# however, if this thread is being watched by the thread watcher,
-		# we don't need this event because the thread watcher will issue it
-		# when ALL the DAQ threads are done.
-		if self.is_essential_service and not self.time_to_quit:
+		# this is only expected to really be a problem if it exits with a
+		# non-zero return value, however.
+		if self.is_essential_service and not self.time_to_quit and self.process.returncode != 0:
 			wx.PostEvent(self.owner_process, Events.EndSubrunEvent(processname=self.process_identity))
 			
 	def read(self, want_cleanup_read = False):
@@ -243,6 +242,7 @@ class SocketThread(threading.Thread):
 			self.logger.debug("New socket message subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
 		else:
 			self.logger.warning("Not adding duplicate socket message subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
+			self.logger.debug("  existing subscriptions:\n%s" % str(self.subscriptions))
 			
 	def Unsubscribe(self, addressee, node_name, message, callback):
 		""" Cancel a subscription previously booked using Subscribe(). """
@@ -266,7 +266,7 @@ class SocketThread(threading.Thread):
 			for subscription in self.subscriptions:
 				if subscription.recipient == addressee:
 					self.subscriptions.remove(subscription)		# remove() is thread-safe.
-					self.logger.debug("Released socket subscription: (addressee, node name, message)\n(%s, %s, %s)" % (subscription.recipient, subscription.node_name, subscription.message))
+					self.logger.debug("Released socket subscription: (addressee, node name, message)\n%s" % subscription)
 					list_changed = True
 					break
 
@@ -295,11 +295,7 @@ class SocketThread(threading.Thread):
 		message = matches.group("message").partition(" ")[0]
 		data = matches.group("message").partition(" ")[2]
 		for subscription in self.subscriptions:
-			if     matches.group("addressee") == subscription.recipient \
-			   and matches.group("sender") == subscription.node_name \
-			   and message == subscription.message:
-				matched = True
-				
+			if subscription.message_match(matches.group("addressee"), matches.group("sender"), message):
 				wx.PostEvent( subscription.callback, Events.SocketReceiptEvent(addressee=matches.group("addressee"), sender=matches.group("sender"), message=message, data=data) )
 				self.logger.debug("Message matched subscription.  Delivered.")
 #			else:
@@ -336,6 +332,18 @@ class SocketSubscription:
 
 		except AttributeError:		# if other doesn't have one of these properties, it can't be equal!
 			return False
+			
+	def message_match(self, addressee, sender, message):
+		""" Does a message match this subscription? 
+		
+		    Needed so that we centralize the functionality for message matching:
+		    a subscription 'contains' a message if its addressee, sender, and message match. """
+		    
+		recipient_match = self.recipient == "*" or self.recipient == addressee
+		sender_match = self.node_name = "*" or self.node_name == sender
+		message_match = self.message.partition(" ")[0] == message.partition(" ")[0]
+
+		return recipient_match and sender_match and message_match
 			
 	def __repr__(self):
 		return "(%s, %s, %s)" % (self.recipient, self.node_name, self.message)
@@ -410,19 +418,19 @@ class AlertMessage:
 	HIGH_PRIORITY = 2
 	NORMAL_PRIORITY = 1
 	LOW_PRIORITY = 0
-	def __init__(self, title=None, text=None, priority=NORMAL_PRIORITY, id=None):
+	def __init__(self, title=None, text=None, priority=NORMAL_PRIORITY, alertid=None):
 		if title is None and text is None:
 			raise ValueError("Title and text cannot both be blank.")
-		
-		if id is None:
+			
+		if alertid is None:
 			self.id = AlertThread.GetID()
-		elif not isinstance(id, str) or id < 1:
+		elif not isinstance(alertid, int) or alertid < 1:
 			raise ValueError("Invalid message ID specified.  IDs must be positive integers...")
-		elif id < AlertThread.id_count:
+		elif alertid < AlertThread.id_count:
 			raise ValueError("Message ID has already been assigned.  You should really be using AlertThread.GetID()...")
 		else:
-			self.id = id
-			AlertThread.id_count = id		# need to skip to whatever value was assigned to be safe
+			self.id = alertid
+			AlertThread.id_count = alertid		# need to skip to whatever value was assigned to be safe
 
 		self.title = title
 		self.text = text
