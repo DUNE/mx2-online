@@ -3,7 +3,7 @@ export DIM_DNS_NODE=mnvnearline1.fnal.gov
 
 source /work/mnvdaq/setupdaqenv.sh
 source /home/nearonline/cmtuser/setup.sh
-pushd /home/nearonline/cmtuser/Minerva_v7r3p1/DaqRecv/v7r3p1/cmt/
+pushd /work/mnvsoft/v7r5/minerva/MINERVA/MINERVA_v7r5/DaqRecv/cmt/
 source ./setup.sh
 popd
 
