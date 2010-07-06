@@ -65,7 +65,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	acqData.infoStream() << "Initializing hardware for " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
 	InitializeCroc(0x010000, 1, 4, 4, 4, 4);
-	InitializeCroc(0x020000, 2, 4, 4, 4, 4);
+	InitializeCroc(0x020000, 2, 4, 4, 5, 4); // 4,4,4,4 before end of day July 3, 2010.
 	InitializeCroc(0x030000, 3, 4, 5, 0, 0);
 	maxFebs = 5;
 #endif
