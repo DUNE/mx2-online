@@ -73,8 +73,9 @@ int main(int argc, char *argv[])
 	str_controllerID  = "1";
 	controllerErrCode = 4;
 #endif
-	unsigned long long startTime, stopTime;        // For SAM.  Done at second & microsecond precision.
-	unsigned long long startReadout, stopReadout;  // For gate monitoring.  Done at microsecond precision.
+	unsigned long long startTime, stopTime;          // For SAM.  Done at second & microsecond precision.
+	unsigned long long startReadout, stopReadout;    // For gate monitoring.  Done at microsecond precision.
+	unsigned long long debugTimeStart, debugTimeEnd; // Misc. debug vars.
 
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
@@ -549,7 +550,7 @@ int main(int argc, char *argv[])
 	mnvdaq.infoStream() << "Returned from electronics initialization.";
 
 	// Start to setup vars for SAM metadata.
-	struct timeval runstart, readend, readstart;
+	struct timeval runstart, readend, readstart, debugstart;
 	gettimeofday(&runstart, NULL);
 	startTime = (unsigned long long)(runstart.tv_sec);
 	// Set initial start & stop readout times.
@@ -818,6 +819,11 @@ int main(int argc, char *argv[])
 		//SynchWrite(soldierToWorker_socket_handle, soldierToWorker_trig);  
 		//SynchListen(soldierToWorker_socket_connection, soldierToWorker_trig);
 #if MASTER&&(!SINGLEPC) // Soldier Node
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeStart = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Starting trigger synch.";
+#endif
 		// Write trigger type to the worker node	 
 		soldierToWorker_trig[0] = triggerType;
 		if (write(soldierToWorker_socket_handle,soldierToWorker_trig,sizeof(soldierToWorker_trig)) == -1) {	 
@@ -836,7 +842,12 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeEnd = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Finished triggtrigger synch.";
+		mnvdaq.debugStream() << "->Required time = " << (debugTimeEnd - debugTimeStart);
+#endif
 		if (!continueRunning)
 			break;
 
@@ -850,6 +861,11 @@ int main(int argc, char *argv[])
 		} 
 #endif
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeStart = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Starting trigger synch.";
+#endif
 		// Write trigger type to the soldier node	 
 		workerToSoldier_trig[0] = triggerType;
 		if (write(workerToSoldier_socket_handle,workerToSoldier_trig,sizeof(workerToSoldier_trig)) == -1) {	 
@@ -857,10 +873,6 @@ int main(int argc, char *argv[])
 			perror("write error: workerToSoldier_trig");	 
 			break;	// break out of main acquisition loop to prevent garbage data taking
 		}
-
-		if (!continueRunning)
-			break;
-
 		// Read trigger type from the soldier node	 
 		while (!soldierToWorker_trig[0]) {	 
 			int read_val = read(soldierToWorker_socket_connection,soldierToWorker_trig,sizeof(soldierToWorker_trig));	 
@@ -872,7 +884,12 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeEnd = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Finished trigger synch.";
+		mnvdaq.debugStream() << "->Required time = " << (debugTimeEnd - debugTimeStart);
+#endif
 		if (!continueRunning)
 			break;
 
@@ -1074,6 +1091,11 @@ int main(int argc, char *argv[])
 		soldierToWorker_error[0] = (unsigned short int)0;
 		workerToSoldier_error[0] = (unsigned short int)0;
 #if MASTER&&(!SINGLEPC) // Soldier Node
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeStart = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Starting error synch.";
+#endif
 		// Write readout info (errors) to the worker node	 
 		soldierToWorker_error[0] = event_data.readoutInfo;
 		if (write(soldierToWorker_socket_handle,soldierToWorker_error,sizeof(soldierToWorker_error)) == -1) {	 
@@ -1092,7 +1114,12 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeEnd = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Finished error synch.";
+		mnvdaq.debugStream() << "->Required time = " << (debugTimeEnd - debugTimeStart);
+#endif
 		if (!continueRunning)
 			break;
 
@@ -1101,6 +1128,11 @@ int main(int argc, char *argv[])
 #endif 
 #endif
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeStart = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Starting error synch.";
+#endif
 		// Write readout info (errors) to the soldier node	 
 		workerToSoldier_error[0] = event_data.readoutInfo;
 		if (write(workerToSoldier_socket_handle,workerToSoldier_error,sizeof(workerToSoldier_error)) == -1) {	 
@@ -1119,7 +1151,12 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeEnd = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Finished error synch.";
+		mnvdaq.debugStream() << "->Required time = " << (debugTimeEnd - debugTimeStart);
+#endif
 		if (!continueRunning)
 			break;
 
@@ -1146,6 +1183,11 @@ int main(int argc, char *argv[])
 		soldierToWorker_gate[0] = 0;
 		workerToSoldier_gate[0] = 0;
 #if MASTER&&(!SINGLEPC) // Soldier Node
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeStart = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Starting gate synch.";
+#endif
 		// Write gate to the worker node	 
 		soldierToWorker_gate[0] = gate;
 		if (write(soldierToWorker_socket_handle,soldierToWorker_gate,sizeof(soldierToWorker_gate)) == -1) {	 
@@ -1164,6 +1206,12 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeEnd = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Finished gate synch.";
+		mnvdaq.debugStream() << "->Required time = " << (debugTimeEnd - debugTimeStart);
+#endif
 		if (!continueRunning)
 			break;
 
@@ -1178,6 +1226,11 @@ int main(int argc, char *argv[])
 		} 
 #endif
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeStart = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Starting gate synch.";
+#endif
 		// Write gate to the soldier node	 
 		workerToSoldier_gate[0] = gate;
 		if (write(workerToSoldier_socket_handle,workerToSoldier_gate,sizeof(workerToSoldier_gate)) == -1) {	 
@@ -1196,6 +1249,12 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+#if DEBUG_TIMING
+		gettimeofday(&debugstart, NULL);
+		debugTimeEnd = (unsigned long long)(debugstart.tv_sec*1000000) + (unsigned long long)(debugstart.tv_usec);
+		mnvdaq.debugStream() << "Finished gate synch.";
+		mnvdaq.debugStream() << "->Required time = " << (debugTimeEnd - debugTimeStart);
+#endif
 		if (!continueRunning)
 			break;
 		
@@ -1714,7 +1773,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-01'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
