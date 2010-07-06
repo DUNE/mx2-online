@@ -406,7 +406,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		# the ET file name is the name used for the ET system file.
 		# all other data file names are based on it.
-		self.ET_filename = '%s_%08d_%04d_%s_v05_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes.code(self.detector), self.run, self.first_subrun + self.subrun, MetaData.RunningModes.code(self.runinfo.runMode), now.year % 100, now.month, now.day, now.hour, now.minute)
+		self.ET_filename = '%s_%08d_%04d_%s_v08_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes.code(self.detector), self.run, self.first_subrun + self.subrun, MetaData.RunningModes.code(self.runinfo.runMode), now.year % 100, now.month, now.day, now.hour, now.minute)
 		
 		# raw data written by the MINERvA DAQ
 		self.raw_data_filename = self.ET_filename + '_RawData.dat'
