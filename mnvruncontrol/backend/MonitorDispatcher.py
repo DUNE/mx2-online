@@ -18,6 +18,7 @@ import fcntl
 import time
 import sys
 import os
+import socket
 import logging
 import logging.handlers
 
@@ -25,6 +26,7 @@ from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import Configuration
 
 from mnvruncontrol.backend.Dispatcher import Dispatcher
+from mnvruncontrol.backend import MailTools
 
 class MonitorDispatcher(Dispatcher):
 	"""
@@ -260,6 +262,8 @@ class OMThread(threading.Thread):
 	def run(self):
 		# redirect any output to a log file
 		i = 1
+		error = None
+		timediff = 0
 		while True:
 			filename = "%s/%s.%d.log" % (Configuration.params["Monitoring nodes"]["om_logfileLocation"], self.processname, i)
 			# open the file in append mode so that if it's locked,
@@ -284,17 +288,41 @@ class OMThread(threading.Thread):
 					environment = os.environ
 					if self.utgid is not None:
 						environment["UTGID"] = self.utgid
+						
+					starttime = time.time()
 
 					self.process = subprocess.Popen(self.command.split(), shell=False, env=environment, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
 					self.pid = self.process.pid		# less typing.
 
 					# now wait until it finishes.
 					self.returncode = self.process.wait()
+
+					# calculate how long the job took.
+					# if it was too short, we'll email the notify addresses below.
+					timediff = time.time() - starttime
+				except Exception as e:
+					error = e
 				# we want to release the lock no matter what happens!
 				finally:
 					fcntl.flock(fileobj, fcntl.LOCK_UN)
 				
 				break
+		
+		# if an error happened, or if the job was too short,
+		# send an e-mail to the addresses listed in the
+		# NOTIFY_ADDRESSES configuration parameter with the
+		# log file.
+		if error is not None or timediff < Configuration.params["Monitoring nodes"]["om_DSTminJobTime"]:
+			subject = "MINERvA near-online automatic DST production warning"
+			if error:
+				messagebody = "There was an error during automatic DST processing.  The error message is:\n\n%s\n\n" % str(error)
+			else:
+				messagebody = "An automatically-produced DST on the near-online system finished in less than the specified time interval (%i s)." % Configuration.params["Monitoring nodes"]["om_DSTminJobTime"]
+			messagebody += "\nPlease see that attached log file for further information."
+			
+			sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
+
+			MailTools.sendMail(fro=sender, to=Configuration.params["General"]["notify_addresses"], subject=subject, text=messagebody, files=[filename,])
 		
 		# copy the DST to its target location.
 		if self.persistent and len(self.dstfiles) > 0 and Configuration.params["Monitoring nodes"]["om_DSTTargetPath"] is not None:

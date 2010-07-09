@@ -17,6 +17,11 @@
 """
 
 # n.b. this file is much easier to look at and/or edit on a wide-ish screen ...
+#
+# format: configuration = { "category title":    { "property #1 name": (default value, description, type),
+#                                                  "property #2 name": (default value, description, type), ... },
+#                           "category #2 title": { "property #1 name": ( ... ), ... }
+#                         }
 
 import sys
 import shelve
@@ -25,7 +30,9 @@ import os.path
 
 from mnvruncontrol.configuration import Defaults
 
-configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT,       "Run/subrun info database file",                   str   ),
+configuration = { "General"          : { "notify_addresses"        : ( Defaults.NOTIFY_ADDRESSES,                     "Email addresses to nofity of problems",           list  )  },
+
+                  "Front end"        : { "runinfoFile"             : ( Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT,       "Run/subrun info database file",                   str   ),
                                          "ResourceLocation"        : ( Defaults.RESOURCE_LOCATION_DEFAULT,            "Resource files location",                         str   ),
                                          "runSeriesLocation"       : ( Defaults.RUN_SERIES_DB_LOCATION_DEFAULT,       "Run series file location",                        str   ),
                                          "logFileLocations"        : ( [],                                            "Where to look for log files",                     list  ),
@@ -74,6 +81,8 @@ configuration = { "Front end"        : { "runinfoFile"             : ( Defaults.
                                          "om_logfileName"          : ( Defaults.OM_DISPATCHER_LOGFILE,                "OM dispatcher log file name",                     str   ),
                                          "om_GaudiOptionsFile"     : ( Defaults.OM_GAUDI_OPTIONSFILE,                 "OM Gaudi process options file",                   str   ),
                                          "om_DSTTargetPath"        : ( Defaults.OM_DST_TARGET_PATH,                   "Copy target for DSTs created by OM dispather",    str   ),
+                                         "om_DSTminJobTime"        : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",              float   ),
+
                                          "om_rawdataLocation"      : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                            str   )  },
 
                   "MTest beam nodes" : { "mtest_PIDfileLocation"   : ( Defaults.MTEST_DISPATCHER_PIDFILE,             "MTest dispatcher PID file location",              str   ),

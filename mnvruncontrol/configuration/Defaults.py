@@ -9,6 +9,9 @@
     Address all complaints to the management.
 """
 
+# general stuff
+NOTIFY_ADDRESSES = ["jwolcott@fnal.gov",]
+
 # Data acquisition properties.
 EVENT_SIZE = 2048 
 FRAMES = 5
@@ -85,6 +88,7 @@ MTEST_PCOS_RST_GATE_SLOT=20
 
 # monitoring
 OM_DST_TARGET_PATH = "/minerva/data/users/minerva/data_processing/dst"		# where DSTs are copied when they're done being created by the dispatcher
+OM_DST_MIN_JOB_TIME = 10			# the minimum amount of time a DSTMaker job can take (anything shorter and mail is sent to NOTIFY_ADDRESSES)
 
 # slow control
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
