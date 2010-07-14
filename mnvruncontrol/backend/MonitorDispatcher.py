@@ -163,6 +163,8 @@ class MonitorDispatcher(Dispatcher):
 			self.om_Gaudi_thread.process.terminate()
 			self.om_Gaudi_thread.join()
 
+		time.sleep(3)
+
 		# now start a new copy of each of the Gaudi jobs.
 		gaudi_processes = ( { "utgid": "NEARONLINE",
 		                      "processname": "presenter",
@@ -224,6 +226,7 @@ class MonitorDispatcher(Dispatcher):
 				# the Presenter Gaudi job needs to be told to stop.
 				# otherwise it segfaults etc.
 				subprocess.call("dim_send_command.exe NEARONLINE stop", shell=True)
+
 				self.om_Gaudi_thread.process.terminate()
 				self.om_Gaudi_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
 			except Exception, excpt:
