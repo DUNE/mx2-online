@@ -1,7 +1,7 @@
+This file is current as of 2010.July.14 - GNP
+
 How to update the hardware configuration for Minerva DAQ.
-
-This will be added to the README's with the DAQ package in the near future.  In the interim, this is a standalone document.
-
+---------------------------------------------------------
 The Minerva DAQ does not perform dynamic hardware lookup, nor does it load configurations from user editable text files.  Instead, the hardware is coded into the DAQ and selected via pre-compiler commands.  The configuration is kept in the DAQ's acquire_data library.
 
 To update the configuration, take the following steps:

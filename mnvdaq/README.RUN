@@ -1,4 +1,7 @@
-This file is current as of 2010.March.12 - GNP
+This file is current as of 2010.July.14 - GNP
+
+It is recommended to use the Run Control by J. Wolcott.  Check out the mnvruncontrol 
+package and set it up appropriately.  To run using bash scripts, check the following:
 
 To run the DAQ, you need to be sure you have the following directories:
 

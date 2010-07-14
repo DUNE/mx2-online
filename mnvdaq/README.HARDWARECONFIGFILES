@@ -1,6 +1,7 @@
-How to update the hardware configuration files used by the run control during run series (automatic hardware loading).
+This file is current as of 2010.July.14 - GNP
 
-This will be added to the README's with the DAQ package in the near future.  In the interim, this is a standalone document.
+How to update the hardware configuration files used by the run control during a run series.
+-------------------------------------------------------------------------------------------
 
 The Minerva DAQ has limited hardware (electronics) configuration capability.  By default (in terms of current best practice), the DAQ does configure the timing registers for all the VME cards in its configuration.  This means it sets the CROC's to external timing mode (so they get timing signals from the CRIM) and sets the CRIM's into a timing mode appropriate for the run, typically either internal for "one shot" pedestals and various "cosmic" running modes, and "MTM" (Minerva Timing Module) for NuMI operations (beam and LI).  LI at MTest is taken with the CRIM in the internal timing mode.
 
