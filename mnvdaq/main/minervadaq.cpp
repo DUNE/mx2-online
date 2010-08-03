@@ -1532,8 +1532,22 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 	/* the lowest address (or, at least the CRIM at the beginning of the CRIM vector). */ 
 	/***********************************************************************************/
 	vector<crim*> *crim_vector = tmpController->GetCrimVector(); 
-	vector<crim*>::iterator crim = crim_vector->begin();
-	int id = (*crim)->GetCrimID();
+	vector<crim*>::iterator crim = crim_vector->begin(); 
+	int id = (*crim)->GetCrimID(); // Point to "master."
+	// Reset the sequencer latch in v9+ CRIM's; Must do all CRIM's because they get TCALB *independently*. 
+	for (crim = crim_vector->begin(); crim != crim_vector->end(); crim++) {
+		id = (*crim)->GetCrimID();
+		try {
+			int error = daq->ResetSequencerControlLatch(id);
+			if (error) throw error;
+		} catch (int e) {
+			std::cout << "Error in minervadaq::TriggerDAQ()!" << std::endl;
+			mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ()!";
+			return e;
+		}
+	} 
+	crim = crim_vector->begin(); id = (*crim)->GetCrimID(); // Point back to "master."
+	// Now "Trigger"
 	switch (runningMode) {
 		case OneShot:
 			for (crim = crim_vector->begin(); crim != crim_vector->end(); crim++) {
@@ -1607,13 +1621,9 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 #endif
 #if RUN_SLEEPY
 	// This sleep is here because we return too quickly - the FEBs are still digitizing.
-	// However, digitization only takes ~300 microseconds.  All of our time function options 
+	// Digitization takes ~300 microseconds.  All of our time function options 
 	// for sleep vary as a function of OS scheduling issues and none are very stable.
 	// A tight sleep time can only really affect MTest since it is only called once per gate.
-	//struct timeval napTime;
-	//gettimeofday(&napTime,NULL);
-	//unsigned long long t0 = (unsigned long long)(napTime.tv_sec*1000000) + (unsigned long long)(napTime.tv_usec);
-	//obsolete//system("sleep 1e-3"); // Actually measured to be something more like 3-4 ms!
 #if defined(HAVE_NANOSLEEP)
 	timespec tmReq;
 	tmReq.tv_sec = (time_t)(0);
@@ -1622,10 +1632,7 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 #else
 	usleep(300); // Typically ~1 ms (sometimes ~2).
 #endif
-	//gettimeofday(&napTime,NULL);
-	//unsigned long long t1 = (unsigned long long)(napTime.tv_sec*1000000) + (unsigned long long)(napTime.tv_usec);
-	//mnvdaq.debugStream() << "Sleep time (us) = " << (t1 - t0);
-#endif
+#endif // run sleepy
 
 	// Tell the data acquiring threads that data is available for processing.	
 	data_ready = true; 
@@ -1773,7 +1780,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-02'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

@@ -193,10 +193,13 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	} 
 
 	// Note IRQLine is set in the CRIM constructor.  The default is SGATEFall, 
-        // which is the correct choice for every running mode but Cosmics.
-	unsigned short GateWidth    = 0x1;       // GetWidth must never be zero!
-	unsigned short TCALBDelay   = 0x1;       // Delay should also be non-zero.
-	unsigned short TCALBEnable  = 0x1;       // Enable pulse delay.
+        // which is the correct choice for every running mode but Cosmics.  Also 
+	// note the CRIM will ignore the SequencerEnable instruction in firmware 
+	// before v9.
+	unsigned short GateWidth         = 0x1;      // GetWidth must never be zero!
+	unsigned short TCALBDelay        = 0x1;      // Delay should also be non-zero.
+	unsigned short TCALBEnable       = 0x1;      // Enable pulse delay.
+	unsigned short SequencerEnable   = 0x1;      // Sequencer control (0 means always send gates, 1 for rearms).
 	crimTimingFrequencies Frequency  = ZeroFreq; // Used to set ONE frequency bit!  ZeroFreq ~no Frequency.
 	crimTimingModes       TimingMode = MTM;      // Default to MTM.
 
@@ -305,7 +308,11 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 	if (hwInitLevel) {
 		// Build Register Settings (this does not write to hardware, it only configures software objects).
 		daqController->GetCrim(index)->SetupTiming(TimingMode, Frequency);
+#if V9CRIM
+		daqController->GetCrim(index)->SetupGateWidth(TCALBEnable, GateWidth, SequencerEnable);
+#else 
 		daqController->GetCrim(index)->SetupGateWidth(TCALBEnable, GateWidth);
+#endif
 		daqController->GetCrim(index)->SetupTCALBPulse(TCALBDelay);
 		acqData.info("  CRIM Timing Setup    = 0x%04X", daqController->GetCrim(index)->GetTimingSetup());
 		acqData.info("  CRIM GateWidth Setup = 0x%04X", daqController->GetCrim(index)->GetGateWidthSetup());
@@ -1781,13 +1788,53 @@ template <class X> int acquire_data::AcquireDeviceData(X *frame, croc *crocTrial
 }
 
 
+int acquire_data::ResetSequencerControlLatch(int crimID)
+{
+/*! \fn int acquire_data::ResetSequencerControlLatch(int crimID)
+ * Resets the sequencer control latch when the latching mechanism is enabled (V9+ CRIM only).
+ *
+ * \param int crimID The CRIM we are resetting.
+ *
+ * Returns a status integer (0 for success).
+ */
+#if DEBUG_TRIGGER
+	acqData.debug("   Entering acquire_data::ResetSequencerControlLatch...");
+	acqData.debug("   ->Preparing to address CRIM %d",(daqController->GetCrim(crimID)->GetCrimAddress()>>16));
+#endif
+	CVAddressModifier AM = daqController->GetAddressModifier();
+	CVDataWidth       DW = daqController->GetDataWidth();
+	int error     = -1;
+	int errorCode =  1;
+	// Reset sequencer control latch.
+#if V9CRIM 
+	try {
+		unsigned char reset_pulse[] = { 0x4, 0x4 };
+#if DEBUG_TRIGGER
+		acqData.debug("    reset_plse msg = 0x%02X%02X",reset_pulse[1],reset_pulse[0]);
+		acqData.debug("    pulse address  = 0x%X",daqController->GetCrim(crimID)->GetSoftCNRSTRegister());
+#endif
+		error = daqAcquire->WriteCycle(daqController->handle, 2, reset_pulse,
+			daqController->GetCrim(crimID)->GetSoftCNRSTRegister(), AM, DW); 
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << 
+			"Unable to send the sequencer control latch reset in acquire_data::ResetSequencerControlLatch!" << std::endl;
+		daqController->ReportError(e);
+		acqData.critStream() << 
+			"Unable to send the sequencer control latch reset in acquire_data::ResetSequencerControlLatch!";
+		return errorCode;
+	}
+#endif
+	return 0;
+}
+
 int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID) 
 {
-/*! \fn void acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
+/*! \fn int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
  *
- * A function which sets up the acquisition trigger indexed by parameter a.
+ * Sets up the acquisition trigger indexed by parameter triggerBit on CRIm with index crimID.
  *
- * Currently, we have the following triggers defined as enumerated types in the DAQ Header (v7):
+ * Currently, we have the following triggers defined as enumerated types in the DAQ Header (v8):
  *  Note the trigger does not depend on CRIM timing mode explicity, but there is occasionally an 
  *  implicit dependence (e.g., NuMI can only run in CRIM MTM mode).
  * UnknownTrigger  = 0x0000,

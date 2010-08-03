@@ -203,16 +203,19 @@ class acquire_data {
 		/*! Function to reset a CROC channel's DPM */
 		bool ResetDPM(croc*, channels*);
 
-		/*!  Function which runs the "trigger" (only executes a VME command for "OneShot"). */
+		/*! Resets the sequencer control latch when the latching mechanism is enabled (V9+ CRIM only). */
+		int ResetSequencerControlLatch(int crimID); 
+
+		/*!  Function that runs the "trigger" (only executes a VME command for "OneShot"). */
 		int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
 
-		/*! Function which waits for the interrupt handler to raise an interrupt */
+		/*! Function that waits for the interrupt handler to raise an interrupt */
 		int WaitOnIRQ();
 
-		/*! Function which acknowledges the interrupt and resets the interrupt handler */
+		/*! Function that acknowledges the interrupt and resets the interrupt handler */
 		int AcknowledgeIRQ();
 
-		/*! Function which sends data to the event builder via ET */
+		/*! Function that sends data to the event builder via ET */
 		bool ContactEventBuilder(event_handler *evt, int thread, et_att_id attach, et_sys_id sys_id);
 
 		/*! Function that gets the MINOS SGATE value from the CRIM registers.  Check the "master" CRIM. */

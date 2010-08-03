@@ -137,8 +137,17 @@ class crim {
 #endif
 		}; 
 		// setup gate width register - arguments are tcalb enable bit and gate width
+		//  tcalb enable - a
+		//  gate width   - b
 		void SetupGateWidth(unsigned short a, unsigned short b) {
-			gateWidthSetup = ( (a & 0x1)<<15 ) | (b & GateWidthRegisterMask);
+			gateWidthSetup = ((a & 0x1)<<15) | (b & GateWidthRegisterMask);
+		};  
+		// setup gate width register - arguments are tcalb enable bit, gate width, and sequencer control enable bit
+		//  tcalb enable     - a
+		//  gate width       - b
+		//  sequencer enable - c 
+		void SetupGateWidth(unsigned short a, unsigned short b, unsigned short c) {
+			gateWidthSetup = ((a & 0x1)<<15) | ((c & 0x1)<<10) | (b & GateWidthRegisterMask);
 		};  
 		// set pluse delay - argument is the pulse delay
 		void SetupTCALBPulse(unsigned short a) {
