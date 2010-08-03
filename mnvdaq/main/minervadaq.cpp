@@ -1535,17 +1535,37 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 	vector<crim*>::iterator crim = crim_vector->begin(); 
 	int id = (*crim)->GetCrimID(); // Point to "master."
 	// Reset the sequencer latch in v9+ CRIM's; Must do all CRIM's because they get TCALB *independently*. 
-	for (crim = crim_vector->begin(); crim != crim_vector->end(); crim++) {
-		id = (*crim)->GetCrimID();
-		try {
-			int error = daq->ResetSequencerControlLatch(id);
-			if (error) throw error;
-		} catch (int e) {
-			std::cout << "Error in minervadaq::TriggerDAQ()!" << std::endl;
-			mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ()!";
-			return e;
-		}
-	} 
+	// Only reset for certain trigger types (OneShot types don't need it).  This could be done in the 
+	// TriggerDAQ function, but I kind of like only calling that for the CRIM's where it is needed (we 
+	// would have to call for all, even non-master, in beam running).
+	switch (triggerType) {
+		// The "OneShot" triggers do not need a reset.
+		case UnknownTrigger:
+		case Pedestal:
+		case LightInjection:
+		case ChargeInjection:
+			break;
+		// The "Cosmic" triggers are initiated via an external signal.
+		case Cosmic:
+		case MTBFMuon:
+		case MTBFBeam:
+		// The NuMI Beam trigger is initiated via an external signal.
+		case NuMI:
+			for (crim = crim_vector->begin(); crim != crim_vector->end(); crim++) {
+				id = (*crim)->GetCrimID();
+				try {
+					int error = daq->ResetSequencerControlLatch(id);
+					if (error) throw error;
+				} catch (int e) {
+					std::cout << "Error in minervadaq::TriggerDAQ()!" << std::endl;
+					mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ()!";
+					return e;
+				}
+			}
+			break;
+		default:
+			break; 
+	}
 	crim = crim_vector->begin(); id = (*crim)->GetCrimID(); // Point back to "master."
 	// Now "Trigger"
 	switch (runningMode) {
@@ -1780,7 +1800,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-02'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-03'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
