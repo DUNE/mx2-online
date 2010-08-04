@@ -1539,12 +1539,12 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 	// TriggerDAQ function, but I kind of like only calling that for the CRIM's where it is needed (we 
 	// would have to call for all, even non-master, in beam running).
 	switch (triggerType) {
-		// The "OneShot" triggers do not need a reset.
+		// The "OneShot" triggers do not need a reset?
 		case UnknownTrigger:
 		case Pedestal:
 		case LightInjection:
 		case ChargeInjection:
-			break;
+		//	break; // For now, always issue the reset - seems to be needed for multi-PC running.
 		// The "Cosmic" triggers are initiated via an external signal.
 		case Cosmic:
 		case MTBFMuon:
@@ -1683,7 +1683,6 @@ unsigned long long GetGlobalGate()
 	} catch (bool e) {
 		std::cout << "Error in minervadaq::main opening global gate data!\n";
 		mnvdaq.fatalStream() << "Error opening global gate data!";
-//		exit(-2000);
 		continueRunning = false;
 	}
 	global_gate.close();
@@ -1705,7 +1704,6 @@ void PutGlobalGate(unsigned long long ggate)
 	} catch (bool e) {
 		std::cout << "Error in minervadaq::main opening global gate data!" << std::endl;
 		mnvdaq.fatalStream() << "Error opening global gate data!";
-//		exit(-2000);
 		continueRunning = false;
 	}
 	global_gate.close();
@@ -1800,7 +1798,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-04'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-05'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
