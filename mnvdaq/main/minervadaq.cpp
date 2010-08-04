@@ -953,7 +953,7 @@ int main(int argc, char *argv[])
 			(unsigned long long)(readend.tv_usec);
 		readoutTimeDiff = (int)stopReadout - (int)startReadout; 
 #if DEBUG_TIMING
-		mnvdaq.debugStream() << "Total readout time at end = " << readoutTimeDiff;
+		mnvdaq.debugStream() << "Total readout time at end of electronics readout = " << readoutTimeDiff;
 #endif
 		if (readoutTimeDiff > allowedReadoutTime) {
 			event_data.readoutInfo += (unsigned short)1; // "Timeout Error"
@@ -1177,6 +1177,18 @@ int main(int argc, char *argv[])
 		mnvdaq.debugStream() << "Final set of ErrorFlags =  " << event_data.readoutInfo;
 #endif
 
+		// Reset the sequencer latch in v9+ CRIM's; Must do all CRIM's because they get TCALB *independently*. 
+		for (crim_iter = crim_vector->begin(); crim_iter != crim_vector->end(); crim_iter++) {
+			try {
+				int error = daq->ResetSequencerControlLatch((*crim_iter)->GetCrimID());
+				if (error) throw error;
+			} catch (int e) {
+				std::cout << "Error in minervadaq::main()!" << std::endl;
+				mnvdaq.critStream() << "Error in minervadaq::main()!";
+				continueRunning = false;
+			}
+		}
+
 		// The soldier node must wait for a "done" signal from the worker node before attaching 
 		// the end-of-gate header bank.  We will use a cross-check on the gate value to be sure 
 		// the nodes are aligned. TODO - test synch write & listen functions w/ return values... 
@@ -1276,6 +1288,10 @@ int main(int argc, char *argv[])
 			(unsigned long long)(readend.tv_usec);
 		// Update readout time diff
 		readoutTimeDiff = (int)stopReadout - (int)startReadout;
+#if DEBUG_TIMING
+		mnvdaq.debugStream() << "Total readout time for this node (possible header value) = " << readoutTimeDiff;
+		
+#endif
 #if SINGLEPC||MASTER // Soldier Node or Singleton
 		/*************************************************************************************/
 		/* Write the End-of-Event Record to the event_handler and then to the event builder. */
@@ -1534,39 +1550,6 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 	vector<crim*> *crim_vector = tmpController->GetCrimVector(); 
 	vector<crim*>::iterator crim = crim_vector->begin(); 
 	int id = (*crim)->GetCrimID(); // Point to "master."
-	// Reset the sequencer latch in v9+ CRIM's; Must do all CRIM's because they get TCALB *independently*. 
-	// Only reset for certain trigger types (OneShot types don't need it).  This could be done in the 
-	// TriggerDAQ function, but I kind of like only calling that for the CRIM's where it is needed (we 
-	// would have to call for all, even non-master, in beam running).
-	switch (triggerType) {
-		// The "OneShot" triggers do not need a reset?
-		case UnknownTrigger:
-		case Pedestal:
-		case LightInjection:
-		case ChargeInjection:
-		//	break; // For now, always issue the reset - seems to be needed for multi-PC running.
-		// The "Cosmic" triggers are initiated via an external signal.
-		case Cosmic:
-		case MTBFMuon:
-		case MTBFBeam:
-		// The NuMI Beam trigger is initiated via an external signal.
-		case NuMI:
-			for (crim = crim_vector->begin(); crim != crim_vector->end(); crim++) {
-				id = (*crim)->GetCrimID();
-				try {
-					int error = daq->ResetSequencerControlLatch(id);
-					if (error) throw error;
-				} catch (int e) {
-					std::cout << "Error in minervadaq::TriggerDAQ()!" << std::endl;
-					mnvdaq.critStream() << "Error in minervadaq::TriggerDAQ()!";
-					return e;
-				}
-			}
-			break;
-		default:
-			break; 
-	}
-	crim = crim_vector->begin(); id = (*crim)->GetCrimID(); // Point back to "master."
 	// Now "Trigger"
 	switch (runningMode) {
 		case OneShot:
@@ -1798,7 +1781,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-05'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-05-06'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

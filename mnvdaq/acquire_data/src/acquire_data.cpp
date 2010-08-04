@@ -362,6 +362,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 
 	// Now set up the IRQ handler, initializing the global enable bit for the first go-around.
 	// Only the "Master" (first) CRIM should be our interrupt handler...
+	acqData.infoStream() << "Setting up IRQ handler on CRIM " << (address>>16);
 	try {
 		int error = SetupIRQ(index);
 		if (error) throw error;
@@ -372,6 +373,21 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		acqData.fatalStream() << "Cannot SetupIRQ!";
 		exit (e);
 	}
+
+	// Now make sure sequencer latch is set.
+#if V9CRIM
+	acqData.infoStream() << "Resetting sequencer control latch on CRIM " << (address>>16);
+	try {
+		int error = ResetSequencerControlLatch(index);
+		if (error) throw error;
+	} catch (int e) {
+		std::cout << "Error in acquire_data::InitializeCrim for CRIM with address = " << (address>>16) << std::endl;
+		std::cout << "Cannot reset sequencer latch!" << std::endl;
+		acqData.fatalStream() << "Error in acquire_data::InitializeCrim for CRIM with address = " << (address>>16);
+		acqData.fatalStream() << "Cannot reset sequencer latch!";
+		exit (e);
+	}
+#endif
 	std::cout << "Finished initializing CRIM " << (address>>16) << std::endl;
 	acqData.infoStream() << "Finished initializing CRIM " << (address>>16);
 }
