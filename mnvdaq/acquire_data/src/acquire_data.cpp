@@ -3068,7 +3068,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 				evt->feb_info[2] = crocAddr;
 				evt->feb_info[3] = (*rop)->getChannel(i)->GetChainNumber();
 				evt->feb_info[6] = brdnum;
-				evt->feb_info[7] = 81; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
+				evt->feb_info[7] = firmwareVersion; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
 				// FillEventStructure here.  FES reads from the *channel's* buffer, not the frame's!
 				FillEventStructure(evt, 2, (*rop)->getChannel(i));
 				// ContactEventBuilder here.
@@ -3207,7 +3207,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 				evt->feb_info[2] = crocAddr;
 				evt->feb_info[3] = (*rop)->getChannel(i)->GetChainNumber();
 				evt->feb_info[6] = brdnum;
-				evt->feb_info[7] = 81; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
+				evt->feb_info[7] = firmwareVersion; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
 				// FillEventStructure here.  FES reads from the *channel's* buffer, not the frame's!
 				FillEventStructure(evt, 1, (*rop)->getChannel(i));
 				// ContactEventBuilder here.
@@ -3346,7 +3346,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					evt->feb_info[2] = crocAddr;
 					evt->feb_info[3] = (*rop)->getChannel(i)->GetChainNumber();
 					evt->feb_info[6] = brdnum;
-					evt->feb_info[7] = 81; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
+					evt->feb_info[7] = firmwareVersion; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
 					// Set the hit id.  Increment sourceID hit in "reverse" - sourceID hit 0 is earliest in physical time.
 					evt->feb_info[8] = (unsigned int)(orgNum - hitIdx);
 #if DEBUG_NEWREADOUT

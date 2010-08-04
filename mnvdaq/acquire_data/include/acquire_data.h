@@ -17,6 +17,11 @@
 #include <sstream>
 
 
+// We do not read the FPGA's on every trigger, so the firmware version is not generally available
+// "dynamically."  Therefore we have to set it BY HAND.  Be sure that this is set correctly for 
+// the *whole* detector.  Mixed firmware is pretty much disallowed.
+const int firmwareVersion = 83;
+
 // The RunningMode defines the sort of data being collected during a run and is not synonymous with 
 // trigger type.  For example, the MixedBeamLightInjection RunningMode will alternate between beam 
 // gates and LI gates.  The RunningMode defines the CRIM timing mode and sets the behavior of the LI 
