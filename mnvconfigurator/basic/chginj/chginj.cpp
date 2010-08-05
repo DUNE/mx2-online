@@ -36,7 +36,7 @@ const int tripRegIFFP2      =   0;
 const int tripRegIBCOMP     =  20;
 const int tripRegVREF       = 165;
 const int tripRegVTH        = 240;
-// const int tripRegPIPEDEL    =  2*maxHits - 1;
+const int tripRegPIPEDEL    =  11; // 2*maxHits - 1;
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
@@ -1155,7 +1155,7 @@ int FEBTRiPTWrite(controller *myController, acquire *myAcquire, croc *myCroc,
 			myFeb->GetTrip(i)->SetRegisterValue( 7, tripRegIBCOMP ); //ibcomp
 			myFeb->GetTrip(i)->SetRegisterValue( 8, tripRegVREF ); //v_ref
 			myFeb->GetTrip(i)->SetRegisterValue( 9, tripRegVTH ); //v_th
-			myFeb->GetTrip(i)->SetRegisterValue(10, 2*maxHits-1); //pipedelay
+			myFeb->GetTrip(i)->SetRegisterValue(10, tripRegPIPEDEL); //pipedelay
 			myFeb->GetTrip(i)->SetRegisterValue(11, tripRegGAIN ); //gain
 			myFeb->GetTrip(i)->SetRegisterValue(12, tripRegIRSEL ); //irsel
 			myFeb->GetTrip(i)->SetRegisterValue(13, tripRegIWSEL ); //iwsel
@@ -1312,7 +1312,7 @@ int FEBTRiPTWriteChargeInjection(controller *myController, acquire *myAcquire, c
 			myFeb->GetTrip(i)->SetRegisterValue( 7, tripRegIBCOMP ); //ibcomp
 			myFeb->GetTrip(i)->SetRegisterValue( 8, tripRegVREF ); //v_ref
 			myFeb->GetTrip(i)->SetRegisterValue( 9, tripRegVTH ); //v_th
-			myFeb->GetTrip(i)->SetRegisterValue(10, 2*maxHits-1); //pipedelay
+			myFeb->GetTrip(i)->SetRegisterValue(10, tripRegPIPEDEL); //pipedelay
 			myFeb->GetTrip(i)->SetRegisterValue(11, tripRegGAIN ); //gain
 			myFeb->GetTrip(i)->SetRegisterValue(12, tripRegIRSEL ); //irsel
 			myFeb->GetTrip(i)->SetRegisterValue(13, tripRegIWSEL ); //iwsel
