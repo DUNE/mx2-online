@@ -14,7 +14,11 @@
 #include <sys/time.h>
 
 const int acquire_data::dpmMax                  = 1024*6; // we have only 6 Kb of space in the DPM Memory per channel
+//#if ZEROSUPPRESSION
+//const int acquire_data::numberOfHits            = 5;      // this is a function of the FEB firmware
+//#else
 const int acquire_data::numberOfHits            = 6;      // this is a function of the FEB firmware
+//#endif
 const unsigned int acquire_data::timeOutSec     = 3600;   // be careful shortening this w.r.t. multi-PC sync issues
 const bool acquire_data::checkForMessRecvd      = true;   // fixed flag
 const bool acquire_data::doNotCheckForMessRecvd = false;  // fixed flag
@@ -2688,6 +2692,9 @@ template <class X> void acquire_data::SendFrameDataFIFOBLT(X *device, channels *
  * Send messages to a generic device using FIFO BLT write cycle -> write the outgoing message to the 
  * CROC FIFO & send the message (sensible for the long FPGA programming frames only).
  *
+ * Actually, this doesn't really work at all with our electronics for some subtle reasons.  It will 
+ * write, but the readback is messed up.  Best to avoid using this function until someday it is removed...
+ *
  * \param X *device the frame (template)
  * \param channels *theChannel the CROC FE Channel for the board housing the device.
  */     
@@ -2801,11 +2808,6 @@ template <class X> int acquire_data::RecvFrameData(X *device, channels *theChann
 	if (success) {
 		return success; // There were errors.
 	}
-	// DecodeRegVals does some useful error checking (message length), but is inefficient.
-	// TODO - figure out the right argument to pass this function... for some reason, if we did a FIFO 
-	// write beforehand, we get back a different DPM pointer than if we had done a regular write...
-	//device->DecodeRegisterValues(dpmPointer-2);
-	//device->DecodeRegisterValues(dpmPointer);
 #if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   Finished RecvFrameData for devices!  Returning " << success;
 #endif
@@ -2942,7 +2944,9 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
         std::list<readoutObject*> *readoutObjects, const int allowedTime, 
 	const bool readFPGA, const int nReadoutADC)
 {
-/*! \fn int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, std::list<readoutObject*> *readoutObjects)
+/*! \fn int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
+ *		std::list<readoutObject*> *readoutObjects, const int allowedTime, 
+ *		const bool readFPGA, const int nReadoutADC)
  *
  * Run the full acquisition sequence for a gate, write the data to file. 
  *
@@ -2952,6 +2956,8 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
  *  \param sys_id, the ET system handle
  *  \param std::list<readoutObject*> *readoutObjects, a pointer to the list of hardware to be read out. 
  *  \param const int allowedTime, allowed readout time in microseconds 
+ *  \param const bool readFPGA, sets whether we read the FPGA's
+ *  \param const int nReadoutADC, sets how many max frames we will read
  */
 #if DEBUG_NEWREADOUT
 	acqData.debugStream() << "Entering acquire_data::WriteAllData.";
@@ -2976,6 +2982,10 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	evt->feb_info[0] = 0;     // Link Number. -> *Probably* ALWAYS 0.
 	evt->feb_info[1] = daqController->GetID(); // Crate ID
 
+	int baseRead = 0;
+#if ZEROSUPPRESSION  
+	baseRead = 1;
+#endif
 	// Do an "FPGA read".
 	// First, send a read frame to each channel that has an FEB with the right index.
 	// Then, after sending a frame to every channel, read each of them in turn for data.
@@ -3296,7 +3306,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 			for (int i=0; i<(*rop)->getDataLength(); i++) {
 				int hitNum = (*rop)->getHitsPerChannel(i);
 				int hitIdx = hitNum - 1; // Explicit offset.
-				if (hitNum > 0) {
+				if (hitNum > baseRead) {
 					// Make a pointer to the FEB on the channel with board number febid
 					tmpFEB  = (*rop)->getChannel(i)->GetFebVector(febindex);
 					int brdnum = tmpFEB->GetBoardNumber();
@@ -3327,7 +3337,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 				int hitNum = (*rop)->getHitsPerChannel(i);
 				int orgNum = (*rop)->getOrigHitsPerChannel(i) - 1;
 				int hitIdx = hitNum - 1; // Explicit offset.
-				if (hitNum > 0) {
+				if (hitNum > baseRead) {
 					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
 					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
 					try {

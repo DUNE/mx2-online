@@ -76,7 +76,6 @@ class feb : public Frames {
 
 		/*! Get functions */
 		febAddresses inline GetBoardNumber() {return boardNumber;};
-		//int inline GetFWB() {return (int)FirmwareVersion[0];}; //redundant
 		int inline GetFirmwareVersion() {return (int)FirmwareVersion[0];};
 		int inline GetMaxHits() {return maxHits;};
 		bool inline GetInit() {return initialized;};

@@ -32,17 +32,18 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 	febAppender  = appender; // log4cpp appender
 	if (febAppender!=0) febLog.setPriority(log4cpp::Priority::ERROR);
 	
-	if ( (maxHits != 1) && (maxHits != 6) ) {
-		std::cout << "Invalid number of maximum hits!  Only 1 or 6 are accepted right now!" << std::endl;
-		if (febAppender!=0) febLog.fatalStream() << "Invalid number of maximum hits!  Only 1 or 6 are accepted right now!";
-		exit(-1);
-	}
+	//if ( (maxHits != 1) && (maxHits != 6) ) {
+	//	std::cout << "Invalid number of maximum hits!  Only 1 or 6 are accepted right now!" << std::endl;
+	//	if (febAppender!=0) febLog.fatalStream() << "Invalid number of maximum hits!  Only 1 or 6 are accepted right now!";
+	//	exit(-1);
+	//}
 
-	// make up the header for this frame, frames default to read 
-	Devices dev = FPGA; //the device type for the header
-	Broadcasts b = None; //broadcast type for header
+	// Make the header for this frame; frames default to read. 
+	Devices dev = FPGA;     //the device type for the header
+	Broadcasts b = None;    //broadcast type for header
 	Directions d = MasterToSlave; //message direction for header
-	FPGAFunctions f = Read; //operation to be performed; options are read and write
+	FPGAFunctions f = Read; //operation to be performed
+	//FPGAFunctions f = DumpRead; //operation to be performed
 	// Compose the transmission FPGA header
 	MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
 
@@ -88,11 +89,18 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 	
 	// Instantiate objects for the ADC's
 	// We read the RAMFunctions in "reverse" order:
-	//  0 for 1 Hit (any firmware) - this *assumes* a PIPEDEL of 1!  This is a user responsibility! 
-	//  5,4,3,2,1,0 for 6 Hit firmware (PIPEDEL 11).
+	//  0               for 1 Hit (any firmware) - this *assumes* a PIPEDEL of 1!  This is a user responsibility! 
+	//  4,3,2,1,0       for 5 Hit firmware (PIPEDEL 9).
+	//  5,4,3,2,1,0     for 6 Hit firmware (PIPEDEL 11).
 	//  7,6,5,4,3,2,1,0 for 8 Hit firmware (PIPEDEL 15).
 	if (maxHits == 1) {
 		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0 ); 
+	} else if (maxHits == 5) {
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit4 );
+		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit3 );
+		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit2 );
+		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit1 );
+		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit0 );
 	} else if (maxHits == 6) {
 		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit5 );
 		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit4 );
@@ -110,9 +118,9 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 		adcHits[6] = new adc( a, (RAMFunctionsHit)ReadHit1 );
 		adcHits[7] = new adc( a, (RAMFunctionsHit)ReadHit0 );
 	} else {
-		std::cout << "Invalid number of maximum hits!  Only 1, 6, or 8 are accepted right now!" << std::endl;
+		std::cout << "Invalid number of maximum hits!  Only 1, 5, 6, or 8 are accepted right now!" << std::endl;
 		if (febAppender!=0) febLog.fatalStream() << 
-			"Invalid number of maximum hits!  Only 1, 6, or 8 are accepted right now!";
+			"Invalid number of maximum hits!  Only 1, 5, 6, or 8 are accepted right now!";
 		exit(-1);		
 	}
 	if (febAppender!=0) {
