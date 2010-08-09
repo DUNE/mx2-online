@@ -57,19 +57,29 @@ if [ $HOSTNAME == "minervatest04.fnal.gov" ]; then
 fi
 
 # mnvonline0 - Multi-node DAQ with hardware.  
+# Also single node now.
 if [ $HOSTNAME == "mnvonline0.fnal.gov" ]; then
 	echo "Setting up multi-node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/multidispatcher.sh $HOME/dispatcher.sh
-	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
+	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
+	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/single_dispatcher.sh
+	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
 fi
 
 # mnvonline1 - Multi-node DAQ with hardware.  
+# Also single node now.
 if [ $HOSTNAME == "mnvonline1.fnal.gov" ]; then
 	echo "Setting up multi-node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/multidispatcher.sh $HOME/dispatcher.sh
-	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
+	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
+	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/single_dispatcher.sh
+	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
 fi
 
 # mnvonline2 - Multi-node DAQ with hardware.  
