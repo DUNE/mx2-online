@@ -95,15 +95,15 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	acqData.infoStream() << "Initializing hardware for " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
 	InitializeCrim(0xF00000, 2, runningMode);
-	InitializeCroc(0x010000, 1, 10, 10, 10,  6); // MS01W, MS02W, MS03W, MS04W
-	InitializeCroc(0x020000, 2, 10, 10,  9,  5); // MS01E, MS02E, MS03E, MS04E
-	InitializeCroc(0x030000, 3, 10, 10, 10, 10); // MS05W, MS06W, MS07W, MS08W
-	InitializeCroc(0x040000, 4,  9,  9,  9,  9); // MS05E, MS06E, MS07E, MS08E
-	InitializeCroc(0x050000, 5, 10, 10, 10, 10); // MS09W, MS10W, MS11W, MS12W
-	InitializeCroc(0x060000, 6,  9,  9,  9,  9); // MS09E, MS10E, MS11E, MS12E
-	InitializeCroc(0x070000, 7, 10, 10, 10, 10); // MS13W, MS14W, MS15W, MS16W
-	InitializeCroc(0x080000, 8,  9,  9,  9,  9); // MS13E, MS14E, MS15E, MS16E
-	maxFebs = 10;
+	InitializeCroc(0x010000, 1, 10, 10, 10,  6); // MS01W, MS02W, MS03W, MS04W	036
+	InitializeCroc(0x020000, 2, 10, 10,  9,  5); // MS01E, MS02E, MS03E, MS04E	034
+	InitializeCroc(0x030000, 3, 10, 10, 10, 10); // MS05W, MS06W, MS07W, MS08W	040
+	InitializeCroc(0x040000, 4,  9,  9,  9,  9); // MS05E, MS06E, MS07E, MS08E	036
+	InitializeCroc(0x050000, 5, 10, 10, 10, 10); // MS09W, MS10W, MS11W, MS12W	040
+	InitializeCroc(0x060000, 6,  9,  9,  9,  9); // MS09E, MS10E, MS11E, MS12E	036
+	InitializeCroc(0x070000, 7, 10, 10, 10, 10); // MS13W, MS14W, MS15W, MS16W	040
+	InitializeCroc(0x080000, 8,  9,  9,  9,  9); // MS13E, MS14E, MS15E, MS16E	036
+	maxFebs = 10;					//				---298
 #endif
 #if CRATE1 // Current as of March 22 Begin-Of-Run 
 	detectorString        = "NuMI Crate 1.";
@@ -111,14 +111,14 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	acqData.infoStream() << "Initializing hardware for " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
 	InitializeCrim(0xF00000, 2, runningMode);
-	InitializeCroc(0x010000, 1, 10, 10, 10, 10); // MS17W, MS18W, MS19W, MS20W
-	InitializeCroc(0x020000, 2,  9,  9,  9,  9); // MS17E, MS18E, MS19E, MS20E
-	InitializeCroc(0x030000, 3, 10, 10,  6,  6); // MS21W, MS22W, MS23W, MS24W
-	InitializeCroc(0x040000, 4,  9,  9,  5,  5); // MS21E, MS22E, MS23E, MS24E
-	InitializeCroc(0x050000, 5,  6,  6,  6,  2); // MS25W, MS26W, MS27W, Veto Wall 
-	InitializeCroc(0x060000, 6,  5,  5,  5,  0); // MS25E, MS26E, MS27E, Loopback
-	InitializeCroc(0x070000, 7, 10, 10, 10, 10); // MS00W, MS00E, MS-1W, MS-1E
-	maxFebs = 10;
+	InitializeCroc(0x010000, 1, 10, 10, 10, 10); // MS17W, MS18W, MS19W, MS20W	040
+	InitializeCroc(0x020000, 2,  9,  9,  9,  9); // MS17E, MS18E, MS19E, MS20E	036
+	InitializeCroc(0x030000, 3, 10, 10,  6,  6); // MS21W, MS22W, MS23W, MS24W	032
+	InitializeCroc(0x040000, 4,  9,  9,  5,  5); // MS21E, MS22E, MS23E, MS24E	028
+	InitializeCroc(0x050000, 5,  6,  6,  6,  2); // MS25W, MS26W, MS27W, Veto Wall 	020
+	InitializeCroc(0x060000, 6,  5,  5,  5,  0); // MS25E, MS26E, MS27E, Loopback	015
+	InitializeCroc(0x070000, 7, 10, 10, 10, 10); // MS00W, MS00E, MS-1W, MS-1E	040
+	maxFebs = 10;					//				---211
 #endif
 	// Set the flags that tells us how many VME cards are installed for this controller.
 	daqController->SetCrocVectorLength(); 
