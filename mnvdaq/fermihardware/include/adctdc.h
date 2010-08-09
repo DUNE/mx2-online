@@ -48,7 +48,7 @@ class adc : public Frames {
 		/*! Makes the outgoing message */
 		void MakeMessage();
 		/*! Shows the raw values from the ADC's */
-		int DecodeRegisterValues(int a); // debug function that parses an adc data block
+		int DecodeRegisterValues(int febFirmware); // debug function that parses an adc data block
 };
 
 /*! \class disc

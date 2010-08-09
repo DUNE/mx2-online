@@ -20,7 +20,22 @@
 // We do not read the FPGA's on every trigger, so the firmware version is not generally available
 // "dynamically."  Therefore we have to set it BY HAND.  Be sure that this is set correctly for 
 // the *whole* detector.  Mixed firmware is pretty much disallowed.
+#if V81FIRMWARE
+const int firmwareVersion = 81;
+const int numberOfHits    =  6;      // this is a function of the FEB firmware
+#endif
+#if V83FIRMWARE
 const int firmwareVersion = 83;
+const int numberOfHits    =  6;      // this is a function of the FEB firmware
+#endif
+#if V84FIRMWARE
+const int firmwareVersion = 84;
+const int numberOfHits    =  8;      // this is a function of the FEB firmware
+#endif
+#if V85FIRMWARE
+const int firmwareVersion = 85;
+const int numberOfHits    =  6;      // this is a function of the FEB firmware
+#endif
 
 // The RunningMode defines the sort of data being collected during a run and is not synonymous with 
 // trigger type.  For example, the MixedBeamLightInjection RunningMode will alternate between beam 
@@ -104,16 +119,15 @@ const int allowedLightInjection =  1100000;
 class acquire_data {
 	private: 
 		controller *daqController; /*!< A CAEN V2718 VME Controller Object */
-		acquire *daqAcquire; /*!< An object of VME write functions */
+		acquire *daqAcquire;       /*!< An object of VME write functions */
 
 		unsigned char *DPMData; /*!<A buffer for handling BLT data */
 
 		boost::mutex data_lock, send_lock; /*!< Boost multiple exclusions for threaded operation */
 
-		static const int dpmMax; /*!<Maximum number of bytes the DPM can hold */
-		std::ofstream frame_acquire_log; /*!< log file streamer for timing output */
-		std::string et_filename; /*!< A string object for the Event Transfer output filename */
-		static const int numberOfHits;
+		static const int dpmMax;              /*!<Maximum number of bytes the DPM can hold */
+		std::ofstream frame_acquire_log;      /*!< log file streamer for timing output */
+		std::string et_filename;              /*!< A string object for the Event Transfer output filename */
 		static const unsigned int timeOutSec; /*!< How long we will wait for a beam spill before moving on... */
 		log4cpp::Appender* acqAppender;
 		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */

@@ -14,11 +14,6 @@
 #include <sys/time.h>
 
 const int acquire_data::dpmMax                  = 1024*6; // we have only 6 Kb of space in the DPM Memory per channel
-//#if ZEROSUPPRESSION
-//const int acquire_data::numberOfHits            = 5;      // this is a function of the FEB firmware
-//#else
-const int acquire_data::numberOfHits            = 6;      // this is a function of the FEB firmware
-//#endif
 const unsigned int acquire_data::timeOutSec     = 3600;   // be careful shortening this w.r.t. multi-PC sync issues
 const bool acquire_data::checkForMessRecvd      = true;   // fixed flag
 const bool acquire_data::doNotCheckForMessRecvd = false;  // fixed flag
@@ -36,8 +31,12 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
  */
 	std::cout << "\nEntering acquire_data::InitializeDaq()." << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeDaq().";
+	acqData.infoStream() << "  FEB Firmware Version     = " << firmwareVersion;
+	acqData.infoStream() << "  Number of Hits (disc+1)  = " << (numberOfHits-1) << "+1";
 	acqData.infoStream() << "  HW (VME Card) Init Level = " << hwInitLevel;
-
+#if V9CRIM
+	acqData.infoStream() << "  Assuming V9 CRIM Firmware.";
+#endif
 	// Get the VME read/write access functions.
 	daqAcquire = new acquire(); 
 
@@ -118,7 +117,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	InitializeCroc(0x040000, 4,  9,  9,  5,  5); // MS21E, MS22E, MS23E, MS24E
 	InitializeCroc(0x050000, 5,  6,  6,  6,  2); // MS25W, MS26W, MS27W, Veto Wall 
 	InitializeCroc(0x060000, 6,  5,  5,  5,  0); // MS25E, MS26E, MS27E, Loopback
-	InitializeCroc(0x070000, 7,  8,  8,  4,  4); // MS00W, MS00E, MS-1W, MS-1E
+	InitializeCroc(0x070000, 7, 10, 10, 10, 10); // MS00W, MS00E, MS-1W, MS-1E
 	maxFebs = 10;
 #endif
 	// Set the flags that tells us how many VME cards are installed for this controller.

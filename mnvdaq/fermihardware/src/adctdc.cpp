@@ -58,7 +58,7 @@ void adc::MakeMessage()
 }
 
 
-int adc::DecodeRegisterValues(int a)
+int adc::DecodeRegisterValues(int febFirmware)
 {	
 /*! \fn
  *
@@ -66,7 +66,7 @@ int adc::DecodeRegisterValues(int a)
  * Decode the input frame data as Hit data type from all Analog BRAMs argument is dummy for now...
  * Returns 0 for success or an error code (eventually)...
  *
- * \param a will set the FEB firmware.
+ * \param febFirmware, the FEB firmware.
  */
 	// Check to see if the frame is right length...
 	unsigned short ml = (message[ResponseLength1] << 8) | message[ResponseLength0];
@@ -77,6 +77,8 @@ int adc::DecodeRegisterValues(int a)
 	}
 	if ( ml != ADCFrameLength ) { 
 		std::cout << "ADC Frame length mismatch!" << std::endl;
+		std::cout << "  Message Length = " << ml << std::endl;
+		std::cout << "  Expected       = " << ADCFrameLength << std::endl;
 		// -> Throw exception here.
 		return 1;		
 	}
@@ -97,8 +99,9 @@ int adc::DecodeRegisterValues(int a)
 		hword++;
 	}
 
-	// The number of bytes per row is going to be a function of firmware!!
-	const int bytes_per_row = 4;
+	// The number of bytes per row is a function of firmware!!
+	int bytes_per_row = 4; // most firmwares (non 84).
+	if (febFirmware = 84) bytes_per_row = 2;
 	// First, show the adc in simple sequential order...
 	// Note that the "TimeVal" will disappear in newer firmware!
 #if SHOWSEQ

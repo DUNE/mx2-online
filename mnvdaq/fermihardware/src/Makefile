@@ -14,6 +14,7 @@ SRC = $(wildcard *.cpp)
 TARGET=libhardware.so
 
 include $(DAQROOT)/Make.include
+include $(DAQROOT)/Make.options
 
 $(TARGET): $(OBJS)
 	@echo $(OBJS)

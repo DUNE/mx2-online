@@ -17,8 +17,14 @@ const int Frames::MaxSendLength=2046; //maximum send message length
 const int Frames::MaxReceiveLength=6124; //maximum receive message length
 const int Frames::MinHeaderLength=9; //size (in bytes) of an outgoing FPGA header for ANY device
 const int Frames::MinBroadcastLength=2; //I'm not sure this is ever used in our setup
-const int Frames::ADCFrameLength=875; //bytes of course (dpm pointer should be this +2)
 const int Frames::NDiscrChPerTrip=16;
+
+#if V81FIRMWARE||V83FIRMWARE||V85FIRMWARE
+const int Frames::ADCFrameLength=875; //bytes of course (dpm pointer should be this +2)
+#endif
+#if V84FIRMWARE
+const int Frames::ADCFrameLength=443; //bytes of course (dpm pointer should be this +2)
+#endif
 
 // log4cpp category hierarchy.
 log4cpp::Category& framesLog = log4cpp::Category::getInstance(std::string("frames"));

@@ -35,9 +35,9 @@ class feb : public Frames {
 		unsigned char firmwareVersion[1]; /*!< the firmware version on this board */
 		int maxHits; /*!< the maximum number of hits a discriminator can take */
 		int TrueIncomingMessageLength; /*!< true FEB incoming message length */
-		bool initialized;  /*!< a flag for the initialization state of this FEB */
+		bool initialized;    /*!< a flag for the initialization state of this FEB */
 		trips *tripChips[6]; /*!< the trip objects for this FEB */
-		adc *adcHits[6]; //we can have as many as 6 hits (for now) /*!< The ADC objects for this FEB */
+		adc *adcHits[8];     /*!< The ADC objects for this FEB; We can have as many as 8 hits. */
 		disc *hits_n_timing; //timing & number of hits /*!< The discriminator for this FEB */
 
 		unsigned char *buffer; /*!< a buffer for FEB data */
