@@ -28,13 +28,13 @@ const int numberOfHits    =  6;      // this is a function of the FEB firmware
 const int firmwareVersion = 83;
 const int numberOfHits    =  6;      // this is a function of the FEB firmware
 #endif
-#if V84FIRMWARE
-const int firmwareVersion = 84;
-const int numberOfHits    =  8;      // this is a function of the FEB firmware
-#endif
 #if V85FIRMWARE
 const int firmwareVersion = 85;
 const int numberOfHits    =  6;      // this is a function of the FEB firmware
+#endif
+#if V90FIRMWARE
+const int firmwareVersion = 90;
+const int numberOfHits    =  8;      // this is a function of the FEB firmware
 #endif
 
 // The RunningMode defines the sort of data being collected during a run and is not synonymous with 

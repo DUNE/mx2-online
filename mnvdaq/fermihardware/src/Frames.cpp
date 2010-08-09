@@ -22,7 +22,7 @@ const int Frames::NDiscrChPerTrip=16;
 #if V81FIRMWARE||V83FIRMWARE||V85FIRMWARE
 const int Frames::ADCFrameLength=875; //bytes of course (dpm pointer should be this +2)
 #endif
-#if V84FIRMWARE
+#if V90FIRMWARE
 const int Frames::ADCFrameLength=443; //bytes of course (dpm pointer should be this +2)
 #endif
 

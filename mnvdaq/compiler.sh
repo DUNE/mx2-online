@@ -17,6 +17,12 @@ if [ $DAQROOT == "/work/software/mnvsingle/mnvdaq" ]; then
 	if [ $HOSTNAME == "minervatest04.fnal.gov" ]; then 
 		cp ${DAQROOT}/options/minervatest04single.opts $DAQROOT/Make.options
 	fi
+	if [ $HOSTNAME == "mnvonline0.fnal.gov" ]; then 
+		cp ${DAQROOT}/options/mnvonline0single.opts $DAQROOT/Make.options
+	fi
+	if [ $HOSTNAME == "mnvonline1.fnal.gov" ]; then 
+		cp ${DAQROOT}/options/mnvonline1single.opts $DAQROOT/Make.options
+	fi
 fi
 
 # multi node build
