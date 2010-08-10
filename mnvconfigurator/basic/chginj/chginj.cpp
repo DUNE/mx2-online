@@ -23,8 +23,12 @@ using namespace std;
 #define BLOCKRAMREADLEVEL 50 // using same for adc & discr
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs on WH14NXO now.
-const int maxHits    = 6;
+//const int maxHits    = 6;
+const int maxHits    = 8;
 const int adcHit     = 1;
+
+//const int febFirmware = 81;
+const int febFirmware = 84;
 
 const int tripRegIBP        =  60;
 const int tripRegIBBNFOLL   = 120;
@@ -36,7 +40,8 @@ const int tripRegIFFP2      =   0;
 const int tripRegIBCOMP     =  20;
 const int tripRegVREF       = 165;
 const int tripRegVTH        = 240;
-const int tripRegPIPEDEL    =  11; // 2*maxHits - 1;
+//const int tripRegPIPEDEL    =  11; // 2*maxHits - 1;
+const int tripRegPIPEDEL    =  2*maxHits - 1;
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
@@ -954,8 +959,13 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 	}
 
 	// Close & Clean up memory
+#if DEBUGLEVEL > FPGAWRITELEVEL
+	printf(" Cleaning up memory...\n");
+#endif
 	delete myFeb;
-	
+#if DEBUGLEVEL > FPGAWRITELEVEL
+	printf(" Finished FEBFPGAWriteChargeInjection for FEB %d\n, returning 0!", (int)boardID);
+#endif
 	return 0;
 }
 
@@ -1573,7 +1583,7 @@ int ReadADCTest(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->GetADC(iHit)->CheckForErrors(); // just for fun
 #if DEBUGLEVEL > BLOCKRAMREADLEVEL
 		// Print decoded frame...
-		myFeb->GetADC(iHit)->DecodeRegisterValues((int)1);
+		myFeb->GetADC(iHit)->DecodeRegisterValues(febFirmware);
 #endif
 		// Some clean-up... 
 		myFeb->GetADC(iHit)->message = 0;
@@ -1703,7 +1713,7 @@ int ReadDiscrTest(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->GetDisc()->CheckForErrors(); // just for fun
 #if DEBUGLEVEL > BLOCKRAMREADLEVEL
 		// Print decoded frame...
-		myFeb->GetDisc()->DecodeRegisterValues((int)1);
+		myFeb->GetDisc()->DecodeRegisterValues(febFirmware);
 #endif
 		// Some clean-up... 
 		myFeb->GetDisc()->message = 0;
