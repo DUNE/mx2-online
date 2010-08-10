@@ -261,7 +261,11 @@ int main(int argc, char **argv)
 			time.tv_nsec = 1000; // wait 1 microsecond
 		
 			// sleep to avoid a busy-wait.
-			nanosleep( &time, NULL );
+			// commenting this sleep out for now - this will keep the CPU engaged 
+			// more or less full time, but keeps the event builder running in time 
+			// with the main acquisition sequence and avoids any possibility of pile
+			// up.  still, keep an eye on this...
+			//nanosleep( &time, NULL );
 
 			// if no events are available, this will return ET_ERROR_EMTPY.
 			// since it's not ET_OK, it will force us to go around and ask
