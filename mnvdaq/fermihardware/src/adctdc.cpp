@@ -102,6 +102,7 @@ int adc::DecodeRegisterValues(int febFirmware)
 	// The number of bytes per row is a function of firmware!!
 	int bytes_per_row = 4; // most firmwares (non 84).
 	if (febFirmware = 84) bytes_per_row = 2;
+	if (febFirmware = 90) bytes_per_row = 2; // 90 & 84 are really the same, but 84 does not live in the wild.
 	// First, show the adc in simple sequential order...
 	// Note that the "TimeVal" will disappear in newer firmware!
 #if SHOWSEQ
