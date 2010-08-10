@@ -98,7 +98,7 @@ MinervaHeader::MinervaHeader(unsigned char crate, log4cpp::Appender* appender)
 	bank_header[0] = magic_pattern;    // add: the magic pattern to the header,
 	bank_header[1] = 48;               // the length in bytes of the DAQ header,
 	bank_header[2] = (3 & 0xFF);       // Bank Type (3 for DAQ Header),
-	bank_header[2] |= (8 & 0xFF)<<0x8; // Version (8, reported as 7?...), and
+	bank_header[2] |= (9 & 0xFF)<<0x8; // Header Version 9, and
 	bank_header[3] = source_id;        // the source information.
 #if DEBUG_HEADERS
 	if (hdrAppender!=0) {

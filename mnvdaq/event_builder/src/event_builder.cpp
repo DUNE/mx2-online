@@ -231,12 +231,6 @@ int main(int argc, char **argv)
 	bool continueRunning = true;
 	while ((et_alive(sys_id)) && continueRunning) {
 		struct timespec time;
-//#if MTEST
-//		time.tv_sec  = 3600; // Wait 60 minutes before the EB times out.
-//#else
-//		time.tv_sec  = 1200; // Wait 20 minutes before the EB times out.
-//#endif
-		
 		//printf("time: %d.%i\n", time.tv_sec, time.tv_nsec);
 
 		// there are two different circumstances under which we will acquire events.
@@ -318,11 +312,6 @@ int main(int argc, char **argv)
 			ebuilder.fatal("event_builder::main(): et_client: got timeout\n");
 			continueRunning = false;
 		}
-//		else if (status == ET_ERROR_BUSY) {
-//			printf("event_builder::main(): et_client: station is busy\n");
-//			ebuilder.fatal("event_builder::main(): et_client: station is busy\n");
-//			continueRunning = false;
-//		}
 		else if (status == ET_ERROR_WAKEUP) {
 			printf("event_builder::main(): et_client: someone told me to wake up\n");
 			ebuilder.fatal("event_builder::main(): et_client: someone told me to wake up\n");
@@ -395,7 +384,6 @@ int main(int argc, char **argv)
 				final_buffer[data_index] = tmp_buffer[data_index];
 			}
 			// Clean up memory - remove data_block created in MakeDataBlock
-			// Strongly suspect this is fixing a small memory leak... - 2010.May.4
 			event->DeleteDataBlock();
 		} else { 
 #if DEBUG_BUFFERS
@@ -408,11 +396,6 @@ int main(int argc, char **argv)
 				final_buffer[data_index] = event->GetEventBlock(data_index);
 			}
 		}
-
-#if !NEARLINE
-		//memcpy (pdata, (void *) final_buffer, length);
-		//et_event_setlength(pe,length);
-#endif
 
 		// Put the event back into the ET system.
 		status = et_event_put(sys_id, attach, pe); 
@@ -488,12 +471,6 @@ int event_builder(event_handler *evt)
 	feb *dummy_feb = new feb(6,1,(febAddresses)0,56); // Make a dummy feb for access to the header decoding functions. 
 	if (evt->feb_info[4]==3) {
 		gate_counter = evt->gate;
-		// Set the "Trigger Time"
-		struct timeval triggerNow;
-		gettimeofday(&triggerNow, NULL);
-		unsigned long long totaluseconds = ((unsigned long long)(triggerNow.tv_sec))*1000000 +
-			(unsigned long long)(triggerNow.tv_usec);
-		evt->triggerTime = totaluseconds;
 		if (!(gate_counter%gate_print_freq)) { 
 			printf("Gate: %5d ; Trigger Time = %llu ; ", gate_counter, evt->triggerTime);
 			fflush(stdout);

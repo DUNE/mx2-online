@@ -1302,6 +1302,7 @@ int main(int argc, char *argv[])
 		event_data.feb_info[4] = bank; 
 		event_data.minosSGATE  = daq->GetMINOSSGATE();
 		event_data.readoutTime = readoutTimeDiff;
+		event_data.triggerTime = startReadout;
 #if DEBUG_GENERAL
 		mnvdaq.debugStream() << "Contacting the EventBuilder from Main...";
 #endif
@@ -1781,7 +1782,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v08','v07-06-02'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-06-03'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
