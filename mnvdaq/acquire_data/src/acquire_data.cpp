@@ -990,6 +990,8 @@ bool acquire_data::TakeAllData(feb *febTrial, channels *channelTrial, croc *croc
  *  messages to the data acquisition electronics, collects those messages, fills a structure
  *  for future data handling, and sends the data on to the event builder.
  *
+ *  This function is used by the "old" readout model (FEB sequential).
+ *
  *  \param feb *febTrial  a pointer to the feb being accessed
  *  \param channels *channelTrial  a pointer to the CROC channel which olds the FEB
  *  \param croc *crocTrial  a pointer to the CROC that has the FEB/Channel being accessed
@@ -3041,12 +3043,16 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum;
 #endif
 				// Compose an FPGA read frame.
+#if V90FIRMWARE
+				tmpFEB->MakeShortMessage();
+#else
 				Devices dev     = FPGA;
 				Broadcasts b    = None;
 				Directions d    = MasterToSlave;
 				FPGAFunctions f = Read;
 				tmpFEB->MakeDeviceFrameTransmit(dev,b,d,f,(unsigned int)tmpFEB->GetBoardNumber());
 				tmpFEB->MakeMessage();
+#endif
 				// Send the message & delete the outgoingMessage.
 				SendFrameData(tmpFEB, (*rop)->getChannel(i));
 				tmpFEB->DeleteOutgoingMessage();

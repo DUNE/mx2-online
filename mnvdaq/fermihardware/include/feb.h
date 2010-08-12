@@ -56,7 +56,8 @@ class feb : public Frames {
 			DCM1Lock[1], DCM2Lock[1], DCM1NoClock[1], DCM2NoClock[1], DCM2PhaseDone[1], 
 			TestPulse2Bit[1], FirmwareVersion[1], boardID[1],
 			HVNumAve[1], HVPulseWidth[1], TripXThresh[1], TripXCompEnc[1],
-			ExtTriggerFound[1], ExtTriggerRearm[1];
+			ExtTriggerFound[1], ExtTriggerRearm[1], AfterPulseExtendedWidth[1],
+			PreviewEnable[1];
 
 		// log4cpp appender for printing log statements.
 		log4cpp::Appender* febAppender;
@@ -92,6 +93,7 @@ class feb : public Frames {
 		void SetFEBDefaultValues();
 		void ShowValues();
 		void MakeMessage();
+		void MakeShortMessage();
 		int DecodeRegisterValues(int);
 		int inline GetExpectedIncomingMessageLength() {return TrueIncomingMessageLength;};
 
@@ -152,6 +154,9 @@ class feb : public Frames {
 		unsigned short inline GetDiscEnMask2() {return DiscrimEnableMask[2];};
 		unsigned short inline GetDiscEnMask3() {return DiscrimEnableMask[3];};
 		unsigned int inline   GetGateTimeStamp() {return GateTimeStamp;};
+		// new v90 registers...
+		unsigned char inline  GetAfterPulseExtendedWidth() {return AfterPulseExtendedWidth[0];};
+		unsigned char inline  GetPreviewEnable() {return PreviewEnable[0];};
 
 		/*! set functions for FEB setable values */
 		void inline SetTimer(unsigned int a) {Timer=a;};
@@ -193,6 +198,11 @@ class feb : public Frames {
 		void inline SetExtTriggerRearm(unsigned char *a) {ExtTriggerRearm[0]=a[0];};
 		void SetExtTriggerRearm(char *a);
 		void inline SetDiscrimEnableMask(unsigned short a, int i) {DiscrimEnableMask[i]=a;};
+		// new v90 registers...
+		void inline SetAfterPulseExtendedWidth(unsigned char *a) {AfterPulseExtendedWidth[0]=a[0];};
+		void SetAfterPulseExtendedWidth(char *a);
+		void inline SetPreviewEnable(unsigned char *a) {PreviewEnable[0]=a[0];};
+		void SetPreviewEnable(char *a);
 };
 
 #endif

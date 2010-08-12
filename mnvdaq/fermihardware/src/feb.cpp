@@ -36,20 +36,12 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 	Devices dev = FPGA;     //the device type for the header
 	Broadcasts b = None;    //broadcast type for header
 	Directions d = MasterToSlave; //message direction for header
-#if FPGADUMPREAD
-	FPGAFunctions f = DumpRead;  //operation to be performed
-#else
 	FPGAFunctions f = Read;      //operation to be performed
-#endif
 	// Compose the transmission FPGA header
 	MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
 
 	// the header + information part of the message 
-#if FPGADUMPREAD
-	OutgoingMessageLength = MinHeaderLength;              //length of the outgoing message message
-#else
 	OutgoingMessageLength = MinHeaderLength + NRegisters; //length of the outgoing message message
-#endif
 	TrueIncomingMessageLength = 
 		2 + MinHeaderLength + NRegisters + (NRegisters + 1) % 2; //the length of the incoming message
 	// Note above: incoming messages are ALWAYS 2 bytes LARGER than outgoing messages!
@@ -131,6 +123,35 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 	}
 }
 
+
+void feb::MakeShortMessage()
+{
+/*! \fn ********************************************************************|
+ * MakeShortMessage uses FPGA Dump Read instead of the regular Read.        |
+ ***************************************************************************|
+ */
+	// Update the header for this frame (frames default to read). 
+	Devices dev     = FPGA;          //the device type for the header
+	Broadcasts b    = None;          //broadcast type for header
+	Directions d    = MasterToSlave; //message direction for header
+	FPGAFunctions f = DumpRead;      //operation to be performed
+	// Compose the transmission FPGA header
+	MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
+
+	// the header + information part of the message 
+	OutgoingMessageLength = MinHeaderLength;              //length of the outgoing message message
+
+	// Make a new out-going message buffer of suitable size.
+	outgoingMessage = new unsigned char [OutgoingMessageLength];  
+												
+	// Eschew the local "non-dyamic" (for lack of a better description)
+	// copy of the message buffer (dynamic).  May not work right?...
+	// Put the message in the inherited out-going message bufer.
+	for (int i=0;i<(OutgoingMessageLength);i++) { 
+		outgoingMessage[i] = frameHeader[i];
+	}
+}
+
 void feb::MakeMessage() 
 {
 /*! \fn ********************************************************************************
@@ -138,35 +159,11 @@ void feb::MakeMessage()
  * name inherited from Frames.  This function bit-packs the data into an OUTGOING
  * message from values set using the get/set functions assigned to this class (see feb.h).
  *
- * The packing for v83 firmware is described below. Header takes up First 11 bytes.  
+ * The packing for v90 firmware is described below. Header takes up First 11 bytes.  
  * Registers start at indx==11.  See docdb 4311 for a description of the bit-by-bit packing.
  * Note that we must clean up the outgoingMessages in the functions that call MakeMessage!
  ********************************************************************************
  */
-#if FPGADUMPREAD
-	// Make a new out-going message buffer of suitable size.
-	outgoingMessage = new unsigned char [OutgoingMessageLength];  
-												
-	// Create a local "non-dyamic" (for lack of a better description)
-	// copy of the message buffer (dynamic) for use in working around
-	// a potential memory leak problems.  While mildly redundant, it 
-	// doesn't really cause any speed issues either and it helps 
-	// ensure that memory is cleaned up properly.
-	unsigned char localMessage[OutgoingMessageLength]; 
-
-	// Write the message to the localMessage buffer.
-	for (int i=0;i<(OutgoingMessageLength);i++) { 
-		if (i<MinHeaderLength) {
-			localMessage[i]=frameHeader[i];
-		} else {
-			localMessage[i]=message[i-MinHeaderLength];
-		}
-	}
-	// Put the message in the inherited out-going message bufer.
-	for (int i=0;i<(OutgoingMessageLength);i++) { 
-		outgoingMessage[i]=localMessage[i];
-	}
-#else
 	// Message must have an odd number of bytes!
 	message = new unsigned char [NRegisters + (NRegisters+1)%2]; 
 
@@ -261,8 +258,9 @@ void feb::MakeMessage()
 	message[25] = (HVActual & 0xFF); //mask off bits 0-7
 	message[26] = (HVActual >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7. 
 						//and mask off bits 0-7
-	/* message word 27: HV control value, 8 bits */
-	message[27] = (HVControl[0] & 0xFF); //mask off bits 0-7
+	/* message word 27: AfterPulseExtendedWidth, 4 bits */
+	//message[27] = (HVControl[0] & 0xFF); //mask off bits 0-7, HV Control is irrelevant for this (all firmwares).
+	message[27] = (AfterPulseExtendedWidth[0] & 0x0F); //mask off bits 0-3, set 4-7 to zero (unused bits).
 
 	/* message word 28-29, bits 0-3: Inject DAC value, 12 bits */
 	message[28] = (InjectDACValue & 0xFF); //mask off bits 0-7
@@ -280,10 +278,11 @@ void feb::MakeMessage()
 	message[30] = (InjectRange[0] & 0x0F); //mask off bits 0-3
 	message[30] |= (InjectPhase[0] & 0x0F) << 0x04; //mask off bits 0-3 and
 							//shift left 4 bits to 4-7
-	/* message word 31: BoardID (bits 0-3) and HVNumAve (bits 4-7) */
+	/* message word 31: BoardID (bits 0-3), HVNumAve (bits 4-6), and PreviewEnable (bit 7) */
 	message[31] = (boardID[0] & 0x0F); //mask off bits 0-3
-	message[31] |= (HVNumAve[0] & 0x07) << 0x04; //mask off bits 0-2 and
-						//shift left 4 bits to 4-7
+	message[31] |= (HVNumAve[0] & 0x07) << 0x04; //mask off bits 0-2 and shift left 4 bits to 4-6
+	message[31] |= (PreviewEnable[0] & 0x01) << 0x07; //mask bit 1 and shift left 7 bits.
+
 	/* message word 32:  Firmware version */
 	message[32] = (FirmwareVersion[0] & 0xFF); //the firmware version is 8 bits
 
@@ -354,8 +353,6 @@ void feb::MakeMessage()
 	}
 	// Clean up memory.
 	delete [] message; 
-#endif // FPGADUMPREAD
-
 	// This finishes the outgoing message.
 }
 
@@ -529,7 +526,8 @@ int feb::DecodeRegisterValues(int buffersize)
 
 			/* message word 27: HV control value, 8 bits */
 			startByte++;
-			HVControl[0] = (message[startByte] & 0xFF); //mask off bits 0-7
+			HVControl[0] = 0; // Depricated in v90+, irrelevant in previous.
+			AfterPulseExtendedWidth[0] = (message[startByte] & 0x0F); //mask off bits 0-3
 
 			/* message word 28-29, bits 0-3: Inject DAC value, 12 bits */
 			startByte++;
@@ -540,8 +538,8 @@ int feb::DecodeRegisterValues(int buffersize)
 
 			/* message word 29, bits 4-7: InjectDACMode, 2 bits; InjectDACDone, 1 bit, 
 			*     InjectDACStart, 1 bit */
-			InjectDACMode[0] = (message[startByte] & 0x30) >> 0x04; //mask off bits 4 & 5 
-			InjectDACDone[0] = (message[startByte] & 0x40) >> 0x06; //mask off bits 6 
+			InjectDACMode[0]  = (message[startByte] & 0x30) >> 0x04; //mask off bits 4 & 5 
+			InjectDACDone[0]  = (message[startByte] & 0x40) >> 0x06; //mask off bits 6 
 			InjectDACStart[0] = (message[startByte] & 0x80) >> 0x07; //mask off bits 7 
 
 			/* message word 30: Inject range (bits 0-3), Inject phase (bits 4-7) */
@@ -549,10 +547,11 @@ int feb::DecodeRegisterValues(int buffersize)
 			InjectRange[0] = (message[startByte] & 0x0F); //mask off bits 0-3
 			InjectPhase[0] = (message[startByte] & 0xF0) >> 0x04; //mask off bits 4-7 
 
-			/* message word 31: BoardID (bits 0-3) and HVNumAve (bits 4-6) */
+			/* message word 31: BoardID (bits 0-3), HVNumAve (bits 4-6), and PreviewEnable (bit 7) */
 			startByte++;
-			boardID[0] = (message[startByte] & 0x0F); //mask off bits 0-3
-			HVNumAve[0] = (message[startByte] & 0x70) >> 0x04; //mask off bits 4-6 & shift
+			boardID[0]       = (message[startByte] & 0x0F); //mask off bits 0-3
+			HVNumAve[0]      = (message[startByte] & 0x70) >> 0x04; //mask off bits 4-6 & shift
+			PreviewEnable[0] = (message[startByte] & 0x80) >> 0x07; //mask off bit 7 & shift
 
 			/* message word 32:  Firmware version */
 			startByte++;
@@ -589,7 +588,6 @@ int feb::DecodeRegisterValues(int buffersize)
 			startByte++;
 			TripXCompEnc[0] = (message[startByte] & 0x3F); //mask off bits 0-5
 
-	
 			/* message word 42-43 Discriminator Enable Mask Trip 0, 16 bits */
 			/* message word 44-45 Discriminator Enable Mask Trip 1, 16 bits */
 			/* message word 46-47 Discriminator Enable Mask Trip 2, 16 bits */
@@ -635,28 +633,30 @@ void feb::SetFEBDefaultValues()
  * Sets default (pre-defined) values for feb information.  These are hard-coded
  * in this function.  No real reason not to hard-code the default values unless
  * the situation arises where different FEB's would indeed need to have different
- * default values.  Then this would need to be changed.
+ * default values.  Then this would need to be changed.  There are a number of 
+ * readonly registers initialized anyway (not all are marked with comments!).
  *********************************************************************************/
-	Timer      = 12;
-	GateStart  = 43300;
-	GateLength = 1702; // 1024 clock ticks * ~9.4 ns/tick ~ 9.6 us
-	TripPowerOff[0] = 0x0; // all on! // 0x3F; // all off
+	Timer           = 12;
+	GateStart       = 43300; // (65535 - 43300 ticks ) * 9.4 ns/tick ~ 209 us delay before gate open
+	GateLength      = 1702;  // 1702 clock ticks * ~9.4 ns/tick ~ 15.999 us
+	TripPowerOff[0] = 0x0;   // all on! // 0x3F; // all off
 	for (int i=0;i<6;i++) {
 		InjectCount[i][0]  = 0;
 		InjectEnable[i][0] = 0;
 	}
-	InjectRange[0] = 0;
-	InjectPhase[0] = 0;
-	InjectDACValue = 0;
+	InjectRange[0]    = 0;
+	InjectPhase[0]    = 0;
+	InjectDACValue    = 0;
 	InjectDACMode[0]  = 0;
 	InjectDACDone[0]  = 0;
 	InjectDACStart[0] = 0;
-	HVEnabled[0] = 0;
-	HVTarget     = 32768;
-	HVActual     = 0;
-	HVControl[0] = 0;
-	HVManual[0]  = 0;
-	statusRXLock[0]      = 0;     //actually readonly
+	HVEnabled[0]      = 0;
+	HVTarget          = 32768; // ~550 Volts?
+	HVActual          = 0;
+	HVControl[0]      = 0; // not used anymore in v90+ firmware...
+	AfterPulseExtendedWidth[0] = 0;
+	HVManual[0]          = 0;
+	statusRXLock[0]      = 0; //actually readonly
 	statusTXSyncLock[0]  = 0; //actually readonly
 	PhaseStart[0]        = 0;
 	PhaseIncrement[0]    = 0;
@@ -664,24 +664,25 @@ void feb::SetFEBDefaultValues()
 	ExtTriggerRearm[0]   = 0; 
 	statusSCMDUnknown[0] = 0; //actually readonly
 	statusFCMDUnknown[0] = 0; //actually readonly
-	PhaseCount[0] = 0;
-	DCM1Lock[0]   = 0;
-	DCM2Lock[0]   = 0;
-	DCM1NoClock[0] = 0;
-	DCM2NoClock[0] = 0;
-	DCM2PhaseDone[0]   = 0;
-	DCM2PhaseTotal     = 0;
-	TestPulse2Bit[0]   = 0;
-	TestPulseCount     = 0;
-	boardID[0]         = 15;
-	FirmwareVersion[0] = 0;
-	HVNumAve[0]     = 0;
-	HVPeriodAuto    = 0;
-	HVPeriodManual  = 0;
-	HVPulseWidth[0] = 0;
-	Temperature     = 0;
-	TripXThresh[0]  = 0;
-	TripXCompEnc[0] = 0;
+	PhaseCount[0]        = 0;
+	DCM1Lock[0]          = 0;
+	DCM2Lock[0]          = 0;
+	DCM1NoClock[0]       = 0;
+	DCM2NoClock[0]       = 0;
+	DCM2PhaseDone[0]     = 0;
+	DCM2PhaseTotal       = 0;
+	TestPulse2Bit[0]     = 0;
+	TestPulseCount       = 0;
+	boardID[0]           = 15; // readonly
+	FirmwareVersion[0]   = 0;  // readonly
+	HVNumAve[0]          = 0;
+	PreviewEnable[0]     = 0;
+	HVPeriodAuto         = 0;  // readonly
+	HVPeriodManual       = 0;
+	HVPulseWidth[0]      = 0;
+	Temperature          = 0;  // readonly
+	TripXThresh[0]       = 0;
+	TripXCompEnc[0]      = 0;
 	for (int i=0; i<4; i++) {DiscrimEnableMask[i]=0xFFFF;} // default to discr. enabled
 	GateTimeStamp = 0; // readonly
 #if DEBUG_FEB&&DEBUG_VERBOSE
@@ -714,7 +715,7 @@ void feb::ShowValues()
 	std::cout<<"HVEnabled       : "<<(int)HVEnabled[0]<<std::endl;;
 	std::cout<<"HVTarget        : "<<(int)HVTarget<<std::endl;;
 	std::cout<<"HVActual        : "<<(int)HVActual<<std::endl;
-	std::cout<<"HVControl       : "<<(int)HVControl[0]<<std::endl;
+	std::cout<<"AfterPulse Delay: "<<(int)AfterPulseExtendedWidth[0]<<std::endl;
 	std::cout<<"HVManual        : "<<(int)HVManual[0]<<std::endl;
 	std::cout<<"statusRXLock    : "<<(int)statusRXLock[0]<<std::endl;
 	std::cout<<"statusTXSyncLock: "<<(int)statusTXSyncLock[0]<<std::endl;
@@ -735,6 +736,7 @@ void feb::ShowValues()
 	std::cout<<"TestPulseCount  : "<<(int)TestPulseCount<<std::endl;
 	std::cout<<"BoardID         : "<<(int)boardID[0]<<std::endl;
 	std::cout<<"FirmwareVersion : "<<(int)FirmwareVersion[0]<<std::endl;
+	std::cout<<"PreviewEnable   : "<<(int)PreviewEnable[0]<<std::endl;
 	std::cout<<"HVNumAve        : "<<(int)HVNumAve[0]<<std::endl;
 	std::cout<<"HVPeriodAuto    : "<<(int)HVPeriodAuto<<std::endl;
 	std::cout<<"HVPeriodManual  : "<<(int)HVPeriodManual<<std::endl;
@@ -848,4 +850,15 @@ void feb::SetExtTriggerRearm(char *a)
 	feb::SetExtTriggerRearm(c);
 }
 
+void feb::SetAfterPulseExtendedWidth(char *a)
+{
+	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+	feb::SetAfterPulseExtendedWidth(c);
+}
+
+void feb::SetPreviewEnable(char *a)
+{
+	unsigned char * c = reinterpret_cast<unsigned char *>(a);
+	feb::SetPreviewEnable(c);
+}
 #endif
