@@ -54,6 +54,10 @@ elif [ "$HOSTNAME" == "mnvnearline1.fnal.gov" ]; then
 	cp ${DAQROOT}/options/mnvnearline1.opts $DAQROOT/Make.options
 fi
 
+pushd ${DAQROOT}/et_9.0/
+gmake install
+popd
+
 if [ $# -gt 0 ]; then
 	gmake all
 else
