@@ -49,7 +49,7 @@ bool SendSentinel(acquire_data *daq, event_handler *event_data, et_att_id attach
 std::list<readoutObject*> readoutObjects; 
 int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id, 
         std::list<readoutObject*> *readoutObjects, const int allowedTime, const bool readFPGA, 
-	const int nReadoutADC);
+	const int nReadoutADC, const bool zeroSuppress);
 
 /* some logging files for debugging purposes */
 #if TIME_ME

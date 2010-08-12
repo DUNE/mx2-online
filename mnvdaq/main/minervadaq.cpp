@@ -593,6 +593,7 @@ int main(int argc, char *argv[])
 	int  gate            = 0; // Increments only for successful readout. 
 	int  triggerCounter  = 0; // Increments on every attempt...
 	bool readFPGA        = true; 
+	bool zeroSuppress    = false; 
 	int  nReadoutADC     = 8;
 	continueRunning = true;		// declared in header.
 	while ( (gate<record_gates) && continueRunning ) {
@@ -648,8 +649,9 @@ int main(int argc, char *argv[])
 		/* Trigger the DAQ, threaded or unthreaded.                                       */
 		/**********************************************************************************/
 		unsigned short int triggerType;
-		readFPGA    = true;     // default to reading the FPGA programming registers
-		nReadoutADC = 8;        // default to maximum possible
+		readFPGA     = true;    // default to reading the FPGA programming registers
+		nReadoutADC  = 8;       // default to maximum possible
+		zeroSuppress = false;   // default to no suppression.
 		allowedReadoutTime = 0; // default to "infinity"
 		// Convert to int should be okay - we only care about the least few significant bits.
 		int readoutTimeDiff = (int)stopReadout - (int)startReadout; // stop updated at end of LAST gate.
@@ -698,6 +700,9 @@ int main(int argc, char *argv[])
 			case NuMIBeam:
 				triggerType = NuMI;
 				allowedReadoutTime = allowedNuMI;
+#if ZEROSUPPRESSION
+				zeroSuppress = true;
+#endif
 				break;
 			case Cosmics:
 				// We need to reset the sequencer latch on the CRIM in Cosmic mode...
@@ -767,6 +772,9 @@ int main(int argc, char *argv[])
 				if (triggerCounter%2) { // ALWAYS start with NuMI!
 					triggerType = NuMI;
 					allowedReadoutTime = allowedNuMI;
+#if ZEROSUPPRESSION
+					zeroSuppress = true;
+#endif
 				} else {
 					if ( readoutTimeDiff < physReadoutMicrosec ) { 
 						triggerType = Pedestal;
@@ -775,6 +783,9 @@ int main(int argc, char *argv[])
 					} else {
 						triggerType = NuMI; 
 						allowedReadoutTime = allowedNuMI;
+#if ZEROSUPPRESSION
+						zeroSuppress = true;
+#endif
 #if DEBUG_MIXEDMODE
 						mnvdaq.debugStream() << "Aborting calib trigger!";
 #endif
@@ -785,6 +796,9 @@ int main(int argc, char *argv[])
 				if (triggerCounter%2) { // ALWAYS start with NuMI!
 					triggerType = NuMI;
 					allowedReadoutTime = allowedNuMI;
+#if ZEROSUPPRESSION
+					zeroSuppress = true;
+#endif
 				} else {
 					if ( readoutTimeDiff < physReadoutMicrosec ) { 
 						triggerType = LightInjection;
@@ -793,6 +807,9 @@ int main(int argc, char *argv[])
 					} else {
 						triggerType = NuMI; 
 						allowedReadoutTime = allowedNuMI;
+#if ZEROSUPPRESSION
+						zeroSuppress = true;
+#endif
 #if DEBUG_MIXEDMODE
 						mnvdaq.debugStream() << "Aborting calib trigger!";
 #endif
@@ -938,7 +955,7 @@ int main(int argc, char *argv[])
 		/**********************************************************************************/
 		try {
 			int error = TakeData(daq, evt, attach, sys_id, &readoutObjects, allowedReadoutTime, 
-				readFPGA, nReadoutADC);
+				readFPGA, nReadoutADC, zeroSuppress);
 			if (error) { throw error; }
 		} catch (int e) {
 			event_data.readoutInfo += (unsigned short)controllerErrCode;
@@ -1385,7 +1402,7 @@ bool SendSentinel(acquire_data *daq, event_handler *event_data, et_att_id attach
 
 int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id, 
 	std::list<readoutObject*> *readoutObjects, const int allowedTime, const bool readFPGA, 
-	const int nReadoutADC)
+	const int nReadoutADC, const bool zeroSuppress)
 {
 /*! \fn int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id sys_id,
  *		std::list<readoutObject*> *readoutObjects, const int allowedTime, const bool readFPGA,
@@ -1408,7 +1425,7 @@ int TakeData(acquire_data *daq, event_handler *evt, et_att_id attach, et_sys_id 
 
 	try {
 		dataTaken = daq->WriteAllData(evt, attach, sys_id, readoutObjects, allowedTime, 
-			readFPGA, nReadoutADC);
+			readFPGA, nReadoutADC, zeroSuppress);
 		if (dataTaken) throw dataTaken;
 	} catch (int e) {
 		std::cout << "Data taking failed in minervadaq main::TakeData!" << std::endl;
@@ -1782,7 +1799,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-06-04'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-06-05'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

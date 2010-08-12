@@ -2941,7 +2941,7 @@ void acquire_data::FillEventStructure(event_handler *evt, int bank, channels *th
 
 int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
         std::list<readoutObject*> *readoutObjects, const int allowedTime, 
-	const bool readFPGA, const int nReadoutADC)
+	const bool readFPGA, const int nReadoutADC, const bool zeroSuppress)
 {
 /*! \fn int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
  *		std::list<readoutObject*> *readoutObjects, const int allowedTime, 
@@ -2957,6 +2957,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
  *  \param const int allowedTime, allowed readout time in microseconds 
  *  \param const bool readFPGA, sets whether we read the FPGA's
  *  \param const int nReadoutADC, sets how many max frames we will read
+ *  \param const bool zeroSuppress, zero suppression flag (false == read end of gate, true == suppress).
  */
 #if DEBUG_NEWREADOUT
 	acqData.debugStream() << "Entering acquire_data::WriteAllData.";
@@ -2982,9 +2983,8 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	evt->feb_info[1] = daqController->GetID(); // Crate ID
 
 	int baseRead = 0;
-#if ZEROSUPPRESSION  
-	baseRead = 1;
-#endif
+	if (zeroSuppress) baseRead = 1;
+
 	// Do an "FPGA read".
 	// First, send a read frame to each channel that has an FEB with the right index.
 	// Then, after sending a frame to every channel, read each of them in turn for data.

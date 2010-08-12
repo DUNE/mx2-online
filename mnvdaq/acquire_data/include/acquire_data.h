@@ -276,7 +276,7 @@ class acquire_data {
 		/*! Run the full acquisition sequence for a gate, write the data to file. */
 		int WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
 			std::list<readoutObject*> *readoutObjects, const int allowedTime, 
-			const bool readFPGA, const int nReadoutADC);
+			const bool readFPGA, const int nReadoutADC, const bool zeroSuppress);
 };
 
 #endif
