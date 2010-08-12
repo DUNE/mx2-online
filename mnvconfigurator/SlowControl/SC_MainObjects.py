@@ -534,6 +534,10 @@ class FEB():
         sentMessage = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
             Frame.DeviceFPGA, Frame.FuncFPGARead) + Frame.NRegsFPGA*[0]
         return WriteSendReceive(sentMessage, Frame.MessageDataLengthFPGA, self.Address, Frame.DeviceFPGA, theCROCChannel, useBLT=True)
+    def FPGADumpRead(self, theCTRL):
+        sentMessage = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
+            Frame.DeviceFPGA, Frame.FuncFPGADumpRead)
+        return WriteSendReceive(sentMessage, Frame.MessageDataLengthFPGA, self.Address, Frame.DeviceFPGA, theCTRL)
     def FPGAWrite(self, theCROCChannel, sentMessageData):
         sentMessage = Frame().MakeHeader(Frame.DirectionM2S, Frame.BroadcastNone, self.Address,
             Frame.DeviceFPGA, Frame.FuncFPGAWrite) + sentMessageData
@@ -744,40 +748,41 @@ class FEB():
         #message word 6-7: WR Gate Length, 16 bits
         txtRegs[2].SetValue(str(msg[6]+(msg[7]<<8)))
         #message word 8-9, bit 0: R  DCM2 PhaseTotal, 9 bits
-        txtRegs[36].SetValue(str(msg[8]+((msg[9]&0x01)<<8)))
+        txtRegs[35].SetValue(str(msg[8]+((msg[9]&0x01)<<8)))
         #message word 9, bit 1: R  DCM2 PhaseDone, 1 bit
-        txtRegs[35].SetValue(str((msg[9]>>1)&0x01))
+        txtRegs[34].SetValue(str((msg[9]>>1)&0x01))
         #message word 9, bit 2: R  DCM1 NoCLK(0), 1 bit
-        txtRegs[33].SetValue(str((msg[9]>>2)&0x01))
+        txtRegs[32].SetValue(str((msg[9]>>2)&0x01))
         #message word 9, bit 3: R  DCM2 NoCLK(0), 1 bit
-        txtRegs[34].SetValue(str((msg[9]>>3)&0x01))
+        txtRegs[33].SetValue(str((msg[9]>>3)&0x01))
         #message word 9, bit 4: R  DCM1 Lock(0), 1 bit
-        txtRegs[31].SetValue(str((msg[9]>>4)&0x01))#message word 25-26: R  HV Actual, 16 bits
+        txtRegs[30].SetValue(str((msg[9]>>4)&0x01))
+        #message word 25-26: R  HV Actual, 16 bits
         txtRegs[5].SetValue(str(msg[25]+(msg[26]<<8)))
         #message word 9, bit 5: R  DCM2 Lock(0), 1 bit
-        txtRegs[32].SetValue(str((msg[9]>>5)&0x01))
+        txtRegs[31].SetValue(str((msg[9]>>5)&0x01))
         #message word 9, bit 6 - 7: R  TP Count2b, 2 bits
-        txtRegs[37].SetValue(str((msg[9]>>6)&0x03))
+        txtRegs[36].SetValue(str((msg[9]>>6)&0x03))
         #message word 10: WR Phase Ticks, 8 bits
-        txtRegs[30].SetValue(str(msg[10]))
+        txtRegs[29].SetValue(str(msg[10]))
         #message word 11, bit 0: R  ExtTriggFound, 1 bit
-        txtRegs[41].SetValue(str((msg[11])&0x01))
+        txtRegs[40].SetValue(str((msg[11])&0x01))
         #message word 11, bit 1: WR ExtTriggRearm, 1 bit
-        txtRegs[42].SetValue(str((msg[11]>>1)&0x01))
+        txtRegs[41].SetValue(str((msg[11]>>1)&0x01))
         #message word 11, bit 2: R  SCmdErr(1), 1 bit
-        txtRegs[48].SetValue(str((msg[11]>>2)&0x01))
+        txtRegs[47].SetValue(str((msg[11]>>2)&0x01))
         #message word 11, bit 3: R  FCmdErr(1), 1 bit
-        txtRegs[49].SetValue(str((msg[11]>>3)&0x01))
+        txtRegs[48].SetValue(str((msg[11]>>3)&0x01))
         #message word 11, bit 4: WR Phase -(0)+(1), 1 bit
-        txtRegs[29].SetValue(str((msg[11]>>4)&0x01))
+        txtRegs[28].SetValue(str((msg[11]>>4)&0x01))
         #message word 11, bit 5: WR Phase R(0)S(1), 1 bit
-        txtRegs[28].SetValue(str((msg[11]>>5)&0x01))
+        txtRegs[27].SetValue(str((msg[11]>>5)&0x01))
         #message word 11, bit 6: R  RXSyncErr(1), 1 bit
-        txtRegs[50].SetValue(str((msg[11]>>6)&0x01))
+        txtRegs[49].SetValue(str((msg[11]>>6)&0x01))
         #message word 11, bit 7: R  TXSyncErr(1), 1 bit
-        txtRegs[51].SetValue(str((msg[11]>>7)&0x01))
+        txtRegs[50].SetValue(str((msg[11]>>7)&0x01))
         #message word 12-15: R  TP Count, 32 bits
-        txtRegs[38].SetValue(str(msg[12]+(msg[13]<<8)+(msg[14]<<16)+(msg[15]<<24)))
+        txtRegs[37].SetValue(str(msg[12]+(msg[13]<<8)+(msg[14]<<16)+(msg[15]<<24)))
         #message word 16: WR Trip0 En+Inj, 8 bits
         txtRegs[15].SetValue(str(msg[16]))
         #message word 17: WR Trip1 En+Inj, 8 bits
@@ -789,17 +794,10 @@ class FEB():
         #message word 20: WR Trip4 En+Inj, 8 bits
         txtRegs[19].SetValue(str(msg[20]))
         #message word 21: WR Trip5 En+Inj, 8 bits
-        txtRegs[20].SetValue(str(msg[21]))#message word 0-3: WR Timer, 32 bits
-        msg[0] = (int(txtRegs[14].GetValue())) & 0xFF
-        msg[1] = (int(txtRegs[14].GetValue())>>8) & 0xFF
-        msg[2] = (int(txtRegs[14].GetValue())>>16) & 0xFF
-        msg[3] = (int(txtRegs[14].GetValue())>>24) & 0xFF
-        #message word 4-5: WR Gate Start, 16 bits
-        msg[4] = (int(txtRegs[1].GetValue())) & 0xFF
-        msg[5] = (int(txtRegs[1].GetValue())>>8) & 0xFF
+        txtRegs[20].SetValue(str(msg[21]))
         #message word 22, bit 0-5: WR Trip PowOFF, 1 bit for each trip
         txtRegs[0].SetValue(str(msg[22]&0x3F))
-        #message word 22, bit 6: WR HV Auto(0)Man(1), 1 bit 
+        #message word 22, bit 6: WR HV Auto(0)Man(1), 1 bit
         txtRegs[6].SetValue(str((msg[22]>>6)&0x01))
         #message word 22, bit 7: WR HV Enable(1), 1 bit
         txtRegs[3].SetValue(str((msg[22]>>7)&0x01))
@@ -807,8 +805,10 @@ class FEB():
         txtRegs[4].SetValue(str(msg[23]+(msg[24]<<8)))
         #message word 25-26: R  HV Actual, 16 bits
         txtRegs[5].SetValue(str(msg[25]+(msg[26]<<8)))
-        #message word 27: R  HV Control, 8 bits
-        txtRegs[27].SetValue(str(msg[27]))
+        #message word 27: WR After Pulse Ticks (bits 0-3)
+        txtRegs[52].SetValue(str((msg[27])&0x0F))
+        #message word 27: WR Spare (bits 4-7)
+        txtRegs[53].SetValue(str((msg[27]>>4)&0x0F))
         #message word 28-29, bits 0-3: WR InjDAC Value, 12 bits
         txtRegs[23].SetValue(str(msg[28]+((msg[29]&0x0F)<<8)))
         #message word 29, bits 4-5: WR InjDAC Mode(0), 2 bits
@@ -823,32 +823,34 @@ class FEB():
         txtRegs[22].SetValue(str((msg[30]>>4)&0x0F))
         #message word 31: R  FE Board ID (bits 0-3)
         txtRegs[13].SetValue(str((msg[31])&0x0F))
-        #message word 31: WR HV NumAvg (bits 4-7)
-        txtRegs[7].SetValue(str((msg[31]>>4)&0x0F))
+        #message word 31: WR HV NumAvg (bits 4-6)
+        txtRegs[7].SetValue(str((msg[31]>>4)&0x07))
+        #message word 31: WR Enable Hit Preview (bit 7)
+        txtRegs[51].SetValue(str((msg[31]>>7)&0x01))
         #message word 32: R  Firmware Version, 8 bits
         txtRegs[12].SetValue(str(msg[32]))
         #message word 33-34: WR HV PeriodMan, 16 bits
         txtRegs[8].SetValue(str(msg[33]+(msg[34]<<8)))
         #message word 35-36: R  HV PeriodAuto, 16 bits
         txtRegs[9].SetValue(str(msg[35]+(msg[36]<<8)))
-        #message word 37: WR HV PulseWidth, 8 bits 
+        #message word 37: WR HV PulseWidth, 8 bits
         txtRegs[10].SetValue(str(msg[37]))
         #message word 38-39: R  Temperature, 16 bits
         txtRegs[11].SetValue(str(msg[38]+(msg[39]<<8)))
         #message word 40: WR TripX Threshold, 8 bits
-        txtRegs[39].SetValue(str(msg[40]))
+        txtRegs[38].SetValue(str(msg[40]))
         #message word 41: R  TripX Comparators, 8 bits
-        txtRegs[40].SetValue(str(msg[41]))
+        txtRegs[39].SetValue(str(msg[41]))
         #message word 42-43: WR DiscMaskT0 (0x), 16 bits
-        txtRegs[43].SetValue(hex(msg[42]+(msg[43]<<8))[2:])
+        txtRegs[42].SetValue(hex(msg[42]+(msg[43]<<8))[2:])
         #message word 44-45: WR DiscMaskT1 (0x), 16 bits
-        txtRegs[44].SetValue(hex(msg[44]+(msg[45]<<8))[2:])
+        txtRegs[43].SetValue(hex(msg[44]+(msg[45]<<8))[2:])
         #message word 46-47: WR DiscMaskT2 (0x), 16 bits
-        txtRegs[45].SetValue(hex(msg[46]+(msg[47]<<8))[2:])
+        txtRegs[44].SetValue(hex(msg[46]+(msg[47]<<8))[2:])
         #message word 48-49: WR DiscMaskT3 (0x), 16 bits
-        txtRegs[46].SetValue(hex(msg[48]+(msg[49]<<8))[2:])
+        txtRegs[45].SetValue(hex(msg[48]+(msg[49]<<8))[2:])
         #message word 50-53: R  GateTimeStamp, 32 bits
-        txtRegs[47].SetValue(str(msg[50]+(msg[51]<<8)+(msg[52]<<16)+(msg[53]<<24)))
+        txtRegs[46].SetValue(str(msg[50]+(msg[51]<<8)+(msg[52]<<16)+(msg[53]<<24)))
     def ParseFPGARegsToMessage(sel, txtRegs):
         msg=Frame.NRegsFPGA*[0]
         #message word 0-3: WR Timer, 32 bits
@@ -868,9 +870,9 @@ class FEB():
         #message word 11, bit 1: WR ExtTriggRearm, 1 bit
         #message word 11, bit 4: WR Phase -(0)+(1), 1 bit
         #message word 11, bit 5: WR Phase R(0)S(1), 1 bit
-        msg[11] = ((int(txtRegs[42].GetValue()) & 0x01) << 1) + \
-                  ((int(txtRegs[29].GetValue()) & 0x01) << 4) + \
-                  ((int(txtRegs[28].GetValue()) & 0x01) << 5)
+        msg[11] = ((int(txtRegs[41].GetValue()) & 0x01) << 1) + \
+                  ((int(txtRegs[28].GetValue()) & 0x01) << 4) + \
+                  ((int(txtRegs[27].GetValue()) & 0x01) << 5)
         #message word 12-15: Read Only
         #message word 16: WR Trip0 En+Inj, 8 bits
         msg[16] = (int(txtRegs[15].GetValue())) & 0xFF
@@ -893,8 +895,12 @@ class FEB():
         #message word 23-24: WR HV Target, 16 bits
         msg[23] = (int(txtRegs[4].GetValue())) & 0xFF
         msg[24] = (int(txtRegs[4].GetValue())>>8) & 0xFF
-        #message word 25-27: Read Only
-        #message word 28-29, bits 0-3: WR InjDAC Value, 12 bits
+        #message word 25-26: Read Only
+        #message word 27, bits 0-3: WR After Pulse Ticks, 4 bits
+        #message word 27, bits 4-7: WR Spare 4 bit
+        msg[27] = ((int(txtRegs[52].GetValue()) & 0x0F) << 0) + \
+                  ((int(txtRegs[53].GetValue()) & 0x0F) << 4)
+        #message word 28-29, bits 0-7: WR InjDAC Value, 12 bits
         msg[28] = (int(txtRegs[23].GetValue())) & 0xFF
         #message word 28-29, bits 0-3: WR InjDAC Value, 12 bits
         #message word 29, bits 4-5: WR InjDAC Mode(0), 2 bits
@@ -910,31 +916,37 @@ class FEB():
             msg[30] = ((int(txtRegs[21].GetValue()) & 0x0F)) + \
                       ((int(txtRegs[22].GetValue()) & 0x0F) << 4)
         else: raise Exception(txtRegs[22].GetName() + ' must be 1, 2, 4 or 8')
-        #message word 31: WR HV NumAvg (bits 4-7)
-        msg[31] = ((int(txtRegs[7].GetValue()) & 0x0F) << 4)
+        #message word 31: R  FE Board ID (bits 0-3)
+        #message word 31: WR HV NumAvg (bits 4-6)
+        #message word 31: WR Enable Hit Preview (bit 7)
+        msg[31] = ((int(txtRegs[7].GetValue()) & 0x07) << 4) + \
+                  ((int(txtRegs[51].GetValue()) & 0x01) << 7)
         #message word 32: Read Only
         #message word 33-34: WR HV PeriodMan, 16 bits
         msg[33] = (int(txtRegs[8].GetValue())) & 0xFF
         msg[34] = (int(txtRegs[8].GetValue())>>8) & 0xFF
         #message word 35-36: Read Only
         #message word 37: WR HV PulseWidth, 8 bits
-        msg[37] = (int(txtRegs[10].GetValue())) & 0xFF
+        pw=(int(txtRegs[10].GetValue())) & 0xFF
+        if pw<=30: msg[37]=pw
+        else: msg[37]=30
+        ##########msg[37] = (int(txtRegs[10].GetValue())) & 0xFF
         #message word 38-39: Read Only
         #message word 40: WR TripX Threshold, 8 bits
-        msg[40] = (int(txtRegs[39].GetValue())) & 0xFF
+        msg[40] = (int(txtRegs[38].GetValue())) & 0xFF
         #message word 41: Read Only
         #message word 42-43: WR DiscMaskT0 (0x), 16 bits
-        msg[42] = (int(txtRegs[43].GetValue(),16)) & 0xFF
-        msg[43] = (int(txtRegs[43].GetValue(),16)>>8) & 0xFF
+        msg[42] = (int(txtRegs[42].GetValue(),16)) & 0xFF
+        msg[43] = (int(txtRegs[42].GetValue(),16)>>8) & 0xFF
         #message word 44-45: WR DiscMaskT1 (0x), 16 bits
-        msg[44] = (int(txtRegs[44].GetValue(),16)) & 0xFF
-        msg[45] = (int(txtRegs[44].GetValue(),16)>>8) & 0xFF
+        msg[44] = (int(txtRegs[43].GetValue(),16)) & 0xFF
+        msg[45] = (int(txtRegs[43].GetValue(),16)>>8) & 0xFF
         #message word 46-47: WR DiscMaskT2 (0x), 16 bits
-        msg[46] = (int(txtRegs[45].GetValue(),16)) & 0xFF
-        msg[47] = (int(txtRegs[45].GetValue(),16)>>8) & 0xFF
+        msg[46] = (int(txtRegs[44].GetValue(),16)) & 0xFF
+        msg[47] = (int(txtRegs[44].GetValue(),16)>>8) & 0xFF
         #message word 48-49: WR DiscMaskT3 (0x), 16 bits
-        msg[48] = (int(txtRegs[46].GetValue(),16)) & 0xFF
-        msg[49] = (int(txtRegs[46].GetValue(),16)>>8) & 0xFF
+        msg[48] = (int(txtRegs[45].GetValue(),16)) & 0xFF
+        msg[49] = (int(txtRegs[45].GetValue(),16)>>8) & 0xFF
         #message word 50-53: Read Only
         return msg
     def ParseTRIPRegsLogicalToPhysical(self, txtRegs):
@@ -1134,6 +1146,7 @@ class Frame():
     FuncNone=0x00
     FuncFPGAWrite=0x01
     FuncFPGARead=0x02
+    FuncFPGADumpRead=0x03
     FuncTRIPWRAll=0x01
     FuncTRIPWRi=[2,3,4,5,6,7]
     FuncFLASHCommand=0x01

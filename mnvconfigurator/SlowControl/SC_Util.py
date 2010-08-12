@@ -402,7 +402,6 @@ def FPGARegLabelsData():
         (' WR InjDAC Mode(0)', pos, size, '', color),
         (' WR InjDAC R(0)S(1)', pos, size, '', color),   
         (' R  InjDAC Done(1)', pos, size, '', color),
-        (' R  HV Control', pos, size, '', color),
         (' WR Phase R(0)S(1)', pos, size, '', color),
         (' WR Phase -(0)+(1)', pos, size, '', color),
         (' WR Phase Ticks', pos, size, '', color),
@@ -426,7 +425,10 @@ def FPGARegLabelsData():
         (' R  SCmdErr(1)', pos, size, '', color),
         (' R  FCmdErr(1)', pos, size, '', color),
         (' R  RXSyncErr(1)', pos, size, '', color),
-        (' R  TXSyncErr(1)', pos, size, '', color))
+        (' R  TXSyncErr(1)', pos, size, '', color),
+        (' WR Enable Preview', pos, size, '', color),
+        (' WR After Pulse Ticks', pos, size, '', color),
+        (' WR Spare', pos, size, '', color))
     return leftRegLabels
 
 def FPGARegTextData():
@@ -463,7 +465,6 @@ def FPGARegTextData():
         ('', pos, size, ' WR InjDAC Mode(0)', color),
         ('', pos, size, ' WR InjDAC R(0)S(1)', color),   
         ('', pos, size, ' R  InjDAC Done(1)', color),
-        ('', pos, size, ' R  HV Control', color),
         ('', pos, size, ' WR Phase R(0)S(1)', color),
         ('', pos, size, ' WR Phase -(0)+(1)', color),
         ('', pos, size, ' WR Phase Ticks', color),
@@ -487,7 +488,10 @@ def FPGARegTextData():
         ('', pos, size, ' R  SCmdErr(1)', color),
         ('', pos, size, ' R  FCmdErr(1)', color),
         ('', pos, size, ' R  RXSyncErr(1)', color),
-        ('', pos, size, ' R  TXSyncErr(1)', color))
+        ('', pos, size, ' R  TXSyncErr(1)', color),
+        ('', pos, size, ' WR Enable Hit Preview', color),
+        ('', pos, size, ' WR After Pulse Ticks', color),
+        ('', pos, size, ' WR Spare', color))
     return rightRegText
 
 def CreateLabels(panel, data, style=wx.ALIGN_LEFT | wx.ST_NO_AUTORESIZE, offset=(0,0)):
@@ -1095,6 +1099,8 @@ class FPGARegisters():
                 szRegs3.Add(self.txtRegs[i+40], 0, 0, 0)
         self.btnRead=CreateButton(panel, 'Read',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
+        self.btnDumpRead=CreateButton(panel, 'Dump Read',
+            pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnWrite=CreateButton(panel, 'Write',
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         self.btnWriteALLThisCH=CreateButton(panel, 'Write ALL This CH',
@@ -1105,6 +1111,7 @@ class FPGARegisters():
             pos=(0,0), size=(125,20), name='', bckcolor=colorButton)
         szBtns=wx.BoxSizer(wx.VERTICAL)
         szBtns.Add(self.btnRead, 0, wx.ALL, 2)
+        szBtns.Add(self.btnDumpRead, 0, wx.ALL, 2)
         szBtns.Add(self.btnWrite, 0, wx.ALL, 2)
         szBtns.Add(self.btnWriteALLThisCH, 0, wx.ALL, 2)
         szBtns.Add(self.btnWriteALLThisCROC, 0, wx.ALL, 2)
