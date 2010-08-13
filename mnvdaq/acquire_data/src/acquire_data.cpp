@@ -2987,6 +2987,15 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	int baseRead = 0;
 	if (zeroSuppress) baseRead = 1;
 
+#if PREVIEWHIT
+	// Loop over readout objects, if febid==1, read the status for the channel and get the vector of data for 
+	// boards with hits:
+	//	PREVIEW_DATA(24 bits) = HVActual(16 bits) + TRIP2_HITCNT(4 bits) + TRIP0_HITCNT(4 bits)
+	// Note that the board address is not part of the message, so we assume for many boards they are stacked 
+	// in order:
+	//	(24 bits - FEB1)(24 bits - FEB2)(24 bits - FEB3)(etc.)
+	// Best understood as a buffer of bytes - 2 bytes for HV, 1 byte for hits.
+#endif	
 	// Do an "FPGA read".
 	// First, send a read frame to each channel that has an FEB with the right index.
 	// Then, after sending a frame to every channel, read each of them in turn for data.
@@ -3438,4 +3447,16 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	return 0;
 }
 
+
+void acquire_data::RecvPreviewData(channels *theChannel, unsigned char *previewData)
+{
+/*! \fn acquire_data::RecvPreviewData(unsigned char *previewData)
+ *
+ * Read the channel status register and then read the preview hit data into a buffer.
+ *
+ * \param channels *theChannel, the CROC FE channel that we will read the status of.
+ * \param unsigned char *previewData, the buffer we will fill with data.
+ */
+	// See acquire_data::RecvFrameData for a model.
+}
 #endif
