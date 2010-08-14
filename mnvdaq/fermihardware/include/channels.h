@@ -54,8 +54,7 @@ class channels {
 		unsigned short channelStatus, dpmPointer; /*!< data members for holding status values */
 		bool has_febs; /*!< a flag for sorting available channels with or without FEB's */
 
-		unsigned char *buffer; /*!<we need a buffer to hold unsorted DPM Memory */
-		// std::ofstream log_file; /*!< A debugging output file streamer */
+		unsigned char *buffer; /*!< a buffer to hold unsorted DPM Memory */
 
 	public:
 		/*! the default constructor */
@@ -108,5 +107,8 @@ class channels {
 		std::vector<feb*> inline *GetFebVector() {return &febsVector;};
 		feb inline *GetFebVector(int i) {return febsVector[i];};
 
+		/*! PreviewData functions */
+		void ParsePreviewData();
+		
 };
 #endif

@@ -2816,7 +2816,7 @@ template <class X> int acquire_data::RecvFrameData(X *device, channels *theChann
 }
 
 
-int acquire_data::RecvFrameData(channels *theChannel)
+int acquire_data::RecvFrameData(channels *theChannel, bool checkForErrors)
 {
 /*! \fn int acquire_data::RecvFrameData(channels *theChannel)
  *
@@ -2839,9 +2839,9 @@ int acquire_data::RecvFrameData(channels *theChannel)
 			theChannel->GetDPMPointerAddress(), AM, DWS);
 		if (error) throw error;
 	} catch (int e) {
-		std::cout << "Error in RecvFrameData for a channel!  Cannot read the status register!" << std::endl;
+		std::cout << "Error in RecvFrameData for a channel!  Cannot read the DPM pointer address!" << std::endl;
 		daqController->ReportError(e);
-		acqData.critStream() << "Error in RecvFrameData for a channel!  Cannot read the status register!";
+		acqData.critStream() << "Error in RecvFrameData for a channel!  Cannot read the DPM pointer address!";
 		return e;
 	}
 	dpmPointer = (unsigned short) (status[0] | status[1]<<0x08);
@@ -2988,13 +2988,18 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	if (zeroSuppress) baseRead = 1;
 
 #if PREVIEWHIT
-	// Loop over readout objects, if febid==1, read the status for the channel and get the vector of data for 
+	// Loop over readout objects, if febid==1, read the dpm for the channel and get the vector of data for 
 	// boards with hits:
 	//	PREVIEW_DATA(24 bits) = HVActual(16 bits) + TRIP2_HITCNT(4 bits) + TRIP0_HITCNT(4 bits)
 	// Note that the board address is not part of the message, so we assume for many boards they are stacked 
 	// in order:
 	//	(24 bits - FEB1)(24 bits - FEB2)(24 bits - FEB3)(etc.)
 	// Best understood as a buffer of bytes - 2 bytes for HV, 1 byte for hits.
+	//
+	// Should probably use new RecvFrameData with error checker flag to do the read.
+	//
+	// For all febid's in the readout object loop, check the channel for the information on the number of hits and 
+	// add it to the readout object.  Then, use that number of hits as a flag to decide if we read a board.
 #endif	
 	// Do an "FPGA read".
 	// First, send a read frame to each channel that has an FEB with the right index.
@@ -3448,15 +3453,4 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 }
 
 
-void acquire_data::RecvPreviewData(channels *theChannel, unsigned char *previewData)
-{
-/*! \fn acquire_data::RecvPreviewData(unsigned char *previewData)
- *
- * Read the channel status register and then read the preview hit data into a buffer.
- *
- * \param channels *theChannel, the CROC FE channel that we will read the status of.
- * \param unsigned char *previewData, the buffer we will fill with data.
- */
-	// See acquire_data::RecvFrameData for a model.
-}
 #endif
