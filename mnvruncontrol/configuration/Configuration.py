@@ -79,7 +79,8 @@ configuration = { "General"          : { "notify_addresses"        : ( Defaults.
                   "Monitoring nodes" : { "om_PIDfileLocation"      : ( Defaults.OM_DISPATCHER_PIDFILE,                "OM dispatcher PID file location",                 str   ),
                                          "om_logfileLocation"      : ( Defaults.OM_LOGFILE_LOCATION_DEFAULT,          "OM dispatcher log file location",                 str   ),
                                          "om_logfileName"          : ( Defaults.OM_DISPATCHER_LOGFILE,                "OM dispatcher log file name",                     str   ),
-                                         "om_GaudiOptionsFile"     : ( Defaults.OM_GAUDI_OPTIONSFILE,                 "OM Gaudi process options file",                   str   ),
+                                         "om_GaudiOutputOptionsFile" : ( Defaults.OM_GAUDI_OUTPUTOPTIONSFILE,           "OM Gaudi process 'output file' options file",     str   ),
+                                         "om_GaudiInputOptionsFile"  : ( Defaults.OM_GAUDI_INPUTOPTIONSFILE,            "OM Gaudi process 'input file' options file",      str   ),
                                          "om_DSTTargetPath"        : ( Defaults.OM_DST_TARGET_PATH,                   "Copy target for DSTs created by OM dispather",    str   ),
                                          "om_DSTminJobTime"        : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",              float   ),
 

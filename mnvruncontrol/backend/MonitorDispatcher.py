@@ -6,6 +6,7 @@
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Mar.-Apr. 2010
+                    August 2010
                     
    Address all complaints to the management.
 """
@@ -57,7 +58,6 @@ class MonitorDispatcher(Dispatcher):
 		self.om_Gaudi_thread = None
 		
 		self.etpattern = None
-		self.last_etpattern = None
 		self.evbfile = None
 			
 
@@ -76,44 +76,16 @@ class MonitorDispatcher(Dispatcher):
 			self.om_eb_thread.terminate()
 			self.om_eb_thread.join()
 		
-		# save the old etpattern if there is one--
-		# we'll need it to tell the last Gaudi DST job to finish properly
-		if self.etpattern is not None:
-			self.last_etpattern = self.etpattern
-			
 		self.etpattern = matches.group("etpattern")
 		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
 		self.raweventfile = "%s/%s_RawEvent.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
-		self.rawhistosfile = "%s/%s_RawHistos.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
 		
 		
-		# 3 possible formats: unsuffixed (for most run modes),
-		# LI version and beam version (the latter two for numil mode
-		# since beam and LI are interleaved)
-		self.dstfiles = []
-		dstfilename_format = "%s/%s%s_DST.root"
-		# the kinds of running modes that need special attention
-		runmode_special_map = { "linjc": [ { "DSTWriter": "Linjc", "filesuffix": "" } ],
-		                        "numil": [ { "DSTWriter": "Numib", "filesuffix": "_BeamTriggers" },
-		                                   { "DSTWriter": "Linjc", "filesuffix": "_LITriggers" } ] }
-		# check if the current running mode is one of the special ones.
-		# if so, make sure that every sort of DSTWriter required is
-		# properly addressed.
-		for runmode in runmode_special_map:
-			if runmode in self.etpattern:
-				for DST_entry in runmode_special_map[runmode]:
-					self.dstfiles.append( { "DSTWriter": DST_entry["DSTWriter"], "filename": dstfilename_format % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern, DST_entry["filesuffix"] ) } )
-				break
-		
-		# if it's still empty, then it gets the default
-		if len(self.dstfiles) == 0:
-			self.dstfiles.append( { "DSTWriter": "Numib", "filename": dstfilename_format % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern, "" ) } )
-			
 		try:
 			self.om_start_eb(etfile="%s_RawData" % matches.group("etpattern"), etport=matches.group("etport"))
 		except Exception, excpt:
 			self.logger.error("   ==> The event builder process can't be started!")
-			self.logger.error("   ==> Error message: '" + str(excpt) + "'")
+			self.logger.error("   ==> Error message: '%s'", excpt)
 		
 		return "0"		# the run control doesn't care whether this has started correctly.
 	
@@ -130,72 +102,54 @@ class MonitorDispatcher(Dispatcher):
 		""" Start the Gaudi process. """
 		# first clear the signal handler so an accidental call wouldn't restart the service.
 		signal.signal(signal.SIGUSR1, signal.SIG_IGN)
-		
-		# replace the options file so that we get the new event builder output.
-		with open(Configuration.params["Monitoring nodes"]["om_GaudiOptionsFile"], "w") as optsfile:
-			optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\" ;\n" % self.evbfile)
-			optsfile.write("Event.Output = \"DATAFILE='PFN:%s' TYP='POOL_ROOTTREE' OPT='RECREATE'\";\n" % self.raweventfile)
-			optsfile.write("HistogramPersistencySvc.Outputfile = \"%s\";\n" % self.rawhistosfile)
+		try:
+			# replace the options files so that we get the new event builder output.
+			with open(Configuration.params["Monitoring nodes"]["om_GaudiOutputOptionsFile"], "w") as optsfile:
+				optsfile.write("HistogramSaver.Outputfile = \"%s/%s_Histos.root\";\n" % ( Configuration.params["Monitoring nodes"]["om_DSTTargetPath"], self.etpattern ) )
 
+				dstfiles = []
+				for dsttype in ("linjc", "numib"):
+					prefix = "Linjc" if dsttype == "linjc" else ""
+					dstfiles.append( { "DSTWriter": dsttype.capitalize(), "filename": "%s/%s_%sDST.root" % (Configuration.params["Monitoring nodes"]["om_DSTTargetPath"], self.etpattern, prefix) } )
 
-			ntuplestrings = []
-			for i in range(len(self.dstfiles)):
-				optsfile.write("%sDSTWriter.OutputFile = \"%s\";\n" % (self.dstfiles[i]["DSTWriter"], self.dstfiles[i]["filename"]) )
+				for dstinfo in dstfiles:
+					optsfile.write("%sDSTWriter.OutputFile = \"%s\";\n" % (dstinfo["DSTWriter"], dstinfo["filename"]) )
+
+			with open(Configuration.params["Monitoring nodes"]["om_GaudiInputOptionsFile"], "w") as optsfile:
+				optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\" ;\n" % self.evbfile)
 			
-			# each DSTWriter is initialized every time,
-			# so even though one of them might not have 
-			# any events sent to it, we still need to 
-			# provide a file location.  the resultant file will
-			# not be copied to the destination area (it
-			# will be overwritten in the staging area
-			# the next time this situation arises).
-			i += 1
-			for DSTWriter in ("Linjc", "Numib"):
-				if DSTWriter not in [item["DSTWriter"] for item in self.dstfiles]:
-					optsfile.write( "%sDSTWriter.OutputFile = \"%s/%sTempDSTFile.root\";\n" % (DSTWriter, Configuration.params["Monitoring nodes"]["om_rawdataLocation"], DSTWriter) )
-					i += 1
+			# if the Gaudi (monitoring) thread is still running, it needs to be stopped.
+			if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
+				self.om_Gaudi_thread.process.terminate()
+				self.om_Gaudi_thread.join()
+
+			# now start a new copy of each of the Gaudi jobs.
+			gaudi_processes = ( { "processname": "monitoring",
+				                 "executable" : "%s/%s/MinervaNearline.exe %s/options/NearlineCurrent.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]) },
+				               { "processname": "dst",
+				                 "executable" : "%s/%s/MinervaNearline.exe %s/options/Nearline.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]) } )
+
+			for process in gaudi_processes:
+				# we will only keep track of the monitoring thread, because this one
+				# is the one that will be replaced.
+				# the others will continue to run, but we'll have no handle for them
+				# (which is intentional, so that they run unmolested until they finish).
+				# of course, if this thread is killed, they might go with it, but that
+				# depends on whether or not they fork first.  (i can't remember.)
+				thread = OMThread(process["executable"], "gaudi_%s" % process["processname"], persistent=(process["processname"] == "dst"))
+				if process["processname"] == "monitoring":
+					self.om_Gaudi_thread = thread
+
+				self.logger.info("   Starting a copy of MinervaNearline.exe using the following command:\n%s", process["executable"])
 			
-		# if the Gaudi thread is still running, it needs to be stopped.
-		# the DIM command is supposed to help it shut down cleanly.  
-		if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
-			subprocess.call("dim_send_command.exe NEARONLINE stop", shell=True)
-	
-			self.om_Gaudi_thread.process.terminate()
-			self.om_Gaudi_thread.join()
-
-		time.sleep(3)
-
-		# now start a new copy of each of the Gaudi jobs.
-		gaudi_processes = ( { "utgid": "NEARONLINE",
-		                      "processname": "presenter",
-		                      "executable" : "%s/%s/OnlineMonitor.exe %s/%s/libGaudiOnline.so OnlineTask -tasktype=LHCb::Class2Task -main=%s/options/Main.opts -opt=%s/options/NearonlinePresenter.opts -auto" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["GAUDIONLINEROOT"], os.environ["CMTCONFIG"], os.environ["GAUDIONLINEROOT"], os.environ["DAQRECVROOT"]),
-		                      "exe_name"   : "OnlineMonitor" }, 
-		                    { "utgid": "NEARONLINE_%s" % self.etpattern,
-		                      "processname": "dst",
-		                      "executable" : "%s/%s/DSTMaker.exe %s/options/NearonlineDST.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]), 
-		                      "exe_name"   : "DSTMaker" } )
-		for process in gaudi_processes:
-			# we will only keep track of the presenter thread, because this one
-			# is the one that will be replaced (needs to have the same UTGID so
-			# that the Presenter can find it properly).
-			# the others will continue to run, but we'll have no handle for them
-			# (which is intentional, so that they run unmolested until they finish).
-			# of course, if this thread is killed, they might go with it, but that
-			# depends on whether or not they fork first.  (i can't remember.)
-			thread = OMThread(process["executable"], "gaudi_%s" % process["processname"], process["utgid"], persistent=(process["processname"] == "dst"))
-			if process["processname"] == "presenter":
-				self.om_Gaudi_thread = thread
-			elif process["processname"] == "dst":
-				thread.dstfiles = self.dstfiles
-
-			self.logger.info("   Starting a copy of %s using the following command:\n%s" % (process["exe_name"], process["executable"]))
-			
-			# want to record the PID.  wait until it's ready.
-			while thread.pid is None:
-				time.sleep(0.01)
-				pass
+				# want to record the PID.  wait until it's ready.
+				while thread.pid is None:
+					time.sleep(0.01)
+					pass
 				
-			self.logger.info("     ==> process id: %d" % thread.pid)
+				self.logger.info("     ==> process id: %d" % thread.pid)
+		except:
+			self.logger.exception("  Error starting the Gaudi processes!:")
 	
 	def om_stop(self, matches=None, show_details=True, **kwargs):
 		""" Stops the online monitor processes.  Only really needed
@@ -221,12 +175,8 @@ class MonitorDispatcher(Dispatcher):
 
 		if self.om_Gaudi_thread and self.om_Gaudi_thread.is_alive():
 			if show_details:
-				self.logger.info("   ==> Attempting to stop the Gaudi thread.")
+				self.logger.info("   ==> Attempting to stop the Gaudi (monitoring) thread.")
 			try:
-				# the Presenter Gaudi job needs to be told to stop.
-				# otherwise it segfaults etc.
-				subprocess.call("dim_send_command.exe NEARONLINE stop", shell=True)
-
 				self.om_Gaudi_thread.process.terminate()
 				self.om_Gaudi_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
 			except Exception, excpt:
@@ -246,17 +196,14 @@ class MonitorDispatcher(Dispatcher):
 class OMThread(threading.Thread):
 	""" OM processes need to be run in a separate thread
 	    so that we know if they finish. """
-	def __init__(self, command, processname, utgid=None, persistent=False):
+	def __init__(self, command, processname, persistent=False):
 		threading.Thread.__init__(self)
 		
 		self.process = None
 		self.pid = None
 		self.command = command
-		self.utgid = utgid
 		self.processname = processname
 		self.persistent = persistent		# if this thread is supposed to run until it finishes
-		
-		self.dstfiles = []				# overridden as necessary by the parent process.
 		
 		self.daemon = True
 		
@@ -286,15 +233,9 @@ class OMThread(threading.Thread):
 				fileobj.truncate(0)
 				
 				try:
-					# the online version (for the Presenter) needs to have a UTGID specified
-					# in its environment.  (this tells DIM how to address it.)
-					environment = os.environ
-					if self.utgid is not None:
-						environment["UTGID"] = self.utgid
-						
 					starttime = time.time()
 
-					self.process = subprocess.Popen(self.command.split(), shell=False, env=environment, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
+					self.process = subprocess.Popen(self.command.split(), shell=False, env=os.environ, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
 					self.pid = self.process.pid		# less typing.
 
 					# now wait until it finishes.
@@ -327,10 +268,6 @@ class OMThread(threading.Thread):
 
 			MailTools.sendMail(fro=sender, to=Configuration.params["General"]["notify_addresses"], subject=subject, text=messagebody, files=[filename,])
 		
-		# copy the DST to its target location.
-		if self.persistent and len(self.dstfiles) > 0 and Configuration.params["Monitoring nodes"]["om_DSTTargetPath"] is not None:
-			for dstfile in self.dstfiles:
-				shutil.copy2(dstfile["filename"], Configuration.params["Monitoring nodes"]["om_DSTTargetPath"]) 
                         
 ####################################################################
 ####################################################################

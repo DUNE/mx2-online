@@ -10,14 +10,14 @@ def sendMail(fro, to, subject, text, files=[], server="localhost"):
 	assert type(to) == list
 	assert type(files) == list
 	
-	msg = email.mime.multipart.MIMEMultipart("mixed")
+	msg = email.mime.Multipart.MIMEMultipart("mixed")
 	msg['From'] = fro
 	msg['To'] = COMMASPACE.join(to)
 	msg['Date'] = formatdate(localtime=True)
 	msg['Subject'] = subject
-	msg.attach( email.mime.text.MIMEText(text) )
+	msg.attach( email.mime.Text.MIMEText(text) )
 	for file in files:
-		part = email.mime.text.MIMEText(open(file,"rb").read(), "plain")
+		part = email.mime.Text.MIMEText(open(file,"rb").read(), "plain")
 		part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(file))
 		msg.attach(part)
 	smtp = smtplib.SMTP(server)
