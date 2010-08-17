@@ -225,10 +225,17 @@ unsigned short channels::GetPreviewHV(int febid)
 {
 /*! \fn Parse the preview hit data to get the HV on FEB febid. 
  */
-	int index = (febid-1)*4;
-	if ( (index+2) < sizeof(*buffer)/sizeof(unsigned char)) {
-		return (unsigned short)( buffer[index] + buffer[index+1]<<8 );
-	} 
+	int ml    = sizeof(*buffer)/sizeof(unsigned char);
+	if (ml == 0) return 0; 
+	int nfebs = ml/6;
+	if (nfebs == 0) return 0;
+	for (int i=0; i<nfebs; i++) {
+		int index   = i * 6;
+		int febaddr = buffer[index + 2] & 0x0F;
+		if (febaddr == febid) {
+			return (unsigned short)( buffer[index+4] + buffer[index+5]<<8 ); 
+		}
+	}
 	return (unsigned short)0;
 }
 
@@ -237,13 +244,20 @@ int channels::GetPreviewHits(int febid)
 {
 /*! \fn Parse the preview hit data to get the max hits on FEB febid. 
  */
-	int index = (febid-1)*4;
-	if ( (index+2) < sizeof(*buffer)/sizeof(unsigned char)) {
-		unsigned char hit01 = buffer[index+2] & 0x0F;
-		unsigned char hit23 = buffer[index+2] & 0xF0;
-		return (int)( hit01>=hit23 ? hit01 : hit23 );
+	int ml    = sizeof(*buffer)/sizeof(unsigned char);
+	if (ml == 0) return -1;
+	int nfebs = ml/6;
+	if (nfebs == 0) return -1;
+	for (int i=0; i<nfebs; i++) {
+		int index   = i * 6;
+		int febaddr = buffer[index + 2] & 0x0F;
+		if (febaddr == febid) {
+			unsigned char hit01 = buffer[index + 3] & 0x0F;
+			unsigned char hit23 = buffer[index + 3] & 0xF0;
+			return (int)( hit01>=hit23 ? hit01 : hit23 );	
+		}
 	}
-	return 0;
+	return -1;
 }
 
 
