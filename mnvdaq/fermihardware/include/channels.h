@@ -108,7 +108,8 @@ class channels {
 		feb inline *GetFebVector(int i) {return febsVector[i];};
 
 		/*! PreviewData functions */
-		void ParsePreviewData();
+		unsigned short GetPreviewHV(int febid);
+		int GetPreviewHits(int febid);
 		
 };
 #endif

@@ -2999,7 +2999,54 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	// Should probably use new RecvFrameData with error checker flag to do the read.
 	//
 	// For all febid's in the readout object loop, check the channel for the information on the number of hits and 
-	// add it to the readout object.  Then, use that number of hits as a flag to decide if we read a board.
+	// add it to the readout object.  Then, use that number of hits as a flag to decide if we read a board.  
+	// Remember to delete the channel buffer before advancing.
+
+#if DEBUG_NEWREADOUT    
+	acqData.debugStream() << "===================";
+	acqData.debugStream() << "Read the PreviewHit";
+	acqData.debugStream() << "===================";
+#endif                          
+	std::list<readoutObject*>::iterator rop = readoutObjects->begin();
+	while (rop != readoutObjects->end() && continueReadout) {
+		int febid    = (*rop)->getFebID();
+		int febindex = febid - 1;
+#if DEBUG_NEWREADOUT                    
+		acqData.debugStream() << "-> Top of readoutObject loop.";
+		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+		acqData.debugStream() << "feb id    = " << febid;
+#endif                          
+		// Pointer for the FEB's on each channel.  Be careful about deleting!   
+		feb *tmpFEB;
+
+		for (int i=0; i<(*rop)->getDataLength(); i++) {
+			unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+			unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+			int nhits = (*rop)->getChannel(i)->GetPreviewHits(febid);
+			nhits++; // add end of gate hit?
+			(*rop)->setHitsPerChannel(i, nhits);
+			(*rop)->setOrigHitsPerChannel(i, nhits);
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "   TOTAL Number of hits (" << i << ") = " << (*rop)->getHitsPerChannel(i);
+#endif
+			// Cleanup...
+			//(*rop)->getChannel(i)->DeleteBuffer();
+			tmpFEB  = 0;
+		} // end loop over data for reading the dpm
+
+		// Increment the readoutObject pointer.
+		rop++;
+		// Check readout time - are we okay?
+		gettimeofday(&readend, NULL);
+		stopReadout = (unsigned long long)(readend.tv_sec*1000000) + (unsigned long long)(readend.tv_usec);
+		readoutTimeDiff = (int)stopReadout - (int)startReadout;
+		if (readoutTimeDiff > allowedTime) { continueReadout = false; }
+	} // end while loop over readout objects
+#if DEBUG_NEWREADOUT
+	acqData.debugStream() << "&&&&&&&&&&&&&&&&&&&& - End of ReadPreviewHit";
+	acqData.debugStream() << "redoutObject Status:";
+	DisplayReadoutObjects(readoutObjects);
+#endif
 #endif	
 	// Do an "FPGA read".
 	// First, send a read frame to each channel that has an FEB with the right index.

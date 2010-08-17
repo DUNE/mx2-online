@@ -42,8 +42,8 @@ channels::channels(unsigned int a, int b)
 
 	bltAddressModifier = cvA24_U_BLT; //the Block Transfer Reads (BLT's) require a special address modifier
 
-	channelStatus = 0; //the channel starts out with no status information kept
-	has_febs=false; //and no feb's loaded
+	channelStatus = 0;     // the channel starts out with no status information kept
+	has_febs      = false; // and no feb's loaded
 }
 
 
@@ -218,6 +218,32 @@ void channels::VectorizeFEBList()
 		}
 	}
 
+}
+
+
+unsigned short channels::GetPreviewHV(int febid)
+{
+/*! \fn Parse the preview hit data to get the HV on FEB febid. 
+ */
+	int index = (febid-1)*4;
+	if ( (index+2) < sizeof(*buffer)/sizeof(unsigned char)) {
+		return (unsigned short)( buffer[index] + buffer[index+1]<<8 );
+	} 
+	return (unsigned short)0;
+}
+
+
+int channels::GetPreviewHits(int febid)
+{
+/*! \fn Parse the preview hit data to get the max hits on FEB febid. 
+ */
+	int index = (febid-1)*4;
+	if ( (index+2) < sizeof(*buffer)/sizeof(unsigned char)) {
+		unsigned char hit01 = buffer[index+2] & 0x0F;
+		unsigned char hit23 = buffer[index+2] & 0xF0;
+		return (int)( hit01>=hit23 ? hit01 : hit23 );
+	}
+	return 0;
 }
 
 
