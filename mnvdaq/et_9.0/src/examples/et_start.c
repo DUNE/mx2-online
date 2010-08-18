@@ -65,17 +65,17 @@ int main(int argc, char **argv)
   int event_size = 3000;            /* size of event in bytes */
   char *et_filename = NULL;
   char  et_name[ET_FILENAME_LENGTH];
-  int networkPort = 1091;
+  int networkPort = 1201;
   int callback_pid = 0;            /* PID of process that will be contacted when the ET system has been set up. */
   
   while ((c = getopt(argc, argv, "vdn:s:f:p:c:")) != EOF) {
     switch (c) {
     case 'p':
       i_tmp = atoi(optarg);
-      if  ( (i_tmp > 1090) && (i_tmp < 1097) ) {
+      if  ( (i_tmp > 1200) && (i_tmp < 1251) ) {
 	networkPort = i_tmp;
       } else {
-	printf("Invalid argument to -p. Valid ports are 1091-1096.\n");
+	printf("Invalid argument to -p. Valid ports are 1201-1250.\n");
 	flush_and_exit(-1);
       }
       break;
@@ -147,7 +147,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "          -n sets number of events\n");
     fprintf(stderr, "          -s sets event size in bytes\n");
     fprintf(stderr, "          -f sets memory-mapped file name\n");
-    fprintf(stderr, "          -p sets the network port (default is 1091; 1092-1094 also valid)\n");
+    fprintf(stderr, "          -p sets the network port (default is 1201; 1201-1250 also valid)\n");
     flush_and_exit(2);
   }
 
