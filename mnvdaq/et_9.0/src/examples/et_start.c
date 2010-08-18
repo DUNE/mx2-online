@@ -33,6 +33,8 @@ sig_atomic_t time_to_quit = 0;
 
 void quit_signal_handler(int signum);
 
+void flush_and_exit(int code);
+
 int main(int argc, char **argv)
 {  
   int           c;
@@ -74,7 +76,7 @@ int main(int argc, char **argv)
 	networkPort = i_tmp;
       } else {
 	printf("Invalid argument to -p. Valid ports are 1091-1096.\n");
-	exit(-1);
+	flush_and_exit(-1);
       }
       break;
     
@@ -83,12 +85,12 @@ int main(int argc, char **argv)
       if (callback_pid <= 1)
       {
          printf("Invalid argument to -c.  Process must have id >= 2.\n");
-         exit(-1);
+         flush_and_exit(-1);
       }
       if (kill(callback_pid, 0) == ESRCH)
       {
          printf("Invalid argument to -c: process does not exist.\n");
-         exit(-1);
+         flush_and_exit(-1);
       }
       break;
 
@@ -98,7 +100,7 @@ int main(int argc, char **argv)
 	nevents = i_tmp;
       } else {
 	printf("Invalid argument to -n. Must be a positive integer.\n");
-	exit(-1);
+	flush_and_exit(-1);
       }
       break;
       
@@ -108,14 +110,14 @@ int main(int argc, char **argv)
 	event_size = i_tmp;
       } else {
 	printf("Invalid argument to -s. Must be a positive integer.\n");
-	exit(-1);
+	flush_and_exit(-1);
       }
       break;
       
     case 'f':
       if (strlen(optarg) >= ET_FILENAME_LENGTH) {
         fprintf(stderr, "ET file name is too long\n");
-        exit(-1);
+        flush_and_exit(-1);
       }
       strcpy(et_name, optarg);
       et_filename = et_name;
@@ -146,7 +148,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "          -s sets event size in bytes\n");
     fprintf(stderr, "          -f sets memory-mapped file name\n");
     fprintf(stderr, "          -p sets the network port (default is 1091; 1092-1094 also valid)\n");
-    exit(2);
+    flush_and_exit(2);
   }
 
   /* Check et_filename */
@@ -154,12 +156,12 @@ int main(int argc, char **argv)
     /* see if env variable SESSION is defined */
     if ( (et_filename = getenv("SESSION")) == NULL ) {
       fprintf(stderr, "No ET file name given and SESSION env variable not defined\n");
-      exit(-1);
+      flush_and_exit(-1);
     }
     /* check length of name */
     if ( (strlen(et_filename) + 12) >=  ET_FILENAME_LENGTH) {
       fprintf(stderr, "ET file name is too long\n");
-      exit(-1);
+      flush_and_exit(-1);
     }
     sprintf(et_name, "%s%s", "/tmp/et_sys_", et_filename);
   }
@@ -195,7 +197,7 @@ int main(int argc, char **argv)
   
   if (et_system_config_init(&config) == ET_ERROR) {
     printf("et_start: no more memory\n");
-    exit(1);
+    flush_and_exit(1);
   }
   /* total number of events */
   et_system_config_setevents(config, nevents);
@@ -225,7 +227,7 @@ int main(int argc, char **argv)
   /* Make sure filename is null-terminated string */
   if (et_system_config_setfile(config, et_name) == ET_ERROR) {
     printf("et_start: bad filename argument\n");
-    exit(1);
+    flush_and_exit(1);
   }
   
   /*************************/
@@ -237,7 +239,7 @@ int main(int argc, char **argv)
   status = pthread_sigmask(SIG_BLOCK, &sigblockset, NULL);
   if (status != 0) {
     printf("et_start: couldn't block all signals (pthread_sigmask failure)\n");
-    exit(1);
+    flush_and_exit(1);
   }
   /* now unblock SIGINT and SIGTERM so we can handle them */
   sigemptyset(&sighandleset);
@@ -246,7 +248,7 @@ int main(int argc, char **argv)
   status = pthread_sigmask(SIG_UNBLOCK, &sighandleset, NULL);
   if (status != 0) {
     printf("et_start: couldn't unblock SIGINT and SIGTERM (pthread_sigmask failure)\n");
-    exit(1);
+    flush_and_exit(1);
   }
   /* set the signal handler */
   signal(SIGINT,  quit_signal_handler);
@@ -260,7 +262,7 @@ int main(int argc, char **argv)
   }
   if (et_system_start(&id, config) != ET_OK) {
     printf("et_start: error in starting ET system\n");
-    exit(1);
+    flush_and_exit(1);
   }
   starttime = time(NULL);
   local = localtime(&starttime);
@@ -320,7 +322,7 @@ int main(int argc, char **argv)
   printf("ET is exiting.\n");
   et_system_close(id);
 
-  exit(0);  
+  flush_and_exit(0);  
 }
 
 /* this function is intended to be the signal handler
@@ -335,4 +337,16 @@ void quit_signal_handler(int signum)
 	
 	/* don't bother resetting the signal handler.
 	   we don't need to call this function more than once. */
+}
+
+/* this function flushes all buffers before exiting
+   so that any parent process is guaranteed to get
+   its output. */
+   
+void flush_and_exit(int code)
+{
+	fflush(stdout);
+	fflush(stderr);
+	
+	exit(code);
 }
