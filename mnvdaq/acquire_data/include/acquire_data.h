@@ -268,7 +268,7 @@ class acquire_data {
 
 		/*! Receive messages. 
 		   -> Read DPM pointer, read BLT, store data in *channel* buffer. */
-		int RecvFrameData(channels *theChannel, bool checkForErrors=true);
+		int RecvFrameData(channels *theChannel);
 
 		/*! Function that fills an event structure for further data handling by the event builder. */
 		void FillEventStructure(event_handler *evt, int bank, channels *theChannel);
@@ -277,7 +277,6 @@ class acquire_data {
 		int WriteAllData(event_handler *evt, et_att_id attach, et_sys_id sys_id, 
 			std::list<readoutObject*> *readoutObjects, const int allowedTime, 
 			const bool readFPGA, const int nReadoutADC, const bool zeroSuppress);
-
 };
 
 #endif
