@@ -3013,6 +3013,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	acqData.debugStream() << "===================";
 #endif                          
 	std::list<readoutObject*>::iterator rop = readoutObjects->begin();
+	// Loop to clear and reset and then read the DPM for each instrumented channel.
 	while (rop != readoutObjects->end() && continueReadout) {
 		int febid    = (*rop)->getFebID();
 		int febindex = febid - 1;
@@ -3021,9 +3022,6 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 		acqData.debugStream() << "feb id    = " << febid;
 #endif                          
-		// Pointer for the FEB's on each channel.  Be careful about deleting!   
-		feb *tmpFEB;
-
 		// Only need to speak to electronics once!
 		if (febid == 1) {
 			// Clear and reset all channels.
@@ -3044,15 +3042,25 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					return e; // Error, stop!
 				}
 			} // end loop over data in readout object for send clear and reset and check status
-
 			// Read the DPM and set the buffer for each channel.
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				try {
+					int error = RecvFrameData((*rop)->getChannel(i));
+					if (error) throw error; 
+				} catch (int e) { 
+					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+					(*rop)->getChannel(i)->GetChainNumber();
+					return e; // Error, stop!
+				}
+			} // end loop over data in readout object for DPM read
 
-			tmpFEB  = 0;
 		}
 		// Increment the readoutObject pointer.
 		rop++;
 		// No need to check readout time yet?
 	} // end while loop over readout objects for electronics communication
+	// Parse channel buffer data and assign it to the readout object hit variables.
 	while (rop != readoutObjects->end() && continueReadout) {
 		int febid    = (*rop)->getFebID();
 		int febindex = febid - 1;
@@ -3061,9 +3069,6 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 		acqData.debugStream() << "feb id    = " << febid;
 #endif                          
-		// Pointer for the FEB's on each channel.  Be careful about deleting!   
-		feb *tmpFEB;
-
 		// Set the number of hits for each readout object.
 		//int nhits = (*rop)->getChannel(i)->GetPreviewHits(febid);
 		//nhits++; // add end of gate hit?
@@ -3072,11 +3077,11 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 #if DEBUG_NEWREADOUT
 		acqData.debugStream() << "   TOTAL Number of hits (" << i << ") = " << (*rop)->getHitsPerChannel(i);
 #endif
-		tmpFEB  = 0;
 		// Increment the readoutObject pointer.
 		rop++;
 		// No need to check readout time yet?
 	} // end while loop over readout objects for parsing
+	// Now loop to clean up channel object memory buffers.
 	while (rop != readoutObjects->end() && continueReadout) {
 		int febid    = (*rop)->getFebID();
 		int febindex = febid - 1;
@@ -3085,12 +3090,8 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 		acqData.debugStream() << "feb id    = " << febid;
 #endif                          
-		// Pointer for the FEB's on each channel.  Be careful about deleting!   
-		feb *tmpFEB;
-
 		// Clean up memory (kill buffer created by SetBuffer in recv for channel.
 		//(*rop)->getChannel(i)->DeleteBuffer();
-		tmpFEB  = 0;
 		// Increment the readoutObject pointer.
 		rop++;
 		// No need to check readout time yet?
@@ -3206,7 +3207,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					int error = RecvFrameData((*rop)->getChannel(i));
 					if (error) throw error; 
 				} catch (int e) { 
-					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+					acqData.critStream() << "Error in WriteAllData!  Cannot read the DPM while trying to read the FPGA's!";
 					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
 						(*rop)->getChannel(i)->GetChainNumber();
 					return e; // Error, stop!
@@ -3328,7 +3329,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					int error = RecvFrameData((*rop)->getChannel(i));
 					if (error) throw error; 
 				} catch (int e) { 
-					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+					acqData.critStream() << "Error in WriteAllData!  Cannot read the DPM while reading the discriminators!";
 					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
 						(*rop)->getChannel(i)->GetChainNumber();
 					return e; // Error, stop!
@@ -3484,7 +3485,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 						int error = RecvFrameData((*rop)->getChannel(i));
 						if (error) throw error; 
 					} catch (int e) { 
-						acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+						acqData.critStream() << "Error in WriteAllData!  Cannot read the DPM while reading the ADC's!";
 						acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
 							(*rop)->getChannel(i)->GetChainNumber();
 						return e; // Error, stop!
