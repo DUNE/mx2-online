@@ -306,6 +306,13 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 	def StopDataAcquisition(self, evt=None):
 		""" Stop data acquisition altogether. """
+		
+		# if we're already trying to stop, there shouldn't be an auto-continuation!
+		if not self.running:
+			auto = False
+		else:
+			auto = hasattr(evt, "auto") and evt.auto
+		
 		self.running = False
 
 		if evt is None or not(hasattr(evt, "allclear")):
@@ -328,7 +335,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		self.subrun = 0
 		
-		auto = hasattr(evt, "auto") and evt.auto
 
 		self.logger.info("Data acquisition finished.")
 		wx.PostEvent(self.main_window, Events.StopRunningEvent(auto=auto))		# tell the main window that we're done here.

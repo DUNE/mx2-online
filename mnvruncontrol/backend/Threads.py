@@ -17,6 +17,7 @@ import re
 import time
 import socket
 import select
+import logging
 import fcntl
 import errno
 import subprocess
@@ -96,6 +97,7 @@ class DAQthread(threading.Thread):
 		# this is only expected to really be a problem if it exits with a
 		# non-zero return value, however.
 		if self.is_essential_service and not self.time_to_quit and self.process.returncode != 0:
+			logging.getLogger("rc_dispatcher").warning("Essential service %s quit early with return code %d...", self.process_identity, self.process.returncode)
 			wx.PostEvent(self.owner_process, Events.EndSubrunEvent(processname=self.process_identity))
 			
 	def read(self, want_cleanup_read = False):
