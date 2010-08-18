@@ -415,7 +415,6 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
  * \param nFEBchain2 an integer describing the number of FEB's on chain 2.  Defaults to 11.
  * \param nFEBchain3 an integer describing the number of FEB's on chain 3.  Defaults to 11.
  */
-// TODO - Pass HW Init Flag here too?
 	std::cout << "\nEntering acquire_data::InitializeCroc for CROC " << (address>>16) << std::endl;
 	acqData.infoStream() << "Entering acquire_data::InitializeCroc for CROC " << (address>>16);
 	acqData.infoStream() << "  HW (VME Card) Init Level = " << hwInitLevel;
@@ -767,6 +766,9 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 	}
 #if NEWREADOUT
 	tmpChan->VectorizeFEBList();
+//#if PREVIEWHIT
+//	SendClearAndReset(tmpChan); // Make sure we clear and reset at the start?
+//#endif
 #endif
 	acqData.infoStream() << "Returning from BuildFEBList.";
 	return 0;
