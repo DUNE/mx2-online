@@ -6,7 +6,7 @@
 #  $3 == number of gates to process
 #  $4 == port mod
 if [ $# -ne 4 ]; then
-	echo "Please supply et_system file name, number of febs, number of gates, and port (1091-1096)."
+	echo "Please supply et_system file name, number of febs, number of gates, and port (1201-1250)."
 	exit 1
 fi
 
