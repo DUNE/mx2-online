@@ -3012,17 +3012,19 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	acqData.debugStream() << "Read the PreviewHit";
 	acqData.debugStream() << "===================";
 #endif                          
-	std::list<readoutObject*>::iterator rop = readoutObjects->begin();
+	std::list<readoutObject*>::iterator rop  = readoutObjects->begin(); // general iterator
+	std::list<readoutObject*>::iterator rop0 = readoutObjects->begin(); // keep this pointing at the beginning
 	// Loop to clear and reset and then read the DPM for each instrumented channel.
 	while (rop != readoutObjects->end() && continueReadout) {
 		int febid    = (*rop)->getFebID();
-		int febindex = febid - 1;
 #if DEBUG_NEWREADOUT                    
-		acqData.debugStream() << "-> Top of readoutObject loop.";
-		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+		acqData.debugStream() << "-> Top of readoutObject loop for clear and reset & DPM read.";
+		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 		acqData.debugStream() << "feb id    = " << febid;
 #endif                          
-		// Only need to speak to electronics once!
+		// Only need to speak to electronics once per chain/channel!  Note we are assuming every 
+		// chain that is instrumented at all has an FEB1.  This is safe given the explicit enumeration 
+		// of FEB's in the init & loop-up functions, but be wary if those functions are changed!
 		if (febid == 1) {
 			// Clear and reset all channels.
 #if DEBUG_NEWREADOUT    
@@ -3038,7 +3040,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
 					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
 					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " <<
-					(*rop)->getChannel(i)->GetChainNumber();
+						(*rop)->getChannel(i)->GetChainNumber();
 					return e; // Error, stop!
 				}
 			} // end loop over data in readout object for send clear and reset and check status
@@ -3048,62 +3050,64 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					int error = RecvFrameData((*rop)->getChannel(i));
 					if (error) throw error; 
 				} catch (int e) { 
+					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
+					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
 					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
 					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
-					(*rop)->getChannel(i)->GetChainNumber();
+						(*rop)->getChannel(i)->GetChainNumber();
 					return e; // Error, stop!
 				}
 			} // end loop over data in readout object for DPM read
 
-		}
-		// Increment the readoutObject pointer.
+		} // end if febid == 1
+		// Increment the readoutObject pointer.  This is sort of a hedge allowing for readout objects with 
+		// febid == 1 *not* at the beginning of the list - we could just cut out in this implementation.
 		rop++;
 		// No need to check readout time yet?
 	} // end while loop over readout objects for electronics communication
 	// Parse channel buffer data and assign it to the readout object hit variables.
+	rop  = readoutObjects->begin(); // general iterator - point back at the start
 	while (rop != readoutObjects->end() && continueReadout) {
 		int febid    = (*rop)->getFebID();
-		int febindex = febid - 1;
 #if DEBUG_NEWREADOUT                    
-		acqData.debugStream() << "-> Top of readoutObject loop.";
-		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+		acqData.debugStream() << "-> Top of readoutObject loop for preview parsing.";
+		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 		acqData.debugStream() << "feb id    = " << febid;
-#endif                          
-		// Set the number of hits for each readout object.
-		//int nhits = (*rop)->getChannel(i)->GetPreviewHits(febid);
-		//nhits++; // add end of gate hit?
-		//(*rop)->setHitsPerChannel(i, nhits);
-		//(*rop)->setOrigHitsPerChannel(i, nhits);
-#if DEBUG_NEWREADOUT
-		acqData.debugStream() << "   TOTAL Number of hits (" << i << ") = " << (*rop)->getHitsPerChannel(i);
-#endif
+#endif           
+		for (int i=0; i<(*rop)->getDataLength(); i++) {
+       
+		}        
 		// Increment the readoutObject pointer.
 		rop++;
 		// No need to check readout time yet?
 	} // end while loop over readout objects for parsing
 	// Now loop to clean up channel object memory buffers.
+	rop  = readoutObjects->begin(); // general iterator - point back at the start
 	while (rop != readoutObjects->end() && continueReadout) {
 		int febid    = (*rop)->getFebID();
-		int febindex = febid - 1;
 #if DEBUG_NEWREADOUT                    
-		acqData.debugStream() << "-> Top of readoutObject loop.";
-		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+		acqData.debugStream() << "-> Top of readoutObject loop for preview cleanup.";
+		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 		acqData.debugStream() << "feb id    = " << febid;
 #endif                          
-		// Clean up memory (kill buffer created by SetBuffer in recv for channel.
-		//(*rop)->getChannel(i)->DeleteBuffer();
+		// Clean up memory (kill buffer created by SetBuffer in recv for channel).
+		// Only read & filled for FEB 1.
+		if (febid == 1) { 
+			for (int i=0; i<(*rop)->getDataLength(); i++) {
+				(*rop)->getChannel(i)->DeleteBuffer();
+			}
+		}
 		// Increment the readoutObject pointer.
 		rop++;
 		// No need to check readout time yet?
 	} // end while loop over readout objects for cleanup
-
-
 #if DEBUG_NEWREADOUT
 	acqData.debugStream() << "&&&&&&&&&&&&&&&&&&&& - End of ReadPreviewHit";
 	acqData.debugStream() << "redoutObject Status:";
 	DisplayReadoutObjects(readoutObjects);
 #endif
 #endif	
+
 	// Do an "FPGA read".
 	// First, send a read frame to each channel that has an FEB with the right index.
 	// Then, after sending a frame to every channel, read each of them in turn for data.
