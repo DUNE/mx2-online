@@ -114,9 +114,9 @@ Once you have configured your setup scripts, build the DAQ with the following st
 
 4) MINERvA DAQ uses the following set of ports:
 	1090 : Queen-Soldier port (on Soldier)
-	1091-1096 : et port (on Queen)
 	1098 : Run Control
 	1110-1113, 1120-1123: Worker-Solider synchronization ports.
+	1201-1250 : et port (on Queen)
 It is a good idea to configure your firewall such that these ports are kept open. 
 
 5) Check ${ET_LIBROOT}/lib and make sure you have libet.a, libet_remote.so, and libet.so.
