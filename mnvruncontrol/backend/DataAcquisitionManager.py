@@ -185,7 +185,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 			# they're actually behaving.
 			for node in self.monitorNodes:
 				if node.own_lock:
-					node.om_stop()
+					try:
+						node.om_stop()
+					except RemoteNode.RemoteNodeNoConnectionException:
+						self.logger.warning("Can't connect to OM node!...")
+						pass
 
 			# now any MTest beamline DAQ nodes
 			if self.mtest_useBeamDAQ:
@@ -406,7 +410,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		# the ET file name is the name used for the ET system file.
 		# all other data file names are based on it.
-		self.ET_filename = '%s_%08d_%04d_%s_v08_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes.code(self.detector), self.run, self.first_subrun + self.subrun, MetaData.RunningModes.code(self.runinfo.runMode), now.year % 100, now.month, now.day, now.hour, now.minute)
+		self.ET_filename = '%s_%08d_%04d_%s_v09_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes.code(self.detector), self.run, self.first_subrun + self.subrun, MetaData.RunningModes.code(self.runinfo.runMode), now.year % 100, now.month, now.day, now.hour, now.minute)
 		
 		# raw data written by the MINERvA DAQ
 		self.raw_data_filename = self.ET_filename + '_RawData.dat'
