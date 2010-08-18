@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme_SAM.py");
 	char data_filename[100]; sprintf(data_filename,"/work/data/sam/testme_RawData.dat");
 	unsigned long long firstEvent, lastEvent;  //unused in main...
-	int networkPort          = 1091; // 1091-1096 (inclusive) currently open.
+	int networkPort          = 1201; // 1201-1250 (inclusive) currently open.
 	int controllerErrCode;
 	string str_controllerID  = "0";
 #if MASTER||SINGLEPC // Soldier Node

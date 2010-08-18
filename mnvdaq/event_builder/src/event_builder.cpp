@@ -26,7 +26,7 @@ int main(int argc, char **argv)
  * of the generic et_producer class.  
  */
 	if (argc < 3) {
-		printf("Usage: event_builder <et_filename> <rawdata_filename> <network port (default 1091)> <callback PID (default: no PID)>\n");
+		printf("Usage: event_builder <et_filename> <rawdata_filename> <network port (default 1201)> <callback PID (default: no PID)>\n");
 		printf("  Please supply the full path!\n");
 		exit(1);
 	}
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	string output_filename(argv[2]);
 	// Open the file for binary output.
 	ofstream binary_outputfile(output_filename.c_str(),ios::out|ios::app|ios::binary); 
-	int networkPort = 1091;
+	int networkPort = 1201;
 	if (argc > 3) networkPort = atoi(argv[3]);
 	std::cout << "ET Network Port        = " << networkPort << std::endl;
 	
