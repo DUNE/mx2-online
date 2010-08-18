@@ -480,14 +480,17 @@ class DataAcquisitionManager(wx.EvtHandler):
 			# they ARE stopped.
 			if not hasattr(evt, "allclear") or not evt.allclear:
 				success = True
+				wait = False
 				for node in self.readoutNodes:
 					wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping " + node.name + " node...", progress=(step, numsteps)) )
 					try:
 						success = success and node.daq_stop()
+						wait = True
 					except ReadoutNode.ReadoutNodeNoConnectionException:
 						self.logger.warning("The %s node cannot be reached..." % node.name)
 						success = False
 					except ReadoutNode.ReadoutNodeNoDAQRunningException:		# raised if the DAQ is not running on the node.  not a big deal.
+						node.completed = True
 						pass
 				
 					wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=False) )
@@ -499,7 +502,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 				# if we WERE able to reach all the nodes, then we should wait
 				# until they've signalled that they have finished data taking.
-				else:
+				elif wait:
 					self.can_shutdown = True
 					return
 		
