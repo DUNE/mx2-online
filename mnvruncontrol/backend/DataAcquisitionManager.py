@@ -478,7 +478,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm", messageheader=header, messagebody=message))
 		
 			num_mtest_nodes = len(self.mtestBeamDAQNodes) if self.mtest_useBeamDAQ else 0
-			numsteps = num_mtest_nodes + len(self.readoutNodes) + len(self.DAQthreads) + 2		# gotta stop all the beamline DAQ nodes, readout nodes, close the DAQ threads, clear the LI system, and close the 'done' signal socket.
+			numsteps = num_mtest_nodes + len(self.readoutNodes) + len(self.DAQthreads) + 1		# gotta stop all the beamline DAQ nodes, readout nodes, close the DAQ threads, and close the 'done' signal socket.
 			step = 0
 			
 			# if the subrun is being stopped for some other reason than
@@ -557,15 +557,10 @@ class DataAcquisitionManager(wx.EvtHandler):
 			# we don't need a handle on them any more.
 			self.DAQthreads = {}
 			
-			
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
-
-			try:
-				self.LIBox.reset()					# don't want the LI box going unless it needs to be.
-			except LIBox.LIBoxException:				# ... but maybe there isn't one connected, or it's not on.  that's ok.
-				pass
-			finally:
-				step += 1
+			for node in self.readout_nodes:
+				node.li_configure(li_level=MetaData.LILevels.ZERO_PE)
+			step += 1
 		
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping listeners...", progress=(step, numsteps)) )
 			for node in self.readoutNodes:
@@ -697,31 +692,18 @@ class DataAcquisitionManager(wx.EvtHandler):
 	def LIBoxSetup(self):
 		""" Configures the light injection box, if needed. """
 		# set up the LI box to do what it's supposed to, if it needs to be on.
-		if self.runinfo.runMode == MetaData.RunningModes.LI.hash or self.runinfo.runMode == MetaData.RunningModes.MIXED_NUMI_LI.hash:
+		if self.runinfo.runMode == MetaData.RunningModes.LI or self.runinfo.runMode == MetaData.RunningModes.MIXED_NUMI_LI:
 			self.logger.info("  Setting up LI:")
-			self.LIBox.LED_groups = MetaData.LEDGroups.description(self.runinfo.ledGroup)
-			self.logger.info("     Configured for LED groups: " + MetaData.LEDGroups.description(self.runinfo.ledGroup))
-		
-			need_LI = True
-			if self.runinfo.ledLevel == MetaData.LILevels.ONE_PE:
-				self.LIBox.pulse_height = Defaults.LI_ONE_PE_VOLTAGE					
-			elif self.runinfo.ledLevel == MetaData.LILevels.MAX_PE:
-				self.LIBox.pulse_height = Defaults.LI_MAX_PE_VOLTAGE
-			else:
-				need_LI = False
-				
 			
-			if need_LI:
-				self.logger.info("     LI level: " + MetaData.LILevels.description(self.runinfo.ledLevel))
-				try:
-					self.LIBox.write_configuration()
-				except LIBox.LIBoxException, e:
-#					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm") )
-					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="The LI box does not seem to be responding.  Check the connection settings and the cable and try again.  Running aborted.", messageheader="LI box not responding") )
-					self.logger.warning("  LI Box is not responding...")
+			for node in self.readout_nodes:
+				if not node.li_configure(li_level=self.runinfo.ledLevel, led_groups=self.runinfo.ledGroup):
+					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="The LI box on node '%s' cannot be configured.  Check the settings and the serial connection." % node.name, messageheader="Error configuring LI box") )
+					self.logger.error("  LI Box on '%s' node cannot be configured...", node.name)
 					return False
-				finally:
-					self.logger.info( "     Commands issued to the LI box:\n" + "\n".join(self.LIBox.get_command_history()) )
+
+			self.logger.info("     Configured for LED groups: %s", MetaData.LEDGroups.description(self.runinfo.ledGroup))
+		
+			
 					
 		# ok to proceed to next step
 		return True

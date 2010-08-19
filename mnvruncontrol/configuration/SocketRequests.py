@@ -21,6 +21,7 @@ ReadoutRequests = [ "(?P<request>daq_running)\?",
                     "(?P<request>daq_last_exit)\?",
                     "(?P<request>daq_start) etfile=(?P<etfile>\S+):etport=(?P<etport>\d+):run=(?P<run>\d+):subrun=(?P<subrun>\d+):gates=(?P<gates>\d+):runmode=(?P<runmode>\d+):detector=(?P<detector>\d+):nfebs=(?P<nfebs>\d+):lilevel=(?P<lilevel>\d+):ledgroup=(?P<ledgroup>\d+):hwinitlevel=(?P<hwinitlevel>\d+)!",
                     "(?P<request>daq_stop)!",
+                    "(?P<request>li_configure) (?P<li_level>\d):(?P<led_groups>\d+)!",
                     "(?P<request>sc_setHWconfig) (?P<hwconfig>\d+)!",
                     "(?P<request>sc_readboards)\?" ]
 

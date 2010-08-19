@@ -96,6 +96,25 @@ class ReadoutNode(RemoteNode.RemoteNode):
 		elif response == "2":
 			raise ReadoutNodeNoDAQRunningException("The DAQ slave process is not currently running, so it can't be stopped.")
 		else:
+
+	def li_configure(self, li_level, led_groups=None):
+		""" Asks the server to configure the light injection system
+		    using the specified settings.
+		    
+		    To disable LI, pass an li_level of ZERO_PE. """
+		
+		assert (li_level == MetaData.ZERO_PE or led_groups is not None)
+		
+		if li_level == MetaData.ZERO_PE:
+			led_groups = MetaData.LEDGroups.ABCD.hash
+		
+		response = self.request("li_configure li_level=%d:led_groups=%d" % (li_level, led_groups))
+		
+		if response == "0":
+			return True
+		elif response == "1":
+			return False
+		else:
 			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
 
 	def sc_loadHWfile(self, filehash):

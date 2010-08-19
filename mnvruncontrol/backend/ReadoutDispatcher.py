@@ -25,6 +25,7 @@ from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import Configuration
 
 from mnvruncontrol.backend import Dispatcher
+from mnvruncontrol.backend import LIBox
 
 from mnvconfigurator.SlowControl.SC_MainMethods import SC as SlowControl
 
@@ -62,6 +63,7 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		                        "daq_last_exit"  : self.daq_exitstatus,
 		                        "daq_start"      : self.daq_start,
 		                        "daq_stop"       : self.daq_stop,
+		                        "li_configure"   : self.li_configure,
 		                        "sc_sethwconfig" : self.sc_sethw,
 		                        "sc_readboards"  : self.sc_readboards } )
 		                        
@@ -69,6 +71,8 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		
 		self.pidfilename = Configuration.params["Readout nodes"]["readout_PIDfileLocation"]
 		self.current_HW_file = "NOFILE"
+
+		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
 
 		self.daq_thread = None
 
@@ -185,6 +189,44 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		if show_details:
 			self.logger.info("   ==> Stopped successfully.  (Process " + str(self.daq_thread.pid) + " exited with code " + str(code) + ".)")
 		return "0"
+		
+	def li_configure(self, matches, show_details, **kwargs):
+		""" Configures the light injection system using the given values. """
+		
+		li_level = MetaData.LILevels[int(matches.group("li_level"))]
+		led_groups = MetaData.LEDGroups[int(matches.group("led_groups"))]
+		
+		need_LI = True
+		if li_level == MetaData.LILevels.ONE_PE:
+			self.LIBox.pulse_height = Defaults.LI_ONE_PE_VOLTAGE					
+		elif li_level == MetaData.LILevels.MAX_PE:
+			self.LIBox.pulse_height = Defaults.LI_MAX_PE_VOLTAGE
+		else:
+			need_LI = False
+
+		# if the LEDs are supposed to be off anyway, just reset the box and be done
+		if not need_LI:
+			self.logger.info("Disabling light injection for this subrun...")
+			try:
+				self.LIBox.reset()
+				return True
+			except LIBox.Error:
+				return False
+		
+		if show_details:
+			self.logger.info("Client wants the light injection system configured as follows:\n  LI level: %s\n  LED groups enabled: %s", li_level, led_groups)
+
+		self.LIBox.LED_groups = led_groups.description
+	
+		try:
+			self.LIBox.write_configuration()
+		except LIBox.LIBoxException, e:
+			self.logger.error("The LI box is not responding!  Check the cable and serial port settings.")
+			return False
+		finally:
+			self.logger.info( "     Commands issued to the LI box:\n%s", "\n".join(self.LIBox.get_command_history()) )
+		
+		return True
 		
 	def sc_sethw(self, matches, show_details, **kwargs):
 		""" Uses the slow control library to load a hardware configuration

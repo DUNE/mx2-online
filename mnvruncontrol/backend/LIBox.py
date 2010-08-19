@@ -86,7 +86,7 @@ class LIBox:
 						print "Sending command:   '" + command + "'"
 					self.port.write(command + "\n")
 				except serial.SerialTimeoutException:
-					raise LIBoxException("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
+					raise Error("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
 
 				if self.wait_response and command != "_X":		# box won't respond after reset command.
 					char = self.port.read(1)
@@ -94,7 +94,7 @@ class LIBox:
 						print "Received from box: '" + char + "'"
 			
 					if char != "K":
-						raise LIBoxException("The LI box didn't respond affirmatively to the command: '" + command + "'.")
+						raise Error("The LI box didn't respond affirmatively to the command: '" + command + "'.")
 			
 				time.sleep(0.02)
 		
@@ -109,7 +109,7 @@ class LIBox:
 					break
 			
 			if command_ok == False:
-				raise LIBoxException("Command '" + command + "' is invalid and cannot be sent to the LI box.")
+				raise Error("Command '" + command + "' is invalid and cannot be sent to the LI box.")
 				
 				
 	def get_command_history(self):
@@ -134,7 +134,7 @@ class LIBox:
 		self.LED_groups = "".join(tmp)
 		
 		if not re.match("^A?B?C?D?$", self.LED_groups):
-			raise LIBoxBadConfigException("LED groups to use must be some combination of 'A', 'B', 'C', 'D' (your entry: '" + self.LED_groups + "').")
+			raise ConfigError("LED groups to use must be some combination of 'A', 'B', 'C', 'D' (your entry: '" + self.LED_groups + "').")
 
 		# the following wizardry is brought to you by the black magic that powers the LI box.
 		# trust me -- it works.
@@ -152,7 +152,7 @@ class LIBox:
 		# pulse height (in volts) next.
 		# allowed values are 4.05-12.07.
 		if self.pulse_height < 4.05 or self.pulse_height > 12.07:
-			raise LIBoxException("LI pulse height must be between 4.05 and 12.07 volts (inclusive).")
+			raise Error("LI pulse height must be between 4.05 and 12.07 volts (inclusive).")
 		
 		highBit = int( (self.pulse_height - 4.0429) / 2.01 )
 
@@ -172,17 +172,17 @@ class LIBox:
 		
 		# pulse width: 0-7.  (roughly 20-35 ns)
 		if self.pulse_width < 0 or self.pulse_width > 7:
-			raise LIBoxException("LI pulse width must be in the range 0-7 (inclusive).")
+			raise Error("LI pulse width must be in the range 0-7 (inclusive).")
 		self.command_stack.append("aD" + str(self.pulse_width))
 		
 		# now the triggering.
 		if (self.trigger_internal):
 			if self.trigger_rate == None:
-				raise LIBoxException("If you intend to use internal triggering, you must manually set the trigger rate.")
+				raise Error("If you intend to use internal triggering, you must manually set the trigger rate.")
 
 			self.trigger_rate = int(self.trigger_rate, 16)		# no decimals.  need it in hexadecimal, too.
 			if self.trigger_rate < 0 or self.trigger_rate > 0xffff:
-				raise LIBoxException("Internal trigger rate must be between 0 and FFFF (hex).")
+				raise Error("Internal trigger rate must be between 0 and FFFF (hex).")
 			
 			trigger_rate = self.trigger_rate
 			
@@ -207,10 +207,10 @@ class LIBox:
 		self.communicate()
 			
 
-class LIBoxBadConfigException(Exception):
+class ConfigError(Exception):
 	pass
 
-class LIBoxException(Exception):
+class Error(Exception):
 	pass
 
 #####################################################################################
