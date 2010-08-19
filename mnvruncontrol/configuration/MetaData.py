@@ -75,7 +75,15 @@ class MetaData:
 				return True
 		
 		return False
-
+	
+	def __getitem__(self, key):
+		""" Returns the MetaDatum instance associated with the key you provide. """
+		for item in self.data:
+			if item == key:
+				return item
+				
+		raise KeyError("Key '" + str(key) + "' is not found in any hash, code, or description.")
+		
 	def descriptions(self):
 		"""
 		Returns a list of the descriptions of the items in this particular MetaData.
@@ -98,13 +106,7 @@ class MetaData:
 		the specified location (or all if given ANY).
 		"""
 		
-		datum = None
-		for item in self.data:
-			if item == key:
-				datum = item
-		
-		if datum is None:
-			raise KeyError("Key '" + str(key) + "' is not found in any hash, code, or description.")
+		datum = self[key]
 
 		getters = { DESCRIPTION: datum.description, HASH: datum.hash, CODE: datum.code }
 		
@@ -185,9 +187,9 @@ class MetaDatum:
 	
 	def __eq__(self, other):
 		# if other has ANY of the same attributes, we should judge equality based on that.
-		if hasattr(other, "parent") or hasattr(other, "identifier") or hasattr(other, "description") or hasattr(other, "code") or hasattr(other, "hash"):
+		if hasattr(other, "identifier") or hasattr(other, "description") or hasattr(other, "code") or hasattr(other, "hash"):
 			try:
-				return other.parent == self.parent and other.identifier == self.identifier and other.description == self.description and other.code == self.code and other.hash == self.hash
+				return other.identifier == self.identifier and other.description == self.description and other.code == self.code and other.hash == self.hash
 			except KeyError:
 				return False
 
@@ -197,6 +199,9 @@ class MetaDatum:
 		
 		
 		return False
+
+	def __repr__(self):
+		return self.description
 
 	def index(self):
 		return self.parent.index(self)
