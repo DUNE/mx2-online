@@ -207,12 +207,12 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 
 		# if the LEDs are supposed to be off anyway, just reset the box and be done
 		if not need_LI:
-			self.logger.info("Disabling light injection for this subrun...")
+			self.logger.info("Disabling light injection...")
 			try:
 				self.LIBox.reset()
-				return True
+				return "0"
 			except LIBox.Error:
-				return False
+				return "1"
 		
 		if show_details:
 			self.logger.info("Client wants the light injection system configured as follows:\n  LI level: %s\n  LED groups enabled: %s", li_level, led_groups)
@@ -223,11 +223,11 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 			self.LIBox.write_configuration()
 		except LIBox.LIBoxException, e:
 			self.logger.error("The LI box is not responding!  Check the cable and serial port settings.")
-			return False
+			return "1"
 		finally:
 			self.logger.info( "     Commands issued to the LI box:\n%s", "\n".join(self.LIBox.get_command_history()) )
 		
-		return True
+		return "0"
 		
 	def sc_sethw(self, matches, show_details, **kwargs):
 		""" Uses the slow control library to load a hardware configuration

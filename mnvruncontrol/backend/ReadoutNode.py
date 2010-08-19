@@ -105,12 +105,12 @@ class ReadoutNode(RemoteNode.RemoteNode):
 		    
 		    To disable LI, pass an li_level of ZERO_PE. """
 		
-		assert (li_level == MetaData.ZERO_PE or led_groups is not None)
+		assert (li_level == MetaData.LILevels.ZERO_PE or led_groups is not None)
 		
-		if li_level == MetaData.ZERO_PE:
+		if li_level == MetaData.LILevels.ZERO_PE:
 			led_groups = MetaData.LEDGroups.ABCD.hash
 		
-		response = self.request("li_configure li_level=%d:led_groups=%d" % (li_level, led_groups))
+		response = self.request("li_configure li_level=%d:led_groups=%d!" % (li_level, led_groups))
 		
 		if response == "0":
 			return True

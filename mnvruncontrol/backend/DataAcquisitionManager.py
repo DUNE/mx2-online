@@ -558,8 +558,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 			self.DAQthreads = {}
 			
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
-			for node in self.readout_nodes:
-				node.li_configure(li_level=MetaData.LILevels.ZERO_PE)
+			for node in self.readoutNodes:
+				node.li_configure(li_level=MetaData.LILevels.ZERO_PE.hash)
 			step += 1
 		
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping listeners...", progress=(step, numsteps)) )
@@ -695,7 +695,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if self.runinfo.runMode == MetaData.RunningModes.LI or self.runinfo.runMode == MetaData.RunningModes.MIXED_NUMI_LI:
 			self.logger.info("  Setting up LI:")
 			
-			for node in self.readout_nodes:
+			for node in self.readoutNodes:
 				if not node.li_configure(li_level=self.runinfo.ledLevel, led_groups=self.runinfo.ledGroup):
 					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="The LI box on node '%s' cannot be configured.  Check the settings and the serial connection." % node.name, messageheader="Error configuring LI box") )
 					self.logger.error("  LI Box on '%s' node cannot be configured...", node.name)
