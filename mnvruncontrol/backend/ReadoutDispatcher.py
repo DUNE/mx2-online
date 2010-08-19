@@ -21,6 +21,7 @@ import logging
 import logging.handlers
 
 from mnvruncontrol.configuration import MetaData
+from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import Configuration
 
