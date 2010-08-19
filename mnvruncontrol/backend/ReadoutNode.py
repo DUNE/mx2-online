@@ -96,6 +96,8 @@ class ReadoutNode(RemoteNode.RemoteNode):
 		elif response == "2":
 			raise ReadoutNodeNoDAQRunningException("The DAQ slave process is not currently running, so it can't be stopped.")
 		else:
+			raise ReadoutNodeUnexpectedDataException("Unexpected response: " + response)
+
 
 	def li_configure(self, li_level, led_groups=None):
 		""" Asks the server to configure the light injection system
