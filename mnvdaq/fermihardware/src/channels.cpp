@@ -225,14 +225,39 @@ unsigned short channels::GetPreviewHV(int febid)
 {
 /*! \fn Parse the preview hit data to get the HV on FEB febid. 
  */
-	int ml    = sizeof(*buffer)/sizeof(unsigned char);
-	if (ml == 0) return 0; 
+#if DEBUG_CHPREVIEW
+	std::cout << "GetPreviewHV: febid = " << febid << std::endl;
+#endif
+	int ml    = sizeof(buffer)/sizeof(unsigned char);
+#if DEBUG_CHPREVIEW
+	std::cout << "  preview hit ml = " << ml << std::endl;
+#endif
+	if (ml <= 0) return 0; 
+#if DEBUG_CHPREVIEW
+	for (int i=0; i<ml; i++) { printf("%02X ",buffer[i]); }
+	std::cout << std::endl;
+#endif
 	int nfebs = ml/6;
+#if DEBUG_CHPREVIEW
+	std::cout << "  preview hit nfebs = " << nfebs << std::endl;
+#endif
 	if (nfebs == 0) return 0;
 	for (int i=0; i<nfebs; i++) {
 		int index   = i * 6;
+#if DEBUG_CHPREVIEW
+		std::cout << "  index = " << index << std::endl;
+#endif
 		int febaddr = buffer[index + 2] & 0x0F;
+#if DEBUG_CHPREVIEW
+		printf("    %02X\n",buffer[index+2]);
+		printf("    %02X\n",buffer[index+3]);
+		std::cout << "  febaddr = " << febaddr << std::endl;
+#endif
 		if (febaddr == febid) {
+#if DEBUG_CHPREVIEW
+			std::cout << "    HV = " << 
+				(unsigned short)( buffer[index+4] + buffer[index+5]<<8 ) << std::endl;
+#endif
 			return (unsigned short)( buffer[index+4] + buffer[index+5]<<8 ); 
 		}
 	}
@@ -244,16 +269,44 @@ int channels::GetPreviewHits(int febid)
 {
 /*! \fn Parse the preview hit data to get the max hits on FEB febid. 
  */
-	int ml    = sizeof(*buffer)/sizeof(unsigned char);
-	if (ml == 0) return -1;
+#if DEBUG_CHPREVIEW
+	std::cout << "GetPreviewHits: febid = " << febid << std::endl;
+#endif
+	//int ml    = dpmPointer-2; // dangerous to rely on this being set for some reason? 
+	int ml    = sizeof(buffer)/sizeof(unsigned char) - 2;
+#if DEBUG_CHPREVIEW
+	std::cout << "  preview hit ml = " << ml << std::endl;
+#endif
+	if (ml <= 0) return -1;
+#if DEBUG_CHPREVIEW
+	for (int i=0; i<ml; i++) { printf("%02X ",buffer[i]); }
+	std::cout << std::endl;
+#endif
 	int nfebs = ml/6;
+#if DEBUG_CHPREVIEW
+	std::cout << "  preview hit nfebs = " << nfebs << std::endl;
+#endif
 	if (nfebs == 0) return -1;
 	for (int i=0; i<nfebs; i++) {
 		int index   = i * 6;
+#if DEBUG_CHPREVIEW
+		std::cout << "  index = " << index << std::endl;
+#endif
 		int febaddr = buffer[index + 2] & 0x0F;
+#if DEBUG_CHPREVIEW
+		printf("    %02X\n",buffer[index+2]);
+		printf("    %02X\n",buffer[index+3]);
+		std::cout << "  febaddr = " << febaddr << std::endl;
+#endif
 		if (febaddr == febid) {
 			unsigned char hit01 = buffer[index + 3] & 0x0F;
-			unsigned char hit23 = buffer[index + 3] & 0xF0;
+#if DEBUG_CHPREVIEW
+			std::cout << "    preview hit01 = " << (int)hit01 << std::endl;
+#endif
+			unsigned char hit23 = (buffer[index + 3] & 0xF0)>>4;
+#if DEBUG_CHPREVIEW
+			std::cout << "    preview hit23 = " << (int)hit23 << std::endl;
+#endif
 			return (int)( hit01>=hit23 ? hit01 : hit23 );	
 		}
 	}

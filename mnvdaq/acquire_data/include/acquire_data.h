@@ -132,7 +132,8 @@ class acquire_data {
 		log4cpp::Appender* acqAppender;
 		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */
 
-		static const bool checkForMessRecvd, doNotCheckForMessRecvd; /*!< Flags for ReadStatus. */
+		static const bool checkForMessRecvd, doNotCheckForMessRecvd; 
+		static const bool checkForErrs, doNotCheckForErrs;       
 	public:
 		/*! Specialized constructor. */
 		acquire_data(std::string fn, log4cpp::Appender* appender, log4cpp::Priority::Value priority, 
@@ -245,6 +246,10 @@ class acquire_data {
 
 		/*! Send a Clear and Reset to a CROC FE Channel. */
 		void SendClearAndReset(channels *theChain);
+		/*! Send a Status Register *Clear only* to a CROC FE Channel. */
+		void SendClear(channels *theChain);
+		/*! Send a *DPM Pointer reset only* to a CROC FE Channel. */
+		void SendReset(channels *theChain);
 		/*! Read the status register on a CROC FE Channel with a flag to see if we should check for the message recv'd. */
 		int ReadStatus(channels *theChain, bool receiveCheck);
 

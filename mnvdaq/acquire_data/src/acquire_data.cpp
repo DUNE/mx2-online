@@ -17,6 +17,8 @@ const int acquire_data::dpmMax                  = 1024*6; // we have only 6 Kb o
 const unsigned int acquire_data::timeOutSec     = 3600;   // be careful shortening this w.r.t. multi-PC sync issues
 const bool acquire_data::checkForMessRecvd      = true;   // fixed flag
 const bool acquire_data::doNotCheckForMessRecvd = false;  // fixed flag
+const bool acquire_data::checkForErrs           = true;   // fixed flag
+const bool acquire_data::doNotCheckForErrs      = false;  // fixed flag
 
 void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<readoutObject*> *readoutObjs) 
 {
@@ -766,9 +768,9 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
 	}
 #if NEWREADOUT
 	tmpChan->VectorizeFEBList();
-//#if PREVIEWHIT
-//	SendClearAndReset(tmpChan); // Make sure we clear and reset at the start?
-//#endif
+#if PREVIEWHIT
+	SendClearAndReset(tmpChan); // Make sure we clear and reset at the start?
+#endif
 #endif
 	acqData.infoStream() << "Returning from BuildFEBList.";
 	return 0;
@@ -2497,6 +2499,84 @@ void acquire_data::SendClearAndReset(channels *theChain)
 } // end SendClearAndReset
 
 
+void acquire_data::SendClear(channels *theChain)
+{
+/*! \fn SendClearAndReset(channels *theChain)
+ * Send a Status Register Clear only...
+ *
+ * \param channels *theChain the FE channel (referenced by Chain because of likely indexing choices).
+ */
+	int crocAddress = ( theChain->GetClearStatusAddress() & 0xFFFF0000 )>>16;
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
+	acqData.debugStream() << "--> Entering SendClear for CROC " << crocAddress <<
+		" Chain " << theChain->GetChainNumber();
+	acqData.debug("  Clear Status Address = 0x%X",theChain->GetClearStatusAddress());
+#endif
+	CVAddressModifier    AM  = daqController->GetAddressModifier();
+	CVDataWidth          DW  = daqController->GetDataWidth();
+	unsigned char message[2] = {0x02, 0x02}; // 0202 + 0808 for clear status AND reset.
+
+	// Clear the status & reset the pointer.
+	try {
+		int success = daqAcquire->WriteCycle(daqController->handle, 2, message,
+			theChain->GetClearStatusAddress(), AM, DW);
+		if (success) throw success;
+	} catch (int e) {
+		daqController->ReportError(e);
+		std::cout << "VME Error in SendClear!  Cannot write to the status register!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
+		acqData.critStream() << "VME Error in SendClear!  Cannot write to the status register!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+		exit(e);
+	}
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)      
+	acqData.debugStream() << "Executed SendClear for CROC " << crocAddress <<
+		" Chain " << theChain->GetChainNumber();
+#endif
+} // end SendClear
+
+
+void acquire_data::SendReset(channels *theChain)
+{
+/*! \fn SendReset(channels *theChain)
+ * Send a DPM pointer Reset only to a CROC FE Channel.
+ *
+ * \param channels *theChain the FE channel (referenced by Chain because of likely indexing choices).
+ */
+	int crocAddress = ( theChain->GetClearStatusAddress() & 0xFFFF0000 )>>16;
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
+	acqData.debugStream() << "--> Entering SendReset for CROC " << crocAddress <<
+		" Chain " << theChain->GetChainNumber();
+	acqData.debug("  Clear Status Address = 0x%X",theChain->GetClearStatusAddress());
+#endif
+	CVAddressModifier    AM  = daqController->GetAddressModifier();
+	CVDataWidth          DW  = daqController->GetDataWidth();
+	unsigned char message[2] = {0x08, 0x08}; // 0202 + 0808 for clear status AND reset.
+
+	// Clear the status & reset the pointer.
+	try {
+		int success = daqAcquire->WriteCycle(daqController->handle, 2, message,
+			theChain->GetClearStatusAddress(), AM, DW);
+		if (success) throw success;
+	} catch (int e) {
+		daqController->ReportError(e);
+		std::cout << "VME Error in SendReset!  Cannot write to the status register!" << std::endl;
+		std::cout << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber() << std::endl;
+		acqData.critStream() << "VME Error in SendReset!  Cannot write to the status register!";
+		acqData.critStream() << "  Error on CROC " << crocAddress <<
+			" Chain " << theChain->GetChainNumber();
+		exit(e);
+	}
+#if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)      
+	acqData.debugStream() << "Executed SendReset for CROC " << crocAddress <<
+		" Chain " << theChain->GetChainNumber();
+#endif
+} // end SendReset
+
+
 int acquire_data::ReadStatus(channels *theChain, bool receiveCheck)
 {
 /*! \fn ReadStatus(channels *theChain, bool receiveCheck)
@@ -2879,6 +2959,7 @@ int acquire_data::RecvFrameData(channels *theChannel, bool checkForErrors)
 			" Chain " << theChannel->GetChainNumber();
 		return e;
 	}
+	//theChannel->SetDPMPointer(dataLength); //This creates errors somehow?  dataLength-2?
 	theChannel->SetBuffer(DPMData);
 
 	// Clean-up and return.
@@ -2888,7 +2969,10 @@ int acquire_data::RecvFrameData(channels *theChannel, bool checkForErrors)
 #endif
 	// Check for errors embedded in the data.
 	// Note that this is really assuming only one frame of data is in the DPM at a time!
-	return theChannel->CheckHeaderErrors(dataLength);
+	if (checkForErrors) {
+		return theChannel->CheckHeaderErrors(dataLength);
+	} 
+	return 0;
 }
 
 
@@ -3016,93 +3100,110 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 #endif                          
 	std::list<readoutObject*>::iterator rop  = readoutObjects->begin(); // general iterator
 	std::list<readoutObject*>::iterator rop0 = readoutObjects->begin(); // keep this pointing at the beginning
-	// Loop to clear and reset and then read the DPM for each instrumented channel.
-	while (rop != readoutObjects->end() && continueReadout) {
-		int febid    = (*rop)->getFebID();
+	// Loop to clear and reset and then read the DPM for each instrumented channel.  We will only look at the 
+	// *first* item in the readout object list for this - FEB1 - under the assumption every chain starts with 
+	// an FEB1.
+	int febid    = (*rop0)->getFebID();
 #if DEBUG_NEWREADOUT                    
-		acqData.debugStream() << "-> Top of readoutObject loop for clear and reset & DPM read.";
-		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
-		acqData.debugStream() << "feb id    = " << febid;
+	acqData.debugStream() << "-> Top of readoutObject loop for clear and reset & DPM read.";
+	acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+	acqData.debugStream() << "feb id    = " << febid;
 #endif                          
-		// Only need to speak to electronics once per chain/channel!  Note we are assuming every 
-		// chain that is instrumented at all has an FEB1.  This is safe given the explicit enumeration 
-		// of FEB's in the init & loop-up functions, but be wary if those functions are changed!
-		if (febid == 1) {
-			// Clear and reset all channels.
+	// Only need to speak to electronics once per chain/channel!  Note we are assuming every 
+	// chain that is instrumented at all has an FEB1.  This is safe given the explicit enumeration 
+	// of FEB's in the init & loop-up functions, but be wary if those functions are changed!
+	if (febid == 1) {
+		// Clear, but do not reset all channels.
 #if DEBUG_NEWREADOUT    
-			acqData.debugStream() << "->Do the clear and resets for all channels for preview data.";
+		acqData.debugStream() << "->Do the clear status for all channels for preview data.";
 #endif                  
-			for (int i=0; i<(*rop)->getDataLength(); i++) {
-				SendClearAndReset((*rop)->getChannel(i));
-				try {   
-					int error = ReadStatus((*rop)->getChannel(i), doNotCheckForMessRecvd);
-					if (error) throw error;
-				} catch (int e) { 
-					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
-					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
-					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
-					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " <<
-						(*rop)->getChannel(i)->GetChainNumber();
-					return e; // Error, stop!
-				}
-			} // end loop over data in readout object for send clear and reset and check status
-			// Read the DPM and set the buffer for each channel.
-			for (int i=0; i<(*rop)->getDataLength(); i++) {
-				try {
-					int error = RecvFrameData((*rop)->getChannel(i));
-					if (error) throw error; 
-				} catch (int e) { 
-					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
-					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
-					acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
-					acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
-						(*rop)->getChannel(i)->GetChainNumber();
-					return e; // Error, stop!
-				}
-			} // end loop over data in readout object for DPM read
-
-		} // end if febid == 1
-		// Increment the readoutObject pointer.  This is sort of a hedge allowing for readout objects with 
-		// febid == 1 *not* at the beginning of the list - we could just cut out in this implementation.
-		rop++;
-		// No need to check readout time yet?
-	} // end while loop over readout objects for electronics communication
-	// Parse channel buffer data and assign it to the readout object hit variables.
-	rop  = readoutObjects->begin(); // general iterator - point back at the start
-	while (rop != readoutObjects->end() && continueReadout) {
-		int febid    = (*rop)->getFebID();
+		for (int i=0; i<(*rop0)->getDataLength(); i++) {
+			unsigned int chaddr = (*rop0)->getChannel(i)->GetChannelAddress(); // set the reference address
 #if DEBUG_NEWREADOUT                    
-		acqData.debugStream() << "-> Top of readoutObject loop for preview parsing.";
-		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
-		acqData.debugStream() << "feb id    = " << febid;
+			acqData.debugStream() << "Channel address    = " << chaddr;
 #endif           
-		for (int i=0; i<(*rop)->getDataLength(); i++) {
-       
-		}        
-		// Increment the readoutObject pointer.
-		rop++;
-		// No need to check readout time yet?
-	} // end while loop over readout objects for parsing
-	// Now loop to clean up channel object memory buffers.
-	rop  = readoutObjects->begin(); // general iterator - point back at the start
-	while (rop != readoutObjects->end() && continueReadout) {
-		int febid    = (*rop)->getFebID();
-#if DEBUG_NEWREADOUT                    
-		acqData.debugStream() << "-> Top of readoutObject loop for preview cleanup.";
-		acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
-		acqData.debugStream() << "feb id    = " << febid;
-#endif                          
-		// Clean up memory (kill buffer created by SetBuffer in recv for channel).
-		// Only read & filled for FEB 1.
-		if (febid == 1) { 
-			for (int i=0; i<(*rop)->getDataLength(); i++) {
-				(*rop)->getChannel(i)->DeleteBuffer();
+			SendClear((*rop0)->getChannel(i));
+#if DEBUG_NEWREADOUT    
+			acqData.debugStream() << "  Sent clear...";
+#endif                  
+			try {   
+				int error = ReadStatus((*rop0)->getChannel(i), doNotCheckForMessRecvd);
+				if (error) throw error;
+			} catch (int e) { 
+				unsigned int clrstsAddr = (*rop0)->getChannel(i)->GetClearStatusAddress();
+				unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+				acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+				acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " <<
+					(*rop0)->getChannel(i)->GetChainNumber();
+				return e; // Error, stop!
 			}
+		} // end loop over data in readout object for send clear and reset and check status
+		// Read the DPM and set the buffer for each channel.  Don't check for errors because the data is 
+		// not formatted like a normal frame!
+		for (int i=0; i<(*rop0)->getDataLength(); i++) {
+			try {
+				int error = RecvFrameData((*rop0)->getChannel(i), doNotCheckForErrs);
+				if (error) throw error; 
+			} catch (int e) { 
+				unsigned int clrstsAddr = (*rop0)->getChannel(i)->GetClearStatusAddress();
+				unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
+				acqData.critStream() << "Error in WriteAllData!  Cannot read the status register!";
+				acqData.critStream() << "->Failed on CROC = " << crocAddr << ", Chain Number = " << 
+					(*rop0)->getChannel(i)->GetChainNumber();
+				return e; // Error, stop!
+			}
+		} // end loop over data in readout object for DPM read
+	} else { 
+		acqData.critStream() << "Error in WriteAllData!  PreviewHit will malfunction if chains do not all start with FEB1!";
+		return 1;
+	} // end if febid == 1
+	// Parse channel buffer data and assign it to the readout object hit variables.  Loop over 
+	// the first readout object & extract data - this is really a loop over all the  CROC FE 
+	// channels.  Note this loop assumes that FEB1 is at the start of the readout object list 
+	// and every chain starts with an FEB1!
+#if DEBUG_NEWREADOUT                    
+	acqData.debugStream() << "-> Top of channel loop for preview parsing.";
+	acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+#endif           
+	for (int i=0; i<(*rop0)->getDataLength(); i++) {
+		unsigned int refrAdd = (*rop0)->getChannel(i)->GetChannelAddress(); // set the reference address
+#if DEBUG_NEWREADOUT                    
+		acqData.debugStream() << "reference channel address    = " << refrAdd;
+		acqData.debugStream() << "-> Top of readoutObject loop for preview parsing.";
+#endif           
+		rop  = readoutObjects->begin(); // general iterator - point back at the start
+		while (rop != readoutObjects->end() && continueReadout) {
+			febid = (*rop)->getFebID();
+			// Add end of gate hit - removed by zero suppression flag if necessary.	
+			int nhits = 1 + ( (*rop0)->getChannel(i)->GetPreviewHits(febid) );	
+#if DEBUG_NEWREADOUT                    
+			acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+			acqData.debugStream() << "feb id    = " << febid;
+			acqData.debugStream() << "nhtis     = " << nhits;
+#endif           
+			// Set nhits.
+			// Increment the readoutObject pointer.
+			rop++;
+			// No need to check readout time yet?
+		} // end while loop over readout objects for parsing
+	} // end for loop over feb1 readout objects
+	// Now loop to clean up channel object memory buffers.
+	febid    = (*rop0)->getFebID();
+#if DEBUG_NEWREADOUT                    
+	acqData.debugStream() << "-> Top of readoutObject loop for preview cleanup.";
+	acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+	acqData.debugStream() << "feb id    = " << febid;
+#endif                          
+	// Clean up memory (kill buffer created by SetBuffer in recv for channel).
+	// Only read & filled for FEB 1.
+	if (febid == 1) { 
+		for (int i=0; i<(*rop0)->getDataLength(); i++) {
+			(*rop0)->getChannel(i)->DeleteBuffer();
 		}
-		// Increment the readoutObject pointer.
-		rop++;
-		// No need to check readout time yet?
-	} // end while loop over readout objects for cleanup
+	} else {
+		acqData.critStream() << "Error in WriteAllData!  PreviewHit will malfunction if chains do not all start with FEB1!";
+		return 1;
+	}
 #if DEBUG_NEWREADOUT
 	acqData.debugStream() << "&&&&&&&&&&&&&&&&&&&& - End of ReadPreviewHit";
 	acqData.debugStream() << "redoutObject Status:";
@@ -3552,6 +3653,10 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 		DisplayReadoutObjects(readoutObjects);
 #endif
 	} // end if readADC
+
+#if PREVIEWHIT
+	// Do a final clear and reset before exiting so we have a fresh starting point?
+#endif
 
 
 #if DEBUG_NEWREADOUT
