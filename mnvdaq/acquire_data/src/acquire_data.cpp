@@ -3119,12 +3119,9 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 #endif                  
 		for (int i=0; i<(*rop0)->getDataLength(); i++) {
 			unsigned int chaddr = (*rop0)->getChannel(i)->GetChannelAddress(); // set the reference address
-#if DEBUG_NEWREADOUT                    
-			acqData.debugStream() << "Channel address    = " << chaddr;
-#endif           
 			SendClear((*rop0)->getChannel(i));
 #if DEBUG_NEWREADOUT    
-			acqData.debugStream() << "  Sent clear...";
+			acqData.debug("  Sent clear to channel address 0x%06X",chaddr);
 #endif                  
 			try {   
 				int error = ReadStatus((*rop0)->getChannel(i), doNotCheckForMessRecvd);
@@ -3182,6 +3179,11 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 			acqData.debugStream() << "nhtis     = " << nhits;
 #endif           
 			// Set nhits.
+			(*rop)->setHitsPerChannel(i, nhits);
+			(*rop)->setOrigHitsPerChannel(i, nhits);
+#if DEBUG_NEWREADOUT
+			acqData.debugStream() << "   R.O. Number of hits (" << i << ") = " << (*rop)->getHitsPerChannel(i);
+#endif          
 			// Increment the readoutObject pointer.
 			rop++;
 			// No need to check readout time yet?
@@ -3655,9 +3657,21 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	} // end if readADC
 
 #if PREVIEWHIT
-	// Do a final clear and reset before exiting so we have a fresh starting point?
+	// Loop to clear and reset and then read the DPM for each instrumented channel.  We will only look at the 
+	// *first* item in the readout object list for this - FEB1 - under the assumption every chain starts with 
+	// an FEB1.  Only need to speak to electronics once per chain/channel!
+	// Clear *and* reset all channels.
+#if DEBUG_NEWREADOUT    
+	acqData.debugStream() << "->Do the cleanup clear and reset for all channels for preview data.";
+#endif                  
+	for (int i=0; i<(*rop0)->getDataLength(); i++) {
+		unsigned int chaddr = (*rop0)->getChannel(i)->GetChannelAddress(); // set the reference address
+		SendClearAndReset((*rop0)->getChannel(i));
+#if DEBUG_NEWREADOUT    
+		acqData.debug("  Sent clear to channel address 0x%06X",chaddr);
+#endif                  
+	} // end loop over data in readout object for send clear and reset and check status
 #endif
-
 
 #if DEBUG_NEWREADOUT
 	acqData.debugStream() << "Exiting acquire_data::WriteAllData.";
