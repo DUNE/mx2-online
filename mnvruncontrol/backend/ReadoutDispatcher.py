@@ -49,6 +49,8 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		# hardware link would get broken.
 		# it will be initialized when used.
 		self.slowcontrol = None
+		# same for the LI box.
+		self.LIBox = None
 
 		# Dispatcher() maintains a central logger.
 		# We want a file output, so we'll set that up here.
@@ -72,8 +74,6 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 		
 		self.pidfilename = Configuration.params["Readout nodes"]["readout_PIDfileLocation"]
 		self.current_HW_file = "NOFILE"
-
-		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
 
 		self.daq_thread = None
 
@@ -194,6 +194,9 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 	def li_configure(self, matches, show_details, **kwargs):
 		""" Configures the light injection system using the given values. """
 		
+		if self.LIBox is None:
+			self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])		
+			
 		li_level = MetaData.LILevels[int(matches.group("li_level"))]
 		led_groups = MetaData.LEDGroups[int(matches.group("led_groups"))]
 		
@@ -221,8 +224,11 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 	
 		try:
 			self.LIBox.write_configuration()
-		except LIBox.LIBoxException, e:
+		except LIBox.Error:
 			self.logger.error("The LI box is not responding!  Check the cable and serial port settings.")
+			return "1"
+		except:
+			self.logger.exception("Error configuring the LI box:")
 			return "1"
 		finally:
 			self.logger.info( "     Commands issued to the LI box:\n%s", "\n".join(self.LIBox.get_command_history()) )
