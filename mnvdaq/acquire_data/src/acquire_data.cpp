@@ -3060,6 +3060,8 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 	gettimeofday(&readstart, NULL);
 	startReadout = (unsigned long long)(readstart.tv_sec*1000000) + (unsigned long long)(readstart.tv_usec);
 
+	bool doReadout       = true;
+	bool doET            = true;
 	bool continueReadout = true;
 	bool readDisc        = true; // Always leave this on...
 	bool readADC         = true;
@@ -3331,18 +3333,25 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 #if DEBUG_NEWREADOUT
 				acqData.debugStream() << "   TOTAL Number of hits (" << i << ") = " << (*rop)->getHitsPerChannel(i);
 #endif
-				// Fiddle with evt data.
-				evt->feb_info[2] = crocAddr;
-				evt->feb_info[3] = (*rop)->getChannel(i)->GetChainNumber();
-				evt->feb_info[6] = brdnum;
-				evt->feb_info[7] = firmwareVersion; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
-				// FillEventStructure here.  FES reads from the *channel's* buffer, not the frame's!
-				FillEventStructure(evt, 1, (*rop)->getChannel(i));
-				// ContactEventBuilder here.
-				ContactEventBuilder(evt, (int)0, attach, sys_id);
+				if (zeroSuppress) {
+					if (nhits <= 1) doET = false; 
+				}
+				if (doET) {
+					// Fiddle with evt data.
+					evt->feb_info[2] = crocAddr;
+					evt->feb_info[3] = (*rop)->getChannel(i)->GetChainNumber();
+					evt->feb_info[6] = brdnum;
+					evt->feb_info[7] = firmwareVersion; // We don't parse the FPGA's anymore in the DAQ... (int)tmpFEB->GetFirmwareVersion();
+					// FillEventStructure here.  FES reads from the *channel's* buffer, not the frame's!
+					FillEventStructure(evt, 1, (*rop)->getChannel(i));
+					// ContactEventBuilder here.
+					ContactEventBuilder(evt, (int)0, attach, sys_id);
+				}
 				// Cleanup...
 				(*rop)->getChannel(i)->DeleteBuffer();
 				tmpFEB  = 0;
+				// Re-set doET
+				doET = true;
 			} // end loop over data for reading the dpm
 
 			// Increment the readoutObject pointer.
@@ -3373,6 +3382,8 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 		while (rop != readoutObjects->end() && continueReadout) {
 			int febid    = (*rop)->getFebID();
 			int febindex = febid - 1;
+			// Re-set do-read.
+			doReadout = true;
 #if DEBUG_NEWREADOUT
 			acqData.debugStream() << "-> Top of readoutObject loop.";
 			acqData.debugStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
@@ -3391,13 +3402,22 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					(*rop)->getChannel(i)->GetChannelAddress() << 
 					" with " << (*rop)->getOrigHitsPerChannel(i) << " hits.";
 #endif
-				if (!zeroSuppress && (*rop)->getOrigHitsPerChannel(i)>1) {
+				if (zeroSuppress) {
+					if ((*rop)->getOrigHitsPerChannel(i)>1) {
+						doReadout = true; 
+#if DEBUG_NEWREADOUT
+						acqData.debugStream() << "->Not Suppressing!";
+#endif
+					} else {
+						doReadout = false;
+#if DEBUG_NEWREADOUT
+						acqData.debugStream() << "->Suppressing!";
+#endif
+					}
+				} else {
+					doReadout = true; 
 #if DEBUG_NEWREADOUT
 					acqData.debugStream() << "->Not Suppressing!";
-#endif
-				} else {
-#if DEBUG_NEWREADOUT
-					acqData.debugStream() << "->Suppressing!";
 #endif
 				}
 				SendClearAndReset((*rop)->getChannel(i));
@@ -3412,6 +3432,8 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 						(*rop)->getChannel(i)->GetChainNumber();
 					return e; // Error, stop!
 				}
+				// Re-set do-read.
+				doReadout = true;
 			} // end loop over data in readout object for send clear and reset and check status
 
 			// Send an FPGA read frame request to each channel with an FEB with id febid.

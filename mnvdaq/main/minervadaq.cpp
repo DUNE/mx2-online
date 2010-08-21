@@ -696,6 +696,8 @@ int main(int argc, char *argv[])
 			case OneShot:
 				triggerType = Pedestal;
 				allowedReadoutTime = allowedPedestal;
+				// TEST!!!
+				zeroSuppress = true;
 				break;
 			case NuMIBeam:
 				triggerType = NuMI;

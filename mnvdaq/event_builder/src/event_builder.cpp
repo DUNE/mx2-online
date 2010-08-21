@@ -436,7 +436,7 @@ int event_builder(event_handler *evt)
 	gate_print_freq = 1;
 #endif 
 #if (WH14T||WH14B)&&SINGLEPC
-	gate_print_freq = 10;
+	gate_print_freq = 1;
 #endif
 #if MTEST
 	gate_print_freq = 5;
