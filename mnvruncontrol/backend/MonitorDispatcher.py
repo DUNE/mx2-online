@@ -105,15 +105,20 @@ class MonitorDispatcher(Dispatcher):
 		try:
 			# replace the options files so that we get the new event builder output.
 			with open(Configuration.params["Monitoring nodes"]["om_GaudiOutputOptionsFile"], "w") as optsfile:
-				optsfile.write("HistogramSaver.Outputfile = \"%s/%s_Histos.root\";\n" % ( Configuration.params["Monitoring nodes"]["om_DSTTargetPath"], self.etpattern ) )
+				path = Configuration.params["Monitoring nodes"]["om_DSTTargetPath"]
+				optsfile.write("HistogramSaver.Outputfile = \"%s/%s_Histos.root\";\n" % (path, self.etpattern ) )
 
 				dstfiles = []
 				for dsttype in ("linjc", "numib"):
 					prefix = "Linjc" if dsttype == "linjc" else ""
-					dstfiles.append( { "DSTWriter": dsttype.capitalize(), "filename": "%s/%s_%sDST.root" % (Configuration.params["Monitoring nodes"]["om_DSTTargetPath"], self.etpattern, prefix) } )
+					dstfiles.append( { "DSTWriter": dsttype.capitalize(), "filename": "%s/%s_%sDST.root" % (path, self.etpattern, prefix) } )
 
 				for dstinfo in dstfiles:
 					optsfile.write("%sDSTWriter.OutputFile = \"%s\";\n" % (dstinfo["DSTWriter"], dstinfo["filename"]) )
+				
+				optsfile.write( "MaxPEGainAlg.OutfileName = \"%s/%s_gain_table.dat\";\n" % (path, self.etpattern) )
+				optsfile.write( "MaxPEGainAlg.ProblemChannelFileName = \"%s/%s_problemchannels.dat\";\n" % (path, self.etpattern) )
+				optsfile.write( "MaxPEGainAlg.HVFileName = \"%s/%s_tunedHVs.dat\";\n" % (path, self.etpattern) )
 
 			with open(Configuration.params["Monitoring nodes"]["om_GaudiInputOptionsFile"], "w") as optsfile:
 				optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\" ;\n" % self.evbfile)

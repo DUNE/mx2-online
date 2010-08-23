@@ -559,7 +559,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 			
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
 			for node in self.readoutNodes:
-				node.li_configure(li_level=MetaData.LILevels.ZERO_PE.hash)
+				try:
+					node.li_configure(li_level=MetaData.LILevels.ZERO_PE.hash)
+				except ReadoutNode.ReadoutNodeNoConnectionException:
+					self.logger.warning("Couldn't reach '%s' node to reset the LI box!", node.name)
+					
 			step += 1
 		
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping listeners...", progress=(step, numsteps)) )
