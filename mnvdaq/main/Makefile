@@ -12,10 +12,6 @@ COMPILE_OPTIONS = -DTAKE_DATA
 #--RUNNING FLAGS--
 COMPILE_OPTIONS += -DRUN_SLEEPY # This flag is required to for FEB digitization.  2009.Dec.16
 
-#--READOUT FLAGS--
-#COMPILE_OPTIONS += -DZEROSUPPRESSION  # Don't read the end of gate hit.
-
-
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
