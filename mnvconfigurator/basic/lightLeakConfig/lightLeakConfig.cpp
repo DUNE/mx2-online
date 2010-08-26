@@ -408,7 +408,8 @@ int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->SetTripPowerOff(val); //turn the trips on
 		myFeb->SetGateStart(43000);      
 		myFeb->SetGateLength(1702);  
-		unsigned char previewEnable[] = {0x1};
+		//unsigned char previewEnable[] = {0x1};
+		unsigned char previewEnable[] = {0x0};
 		myFeb->SetPreviewEnable(previewEnable);
 
 		if (HVEnableFlag) {
