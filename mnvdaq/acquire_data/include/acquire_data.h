@@ -93,9 +93,9 @@ int allowedReadoutTime;
 // Label by triggerType.
 const int allowedPedestal       =  1000000;
 //const int allowedPedestal       =  5000;  // Play-around test value.  
-const int allowedNuMI           =  2100000;
-const int allowedCosmic         = 10000000;  // UNTESTED! (Really, an MTest value.)
-const int allowedLightInjection =  1100000;
+const int allowedNuMI           =  4000000; // Block for at most one spill?
+const int allowedCosmic         = 10000000; // UNTESTED! (Really, an MTest value.)
+const int allowedLightInjection =  1000000; // Same as pedestal (we are mixing now).
 
 
 /*! \class acquire_data
