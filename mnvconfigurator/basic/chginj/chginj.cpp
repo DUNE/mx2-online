@@ -614,6 +614,7 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 	unsigned int dpmPointer;
 	bool init; 
 	bool lDecode = true;
+	int offset = (int)boardID;
 
 	feb *myFeb = new feb(maxHits, init, boardID, NRegisters);
 	myFeb->SetFEBDefaultValues(); // use defaults to build the message
@@ -624,11 +625,11 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 		myFeb->SetGateStart(43123);  //count to 65535 in clock ticks, 43000 => 211.8 us
 		myFeb->SetGateLength(1702);  //gate length for MINERvA in NuMI is 1702
 		myFeb->SetHVTarget(25000); // just to sneak past the run control I hope...
-		unsigned char previewEnable[] = {0x1};
+		//unsigned char previewEnable[] = {0x1};
+		unsigned char previewEnable[] = {0x0};
 		myFeb->SetPreviewEnable(previewEnable); 
 		for (int i=0; i<4; i++) {    // inject registers, DON'T WRITE TO THE LOW GAIN TRIPS!
-			unsigned char inj[] = { 1 + (unsigned char)i*40 };   // 15 integration ticks + ~20 reset ticks...
-			//unsigned char inj[] = { 1 + (unsigned char)i*2 };   // 15 integration ticks + ~20 reset ticks...
+			unsigned char inj[] = { 1 + (unsigned char)i*(40-2*offset) };   // 15 integration ticks + ~20 reset ticks...
 			unsigned char enable[] = {0x1}; // never enable low gain, or things get very confusing...
 			myFeb->SetInjectCount(inj,i);
 			myFeb->SetInjectEnable(enable,i);
