@@ -26,8 +26,7 @@ class MonitorNode(RemoteNode):
 		""" Asks the server to start the OM processes. """
 		
 		request = "om_start etpattern=%s:etport=%d!" % (etpattern, etport)
-		#print request
-		self.request(request)
+		return self.request(request) == "0"
 
 	def om_stop(self):
 		""" Asks the server to stop the OM processes. """

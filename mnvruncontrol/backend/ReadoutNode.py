@@ -110,7 +110,10 @@ class ReadoutNode(RemoteNode.RemoteNode):
 		if li_level == MetaData.LILevels.ZERO_PE:
 			led_groups = MetaData.LEDGroups.ABCD.hash
 		
-		response = self.request("li_configure li_level=%d:led_groups=%d!" % (li_level, led_groups))
+		try:
+			response = self.request("li_configure li_level=%d:led_groups=%d!" % (li_level, led_groups))
+		except RemoteNode.RemoteNodeNoConnectionException:
+			raise ReadoutNodeNoConnectionException()		# this is the type of exception DAQMgr is expecting
 		
 		if response == "0":
 			return True

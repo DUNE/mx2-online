@@ -65,8 +65,7 @@ class MonitorDispatcher(Dispatcher):
 		""" Starts the online monitoring services as subprocesses.  First checks
 		    to make sure it's not already running, and if it is, does nothing.
 
-		    Returns 0 since the run control doesn't actually care if 
-		    the processes are started correctly.  """
+		    Returns 0 on success and 1 on failure.  """
 		    
 		if show_details:
 			self.logger.info("Client wants to start the OM processes.")
@@ -83,17 +82,17 @@ class MonitorDispatcher(Dispatcher):
 		
 		try:
 			self.om_start_eb(etfile="%s_RawData" % matches.group("etpattern"), etport=matches.group("etport"))
+			return "0"
 		except Exception, excpt:
 			self.logger.error("   ==> The event builder process can't be started!")
 			self.logger.error("   ==> Error message: '%s'", excpt)
-		
-		return "0"		# the run control doesn't care whether this has started correctly.
+			return "1"
 	
 	def om_start_eb(self, etfile, etport):
 		""" Start the event builder process. """
 		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Configuration.params["Master node"]["etSystemFileLocation"], etfile, self.evbfile, etport, os.getpid()) ) 
 		self.logger.info("   event_builder command:")
-		self.logger.info("      '" + executable + "'...")
+		self.logger.info("      '%s'", executable)
 		
 		signal.signal(signal.SIGUSR1, self.om_start_Gaudi)
 		self.om_eb_thread = OMThread(executable, "eventbuilder")

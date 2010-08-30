@@ -68,6 +68,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.DAQStartTasks = [ { "method": self.StartETSys,          "message": "Starting ET system..." },
 		                       { "method": self.StartETMon,          "message": "Starting ET monitor..." },
 		                       { "method": self.StartEBSvc,          "message": "Starting event builder..." },
+		                       { "method": self.StartOM,             "message": "Starting online monitoring..." },
 		                       { "method": self.StartRemoteServices, "message": "Starting remote services..."} ]
 
 
@@ -620,6 +621,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 			node.shutting_down = False
 			node.sent_sentinel = False
 			wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=on) )
+		
+		for node in self.monitorNodes:
+			node.ready = False
 				
 		if not ok:
 			wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="Cannot make a connection to the readout node(s).  Running aborted.", messageheader="No connection to readout node(s)") )
@@ -831,24 +835,36 @@ class DataAcquisitionManager(wx.EvtHandler):
 		self.windows.append( ebSvcFrame )
 		self.UpdateWindowCount()
 		self.DAQthreads["event builder"] = Threads.DAQthread(eb_command, "event builder", output_window=ebSvcFrame, owner_process=self, env=self.environment, is_essential_service=True)
-
-	def StartRemoteServices(self):
-		""" Notify all the remote services that we're ready to go.
-		    Currently this includes the online monitoring system
-		    as well as the DAQs on the MTest beamline node (if
-		    configured) and the readout node(s). """
-		    
+		
+	def StartOM(self):
+		""" Start the online monitoring services on the OM node.
+		
+		    This needs to be done BEFORE the DAQ is started on the
+		    readout nodes because otherwise there is a race condition
+		    between the startup of the event builder on the OM node
+		    and the startup of the DAQ -- and if the DAQ starts up first,
+		    the EB on the OM node might miss some of the frames from
+		    the first event. """
+		
+		if len(self.monitorNodes) == 0:
+			return True
+		
 		# the ET system is all set up, so the online monitoring nodes
-		# can be told to connect.  the run control doesn't care if they
-		# actually start up properly; all it does is try to send the
-		# appropriate signal.
+		# can be told to connect.
 		for node in self.monitorNodes:
 			try:
 				node.om_start(self.ET_filename, self.runinfo.ETport)
+				return None
 			except:
-				self.logger.exception("Online monitoring couldn't be started on node '%s'.  Ignoring." % node.name)
-				continue
+				self.logger.exception("Online monitoring couldn't be started on node '%s'!", node.name)
+				wx.PostEvent(self.main_window, Events.AlertMessage(alerttype="error", messagebody=["The online monitoring system couldn't be started!"], messageheader="Couldn't start the online monitoring system!") )
+				return False
 
+	def StartRemoteServices(self):
+		""" Notify all the remote services that we're ready to go.
+		    Currently this includes the DAQs on the MTest beamline
+		    node (if configured) and the readout node(s). """
+		    
 		if self.mtest_useBeamDAQ:
 			for node in self.mtestBeamDAQNodes:
 				try:
@@ -978,6 +994,19 @@ class DataAcquisitionManager(wx.EvtHandler):
 				self.last_logged_gate = gate_count
 				
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Running...\nGate %d/%d" % (gate_count, self.runinfo.gates), progress=(gate_count, self.runinfo.gates)) )
+			
+		# if the OM nodes are ready, then we can proceed to the next step
+		if evt.message == "om_ready":
+			self.logger.info("OM node '%s' reports that it is ready.", evt.sender)
+			all_configured = True
+			for node in self.monitorNodes:
+				if node.name == evt.sender:
+					node.ready = True
+				elif not node.ready:
+					all_configured = False
+			
+			if all_configured:
+				wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
 			
 		# if it's a HW error message, we need to abort the subrun.
 		elif evt.message == "hw_error":	
