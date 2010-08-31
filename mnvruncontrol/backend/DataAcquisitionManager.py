@@ -18,6 +18,7 @@ import fcntl
 import datetime
 import time
 import threading
+import socket
 import logging
 import logging.handlers
 
@@ -492,6 +493,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping " + node.name + " node...", progress=(step, numsteps)) )
 					if not node.own_lock:
 						node.completed = True
+						continue
 					try:
 						success = success and node.daq_stop()
 						wait = True
@@ -612,8 +614,31 @@ class DataAcquisitionManager(wx.EvtHandler):
 		wx.PostEvent(self.main_window, Events.UpdateSeriesEvent())
 
 		# ET needs to use a rotating port number to avoid blockages.
-		self.runinfo.ETport = Configuration.params["Socket setup"]["etPortBase"] + (self.first_subrun + self.subrun) % Configuration.params["Socket setup"]["numETports"]		
-		self.logger.info("  ET port for this subrun: " + str(self.runinfo.ETport))
+		# unfortunately, there's no programmatic way to determine which
+		# one in the set will be free.  (modding the subrun number by
+		# the number of available ports would work if the subrun number
+		# never reverted back to 1, ... but it does sometimes.)
+		# so we just find one that will work by inspection.
+		self.logger.info("Trying to find a port for use by ET.")
+		self.runinfo.ETport = None
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		for port in range(Configuration.params["Socket setup"]["etPortBase"], Configuration.params["Socket setup"]["etPortBase"] + Configuration.params["Socket setup"]["numETports"]):
+			try:
+				self.logger.debug("  trying port %d...", port)
+				s.bind( ("", port) )
+			except socket.error as e:
+				continue
+			else:
+				s.close()
+				self.runinfo.ETport = port
+				break
+		
+		if self.runinfo.ETport is None:
+			wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="All of the ET server ports assigned to the DAQ are in use.  Either wait until they finish or kill some of them before continuing.", messageheader="No ET server ports available") )
+			return False
+			
+		
+		self.logger.info("  ... will use port %d as this subrun's ET port.", self.runinfo.ETport)
 
 		ok = True
 		for node in self.readoutNodes:
@@ -793,7 +818,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			self.current_DAQ_thread += 1
 			self.startup_step += 1
 		else:
-			signal.signal(signal.SIGCONT, signal.SIG_IGN)		# go back to ignoring the signal...
+			signal.signal(signal.SIGUSR1, signal.SIG_IGN)		# go back to ignoring the signal...
 			print "Note: requested a new thread but no more threads to start..."
 
 	def StartETSys(self):
@@ -849,8 +874,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    the EB on the OM node might miss some of the frames from
 		    the first event. """
 		
+		# if no monitoring nodes, just go on to the next step
+		# by emitting the correct signal
 		if len(self.monitorNodes) == 0:
-			return True
+			os.kill(os.getpid(), signal.SIGUSR1)
+			return
 		
 		self.logger.debug("Booking subscription(s) for 'OM ready' messages from online monitoring nodes...")
 		for node in self.monitorNodes:
