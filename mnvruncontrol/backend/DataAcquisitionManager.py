@@ -66,9 +66,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		                          { "method": self.ReadoutNodeHWConfig,       "message": "Loading hardware..." },
 		                          { "method": self.ReadoutNodeHVCheck,        "message": "Checking hardware..." } ]
 		self.DAQStartTasks = [ { "method": self.StartETSys,          "message": "Starting ET system..." },
-		                       { "method": self.StartETMon,          "message": "Starting ET monitor..." },
 		                       { "method": self.StartEBSvc,          "message": "Starting event builder..." },
 		                       { "method": self.StartOM,             "message": "Starting online monitoring..." },
+		                       { "method": self.StartETMon,          "message": "Starting ET monitor..." },
 		                       { "method": self.StartRemoteServices, "message": "Starting remote services..."} ]
 
 
@@ -564,6 +564,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 					node.li_configure(li_level=MetaData.LILevels.ZERO_PE.hash)
 				except ReadoutNode.ReadoutNodeNoConnectionException:
 					self.logger.warning("Couldn't reach '%s' node to reset the LI box!", node.name)
+				except ReadoutNode.ReadoutNodeUnexpectedDataException:
+					self.logger.warning("Unexpected response from readout node.  Can't reset LI box...", node.name)
 					
 			step += 1
 		
@@ -849,16 +851,19 @@ class DataAcquisitionManager(wx.EvtHandler):
 		if len(self.monitorNodes) == 0:
 			return True
 		
+		self.logger.debug("Booking subscription(s) for 'OM ready' messages from online monitoring nodes...")
+		for node in self.monitorNodes:
+			self.socketThread.Subscribe(node.id, node.name, "om_ready", callback=self, notice="Initializing online monitoring...")
+			self.logger.debug("    ... subscribed the %s node." % node.name)
+		
 		# the ET system is all set up, so the online monitoring nodes
 		# can be told to connect.
 		for node in self.monitorNodes:
 			try:
 				node.om_start(self.ET_filename, self.runinfo.ETport)
-				return None
 			except:
 				self.logger.exception("Online monitoring couldn't be started on node '%s'!", node.name)
 				wx.PostEvent(self.main_window, Events.AlertMessage(alerttype="error", messagebody=["The online monitoring system couldn't be started!"], messageheader="Couldn't start the online monitoring system!") )
-				return False
 
 	def StartRemoteServices(self):
 		""" Notify all the remote services that we're ready to go.
@@ -1005,8 +1010,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 				elif not node.ready:
 					all_configured = False
 			
+			# start up the next step ...
 			if all_configured:
-				wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
+				self.StartNextThread()
 			
 		# if it's a HW error message, we need to abort the subrun.
 		elif evt.message == "hw_error":	
