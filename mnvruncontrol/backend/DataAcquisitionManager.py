@@ -490,6 +490,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 				wait = False
 				for node in self.readoutNodes:
 					wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping " + node.name + " node...", progress=(step, numsteps)) )
+					if not node.own_lock:
+						node.completed = True
 					try:
 						success = success and node.daq_stop()
 						wait = True
@@ -498,7 +500,6 @@ class DataAcquisitionManager(wx.EvtHandler):
 						success = False
 					except ReadoutNode.ReadoutNodeNoDAQRunningException:		# raised if the DAQ is not running on the node.  not a big deal.
 						node.completed = True
-						pass
 				
 					wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=False) )
 				
@@ -863,7 +864,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				node.om_start(self.ET_filename, self.runinfo.ETport)
 			except:
 				self.logger.exception("Online monitoring couldn't be started on node '%s'!", node.name)
-				wx.PostEvent(self.main_window, Events.AlertMessage(alerttype="error", messagebody=["The online monitoring system couldn't be started!"], messageheader="Couldn't start the online monitoring system!") )
+				wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="error", messagebody=["The online monitoring system couldn't be started!"], messageheader="Couldn't start the online monitoring system!") )
 
 	def StartRemoteServices(self):
 		""" Notify all the remote services that we're ready to go.
