@@ -26,16 +26,16 @@ import logging.handlers
 from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import Configuration
 
-from mnvruncontrol.backend.Dispatcher import Dispatcher
+from mnvruncontrol.backend import Dispatcher
 from mnvruncontrol.backend import MailTools
 
-class MonitorDispatcher(Dispatcher):
+class MonitorDispatcher(Dispatcher.Dispatcher):
 	"""
 	Online monitor node dispatcher.  Starts and stops the OM processes
 	based on instructions received from the run control.
 	"""
 	def __init__(self):
-		Dispatcher.__init__(self)
+		Dispatcher.Dispatcher.__init__(self)
 	
 		# Dispatcher() maintains a central logger.
 		# We want a file output, so we'll set that up here.
@@ -101,6 +101,10 @@ class MonitorDispatcher(Dispatcher):
 		""" Start the Gaudi process. """
 		# first clear the signal handler so an accidental call wouldn't restart the service.
 		signal.signal(signal.SIGUSR1, signal.SIG_IGN)
+
+		# let the main RC know that the event builder is done starting up
+		self.queue.put(Dispatcher.Message("om_ready", Dispatcher.MASTER))
+
 		try:
 			# replace the options files so that we get the new event builder output.
 			with open(Configuration.params["Monitoring nodes"]["om_GaudiOutputOptionsFile"], "w") as optsfile:
