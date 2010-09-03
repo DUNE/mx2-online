@@ -568,7 +568,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 				except ReadoutNode.ReadoutNodeNoConnectionException:
 					self.logger.warning("Couldn't reach '%s' node to reset the LI box!", node.name)
 				except ReadoutNode.ReadoutNodeUnexpectedDataException:
-					self.logger.warning("Unexpected response from readout node.  Can't reset LI box...", node.name)
+					self.logger.warning("Unexpected response from '%s' readout node.  Can't reset LI box...", node.name)
 					
 			step += 1
 		
