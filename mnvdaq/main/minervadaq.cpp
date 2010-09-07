@@ -652,6 +652,9 @@ int main(int argc, char *argv[])
 		readFPGA     = true;    // default to reading the FPGA programming registers
 		nReadoutADC  = 8;       // default to maximum possible
 		zeroSuppress = false;   // default to no suppression.
+#if ZEROSUPPRESSION
+		zeroSuppress = true;
+#endif
 		allowedReadoutTime = 0; // default to "infinity"
 		// Convert to int should be okay - we only care about the least few significant bits.
 		int readoutTimeDiff = (int)stopReadout - (int)startReadout; // stop updated at end of LAST gate.
@@ -681,7 +684,6 @@ int main(int argc, char *argv[])
 					((*croc_iter)->GetCrocAddress()>>16) << " for Gate " << gate 
 					<< std::endl;
 				std::cout << "Cannot write to FastCommand register!" << std::endl;
-//				exit(e);
 				continueRunning = false;
 				break;
 			}
@@ -696,17 +698,10 @@ int main(int argc, char *argv[])
 			case OneShot:
 				triggerType = Pedestal;
 				allowedReadoutTime = allowedPedestal;
-				// TEST!!!
-#if ZEROSUPPRESSION
-				zeroSuppress = true;
-#endif
 				break;
 			case NuMIBeam:
 				triggerType = NuMI;
 				allowedReadoutTime = allowedNuMI;
-#if ZEROSUPPRESSION
-				zeroSuppress = true;
-#endif
 				break;
 			case Cosmics:
 				// We need to reset the sequencer latch on the CRIM in Cosmic mode...
@@ -771,14 +766,13 @@ int main(int argc, char *argv[])
 			case PureLightInjection:
 				triggerType = LightInjection;
 				allowedReadoutTime = allowedLightInjection;
+				zeroSuppress = false; // Should always read all boards for LI & Discr. may be off.
+				nReadoutADC = 1;      // Deepest only.
 				break;
 			case MixedBeamPedestal:
 				if (triggerCounter%2) { // ALWAYS start with NuMI!
 					triggerType = NuMI;
 					allowedReadoutTime = allowedNuMI;
-#if ZEROSUPPRESSION
-					zeroSuppress = true;
-#endif
 				} else {
 					if ( readoutTimeDiff < physReadoutMicrosec ) { 
 						triggerType = Pedestal;
@@ -787,9 +781,6 @@ int main(int argc, char *argv[])
 					} else {
 						triggerType = NuMI; 
 						allowedReadoutTime = allowedNuMI;
-#if ZEROSUPPRESSION
-						zeroSuppress = true;
-#endif
 #if DEBUG_MIXEDMODE
 						mnvdaq.debugStream() << "Aborting calib trigger!";
 #endif
@@ -800,20 +791,15 @@ int main(int argc, char *argv[])
 				if (triggerCounter%2) { // ALWAYS start with NuMI!
 					triggerType = NuMI;
 					allowedReadoutTime = allowedNuMI;
-#if ZEROSUPPRESSION
-					zeroSuppress = true;
-#endif
 				} else {
 					if ( readoutTimeDiff < physReadoutMicrosec ) { 
 						triggerType = LightInjection;
 						allowedReadoutTime = allowedLightInjection;
-						nReadoutADC = 1; // Deepest only.
+						zeroSuppress = false; // Should always read all boards for LI.
+						nReadoutADC = 1;      // Deepest only.
 					} else {
 						triggerType = NuMI; 
 						allowedReadoutTime = allowedNuMI;
-#if ZEROSUPPRESSION
-						zeroSuppress = true;
-#endif
 #if DEBUG_MIXEDMODE
 						mnvdaq.debugStream() << "Aborting calib trigger!";
 #endif
@@ -1803,7 +1789,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-01'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-02'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

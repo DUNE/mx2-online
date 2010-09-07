@@ -2,17 +2,17 @@
 #COMPILE_OPTIONS += -DTIME_ME
 
 #--DETECTOR FLAGS--
-COMPILE_OPTIONS += -DCRATE0
+#COMPILE_OPTIONS += -DCRATE0
 #COMPILE_OPTIONS += -DCRATE1
 #COMPILE_OPTIONS += -DWH14T # 14sxo top crate
-#COMPILE_OPTIONS += -DWH14B # 14sxo bottom crate
+COMPILE_OPTIONS += -DWH14B # 14sxo bottom crate
 #COMPILE_OPTIONS += -DMTEST # 14sxo bottom crate
 #COMPILE_OPTIONS += -DNEARLINE # Nearline station 
 
 #--MULTI PC SETUP--
-#COMPILE_OPTIONS += -DSINGLEPC # Comment this out for multi-pc running.
-COMPILE_OPTIONS += -DMULTIPC # Comment this out for single-pc running. 
-COMPILE_OPTIONS += -DMASTER # Comment this out for single-pc running & on the worker node.
+COMPILE_OPTIONS += -DSINGLEPC # Comment this out for multi-pc running.
+#COMPILE_OPTIONS += -DMULTIPC # Comment this out for single-pc running. 
+#COMPILE_OPTIONS += -DMASTER # Comment this out for single-pc running & on the worker node.
 
 #--BACKUP NODES?--
 #COMPILE_OPTIONS += -DBACKUPNODE
@@ -31,15 +31,16 @@ COMPILE_OPTIONS += -DNEWREADOUT
 #COMPILE_OPTIONS += -DDEBUG_NEWTHREAD
 
 #--FEB FIRMWARE FLAGS--
-#COMPILE_OPTIONS += -DV81FIRMWARE
+#COMPILE_OPTIONS += -DV83FIRMWARE
 COMPILE_OPTIONS += -DV90FIRMWARE
 
 #--VME CARD FIRMWARE SPECIFIC FLAGS (HOPEFULLY TEMPORARY)--
 COMPILE_OPTIONS += -DV9CRIM
 
 #--FIRMWARE SPECIFIC IMPLEMENTATIONS--
-COMPILE_OPTIONS += -DPREVIEWHIT
+#COMPILE_OPTIONS += -DPREVIEWHIT
 
 #--READOUT FLAGS--
-COMPILE_OPTIONS += -DZEROSUPPRESSION  # Don't read the end of gate hit.
+#COMPILE_OPTIONS += -DZEROSUPPRESSION  # Don't read the end of gate hit.
+
 
