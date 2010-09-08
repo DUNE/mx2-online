@@ -463,10 +463,28 @@ int main(int argc, char *argv[])
 #endif // end if MASTER&&(!SINGLEPC)
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	// Initiate connection with "server" (soldier node).  Connect waits for a server response.
+	/*
 	if (connect(workerToSoldier_socket_handle, (struct sockaddr*) &workerToSoldier_service, 
 			sizeof (struct sockaddr_in)) == -1) { 
 		mnvdaq.fatalStream() << "Error in workerToSoldier connect!";
 		perror ("connect"); exit(EXIT_UNSPECIFIED_ERROR); 
+	}
+	*/
+	int conCounter=0;
+	int conVal = connect(workerToSoldier_socket_handle, (struct sockaddr*) &workerToSoldier_service, 
+		sizeof (struct sockaddr_in));
+	mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
+	while ( (conVal==-1) && conCounter<50) {
+		conVal = connect(workerToSoldier_socket_handle, (struct sockaddr*) &workerToSoldier_service, 
+			sizeof (struct sockaddr_in));
+		conCounter++;
+		mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
+	}
+	if (conVal == -1) {
+		mnvdaq.fatalStream() << "Error in workerToSoldier connect!";
+		perror ("connect"); exit(EXIT_UNSPECIFIED_ERROR);
+	} else {
+		mnvdaq.infoStream() << "Completed workerToSoldier connect!";
 	}
 	std::cout << " ->Returned from connect to workerToSoldier!\n";
 	mnvdaq.infoStream() << " ->Returned from connect to workerToSoldier!";
@@ -477,10 +495,28 @@ int main(int argc, char *argv[])
 	soldierToWorker_socket_is_live = false;
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Initiate connection with "server" (worker node).  Connect waits for a server response.
+	/*
 	if (connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
 			sizeof (struct sockaddr_in)) == -1) { 
 		mnvdaq.fatalStream() << "Error in soldierToWorker connect!";
 		perror ("connect"); exit(EXIT_UNSPECIFIED_ERROR); 
+	}
+	*/
+	int conCounter=0;
+	int conVal = connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
+		sizeof (struct sockaddr_in));
+	mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
+	while ( (conVal==-1) && conCounter<50) {
+		conVal = connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
+			sizeof (struct sockaddr_in));
+		conCounter++;
+		mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
+	}
+	if (conVal == -1) {
+		mnvdaq.fatalStream() << "Error in soldierToWorker connect!";
+		perror ("connect"); exit(EXIT_UNSPECIFIED_ERROR);
+	} else {
+		mnvdaq.infoStream() << "Completed soldierToWorker connect!";
 	}
 	std::cout << " ->Returned from connect to soldierToWorker!\n\n";
 	mnvdaq.infoStream() << " ->Returned from connect to soldierToWorker!";
@@ -602,7 +638,6 @@ int main(int argc, char *argv[])
 		mnvdaq.debugStream() << "\t\t\t\tNew Gate";
 		mnvdaq.debugStream() << "triggerCounter = " << triggerCounter;
 #endif
-		//continueRunning = true; // Reset? -> Our choice here is to *stop* the subrun instead. 
 #if TIME_ME
 		struct timeval gate_start_time, gate_stop_time;
 		gettimeofday(&gate_start_time, NULL);
@@ -692,7 +727,7 @@ int main(int argc, char *argv[])
 
 		// don't want to keep going through and possibly spitting out garbage!
 		if (!continueRunning)
-			break;
+			break; // exit the gate while loop
 			
 		switch (runningMode) { 
 			case OneShot:
@@ -814,7 +849,7 @@ int main(int argc, char *argv[])
 
 		// don't want to keep going through and possibly spitting out garbage!
 		if (!continueRunning)
-			break;
+			break; // exit the gate while loop.
 
 		event_data.triggerType  = triggerType;
 		soldierToWorker_trig[0] = (unsigned short int)0;
@@ -1337,8 +1372,10 @@ int main(int argc, char *argv[])
 
 	// Close sockets for multi-PC synchronization.
 #if !SINGLEPC
-	close(workerToSoldier_socket_handle);
-	close(soldierToWorker_socket_handle);
+	int cl1 = close(workerToSoldier_socket_handle);
+	int cl2 = close(soldierToWorker_socket_handle);
+	mnvdaq.infoStream() << "Closing workerToSoldier socket... " << cl1;
+	mnvdaq.infoStream() << "Closing soldierToWorker socket... " << cl2;
 #endif
 	// Report end of subrun...
 #if SINGLEPC||MASTER // Single PC or Soldier Node
@@ -1789,7 +1826,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-02'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-03'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -1880,7 +1917,6 @@ template <typename Any> int SynchWrite(int socket_handle, Any data[])
 	if (write(socket_handle,data,sizeof(data)) == -1) {
 		mnvdaq.fatalStream() << "socket write error: SynchWrite!";
 		perror("write error");
-//		exit(EXIT_UNSPECIFIED_ERROR);
 		continueRunning = false;
 	}
 #if DEBUG_SOCKETS
@@ -1900,7 +1936,6 @@ template <typename Any> int SynchListen(int socket_connection, Any data[])
 		if ( read_val != sizeof(data) ) {
 			mnvdaq.fatalStream() << "Server read error in SynchListen!";
 			perror("server read error: done");
-//			exit(EXIT_UNSPECIFIED_ERROR);
 			continueRunning = false;
 			break;
 		}
