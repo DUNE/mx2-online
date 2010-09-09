@@ -717,7 +717,7 @@ int main(int argc, char *argv[])
 			
 		switch (runningMode) { 
 			case OneShot:
-				zeroSuppress = true;   // Never zero suppress pure pedestals.
+				zeroSuppress = false;   // Never zero suppress pure pedestals.
 				triggerType = Pedestal;
 				allowedReadoutTime = allowedPedestal;
 				break;
