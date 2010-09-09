@@ -463,13 +463,6 @@ int main(int argc, char *argv[])
 #endif // end if MASTER&&(!SINGLEPC)
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	// Initiate connection with "server" (soldier node).  Connect waits for a server response.
-	/*
-	if (connect(workerToSoldier_socket_handle, (struct sockaddr*) &workerToSoldier_service, 
-			sizeof (struct sockaddr_in)) == -1) { 
-		mnvdaq.fatalStream() << "Error in workerToSoldier connect!";
-		perror ("connect"); exit(EXIT_UNSPECIFIED_ERROR); 
-	}
-	*/
 	int conCounter=0;
 	int conVal = connect(workerToSoldier_socket_handle, (struct sockaddr*) &workerToSoldier_service, 
 		sizeof (struct sockaddr_in));
@@ -495,13 +488,6 @@ int main(int argc, char *argv[])
 	soldierToWorker_socket_is_live = false;
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Initiate connection with "server" (worker node).  Connect waits for a server response.
-	/*
-	if (connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
-			sizeof (struct sockaddr_in)) == -1) { 
-		mnvdaq.fatalStream() << "Error in soldierToWorker connect!";
-		perror ("connect"); exit(EXIT_UNSPECIFIED_ERROR); 
-	}
-	*/
 	int conCounter=0;
 	int conVal = connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
 		sizeof (struct sockaddr_in));
@@ -1826,7 +1812,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-03'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-04'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
