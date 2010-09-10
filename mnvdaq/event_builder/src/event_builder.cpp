@@ -219,13 +219,13 @@ int main(int argc, char **argv)
 	}
 
 	// Request an event from the ET service.
-	std::cout << "Starting!" << std::endl;
-	std::cout << "\nIf 20 seconds goes by and the DAQ doesn't start, " << std::endl;
-	std::cout << "please skip to the next subrun or stop and try again." << std::endl;
-	std::cout << "\nIf the event builder exits cleanly and no events " << std::endl;
-	std::cout << "were taken, check the electronics for errors!" << std::endl;
-	std::cout << "\nIn either case, please note the run and subrun and " << std::endl;
-	std::cout << "email them to Gabe Perdue: perdue AT fnal DOT gov" << std::endl;
+	std::cout << " Starting!" << std::endl;
+	std::cout << "\n If there is beam and 60 seconds goes by and the DAQ doesn't start, please " << std::endl; 
+	std::cout << " skip to the next subrun or stop and try again." << std::endl;
+	std::cout << "\n If the event builder exits cleanly and no events were taken, check the " << std::endl; 
+	std::cout << " electronics for errors!" << std::endl;
+	std::cout << "\n In either case, please note the run and subrun and email them to Gabe Perdue: " << std::endl;
+	std::cout << "\t perdue AT fnal DOT gov" << std::endl;
 	std::cout << std::endl;
 	int evt_counter = 0;
 	bool continueRunning = true;
