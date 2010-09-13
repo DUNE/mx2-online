@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# Kill them all, let God sort them out.
 echo "Going to kill all ET processes..."
 $HOME/mnvdaqrunscripts/etkiller.pl
 echo "Waiting..."
@@ -17,4 +18,10 @@ sleep 1
 echo "Going to kill remote processes..."
 `ssh minerva@minervatest02.fnal.gov $HOME/mnvdaqrunscripts/allkiller_silent.sh`
 `ssh minerva@minervatest04.fnal.gov $HOME/mnvdaqrunscripts/allkiller_silent.sh`
+
+# Restart the dispatchers...
+echo "Now restarting the dispatchers..."
+`ssh minerva@minervatest02.fnal.gov $HOME/mnvdaqrunscripts/multidispatcher.sh`
+`ssh minerva@minervatest04.fnal.gov $HOME/mnvdaqrunscripts/multidispatcher.sh`
+
 
