@@ -21,6 +21,6 @@ echo "Going to kill remote processes..."
 
 # Assumes a valid kerberos ticket!
 echo "Now restart dispatchers..."
-`ssh mnvonline@mnvonline0.fnal.gov $HOME/mnvdaqrunscripts/multidispatcher.sh`
-`ssh mnvonline@mnvonline1.fnal.gov $HOME/mnvdaqrunscripts/multidispatcher.sh`
+`ssh mnvonline@mnvonline0.fnal.gov source $HOME/mnvdaqrunscripts/multidispatcher.sh`
+`ssh mnvonline@mnvonline1.fnal.gov source $HOME/mnvdaqrunscripts/multidispatcher.sh`
 

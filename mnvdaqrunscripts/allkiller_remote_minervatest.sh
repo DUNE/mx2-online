@@ -21,7 +21,7 @@ echo "Going to kill remote processes..."
 
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
-`ssh minerva@minervatest02.fnal.gov $HOME/mnvdaqrunscripts/multidispatcher.sh`
-`ssh minerva@minervatest04.fnal.gov $HOME/mnvdaqrunscripts/multidispatcher.sh`
+`ssh minerva@minervatest02.fnal.gov source $HOME/mnvdaqrunscripts/multidispatcher.sh`
+`ssh minerva@minervatest04.fnal.gov source $HOME/mnvdaqrunscripts/multidispatcher.sh`
 
 
