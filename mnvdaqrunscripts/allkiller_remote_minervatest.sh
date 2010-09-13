@@ -15,6 +15,6 @@ sleep 1
 
 # Assumes a valid kerberos ticket!
 echo "Going to kill remote processes..."
-`ssh minerva@minervatest02.fnal.gov $HOME/mnvdaqrunscripts/allkiller.sh`
-`ssh minerva@minervatest04.fnal.gov $HOME/mnvdaqrunscripts/allkiller.sh`
+`ssh minerva@minervatest02.fnal.gov $HOME/mnvdaqrunscripts/allkiller_silent.sh`
+`ssh minerva@minervatest04.fnal.gov $HOME/mnvdaqrunscripts/allkiller_silent.sh`
 
