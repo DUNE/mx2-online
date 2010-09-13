@@ -40,7 +40,7 @@ const int tripRegIFFP2      =   0;
 const int tripRegIBCOMP     =  20;
 const int tripRegVREF       = 165;
 const int tripRegVTH        = 240;
-//const int tripRegPIPEDEL    =  11; // 2*maxHits - 1;
+//const int tripRegVTH        =   0;
 const int tripRegPIPEDEL    =  2*maxHits - 1;
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
@@ -629,7 +629,7 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 		unsigned char previewEnable[] = {0x0};
 		myFeb->SetPreviewEnable(previewEnable); 
 		for (int i=0; i<4; i++) {    // inject registers, DON'T WRITE TO THE LOW GAIN TRIPS!
-			unsigned char inj[] = { 1 + (unsigned char)i*(40-2*offset) };   // 15 integration ticks + ~20 reset ticks...
+			unsigned char inj[] = { 1 + (unsigned char)i*(40) + 2*offset };   // 15 integration ticks + ~20 reset ticks...
 			unsigned char enable[] = {0x1}; // never enable low gain, or things get very confusing...
 			myFeb->SetInjectCount(inj,i);
 			myFeb->SetInjectEnable(enable,i);
