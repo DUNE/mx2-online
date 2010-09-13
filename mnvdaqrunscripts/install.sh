@@ -128,7 +128,7 @@ fi
 
 # mnvnearline1 - Nearonline machine with no DAQ hardware.
 if [ $HOSTNAME == "mnvnearline1.fnal.gov" ]; then
-	echo "Setting up multi-node scripts on ${HOSTNAME}..."
+	echo "Setting up nearline scripts on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/check_dispatcher.sh $HOME/check_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/om_log_check.sh $HOME/om_log_check.sh
 	ln -sf $HOME/mnvdaqrunscripts/start_om_dispatcher.sh $HOME/start_om_dispatcher.sh
