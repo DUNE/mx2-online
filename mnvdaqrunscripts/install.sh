@@ -134,6 +134,7 @@ if [ $HOSTNAME == "mnvnearline1.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/check_dispatcher.sh $HOME/check_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/om_log_check.sh $HOME/om_log_check.sh
 	ln -sf $HOME/mnvdaqrunscripts/start_om_dispatcher.sh $HOME/start_om_dispatcher.sh
+	ln -sf $HOME/mnvdaqrunscripts/find_om_processes.sh $HOME/find_om_processes.sh
 	ln -sf $HOME/mnvdaqrunscripts/nearlinekiller.pl $HOME/kill_all.pl
 	ln -sf $HOME/mnvdaqrunscripts/cvs_setup.sh $HOME/cvs_setup.sh
 	ln -sf $HOME/mnvdaqrunscripts/nearline_restart.sh $HOME/hard_restart.sh
