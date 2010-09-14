@@ -51,6 +51,8 @@ if [ $HOSTNAME == "minervatest03.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_minervatest.sh $HOME/hard_daq_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/remote_minervatest_dispatcher_restart_hard.sh $HOME/hard_dispatcher_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/remote_minervatest_dispatcher_restart_soft.sh $HOME/soft_dispatcher_restart.sh
 fi
 
 # minervatest04 - Single & multi-node DAQ with hardware. 
@@ -102,10 +104,15 @@ fi
 if [ $HOSTNAME == "mnvonline2.fnal.gov" ]; then
 	echo "Setting up multi-node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/multidispatcher.sh $HOME/dispatcher.sh
+	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/single_dispatcher.sh
+	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
 fi
 
 # mnvonlinemaster - Multi-node DAQ with no hardware.
@@ -117,6 +124,8 @@ if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_mnvonline.sh $HOME/hard_daq_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_nearline_restart.sh $HOME/hard_nearline_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/full_restart_mnvonline.sh $HOME/hard_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/remote_mnvonline_dispatcher_restart_hard.sh $HOME/dispatcher_restart.sh
+#	ln -sf $HOME/mnvdaqrunscripts/remote_mnvonline_dispatcher_restart_soft.sh $HOME/soft_dispatcher_restart.sh
 fi
 
 # mnvonlinebck1 - Multi-node DAQ with no hardware.
