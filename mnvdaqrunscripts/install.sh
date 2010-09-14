@@ -50,7 +50,7 @@ if [ $HOSTNAME == "minervatest03.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_minervatest.sh $HOME/allkiller.sh
+	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_minervatest.sh $HOME/hard_daq_restart.sh
 fi
 
 # minervatest04 - Single & multi-node DAQ with hardware. 
