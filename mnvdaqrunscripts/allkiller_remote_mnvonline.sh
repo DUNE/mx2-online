@@ -30,4 +30,4 @@ sleep 2
 
 # Now, relaunch the RC
 echo "Restarting the Run Control!"
-$HOME/mnvdaqrunscripts/multiruncontrol.sh
+source $HOME/mnvdaqrunscripts/multiruncontrol.sh

@@ -18,10 +18,14 @@ sleep 1
 echo "Going to kill remote processes..."
 `ssh minerva@minervatest02.fnal.gov $HOME/mnvdaqrunscripts/allkiller_silent.sh`
 `ssh minerva@minervatest04.fnal.gov $HOME/mnvdaqrunscripts/allkiller_silent.sh`
-
+sleep 2
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
 `ssh minerva@minervatest02.fnal.gov source $HOME/mnvdaqrunscripts/multidispatcher.sh`
 `ssh minerva@minervatest04.fnal.gov source $HOME/mnvdaqrunscripts/multidispatcher.sh`
+sleep 2
 
+# Now, relaunch the RC
+echo "Restarting the Run Control!"
+source $HOME/mnvdaqrunscripts/multiruncontrol.sh
 
