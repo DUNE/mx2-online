@@ -114,7 +114,8 @@ if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_mnvonline.sh $HOME/allkiller.sh
+	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_mnvonline.sh $HOME/hard_daq_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/remote_nearline_restart.sh $HOME/hard_nearline_restart.sh
 fi
 
 # mnvonlinebck1 - Multi-node DAQ with no hardware.
