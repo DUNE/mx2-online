@@ -2,6 +2,7 @@
 
 $proc[0] = "event_builder";
 $proc[1] = "et_monitor";
+$proc[2] = "et_start";
 
 foreach $var (@proc) {
 	print "Looking to kill $var...\n";
