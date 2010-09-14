@@ -1,0 +1,45 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+
+echo "$0: You MUST provide the number of gates to acquire! (and the output file name!)"
+
+echo "Usage:  filename gates"
+exit 1
+fi
+
+EVENT_SIZE=1024  #a kilobyte
+FRAMES=8
+EVENTS=$(($EVENT_SIZE*$2*$FRAMES))
+# start the event transfer protocol
+# $1 is the binary file which will contain the event data
+# $2 is the number of gates to store
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ET_LIBROOT/lib
+echo $1 $2
+if [ -e ./$1 ]
+then
+  echo "File $1 already exists in this directory"
+  echo "ET will be unable to attach to this file"
+  exit
+fi
+
+xterm -hold -e ./rut_daqscript1 $1 $2 & #$ET_HOME/bin/et_start -v -f ./$1 -n $2 -s $EVENT_SIZE   #start et in its very own xterminal!
+#xterm -e $ET_HOME/bin/et_start -v -f ./$1 -n $2 -s $EVENT_SIZE   #start et in its very own xterminal!
+sleep 2s #wait for ET to start
+xterm -hold -e ./rut_daqscript2 $1 & #start et monitor in its very own xterminal!
+#xterm -e $ET_HOME/bin/et_monitor -f $1 & #start et monitor in its very own xterminal!
+#$ET_HOME/bin/et_monitor -f $1 & #start et monitor in its very own xterminal!
+
+#start the minerva event builder service
+xterm -hold -e ./rut_daqscript3 $1 & # this one gets its own xterm too!
+#xterm -e ./event_builder $1 & # this one gets its own xterm too!
+#./event_builder $1 & # this one gets its own xterm too!
+
+sleep 2s
+
+#start minervadaq
+./minervadaq $1 $2 > lookatme
+
+#That should do it!
