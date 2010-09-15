@@ -283,12 +283,12 @@ class SocketThread(threading.Thread):
 		    issues an event to the callback object. """
 		matches = re.match(SocketRequests.Notification, message)
 		if matches is None:
-			self.logger.debug("Received garbled message:\n%s" % message)
-			self.logger.debug("Ignoring.")
+			self.logger.log(5, "Received garbled message:\n%s" % message)
+			self.logger.log(5, "Ignoring.")
 			return
 		else:
-			self.logger.debug("Received message:")
-			self.logger.debug(message)
+			self.logger.log(5, "Received message:")
+			self.logger.log(5, message)
 		
 		matched = False
 		
@@ -299,13 +299,14 @@ class SocketThread(threading.Thread):
 		for subscription in self.subscriptions:
 			if subscription.message_match(matches.group("addressee"), matches.group("sender"), message):
 				wx.PostEvent( subscription.callback, Events.SocketReceiptEvent(addressee=matches.group("addressee"), sender=matches.group("sender"), message=message, data=data) )
-				self.logger.debug("Message matched subscription.  Delivered.")
+				self.logger.log(5, "Message matched subscription.  Delivered.")
+				matched = True
 #			else:
 #				print "(%d, %d, %d)" % (matches.group("addressee") == str(subscription.recipient), matches.group("sender") == subscription.node_name, matches.group("message") == subscription.message)
 #				print "no match."
 		
 		if not matched:
-			self.logger.debug("Message didn't match any subscriptions.  Discarding.")
+			self.logger.log(5, "Message didn't match any subscriptions.  Discarding.")
 		
 	def Abort(self):
 		self.time_to_quit = True

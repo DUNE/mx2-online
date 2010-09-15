@@ -472,7 +472,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# after we're done, there won't be any subscriptions so it won't matter
 		# if messages arrive after that.
 		with self.messageHandlerLock:
-
+			self.logger.debug("Stopping remote nodes...")
 			if hasattr(evt, "processname") and evt.processname is not None:
 				self.running = False
 				header = evt.processname + " quit prematurely!"
@@ -527,7 +527,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 				else:
 					mtestDAQ_stopped = True
 			
-			for threadname in self.DAQthreads:		
+			self.logger.debug("Sending 'stop' signal to ET threads...")		
+			for threadname in self.DAQthreads:
 				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nSignalling ET threads...", progress=(step, numsteps)) )
 
 				thread = self.DAQthreads[threadname]
@@ -561,6 +562,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			# we don't need a handle on them any more.
 			self.DAQthreads = {}
 			
+			self.logger.debug("Clearing the LI system...")
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
 			for node in self.readoutNodes:
 				try:
@@ -572,6 +574,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 					
 			step += 1
 		
+			self.logger.debug("Unsubscribing from listener...")
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping listeners...", progress=(step, numsteps)) )
 			for node in self.readoutNodes:
 				self.socketThread.UnsubscribeAll(node.id)
@@ -590,14 +593,16 @@ class DataAcquisitionManager(wx.EvtHandler):
 			wx.PostEvent( self.main_window, Events.SubrunOverEvent(run=self.run, subrun=self.first_subrun + self.subrun) )
 
 			if self.running and self.subrun < len(self.runseries.Runs):
+				self.logger.debug("Signalling that we're ready for next subrun...")
 				wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
 			else:
-				self.logger.debug("EndSubrun() finished...")
-			
+				self.logger.debug("Signalling that all subruns in this run are finished...")
 				# if this isn't a manual (user-initiated) stop,
 				# then the sequence is different
 				auto = not hasattr(evt, "manual") or not evt.manual
 				wx.PostEvent(self, Events.StopRunningEvent(allclear=True, auto=auto))
+
+		self.logger.debug("EndSubrun() finished.")
 		
 
 	##########################################
@@ -812,7 +817,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    This method should ONLY be called
 		    as the signal handler for SIGCONT
 		    (otherwise race conditions will result)! """
+		self.logger.debug("StartNextThread called.  Current DAQ thread: %d/%d", self.current_DAQ_thread, len(self.DAQStartTasks))
 		if self.current_DAQ_thread < len(self.DAQStartTasks):
+			self.logger.debug("Going to start method: %s", self.DAQStartTasks[self.current_DAQ_thread]["method"])
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent( text="Setting up run:\n" + self.DAQStartTasks[self.current_DAQ_thread]["message"], progress=(self.startup_step, self.num_startup_steps) ) )
 			self.DAQStartTasks[self.current_DAQ_thread]["method"]()
 			self.current_DAQ_thread += 1
@@ -892,7 +899,8 @@ class DataAcquisitionManager(wx.EvtHandler):
 				node.om_start(self.ET_filename, self.runinfo.ETport)
 			except:
 				self.logger.exception("Online monitoring couldn't be started on node '%s'!", node.name)
-				wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="error", messagebody=["The online monitoring system couldn't be started!"], messageheader="Couldn't start the online monitoring system!") )
+				wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="error", messagebody=["The online monitoring system couldn't be started!"], messageheader="Couldn't start the online monitoring system!  The run has been halted.  Check the dispatcher on the '%s' online monitoring node." % node.name) )
+				self.StopDataAcquisition()
 
 	def StartRemoteServices(self):
 		""" Notify all the remote services that we're ready to go.
@@ -1011,9 +1019,9 @@ class DataAcquisitionManager(wx.EvtHandler):
 				
 		# need a lock to prevent race conditions (for example, a second node sending a "daq_finished" event
 		# while the "daq_finished" event for a previous node is still being processed)
-		self.logger.debug("Acquiring message handler lock...")
+		self.logger.log(5, "Acquiring message handler lock...")
 		self.messageHandlerLock.acquire()
-		self.logger.debug("Successfully acquired message handler lock.")
+		self.logger.log(5, "Successfully acquired message handler lock.")
 		
 		# if it's a gate count, send the appropriate event to the front end.
 		if evt.message == "gate_count":
@@ -1030,7 +1038,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Running...\nGate %d/%d" % (gate_count, self.runinfo.gates), progress=(gate_count, self.runinfo.gates)) )
 			
 		# if the OM nodes are ready, then we can proceed to the next step
-		if evt.message == "om_ready":
+		elif evt.message == "om_ready":
 			self.logger.info("OM node '%s' reports that it is ready.", evt.sender)
 			all_configured = True
 			for node in self.monitorNodes:
@@ -1184,11 +1192,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True, sentinel=haveSentinel))
 
 		else:
-			self.logger.debug("Got a message I don't know how to handle.  Ignoring.")
+			self.logger.debug("Got a message I don't know how to handle (subject: '%s').  Ignoring.", evt.message)
 			
 
 		self.messageHandlerLock.release()
-		self.logger.debug("Released message handler lock.")
+		self.logger.log(5, "Released message handler lock.")
 
 	def RelayProgressToDisplay(self, evt):
 		""" Pass along an 'update progress' event (usu. from the SocketThread) to the main run control. """
