@@ -45,6 +45,8 @@ const int tripRegPIPEDEL    =  2*maxHits - 1;
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
+const int tripInjectPattern =   0x1FE;   // First word
+//const int tripInjectPattern =   0x1FFFE; // First two words
 
 // Implement this interface for your own strategies for printing log statements.
 log4cpp::Appender* myAppender;
@@ -1331,7 +1333,8 @@ int FEBTRiPTWriteChargeInjection(controller *myController, acquire *myAcquire, c
 			myFeb->GetTrip(i)->SetRegisterValue(12, tripRegIRSEL ); //irsel
 			myFeb->GetTrip(i)->SetRegisterValue(13, tripRegIWSEL ); //iwsel
 			//myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FE ); //inject, enable first word
-			myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FFFE ); //inject, enable first two words
+			//myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FFFE ); //inject, enable first two words
+			myFeb->GetTrip(i)->SetRegisterValue(14, tripInjectPattern ); //inject, enable first two words
 			// Injection patterns:
 			// ~~~~~~~~~~~~~~~~~~~
 			// Funny structure... 34 bits... using "FermiDAQ" nomenclature...
