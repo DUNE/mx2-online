@@ -3543,7 +3543,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 						(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum;
 #endif
 					// Compose an FPGA read frame.
-#if V90FIRMWARE
+#if (V90FIRMWARE)||(V91FIRMWARE)
 					tmpFEB->MakeShortMessage();
 #else
 					Devices dev     = FPGA;
