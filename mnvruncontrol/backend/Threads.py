@@ -51,6 +51,7 @@ class DAQthread(threading.Thread):
 		self.time_to_quit = False
 		self.issued_quit = False			# has the subprocess been instructed to stop?
 		self.have_cleaned_up = False		# have we done a cleanup read of output text yet?
+		self.output_history = ""
 
 		self.start()					# starts the run() function in a separate thread.  (inherited from threading.Thread)
 	
@@ -81,12 +82,16 @@ class DAQthread(threading.Thread):
 			# now post any data from the process to its output window
 			if len(newdata) > 0 and self.write_output and self.output_window:		# make sure the window is still open
 				wx.PostEvent(self.output_window, Events.NewDataEvent(data=newdata))
+				self.output_history += newdata
+				self.output_history = self.output_history[-2000:]        # trim to 2000 characters
 					
 		# do one final read to clean up anything left in the pipe.
 		newdata = self.read(want_cleanup_read = True)
 		if self.write_output and self.output_window:
 			if len(newdata) > 0:
 				wx.PostEvent(self.output_window, Events.NewDataEvent(data=newdata))
+				self.output_history += newdata
+				self.output_history = self.output_history[-2000:]        # trim to 2000 characters
 
 			wx.PostEvent(self.output_window, Events.NewDataEvent(data="\n\nThread terminated cleanly."))
 
@@ -97,7 +102,9 @@ class DAQthread(threading.Thread):
 		# this is only expected to really be a problem if it exits with a
 		# non-zero return value, however.
 		if self.is_essential_service and not self.time_to_quit and self.process.returncode != 0:
-			logging.getLogger("rc_dispatcher").warning("Essential service %s quit early with return code %d...", self.process_identity, self.process.returncode)
+			msg = "Essential service '%s' quit early with return code %d...\n" % (self.process_identity, self.process.returncode)
+			msg += "====== last 2000 characters of output from '%s' ======\n%s\n======================================================" % (self.process_identity, self.output_history)
+			logging.getLogger("rc_dispatcher").warning(msg)
 			wx.PostEvent(self.owner_process, Events.EndSubrunEvent(processname=self.process_identity))
 			
 	def read(self, want_cleanup_read = False):
