@@ -327,6 +327,7 @@ int main(int argc, char *argv[])
 #endif
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Create a TCP socket pair.
+	mnvdaq.infoStream() << "~~~~~~~ Socket Setup";
 	try {
 		int error = CreateSocketPair(workerToSoldier_socket_handle, soldierToWorker_socket_handle);
 		if (error) throw error;
@@ -375,6 +376,7 @@ int main(int argc, char *argv[])
 
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	// Create a TCP socket pair.
+	mnvdaq.infoStream() << "~~~~~~~ Socket Setup";
 	try {
 		int error = CreateSocketPair(workerToSoldier_socket_handle, soldierToWorker_socket_handle);
 		if (error) throw error;
@@ -426,6 +428,7 @@ int main(int argc, char *argv[])
 	workerToSoldier_socket_is_live = false;
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	std::cout << "\nPreparing make new server connection for workerToSoldier synchronization...\n";
+	mnvdaq.infoStream() << "~~~~~~~ Socket Connections";
 	mnvdaq.infoStream() << "Preparing make new server connection for workerToSoldier synchronization...";
 	mnvdaq.infoStream() << " workerToSoldier_socket_is_live = " << workerToSoldier_socket_is_live; 
 	// Accept connection from worker node to supply end of event signalling.
@@ -461,6 +464,7 @@ int main(int argc, char *argv[])
 		" with live status = " << workerToSoldier_socket_is_live << "\n";
 	mnvdaq.infoStream() << " ->Connection complete at " << workerToSoldier_socket_connection << 
 		" with live status = " << workerToSoldier_socket_is_live;
+	minervasleep(100);
 #endif // end if MASTER&&(!SINGLEPC)
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	// Initiate connection with "server" (soldier node).  Connect waits for a server response.
@@ -483,6 +487,7 @@ int main(int argc, char *argv[])
 	}
 	std::cout << " ->Returned from connect to workerToSoldier!\n";
 	mnvdaq.infoStream() << " ->Returned from connect to workerToSoldier!";
+	minervasleep(100);
 #endif // end if (!MASTER)&&(!SINGLEPC)
 
 	
@@ -490,6 +495,7 @@ int main(int argc, char *argv[])
 	soldierToWorker_socket_is_live = false;
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	std::cout << "\nPreparing make new server connection for soldierToWorker synchronization...\n";
+	mnvdaq.infoStream() << "~~~~~~~ Socket Connections";
 	mnvdaq.infoStream() << "Preparing make new server connection for soldierToWorker synchronization...";
 	mnvdaq.infoStream() << " soldierToWorker_socket_is_live = " << soldierToWorker_socket_is_live; 
 	// Accept connection from worker node to supply global gate signalling.
@@ -525,6 +531,7 @@ int main(int argc, char *argv[])
 		" with live status = " << soldierToWorker_socket_is_live << "\n\n";
 	mnvdaq.infoStream() << " ->Connection complete at " << soldierToWorker_socket_connection << 
 		" with live status = " << soldierToWorker_socket_is_live;
+	minervasleep(100);
 #endif // end if (!MASTER)&&(!SINGLEPC)
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Initiate connection with "server" (worker node).  Connect waits for a server response.
@@ -547,10 +554,12 @@ int main(int argc, char *argv[])
 	}
 	std::cout << " ->Returned from connect to soldierToWorker!\n\n";
 	mnvdaq.infoStream() << " ->Returned from connect to soldierToWorker!";
+	minervasleep(100);
 #endif // end if MASTER&&(!SINGLEPC)
 
 
 	// Make an acquire data object containing functions for performing initialization and acquisition.
+	mnvdaq.infoStream() << "~~~~~~~ Begin Hardware Setup";
 	acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::DEBUG, hardwareInit); 
 	mnvdaq.infoStream() << "Got the acquire_data functions.";
 
@@ -622,6 +631,7 @@ int main(int argc, char *argv[])
 	bool zeroSuppress    = false; 
 	int  nReadoutADC     = 8;
 	continueRunning = true;		// declared in header.
+	mnvdaq.infoStream() << "~~~~~~~ Begin Acquisition";
 	while ( (gate<record_gates) && continueRunning ) {
 		triggerCounter++; // Not a gate counter - this updates trigger type in mixed mode.
 #if DEBUG_GENERAL
@@ -1774,6 +1784,7 @@ int SetupSocketService(struct sockaddr_in &socket_service, struct hostent *node_
 	}
 	else socket_service.sin_addr = *((struct in_addr *) node_info->h_addr);
 	socket_service.sin_port = htons(port); 
+	mnvdaq.infoStream() << "Set up socket service on port " << port;
 	return 0; // success
 }
 
@@ -1948,4 +1959,18 @@ void quitsignal_handler(int signum)
  */
 {
 	continueRunning = false;
+}
+
+
+int minervasleep(int us) 
+{
+#if defined(HAVE_NANOSLEEP)
+	timespec tmReq;
+	tmReq.tv_sec = (time_t)(0);
+	tmReq.tv_nsec = us * 1000;
+	(void)nanosleep(&tmReq, (timespec *)NULL); // Typically ~1 ms (sometimes ~2).
+#else   
+	usleep(us); 
+#endif          
+	return 0;
 }

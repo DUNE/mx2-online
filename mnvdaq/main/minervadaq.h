@@ -21,6 +21,9 @@ void quitsignal_handler(int signum);   /*!< The signal handler for SIGTERM/SIGIN
 
 boost::mutex main_mutex; /*!< A BOOST multiple exclusion for use in threaded operation */
 
+/*! short sleep function */
+int minervasleep(int us);
+
 bool data_ready, evt_record_available;   /*!<data status variables */
 /*! a function for selecting a trigger and waiting on it */
 int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode, controller *tmpController); 
