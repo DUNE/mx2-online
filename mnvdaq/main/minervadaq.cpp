@@ -442,6 +442,7 @@ int main(int argc, char *argv[])
 		// Accept will wait for a connection...
 		workerToSoldier_socket_connection = 
 			accept(workerToSoldier_socket_handle, (sockaddr*)&remote_address, &address_length);
+		mnvdaq.infoStream() << " workerToSoldier_socket_connection return value = " << workerToSoldier_socket_connection;
 		if (workerToSoldier_socket_connection == -1) {
 			// The call to accept failed. 
 			if (errno == EINTR) {
@@ -463,6 +464,7 @@ int main(int argc, char *argv[])
 #endif // end if MASTER&&(!SINGLEPC)
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	// Initiate connection with "server" (soldier node).  Connect waits for a server response.
+	mnvdaq.infoStream() << "Initiate connection with server (soldier node).";
 	int conCounter=0;
 	int conVal = connect(workerToSoldier_socket_handle, (struct sockaddr*) &workerToSoldier_service, 
 		sizeof (struct sockaddr_in));
@@ -486,27 +488,6 @@ int main(int argc, char *argv[])
 	
 	// Client-server connect - soldierToWorker. 
 	soldierToWorker_socket_is_live = false;
-#if MASTER&&(!SINGLEPC) // Soldier Node
-	// Initiate connection with "server" (worker node).  Connect waits for a server response.
-	int conCounter=0;
-	int conVal = connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
-		sizeof (struct sockaddr_in));
-	mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
-	while ( (conVal==-1) && conCounter<50) {
-		conVal = connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
-			sizeof (struct sockaddr_in));
-		conCounter++;
-		mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
-	}
-	if (conVal == -1) {
-		mnvdaq.fatalStream() << "Error in soldierToWorker connect!";
-		perror ("connect"); exit(EXIT_UNSPECIFIED_ERROR);
-	} else {
-		mnvdaq.infoStream() << "Completed soldierToWorker connect!";
-	}
-	std::cout << " ->Returned from connect to soldierToWorker!\n\n";
-	mnvdaq.infoStream() << " ->Returned from connect to soldierToWorker!";
-#endif // end if MASTER&&(!SINGLEPC)
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	std::cout << "\nPreparing make new server connection for soldierToWorker synchronization...\n";
 	mnvdaq.infoStream() << "Preparing make new server connection for soldierToWorker synchronization...";
@@ -525,6 +506,7 @@ int main(int argc, char *argv[])
 		// Accept will wait for a connection...
 		soldierToWorker_socket_connection = 
 			accept(soldierToWorker_socket_handle, (sockaddr*)&remote_address, &address_length);
+		mnvdaq.infoStream() << " soldierToWorker_socket_connection return value = " << soldierToWorker_socket_connection;
 		if (soldierToWorker_socket_connection == -1) {
 			// The call to accept failed. 
 			if (errno == EINTR) {
@@ -544,6 +526,28 @@ int main(int argc, char *argv[])
 	mnvdaq.infoStream() << " ->Connection complete at " << soldierToWorker_socket_connection << 
 		" with live status = " << soldierToWorker_socket_is_live;
 #endif // end if (!MASTER)&&(!SINGLEPC)
+#if MASTER&&(!SINGLEPC) // Soldier Node
+	// Initiate connection with "server" (worker node).  Connect waits for a server response.
+	mnvdaq.infoStream() << "Initiate connection with server (worker node).";
+	int conCounter=0;
+	int conVal = connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
+		sizeof (struct sockaddr_in));
+	mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
+	while ( (conVal==-1) && conCounter<50) {
+		conVal = connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
+			sizeof (struct sockaddr_in));
+		conCounter++;
+		mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
+	}
+	if (conVal == -1) {
+		mnvdaq.fatalStream() << "Error in soldierToWorker connect!";
+		perror ("connect"); exit(EXIT_UNSPECIFIED_ERROR);
+	} else {
+		mnvdaq.infoStream() << "Completed soldierToWorker connect!";
+	}
+	std::cout << " ->Returned from connect to soldierToWorker!\n\n";
+	mnvdaq.infoStream() << " ->Returned from connect to soldierToWorker!";
+#endif // end if MASTER&&(!SINGLEPC)
 
 
 	// Make an acquire data object containing functions for performing initialization and acquisition.
@@ -1814,7 +1818,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-06'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-07'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
