@@ -116,7 +116,7 @@ if [ $HOSTNAME == "mnvonline2.fnal.gov" ]; then
 fi
 
 # mnvonlinemaster - Multi-node DAQ with no hardware.
-if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" ]; then
+if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
@@ -129,13 +129,13 @@ if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" ]; then
 fi
 
 # mnvonlinebck1 - Multi-node DAQ with no hardware.
-if [ $HOSTNAME == "mnvonlinebck1.fnal.gov" ]; then
-	echo "Setting up multi-node scripts on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
-	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
-	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
-fi
+#if [ $HOSTNAME == "mnvonlinebck1.fnal.gov" ]; then
+#	echo "Setting up multi-node scripts on ${HOSTNAME}..."
+#	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
+#	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
+#	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
+#	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+#fi
 
 # mnvnearline1 - Nearonline machine with no DAQ hardware.
 if [ $HOSTNAME == "mnvnearline1.fnal.gov" ]; then
