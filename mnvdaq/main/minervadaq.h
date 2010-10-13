@@ -40,6 +40,10 @@ int WriteSAM(const char samfilename[],
 	const std::string datafilename, const int detector, const char configfilename[], 
 	const int runningMode, const int eventCount, const int runNum, const int subNum, 
 	const unsigned long long startTime, const unsigned long long stopTime);
+/*! Write the up-to-date last trigger information file */
+int WriteLastTrigger(const char filename[], const int run, const int subrun, 
+	const unsigned long long triggerNum, const int triggerType,
+	const unsigned long long triggerTime);
 /*! Synch readout nodes - write */ 
 template <typename Any> int SynchWrite(int socket_handle, Any *data);
 /*! Synch readout nodes - listen */ 

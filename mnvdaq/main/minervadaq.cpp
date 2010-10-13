@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
 	string et_filename       = "/work/data/etsys/testme_RawData";  
 	string log_filename      = "/work/data/logs/testme_Log.txt"; 
 	char sam_filename[100]; sprintf(sam_filename,"/work/data/sam/testme_SAM.py");
+	char lasttrigger_filename[100]; sprintf(lasttrigger_filename,"/work/conditions/last_trigger.dat"); 
 	char data_filename[100]; sprintf(data_filename,"/work/data/sam/testme_RawData.dat");
 	unsigned long long firstEvent, lastEvent;  //unused in main...
 	int networkPort          = 1201; // 1201-1250 (inclusive) currently open.
@@ -1369,6 +1370,8 @@ int main(int argc, char *argv[])
 		WriteSAM(sam_filename, firstEvent, lastEvent, fileroot,  
 			detector, config_filename, runningMode, gate, runNumber, subRunNumber,
 			startTime, stopTime);
+		WriteLastTrigger(lasttrigger_filename, runNumber, subRunNumber, gate,
+			triggerType, event_data.triggerTime);
 #endif
 	} //end of gates loop
 
@@ -1911,6 +1914,36 @@ int WriteSAM(const char samfilename[],
 	return 0;
 }
 
+int WriteLastTrigger(const char filename[], const int run, const int subrun,
+	const unsigned long long triggerNum, const int triggerType,
+	const unsigned long long triggerTime)
+/*! \fn int WriteLastTrigger(const int run, const int subrun,
+ *        const char filename[], const unsigned long long triggerNum, 
+ *		const int triggerType, const unsigned int triggerType
+ *
+ * Write the last trigger information to a file.  Returns a success int (0 for success).
+ */
+{
+	FILE *file;
+
+	if ( (file=fopen(filename,"w")) ==NULL) {
+		std::cout << "minervadaq::main(): Error!  Cannot open last trigger file for writing!" << std::endl;
+		mnvdaq.warnStream() << "Error opening last trigger file for writing!";
+		return 1;
+	}
+	else
+		mnvdaq.infoStream() << "Writing info for trigger " << triggerNum << " to file " << filename;
+
+	fprintf(file, "run=%d\n",      run);
+	fprintf(file, "subrun=%d\n",   subrun);
+	fprintf(file, "number=%llu\n", triggerNum);
+	fprintf(file, "type=%d\n",     triggerType);
+	fprintf(file, "time=%llu\n",   triggerTime);
+	
+	fclose(file);
+	
+	return 0;
+}
 
 template <typename Any> int SynchWrite(int socket_handle, Any data[])
 {
