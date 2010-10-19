@@ -37,6 +37,16 @@ then
 	export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
 	# Add log4cpp support.
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/scratch/nearonline/log4cpp/lib
+elif [ $LOCALE == "NEARLINEDEV" ]
+then
+        export DAQROOT=/work/mnvdaq
+        export CAEN_DIR=/work/CAENVMElib
+        export ET_HOME=$DAQROOT/et_9.0/Linux-x86_64-64
+        export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
+        # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
+        export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
+        # Add log4cpp support.
+        export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
 else
 	echo Unsupported LOCALE!
 	exit 1
