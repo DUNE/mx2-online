@@ -1,13 +1,25 @@
 mnvruncontrol -- the MINERvA run control
 ========================================
   Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v4r15  (August 2010)
-  Last update:      August 20, 2010
+  Last revision:    v5r0  (October 2010)
+  Last update:      October 19, 2010
 ========================================
 
 This document briefly summarizes the changes from version to version
 of the MINERvA run control software.  I didn't think to start it
 until most of the way through v4, so it's a bit skimpy below there...
+
+v5r0     (Beta version.)  Massive overhaul of run control system:
+         - DataAcquisitionManager is now a SERVER process (a Dispatcher
+           like the others).  Start the other Dispatchers on the
+           appropriate nodes first.  It can run the DAQ with any number
+           of frontend clients (including 0).
+         - Frontend CLIENTs now are run locally on the machine where
+           they are to be used (instead of being X-forwarded via SSH).
+         - A multitude of adjustments were made to the thread
+           architecture, the configuration, and the event model to
+           support this new design.  They are too numerous to detail
+           here (see the CVS logs if you are really interested).
 
 v4r15    Now expects any LI boxes to be attached to the readout nodes
          and gives them instructions accordingly.
