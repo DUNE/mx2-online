@@ -3,7 +3,7 @@
 
 #include "adctdc.h"
 
-#define SHOWSEQ 1 /*!< \define show unpacked block ram (adc) in internal sequential order...*/
+#define SHOWSEQ 0 /*!< \define show unpacked block ram (adc) in internal sequential order...*/
 #define SHOWPIX 1 /*!< \define show unpacked block ram (adc) keyed by pixel...*/
 #define SHOWNHITS 1 /*!< \define show number of hits when doing discr. parse*/
 #define SHOWBRAM 1 /*!< \define show raw (parsed) discr frame data; Also show SYSTICKS*/
@@ -58,7 +58,7 @@ void adc::MakeMessage()
 }
 
 
-int adc::DecodeRegisterValues(int febFirmware)
+int adc::DecodeRegisterValues(int a)
 {	
 /*! \fn
  *
@@ -66,7 +66,7 @@ int adc::DecodeRegisterValues(int febFirmware)
  * Decode the input frame data as Hit data type from all Analog BRAMs argument is dummy for now...
  * Returns 0 for success or an error code (eventually)...
  *
- * \param febFirmware, the FEB firmware.
+ * \param a an integer place holder (from the inheritance from Frames)
  */
 	// Check to see if the frame is right length...
 	unsigned short ml = (message[ResponseLength1] << 8) | message[ResponseLength0];
@@ -77,8 +77,6 @@ int adc::DecodeRegisterValues(int febFirmware)
 	}
 	if ( ml != ADCFrameLength ) { 
 		std::cout << "ADC Frame length mismatch!" << std::endl;
-		std::cout << "  Message Length = " << ml << std::endl;
-		std::cout << "  Expected       = " << ADCFrameLength << std::endl;
 		// -> Throw exception here.
 		return 1;		
 	}
@@ -99,20 +97,18 @@ int adc::DecodeRegisterValues(int febFirmware)
 		hword++;
 	}
 
-	// The number of bytes per row is a function of firmware!!
-	int bytes_per_row = 4; // most firmwares (non 84).
-	if (febFirmware = 84) bytes_per_row = 2;
-	if (febFirmware = 90) bytes_per_row = 2; // 90 & 84 are really the same, but 84 does not live in the wild.
 	// First, show the adc in simple sequential order...
-	// Note that the "TimeVal" will disappear in newer firmware!
 #if SHOWSEQ
-	int AmplVal     = 0;
-	int TimeVal     = 0;
-	int ChIndx      = 0;
-	int TripIndx    = 0;
-	int NTimeAmplCh = nChannelsPerTrip; 
-	int nrows       = 215; //really 216, but starting just past row 1...
-	int max_show    = 15 + bytes_per_row * nrows; 
+	int AmplVal = 0;
+	int TimeVal = 0;
+	int ChIndx = 0;
+	int TripIndx = 0;
+	int NTimeAmplCh = channelsPerTrip; //= 36; 
+	// There is one dummy ADC reading + 32 real channel + 2 edge channels + one ADC latency
+
+	int bytes_per_row = 4;
+	int nrows = 215; //really 216, but starting just past row 1...
+	int max_show = 15 + bytes_per_row * nrows; 
 	for (int i = 15; i <= max_show; i += 4) {
 		AmplVal = ((message[i - 2] << 8) + message[i - 3]);
 		TimeVal = ((message[i] << 8) + message[i - 1]); //timeval not useful for MINERvA (D0 thing)
@@ -127,6 +123,13 @@ int adc::DecodeRegisterValues(int febFirmware)
 
 	// Show the adc keyed by pixel value...
 #if SHOWPIX 
+	const int nPixelsPerFEB         = 64;
+	const int nHiMedTripsPerFEB     = 4;
+	const int nSides                = 2;
+	const int nPixelsPerTrip        = nPixelsPerFEB/nHiMedTripsPerFEB; //16
+	const int nPixelsPerSide        = nPixelsPerFEB/nSides; //32
+	const int nChannelsPerTrip      = 36;
+	const int nSkipChannelsPerTrip  = 3;
 	int lowMap[] = {26,34,25,33,24,32,23,31,22,30,21,29,20,28,19,27,
 		11,3,12,4,13,5,14,6,15,7,16,8,17,9,18,10,
 		11,3,12,4,13,5,14,6,15,7,16,8,17,9,18,10,
@@ -138,13 +141,13 @@ int adc::DecodeRegisterValues(int febFirmware)
 		int side = pixel / (nPixelsPerSide);
 		int hiMedEvenOdd = (pixel / (nPixelsPerSide / 2)) % 2;
 		int hiMedTrip = 2 * side + hiMedEvenOdd;  // 0...3
-		int loTrip = nHiMedTripsPerFEB + side;    // 4...5
+		int loTrip = nHiMedTripsPerFEB + side;  // 4...5
 		int hiChannel = nSkipChannelsPerTrip + (pixel % nPixelsPerTrip);
 		int medChannel = hiChannel + nPixelsPerTrip;
 		int loChannel = lowMap[pixel];
 		printf("Pixel = %d, HiMedTrip = %d, hiChannel = %d, medChannel = %d, loTrip = %d, lowChannel = %d\n",
 			pixel, hiMedTrip, hiChannel, medChannel, loTrip, loChannel);
-		// Calculate the offsets (in bytes_per_row increments).
+		// Calculate the offsets (in 4 byte increments (one full 32-bit "row") - time+charge)
 		// The header offset is an additional 12 bytes... 
 		int hiOffset = hiMedTrip * nChannelsPerTrip + hiChannel;
 		int medOffset = hiMedTrip * nChannelsPerTrip + medChannel;
@@ -152,11 +155,11 @@ int adc::DecodeRegisterValues(int febFirmware)
 		printf("hiOffset = %d, medOffset = %d, loOffset = %d\n", hiOffset, medOffset, loOffset);
 		unsigned short int dataMask = 0x3FFC;
 		printf("Qhi = %d, Qmed = %d, Qlo = %d\n", 
-			( ( ( (message[headerLength + bytes_per_row*hiOffset + 1] << 8) | message[headerLength + bytes_per_row*hiOffset] ) 
+			( ( ( (message[headerLength + 4*hiOffset + 1] << 8) | message[headerLength + 4*hiOffset] ) 
 			& dataMask ) >> 2),
-			( ( ( (message[headerLength + bytes_per_row*medOffset + 1] << 8) | message[headerLength + bytes_per_row*medOffset] ) 
+			( ( ( (message[headerLength + 4*medOffset + 1] << 8) | message[headerLength + 4*medOffset] ) 
 			& dataMask ) >> 2),
-			( ( ( (message[headerLength + bytes_per_row*loOffset + 1] << 8) | message[headerLength + bytes_per_row*loOffset] ) 
+			( ( ( (message[headerLength + 4*loOffset + 1] << 8) | message[headerLength + 4*loOffset] ) 
 			& dataMask ) >> 2)
 			);
 	}                

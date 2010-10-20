@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
 		detConf[i]   = 8;   // Detector config - basically , number of FEB's.
 		ledLevel[i]  = 0;   // Default to Zero PE (only for Header, not used)
 		ledGroup[i]  = 8;   // Default to LEDALL (only for Header, not used)
-		initLevel[i] = 1;   // Default to "init". 
+		initLevel[i] = 1;   // Default to "init" while we are debugging TODO default to nothing.
 	}
 	sprintf(conf_file,"unknown");
 	sprintf(et_file,"testme");	

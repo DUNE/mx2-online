@@ -1,7 +1,4 @@
-This file is current as of 2010.July.14 - GNP
-
-It is recommended to use the Run Control by J. Wolcott.  Check out the mnvruncontrol 
-package and set it up appropriately.  To run using bash scripts, check the following:
+This file is current as of 2010.January.09 - GNP
 
 To run the DAQ, you need to be sure you have the following directories:
 
@@ -15,8 +12,10 @@ Note that you can use different directories for these purposes, but you would ne
 - main/minervad.cpp: for global gate data location, ET system location, and SAM file location.
 - runthedaq/start_daq_<mode>: for ET system and RawData locations.
 
-0) To run the DAQ, you need to first have sourced the correct environment setup script: 
-		setupdaqenv.sh
+0) To run the DAQ, you need to first have sourced the correct environment setup script:
+- single_daqbuild.sh : Single PC mode.
+- setup_daqbuild.sh  : Multi PC mode.
+(You do not need to source the setup_etbuild.sh script if you are not compiling ET.)
 
 1) To run the DAQ in single PC mode go to $DAQROOT/runthedaq and use the start_daq_singleton script.  Note you 
 can pass the following flagged commands to the script:
