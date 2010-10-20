@@ -1,8 +1,8 @@
 mnvruncontrol -- the MINERvA run control
 ========================================
   Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v4r13  (June 2010)
-  Last update:      June 11, 2010
+  Last revision:    v4r15  (August 2010)
+  Last update:      August 20, 2010
 ========================================
 
 This document briefly summarizes the changes from version to version
@@ -13,7 +13,7 @@ v4r15    Now expects any LI boxes to be attached to the readout nodes
          and gives them instructions accordingly.
 
 v4r14    MonitorDispatcher now e-mails users specified in Configuration
-         if a DST making job fails.
+         if a DST-making job fails.
 
 v4r13    - Compatibility update for asynchronous DAQ (mnvdaq >= v7r5):
            * Readout dispatcher reports on sentinel frame status to main node.

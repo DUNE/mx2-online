@@ -16,9 +16,9 @@ import time
 import sys
 import os
 import logging
-import logging.handlers
 
-from mnvruncontrol.configuration import SocketRequests
+import mnvruncontrol.configuration.Logging
+
 from mnvruncontrol.configuration import Configuration
 
 from mnvruncontrol.backend.Dispatcher import Dispatcher
@@ -31,17 +31,7 @@ class MTestBeamDispatcher(Dispatcher):
 	def __init__(self):
 		Dispatcher.__init__(self)
 	
-		# Dispatcher() maintains a central logger.
-		# We want a file output, so we'll set that up here.
-		self.filehandler = logging.handlers.RotatingFileHandler(Configuration.params["MTest beam nodes"]["mtest_logfileName"], maxBytes=204800, backupCount=5)
-		self.filehandler.setLevel(logging.INFO)
-		self.filehandler.setFormatter(self.formatter)		# self.formatter is set up in the Dispatcher superclass
-		self.logger.addHandler(self.filehandler)
-
-		# we need to specify what requests we know how to handle.
-		self.valid_requests += SocketRequests.MTestBeamRequests
-		self.handlers.update( { "mtestbeam_start" : self.beamdaq_start,
-		                        "mtestbeam_stop"  : self.beamdaq_stop } )
+		self.logger = logging.getLogger("Dispatcher.MTest")
 
 		# need to shut down the subprocesses...
 		self.cleanup_methods += [self.beamdaq_stop]
@@ -52,99 +42,140 @@ class MTestBeamDispatcher(Dispatcher):
 		self.daq_starters = { "wire chamber": self.start_wire_chamber,
 		                      "tof":          self.start_tof           }
 		
-
-	def beamdaq_start(self, matches, show_details, **kwargs):
-		""" Starts the test beam DAQ services as subprocesses.
+		# we need to know when the DAQ manager goes up or down,
+		# as well as when online monitoring is supposed to start or stop
+		handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.daq_mgr_status_handler,
+		             PostOffice.Subscription(subject="mtest_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.mtest_directive_handler }
 		
-		    Returns 0 on success, 1 on failure. """
+		for subscription in handlers:
+			self.postoffice.AddSubscription(subscription)
+			self.AddHandler(subscription, handlers[subscription])
+
+	def daq_mgr_status_handler(self, message):
+		""" Method to respond to changes in status of the
+		    DAQ manager (books subscriptions, etc.). """
+
+		self._daq_mgr_status_update(self, message, ["mtest_directive",])		    
+	
+	def mtest_directive_handler(self, message):
+		""" Deals with incoming directives for the MTest beam node. """
+		
+		if not ( hasattr(message, "directive") and hasattr(message, "mgr_id") ):
+			self.logger.info("MTest directive message is improperly formatted.  Ignoring...")
+			return
+
+		response = message.ResponseMessage()
+		if message.mgr_id in self.identities:
+			response.sender = self.identities[message.mgr_id]
+		
+		status = True
+		if not self.client_allowed(message.mgr_id):
+			response.subject = "not_allowed"
+		else:
+			if message.directive == "start":
+				status = om_start(message)
+			
+			elif message.directive == "stop":
+				status = om_stop()
+		
+			if status is None:
+				response.subject = "invalid_request"
+			else:
+				response.subject = "request_response"
+				response.success = status
+		self.postoffice.Send(response)
+			
+
+	def beamdaq_start(self, message):
+		""" Starts the test beam DAQ services as subprocesses. """
 		    
-		if show_details:
-			self.logger.info("Client wants to start the beamline DAQ processes.")
+		self.logger.info("Manager wants to start the beamline DAQ processes.")
+		
+		# the configuration that must be passed for this message to do anything.
+		must_haves = [ "branch", "crate", "type", "mem_slot", "wc_rst_gate_slot", \
+		               "num_events", "filepattern", "run", "subrun", "runmode", \
+		               "tdc_slot", "adc_slot", "tof_rst_gate_slot" ]
+		
+		for item in must_haves:          
+			if not hasattr(message, item):
+				return None
 
 		# first clear up any old processes.
 		for thread in self.daq_threads:
 			if self.daq_threads[thread] is not None and self.daq_threads[thread].is_alive():
 				self.logger.info("Clearing up old threads first...")
-				success = self.beamdaq_stop() == "0"
 				
-				if not success:
-					return "1"
-				break
+				if not self.beamdaq_stop():
+					return False
 		
 		# need some initialization stuff...
-		self.crate_initialize(matches)		# first, crate initialization
-		self.gate_inhibit(matches, True)		# then a gate inhibit (don't let it trigger gates while we're configuring...)
+		self.crate_initialize(message)		# first, crate initialization
+		self.gate_inhibit(message, True)		# then a gate inhibit (don't let it trigger gates while we're configuring...)
 		
 		# now start the DAQ processes
 		for thread in self.daq_threads:
 			try:
 				self.logger.info("Trying to start the %s thread..." % thread )
-				self.daq_threads[thread] = self.daq_starters[thread](matches)
+				self.daq_threads[thread] = self.daq_starters[thread](message)
 			except:
 				self.logger.exception("  ==> failed.")
-				return "1"
+				return False
 			else:
 				self.logger.info("  ==> success.")
 		
 		# set a timer to cancel the gate inhibit in 3 seconds.
 		self.logger.info(" Will release gate inhibit in 3 seconds.")
-		timer = threading.Timer(3, self.gate_inhibit, (matches, False) )
+		timer = threading.Timer(3, self.gate_inhibit, (message, False) )
 		timer.start()
 				
-		return "0"
+		return True
 	
-	def crate_initialize(self, matches, **kwargs):
+	def crate_initialize(self, message):
 		self.logger.info("  ==> Initializing the crate...")
-		subprocess.call("%s/camac/example/cz %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("type")), shell=True)
+		subprocess.call("%s/camac/example/cz %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], message.branch, message.crate, message.type), shell=True)
 		
-	def gate_inhibit(self, matches, inhibit_status, **kwargs):
+	def gate_inhibit(self, message, inhibit_status):
 		self.logger.info("  ==> Sending a gate inhibit command: inhibit " + ("on" if inhibit_status == True else "off"))
 		inhibit_status = 1 if inhibit_status == True else 0
-		subprocess.call("%s/misc/gateinhibit/gate_inhibit %s %s %s %s %d" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("type"), matches.group("gate_slot"), inhibit_status), shell=True)
+		subprocess.call("%s/misc/gateinhibit/gate_inhibit %s %s %s %s %d" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], message.branch, message.crate, message.type, message.gate_slot, inhibit_status), shell=True)
 	
-	def start_wire_chamber(self, matches, **kwargs):
+	def start_wire_chamber(self, message):
 		""" Starts the wire chamber process.
 		
 		    Returns a DAQThread containing the subprocess it was started in. """
 		    
-		command = "%s/PCOS/PCOS_readout_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("mem_slot"), matches.group("type"), matches.group("wc_rst_gate_slot"), matches.group("num_events"), matches.group("filepattern"), matches.group("run"), matches.group("subrun"), matches.group("runmode"))
+		command = "%s/PCOS/PCOS_readout_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], message.branch, message.crate, message.mem_slot, message.type, message.wc_rst_gate_slot, message.num_events, message.filepattern, message.run, message.subrun, message.runmode)
 		self.logger.info("  ==> Using command: '%s'" % command)
 		return DAQThread(command, "wire chamber")
 
-	def start_tof(self, matches, **kwargs):
+	def start_tof(self, message):
 		""" Starts the time-of-flight process.
 		
 		    Returns a DAQThread containing the subprocess it was started in. """
 		    
-		command = "%s/tof/src/run_rik_t977_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], matches.group("branch"), matches.group("crate"), matches.group("tdc_slot"), matches.group("adc_slot"), matches.group("tof_rst_gate_slot"), matches.group("num_events"), matches.group("filepattern"), matches.group("run"), matches.group("subrun"), matches.group("runmode"))
+		command = "%s/tof/src/run_rik_t977_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], message.branch, message.crate, message.tdc_slot, message.adc_slot, message.tof_rst_gate_slot, message.num_events, message.filepattern, message.run, message.subrun, message.runmode)
 		self.logger.info("  ==> Using command: '%s'" % command)
 		return DAQThread(command, "tof")
 	
-	def beamdaq_stop(self, matches=None, show_details=True, **kwargs):
-		""" Stops the beamline DAQ processes. 
-				    
-		    Returns 0 on success and 1 on failure. """
+	def beamdaq_stop(self):
+		""" Stops the beamline DAQ processes. """
 		    
-		if show_details:
-			self.logger.info("Client wants to stop the beamline DAQ processes.")
+		self.logger.info("Manager wants to stop the beamline DAQ processes.")
 		
-		errors = False
 		for thread in self.daq_threads:
 			if self.daq_threads[thread] and self.daq_threads[thread].is_alive():
-				if show_details:
-					self.logger.info("   ==> Attempting to stop the %s DAQ thread." % thread)
+				self.logger.info("   ==> Attempting to stop the %s DAQ thread." % thread)
 				try:
 					self.daq_threads[thread].process.terminate()
 					self.daq_threads[thread].join()		# 'merges' this thread with the other one so that we wait until it's done.
 				except Exception, excpt:
 					self.logger.error("   ==> DAQ process %s couldn't be stopped!" % thread)
 					self.logger.exception("   ==> Error message:")
-					errors = True
+					return excpt
 
-		if show_details and not errors:
-			self.logger.info("   ==> All stopped successfully.")
+		self.logger.info("   ==> All stopped successfully.")
 		
-		return "0" if not errors else "1"
+		return not True
 		
 
 #########################

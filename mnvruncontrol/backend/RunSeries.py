@@ -13,7 +13,7 @@ from mnvruncontrol.configuration import MetaData
 class RunSeries:
 	
         def __init__(self):
-		self.Runs = list()
+		self.Runs = []
 
 	def FirstRun(self):
 	        try:

@@ -21,9 +21,6 @@ import os.path
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import Configuration
 
-from mnvruncontrol.backend.ReadoutNode import ReadoutNode
-from mnvruncontrol.backend.MonitorNode import MonitorNode
-
 # only do the graphical stuff if $DISPLAY is defined!
 if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 	import wx
@@ -93,59 +90,60 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			self.AddButtons = {}
 			self.DeleteButtons = {}
 
-			# first: log file locations
-			labels["Front end"]["logFileLocations"] = wx.StaticText(self.pages["Front end"], -1, Configuration.names["Front end"]["logFileLocations"])
-			self.entries["Front end"]["logFileLocations"] = AutoSizingEditableListCtrl(self.pages["Front end"], style=wx.LC_REPORT | wx.LC_HRULES)
-			self.entries["Front end"]["logFileLocations"].InsertColumn(0, "Location")
-		
-			for location in Configuration.params["Front end"]["logFileLocations"]:
-				self.entries["Front end"]["logFileLocations"].InsertStringItem(sys.maxint, location)
+#			# first: log file locations
+#			labels["Front end"]["logFileLocations"] = wx.StaticText(self.pages["Front end"], -1, Configuration.names["Front end"]["logFileLocations"])
+#			self.entries["Front end"]["logFileLocations"] = AutoSizingEditableListCtrl(self.pages["Front end"], style=wx.LC_REPORT | wx.LC_HRULES)
+#			self.entries["Front end"]["logFileLocations"].InsertColumn(0, "Location")
+#		
+#			for location in Configuration.params["Front end"]["logFileLocations"]:
+#				self.entries["Front end"]["logFileLocations"].InsertStringItem(sys.maxint, location)
 
-			self.AddButtons["logFileLocations"] = wx.Button(self.pages["Front end"], wx.ID_ADD, style=wx.BU_EXACTFIT)
-			self.pages["Front end"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["logFileLocations"])
+#			self.AddButtons["logFileLocations"] = wx.Button(self.pages["Front end"], wx.ID_ADD, style=wx.BU_EXACTFIT)
+#			self.pages["Front end"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["logFileLocations"])
 
-			self.DeleteButtons["logFileLocations"] = wx.Button(self.pages["Front end"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
-			self.pages["Front end"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["logFileLocations"])
-		
-			buttonSizer = wx.BoxSizer(wx.VERTICAL)
-			buttonSizer.AddMany ( ( (self.AddButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
-		
-			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-			entrySizer.AddMany( ( (self.entries["Front end"]["logFileLocations"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
-		
-			gridSizers["Front end"].Add(labels["Front end"]["logFileLocations"], flag=wx.ALIGN_CENTER_VERTICAL)
-			gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
+#			self.DeleteButtons["logFileLocations"] = wx.Button(self.pages["Front end"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
+#			self.pages["Front end"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["logFileLocations"])
+#		
+#			buttonSizer = wx.BoxSizer(wx.VERTICAL)
+#			buttonSizer.AddMany ( ( (self.AddButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
+#		
+#			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
+#			entrySizer.AddMany( ( (self.entries["Front end"]["logFileLocations"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
+#		
+#			gridSizers["Front end"].Add(labels["Front end"]["logFileLocations"], flag=wx.ALIGN_CENTER_VERTICAL)
+#			gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
 
 			# next: remote node config
-			for nodetype in ("readoutNodes", "monitorNodes", "mtestbeamNodes"):
-				labels["Front end"][nodetype] = wx.StaticText(self.pages["Front end"], -1, Configuration.names["Front end"][nodetype])
-				self.entries["Front end"][nodetype] = AutoSizingEditableListCtrl(self.pages["Front end"], style=wx.LC_REPORT | wx.LC_HRULES)
-				self.entries["Front end"][nodetype].InsertColumn(0, "Name")
-				self.entries["Front end"][nodetype].InsertColumn(1, "Address (IPv4/DNS)")
-			
-				for node in Configuration.params["Front end"][nodetype]:
-					index = self.entries["Front end"][nodetype].InsertStringItem(sys.maxint, node["name"])
-					self.entries["Front end"][nodetype].SetStringItem(index, 1, node["address"])
+			labels["Master node"]["notifyAddresses"] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["Master node"]["notifyAddresses"])
+			self.entries["Master node"]["notifyAddresses"] = AutoSizingEditableListCtrl(self.pages["Master node"], style=wx.LC_REPORT | wx.LC_HRULES)
+			self.entries["Master node"]["notifyAddresses"].InsertColumn(0, "Node type")
+			self.entries["Master node"]["notifyAddresses"].InsertColumn(1, "Name")
+			self.entries["Master node"]["notifyAddresses"].InsertColumn(2, "Address (IPv4/DNS)")
+		
+			for node in Configuration.params["Master node"]["notifyAddresses"]:
+				index = self.entries["Master node"]["notifyAddresses"].InsertStringItem(sys.maxint, str(node["type"]))
+				self.entries["Master node"]["notifyAddresses"].SetStringItem(index, 1, node["name"])
+				self.entries["Master node"]["notifyAddresses"].SetStringItem(index, 2, node["address"])
 
-				self.AddButtons[nodetype] = wx.Button(self.pages["Front end"], wx.ID_ADD, style=wx.BU_EXACTFIT)
-				self.pages["Front end"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons[nodetype])
+			self.AddButtons["notifyAddresses"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
+			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["notifyAddresses"])
 
-				self.DeleteButtons[nodetype] = wx.Button(self.pages["Front end"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
-				self.pages["Front end"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons[nodetype])
-			
-				buttonSizer = wx.BoxSizer(wx.VERTICAL)
-				buttonSizer.AddMany ( ( (self.AddButtons[nodetype], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons[nodetype], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
-			
-				entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-				entrySizer.AddMany( ( (self.entries["Front end"][nodetype], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
-			
-				gridSizers["Front end"].Add(labels["Front end"][nodetype], flag=wx.ALIGN_CENTER_VERTICAL)
-				gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
+			self.DeleteButtons["notifyAddresses"] = wx.Button(self.pages["Master node"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
+			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["notifyAddresses"])
+		
+			buttonSizer = wx.BoxSizer(wx.VERTICAL)
+			buttonSizer.AddMany ( ( (self.AddButtons["notifyAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["notifyAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
+		
+			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
+			entrySizer.AddMany( ( (self.entries["Master node"]["notifyAddresses"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
+		
+			gridSizers["Master node"].Add(labels["Master node"]["notifyAddresses"], flag=wx.ALIGN_CENTER_VERTICAL)
+			gridSizers["Master node"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
 	
-			gridSizers["Front end"].SetFlexibleDirection(wx.BOTH)
+			gridSizers["Master node"].SetFlexibleDirection(wx.BOTH)
 
 			# these are added like this so that they show up in a predictable order
-			for name in ("Front end", "Hardware", "Socket setup", "Dispatchers", "Master node", "Readout nodes", "Monitoring nodes", "MTest beam nodes"):
+			for name in ("Front end", "Hardware", "Socket setup", "Master node", "Readout nodes", "Monitoring nodes", "MTest beam nodes"):
 				nb.AddPage(self.pages[name], name)
 			
 			saveButton = wx.Button(panel, wx.ID_SAVE)
@@ -169,9 +167,14 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			""" Add a node to the list. """
 			for itemname in self.AddButtons:
 				if evt.EventObject == self.AddButtons[itemname]:
-					index = self.entries["Front end"][itemname].InsertStringItem(sys.maxint, "[text]")
-					for col in range(1, self.entries["Front end"][itemname].GetColumnCount()):
-						self.entries["Front end"][itemname].SetStringItem(index, 1, "[text]")
+					for page in self.entries:
+						if itemname in self.entries[page]:
+							itemlocation = self.entries[page]
+							break
+				
+					index = itemlocation[itemname].InsertStringItem(sys.maxint, "[text]")
+					for col in range(1, itemlocation[itemname].GetColumnCount()):
+						itemlocation[itemname].SetStringItem(index, col, "[text]")
 	
 		def DeleteNodes(self, evt):
 			""" Delete all selected nodes from the list. """
@@ -179,8 +182,14 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 				if evt.EventObject == self.DeleteButtons[nodename]:
 					index = -1
 					toDelete = []
+
+					for page in self.entries:
+						if itemname in self.entries[page]:
+							itemlocation = self.entries[page]
+							break
+
 					while True:
-						index = self.entries["Front end"][nodename].GetNextSelected(index)
+						index = itemlocation[nodename].GetNextSelected(index)
 		
 						if index == -1:
 							break
@@ -190,7 +199,7 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 					# want to delete from the back to the front so that we don't skip any
 					toDelete = sorted(toDelete, reverse=True)
 					for item in toDelete:
-						self.entries["Front end"][nodename].DeleteItem(item)
+						itemlocation[nodename].DeleteItem(item)
 		
 		def SaveAll(self, evt=None):
 			""" Save the configuration. """
@@ -216,35 +225,39 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			
 					# now any that need to be handled in a particular way
 			
-					# first: log file locations
-					loglist = []
-					index = -1
-					while True:
-						index = self.entries["Front end"]["logFileLocations"].GetNextItem(index)
-				
-						if index == -1:
-							break
-						loglist.append(self.entries["Front end"]["logFileLocations"].GetItem(index, 0).GetText())
-			
-					db["logFileLocations"] = loglist
+#					# first: log file locations
+#					loglist = []
+#					index = -1
+#					while True:
+#						index = self.entries["Front end"]["logFileLocations"].GetNextItem(index)
+#				
+#						if index == -1:
+#							break
+#						loglist.append(self.entries["Front end"]["logFileLocations"].GetItem(index, 0).GetText())
+#			
+#					db["logFileLocations"] = loglist
 			
 			
 					# now remote nodes
-					nodetypes = ["readoutNodes", "monitorNodes", "mtestbeamNodes"]
-					nodelist = {}
-					for nodetype in nodetypes:
-						nodelist[nodetype] = []
-						index = -1
-						while True:
-							index = self.entries["Front end"][nodetype].GetNextItem(index)
-					
-							if index == -1:
-								break
-					
-							nodedescr = {"name": self.entries["Front end"][nodetype].GetItem(index, 0).GetText(), "address" : self.entries["Front end"][nodetype].GetItem(index, 1).GetText()}
-							nodelist[nodetype].append(nodedescr)
-					
-						db[nodetype] = nodelist[nodetype]
+					nodelist= []
+					index = -1
+					while True:
+						index = self.entries["Master node"]["notifyAddresses"].GetNextItem(index)
+				
+						if index == -1:
+							break
+						
+						try:
+							nodetype = int(self.entries["Master node"]["notifyAddresses"].GetItem(index, 0).GetText())
+						except ValueError:
+							nodetype = 1		# default to READOUT
+				
+						nodedescr = { "type":     nodetype,
+						              "name":     self.entries["Master node"]["notifyAddresses"].GetItem(index, 1).GetText(),
+						              "address" : self.entries["Master node"]["notifyAddresses"].GetItem(index, 2).GetText() }
+						nodelist.append(nodedescr)
+				
+					db["notifyAddresses"] = nodelist
 			
 					# need to specifically close the DB so that it saves correctly
 					db.close()

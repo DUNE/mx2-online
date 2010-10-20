@@ -1,43 +1,64 @@
 """
-  DataAcquisitionManager.py:
-   Infrastructural objects to manage a data acquisition run.
-   Used by the run control.
+  Package: mnvruncontrol
+   The MINERvA run control
   
-   Original author: J. Wolcott (jwolcott@fnal.gov)
-                    Feb.-June 2010
+  File: DataAcquisitionManager.py
+  
+  Notes:
+   The server process that actually manages the DAQ.
+   Runs only on the master readout node if there are
+   multiple readout nodes.  (Otherwise runs on the
+   same machine as the readout dispatcher and the
+   frontend.)
+
+   Utilizes the PostOffice system as its event dispatcher
+   as well as its means for communicating with the
+   frontend client(s) and the dispatcher(s).
+  
+  Original author: J. Wolcott (jwolcott@fnal.gov)
+                   first version,  Feb.-Aug. 2010
+                   second version, Aug.-Oct. 2010
                     
-   Address all complaints to the management.
+  Address all complaints to the management.
 """
 
 import wx
 import os
 import re
+import sys
 import signal
 import errno
 import fcntl
 import datetime
 import time
-import threading
+import uuid
+import copy
+import pprint
+import shelve
 import socket
+import anydbm
+import threading
 import logging
 import logging.handlers
 
 # run control-specific modules.
 # note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
+import mnvruncontrol.configuration.Logging
+
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Configuration
+from mnvruncontrol.configuration.DAQConfiguration import DAQConfiguration
+from mnvruncontrol.backend import PostOffice
+from mnvruncontrol.backend import Dispatcher
 from mnvruncontrol.backend import Events
-from mnvruncontrol.backend import LIBox
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import RemoteNode
-from mnvruncontrol.backend import ReadoutNode
-from mnvruncontrol.backend import MonitorNode
-from mnvruncontrol.backend import MTestBeamNode
+from mnvruncontrol.backend import Alert
 from mnvruncontrol.backend import Threads
-from mnvruncontrol.frontend import Frames
 
-class DataAcquisitionManager(wx.EvtHandler):
+
+class DataAcquisitionManager(Dispatcher.Dispatcher):
 	""" Object that does the actual coordination of data acquisition.
 	    You should only ever make one of these at a time. """
 	
@@ -52,14 +73,17 @@ class DataAcquisitionManager(wx.EvtHandler):
 	###   * subprocess starters                ( ...              700)
 	###   * utilities/event handlers           ( ...              825)
 	
-	def __init__(self, main_window):
-		wx.EvtHandler.__init__(self)
+	def __init__(self):
+		Dispatcher.Dispatcher.__init__(self)
 
-		self.main_window = main_window
-		
+		self.pidfilename = Configuration.params["Master node"]["master_PIDfileLocation"]
+
+		self.socket_port = Configuration.params["Socket setup"]["masterPort"]
+
 		# threads that this object will be managing.
-		self.DAQthreads = {}
-
+		self.worker_thread = Threads.WorkerThread()
+		self.DAQ_threads = {}
+		
 		# methods that will be started sequentially
 		# by various processes and accompanying messages
 		self.SubrunStartTasks = [ { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
@@ -72,281 +96,674 @@ class DataAcquisitionManager(wx.EvtHandler):
 		                       { "method": self.StartETMon,          "message": "Starting ET monitor..." },
 		                       { "method": self.StartRemoteServices, "message": "Starting remote services..."} ]
 
-
-		# counters
-		self.current_DAQ_thread = 0			# the next thread to start
-		self.subrun = 0					# the next run in the series to start
-		self.windows = []					# child windows opened by the process.
-		
-		self.readoutNodes         = [ReadoutNode.ReadoutNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["readoutNodes"]]
-		self.monitorNodes         = [MonitorNode.MonitorNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["monitorNodes"]]
-		self.mtestBeamDAQNodes    = [MTestBeamNode.MTestBeamNode(nodedescr["name"], nodedescr["address"]) for nodedescr in Configuration.params["Front end"]["mtestbeamNodes"]]
-
-		self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
-
-		# configuration stuff
-		self.etSystemFileLocation = Configuration.params["Master node"]["etSystemFileLocation"]
-		self.rawdataLocation      = Configuration.params["Master node"]["master_rawdataLocation"]
+		# will be filled by the session creator.
+		self.remote_nodes = {}
 
 		# logging facilities
-		self.logger = logging.getLogger("rc_dispatcher")
-		self.logger.setLevel(logging.DEBUG)
-		self.filehandler = logging.handlers.RotatingFileHandler(Configuration.params["Master node"]["master_logfileName"], maxBytes=204800, backupCount=5)
-		self.filehandler.setLevel(logging.DEBUG)
-		self.formatter = logging.Formatter("[%(asctime)s] %(levelname)s:  %(message)s")
-		self.filehandler.setFormatter(self.formatter)
-		self.logger.addHandler(self.filehandler)
+		self.logger = logging.getLogger("Dispatcher.DAQManager")
 		
 		self.last_logged_gate = 0
 
-		# these will need to be set by the run control window before the process is started.
-		# that way we can be sure it's properly configured.
-		self.runseries = None
-		self.detector = None
-		self.run = None
-		self.first_subrun = None
-		self.febs = None
-		
-		self.mtest_useBeamDAQ = None
-		self.mtest_branch = None
-		self.mtest_crate = None
-		self.mtest_controller_type = None
-		self.mtest_mem_slot = None
-		self.mtest_gate_slot = None
-		self.mtest_adc_slot = None
-		self.mtest_tdc_slot = None
-		self.mtest_tof_rst_gate_slot = None
-		self.mtest_wc_rst_gate_slot = None
-		
+		# run-time configuration.
+		# will be finalized by comparison with configuration sent by front end
+		# and final validation/generation of run series
+		self.configuration = DAQConfiguration()
+		self.PrepareRunSeries()
+
+		# status stuff
 		self.running = False
-		self.can_shutdown = False		# used in between subruns to prevent shutting down twice for different reasons
+		self.waiting = False
+		self.started_et = False
+		self.first_subrun = self.configuration.subrun
+		
+		self.current_state = None
+		self.current_progress = (0, 0)
+		self.current_gate = {}
+
+		self.current_DAQ_thread = 0			# the next thread to start
+		self.can_shutdown = False			# used in between subruns to prevent shutting down twice for different reasons
+
+		self.problem_pmt_list = None
+		self.do_pmt_check = True
+		self.errors = []
+		self.warnings = []
+		
+		# information about which client is currently in control of the DAQ
+		self.control_info = None
 		
 		self.last_HW_config = None		# this way we don't write the HW config more often than necessary
 
-		self.messageHandlerLock = threading.Lock()
+		# set up the signal handler for SIGUSR1, which is
+		# the signal emitted by each of the subprocesses
+		# when they are ready for execution to move on.
+		signal.signal(signal.SIGUSR1, self.StartNextThread)
 
-		self.Bind(Events.EVT_SOCKET_RECEIPT, self.HandleSocketMessage)
-		self.Bind(Events.EVT_UPDATE_PROGRESS, self.RelayProgressToDisplay)
-
-		self.Bind(Events.EVT_READY_FOR_NEXT_SUBRUN, self.StartNextSubrun)
-		self.Bind(Events.EVT_THREAD_READY, self.StartNextThread)
-		self.Bind(Events.EVT_END_SUBRUN, self.EndSubrun)		# if the DAQ process quits, this subrun is over
-		self.Bind(Events.EVT_STOP_RUNNING, self.StopDataAcquisition)
-
-		try:
-			self.socketThread = Threads.SocketThread(self.logger)
-			self.logger.info("Started master node listener on port %d." % Configuration.params["Socket setup"]["masterPort"])
-
-			self.OldSessionCleanup()
-		except Threads.SocketAlreadyBoundException:
-			self.socketThread = None
-			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["Can't bind a local listening socket.",  "Synchronization between readout nodes and the run control will be impossible.", "Check that there isn't another run control process running on this machine."], messageheader="Can't bind local socket") )
+		# make sure shutdown happens smoothly
+		self.startup_methods += [self.BookSubscriptions, self.BeginSession]
+		self.cleanup_methods += [self.Cleanup]
 		
-	def OldSessionCleanup(self):
+	def BookSubscriptions(self):
+		""" Books all the standing subscriptions the DAQMgr will want
+		    and assigns handlers for those messages. """
+		    
+		# daq_status:    from readout nodes (informs us if something happened on the readout nodes)
+		# device_status: from peripherals
+		# mgr_internal:  from this DAQ manager to itself
+		# mgr_directive: from front-end client (tells the DAQ manager what to do)
+		subscriptions = [ PostOffice.Subscription(subject="control_request", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="daq_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="om_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="beamdaq_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="device_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="mgr_internal", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="mgr_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) ]
+		handlers = [ self.ControlRequestHandler,
+		             self.DAQStatusHandler,
+		             self.OMStatusHandler,
+		             self.BeamDAQStatusHandler,
+		             self.DeviceStatusHandler,
+		             self.MgrInternalHandler,
+		             self.MgrDirectiveHandler ]
+	
+		for (subscription, handler) in zip(subscriptions, handlers):
+			self.postoffice.AddSubscription(subscription)
+			self.AddHandler(subscription, handler)
+			
+	def client_allowed(self, client_id):
+		""" Overridden from Dispatcher -- checks if a client is
+		    allowed to give instructions. """
+		    
+		return self.control_info is not None and self.control_info["client_id"] == client_id
+
+	def BeamDAQStatusHandler(self, message):
+		""" Handles updates from the MTest beam DAQ
+		    about changes in its state. """
+		
+		pass	
+		
+	def ControlRequestHandler(self, message):
+		""" Handles requests from clients for control of the DAQ.
+		
+		    Note: locks on the DAQManager work differently than in
+		    other dispatchers: anybody can request control
+		    at any time (even if somebody else already has
+		    control).  (We want to avoid the situation where
+		    somebody has a lock then their connection gets broken,
+		    preventing anybody else from controlling the DAQ until
+		    the DAQ manager is reset.) """
+
+		response_msg = message.ResponseMessage()
+
+		# lock requests that have no return path are OUTGOING.
+		# we don't want to lock ourselves!
+		if len(message.return_path) == 0:
+			response_msg.subject = "request_response"
+			response_msg.success = Dispatcher.LockError("Not issuing a lock to my own node!")
+
+		elif not( hasattr(message, "request") and hasattr(message, "requester_id") ):
+			response_msg.subject = "invalid_request"
+		else:
+			response_msg.subject = "request_response"
+			if message.request == "get":
+				if not ( hasattr(message, "requester_name") and hasattr(message, "requester_location") ):
+					response_msg.subject = "invalid_request"
+				else:
+					self.logger.info("Granted control to client %s (reporting identity '%s') located at %s.", message.requester_id, message.requester_name, message.requester_location)
+					self.control_info = {"client_id": message.requester_id, "client_identity": message.requester_name, "client_location": message.requester_location}
+					response_msg.success = True
+
+			elif message.request == "release":
+				if self.control_info is None or self.control_info["client_id"] != message.requester_id:
+					self.logger.info("Client %s wants to relinquish control, but isn't the controlling node.  Ignoring.", message.requester_id)
+				else:
+					self.control_info = None
+					self.logger.info("Client %s relinquished control.", message.requester_id)
+					response_msg.success = True
+
+		self.postoffice.Send(response_msg)
+		
+		notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
+		self.postoffice.Send(notify_msg)
+	
+	def DAQStatusHandler(self, message):
+		""" Handles updates from the readout nodes regarding
+		    the status of the DAQ on their own nodes.
+		    
+		    This includes readiness for data taking, the end
+		    of data taking, errors, etc. """
+		    
+		if not hasattr(message, "state"):
+			self.logger.info("DAQ status message from '%s' node is badly formed.  Ignoring.  Message:\n%s", message.sender, message)
+			return
+			
+#		self.logger.debug("DAQ status message:\n%s", message)
+		
+		if message.state == "hw_error":
+			self.NewAlert(notice="A hardware error was reported on the '%s' node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
+			self.remote_nodes[message.sender].status = RemoteNode.ERROR
+			self.StopDataAcquisition(do_auto_start=False)
+			self.last_HW_config = None
+
+			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+		
+		elif message.state == "hw_ready":
+			self.remote_nodes[message.sender].status = RemoteNode.OK
+			self.logger.debug("    ==> '%s' node reports it's ready.", message.sender)
+
+			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+			
+			# are they all ready yet?
+			for node in self.remote_nodes:
+				if self.remote_nodes[node].type == RemoteNode.READOUT and self.remote_nodes[node].status is not RemoteNode.OK:
+					return
+
+			# all nodes are ready.  continue the startup sequence.
+			self.logger.info("    ==> all readout nodes ready.")
+			self.StartNextSubrun()
+		
+		elif message.state == "running" and hasattr(message, "gate_count"):
+			# updates are only relevant if we're still doing the same subrun...
+			if message.run_num != self.configuration.run or message.subrun_num != self.configuration.subrun:
+				return
+
+			# we can't rely on getting a notice for every single gate
+			# (the test stand and MTest read out too fast for that in some modes).
+			# so we use the integer division (//) construction below.
+			stride = Configuration.params["Master node"]["logfileGateCount"]
+			if message.gate_count // stride > self.last_logged_gate // stride:
+				self.logger.info("  DAQ has reached gate %d..." % message.gate_count)
+				self.last_logged_gate = message.gate_count
+
+			if message.gate_count > self.current_gate["number"]:
+				self.current_gate["number"] = message.gate_count
+				self.current_gate["type"]   = message.last_trigger_type
+				self.current_gate["time"]   = message.last_trigger_time
+				
+				self.postoffice.Send( self.StatusReport( items=["current_gate", "waiting"] ) )
+			
+		elif message.state == "finished":
+			self.remote_nodes[message.sender].completed = True
+			self.remote_nodes[message.sender].sent_sentinel = message.sentinel
+			self.remote_nodes[message.sender].status = RemoteNode.IDLE
+			self.logger.debug("    ==> '%s' node reports it's done taking data and %s send a sentinel.", message.sender, "DID" if message.sentinel else "DID NOT")
+			
+			# loop and check if they're all finished
+			sentinel = False
+			for node in self.remote_nodes:
+				if self.remote_nodes[node].type == RemoteNode.READOUT:
+					if not self.remote_nodes[node].completed:
+						self.logger.debug( "    ... still waiting on '%s' node.", node)
+						return
+					sentinel = sentinel or self.remote_nodes[node].sent_sentinel
+			
+			# all nodes are finished.  end the subrun.
+			self.logger.info("All nodes finished.  Sentinel status: %s", str(sentinel))
+			self.EndSubrun(sentinel=sentinel)
+
+	def MgrDirectiveHandler(self, message):
+		""" Handles messages from front-end clients: requests
+		    for status updates, instructions for starting/stopping,
+		    requests for control, etc. """
+		
+		# ignore ill-formed messages
+		if not hasattr(message, "directive") or not hasattr(message, "client_id"):
+			self.logger.info("Directive message is badly formed and will be ignored:\n%s", message)
+			return
+		
+		response = message.ResponseMessage()
+		response.sender = self.id
+		
+		# there are a few directives for which 
+		# a lock is unnecessary, so we consider them first.
+		if message.directive == "status_report":
+			self.StatusReport(response)
+		elif message.directive == "pmt_hv_list":
+			self.worker_thread.queue.put( {"method": self.GetProblemPMTs, "kwargs": {"send_results": True}} )
+			status = True
+		elif message.directive == "series_info" and hasattr(message, "series"):
+			self.worker_thread.queue.put( {"method": self.SeriesInfo, "kwargs": {"series": message.series}} )
+			status = True
+		
+		# the rest are commands, so we first need to verify
+		# that this client is allowed to issue them.
+		else:
+			if not self.client_allowed(message.client_id):
+				self.logger.info("Got directive message from unallowed client ('%s') -- ignoring.  Message:\n%s", message.client_id, message)
+				response.subject = "not_allowed"
+			else:
+				status = None
+				
+				# some of these use the worker_thread because
+				# they start tasks that don't return immediately.
+				# the rule of thumb is, if they don't return quickly,
+				# use the worker_thread by putting the appropriate
+				# dictionary into its queue.  
+				# (see the documentation at
+				#  mnvruncontrol.backend.Threads.WorkerThread.run() ...)
+				if message.directive == "start":
+					self.logger.info("Client wants to begin data acquisition.")
+					if self.running:
+						self.logger.warning("  ... but we are already running!  Request is invalid.")
+						status = mnvruncontrol.backend.DataAcquisitionManager.RunError("Can't start running because DAQ is already running.")
+
+					elif len(self.errors) > 0:
+						self.logger.warning("There are errors left unaddressed.  These must be handled before starting the next run.")
+						status = mnvruncontrol.backend.DataAcquisitionManager.AlertError("There are unaddressed errors.  Handle those before starting a run!")
+					elif not hasattr(message, "configuration") or not isinstance(message.configuration, DAQConfiguration):
+						self.logger.error("Directive message does not properly specify configuration...")
+						status = mnvruncontrol.backend.DataAcquisitionManager.ConfigurationError("Run configuration is improperly specified.")
+					else:
+						self.worker_thread.queue.put( {"method": self.StartDataAcquisition, "kwargs": {"configuration": message.configuration}} )
+						status = True
+				elif message.directive == "continue":
+					self.logger.info("Frontend client requests continuation of running.")
+					self.worker_thread.queue.put({"method": self.StartNextSubrun})
+					status = True
+			
+				elif message.directive == "stop":
+					self.logger.info("Frontend client requests stoppage of data acquisition.")
+					self.worker_thread.queue.put( {"method": self.StopDataAcquisition, "kwargs": {"do_auto_start": False}} )
+					status = True
+					
+				elif message.directive == "skip":
+					self.logger.info("Frontend client requests skip to next subrun.")
+					self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end", auto_start=True) )
+					status = True
+				
+				elif message.directive == "alert_acknowledge":
+					if not hasattr(message, "alert_id"):
+						self.logger.warning("Got 'alert_acknowledge' message with no alert ID!  Ignoring...")
+					self.logger.info("Frontend client '%s' acknowledged alert %s.", message.client_id, message.alert_id)
+					status = self.AcknowledgeAlert(message.alert_id)
+
+				if status is None:
+					response.subject = "invalid_request"
+				else:
+					response.subject = "request_response"
+					response.success = status
+		self.postoffice.Send(response)
+	
+	def MgrInternalHandler(self, message):
+		""" Handles messages that are passed around internally
+		    by the DAQMgr.  Always insists that the messages
+		    have no return_path (i.e., haven't been transmitted
+		    over the network). """	
+
+		# ignore ill-formed messages
+		if not hasattr(message, "event"):
+			self.logger.warning("Internal message is badly formed!  Message:\n%s", message)
+			return
+		
+		# internal messages better actually be internal! ...
+		if len(message.return_path) > 0:
+			self.logger.info("Got 'DAQMgr internal' message over the network.  Ignoring.  Message:\n%s", message)
+			return
+		
+		
+		if message.event == "subrun_auto_start":
+			self.worker_thread.queue.put({"method": self.StartNextSubrun})
+			
+		elif message.event == "subrun_end":
+			auto_start = True if not hasattr(message, "auto_start") else message.auto_start
+			self.worker_thread.queue.put({"method": self.EndSubrun, "kwargs": {"auto_start": auto_start} })
+
+		elif message.event == "series_auto_start":
+			self.configuration.run += 1
+			self.configuration.subrun = 1
+			self.worker_thread.queue.put({"method": self.StartDataAcquisition, "args": [self.configuration]})
+		
+		elif message.event == "series_end":
+			if hasattr(message, "early_abort") and message.early_abort:
+				warning_msg = "Aborting early!"
+				if hasattr(message, "lost_process"):
+					warning_msg += "  (due to crash of '%s' process).  Last 2000 characters of output from this process:\n%s" % (message.lost_process, message.output_history)
+					self.logger.warning(warning_msg)
+					self.NewAlert(notice="'%s' process crashed!\nRunning has been halted for troubleshooting." % message.lost_process, severity=Alert.ERROR)
+				auto_start = False
+			else:
+				auto_start = True if not hasattr(message, "auto_start") else message.auto_start
+			# should auto-start next series if configuration allows it
+			# and the series ended nicely
+			self.worker_thread.queue.put( {"method": self.StopDataAcquisition, "kwargs": {"do_auto_start": auto_start}} )
+		
+	def DeviceStatusHandler(self, message):
+		""" Handles updates from various peripherals about
+		    changes in their state. """
+		
+		pass	
+		
+	def BeginSession(self):
 		""" Checks if there's a session that was already open.
 		    If so, cleans up (stops the remote nodes), etc.
-		    """
-		self.logger.info("Starting up: checking for leftover session...")
-		# first check for an old session.
-		# if there is one, load in the IDs from the nodes that were in use.
-		try:
-			sessionfile = open(Configuration.params["Master node"]["sessionfile"], "r")
-		except (OSError, IOError):
-			self.logger.info("No previous session detected.  Starting fresh.")
-			return
+		    
+		    Otherwise, starts a new session: contacts nodes
+		    to inform them that the manager is up and running, etc. """
+		    
+		self.logger.info("Old session resumption is disabled for now.")
+		self.logger.info("Starting a fresh session.")
 
-		self.logger.info("Old session detected.  Restoring any old node IDs...")
-		# try to get a lock on the file.  that way we know it isn't being
-		# updated while we try to read it.
-		fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
-		try:
-			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
-			node_map = { "readout": self.readoutNodes, "monitoring": self.monitorNodes, "mtestbeam": self.mtestBeamDAQNodes }
-			do_reset = False
-			for line in sessionfile:
-				matches = pattern.match(line)
-				if matches is not None and matches.group("type").lower() in node_map:
-					for node in node_map[matches.group("type").lower()]:
-						if node.address == matches.group("address"):
-							node.id = matches.group("id")
-							node.own_lock = True
-							do_reset = True
-		finally:
-			fcntl.flock(sessionfile.fileno(), fcntl.LOCK_UN)
-
-		sessionfile.close()
+		self.remote_nodes = {}
+		self.logger.info("Contacting nodes to announce that I am up...")
+		for node_config in Configuration.params["Master node"]["nodeAddresses"]:
+			# if we had a startup error in another thread,
+			# we should bail here.
+			if self.quit:
+				return
+				
+			assert node_config["type"] in RemoteNode.NODE_TYPES
 		
-		self.logger.info("Resetting any nodes that are still running...")
-		# now reset any nodes that were previously locked & running.
-		if do_reset:
-			# first inform the main window that it needs to wait until we're done cleaning up.
-			wx.PostEvent(self.main_window, Events.WaitForCleanupEvent())
+			node = RemoteNode.RemoteNode(node_config["type"], node_config["name"], node_config["address"])
+			self.logger.info("  ... contacting node '%s' at address %s ...", node.name, node.address)
+			try:
+				node.InitialContact(postoffice=self.postoffice, mgr_id=self.id)
+			except RemoteNode.NoContactError:
+				notification = "Could not establish communication with the '%s' node at %s..." % (node_config["name"], node_config["address"])
+				severity = Alert.ERROR if node.type == RemoteNode.READOUT else Alert.WARNING
+				self.NewAlert(notice=notification, severity=severity)
+			except RemoteNode.TooManyResponsesError:
+				self.NewAlert( notice="Too many responses from '%s' node (at %s)!" % (node_config["name"], node_config["address"]), severity=Alert.ERROR )
+			else:
+				self.logger.info("   ... success.  Asking for forward subscriptions...")
 			
-			# next, reset the monitoring nodes.  they're simple
-			# because we don't really care too much about whether
-			# they're actually behaving.
-			for node in self.monitorNodes:
-				if node.own_lock:
-					try:
-						node.om_stop()
-					except RemoteNode.RemoteNodeNoConnectionException:
-						self.logger.warning("Can't connect to OM node!...")
-						pass
+				subject_map = { RemoteNode.READOUT:    "daq_status",
+				                RemoteNode.MONITORING: "om_status",
+				                RemoteNode.MTEST:      "beamdaq_status",
+				                RemoteNode.PERIPHERAL: "device_status" }
 
-			# now any MTest beamline DAQ nodes
-			if self.mtest_useBeamDAQ:
-				for node in self.mtestBeamDAQNodes:
-					if node.own_lock:
-						node.stop()
+				subscr = PostOffice.Subscription(subject=subject_map[node.type], delivery_address=(None, self.socket_port))
+				self.postoffice.ForwardRequest( node.address, [subscr,] )
+				self.logger.info("   ... done.")
 
-			self.can_shutdown = True
-			self.first_subrun = 0
+			self.remote_nodes[node_config["name"]] = node
 			
-			# finally, deal with the readout nodes.
-			# remember, we need to loop twice so that all subscriptions
-			# are booked before issuing any stops.
-			for node in self.readoutNodes:
-				if node.own_lock:
-					self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Cleaning up from previous run...")
-			
-			wait_for_reset = False	
-			for node in self.readoutNodes:
-				if node.own_lock:
-					success = False
-					try:
-						success = node.daq_stop()
-					except ReadoutNode.ReadoutNodeNoDAQRunningException:
-						pass
-					
-					if success:
-						wait_for_reset = True
-					# otherwise we'll be stuck... forever...
-					else:
-						node.completed = True
-						self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", callback=self)
-				# if it's not locked, then we can't stop it, so it may as well be "completed"
-				# (otherwise we'll stuck waiting forever)
-				else:
-					node.completed = True
-			
-			if not wait_for_reset:
-				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True, sentinel=False))
+
+#		self.logger.info("Starting up: checking for leftover session...")
+#		# first check for an old session.
+#		# if there is one, load in the IDs from the nodes that were in use.
+#		try:
+#			sessionfile = open(Configuration.params["Master node"]["sessionfile"], "r")
+#		except (OSError, IOError):
+#			self.logger.info("No previous session detected.  Starting fresh.")
+#			return
+
+#		self.logger.info("Old session detected.  Restoring any old node IDs...")
+#		# try to get a lock on the file.  that way we know it isn't being
+#		# updated while we try to read it.
+#		fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
+#		try:
+#			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
+#			node_map = { "readout": self.readoutNodes, "monitoring": self.monitorNodes, "mtestbeam": self.mtestBeamDAQNodes }
+#			do_reset = False
+#			for line in sessionfile:
+#				matches = pattern.match(line)
+#				if matches is not None and matches.group("type").lower() in node_map:
+#					for node in node_map[matches.group("type").lower()]:
+#						if node.address == matches.group("address"):
+#							node.id = matches.group("id")
+#							node.own_lock = True
+#							do_reset = True
+#		finally:
+#			fcntl.flock(sessionfile.fileno(), fcntl.LOCK_UN)
+
+#		sessionfile.close()
+#		
+#		self.logger.info("Resetting any nodes that are still running...")
+#		# now reset any nodes that were previously locked & running.
+#		if do_reset:
+#			# first inform the main window that it needs to wait until we're done cleaning up.
+#			wx.PostEvent(self.main_window, Events.WaitForCleanupEvent())
+#			
+#			# next, reset the monitoring nodes.  they're simple
+#			# because we don't really care too much about whether
+#			# they're actually behaving.
+#			for node in self.monitorNodes:
+#				if node.own_lock:
+#					node.om_stop()
+
+#			# now any MTest beamline DAQ nodes
+#			if self.mtest_useBeamDAQ:
+#				for node in self.mtestBeamDAQNodes:
+#					if node.own_lock:
+#						node.stop()
+
+#			self.can_shutdown = True
+#			self.first_subrun = 0
+#			
+#			# finally, deal with the readout nodes.
+#			# remember, we need to loop twice so that all subscriptions
+#			# are booked before issuing any stops.
+#			for node in self.readoutNodes:
+#				if node.own_lock:
+#					self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Cleaning up from previous run...")
+#			
+#			wait_for_reset = False	
+#			for node in self.readoutNodes:
+#				if node.own_lock:
+#					success = False
+#					try:
+#						success = node.daq_stop()
+#					except ReadoutNode.ReadoutNodeNoDAQRunningException:
+#						pass
+#					
+#					if success:
+#						wait_for_reset = True
+#					# otherwise we'll be stuck... forever...
+#					else:
+#						node.completed = True
+#						self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", callback=self)
+#				# if it's not locked, then we can't stop it, so it may as well be "completed"
+#				# (otherwise we'll stuck waiting forever)
+#				else:
+#					node.completed = True
+#			
+#			if not wait_for_reset:
+#				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True, sentinel=False))
 		
 	def Cleanup(self):
-		""" Any clean-up actions that need to be taken.
-		    Called by the RunControl right before shutdown. """
+		""" Any clean-up actions that need to be taken before shutdown.  """
 		    
-		delete_session = True
-		# release any locks that might still be open
-		for node in self.readoutNodes + self.monitorNodes + self.mtestBeamDAQNodes:
-			if node.own_lock:
-				success = node.release_lock()
-				
-				delete_session = delete_session and success
+#		# release any outstanding locks
+#		self.logger.info("Releasing outstanding locks...")
+#		msgs = self.postoffice.SendAndWaitForResponse(PostOffice.Message(subject="lock_request", request="release", requester_id=self.id), timeout=Configuration.params["Socket setup"]["socketTimeout"])
+#			
+#		for message in msgs:
+#			if len(message.return_path) == 0:
+#				continue
+#		
+#			if message.success == True:
+#				self.logger.info("   ... got release confirmation from '%s' node", message.sender)
+#			elif message.success == False:
+#				self.logger.warning("  ... couldn't release lock on '%s' node!", message.sender)
+#			elif isinstance(message.success, Exception):
+#				self.logger.warning("  ... error during release of lock on '%s' node.  Error text:\n%s", message.success)
 		
-		# remove the session file, but only if there's no more
-		# locks that are still open...
-		if delete_session:
-			try:
-				os.remove(Configuration.params["Master node"]["sessionfile"])
-			except (IOError, OSError):		# if the file doesn't exist, no problem
-				pass
-			
-		if self.socketThread is not None:
-			self.socketThread.Abort()
-			self.socketThread.join()
+		self.logger.info("Informing nodes I'm going down...")
+		self.postoffice.Send( PostOffice.Message(subject="mgr_status", status="offline", mgr_id=self.id) )
+		
+		self.logger.info("Stopping worker thread...")
+		self.worker_thread.queue.put("QUIT")
+		self.worker_thread.join()
+
+#		delete_session = True
+#		# release any locks that might still be open
+#		for node in self.readoutNodes + self.monitorNodes + self.mtestBeamDAQNodes:
+#			if node.own_lock:
+#				success = node.release_lock()
+#				
+#				delete_session = delete_session and success
+#		
+#		# remove the session file, but only if there's no more
+#		# locks that are still open...
+#		if delete_session:
+#			try:
+#				os.remove(Configuration.params["Master node"]["sessionfile"])
+#			except (IOError, OSError):		# if the file doesn't exist, no problem
+#				pass
+		
 		
 	##########################################
 	# Global starters and stoppers
 	##########################################
 	
-	def StartDataAcquisition(self, evt=None):
+	def StartDataAcquisition(self, configuration):
 		""" Starts the data acquisition process.
 		    Called only for the first subrun in a series. """
 		    
-		if not isinstance(self.runseries, RunSeries.RunSeries):
-			raise ValueError("No run series defined!")
+		assert len(self.errors) == 0
+		    
+		# first: assemble the run series that we need.
+		# we need to make sure the configuration we got makes sense.
+		# we will compare the requested configuration
+		# with the one from our last run here to make sure
+		# that all of the parameters are valid.
+		last_config = DAQConfiguration()
 
-		if self.detector == None or self.run == None or self.first_subrun == None or self.febs == None:
-			raise ValueError("Run series is improperly configured.")
+		if not configuration.Validate():
+			self.logger.error("Directive message's configuration is invalid:\n%s", pprint.pformat(configuration.__dict__))
+			return mnvruncontrol.backend.DataAcquisitionManager.ConfigurationError("Invalid configuration.")
+		elif not( (configuration.run > last_config.run) or (configuration.run == last_config.run and configuration.subrun >= last_config.subrun) ):
+			self.logger.error("Directive message requests invalid run/subrun numbers: %d/%d (last config was %d/%d)", configuration.run, configuration.subrun, last_config.run, last_config.subrun)
+			return mnvruncontrol.backend.DataAcquisitionManager.ConfigurationError("Invalid run/subrun pair.")
 
-		# try to get a lock on each of the readout nodes
-		# as well as any MTest beamline DAQ nodes
-		failed_connection = None
-		nodelist = self.readoutNodes + self.mtestBeamDAQNodes if self.mtest_useBeamDAQ else self.readoutNodes
-		for node in nodelist:
-			if node.get_lock():
-				if node.nodetype == "readout":
-					wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
-				self.logger.info(" Got run lock on %s node (id: %s)..." % (node.name, node.id))
-			else:
-				failed_connection = node.name
-				self.logger.critical("Couldn't lock the %s node!  Aborting." % node.name)
-				break
-		if failed_connection:
-			wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm", messagebody=["Cannot get control of dispatcher on the " + failed_connection + " node.",  "Check to make sure that the dispatcher is started on that machine", "and that there are no other run control processes connected to it."], messageheader="No lock on " + failed_connection + " node") )
-			return
+		self.configuration = configuration
 		
-		# also try to get a lock on any monitor nodes
-		# here it's not a tragedy if we can't, so no erroring.
-		for node in self.monitorNodes:
-			if node.get_lock():
-				self.logger.info(" Got run lock on %s node (id: %s)..." % (node.name, node.id))
+		# get the run series ready
+		self.logger.debug("   preparing run series...")
+		success = self.PrepareRunSeries()
+		if success != True:
+			return success
+		
+		self.logger.debug("   locking remote nodes...")
+		# lock each of the remote nodes that's currently taking orders from this manager.
+		try:
+			responses = self.NodeSendWithResponse(PostOffice.Message(subject="lock_request", request="get", requester_id=self.id), timeout=10)
+		except NodeError:
+			self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
+			return False
+		
+		for response in responses:
+			if response.sender in self.remote_nodes:
+				self.remote_nodes[response.sender].SetLocked(response.success)
+			self.logger.debug("  response from remote node: %s", response)
+		
+		# if we can't lock one of the nodes, the user should be informed.
+		# moreover, if it's a READOUT node, we can't start the run anyway,
+		# so in that case we should abort immediately.
+		ok = True
+		for node_name in self.remote_nodes:
+			node = self.remote_nodes[node_name]
+			if not node.locked:
+				node.status = RemoteNode.ERROR
+				notice = "Cannot lock node '%s'!" % node_name
+				if node.type == RemoteNode.READOUT:
+					severity = Alert.ERROR
+					ok = False
+				else:
+					severity = Alert.WARNING
+				# alerts are automatically logged
+				self.NewAlert(notice=notice, severity=severity)
 			else:
-				self.logger.warning("Couldn't lock the %s monitoring node.  Ignoring..." % node.name)
+				# for now, these nodes are 'ok' so long as we have control of them
+				if node.type not in (RemoteNode.READOUT, RemoteNode.MONITORING):
+					node.status = RemoteNode.OK
+				self.logger.info("     got lock confirmation from node '%s'...", node.name)
+		
+		self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )		
+		
+		if not ok:
+			return False
+
 			
 		# need to make sure all the tasks are marked "not yet completed"
 		for task in self.SubrunStartTasks:
 			task["completed"] = False
 		
 		self.logger.info("Beginning data acquisition sequence...")
-		self.logger.info( "  Run: " + str(self.run) + "; starting subrun: " + str(self.first_subrun) + "; number of subruns to take: " + str(len(self.runseries.Runs)) )
+		self.logger.info( "  Run: %d; starting subrun: %d; number of subruns to take: %d", self.configuration.run, self.configuration.subrun, len(self.run_series.Runs) )
 					
-		self.subrun = 0
+#		self.subrun = 0
+		self.first_subrun = self.configuration.subrun
 		self.running = True
-		self.StartNextSubrun()
+
+		for node_name in self.remote_nodes:
+			node = self.remote_nodes[node_name]
+			if node.type == RemoteNode.READOUT:
+				node.completed = False
+
+		# want to return so that client knows we started ok
+		self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_auto_start") )
+		self.postoffice.Send( self.StatusReport( items=["running", "run_series", "first_subrun"]) )
+		return True
 		
-	def StopDataAcquisition(self, evt=None):
+	def StopDataAcquisition(self, do_auto_start=True):
 		""" Stop data acquisition altogether. """
-		
-		# if we're already trying to stop, there shouldn't be an auto-continuation!
-		if not self.running:
-			auto = False
-		else:
-			auto = hasattr(evt, "auto") and evt.auto
-		
-		self.running = False
 
-		if evt is None or not(hasattr(evt, "allclear")):
+		# if we are currently still running, the subrun needs to be stopped first!
+		if self.running:
+			self.running = False
 			self.logger.info("Stopping data acquisition sequence...")
-			wx.PostEvent(self, Events.EndSubrunEvent(manual=True))
+			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="subrun_end", auto_start=do_auto_start))
 			return
+		else:
+			self.logger.debug("Not running, so we don't need to stop the DAQ.")
 
-		for node in self.readoutNodes:
-			node.release_lock()
-		
-		if self.mtest_useBeamDAQ:
-			for node in self.mtestBeamDAQNodes:
-				node.release_lock()
-		
-		for node in self.monitorNodes:
-			try:
-				node.release_lock()									
-			except:		# don't worry about it.  
-				pass
+		self.logger.info("Unlocking remote nodes...")
+		# release locks from the remote nodes
+		try:
+			responses = self.NodeSendWithResponse(PostOffice.Message(subject="lock_request", request="release", requester_id=self.id), timeout=10)
+		except NodeError:
+			pass
 
-		self.subrun = 0
+		# if we can't unlock one of the nodes, the user should be informed.
+		# we should finish the shutdown sequence, nevertheless.
+		for response in responses:
+			self.remote_nodes[response.sender].SetLocked(False)
+		for node_name in self.remote_nodes:
+			if self.remote_nodes[node_name].locked:
+				notice = "Cannot unlock node '%s'..." % node_name
+				self.NewAlert(notice=notice, severity=Alert.WARNING)
+			else:
+				self.logger.info("Got unlock confirmation from node '%s'...", node_name)
 		
+		# EndSubrun() sometimes increments self.configuration.subrun...
+		if self.configuration.subrun - self.first_subrun <= 1:
+			subrun_string = "subrun %d" % self.first_subrun
+		else:
+			# the subrun number will have been incremented if we started ET
+			# but not if we didn't
+			subrun_adjust = 1 if self.started_et else 0
+			subrun_string = "subruns %d-%d" % (self.first_subrun, self.configuration.subrun - subrun_adjust)
+		self.logger.info("Data acquisition for run %d, %s finished.", self.configuration.run, subrun_string)
 
-		self.logger.info("Data acquisition finished.")
-		wx.PostEvent(self.main_window, Events.StopRunningEvent(auto=auto))		# tell the main window that we're done here.
+		# now that we're finished, the first subrun
+		# will be wherever we left off...
+		self.first_subrun = self.configuration.subrun
+		
+		# be sure to reset this just in case it somehow wasn't.
+		self.problem_pmt_list = None
+
+#		self.subrun = 0
+		
+#		self.logger.info("Informing frontend that run series is over.")
+#		self.postoffice.Send( PostOffice.Message(subject="frontend_info", info="series_end") )
+#		print "do_auto_start is: ", do_auto_start
+		
+		if not self.configuration.is_single_run and self.configuration.auto_start_series and do_auto_start:
+			self.logger.info("Auto-starting next run series...")
+			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="series_auto_start"))
+		else:
+			self.logger.info("Running ended.")
+			self.current_state = "Idle."
+			self.current_progress = (0, 1)
+			# inform the frontend clients where we now stand.
+			self.postoffice.Send( self.StatusReport() )
 
 
 	##########################################
 	# Subrun starters and stoppers
 	##########################################
 		
-	def StartNextSubrun(self, evt=None):
+	def StartNextSubrun(self):
 		""" Prepares to start the next subrun: waits for
 		    the DAQ system to be ready, notifies the main 
 		    window what run we're in, prepares the LI box
@@ -354,12 +771,17 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    acquisition sequence. """
 	
 		self.logger.debug("StartNextSubrun() called.")
+		
+#		self.configuration.subrun = self.first_subrun + self.subrun
 	
 		quitting = not(self.running)
-		self.CloseWindows()			# don't want leftover windows open.
+		
+		if quitting:
+			return
 
 		self.num_startup_steps = len(self.SubrunStartTasks) + len(self.DAQStartTasks)
 		self.startup_step = 0
+		self.last_logged_gate = 0
 
 		# run the startup tasks sequentially.
 		for task in self.SubrunStartTasks:
@@ -370,8 +792,11 @@ class DataAcquisitionManager(wx.EvtHandler):
 			# startup tasks more than once.
 			if not task["completed"]:
 				self.logger.debug("Starting task: %s" % task["message"])
+
 				# notify the main window which step we're on so that the user has some feedback.
-				wx.PostEvent(self.main_window, Events.UpdateProgressEvent(text="Setting up run:\n" + task["message"], progress=(self.startup_step, self.num_startup_steps)) )
+				self.current_state = "Setting up run:\n" + task["message"]
+				self.current_progress = (self.startup_step, self.num_startup_steps)
+				self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress"] ) )
 				
 				# then run the appropriate method.
 				status = task["method"]()
@@ -393,22 +818,36 @@ class DataAcquisitionManager(wx.EvtHandler):
 				#               to the DataAcquisitionManager and
 				#               StartNextSubrun() will be called again.
 				#               in the meantime, control must be
-				#               returned to the main wx loop, so
+				#               returned to the main dispatcher loop, so
 				#               this method needs to be exited
 				#               immediately.
+				#
+				# we should inform the front end any time the 'waiting'
+				# status changes.
+
+				do_update = self.waiting != (status is None)
+				self.waiting = (status is None)
+				if do_update:
+					self.postoffice.Send( self.StatusReport(items=["waiting"]) )
+
 				if status is None:
 					return
+										
 				if status == False:
 					quitting = True
 					break
 			else:
-				self.logger.debug("Skipping task (already done): %s" % task["message"])
+				self.logger.debug("Skipping task (already done): %s", task["message"])
 			self.startup_step += 1
+
+		# clear out the PMT list (otherwise non-control clients will always be stuck on it)
+		self.problem_pmt_list = None
+		self.postoffice.Send( self.StatusReport(items=["problem_pmt_list",]) )
 			
 		# if running needs to end, there's some cleanup we need to do first.
 		if quitting:
-			self.logger.warning("Subrun " + str(self.first_subrun + self.subrun) + " aborted.")
-			wx.PostEvent(self, Events.StopRunningEvent(allclear=True))		# tell the main window that we're done here.
+			self.logger.warning("Subrun %d aborted.", self.configuration.subrun)
+			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="series_end", early_abort=True))
 			return
 
 		# all the startup tasks were successful.
@@ -418,192 +857,177 @@ class DataAcquisitionManager(wx.EvtHandler):
 
 		# the ET file name is the name used for the ET system file.
 		# all other data file names are based on it.
-		self.ET_filename = '%s_%08d_%04d_%s_v09_%02d%02d%02d%02d%02d' % (MetaData.DetectorTypes.code(self.detector), self.run, self.first_subrun + self.subrun, MetaData.RunningModes.code(self.runinfo.runMode), now.year % 100, now.month, now.day, now.hour, now.minute)
+		self.configuration.et_filename = '%s_%08d_%04d_%s_v08_%02d%02d%02d%02d%02d' % (self.configuration.detector.code, self.configuration.run, self.configuration.subrun, self.configuration.run_mode.code, now.year % 100, now.month, now.day, now.hour, now.minute)
+
 		
-		# raw data written by the MINERvA DAQ
-		self.raw_data_filename = self.ET_filename + '_RawData.dat'
+		# raw data written by the event builder
+		self.raw_data_filename = self.configuration.et_filename + '_RawData.dat'
 		
-		wx.PostEvent(self.main_window, Events.SubrunStartingEvent(first_subrun=self.first_subrun, current_subrun=self.subrun, num_subruns=len(self.runseries.Runs)))
+#		wx.PostEvent(self.main_window, Events.SubrunStartingEvent(first_subrun=self.first_subrun, current_subrun=self.subrun, num_subruns=len(self.run_series.Runs)))
 
 		self.current_DAQ_thread = 0
-
-		# set up the signal handler for SIGUSR1, which is
-		# the signal emitted by each of the subprocesses
-		# when they are ready for execution to move on.
-		signal.signal(signal.SIGUSR1, self.StartNextThread)
-
+		
 		# start the first thread manually.
 		# the rest will be started in turn as SIGUSR1 signals
 		# are received by the program.		
 		self.StartNextThread()			
 		
-	def EndSubrun(self, evt):
+	def EndSubrun(self, sentinel=False, auto_start=True):
 		""" Performs the jobs that need to be done when a subrun ends. 
 		
-		    Generally it is only executed as the event handler for an
-		    EndSubrunEvent. """
+		    Generally it is only executed as the handler for a
+		    'subrun_end' message."""
 		
-		# note: this method can be called for a lot of different reasons.
-		# here are the ones I can find (more added as I discover them):
-		#  - session cleanup from a previous unclean shutdown can't contact
-		#     all nodes to inform them they need to shutdown.  to prevent
-		#     a never-ending wait for messages that won't be coming,
-		#     OldSessionCleanup() passes us an EndSubrunEvent with "allclear"
-		#     and "sentinel".  this mimics the next item.
-		#  - 'daq_finished' messages received from all readout nodes.  
-		#      SocketThread posts us an EndSubrunEvent with "allclear" and "sentinel."
-		#  - an essential process dies.  DAQthread object posts us
-		#     an EndSubrunEvent with "processname".
-		#  - user wants to skip to the next subrun in a run series.
-		#     Run control frontend posts us an EndSubrunEvent with
-		#     no special attributes.
-		#  - user wants to stop the subrun or run series.  StopDataAcquisition()
-		#     method of this object passes us an EndSubrunEvent with
-		#     "manual".
-
 		# block from trying to shut down twice simultaneously
 		if not self.can_shutdown:
 			return
 		self.can_shutdown = False
 
-		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finalizing...")
+		self.logger.info("Subrun %d finalizing...", self.configuration.subrun)
 		
-		# we need to prevent the delivery of messages while we're shutting down.
-		# after we're done, there won't be any subscriptions so it won't matter
-		# if messages arrive after that.
-		with self.messageHandlerLock:
-			self.logger.debug("Stopping remote nodes...")
-			if hasattr(evt, "processname") and evt.processname is not None:
-				self.running = False
-				header = evt.processname + " quit prematurely!"
-				message = ["The essential process '" + evt.processname + "' died before the subrun was over.", "Running has been halted for troubleshooting."]
-				wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm", messageheader=header, messagebody=message))
+		self.logger.info("  ... instructing readout and MTest nodes to shut down...")
+
+		step = 0
+		numsteps = 1
 		
-			num_mtest_nodes = len(self.mtestBeamDAQNodes) if self.mtest_useBeamDAQ else 0
-			numsteps = num_mtest_nodes + len(self.readoutNodes) + len(self.DAQthreads) + 1		# gotta stop all the beamline DAQ nodes, readout nodes, close the DAQ threads, and close the 'done' signal socket.
-			step = 0
+		# check if we need to stop any of the nodes
+		stop_readout = False
+		stop_mtest = False
+		for node_name in self.remote_nodes:
+			node = self.remote_nodes[node_name]
+			if node.type == RemoteNode.READOUT and node.completed == False:
+				stop_readout = True
 			
-			# if the subrun is being stopped for some other reason than
-			# all readout nodes exiting cleanly, then we need to make sure
-			# they ARE stopped.
-			if not hasattr(evt, "allclear") or not evt.allclear:
-				success = True
-				wait = False
-				for node in self.readoutNodes:
-					wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping " + node.name + " node...", progress=(step, numsteps)) )
-					if not node.own_lock:
-						node.completed = True
-						continue
+			if node.type == RemoteNode.MTEST and node.completed == False:
+				stop_mtest = True
+
+			# other node types don't need to be forcibly 'stopped'
+			# so they are 'idle' as of now
+			if node.type not in (RemoteNode.READOUT, RemoteNode.MTEST):
+				node.status = RemoteNode.IDLE
+		
+		self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+		responses = []
+
+		try:
+			if stop_readout:
+				responses += self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+			if stop_mtest:
+				responses += self.NodeSendWithResponse( PostOffice.Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=10 )
+		except NodeError:
+			self.NewAlert(notice="Couldn't contact all the nodes to stop them.  The next subrun could be problematic...", severity=Alert.ERROR)
+
+		wait_for_DAQ = False
+		for response in responses:
+			if hasattr(response, "success"):
+				if isinstance(response.success, Exception):
+					self.NewAlert(notice="Couldn't stop the DAQ on the '%s' node!" % response.sender, severity=Alert.ERROR)
+					continue
+				elif response.success == True:
+					self.logger.info("   => '%s' node is stopping...", response.sender)
+				elif response.success == False:
+					self.logger.info("   => '%s' node was not in data acquisition...", response.sender)
+					self.remote_nodes[response.sender].completed = True
+					self.remote_nodes[response.sender].status = RemoteNode.IDLE
+					self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+			else:
+				self.logger.info("   Bogus message from '%s' node:\n%s", response.sender, response)
+				continue
+				
+			# the node sends back 'True' when a DAQ has been stopped.
+			# it returns 'False' when there's no DAQ to stop:
+			# in that case we don't need to wait for a signal.
+			if node.type == RemoteNode.READOUT:
+				wait_for_DAQ = wait_for_DAQ and response.success
+		
+		# if there was a DAQ node still running,
+		# we need to wait until it signals us it's done!
+		if wait_for_DAQ:
+			self.can_shutdown = True
+			return
+		
+		self.waiting = False
+		
+		for node_name in self.remote_nodes:
+			node = self.remote_nodes[node_name]
+			if node.type in (RemoteNode.READOUT, RemoteNode.MTEST) and not node.completed:
+				self.NewAlert(notice="Not all nodes were stopped.  The next subrun could be problematic...", severity=Alert.WARNING)
+				break
+		
+		for threadname in self.DAQ_threads:		
+			self.current_state = "Subrun finishing:\nSignalling ET threads..."
+			self.current_progress = (step, numsteps)
+			self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress", "waiting"] )  )
+
+			thread = self.DAQ_threads[threadname]
+			
+			# the ET system process stops on its own.  just cut off its display feed.
+			if threadname == "et system":
+				thread.relay_output = False
+
+			# the event builder needs to know if it should expect a sentinel.
+			elif threadname == "event builder":
+				# only signal if there's no sentinel coming.
+				# if there isn't, send the process a SIGTERM.
+				if not sentinel:
 					try:
-						success = success and node.daq_stop()
-						wait = True
-					except ReadoutNode.ReadoutNodeNoConnectionException:
-						self.logger.warning("The %s node cannot be reached..." % node.name)
-						success = False
-					except ReadoutNode.ReadoutNodeNoDAQRunningException:		# raised if the DAQ is not running on the node.  not a big deal.
-						node.completed = True
+						thread.process.terminate()
+					# the process might have crashed.
+					except OSError:
+						pass
 				
-					wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=False) )
+				# either way, we stop displaying its output.
+				thread.relay_output = False
 				
-					step += 1
-			
-				if not success:
-					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["Not all readout nodes could be stopped.",  "The next subrun could be problematic..."], messageheader="Not all nodes stopped") )
-
-				# if we WERE able to reach all the nodes, then we should wait
-				# until they've signalled that they have finished data taking.
-				elif wait:
-					self.can_shutdown = True
-					return
-		
-			if self.mtest_useBeamDAQ:
-				success = True
-				for node in self.mtestBeamDAQNodes:
-					success = success and node.daq_stop()
-					step += 1
-		
-				if not success:
-					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["The beamline DAQ node(s) couldn't be stopped.",  "The next subrun could be problematic..."], messageheader="Beamline DAQ node(s) not stopped") )
-				else:
-					mtestDAQ_stopped = True
-			
-			self.logger.debug("Sending 'stop' signal to ET threads...")		
-			for threadname in self.DAQthreads:
-				wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nSignalling ET threads...", progress=(step, numsteps)) )
-
-				thread = self.DAQthreads[threadname]
+			# any other threads should be aborted.
+			elif hasattr(thread, "Abort"):
+				self.logger.info("Stopping thread '%s'...", threadname)	
+				thread.Abort()
 				
-				# the ET system process stops on its own.  just cut off its display feed.
-				if threadname == "et system":
-					thread.SetRelayOutput(False)
-
-				# the event builder needs to know if it should expect a sentinel.
-				elif threadname == "event builder":
-					# only signal if there's no sentinel coming.
-					# if there isn't, send the process a SIGTERM.
-					if not hasattr(evt, "sentinel") or not evt.sentinel:
-						try:
-							thread.process.terminate()
-						# the process might have crashed.
-						except OSError:
-							pass
-					
-					# either way, we stop displaying its output.
-					thread.SetRelayOutput(False)
-					
-				# any other threads should be aborted.
-				elif hasattr(thread, "Abort"):
-					self.logger.info("Stopping thread '%s'..." % threadname)	
-					thread.Abort()
-			
-				step += 1
-			
-			# remove the threads from the dictionary.
-			# we don't need a handle on them any more.
-			self.DAQthreads = {}
-			
-			self.logger.debug("Clearing the LI system...")
-			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
-			for node in self.readoutNodes:
-				try:
-					node.li_configure(li_level=MetaData.LILevels.ZERO_PE.hash)
-				except ReadoutNode.ReadoutNodeNoConnectionException:
-					self.logger.warning("Couldn't reach '%s' node to reset the LI box!", node.name)
-				except ReadoutNode.ReadoutNodeUnexpectedDataException:
-					self.logger.warning("Unexpected response from '%s' readout node.  Can't reset LI box...", node.name)
-					
 			step += 1
 		
-			self.logger.debug("Unsubscribing from listener...")
-			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nStopping listeners...", progress=(step, numsteps)) )
-			for node in self.readoutNodes:
-				self.socketThread.UnsubscribeAll(node.id)
-			self.socketThread.UnsubscribeAll("*")
+		# remove the threads from the dictionary.
+		# we don't need a handle on them any more.
+		self.DAQ_threads = {}
+			
+			
+#		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
 
-			self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " finished.")
-
-			# need to make sure all the tasks are marked "not yet completed" so that they are run for the next subrun
-			for task in self.SubrunStartTasks:
-				task["completed"] = False
-
-			self.current_DAQ_thread = 0			# reset the thread counter in case there's another subrun in the series
-			self.subrun += 1
+		# try to reset the LI box...
+		# but don't worry too much if it can't be--
+		# it might already be unset, etc.  we'll
+		# panic on the startup end if need be.
+		message = PostOffice.Message(subject="readout_directive", mgr_id=self.id,
+		                             directive="li_configure",
+		                             li_level=MetaData.LILevels.ZERO_PE,
+		                             led_groups=MetaData.LEDGroups.ABCD)
+		responses = self.postoffice.Send(message)
+		step += 1
 		
-			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun completed.", progress=(numsteps, numsteps)) )
-			wx.PostEvent( self.main_window, Events.SubrunOverEvent(run=self.run, subrun=self.first_subrun + self.subrun) )
+		self.logger.info("Subrun %d finished.", self.configuration.subrun)
 
-			if self.running and self.subrun < len(self.runseries.Runs):
-				self.logger.debug("Signalling that we're ready for next subrun...")
-				wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
-			else:
-				self.logger.debug("Signalling that all subruns in this run are finished...")
-				# if this isn't a manual (user-initiated) stop,
-				# then the sequence is different
-				auto = not hasattr(evt, "manual") or not evt.manual
-				wx.PostEvent(self, Events.StopRunningEvent(allclear=True, auto=auto))
+		# need to make sure all the tasks are marked "not yet completed" so that they are run for the next subrun
+		for task in self.SubrunStartTasks:
+			task["completed"] = False
 
-		self.logger.debug("EndSubrun() finished.")
+		# we should only increment the subrun number if we
+		# started up ET.  otherwise there's nothing on disk
+		# with the old subrun number, which means we can
+		# reuse it.
+		if self.started_et:
+			self.configuration.subrun += 1
+
+		self.current_state = "Subrun completed."
+		self.current_progress = (numsteps, numsteps)
+		self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress"] ) )
 		
+#		wx.PostEvent( self.main_window, Events.SubrunOverEvent(run=self.run, subrun=self.first_subrun + self.subrun) )
+
+		if self.running and (self.configuration.subrun - self.first_subrun) < len(self.run_series.Runs):
+			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="subrun_auto_start"))
+		else:
+			self.running = False
+			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="series_end", early_abort=False, auto_start=auto_start))		
 
 	##########################################
 	# Helper methods used by StartNextSubrun()
@@ -611,12 +1035,24 @@ class DataAcquisitionManager(wx.EvtHandler):
 	
 	def RunInfoAndConnectionSetup(self):
 		""" Configures the run and sets up connections to the readout nodes. """
-		self.logger.info("Subrun " + str(self.first_subrun + self.subrun) + " begun.")
+		self.logger.info("Subrun %d begun.", self.configuration.subrun)
 		
 		self.can_shutdown = True		# from here on it makes sense to call the EndSubrun() method
+		self.started_et = False		# we haven't started ET yet this subrun
+		self.current_gate = { "number": 0, "type": MetaData.TriggerTypes.UNKNOWN, "time": 0 }
 		
-		self.runinfo = self.runseries.Runs[self.subrun]
-		wx.PostEvent(self.main_window, Events.UpdateSeriesEvent())
+		# copy the information from this subrun into the configuration
+		runinfo = self.run_series.Runs[self.configuration.subrun - self.first_subrun]
+
+		self.configuration.num_gates  = runinfo.gates
+		self.configuration.run_mode   = MetaData.RunningModes[runinfo.runMode]
+		self.configuration.hw_config  = MetaData.HardwareConfigurations[runinfo.hwConfig]
+		self.configuration.li_level   = MetaData.LILevels.MAX_PE if runinfo.ledLevel == "--" else MetaData.LILevels[runinfo.ledLevel]
+		self.configuration.led_groups = MetaData.LEDGroups.ABCD if runinfo.ledLevel == "--" else MetaData.LEDGroups[runinfo.ledGroup]
+
+
+#		wx.PostEvent(self.main_window, Events.UpdateSeriesEvent())
+
 
 		# ET needs to use a rotating port number to avoid blockages.
 		# unfortunately, there's no programmatic way to determine which
@@ -625,7 +1061,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# never reverted back to 1, ... but it does sometimes.)
 		# so we just find one that will work by inspection.
 		self.logger.info("Trying to find a port for use by ET.")
-		self.runinfo.ETport = None
+		self.configuration.et_port = None
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		for port in range(Configuration.params["Socket setup"]["etPortBase"], Configuration.params["Socket setup"]["etPortBase"] + Configuration.params["Socket setup"]["numETports"]):
 			try:
@@ -635,34 +1071,16 @@ class DataAcquisitionManager(wx.EvtHandler):
 				continue
 			else:
 				s.close()
-				self.runinfo.ETport = port
-				break
-		
-		if self.runinfo.ETport is None:
-			wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="All of the ET server ports assigned to the DAQ are in use.  Either wait until they finish or kill some of them before continuing.", messageheader="No ET server ports available") )
-			return False
-			
-		
-		self.logger.info("  ... will use port %d as this subrun's ET port.", self.runinfo.ETport)
+				self.configuration.et_port = port
+			break
 
-		ok = True
-		for node in self.readoutNodes:
-			on = node.ping()
-			ok = ok and on
-			node.configured = False
-			node.completed = False
-			node.shutting_down = False
-			node.sent_sentinel = False
-			wx.PostEvent( self.main_window, Events.UpdateNodeEvent(node=node.name, on=on) )
-		
-		for node in self.monitorNodes:
-			node.ready = False
-				
-		if not ok:
-			wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="Cannot make a connection to the readout node(s).  Running aborted.", messageheader="No connection to readout node(s)") )
-			
-			# need to stop the run startup sequence.
+		if self.configuration.et_port is None:
+			self.NewAlert(notice="All of the ET server ports assigned to the DAQ are in use.  Either wait until they finish or kill some of them before continuing.", severity=Alert.ERROR )
 			return False
+
+		self.logger.info("  ... will use port %d as this subrun's ET port.", self.configuration.et_port)
+
+		self.postoffice.Send( self.StatusReport( items=["running", "configuration"]) )
 		
 		# ok to proceed to next step
 		return True
@@ -674,7 +1092,7 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    receives the appropriate message from all readout nodes then
 		    we will continue. """
 		    
-		self.logger.info("  Using hardware configuration: " + MetaData.HardwareConfigurations.description(self.runinfo.hwConfig))
+		self.logger.info("  Using hardware configuration: %s", self.configuration.hw_config.description)
 		
 		# if this subrun has a different HW config from the one before
 		# (which includes the cases where this is the first subrun
@@ -685,45 +1103,62 @@ class DataAcquisitionManager(wx.EvtHandler):
 		# to use any configuration file at all (so that custom
 		# configurations via the slow control can be used for testing).
 		self.logger.debug("  HW config check.")
-		if self.runinfo.hwConfig != MetaData.HardwareConfigurations.NOFILE.hash and self.runinfo.hwConfig != self.last_HW_config:
-			# NOTE: DON'T consolidate this loop together with the next one.
-			# the subscriptions need to ALL be booked before any of the nodes
-			# gets a "HW configure" command.  otherwise there will be race conditions.
-			for node in self.readoutNodes:
-				self.logger.info("  ==> Booking a subscription for 'HW ready' and 'HW error' messages from readout nodes...")
-				for node in self.readoutNodes:
-					self.socketThread.Subscribe(node.id, node.name, "hw_ready", callback=self, waiting=True, notice="Configuring HW...")
-					self.socketThread.Subscribe(node.id, node.name, "hw_error", callback=self)
-					self.logger.debug("    ... subscribed the %s node." % node.name)
+		if self.configuration.hw_config != MetaData.HardwareConfigurations.NOFILE and self.configuration.hw_config != self.last_HW_config:
+			for node_name in self.remote_nodes:
+				node = self.remote_nodes[node_name]
+				if node.type == RemoteNode.READOUT:
+					node.status = RemoteNode.IDLE
+					node.hw_init = False
 			
-			for node in self.readoutNodes:
-				self.logger.info("   ==> Configuring the %s node..." % node.name)
-				success = False
-				tries = 0
-				while not success and tries < Configuration.params["Readout nodes"]["SCHWwriteAttempts"]:
-					try:
-						success = node.sc_loadHWfile(self.runinfo.hwConfig)
-					except ReadoutNode.ReadoutNodeNoConnectionException:
-						self.logger.info("    ... no connection.")
-						if tries < Configuration.params["Readout nodes"]["SCHWwriteAttempts"]:
-							self.logger.info("   ... will make another attempt in %ds." % Configuration.params["Socket setup"]["connAttemptInterval"])
-						success = False
-					tries += 1
-					time.sleep(Configuration.params["Socket setup"]["connAttemptInterval"])
+			try:
+				responses = self.NodeSendWithResponse(PostOffice.Message(subject="readout_directive", directive="hw_config", hw_config=self.configuration.hw_config, mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10)
+			except NodeError:
+				self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
+				return False
+			
+			for response in responses:
+				if response.success == True:
+					node.hw_init = True
+					node.status = ReadoutNode.OK
+				else:
+					if response.success == False:
+						self.NewAlert( notice="Hardware configuration file for configuration '%s' could not be found on the '%s' readout node..." % (self.configuration.hw_config, response.sender), severity=Alert.ERROR )
+					elif isinstance(response.success, Exception):
+						self.NewAlert( notice="Error configuring hardware on '%s' node.  Error text:\n%s" % (response.sender, response.success), severity=Alert.ERROR )
 					
-				if not success:
-#					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm") )
-					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="Could not configure the hardware for the " + node.name + " readout node.  This subrun will be stopped.", messageheader="Hardware configuration problem") )
-					self.logger.error("Could not set the hardware for the " + node.name + " readout node.  This subrun will be aborted.")
-					# make sure we try to load hardware next time
+					node.status = RemoteNode.ERROR
+					
+					# this will force HW to be reloaded next time a subrun is started
 					self.last_HW_config = None
+					return False
 					
-					# need to stop the run startup sequence.
+			# we've succeeded if initialization of all the hardware
+			# on the readout nodes was successful.
+			# what the other nodes are doing is irrelevant at the moment.
+			success = True
+			for node_name in self.remote_nodes:
+				node = self.remote_nodes[node_name]
+				success = success and (node.type != RemoteNode.READOUT or node.hw_init)
+				if not success:
+					self.NewAlert(notice="Couldn't initialize hardware on '%s' node... " % node.name, severity=Alert.ERROR)
 					return False
 			
+			
 			# record what we did so that the next time we don't have to do it again.
-			self.last_HW_config = self.runinfo.hwConfig
+			self.last_HW_config = self.configuration.hw_config
+			
+			# always check the PMT HVs and periods after setting a new HW config
+			self.do_pmt_check = True
 		else:
+			for node_name in self.remote_nodes:
+				node = self.remote_nodes[node_name]
+				if node.type == RemoteNode.READOUT:
+					node.status = RemoteNode.OK
+					node.hw_init = True
+
+			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+			
+			self.last_HW_config = self.configuration.hw_config
 			self.logger.info("   ==> No HW configuration necessary.")
 			return True
 		
@@ -732,19 +1167,34 @@ class DataAcquisitionManager(wx.EvtHandler):
 		
 	def LIBoxSetup(self):
 		""" Configures the light injection box, if needed. """
-		# set up the LI box to do what it's supposed to, if it needs to be on.
-		if self.runinfo.runMode == MetaData.RunningModes.LI or self.runinfo.runMode == MetaData.RunningModes.MIXED_NUMI_LI:
-			self.logger.info("  Setting up LI:")
-			
-			for node in self.readoutNodes:
-				if not node.li_configure(li_level=self.runinfo.ledLevel, led_groups=self.runinfo.ledGroup):
-					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="The LI box on node '%s' cannot be configured.  Check the settings and the serial connection." % node.name, messageheader="Error configuring LI box") )
-					self.logger.error("  LI Box on '%s' node cannot be configured...", node.name)
-					return False
 
-			self.logger.info("     Configured for LED groups: %s", MetaData.LEDGroups.description(self.runinfo.ledGroup))
+		# set up the LI box to do what it's supposed to, if it needs to be on.
+		if self.configuration.run_mode in (MetaData.RunningModes.LI, MetaData.RunningModes.MIXED_NUMI_LI):
+			li_level   = self.configuration.li_level
+			led_groups = self.configuration.led_groups
+		else:
+			li_level   = MetaData.LILevels.ZERO_PE
+			led_groups = MetaData.LEDGroups.ABCD
 		
+		message = PostOffice.Message(subject="readout_directive", mgr_id=self.id, directive="li_configure",
+		                             li_level=li_level, led_groups=led_groups)
+		
+		try:
+			responses = self.NodeSendWithResponse(message, node_type=RemoteNode.READOUT, timeout=10)
+		except NodeError:
+			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
+			return False
+
+		for response in responses:
+			if response.success:
+				self.remote_nodes[response.sender].status = RemoteNode.OK
+			else:
+				self.NewAlert( notice="The LI box on the '%s' node could not be configured!" % response.sender, severity=Alert.ERROR )
+				if isinstance(response.success, Exception):
+					self.logger.error("LI error text:\n%s", response.success)
 			
+				self.remote_nodes[response.sender].status = RemoteNode.ERROR
+				return False
 					
 		# ok to proceed to next step
 		return True
@@ -756,55 +1206,47 @@ class DataAcquisitionManager(wx.EvtHandler):
 		If not, control is passed to a window that asks
 		the user for input.
 		"""
-		# first cancel the 'HW ready/error' subscriptions.  if we got this far, we've received them all.
-		for node in self.readoutNodes:
-			self.socketThread.Unsubscribe(node.id, node.name, "hw_ready", self)
-			self.socketThread.Unsubscribe(node.id, node.name, "hw_error", self)
 		
-		# we don't need to do the check unless this subrun is the first one of its type
-		if self.subrun == 0 or len(self.runseries.Runs) == 1 or self.runinfo.hwConfig != self.runseries.Runs[self.subrun - 1].hwConfig:
+		# this check is only done at the beginning of a run series
+		# or if the hardware configuration has changed
+		if self.do_pmt_check:
+			problem_boards = self.GetProblemPMTs()
 			thresholds = sorted(Configuration.params["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
-			over = {}
 			needs_intervention = False
-			for node in self.readoutNodes:
-				board_statuses = node.sc_readBoards()
+                        
+			over = {}
+			for board in problem_boards:
+				if board["period"] < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
+					   needs_intervention = True
+					   break
 
-				# this method returns 0 if there are no boards to read
-				if board_statuses == 0:
-					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="notice", messagebody=["The " + node.name + " node is reporting that it has no FEBs attached.",  "Your data will appear suspiciously empty..."], messageheader="No boards attached to " + node.name + " node") )
-					self.logger.warning(node.name + " node reports that it has no FEBs...")
-					continue	# it's still ok to go on, but user should know what's happening
-				elif board_statuses is None:
-#					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm") )
-					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="The " + node.name + " node says it can't read the FEBs.  This subrun will be stopped.", messageheader="Can't read FEBs on " + node.name + " node") )
-					self.logger.warning(node.name + " node reports that can't read its FEBs.  See its log.")
-					return False
-			
-				for board in board_statuses:
-					dev = abs(int(board["hv_dev"]))
-					period = int(board["hv_period"])
-				
-					for threshold in thresholds:
-						if dev > threshold:
-							if threshold in over:
-								over[threshold] += 1
-							else:
-								over[threshold] = 1
-						
-							if over[threshold] > Configuration.params["Readout nodes"]["SCHVthresholds"][threshold]:
-								needs_intervention = True
-								break
-						
-					if period < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
+				for threshold in thresholds:
+					if board["hv_deviation"] > threshold:
+						if threshold in over:
+							over[threshold] += 1
+						else:
+							over[threshold] = 1
+
+					if over[threshold] > Configuration.params["Readout nodes"]["SCHVthresholds"][threshold]:
 						needs_intervention = True
 						break
+
+			# we've done the PMT check now, so unless the HW config changes,
+			# we don't need to do it again this run series.
+			self.do_pmt_check = False
 
 			# does the user need to look at it?
 			# if so, send control back to the main thread.
 			if needs_intervention:
-				wx.PostEvent(self.main_window, Events.NeedUserHVCheckEvent(daqmgr=self))
-				return None
-	
+				  self.logger.info("  ... need user intervention to verify PMT high voltages.")
+				  self.postoffice.Send(PostOffice.Message(subject="frontend_info", info="need_HV_confirmation", pmt_info=problem_boards))
+				  self.problem_pmt_list = problem_boards
+				  return None
+
+
+		self.logger.info("  ... PMT voltages are ok.")
+		self.problem_pmt_list = None
+		
 		# ok to proceed to next step
 		return True
 
@@ -815,33 +1257,42 @@ class DataAcquisitionManager(wx.EvtHandler):
 	def StartNextThread(self, signum=None, sigframe=None):
 		""" Starts the next thread in the sequence.
 		    This method should ONLY be called
-		    as the signal handler for SIGCONT
+		    as the signal handler for SIGUSR1
 		    (otherwise race conditions will result)! """
-		self.logger.debug("StartNextThread called.  Current DAQ thread: %d/%d", self.current_DAQ_thread, len(self.DAQStartTasks))
+		
+		if not self.running:
+			return    
+		
 		if self.current_DAQ_thread < len(self.DAQStartTasks):
-			self.logger.debug("Going to start method: %s", self.DAQStartTasks[self.current_DAQ_thread]["method"])
-			wx.PostEvent( self.main_window, Events.UpdateProgressEvent( text="Setting up run:\n" + self.DAQStartTasks[self.current_DAQ_thread]["message"], progress=(self.startup_step, self.num_startup_steps) ) )
-			self.DAQStartTasks[self.current_DAQ_thread]["method"]()
-			self.current_DAQ_thread += 1
+			self.current_state = "Setting up run:\n" + self.DAQStartTasks[self.current_DAQ_thread]["message"]
+			self.current_progress = (self.startup_step, self.num_startup_steps)
+			self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress"] ) )
+			
+			# do the increments first to prevent race conditions
+			# (i.e., some subsidiary task spawned by a DAQStartTask
+			#  might signal before the DAQStartTask has fully finished)
 			self.startup_step += 1
+			self.current_DAQ_thread += 1
+			self.DAQStartTasks[self.current_DAQ_thread-1]["method"]()
 		else:
 			signal.signal(signal.SIGUSR1, signal.SIG_IGN)		# go back to ignoring the signal...
-			print "Note: requested a new thread but no more threads to start..."
+			self.logger.warning("Note: requested a new thread but no more threads to start...")
 
 	def StartETSys(self):
 		""" Start the et_system process. """
-		events = self.runinfo.gates * Configuration.params["Hardware"]["eventFrames"] * self.febs
+		
+		self.logger.info("  starting the ET system (using ET filename: '%s_RawData')...", self.configuration.et_filename)
+		
+		events = self.configuration.num_gates * Configuration.params["Hardware"]["eventFrames"] * Configuration.params["Hardware"]["num_FEBs"]
 
-		etSysFrame = Frames.OutputFrame(None, "ET system", window_size=(600,200), window_pos=(610,0))
-		etSysFrame.Show(True)
+		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d -c %d -p %d" % ( os.environ["ET_HOME"],
+		                                                                                          Configuration.params["Master node"]["etSystemFileLocation"],
+		                                                                                          self.configuration.et_filename + "_RawData",
+		                                                                                          events, Configuration.params["Hardware"]["frameSize"],
+		                                                                                          os.getpid(),
+		                                                                                          self.configuration.et_port )
 
-		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d -c %d -p %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", events, Configuration.params["Hardware"]["frameSize"], os.getpid(), self.runinfo.ETport)
-
-#		print etsys_command
-
-		self.windows.append( etSysFrame )
-		self.UpdateWindowCount()
-		self.DAQthreads["et system"] = Threads.DAQthread(etsys_command, "ET system", output_window=etSysFrame, owner_process=self, env=self.environment, is_essential_service=True)
+		self.DAQ_threads["et system"] = Threads.DAQthread(process_info=etsys_command, process_identity="ET system", postoffice=self.postoffice, env=os.environ, is_essential_service=True)
 
 	def StartETMon(self):
 		""" Start the ET monitor process.
@@ -849,28 +1300,31 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    Not strictly necessary for data aquisition, but
 		    is sometimes helpful for troubleshooting. """
 		    
-		etMonFrame = Frames.OutputFrame(None, "ET monitor", window_size=(600,600), window_pos=(610,225))
-		etMonFrame.Show(True)
-		
-		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s -c %d -p %d" % (self.environment["ET_HOME"], self.etSystemFileLocation, self.ET_filename + "_RawData", os.getpid(), self.runinfo.ETport)
-		self.windows.append( etMonFrame )
-		self.UpdateWindowCount()
-		self.DAQthreads["et monitor"] = Threads.DAQthread(etmon_command, "ET monitor", output_window=etMonFrame, owner_process=self, env=self.environment)
+		self.logger.info("  starting the ET monitor...")
+		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s -c %d -p %d" % ( os.environ["ET_HOME"], 
+		                                                                             Configuration.params["Master node"]["etSystemFileLocation"],
+		                                                                             self.configuration.et_filename + "_RawData",
+		                                                                             os.getpid(),
+		                                                                             self.configuration.et_port )
+		self.DAQ_threads["et monitor"] = Threads.DAQthread(process_info=etmon_command, process_identity="ET monitor", postoffice=self.postoffice, env=os.environ)
 
 	def StartEBSvc(self):
 		""" Start the event builder service.
 		
 		    (This does the work of stitching together the frames from the readout nodes.) """
+
+		self.logger.info("  starting the event builder...")
 		    
-		ebSvcFrame = Frames.OutputFrame(None, "Event builder service", window_size=(600,200), window_pos=(0,700))
-		ebSvcFrame.Show(True)
+		eb_command = '%s/bin/event_builder %s/%s %s/%s %d %d' % ( os.environ['DAQROOT'],
+		                                                          Configuration.params["Master node"]["etSystemFileLocation"],
+		                                                          self.configuration.et_filename + "_RawData",
+		                                                          Configuration.params["Master node"]["master_rawdataLocation"],
+		                                                          self.raw_data_filename,
+		                                                          self.configuration.et_port, os.getpid())
 
-		eb_command = '%s/bin/event_builder %s/%s %s/%s %d %d' % (self.environment['DAQROOT'], self.etSystemFileLocation, self.ET_filename + "_RawData", self.rawdataLocation, self.raw_data_filename, self.runinfo.ETport, os.getpid())
+		self.DAQ_threads["event builder"] = Threads.DAQthread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, is_essential_service=True)
+		self.started_et = True
 
-		self.windows.append( ebSvcFrame )
-		self.UpdateWindowCount()
-		self.DAQthreads["event builder"] = Threads.DAQthread(eb_command, "event builder", output_window=ebSvcFrame, owner_process=self, env=self.environment, is_essential_service=True)
-		
 	def StartOM(self):
 		""" Start the online monitoring services on the OM node.
 		
@@ -880,326 +1334,376 @@ class DataAcquisitionManager(wx.EvtHandler):
 		    and the startup of the DAQ -- and if the DAQ starts up first,
 		    the EB on the OM node might miss some of the frames from
 		    the first event. """
+		    
+		num_remote_nodes = 0
+		for node in self.remote_nodes:
+			if self.remote_nodes[node].type == RemoteNode.MONITORING:
+				num_remote_nodes += 1
 		
 		# if no monitoring nodes, just go on to the next step
 		# by emitting the correct signal
-		if len(self.monitorNodes) == 0:
+		if num_remote_nodes == 0:
 			os.kill(os.getpid(), signal.SIGUSR1)
 			return
 		
-		self.logger.debug("Booking subscription(s) for 'OM ready' messages from online monitoring nodes...")
-		for node in self.monitorNodes:
-			self.socketThread.Subscribe(node.id, node.name, "om_ready", callback=self, notice="Initializing online monitoring...")
-			self.logger.debug("    ... subscribed the %s node." % node.name)
-		
 		# the ET system is all set up, so the online monitoring nodes
 		# can be told to connect.
-		for node in self.monitorNodes:
-			try:
-				node.om_start(self.ET_filename, self.runinfo.ETport)
-			except:
-				self.logger.exception("Online monitoring couldn't be started on node '%s'!", node.name)
-				wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="error", messagebody=["The online monitoring system couldn't be started!"], messageheader="Couldn't start the online monitoring system!  The run has been halted.  Check the dispatcher on the '%s' online monitoring node." % node.name) )
-				self.StopDataAcquisition()
+		self.logger.info("  initializing any online monitoring nodes...")
+		message = PostOffice.Message(subject="om_directive", directive="start", mgr_id=self.id, et_pattern=self.configuration.et_filename, et_port=self.configuration.et_port)
+
+		try:
+			responses = self.NodeSendWithResponse(message, node_type=RemoteNode.MONITORING, timeout=10)
+		except NodeError:
+			self.NewAlert(notice="At least one of the monitoring node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
+			self.StopDataAcquisition(do_auto_start=False)
+			return
+
+		for response in responses:
+			if response.subject == "invalid_request" \
+			  or response.success == False:
+				self.NewAlert(notice="Couldn't start the '%s' online monitoring node..." % response.sender, severity=Alert.ERROR)
+				self.StopDataAcquisition(do_auto_start=False)
+				return
+			elif isinstance(response.success, Exception):
+				self.NewAlert(notice="Error starting the '%s' online monitoring node.  Error message text:\n%s" % (response.sender, response.success), severity=Alert.ERROR)
+				self.StopDataAcquisition(do_auto_start=False)
+				return
+			else:
+				self.remote_nodes[response.sender].status = RemoteNode.OK
+				self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+
+				self.logger.info("    ... '%s' node started.", response.sender)
+		
+		os.kill(os.getpid(), signal.SIGUSR1)
 
 	def StartRemoteServices(self):
 		""" Notify all the remote services that we're ready to go.
-		    Currently this includes the DAQs on the MTest beamline
-		    node (if configured) and the readout node(s). """
+		    Currently this includes the online monitoring system
+		    as well as the DAQs on the MTest beamline node (if
+		    configured) and the readout node(s). """
 		    
-		if self.mtest_useBeamDAQ:
-			for node in self.mtestBeamDAQNodes:
-				try:
-					node.daq_start(self.mtest_branch, self.mtest_crate, self.mtest_controller_type, self.mtest_mem_slot, self.mtest_gate_slot, self.mtest_adc_slot, self.mtest_tdc_slot, self.mtest_tof_rst_gate_slot, self.mtest_wc_rst_gate_slot, self.runinfo.gates, self.ET_filename, self.run, self.first_subrun + self.subrun, self.runinfo.runMode)
-				except:
-					self.logger.exception("Couldn't start MTest beamline DAQ!  Aborting run.")
-					wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm", messageheader="Couldn't start beamline DAQ", messagebody=["Couldn't start the beamline DAQ.",  "Run has been aborted (see the log for more details)."]) )
-					self.StopDataAcquisition()
+# TODO: someday this needs to be updated for v5 series run control
+#		if self.mtest_useBeamDAQ:
+#			for node in self.mtestBeamDAQNodes:
+#				try:
+#					node.daq_start(self.configuration)
+#				except:
+#					self.logger.exception("Couldn't start MTest beamline DAQ!  Aborting run.")
+#					wx.PostEvent(self.main_window, Events.AlertEvent(alerttype="alarm", messageheader="Couldn't start beamline DAQ", messagebody=["Couldn't start the beamline DAQ.",  "Run has been aborted (see the log for more details)."]) )
+#					self.StopDataAcquisition()
+		
+		# for non-LI run modes, these values are irrelevant, so we set them to some well-defined defaults.
+		if not (self.configuration.run_mode in (MetaData.RunningModes.LI, MetaData.RunningModes.MIXED_NUMI_LI)):
+			self.configuration.li_level = MetaData.LILevels.ZERO_PE
+			self.configuration.led_groups = MetaData.LEDGroups.ABCD
+		
+		# issue the 'stop' command to the DAQ(s)
+		# to make sure we are in a well-defined starting state
+		self.logger.info("  clearing the DAQ to make sure it's ready...")
+		
+		print "In thread %s" % threading.current_thread().name
+
+		try:
+			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+		except NodeError:
+			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
+			self.StopDataAcquisition(do_auto_start=False)
+			return
+
+		for response in responses:
+			if isinstance(response.success, Exception):
+				self.NewAlert(notice="Error stopping the DAQ on the '%s' readout node.  Error message text:\n%s" % (response.sender, response.success), severity=Alert.ERROR)
+				self.StopDataAcquisition(do_auto_start=False)
+				return
+
+		# now start the DAQ(s)
+		self.logger.info("  starting the DAQ on the readout nodes...")
+
+		try:
+			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
+		except NodeError:
+			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
+			self.StopDataAcquisition(do_auto_start=False)
+			return
+
+
+		for response in responses:
+			if isinstance(response.success, Exception):
+				self.NewAlert(notice="Error starting the DAQ on the '%s' readout node.  Error message text:\n%s" % (response.sender, response.success), severity=Alert.ERROR)
+				self.StopDataAcquisition(do_auto_start=False)
+				return
+			elif response.success == False:
+				self.NewAlert(notice="The DAQ on the '%s' node is already running (even after being issued a 'STOP' command)!  Stopping run for troubleshooting..." % response.sender, severity=Alert.ERROR)
+			elif response.success == True:
+				self.logger.info("   '%s' node started...", response.sender)
+				self.remote_nodes[response.sender].running = True
+				self.remote_nodes[response.sender].completed = False
 				
-
-		# DON'T consolidate this loop together with the next one.
-		# ALL the subscriptions need to be booked before *any* of
-		# the readout nodes is told to start (in case there's a problem
-		# and it returns immediately).		    
-		self.logger.info("  Booking subscriptions for 'DAQ finished' messages from readout nodes...")
-		for node in self.readoutNodes:
-			self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self)
-			self.logger.info("    ... subscribed the %s node." % node.name)
-			
-		self.last_logged_gate = 0
-		self.logger.info("  Booking subscription for gate count messages from readout nodes...")
-		self.socketThread.Subscribe("*", "*", "gate_count", callback=self)
-		self.logger.info("    ... done.")
-
-		# we use a lock to block message reading until all nodes have been initially contacted.
-		# this will ensure that even if one readout node dies right away, things still happen
-		# in the proper sequence.
-		# the 'with' statement ensures that the lock is always released when this block is exited,
-		# even if there's an uncaught exception.
-		with self.messageHandlerLock:
-			for node in self.readoutNodes:
-				errmsg = None
-				errtitle = None
-
-				try:
-					# for non-LI run modes, these values are irrelevant, so we set them to some well-defined defaults.
-					if not (self.runinfo.runMode in (MetaData.RunningModes.LI.hash, MetaData.RunningModes.MIXED_NUMI_LI.hash)):
-						self.runinfo.ledLevel = MetaData.LILevels.ZERO_PE.hash
-						self.runinfo.ledGroup = MetaData.LEDGroups.ABCD.hash
-
-	#				print self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup
-					
-					success = node.daq_start(self.ET_filename, self.runinfo.ETport, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
-				
-					self.logger.info("Started DAQ on %s node (address: %s)" % (node.name, node.address))
-				except ReadoutNode.ReadoutNodeException:
-					wx.PostEvent(self.main_window, Events.AlertMessage(alerttype="notice", messagebody=["Somehow the DAQ service on the " + node.name + " node has not yet stopped.",  "Stopping now -- but be on the lookout for weird behavior."], messageheader=node.name.capitalize() + " DAQ service not yet stopped") )
-
-					stop_success = node.daq_stop()
-					if stop_success:
-						success = node.daq_start(self.ET_filename, self.runinfo.ETport, self.run, self.first_subrun + self.subrun, self.runinfo.gates, self.runinfo.runMode, self.detector, self.febs, self.runinfo.ledLevel, self.runinfo.ledGroup, self.hwinit)
-					else:
-						errmsg = "Couldn't stop the " + node.name +" DAQ service.  Aborting run."
-						errtitle =  title=node.name.capitalize() + " DAQ service couldn't be stopped"
-						success = False
-				except ReadoutNode.ReadoutNodeNoConnectionException:
-					errmsg = "The connection to the " + node.name + " node couldn't be established!  Run will be aborted."
-					errtitle = "No connection to the " + node.name + " node"
-					success = False
-	
-				if not success:
-					header = errtitle if errtitle is not None else node.name.capitalize() + " DAQ service couldn't be started"
-					body = errmsg if errmsg is not None else "Couldn't start the " + node.name + " DAQ service.  Aborting run."
-					wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messageheader=header, messagebody=body) )
-#					wx.PostEvent(self.main_window, Events.ErrorMsgEvent(title=errtitle, text=errmsg) )
-				
-					self.StopDataAcquisition()
-					break
-				else:
-					wx.PostEvent(self.main_window, Events.UpdateNodeEvent(node=node.name, on=True))
-		##end## with self.messageHandlerLock
-	
 		if self.running:
-			self.logger.info("  All DAQ services started.  Data acquisition for subrun %d underway." % (self.subrun + self.first_subrun) )
+			self.current_state = "Running"
+			# increment the subrun number so that if this run crashes,
+			# the next one won't overwrite it -- then decrement it again
+			# so that our bookkeeping is accurate
+			self.configuration.subrun += 1
+			self.configuration.Save(filepath=Configuration.params["Master node"]["runinfoFile"])
+			self.configuration.subrun -= 1
+			
+			# we're waiting now for the 'done' signal from the DAQ
+			self.waiting = True
+			self.postoffice.Send( self.StatusReport(items=["waiting"]) )
+			
+			self.logger.info("  All DAQ services started.  Data acquisition for subrun %d underway." % (self.configuration.subrun) )
 		
-	def StartTestProcess(self):
-		frame = Frames.OutputFrame(self.main_window, "test process", window_size=(600,600), window_pos=(1200,200))
-		frame.Show(True)
+####################################################################
+#  Utilities
+####################################################################
 
-		command = "/home/jeremy/code/mnvruncontrol/scripts/test.sh"
-
-		self.windows.append(frame)
-		self.UpdateWindowCount()
-		self.DAQthreads["test process"] = Threads.DAQthread(command, "test process", output_window=frame, owner_process=self, next_thread_delay=3, is_essential_service=True)
+	def AcknowledgeAlert(self, alert):
+		""" Clears an alert from the stack. """
 		
-
-	##########################################
-	# Utilities, event handlers, etc.
-	##########################################
-
-	def CloseWindows(self):
-		""" Close any windows owned by ET/DAQ processes. """
-		while len(self.windows) > 0:		
-			window = self.windows.pop()
-			
-			if window:		# wx guarantees that 'dead' windows will evaluate to False
-				window.Destroy()
-				
-		self.UpdateWindowCount()
+		for notice_collection in (self.warnings, self.errors):
+			if alert in notice_collection:
+				notice_collection.remove(alert)
 		
-	def UpdateWindowCount(self):
-		for window in self.windows:
-			if not(window):
-				window.pop()
+		# make sure ALL clients know that this alert was cleared
+		self.postoffice.Send( PostOffice.Message(subject="client_alert", action="clear", alert=alert, mgr_id=self.id) )
+	
+	def GetProblemPMTs(self, send_results=False):
+		""" Requests PMT high voltage and period information
+		    from the readout nodes and returns any that are
+		    over the specified thresholds. """
+
+		thresholds = sorted(Configuration.params["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
+
+		try:		
+			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+		except NodeError:
+			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
+			self.StopDataAcquisition(do_auto_start=False)
 		
-		wx.PostEvent( self.main_window, Events.UpdateWindowCountEvent(count=len(self.windows)) )
-
-	def HandleSocketMessage(self, evt):
-		""" Decides what to do with messages received from remote nodes. """
-				
-		# need a lock to prevent race conditions (for example, a second node sending a "daq_finished" event
-		# while the "daq_finished" event for a previous node is still being processed)
-		self.logger.log(5, "Acquiring message handler lock...")
-		self.messageHandlerLock.acquire()
-		self.logger.log(5, "Successfully acquired message handler lock.")
-		
-		# if it's a gate count, send the appropriate event to the front end.
-		if evt.message == "gate_count":
-			gate_count = int(evt.data)
+		nodes_checked = 0
+		problem_boards = []
+		for response in responses:
+			if len(response.sc_board_list) == 0:
+				self.NewAlert(notice="The '%s' node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty..." % response.sender, severity=Alert.WARNING)
 			
-			# we can't rely on getting a notice for every single gate
-			# (MTest in particular reads out too fast for that).
-			# so we use the integer division (//) construction below.
-			stride = Configuration.params["Master node"]["logfileGateCount"]
-			if gate_count // stride > self.last_logged_gate // stride:
-				self.logger.info("  DAQ has reached gate %d..." % gate_count)
-				self.last_logged_gate = gate_count
-				
-			wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Running...\nGate %d/%d" % (gate_count, self.runinfo.gates), progress=(gate_count, self.runinfo.gates)) )
-			
-		# if the OM nodes are ready, then we can proceed to the next step
-		elif evt.message == "om_ready":
-			self.logger.info("OM node '%s' reports that it is ready.", evt.sender)
-			all_configured = True
-			for node in self.monitorNodes:
-				if node.name == evt.sender:
-					node.ready = True
-				elif not node.ready:
-					all_configured = False
-			
-			# start up the next step ...
-			if all_configured:
-				self.StartNextThread()
-			
-		# if it's a HW error message, we need to abort the subrun.
-		elif evt.message == "hw_error":	
-			# make sure we try to load hardware next time
-			self.last_HW_config = None
-
-			self.logger.error("The " + evt.sender + " readout node reports a hardware error.")
-			if self.running:
-				wx.PostEvent( self.main_window, Events.AlertEvent(alerttype="alarm", messagebody="There was a hardware error while configuring the " + evt.sender + " readout node.  Subrun stopped.", messageheader="Hardware configuration problem") )
-				self.logger.error("This subrun will be aborted.")
-			
-				self.logger.warning("Subrun " + str(self.first_subrun + self.subrun) + " aborted.")
-			
-				self.logger.info("Cancelling any message subscriptions in preparation for early shutdown...")
-				for node in self.readoutNodes:
-					self.socketThread.UnsubscribeAll(node.id)
-				
-				# if there's more than one HW error, we don't want to
-				# go through the shutdown sequence more than once.
-				self.running = False
-			
-				wx.PostEvent(self, Events.StopRunningEvent(allclear=True))
-
-		# if it's a HW ready message, then we should see if all the other nodes are ready too
-		elif evt.message == "hw_ready":
-			allconfigured = True
-			for node in self.readoutNodes:
-				# first set the node we've been notified about to "configured."
-				if node.name == evt.sender:
-					self.logger.debug("    ==> %s node reports it's ready." % node.name)
-					node.configured = True
-				# now, check if any other ones are still unconfigured.
-				elif not node.configured:
-					allconfigured = False
-
-			# if everybody's configured, we're ready to move on to the next step.
-			if allconfigured:
-				self.logger.info("    ==> all nodes ready.")
-				wx.PostEvent(self, Events.ReadyForNextSubrunEvent())
-
-		# if it's a DAQ finished message, we need to make sure all the nodes stop
-		# and then do the subrun shutdown stuff.
-		elif evt.message == "daq_finished":
-			alldone = True
-			haveSentinel = False
-
-			matches = re.match("sentinel=(?P<status>YES|NO)", evt.data)
-			try:
-				sentinelStatus = matches.group("status") == "YES"
-			except IndexError:		# thrown when there is no such group
-				sentinelStatus = False
-				
-			for node in self.readoutNodes:
-				# first set the node we've been notified about to "done."
-				if node.name == evt.sender:
-					sentSentinel = "DID" if sentinelStatus else "DID NOT"
-					self.logger.debug("    ==> %s node reports it's done taking data and %s send a sentinel." % (node.name, sentSentinel))
-					node.completed = True
-					node.shutting_down = False
-					node.sent_sentinel = sentinelStatus
+			voltage_list = "  voltage deviations & HV periods of PMTs attached to the '%s' node:\ncroc-channel-board: HV dev, HV period\n=====================================\n" % response.sender
+			for board in response.sc_board_list:
+				voltage_list += "%d-%d-%d: %5d, %5d\n" % (board["croc"], board["chain"], board["board"], board["hv_deviation"], board["period"])
+				if board["hv_deviation"] > min(thresholds) or board["period"] < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
+					board["node"] = response.sender
+					problem_boards.append(board)
 					
-					self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", self)
-					
-				else:
-					alldone = alldone and node.completed
-					
-				# either way, we need to know if a sentinel frame was sent.
-				haveSentinel = haveSentinel or node.sent_sentinel
-
-					
-					
-				# we DON'T force the other nodes to shut down because
-				# the nodes depend on each other for gate synchronization
-				# (when there are more than one).  therefore they SHOULD
-				# all shut down when the first one goes down anyway.
-				#
-				# this can of course be re-implemented if necessary, but
-				# it suffers from a synchronization problem that will need
-				# to be addressed:
-				#    this method needs to use a lock to make sure it
-				#    doesn't try to process two messages simultaneously
-				#    and interfere with itself.  however, usually the
-				#    second node to finish finishes (and sends its message)
-				#    while the message from the first node is still being
-				#    processed.  that means that the daq_stop() command in
-				#    the implementation below is issued AFTER the node has
-				#    already finished -- and so we SHOULD wait for that signal
-				#    to arrive (which would mean one more call of this method)
-				#    rather than stopping it via daq_stop() (since it's already
-				#    stopped anyway).
-				#
-				# another question is whether waiting on the remote nodes
-				# is the right method for deciding whether a subrun is done
-				# altogether.  if communication is too fast, we might stop
-				# the event builder before it has completely assembled the
-				# last gate ...
+			self.logger.info(voltage_list)
 				
+			nodes_checked += 1
 
-#				# now, check if any other ones are still running.
-#				elif not node.completed:
-#					# makes sure that if this is an abnormal shutdown,
-#					# all the other nodes are shut down too.
-#					if not node.daq_checkStatus():
-#						
-#					
-#					if not node.shutting_down:
-#						try:
-#							success = node.daq_stop()
-#						
-#							if not success:
-#								wx.PostEvent( self.main_window, Events.ErrorMsgEvent(text="Couldn't stop the %s node.  The dispatcher on that node will probably need to be restarted and any leftover DAQ processes killed." % node.name, title="Couldn't stop %s DAQ" % node.name) )
-#								self.logger.error("Couldn't stop the DAQ on the %s node!")
-#						
-#								# we mark this one as shut down because otherwise we'll never stop!
-#								# however, we DON'T set alldone to False here because this node is effectively "done" now.
-#								node.completed = True
-#								node.shutting_down = False
-#							# if we successfully got through to the node to tell it to stop,
-#							# we'll need to wait on it to give us the right signal.
-#							# that will mean this method will be called again ==> not done.
-#							else:
-#								alldone = False
-#						except ReadoutNode.ReadoutNodeNoDAQRunningException:			# if it's already closed, then it's no problem.  (see above.)
-#							node.completed = True
-#					else:
-#						alldone = False
-				
-#				if node.completed:
-#					print "%s node is done." % node.name
-#				else:
-#					print "%s node is not done yet." % node.name
-#				
-#				print "alldone? %d" % alldone
-				
-			if alldone:
-				# all DAQs have been closed cleanly.
-				# the subrun needs to end then.
-				# we pass 'allclear = True' to signify this.
-				self.logger.info("All nodes finished.  Sentinel status: %s" % str(haveSentinel))
-				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True, sentinel=haveSentinel))
+		if nodes_checked == 0:
+			self.NewAlert(notice="No nodes responded with PMT voltages.  Check the dispatchers on your readout nodes!", severity=Alert.ERROR)
+			self.StopDataAcquisition(do_auto_start=False)
 
+		if send_results:
+			self.postoffice.Send( PostOffice.Message(subject="frontend_info", info="pmt_update", pmt_info=problem_boards) )
 		else:
-			self.logger.debug("Got a message I don't know how to handle (subject: '%s').  Ignoring.", evt.message)
+			return problem_boards
+
+	def NodeSendWithResponse(self, message, node_type=None, timeout=None, with_exception=False):
+		""" Utility method to send a message to the readout nodes.
+		    It verifies that the senders of response messages are
+		    actually within the node list.  It can also optionally
+		    verify that a response was received from each node
+		    of a certain type (or every node in the list). """
+		    
+		responses = self.postoffice.SendAndWaitForResponse( message, timeout=timeout, with_exception=with_exception )
+
+		out_responses = []
+		responses_received = dict( [ (node_name, False) for node_name in self.remote_nodes ] )
+		for response in responses:
+			# occasionally we get responses from the local node.  ignore those.
+			if len(response.return_path) == 0:
+				continue
+			elif response.sender not in self.remote_nodes:
+				self.logger.warning("Got response from a node I don't have in my list.  Who are you?? (name: %s, address: %s)", response.sender, response.return_path[0])
+				continue
 			
+			responses_received[response.sender] = True
+			out_responses.append(response)
 
-		self.messageHandlerLock.release()
-		self.logger.log(5, "Released message handler lock.")
+		missing_nodes = []
+		
+		if node_type is not None:
+			for node in responses_received:
+				if (node_type == RemoteNode.ANY or node_type == self.remote_nodes[node].type) and not responses_received[node]:
+					missing_nodes.append(node)
+		
+		if len(missing_nodes) > 0:
+			raise NodeError("Responses were not received from the following nodes: %s" % missing_nodes)
+		
+		return out_responses
+		
 
-	def RelayProgressToDisplay(self, evt):
-		""" Pass along an 'update progress' event (usu. from the SocketThread) to the main run control. """
-		# just pass the event along (so long as we're running).
-		if self.running:
-			wx.PostEvent(self.main_window, evt)
+	def NewAlert(self, notice, severity):
+		""" Adds a new alert to the stack and sends a message
+		    out to clients indicating there's a notice waiting.
+		    
+		    In addition, if the alert is an ERROR, running is
+		    halted. """
+		
+		alert = Alert.Alert(notice, severity, manager=True)
+		
+		if severity == Alert.WARNING:
+			self.logger.warning(alert.notice)
+			self.warnings += [alert,]
+		else:
+			self.logger.error(alert.notice)
+			self.errors += [alert,]
+#			self.running = False
+		
+		self.postoffice.Send( PostOffice.Message(subject="client_alert", mgr_id=self.id, alert=alert, action="new") )
+
+	def OMStatusHandler(self, message):
+		""" Handles updates from an online monitoring node
+		    about changes in its state. """
+		
+		if not hasattr(message, "state"):
+			self.logger.info("OM status message from '%s' node is badly formed.  Ignoring.  Message:\n%s", message.sender, message)
+			return
+		
+		if message.state == "om_error":
+			self.NewAlert(notice="An error was reported on the '%s' monitoring node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
+			self.remote_nodes[message.sender].status = RemoteNode.ERROR
+			self.StopDataAcquisition(do_auto_start=False)
+
+			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+
+
+		# DON'T HANDLE THE "om_ready" CASE HERE.
+		# it will deadlock because the StartOM()
+		# method is ALREADY waiting for that response!
+		
+	def PrepareRunSeries(self):
+		""" Prepares a run series based on the values
+		    found in the current configuration.  """
+		    
+		if self.configuration.is_single_run:
+			self.run_series = RunSeries.RunSeries()
+			run = RunSeries.RunInfo( gates=self.configuration.num_gates, \
+			                         runMode=self.configuration.run_mode.hash,\
+			                         hwcfg=self.configuration.hw_config.hash,\
+			                         ledLevel=self.configuration.li_level.hash,\
+			                         ledGroup=self.configuration.led_groups.hash ) 
+			self.run_series.AppendRun(run)
+		else:
+			try:
+				dblocation = "%s/%s" % (Configuration.params["Master node"]["runSeriesLocation"], self.configuration.run_series.code)
+				db = shelve.open(dblocation)
+				self.run_series = db["series"]
+				db.close()
+			except (anydbm.error, KeyError):
+				self.logger.error("Cannot load run series file '%s'!", dblocation)
+				return mnvruncontrol.backend.DataAcquisitionManager.FileError("Run series file '%s' cannot be loaded..." % self.configuration.run_series.code)
+		
+		# we always check the PMT HVs and periods at the beginning of a run series
+		self.do_pmt_check = True
+		
+		return True
+
+	def SeriesInfo(self, series):
+		""" Answers inquiries from clients asking about
+		    the details of particular run series. """
+		
+		self.logger.info("Client wants info about run series '%s'.", series.description)
+		message = PostOffice.Message(subject="frontend_info", info="series_update", series=series)
+		
+		try:
+			dblocation = "%s/%s" % (Configuration.params["Master node"]["runSeriesLocation"], series.code)
+			db = shelve.open(dblocation)
+			message.series_details = db["series"]
+			db.close()
+		except (anydbm.error, KeyError):
+			# if we can't load it, we'll send them a blank run series
+			self.logger.warning("Couldn't open file for run series '%s' (tried: '%s')!  Returning a blank series...", series.description, dblocation)
+			message.series_details = RunSeries.RunSeries()
+		
+		self.postoffice.Send(message)
+	
+	def StatusReport(self, message=None, items=[]):
+		""" Fills a message with a bunch of status information.
+		
+		    It is only all given only when a client
+		    specifically requests it or a subrun is beginning
+		    (it generates a fair bit of information and sending
+		    it over the network unasked-for would probably
+		    slow things down). 
+		    
+		    Otherwise, methods throughout the DAQ manager
+		    use the items[] list to specify which pieces of
+		    information should be given."""
+		
+		
+		# some defaults
+		if message is None:
+			message = PostOffice.Message( subject="frontend_info", info="status_update" )
+		if len(items) == 0:
+			items = ( "configuration", "current_state", "current_progress", "current_gate", "first_subrun",
+			          "errors", "warnings", "problem_pmt_list", "remote_nodes", "running", "run_series",
+			          "control_info", "waiting" )
+
+		self.logger.debug("Generating status report with the following items: %s", items)
+
+		message.status = {}
+		for item in items:
+			message.status[item] = copy.deepcopy(self.__dict__[item])
+			
+		message.status["time_generated"] = time.time()
+		
+		return message
+		
+####################################################################
+#  Utility classes
+####################################################################
+
+
+
+class AlertError(Exception):
+	pass
+
+class ConfigurationError(Exception):
+	pass
+	
+class FileError(Exception):
+	pass
+	
+class NodeError(Exception):
+	pass
+	
+class RunError(Exception):
+	pass
+			
+####################################################################
+####################################################################
+"""
+  This module should probably never be imported elsewhere.
+  It's designed to run directly as a background process
+  coordinating the pieces of the DAQ proper with input
+  from a frontend client over a socket.
+  
+  Otherwise this implementation will bail with an error.
+"""
+if __name__ == "__main__":
+	environment = {}
+	try:
+		os.environ["DAQROOT"]
+		os.environ["ET_HOME"]
+		os.environ["ET_LIBROOT"]
+		os.environ["LD_LIBRARY_PATH"]
+	except KeyError:
+		sys.stderr.write("Your environment is not properly configured.  You must run the 'setupdaqenv.sh' script before launching the dispatcher.\n")
+		sys.exit(1)
+
+	dispatcher = DataAcquisitionManager()
+	dispatcher.bootstrap()
+	
+	sys.exit(0)
+else:
+	raise RuntimeError("This module is not designed to be imported!")

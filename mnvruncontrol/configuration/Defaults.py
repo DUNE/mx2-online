@@ -15,12 +15,18 @@ NOTIFY_ADDRESSES = ["jwolcott@fnal.gov",]
 # Data acquisition properties.
 EVENT_SIZE = 2048 
 FRAMES = 5
+NUM_FEBS = 491				# full detector
 
 # LI settings
 LI_ONE_PE_VOLTAGE = 5.07		# from Brandon Eberly (eberly@fnal.gov), 3/5/2010
 LI_MAX_PE_VOLTAGE = 12.07	# currently the maximum the LI box can output.
 
 # Run control properties.
+FRONTEND_LOGFILE_DEFAULT = "/tmp/runcontrol.log"
+FRONTEND_LISTEN_PORT = 3000
+BLINK_INTERVAL = 2		# in seconds
+BELL_INTERVAL = 10		# in seconds
+
 CONFIG_DB_NAME = "run_control_config.db"
 CONFIG_DB_LOCATION = "/work/conditions"
 
@@ -33,11 +39,10 @@ ET_SYSTEM_LOCATION_DEFAULT = "/work/data/etsys"
 RAW_DATA_LOCATION_DEFAULT = "/work/data/rawdata"
 
 RESOURCE_LOCATION_DEFAULT = "/work/software/mnvruncontrol/resources"
-DAQMGR_SESSION_FILE = "/work/conditions/daqmgr_session.dat"
+DAQMGR_SESSION_FILE = "/work/conditions/daqmgr_session.db"
 
 LOGFILE_NAME_PATTERN = "^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w{5})_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller(?P<controller>[01])Log.txt$"
 
-NOTIFICATION_INTERVAL = 2		# in seconds
 LOGFILE_GATE_COUNT_INTERVAL = 50	# the master log file will get a notice every this many gates
 
 # Socket communication defaults.
@@ -54,16 +59,18 @@ MONITOR = "mnvnearline1.fnal.gov"
 
 MAX_CONNECTION_ATTEMPTS = 3
 CONNECTION_ATTEMPT_INTERVAL = 0.5	# in seconds
-SOCKET_TIMEOUT = 2.5  # in seconds
+MESSAGE_TIMEOUT = 5  # in seconds
 
 # number of times in a row to log the same request
 # in the dispatcher before suppressing
 MAX_REPEATED_REQUEST_LOGS = 5
 
 # dispatcher process details
+MASTER_DISPATCHER_PIDFILE = "/work/conditions/daqmgr_dispatcher.pid"
 READOUT_DISPATCHER_PIDFILE = "/work/conditions/readout_dispatcher.pid"
 READOUT_DISPATCHER_LOGFILE = "/work/data/logs/readout_dispatcher.log"
 SAM_FILE_LOCATION = "/work/data/sam"
+LAST_TRIGGER_FILE = "/work/conditions/last_trigger.dat"
 OM_DISPATCHER_PIDFILE = "/tmp/om_dispatcher.pid"
 OM_LOGFILE_LOCATION_DEFAULT = "/work/logs"
 OM_DISPATCHER_LOGFILE = "%s/om_dispatcher.log" % OM_LOGFILE_LOCATION_DEFAULT
@@ -99,4 +106,7 @@ SLOWCONTROL_NUM_WRITE_ATTEMPTS = 3
 SLOWCONTROL_BEAM_FILE              = "beam.hwcfg"
 SLOWCONTROL_LI_FILE                = "li.hwcfg"
 SLOWCONTROL_LI_DISCRIMINATORS_FILE = "li_with_discriminators.hwcfg"
+
+# logging!
+PO_LOGFILE_DEFAULT = "/work/data/logs/postoffice.log"
  

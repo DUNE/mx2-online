@@ -13,6 +13,7 @@
 import subprocess
 import threading
 import time
+import copy
 import sys
 import re
 import os
@@ -20,18 +21,19 @@ import os.path
 import logging
 import logging.handlers
 
+import mnvruncontrol.configuration.Logging
+
 from mnvruncontrol.configuration import MetaData
-from mnvruncontrol.configuration import Defaults
-from mnvruncontrol.configuration import SocketRequests
 from mnvruncontrol.configuration import Configuration
 
 from mnvruncontrol.backend import Dispatcher
+from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import LIBox
 
 from mnvconfigurator.SlowControl.SC_MainMethods import SC as SlowControl
 
 
-class RunControlDispatcher(Dispatcher.Dispatcher):
+class ReadoutDispatcher(Dispatcher.Dispatcher):
 	"""
 	This guy is the one who listens for requests and handles them.
 	There should NEVER be more than one instance running at a time!
@@ -41,35 +43,24 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 	def __init__(self):
 		Dispatcher.Dispatcher.__init__(self)
 	
-		# the master slow control object.  it handles
-		# the interface with the hardware.
+		# the master slow control object.
+		# it handles the interface with the hardware.
 		# we can't initialize it here because it seems to
 		# use file descriptors to interact with the hardware,
 		# which means that during daemonization the
 		# hardware link would get broken.
 		# it will be initialized when used.
-		self.slowcontrol = None
-		# same for the LI box.
-		self.LIBox = None
+		self.slow_control = None
+		
+		# the LI box object.
+		# this one does all communication with the LI box
+		# via an RS-232 (serial) interface provided by the
+		# PySerial module.
+		# again we wait to initialize it until it's needed.
+		self.li_box = None
 
-		# Dispatcher() maintains a central logger.
-		# We want a file output, so we'll set that up here.
-		self.filehandler = logging.handlers.RotatingFileHandler(Configuration.params["Readout nodes"]["readout_logfileName"], maxBytes=204800, backupCount=5)
-		self.filehandler.setLevel(logging.INFO)
-		self.filehandler.setFormatter(self.formatter)		# self.formatter is set up in the Dispatcher superclass
-		self.logger.addHandler(self.filehandler)
+		self.logger = logging.getLogger("Dispatcher.Readout")
 
-		# we need to specify what requests we know how to handle.
-		self.valid_requests += SocketRequests.ReadoutRequests
-		self.handlers.update( { "alive"          : self.ping,
-		                        "daq_running"    : self.daq_status,
-		                        "daq_last_exit"  : self.daq_exitstatus,
-		                        "daq_start"      : self.daq_start,
-		                        "daq_stop"       : self.daq_stop,
-		                        "li_configure"   : self.li_configure,
-		                        "sc_sethwconfig" : self.sc_sethw,
-		                        "sc_readboards"  : self.sc_readboards } )
-		                        
 		self.cleanup_methods += [self.daq_stop]
 		
 		self.pidfilename = Configuration.params["Readout nodes"]["readout_PIDfileLocation"]
@@ -77,235 +68,291 @@ class RunControlDispatcher(Dispatcher.Dispatcher):
 
 		self.daq_thread = None
 
-	def daq_status(self, matches, show_details, **kwargs):
+		# we need to know when the DAQ manager goes up or down,
+		# as well as when the DAQ on this node is supposed to start or stop
+		handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.daq_mgr_status_handler,
+			        PostOffice.Subscription(subject="readout_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.readout_directive_handler }
+	
+		for subscription in handlers:
+			self.postoffice.AddSubscription(subscription)
+			self.AddHandler(subscription, handlers[subscription])
+
+
+	def daq_mgr_status_handler(self, message):
+		""" Method to respond to changes in status of the
+		    DAQ manager (books subscriptions, etc.). """
+
+		self._daq_mgr_status_update(message, ["readout_directive", ])		    
+	
+	def readout_directive_handler(self, message):
+		""" Handles incoming directives for a readout node. """
+		
+		self.logger.debug("Manager directive message:\n%s", message)
+		
+		if not ( hasattr(message, "directive") ):
+			self.logger.info("Readout directive message is improperly formatted.  Ignoring...")
+			return
+		
+		response = message.ResponseMessage()
+		if hasattr(message, "mgr_id") and message.mgr_id in self.identities:
+			response.sender = self.identities[message.mgr_id]
+		else:
+			response.sender = self.id
+		
+		# there are a few directives for which identification
+		# and a lock are unnecessary, so we consider them first.
+		if message.directive == "daq_running":
+			response.daq_running = self.daq_status()
+		elif message.directive == "daq_exit_status":
+			response.daq_exit_status = self.daq_exitstatus()
+		elif message.directive == "sc_read_boards":
+			response.sc_board_list = self.sc_readboards()
+		
+		# the rest are commands, so we first need to verify
+		# that this manager is allowed to issue them.
+		else:
+			if not hasattr(message, "mgr_id"):
+				self.logger.info("Readout directive message is improperly formatted.  Ignoring...")
+				return
+				
+			if not self.client_allowed(message.mgr_id):
+				response.subject = "not_allowed"
+			else:
+				if message.directive == "daq_start":
+					status = self.daq_start(message.configuration, identity=self.identities[message.mgr_id])
+			
+				elif message.directive == "daq_stop":
+					status = self.daq_stop()
+					
+				elif message.directive == "hw_config":
+					status = self.sc_sethw(message.hw_config, identity_to_report=response.sender)
+		
+				elif message.directive == "li_configure":
+					status = self.li_configure(message.li_level, message.led_groups)
+		
+				if status is None:
+					response.subject = "invalid_request"
+				else:
+					response.subject = "request_response"
+					response.success = status
+		self.postoffice.Send(response)
+
+	def daq_status(self):
 		""" Returns 1 if there is a DAQ subprocess running; 0 otherwise. """
-		if show_details:
-			self.logger.info("Client wants to know if DAQ process is running.")
+		self.logger.info("Manager wants to know if DAQ process is running.")
 		
 		if self.daq_thread and self.daq_thread.is_alive():
-			if show_details:
-				self.logger.info("   ==> It IS.")
-			return "1"
+			self.logger.info("   ==> It IS.")
+			return True
 		else:
-			if show_details:
-				self.logger.info("   ==> It ISN'T.")
-			return "0"
+			self.logger.info("   ==> It ISN'T.")
+			return False
 	
-	def daq_exitstatus(self, matches, show_details, **kwargs):
+	def daq_exitstatus(self):
 		""" Returns the exit code last given by a DAQ subprocess, or,
-		    if no DAQ process has yet exited, returns 'NONE'. """
-		self.logger.info("Client wants to know last DAQ process exit code.")
+		    if no DAQ process has yet exited, returns None. """
+		self.logger.info("Manager wants to know last DAQ process exit code.")
 
 		if self.daq_thread is None:
-			if show_details:
-				self.logger.info("   ==> DAQ has not yet been run.")
-			return "NONE"
+			self.logger.info("   ==> DAQ has not yet been run.")
+			return None
 		elif self.daq_thread.is_alive():
-			if show_details:
-				self.logger.info("   ==> Process is currently running.  Will need to wait for it to finish.")
-			return "NONE"
+			self.logger.info("   ==> Process is currently running.  Will need to wait for it to finish.")
+			return None
 		else:
-			if show_details:
-				self.logger.info("   ==> Exit code: " + str(self.daq_process.returncode) + " (for codes < 0, this indicates the signal that stopped the process).")
-			return str(self.daq_thread.returncode)
+			self.logger.info("   ==> Exit code: %d (for codes < 0, this indicates the signal that stopped the process).", self.daq_process.returncode)
+			return self.daq_thread.returncode
 
-	def daq_start(self, matches, show_details, **kwargs):
+	def daq_start(self, configuration, identity):
 		""" Starts the DAQ slave service as a subprocess.  First checks
-		    to make sure it's not already running.  Returns 0 on success,
-		    1 on some DAQ or other error, and 2 if there is already
-		    a DAQ process running. """
+		    to make sure it's not already running.  Returns True on success,
+		    False if there is already a DAQ process running, and if an
+		    exception is raised, the exception is returned. """
 		    
-		if show_details:
-			self.logger.info("Client wants to start the DAQ process.")
-			self.logger.info("   Configuration:")
-			self.logger.info("      Run number: " + matches.group("run"))
-			self.logger.info("      Subrun number: " + matches.group("subrun"))
-			self.logger.info("      Number of gates: " + matches.group("gates"))
-			self.logger.info("      Run mode: " + MetaData.RunningModes.description(int(matches.group("runmode"))) )
-			self.logger.info("      Detector: " + MetaData.DetectorTypes.description(int(matches.group("detector"))) )
-			self.logger.info("      Number of FEBs: " + matches.group("nfebs") )
-			self.logger.info("      LI level: " + MetaData.LILevels.description(int(matches.group("lilevel"))) )
-			self.logger.info("      LED group: " + MetaData.LEDGroups.description(int(matches.group("ledgroup"))) )
-			self.logger.info("      HW init level: " + MetaData.HardwareInitLevels.description(int(matches.group("hwinitlevel"))) )
-			self.logger.info("      ET file: " + matches.group("etfile") )
-			self.logger.info("      ET port: " + matches.group("etport") )
-
+		logmsg = "Manager wants to start the DAQ process.\n" \
+			  + "   Configuration:\n" \
+		       + "      Run number: %d\n" \
+		       + "      Subrun number: %d\n" \
+		       + "      Number of gates: %d\n" \
+		       + "      Run mode: %s\n" \
+		       + "      Detector: %s\n" \
+		       + "      Number of FEBs: %d\n" \
+		       + "      LI level: %s\n" \
+		       + "      LED group: %s\n" \
+		       + "      HW init level: %s\n" \
+		       + "      ET file: %s\n" \
+		       + "      ET port: %d\n" 
+		self.logger.info(logmsg, configuration.run, configuration.subrun, \
+		                 configuration.num_gates, configuration.run_mode.description, \
+		                 configuration.detector.description, configuration.num_febs, \
+		                 configuration.li_level.description, configuration.led_groups.description, \
+		                 configuration.hw_init.description, configuration.et_filename, configuration.et_port)
+	
 		if self.daq_thread and self.daq_thread.is_alive() is True:
-			if show_details:
-				self.logger.info("   ==> There is already a DAQ process running.")
-			return "2"
+			self.logger.info("   ==> There is already a DAQ process running.")
+			return False
+			
+		# clean up the 'last trigger' file
+		try:
+			os.remove(Configuration.params["Readout nodes"]["lastTriggerFile"])
+		except OSError:
+			pass
 		
 		try:
-			executable = ( environment["DAQROOT"] + "/bin/minervadaq", 
-				          "-et", matches.group("etfile"),
-				          "-p",  matches.group("etport"),
-				          "-g",  matches.group("gates"),
-				          "-m",  matches.group("runmode"),
-				          "-r",  matches.group("run"),
-					     "-s",  matches.group("subrun"),
-				          "-d",  matches.group("detector"),
-				          "-dc", matches.group("nfebs"),
-				          "-ll", matches.group("lilevel"),
-				          "-lg", matches.group("ledgroup"),
-				          "-hw", matches.group("hwinitlevel"),
+			executable = ( 
+			environment["DAQROOT"] + "/bin/minervadaq", 
+				          "-et", str(configuration.et_filename),
+				          "-p",  str(configuration.et_port),
+				          "-g",  str(configuration.num_gates),
+				          "-m",  str(configuration.run_mode.hash),
+				          "-r",  str(configuration.run),
+					     "-s",  str(configuration.subrun),
+				          "-d",  str(configuration.detector.hash),
+				          "-dc", str(configuration.num_febs),
+				          "-ll", str(configuration.li_level.hash),
+				          "-lg", str(configuration.led_groups.hash),
+				          "-hw", str(configuration.hw_init.hash),
 				          "-cf", self.current_HW_file ) 
-			if show_details:
-				self.logger.info("   minervadaq command:")
-				self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
-			self.daq_thread = DAQThread(owner_process=self, logger=self.logger, daq_command=executable, master_address=self.lock_address, etfile=matches.group("etfile"))
-		except:
-			self.logger.error("   ==> DAQ process can't be started!")
-			self.logger.exception("   ==> Error message: ")
-			return "1"
+			self.logger.info("   minervadaq command:")
+			self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
+			self.daq_thread = DAQThread(owner_process=self, daq_command=executable, etfile=configuration.et_filename, identity=identity)
+		except Exception, e:
+			self.logger.exception("   ==> DAQ process can't be started! Error message: ")
+			return e
 		else:
-			if show_details:
-				self.logger.info("    ==> Started successfully.")
-			return "0"
+			self.logger.info("    ==> Started successfully.")
+			return True
 	
-	def daq_stop(self, matches=None, show_details=True, **kwargs):
+	def daq_stop(self):
 		""" Stops a DAQ slave service.  First checks to make sure there
-		    is in fact such a service running.  Returns 0 on success,
-		    1 on some DAQ or other error, and 2 if there is no DAQ
-		    process currently running. """
+		    is in fact such a service running.  Returns True on success,
+		    returns the exception if one is raised during the DAQ startup,
+		    and False if there is no DAQ process currently running. """
 		    
-		if show_details:
-			self.logger.info("Client wants to stop the DAQ process.")
+		self.logger.info("Manager wants to stop the DAQ process.")
 		
 		if self.daq_thread and self.daq_thread.is_alive():
-			if show_details:
-				self.logger.info("   ==> Attempting to stop.")
+			self.logger.info("   ==> Attempting to stop.")
 			try:
 				self.daq_thread.daq_process.terminate()
 				self.daq_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
 				code = self.daq_thread.returncode
 			except Exception, excpt:
-				self.logger.error("   ==> DAQ process couldn't be stopped!")
-				self.logger.exception("   ==> Error message:")
-				return "1"
+				self.logger.exception("   ==> DAQ process couldn't be stopped! Error message:")
+				return excpt
 		else:		# if there's a process but it's already finished
-			if show_details:
-				self.logger.info("   ==> No DAQ process to stop.")
-			return "2"
+			self.logger.info("   ==> No DAQ process to stop.")
+			return False
 
-		if show_details:
-			self.logger.info("   ==> Stopped successfully.  (Process " + str(self.daq_thread.pid) + " exited with code " + str(code) + ".)")
-		return "0"
+		self.logger.info("   ==> Stopped successfully.  (Process %d exited with code %d.)", self.daq_thread.pid, code)
+		return True
 		
-	def li_configure(self, matches, show_details, **kwargs):
-		""" Configures the light injection system using the given values. """
+	def li_configure(self, li_level, led_groups):
+		""" Uses the LI box interface to configure it.
 		
-		if self.LIBox is None:
-			self.LIBox = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])		
-			
-		li_level = MetaData.LILevels[int(matches.group("li_level"))]
-		led_groups = MetaData.LEDGroups[int(matches.group("led_groups"))]
+		    Returns True on success, False if for some
+		    reason the configuration could not be written,
+		    and an exception if one occurred. """
+		
+		if self.li_box is None:
+			self.li_box = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
 		
 		need_LI = True
 		if li_level == MetaData.LILevels.ONE_PE:
-			self.LIBox.pulse_height = Defaults.LI_ONE_PE_VOLTAGE					
+			self.li_box.pulse_height = Defaults.LI_ONE_PE_VOLTAGE                                        
 		elif li_level == MetaData.LILevels.MAX_PE:
-			self.LIBox.pulse_height = Defaults.LI_MAX_PE_VOLTAGE
+			self.li_box.pulse_height = Defaults.LI_MAX_PE_VOLTAGE
 		else:
 			need_LI = False
 
 		# if the LEDs are supposed to be off anyway, just reset the box and be done
 		if not need_LI:
-			self.logger.info("Disabling light injection...")
+			self.logger.info("Disabling light injection for this subrun...")
 			try:
-				self.LIBox.reset()
-				return "0"
-			except LIBox.Error:
-				return "1"
-		
-		if show_details:
-			self.logger.info("Client wants the light injection system configured as follows:\n  LI level: %s\n  LED groups enabled: %s", li_level, led_groups)
+				self.li_box.reset()
+				return True
+			except LIBox.Error as e:
+				return e
 
-		self.LIBox.LED_groups = led_groups.description
-	
+		self.logger.info("Client wants the light injection system configured as follows:\n  LI level: %s\n  LED groups enabled: %s", li_level, led_groups)
+
+		self.li_box.LED_groups = led_groups.description
+
 		try:
-			self.LIBox.write_configuration()
-		except LIBox.Error:
+			self.li_box.write_configuration()
+		except LIBox.Error as e:
 			self.logger.error("The LI box is not responding!  Check the cable and serial port settings.")
-			return "1"
-		except:
-			self.logger.exception("Error configuring the LI box:")
-			return "1"
+			return e
 		finally:
-			self.logger.info( "     Commands issued to the LI box:\n%s", "\n".join(self.LIBox.get_command_history()) )
+			self.logger.info( "     Commands issued to the LI box:\n%s", "\n".join(self.li_box.get_command_history()) )
+
+		return True
 		
-		return "0"
-		
-	def sc_sethw(self, matches, show_details, **kwargs):
+	def sc_sethw(self, hw_config, identity_to_report=None):
 		""" Uses the slow control library to load a hardware configuration
-		    file.  Returns 0 on success, 1 on error, and 2 if 
-		    there is no such file. """
-		hwconfig_hash = int(matches.group("hwconfig"))
-		hwfile = Configuration.params["Readout nodes"][MetaData.HardwareConfigurations.code(hwconfig_hash)] 
-		if show_details:
-			self.logger.info("Client wants to load slow control configuration file: '%s'." % MetaData.HardwareConfigurations.description(hwconfig_hash))
+		    file.  Returns True on success, False if there is no such file,
+		    and the exception itself if one is raised during loading. """
+		hwfile = Configuration.params["Readout nodes"][hw_config.code] 
+		self.logger.info("Manager wants to load slow control configuration file: '%s'.", hw_config.description)
 		
 		fullpath = "%s/%s" % (Configuration.params["Readout nodes"]["SCfileLocation"], hwfile)
 		
 		if not os.path.isfile(fullpath):
-			self.logger.warning("Specified slow control configuration file does not exist: " + fullpath)
-			return "2"
+			self.logger.warning("Specified slow control configuration file does not exist: %s", fullpath)
+			return False
 
 		try:			
 			self.sc_init()
-		except:
+		except Exception, e:
 			self.logger.exception("Hardware error while initializing:")
-			return "1"
+			return e
 		
-		SCHWSetupThread(self, self.slowcontrol, fullpath)
+		SCHWSetupThread(self, self.slow_control, fullpath, identity_to_report=identity_to_report)
 		
 		self.current_HW_file = hwfile
 
-		return "0"
+		return True
 		    
-	def sc_readboards(self, matches, show_details, **kwargs):
+	def sc_readboards(self):
 		""" Uses the slow control library to read a few parameters
 		    from the front-end boards:
 		     (1) the target - actual high voltages (in ADC counts).
 		     (2) the HV period (in seconds)
-		    On success, returns a string of lines consisting of
-		    1 voltage per line, in the following format:
-		    CROC-CHANNEL-BOARD: [voltage_deviation_in_ADC_counts]
-		    On failure, returns the string "NOREAD". 
-                    If the slow control modules return an empty list
-                    (no FEBs), this method returns "NOBOARDS". """
 
-		if show_details:
-			self.logger.info("Client wants high voltage details of front-end boards.")
+		    On success, returns a list of dictionaries with the following
+		    keys: "croc", "channel", "board", "hv_deviation", "period"
+		    
+		    If an exception occurs during the read, that exception is returned."""
+
+		self.logger.info("Manager wants high voltage details of front-end boards.")
 		try:
 			self.sc_init()
-			feblist = self.slowcontrol.HVReadAll(0)		# we want ALL boards, that is, those that deviate from target HV by at least 0...
-		except:
+			feblist = self.slow_control.HVReadAll(0)		# we want ALL boards, that is, those that deviate from target HV by at least 0...
+		except Exception, e:
 			self.logger.exception("Error trying to read the voltages:")
 			self.logger.warning("No read performed.")
-			return "NOREAD"
+			return e
 
-		if len(feblist) == 0:
-			return "NOBOARDS"
-		
-		formatted_feblist = [ "%s-%s-%s: %s %s" % (febdetails['FPGA']["CROC"],
-		                                           febdetails["FPGA"]["Channel"],
-		                                           febdetails["FPGA"]["FEB"],
-		                                           febdetails["A-T"],
-		                                           (febdetails["PeriodMan"] if febdetails["Mode"] == "Manual" else febdetails["PeriodAuto"]) )
-		                      for febdetails in feblist ]
-		return "\n".join(formatted_feblist)
+	
+		formatted_feblist = [ { "croc"        : febdetails['FPGA']["CROC"],
+		                        "chain"       : febdetails["FPGA"]["Channel"],		# NOT a typo.  these are CHAINS -- they go from 0!
+		                        "board"       : febdetails["FPGA"]["FEB"],
+		                        "hv_deviation": febdetails["A-T"],
+		                        "period"      : (febdetails["PeriodMan"] if febdetails["Mode"] == "Manual" else febdetails["PeriodAuto"]) } \
+		                          for febdetails in feblist ]
+		return formatted_feblist
 		
 	def sc_init(self):
-		if self.slowcontrol is None:
-			self.slowcontrol = SlowControl()
+		if self.slow_control is None:
+			self.slow_control = SlowControl()
 
 		# find the appropriate VME devices: CRIMs, CROCs, DIGitizers....
-		self.slowcontrol.FindCRIMs()
-		self.slowcontrol.FindCROCs()
-		self.slowcontrol.FindDIGs()
+		self.slow_control.FindCRIMs()
+		self.slow_control.FindCROCs()
+		self.slow_control.FindDIGs()
 		
 		# then load the FEBs into their various CROCs
-		self.slowcontrol.FindFEBs(self.slowcontrol.vmeCROCs)
+		self.slow_control.FindFEBs(self.slow_control.vmeCROCs)
 
 #########################
 # DAQThread             #
@@ -315,17 +362,15 @@ class DAQThread(threading.Thread):
 	    so that they can be monitored continuously.  When
 	    they terminate, a socket is opened to the master
 	    node to emit a "done" signal."""
-	def __init__(self, owner_process, logger, daq_command, master_address, etfile):
+	def __init__(self, owner_process, daq_command, etfile, identity):
 		threading.Thread.__init__(self)
 		
 		self.daq_process = None
-		self.logger = logger		# since loggers are thread-safe, we'll just use it directly.
+		self.logger = logging.getLogger("Dispatcher.Readout")
 		self.owner_process = owner_process
-		self.master_address = master_address
 		self.daq_command = daq_command
-		self.sam_file = "%s/%s_SAM.py" % (Configuration.params["Readout nodes"]["SAMfileLocation"], etfile)
-		self.sam_file_last_look = 0
-		self.sam_file_misses = 0
+		self.identity = identity
+#		self.sam_file = "%s/%s_SAM.py" % (Configuration.params["Readout nodes"]["SAMfileLocation"], etfile)
 		
 		self.daemon = True
 		
@@ -340,71 +385,98 @@ class DAQThread(threading.Thread):
 				self.daq_process = subprocess.Popen(self.daq_command, env=environment, stdout=logfile.fileno(), stderr=subprocess.STDOUT)
 				self.pid = self.daq_process.pid		# less typing.
 
-				self.owner_process.logger.info("   ==>  Process id: " + str(self.pid) + ".")
+				self.logger.info("   ==>  Process id: " + str(self.pid) + ".")
 				
-				# check the SAM file every so often
+				# how often to check, and how many times to check at that frequency
+				# (we do some throttling to keep the disk wear down)
+				# { frequency (in seconds): count, frequency: count, ... }
+				check_count_max = {0.1: 20, 1: 5, 5: 25, 15: None}
+				check_frequencies = sorted(check_count_max.keys())
+				check_counts = {0.1: 0, 1: 0, 5: 0}
+				check_frequency = 0.1
+
+				self.trigger_file_last_look = 0
+				
+				# check the 'last trigger' file every so often
 				while self.daq_process.poll() is None:
 					# don't busy-wait
 					time.sleep(0.1)
 
-					# we've determined this node isn't producing a SAM file.
-					if self.sam_file is None:
+					if time.time() - self.trigger_file_last_look < check_frequency:
 						continue
-				
-					# this is so ugly it would make Cinderella's stepsisters look like Angelina Jolie by comparison.
-					# unfortunately, though, I can't rely on the SAM file being there right away
-					# because the DAQ doesn't create it until it's read out one full gate.  sigh.
-					# I just hope I'm not creating undue wear on the disk by polling like this.
-						
+					
+					stats = None
 					try:
-						stats = os.stat(self.sam_file)
+						stats = os.stat(Configuration.params["Readout nodes"]["lastTriggerFile"])
 					except OSError:
-						self.sam_file_misses += 1
-						
-						# if we get too many misses we will assume it's not going to show up (shudder)
-						# ... is two seconds too short?
-						if self.sam_file_misses > 20:
-							self.sam_file = None
-					else:
+						pass
+					finally:
 						# if the file has been modified since the last look, report a new gate.
-						if stats.st_mtime > self.sam_file_last_look:
+						# but we want to make sure we throttle the updates a bit so that we don't
+						# overwhelm the receiving end, so we make sure we leave at least 0.5s
+						# between updates.
+						if stats is not None and stats.st_mtime - self.trigger_file_last_look > 0.5:
+							# reset the counter to the fastest check frequency
+							# since we know some activity has been happening
+							check_frequency = check_frequencies[0]
+							check_counts[check_frequency] = 0
+
 							self.ReportNewGate(stats.st_mtime)
+						elif check_frequencies.index(check_frequency) < len(check_frequencies) - 1:
+							if check_counts[check_frequency] <= check_count_max[check_frequency]:
+								check_counts[check_frequency] += 1
+							# if it hasn't been modified, and we've looked the maximum number of times
+							# at this frequency, move to the next one.  
+							else:
+								check_frequency = check_frequencies[check_frequencies.index(check_frequency) + 1]
+								check_counts[check_frequency] = 0
+				
+				# last 'cleanup' read
+				self.ReportNewGate(time.time())
 				
 				self.returncode = self.daq_process.returncode
 		
-				self.owner_process.logger.info("DAQ subprocess finished.  Its output will be written to '" + filename + "'.")
+				self.logger.info("DAQ subprocess finished.  Its output will be written to '%s'.", filename)
 		except (OSError, IOError) as e:
-			self.logger.exception("minervadaq log file error: %s" % e.message)
+			self.logger.exception("minervadaq log file error: %s", e.message)
 			self.logger.warning("   ==> log file information will be discarded.")
 		
-		sentinel = "YES" if self.returncode == 0 else "NO"
+		sentinel = self.returncode == 0
 		
-		self.owner_process.queue.put(Dispatcher.Message(message="daq_finished sentinel=%s" % sentinel, recipient=Dispatcher.MASTER))
+		self.owner_process.postoffice.Send(PostOffice.Message(subject="daq_status", state="finished", sentinel=sentinel, sender=self.identity))
 		
 	def ReportNewGate(self, file_mod_time):
-		""" Opens up the SAM file and parses it to find the gate count,
+		""" Opens up the last trigger file and parses it to find the gate count,
 		    then sends this information to the master node. """
 
 		# gotta beware.  the DAQ is writing to this file repeatedly,
 		# so we might wind up with an unsuccessful open.
 		try:
-			with open(self.sam_file, "r") as sam_file:
+			with open(Configuration.params["Readout nodes"]["lastTriggerFile"], "r") as trigger_file:
 				# we attempt to get the whole file at once -- it's short.
 				# this way it (hopefully) won't be changing under our feet.
-				sam_data = sam_file.read()
+				trigger_data = trigger_file.read()
 				
 				# now we look for the token "eventCount=".
-				matches = re.search("eventCount=(?P<num_gates>\d+),", sam_data)
+				matches = re.search("run=(?P<run>\d+)\nsubrun=(?P<subrun>\d+)\nnumber=(?P<trig_num>\d+)\ntype=(?P<trig_type>\d+)\ntime=(?P<trig_time>\d+)", trigger_data)
 
 				# if we find it, we report it, THEN record when we found it.
 				# notice that this way if we get an exception, or don't find
 				# the gate count in the file (maybe it's still being written),
 				# we'll wind up trying again on the next time around.
 				if matches is not None:
-					self.owner_process.queue.put(Dispatcher.Message(message="gate_count %s" % matches.group("num_gates"), recipient=Dispatcher.MASTER))
-					self.sam_file_last_look = file_mod_time
+					self.owner_process.postoffice.Send( PostOffice.Message( subject="daq_status", \
+					                                                        state="running", \
+					                                                        gate_count=int(matches.group("trig_num")), \
+					                                                        run_num=int(matches.group("run")), \
+					                                                        subrun_num=int(matches.group("subrun")),
+					                                                        last_trigger_time=int(matches.group("trig_time")) / 10**6, \
+					                                                        last_trigger_type=MetaData.TriggerTypes[int(matches.group("trig_type"))], \
+					                                                        
+					                                                        sender=self.identity ) )
+					self.trigger_file_last_look = file_mod_time
 				
-		# if we can't open the file, oh, well.  we'll be trying again in 0.1 seconds anyway.
+		# if we can't open the file, oh, well.  we'll be trying again soon anyway.
 		except (IOError, OSError):
 			pass
 				
@@ -415,25 +487,26 @@ class DAQThread(threading.Thread):
 class SCHWSetupThread(threading.Thread):
 	""" Thread to take care of the initialization of the slow control.
 	    Sends a message to the master node when it's done. """
-	def __init__(self, dispatcher, slowcontrol, filename):
+	def __init__(self, dispatcher, slowcontrol, filename, identity_to_report=None):
 		threading.Thread.__init__(self)
 		
 		self.dispatcher = dispatcher
-		self.slowcontrol = slowcontrol
+		self.slow_control = slowcontrol
 		self.filename = filename
+		self.identity = identity_to_report
 		
 		self.start()
 	
 	def run(self):
 		try:
-			self.slowcontrol.HWcfgFileLoad(self.filename)
-		except:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
+			self.slow_control.HWcfgFileLoad(self.filename)
+		except Exception, e:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
 			self.dispatcher.logger.exception("Error trying to load the hardware config file")
 			self.dispatcher.logger.warning("Hardware was not configured...")
-			self.dispatcher.queue.put(Dispatcher.Message("hw_error", Dispatcher.MASTER))
+			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=e, state="hw_error"))
 		else:
-			self.dispatcher.logger.info("HW file %s was loaded." % self.filename)
-			self.dispatcher.queue.put(Dispatcher.Message("hw_ready", Dispatcher.MASTER))
+			self.dispatcher.logger.info("HW file %s was loaded.  Informing manager." % self.filename)
+			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=None, state="ready"))
 		
 
 
@@ -459,7 +532,7 @@ if __name__ == "__main__":
 		sys.stderr.write("Your environment is not properly configured.  You must run the 'setupdaqenv.sh' script before launching the dispatcher.\n")
 		sys.exit(1)
 
-	dispatcher = RunControlDispatcher()
+	dispatcher = ReadoutDispatcher()
 	dispatcher.bootstrap()
 	
 	sys.exit(0)

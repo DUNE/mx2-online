@@ -142,7 +142,7 @@ class MetaData:
 		""" Uses get() to get the description you want. """
 		return self.get(key, DESCRIPTION)
 	
-	def item(self, index, returntype):
+	def item(self, index, returntype=None):
 		"""
 		Allows you to get information based on the position in the array.
 		It's sort of the inverse of index() below.
@@ -153,10 +153,12 @@ class MetaData:
 		if index >= 0 and index < len(self.data):
 			datum = self.data[index]
 			getters = { DESCRIPTION: datum.description, HASH: datum.hash, CODE: datum.code }
-			if returntype in getters:
+			if returntype is None:
+				return datum	
+			elif returntype in getters:
 				return getters[returntype]
 			else:
-				raise ValueError("Invalid returntype specified: '" + str(index) + "'...")
+				raise ValueError("Invalid returntype specified: '" + str(returntype) + "'...")
 		else:
 			raise ValueError("Invalid index specified: '" + str(index) + "'...")
 			
@@ -167,7 +169,7 @@ class MetaData:
 		to the key passed.  Raises ValueError if no such key exists.
 		"""
 		if not key in self:
-			raise ValueError("Key not found in this metadata.")
+			raise ValueError("Key '%s' not found in this metadata." % key)
 		else:
 			for i in range(len(self.data)):
 				if key == self.data[i]:
@@ -232,6 +234,11 @@ class MetaDatum:
 #
 ########################################################################################################
 		
+HardwareConfigurations = MetaData(( ("NOFILE",     "Current state",          0, "[no HW file -- current configuration]"),
+                                    ("BEAM",       "Beam settings",          1, "SCBeamFile"),
+                                    ("LI",         "LI settings",            2, "SCLIFile"),
+                                    ("LI_DISCRIM", "LI with discriminators", 3, "SCLIDiscriminatorsFile") ))
+                                    
 HardwareInitLevels	= MetaData(( ("NO_HW_INIT",   "No HW init",   0, None),
 				             ("FULL_HW_INIT", "Full HW init", 1, None) ))
 				             
@@ -289,12 +296,17 @@ RunSeriesTypes          = MetaData(( ("BEAM",           "Beam",                0
 				                 ("MIXED_BEAM_PED", "Mixed Beam-Pedestal", 4, "mix_beam_ped_series.db"),
 				                 ("MIXED_BEAM_LI",  "Mixed Beam-LI",       5, "mix_beam_li_series.db"),
 				                 ("CUSTOM",         "Custom Series",       6, "custom_series.db") ))
-        	
-HardwareConfigurations = MetaData(( ("NOFILE",     "Current state",          0, "[no HW file -- current configuration]"),
-                                    ("BEAM",       "Beam settings",          1, "SCBeamFile"),
-                                    ("LI",         "LI settings",            2, "SCLIFile"),
-                                    ("LI_DISCRIM", "LI with discriminators", 3, "SCLIDiscriminatorsFile") ))
-                                    
+				                 
+TriggerTypes       = MetaData(( ("UNKNOWN",   "Unknown",          0,   None),
+                                ("PEDESTAL",  "Pedestal",         1,   None),
+                                ("LINJC",     "Light injection",  2,   None),
+                                ("CHINJ",     "Charge injection", 4,   None),
+                                ("COSMC",     "Cosmic",            8,  None),
+                                ("NUMI",      "NuMI",             16,  None),
+                                ("MUON",      "Test beam muon",   32,  None),
+                                ("TBEAM",     "Test beam",        64,  None),
+                                ("MC",        "Monte Carlo",      128, None)  ))
+      	
 # these are a couple of very useful translator functions
 # (they convert LED group strings like "ABD" to the appropriate code, e.g., "d",
 #  and back.)

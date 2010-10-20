@@ -10,23 +10,24 @@
    Address all complaints to the management.
 """
 
-import threading
 import wx
 import os
 import re
 import time
 import socket
 import select
-import logging
 import fcntl
 import errno
+import logging
 import subprocess
+import threading
 from Queue import Queue
 
 from mnvruncontrol.configuration import Configuration
-from mnvruncontrol.configuration import SocketRequests
+from mnvruncontrol.configuration import Logging
+from mnvruncontrol.backend import PostOffice
+from mnvruncontrol.backend import Alert
 from mnvruncontrol.backend import Events
-from mnvruncontrol.backend import ReadoutNode
 
 #########################################################
 #   DAQthread
@@ -34,24 +35,21 @@ from mnvruncontrol.backend import ReadoutNode
 
 class DAQthread(threading.Thread):
 	""" A thread for an ET/DAQ process. """
-	def __init__(self, process_info, process_identity, output_window, owner_process, env, next_thread_delay=0, is_essential_service=False):
+	def __init__(self, process_info, process_identity, postoffice, env, is_essential_service=False):
 		threading.Thread.__init__(self)
 		self.process_identity = process_identity
-		self.output_window = output_window
-		self.owner_process = owner_process
+		self.postoffice = postoffice
 		self.environment = env
 		self.command = process_info
-		self.next_thread_delay = next_thread_delay
 		self.is_essential_service = is_essential_service
 		self.name = self.command.split()[0] + "Thread"
 		self.process = None
 		self.daemon = True				# this way the process will end when the main thread does
 
-		self.write_output = True			# if process output should be relayed to the window
+		self.relay_output = False		# if process output should be relayed to the front end
+		self.output_history = ""
 		self.time_to_quit = False
 		self.issued_quit = False			# has the subprocess been instructed to stop?
-		self.have_cleaned_up = False		# have we done a cleanup read of output text yet?
-		self.output_history = ""
 
 		self.start()					# starts the run() function in a separate thread.  (inherited from threading.Thread)
 	
@@ -59,13 +57,6 @@ class DAQthread(threading.Thread):
 		''' The stuff to do while this thread is going.  Overridden from threading.Thread. '''
 		self.process = subprocess.Popen(self.command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=self.environment)
 		self.pid = self.process.pid
-
-		if self.next_thread_delay > 0:
-			# start a new thread to count down until the next DAQ process can be started.
-			self.owner_process.timerThreads.append(TimerThread(self.next_thread_delay, self.owner_process))
-
-		if self.output_window and self.write_output:
-			wx.PostEvent(self.output_window, Events.NewDataEvent(data="Started thread with PID " + str(self.pid) + "\n"))	# post a message noting the PID of this thread
 
 		while self.process.poll() is None:
 			# no busy-waiting.
@@ -79,21 +70,21 @@ class DAQthread(threading.Thread):
 			
 			newdata = self.read()
 
-			# now post any data from the process to its output window
-			if len(newdata) > 0 and self.write_output and self.output_window:		# make sure the window is still open
-				wx.PostEvent(self.output_window, Events.NewDataEvent(data=newdata))
-				self.output_history += newdata
-				self.output_history = self.output_history[-2000:]        # trim to 2000 characters
+			# push any data to the frontend if it wants it
+			if len(newdata) > 0 and self.relay_output:
+				 self.postoffice.Send(PostOffice.Message(subject="frontend_info", update="process_data", data=newdata))
+				 
+			self.output_history += newdata
+			self.output_history = self.output_history[-2000:]	# trim to 2000 characters
 					
 		# do one final read to clean up anything left in the pipe.
-		newdata = self.read(want_cleanup_read = True)
-		if self.write_output and self.output_window:
+		newdata = self.read()
+		if self.relay_output:
 			if len(newdata) > 0:
-				wx.PostEvent(self.output_window, Events.NewDataEvent(data=newdata))
-				self.output_history += newdata
-				self.output_history = self.output_history[-2000:]        # trim to 2000 characters
+				self.postoffice.Send(PostOffice.Message(subject="frontend_info", update="process_data", data=newdata))
 
-			wx.PostEvent(self.output_window, Events.NewDataEvent(data="\n\nThread terminated cleanly."))
+		self.output_history += newdata
+		self.output_history = self.output_history[-2000:]	# trim to 2000 characters
 
 		# if this an essential service and it's not being terminated
 		# due to some external signal, it's the first thing to quit.
@@ -102,41 +93,26 @@ class DAQthread(threading.Thread):
 		# this is only expected to really be a problem if it exits with a
 		# non-zero return value, however.
 		if self.is_essential_service and not self.time_to_quit and self.process.returncode != 0:
-			msg = "Essential service '%s' quit early with return code %d...\n" % (self.process_identity, self.process.returncode)
-			msg += "====== last 2000 characters of output from '%s' ======\n%s\n======================================================" % (self.process_identity, self.output_history)
-			logging.getLogger("rc_dispatcher").warning(msg)
-			wx.PostEvent(self.owner_process, Events.EndSubrunEvent(processname=self.process_identity))
+			self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="series_end", early_abort=True, lost_process=self.process_identity, output_history=self.output_history) )
+			
 			
 	def read(self, want_cleanup_read = False):
 		""" Read out the data from the process.  This method attempts
 		    to be intelligent about its reads from stdout: it
-		    is non-blocking (won't lock up if there's nothing there),
-		    and stops reading if the process has finished. """
+		    is non-blocking (won't lock up if there's nothing there). """
 		    
 		#	We use select() (again from the UNIX library) to check that
 		#	there actually IS something in the buffer before we try to read.
 		#	If we didn't do that, the thread would lock up until the specified
 		#	number of characters was read out.
 
-		#	Note that the reading loop includes a poll() of the process.
-		#	This is so that if LastCheck() is called on this process,
-		#	and this loop is somehow still running, we stop trying to read
-		#    as soon as the process finishes.  Here's why:
-		#	when the communicate() in LastCheck() finishes,
-		#	it will close the pipe to stdout, and if we continue to try
-		#	reading, we'll get an exception.
-		#    This condition is lifted if this read is explicitly called
-		#    as a "cleanup" read -- that is, if it's intended to be the
-		#    last read after the process is dead.  This is only allowed to
-		#    happen once (controlled by self.have_cleaned_up), which will
-		#	hopefully prevent race conditions between run() and LastCheck().
-		
 		do_cleanup_read = want_cleanup_read and not self.have_cleaned_up
 		if do_cleanup_read:
 			self.have_cleaned_up = True
 		
 		data = ""
-		while self.process.poll() is None or do_cleanup_read:
+		length_read = -1
+		while length_read != 0 and not self.time_to_quit:
 			# don't busy-wait.
 			time.sleep(0.01)
 			
@@ -153,11 +129,10 @@ class DAQthread(threading.Thread):
 
 			try:	
 				newdata = os.read(self.process.stdout.fileno(), 1024)
+				length_read = len(newdata)
 			except OSError:		# if the pipe is closed mid-read
 				break
 			
-			if newdata == "":
-				break
 			data += newdata
 		
 		return data
@@ -166,219 +141,97 @@ class DAQthread(threading.Thread):
 		''' When the Stop button is pressed, we gotta quit! '''
 		self.time_to_quit = True
 		
-	def SetRelayOutput(self, dowrite=True):
-		''' Sets whether subprocess output should be relayed to the window. '''
-		self.write_output = dowrite
-	
-		
 #########################################################
-#   SocketThread
+#   WorkerThread
 #########################################################
 
-class SocketThread(threading.Thread):
-	""" A thread that keeps open a socket to listen for
-	    the "done" signal from all readout nodes. """
-	def __init__(self, logger):
+class WorkerThread(threading.Thread):
+	""" A special thread that's designed to 
+	    perform run control functionality on behalf
+	    of the message handlers (so that we don't
+	    tie up the message handler thread). """
+	def __init__(self):
 		threading.Thread.__init__(self)
 		
-		self.logger = logger		# loggers are thread-safe!
-
-		self.name = "SocketThread"
+		self.queue = Queue()
 		self.time_to_quit = False
 		
-		self.subscriptions = []
-
-		self.daemon = True
-		
-		# set up the socket
-		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)		# TCP/IP (only IPv4)
-		# allowed to be rebound before a TIME_WAIT, LAST_ACK, or FIN_WAIT state expires
-		self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	
-		try:
-			self.socket.bind(("", Configuration.params["Socket setup"]["masterPort"]))		# allow any incoming connections on the right port number
-		except socket.error:
-			raise SocketAlreadyBoundException
-
-		self.socket.setblocking(0)			# we want to be able to update the display, so we can't wait on a connection
-		self.socket.listen(3)				# we might have more than one node contact us simultaneously, so allow multiple backlogged connections
-
 		self.start()
 	
 	def run(self):
-		lastupdate = 0
-		while not self.time_to_quit:
-			# this loop is a busy-wait-style loop.
-			# we sleep so that we bring the CPU usage
-			# down to a negligible level.
-			time.sleep(0.01)
-			
-			if select is not None and select.select([self.socket], [], [], 0)[0]:		# the first part is to ensure that we don't get messed up when shutting things down
-				client_socket, client_address = self.socket.accept()
-
-				request = ""
-				datalen = -1
-				while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire request
-					data = client_socket.recv(1024)
-					datalen = len(data)
-					request += data
-				
-				self.DispatchMessage(request)
-				
-			if len(self.subscriptions) > 0 and time.time() - lastupdate > 0.25:			# some throttling to make sure we don't overload the event dispatcher
-				lastupdate = time.time()
-				
-				# issue an event to any callback objects waiting on updates.
-				# note that we will only issue ONE message per cycle per callback
-				# (otherwise we could overload the event dispatcher)
-				# so whoever's first on the subscription list will be the lucky one.
-				callbacks_notified = []
-				for subscription in self.subscriptions:		# loops on lists are thread-safe.
-					if subscription.waiting and subscription.notice is not None and subscription.callback not in callbacks_notified:
-						wx.PostEvent(subscription.callback, Events.UpdateProgressEvent( text=subscription.notice, progress=(0,0)) )
-						callbacks_notified.append(subscription.callback)
-#					else:
-#						print "(%d, %d, %d)" % (subscription.waiting, subscription.notice is not None, subscription.callback not in callbacks_notified)
-		self.socket.shutdown(socket.SHUT_RDWR)
-		self.socket.close()
-					
-	def Subscribe(self, addressee, node_name, message, callback, waiting=False, notice=None):
-		""" Clients should use this method to book a subscription
-		    for messages from the readout nodes. """
-		subscription = SocketSubscription(addressee, node_name, message, callback, waiting, notice)
-		if subscription not in self.subscriptions:
-			self.subscriptions.append(subscription)		# append() is thread-safe.
-			self.logger.debug("New socket message subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
-		else:
-			self.logger.warning("Not adding duplicate socket message subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
-			self.logger.debug("  existing subscriptions:\n%s" % str(self.subscriptions))
-			
-	def Unsubscribe(self, addressee, node_name, message, callback):
-		""" Cancel a subscription previously booked using Subscribe(). """
-		subscription = SocketSubscription(addressee, node_name, message, callback)
-		if subscription in self.subscriptions:
-			self.subscriptions.remove(subscription)		# remove() is thread-safe.
-			self.logger.debug("Released socket subscription: (addressee, node name, message)\n(%s, %s, %s)" % (addressee, node_name, message))
-	
-	def UnsubscribeAll(self, addressee):
-		""" Unsubscribe all messages intended for a certain host. """
-		# I'm worried about making a copy and only sending non-removed items to it,
-		# then replacing the original with the copy.  I suspect that's not a thread-safe way to handle it
-		# (what if another thread is trying to update the list simultaneously?  
-		#  whose list is the one we get in the end?)
-		# Hence the less efficient but definitely thread-safe solution below.
-		while True:
-			list_changed = False
-			
-			# loop through the subscriptions until we find one that matches.
-			# remove that one.  then start over to make sure we don't miss any.
-			for subscription in self.subscriptions:
-				if subscription.recipient == addressee:
-					self.subscriptions.remove(subscription)		# remove() is thread-safe.
-					self.logger.debug("Released socket subscription: (addressee, node name, message)\n%s" % subscription)
-					list_changed = True
-					break
-
-			if not list_changed:
-				break
-#			else:
-#				print "Subscription didn't match: %s, %s" % (str(subscription), addressee)
+		""" The worker thread loop.
 		
-			
-	def DispatchMessage(self, message):
-		""" Checks if this message matches any subscriptions, and if so,
-		    issues an event to the callback object. """
-		matches = re.match(SocketRequests.Notification, message)
-		if matches is None:
-			self.logger.log(5, "Received garbled message:\n%s" % message)
-			self.logger.log(5, "Ignoring.")
-			return
-		else:
-			self.logger.log(5, "Received message:")
-			self.logger.log(5, message)
-		
-		matched = False
-		
-		# we only match based on the BASE part of the text (anything before the first space).
-		# anything after that is considered "data" that goes with the message.
-		message = matches.group("message").partition(" ")[0]
-		data = matches.group("message").partition(" ")[2]
-		for subscription in self.subscriptions:
-			if subscription.message_match(matches.group("addressee"), matches.group("sender"), message):
-				wx.PostEvent( subscription.callback, Events.SocketReceiptEvent(addressee=matches.group("addressee"), sender=matches.group("sender"), message=message, data=data) )
-				self.logger.log(5, "Message matched subscription.  Delivered.")
-				matched = True
-#			else:
-#				print "(%d, %d, %d)" % (matches.group("addressee") == str(subscription.recipient), matches.group("sender") == subscription.node_name, matches.group("message") == subscription.message)
-#				print "no match."
-		
-		if not matched:
-			self.logger.log(5, "Message didn't match any subscriptions.  Discarding.")
-		
-	def Abort(self):
-		self.time_to_quit = True
-
-class SocketSubscription:
-	""" A simple class to model socket subscriptions. """
-	def __init__(self, recipient, node_name, message, callback, waiting=False, notice=None):
-		self.recipient = str(recipient)
-		self.node_name = str(node_name)
-		self.message = str(message)
-		self.callback = callback
-		self.waiting = waiting
-		self.notice = notice
-	
-	def __eq__(self, other):
-		try:
-			# allow for "*" as "matches anything"
-			recipients_match = self.recipient == "*" or other.recipient == "*" or self.recipient == other.recipient
-			node_names_match = self.node_name == "*" or other.node_name == "*" or self.node_name == other.node_name
-
-			# note that this scheme means subscriptions are equivalent
-			# if the BASE part of their message (before any spaces) match.
-			# anything after that is irrelevant and not used in comparison
-			# (it's assumed to be some kind of variable data).
-			return (recipients_match and node_names_match and self.callback == other.callback and self.message.partition(" ")[0] == other.message.partition(" ")[0])
-
-		except AttributeError:		# if other doesn't have one of these properties, it can't be equal!
-			return False
-			
-	def message_match(self, addressee, sender, message):
-		""" Does a message match this subscription? 
-		
-		    Needed so that we centralize the functionality for message matching:
-		    a subscription 'contains' a message if its addressee, sender, and message match. """
+		    Use this thread by putting a dictionary of the form
+		     { "method": <function object>,
+		       "args":   <non-keyword arguments as a list>,
+		       "kwargs": <keyword arguments as a dictionary> }
+		    into the WorkerThread's queue.   The method will
+		    then execute the function with these arguments."""
 		    
-		recipient_match = self.recipient == "*" or self.recipient == addressee
-		sender_match = self.node_name = "*" or self.node_name == sender
-		message_match = self.message.partition(" ")[0] == message.partition(" ")[0]
-
-		return recipient_match and sender_match and message_match
+		while True:
+			method_info = self.queue.get()
 			
-	def __repr__(self):
-		return "(%s, %s, %s)" % (self.recipient, self.node_name, self.message)
+			# this is how the main thread signals us to quit
+			if method_info == "QUIT":
+				break
+			
+			# call the specified method with the specified non-keyword and keyword arguments
+			args = [] if "args" not in method_info else method_info["args"]
+			kwargs = {} if "kwargs" not in method_info else method_info["kwargs"]
+#			print "args:", args
+#			print "kwargs:", kwargs
+#			print "Calling method %s..." % method_info["method"]
 
-class SocketAlreadyBoundException(Exception):
-	pass
-
-
+			# functions being run using this thread
+			# can raise a StopWorkingException if they
+			# need a quick way out.  we need to trap it
+			# here so that it doesn't propagate further up.
+			try:
+				method_info["method"](*args, **kwargs)
+			except StopWorkingException:
+				pass
+		
 #########################################################
 #   AlertThread
 #########################################################
 
-class AlertThread(threading.Thread):
-	id_count = 0		# used to give each message a unique ID
+# the interval time is configurable,
+# though nobody will probably ever
+# want to tune it.
+PULSE_INTERVAL = 0.25		# in seconds
 
-	def __init__(self, postback_window):
+class AlertThread(threading.Thread):
+	""" A custom thread dedicated to keeping the user
+	    up-to-date on what's going on in the run control.
+	    
+	    It's currently used for two purposes:
+	      (a) to manage incoming Alerts, which require
+	          recurring notifications to the frontend
+	      (b) to send events to the frontend when the
+	          progress gauge is in "indeterminate" mode
+	          ('pulse' events need to be sent at regular
+	          intervals to get motion from the little bar). """
+	          
+	def __init__(self, parent_app):
 		threading.Thread.__init__(self)
-		self.postback_window = postback_window
-		self.time_to_quit = False
+		self._parent_app = parent_app
 		self.daemon = True
 
-		self.messages = Queue()
-		self.current_message = None
-		self.current_message_displayed = False
+		# user-accessible parameters.
+		self.do_pulse = False		# should we be sending 'pulse' events?
+		self.time_to_quit = False
+
+		self._logger = logging.getLogger("Frontend")
+
 		
+		self._alerts = []
+		self._current_alert = None
+		
+		self._alert_lock = threading.Lock()
+		
+		self._last_bell = 0
+		self._last_blink = 0
+		self._last_pulse = 0
 		
 		self.start()
 
@@ -389,62 +242,95 @@ class AlertThread(threading.Thread):
 			time.sleep(0.1)
 
 			# if the place to send the alert no longer exists, then this thread is pointless.
-			if not self.postback_window:
+			if not self._parent_app:
 				return
 
 			# if there's nothing to do, just keep looping.
-			if self.current_message is None and self.messages.empty():
+			if self._current_alert is None \
+			   and len(self._alerts) == 0 \
+			   and not self.do_pulse:
 				continue
 
 			# however, if there's a message waiting, we have things to do now
-			if self.current_message is None:
-				self.current_message = self.messages.get_nowait()
-				lastupdate = 0
+			if self._current_alert is None and len(self._alerts) > 0:
+				with self._alert_lock:
+					self._current_alert = self._alerts.pop(0)
+					self._last_bell = time.time()
+					self._last_blink = time.time()
+					
+					wx.PostEvent( self._parent_app, Events.AlertEvent(alert=self._current_alert, bell=True, blink=True) )
+					
+			# and if there's a current message,
+			# we need to make sure that bells and blinks
+			# are done at the correct intervals
+			if self._current_alert is not None:
+				bell = False
+				blink = False
+				if time.time() - self._last_bell > Configuration.params["Front end"]["bellInterval"]:
+					bell = True
+					self._last_bell = time.time()
+				elif time.time() - self._last_blink > Configuration.params["Front end"]["blinkInterval"]:
+					blink = True
+					self._last_blink = time.time()
+				
+				if bell or blink:
+					wx.PostEvent( self._parent_app, Events.AlertEvent(alert=self._current_alert, bell=bell, blink=blink) )
 
-			# update at the specified interval.
-			# high-priority messages need events every interval;
-			# lower-priority ones only need the initial push.
-			if (self.current_message.priority == AlertMessage.HIGH_PRIORITY or not self.current_message_displayed) and time.time() - lastupdate > Configuration.params["Front end"]["notificationInterval"]:
-				lastupdate = time.time()
-				wx.PostEvent(self.postback_window, Events.NotifyEvent(priority=self.current_message.priority, messageheader=self.current_message.title, messagebody=self.current_message.text))
-				self.current_message_displayed = True
+			# if we want 'pulses', we should do that now.
+			if self.do_pulse and time.time() - self._last_pulse > PULSE_INTERVAL:
+				wx.PostEvent( self._parent_app, Events.UpdateProgressEvent(progress=(0,0)) )
+				
+				self._last_pulse = time.time()
 
-	def acknowledge(self):
-		""" Dismisses the current alert. """
-		self.current_message = None
-		self.current_message_displayed = False
+	def AcknowledgeAlert(self, alert_id, send_acknowledgment=True):
+		""" Dismisses an alert and (optionally) sends
+		    notification to the manager. """
 		
+		self._logger.debug("Alert %s acknowleged.", alert_id)
+		
+		alert = None
+		
+		with self._alert_lock:
+			if self._current_alert == alert_id:
+				alert = self._current_alert
+				self._current_alert = None
+			
+			if alert in self._alerts:
+				alert = self._alerts.pop(self._alerts.index(alert_id))
+				
+		if alert is not None and alert.is_manager_alert and send_acknowledgment:
+			self._logger.debug("Sending manager acknowledgement.")
+			self._parent_app.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="alert_acknowledge", alert_id=alert.id, client_id=self._parent_app.id) )
+		
+	def NewAlert(self, alert):
+		""" Adds a new alert to the stack. """
+
+		# don't accept poorly-formed alerts
+		assert hasattr(alert, "notice") and hasattr(alert, "severity")
+		
+		with self._alert_lock:
+			# don't add the same alert twice.
+			if alert in self._alerts or alert == self._current_alert:
+				return
+			else:
+				self._logger.debug("New alert (id: %s).", alert.id)
+			
+			self._alerts.append(alert)
+
+		prefix = "(from DAQ manager) " if (hasattr(alert, "is_manager_alert") and alert.is_manager_alert) else ""
+		log_method = { Alert.WARNING: self._logger.warning,
+		               Alert.ERROR:   self._logger.error }
+		log_method[alert.severity](prefix + alert.notice)
+			
 	def Abort(self):
 		self.time_to_quit = True
 
-	@staticmethod
-	def GetID():
-		""" Get a unique ID for a message. """
-		AlertThread.id_count += 1
-		return AlertThread.id_count
 
+#########################################################
+#   Internal Utilities
+#########################################################
 
-class AlertMessage:
-	HIGH_PRIORITY = 2
-	NORMAL_PRIORITY = 1
-	LOW_PRIORITY = 0
-	def __init__(self, title=None, text=None, priority=NORMAL_PRIORITY, alertid=None):
-		if title is None and text is None:
-			raise ValueError("Title and text cannot both be blank.")
-			
-		if alertid is None:
-			self.id = AlertThread.GetID()
-		elif not isinstance(alertid, int) or alertid < 1:
-			raise ValueError("Invalid message ID specified.  IDs must be positive integers...")
-		elif alertid < AlertThread.id_count:
-			raise ValueError("Message ID has already been assigned.  You should really be using AlertThread.GetID()...")
-		else:
-			self.id = alertid
-			AlertThread.id_count = alertid		# need to skip to whatever value was assigned to be safe
-
-		self.title = title
-		self.text = text
-		self.priority = priority
-
-		
-
+class StopWorkingException(Exception):
+	""" Raise one of these within a function being run by
+	    the worker thread if you want to stop working immediately.  """
+	pass
