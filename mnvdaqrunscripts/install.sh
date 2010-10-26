@@ -42,12 +42,14 @@ if [ $HOSTNAME == "minervatest02.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/multidispatcher.sh $HOME/multi_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+	ln -sf $HOME/mnvdaqrunscripts/singleacquisitionmanager.sh $HOME/acquisitionmanager.sh
 fi
 
 # minervatest03 - Multi-node DAQ with no hardware.
 if [ $HOSTNAME == "minervatest03.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/multiacquisitionmanager.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_minervatest.sh $HOME/hard_daq_restart.sh
@@ -66,6 +68,7 @@ if [ $HOSTNAME == "minervatest04.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/single_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+	ln -sf $HOME/mnvdaqrunscripts/singleacquisitionmanager.sh $HOME/acquisitionmanager.sh
 fi
 
 # mnvonline0 - Multi-node DAQ with hardware.  
