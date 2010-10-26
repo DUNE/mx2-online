@@ -1,79 +1,51 @@
 mnvruncontrol -- the MINERvA run control
 ========================================
   Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v4r4p1  (April 2010)
-  Last update:      April 13, 2010
+  Last revision:    v5r1  (October 2010)
+  Last update:      October 26, 2010
 ========================================
 
 This document contains a few notes on the internal operations of the run control
 software so as to give someone intending to work on it a general idea of what's
 going on (and maybe some ideas on how to avoid catastrophically destroying it).
 
+It's lengthy, but you really only need to read it if you plan to _modify_ the
+run control.  If all you're interested in doing is configuring it, read the
+README instead.
+
 
 Most of the code is intended to be relatively well-documented inline, so only
 a few things need amplification here:
-  * thread-safe programming and the run control;
-  * the DataAcquisitionManager event model; and
-  * the SocketThread message handling system.
+  * a structural overview of the run control;
+  * how to use the PostOffice properly;
+  * run control security concerns;
+  * thread-safe programming and the run control; and
+  * how to use the XRC resource files.
 
-(1) THREAD-SAFE PROGRAMMING
-  (a) Method calls; events.
-    By its nature the run control has to manage multiple threads of operation
-    simultaneously.  It therefore cannot operate in a linear fashion; it needs
-    EVENTS to signal from one thread to another.  wxPython has a robust event
-    system in place, and the run control (hereafter "RC") takes advantage of it;
-    all communication between threaded processes (except in the dispatchers) is
-    done using the wxPython events created in backend/Events.py.
-    
-    It is very important to know that this is not just elegant modeling; it is
-    absolutely essential to the stability of the processes.  Because Python
-    feels so "free-form," it is very tempting to just directly call the
-    member methods of one threaded object from the context of another.  DON'T.
-    It invariably leads to what I call "hiccups", or sometimes even larger-scale
-    freezing.  Pass an *event* to the client object instead, using the wx.Post()
-    method, and have the event handler for the event in the client object call
-    the method you want.
-    
-    For example:
-    
-    The "Pre-", "Post-", and "SkipToNextSubrun" methods of the main RunControl
-    class need to be called around the beginning of, end of, or in between
-    subruns, respectively.  Now, the sequencing of events is handled by the
-    DataAcquisitionManager, so it seems simple enough for it to call
-    (for instance)
-       self.main_window.PreSubrun()
-    from the StartNextSubrun() method.  But notice that this isn't what it does;
-    instead, it posts a SubrunStartingEvent to the main_window object:
-       wx.PostEvent(self.main_window, Events.SubrunStartingEvent(...))
-    (line 370 or so; I have of course elided the parameters inside the 
-    SubrunStartingEvent so as not to clutter the text here).  This is the
-    procedure that should always be followed to maintain the stability of the
-    run.
-    
-  (b) Synchronization primitives.
-    Other synchronization methods are used as necessary.  The message handler
-    for the DataAcquisitionManager (the method HandleSocketMessage), for
-    example, uses a threading.Lock object to ensure that multiple messages are
-    not processed concurrently.  It would be wise to have at least a decent
-    introduction to synchronization primitives (mutual exclusion locks,
-    semaphores, etc.) under your belt before attempting to modify the run
-    control (particularly the DataAcquisitionManager or the objects found in
-    backend/Threads.py) too much.  The 'threading' Python module provides a
-    nice interface to pretty much any synchronization task you'll need to do, so
-    be sure to consult the Python documentation (http://docs.python.org/)
-    before going to town on it.  Carefully think about the potential
-    consequences of multiple threads executing the same method, and use
-    synchronization tools appropriately.
-    
-    Inline comments are sprinkled throughout the code to illustrate the logic
-    I've used.  (I don't claim to be a great operating system programmer, so if
-    you are, and you find design flaws in my threading model, please feel free
-    to correct them!)
+(1) STRUCTURAL OVERVIEW
+  (a) 'Frontend', 'backend', etc.: package design hierarchy
+    The run control package is designed to be relatively modular.  The folder
+    structure is intended to reflect the design philosophy, as follows:
 
-(2) THE EVENT MODEL OF DATAACQUISITIONMANAGER
+    mnvruncontrol/
+     - frontend/ : modules that provide the user interface.
+     - backend/  : modules that do "behind-the-scenes" work for the run control.
+                   Anything that does something algorithmic but which a user
+                   will never see should go here.
+     - configuration/ : configurables and 'meta-data'.
+                        Hopefully straightforward.  (Many of the parameters here
+                        can be adjusted via the RunControlConfiguration.py
+                        module located in the frontend.)
+     - resources/     : Non-python stuff that is used by the run control,
+                        including images, sounds, and the XML specification of
+                        the run control's graphical interface.
+     - scripts/       : any shell or test scripts associated with the RC.
+                        Someday this folder will probably disappear.
 
+   (b) DataAcquisitionManager and indeterminate-length tasks.
     The DataAcquisitionManager object is the heart and soul of the run control
-    system.  
+    system.  It runs as a server process on the master node to start, stop,
+    and otherwise manage the DAQ processes.
     
     The nature of the underlying processes it's coordinating means that it needs
     to execute its startup sequence in a somewhat non-deterministic fashion.  To
@@ -98,8 +70,8 @@ a few things need amplification here:
     Following the text descriptions is an attempt to represent this in a flow
     chart form.
     
-  (a) Subrun startup tasks -- handling PMT high voltage checks and slow control
-      configuration.
+    (i) Subrun startup tasks -- handling PMT high voltage checks and slow
+        control configuration.
     The fact that the startup sequence needs to be able to be interrupted and
     resumed is accommodated by introducing a sort of "task list" of jobs that
     need to be accomplished (in a certain order) before a run can start.  You
@@ -125,28 +97,24 @@ a few things need amplification here:
     will immediately exit and wait to be called again.  The next time it's
     called, it will resume with the next method that is not yet "completed".
     
-    Note that the StartNextSubrun() method should only be called as the event
-    handler for the ReadyforNextSubrunEvent (the one exception being when it
-    is called directly from StartDataAcquisition), so each task that needs to
-    run for an indeterminate period should post a ReadyForNextSubrunEvent to
-    the DataAcquisitionManager when it's done.
-    
-    When the hardware configuration is being written to the hardware, it is the
-    HandleSocketMessage that issues such an event (after receiving an appropriate
-    message from the readout nodes via the SocketThread); in the case of the PMT
-    high-voltage check, it's issued instead by the HVConfirmationFrame
-    (in frontend/Frames.py).  [See part (3) below for more information on the
-    SocketThread/messaging system.]
+    Note that the StartNextSubrun() method should only be called as the message
+    handler for "mgr_internal" messages with "subrun_auto_start" as the action;
+    such messages are generated when the manager receives messages signalling the
+    appropriate activity is done: when the hardware configuration is being
+    written to the hardware, the DAQ manager gets back "daq_status" messages
+    from each node indicating the state is "hw_ready"; in the case of the PMT
+    high-voltage check, the frontend sends a "mgr_directive" message with
+    directive "continue" when the user dismisses the alert.
 
-  (b) Subprocess startup.
+    (ii) Subprocess startup.
     The indeterminate nature of the subprocess startup time is handled in a
     similar fashion to that of the other startup tasks.  There's a list of
-    DAQStartTasks, akin to the SubrunStartTasks above, currently at line 70ff in
+    DAQStartTasks, akin to the SubrunStartTasks above, currently at line 93ff in
     the code, with the same properties.  They are executed in much the same way.
     
     The only new wrinkle is that since the subprocesses are separate programs,
-    they don't have access to the memory space of the DataAcquisionManager and
-    so they can't use wx.Post() to send events when they're ready.  Instead,
+    and they're written in C/C++, instead of Python, so they can't use the
+    PostOffice to send messages when they're ready.  Instead,
     we rely on the interprocess signalling mechanisms built into the UNIX core.
     Each of the subprocesses that requires a wait issues a SIGUSR1 signal back
     to the main RunControl process using the kill() function of the standard
@@ -154,18 +122,18 @@ a few things need amplification here:
     read more about kill() and other UNIX C library functions at
     http://www.gnu.org/software/libc/.)  The DataAcquisitionManager,
     meanwhile, sets itself up to handle this signal using the "signal" method
-    of the "signal" module (who'd've guessed?...) in StartDataAcquisition, and
+    of the "signal" module (surprise) during its initialization, and
     the method that's called as the signal handler (StartNextThread) creates
     a new subprocess when the signal is received.
     
     When all of the processes have started, data acquisition should be underway,
     so the last process to start posts a notice to this effect to the log file,
-    and then control is returned to the main wx event loop.  Further activity
-    will be initiated by the HandleSocketMessage method after receiving
-    notification from the SocketThread (which by this point is listening for
-    "done" messages from the readout nodes).
+    and then control is returned to the main dispatcher loop.  Further activity
+    will be initiated by the message handlers when they receive communication
+    from the frontend (to stop the run or skip to the next subrun) or from the
+    readout nodes (when they are done taking data).
     
- 
+   (c) Diagram of DAQ manager event model.
  Left: DataAcquisitionManager                                         :    Right: graphics/front end
               methods                                                 :                 methods
                                                                       :
@@ -220,43 +188,120 @@ a few things need amplification here:
                     |-------------------|                             :
                     |StopDataAcquisition|                             :
                     |-------------------|                             :
-                    
-(3) The SocketThread message handling system.
-  The SocketThread (backend/Threads.py) is a thread designed to listen in the
-  background on behalf of the DataAcquisitionManager for messages coming from
-  remote nodes.  Because it's listening for messages from various sources
-  simultaneously, it uses a somewhat different paradigm from the dispatchers
-  (which expect useful communication from a single source at a time and discard
-  other communcations).
   
-  The basic idea is as follows: every message intended for the dispatcher
-  should conform to a particular format specifying who it's from, who it's to,
-  and the content of the message.  (See the code for this format.)  The "from"
-  field is determined by the identity assigned to the dispatcher on that node
-  when a lock is requested (see backend/RemoteNode.py and backend/Dispatcher.py).
-  The "to" field will be the identifier the RemoteNode object was assigned when
-  it was created.  The message content is arbitrary.
+
+(2) THE POSTOFFICE MESSAGE MANAGEMENT SYSTEM.
+  The PostOffice (backend/PostOffice.py) is intended to be a self-contained,
+  flexible communication system allowing for message delivery based on a
+  "publish-subscribe" model.  It can be used both to send messages across a
+  network and to deliver messages locally (like the event dispatch system one
+  finds generally in GUI systems).
   
-  When expecting a message, a receiving function needs to "subscribe" to the
-  SocketThread (using its Subscribe() method, surprisingly enough) giving the
-  name and ID of the node it's expecting a message from (each RemoteNode
-  instance has these as attributes) and the message content.  A subscription
-  must also provide an object reference known as a "callback", which is the
-  object to which an Event should be delivered when a corresponding message is
-  received.  When a message conforming to the format is received, the
-  SocketThread examines its list of current subscriptions, and if one of them
-  matches the message, it posts a SocketReceiptEvent containing attributes
-  corresponding to the message properties to the callback object.
+  The name "PostOffice" was chosen because in many ways the model of the system
+  mirrors a real post office.  There are "messages"; they are sent by depositing
+  them with a "Post Office"; Post Offices relay them one to another;
+  Post Offices deliver the messages to local "mailboxes" (which are called 
+  'MessageTerminus'es).  Messages can be sent requesting "delivery confirmation"
+  or with a wait for a response.
   
-  If the program is actively waiting on some message, it can be helpful to get
-  some kind of indication that things are still going.  The SocketThread will
-  post UpdateProgressEvents containing a certain message every 0.25s to the
-  callback if the "waiting" and "notice" parameters are passed to the Subscribe
-  method.
+  Be warned, though, that the analogy is not perfect.  In particular, as the
+  module's internal documentation warns, you mustn't imagine a Message as being
+  stamped with a particular address to which it should be delivered.  Delivery
+  is rather assigned via a "publish-subscribe" model, as mentioned above: each
+  PostOffice decides whether to deliver or forward a message based on a list
+  of "subscriptions" that it maintains, each of which specifies what should be
+  done with a copy of the message.  Nota bene: a message is allowed to match ANY
+  NUMBER of subscriptions!  [The PostOffice class has a method called 'SendTo',
+  which attempts to send a message exclusively to a single destination
+  PostOffice, but you should only use it where absolutely necessary.  If the PO
+  already has another subscription that will match the message, it will still
+  go there too...]  So, exercise care in your mental depiction of what's
+  going on: envision this as a "broadcast" system with repeaters, not like an
+  e-mail system where you specify each recipient individually.  Read the caution
+  at the top of backend/PostOffice.py for more details.
   
-  Most of this should (at this point) be transparent to the programmer.  See
-  DataAcquisitionManager.ReadoutNodeHWConfig() for an example of how to book
-  subscriptions, and look at DataAcquisitionManager.HandleSocketMessage() to
-  see how SocketReceiptEvents might be handled.
+  Thanks to the beauty of Python's 'pickle' module, a message can contain any
+  data of nearly any type -- including instances of user-defined classes.  (The
+  run control makes extensive use of this latter functionality.)  The only 
+  obligatory attribute you must provide is the message "subject", which is used
+  to match messages to subscriptions; you are free to attach or not attach
+  anything else to the object by simple assignment or in the constructor, e.g.,
+     msg = PostOffice.Message( subject="first message", my_param1=37.3,
+                               my_param2="param",
+                               my_param3=[37.3, "param", False] )
+     msg.my_param4 = { "key1": 37.3, "key2": False }
+  The only stipulation should you choose to use an instance of a class you have
+  written is that the PostOffice on the receiving end have access to the module
+  containing the class definition, and the definitions on both ends match.
+  (Otherwise the object won't be reconstructible on the other end.)
   
+  To use the system, you need at minimum two persistent objects: an instance
+  of the PostOffice class (handles message routing) and an instance of the
+  MessageTerminus class (which receives messages).  You create Subscription
+  objects (see the class docstring in PostOffice.py) and register them with
+  the PostOffice object using AddSubscription, telling the PO where to deliver
+  or forward them, and with the MessageTerminus object, telling it which of its
+  methods to use to react to message delivery.  Any of the Dispatcher objects
+  within the run control can be used as a template for how all this works.
+  
+  Network communications should be nearly transparent to the client programmer:
+  all you will need are the IP address (currently only IPv4, the dotted-decimal
+  'XXX.XXX.XXX.XXX' version, is supported) and the port number where the remote
+  PostOffice is listening.  Everything beyond this is handled internally.
+  
+(3) SECURITY AND THE RUN CONTROL.
+  The PostOffice is inherently susceptible to packet forgery because the
+  'pickle' module it uses is not intended to be secure against it.  (See the
+  dire warnings on the subject at the top of PostOffice.py.)  Moreover, Fermilab
+  security policy requires that all authentication to a machine from outside the
+  lab be done centrally.
+  
+  These challenges are met by access control: to access the ports on which the
+  PostOffices are listening from outside the FNAL network, one must log in via
+  SSH to the master machine and forward them back.  Anyone who has login
+  privileges to the master DAQ machine (this list is very short) is considered
+  trusted and no further worrying is done over the contents of their messages.
+  The run control frontend handles this internally.
+
+(4) THREAD-SAFE PROGRAMMING AND THE RUN CONTROL
+    By its nature the run control has to manage multiple threads of operation
+    simultaneously.  Most of details of this are buried within the run control's
+    Threads module (backend/Threads.py).  Each of the classes of threads you'll
+    find there are intended for a particular purpose.  There are a few things to
+    bear in mind if you find yourself needing to alter the run control's thread
+    architecture.
+    
+    First of all, if you are not already familiar with threaded programming,
+    read up on it first.  Seriously.  You'll thank yourself later.  Debugging
+    threaded programs can be a real nightmare if you don't understand the
+    usual techniques and associated issues.
+    
+    Secondly, you should always be mindful that the PostOffice system is
+    itself a threaded system.  Most of this doesn't matter to the end
+    programmer; the only significant caution is that you must ALWAYS ensure that
+    methods you use to handle messages delivered to a MessageTerminus return
+    quickly.  If you don't, then you will get pile-up of messages at the
+    MessageTerminus (because it can't handle them) until the first message's
+    handler method returns.  Even worse, if your message handler calls a
+    PostOffice SendAndWaitForResponse(), you will almost certainly get a 
+    deadlock.  If you need to start a long-running task in response to a message
+    received by a MessageTerminus, the best solution is to run your task in a
+    WorkerThread (in backend/Threads.py), as the DataAcquisitionManager
+    (backend/DataAcquisitionManager.py) does.
+    
+    Finally, wxPython is VERY sensitive to threaded operation.  You should
+    scrupulously avoid ever accessing any wx objects directly from any thread
+    other than the main one.  The run control frontend (frontend/RunControl.py)
+    accomplishes this by dividing its methods into those that are allowed to
+    access the graphic objects (nearly all of which begin with "On" and are
+    handlers for wx events) and those that are not.  They are separated by
+    comment blocks in the code.  If you mistakenly try to manipulate a wx object
+    from any thread besides the main one, you expose yourself to weird, 
+    irregular, and unpredictable deadlocks.  Learn from my mistakes!
+    
+    Inline comments are sprinkled throughout the code to illustrate the logic
+    I've used.  (I don't claim to be a great operating system programmer, so if
+    you are, and you find design flaws in my threading model, please feel free
+    to correct them!)
+
   

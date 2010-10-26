@@ -1,8 +1,7 @@
 """
   Logging.py:
    Does the set-up of the various logging facilities
-   used by mnvruncontrol.  Import this in the module
-   that is run as __main__ (and there only!).
+   used by mnvruncontrol.  
    
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     June 2010
@@ -71,6 +70,7 @@ except NameError:
 	PO_logger.setLevel(logging.DEBUG)
 	PO_filehandler.setLevel(logging.DEBUG)
 
+# when you need to see all the gory details, these settings are helpful
 #	PO_filehandler = logging.FileHandler(Configuration.params["Logging"]["PO_logfileName"], 'w')
 #	PO_logger.setLevel(5)
 #	PO_filehandler.setLevel(5)
