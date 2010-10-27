@@ -114,36 +114,36 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 #			gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
 
 			# next: remote node config
-			labels["Master node"]["notifyAddresses"] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["Master node"]["notifyAddresses"])
-			self.entries["Master node"]["notifyAddresses"] = AutoSizingEditableListCtrl(self.pages["Master node"], style=wx.LC_REPORT | wx.LC_HRULES)
-			self.entries["Master node"]["notifyAddresses"].InsertColumn(0, "Node type")
-			self.entries["Master node"]["notifyAddresses"].InsertColumn(1, "Name")
-			self.entries["Master node"]["notifyAddresses"].InsertColumn(2, "Address (IPv4/DNS)")
+			labels["Master node"]["nodeAddresses"] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["Master node"]["nodeAddresses"])
+			self.entries["Master node"]["nodeAddresses"] = AutoSizingEditableListCtrl(self.pages["Master node"], style=wx.LC_REPORT | wx.LC_HRULES)
+			self.entries["Master node"]["nodeAddresses"].InsertColumn(0, "Node type")
+			self.entries["Master node"]["nodeAddresses"].InsertColumn(1, "Name")
+			self.entries["Master node"]["nodeAddresses"].InsertColumn(2, "Address (IPv4/DNS)")
 		
-			for node in Configuration.params["Master node"]["notifyAddresses"]:
-				index = self.entries["Master node"]["notifyAddresses"].InsertStringItem(sys.maxint, str(node["type"]))
-				self.entries["Master node"]["notifyAddresses"].SetStringItem(index, 1, node["name"])
-				self.entries["Master node"]["notifyAddresses"].SetStringItem(index, 2, node["address"])
+			for node in Configuration.params["Master node"]["nodeAddresses"]:
+				index = self.entries["Master node"]["nodeAddresses"].InsertStringItem(sys.maxint, str(node["type"]))
+				self.entries["Master node"]["nodeAddresses"].SetStringItem(index, 1, node["name"])
+				self.entries["Master node"]["nodeAddresses"].SetStringItem(index, 2, node["address"])
 
-			self.AddButtons["notifyAddresses"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
-			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["notifyAddresses"])
+			self.AddButtons["nodeAddresses"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
+			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["nodeAddresses"])
 
-			self.DeleteButtons["notifyAddresses"] = wx.Button(self.pages["Master node"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
-			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["notifyAddresses"])
+			self.DeleteButtons["nodeAddresses"] = wx.Button(self.pages["Master node"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
+			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["nodeAddresses"])
 		
 			buttonSizer = wx.BoxSizer(wx.VERTICAL)
-			buttonSizer.AddMany ( ( (self.AddButtons["notifyAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["notifyAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
+			buttonSizer.AddMany ( ( (self.AddButtons["nodeAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["nodeAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
 		
 			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-			entrySizer.AddMany( ( (self.entries["Master node"]["notifyAddresses"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
+			entrySizer.AddMany( ( (self.entries["Master node"]["nodeAddresses"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
 		
-			gridSizers["Master node"].Add(labels["Master node"]["notifyAddresses"], flag=wx.ALIGN_CENTER_VERTICAL)
+			gridSizers["Master node"].Add(labels["Master node"]["nodeAddresses"], flag=wx.ALIGN_CENTER_VERTICAL)
 			gridSizers["Master node"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
 	
 			gridSizers["Master node"].SetFlexibleDirection(wx.BOTH)
 
 			# these are added like this so that they show up in a predictable order
-			for name in ("Front end", "Hardware", "Socket setup", "Master node", "Readout nodes", "Monitoring nodes", "MTest beam nodes"):
+			for name in ("Front end", "Hardware", "Socket setup", "Master node", "Readout nodes", "Monitoring nodes", "MTest beam nodes", "Logging"):
 				nb.AddPage(self.pages[name], name)
 			
 			saveButton = wx.Button(panel, wx.ID_SAVE)
@@ -242,22 +242,22 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 					nodelist= []
 					index = -1
 					while True:
-						index = self.entries["Master node"]["notifyAddresses"].GetNextItem(index)
+						index = self.entries["Master node"]["nodeAddresses"].GetNextItem(index)
 				
 						if index == -1:
 							break
 						
 						try:
-							nodetype = int(self.entries["Master node"]["notifyAddresses"].GetItem(index, 0).GetText())
+							nodetype = int(self.entries["Master node"]["nodeAddresses"].GetItem(index, 0).GetText())
 						except ValueError:
 							nodetype = 1		# default to READOUT
 				
 						nodedescr = { "type":     nodetype,
-						              "name":     self.entries["Master node"]["notifyAddresses"].GetItem(index, 1).GetText(),
-						              "address" : self.entries["Master node"]["notifyAddresses"].GetItem(index, 2).GetText() }
+						              "name":     self.entries["Master node"]["nodeAddresses"].GetItem(index, 1).GetText(),
+						              "address" : self.entries["Master node"]["nodeAddresses"].GetItem(index, 2).GetText() }
 						nodelist.append(nodedescr)
 				
-					db["notifyAddresses"] = nodelist
+					db["nodeAddresses"] = nodelist
 			
 					# need to specifically close the DB so that it saves correctly
 					db.close()
