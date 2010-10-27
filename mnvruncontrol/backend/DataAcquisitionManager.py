@@ -81,7 +81,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.socket_port = Configuration.params["Socket setup"]["masterPort"]
 
 		# threads that this object will be managing.
-		self.worker_thread = Threads.WorkerThread()
+		self.worker_thread = None
 		self.DAQ_threads = {}
 		
 		# methods that will be started sequentially
@@ -441,6 +441,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    
 		self.logger.info("Old session resumption is disabled for now.")
 		self.logger.info("Starting a fresh session.")
+
+		self.logger.debug("Creating worker thread.")
+		self.worker_thread = Threads.WorkerThread()
 
 		self.remote_nodes = {}
 		self.logger.info("Contacting nodes to announce that I am up...")
