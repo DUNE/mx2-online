@@ -50,6 +50,10 @@ class MonitorDispatcher(Dispatcher):
 		self.etpattern = None
 		self.evbfile = None
 		
+		# has the "OM ready" signal been sent to the
+		# DAQ manager for this subrun?
+		self.signalled_ready = False
+		
 		# this is how we know to start the second part
 		# of the nearline system, which needs to wait
 		# until the event builder has set up: the EB
@@ -117,6 +121,7 @@ class MonitorDispatcher(Dispatcher):
 		    
 		self.logger.info("Manager wants to start the OM processes.")
 		
+		self.signalled_ready = False
 
 		# first clear up any old event builder processes.
 		if self.om_eb_thread and self.om_eb_thread.is_alive() is None:
@@ -150,6 +155,8 @@ class MonitorDispatcher(Dispatcher):
 		# is done setting up
 		message = PostOffice.Message(subject="om_status", state="om_ready", sender=self.identities[self.lock_id])
 		self.postoffice.Send(message)
+		
+		self.signalled_ready = True
 		
 		try:
 			# replace the options file so that we get the new event builder output.
@@ -318,9 +325,10 @@ class OMThread(threading.Thread):
 
 			MailTools.sendMail(fro=sender, to=Configuration.params["General"]["notify_addresses"], subject=subject, text=messagebody, files=[filename,])
 			
-			# inform the DAQ manager.
-			msg = PostOffice.Message(subject="om_status", state="om_error", sender=self.parent.identities[self.parent.lock_id], error="Process '%s' quit early." % self.processname)
-			self.parent.postoffice.Send(msg)
+			# inform the DAQ manager if necessary.
+			if not self.parent.signalled_ready:
+				msg = PostOffice.Message(subject="om_status", state="om_error", sender=self.parent.identities[self.parent.lock_id], error="Process '%s' quit early." % self.processname)
+				self.parent.postoffice.Send(msg)
 		
                         
 ####################################################################
