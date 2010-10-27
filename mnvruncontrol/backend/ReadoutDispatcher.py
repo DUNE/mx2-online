@@ -42,7 +42,6 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 	"""
 	def __init__(self):
 		Dispatcher.Dispatcher.__init__(self)
-	
 		# the master slow control object.
 		# it handles the interface with the hardware.
 		# we can't initialize it here because it seems to
@@ -119,7 +118,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 				self.logger.info("Readout directive message is improperly formatted.  Ignoring...")
 				return
 				
-			if not self.client_allowed(message.mgr_id):
+			if not self.ClientAllowed(message.mgr_id):
 				response.subject = "not_allowed"
 			else:
 				if message.directive == "daq_start":
@@ -139,6 +138,8 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 				else:
 					response.subject = "request_response"
 					response.success = status
+					
+		self.logger.debug("response message:\n%s", response)
 		self.postoffice.Send(response)
 
 	def daq_status(self):
@@ -257,6 +258,8 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		    Returns True on success, False if for some
 		    reason the configuration could not be written,
 		    and an exception if one occurred. """
+		
+		self.logger.debug("Configuring LI using parameters: %s, %s", li_level, led_groups)
 		
 		if self.li_box is None:
 			self.li_box = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])

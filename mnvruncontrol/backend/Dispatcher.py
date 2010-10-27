@@ -114,10 +114,10 @@ class Dispatcher(PostOffice.MessageTerminus):
 		
 		self.__logger.info("Starting up.")
 		
-		other_instance_pid = self.other_instances()
+		other_instance_pid = self._OtherInstances()
 		if other_instance_pid:
 			if self.replace:
-				self.kill_other_instance(other_instance_pid)
+				self._KillOtherInstance(other_instance_pid)
 			else:
 				self.__logger.fatal("Terminating this instance.")
 				self._Shutdown()
@@ -181,11 +181,11 @@ class Dispatcher(PostOffice.MessageTerminus):
 		""" Kills another instance of the dispatcher. """
 
 		self.__logger.info("Checking for other instances to stop...")
-		other_pid = self.other_instances()
+		other_pid = self._OtherInstances()
 		
 		if other_pid:
 			self.__logger.info("Stopping instance with pid %d...", other_pid)
-			self.kill_other_instance(other_pid)
+			self._KillOtherInstance(other_pid)
 		else:
 			self.__logger.info("No other instances to stop.")
 			sys.exit(0)
@@ -297,7 +297,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 
 		return
 
-	def other_instances(self):
+	def _OtherInstances(self):
 		if self.pidfilename is None:
 			raise Exception("Derived dispatcher classes must specify where the PID file is to be kept!")
 	
@@ -324,7 +324,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 		
 		return None
 	
-	def kill_other_instance(self, pid):
+	def _KillOtherInstance(self, pid):
 		self.__logger.info("Instructing process " + str(pid) + " to end.")
 
 		os.kill(pid, signal.SIGTERM)

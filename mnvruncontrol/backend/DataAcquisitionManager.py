@@ -169,7 +169,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.postoffice.AddSubscription(subscription)
 			self.AddHandler(subscription, handler)
 			
-	def client_allowed(self, client_id):
+	def ClientAllowed(self, client_id):
 		""" Overridden from Dispatcher -- checks if a client is
 		    allowed to give instructions. """
 		    
@@ -327,7 +327,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# the rest are commands, so we first need to verify
 		# that this client is allowed to issue them.
 		else:
-			if not self.client_allowed(message.client_id):
+			if not self.ClientAllowed(message.client_id):
 				self.logger.info("Got directive message from unallowed client ('%s') -- ignoring.  Message:\n%s", message.client_id, message)
 				response.subject = "not_allowed"
 			else:

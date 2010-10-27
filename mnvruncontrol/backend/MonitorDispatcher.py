@@ -92,7 +92,7 @@ class MonitorDispatcher(Dispatcher):
 			response.sender = self.identities[message.mgr_id]
 		
 		status = True
-		if not self.client_allowed(message.mgr_id):
+		if not self.ClientAllowed(message.mgr_id):
 			response.subject = "not_allowed"
 		else:
 			if message.directive == "start":
