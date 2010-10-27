@@ -653,6 +653,7 @@ class PostOffice(MessageTerminus):
 
 		if self.listen_socket is not None:
 			self.listen_port = self.listen_socket.getsockname()[1]
+			logger().info("Using provided socket.  Listening at port %d.", self.listen_port)
 		else:
 			try:
 				# create an IPv4 TCP socket.
@@ -689,6 +690,7 @@ class PostOffice(MessageTerminus):
 		    block things up while it waits for messages (this is
 		    arranged by default by the constructor). """
 		
+		logger().debug("Entering scheduling loop.")
 		while not self.time_to_quit:
 			# dispatching current messages is first.
 			# the socket connection will wait.
@@ -709,6 +711,7 @@ class PostOffice(MessageTerminus):
 			except Queue.Empty:
 				pass
 			
+#			logger().log(5, "Handling messages.  Message count: %d", len(messages))
 			# now handle them.
 			for message in messages:
 				# "reponse_requested" messages need to wait
@@ -904,6 +907,8 @@ class PostOffice(MessageTerminus):
 
 			### END   for message in messages ###
 
+#			logger().log(5, "Done handling messages.")
+
 			# avoid busy-waiting.
 			# backlogs aren't generally cleared this fast,
 			# so we should only go right back around if 
@@ -914,6 +919,7 @@ class PostOffice(MessageTerminus):
 			# check for moldy old messages in pending_messages and messages_awaiting_release
 			# that have been around for too long.  they probably won't ever get responses,
 			# so just get rid of them.  (we hold them for an hour before expunging.)
+			logger().log(5, "Pending messages check.")
 			if len(self.pending_messages) > 0:
 				with self.pending_message_lock:
 					new_pending_messages = {}
@@ -930,8 +936,10 @@ class PostOffice(MessageTerminus):
 							new_msgs[msg_id] = self.messages_awaiting_release[msg_id]
 					self.messages_awaiting_release = new_msgs
 			
+#			logger().log(5, "Checking socket.")
 			try:
 				# this will return the socket when it's got a client ready
+#				logger().debug("trying SELECT")
 				if select.select([self.listen_socket], [], [], 0)[0]:		
 					certificate = None
 					client_socket, client_address = self.listen_socket.accept()
@@ -971,6 +979,7 @@ class PostOffice(MessageTerminus):
 						client_socket.close()
 						continue
 					elif msg == "ping":
+						logger().debug("Responding to ping...")
 						send("1")
 						client_socket.shutdown(socket.SHUT_WR)
 						continue
@@ -1042,6 +1051,7 @@ class PostOffice(MessageTerminus):
 					
 			except (socket.error, select.error), (errnum, msg):
 				if errnum == errno.EINTR:		# the code for an interrupted system call
+					logger().warning("Recv was interrupted by system call.  Will try again.")
 					pass
 				else:
 					logger().exception("Error trying to receive incoming data:")
@@ -1495,13 +1505,16 @@ class PostOffice(MessageTerminus):
 		# first shut down the scheduler thread
 		self.time_to_quit = True
 		if self.scheduler_thread.is_alive():
+			logger().info("Shutting down scheduler...")
 			self.scheduler_thread.join()
 
 		if self.listen_socket:
+			logger().info("Shutting down listening socket...")
 			self.listen_socket.close()
 		
 		# now shut down the delivery threads
 		self.delivering = False
+		logger().info("Shutting down delivery threads...")
 		for thread in self.delivery_threads:
 			if not thread.is_alive():
 				continue
@@ -1510,6 +1523,7 @@ class PostOffice(MessageTerminus):
 			thread.join()
 
 		# finally, shut down the thread inherited from the MessageTerminus
+		logger().info("Shutting down the PostOffice's MessageTerminus...")
 		self.Close()
 		
 

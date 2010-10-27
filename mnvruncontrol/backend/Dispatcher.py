@@ -36,17 +36,18 @@ class Dispatcher(PostOffice.MessageTerminus):
 	start() method checks before allowing dispatching to be started.
 	"""
 	def __init__(self):
-		PostOffice.MessageTerminus.__init__(self)
-		
 		self.interactive = False
 		self.respawn = False
 		self.quit = False
 		
-		# we'll set up the socket after we know it's available (in setup())
-		self.postoffice = PostOffice.PostOffice(use_logging=True)
+		# we'll set up the PostOffice after we
+		# daemonize (otherwise the fork only will
+		# preserve the thread doing the fork...)
+		self.postoffice = None
 		
 		# this can be overridden by a derived class if it wants
 		self.socket_port = Configuration.params["Socket setup"]["dispatcherPort"]
+		self.server_socket = None
 		
 		# where this log goes is set up in the Logging module
 		self.__logger = logging.getLogger("Dispatcher")
@@ -100,8 +101,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 		
 		self.__logger.info("Listening on port %d.", self.socket_port)
 		
-		self.postoffice.listen_socket = server_socket
-		self.postoffice.StartListening()
+		self.server_socket = server_socket
 			
 	def start(self):
 		""" Starts the listener.  If you want to run it as a background
@@ -136,6 +136,15 @@ class Dispatcher(PostOffice.MessageTerminus):
 			pidfile = open(self.pidfilename, 'w')
 			pidfile.write(str(os.getpid()) +"\n")
 			pidfile.close()
+
+		# don't set this up until AFTER we have daemonized.
+		# both the MessageTerminus and the PostOffice use threads,
+		# and apparently os.fork() will only fork the thread
+		# actually doing the calling.  doing things this way
+		# ensures that the threads are created after the fork
+		# and thus are not dropped.
+		PostOffice.MessageTerminus.__init__(self)
+		self.postoffice = PostOffice.PostOffice(use_logging=True, listen_socket=self.server_socket)
 		
 		for method in self.startup_methods:
 			method()
