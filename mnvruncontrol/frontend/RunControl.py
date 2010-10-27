@@ -42,6 +42,18 @@ from mnvruncontrol.backend import RemoteNode		# needed for 'status' enumeration
 #########################################################
 
 class MainApp(wx.App, PostOffice.MessageTerminus):
+
+	### Notice: this class is pretty large and has a lot
+	### of methods, so I have grouped them by category.
+	### Within each category they are arranged roughly 
+	### alphabetically.
+	###
+	### The categories are as follows:
+	###   * initialization/teardown            (begin around line 50)
+	###   * message handlers & access control  ( ...              225)
+	###   * wx event handlers                  ( ...              300)
+	###   * 'real work' methods                ( ...              1200)
+
 	def OnInit(self):
 		PostOffice.MessageTerminus.__init__(self)
 
@@ -199,10 +211,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		                  PostOffice.Subscription(subject="client_alert", action=PostOffice.Subscription.DELIVER, delivery_address=self),
 		                  PostOffice.Subscription(subject="frontend_internal", action=PostOffice.Subscription.DELIVER, delivery_address=self),
 		                  PostOffice.Subscription(subject="frontend_info", action=PostOffice.Subscription.DELIVER, delivery_address=self) ]
-		handlers = [ self.daq_mgr_status_handler,
-		             self.client_alert_handler,
-		             self.frontend_internal_handler,
-		             self.frontend_info_handler ]
+		handlers = [ self.DAQMgrStatusHandler,
+		             self.ClientAlertHandler,
+		             self.FrontendInternalHandler,
+		             self.FrontendInfoHandler ]
 	
 		for (subscription, handler) in zip(subscriptions, handlers):
 			self.postoffice.AddSubscription(subscription)
@@ -213,7 +225,18 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	# Message handlers
 	######################################################
 
-	def daq_mgr_status_handler(self, message):
+	def ClientAlertHandler(self, message):
+		""" Handles alert messages. """
+		
+		if not (hasattr(message, "mgr_id") and hasattr(message, "alert") and hasattr(message, "action")):
+			self.logger.warning("DAQMgr's 'client_alert' message is poorly formed.  Ignoring...   Message:\n%s", message)
+		
+		if message.action == "new":
+			self.alert_thread.NewAlert(message.alert)
+		elif message.action == "clear":
+			self.alert_thread.AcknowledgeAlert(message.alert)
+				
+	def DAQMgrStatusHandler(self, message):
 		""" Decides what to do when the DAQ manager changes status. """
 		
 		if not (hasattr(message, "status") and hasattr(message, "mgr_id")):
@@ -229,7 +252,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			self.alert_thread.NewAlert( Alert.Alert(notice="The DAQ manager is shutting down.  Further use of this DAQ won't be possible until it is restarted.", severity=Alert.WARNING) )
 			wx.PostEvent(self, Events.DAQQuitEvent())
 	
-	def frontend_info_handler(self, message):
+	def FrontendInfoHandler(self, message):
 		""" The DAQMgr uses "frontend_info" messages to send us
 		    updates that aren't coming in response to a specific
 		    request we made. 
@@ -258,18 +281,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		elif message.info == "series_update" and hasattr(message, "series") and hasattr(message, "series_details"):
 			wx.PostEvent( self, Events.UpdateSeriesEvent(series=message.series, details=message.series_details) )
 			
-	def client_alert_handler(self, message):
-		""" Handles alert messages. """
-		
-		if not (hasattr(message, "mgr_id") and hasattr(message, "alert") and hasattr(message, "action")):
-			self.logger.warning("DAQMgr's 'client_alert' message is poorly formed.  Ignoring...   Message:\n%s", message)
-		
-		if message.action == "new":
-			self.alert_thread.NewAlert(message.alert)
-		elif message.action == "clear":
-			self.alert_thread.AcknowledgeAlert(message.alert)
-				
-	def frontend_internal_handler(self, message):
+	def FrontendInternalHandler(self, message):
 		""" Handles messages that are passed around internally
 		    by the front end.  Always insists that the messages
 		    have no return_path (i.e., haven't been transmitted

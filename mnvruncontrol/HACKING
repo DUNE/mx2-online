@@ -134,61 +134,75 @@ a few things need amplification here:
     readout nodes (when they are done taking data).
     
    (c) Diagram of DAQ manager event model.
- Left: DataAcquisitionManager                                         :    Right: graphics/front end
-              methods                                                 :                 methods
-                                                                      :
-                     |--------------------|                           :
-                     |StartDataAcquisition|                           :
-                     |--------------------|                           :
-                              |                                       :
-                              v                                       :
-        |-->------------>-----|                                       :
-        |                     v                                       :
-        |             |---------------|               SubrunStartingEvent               |---------|
-        |         |->-|StartNextSubrun|------------>--------------------->--------------|PreSubrun|
-        |  Ready  |   |---------------|                               :                 |---------|
-        |    For  |           |                                       :
-        | ForNext |           v                                       :
-        |  Subrun |   |---------------|                               :
-        |  Event  |-<-|SubrunStartTask|                               :
-        |             |---------------|                               :
-        ^                     |                                       :
-        |                     | when all                              :
-  Ready |                     | tasks                                 :
-   For  |                     | completed                             :
-   Next |                     v                                       :
- Subrun |             |---------------|           |-------------|     :
-  Event |             |StartDAQThreads|--->--->---|ThreadStarter|     :
-        |             |---------------|           |-------------|     :
-   or   |                     |    ^                     |            :
-        |         when all    |    |                     v            :                   |------|
-  Skip  |           threads   |    |  sends SIGUSR1 |---------|      NewDataEvent         |DAQ/ET|
-   To   |           started   |    |------<---<-----|DAQThread|------->--------->---------|window|
-  Next  ^                     |        when ready   |---------|       :                   |------|
- Subrun |                     |                                       :
-  Event |                     v                                       :
-        |             |---------------|                               :
-        |             |   [waiting]   |               UpdateProgressEvent             |---------------|
-        |             | (SocketThread |------------->------------------->-------------|UpdateRunStatus|
-        |             |   listening)  |                               :               |---------------|
-        |             |---------------|                               :
-        |                     |                                       :
-        |                     | when messages                         :
-        ^                     | received from                         :
-        |                     | all readout nodes                     :
-        |                     v                                       :
-        |  if more      |---------|                   SubrunOverEvent :                 |----------|
-        |-----<------<--|EndSubrun|----------------->------------------>----------------|PostSubrun|
-             subruns    |---------|                                   :                 |----------|
-                              |                                       :
-                      Subrun  | no more subruns                       :
-                       Over   | or "Stop" pressed                     :
-                      Event   |                                       :
-                              v                                       :
-                    |-------------------|                             :
-                    |StopDataAcquisition|                             :
-                    |-------------------|                             :
-  
+   
+   Sometimes I find it helpful to have a flow chart of the structure of the
+   events that the DAQ manager follows.  Below is an ASCII-art attempt to make
+   one.
+   
+   Items in boxes are methods; text separated by underscores indicates
+   messages, with the subject first and the relevant subsidiary piece second
+   (so, "mgr_directive subrun_auto_start" is a message with subject
+   "mgr_directive" and directive="subrun_auto_start").  Method names in
+   parentheses are "generic": they indicate a class of methods.  For
+   example: (SubrunStartTask) will be a method from the SubrunStartTask
+   list.
+
+
+                         (mgr_directive
+                             msg from
+                                frontend)
+                               |
+                               v
+                      |--------------------|                           
+                      |StartDataAcquisition|                           
+                      |--------------------|                           
+                               |                                       
+                               v                                       
+        |-->------------->-----|                                       
+        |                      v        
+        |              |---------------|
+        |  mgr_    |->-|StartNextSubrun|
+        | internal |   |---------------|
+        |          |           |        
+        | subrun_  |           v        
+        | auto_    |   |-----------------|
+        | start    |-<-|(SubrunStartTask)|
+        |              |-----------------|
+        ^                      |        
+        |                      | when all
+mgr_    |                      | tasks    
+internal|                      | completed
+        |                      v          
+subrun_ |              |---------------|           |--------------|
+ auto_  |              |StartNextThread|--->--->---|(DAQStartTask)|
+ start  |              |---------------|           |--------------|
+        |                      |    ^                      |       
+        |          when all    |    |                      v       
+        |            threads   |    |  sends SIGUSR1  |---------|
+        |            started   |    |------<---<------|DAQThread|
+        ^                      |        when ready    |---------|
+        |                      |                                
+        |                      v                                
+        |              |---------------|                        
+        |              |   [waiting]   |
+        |              |---------------|
+        |                      |            
+        |                      | when messages
+        ^                      | received from
+        |                      | all readout nodes
+        |                      v                  
+        |  if more        |---------|           
+        |-----<-------<---|EndSubrun|
+             subruns      |---------|
+                               |                                       
+                   mgr_internal| no more subruns                       
+                   series_end  | or "Stop" pressed                     
+                               |                                       
+                               v                                       
+                     |-------------------|                             
+                     |StopDataAcquisition|                             
+                     |-------------------|                             
+   
 
 (2) THE POSTOFFICE MESSAGE MANAGEMENT SYSTEM.
   The PostOffice (backend/PostOffice.py) is intended to be a self-contained,
@@ -274,7 +288,8 @@ a few things need amplification here:
     First of all, if you are not already familiar with threaded programming,
     read up on it first.  Seriously.  You'll thank yourself later.  Debugging
     threaded programs can be a real nightmare if you don't understand the
-    usual techniques and associated issues.
+    usual techniques and associated issues.  You should also carefully read
+    the documentation for the Python 'threading' module.
     
     Secondly, you should always be mindful that the PostOffice system is
     itself a threaded system.  Most of this doesn't matter to the end
@@ -304,4 +319,28 @@ a few things need amplification here:
     you are, and you find design flaws in my threading model, please feel free
     to correct them!)
 
-  
+ (5) THE .XRC RESOURCE FILE USED BY THE FRONTEND AND HOW TO EDIT IT
+    The frontend.xrc file (in the resources/ folder) contains an XML document
+    describing the layout of the graphical part of the frontend.  A nice 
+    tutorial for how to use the XRC resource objects in wxPython can be found at
+
+    http://wiki.wxpython.org/UsingXmlResources
+    http://wiki.wxpython.org/XRCTutorial
+    
+    There's also a wealth of information on the format, etc., available from the
+    wxWidgets web site, though it's all about using it with the C++ backend.
+    If you'd like to peruse it, you can find it at:
+    
+    http://wiki.wxwidgets.org/Resource_Files
+    
+    or do a Google search for "XRC wxWidgets" or something like that.
+    
+    To produce the file here, I've used wxGlade, a 'WYSIWYG'-like editor
+    written using wxPython.  (The frontend.wxg file in the resources/ folder
+    is the wxGlade source file.)  Unfortunately the display is a bit funny now
+    that the run control has a bunch of panels that would sit on top of each
+    other if they were all shown at once... but if you really need to edit the
+    front end I still find this easier than messing around with the XML by hand.
+    Your mileage may vary.  (You might also consider using a different .xrc
+    program if you have a lot of trouble with wxGlade -- there are a handful out
+    there that are free.)

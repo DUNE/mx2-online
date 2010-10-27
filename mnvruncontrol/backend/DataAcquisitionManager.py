@@ -66,12 +66,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	### pretty large, so its methods are also grouped by category.
 	###
 	### The categories are as follows:
-	###   * initialization/teardown            (begin around line 50)
-	###   * global starters/stoppers           ( ...              125)
-	###   * subrun starters/stoppers           ( ...              200)
-	###   * helper methods for StartNextSubrun ( ...              475)
-	###   * subprocess starters                ( ...              700)
-	###   * utilities/event handlers           ( ...              825)
+	###   * initialization/teardown            (begin around line 75)
+	###   * message handlers & access control  ( ...              350)
+	###   * global starters/stoppers           ( ...              625)
+	###   * subrun starters/stoppers           ( ...              775)
+	###   * helper methods for StartNextSubrun ( ...              1050)
+	###   * subprocess starters                ( ...              1250)
+	###   * utilities & alerts                 ( ...              1475)
 	
 	def __init__(self):
 		Dispatcher.Dispatcher.__init__(self)
@@ -141,296 +142,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# make sure setup and shutdown happen smoothly
 		self.startup_methods += [self.BeginSession]
 		self.cleanup_methods += [self.Cleanup]
-		
-	def BookSubscriptions(self):
-		""" Books all the standing subscriptions the DAQMgr will want
-		    and assigns handlers for those messages. """
-		    
-		# daq_status:    from readout nodes (informs us if something happened on the readout nodes)
-		# device_status: from peripherals
-		# mgr_internal:  from this DAQ manager to itself
-		# mgr_directive: from front-end client (tells the DAQ manager what to do)
-		subscriptions = [ PostOffice.Subscription(subject="control_request", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="daq_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="om_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="beamdaq_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="device_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="mgr_internal", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="mgr_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) ]
-		handlers = [ self.ControlRequestHandler,
-		             self.DAQStatusHandler,
-		             self.OMStatusHandler,
-		             self.BeamDAQStatusHandler,
-		             self.DeviceStatusHandler,
-		             self.MgrInternalHandler,
-		             self.MgrDirectiveHandler ]
-	
-		for (subscription, handler) in zip(subscriptions, handlers):
-			self.postoffice.AddSubscription(subscription)
-			self.AddHandler(subscription, handler)
-			
-	def ClientAllowed(self, client_id):
-		""" Overridden from Dispatcher -- checks if a client is
-		    allowed to give instructions. """
-		    
-		return self.control_info is not None and self.control_info["client_id"] == client_id
-
-	def BeamDAQStatusHandler(self, message):
-		""" Handles updates from the MTest beam DAQ
-		    about changes in its state. """
-		
-		pass	
-		
-	def ControlRequestHandler(self, message):
-		""" Handles requests from clients for control of the DAQ.
-		
-		    Note: locks on the DAQManager work differently than in
-		    other dispatchers: anybody can request control
-		    at any time (even if somebody else already has
-		    control).  (We want to avoid the situation where
-		    somebody has a lock then their connection gets broken,
-		    preventing anybody else from controlling the DAQ until
-		    the DAQ manager is reset.) """
-
-		response_msg = message.ResponseMessage()
-
-		# lock requests that have no return path are OUTGOING.
-		# we don't want to lock ourselves!
-		if len(message.return_path) == 0:
-			response_msg.subject = "request_response"
-			response_msg.success = Dispatcher.LockError("Not issuing a lock to my own node!")
-
-		elif not( hasattr(message, "request") and hasattr(message, "requester_id") ):
-			response_msg.subject = "invalid_request"
-		else:
-			response_msg.subject = "request_response"
-			if message.request == "get":
-				if not ( hasattr(message, "requester_name") and hasattr(message, "requester_location") ):
-					response_msg.subject = "invalid_request"
-				else:
-					self.logger.info("Granted control to client %s (reporting identity '%s') located at %s.", message.requester_id, message.requester_name, message.requester_location)
-					self.control_info = {"client_id": message.requester_id, "client_identity": message.requester_name, "client_location": message.requester_location}
-					response_msg.success = True
-
-			elif message.request == "release":
-				if self.control_info is None or self.control_info["client_id"] != message.requester_id:
-					self.logger.info("Client %s wants to relinquish control, but isn't the controlling node.  Ignoring.", message.requester_id)
-				else:
-					self.control_info = None
-					self.logger.info("Client %s relinquished control.", message.requester_id)
-					response_msg.success = True
-
-		self.postoffice.Send(response_msg)
-		
-		notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
-		self.postoffice.Send(notify_msg)
-	
-	def DAQStatusHandler(self, message):
-		""" Handles updates from the readout nodes regarding
-		    the status of the DAQ on their own nodes.
-		    
-		    This includes readiness for data taking, the end
-		    of data taking, errors, etc. """
-		    
-		if not hasattr(message, "state"):
-			self.logger.info("DAQ status message from '%s' node is badly formed.  Ignoring.  Message:\n%s", message.sender, message)
-			return
-			
-#		self.logger.debug("DAQ status message:\n%s", message)
-		
-		if message.state == "hw_error":
-			self.NewAlert(notice="A hardware error was reported on the '%s' node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
-			self.remote_nodes[message.sender].status = RemoteNode.ERROR
-			self.StopDataAcquisition(do_auto_start=False)
-			self.last_HW_config = None
-
-			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
-		
-		elif message.state == "hw_ready":
-			self.remote_nodes[message.sender].status = RemoteNode.OK
-			self.logger.debug("    ==> '%s' node reports it's ready.", message.sender)
-
-			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
-			
-			# are they all ready yet?
-			for node in self.remote_nodes:
-				if self.remote_nodes[node].type == RemoteNode.READOUT and self.remote_nodes[node].status is not RemoteNode.OK:
-					return
-
-			# all nodes are ready.  continue the startup sequence.
-			self.logger.info("    ==> all readout nodes ready.")
-			self.StartNextSubrun()
-		
-		elif message.state == "running" and hasattr(message, "gate_count"):
-			# updates are only relevant if we're still doing the same subrun...
-			if message.run_num != self.configuration.run or message.subrun_num != self.configuration.subrun:
-				return
-
-			# we can't rely on getting a notice for every single gate
-			# (the test stand and MTest read out too fast for that in some modes).
-			# so we use the integer division (//) construction below.
-			stride = Configuration.params["Master node"]["logfileGateCount"]
-			if message.gate_count // stride > self.last_logged_gate // stride:
-				self.logger.info("  DAQ has reached gate %d..." % message.gate_count)
-				self.last_logged_gate = message.gate_count
-
-			if message.gate_count > self.current_gate["number"]:
-				self.current_gate["number"] = message.gate_count
-				self.current_gate["type"]   = message.last_trigger_type
-				self.current_gate["time"]   = message.last_trigger_time
-				
-				self.postoffice.Send( self.StatusReport( items=["current_gate", "waiting"] ) )
-			
-		elif message.state == "finished":
-			self.remote_nodes[message.sender].completed = True
-			self.remote_nodes[message.sender].sent_sentinel = message.sentinel
-			self.remote_nodes[message.sender].status = RemoteNode.IDLE
-			self.logger.debug("    ==> '%s' node reports it's done taking data and %s send a sentinel.", message.sender, "DID" if message.sentinel else "DID NOT")
-			
-			# loop and check if they're all finished
-			sentinel = False
-			for node in self.remote_nodes:
-				if self.remote_nodes[node].type == RemoteNode.READOUT:
-					if not self.remote_nodes[node].completed:
-						self.logger.debug( "    ... still waiting on '%s' node.", node)
-						return
-					sentinel = sentinel or self.remote_nodes[node].sent_sentinel
-			
-			# all nodes are finished.  end the subrun.
-			self.logger.info("All nodes finished.  Sentinel status: %s", str(sentinel))
-			self.EndSubrun(sentinel=sentinel)
-
-	def MgrDirectiveHandler(self, message):
-		""" Handles messages from front-end clients: requests
-		    for status updates, instructions for starting/stopping,
-		    requests for control, etc. """
-		
-		# ignore ill-formed messages
-		if not hasattr(message, "directive") or not hasattr(message, "client_id"):
-			self.logger.info("Directive message is badly formed and will be ignored:\n%s", message)
-			return
-		
-		response = message.ResponseMessage()
-		response.sender = self.id
-		
-		# there are a few directives for which 
-		# a lock is unnecessary, so we consider them first.
-		if message.directive == "status_report":
-			self.StatusReport(response)
-		elif message.directive == "pmt_hv_list":
-			self.worker_thread.queue.put( {"method": self.GetProblemPMTs, "kwargs": {"send_results": True}} )
-			status = True
-		elif message.directive == "series_info" and hasattr(message, "series"):
-			self.worker_thread.queue.put( {"method": self.SeriesInfo, "kwargs": {"series": message.series}} )
-			status = True
-		
-		# the rest are commands, so we first need to verify
-		# that this client is allowed to issue them.
-		else:
-			if not self.ClientAllowed(message.client_id):
-				self.logger.info("Got directive message from unallowed client ('%s') -- ignoring.  Message:\n%s", message.client_id, message)
-				response.subject = "not_allowed"
-			else:
-				status = None
-				
-				# some of these use the worker_thread because
-				# they start tasks that don't return immediately.
-				# the rule of thumb is, if they don't return quickly,
-				# use the worker_thread by putting the appropriate
-				# dictionary into its queue.  
-				# (see the documentation at
-				#  mnvruncontrol.backend.Threads.WorkerThread.run() ...)
-				if message.directive == "start":
-					self.logger.info("Client wants to begin data acquisition.")
-					if self.running:
-						self.logger.warning("  ... but we are already running!  Request is invalid.")
-						status = mnvruncontrol.backend.DataAcquisitionManager.RunError("Can't start running because DAQ is already running.")
-
-					elif len(self.errors) > 0:
-						self.logger.warning("There are errors left unaddressed.  These must be handled before starting the next run.")
-						status = mnvruncontrol.backend.DataAcquisitionManager.AlertError("There are unaddressed errors.  Handle those before starting a run!")
-					elif not hasattr(message, "configuration") or not isinstance(message.configuration, DAQConfiguration):
-						self.logger.error("Directive message does not properly specify configuration...")
-						status = mnvruncontrol.backend.DataAcquisitionManager.ConfigurationError("Run configuration is improperly specified.")
-					else:
-						self.worker_thread.queue.put( {"method": self.StartDataAcquisition, "kwargs": {"configuration": message.configuration}} )
-						status = True
-				elif message.directive == "continue":
-					self.logger.info("Frontend client requests continuation of running.")
-					self.worker_thread.queue.put({"method": self.StartNextSubrun})
-					status = True
-			
-				elif message.directive == "stop":
-					self.logger.info("Frontend client requests stoppage of data acquisition.")
-					self.worker_thread.queue.put( {"method": self.StopDataAcquisition, "kwargs": {"do_auto_start": False}} )
-					status = True
-					
-				elif message.directive == "skip":
-					self.logger.info("Frontend client requests skip to next subrun.")
-					self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end", auto_start=True) )
-					status = True
-				
-				elif message.directive == "alert_acknowledge":
-					if not hasattr(message, "alert_id"):
-						self.logger.warning("Got 'alert_acknowledge' message with no alert ID!  Ignoring...")
-					self.logger.info("Frontend client '%s' acknowledged alert %s.", message.client_id, message.alert_id)
-					status = self.AcknowledgeAlert(message.alert_id)
-
-				if status is None:
-					response.subject = "invalid_request"
-				else:
-					response.subject = "request_response"
-					response.success = status
-		self.postoffice.Send(response)
-	
-	def MgrInternalHandler(self, message):
-		""" Handles messages that are passed around internally
-		    by the DAQMgr.  Always insists that the messages
-		    have no return_path (i.e., haven't been transmitted
-		    over the network). """	
-
-		# ignore ill-formed messages
-		if not hasattr(message, "event"):
-			self.logger.warning("Internal message is badly formed!  Message:\n%s", message)
-			return
-		
-		# internal messages better actually be internal! ...
-		if len(message.return_path) > 0:
-			self.logger.info("Got 'DAQMgr internal' message over the network.  Ignoring.  Message:\n%s", message)
-			return
-		
-		
-		if message.event == "subrun_auto_start":
-			self.worker_thread.queue.put({"method": self.StartNextSubrun})
-			
-		elif message.event == "subrun_end":
-			auto_start = True if not hasattr(message, "auto_start") else message.auto_start
-			self.worker_thread.queue.put({"method": self.EndSubrun, "kwargs": {"auto_start": auto_start} })
-
-		elif message.event == "series_auto_start":
-			self.configuration.run += 1
-			self.configuration.subrun = 1
-			self.worker_thread.queue.put({"method": self.StartDataAcquisition, "args": [self.configuration]})
-		
-		elif message.event == "series_end":
-			if hasattr(message, "early_abort") and message.early_abort:
-				warning_msg = "Aborting early!"
-				if hasattr(message, "lost_process"):
-					warning_msg += "  (due to crash of '%s' process).  Last 2000 characters of output from this process:\n%s" % (message.lost_process, message.output_history)
-					self.logger.warning(warning_msg)
-					self.NewAlert(notice="'%s' process crashed!\nRunning has been halted for troubleshooting." % message.lost_process, severity=Alert.ERROR)
-				auto_start = False
-			else:
-				auto_start = True if not hasattr(message, "auto_start") else message.auto_start
-			# should auto-start next series if configuration allows it
-			# and the series ended nicely
-			self.worker_thread.queue.put( {"method": self.StopDataAcquisition, "kwargs": {"do_auto_start": auto_start}} )
-		
-	def DeviceStatusHandler(self, message):
-		""" Handles updates from various peripherals about
-		    changes in their state. """
-		
-		pass	
 		
 	def BeginSession(self):
 		""" Checks if there's a session that was already open.
@@ -561,6 +272,33 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 #			
 #			if not wait_for_reset:
 #				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True, sentinel=False))
+
+	def BookSubscriptions(self):
+		""" Books all the standing subscriptions the DAQMgr will want
+		    and assigns handlers for those messages. """
+		    
+		# daq_status:    from readout nodes (informs us if something happened on the readout nodes)
+		# device_status: from peripherals
+		# mgr_internal:  from this DAQ manager to itself
+		# mgr_directive: from front-end client (tells the DAQ manager what to do)
+		subscriptions = [ PostOffice.Subscription(subject="control_request", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="daq_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="om_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="beamdaq_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="device_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="mgr_internal", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="mgr_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) ]
+		handlers = [ self.ControlRequestHandler,
+		             self.DAQStatusHandler,
+		             self.OMStatusHandler,
+		             self.BeamDAQStatusHandler,
+		             self.DeviceStatusHandler,
+		             self.MgrInternalHandler,
+		             self.MgrDirectiveHandler ]
+	
+		for (subscription, handler) in zip(subscriptions, handlers):
+			self.postoffice.AddSubscription(subscription)
+			self.AddHandler(subscription, handler)
 		
 	def Cleanup(self):
 		""" Any clean-up actions that need to be taken before shutdown.  """
@@ -602,7 +340,273 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 #				os.remove(Configuration.params["Master node"]["sessionfile"])
 #			except (IOError, OSError):		# if the file doesn't exist, no problem
 #				pass
+
+	##########################################
+	# Message handlers & access control
+	##########################################
+	
+	def BeamDAQStatusHandler(self, message):
+		""" Handles updates from the MTest beam DAQ
+		    about changes in its state. """
 		
+		pass	
+		
+	def ClientAllowed(self, client_id):
+		""" Overridden from Dispatcher -- checks if a client is
+		    allowed to give instructions. """
+		    
+		return self.control_info is not None and self.control_info["client_id"] == client_id
+
+	def ControlRequestHandler(self, message):
+		""" Handles requests from clients for control of the DAQ.
+		
+		    Note: locks on the DAQManager work differently than in
+		    other dispatchers: anybody can request control
+		    at any time (even if somebody else already has
+		    control).  (We want to avoid the situation where
+		    somebody has a lock then their connection gets broken,
+		    preventing anybody else from controlling the DAQ until
+		    the DAQ manager is reset.) """
+
+		response_msg = message.ResponseMessage()
+
+		# lock requests that have no return path are OUTGOING.
+		# we don't want to lock ourselves!
+		if len(message.return_path) == 0:
+			response_msg.subject = "request_response"
+			response_msg.success = Dispatcher.LockError("Not issuing a lock to my own node!")
+
+		elif not( hasattr(message, "request") and hasattr(message, "requester_id") ):
+			response_msg.subject = "invalid_request"
+		else:
+			response_msg.subject = "request_response"
+			if message.request == "get":
+				if not ( hasattr(message, "requester_name") and hasattr(message, "requester_location") ):
+					response_msg.subject = "invalid_request"
+				else:
+					self.logger.info("Granted control to client %s (reporting identity '%s') located at %s.", message.requester_id, message.requester_name, message.requester_location)
+					self.control_info = {"client_id": message.requester_id, "client_identity": message.requester_name, "client_location": message.requester_location}
+					response_msg.success = True
+
+			elif message.request == "release":
+				if self.control_info is None or self.control_info["client_id"] != message.requester_id:
+					self.logger.info("Client %s wants to relinquish control, but isn't the controlling node.  Ignoring.", message.requester_id)
+				else:
+					self.control_info = None
+					self.logger.info("Client %s relinquished control.", message.requester_id)
+					response_msg.success = True
+
+		self.postoffice.Send(response_msg)
+		
+		notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
+		self.postoffice.Send(notify_msg)
+	
+	def DAQStatusHandler(self, message):
+		""" Handles updates from the readout nodes regarding
+		    the status of the DAQ on their own nodes.
+		    
+		    This includes readiness for data taking, the end
+		    of data taking, errors, etc. """
+		    
+		if not hasattr(message, "state"):
+			self.logger.info("DAQ status message from '%s' node is badly formed.  Ignoring.  Message:\n%s", message.sender, message)
+			return
+			
+#		self.logger.debug("DAQ status message:\n%s", message)
+		
+		if message.state == "hw_error":
+			self.NewAlert(notice="A hardware error was reported on the '%s' node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
+			self.remote_nodes[message.sender].status = RemoteNode.ERROR
+			self.StopDataAcquisition(do_auto_start=False)
+			self.last_HW_config = None
+
+			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+		
+		elif message.state == "hw_ready":
+			self.remote_nodes[message.sender].status = RemoteNode.OK
+			self.logger.debug("    ==> '%s' node reports it's ready.", message.sender)
+
+			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+			
+			# are they all ready yet?
+			for node in self.remote_nodes:
+				if self.remote_nodes[node].type == RemoteNode.READOUT and self.remote_nodes[node].status is not RemoteNode.OK:
+					return
+
+			# all nodes are ready.  continue the startup sequence.
+			self.logger.info("    ==> all readout nodes ready.")
+			self.StartNextSubrun()
+		
+		elif message.state == "running" and hasattr(message, "gate_count"):
+			# updates are only relevant if we're still doing the same subrun...
+			if message.run_num != self.configuration.run or message.subrun_num != self.configuration.subrun:
+				return
+
+			# we can't rely on getting a notice for every single gate
+			# (the test stand and MTest read out too fast for that in some modes).
+			# so we use the integer division (//) construction below.
+			stride = Configuration.params["Master node"]["logfileGateCount"]
+			if message.gate_count // stride > self.last_logged_gate // stride:
+				self.logger.info("  DAQ has reached gate %d..." % message.gate_count)
+				self.last_logged_gate = message.gate_count
+
+			if message.gate_count > self.current_gate["number"]:
+				self.current_gate["number"] = message.gate_count
+				self.current_gate["type"]   = message.last_trigger_type
+				self.current_gate["time"]   = message.last_trigger_time
+				
+				self.postoffice.Send( self.StatusReport( items=["current_gate", "waiting"] ) )
+			
+		elif message.state == "finished":
+			self.remote_nodes[message.sender].completed = True
+			self.remote_nodes[message.sender].sent_sentinel = message.sentinel
+			self.remote_nodes[message.sender].status = RemoteNode.IDLE
+			self.logger.debug("    ==> '%s' node reports it's done taking data and %s send a sentinel.", message.sender, "DID" if message.sentinel else "DID NOT")
+			
+			# loop and check if they're all finished
+			sentinel = False
+			for node in self.remote_nodes:
+				if self.remote_nodes[node].type == RemoteNode.READOUT:
+					if not self.remote_nodes[node].completed:
+						self.logger.debug( "    ... still waiting on '%s' node.", node)
+						return
+					sentinel = sentinel or self.remote_nodes[node].sent_sentinel
+			
+			# all nodes are finished.  end the subrun.
+			self.logger.info("All nodes finished.  Sentinel status: %s", str(sentinel))
+			self.EndSubrun(sentinel=sentinel)
+
+	def DeviceStatusHandler(self, message):
+		""" Handles updates from various peripherals about
+		    changes in their state. """
+		
+		pass	
+		
+	def MgrDirectiveHandler(self, message):
+		""" Handles messages from front-end clients: requests
+		    for status updates, instructions for starting/stopping,
+		    requests for control, etc. """
+		
+		# ignore ill-formed messages
+		if not hasattr(message, "directive") or not hasattr(message, "client_id"):
+			self.logger.info("Directive message is badly formed and will be ignored:\n%s", message)
+			return
+		
+		response = message.ResponseMessage()
+		response.sender = self.id
+		
+		# there are a few directives for which 
+		# a lock is unnecessary, so we consider them first.
+		if message.directive == "status_report":
+			self.StatusReport(response)
+		elif message.directive == "pmt_hv_list":
+			self.worker_thread.queue.put( {"method": self.GetProblemPMTs, "kwargs": {"send_results": True}} )
+			status = True
+		elif message.directive == "series_info" and hasattr(message, "series"):
+			self.worker_thread.queue.put( {"method": self.SeriesInfo, "kwargs": {"series": message.series}} )
+			status = True
+		
+		# the rest are commands, so we first need to verify
+		# that this client is allowed to issue them.
+		else:
+			if not self.ClientAllowed(message.client_id):
+				self.logger.info("Got directive message from unallowed client ('%s') -- ignoring.  Message:\n%s", message.client_id, message)
+				response.subject = "not_allowed"
+			else:
+				status = None
+				
+				# some of these use the worker_thread because
+				# they start tasks that don't return immediately.
+				# the rule of thumb is, if they don't return quickly,
+				# use the worker_thread by putting the appropriate
+				# dictionary into its queue.  
+				# (see the documentation at
+				#  mnvruncontrol.backend.Threads.WorkerThread.run() ...)
+				if message.directive == "start":
+					self.logger.info("Client wants to begin data acquisition.")
+					if self.running:
+						self.logger.warning("  ... but we are already running!  Request is invalid.")
+						status = mnvruncontrol.backend.DataAcquisitionManager.RunError("Can't start running because DAQ is already running.")
+
+					elif len(self.errors) > 0:
+						self.logger.warning("There are errors left unaddressed.  These must be handled before starting the next run.")
+						status = mnvruncontrol.backend.DataAcquisitionManager.AlertError("There are unaddressed errors.  Handle those before starting a run!")
+					elif not hasattr(message, "configuration") or not isinstance(message.configuration, DAQConfiguration):
+						self.logger.error("Directive message does not properly specify configuration...")
+						status = mnvruncontrol.backend.DataAcquisitionManager.ConfigurationError("Run configuration is improperly specified.")
+					else:
+						self.worker_thread.queue.put( {"method": self.StartDataAcquisition, "kwargs": {"configuration": message.configuration}} )
+						status = True
+				elif message.directive == "continue":
+					self.logger.info("Frontend client requests continuation of running.")
+					self.worker_thread.queue.put({"method": self.StartNextSubrun})
+					status = True
+			
+				elif message.directive == "stop":
+					self.logger.info("Frontend client requests stoppage of data acquisition.")
+					self.worker_thread.queue.put( {"method": self.StopDataAcquisition, "kwargs": {"do_auto_start": False}} )
+					status = True
+					
+				elif message.directive == "skip":
+					self.logger.info("Frontend client requests skip to next subrun.")
+					self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end", auto_start=True) )
+					status = True
+				
+				elif message.directive == "alert_acknowledge":
+					if not hasattr(message, "alert_id"):
+						self.logger.warning("Got 'alert_acknowledge' message with no alert ID!  Ignoring...")
+					self.logger.info("Frontend client '%s' acknowledged alert %s.", message.client_id, message.alert_id)
+					status = self.AcknowledgeAlert(message.alert_id)
+
+				if status is None:
+					response.subject = "invalid_request"
+				else:
+					response.subject = "request_response"
+					response.success = status
+		self.postoffice.Send(response)
+	
+	def MgrInternalHandler(self, message):
+		""" Handles messages that are passed around internally
+		    by the DAQMgr.  Always insists that the messages
+		    have no return_path (i.e., haven't been transmitted
+		    over the network). """	
+
+		# ignore ill-formed messages
+		if not hasattr(message, "event"):
+			self.logger.warning("Internal message is badly formed!  Message:\n%s", message)
+			return
+		
+		# internal messages better actually be internal! ...
+		if len(message.return_path) > 0:
+			self.logger.info("Got 'DAQMgr internal' message over the network.  Ignoring.  Message:\n%s", message)
+			return
+		
+		
+		if message.event == "subrun_auto_start":
+			self.worker_thread.queue.put({"method": self.StartNextSubrun})
+			
+		elif message.event == "subrun_end":
+			auto_start = True if not hasattr(message, "auto_start") else message.auto_start
+			self.worker_thread.queue.put({"method": self.EndSubrun, "kwargs": {"auto_start": auto_start} })
+
+		elif message.event == "series_auto_start":
+			self.configuration.run += 1
+			self.configuration.subrun = 1
+			self.worker_thread.queue.put({"method": self.StartDataAcquisition, "args": [self.configuration]})
+		
+		elif message.event == "series_end":
+			if hasattr(message, "early_abort") and message.early_abort:
+				warning_msg = "Aborting early!"
+				if hasattr(message, "lost_process"):
+					warning_msg += "  (due to crash of '%s' process).  Last 2000 characters of output from this process:\n%s" % (message.lost_process, message.output_history)
+					self.logger.warning(warning_msg)
+					self.NewAlert(notice="'%s' process crashed!\nRunning has been halted for troubleshooting." % message.lost_process, severity=Alert.ERROR)
+				auto_start = False
+			else:
+				auto_start = True if not hasattr(message, "auto_start") else message.auto_start
+			# should auto-start next series if configuration allows it
+			# and the series ended nicely
+			self.worker_thread.queue.put( {"method": self.StopDataAcquisition, "kwargs": {"do_auto_start": auto_start}} )
 		
 	##########################################
 	# Global starters and stoppers
@@ -1458,7 +1462,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.logger.info("  All DAQ services started.  Data acquisition for subrun %d underway." % (self.configuration.subrun) )
 		
 ####################################################################
-#  Utilities
+#  Utilities & alerts
 ####################################################################
 
 	def AcknowledgeAlert(self, alert):
