@@ -60,24 +60,27 @@ class MonitorDispatcher(Dispatcher):
 		# except in the main thread.
 		signal.signal(signal.SIGUSR1, self.om_start_Gaudi)
 		
+	def BookSubscriptions(self):
+		""" Overrides Dispatcher's BookSubscriptions()
+		    to do something useful here. """
+	
 		# we need to know when the DAQ manager goes up or down,
 		# as well as when the OM system on this node is supposed
 		# to start or stop
-		handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.daq_mgr_status_handler,
-			        PostOffice.Subscription(subject="om_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.om_directive_handler }
+		handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.DAQMgrStatusHandler,
+			        PostOffice.Subscription(subject="om_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.OMDirectiveHandler }
 	
 		for subscription in handlers:
 			self.postoffice.AddSubscription(subscription)
 			self.AddHandler(subscription, handlers[subscription])
 		
-		
-	def daq_mgr_status_handler(self, message):
+	def DAQMgrStatusHandler(self, message):
 		""" Method to respond to changes in status of the
 		    DAQ manager (books subscriptions, etc.). """
 
-		self._daq_mgr_status_update(message, ["om_directive",])		    
+		self.DAQMgrStatusUpdate(message, ["om_directive",])		    
 	
-	def om_directive_handler(self, message):
+	def OMDirectiveHandler(self, message):
 		""" Handles incoming directives for the online monitoring system. """
 		
 		if not ( hasattr(message, "directive") and hasattr(message, "mgr_id") ):
@@ -346,16 +349,7 @@ if __name__ == "__main__":
 		sys.exit(1)
 
 	dispatcher = MonitorDispatcher()
-	dispatcher.bootstrap()
-
-	# we need to know when the DAQ manager goes up or down,
-	# as well as when online monitoring is supposed to start or stop
-	handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=dispatcher) : dispatcher.daq_mgr_status_handler,
-	             PostOffice.Subscription(subject="om_directive", action=PostOffice.Subscription.DELIVER, delivery_address=dispatcher) : dispatcher.om_directive_handler }
-	
-	for subscription in handlers:
-		dispatcher.postoffice.AddSubscription(subscription)
-		dispatcher.AddHandler(subscription, handlers[subscription])
+	dispatcher.Bootstrap()
 
 	sys.exit(0)
 	

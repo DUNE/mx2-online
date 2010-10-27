@@ -138,8 +138,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# when they are ready for execution to move on.
 		signal.signal(signal.SIGUSR1, self.StartNextThread)
 
-		# make sure shutdown happens smoothly
-		self.startup_methods += [self.BookSubscriptions, self.BeginSession]
+		# make sure setup and shutdown happen smoothly
+		self.startup_methods += [self.BeginSession]
 		self.cleanup_methods += [self.Cleanup]
 		
 	def BookSubscriptions(self):
@@ -1702,7 +1702,7 @@ if __name__ == "__main__":
 		sys.exit(1)
 
 	dispatcher = DataAcquisitionManager()
-	dispatcher.bootstrap()
+	dispatcher.Bootstrap()
 	
 	sys.exit(0)
 else:

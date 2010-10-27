@@ -33,7 +33,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 	This guy is the one who listens for requests and handles them.
 	There should NEVER be more than one instance running at a time!
 	(They wouldn't both be able to bind to the port...)  Thus the
-	start() method checks before allowing dispatching to be started.
+	_Start() method checks before allowing dispatching to be started.
 	"""
 	def __init__(self):
 		self.interactive = False
@@ -76,10 +76,10 @@ class Dispatcher(PostOffice.MessageTerminus):
 		# make sure that the process shuts down gracefully given the right signals.
 		# these lines set up the signal HANDLERS: which functions are called
 		# when each signal is received.
-		signal.signal(signal.SIGINT, self.shutdown)
-		signal.signal(signal.SIGTERM, self.shutdown)
+		signal.signal(signal.SIGINT, self._Shutdown)
+		signal.signal(signal.SIGTERM, self._Shutdown)
 		
-	def setup(self):
+	def _Setup(self):
 		try:
 			server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.
 			# allowed to be rebound before a TIME_WAIT, LAST_ACK, or FIN_WAIT state expires
@@ -93,17 +93,17 @@ class Dispatcher(PostOffice.MessageTerminus):
 		except socket.error, e:
 			self.__logger.exception("Error trying to bind my listening socket:")
 			self.__logger.fatal("Can't get a socket.")
-			self.shutdown()
+			self._Shutdown()
 		except Exception, e:
 			self.__logger.exception("An error occurred while trying to bind the socket:")
 			self.__logger.fatal("Quitting.")		
-			self.shutdown()
+			self._Shutdown()
 		
 		self.__logger.info("Listening on port %d.", self.socket_port)
 		
 		self.server_socket = server_socket
 			
-	def start(self):
+	def _Start(self):
 		""" Starts the listener.  If you want to run it as a background
 		    service, make sure the attribute 'interactive' is False. 
 		    This is normally accomplished by not setting the "-i" flag
@@ -120,16 +120,16 @@ class Dispatcher(PostOffice.MessageTerminus):
 				self.kill_other_instance(other_instance_pid)
 			else:
 				self.__logger.fatal("Terminating this instance.")
-				self.shutdown()
+				self._Shutdown()
 				sys.exit(1)
 
-		self.setup()
+		self._Setup()
 
 		# don't daemonize or make a PID file if we're quitting anyway
 		if not self.quit:
 			# make sure this thing is a daemon if it needs to be
  			if not self.interactive:
-				self.daemonize()
+				self._Daemonize()
 		
 			self.__logger.info("Creating new PID file.  My PID: " + str(os.getpid()) + "")
 			
@@ -146,23 +146,27 @@ class Dispatcher(PostOffice.MessageTerminus):
 		PostOffice.MessageTerminus.__init__(self)
 		self.postoffice = PostOffice.PostOffice(use_logging=True, listen_socket=self.server_socket)
 		
+		# set up any subscriptions the derived class wants
+		self.BookSubscriptions()
+		
+		# also do any other startup stuff the derived class specified
 		for method in self.startup_methods:
 			method()
 
 		# make sure we receive correspondence regarding our lock status
 		lock_subscr = PostOffice.Subscription(subject="lock_request", action=PostOffice.Subscription.DELIVER, delivery_address=self)
 		self.postoffice.AddSubscription(lock_subscr)
-		self.AddHandler(lock_subscr, self.lock_handler)
+		self.AddHandler(lock_subscr, self._LockHandler)
 		
 		self.__logger.info("Dispatching started.")
 		while not self.quit:
 			time.sleep(0.1)
 		
 		self.__logger.info("Shutting down.")
-		self.cleanup()
-		self.shutdown()
+		self._Cleanup()
+		self._Shutdown()
 		
-	def shutdown(self, sig=None, frame=None):
+	def _Shutdown(self, sig=None, frame=None):
 		""" Ends the dispatch loop. """
 
 		# when this method is not called as a signal handler
@@ -173,14 +177,14 @@ class Dispatcher(PostOffice.MessageTerminus):
 
 		self.quit = True
 
-	def stop(self):
+	def _Stop(self):
 		""" Kills another instance of the dispatcher. """
 
 		self.__logger.info("Checking for other instances to stop...")
 		other_pid = self.other_instances()
 		
 		if other_pid:
-			self.__logger.info("Stopping instance with pid " + str(other_pid) + "...")
+			self.__logger.info("Stopping instance with pid %d...", other_pid)
 			self.kill_other_instance(other_pid)
 		else:
 			self.__logger.info("No other instances to stop.")
@@ -188,7 +192,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 			
 		self.__logger.info("Shutdown completed.")
 		
-	def cleanup(self):
+	def _Cleanup(self):
 		for cleanup_method in self.cleanup_methods:
 			cleanup_method()
 
@@ -202,7 +206,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 		
 #		print threading.enumerate()
 
-	def daemonize(self):
+	def _Daemonize(self):
 		""" Starts the listener as a background service.
 		    Modified mostly from code.activestate.com, recipe 278731. """
 		    
@@ -340,7 +344,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 				break
 		self.__logger.info("Process " + str(pid) + " ended.")
 	
-	def _daq_mgr_status_update(self, message, additional_notification_requests = []):
+	def DAQMgrStatusUpdate(self, message, additional_notification_requests = []):
 		""" Method to respond to changes in status of the
 		    DAQ manager (books subscriptions, etc.). 
 		    
@@ -383,7 +387,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 				self.lock_id = None
 	
 	
-	def lock_handler(self, message):
+	def _LockHandler(self, message):
 		""" Handles incoming requests for lock status changes/information.
 		
 		    Messages must contain at least the attributes 'request'
@@ -456,7 +460,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 
 		self.postoffice.Send(response_msg)
 	
-	def client_allowed(self, client_id):
+	def ClientAllowed(self, client_id):
 		""" Checks if a client is allowed to issue commands
 		    based on the current state of this node's lock. """
 
@@ -473,7 +477,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 #		return self.lock_id == client_id
 		
 		
-	def bootstrap(self):
+	def Bootstrap(self):
 		""" Handles the processing of command-line arguments
 		    and starts the dispatcher processes.
 		    Derived classes should call this in a 
@@ -488,7 +492,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 	
 		if len(commands) != 1 or not(commands[0].lower() in ("start", "stop")):
 			parser.print_help()
-			self.shutdown()
+			self._Shutdown()
 			sys.exit(0)
 
 		command = commands[0].lower()
@@ -508,14 +512,25 @@ class Dispatcher(PostOffice.MessageTerminus):
 				print "Also see the log file.\n"
 
 			try:
-				self.start()
+				self._Start()
 			except:
-				self.shutdown()
+				self._Shutdown()
 				raise
 		elif command == "stop":
 			self.interactive = True
 			self.replace = False
-			self.stop()
+			self._Stop()
+			
+	def BookSubscriptions(self):
+		""" Books any subscriptions this dispatcher
+		    should be respecting.
+		    
+		    This is a placeholder method intended for
+		    derived classes to override.  Its utility
+		    is that it is not called until the PostOffice
+		    and MessageTerminus are correctly set up. """
+		
+		pass
 			
 class LockError(Exception):
 	pass

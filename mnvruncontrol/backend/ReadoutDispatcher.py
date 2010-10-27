@@ -68,23 +68,27 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 
 		self.daq_thread = None
 
+	def BookSubscriptions(self):
+		""" Overrides Dispatcher's BookSubscriptions()
+		    to do something useful here. """
+		
 		# we need to know when the DAQ manager goes up or down,
 		# as well as when the DAQ on this node is supposed to start or stop
-		handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.daq_mgr_status_handler,
-			        PostOffice.Subscription(subject="readout_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.readout_directive_handler }
+		handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.DAQMgrStatusHandler,
+			        PostOffice.Subscription(subject="readout_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.ReadoutDirectiveHandler }
 	
 		for subscription in handlers:
 			self.postoffice.AddSubscription(subscription)
 			self.AddHandler(subscription, handlers[subscription])
 
 
-	def daq_mgr_status_handler(self, message):
+	def DAQMgrStatusHandler(self, message):
 		""" Method to respond to changes in status of the
 		    DAQ manager (books subscriptions, etc.). """
 
-		self._daq_mgr_status_update(message, ["readout_directive", ])		    
+		self.DAQMgrStatusUpdate(message, ["readout_directive", ])		    
 	
-	def readout_directive_handler(self, message):
+	def ReadoutDirectiveHandler(self, message):
 		""" Handles incoming directives for a readout node. """
 		
 		self.logger.debug("Manager directive message:\n%s", message)
@@ -533,7 +537,7 @@ if __name__ == "__main__":
 		sys.exit(1)
 
 	dispatcher = ReadoutDispatcher()
-	dispatcher.bootstrap()
+	dispatcher.Bootstrap()
 	
 	sys.exit(0)
 else:
