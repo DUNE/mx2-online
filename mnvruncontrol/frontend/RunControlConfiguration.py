@@ -20,6 +20,7 @@ import os.path
 
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import Configuration
+from mnvruncontrol.configuration import MetaData
 
 # only do the graphical stuff if $DISPLAY is defined!
 if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
@@ -28,6 +29,11 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 	from wx.lib.mixins.listctrl import ListRowHighlighter
 	from wx.lib.mixins.listctrl import TextEditMixin
 	from mnvruncontrol.backend import Events
+
+	# there are a couple controls for simple types that can't be done automatically
+	# because they use the metadata as the source of their options
+	metadata_ctrls = { "detectorType" : MetaData.DetectorTypes,
+	                   "hwInitLevel"  : MetaData.HardwareInitLevels }
 
 	#########################################################
 	#   Configuration
@@ -46,7 +52,6 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			for pagename in Configuration.names:
 				self.pages[pagename] = wx.Panel(nb)
 		
-	#		warningText = wx.StaticText(self.frontendPage, -1, "** PLEASE don't change these values unless you know what you're doing! **")
 		
 			###########################################################################
 			# first, the ones that can be automatically placed on the panels
@@ -62,7 +67,8 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 
 				for param_name in Configuration.params[param_set]:
 					# any iterable types will need to be added by hand.
-					if hasattr(Configuration.params[param_set][param_name], '__iter__'):
+					if hasattr(Configuration.params[param_set][param_name], '__iter__') \
+					  or param_name in metadata_ctrls:
 						continue
 
 					labels[param_set][param_name] = wx.StaticText(self.pages[param_set], -1, Configuration.names[param_set][param_name])
@@ -113,6 +119,14 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 #			gridSizers["Front end"].Add(labels["Front end"]["logFileLocations"], flag=wx.ALIGN_CENTER_VERTICAL)
 #			gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
 
+			# first: config choices that need list boxes.
+			for key in metadata_ctrls:
+				labels["Master node"][key] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["Master node"][key])
+				self.entries["Master node"][key] = wx.Choice(self.pages["Master node"], -1, choices=metadata_ctrls[key].descriptions())
+				self.entries["Master node"][key].SetSelection( metadata_ctrls[key].index(Configuration.params["Master node"][key]) )
+				gridSizers["Master node"].Add(labels["Master node"][key], flag=wx.ALIGN_CENTER_VERTICAL)
+				gridSizers["Master node"].Add(self.entries["Master node"][key], proportion=0, flag=wx.EXPAND)
+			
 			# next: remote node config
 			labels["Master node"]["nodeAddresses"] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["Master node"]["nodeAddresses"])
 			self.entries["Master node"]["nodeAddresses"] = AutoSizingEditableListCtrl(self.pages["Master node"], style=wx.LC_REPORT | wx.LC_HRULES)
@@ -225,18 +239,9 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			
 					# now any that need to be handled in a particular way
 			
-#					# first: log file locations
-#					loglist = []
-#					index = -1
-#					while True:
-#						index = self.entries["Front end"]["logFileLocations"].GetNextItem(index)
-#				
-#						if index == -1:
-#							break
-#						loglist.append(self.entries["Front end"]["logFileLocations"].GetItem(index, 0).GetText())
-#			
-#					db["logFileLocations"] = loglist
-			
+					# first: choices
+					for item in metadata_ctrls:
+						db[item] = metadata_ctrls[item].item(self.entries["Master node"][item].GetSelection()).hash
 			
 					# now remote nodes
 					nodelist= []

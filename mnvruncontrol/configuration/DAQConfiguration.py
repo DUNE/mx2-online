@@ -59,11 +59,13 @@ class DAQConfiguration:
           self.Load()
           
 	def Validate(self):
+		# notice that the user can't freely specify hw_init or detector:
+		# they must match what's in the configuration DB
 		return     (isinstance(self.run, int) and self.run > 0) \
 		       and (isinstance(self.subrun, int) and self.subrun > 0) \
 		       and (isinstance(self.et_port, int) and self.et_port - Configuration.params["Socket setup"]["etPortBase"] in range(Configuration.params["Socket setup"]["numETports"])) \
-		       and self.hw_init in MetaData.HardwareInitLevels \
-		       and self.detector in MetaData.DetectorTypes \
+		       and self.hw_init == Configuration.params["Master node"]["hwInitLevel"] \
+		       and self.detector == Configuration.params["Master node"]["detectorType"] \
 		       and isinstance(self.is_single_run, bool) \
 		       and (isinstance(self.num_gates, int) and self.num_gates > 0) \
 		       and self.run_mode in MetaData.RunningModes \

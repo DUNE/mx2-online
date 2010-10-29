@@ -234,6 +234,14 @@ class MetaDatum:
 #
 ########################################################################################################
 		
+DetectorTypes		= MetaData(( ("UNKNOWN",        "Unknown",            0,  "UN"),
+				             ("PMT_TEST_STAND", "PMT test stand",     1,  "FT"),
+				             ("TP",             "Tracking prototype", 2,  "TP"),
+				             ("TEST_BEAM",      "Test beam",          4,  "TB"),
+				             ("FROZEN",         "Frozen",             8,  "MN"),
+				             ("UPSTREAM",       "Upstream",           16, "US"),
+				             ("MINERVA",        "Full MINERvA",       32, "MV") ))
+
 HardwareConfigurations = MetaData(( ("NOFILE",     "Current state",          0, "[no HW file -- current configuration]"),
                                     ("BEAM",       "Beam settings",          1, "SCBeamFile"),
                                     ("LI",         "LI settings",            2, "SCLIFile"),
@@ -271,14 +279,6 @@ LEDGroups			= MetaData(( ("ABCD",            "ABCD",  2**3,    "0"),
 #				             ("ABD",   2**23,   "t"),
 #				             ("BD",    2**24,   "u") ))
 
-
-DetectorTypes		= MetaData(( ("UNKNOWN",        "Unknown",            0,  "UN"),
-				             ("PMT_TEST_STAND", "PMT test stand",     1,  "FT"),
-				             ("TP",             "Tracking prototype", 2,  "TP"),
-				             ("TEST_BEAM",      "Test beam",          4,  "TB"),
-				             ("FROZEN",         "Frozen",             8,  "MN"),
-				             ("UPSTREAM",       "Upstream",           16, "US"),
-				             ("MINERVA",        "Full MINERvA",       32, "MV") ))
 
 RunningModes		= MetaData(( ("ONE_SHOT",       "One shot",             0, "pdstl"),
 				             ("NUMI",           "NuMI beam",            1, "numib"),

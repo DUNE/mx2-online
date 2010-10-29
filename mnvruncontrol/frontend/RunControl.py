@@ -161,10 +161,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    are not hard-coded into the GUI; they need to be
 		    loaded from the MetaData at runtime. """
 		
-		entries      = [ "config_global_hwinit_entry", "config_global_detector_entry", "config_singlerun_runmode_entry",
-		                 "config_singlerun_hwconfig_entry", "config_singlerun_lilevel_entry", "config_runseries_type_entry" ]
-		choice_lists = [ MetaData.HardwareInitLevels,  MetaData.DetectorTypes,         MetaData.RunningModes,
-		                 MetaData.HardwareConfigurations,   MetaData.LILevels,                MetaData.RunSeriesTypes ]
+		entries      = [ "config_singlerun_runmode_entry", "config_singlerun_hwconfig_entry",
+		                 "config_singlerun_lilevel_entry", "config_runseries_type_entry" ]
+		choice_lists = [ MetaData.RunningModes, MetaData.HardwareConfigurations,
+		                 MetaData.LILevels, MetaData.RunSeriesTypes ]
 		
 		for (entry_name, choice_list) in zip(entries, choice_lists):
 			entry = xrc.XRCCTRL(self.frame, entry_name)
@@ -304,8 +304,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		controls = [ xrc.XRCCTRL(self.frame, "control_start_button"),
 
 		             xrc.XRCCTRL(self.frame, "config_global_run_entry"),
-		             xrc.XRCCTRL(self.frame, "config_global_hwinit_entry"),
-		             xrc.XRCCTRL(self.frame, "config_global_detector_entry"),
 		             xrc.XRCCTRL(self.frame, "config_global_singlerun_button"),
 		             xrc.XRCCTRL(self.frame, "config_global_runseries_button"),
 
@@ -872,8 +870,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# assemble the information needed to properly start the run
 		self.status["configuration"].run               = xrc.XRCCTRL(self.frame, "config_global_run_entry").GetValue()
 		self.status["configuration"].subrun            = xrc.XRCCTRL(self.frame, "config_global_subrun_entry").GetValue()
-		self.status["configuration"].hw_init           = MetaData.HardwareInitLevels.item(xrc.XRCCTRL(self.frame, "config_global_hwinit_entry").GetSelection())
-		self.status["configuration"].detector          = MetaData.DetectorTypes.item(xrc.XRCCTRL(self.frame, "config_global_detector_entry").GetSelection())
 		self.status["configuration"].is_single_run     = xrc.XRCCTRL(self.frame, "config_global_singlerun_button").GetValue()
 		self.status["configuration"].num_gates         = xrc.XRCCTRL(self.frame, "config_singlerun_gates_entry").GetValue()
 		self.status["configuration"].run_mode          = MetaData.RunningModes.item(xrc.XRCCTRL(self.frame, "config_singlerun_runmode_entry").GetSelection())
@@ -1017,8 +1013,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			runnum_ctrl.SetValue(status["configuration"].run)
 			runnum_ctrl.SetRange(status["configuration"].run, runnum_ctrl.GetMax())
 			xrc.XRCCTRL(self.frame, "config_global_subrun_entry").SetValue(status["configuration"].subrun)
-			xrc.XRCCTRL(self.frame, "config_global_hwinit_entry").SetSelection(MetaData.HardwareInitLevels.index(status["configuration"].hw_init))
-			xrc.XRCCTRL(self.frame, "config_global_detector_entry").SetSelection(MetaData.DetectorTypes.index(status["configuration"].detector))
 			xrc.XRCCTRL(self.frame, "config_global_singlerun_button").SetValue(status["configuration"].is_single_run)
 			xrc.XRCCTRL(self.frame, "config_global_runseries_button").SetValue(not status["configuration"].is_single_run)
 			xrc.XRCCTRL(self.frame, "config_singlerun_gates_entry").SetValue(status["configuration"].num_gates)

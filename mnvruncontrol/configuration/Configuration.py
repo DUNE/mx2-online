@@ -24,6 +24,7 @@ import anydbm
 import os.path
 
 from mnvruncontrol.configuration import Defaults
+from mnvruncontrol.configuration import MetaData
 
 configuration = { "General"          : { "notify_addresses"          : ( Defaults.NOTIFY_ADDRESSES,                     "Email addresses to nofity of problems",                  list  )  },
 
@@ -59,7 +60,9 @@ configuration = { "General"          : { "notify_addresses"          : ( Default
                                          "runinfoFile"               : ( Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT,       "Run/subrun info database file",                   str   ),
                                          "logfileGateCount"          : ( Defaults.LOGFILE_GATE_COUNT_INTERVAL,          "Interval to write gate count to log file",        int   ),
                                          "etSystemFileLocation"      : ( Defaults.ET_SYSTEM_LOCATION_DEFAULT,           "ET system file location",                         str   ),
-                                         "nodeAddresses"           : ( [],                                            "Nodes to notify when DAQ manager is ready",       list  ),   
+                                         "hwInitLevel"               : ( MetaData.HardwareInitLevels.FULL_HW_INIT.hash, "Hardware init level",                             int   ),
+                                         "detectorType"              : ( MetaData.DetectorTypes.MINERVA.hash,           "Detector type",                                   int   ),
+                                         "nodeAddresses"             : ( [],                                            "Nodes to notify when DAQ manager is ready",       list  ),   
                                          "sessionfile"               : ( Defaults.DAQMGR_SESSION_FILE,                  "Where to store the DAQ manager session file",     str   ),
                                          "runSeriesLocation"         : ( Defaults.RUN_SERIES_DB_LOCATION_DEFAULT,       "Run series file location",                        str   ),
                                          "master_rawdataLocation"    : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (master node)",                 str   )  },
