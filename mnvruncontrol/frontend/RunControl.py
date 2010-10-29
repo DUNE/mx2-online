@@ -64,7 +64,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# load and show the graphics
 		self.res = xrc.XmlResource('../resources/frontend.xrc')
 		self.frame = self.res.LoadFrame(None, 'main_frame')
-		self.frame.SetDimensions(0, 0, 650, 700)
+		self.frame.SetDimensions(0, 0, 1000, 1000)
 		self.SetTopWindow(self.frame)
 		self.frame.Show()
 
@@ -103,11 +103,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		                         "LED off":   wx.Bitmap(path_template % "LED_off.png", type=wx.BITMAP_TYPE_PNG),
 		                         "LED error": wx.Bitmap(path_template % "LED_error.png", type=wx.BITMAP_TYPE_PNG) }
 
-		# redraw one last time!
-		xrc.XRCCTRL(self.frame, "control_page").Layout()
-		xrc.XRCCTRL(self.frame, "configuration_page").Layout()
-		self.frame.Layout()
-		
+		self.Redraw()
+
 		# try to figure out what my externally-visible IP address is
 		try:
 			self.ip_addr = urllib2.urlopen("http://whatismyip.org").read()
@@ -176,24 +173,20 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			entry.SetSelection(0)
 			
 		# also take care of the list controls, while we're at it
-		for series_ctrl in (xrc.XRCCTRL(self.frame, "status_daq_series_list"), xrc.XRCCTRL(self.frame, "config_runseries_details")):
+		controls = (xrc.XRCCTRL(self.frame, "status_daq_series_list"), xrc.XRCCTRL(self.frame, "config_runseries_details"))
+		big_col = (3, 2)
+		for series_ctrl in controls:
 			if series_ctrl == xrc.XRCCTRL(self.frame, "status_daq_series_list"):
-				series_ctrl.InsertColumn(0, "", width=20)		# which subrun is currently being executed
+				series_ctrl.InsertColumn(0, u"\u00a0", width=30)		# which subrun is currently being executed
 			
 			for column_name in ("Subrun", "# gates", "Configuration"):
-				series_ctrl.InsertColumn(series_ctrl.GetColumnCount(), column_name, width=wx.LIST_AUTOSIZE)
+				series_ctrl.InsertColumn(series_ctrl.GetColumnCount(), column_name, width=100)
 
-			# reformat...
-			width_left = series_ctrl.GetClientSize().width
-			for col in range(series_ctrl.GetColumnCount()-1):
-				width_left -= series_ctrl.GetColumnWidth(col)
-			series_ctrl.SetColumnWidth(series_ctrl.GetColumnCount()-1, width_left-5)		# leave 5 px buffer
-		
 		# extra details for the 'configuration' one
 		config_ctrl = xrc.XRCCTRL(self.frame, "config_runseries_details")
-		for column_name in ("LED groups", "LI level"):
-			config_ctrl.InsertColumn(series_ctrl.GetColumnCount(), column_name, width=wx.LIST_AUTOSIZE)
-		
+		for column_name in ("LED grps", "LI level"):
+			config_ctrl.InsertColumn(series_ctrl.GetColumnCount(), column_name, width=100)
+				
 		column_map = { 0: "Node",
 		               1: "CROC",
 		               2: "Chain",
@@ -202,7 +195,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		               5: "HV period" }
 		pmt_ctrl = xrc.XRCCTRL(self.frame, "pmt_check_list")
 		for column in column_map:
-			pmt_ctrl.InsertColumn(column, column_map[column], width=wx.LIST_AUTOSIZE)
+			pmt_ctrl.InsertColumn(column, column_map[column], width=100)
 		
 	def SetupHandlers(self):
 		""" Set up the handlers for PostOffice messages. """
@@ -469,19 +462,18 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 			for page in (xrc.XRCCTRL(self.frame, "control_page"), xrc.XRCCTRL(self.frame, "configuration_page")):
 				page.Show()
-				page.Layout()
 
 			# make sure the right panel (single run or series) is showing
 			self.OnSeriesClick()
 
-			xrc.XRCCTRL(self.frame, "main_frame").Layout()
+			self.Redraw()
 		
-			# format the run series display now that it's visible.
-			series_ctrl = xrc.XRCCTRL(self.frame, "status_daq_series_list")
-			width_left = series_ctrl.GetClientSize().width
-			for col in range(series_ctrl.GetColumnCount()-1):
-				width_left -= series_ctrl.GetColumnWidth(col)
-			series_ctrl.SetColumnWidth(series_ctrl.GetColumnCount()-1, width_left-5)		# leave 5 px buffer
+#			# format the run series display now that it's visible.
+#			series_ctrl = xrc.XRCCTRL(self.frame, "status_daq_series_list")
+#			width_left = series_ctrl.GetClientSize().width
+#			for col in range(series_ctrl.GetColumnCount()-1):
+#				width_left -= series_ctrl.GetColumnWidth(col)
+#			series_ctrl.SetColumnWidth(series_ctrl.GetColumnCount()-1, width_left-5)		# leave 5 px buffer
 		else:
 			control_button_panel.Hide()
 			self.ShowPanel("connection_panel")
@@ -540,7 +532,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			work = { "method": self.DisconnectDAQ, "kwargs": self.ssh_details }
 			
 		control_page = xrc.XRCCTRL(self.frame, "control_page")
-		control_page.Layout()
+		self.Redraw()
 
 		self.worker_thread.queue.put(work)
 		
@@ -610,7 +602,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		if self.problem_pmt_list is not None:
 			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=self.problem_pmt_list, ask_confirm=True) )
 		
-		self.frame.Layout()
+		self.Redraw()
 
 	def OnHVContinueClick(self, evt):
 		""" Continues the run sequence after a PMT HV/period check. """
@@ -703,7 +695,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 			index = pmt_list.GetNextItem(index)
 	
-		xrc.XRCCTRL(self.frame, "main_frame").Layout()
+		self.Redraw()
 
 		width_left = pmt_list.GetClientSize().width
 		for col in range(pmt_list.GetColumnCount()-1):
@@ -752,7 +744,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			else:
 				progress_gauge.Hide()
 
-		xrc.XRCCTRL(self.frame, "main_frame").Layout()
+		self.Redraw()
 
 		
 	def OnRunNumberAdjust(self, evt):
@@ -785,8 +777,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		xrc.XRCCTRL(self.frame, "config_singlerun_panel").Show(singlerun)
 		xrc.XRCCTRL(self.frame, "config_runseries_panel").Show(not singlerun)
 
-		xrc.XRCCTRL(self.frame, "configuration_page").Layout()
-
 		# be sure to get the newest version
 		# of whichever series is currently selected
 		# if the user wants a run series
@@ -794,11 +784,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			self.OnSeriesTypeSelect()
 
 			# also format the run series display now that it's visible.
-			series_ctrl = xrc.XRCCTRL(self.frame, "config_runseries_details")
-			width_left = series_ctrl.GetClientSize().width
-			for col in range(series_ctrl.GetColumnCount()-1):
-				width_left -= series_ctrl.GetColumnWidth(col)
-			series_ctrl.SetColumnWidth(series_ctrl.GetColumnCount()-1, width_left)
+#			width_left = series_ctrl.GetClientSize().width
+#			for col in range(series_ctrl.GetColumnCount()-1):
+#				width_left -= series_ctrl.GetColumnWidth(col)
+#			series_ctrl.SetColumnWidth(series_ctrl.GetColumnCount()-1, width_left)
+
+		self.Redraw()
 		
 	def OnSeriesTypeSelect(self, evt=None):
 		""" Initiates the process of retrieving the appropriate
@@ -825,7 +816,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		series_ctrl = xrc.XRCCTRL(self.frame, "config_runseries_details")
 		series_ctrl.DeleteAllItems()
-		
+
+		series_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
+#		
 		for runinfo in evt.details.Runs:
 			index = series_ctrl.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
 			series_ctrl.SetStringItem( index, 0, str(evt.details.Runs.index(runinfo)+1) )
@@ -841,13 +834,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			series_ctrl.SetStringItem( index, 3, led_groups )
 			series_ctrl.SetStringItem( index, 4, li_level )
 
-
-		# format the run series display
-		series_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
-		width_left = series_ctrl.GetClientSize().width
-		for col in range(series_ctrl.GetColumnCount()-1):
-			width_left -= series_ctrl.GetColumnWidth(col)
-		series_ctrl.SetColumnWidth(2, width_left-5)		# make the 'Configuration column the biggest.
 		
 		
 	def OnSkipClick(self, evt):
@@ -1024,7 +1010,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				series_ctrl.SetStringItem( index, 1, str(status["run_series"].Runs.index(runinfo) + status["first_subrun"]) )
 				series_ctrl.SetStringItem( index, 2, str(runinfo.gates) )
 				series_ctrl.SetStringItem( index, 3, MetaData.RunningModes.description(runinfo.runMode) )
-		
+
 		# now get the configuration and fill the appropriate boxes
 		if "configuration" in status:
 			runnum_ctrl = xrc.XRCCTRL(self.frame, "config_global_run_entry")
@@ -1090,12 +1076,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		if "waiting" in status:
 			self.alert_thread.do_pulse = status["waiting"]
 
-		# redraw in case anything moved
-		xrc.XRCCTRL(self.frame, "control_page").Layout()
-		xrc.XRCCTRL(self.frame, "configuration_page").Layout()
-		xrc.XRCCTRL(self.frame, "main_frame").Layout()
-		
-		self.frame.Layout()
+		# in case anything moved
+		self.Redraw()
 	
 	def OnStopClick(self, evt=None):
 		""" Begin the shutdown sequence. """
@@ -1118,6 +1100,33 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		self.worker_thread.queue.put( {"method": self.StopRunning} )
 	
+	def Redraw(self):
+		""" Makes sure that everything is completely
+		    repositioned and redrawn as necessary. """
+
+#		self.frame.Refresh()
+		
+		# force the auto-layout algorithms to run
+		xrc.XRCCTRL(self.frame, "control_page").Layout()
+		xrc.XRCCTRL(self.frame, "configuration_page").Layout()
+		self.frame.Layout()
+		
+		# then make sure our list controls look right		
+		controls = ( xrc.XRCCTRL(self.frame, "status_daq_series_list"),
+		             xrc.XRCCTRL(self.frame, "config_runseries_details") )
+		big_col = (3, 2)
+		for series_ctrl, focus_col in zip(controls, big_col):
+			series_ctrl.Layout()
+			width_left = series_ctrl.GetClientSize().width
+			for col in range(series_ctrl.GetColumnCount()):
+				# the "Configuration" column is supposed to be the big one
+				if col == focus_col:
+					continue
+				series_ctrl.SetColumnWidth(col, wx.LIST_AUTOSIZE_USEHEADER)
+				width_left -= series_ctrl.GetColumnWidth(col)
+				
+			series_ctrl.SetColumnWidth(focus_col, width_left-2)
+	
 	def RestorePanelState(self):
 		""" Restores the panel state previously set
 		    by using SavePanelState(). """
@@ -1138,7 +1147,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		self.panel_state = {}
 
-		self.frame.Layout()
+		self.Redraw()
 	
 	def SavePanelState(self):
 		""" Puts the display state of the panels
@@ -1187,7 +1196,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				other_panel.Hide()
 		
 		panel.Show()
-		self.frame.Layout()
+		self.Redraw()
 		
 		
 	######################################################
