@@ -114,9 +114,13 @@ for param_set in configuration:
 
 
 # first, we check if the user passed a location for the main config DB
-# on the command line.  (e.g. maybe there's no '/work' directory.)
+# in the environment or on the command line.
+# (e.g. maybe there's no '/work' directory.)
 # if none is supplied, we use the default from Defaults.
 user_specified_db = None
+if os.getenv("RC_CONFIG_PATH") is not None:
+	user_specified_db = os.getenv("RC_CONFIG_PATH")
+
 if "-c" in sys.argv:
 	index = sys.argv.index("-c")
 	if index >= len(sys.argv) - 1:
@@ -140,11 +144,19 @@ if user_specified_db is not None:
 	locations_to_try = [user_specified_db] + locations_to_try
 	
 config_file_inaccessible = True
+config_file_empty = False
 for location in locations_to_try:
 	try:
 		db = shelve.open(location, "r")
 	except anydbm.error:
-		pass
+		try:
+			db = shelve.open(location, "c")
+		except anydbm.error as e:
+			pass
+		else:
+			config_file_inaccessible = False
+			config_file_empty = True
+			break
 	else:
 		config_file_inaccessible = False
 		break
@@ -156,6 +168,7 @@ if not config_file_inaccessible:
 				params[param_set][param_name] = db[param_name]
 			except KeyError:
 				pass		# the default is already set
+	db.close()
 else:
-	print "Note: configuration file is inaccessible.  Defaults are in use."
+	print "Note: configuration file is inaccessible.  Defaults are in use"
 
