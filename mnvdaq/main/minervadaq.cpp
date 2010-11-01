@@ -804,7 +804,7 @@ int main(int argc, char *argv[])
 				triggerType = LightInjection;
 				allowedReadoutTime = allowedLightInjection;
 				zeroSuppress = false; // Should always read all boards for LI & Discr. may be off.
-				//nReadoutADC = 1;      // Deepest only.
+				nReadoutADC = 1;      // Deepest only.
 				break;
 			case MixedBeamPedestal:
 				if (triggerCounter%2) { // ALWAYS start with NuMI!
