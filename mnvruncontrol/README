@@ -69,9 +69,9 @@ Contents:
     configuration file in a folder called "/work/conditions".  If such a folder
     does not exist, you have a choice: (a) create it, (b) edit the file
     backend/Defaults.py and change the variables CONFIG_DB_LOCATION and
-    CONFIG_DB_NAME to suit your preferences, (c) place a file with the name
-    "run_control_config.db" (it can be empty) in the same directory as any of 
-    the run control files you want to run, or (d) pass the option
+    CONFIG_DB_NAME to suit your preferences, (c) set the environment variable
+    RC_CONFIG_PATH to the full path to the file you would like to use (be sure
+    it is set at every invocation!) or (d) pass the option 
     "-c <config_file_full_path>" at each invocation.
     
     For your sanity I recommend either option (a) or (b).
