@@ -111,6 +111,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		except urllib2.URLError:
 			self.ip_addr = None
 
+		# make sure the controls are set up as we expect
+		self.ConfigControlsEnable()
+
 		# if the config has us auto-connecting,
 		# we should behave as if the 'connect' button was clicked
 		if self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_autoconnect")).IsChecked():
@@ -125,6 +128,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		self.Bind(wx.EVT_MENU, self.OnClose, id=xrc.XRCID("menu_exit"))
 		self.Bind(wx.EVT_MENU, self.OnSave, id=xrc.XRCID("menu_save"))
+		self.Bind(wx.EVT_MENU, self.ConfigControlsEnable, id=xrc.XRCID("menu_lockdown"))
 
 		self.frame.Bind(wx.EVT_BUTTON, self.OnAlertAcknowledgeClick, id=xrc.XRCID("alert_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnStartClick, id=xrc.XRCID("control_start_button"))
@@ -299,11 +303,22 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		""" Enables or disables the configuration buttons as appropriate
 		    (depending on whether or not we're running, have control, etc.) """
 
-		enabled = ("running" in self.status and self.status["running"] == False) and self.in_control
+		enabled =    self.status is not None \
+		          and ("running" in self.status and self.status["running"] == False) \
+		          and self.in_control
 
-		controls = [ xrc.XRCCTRL(self.frame, "control_start_button"),
+		menu_items = [ self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_autostart")),
+		               self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_lockdown")) ]
 
-		             xrc.XRCCTRL(self.frame, "config_global_run_entry"),
+		for item in menu_items:
+			item.Enable(enabled)
+
+		# the start button has the same stipulations.
+		xrc.XRCCTRL(self.frame, "control_start_button").Enable(enabled)
+
+
+		enabled = enabled and not self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_lockdown")).IsChecked()
+		controls = [ xrc.XRCCTRL(self.frame, "config_global_run_entry"),
 		             xrc.XRCCTRL(self.frame, "config_global_singlerun_button"),
 		             xrc.XRCCTRL(self.frame, "config_global_runseries_button"),
 
@@ -312,10 +327,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		             xrc.XRCCTRL(self.frame, "config_singlerun_hwconfig_entry"),
 		             xrc.XRCCTRL(self.frame, "config_singlerun_gates_entry"),
 		             
-		             xrc.XRCCTRL(self.frame, "config_runseries_type_entry"),
-		             
-		             self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_autostart")),
-		             self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_lockdown")) ]
+		             xrc.XRCCTRL(self.frame, "config_runseries_type_entry") ]
 		             
 		for control in controls:
 			control.Enable(enabled)
@@ -334,7 +346,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			control.Enable(li_enabled)
 			
 		# the 'skip' and 'stop' buttons should be enabled when we ARE running
-		control_enabled = ("running" in self.status and self.status["running"] == True) and self.in_control
+		control_enabled =     self.status is not None\
+		                  and ("running" in self.status and self.status["running"] == True) \
+		                  and self.in_control
 		for control in (xrc.XRCCTRL(self.frame, "control_skip_button"), xrc.XRCCTRL(self.frame, "control_stop_button")):
 			control.Enable(control_enabled)
 
@@ -1020,7 +1034,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			xrc.XRCCTRL(self.frame, "config_singlerun_hwconfig_entry").SetSelection(MetaData.HardwareConfigurations.index(status["configuration"].hw_config))
 			xrc.XRCCTRL(self.frame, "config_singlerun_lilevel_entry").SetSelection(MetaData.LILevels.index(status["configuration"].li_level))
 			xrc.XRCCTRL(self.frame, "config_runseries_type_entry").SetSelection(MetaData.RunSeriesTypes.index(status["configuration"].run_series))
-			self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_lockdown")).Check(status["configuration"].lockdown)
 			self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_autostart")).Check(status["configuration"].auto_start_series)
 			for char in "ABCD":
 				xrc.XRCCTRL(self.frame, "config_singlerun_ledgroups_%s_entry" % char).SetValue( char in status["configuration"].led_groups.description )
@@ -1320,6 +1333,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		remote_port  = self.cfg.ReadInt("remote_port", 1090)
 		use_ssh      = self.cfg.ReadBool("use_ssh", True)
 		ssh_user     = self.cfg.Read("ssh_user", "mnvonline")
+		lockdown     = self.cfg.ReadBool("lockdown", False)
 		auto_connect = self.cfg.ReadBool("auto_connect", False)
 		
 		xrc.XRCCTRL(self.frame, "config_connection_identity_entry").SetValue(identity)
@@ -1327,6 +1341,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		xrc.XRCCTRL(self.frame, "config_connection_remoteport_entry").SetValue(remote_port)
 		xrc.XRCCTRL(self.frame, "config_connection_usessh_entry").SetValue(use_ssh)
 		xrc.XRCCTRL(self.frame, "config_connection_sshuser_entry").SetValue(ssh_user)
+		self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_lockdown")).Check(lockdown)
 		self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_autoconnect")).Check(auto_connect)
 		
 	def PrepareSSHTunnels(self, ssh_user, remote_host, remote_port):
@@ -1448,6 +1463,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.cfg.WriteInt("remote_port", xrc.XRCCTRL(self.frame, "config_connection_remoteport_entry").GetValue())
 		self.cfg.WriteBool("use_ssh", xrc.XRCCTRL(self.frame, "config_connection_usessh_entry").GetValue())
 		self.cfg.Write("ssh_user", xrc.XRCCTRL(self.frame, "config_connection_sshuser_entry").GetValue())
+		self.cfg.WriteBool("lockdown", self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_lockdown")).IsChecked())
 		self.cfg.WriteBool("auto_connect", self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_autoconnect")).IsChecked())
 	
 		self.cfg.Flush()
