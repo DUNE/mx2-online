@@ -56,6 +56,7 @@ from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import RemoteNode
 from mnvruncontrol.backend import Alert
 from mnvruncontrol.backend import Threads
+from mnvruncontrol.backend import DAQErrors
 
 
 class DataAcquisitionManager(Dispatcher.Dispatcher):
@@ -524,16 +525,28 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				#  mnvruncontrol.backend.Threads.WorkerThread.run() ...)
 				if message.directive == "start":
 					self.logger.info("Client wants to begin data acquisition.")
+					# we need to make sure the configuration we got makes sense.
+					# we will compare the requested configuration
+					# with the one from our last run here to make sure
+					# that all of the parameters are valid.
+					last_config = DAQConfiguration()
+					
 					if self.running:
 						self.logger.warning("  ... but we are already running!  Request is invalid.")
-						status = mnvruncontrol.backend.DataAcquisitionManager.RunError("Can't start running because DAQ is already running.")
+						status = DAQErrors.RunError("Can't start running because DAQ is already running.")
 
 					elif len(self.errors) > 0:
 						self.logger.warning("There are errors left unaddressed.  These must be handled before starting the next run.")
-						status = mnvruncontrol.backend.DataAcquisitionManager.AlertError("There are unaddressed errors.  Handle those before starting a run!")
+						status = DAQErrors.AlertError("There are unaddressed errors.  Handle those before starting a run!")
 					elif not hasattr(message, "configuration") or not isinstance(message.configuration, DAQConfiguration):
 						self.logger.error("Directive message does not properly specify configuration...")
-						status = mnvruncontrol.backend.DataAcquisitionManager.ConfigurationError("Run configuration is improperly specified.")
+						status = DAQErrors.ConfigurationError("Run configuration is improperly specified.")
+					elif not message.configuration.Validate():
+						self.logger.error("Directive message's configuration is invalid:\n%s", pprint.pformat(message.configuration.__dict__))
+						status = DAQErrors.ConfigurationError("Invalid configuration.")
+					elif not( (message.configuration.run > last_config.run) or (message.configuration.run == last_config.run and message.configuration.subrun >= last_config.subrun) ):
+						self.logger.error("Directive message requests invalid run/subrun numbers: %d/%d (last config was %d/%d)", message.configuration.run, message.configuration.subrun, last_config.run, last_config.subrun)
+						status = DAQErrors.ConfigurationError("Invalid run/subrun pair.")
 					else:
 						self.worker_thread.queue.put( {"method": self.StartDataAcquisition, "kwargs": {"configuration": message.configuration}} )
 						status = True
@@ -617,21 +630,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    Called only for the first subrun in a series. """
 		    
 		assert len(self.errors) == 0
+		assert configuration.Validate()
 		    
-		# first: assemble the run series that we need.
-		# we need to make sure the configuration we got makes sense.
-		# we will compare the requested configuration
-		# with the one from our last run here to make sure
-		# that all of the parameters are valid.
-		last_config = DAQConfiguration()
-
-		if not configuration.Validate():
-			self.logger.error("Directive message's configuration is invalid:\n%s", pprint.pformat(configuration.__dict__))
-			return mnvruncontrol.backend.DataAcquisitionManager.ConfigurationError("Invalid configuration.")
-		elif not( (configuration.run > last_config.run) or (configuration.run == last_config.run and configuration.subrun >= last_config.subrun) ):
-			self.logger.error("Directive message requests invalid run/subrun numbers: %d/%d (last config was %d/%d)", configuration.run, configuration.subrun, last_config.run, last_config.subrun)
-			return mnvruncontrol.backend.DataAcquisitionManager.ConfigurationError("Invalid run/subrun pair.")
-
 		self.configuration = configuration
 		
 		# get the run series ready
@@ -644,7 +644,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# lock each of the remote nodes that's currently taking orders from this manager.
 		try:
 			responses = self.NodeSendWithResponse(PostOffice.Message(subject="lock_request", request="get", requester_id=self.id), timeout=10)
-		except NodeError:
+		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			return False
 		
@@ -718,7 +718,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# release locks from the remote nodes
 		try:
 			responses = self.NodeSendWithResponse(PostOffice.Message(subject="lock_request", request="release", requester_id=self.id), timeout=10)
-		except NodeError:
+		except DAQErrors.NodeError:
 			pass
 
 		# if we can't unlock one of the nodes, the user should be informed.
@@ -921,7 +921,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				responses += self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
 			if stop_mtest:
 				responses += self.NodeSendWithResponse( PostOffice.Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=10 )
-		except NodeError:
+		except DAQErrors.NodeError:
 			self.NewAlert(notice="Couldn't contact all the nodes to stop them.  The next subrun could be problematic...", severity=Alert.ERROR)
 
 		wait_for_DAQ = False
@@ -1117,7 +1117,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 			try:
 				responses = self.NodeSendWithResponse(PostOffice.Message(subject="readout_directive", directive="hw_config", hw_config=self.configuration.hw_config, mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10)
-			except NodeError:
+			except DAQErrors.NodeError:
 				self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 				return False
 			
@@ -1186,7 +1186,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		try:
 			responses = self.NodeSendWithResponse(message, node_type=RemoteNode.READOUT, timeout=10)
-		except NodeError:
+		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			return False
 
@@ -1358,7 +1358,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		try:
 			responses = self.NodeSendWithResponse(message, node_type=RemoteNode.MONITORING, timeout=10)
-		except NodeError:
+		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the monitoring node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(do_auto_start=False)
 			return
@@ -1410,7 +1410,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		try:
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
-		except NodeError:
+		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(do_auto_start=False)
 			return
@@ -1426,7 +1426,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		try:
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
-		except NodeError:
+		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(do_auto_start=False)
 			return
@@ -1482,7 +1482,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		try:		
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
-		except NodeError:
+		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(do_auto_start=False)
 		
@@ -1542,7 +1542,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					missing_nodes.append(node)
 		
 		if len(missing_nodes) > 0:
-			raise NodeError("Responses were not received from the following nodes: %s" % missing_nodes)
+			raise DAQErrors.NodeError("Responses were not received from the following nodes: %s" % missing_nodes)
 		
 		return out_responses
 		
@@ -1606,7 +1606,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				db.close()
 			except (anydbm.error, KeyError):
 				self.logger.error("Cannot load run series file '%s'!", dblocation)
-				return mnvruncontrol.backend.DataAcquisitionManager.FileError("Run series file '%s' cannot be loaded..." % self.configuration.run_series.code)
+				return DAQErrors.FileError("Run series file '%s' cannot be loaded..." % self.configuration.run_series.code)
 		
 		# we always check the PMT HVs and periods at the beginning of a run series
 		self.do_pmt_check = True
@@ -1664,27 +1664,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		return message
 		
-####################################################################
-#  Utility classes
-####################################################################
-
-
-
-class AlertError(Exception):
-	pass
-
-class ConfigurationError(Exception):
-	pass
-	
-class FileError(Exception):
-	pass
-	
-class NodeError(Exception):
-	pass
-	
-class RunError(Exception):
-	pass
-			
 ####################################################################
 ####################################################################
 """
