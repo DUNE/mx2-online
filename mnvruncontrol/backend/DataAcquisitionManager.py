@@ -947,7 +947,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		# if there was a DAQ node still running,
 		# we need to wait until it signals us it's done!
-		if wait_for_DAQ:
+		# check once more, though, before we quit -- maybe
+		# all the DAQs finished while we were processing
+		# the responses to the request.
+		all_completed = True
+		for node_name in self.remote_nodes:
+			node = self.remote_nodes[node_name]
+			all_completed = all_completed and (node.type == RemoteNode.READOUT and node.completed)
+			
+		if wait_for_DAQ and not all_completed:
 			self.can_shutdown = True
 			return
 		
