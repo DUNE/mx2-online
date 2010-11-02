@@ -890,7 +890,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.status["configuration"].hw_config         = MetaData.HardwareConfigurations.item(xrc.XRCCTRL(self.frame, "config_singlerun_hwconfig_entry").GetSelection())
 		self.status["configuration"].li_level          = MetaData.LILevels.item(xrc.XRCCTRL(self.frame, "config_singlerun_lilevel_entry").GetSelection())
 		self.status["configuration"].run_series        = MetaData.RunSeriesTypes.item(xrc.XRCCTRL(self.frame, "config_runseries_type_entry").GetSelection())
-		self.status["configuration"].lockdown          = self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_lockdown")).IsChecked()
 		self.status["configuration"].auto_start_series = self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_autostart")).IsChecked()
 		LEDs = ""
 		for char in "ABCD":
@@ -1477,7 +1476,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		                                                        client_id=self.id,
 		                                                        configuration=self.status["configuration"]),
 		                                     timeout=Configuration.params["Socket setup"]["messageTimeout"]  )
-		
+
 		if response is None:
 			success = False
 		else:
@@ -1487,14 +1486,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			elif response.subject == "not_allowed":
 				self.alert_thread.NewAlert( Alert.Alert(notice="DAQ Manager rejected the 'start' directive because you are not currently in control of the DAQ.  (Probably somebody else grabbed it while you were adjusting the run parameters.)  Regain control using the 'request control' button and try again.", severity=Alert.WARNING) )
 				success = False
-		
-			elif response.subject == "response_request":
+			elif response.subject == "request_response":
 				if isinstance(response.success, Exception):
-					self.alert_thread.NewAlert( Alert.Alert(notice="Run start failed with an error: %s" % response.status), severity=Alert.ERROR )
+					self.alert_thread.NewAlert( Alert.Alert(notice="Run start failed with an error: %s" % response.success, severity=Alert.ERROR) )
 					success = False
-		
-				if response.success != True:
-					self.alert_thread.NewAlert( Alert.Alert(notice="Run start failed for an unspecified reason.  Have an expert check the DAQ manager log..."), severity=Alert.ERROR ) 
+				elif response.success != True:
+					self.alert_thread.NewAlert( Alert.Alert(notice="Run start failed for an unspecified reason.  Have an expert check the DAQ manager log...", severity=Alert.ERROR) ) 
 					success = False
 		
 		if not success:
