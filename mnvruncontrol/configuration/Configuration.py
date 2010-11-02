@@ -139,9 +139,10 @@ if "-c" in sys.argv:
 # first look in the specified location (or, if that's not
 # set, the default); if nothing's there or it can't be opened,
 # try the current directory.
-locations_to_try = [os.path.abspath(Defaults.CONFIG_DB_NAME), "%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME)]
+locations_to_try = ["%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME),]
 if user_specified_db is not None:
-	locations_to_try = [user_specified_db] + locations_to_try
+#	print "trying user-specified DB: ", user_specified_db
+	locations_to_try = [user_specified_db,] + locations_to_try
 	
 config_file_inaccessible = True
 config_file_empty = False
@@ -158,10 +159,11 @@ for location in locations_to_try:
 			config_file_empty = True
 			break
 	else:
+#		print "using location: ", location
 		config_file_inaccessible = False
 		break
 
-if not config_file_inaccessible:
+if not (config_file_inaccessible or config_file_empty):
 	for param_set in params:
 		for param_name in params[param_set]:
 			try:
