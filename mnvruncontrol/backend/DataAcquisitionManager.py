@@ -929,7 +929,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			if hasattr(response, "success"):
 				if isinstance(response.success, Exception):
 					self.NewAlert(notice="Couldn't stop the DAQ on the '%s' node!" % response.sender, severity=Alert.ERROR)
-					continue
 				elif response.success == True:
 					self.logger.info("   => '%s' node is stopping...", response.sender)
 				elif response.success == False:
@@ -939,13 +938,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
 			else:
 				self.logger.info("   Bogus message from '%s' node:\n%s", response.sender, response)
-				continue
 				
 			# the node sends back 'True' when a DAQ has been stopped.
 			# it returns 'False' when there's no DAQ to stop:
 			# in that case we don't need to wait for a signal.
 			if node.type == RemoteNode.READOUT:
-				wait_for_DAQ = wait_for_DAQ and response.success
+				wait_for_DAQ = wait_for_DAQ or response.success
 		
 		# if there was a DAQ node still running,
 		# we need to wait until it signals us it's done!
