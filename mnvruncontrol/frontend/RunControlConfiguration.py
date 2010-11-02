@@ -192,8 +192,8 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 	
 		def DeleteNodes(self, evt):
 			""" Delete all selected nodes from the list. """
-			for nodename in self.DeleteButtons:
-				if evt.EventObject == self.DeleteButtons[nodename]:
+			for itemname in self.DeleteButtons:
+				if evt.EventObject == self.DeleteButtons[itemname]:
 					index = -1
 					toDelete = []
 
@@ -203,7 +203,7 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 							break
 
 					while True:
-						index = itemlocation[nodename].GetNextSelected(index)
+						index = itemlocation[itemname].GetNextSelected(index)
 		
 						if index == -1:
 							break
@@ -213,7 +213,7 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 					# want to delete from the back to the front so that we don't skip any
 					toDelete = sorted(toDelete, reverse=True)
 					for item in toDelete:
-						itemlocation[nodename].DeleteItem(item)
+						itemlocation[itemname].DeleteItem(item)
 		
 		def SaveAll(self, evt=None):
 			""" Save the configuration. """
