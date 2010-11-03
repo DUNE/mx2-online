@@ -923,6 +923,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			xrc.XRCCTRL(self.frame, "status_trigger_run").SetLabel( "%d/%d" % (self.status["configuration"].run, self.status["configuration"].subrun) )
 			xrc.XRCCTRL(self.frame, "status_trigger_number").SetLabel( str(status["current_gate"]["number"]) )
 			xrc.XRCCTRL(self.frame, "status_trigger_type").SetLabel( status["current_gate"]["type"].description )
+			xrc.XRCCTRL(self.frame, "status_trigger_time_label").SetLabel( "time (%s):" % time.strftime("%Z") )
 			xrc.XRCCTRL(self.frame, "status_trigger_time").SetLabel( time.strftime("%H:%M:%S", time.localtime(status["current_gate"]["time"])) )
 			
 			update_event = Events.UpdateProgressEvent()
