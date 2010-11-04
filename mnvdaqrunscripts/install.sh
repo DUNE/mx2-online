@@ -23,6 +23,7 @@ fi
 # mnvtbonline2 - Testbeam DAQ with hardware / Testbeam Control room machine / H. Budd's desktop.
 if [ $HOSTNAME == "mnvtbonline2.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/rcc.sh $HOME/rcc.sh
 	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/multiacquisitionmanager.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
