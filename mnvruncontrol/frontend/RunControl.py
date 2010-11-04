@@ -145,7 +145,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		self.frame.Bind(wx.EVT_CHECKBOX, self.OnSSHTunnelClick, id=xrc.XRCID("config_connection_usessh_entry"))
 
-		self.frame.Bind(wx.EVT_CHOICE, self.OnSeriesTypeSelect, id=xrc.XRCID("config_runseries_type_entry"))
+		self.frame.Bind(wx.EVT_CHOICE, self.OnSeriesTypeSelect,   id=xrc.XRCID("config_runseries_type_entry"))
+		self.frame.Bind(wx.EVT_CHOICE, self.ConfigControlsEnable, id=xrc.XRCID("config_singlerun_runmode_entry"))
 
 		self.frame.Bind(wx.EVT_CLOSE, self.OnClose, self.frame)
 
