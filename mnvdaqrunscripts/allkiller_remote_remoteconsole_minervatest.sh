@@ -12,27 +12,27 @@ SOLDERMACH=minervatest04.fnal.gov
 WORKERMACH=minervatest04.fnal.gov
 REMDAQACCT=minerva
 echo "Going to kill all ET processes..."
-`ssh minerva@minervatest03.fnal.gov /home/minerva/mnvdaqrunscripts/etkiller.pl`
+`ssh ${REMDAQACCT}@${MASTERMACH} /home/minerva/mnvdaqrunscripts/etkiller.pl`
 echo "Waiting..."
 sleep 1
 echo "Going to kill the Run Control..."
-`ssh minerva@minervatest03.fnal.gov /home/minerva/mnvdaqrunscripts/rckiller.pl`
+`ssh ${REMDAQACCT}@${MASTERMACH} /home/minerva/mnvdaqrunscripts/rckiller.pl`
 echo "Waiting..."
 sleep 1
 echo "Going to kill the Dispatcher..."
-`ssh minerva@minervatest03.fnal.gov /home/minerva/mnvdaqrunscripts/rdkiller.pl`
+`ssh ${REMDAQACCT}@${MASTERMACH} /home/minerva/mnvdaqrunscripts/rdkiller.pl`
 echo "Waiting..."
 sleep 1
 
 # Assumes a valid kerberos ticket!
 echo "Going to kill remote processes..."
-`ssh minerva@minervatest02.fnal.gov /home/minerva/mnvdaqrunscripts/allkiller_silent.sh`
-`ssh minerva@minervatest04.fnal.gov /home/minerva/mnvdaqrunscripts/allkiller_silent.sh`
+`ssh ${REMDAQACCT}@${SOLDERMACH} /home/minerva/mnvdaqrunscripts/allkiller_silent.sh`
+`ssh ${REMDAQACCT}@${WORKERMACH} /home/minerva/mnvdaqrunscripts/allkiller_silent.sh`
 sleep 2
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
-`ssh minerva@minervatest02.fnal.gov source /home/minerva/mnvdaqrunscripts/multidispatcher.sh`
-`ssh minerva@minervatest04.fnal.gov source /home/minerva/mnvdaqrunscripts/multidispatcher.sh`
+`ssh ${REMDAQACCT}@${SOLDERMACH} source /home/minerva/mnvdaqrunscripts/multidispatcher.sh`
+`ssh ${REMDAQACCT}@${WORKERMACH} source /home/minerva/mnvdaqrunscripts/multidispatcher.sh`
 sleep 2
 
 # Now, relaunch the RC on the LOCAL machine.

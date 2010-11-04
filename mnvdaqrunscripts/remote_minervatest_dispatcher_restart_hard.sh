@@ -2,8 +2,10 @@
 
 # Assumes a valid kerberos ticket!
 echo "Going to kill remote processes..."
-`ssh minerva@minervatest02.fnal.gov /home/minerva/mnvdaqrunscripts/allkiller_silent.sh`
-`ssh minerva@minervatest04.fnal.gov /home/minerva/mnvdaqrunscripts/allkiller_silent.sh`
+#`ssh minerva@minervatest02.fnal.gov /home/minerva/mnvdaqrunscripts/allkiller_silent.sh`
+#`ssh minerva@minervatest04.fnal.gov /home/minerva/mnvdaqrunscripts/allkiller_silent.sh`
+`ssh minerva@minervatest02.fnal.gov /home/minerva/mnvdaqrunscripts/allkiller_remote_remoteconsole_minervatest.sh`
+`ssh minerva@minervatest04.fnal.gov /home/minerva/mnvdaqrunscripts/allkiller_remote_remoteconsole_minervatest.sh`
 echo "Waiting two seconds..."
 sleep 2
 
