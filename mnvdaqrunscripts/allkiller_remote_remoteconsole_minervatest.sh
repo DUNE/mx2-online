@@ -5,17 +5,22 @@
 # Here, we have some possible confusion for a remote $HOME.  minervatest machines 
 # should always be run using the "minerva" user, with $HOME "/home/minerva" - 
 # however, some potential for shenanigans is possible when running from a remote 
-# console.  Hence, keeping $HOME for killing "local" things...
+# console.  Hence, keeping $HOME for killing "local" things, but using /home/minerva
+# for stuff on test03.
+MASTERMACH=minervatest03.fnal.gov
+SOLDERMACH=minervatest04.fnal.gov
+WORKERMACH=minervatest04.fnal.gov
+REMDAQACCT=minerva
 echo "Going to kill all ET processes..."
-$HOME/mnvdaqrunscripts/etkiller.pl
+`ssh minerva@minervatest03.fnal.gov /home/minerva/mnvdaqrunscripts/etkiller.pl`
 echo "Waiting..."
 sleep 1
 echo "Going to kill the Run Control..."
-$HOME/mnvdaqrunscripts/rckiller.pl
+`ssh minerva@minervatest03.fnal.gov /home/minerva/mnvdaqrunscripts/rckiller.pl`
 echo "Waiting..."
 sleep 1
 echo "Going to kill the Dispatcher..."
-$HOME/mnvdaqrunscripts/rdkiller.pl
+`ssh minerva@minervatest03.fnal.gov /home/minerva/mnvdaqrunscripts/rdkiller.pl`
 echo "Waiting..."
 sleep 1
 
@@ -30,7 +35,7 @@ echo "Now restarting the dispatchers..."
 `ssh minerva@minervatest04.fnal.gov source /home/minerva/mnvdaqrunscripts/multidispatcher.sh`
 sleep 2
 
-# Now, relaunch the RC
+# Now, relaunch the RC on the LOCAL machine.
 echo "Restarting the Run Control!"
 source $HOME/mnvdaqrunscripts/multiruncontrol.sh
 
