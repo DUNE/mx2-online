@@ -6,7 +6,7 @@
 #  $3 == number of gates to process
 #  $4 == port mod
 if [ $# -ne 4 ]; then
-	echo "Please supply et_system file name, number of febs, number of gates, and port (1201-1250)."
+	echo "Please supply et_system file name, number of febs, number of gates, and port (1091 or 1092)."
 	exit 1
 fi
 
@@ -30,5 +30,5 @@ then
 fi
 
 # The ETSYS should include the full path.
-$ET_HOME/Linux-x86_64-64/bin/et_start -v -f $ETSYS -n $EVENTS -s $EVENT_SIZE -p $PORT 
+$ET_HOME/Linux-x86_64-64/bin/et_start -v -f $ETSYS -n $EVENTS -s $EVENT_SIZE -p $PORT
 

@@ -68,10 +68,9 @@ typedef enum Devices { //typecast to unsigned char
  *
  */
 typedef enum FPGAFunctions { //typecast to unsigned char
-	NoFPGA   = 0x00,
-	Write    = 0x01,
-	Read     = 0x02,
-	DumpRead = 0x03
+	NoFPGA = 0x00,
+	Write  = 0x01,
+	Read   = 0x02
 };
 
 

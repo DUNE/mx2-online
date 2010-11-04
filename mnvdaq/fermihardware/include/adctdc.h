@@ -16,14 +16,6 @@
 *
 ***********************************************************************************/
 
-const int nPixelsPerFEB         = 64;
-const int nHiMedTripsPerFEB     = 4;
-const int nSides                = 2;
-const int nPixelsPerTrip        = 16;  // nPixelsPerFEB / nHiMedTripsPerFEB
-const int nPixelsPerSide        = 32;  // nPixelsPerFEB / nSides
-const int nChannelsPerTrip      = 36;  // 1 dummy ADC reading + 32 real channel + 2 edge channels + 1 ADC latency
-const int nSkipChannelsPerTrip  = 3;
-
 /*! \class adc
 *
  * \brief This class controls the ADC frames.
@@ -48,7 +40,7 @@ class adc : public Frames {
 		/*! Makes the outgoing message */
 		void MakeMessage();
 		/*! Shows the raw values from the ADC's */
-		int DecodeRegisterValues(int febFirmware); // debug function that parses an adc data block
+		int DecodeRegisterValues(int a); // debug function that parses an adc data block
 };
 
 /*! \class disc

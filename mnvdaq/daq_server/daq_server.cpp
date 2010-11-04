@@ -74,13 +74,6 @@ int make_socket() {
 	/* create a TCP socket */
 	socket_handle = socket (PF_INET, SOCK_STREAM, 0); // address domain, type, protocol
                                                       // types are basically TCP (STREAM) an UDP (DGRAM)
-
-	// need to allow the socket to be reused.
-	// prevents "address already in use" errors when starting the DAQ
-	// again too quickly after the last time it shut down.
-	int optval = 1;
-	setsockopt(socket_handle, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
-
 	if (socket_handle == -1) {
 		slavenode.fatalStream() << "Error creating socket handle in daq_server::make_socket()!";
 		perror("socket");
