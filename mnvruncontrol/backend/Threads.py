@@ -255,10 +255,21 @@ class AlertThread(threading.Thread):
 			if self._current_alert is None and len(self._alerts) > 0:
 				with self._alert_lock:
 					self._current_alert = self._alerts.pop(0)
-					self._last_bell = time.time()
+					
+					if Configuration.params["Front end"]["bellInterval"] > 0:
+						self._last_bell = time.time()
+						bell = True
+					else:
+						bell = False
+
+					if Configuration.params["Front end"]["blinkInterval"] > 0:
+						self._last_blink = time.time()
+						blink = True
+					else:
+						blink = False
 					self._last_blink = time.time()
 					
-					wx.PostEvent( self._parent_app, Events.AlertEvent(alert=self._current_alert, bell=True, blink=True) )
+					wx.PostEvent( self._parent_app, Events.AlertEvent(alert=self._current_alert, bell=bell, blink=blink) )
 					
 			# and if there's a current message,
 			# we need to make sure that bells and blinks
@@ -266,10 +277,12 @@ class AlertThread(threading.Thread):
 			if self._current_alert is not None:
 				bell = False
 				blink = False
-				if time.time() - self._last_bell > Configuration.params["Front end"]["bellInterval"]:
+				if Configuration.params["Front end"]["bellInterval"] > 0 and \
+				   time.time() - self._last_bell > Configuration.params["Front end"]["bellInterval"]:
 					bell = True
 					self._last_bell = time.time()
-				elif time.time() - self._last_blink > Configuration.params["Front end"]["blinkInterval"]:
+				elif Configuration.params["Front end"]["blinkInterval"] and \
+				     time.time() - self._last_blink > Configuration.params["Front end"]["blinkInterval"]:
 					blink = True
 					self._last_blink = time.time()
 				
