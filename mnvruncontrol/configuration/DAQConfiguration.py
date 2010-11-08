@@ -123,9 +123,17 @@ class DAQConfiguration:
 		except anydbm.error:
 			pass
 			
+		# these two keys are special because the value stored
+		# in the last run for them is irrelevant.  all that matters is
+		# what's in the Configuration.
+		exceptions = { "detector": MetaData.DetectorTypes[Configuration.params["Master node"]["detectorType"]],
+		               "hw_init" : MetaData.HardwareInitLevels[Configuration.params["Master node"]["hwInitLevel"]] }
+
 		has_all_keys = True
 		for key in DAQConfiguration.default_config.keys():
-			if db is not None and db.has_key(key) and type(db[key]) == type(DAQConfiguration.default_config[key]):
+			if key in exceptions:
+				self.__dict__[key] = exceptions[key]
+			elif db is not None and db.has_key(key) and type(db[key]) == type(DAQConfiguration.default_config[key]):
 				self.__dict__[key] = db[key]
 			else:
 				self.__dict__[key] = DAQConfiguration.default_config[key]
