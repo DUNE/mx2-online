@@ -325,6 +325,7 @@ int main(int argc, char *argv[])
 	soldierToWorker_port += (unsigned short)(subRunNumber % 4);
 	mnvdaq.infoStream() << "Worker to Solider Network Port = " << workerToSoldier_port;
 	mnvdaq.infoStream() << "Soldier to Worker Network Port = " << soldierToWorker_port;
+	struct timeval start_listen, still_listening;
 #endif
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Create a TCP socket pair.
@@ -469,16 +470,19 @@ int main(int argc, char *argv[])
 #endif // end if MASTER&&(!SINGLEPC)
 #if (!MASTER)&&(!SINGLEPC) // Worker Node
 	// Initiate connection with "server" (soldier node).  Connect waits for a server response.
+	// Keep trying to connect for 30 seconds...
 	mnvdaq.infoStream() << "Initiate connection with server (soldier node).";
-	int conCounter=0;
+	gettimeofday(&start_listen, NULL);
+	int time_spent_listening = 0;
 	int conVal = connect(workerToSoldier_socket_handle, (struct sockaddr*) &workerToSoldier_service, 
 		sizeof (struct sockaddr_in));
-	mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
-	while ( (conVal==-1) && conCounter<50) {
+	while ( (conVal==-1) && time_spent_listening<30) {
 		conVal = connect(workerToSoldier_socket_handle, (struct sockaddr*) &workerToSoldier_service, 
 			sizeof (struct sockaddr_in));
-		conCounter++;
-		mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
+		minervasleep(1000);
+		gettimeofday(&still_listening,NULL);
+		time_spent_listening = still_listening.tv_sec - start_listen.tv_sec;
+		mnvdaq.infoStream() << "   time spent listening = " << time_spent_listening << " ; conVal = " << conVal;
 	}
 	if (conVal == -1) {
 		mnvdaq.fatalStream() << "Error in workerToSoldier connect!";
@@ -536,16 +540,19 @@ int main(int argc, char *argv[])
 #endif // end if (!MASTER)&&(!SINGLEPC)
 #if MASTER&&(!SINGLEPC) // Soldier Node
 	// Initiate connection with "server" (worker node).  Connect waits for a server response.
+	// Keep trying to connect for 30 seconds...
 	mnvdaq.infoStream() << "Initiate connection with server (worker node).";
-	int conCounter=0;
+	gettimeofday(&start_listen, NULL);
+	int time_spent_listening = 0;
 	int conVal = connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
 		sizeof (struct sockaddr_in));
-	mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
-	while ( (conVal==-1) && conCounter<50) {
+	while ( (conVal==-1) && time_spent_listening<30) {
 		conVal = connect(soldierToWorker_socket_handle, (struct sockaddr*) &soldierToWorker_service, 
 			sizeof (struct sockaddr_in));
-		conCounter++;
-		mnvdaq.infoStream() << "   conCounter = " << conCounter << " ; conVal = " << conVal;
+		minervasleep(1000);
+		gettimeofday(&still_listening,NULL);
+		time_spent_listening = still_listening.tv_sec - start_listen.tv_sec;
+		mnvdaq.infoStream() << "   time spent listening = " << time_spent_listening << " ; conVal = " << conVal;
 	}
 	if (conVal == -1) {
 		mnvdaq.fatalStream() << "Error in soldierToWorker connect!";
@@ -1832,7 +1839,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-07'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-08'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
