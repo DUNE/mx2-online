@@ -33,6 +33,16 @@
 log4cpp::Appender* daqAppender;
 log4cpp::Category& root   = log4cpp::Category::getRoot();
 log4cpp::Category& mnvdaq = log4cpp::Category::getInstance(std::string("mnvdaq"));
+// log4cpp message levels:
+//	emergStream() 
+//	fatalStream() 
+//	alertStream() 
+//	critStream() 
+//	errorStream()
+//	warnStream() 
+//	noticeStream()
+//	infoStream() 
+//	debugStream()
 
 /*! The main routine which executes the data acquisition sequences for minervadaq. */
 
@@ -179,7 +189,11 @@ int main(int argc, char *argv[])
 	daqAppender->setLayout(new log4cpp::BasicLayout());
 	root.addAppender(daqAppender);
 	root.setPriority(log4cpp::Priority::DEBUG);
+#if DEBUG_GENERAL||DEBUG_SOCKETS||DEBUG_MIXEDMODE||DEBUG_TIMING
         mnvdaq.setPriority(log4cpp::Priority::DEBUG);
+#else
+        mnvdaq.setPriority(log4cpp::Priority::INFO);
+#endif
 	root.infoStream()   << "Starting MINERvA DAQ. ";
 	mnvdaq.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 	mnvdaq.infoStream() << "Arguments to MINERvA DAQ: ";
@@ -568,7 +582,11 @@ int main(int argc, char *argv[])
 
 	// Make an acquire data object containing functions for performing initialization and acquisition.
 	mnvdaq.infoStream() << "~~~~~~~ Begin Hardware Setup";
+#if DEBUG_GENERAL||DEBUG_SOCKETS||DEBUG_MIXEDMODE||DEBUG_TIMING
 	acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::DEBUG, hardwareInit); 
+#else
+	acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::INFO, hardwareInit); 
+#endif
 	mnvdaq.infoStream() << "Got the acquire_data functions.";
 
 	/*********************************************************************************/
@@ -1839,7 +1857,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-08'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-09'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
@@ -1938,8 +1956,13 @@ int WriteLastTrigger(const char filename[], const int run, const int subrun,
 		mnvdaq.warnStream() << "Error opening last trigger file for writing!";
 		return 1;
 	}
-	else
-		mnvdaq.infoStream() << "Writing info for trigger " << triggerNum << " to file " << filename;
+	else {
+		if (!(triggerNum%10)) {
+			mnvdaq.infoStream() << "Writing info for trigger " << triggerNum << " to file " << filename;
+		} else {
+			mnvdaq.debugStream() << "Writing info for trigger " << triggerNum << " to file " << filename;
+		}
+	}
 
 	fprintf(file, "run=%d\n",      run);
 	fprintf(file, "subrun=%d\n",   subrun);
