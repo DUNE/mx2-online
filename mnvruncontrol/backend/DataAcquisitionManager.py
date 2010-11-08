@@ -864,7 +864,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		# the ET file name is the name used for the ET system file.
 		# all other data file names are based on it.
-		self.configuration.et_filename = '%s_%08d_%04d_%s_v08_%02d%02d%02d%02d%02d' % (self.configuration.detector.code, self.configuration.run, self.configuration.subrun, self.configuration.run_mode.code, now.year % 100, now.month, now.day, now.hour, now.minute)
+		self.configuration.et_filename = '%s_%08d_%04d_%s_v09_%02d%02d%02d%02d%02d' % (self.configuration.detector.code, self.configuration.run, self.configuration.subrun, self.configuration.run_mode.code, now.year % 100, now.month, now.day, now.hour, now.minute)
 
 		
 		# raw data written by the event builder
