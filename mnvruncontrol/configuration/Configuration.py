@@ -47,8 +47,7 @@ configuration = { "General"          : { "notify_addresses"          : ( Default
                                          "connAttemptInterval"       : ( Defaults.CONNECTION_ATTEMPT_INTERVAL,          "Interval between connection attempts (s)",        float ),
                                          "messageTimeout"            : ( Defaults.MESSAGE_TIMEOUT,                      "Message timeout (s)",                             float )  },
                                          
-                  "Logging"          : { "maxRepeatedRequestLogs"    : ( Defaults.MAX_REPEATED_REQUEST_LOGS,            "Max number of consecutive same requests logged",  int   ),
-                                         "om_logfileName"            : ( Defaults.OM_DISPATCHER_LOGFILE,                "OM dispatcher log file name",                     str   ),
+                  "Logging"          : { "om_logfileName"            : ( Defaults.OM_DISPATCHER_LOGFILE,                "OM dispatcher log file name",                     str   ),
                                          "master_logfileLocation"    : ( Defaults.LOGFILE_LOCATION_DEFAULT,             "DAQ manager log file location",                   str   ),
                                          "readout_logfileName"       : ( Defaults.READOUT_DISPATCHER_LOGFILE,           "Readout log file name",                           str   ),
                                          "PO_logfileName"            : ( Defaults.PO_LOGFILE_DEFAULT,                   "Post office log file name",                       str   ),
@@ -63,7 +62,6 @@ configuration = { "General"          : { "notify_addresses"          : ( Default
                                          "hwInitLevel"               : ( MetaData.HardwareInitLevels.FULL_HW_INIT.hash, "Hardware init level",                             int   ),
                                          "detectorType"              : ( MetaData.DetectorTypes.MINERVA.hash,           "Detector type",                                   int   ),
                                          "nodeAddresses"             : ( [],                                            "Nodes to notify when DAQ manager is ready",       list  ),   
-                                         "sessionfile"               : ( Defaults.DAQMGR_SESSION_FILE,                  "Where to store the DAQ manager session file",     str   ),
                                          "runSeriesLocation"         : ( Defaults.RUN_SERIES_DB_LOCATION_DEFAULT,       "Run series file location",                        str   ),
                                          "master_rawdataLocation"    : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (master node)",                 str   )  },
 
