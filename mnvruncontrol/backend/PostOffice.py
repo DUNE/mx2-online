@@ -951,10 +951,6 @@ class PostOffice(MessageTerminus):
 					client_address = client_address[0]
 
 
-					# why did I do this????
-#					if client_address == socket.gethostbyname(socket.gethostname()):
-#						client_address = "localhost"
-
 					# if this is an SSL socket, get the other side's certificate
 					if hasattr(client_socket, "getpeercert"):
 						certificate = client_socket.getpeercert()					
@@ -1734,7 +1730,11 @@ class DeliveryThread(threading.Thread):
 							else:
 								# we convert to an IP address here so that it matches
 								# with all of the other places we store addresses
-								address = [socket.gethostbyname(subscription.delivery_address[0]), subscription.delivery_address[1]]
+								try:
+									delivery_addr = socket.gethostbyname(subscription.delivery_address[0])
+								except socket.gaierror:		#... but if it's an invalid hostname, we can't.
+									delivery_addr = subscription.delivery_address[0]
+								address = [delivery_addr, subscription.delivery_address[1]]
 							
 							# if we are trying to send the same message to the same place,
 							# we shouldn't be duplicating its status...
@@ -1751,7 +1751,11 @@ class DeliveryThread(threading.Thread):
 			
 							# we "forge" a message from this address indicating no deliveries there
 							nodelivery_msg = Message(subject="postmaster", in_reply_to=message.id, delivered_to=[])
-							nodelivery_msg.return_path = [ [socket.gethostbyname(subscription.delivery_address[0]), subscription.delivery_address[1]], ]
+							try:
+								delivery_addr = socket.gethostbyname(subscription.delivery_address[0])
+							except socket.gaierror:		# if it's an invalid hostname
+								delivery_addr = subscription.delivery_address[0]
+							nodelivery_msg.return_path = [ [delivery_addr, subscription.delivery_address[1]], ]
 							
 					# note: can't do this within the 'with' block above
 					# because _PostMasterMessages also wants that same lock...
