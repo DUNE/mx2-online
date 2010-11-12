@@ -29,7 +29,7 @@ LI_MAX_PE_VOLTAGE = 12.07	# currently the maximum the LI box can output.
 
 # Front-end properties
 BLINK_INTERVAL            = 2		# in seconds
-BELL_INTERVAL             = 10		# in seconds
+BELL_INTERVAL             = 10	# in seconds
 FRONTEND_LISTEN_PORT      = 3000
 RESOURCE_LOCATION_DEFAULT = "/work/software/mnvruncontrol/resources"
 

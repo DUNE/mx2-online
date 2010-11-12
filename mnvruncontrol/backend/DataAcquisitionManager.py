@@ -1120,14 +1120,19 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		# if this subrun has a different HW config from the one before
 		# (which includes the cases where this is the first subrun
-		#  or it's the only subrun), then
+		#  or it's the only subrun), or the user forces a reload, then
 		# we need to ask the slow control to set up the HW.
 		# that is, unless this configuration is the "current
 		# state" version, in which case the user doesn't want
 		# to use any configuration file at all (so that custom
 		# configurations via the slow control can be used for testing).
+		# NOTICE THAT THE SELECTION OF THE "CURRENT STATE" OPTION
+		# OVERRIDES THE "FORCE HW RELOAD" OPTION.  this is because
+		# you wouldn't want to try to force a reload when the
+		# selected hardware is "no configuration".
 		self.logger.debug("  HW config check.")
-		if self.configuration.hw_config != MetaData.HardwareConfigurations.NOFILE and self.configuration.hw_config != self.last_HW_config:
+		if self.configuration.hw_config != MetaData.HardwareConfigurations.NOFILE \
+		   and ( self.configuration.hw_config != self.last_HW_config or self.configuration.force_hw_reload ):
 			for node_name in self.remote_nodes:
 				node = self.remote_nodes[node_name]
 				if node.type == RemoteNode.READOUT:
@@ -1170,6 +1175,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 			# record what we did so that the next time we don't have to do it again.
 			self.last_HW_config = self.configuration.hw_config
+			
+			# if this was a 'force-reload', and it happened successfully,
+			# we don't want to do it again unless the user requests it.
+			# therefore turn it off.
+			self.configuration.force_hw_reload = False
 			
 			# always check the PMT HVs and periods after setting a new HW config
 			self.do_pmt_check = True

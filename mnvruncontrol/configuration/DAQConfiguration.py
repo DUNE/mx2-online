@@ -35,6 +35,7 @@ class DAQConfiguration:
 	                   "num_febs"                 : Defaults.NUM_FEBS,
 	                   "run_mode"                 : MetaData.RunningModes.ONE_SHOT,
 	                   "hw_config"                : MetaData.HardwareConfigurations.NOFILE,
+	                   "force_hw_config"          : False,
 	                   "led_groups"               : MetaData.LEDGroups.ABCD,
 	                   "li_level"                 : MetaData.LILevels.ZERO_PE,
 	                   "run_series"               : MetaData.RunSeriesTypes.PEDESTAL,
@@ -95,6 +96,7 @@ class DAQConfiguration:
 		       and (isinstance(self.num_gates, int) and self.num_gates > 0) \
 		       and self.run_mode in MetaData.RunningModes \
 		       and self.hw_config in MetaData.HardwareConfigurations \
+		       and isinstance(self.force_hw_config, bool) \
 		       and self.led_groups in MetaData.LEDGroups \
 		       and self.li_level in MetaData.LILevels \
 		       and self.run_series in MetaData.RunSeriesTypes \
