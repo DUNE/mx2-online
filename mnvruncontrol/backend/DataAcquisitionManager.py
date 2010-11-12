@@ -862,12 +862,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		# the ET file name is the name used for the ET system file.
 		# all other data file names are based on it.
-		self.configuration.et_filename = "%(det)s_%(run)08d_%(subrun)04d_%(mode)s_%(ver)_%(year)02d%(month)02d%(day)02d%(hour)02d%(minute)02d"
+		self.configuration.et_filename = "%(det)s_%(run)08d_%(subrun)04d_%(mode)s_%(ver)s_%(year)02d%(month)02d%(day)02d%(hour)02d%(minute)02d"
 		values = { "det":    self.configuration.detector.code,
 		           "run":    self.configuration.run,
 		           "subrun": self.configuration.subrun,
 		           "mode":   self.configuration.run_mode.code,
-		           "ver":    DEFAULTS.DAQ_HEADER_VERSION_STRING,
+		           "ver":    Defaults.DAQ_HEADER_VERSION_STRING,
 		           "year":   now.year % 100,
 		           "month":  now.month,
 		           "day":    now.day,
@@ -1113,7 +1113,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    method exits after starting the process.  When the SocketThread
 		    receives the appropriate message from all readout nodes then
 		    we will continue. """
-		    
+		
 		self.logger.info("  Using hardware configuration: %s", self.configuration.hw_config.description)
 		
 		# if this subrun has a different HW config from the one before
@@ -1129,6 +1129,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# you wouldn't want to try to force a reload when the
 		# selected hardware is "no configuration".
 		self.logger.debug("  HW config check.")
+		if self.configuration.force_hw_reload:
+			self.logger.info("  ... client explicitly requests hardware configuration be done.")
 		if self.configuration.hw_config != MetaData.HardwareConfigurations.NOFILE \
 		   and ( self.configuration.hw_config != self.last_HW_config or self.configuration.force_hw_reload ):
 			for node_name in self.remote_nodes:
