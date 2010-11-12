@@ -35,7 +35,7 @@ class DAQConfiguration:
 	                   "num_febs"                 : Defaults.NUM_FEBS,
 	                   "run_mode"                 : MetaData.RunningModes.ONE_SHOT,
 	                   "hw_config"                : MetaData.HardwareConfigurations.NOFILE,
-	                   "force_hw_config"          : False,
+	                   "force_hw_reload"          : False,
 	                   "led_groups"               : MetaData.LEDGroups.ABCD,
 	                   "li_level"                 : MetaData.LILevels.ZERO_PE,
 	                   "run_series"               : MetaData.RunSeriesTypes.PEDESTAL,
