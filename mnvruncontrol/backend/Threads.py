@@ -10,7 +10,6 @@
    Address all complaints to the management.
 """
 
-import wx
 import os
 import re
 import time
@@ -23,11 +22,20 @@ import subprocess
 import threading
 from Queue import Queue
 
+# since both frontend and backend objects import
+# the Threads module, if wx is not available,
+# we won't panic.
+try:
+	import wx
+	from mnvruncontrol.backend import Events
+except ImportError:
+	pass
+
+
 from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration import Logging
 from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import Alert
-from mnvruncontrol.backend import Events
 
 #########################################################
 #   DAQthread

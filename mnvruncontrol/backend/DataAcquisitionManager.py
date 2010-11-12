@@ -22,7 +22,6 @@
   Address all complaints to the management.
 """
 
-import wx
 import os
 import re
 import sys
@@ -51,7 +50,6 @@ from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration.DAQConfiguration import DAQConfiguration
 from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import Dispatcher
-from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import RemoteNode
 from mnvruncontrol.backend import Alert
