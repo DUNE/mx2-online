@@ -888,7 +888,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.status["configuration"].subrun            = xrc.XRCCTRL(self.frame, "config_global_subrun_entry").GetValue()
 		self.status["configuration"].is_single_run     = xrc.XRCCTRL(self.frame, "config_global_singlerun_button").GetValue()
 		self.status["configuration"].num_gates         = xrc.XRCCTRL(self.frame, "config_singlerun_gates_entry").GetValue()
-		self.status["configuration"].force_hw_config   = xrc.XRCCTRl(self.frame, "config_global_hwreload_button").GetValue()
+		self.status["configuration"].force_hw_config   = xrc.XRCCTRL(self.frame, "config_global_hwreload_button").GetValue()
 		self.status["configuration"].run_mode          = MetaData.RunningModes.item(xrc.XRCCTRL(self.frame, "config_singlerun_runmode_entry").GetSelection())
 		self.status["configuration"].hw_config         = MetaData.HardwareConfigurations.item(xrc.XRCCTRL(self.frame, "config_singlerun_hwconfig_entry").GetSelection())
 		self.status["configuration"].li_level          = MetaData.LILevels.item(xrc.XRCCTRL(self.frame, "config_singlerun_lilevel_entry").GetSelection())
