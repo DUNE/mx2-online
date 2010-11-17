@@ -30,9 +30,7 @@ log4cpp::Category& root     = log4cpp::Category::getRoot();
 log4cpp::Category& llConfig = log4cpp::Category::getInstance(std::string("llConfig"));
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs now.
-const int maxHits    = 8;  // maxHits should not be changed independent of the DAQ!
-
-const int febFirmware = 90;
+const int maxHits    = 6;  // maxHits should not be changed independent of the DAQ!
 
 const int tripRegIBP        =  60;
 const int tripRegIBBNFOLL   = 120;
@@ -44,7 +42,7 @@ const int tripRegIFFP2      =   0;
 const int tripRegIBCOMP     =  20;
 const int tripRegVREF       = 165;
 const int tripRegVTH        =   0; // Turn discr. off for light leak checkout.
- const int tripRegPIPEDEL    =  2*maxHits - 1; 
+// const int tripRegPIPEDEL    =  2*maxHits - 1; 
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
@@ -103,36 +101,36 @@ int main(int argc, char *argv[])
 	// Process the command line argument set.
 	int optind = 1;
 	// Decode Arguments
-	printf("\nArguments: ");
+	cout << "\n\nArguments: " << endl;
 	while ((optind < argc) && (argv[optind][0]=='-')) {
 		string sw = argv[optind];
 		if (sw=="-c") {
 			optind++;
 			crocCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
-			printf(" CROC Address = %03d ", (crocCardAddress>>16));
+			cout << "\tCROC Address   = " << (crocCardAddress>>16) << endl;
         	}
 		else if (sw=="-h") {
 			optind++;
 			crocChannel = (unsigned int)( atoi(argv[optind]) );
-			printf(" CROC Channel = %1d ", crocChannel);
+			cout << "\tCROC Channel   = " << crocChannel << endl;
         	}
 		else if (sw=="-f") {
 			optind++;
 			nFEBs = atoi(argv[optind]);
-			printf(" Number of FEBs = %02d ", nFEBs);
+			cout << "\tNumber of FEBs = " << nFEBs << endl;
         	}
 		else if (sw=="-v") {
 			optind++;
 			HVTarget = atoi(argv[optind]);
-			printf(" Target HV = %05d ", HVTarget);
+			cout << "\tTarget HV      = " << HVTarget << endl;
         	}
 		else if (sw=="-e") {
 			optind++;
 			HVEnableFlag = atoi(argv[optind]);
-			printf(" HV Enable Flag = %1d ", HVEnableFlag);
+			cout << "\tHV Enable Flag = " << HVEnableFlag << endl;
 		}
 		else
-			cout << "\nUnknown switch: " << argv[optind] << endl;
+			cout << "Unknown switch: " << argv[optind] << endl;
 		optind++;
 	}
 	cout << endl;
@@ -158,6 +156,7 @@ int main(int argc, char *argv[])
 	if ((error=myController->ContactController())!=0) { 
 		cout<<"Controller contact error: "<<error<<endl; exit(error); // Exit due to no controller!
 	}
+	cout<<"Controller & Acquire Initialized..."<<endl;
 	cout<<endl;
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -166,6 +165,8 @@ int main(int argc, char *argv[])
 		febAddr.push_back( (febAddresses)nboard );
 	}
   	
+	std::cout << "Making CROC with index == " << crocID << " && address == " 
+		<< (crocCardAddress>>16) << std::endl;
 	myController->MakeCroc(crocCardAddress,(crocID));
 	try {
 		error = myController->GetCrocStatus(crocID); 
@@ -408,15 +409,11 @@ int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->SetTripPowerOff(val); //turn the trips on
 		myFeb->SetGateStart(43000);      
 		myFeb->SetGateLength(1702);  
-		//unsigned char previewEnable[] = {0x1};
-		unsigned char previewEnable[] = {0x0};
-		myFeb->SetPreviewEnable(previewEnable);
-
 		if (HVEnableFlag) {
-			//std::cout << "HV Enable Flag is set to ON!\n";
+			std::cout << "HV Enable Flag is set to ON!\n";
 			val[0]=0x1; 
 		} else {
-			//std::cout << "HV Enable Flag is set to OFF!\n";
+			std::cout << "HV Enable Flag is set to OFF!\n";
 			val[0]=0x0; 
 		}
 		myFeb->SetHVEnabled(val);

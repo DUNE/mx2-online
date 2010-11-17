@@ -11,72 +11,64 @@ namespace MinervaUserControls
 {
     public partial class FPGADevRegControl : UserControl
     {
-        private const int NLogicalRgisters = 60;
-
+        private const int NLogicalRgisters = 51;
         private UInt32[] FPGALogicalReg = new UInt32[NLogicalRgisters];
         private bool isAdvancedGUI = false;
 
         #region Define Logical Registers
         public enum LogicalRegisters : byte
         {
-            Timer = 0,              // 32 bits
-            GateStart = 1,          // 16 bits
-            GateLength = 2,         // 16 bits
-            TripPowerOff = 3,       //  6 bits
-            InjectCount0 = 4,       //  7 bits
-            InjectCount1 = 5,       //  7 bits
-            InjectCount2 = 6,       //  7 bits
-            InjectCount3 = 7,       //  7 bits
-            InjectCount4 = 8,       //  7 bits
-            InjectCount5 = 9,       //  7 bits
-            InjectEnable0 = 10,     //  1 bit
-            InjectEnable1 = 11,     //  1 bit
-            InjectEnable2 = 12,     //  1 bit
-            InjectEnable3 = 13,     //  1 bit
-            InjectEnable4 = 14,     //  1 bit
-            InjectEnable5 = 15,     //  1 bit
-            InjectRange = 16,       //  4 bits
-            InjectPhase = 17,       //  4 bits
-            InjectDACValue = 18,    // 12 bits
-            InjectDACMode = 19,     //  2 bits
-            InjectDACStart = 20,    //  1 bit
-            InjectDACDone = 21,     //  1 bit, readonly
-            HVEnabled = 22,         //  1 bit
-            HVTarget = 23,          // 16 bits
-            HVActual = 24,          // 16 bits, readonly
-            HVControl = 25,         //  8 bits, readonly
-            HVAutoManual = 26,      //  1 bit
-            PhaseStart = 27,        //  1 bit
-            PhaseIncrement = 28,    //  1 bit
-            PhaseTicks = 29,        //  8 bits 
-            DCM1Lock = 30,          //  1 bit, readonly
-            DCM2Lock = 31,          //  1 bit, readonly
-            DCM1NoClock = 32,       //  1 bit, readonly
-            DCM2NoClock = 33,       //  1 bit, readonly
-            DCM2PhaseDone = 34,     //  1 bit, readonly
-            DCM2PhaseTotal = 35,    //  9 bits, readonly
-            TestPulse2Bit = 36,     //  2 bits, readonly
-            TestPulseCount = 37,    // 32 bits, readonly
-            BoardID = 38,           //  4 bits
-            FirmwareVersion = 39,   //  8 bits, readonly
-            HVNumAvg = 40,          //  4 bits
-            HVPeriodManual = 41,    // 16 bits
-            HVPeriodAuto = 42,      // 16 bits, readonly
-            HVPulseWidth = 43,      //  8 bits
-            Temperature = 44,       // 16 bits, readonly
-            TripXThreshold = 45,    //  8 bits
-            TripXComparators = 46,  //  6 bits, readonly
-            ExtTriggFound = 47,     //  1 bit, readonly ->  08.08.2008
-            ExtTriggRearm = 48,     //  1 bit           ->  08.08.2008
-            DiscrimEnableMaskTrip0 = 49,    // 16 bits  -> 10.30.2008
-            DiscrimEnableMaskTrip1 = 50,    // 16 bits  -> 10.30.2008
-            DiscrimEnableMaskTrip2 = 51,    // 16 bits  -> 10.30.2008
-            DiscrimEnableMaskTrip3 = 52,    // 16 bits  -> 10.30.2008
-            GateTimeStamp = 53,             // 32 bits, readonly  -> 12.22.2008
-            StatusSCMDUnknown = 54,         // 1bit, readonly     -> 11.13.2009
-            StatusFCMDUnknown = 55,         // 1bit, readonly     -> 11.13.2009
-            StatusRXLock = 56,              // 1bit, readonly     -> 11.13.2009
-            StatusTXSyncLock = 57           // 1bit, readonly     -> 11.13.2009
+            Timer = 0,              // 32 bits          0
+            GateStart = 1,          // 16 bits          1     
+            GateLength = 2,         // 16 bits          2
+            TripPowerOff = 3,       //  6 bits          3
+            InjectCount0 = 4,       //  7 bits          4
+            InjectCount1 = 5,       //  7 bits          5
+            InjectCount2 = 6,       //  7 bits          6
+            InjectCount3 = 7,       //  7 bits          7
+            InjectCount4 = 8,       //  7 bits          8
+            InjectCount5 = 9,       //  7 bits          9
+            InjectEnable0 = 10,     //  1 bit           10
+            InjectEnable1 = 11,     //  1 bit           11
+            InjectEnable2 = 12,     //  1 bit           12
+            InjectEnable3 = 13,     //  1 bit           13
+            InjectEnable4 = 14,     //  1 bit           14
+            InjectEnable5 = 15,     //  1 bit           15
+            InjectRange = 16,       //  4 bits          16
+            InjectPhase = 17,       //  4 bits          17
+            InjectDACValue = 18,    // 12 bits          18
+            InjectDACMode = 19,     //  2 bits          19
+            InjectDACStart = 20,    //  1 bit           20
+            InjectDACDone = 21,     //  1 bit, readonly 21
+            HVEnabled = 22,         //  1 bit           22
+            HVTarget = 23,          // 16 bits          23
+            HVActual = 24,          // 16 bits, readonly24
+            HVControl = 25,         //  8 bits, readonly25
+            HVAutoManual = 26,      //  1 bit           26
+            VXOMuxSelect = 27,      //  1 bit           27
+            PhaseStart = 28,        //  1 bit           28
+            PhaseIncrement = 29,    //  1 bit           29
+            PhaseSpare = 30,        //  4 bits          30 was 4 bit, now is 2 bits -> 08.08.2008
+            PhaseTicks = 31,        //  8 bits          31
+            DCM1Lock = 32,          //  1 bit, readonly 32
+            DCM2Lock = 33,          //  1 bit, readonly 33
+            DCM1NoClock = 34,       //  1 bit, readonly 34
+            DCM2NoClock = 35,       //  1 bit, readonly 35
+            DCM2PhaseDone = 36,     //  1 bit, readonly 36
+            DCM2PhaseTotal = 37,    //  9 bits, readonly37
+            TestPulse2Bit = 38,     //  2 bits, readonly38
+            TestPulseCount = 39,    // 32 bits, readonly39
+            BoardID = 40,           //  4 bits          40
+            FirmwareVersion = 41,   //  8 bits, readonly41
+            HVNumAvg = 42,          //  4 bits          42
+            HVPeriodManual = 43,    // 16 bits          43
+            HVPeriodAuto = 44,      // 16 bits, readonly44
+            HVPulseWidth = 45,      //  8 bits          45
+            Temperature = 46,       // 16 bits          46
+            TripXThreshold = 47,    //  8 bits          47
+            TripXComparators = 48,  //  6 bits          48
+            ExtTriggFound = 49,     //  1 bit           49  ExtTriggFound, 1 bit ->  08.08.2008
+            ExtTriggRearm = 50      //  1 bit           50  ExtTriggRearm, 1 bit ->  08.08.2008
         }
         #endregion
 
@@ -98,8 +90,11 @@ namespace MinervaUserControls
         private const UInt32 HVActualDefaultValue = 0;
         private const UInt32 HVControlDefaultValue = 0;
         private const UInt32 HVManualDefaultValue = 0;
+        private const UInt32 VXOOffDefaultValue = 0;
+        private const UInt32 VXOMuxXilinxDefaultValue = 1;
         private const UInt32 PhaseStartDefaultValue = 0;
         private const UInt32 PhaseIncrementDefaultValue = 0;
+        private const UInt32 PhaseSpareDefaultValue = 0;
         private const UInt32 PhaseCountDefaultValue = 0;
         private const UInt32 DCM1LockDefaultValue = 0;
         private const UInt32 DCM2LockDefaultValue = 0;
@@ -120,15 +115,6 @@ namespace MinervaUserControls
         private const UInt32 TripXComparatorsDefaultValue = 0;
         private const UInt32 ExtTriggFoundDefaultValue = 0; // 08.08.2008
         private const UInt32 ExtTriggRearmDefaultValue = 0; // 08.08.2008
-        private const UInt32 DiscrimEnableMaskTrip0DefaultValue = 0xFFFF;   // 10.30.2008
-        private const UInt32 DiscrimEnableMaskTrip1DefaultValue = 0xFFFF;   // 10.30.2008
-        private const UInt32 DiscrimEnableMaskTrip2DefaultValue = 0xFFFF;   // 10.30.2008
-        private const UInt32 DiscrimEnableMaskTrip3DefaultValue = 0xFFFF;   // 10.30.2008
-        private const UInt32 GateTimeStampDefaultValue = 0;                 // 12.22.2008
-        private const UInt32 StatusSCMDUnknownDefaultValue = 0;             // 11.13.2009
-        private const UInt32 StatusFCMDUnknownDefaultValue = 0;             // 11.13.2009
-        private const UInt32 StatusRXLockDefaultValue = 0;                  // 11.13.2009
-        private const UInt32 StatusTXSyncLockDefaultValue = 0;              // 11.13.2009
         #endregion 
         
         #region Define Control-type members (TextBox, ComboBox and Label)
@@ -159,8 +145,11 @@ namespace MinervaUserControls
         private TextBox txt_LRHVActual = new TextBox(); private Label lbl_HVActual = new Label();
         private TextBox txt_LRHVControl = new TextBox(); private Label lbl_HVControl = new Label();
         private ComboBox cmb_LWRHVAutoMan = new ComboBox(); private Label lbl_HVAutoMan = new Label();
+        //private ComboBox cmb_LWRVXOOn0Off1 = new ComboBox(); private Label lbl_VXOOn0Off1 = new Label();
+        private ComboBox cmb_LWRVXOMuxSel = new ComboBox(); private Label lbl_VXOMuxSel = new Label();
         private ComboBox cmb_LWRPHShiftStartClearn = new ComboBox(); private Label lbl_PHShiftStartClearn = new Label();
         private ComboBox cmb_LWRPHShiftDecr0Incr1 = new ComboBox(); private Label lbl_PHShiftDecr0Incr1 = new Label();
+        private TextBox txt_LWRPHShiftSpare = new TextBox(); private Label lbl_PHShiftSpare = new Label();
         private TextBox txt_LWRPHShiftVal = new TextBox(); private Label lbl_PHShiftVal = new Label();
         private TextBox txt_LRDCM1Locked = new TextBox(); private Label lbl_DCM1Locked = new Label();
         private TextBox txt_LRDCM2Locked = new TextBox(); private Label lbl_DCM2Locked = new Label();
@@ -181,15 +170,6 @@ namespace MinervaUserControls
         private TextBox txt_LRTripXComparators = new TextBox(); private Label lbl_TripXComparators = new Label();
         private TextBox txt_LRExtTriggFound = new TextBox(); private Label lbl_ExtTriggFound = new Label(); // 08.08.2008
         private TextBox txt_LWRExtTriggRearm = new TextBox(); private Label lbl_ExtTriggRearm = new Label(); // 08.08.2008
-        private TextBox txt_LWRDiscrimEnableMaskTrip0 = new TextBox(); private Label lbl_DiscrimEnableMaskTrip0 = new Label(); // 10.30.2008
-        private TextBox txt_LWRDiscrimEnableMaskTrip1 = new TextBox(); private Label lbl_DiscrimEnableMaskTrip1 = new Label(); // 10.30.2008
-        private TextBox txt_LWRDiscrimEnableMaskTrip2 = new TextBox(); private Label lbl_DiscrimEnableMaskTrip2 = new Label(); // 10.30.2008
-        private TextBox txt_LWRDiscrimEnableMaskTrip3 = new TextBox(); private Label lbl_DiscrimEnableMaskTrip3 = new Label(); // 10.30.2008
-        private TextBox txt_LRGateTimeStamp = new TextBox(); private Label lbl_GateTimeStamp = new Label(); // 12.22.2008
-        private TextBox txt_LRStatusSCMDUnknown = new TextBox(); private Label lbl_StatusSCMDUnknown = new Label();     // 11.13.2009
-        private TextBox txt_LRStatusFCMDUnknown = new TextBox(); private Label lbl_StatusFCMDUnknown = new Label();     // 11.13.2009
-        private TextBox txt_LRStatusRXLock = new TextBox(); private Label lbl_StatusRXLock = new Label();               // 11.13.2009
-        private TextBox txt_LRStatusTXSyncLock = new TextBox(); private Label lbl_StatusTXSyncLock = new Label();       // 11.13.2009
         #endregion        
         
         public int NRegs
@@ -252,8 +232,10 @@ namespace MinervaUserControls
             FPGALogicalReg[(int)LogicalRegisters.HVActual] = HVActualDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.HVControl] = HVControlDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.HVAutoManual] = HVManualDefaultValue;
+            FPGALogicalReg[(int)LogicalRegisters.VXOMuxSelect] = VXOMuxXilinxDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.PhaseStart] = PhaseStartDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.PhaseIncrement] = PhaseIncrementDefaultValue;
+            FPGALogicalReg[(int)LogicalRegisters.PhaseSpare] = PhaseSpareDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.PhaseTicks] = PhaseCountDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.DCM1Lock] = DCM1LockDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.DCM2Lock] = DCM2LockDefaultValue;
@@ -274,29 +256,25 @@ namespace MinervaUserControls
             FPGALogicalReg[(int)LogicalRegisters.TripXComparators] = TripXComparatorsDefaultValue;
             FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound] = ExtTriggFoundDefaultValue;    // 08.08.2008
             FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm] = ExtTriggRearmDefaultValue;    // 08.08.2008
-            FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip0] = DiscrimEnableMaskTrip0DefaultValue;  // 10.30.2008
-            FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip1] = DiscrimEnableMaskTrip1DefaultValue;  // 10.30.2008
-            FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip2] = DiscrimEnableMaskTrip2DefaultValue;  // 10.30.2008
-            FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip3] = DiscrimEnableMaskTrip3DefaultValue;  // 10.30.2008
-            FPGALogicalReg[(int)LogicalRegisters.GateTimeStamp] = GateTimeStampDefaultValue;    // 12.22.2008
-            FPGALogicalReg[(int)LogicalRegisters.StatusSCMDUnknown] = StatusSCMDUnknownDefaultValue;    // 11.13.2009
-            FPGALogicalReg[(int)LogicalRegisters.StatusFCMDUnknown] = StatusFCMDUnknownDefaultValue;    // 11.13.2009
-            FPGALogicalReg[(int)LogicalRegisters.StatusRXLock] = StatusRXLockDefaultValue;              // 11.13.2009
-            FPGALogicalReg[(int)LogicalRegisters.StatusTXSyncLock] = StatusTXSyncLockDefaultValue;      // 11.13.2009
         }
 
         private void myInitializeComponent()
         {
+            int Xoffset = 10;
+            int Yoffset = 10;
             int Xwidth = 100;
             int Yheight = 15;
 
             //Create Register_Timer Controls
+            //Label lbl_Timer = new Label();
+            //lbl_Timer.Location = new Point(Xoffset, Yoffset);
             lbl_Timer.Width = Xwidth;
             lbl_Timer.Height = Yheight;
             lbl_Timer.Text = "WR Timer";
             lbl_Timer.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_Timer.BackColor = Color.Coral;
             this.Controls.Add(lbl_Timer);
+            //txt_LWRTimer.Location = new Point(lbl_Timer.Left + lbl_Timer.Width + 5, lbl_Timer.Top);
             txt_LWRTimer.Width = Xwidth;
             txt_LWRTimer.Height = Yheight;
             txt_LWRTimer.Enabled = true;
@@ -308,12 +286,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRTimer);
 
             //Create Register_GateStart Controls
+            Xoffset = lbl_Timer.Left;
+            Yoffset = lbl_Timer.Top + lbl_Timer.Height + 5;
+            //Label lbl_GateStart = new Label();
+            //lbl_GateStart.Location = new Point(Xoffset, Yoffset);
             lbl_GateStart.Width = Xwidth;
             lbl_GateStart.Height = Yheight;
             lbl_GateStart.Text = "WR Gate Start";
             lbl_GateStart.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_GateStart.BackColor = Color.Coral;
             this.Controls.Add(lbl_GateStart);
+            //txt_LWRGateStart.Location = new Point(lbl_GateStart.Left + lbl_GateStart.Width + 5, lbl_GateStart.Top);
             txt_LWRGateStart.Width = Xwidth;
             txt_LWRGateStart.Height = Yheight;
             txt_LWRGateStart.Enabled = true;
@@ -325,12 +308,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRGateStart);
 
             //Create Register_GateLength Controls
+            Xoffset = lbl_GateStart.Left;
+            Yoffset = lbl_GateStart.Top + lbl_GateStart.Height + 5;
+            //Label lbl_GateLength = new Label();
+            //lbl_GateLength.Location = new Point(Xoffset, Yoffset);
             lbl_GateLength.Width = Xwidth;
             lbl_GateLength.Height = Yheight;
             lbl_GateLength.Text = "WR Gate Length";
             lbl_GateLength.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_GateLength.BackColor = Color.Coral;
             this.Controls.Add(lbl_GateLength);
+            //txt_LWRGateLength.Location = new Point(lbl_GateLength.Left + lbl_GateLength.Width + 5, lbl_GateLength.Top);
             txt_LWRGateLength.Width = Xwidth;
             txt_LWRGateLength.Height = Yheight;
             txt_LWRGateLength.Enabled = true;
@@ -342,12 +330,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRGateLength);
 
             //Create Register_TripXPowerDown Controls
+            Xoffset = lbl_GateLength.Left;
+            Yoffset = lbl_GateLength.Top + lbl_GateLength.Height + 5;
+            //Label lbl_TripXPowerDown = new Label();
+            //lbl_TripXPowerDown.Location = new Point(Xoffset, Yoffset);
             lbl_TripXPowerDown.Width = Xwidth;
             lbl_TripXPowerDown.Height = Yheight;
             lbl_TripXPowerDown.Text = "WR Trip PowOFF";
             lbl_TripXPowerDown.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TripXPowerDown.BackColor = Color.Coral;
             this.Controls.Add(lbl_TripXPowerDown);
+            //txt_LWRTripXPowerDown.Location = new Point(lbl_TripXPowerDown.Left + lbl_TripXPowerDown.Width + 5, lbl_TripXPowerDown.Top);
             txt_LWRTripXPowerDown.Width = Xwidth;
             txt_LWRTripXPowerDown.Height = Yheight;
             txt_LWRTripXPowerDown.Enabled = true;
@@ -359,12 +352,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRTripXPowerDown);
 
             //Create Register_Trip0InjectCnt Controls
+            Xoffset = lbl_TripXPowerDown.Left;
+            Yoffset = lbl_TripXPowerDown.Top + lbl_TripXPowerDown.Height + 5;
+            //Label lbl_Trip0InjectCnt = new Label();
+            //lbl_Trip0InjectCnt.Location = new Point(Xoffset, Yoffset);
             lbl_Trip0InjectCnt.Width = Xwidth;
             lbl_Trip0InjectCnt.Height = Yheight;
             lbl_Trip0InjectCnt.Text = "WR Trip0 InjCnt+EN";
             lbl_Trip0InjectCnt.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_Trip0InjectCnt.BackColor = Color.Coral;
             this.Controls.Add(lbl_Trip0InjectCnt);
+            //txt_LWRTrip0InjectCnt.Location = new Point(lbl_Trip0InjectCnt.Left + lbl_Trip0InjectCnt.Width + 5, lbl_Trip0InjectCnt.Top);
             txt_LWRTrip0InjectCnt.Width = Xwidth;
             txt_LWRTrip0InjectCnt.Height = Yheight;
             txt_LWRTrip0InjectCnt.Enabled = true;
@@ -383,12 +381,17 @@ namespace MinervaUserControls
             this.Controls.Add(chk_LWRTrip0InjectCntEnable);
 
             //Create Register_Trip1InjectCnt Controls
+            Xoffset = lbl_Trip0InjectCnt.Left;
+            Yoffset = lbl_Trip0InjectCnt.Top + lbl_Trip0InjectCnt.Height + 5;
+            //Label lbl_Trip1InjectCnt = new Label();
+            //lbl_Trip1InjectCnt.Location = new Point(Xoffset, Yoffset);
             lbl_Trip1InjectCnt.Width = Xwidth;
             lbl_Trip1InjectCnt.Height = Yheight;
             lbl_Trip1InjectCnt.Text = "WR Trip1 InjCnt+EN";
             lbl_Trip1InjectCnt.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_Trip1InjectCnt.BackColor = Color.Coral;
             this.Controls.Add(lbl_Trip1InjectCnt);
+            //txt_LWRTrip1InjectCnt.Location = new Point(lbl_Trip1InjectCnt.Left + lbl_Trip1InjectCnt.Width + 5, lbl_Trip1InjectCnt.Top);
             txt_LWRTrip1InjectCnt.Width = Xwidth;
             txt_LWRTrip1InjectCnt.Height = Yheight;
             txt_LWRTrip1InjectCnt.Enabled = true;
@@ -398,6 +401,7 @@ namespace MinervaUserControls
             txt_LWRTrip1InjectCnt.TabIndex = (int)LogicalRegisters.InjectCount1;
             txt_LWRTrip1InjectCnt.Validating += new CancelEventHandler(control_Validating);
             this.Controls.Add(txt_LWRTrip1InjectCnt);
+            //chk_LWRTrip1InjectCntEnable.Location = new Point(txt_LWRTrip1InjectCnt.Left + txt_LWRTrip1InjectCnt.Width + 5, txt_LWRTrip1InjectCnt.Top);
             chk_LWRTrip1InjectCntEnable.Width = Xwidth / 5;
             chk_LWRTrip1InjectCntEnable.Checked = Convert.ToBoolean(InjectEnableDefaultValue & 0x2);
             chk_LWRTrip1InjectCntEnable.Name = "Trip1InjectCntEnable";
@@ -406,12 +410,17 @@ namespace MinervaUserControls
             this.Controls.Add(chk_LWRTrip1InjectCntEnable);
 
             //Create Register_Trip2InjectCnt Controls
+            Xoffset = lbl_Trip1InjectCnt.Left;
+            Yoffset = lbl_Trip1InjectCnt.Top + lbl_Trip1InjectCnt.Height + 5;
+            //Label lbl_Trip2InjectCnt = new Label();
+            //lbl_Trip2InjectCnt.Location = new Point(Xoffset, Yoffset);
             lbl_Trip2InjectCnt.Width = Xwidth;
             lbl_Trip2InjectCnt.Height = Yheight;
             lbl_Trip2InjectCnt.Text = "WR Trip2 InjCnt+EN";
             lbl_Trip2InjectCnt.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_Trip2InjectCnt.BackColor = Color.Coral;
             this.Controls.Add(lbl_Trip2InjectCnt);
+            //txt_LWRTrip2InjectCnt.Location = new Point(lbl_Trip2InjectCnt.Left + lbl_Trip2InjectCnt.Width + 5, lbl_Trip2InjectCnt.Top);
             txt_LWRTrip2InjectCnt.Width = Xwidth;
             txt_LWRTrip2InjectCnt.Height = Yheight;
             txt_LWRTrip2InjectCnt.Enabled = true;
@@ -421,6 +430,7 @@ namespace MinervaUserControls
             txt_LWRTrip2InjectCnt.TabIndex = (int)LogicalRegisters.InjectCount2;
             txt_LWRTrip2InjectCnt.Validating += new CancelEventHandler(control_Validating);
             this.Controls.Add(txt_LWRTrip2InjectCnt);
+            //chk_LWRTrip2InjectCntEnable.Location = new Point(txt_LWRTrip2InjectCnt.Left + txt_LWRTrip2InjectCnt.Width + 5, txt_LWRTrip2InjectCnt.Top);
             chk_LWRTrip2InjectCntEnable.Width = Xwidth / 5;
             chk_LWRTrip2InjectCntEnable.Checked = Convert.ToBoolean(InjectEnableDefaultValue & 0x4);
             chk_LWRTrip2InjectCntEnable.Name = "Trip2InjectCntEnable";
@@ -429,12 +439,17 @@ namespace MinervaUserControls
             this.Controls.Add(chk_LWRTrip2InjectCntEnable);
 
             //Create Register_Trip3InjectCnt Controls
+            Xoffset = lbl_Trip2InjectCnt.Left;
+            Yoffset = lbl_Trip2InjectCnt.Top + lbl_Trip2InjectCnt.Height + 5;
+            //Label lbl_Trip3InjectCnt = new Label();
+            //lbl_Trip3InjectCnt.Location = new Point(Xoffset, Yoffset);
             lbl_Trip3InjectCnt.Width = Xwidth;
             lbl_Trip3InjectCnt.Height = Yheight;
             lbl_Trip3InjectCnt.Text = "WR Trip3 InjCnt+EN";
             lbl_Trip3InjectCnt.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_Trip3InjectCnt.BackColor = Color.Coral;
             this.Controls.Add(lbl_Trip3InjectCnt);
+            //txt_LWRTrip3InjectCnt.Location = new Point(lbl_Trip3InjectCnt.Left + lbl_Trip3InjectCnt.Width + 5, lbl_Trip3InjectCnt.Top);
             txt_LWRTrip3InjectCnt.Width = Xwidth;
             txt_LWRTrip3InjectCnt.Height = Yheight;
             txt_LWRTrip3InjectCnt.Enabled = true;
@@ -444,6 +459,7 @@ namespace MinervaUserControls
             txt_LWRTrip3InjectCnt.TabIndex = (int)LogicalRegisters.InjectCount3;
             txt_LWRTrip3InjectCnt.Validating += new CancelEventHandler(control_Validating);
             this.Controls.Add(txt_LWRTrip3InjectCnt);
+            //chk_LWRTrip3InjectCntEnable.Location = new Point(txt_LWRTrip3InjectCnt.Left + txt_LWRTrip3InjectCnt.Width + 5, txt_LWRTrip3InjectCnt.Top);
             chk_LWRTrip3InjectCntEnable.Width = Xwidth / 5;
             chk_LWRTrip3InjectCntEnable.Checked = Convert.ToBoolean(InjectEnableDefaultValue & 0x8);
             chk_LWRTrip3InjectCntEnable.Name = "Trip3InjectCntEnable";
@@ -452,12 +468,17 @@ namespace MinervaUserControls
             this.Controls.Add(chk_LWRTrip3InjectCntEnable);
 
             //Create Register_Trip4InjectCnt Controls
+            Xoffset = lbl_Trip3InjectCnt.Left;
+            Yoffset = lbl_Trip3InjectCnt.Top + lbl_Trip3InjectCnt.Height + 5;
+            //Label lbl_Trip4InjectCnt = new Label();
+            //lbl_Trip4InjectCnt.Location = new Point(Xoffset, Yoffset);
             lbl_Trip4InjectCnt.Width = Xwidth;
             lbl_Trip4InjectCnt.Height = Yheight;
             lbl_Trip4InjectCnt.Text = "WR Trip4 InjCnt+EN";
             lbl_Trip4InjectCnt.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_Trip4InjectCnt.BackColor = Color.Coral;
             this.Controls.Add(lbl_Trip4InjectCnt);
+            //txt_LWRTrip4InjectCnt.Location = new Point(lbl_Trip4InjectCnt.Left + lbl_Trip4InjectCnt.Width + 5, lbl_Trip4InjectCnt.Top);
             txt_LWRTrip4InjectCnt.Width = Xwidth;
             txt_LWRTrip4InjectCnt.Height = Yheight;
             txt_LWRTrip4InjectCnt.Enabled = true;
@@ -467,6 +488,7 @@ namespace MinervaUserControls
             txt_LWRTrip4InjectCnt.TabIndex = (int)LogicalRegisters.InjectCount4;
             txt_LWRTrip4InjectCnt.Validating += new CancelEventHandler(control_Validating);
             this.Controls.Add(txt_LWRTrip4InjectCnt);
+            //chk_LWRTrip4InjectCntEnable.Location = new Point(txt_LWRTrip4InjectCnt.Left + txt_LWRTrip4InjectCnt.Width + 5, txt_LWRTrip4InjectCnt.Top);
             chk_LWRTrip4InjectCntEnable.Width = Xwidth / 5;
             chk_LWRTrip4InjectCntEnable.Checked = Convert.ToBoolean(InjectEnableDefaultValue & 0x10);
             chk_LWRTrip4InjectCntEnable.Name = "Trip4InjectCntEnable";
@@ -475,12 +497,17 @@ namespace MinervaUserControls
             this.Controls.Add(chk_LWRTrip4InjectCntEnable);
 
             //Create Register_Trip5InjectCnt Controls
+            Xoffset = lbl_Trip4InjectCnt.Left;
+            Yoffset = lbl_Trip4InjectCnt.Top + lbl_Trip4InjectCnt.Height + 5;
+            //Label lbl_Trip5InjectCnt = new Label();
+            //lbl_Trip5InjectCnt.Location = new Point(Xoffset, Yoffset);
             lbl_Trip5InjectCnt.Width = Xwidth;
             lbl_Trip5InjectCnt.Height = Yheight;
             lbl_Trip5InjectCnt.Text = "WR Trip5 InjCnt+EN";
             lbl_Trip5InjectCnt.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_Trip5InjectCnt.BackColor = Color.Coral;
             this.Controls.Add(lbl_Trip5InjectCnt);
+            //txt_LWRTrip5InjectCnt.Location = new Point(lbl_Trip5InjectCnt.Left + lbl_Trip5InjectCnt.Width + 5, lbl_Trip5InjectCnt.Top);
             txt_LWRTrip5InjectCnt.Width = Xwidth;
             txt_LWRTrip5InjectCnt.Height = Yheight;
             txt_LWRTrip5InjectCnt.Enabled = true;
@@ -490,6 +517,7 @@ namespace MinervaUserControls
             txt_LWRTrip5InjectCnt.TabIndex = (int)LogicalRegisters.InjectCount5;
             txt_LWRTrip5InjectCnt.Validating += new CancelEventHandler(control_Validating);
             this.Controls.Add(txt_LWRTrip5InjectCnt);
+            //chk_LWRTrip5InjectCntEnable.Location = new Point(txt_LWRTrip5InjectCnt.Left + txt_LWRTrip5InjectCnt.Width + 5, txt_LWRTrip5InjectCnt.Top);
             chk_LWRTrip5InjectCntEnable.Width = Xwidth / 5;
             chk_LWRTrip5InjectCntEnable.Checked = Convert.ToBoolean(InjectEnableDefaultValue & 0x20);
             chk_LWRTrip5InjectCntEnable.Name = "Trip5InjectCntEnable";
@@ -498,12 +526,17 @@ namespace MinervaUserControls
             this.Controls.Add(chk_LWRTrip5InjectCntEnable);
 
             //Create Register_TripXInjectCntRange Controls
+            Xoffset = lbl_Trip5InjectCnt.Left;
+            Yoffset = lbl_Trip5InjectCnt.Top + lbl_Trip5InjectCnt.Height + 5;
+            //Label lbl_TripXInjectCntRange = new Label();
+            //lbl_TripXInjectCntRange.Location = new Point(Xoffset, Yoffset);
             lbl_TripXInjectCntRange.Width = Xwidth;
             lbl_TripXInjectCntRange.Height = Yheight;
             lbl_TripXInjectCntRange.Text = "WR TripX InjRange";
             lbl_TripXInjectCntRange.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TripXInjectCntRange.BackColor = Color.Coral;
             this.Controls.Add(lbl_TripXInjectCntRange);
+            //txt_LWRTripXInjectCntRange.Location = new Point(lbl_TripXInjectCntRange.Left + lbl_TripXInjectCntRange.Width + 5, lbl_TripXInjectCntRange.Top);
             txt_LWRTripXInjectCntRange.Width = Xwidth;
             txt_LWRTripXInjectCntRange.Height = Yheight;
             txt_LWRTripXInjectCntRange.Enabled = true;
@@ -515,12 +548,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRTripXInjectCntRange);
 
             //Create Register_TripXInjectCntPhase Controls
+            Xoffset = lbl_TripXInjectCntRange.Left;
+            Yoffset = lbl_TripXInjectCntRange.Top + lbl_TripXInjectCntRange.Height + 5;
+            //Label lbl_TripXInjectCntPhase = new Label();
+            //lbl_TripXInjectCntPhase.Location = new Point(Xoffset, Yoffset);
             lbl_TripXInjectCntPhase.Width = Xwidth;
             lbl_TripXInjectCntPhase.Height = Yheight;
             lbl_TripXInjectCntPhase.Text = "WR TripX InjPhase";
             lbl_TripXInjectCntPhase.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TripXInjectCntPhase.BackColor = Color.Coral;
             this.Controls.Add(lbl_TripXInjectCntPhase);
+            //cmb_LWRTripXInjectCntPhase.Location = new Point(lbl_TripXInjectCntPhase.Left + lbl_TripXInjectCntPhase.Width + 5, lbl_TripXInjectCntPhase.Top);
             cmb_LWRTripXInjectCntPhase.Width = Xwidth;
             cmb_LWRTripXInjectCntPhase.Height = Yheight;
             cmb_LWRTripXInjectCntPhase.Items.Clear();
@@ -536,12 +574,17 @@ namespace MinervaUserControls
             this.Controls.Add(cmb_LWRTripXInjectCntPhase);
 
             //Create Register_TripXInjDACVal Controls
+            Xoffset = lbl_TripXInjectCntPhase.Left;
+            Yoffset = lbl_TripXInjectCntPhase.Top + lbl_TripXInjectCntPhase.Height + 5;
+            //Label lbl_TripXInjDACVal = new Label();
+            //lbl_TripXInjDACVal.Location = new Point(Xoffset, Yoffset);
             lbl_TripXInjDACVal.Width = Xwidth;
             lbl_TripXInjDACVal.Height = Yheight;
             lbl_TripXInjDACVal.Text = "WR InjDAC Value";
             lbl_TripXInjDACVal.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TripXInjDACVal.BackColor = Color.Coral;
             this.Controls.Add(lbl_TripXInjDACVal);
+            //txt_LWRTripXInjDACVal.Location = new Point(lbl_TripXInjDACVal.Left + lbl_TripXInjDACVal.Width + 5, lbl_TripXInjDACVal.Top);
             txt_LWRTripXInjDACVal.Width = Xwidth;
             txt_LWRTripXInjDACVal.Height = Yheight;
             txt_LWRTripXInjDACVal.Enabled = true;
@@ -553,12 +596,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRTripXInjDACVal);
 
             //Create Register_TripXInjDACMode Controls
+            Xoffset = lbl_TripXInjDACVal.Left;
+            Yoffset = lbl_TripXInjDACVal.Top + lbl_TripXInjDACVal.Height + 5;
+            //Label lbl_TripXInjDACMode = new Label();
+            //lbl_TripXInjDACMode.Location = new Point(Xoffset, Yoffset);
             lbl_TripXInjDACMode.Width = Xwidth;
             lbl_TripXInjDACMode.Height = Yheight;
             lbl_TripXInjDACMode.Text = "WR InjDAC Mode";
             lbl_TripXInjDACMode.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TripXInjDACMode.BackColor = Color.Coral;
             this.Controls.Add(lbl_TripXInjDACMode);
+            //cmb_LWRTripXInjDACMode.Location = new Point(lbl_TripXInjDACMode.Left + lbl_TripXInjDACMode.Width + 5, lbl_TripXInjDACMode.Top);
             cmb_LWRTripXInjDACMode.Width = Xwidth;
             cmb_LWRTripXInjDACMode.Height = Yheight;
             cmb_LWRTripXInjDACMode.Items.Add("0 Normal");
@@ -572,12 +620,17 @@ namespace MinervaUserControls
             this.Controls.Add(cmb_LWRTripXInjDACMode);
 
             //Create Register_TripXInjDACStartClearn Controls
+            Xoffset = lbl_TripXInjDACMode.Left;
+            Yoffset = lbl_TripXInjDACMode.Top + lbl_TripXInjDACMode.Height + 5;
+            //Label lbl_TripXInjDACStartClearn = new Label();
+            //lbl_TripXInjDACStartClearn.Location = new Point(Xoffset, Yoffset);
             lbl_TripXInjDACStartClearn.Width = Xwidth;
             lbl_TripXInjDACStartClearn.Height = Yheight;
             lbl_TripXInjDACStartClearn.Text = "WR InjDAC RS";
             lbl_TripXInjDACStartClearn.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TripXInjDACStartClearn.BackColor = Color.Coral;
             this.Controls.Add(lbl_TripXInjDACStartClearn);
+            //cmb_LWRTripXInjDACStartClearn.Location = new Point(lbl_TripXInjDACStartClearn.Left + lbl_TripXInjDACStartClearn.Width + 5, lbl_TripXInjDACStartClearn.Top);
             cmb_LWRTripXInjDACStartClearn.Width = Xwidth;
             cmb_LWRTripXInjDACStartClearn.Height = Yheight;
             cmb_LWRTripXInjDACStartClearn.Items.Add("0 Reset");
@@ -589,12 +642,17 @@ namespace MinervaUserControls
             this.Controls.Add(cmb_LWRTripXInjDACStartClearn);
 
             //Create Register_TripXInjDACDone Controls
+            Xoffset = lbl_TripXInjDACStartClearn.Left;
+            Yoffset = lbl_TripXInjDACStartClearn.Top + lbl_TripXInjDACStartClearn.Height + 5;
+            //Label lbl_TripXInjDACDone = new Label();
+            //lbl_TripXInjDACDone.Location = new Point(Xoffset, Yoffset);
             lbl_TripXInjDACDone.Width = Xwidth;
             lbl_TripXInjDACDone.Height = Yheight;
             lbl_TripXInjDACDone.Text = "R  InjDAC Done";
             lbl_TripXInjDACDone.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TripXInjDACDone.BackColor = Color.Coral;
             this.Controls.Add(lbl_TripXInjDACDone);
+            //txt_LRTripXInjDACDone.Location = new Point(lbl_TripXInjDACDone.Left + lbl_TripXInjDACDone.Width + 5, lbl_TripXInjDACDone.Top);
             txt_LRTripXInjDACDone.Width = Xwidth;
             txt_LRTripXInjDACDone.Height = Yheight;
             txt_LRTripXInjDACDone.Enabled = true;
@@ -606,12 +664,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRTripXInjDACDone);
 
             //Create Register_HVAvgOn Controls
+            Xoffset = lbl_TripXInjDACDone.Left;
+            Yoffset = lbl_TripXInjDACDone.Top + lbl_TripXInjDACDone.Height + 5;
+            //Label lbl_HVEnable = new Label();
+            //lbl_HVEnable.Location = new Point(Xoffset, Yoffset);
             lbl_HVEnable.Width = Xwidth;
             lbl_HVEnable.Height = Yheight;
             lbl_HVEnable.Text = "WR HV Enable";
             lbl_HVEnable.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_HVEnable.BackColor = Color.Coral;
             this.Controls.Add(lbl_HVEnable);
+            //cmb_LWRHVEnable.Location = new Point(lbl_HVEnable.Left + lbl_HVEnable.Width + 5, lbl_HVEnable.Top);
             cmb_LWRHVEnable.Width = Xwidth;
             cmb_LWRHVEnable.Height = Yheight;
             cmb_LWRHVEnable.Items.Add("0 HV Off");
@@ -623,12 +686,17 @@ namespace MinervaUserControls
             this.Controls.Add(cmb_LWRHVEnable);
 
             //Create Register_HVWriteData Controls
+            Xoffset = lbl_HVEnable.Left;
+            Yoffset = lbl_HVEnable.Top + lbl_HVEnable.Height + 5;
+            //Label lbl_HVTarget = new Label();
+            //lbl_HVTarget.Location = new Point(Xoffset, Yoffset);
             lbl_HVTarget.Width = Xwidth;
             lbl_HVTarget.Height = Yheight;
             lbl_HVTarget.Text = "WR HV Target";
             lbl_HVTarget.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_HVTarget.BackColor = Color.Coral;
             this.Controls.Add(lbl_HVTarget);
+            //txt_LWRHVTarget.Location = new Point(lbl_HVTarget.Left + lbl_HVTarget.Width + 5, lbl_HVTarget.Top);
             txt_LWRHVTarget.Width = Xwidth;
             txt_LWRHVTarget.Height = Yheight;
             txt_LWRHVTarget.Enabled = true;
@@ -640,12 +708,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRHVTarget);
 
             //Create Register_HVReadData Controls
+            Xoffset = lbl_HVTarget.Left;
+            Yoffset = lbl_HVTarget.Top + lbl_HVTarget.Height + 5;
+            //Label lbl_HVActual = new Label();
+            //lbl_HVActual.Location = new Point(Xoffset, Yoffset);
             lbl_HVActual.Width = Xwidth;
             lbl_HVActual.Height = Yheight;
             lbl_HVActual.Text = "R  HV Actual";
             lbl_HVActual.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_HVActual.BackColor = Color.Coral;
             this.Controls.Add(lbl_HVActual);
+            //txt_LRHVActual.Location = new Point(lbl_HVActual.Left + lbl_HVActual.Width + 5, lbl_HVActual.Top);
             txt_LRHVActual.Width = Xwidth;
             txt_LRHVActual.Height = Yheight;
             txt_LRHVActual.Enabled = true;
@@ -657,12 +730,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRHVActual);
 
             //Create Register_HVReadDummy Controls
+            Xoffset = lbl_HVActual.Left;
+            Yoffset = lbl_HVActual.Top + lbl_HVActual.Height + 5;
+            //Label lbl_HVControl = new Label();
+            //lbl_HVControl.Location = new Point(Xoffset, Yoffset);
             lbl_HVControl.Width = Xwidth;
             lbl_HVControl.Height = Yheight;
             lbl_HVControl.Text = "R  HV Control";
             lbl_HVControl.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_HVControl.BackColor = Color.Coral;
             this.Controls.Add(lbl_HVControl);
+            //txt_LRHVControl.Location = new Point(lbl_HVControl.Left + lbl_HVControl.Width + 5, lbl_HVControl.Top);
             txt_LRHVControl.Width = Xwidth;
             txt_LRHVControl.Height = Yheight;
             txt_LRHVControl.Enabled = true;
@@ -674,12 +752,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRHVControl);
 
             //Create Register_HVLoopOff Controls
+            Xoffset = lbl_HVControl.Left;
+            Yoffset = lbl_HVControl.Top + lbl_HVControl.Height + 5;
+            //Label lbl_HVAutoMan = new Label();
+            //lbl_HVAutoMan.Location = new Point(Xoffset, Yoffset);
             lbl_HVAutoMan.Width = Xwidth;
             lbl_HVAutoMan.Height = Yheight;
             lbl_HVAutoMan.Text = "WR HV Auto/Man";
             lbl_HVAutoMan.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_HVAutoMan.BackColor = Color.Coral;
             this.Controls.Add(lbl_HVAutoMan);
+            //cmb_LWRHVAutoMan.Location = new Point(lbl_HVAutoMan.Left + lbl_HVAutoMan.Width + 5, lbl_HVAutoMan.Top);
             cmb_LWRHVAutoMan.Width = Xwidth;
             cmb_LWRHVAutoMan.Height = Yheight;
             cmb_LWRHVAutoMan.Items.Add("0 Auto");
@@ -690,13 +773,62 @@ namespace MinervaUserControls
             cmb_LWRHVAutoMan.Validating += new CancelEventHandler(control_Validating);
             this.Controls.Add(cmb_LWRHVAutoMan);
 
+            ////Create Register_VXOOn0Off1 Controls
+            //Xoffset = lbl_HVControl.Left;
+            //Yoffset = lbl_HVControl.Top + lbl_HVControl.Height + 5;
+            //Label lbl_VXOOn0Off1 = new Label();
+            //lbl_VXOOn0Off1.Location = new Point(Xoffset, Yoffset);
+            //lbl_VXOOn0Off1.Width = Xwidth;
+            //lbl_VXOOn0Off1.Height = Yheight;
+            //lbl_VXOOn0Off1.Text = "WR VXO OnOff";
+            //lbl_VXOOn0Off1.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
+            //lbl_VXOOn0Off1.BackColor = Color.Coral;
+            //this.Controls.Add(lbl_VXOOn0Off1);
+            //cmb_LWRVXOOn0Off1.Location = new Point(lbl_VXOOn0Off1.Left + lbl_VXOOn0Off1.Width + 5, lbl_VXOOn0Off1.Top);
+            //cmb_LWRVXOOn0Off1.Width = Xwidth;
+            //cmb_LWRVXOOn0Off1.Height = Yheight;
+            //cmb_LWRVXOOn0Off1.Items.Add("0 VXO On");
+            //cmb_LWRVXOOn0Off1.Items.Add("1 VXO Off");
+            //cmb_LWRVXOOn0Off1.Name = "VXOOn0Off1";
+            //cmb_LWRVXOOn0Off1.SelectedIndex = (int)VXOOffDefaultValue;
+            //cmb_LWRVXOOn0Off1.TabIndex = 27; //!!!!!!!!!!!!!!!!!!UPDATE ME!!!!!!!!!!!!!!
+            //cmb_LWRVXOOn0Off1.Validating += new CancelEventHandler(control_Validating);
+            //this.Controls.Add(cmb_LWRVXOOn0Off1);
+
+            //Create Register_VXOMuxSel Controls
+            Xoffset = lbl_HVAutoMan.Left;
+            Yoffset = lbl_HVAutoMan.Top + lbl_HVAutoMan.Height + 5;
+            //Label lbl_VXOMuxSel = new Label();
+            //lbl_VXOMuxSel.Location = new Point(Xoffset, Yoffset);
+            lbl_VXOMuxSel.Width = Xwidth;
+            lbl_VXOMuxSel.Height = Yheight;
+            lbl_VXOMuxSel.Text = "WR VXO PLL Sel";
+            lbl_VXOMuxSel.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
+            lbl_VXOMuxSel.BackColor = Color.Coral;
+            this.Controls.Add(lbl_VXOMuxSel);
+            //cmb_LWRVXOMuxSel.Location = new Point(lbl_VXOMuxSel.Left + lbl_VXOMuxSel.Width + 5, lbl_VXOMuxSel.Top);
+            cmb_LWRVXOMuxSel.Width = Xwidth;
+            cmb_LWRVXOMuxSel.Height = Yheight;
+            cmb_LWRVXOMuxSel.Items.Add("0 Analog Devices");
+            cmb_LWRVXOMuxSel.Items.Add("1 Xilinx");
+            cmb_LWRVXOMuxSel.Name = "VXOMuxSel";
+            cmb_LWRVXOMuxSel.SelectedIndex = (int)VXOMuxXilinxDefaultValue;
+            cmb_LWRVXOMuxSel.TabIndex = (int)LogicalRegisters.VXOMuxSelect;
+            cmb_LWRVXOMuxSel.Validating += new CancelEventHandler(control_Validating);
+            this.Controls.Add(cmb_LWRVXOMuxSel);
+
             //Create Register_PHShifStartClearn Controls
+            Xoffset = lbl_VXOMuxSel.Left;
+            Yoffset = lbl_VXOMuxSel.Top + lbl_VXOMuxSel.Height + 5;
+            //Label lbl_PHShiftStartClearn = new Label();
+            //lbl_PHShiftStartClearn.Location = new Point(Xoffset, Yoffset);
             lbl_PHShiftStartClearn.Width = Xwidth;
             lbl_PHShiftStartClearn.Height = Yheight;
             lbl_PHShiftStartClearn.Text = "WR PHASE RS";
             lbl_PHShiftStartClearn.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_PHShiftStartClearn.BackColor = Color.Coral;
             this.Controls.Add(lbl_PHShiftStartClearn);
+            //cmb_LWRPHShiftStartClearn.Location = new Point(lbl_PHShiftStartClearn.Left + lbl_PHShiftStartClearn.Width + 5, lbl_PHShiftStartClearn.Top);
             cmb_LWRPHShiftStartClearn.Width = Xwidth;
             cmb_LWRPHShiftStartClearn.Height = Yheight;
             cmb_LWRPHShiftStartClearn.Items.Add("0 Reset");
@@ -708,12 +840,17 @@ namespace MinervaUserControls
             this.Controls.Add(cmb_LWRPHShiftStartClearn);
 
             //Create Register_PHShiftDecr0Incr1 Controls
+            Xoffset = lbl_PHShiftStartClearn.Left;
+            Yoffset = lbl_PHShiftStartClearn.Top + lbl_PHShiftStartClearn.Height + 5;
+            //Label lbl_PHShiftDecr0Incr1 = new Label();
+            //lbl_PHShiftDecr0Incr1.Location = new Point(Xoffset, Yoffset);
             lbl_PHShiftDecr0Incr1.Width = Xwidth;
             lbl_PHShiftDecr0Incr1.Height = Yheight;
             lbl_PHShiftDecr0Incr1.Text = "WR PHASE +/-";
             lbl_PHShiftDecr0Incr1.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_PHShiftDecr0Incr1.BackColor = Color.Coral;
             this.Controls.Add(lbl_PHShiftDecr0Incr1);
+            //cmb_LWRPHShiftDecr0Incr1.Location = new Point(lbl_PHShiftDecr0Incr1.Left + lbl_PHShiftDecr0Incr1.Width + 5, lbl_PHShiftDecr0Incr1.Top);
             cmb_LWRPHShiftDecr0Incr1.Width = Xwidth;
             cmb_LWRPHShiftDecr0Incr1.Height = Yheight;
             cmb_LWRPHShiftDecr0Incr1.Items.Add("0 Decrement");
@@ -724,13 +861,40 @@ namespace MinervaUserControls
             cmb_LWRPHShiftDecr0Incr1.Validating += new CancelEventHandler(control_Validating);
             this.Controls.Add(cmb_LWRPHShiftDecr0Incr1);
 
+            //Create Register_PHShiftSpare Controls
+            Xoffset = lbl_PHShiftDecr0Incr1.Left;
+            Yoffset = lbl_PHShiftDecr0Incr1.Top + lbl_PHShiftDecr0Incr1.Height + 5;
+            //Label lbl_PHShiftSpare = new Label();
+            //lbl_PHShiftSpare.Location = new Point(Xoffset, Yoffset);
+            lbl_PHShiftSpare.Width = Xwidth;
+            lbl_PHShiftSpare.Height = Yheight;
+            lbl_PHShiftSpare.Text = "WR PHASE Spare";
+            lbl_PHShiftSpare.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
+            lbl_PHShiftSpare.BackColor = Color.Coral;
+            this.Controls.Add(lbl_PHShiftSpare);
+            //txt_LWRPHShiftSpare.Location = new Point(lbl_PHShiftSpare.Left + lbl_PHShiftSpare.Width + 5, lbl_PHShiftSpare.Top);
+            txt_LWRPHShiftSpare.Width = Xwidth;
+            txt_LWRPHShiftSpare.Height = Yheight;
+            txt_LWRPHShiftSpare.Enabled = true;
+            txt_LWRPHShiftSpare.BackColor = Color.White;
+            txt_LWRPHShiftSpare.Name = "PHShiftSpare";
+            txt_LWRPHShiftSpare.Text = PhaseSpareDefaultValue.ToString();
+            txt_LWRPHShiftSpare.TabIndex = (int)LogicalRegisters.PhaseSpare;
+            txt_LWRPHShiftSpare.Validating += new CancelEventHandler(control_Validating);
+            this.Controls.Add(txt_LWRPHShiftSpare);
+
             //Create Register_PHShiftVal Controls
+            Xoffset = lbl_PHShiftSpare.Left;
+            Yoffset = lbl_PHShiftSpare.Top + lbl_PHShiftSpare.Height + 5;
+            //Label lbl_PHShiftVal = new Label();
+            //lbl_PHShiftVal.Location = new Point(Xoffset, Yoffset);
             lbl_PHShiftVal.Width = Xwidth;
             lbl_PHShiftVal.Height = Yheight;
             lbl_PHShiftVal.Text = "WR PHASE Ticks";
             lbl_PHShiftVal.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_PHShiftVal.BackColor = Color.Coral;
             this.Controls.Add(lbl_PHShiftVal);
+            //txt_LWRPHShiftVal.Location = new Point(lbl_PHShiftVal.Left + lbl_PHShiftVal.Width + 5, lbl_PHShiftVal.Top);
             txt_LWRPHShiftVal.Width = Xwidth;
             txt_LWRPHShiftVal.Height = Yheight;
             txt_LWRPHShiftVal.Enabled = true;
@@ -742,12 +906,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRPHShiftVal);
 
             //Create Register_DCM1Locked Controls
+            Xoffset = lbl_PHShiftVal.Left;
+            Yoffset = lbl_PHShiftVal.Top + lbl_PHShiftVal.Height + 5;
+            //Label lbl_DCM1Locked = new Label();
+            //lbl_DCM1Locked.Location = new Point(Xoffset, Yoffset);
             lbl_DCM1Locked.Width = Xwidth;
             lbl_DCM1Locked.Height = Yheight;
             lbl_DCM1Locked.Text = "R  DCM1 LOCK";
             lbl_DCM1Locked.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_DCM1Locked.BackColor = Color.Coral;
             this.Controls.Add(lbl_DCM1Locked);
+            //txt_LRDCM1Locked.Location = new Point(lbl_DCM1Locked.Left + lbl_DCM1Locked.Width + 5, lbl_DCM1Locked.Top);
             txt_LRDCM1Locked.Width = Xwidth;
             txt_LRDCM1Locked.Height = Yheight;
             txt_LRDCM1Locked.Enabled = true;
@@ -759,12 +928,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRDCM1Locked);
 
             //Create Register_DCM2Locked Controls
+            Xoffset = lbl_DCM1Locked.Left;
+            Yoffset = lbl_DCM1Locked.Top + lbl_DCM1Locked.Height + 5;
+            //Label lbl_DCM2Locked = new Label();
+            //lbl_DCM2Locked.Location = new Point(Xoffset, Yoffset);
             lbl_DCM2Locked.Width = Xwidth;
             lbl_DCM2Locked.Height = Yheight;
             lbl_DCM2Locked.Text = "R  DCM2 LOCK";
             lbl_DCM2Locked.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_DCM2Locked.BackColor = Color.Coral;
             this.Controls.Add(lbl_DCM2Locked);
+            //txt_LRDCM2Locked.Location = new Point(lbl_DCM2Locked.Left + lbl_DCM2Locked.Width + 5, lbl_DCM2Locked.Top);
             txt_LRDCM2Locked.Width = Xwidth;
             txt_LRDCM2Locked.Height = Yheight;
             txt_LRDCM2Locked.Enabled = true;
@@ -776,12 +950,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRDCM2Locked);
 
             //Create Register_DCM1NoClk Controls
+            Xoffset = lbl_DCM2Locked.Left;
+            Yoffset = lbl_DCM2Locked.Top + lbl_DCM2Locked.Height + 5;
+            //Label lbl_DCM1NoClk = new Label();
+            //lbl_DCM1NoClk.Location = new Point(Xoffset, Yoffset);
             lbl_DCM1NoClk.Width = Xwidth;
             lbl_DCM1NoClk.Height = Yheight;
             lbl_DCM1NoClk.Text = "R  DCM1 NoCLK";
             lbl_DCM1NoClk.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_DCM1NoClk.BackColor = Color.Coral;
             this.Controls.Add(lbl_DCM1NoClk);
+            //txt_LRDCM1NoClk.Location = new Point(lbl_DCM1NoClk.Left + lbl_DCM1NoClk.Width + 5, lbl_DCM1NoClk.Top);
             txt_LRDCM1NoClk.Width = Xwidth;
             txt_LRDCM1NoClk.Height = Yheight;
             txt_LRDCM1NoClk.Enabled = true;
@@ -793,12 +972,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRDCM1NoClk);
 
             //Create Register_DCM2NoClk Controls
+            Xoffset = lbl_DCM1NoClk.Left;
+            Yoffset = lbl_DCM1NoClk.Top + lbl_DCM1NoClk.Height + 5;
+            //Label lbl_DCM2NoClk = new Label();
+            //lbl_DCM2NoClk.Location = new Point(Xoffset, Yoffset);
             lbl_DCM2NoClk.Width = Xwidth;
             lbl_DCM2NoClk.Height = Yheight;
             lbl_DCM2NoClk.Text = "R  DCM2 NoCLK";
             lbl_DCM2NoClk.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_DCM2NoClk.BackColor = Color.Coral;
             this.Controls.Add(lbl_DCM2NoClk);
+            //txt_LRDCM2NoClk.Location = new Point(lbl_DCM2NoClk.Left + lbl_DCM2NoClk.Width + 5, lbl_DCM2NoClk.Top);
             txt_LRDCM2NoClk.Width = Xwidth;
             txt_LRDCM2NoClk.Height = Yheight;
             txt_LRDCM2NoClk.Enabled = true;
@@ -810,12 +994,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRDCM2NoClk);
 
             //Create Register_DCM2PHShiftDone Controls
+            Xoffset = lbl_DCM2NoClk.Left;
+            Yoffset = lbl_DCM2NoClk.Top + lbl_DCM2NoClk.Height + 5;
+            //Label lbl_DCM2PHShiftDone = new Label();
+            //lbl_DCM2PHShiftDone.Location = new Point(Xoffset, Yoffset);
             lbl_DCM2PHShiftDone.Width = Xwidth;
             lbl_DCM2PHShiftDone.Height = Yheight;
             lbl_DCM2PHShiftDone.Text = "R  DCM2 PHDone";
             lbl_DCM2PHShiftDone.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_DCM2PHShiftDone.BackColor = Color.Coral;
             this.Controls.Add(lbl_DCM2PHShiftDone);
+            //txt_LRDCM2PHShiftDone.Location = new Point(lbl_DCM2PHShiftDone.Left + lbl_DCM2PHShiftDone.Width + 5, lbl_DCM2PHShiftDone.Top);
             txt_LRDCM2PHShiftDone.Width = Xwidth;
             txt_LRDCM2PHShiftDone.Height = Yheight;
             txt_LRDCM2PHShiftDone.Enabled = true;
@@ -827,12 +1016,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRDCM2PHShiftDone);
 
             //Create Register_DCM2TotalPhaseShift Controls
+            Xoffset = lbl_DCM2PHShiftDone.Left;
+            Yoffset = lbl_DCM2PHShiftDone.Top + lbl_DCM2PHShiftDone.Height + 5;
+            //Label lbl_DCM2TotalPhaseShift = new Label();
+            //lbl_DCM2TotalPhaseShift.Location = new Point(Xoffset, Yoffset);
             lbl_DCM2TotalPhaseShift.Width = Xwidth;
             lbl_DCM2TotalPhaseShift.Height = Yheight;
             lbl_DCM2TotalPhaseShift.Text = "R  DCM2 PHTotal";
             lbl_DCM2TotalPhaseShift.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_DCM2TotalPhaseShift.BackColor = Color.Coral;
             this.Controls.Add(lbl_DCM2TotalPhaseShift);
+            //txt_LRDCM2TotalPhaseShift.Location = new Point(lbl_DCM2TotalPhaseShift.Left + lbl_DCM2TotalPhaseShift.Width + 5, lbl_DCM2TotalPhaseShift.Top);
             txt_LRDCM2TotalPhaseShift.Width = Xwidth;
             txt_LRDCM2TotalPhaseShift.Height = Yheight;
             txt_LRDCM2TotalPhaseShift.Enabled = true;
@@ -844,12 +1038,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRDCM2TotalPhaseShift);
 
             //Create Register_TestPulseCounter2b Controls
+            Xoffset = lbl_DCM2TotalPhaseShift.Left;
+            Yoffset = lbl_DCM2TotalPhaseShift.Top + lbl_DCM2TotalPhaseShift.Height + 5;
+            //Label lbl_TestPulseCounter2b = new Label();
+            //lbl_TestPulseCounter2b.Location = new Point(Xoffset, Yoffset);
             lbl_TestPulseCounter2b.Width = Xwidth;
             lbl_TestPulseCounter2b.Height = Yheight;
             lbl_TestPulseCounter2b.Text = "R  TP Count2b";
             lbl_TestPulseCounter2b.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TestPulseCounter2b.BackColor = Color.Coral;
             this.Controls.Add(lbl_TestPulseCounter2b);
+            //txt_LRTestPulseCounter2b.Location = new Point(lbl_TestPulseCounter2b.Left + lbl_TestPulseCounter2b.Width + 5, lbl_TestPulseCounter2b.Top);
             txt_LRTestPulseCounter2b.Width = Xwidth;
             txt_LRTestPulseCounter2b.Height = Yheight;
             txt_LRTestPulseCounter2b.Enabled = true;
@@ -861,12 +1060,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRTestPulseCounter2b);
 
             //Create Register_TestPulseCounter Controls
+            Xoffset = lbl_TestPulseCounter2b.Left;
+            Yoffset = lbl_TestPulseCounter2b.Top + lbl_TestPulseCounter2b.Height + 5;
+            //Label lbl_TestPulseCounter = new Label();
+            //lbl_TestPulseCounter.Location = new Point(Xoffset, Yoffset);
             lbl_TestPulseCounter.Width = Xwidth;
             lbl_TestPulseCounter.Height = Yheight;
             lbl_TestPulseCounter.Text = "R  TP Count";
             lbl_TestPulseCounter.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TestPulseCounter.BackColor = Color.Coral;
             this.Controls.Add(lbl_TestPulseCounter);
+            //txt_LRTestPulseCounter.Location = new Point(lbl_TestPulseCounter.Left + lbl_TestPulseCounter.Width + 5, lbl_TestPulseCounter.Top);
             txt_LRTestPulseCounter.Width = Xwidth;
             txt_LRTestPulseCounter.Height = Yheight;
             txt_LRTestPulseCounter.Enabled = true;
@@ -878,12 +1082,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRTestPulseCounter);
 
             //Create Register_MyBoardID Controls
+            Xoffset = lbl_TestPulseCounter.Left;
+            Yoffset = lbl_TestPulseCounter.Top + lbl_TestPulseCounter.Height + 5;
+            //Label lbl_MyBoardID = new Label();
+            //lbl_MyBoardID.Location = new Point(Xoffset, Yoffset);
             lbl_MyBoardID.Width = Xwidth;
             lbl_MyBoardID.Height = Yheight;
             lbl_MyBoardID.Text = "R MyBoardID";
             lbl_MyBoardID.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_MyBoardID.BackColor = Color.Coral;
             this.Controls.Add(lbl_MyBoardID);
+            //txt_LRMyBoardID.Location = new Point(lbl_MyBoardID.Left + lbl_MyBoardID.Width + 5, lbl_MyBoardID.Top);
             txt_LRMyBoardID.Width = Xwidth;
             txt_LRMyBoardID.Height = Yheight;
             txt_LRMyBoardID.Enabled = true;
@@ -895,12 +1104,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRMyBoardID);
 
             //Create Register_Version Controls
+            Xoffset = lbl_MyBoardID.Left;
+            Yoffset = lbl_MyBoardID.Top + lbl_MyBoardID.Height + 5;
+            //Label lbl_Version = new Label();
+            //lbl_Version.Location = new Point(Xoffset, Yoffset);
             lbl_Version.Width = Xwidth;
             lbl_Version.Height = Yheight;
             lbl_Version.Text = "R Version";
             lbl_Version.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_Version.BackColor = Color.Coral;
             this.Controls.Add(lbl_Version);
+            //txt_LRVersion.Location = new Point(lbl_Version.Left + lbl_Version.Width + 5, lbl_Version.Top);
             txt_LRVersion.Width = Xwidth;
             txt_LRVersion.Height = Yheight;
             txt_LRVersion.Enabled = true;
@@ -912,12 +1126,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRVersion);
 
             //Create Register_HVNumAve Controls
+            Xoffset = lbl_Version.Left;
+            Yoffset = lbl_Version.Top + lbl_Version.Height + 5;
+            //Label lbl_HVNumAve = new Label();
+            //lbl_HVNumAve.Location = new Point(Xoffset, Yoffset);
             lbl_HVNumAve.Width = Xwidth;
             lbl_HVNumAve.Height = Yheight;
             lbl_HVNumAve.Text = "WR HV NumAvg";
             lbl_HVNumAve.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_HVNumAve.BackColor = Color.Coral;
             this.Controls.Add(lbl_HVNumAve);
+            //txt_LWRHVNumAve.Location = new Point(lbl_HVNumAve.Left + lbl_HVNumAve.Width + 5, lbl_HVNumAve.Top);
             txt_LWRHVNumAve.Width = Xwidth;
             txt_LWRHVNumAve.Height = Yheight;
             txt_LWRHVNumAve.Enabled = true;
@@ -929,12 +1148,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRHVNumAve);
 
             //Create Register_HVPeriodMan Controls
+            Xoffset = lbl_HVNumAve.Left;
+            Yoffset = lbl_HVNumAve.Top + lbl_HVNumAve.Height + 5;
+            //Label lbl_HVPeriodMan = new Label();
+            //lbl_HVPeriodMan.Location = new Point(Xoffset, Yoffset);
             lbl_HVPeriodMan.Width = Xwidth;
             lbl_HVPeriodMan.Height = Yheight;
             lbl_HVPeriodMan.Text = "WR HV PeriodMan";
             lbl_HVPeriodMan.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_HVPeriodMan.BackColor = Color.Coral;
             this.Controls.Add(lbl_HVPeriodMan);
+            //txt_LWRHVPeriodMan.Location = new Point(lbl_HVPeriodMan.Left + lbl_HVPeriodMan.Width + 5, lbl_HVPeriodMan.Top);
             txt_LWRHVPeriodMan.Width = Xwidth;
             txt_LWRHVPeriodMan.Height = Yheight;
             txt_LWRHVPeriodMan.Enabled = true;
@@ -946,12 +1170,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRHVPeriodMan);
 
             //Create Register_HVPeriodAuto Controls
+            Xoffset = lbl_HVPeriodMan.Left;
+            Yoffset = lbl_HVPeriodMan.Top + lbl_HVPeriodMan.Height + 5;
+            //Label lbl_HVPeriodAuto = new Label();
+            //lbl_HVPeriodAuto.Location = new Point(Xoffset, Yoffset);
             lbl_HVPeriodAuto.Width = Xwidth;
             lbl_HVPeriodAuto.Height = Yheight;
             lbl_HVPeriodAuto.Text = "R HV PeriodAuto";
             lbl_HVPeriodAuto.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_HVPeriodAuto.BackColor = Color.Coral;
             this.Controls.Add(lbl_HVPeriodAuto);
+            //txt_LRHVPeriodAuto.Location = new Point(lbl_HVPeriodAuto.Left + lbl_HVPeriodAuto.Width + 5, lbl_HVPeriodAuto.Top);
             txt_LRHVPeriodAuto.Width = Xwidth;
             txt_LRHVPeriodAuto.Height = Yheight;
             txt_LRHVPeriodAuto.Enabled = true;
@@ -963,12 +1192,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRHVPeriodAuto);
 
             //Create Register_HVPulseWidth Controls
+            Xoffset = lbl_HVPeriodAuto.Left;
+            Yoffset = lbl_HVPeriodAuto.Top + lbl_HVPeriodAuto.Height + 5;
+            //Label lbl_HVPulseWidth = new Label();
+            //lbl_HVPulseWidth.Location = new Point(Xoffset, Yoffset);
             lbl_HVPulseWidth.Width = Xwidth;
             lbl_HVPulseWidth.Height = Yheight;
             lbl_HVPulseWidth.Text = "WR HV PulseWidth";
             lbl_HVPulseWidth.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_HVPulseWidth.BackColor = Color.Coral;
             this.Controls.Add(lbl_HVPulseWidth);
+            //txt_LWRHVPulseWidth.Location = new Point(lbl_HVPulseWidth.Left + lbl_HVPulseWidth.Width + 5, lbl_HVPulseWidth.Top);
             txt_LWRHVPulseWidth.Width = Xwidth;
             txt_LWRHVPulseWidth.Height = Yheight;
             txt_LWRHVPulseWidth.Enabled = true;
@@ -980,12 +1214,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRHVPulseWidth);
 
             //Create Register_Temperature Controls
+            Xoffset = lbl_HVPulseWidth.Left;
+            Yoffset = lbl_HVPulseWidth.Top + lbl_HVPulseWidth.Height + 5;
+            //Label lbl_Temperature = new Label();
+            //lbl_Temperature.Location = new Point(Xoffset, Yoffset);
             lbl_Temperature.Width = Xwidth;
             lbl_Temperature.Height = Yheight;
             lbl_Temperature.Text = "R Temperature";
             lbl_Temperature.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_Temperature.BackColor = Color.Coral;
             this.Controls.Add(lbl_Temperature);
+            //txt_LRTemperature.Location = new Point(lbl_Temperature.Left + lbl_Temperature.Width + 5, lbl_Temperature.Top);
             txt_LRTemperature.Width = Xwidth;
             txt_LRTemperature.Height = Yheight;
             txt_LRTemperature.Enabled = true;
@@ -997,12 +1236,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRTemperature);
 
             //Create Register_TripXThreshold Controls
+            Xoffset = lbl_Temperature.Left;
+            Yoffset = lbl_Temperature.Top + lbl_Temperature.Height + 5;
+            //Label lbl_TripXThreshold = new Label();
+            //lbl_TripXThreshold.Location = new Point(Xoffset, Yoffset);
             lbl_TripXThreshold.Width = Xwidth;
             lbl_TripXThreshold.Height = Yheight;
             lbl_TripXThreshold.Text = "WR TripXThreshold";
             lbl_TripXThreshold.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TripXThreshold.BackColor = Color.Coral;
             this.Controls.Add(lbl_TripXThreshold);
+            //txt_LWRTripXThreshold.Location = new Point(lbl_TripXThreshold.Left + lbl_TripXThreshold.Width + 5, lbl_TripXThreshold.Top);
             txt_LWRTripXThreshold.Width = Xwidth;
             txt_LWRTripXThreshold.Height = Yheight;
             txt_LWRTripXThreshold.Enabled = true;
@@ -1014,12 +1258,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LWRTripXThreshold);
 
             //Create Register_TripXComparators Controls
+            Xoffset = lbl_TripXThreshold.Left;
+            Yoffset = lbl_TripXThreshold.Top + lbl_TripXThreshold.Height + 5;
+            //Label lbl_TripXComparators = new Label();
+            //lbl_TripXComparators.Location = new Point(Xoffset, Yoffset);
             lbl_TripXComparators.Width = Xwidth;
             lbl_TripXComparators.Height = Yheight;
             lbl_TripXComparators.Text = "R TripXComparators";
             lbl_TripXComparators.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_TripXComparators.BackColor = Color.Coral;
             this.Controls.Add(lbl_TripXComparators);
+            //txt_LRTripXComparators.Location = new Point(lbl_TripXComparators.Left + lbl_TripXComparators.Width + 5, lbl_TripXComparators.Top);
             txt_LRTripXComparators.Width = Xwidth;
             txt_LRTripXComparators.Height = Yheight;
             txt_LRTripXComparators.Enabled = true;
@@ -1031,12 +1280,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRTripXComparators);
 
             //Create Register_ExtTriggFound Controls    // 08.08.2008
+            Xoffset = lbl_TripXComparators.Left;
+            Yoffset = lbl_TripXComparators.Top + lbl_TripXComparators.Height + 5;
+            //Label lbl_ExtTriggFound = new Label();
+            //lbl_ExtTriggFound.Location = new Point(Xoffset, Yoffset);
             lbl_ExtTriggFound.Width = Xwidth;
             lbl_ExtTriggFound.Height = Yheight;
             lbl_ExtTriggFound.Text = "R ExtTriggFound";
             lbl_ExtTriggFound.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_ExtTriggFound.BackColor = Color.Coral;
             this.Controls.Add(lbl_ExtTriggFound);
+            //txt_LRTripXComparators.Location = new Point(lbl_ExtTriggFound.Left + lbl_ExtTriggFound.Width + 5, lbl_ExtTriggFound.Top);
             txt_LRExtTriggFound.Width = Xwidth;
             txt_LRExtTriggFound.Height = Yheight;
             txt_LRExtTriggFound.Enabled = true;
@@ -1048,12 +1302,17 @@ namespace MinervaUserControls
             this.Controls.Add(txt_LRExtTriggFound);
 
             //Create Register_ExtTriggRearm Controls    // 08.08.2008
+            Xoffset = lbl_ExtTriggFound.Left;
+            Yoffset = lbl_ExtTriggFound.Top + lbl_ExtTriggFound.Height + 5;
+            //Label lbl_ExtTriggRearm = new Label();
+            //lbl_ExtTriggRearm.Location = new Point(Xoffset, Yoffset);
             lbl_ExtTriggRearm.Width = Xwidth;
             lbl_ExtTriggRearm.Height = Yheight;
             lbl_ExtTriggRearm.Text = "WR ExtTriggRearm";
             lbl_ExtTriggRearm.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
             lbl_ExtTriggRearm.BackColor = Color.Coral;
             this.Controls.Add(lbl_ExtTriggRearm);
+            //txt_LRExtTriggRearm.Location = new Point(lbl_ExtTriggRearm.Left + lbl_ExtTriggRearm.Width + 5, lbl_ExtTriggRearm.Top);
             txt_LWRExtTriggRearm.Width = Xwidth;
             txt_LWRExtTriggRearm.Height = Yheight;
             txt_LWRExtTriggRearm.Enabled = true;
@@ -1063,160 +1322,6 @@ namespace MinervaUserControls
             txt_LWRExtTriggRearm.TabIndex = (int)LogicalRegisters.ExtTriggRearm;
             txt_LWRExtTriggRearm.Validating += new CancelEventHandler(control_Validating);
             this.Controls.Add(txt_LWRExtTriggRearm);
-
-            //Create Register_DiscrimEnableMaskTrip0 Controls    // 10.30.2008
-            lbl_DiscrimEnableMaskTrip0.Width = Xwidth;
-            lbl_DiscrimEnableMaskTrip0.Height = Yheight;
-            lbl_DiscrimEnableMaskTrip0.Text = "WR DM_T0 0x";
-            lbl_DiscrimEnableMaskTrip0.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
-            lbl_DiscrimEnableMaskTrip0.BackColor = Color.Coral;
-            this.Controls.Add(lbl_DiscrimEnableMaskTrip0);
-            txt_LWRDiscrimEnableMaskTrip0.Width = Xwidth;
-            txt_LWRDiscrimEnableMaskTrip0.Height = Yheight;
-            txt_LWRDiscrimEnableMaskTrip0.Enabled = true;
-            txt_LWRDiscrimEnableMaskTrip0.BackColor = Color.White;
-            txt_LWRDiscrimEnableMaskTrip0.Name = "DiscrimEnableMaskTrip0";
-            txt_LWRDiscrimEnableMaskTrip0.Text = DiscrimEnableMaskTrip0DefaultValue.ToString();
-            txt_LWRDiscrimEnableMaskTrip0.TabIndex = (int)LogicalRegisters.DiscrimEnableMaskTrip0;
-            txt_LWRDiscrimEnableMaskTrip0.Validating += new CancelEventHandler(control_Validating);
-            this.Controls.Add(txt_LWRDiscrimEnableMaskTrip0);
-
-            //Create Register_DiscrimEnableMaskTrip1 Controls    // 10.30.2008
-            lbl_DiscrimEnableMaskTrip1.Width = Xwidth;
-            lbl_DiscrimEnableMaskTrip1.Height = Yheight;
-            lbl_DiscrimEnableMaskTrip1.Text = "WR DM_T1 0x";
-            lbl_DiscrimEnableMaskTrip1.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
-            lbl_DiscrimEnableMaskTrip1.BackColor = Color.Coral;
-            this.Controls.Add(lbl_DiscrimEnableMaskTrip1);
-            txt_LWRDiscrimEnableMaskTrip1.Width = Xwidth;
-            txt_LWRDiscrimEnableMaskTrip1.Height = Yheight;
-            txt_LWRDiscrimEnableMaskTrip1.Enabled = true;
-            txt_LWRDiscrimEnableMaskTrip1.BackColor = Color.White;
-            txt_LWRDiscrimEnableMaskTrip1.Name = "DiscrimEnableMaskTrip1";
-            txt_LWRDiscrimEnableMaskTrip1.Text = DiscrimEnableMaskTrip1DefaultValue.ToString();
-            txt_LWRDiscrimEnableMaskTrip1.TabIndex = (int)LogicalRegisters.DiscrimEnableMaskTrip1;
-            txt_LWRDiscrimEnableMaskTrip1.Validating += new CancelEventHandler(control_Validating);
-            this.Controls.Add(txt_LWRDiscrimEnableMaskTrip1);
-
-            //Create Register_DiscrimEnableMaskTrip2 Controls    // 10.30.2008
-            lbl_DiscrimEnableMaskTrip2.Width = Xwidth;
-            lbl_DiscrimEnableMaskTrip2.Height = Yheight;
-            lbl_DiscrimEnableMaskTrip2.Text = "WR DM_T2 0x";
-            lbl_DiscrimEnableMaskTrip2.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
-            lbl_DiscrimEnableMaskTrip2.BackColor = Color.Coral;
-            this.Controls.Add(lbl_DiscrimEnableMaskTrip2);
-            txt_LWRDiscrimEnableMaskTrip2.Width = Xwidth;
-            txt_LWRDiscrimEnableMaskTrip2.Height = Yheight;
-            txt_LWRDiscrimEnableMaskTrip2.Enabled = true;
-            txt_LWRDiscrimEnableMaskTrip2.BackColor = Color.White;
-            txt_LWRDiscrimEnableMaskTrip2.Name = "DiscrimEnableMaskTrip2";
-            txt_LWRDiscrimEnableMaskTrip2.Text = DiscrimEnableMaskTrip2DefaultValue.ToString();
-            txt_LWRDiscrimEnableMaskTrip2.TabIndex = (int)LogicalRegisters.DiscrimEnableMaskTrip2;
-            txt_LWRDiscrimEnableMaskTrip2.Validating += new CancelEventHandler(control_Validating);
-            this.Controls.Add(txt_LWRDiscrimEnableMaskTrip2);
-
-            //Create Register_DiscrimEnableMaskTrip3 Controls    // 10.30.2008
-            lbl_DiscrimEnableMaskTrip3.Width = Xwidth;
-            lbl_DiscrimEnableMaskTrip3.Height = Yheight;
-            lbl_DiscrimEnableMaskTrip3.Text = "WR DM_T3 0x";
-            lbl_DiscrimEnableMaskTrip3.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
-            lbl_DiscrimEnableMaskTrip3.BackColor = Color.Coral;
-            this.Controls.Add(lbl_DiscrimEnableMaskTrip3);
-            txt_LWRDiscrimEnableMaskTrip3.Width = Xwidth;
-            txt_LWRDiscrimEnableMaskTrip3.Height = Yheight;
-            txt_LWRDiscrimEnableMaskTrip3.Enabled = true;
-            txt_LWRDiscrimEnableMaskTrip3.BackColor = Color.White;
-            txt_LWRDiscrimEnableMaskTrip3.Name = "DiscrimEnableMaskTrip3";
-            txt_LWRDiscrimEnableMaskTrip3.Text = DiscrimEnableMaskTrip3DefaultValue.ToString();
-            txt_LWRDiscrimEnableMaskTrip3.TabIndex = (int)LogicalRegisters.DiscrimEnableMaskTrip3;
-            txt_LWRDiscrimEnableMaskTrip1.Validating += new CancelEventHandler(control_Validating);
-            this.Controls.Add(txt_LWRDiscrimEnableMaskTrip3);
-
-            //Create Register_GateTimeStamp Controls    // 12.22.2008
-            lbl_GateTimeStamp.Width = Xwidth;
-            lbl_GateTimeStamp.Height = Yheight;
-            lbl_GateTimeStamp.Text = "R GateTimeStamp";
-            lbl_GateTimeStamp.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
-            lbl_GateTimeStamp.BackColor = Color.Coral;
-            this.Controls.Add(lbl_GateTimeStamp);
-            txt_LRGateTimeStamp.Width = Xwidth;
-            txt_LRGateTimeStamp.Height = Yheight;
-            txt_LRGateTimeStamp.Enabled = true;
-            txt_LRGateTimeStamp.BackColor = Color.White;
-            txt_LRGateTimeStamp.Name = "GateTimeStamp";
-            txt_LRGateTimeStamp.Text = GateTimeStampDefaultValue.ToString();
-            txt_LRGateTimeStamp.TabIndex = (int)LogicalRegisters.GateTimeStamp;
-            txt_LRGateTimeStamp.Validating += new CancelEventHandler(control_Validating);
-            this.Controls.Add(txt_LRGateTimeStamp);
-
-            //Create Register_StatusSCMDUnknown Controls    // 11.13.2009
-            lbl_StatusSCMDUnknown.Width = Xwidth;
-            lbl_StatusSCMDUnknown.Height = Yheight;
-            lbl_StatusSCMDUnknown.Text = "R StatSCMDErr";
-            lbl_StatusSCMDUnknown.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
-            lbl_StatusSCMDUnknown.BackColor = Color.Coral;
-            this.Controls.Add(lbl_StatusSCMDUnknown);
-            txt_LRStatusSCMDUnknown.Width = Xwidth;
-            txt_LRStatusSCMDUnknown.Height = Yheight;
-            txt_LRStatusSCMDUnknown.Enabled = true;
-            txt_LRStatusSCMDUnknown.BackColor = Color.White;
-            txt_LRStatusSCMDUnknown.Name = "StatusSCMDUnknown";
-            txt_LRStatusSCMDUnknown.Text = StatusSCMDUnknownDefaultValue.ToString();
-            txt_LRStatusSCMDUnknown.TabIndex = (int)LogicalRegisters.StatusSCMDUnknown;
-            txt_LRStatusSCMDUnknown.Validating += new CancelEventHandler(control_Validating);
-            this.Controls.Add(txt_LRStatusSCMDUnknown);
-
-            //Create Register_StatusFCMDUnknown Controls    // 11.13.2009
-            lbl_StatusFCMDUnknown.Width = Xwidth;
-            lbl_StatusFCMDUnknown.Height = Yheight;
-            lbl_StatusFCMDUnknown.Text = "R StatFCMDErr";
-            lbl_StatusFCMDUnknown.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
-            lbl_StatusFCMDUnknown.BackColor = Color.Coral;
-            this.Controls.Add(lbl_StatusFCMDUnknown);
-            txt_LRStatusFCMDUnknown.Width = Xwidth;
-            txt_LRStatusFCMDUnknown.Height = Yheight;
-            txt_LRStatusFCMDUnknown.Enabled = true;
-            txt_LRStatusFCMDUnknown.BackColor = Color.White;
-            txt_LRStatusFCMDUnknown.Name = "StatusFCMDUnknown";
-            txt_LRStatusFCMDUnknown.Text = StatusFCMDUnknownDefaultValue.ToString();
-            txt_LRStatusFCMDUnknown.TabIndex = (int)LogicalRegisters.StatusFCMDUnknown;
-            txt_LRStatusFCMDUnknown.Validating += new CancelEventHandler(control_Validating);
-            this.Controls.Add(txt_LRStatusFCMDUnknown);
-
-            //Create Register_StatusRXLock Controls    // 11.13.2009
-            lbl_StatusRXLock.Width = Xwidth;
-            lbl_StatusRXLock.Height = Yheight;
-            lbl_StatusRXLock.Text = "R StatRXLockErr";
-            lbl_StatusRXLock.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
-            lbl_StatusRXLock.BackColor = Color.Coral;
-            this.Controls.Add(lbl_StatusRXLock);
-            txt_LRStatusRXLock.Width = Xwidth;
-            txt_LRStatusRXLock.Height = Yheight;
-            txt_LRStatusRXLock.Enabled = true;
-            txt_LRStatusRXLock.BackColor = Color.White;
-            txt_LRStatusRXLock.Name = "StatusRXLock";
-            txt_LRStatusRXLock.Text = StatusRXLockDefaultValue.ToString();
-            txt_LRStatusRXLock.TabIndex = (int)LogicalRegisters.StatusRXLock;
-            txt_LRStatusRXLock.Validating += new CancelEventHandler(control_Validating);
-            this.Controls.Add(txt_LRStatusRXLock);
-
-            //Create Register_StatusTXSyncLock Controls    // 11.13.2009
-            lbl_StatusTXSyncLock.Width = Xwidth;
-            lbl_StatusTXSyncLock.Height = Yheight;
-            lbl_StatusTXSyncLock.Text = "R StatTXLockErr";
-            lbl_StatusTXSyncLock.Font = new Font("Microsoft Sans Serif", 7, FontStyle.Italic);
-            lbl_StatusTXSyncLock.BackColor = Color.Coral;
-            this.Controls.Add(lbl_StatusTXSyncLock);
-            txt_LRStatusTXSyncLock.Width = Xwidth;
-            txt_LRStatusTXSyncLock.Height = Yheight;
-            txt_LRStatusTXSyncLock.Enabled = true;
-            txt_LRStatusTXSyncLock.BackColor = Color.White;
-            txt_LRStatusTXSyncLock.Name = "StatusTXSyncLock";
-            txt_LRStatusTXSyncLock.Text = StatusTXSyncLockDefaultValue.ToString();
-            txt_LRStatusTXSyncLock.TabIndex = (int)LogicalRegisters.StatusTXSyncLock;
-            txt_LRStatusTXSyncLock.Validating += new CancelEventHandler(control_Validating);
-            this.Controls.Add(txt_LRStatusTXSyncLock);
-        
         }
 
         public bool IsAdvancedGUI { get { return isAdvancedGUI; } }
@@ -1341,6 +1446,11 @@ namespace MinervaUserControls
             get { return FPGALogicalReg[(int)LogicalRegisters.HVAutoManual]; }
             set { FPGALogicalReg[(int)LogicalRegisters.HVAutoManual] = value; }
         }
+        public UInt32 RegisterVXOMuxSelect
+        {
+            get { return FPGALogicalReg[(int)LogicalRegisters.VXOMuxSelect]; }
+            set { FPGALogicalReg[(int)LogicalRegisters.VXOMuxSelect] = value; }
+        }
         public UInt32 RegisterPhaseStart
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.PhaseStart]; }
@@ -1350,6 +1460,11 @@ namespace MinervaUserControls
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.PhaseIncrement]; }
             set { FPGALogicalReg[(int)LogicalRegisters.PhaseIncrement] = value; }
+        }
+        public UInt32 RegisterPhaseSpare
+        {
+            get { return FPGALogicalReg[(int)LogicalRegisters.PhaseSpare]; }
+            set { FPGALogicalReg[(int)LogicalRegisters.PhaseSpare] = value; }
         }
         public UInt32 RegisterPhaseTicks
         {
@@ -1441,61 +1556,17 @@ namespace MinervaUserControls
             get { return FPGALogicalReg[(int)LogicalRegisters.TripXComparators]; }
             set { FPGALogicalReg[(int)LogicalRegisters.TripXComparators] = value; }
         }
-        public UInt32 RegisterExtTriggFound             // 08.08.2008
+        public UInt32 RegisterExtTriggFound // 08.08.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound]; }
             set { FPGALogicalReg[(int)LogicalRegisters.ExtTriggFound] = value; }
         }
-        public UInt32 RegisterExtTriggRearm             // 08.08.2008
+        public UInt32 RegisterExtTriggRearm // 08.08.2008
         {
             get { return FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm]; }
             set { FPGALogicalReg[(int)LogicalRegisters.ExtTriggRearm] = value; }
         }
-        public UInt32 RegisterDiscrimEnableMaskTrip0    // 10.30.2008
-        {
-            get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip0]; }
-            set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip0] = value; }
-        }
-        public UInt32 RegisterDiscrimEnableMaskTrip1    // 10.30.2008
-        {
-            get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip1]; }
-            set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip1] = value; }
-        }
-        public UInt32 RegisterDiscrimEnableMaskTrip2    // 10.30.2008
-        {
-            get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip2]; }
-            set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip2] = value; }
-        }
-        public UInt32 RegisterDiscrimEnableMaskTrip3    // 10.30.2008
-        {
-            get { return FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip3]; }
-            set { FPGALogicalReg[(int)LogicalRegisters.DiscrimEnableMaskTrip3] = value; }
-        }
-        public UInt32 RegisterGateTimeStamp             // 12.22.2008
-        {
-            get { return FPGALogicalReg[(int)LogicalRegisters.GateTimeStamp]; }
-            set { FPGALogicalReg[(int)LogicalRegisters.GateTimeStamp] = value; }
-        }
-        public UInt32 RegisterStatusSCMDUnknown         // 11.13.2009
-        {
-            get { return FPGALogicalReg[(int)LogicalRegisters.StatusSCMDUnknown]; }
-            set { FPGALogicalReg[(int)LogicalRegisters.StatusSCMDUnknown] = value; }
-        }
-        public UInt32 RegisterStatusFCMDUnknown         // 11.13.2009
-        {
-            get { return FPGALogicalReg[(int)LogicalRegisters.StatusFCMDUnknown]; }
-            set { FPGALogicalReg[(int)LogicalRegisters.StatusFCMDUnknown] = value; }
-        }
-        public UInt32 RegisterStatusRXLock              // 11.13.2009
-        {
-            get { return FPGALogicalReg[(int)LogicalRegisters.StatusRXLock]; }
-            set { FPGALogicalReg[(int)LogicalRegisters.StatusRXLock] = value; }
-        }
-        public UInt32 RegisterStatusTXSyncLock          // 11.13.2009
-        {
-            get { return FPGALogicalReg[(int)LogicalRegisters.StatusTXSyncLock]; }
-            set { FPGALogicalReg[(int)LogicalRegisters.StatusTXSyncLock] = value; }
-        }
+
 
         private void control_Validating(object sender, CancelEventArgs e)
         {
@@ -1507,7 +1578,6 @@ namespace MinervaUserControls
                     {
                         case (int)LogicalRegisters.Timer:
                         case (int)LogicalRegisters.TestPulseCount:
-                        case (int)LogicalRegisters.GateTimeStamp:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0xFFFFFFFF, 0, "Value must be 32 bits");
                             break;
                         case (int)LogicalRegisters.GateStart:
@@ -1518,12 +1588,6 @@ namespace MinervaUserControls
                         case (int)LogicalRegisters.HVPeriodAuto:
                         case (int)LogicalRegisters.Temperature:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0xFFFF, 0, "Value must be 16 bits");
-                            break;
-                        case (int)LogicalRegisters.DiscrimEnableMaskTrip0:
-                        case (int)LogicalRegisters.DiscrimEnableMaskTrip1:
-                        case (int)LogicalRegisters.DiscrimEnableMaskTrip2:
-                        case (int)LogicalRegisters.DiscrimEnableMaskTrip3:
-                            CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text, 16), 0xFFFF, 0, "Value must be 16 bits");
                             break;
                         case (int)LogicalRegisters.InjectDACValue:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0xFFF, 0, "Value must be 12 bits");
@@ -1552,10 +1616,12 @@ namespace MinervaUserControls
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0x3F, 0, "Value must be 6 bits");
                             break;
                         case (int)LogicalRegisters.InjectRange:
+                        //case (int)LogicalRegisters.PhaseSpare:    // 08.08.2008
                         case (int)LogicalRegisters.BoardID:
                         case (int)LogicalRegisters.HVNumAvg:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0xF, 0, "Value must be 4 bits");
                             break;
+                        case (int)LogicalRegisters.PhaseSpare:
                         case (int)LogicalRegisters.TestPulse2Bit:
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0x3, 0, "Value must be 2 bits");
                             break;
@@ -1565,13 +1631,8 @@ namespace MinervaUserControls
                         case (int)LogicalRegisters.DCM1NoClock:
                         case (int)LogicalRegisters.DCM2NoClock:
                         case (int)LogicalRegisters.DCM2PhaseDone:
-                        case (int)LogicalRegisters.ExtTriggFound:
-                        case (int)LogicalRegisters.ExtTriggRearm:
-
-                        case (int)LogicalRegisters.StatusSCMDUnknown:
-                        case (int)LogicalRegisters.StatusFCMDUnknown:
-                        case (int)LogicalRegisters.StatusRXLock:
-                        case (int)LogicalRegisters.StatusTXSyncLock:
+                        case (int)LogicalRegisters.ExtTriggFound:   // 08.08.2008
+                        case (int)LogicalRegisters.ExtTriggRearm:   // 08.08.2008
                             CheckInput(sender, e, Convert.ToInt64(((TextBox)sender).Text), 0x1, 0, "Value must be 1 bit");
                             break;
                     }
@@ -1615,23 +1676,14 @@ namespace MinervaUserControls
                     try
                     {
                         if (ctrl is TextBox)
-                        {
                             if (ctrl.TabIndex == (int)LogicalRegisters.Temperature)
                             {
                                 //this is special update for Temperature register
                                 FPGALogicalReg[ctrl.TabIndex] = Convert.ToUInt32((((TextBox)ctrl).Text).Split(',')[0]);
                             }
-                            else if ((ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip0) |
-                                (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip1) |
-                                (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip2) |
-                                (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip3))
-                            {
-                                //this is special update for DiscrimEnableMaskTripX registers
-                                FPGALogicalReg[ctrl.TabIndex] = Convert.ToUInt32((((TextBox)ctrl).Text), 16);
-                            }
                             else
                                 FPGALogicalReg[ctrl.TabIndex] = Convert.ToUInt32(((TextBox)ctrl).Text);
-                        }
+
                         if (ctrl is ComboBox)
                             //"TripXInjectCntPhase" needs special treatment...
                             if (((ComboBox)ctrl).TabIndex == (int)LogicalRegisters.InjectPhase)
@@ -1664,16 +1716,7 @@ namespace MinervaUserControls
                 {
                     if (ctrl is TextBox)
                     {
-                        if ((ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip0) |
-                            (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip1) |
-                            (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip2) |
-                            (ctrl.TabIndex == (int)LogicalRegisters.DiscrimEnableMaskTrip3))
-                        {
-                            //this is special update for DiscrimEnableMaskTripX registers
-                            ((TextBox)ctrl).Text = FPGALogicalReg[ctrl.TabIndex].ToString("X4");
-                        }
-                        else
-                            ((TextBox)ctrl).Text = FPGALogicalReg[ctrl.TabIndex].ToString();
+                        ((TextBox)ctrl).Text = FPGALogicalReg[ctrl.TabIndex].ToString();
                         control_Validating(ctrl, null);
                     }
                     if (ctrl is ComboBox)
@@ -1730,9 +1773,8 @@ namespace MinervaUserControls
                 txt_LWRTripXPowerDown.Location = new Point(lbl_TripXPowerDown.Left + lbl_TripXPowerDown.Width + 5, lbl_TripXPowerDown.Top);
                 lbl_TripXPowerDown.Visible = true;
                 txt_LWRTripXPowerDown.Visible = true;
-                CreateLocations(lbl_TripXPowerDown, lbl_GateStart, txt_LWRGateStart, true, true);
-                CreateLocations(lbl_GateStart, lbl_GateLength, txt_LWRGateLength, true, true);
-                CreateLocations(lbl_GateLength, lbl_HVEnable, cmb_LWRHVEnable, true, true);
+
+                CreateLocations(lbl_TripXPowerDown, lbl_HVEnable, cmb_LWRHVEnable, true, true);
                 CreateLocations(lbl_HVEnable, lbl_HVTarget, txt_LWRHVTarget, true, true);
                 CreateLocations(lbl_HVTarget, lbl_HVActual, txt_LRHVActual, true, true);
                 CreateLocations(lbl_HVActual, lbl_HVAutoMan, cmb_LWRHVAutoMan, true, true);
@@ -1771,9 +1813,12 @@ namespace MinervaUserControls
                 CreateLocations(lbl_HVTarget, lbl_HVActual, txt_LRHVActual, true, true);
                 CreateLocations(lbl_HVActual, lbl_HVControl, txt_LRHVControl, true, true);
                 CreateLocations(lbl_HVControl, lbl_HVAutoMan, cmb_LWRHVAutoMan, true, true);
-                CreateLocations(lbl_HVAutoMan, lbl_PHShiftStartClearn, cmb_LWRPHShiftStartClearn, true, true);
+                //private ComboBox cmb_LWRVXOOn0Off1 = new ComboBox(); private Label lbl_VXOOn0Off1 = new Label();
+                CreateLocations(lbl_HVAutoMan, lbl_VXOMuxSel, cmb_LWRVXOMuxSel, true, true);
+                CreateLocations(lbl_VXOMuxSel, lbl_PHShiftStartClearn, cmb_LWRPHShiftStartClearn, true, true);
                 CreateLocations(lbl_PHShiftStartClearn, lbl_PHShiftDecr0Incr1, cmb_LWRPHShiftDecr0Incr1, true, true);
-                CreateLocations(lbl_PHShiftDecr0Incr1, lbl_PHShiftVal, txt_LWRPHShiftVal, true, true);
+                CreateLocations(lbl_PHShiftDecr0Incr1, lbl_PHShiftSpare, txt_LWRPHShiftSpare, true, true);
+                CreateLocations(lbl_PHShiftSpare, lbl_PHShiftVal, txt_LWRPHShiftVal, true, true);
                 CreateLocations(lbl_PHShiftVal, lbl_DCM1Locked, txt_LRDCM1Locked, true, true);
                 CreateLocations(lbl_DCM1Locked, lbl_DCM2Locked, txt_LRDCM2Locked, true, true);
                 CreateLocations(lbl_DCM2Locked, lbl_DCM1NoClk, txt_LRDCM1NoClk, true, true);
@@ -1791,17 +1836,8 @@ namespace MinervaUserControls
                 CreateLocations(lbl_HVPulseWidth, lbl_Temperature, txt_LRTemperature, true, true);
                 CreateLocations(lbl_Temperature, lbl_TripXThreshold, txt_LWRTripXThreshold, true, true);
                 CreateLocations(lbl_TripXThreshold, lbl_TripXComparators, txt_LRTripXComparators, true, true);
-                CreateLocations(lbl_TripXComparators, lbl_ExtTriggFound, txt_LRExtTriggFound, true, true);                          // 08.08.2008
-                CreateLocations(lbl_ExtTriggFound, lbl_ExtTriggRearm, txt_LWRExtTriggRearm, true, true);                            // 08.08.2008
-                CreateLocations(lbl_ExtTriggRearm, lbl_DiscrimEnableMaskTrip0, txt_LWRDiscrimEnableMaskTrip0, true, true);          // 10.30.2008
-                CreateLocations(lbl_DiscrimEnableMaskTrip0, lbl_DiscrimEnableMaskTrip1, txt_LWRDiscrimEnableMaskTrip1, true, true); // 10.30.2008
-                CreateLocations(lbl_DiscrimEnableMaskTrip1, lbl_DiscrimEnableMaskTrip2, txt_LWRDiscrimEnableMaskTrip2, true, true); // 10.30.2008
-                CreateLocations(lbl_DiscrimEnableMaskTrip2, lbl_DiscrimEnableMaskTrip3, txt_LWRDiscrimEnableMaskTrip3, true, true); // 10.30.2008
-                CreateLocations(lbl_DiscrimEnableMaskTrip3, lbl_GateTimeStamp, txt_LRGateTimeStamp, true, true);                    // 12.22.2008
-                CreateLocations(lbl_GateTimeStamp, lbl_StatusSCMDUnknown, txt_LRStatusSCMDUnknown, true, true);         // 11.13.2009
-                CreateLocations(lbl_StatusSCMDUnknown, lbl_StatusFCMDUnknown, txt_LRStatusFCMDUnknown, true, true);     // 11.13.2009
-                CreateLocations(lbl_StatusFCMDUnknown, lbl_StatusRXLock, txt_LRStatusRXLock, true, true);               // 11.13.2009
-                CreateLocations(lbl_StatusRXLock, lbl_StatusTXSyncLock, txt_LRStatusTXSyncLock, true, true);            // 11.13.2009
+                CreateLocations(lbl_TripXComparators, lbl_ExtTriggFound, txt_LRExtTriggFound, true, true);  // 08.08.2008
+                CreateLocations(lbl_ExtTriggFound, lbl_ExtTriggRearm, txt_LWRExtTriggRearm, true, true);    // 08.08.2008
             }
         }
 

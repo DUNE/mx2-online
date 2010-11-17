@@ -41,7 +41,7 @@ const unsigned int crocChannel     = 1;
 const int crocID                   = 1;
 const unsigned int crimCardAddress = 224 << 16;
 const int crimID                   = 1;
-const int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
+const int nFEBs                    = 7; // USE SEQUENTIAL ADDRESSING!!!
 
 // TriPT Programming Register Values.
 const int tripRegIBP        =  60;
@@ -96,9 +96,6 @@ void SetPriorities() {
 int CROCClearStatusAndResetPointer(controller *myController, acquire *myAcquire, croc *myCroc);
 // Initialize the CRIM for Data Taking.
 void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int runningMode);
-// Test the message content.
-int FEBFPGATest(controller *myController, acquire *myAcquire, croc *myCroc,
-        unsigned int crocChannel, febAddresses boardID);
 
 
 int main(int argc, char** argv) 
@@ -166,7 +163,7 @@ int main(int argc, char** argv)
 	root.alertStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << log4cpp::eol;
 	if ((error=myController->ContactController())!=0) { 
 		std::cout << "Controller Contatc Error!\n";
-		logTest.fatalStream() << "Controller contact error: " << error << log4cpp::eol; 
+		logTest.critStream() << "Controller contact error: " << error << log4cpp::eol; 
 		exit(error); // Exit due to no controller!
 	}
 	logTest.infoStream() << "Controller & Acquire Initialized..." << log4cpp::eol;
@@ -225,10 +222,6 @@ int main(int argc, char** argv)
 		}
 	}
 	
-	
-	// FEB message test
-	//error = FEBFPGATest(myController, myAcquire, myCroc, 0, (febAddresses)1);
-
 	
 	// ~~~ Clean Up
 	log4cpp::Category::shutdown();
@@ -306,27 +299,3 @@ void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int ru
 {
 	logTest.infoStream() << "InitCRIM is a dummy function." << log4cpp::eol;
 }
-
-
-// Test to check the message content
-int FEBFPGATest(controller *myController, acquire *myAcquire, croc *myCroc,
-        unsigned int crocChannel, febAddresses boardID)
-{
-        bool init;
-
-        feb *myFeb = new feb(maxHits, init, boardID, NRegisters);
-        myFeb->SetFEBDefaultValues();
-	myFeb->MakeMessage();
-	printf("  Message Length = %d\n",myFeb->GetOutgoingMessageLength());
-	unsigned char *tempArr = new unsigned char [ myFeb->GetOutgoingMessageLength() ];
-	tempArr = myFeb->GetOutgoingMessage();
-	for (int i = 0; i<myFeb->GetOutgoingMessageLength(); i++) {
-		printf(" %02d    %02X\n",i,tempArr[i]);
-	}
-	myFeb->DeleteOutgoingMessage(); // must clean up FEB messages manually on a case-by-case basis
-	//Not needed, already remove w/ above...//delete [] tempArr;
-
-	return 0;
-}
-
-

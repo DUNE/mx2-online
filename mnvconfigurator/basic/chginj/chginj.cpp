@@ -16,19 +16,23 @@ using namespace std;
 
 #define DEBUGLEVEL 10
 #define CLEARANDRESETLEVEL 50
-#define FPGAREADLEVEL 5
+#define FPGAREADLEVEL 50
 #define FPGAWRITELEVEL 50
 #define TRIPTREADLEVEL 50
 #define TRIPTWRITELEVEL 50
-#define BLOCKRAMREADLEVEL 50 // using same for adc & discr
+#define BLOCKRAMREADLEVEL 5 // using same for adc & discr
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs on WH14NXO now.
-//const int maxHits    = 6;
-const int maxHits    = 8;
+const int maxHits    = 6;
 const int adcHit     = 1;
 
-//const int febFirmware = 81;
-const int febFirmware = 90;
+// Note, indices are distinct from addresses!
+const unsigned int crocCardAddress = 1 << 16;
+const unsigned int crocChannel     = 1;	
+const int crocID                   = 1;
+const unsigned int crimCardAddress = 224 << 16;
+const int crimID                   = 1;
+const int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
 
 const int tripRegIBP        =  60;
 const int tripRegIBBNFOLL   = 120;
@@ -40,13 +44,10 @@ const int tripRegIFFP2      =   0;
 const int tripRegIBCOMP     =  20;
 const int tripRegVREF       = 165;
 const int tripRegVTH        = 240;
-//const int tripRegVTH        =   0;
-const int tripRegPIPEDEL    =  2*maxHits - 1;
+// const int tripRegPIPEDEL    =  2*maxHits - 1;
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
-const int tripInjectPattern =   0x1FE;   // First word
-//const int tripInjectPattern =   0x1FFFE; // First two words
 
 // Implement this interface for your own strategies for printing log statements.
 log4cpp::Appender* myAppender;
@@ -95,78 +96,17 @@ int ReadDiscrTest(controller *myController, acquire *myAcquire, croc *myCroc,
 // Initialize the CRIM for Data Taking
 void InitCRIM(controller *myController, acquire *myAcquire, crim *myCrim, int runningMode);
 
-int main(int argc, char *argv[])
+
+int main() 
 {
-	if (argc < 2) {
-		cout << "Usage : chginj -c <CROC Address> -h <CHANNEL Number> ";
-		cout << "-f <Number of FEBs> ";
-		//notworking//cout << "-v <HV Target> -e <enable 1 or 0>";
-		cout << endl;
-		exit(0);
-	}
-
-	// Note, indices are distinct from addresses!
-	unsigned int crocCardAddress = 1 << 16;
-	unsigned int crocChannel     = 1;
-	int crocID                   = 1;
-	int nFEBs                    = 4; // USE SEQUENTIAL ADDRESSING!!!
-	int HVTarget                 = 32000;
-	int HVEnableFlag             = 0; // disable by default
-	unsigned int crimCardAddress = 224 << 16;
-	int crimID                   = 1;
-
-	int error;
+	int error;		
 	int controllerID = 0;
-	int runningMode  = 0; // 0 == OneShot	
+	int runningMode = 0; // 0 == OneShot	
 		
 	bool doWriteCheck = true;
 	
 	bool doChjInjConfig = true;
 	// bool doChjInjConfig = false;
-
-	// Process the command line argument set.
-	int optind = 1;
-	// Decode Arguments
-	printf("\nArguments: ");
-	while ((optind < argc) && (argv[optind][0]=='-')) {
-		string sw = argv[optind];
-		if (sw=="-c") {
-			optind++;
-			crocCardAddress = (unsigned int)( atoi(argv[optind]) << 16 );
-			printf(" CROC Address = %03d ", (crocCardAddress>>16));
-		}
-		else if (sw=="-h") {
-			optind++;
-			crocChannel = (unsigned int)( atoi(argv[optind]) );
-			printf(" CROC Channel = %1d ", crocChannel);
-		}
-		else if (sw=="-f") {
-			optind++;
-			nFEBs = atoi(argv[optind]);
-			printf(" Number of FEBs = %02d ", nFEBs);
-		}
-		else if (sw=="-v") {
-			optind++;
-			HVTarget = atoi(argv[optind]);
-			printf(" Target HV = %05d ", HVTarget);
-		}
-		else if (sw=="-e") {
-			optind++;
-			HVEnableFlag = atoi(argv[optind]);
-			printf(" HV Enable Flag = %1d ", HVEnableFlag);
-		}
-		else
-			cout << "\nUnknown switch: " << argv[optind] << endl;
-		optind++;
-	}
-	cout << endl;
-	// Report the rest of the command line...
-	if (optind < argc) {
-		cout << "There were remaining arguments!  Are you sure you set the run up correctly?" << endl;
-		cout << "  Remaining arguments = ";
-		for (;optind<argc;optind++) cout << argv[optind];
-		cout << endl;
-	}
 
 	myAppender = new log4cpp::FileAppender("default", "/work/data/logs/config.txt");
 	myAppender->setLayout(new log4cpp::BasicLayout());
@@ -182,8 +122,8 @@ int main(int argc, char *argv[])
 	if ((error=myController->ContactController())!=0) { 
 		cout<<"Controller contact error: "<<error<<endl; exit(error); // Exit due to no controller!
 	}
-	//cout<<"Controller & Acquire Initialized..."<<endl;
-	//cout<<endl;
+	cout<<"Controller & Acquire Initialized..."<<endl;
+	cout<<endl;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::list<febAddresses> febAddr;
@@ -191,8 +131,8 @@ int main(int argc, char *argv[])
 		febAddr.push_back( (febAddresses)nboard );
 	}
   
-	//std::cout << "Making CRIM with index == " << crimID << " && address == " 
-	//	<< (crimCardAddress>>16) << std::endl;
+	std::cout << "Making CRIM with index == " << crimID << " && address == " 
+		<< (crimCardAddress>>16) << std::endl;
 	myController->MakeCrim(crimCardAddress,crimID);
 	try {
 		error = myController->GetCrimStatus(crimID); 
@@ -205,8 +145,8 @@ int main(int argc, char *argv[])
 	crim *myCrim = myController->GetCrim(crimID);
 	InitCRIM(myController, myAcquire, myCrim, runningMode);
 	
-	//std::cout << "Making CROC with index == " << crocID << " && address == " 
-	//	<< (crocCardAddress>>16) << std::endl;
+	std::cout << "Making CROC with index == " << crocID << " && address == " 
+		<< (crocCardAddress>>16) << std::endl;
 	myController->MakeCroc(crocCardAddress,(crocID));
 	try {
 		error = myController->GetCrocStatus(crocID); 
@@ -369,8 +309,7 @@ int FEBFPGARead(controller *myController, acquire *myAcquire, croc *myCroc,
 	
 	// Write the message to CROC FIFO, swapped!
 	{
-		myFeb->MakeShortMessage();
-		//myFeb->MakeMessage();
+		myFeb->MakeMessage();
 		myAddress = myCroc->GetAddress() + 0x4000*(crocChannel-1) + (unsigned int)crocInput; 
 #if DEBUGLEVEL > FPGAREADLEVEL
 		printf("  FIFO Address   = 0x%X\n",myAddress);
@@ -489,7 +428,7 @@ int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc,
 	{
 		unsigned char val[]={0x0};
 		myFeb->SetTripPowerOff(val); //turn the trips on
-		myFeb->SetGateStart(43111);      
+		myFeb->SetGateStart(43000);      
 		myFeb->SetGateLength(1702);  
 		myFeb->SetHVPeriodManual(47806);
     	for (int i=0;i<4;i++) { myFeb->SetDiscrimEnableMask(0xFFFF,i); } //NRegisters==54 only!
@@ -616,7 +555,6 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 	unsigned int dpmPointer;
 	bool init; 
 	bool lDecode = true;
-	int offset = (int)boardID;
 
 	feb *myFeb = new feb(maxHits, init, boardID, NRegisters);
 	myFeb->SetFEBDefaultValues(); // use defaults to build the message
@@ -624,14 +562,10 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 	{
 		unsigned char val[]={0x0};
 		myFeb->SetTripPowerOff(val); //turn the trips on
-		myFeb->SetGateStart(43123);  //count to 65535 in clock ticks, 43000 => 211.8 us
+		myFeb->SetGateStart(43000);  //count to 65535 in clock ticks, 43000 => 211.8 us
 		myFeb->SetGateLength(1702);  //gate length for MINERvA in NuMI is 1702
-		myFeb->SetHVTarget(25000); // just to sneak past the run control I hope...
-		//unsigned char previewEnable[] = {0x1};
-		unsigned char previewEnable[] = {0x0};
-		myFeb->SetPreviewEnable(previewEnable); 
 		for (int i=0; i<4; i++) {    // inject registers, DON'T WRITE TO THE LOW GAIN TRIPS!
-			unsigned char inj[] = { 1 + (unsigned char)i*(40) + 2*offset };   // 15 integration ticks + ~20 reset ticks...
+			unsigned char inj[] = { 1 + (unsigned char)i*40 };   // 15 integration ticks + ~20 reset ticks...
 			unsigned char enable[] = {0x1}; // never enable low gain, or things get very confusing...
 			myFeb->SetInjectCount(inj,i);
 			myFeb->SetInjectEnable(enable,i);
@@ -965,13 +899,8 @@ int FEBFPGAWriteChargeInjection(controller *myController, acquire *myAcquire, cr
 	}
 
 	// Close & Clean up memory
-#if DEBUGLEVEL > FPGAWRITELEVEL
-	printf(" Cleaning up memory...\n");
-#endif
 	delete myFeb;
-#if DEBUGLEVEL > FPGAWRITELEVEL
-	printf(" Finished FEBFPGAWriteChargeInjection for FEB %d\n, returning 0!", (int)boardID);
-#endif
+	
 	return 0;
 }
 
@@ -1171,7 +1100,7 @@ int FEBTRiPTWrite(controller *myController, acquire *myAcquire, croc *myCroc,
 			myFeb->GetTrip(i)->SetRegisterValue( 7, tripRegIBCOMP ); //ibcomp
 			myFeb->GetTrip(i)->SetRegisterValue( 8, tripRegVREF ); //v_ref
 			myFeb->GetTrip(i)->SetRegisterValue( 9, tripRegVTH ); //v_th
-			myFeb->GetTrip(i)->SetRegisterValue(10, tripRegPIPEDEL); //pipedelay
+			myFeb->GetTrip(i)->SetRegisterValue(10, 2*maxHits-1); //pipedelay
 			myFeb->GetTrip(i)->SetRegisterValue(11, tripRegGAIN ); //gain
 			myFeb->GetTrip(i)->SetRegisterValue(12, tripRegIRSEL ); //irsel
 			myFeb->GetTrip(i)->SetRegisterValue(13, tripRegIWSEL ); //iwsel
@@ -1328,13 +1257,12 @@ int FEBTRiPTWriteChargeInjection(controller *myController, acquire *myAcquire, c
 			myFeb->GetTrip(i)->SetRegisterValue( 7, tripRegIBCOMP ); //ibcomp
 			myFeb->GetTrip(i)->SetRegisterValue( 8, tripRegVREF ); //v_ref
 			myFeb->GetTrip(i)->SetRegisterValue( 9, tripRegVTH ); //v_th
-			myFeb->GetTrip(i)->SetRegisterValue(10, tripRegPIPEDEL); //pipedelay
+			myFeb->GetTrip(i)->SetRegisterValue(10, 2*maxHits-1); //pipedelay
 			myFeb->GetTrip(i)->SetRegisterValue(11, tripRegGAIN ); //gain
 			myFeb->GetTrip(i)->SetRegisterValue(12, tripRegIRSEL ); //irsel
 			myFeb->GetTrip(i)->SetRegisterValue(13, tripRegIWSEL ); //iwsel
 			//myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FE ); //inject, enable first word
-			//myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FFFE ); //inject, enable first two words
-			myFeb->GetTrip(i)->SetRegisterValue(14, tripInjectPattern ); //inject, enable first two words
+			myFeb->GetTrip(i)->SetRegisterValue(14, 0x1FFFE ); //inject, enable first two words
 			// Injection patterns:
 			// ~~~~~~~~~~~~~~~~~~~
 			// Funny structure... 34 bits... using "FermiDAQ" nomenclature...
@@ -1590,7 +1518,7 @@ int ReadADCTest(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->GetADC(iHit)->CheckForErrors(); // just for fun
 #if DEBUGLEVEL > BLOCKRAMREADLEVEL
 		// Print decoded frame...
-		myFeb->GetADC(iHit)->DecodeRegisterValues(febFirmware);
+		myFeb->GetADC(iHit)->DecodeRegisterValues((int)1);
 #endif
 		// Some clean-up... 
 		myFeb->GetADC(iHit)->message = 0;
@@ -1720,7 +1648,7 @@ int ReadDiscrTest(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->GetDisc()->CheckForErrors(); // just for fun
 #if DEBUGLEVEL > BLOCKRAMREADLEVEL
 		// Print decoded frame...
-		myFeb->GetDisc()->DecodeRegisterValues(febFirmware);
+		myFeb->GetDisc()->DecodeRegisterValues((int)1);
 #endif
 		// Some clean-up... 
 		myFeb->GetDisc()->message = 0;
