@@ -21,14 +21,15 @@ if [ $HOSTNAME == "mnvtbonline1.fnal.gov" ]; then
 fi
 
 # mnvtbonline2 - Testbeam DAQ with hardware / Testbeam Control room machine / H. Budd's desktop.
+# 	Uses "new" wxPython install method - have to use python2.6
 if [ $HOSTNAME == "mnvtbonline2.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/rcc.sh $HOME/rcc.sh
-	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
-	ln -sf $HOME/mnvdaqrunscripts/multiacquisitionmanager.sh $HOME/acquisitionmanager.sh
+	ln -sf $HOME/mnvdaqrunscripts/rcc26.sh $HOME/rcc.sh
+	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol26.sh $HOME/runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/multiacquisitionmanager26.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_minervatest.sh $HOME/hard_daq_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_remoteconsole_minervatest26.sh $HOME/hard_daq_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_minervatest_dispatcher_restart_hard.sh $HOME/hard_dispatcher_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_minervatest_dispatcher_restart_soft.sh $HOME/soft_dispatcher_restart.sh
 fi
