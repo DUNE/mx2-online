@@ -8,7 +8,7 @@
 # console.  Hence, keeping $HOME for killing "local" things, but using /home/minerva
 # for stuff on test03.
 MASTERMACH=minervatest03.fnal.gov
-SOLDERMACH=minervatest04.fnal.gov
+SOLDERMACH=minervatest02.fnal.gov
 WORKERMACH=minervatest04.fnal.gov
 REMDAQACCT=minerva
 echo "Going to kill all ET processes..."
