@@ -18,6 +18,7 @@ import fcntl
 import time
 import sys
 import os
+import os.path
 import socket
 import logging
 
@@ -50,6 +51,8 @@ class MonitorDispatcher(Dispatcher):
 		self.etpattern = None
 		self.evbfile = None
 		
+		self.use_condor = Configuration.params["Monitoring nodes"]["om_useCondor"]
+		
 		# has the "OM ready" signal been sent to the
 		# DAQ manager for this subrun?
 		self.signalled_ready = False
@@ -77,7 +80,73 @@ class MonitorDispatcher(Dispatcher):
 		for subscription in handlers:
 			self.postoffice.AddSubscription(subscription)
 			self.AddHandler(subscription, handlers[subscription])
+
+	def CheckCondor(self):
+		""" Checks to see if it appears Condor is available
+		    and accepting jobs. """
 		
+		# don't do anything if we don't want to use Condor.
+		if not Configuration.params["Monitoring nodes"]["om_useCondor"]:
+			return
+		
+		# local variable that will be compared with self.use_condor in a minute
+		use_condor = True
+
+		# first ask Condor for names and statuses of its slots.
+		condor_command = "condor_status -avail -format \"%s \" Name -format \"%s\\n\" State"
+		p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
+		status_text = p.read()
+		return_code = p.wait()
+		available_slots = status_text.count("Unclaimed")
+		
+		self.logger.info("Condor reports the following status:\n====================================\n%s", status_text)
+		
+		# in case we need to send mail below
+		sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
+		subject = None
+		messagebody = None
+		
+		if return_code != 0:
+			self.logger.warning("Condor status query returned non-zero exit code (code: %d)!  Falling back to unmonitored job submission...", return_code)
+			self.logger.warning("Condor query command was: %s\n", condor_command)
+
+			use_condor = False
+
+			subject = "MINERvA near-online Condor error"
+			messagebody = "There was an error attempting to query the mnvnearline* Condor queue status:\n\n'condor_status' returned with exit code: %d\n\nThe output from the condor_status query was: '%s'" % (return_code, status_text)
+		elif available_slots == 0:
+			self.logger.warning("Condor slots are all full!  This job will be queued for processing when a slot becomes available...")
+
+			# job status == 1 is an "idle" job.
+			condor_command = "condor_q -constraint \"JobStatus == 1\" -format \"%d \" JobStatus"
+			p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
+			status_text = p.read()
+			p.wait()
+			idle_job_count = len(status_text.split(" "))
+			
+			# only start sending mail when the threshold is crossed.
+			# maybe the user is ok with a job or two in the backlog.
+			if idle_job_count >= Configuration.params["Monitoring nodes"]["om_maxCondorBacklog"]:
+				condor_command = "condor_q"
+				p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
+				status_text = p.read()
+				p.wait()
+
+				subject = "MINERvA near-online Condor queue is full"
+				messagebody = "The Condor queue on mnvnearline* is full.  The queue currently looks like:\n%s" % status_text
+		
+		# if Condor has gone down, send a notification
+		if not use_condor and self.use_condor:
+			messagebody += "\n\nInteractive job submission will be used until Condor reports it is accessible and functioning."
+		# and similarly, if it just came back up, ditto
+		elif use_condor and not self.use_condor:
+			subject = "MINERvA near-online Condor is back up"
+			messagebody = "The mnvnearline* Condor queue has returned to normal working order." 			
+
+		if subject is not None and messagebody is not None:
+			MailTools.sendMail(fro=sender, to=Configuration.params["General"]["notify_addresses"], subject=subject, text=messagebody)
+
+
 	def DAQMgrStatusHandler(self, message):
 		""" Method to respond to changes in status of the
 		    DAQ manager (books subscriptions, etc.). """
@@ -150,13 +219,15 @@ class MonitorDispatcher(Dispatcher):
 		self.om_eb_thread = OMThread(self, executable, "eventbuilder")
 	
 	def om_start_Gaudi(self, signum=None, sigframe=None):
-		""" Start the Gaudi process. """
+		""" Start the Gaudi processes. """
 		# let the DAQ manager know that the event builder
 		# is done setting up
 		message = PostOffice.Message(subject="om_status", state="om_ready", sender=self.identities[self.lock_id])
 		self.postoffice.Send(message)
 		
 		self.signalled_ready = True
+		
+		self.CheckCondor()
 		
 		try:
 			# replace the options file so that we get the new event builder output.
@@ -181,8 +252,10 @@ class MonitorDispatcher(Dispatcher):
 			
 			# if the Gaudi (monitoring) thread is still running, it needs to be stopped.
 			if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
+				self.logger.info(" ... stopping previous monitoring thread...")
 				self.om_Gaudi_thread.process.terminate()
 				self.om_Gaudi_thread.join()
+				self.logger.info(" ... done.")
 
 			# now start a new copy of each of the Gaudi jobs.
 			gaudi_processes = ( { "processname": "monitoring",
@@ -193,22 +266,52 @@ class MonitorDispatcher(Dispatcher):
 			for process in gaudi_processes:
 				# we will only keep track of the monitoring thread, because this one
 				# is the one that will be replaced.
-				# the others will continue to run, but we'll have no handle for them
-				# (which is intentional, so that they run unmolested until they finish).
+				# 
+				# if we're using Condor, the others will be submitted as jobs via minerva_jobsub.
+				# that will be the last that we ever see of them here.
+				# otherwise, they'll run 'interactively' in the background,
+				# but we won't keep a handle for them (not assign to a variable)
+				# so that they run unmolested until they finish.
 				# of course, if this thread is killed, they might go with it, but that
-				# depends on whether or not they fork first.  (i can't remember.)
-				thread = OMThread(self, process["executable"], "gaudi_%s" % process["processname"], persistent=(process["processname"] == "dst"))
-				if process["processname"] == "monitoring":
-					self.om_Gaudi_thread = thread
-
-				self.logger.info("   Starting a copy of MinervaNearline.exe using the following command:\n%s", process["executable"])
-			
-				# want to record the PID.  wait until it's ready.
-				while thread.pid is None:
-					time.sleep(0.01)
-					pass
+				# depends on whether or not they fork first.  (i don't think they do.)
 				
-				self.logger.info("     ==> process id: %d" % thread.pid)
+				interactive = process["processname"] == "monitoring" or (process["processname"] == "dst" and not self.use_condor)
+				
+				if interactive:
+					thread = OMThread(self, process["executable"], "gaudi_%s" % process["processname"], persistent=(process["processname"] == "dst"))
+					if process["processname"] == "monitoring":
+						self.om_Gaudi_thread = thread
+
+					self.logger.info("  Starting a copy of MinervaNearline.exe with the following command:\n%s", process["executable"])
+			
+					# want to record the PID.  wait until it's ready.
+					while thread.pid is None:
+						time.sleep(0.01)
+						pass
+				
+					self.logger.info("     ==> process id: %d" % thread.pid)
+				else:
+					fmt = { "host":        Configuration.params["Monitoring nodes"]["om_condorHost"],
+					        "notify":      ",".join(Configuration.params["General"]["notify_addresses"]),
+					        "release":     os.environ["MINERVA_RELEASE"],
+					        "siteroot":    os.environ["MYSITEROOT"],
+					        "daqrecvroot": os.environ["DAQRECVROOT"],
+					        "executable":  process["executable"] }
+					executable = "minerva_jobsub -l \"notify_user = %(notify)s\" -submit_host %(host)s -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s -q %(executable)s" % fmt
+					self.logger.info("  Submitting a Condor job using the following command:\n%s", executable)
+					return_code = subprocess.call(executable, shell=True)
+					
+					if return_code != 0:
+						self.logger.warning("Condor submission exited with non-zero return code: %d.  This job was probably not submitted!" % return_code)
+						
+						sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
+						subject = "MINERvA near-online Condor submission problem"
+						messagebody = "A job submission to the mnvnearline* Condor queue returned a non-zero exit code: %d." % return_code
+						messagebody += "The command was:\n%s" % executable 			
+						MailTools.sendMail(fro=sender, to=Configuration.params["General"]["notify_addresses"], subject=subject, text=messagebody)
+					else:
+						self.logger.info("  ... submitted successfully.")
+					
 		except Exception:
 			self.logger.exception("  Error starting the Gaudi processes!:")
 	
@@ -346,15 +449,17 @@ class OMThread(threading.Thread):
 """
 if __name__ == "__main__":
 	environment = {}
-	try:
-		environment["DAQROOT"] = os.environ["DAQROOT"]
-		environment["ET_HOME"] = os.environ["ET_HOME"]
-		environment["ET_LIBROOT"] = os.environ["ET_LIBROOT"]
-		environment["CAEN_DIR"] = os.environ["CAEN_DIR"]
-		environment["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
-	except KeyError:
-		sys.stderr.write("Your environment is not properly configured.  You must run the 'setupdaqenv.sh' script before launching the dispatcher.\n")
-		sys.exit(1)
+	for var in [ "DAQROOT", "ET_HOME", "ET_LIBROOT", "CAEN_DIR",
+	             "DAQRECVROOT", "CMTCONFIG", "MINERVA_RELEASE",
+	             "MYSITEROOT", "LD_LIBRARY_PATH", "CONDOR_TMP", "CONDOR_EXEC" ]:
+		try:
+			environment[var] = os.environ[var]
+		except KeyError:
+			sys.stderr.write("Your environment is not properly configured.  Missing variable: %s\n\n" % var)
+			sys.stderr.write("You must source the 'setupdaqenv.sh', 'setup.minerva.condor.sh',\n")
+			sys.stderr.write("general MINERvA analysis framework, and DaqRecv package setup scripts\n")
+			sys.stderr.write("before launching this dispatcher.\n")
+			sys.exit(1)
 
 	dispatcher = MonitorDispatcher()
 	dispatcher.Bootstrap()

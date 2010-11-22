@@ -86,8 +86,10 @@ MTEST_TOF_RST_GATE_SLOT  = 18
 MTEST_PCOS_RST_GATE_SLOT = 20
 
 # monitoring
-OM_DST_TARGET_PATH = "/minerva/data/users/minerva/data_processing/dst"		# where DSTs are copied when they're done being created by the dispatcher
-OM_DST_MIN_JOB_TIME = 10			# the minimum amount of time a DSTMaker job can take (anything shorter and mail is sent to NOTIFY_ADDRESSES)
+OM_DST_TARGET_PATH    = "/minerva/data/users/minerva/data_processing/dst"		# where DSTs are copied when they're done being created by the dispatcher
+OM_DST_MIN_JOB_TIME   = 10		# the minimum amount of time a DSTMaker job can take (anything shorter and mail is sent to NOTIFY_ADDRESSES)
+OM_CONDOR_HOST        = "mnvnearline1.fnal.gov"
+OM_MAX_CONDOR_BACKLOG = 2		# max number of jobs that can be backlogged in the Condor queue
 
 # slow control
 SLOWCONTROL_ALLOWED_HV_THRESHOLDS    = {200: 0}	# that is, { threshold : num allowed over that threshold, ... }

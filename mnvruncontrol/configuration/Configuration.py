@@ -83,7 +83,10 @@ configuration = { "General"          : { "notify_addresses"          : ( Default
                                          "om_GaudiOutputOptionsFile" : ( Defaults.OM_GAUDI_OUTPUTOPTIONSFILE,           "OM Gaudi process 'output file' options file",     str   ),
                                          "om_GaudiInputOptionsFile"  : ( Defaults.OM_GAUDI_INPUTOPTIONSFILE,            "OM Gaudi process 'input file' options file",      str   ),
                                          "om_DSTTargetPath"          : ( Defaults.OM_DST_TARGET_PATH,                   "Copy target for DSTs created by OM dispather",    str   ),
-                                         "om_DSTminJobTime"        : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",              float   ),
+                                         "om_DSTminJobTime"          : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",          float ),
+                                         "om_useCondor"              : ( False,                                         "Use a Condor queue?",                             bool  ),
+                                         "om_condorHost"             : ( Defaults.OM_CONDOR_HOST,                       "The machine hosting the Condor queue manager",    str   ),
+                                         "om_maxCondorBacklog"       : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",          float ),
                                          "om_rawdataLocation"        : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                            str   )  },
 
                   "MTest beam nodes" : { "mtest_PIDfileLocation"     : ( Defaults.MTEST_DISPATCHER_PIDFILE,             "MTest dispatcher PID file location",              str   ),
@@ -170,5 +173,5 @@ if not (config_file_inaccessible or config_file_empty):
 				pass		# the default is already set
 	db.close()
 else:
-	print "Note: configuration file is inaccessible.  Defaults are in use"
+	print "Note: configuration file is inaccessible.  Defaults are in use..."
 
