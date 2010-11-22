@@ -26,7 +26,7 @@ import os.path
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
 
-configuration = { "General"          : { "notify_addresses"          : ( Defaults.NOTIFY_ADDRESSES,                     "Email addresses to nofity of problems",                  list  )  },
+configuration = { "General"          : { "notify_addresses"          : ( Defaults.NOTIFY_ADDRESSES,                     "Email addresses to nofity of problems",           list  )  },
 
                   "Front end"        : { "ResourceLocation"          : ( Defaults.RESOURCE_LOCATION_DEFAULT,            "Resource files location",                         str   ),
                                          "frontend_listenPort"       : ( Defaults.FRONTEND_LISTEN_PORT,                 "Frontend client listener port",                   int   ),
@@ -95,6 +95,22 @@ configuration = { "General"          : { "notify_addresses"          : ( Default
                                          "mtest_logfileLocation"     : ( Defaults.MTEST_LOGFILE_LOCATION,               "MTest dispatcher log file location",              str   )  }  }
 
 
+def SaveToDB():
+	""" Save the current parameter set to the database. """
+	
+	if config_file_inaccessible:
+		return
+	
+	db = shelve.open(config_file_location, "c")
+	
+	for param_set in params:
+		for param in params[param_set]:
+			db[param] = types[param_set][param](params[param_set][param])
+			
+	db.close()
+
+	print "Wrote configuration to '%s'." % config_file_location
+
 # the basic dictionary is structured a bit deep
 # (though it's nice for entering data).
 # below it's reworked for easier access
@@ -161,6 +177,7 @@ for location in locations_to_try:
 			break
 	else:
 #		print "using location: ", location
+		config_file_location = location
 		config_file_inaccessible = False
 		break
 
@@ -174,4 +191,4 @@ if not (config_file_inaccessible or config_file_empty):
 	db.close()
 else:
 	print "Note: configuration file is inaccessible.  Defaults are in use..."
-
+			

@@ -218,63 +218,40 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 		def SaveAll(self, evt=None):
 			""" Save the configuration. """
 		
-			locations_to_try = ["%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME)]
-			if Configuration.user_specified_db:
-				locations_to_try = [Configuration.user_specified_db] + locations_to_try
-			
-			found_location = False
-			for location in locations_to_try:
-				try:
-					db = shelve.open(os.path.abspath(location), "c")  
-				except anydbm.error, e:
-					continue
-				else:
-					found_location = True
-					# first do the automatic ones
-					for param_set in self.entries:
-						for param_name in self.entries[param_set]:
-							if isinstance(self.entries[param_set][param_name], wx.TextCtrl) or isinstance(self.entries[param_set][param_name], wx.CheckBox):
-								# note that this must saved as the correct type (hence the Configuration.types() call).
-								db[param_name] = Configuration.types[param_set][param_name](self.entries[param_set][param_name].GetValue())
-			
-					# now any that need to be handled in a particular way
-			
-					# first: choices
-					for item in metadata_ctrls:
-						db[item] = metadata_ctrls[item].item(self.entries["Master node"][item].GetSelection()).hash
-			
-					# now remote nodes
-					nodelist= []
-					index = -1
-					while True:
-						index = self.entries["Master node"]["nodeAddresses"].GetNextItem(index)
-				
-						if index == -1:
-							break
-						
-						try:
-							nodetype = int(self.entries["Master node"]["nodeAddresses"].GetItem(index, 0).GetText())
-						except ValueError:
-							nodetype = 1		# default to READOUT
-				
-						nodedescr = { "type":     nodetype,
-						              "name":     self.entries["Master node"]["nodeAddresses"].GetItem(index, 1).GetText(),
-						              "address" : self.entries["Master node"]["nodeAddresses"].GetItem(index, 2).GetText() }
-						nodelist.append(nodedescr)
-				
-					db["nodeAddresses"] = nodelist
-			
-					# need to specifically close the DB so that it saves correctly
-					db.close()
-				
-					break
+			# first do the automatic ones
+			for param_set in self.entries:
+				for param_name in self.entries[param_set]:
+					if isinstance(self.entries[param_set][param_name], wx.TextCtrl) or isinstance(self.entries[param_set][param_name], wx.CheckBox):
+						# note that this must saved as the correct type (hence the Configuration.types() call).
+						Configuration.params[param_set][param_name] = Configuration.types[param_set][param_name](self.entries[param_set][param_name].GetValue())
+	
+			# now any that need to be handled in a particular way
+	
+			# first: choices
+			for item in metadata_ctrls:
+				Configuration.params["Master node"][item] = metadata_ctrls[item].item(self.entries["Master node"][item].GetSelection()).hash
+	
+			# now remote nodes
+			nodelist= []
+			index = -1
+			while True:
+				index = self.entries["Master node"]["nodeAddresses"].GetNextItem(index)
 		
-			if found_location:
-				if self.parent is not None:	
-					wx.PostEvent(self.parent, Events.ConfigUpdatedEvent())
-				else:
-					print "Wrote configuration to '%s'." % location
-
+				if index == -1:
+					break
+				
+				try:
+					nodetype = int(self.entries["Master node"]["nodeAddresses"].GetItem(index, 0).GetText())
+				except ValueError:
+					nodetype = 1		# default to READOUT
+		
+				nodedescr = { "type":     nodetype,
+				              "name":     self.entries["Master node"]["nodeAddresses"].GetItem(index, 1).GetText(),
+				              "address" : self.entries["Master node"]["nodeAddresses"].GetItem(index, 2).GetText() }
+				nodelist.append(nodedescr)
+		
+			Configuration.params["Master node"]["nodeAddresses"] = nodelist
+			
 			self.Close()
 		
 		def Cancel(self, evt=None):
@@ -301,6 +278,95 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			frame.Show(True)
 			return True
 
+else:
+	#########################################################
+	#   TextApp
+	#########################################################
+
+	class TextApp:
+		def ConsoleLoop(self):
+			""" A text-entry interface. """
+			
+			quit = False
+			
+			while not quit:
+				current_section = None
+				while current_section is None:
+					current_section = self.MenuSelection(Configuration.params.keys())
+					
+					# user just pushed 'enter'
+					if current_section is None:
+						quit = True
+						break
+				
+					while current_section is not None:
+						print "Section '%s'" % current_section
+						print "==========================================================="
+						param = self.MenuSelection(Configuration.names[current_section].keys(), Configuration.names[current_section].values())
+						
+						if param is None:
+							current_section = None
+							continue
+						
+						# lists are trickier
+						if Configuration.types[current_section][param] != list:
+							print "Changing value for '%s'." % param
+							print "Old value: ", Configuration.params[current_section][param]
+							print "Enter new value (just press 'Enter' to cancel):"
+							
+							try:
+								v = raw_input(">>> ")
+							except EOFError:
+								return
+							
+							if v == "":
+								continue
+							
+							try:
+								Configuration.params[current_section][param] = Configuration.types[current_section][param](v)
+							except ValueError:
+								print "Invalid input!"
+								continue
+					
+						else:
+							print "List editing doesn't work yet in text-only mode."
+							print "Either use the GUI editor or edit the config database by hand.\n"
+			### while not quit
+			
+			Configuration.SaveToDB()
+		
+		def MenuSelection(self, choices, descriptions=None):
+			""" Displays a menu to the user and requests
+			    that s/he pick one of the options. """
+			
+			print "Choices:"
+			print "--------"
+			
+			for i in range(len(choices)):
+				descr = " " if descriptions is None else (" (%s)" % descriptions[i])
+				print "[%d] %-25s%s" % (i+1, choices[i], descr)
+			
+			while True:
+				print "\nPlease enter the number of the menu item you want"
+				print "(just press 'Enter' to go back/quit)"
+
+				try:
+					r = raw_input(">>> ")
+				except EOFError:
+					return None
+
+				if r == "":
+					return None
+			
+				try:
+					if int(r) - 1 in range(len(choices)):
+						return choices[int(r)-1]
+					else:
+						raise ValueError()
+				except ValueError:
+					print "Invalid entry."
+		
+
 #########################################################
 #   Main execution
 #########################################################
@@ -312,8 +378,10 @@ if __name__ == '__main__':		# make sure that this file isn't being included some
 		app.MainLoop()
 	# a VERY simple text-mode dump of the values
 	else:
-		for section in Configuration.params:
-			print "Section '%s':" % section
-			for key in Configuration.params[section]:
-				print "   %-25s:  %s" % ("'" + key + "'", Configuration.params[section][key])
+#		for section in Configuration.params:
+#			print "Section '%s':" % section
+#			for key in Configuration.params[section]:
+#				print "   %-25s:  %s" % ("'" + key + "'", Configuration.params[section][key])
+		app = TextApp()
+		app.ConsoleLoop()
 
