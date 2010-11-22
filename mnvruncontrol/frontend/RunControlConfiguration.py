@@ -252,6 +252,8 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 		
 			Configuration.params["Master node"]["nodeAddresses"] = nodelist
 			
+			Configuration.SaveToDB()
+			
 			self.Close()
 		
 		def Cancel(self, evt=None):
