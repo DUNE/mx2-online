@@ -1,0 +1,102 @@
+#!/bin/bash
+
+######################################################################################
+#
+# A smarter Kerberizing script: only gets a new kerberos ticket if one is needed.
+# Can use a user-specified Kerberos principal name provided on the command line
+# (though note that this must be a special Kerberos principal stored in a keytab file
+#  because of the arguments to kinit) as well as giving the option of using either
+# Kerberos's default cache file location or a time-stamped version.
+#
+#  J. Wolcott
+#  05-28-2010
+#
+######################################################################################
+
+# default to WH control room
+principal="minerva-online/minerva/minerva-om.fnal.gov"
+default=false
+wantshelp=false
+force=false
+
+# getopts will barf if OPTIND is too high from some previous usage
+unset OPTIND
+while getopts "p:d:h:f:" options; do
+	case $options in
+		p) principal=$OPTARG;;
+		d) default=true;;
+		h) wantshelp=true;;
+		f) force=true;;
+	esac
+done
+
+if [ $wantshelp == true ]; then
+	echo "Usage:"
+	echo "Kerberize [-d] [-p <principal name>]"
+	echo "  options:"
+	echo "    -d        use the default Kerberos cache file (/tmp/krb5cc_1000)"
+	echo "              instead of providing a custom time-stamped version"
+	echo "    -p        use the specified Kerberos principal instead of the default"
+	echo "              (the MINERvA Wilson Hall control room principal)"
+	echo "    -f        force retrieval of new ticket.  If not specified this script"
+	echo "              will check for an existing one first."
+	echo "    -h        this help message"
+	if [ "$BASH_SOURCE" == "$0" ]; then
+		exit 1
+	else
+		return 1
+	fi
+fi
+
+# note that this check would fail if this script were to source itself.
+# fortunately, we don't pull crazy shenanigans like that around here.
+# (the exception for "default cache file" is because the time-stamped
+#  file's location is set in an environment variable that Kerberos
+#  will never find if the script isn't sourced.  if we're using
+#  the default location this is evidently no problem.)
+if [ "$BASH_SOURCE" == "$0" -a $default == false ]; then
+	echo "Note: this script MUST be sourced, not executed!"
+	exit
+fi
+
+# if we're forcing a new ticket, or the old and new caches don't match,
+# clear out the old ticket.  (this check depends on operator precedence:
+#  AND [-a] has higher precedence than OR [-o].)
+if [ "$KRB5CCNAME" -a "$default" == true -o "$force" == true ]; then
+	kdestroy > /dev/null 2>&1
+	unset KRB5CCNAME
+fi
+
+kopts=""
+if [ -n "$KRB5CCNAME" ]; then
+	kopts="-c $KRB5CCNAME"
+fi
+
+# before doing anything drastic we check
+# if our credentials are ok.  if they are,
+# then we don't do any more.
+if ! klist -s $kopts; then
+	# now we know we need to do something.
+	# first we try to renew our ticket.
+	# (kinit complains if you try to renew
+	#  on an empty ticket cache, so output
+	#  is directed to /dev/null.)
+	# if that's no good, we get a new one.
+	if ! kinit -R $kopts > /dev/null 2>&1; then
+		# non-default Kerberos cache file requires some extra work.
+		if [ $default == false ]; then
+			timestamp=`date +%Y%m%d_%H%M_%S`
+			KRB5CCNAME="/tmp/interactive_krbcc_$timestamp"
+			export KRB5CCNAME
+			kopts="-c $KRB5CCNAME"
+			myhostname=`hostname -f`
+		else
+			unset KRB5CCNAME
+			kopts=""
+		fi
+
+		kinit -r 7d $kopts -k -t $HOME/Krb5/krb-s.keytab $principal
+
+		klist $kopts
+	fi
+fi
