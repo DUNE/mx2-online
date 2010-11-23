@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Use this script to restart the DataAcquisition manager in the WH Control 
+# Room when running the DAQ in a "remote console" mode regardless of the 
+# number of readout nodes.
+
 # Setup environment for LinDAQ.
 if test -z "$DAQROOT"
 then

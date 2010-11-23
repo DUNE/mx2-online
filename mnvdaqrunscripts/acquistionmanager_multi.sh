@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Use this script to restart the DataAcquisition manager on the mnvonline or 
+# minervatest cluster when running "locally" (either at the terminal or via 
+# ssh'ed x-forwarding) and a multi-node DAQ.
+
 # Setup environment for LinDAQ.
 if test -z "$DAQROOT"
 then

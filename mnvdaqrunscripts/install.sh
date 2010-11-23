@@ -67,7 +67,7 @@ if [ $HOSTNAME == "minervatest03.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/multiacquisitionmanager.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_minervatest.sh $HOME/hard_daq_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/restart_all_multi_minervatest.sh $HOME/hard_daq_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_minervatest_dispatcher_restart_hard.sh $HOME/hard_dispatcher_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_minervatest_dispatcher_restart_soft.sh $HOME/soft_dispatcher_restart.sh
 fi
@@ -141,7 +141,7 @@ if [ $HOSTNAME == "minerva-rc.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/whcr_acquistionmanager26.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 
-	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_mnvonline.sh $HOME/hard_restart_daq.sh
+	ln -sf $HOME/mnvdaqrunscripts/restart_all_multi_mnvonline.sh $HOME/hard_restart_daq.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_nearline_restart.sh $HOME/hard_restart_monitoring.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_allkiller_mnvonline26.sh $HOME/hard_restart_all.sh
 
@@ -153,7 +153,7 @@ if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal
 	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_mnvonline.sh $HOME/hard_daq_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/restart_all_multi_mnvonline.sh $HOME/hard_daq_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_nearline_restart.sh $HOME/hard_nearline_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/full_restart_mnvonline.sh $HOME/hard_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_mnvonline_dispatcher_restart_hard.sh $HOME/dispatcher_restart.sh
