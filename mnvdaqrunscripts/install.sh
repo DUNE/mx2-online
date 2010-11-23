@@ -1,5 +1,6 @@
 #!/bin/sh
 
+
 # mnvtbonline0 - Single node DAQ with hardware.
 if [ $HOSTNAME == "mnvtbonline0.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
@@ -130,6 +131,20 @@ if [ $HOSTNAME == "mnvonline2.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/single_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
+fi
+
+# minerva-rc - Main MINERvA Control Room PC in WH12.
+if [ $HOSTNAME == "minerva-rc.fnal.gov" ]; then
+	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/whcr_dispatcher_restart_hard_mnvonline.sh $HOME/dispatcher_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_runcontrol26.sh $HOME/runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_acquistionmanager26.sh $HOME/acquisitionmanager.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
+
+	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_mnvonline.sh $HOME/hard_restart_daq.sh
+	ln -sf $HOME/mnvdaqrunscripts/remote_nearline_restart.sh $HOME/hard_restart_monitoring.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_allkiller_mnvonline26.sh $HOME/hard_restart_all.sh
+
 fi
 
 # mnvonlinemaster - Multi-node DAQ with no hardware.
