@@ -68,7 +68,7 @@ class RunInfo(object):
                 dump  = 'Run Mode               = %s\n' % MetaData.RunningModes.description(self.runMode)
                 dump += 'Gates                  = %d\n' % self.gates
                 dump += 'Hardware configuration = %s\n' % MetaData.HardwareConfigurations.description(self.hwConfig)
-                dump += 'LED Level              = %s\n' % MetaData.LILevels.description(self.ledLevel)
-                dump += 'LED Group              = %s\n' % MetaData.LEDGroups.description(self.ledGroup)
+                dump += 'LED Level              = %s\n' % self.ledLevel if self.ledLevel not in MetaData.LILevels else MetaData.LILevels.description(self.ledLevel)
+                dump += 'LED Group              = %s\n' % self.ledGroup if self.ledGroup not in MetaData.LEDGroups else MetaData.LEDGroups.description(self.ledGroup)
 		
 		return dump
