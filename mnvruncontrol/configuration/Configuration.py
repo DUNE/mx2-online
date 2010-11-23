@@ -163,6 +163,7 @@ if user_specified_db is not None:
 	
 config_file_inaccessible = True
 config_file_empty = False
+config_file_location = None
 for location in locations_to_try:
 	try:
 		db = shelve.open(location, "r")
