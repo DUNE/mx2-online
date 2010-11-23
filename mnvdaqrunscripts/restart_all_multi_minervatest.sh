@@ -6,7 +6,7 @@
 # ASSUMES VALID KERBEROS!
 
 # Get cluster defs.
-. $HOME/mnvdaqrunscripts/minervatest_defs
+. $HOME/mnvdaqrunscripts/defs_minervatest
 
 echo "Going to kill all ET processes on local master..."
 $SCRIPTSDIR/etkiller.pl

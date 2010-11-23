@@ -7,7 +7,7 @@
 # (Basically just for mnvtbonline2.)
 # ASSUMES A VALID KERBEROS TICKET!
 
-. $HOME/mnvdaqrunscripts/minervatest_defs
+. $HOME/mnvdaqrunscripts/defs_minervatest
 
 echo "Going to kill all remote ET processes..."
 `ssh ${REMDAQACCT}@${MASTERMACH} $SCRIPTSDIR/etkiller.pl`

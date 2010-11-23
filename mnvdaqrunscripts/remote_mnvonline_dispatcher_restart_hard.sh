@@ -4,7 +4,7 @@
 # readout nodes when on the mnvonline cluster master node.  Assumes a 
 # valid kerberos ticket!
 
-. $HOME/mnvdaqrunscripts/mnvonline_defs
+. $HOME/mnvdaqrunscripts/defs_mnvonline
 
 # Assumes a valid kerberos ticket!
 echo "Going to kill remote processes..."

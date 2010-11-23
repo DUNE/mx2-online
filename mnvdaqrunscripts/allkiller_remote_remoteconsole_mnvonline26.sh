@@ -3,7 +3,7 @@
 # Kill them all, let God sort them out.
 
 # Get cluster defs.
-. $HOME/mnvdaqrunscripts/mnvonline_defs
+. $HOME/mnvdaqrunscripts/defs_mnvonline
 
 # Need to kerberize first. 
 . $HOME/mnvdaqrunscripts/Kerberize

@@ -6,7 +6,7 @@
 # ASSUMES VALID KERBEROS!
 
 # Get cluster defs.
-. $HOME/mnvdaqrunscripts/mnvonline_defs
+. $HOME/mnvdaqrunscripts/defs_mnvonline
 
 echo "Going to kill all ET processes on local master..."
 $SCRIPTSDIR/etkiller.pl

@@ -8,7 +8,7 @@
 if test -z "$DAQROOT"
 then
 	echo "No DAQROOT defined.  Sourcing the setup script..."
-	source /home/minerva/mnvdaqrunscripts/setupdaqenv.sh /home/minerva/wx_support/mnvdaq
+	source /home/minerva/mnvdaqrunscripts/setupdaqenv.sh /home/minerva/mnvonline/mnvdaq
 fi
 
 
