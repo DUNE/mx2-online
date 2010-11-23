@@ -13,7 +13,7 @@ then
 fi
 
 
-# Check to see if the dispatcher is running.  If it is, kill it.
+# Check to see if the acquisition manager is running.  If it is, stop/kill it.
 pushd ${RCROOT}/backend >& /dev/null
 python2.6 DataAcquisitionManager.py stop
 popd >& /dev/null

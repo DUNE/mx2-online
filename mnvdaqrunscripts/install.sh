@@ -27,7 +27,7 @@ if [ $HOSTNAME == "mnvtbonline2.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/rcc26.sh $HOME/rcc.sh
 	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol26.sh $HOME/runcontrol.sh
-	ln -sf $HOME/mnvdaqrunscripts/multiacquisitionmanager26.sh $HOME/acquisitionmanager.sh
+	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_multi26.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_restart_all_multi_minervatest.sh $HOME/hard_daq_restart.sh
@@ -49,6 +49,7 @@ fi
 # minervatest02 - Single & multi-node DAQ with hardware.  
 if [ $HOSTNAME == "minervatest02.fnal.gov" ]; then
 	echo "Setting up single and multi-node scripts (with hardware) on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_single.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledispatcher.sh $HOME/single_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
@@ -64,7 +65,7 @@ fi
 if [ $HOSTNAME == "minervatest03.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
-	ln -sf $HOME/mnvdaqrunscripts/multiacquisitionmanager.sh $HOME/acquisitionmanager.sh
+	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_multi.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/restart_all_multi_minervatest.sh $HOME/hard_daq_restart.sh
@@ -75,6 +76,7 @@ fi
 # minervatest04 - Single & multi-node DAQ with hardware. 
 if [ $HOSTNAME == "minervatest04.fnal.gov" ]; then
 	echo "Setting up single and multi-node scripts (with hardware) on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_single.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/multidispatcher.sh $HOME/multi_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
