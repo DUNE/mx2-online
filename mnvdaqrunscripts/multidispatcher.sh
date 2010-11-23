@@ -8,13 +8,13 @@ then
 fi
 
 # Check to see if the dispatcher is running.  If it is, kill it.
-pushd /work/software/mnvruncontrol/backend
+pushd /work/software/mnvruncontrol/backend >& /dev/null
 python ReadoutDispatcher.py stop
-popd
+popd >& /dev/null
 
 # Start the dispatcher.
-pushd /work/software/mnvruncontrol/backend
+pushd /work/software/mnvruncontrol/backend >& /dev/null
 python ReadoutDispatcher.py start
-popd
+popd >& /dev/null
 
 ps -leaf | grep ReadoutDispatcher | grep -v grep
