@@ -325,14 +325,19 @@ else:
 								continue
 							
 							try:
-								Configuration.params[current_section][param] = Configuration.types[current_section][param](v)
+								# beware.  bool(<string>) = len(<string>) > 0!
+								if Configuration.types[current_section][param] == bool and isinstance(v, basestring):
+									Configuration.params[current_section][param] = v in ("True", "true", "1")
+								else:
+									Configuration.params[current_section][param] = Configuration.types[current_section][param](v)
 							except ValueError:
 								print "Invalid input!"
 								continue
 					
 						else:
-							print "List editing doesn't work yet in text-only mode."
-							print "Either use the GUI editor or edit the config database by hand.\n"
+							print "List/dictionary editing doesn't work yet in text-only mode."
+							print "Either use the GUI editor or edit the Configuration by hand"
+							print "and use its SaveToDB() function.\n"
 			### while not quit
 			
 			Configuration.SaveToDB()
