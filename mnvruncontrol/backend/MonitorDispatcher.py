@@ -126,6 +126,7 @@ class MonitorDispatcher(Dispatcher):
 			
 			# only start sending mail when the threshold is crossed.
 			# maybe the user is ok with a job or two in the backlog.
+			self.logger.info("Idle Condor jobs: %d", idle_job_count)
 			if idle_job_count >= Configuration.params["Monitoring nodes"]["om_maxCondorBacklog"]:
 				condor_command = "condor_q"
 				p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
@@ -144,6 +145,7 @@ class MonitorDispatcher(Dispatcher):
 			messagebody = "The mnvnearline* Condor queue has returned to normal working order." 			
 
 		if subject is not None and messagebody is not None:
+			self.logger.info("Sending mail to notification addresses.")
 			MailTools.sendMail(fro=sender, to=Configuration.params["General"]["notify_addresses"], subject=subject, text=messagebody)
 
 
