@@ -1,0 +1,7 @@
+# minervatest cluster definitions
+MASTERMACH=minervatest03.fnal.gov
+SOLDERMACH=minervatest02.fnal.gov
+WORKERMACH=minervatest04.fnal.gov
+REMDAQACCT=minerva
+SCRIPTDIR=/home/minerva/mnvdaqrunscripts
+
