@@ -1,14 +1,16 @@
 export LOCALE=NEARLINE
-export DIM_DNS_NODE=mnvnearline1.fnal.gov
-export UTGID=NEARONLINE
-
-export SOFTREL=v7r6
+export SOFTREL=v8r0
 
 source /scratch/nearonline/mnvdaq/setupdaqenv.sh
 
+# need to set up Condor if it's available
+if [ -e /grid/fermiapp/minerva/condor-scripts/setup.minerva.condor.sh ]; then
+	source /grid/fermiapp/minerva/condor-scripts/setup.minerva.condor.sh
+fi
+
 #### ATTENTION: this script needs to be updated for new framework versions!!!
 source /scratch/nearonline/software_releases/${SOFTREL}/setup.sh ${SOFTREL} /scratch/nearonline/software_releases/${SOFTREL}
-pushd /home/nearonline/cmtuser/Minerva_${SOFTREL}/DaqRecv/cmt/
+pushd /home/nearonline/cmtuser/Minerva_${SOFTREL}/Tools/DaqRecv/cmt/
 source ./setup.sh
 popd
 
