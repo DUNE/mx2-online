@@ -1,3 +1,5 @@
 #!/bin/sh
 
-python  /work/software/mnvruncontrol/frontend/RunSeriesConfigurator.py &
+. $HOME/mnvdaqrunscripts/defs_standardpaths
+
+python  ${RCROOT}/frontend/RunSeriesConfigurator.py &

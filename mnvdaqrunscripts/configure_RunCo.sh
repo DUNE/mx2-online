@@ -1,4 +1,6 @@
 #!/bin/sh
 
-python  /work/software/mnvruncontrol/frontend/RunControlConfiguration.py &
+. $HOME/mnvdaqrunscripts/defs_standardpaths
+
+python  ${RCROOT}/frontend/RunControlConfiguration.py &
 
