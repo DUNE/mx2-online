@@ -1,8 +1,7 @@
 #!/bin/sh
 
-# Use this script to restart the DataAcquisition manager on the mnvonline or 
-# minervatest cluster when running "locally" (either at the terminal or via 
-# ssh'ed x-forwarding) and a multi-node DAQ.
+# Use this script to restart the DataAcquisition manager on a remote 
+# console when using python2.6.
 
 . $HOME/mnvdaqrunscripts/defs_standardpaths
 
@@ -14,14 +13,14 @@ then
 fi
 
 
-# Check to see if the acquisition manager is running.  If it is, stop/kill it.
+# Check to see if the dispatcher is running.  If it is, kill it.
 pushd ${RCROOT}/backend >& /dev/null
-python DataAcquisitionManager.py stop
+python2.6 DataAcquisitionManager.py stop
 popd >& /dev/null
 
 # Start the dispatcher.
 pushd ${RCROOT}/backend >& /dev/null
-python DataAcquisitionManager.py start
+python2.6 DataAcquisitionManager.py start
 popd >& /dev/null
 
 ps -leaf | grep DataAcquisitionManager | grep -v grep
