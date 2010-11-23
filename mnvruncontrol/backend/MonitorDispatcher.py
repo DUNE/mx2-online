@@ -451,14 +451,19 @@ class OMThread(threading.Thread):
 """
 if __name__ == "__main__":
 	environment = {}
-	for var in [ "DAQROOT", "ET_HOME", "ET_LIBROOT", "CAEN_DIR",
+	var_list = [ "DAQROOT", "ET_HOME", "ET_LIBROOT", "CAEN_DIR",
 	             "DAQRECVROOT", "CMTCONFIG", "MINERVA_RELEASE",
-	             "MYSITEROOT", "LD_LIBRARY_PATH", "CONDOR_TMP", "CONDOR_EXEC" ]:
+	             "MYSITEROOT", "LD_LIBRARY_PATH" ]
+
+	if Configuration.params["Monitoring nodes"]["om_useCondor"]:
+		var_list += ["CONDOR_TMP", "CONDOR_EXEC"]
+		
+	for var in var_list:
 		try:
 			environment[var] = os.environ[var]
 		except KeyError:
 			sys.stderr.write("Your environment is not properly configured.  Missing variable: %s\n\n" % var)
-			sys.stderr.write("You must source the 'setupdaqenv.sh', 'setup.minerva.condor.sh',\n")
+			sys.stderr.write("You must source the 'setupdaqenv.sh', 'setup.minerva.condor.sh' (if using Condor),\n")
 			sys.stderr.write("general MINERvA analysis framework, and DaqRecv package setup scripts\n")
 			sys.stderr.write("before launching this dispatcher.\n")
 			sys.exit(1)
