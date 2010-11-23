@@ -1,12 +1,15 @@
 #!/bin/sh
 
-# Use this script to restart the dispatchers on the mnvonline cluster 
-# readout nodes when on the mnvonline cluster master node.  Assumes a 
-# valid kerberos ticket!
+# Use this script when using the Run Control in the Wilson Hall CR to restart the 
+# dispatchers on the readout nodes on the mnvonline cluster.
 
+# Get cluster defs.
 . $HOME/mnvdaqrunscripts/defs_mnvonline
 
-# Nuke all the other DAQ stuff...
+# Need to kerberize first. 
+. $HOME/mnvdaqrunscripts/Kerberize
+
+# Kill everything.
 echo "Going to kill remote processes..."
 `ssh ${REMDAQACCT}@${SOLDERMACH} ${SCRIPTSDIR}/allkiller_silent.sh`
 `ssh ${REMDAQACCT}@${WORKERMACH} ${SCRIPTSDIR}/allkiller_silent.sh`
@@ -18,4 +21,8 @@ echo "Now restarting the dispatchers..."
 `ssh ${REMDAQACCT}@${WORKERMACH} source ${SCRIPTSDIR}/dispatcher_multi.sh`
 echo "Waiting 2..."
 sleep 2
+
+# Now blow away kerberos ticket. (?)
+kdestroy -c $KRB5CCNAME
+
 

@@ -22,8 +22,8 @@ echo "Waiting 2..."
 sleep 2
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
-`ssh ${REMDAQACCT}@${SOLDERMACH} source $SCRIPTSDIR/multidispatcher.sh`
-`ssh ${REMDAQACCT}@${WORKERMACH} source $SCRIPTSDIR/multidispatcher.sh`
+`ssh ${REMDAQACCT}@${SOLDERMACH} source $SCRIPTSDIR/dispatcher_multi.sh`
+`ssh ${REMDAQACCT}@${WORKERMACH} source $SCRIPTSDIR/dispatcher_multi.sh`
 echo "Waiting 2..."
 sleep 2
 
