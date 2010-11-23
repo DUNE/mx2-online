@@ -95,7 +95,7 @@ class MonitorDispatcher(Dispatcher):
 		# first ask Condor for names and statuses of its slots.
 		condor_command = "condor_status -avail -format \"%s \" Name -format \"%s\\n\" State"
 		p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
-		status_text = p.read()
+		status_text = p.stdout.read()
 		return_code = p.wait()
 		available_slots = status_text.count("Unclaimed")
 		
@@ -120,7 +120,7 @@ class MonitorDispatcher(Dispatcher):
 			# job status == 1 is an "idle" job.
 			condor_command = "condor_q -constraint \"JobStatus == 1\" -format \"%d \" JobStatus"
 			p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
-			status_text = p.read()
+			status_text = p.stdout.read()
 			p.wait()
 			idle_job_count = len(status_text.split(" "))
 			
@@ -129,7 +129,7 @@ class MonitorDispatcher(Dispatcher):
 			if idle_job_count >= Configuration.params["Monitoring nodes"]["om_maxCondorBacklog"]:
 				condor_command = "condor_q"
 				p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
-				status_text = p.read()
+				status_text = p.stdout.read()
 				p.wait()
 
 				subject = "MINERvA near-online Condor queue is full"
