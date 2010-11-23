@@ -4,7 +4,6 @@
 # -------------------------------------
 # Use this script to restart all the DAQ components running on the minervatest cluster 
 # when running the RC locally and actually using client-server features of the RC.
-# (Basically just for mnvtbonline2.)
 # ASSUMES A VALID KERBEROS TICKET!
 
 . $HOME/mnvdaqrunscripts/defs_minervatest
@@ -32,5 +31,5 @@ source $HOME/mnvdaqrunscripts/acquistionmanager_multi.sh
 
 # Now, relaunch the RC on the LOCAL machine.
 echo "Restarting the Run Control!"
-source $HOME/mnvdaqrunscripts/multiruncontrol26.sh
+source $HOME/mnvdaqrunscripts/runcontrol_multi26.sh
 

@@ -35,5 +35,5 @@ source $SCRIPTSDIR/acquistionmanager_multi.sh
 
 # Now, relaunch the RC
 echo "Restarting the Run Control!"
-source $SCRIPTSDIR/multiruncontrol.sh
+source $SCRIPTSDIR/runcontrol_multi.sh
 

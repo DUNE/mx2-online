@@ -4,7 +4,7 @@
 # mnvtbonline0 - Single node DAQ with hardware.
 if [ $HOSTNAME == "mnvtbonline0.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/singledaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/dispatcher.sh
@@ -15,7 +15,7 @@ fi
 # mnvtbonline1 - Single node DAQ with hardware.
 if [ $HOSTNAME == "mnvtbonline1.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/singledaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/dispatcher.sh
@@ -26,7 +26,7 @@ fi
 if [ $HOSTNAME == "mnvtbonline2.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/rcc26.sh $HOME/rcc.sh
-	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol26.sh $HOME/runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi26.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_multi26.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
@@ -40,7 +40,7 @@ fi
 if [ $HOSTNAME == "minervatest01.fnal.gov" ]; then
 	echo "Not supporting minervatest01 as a MINERvA DAQ PC right now..."
 #	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
-#	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/runcontrol.sh
+#	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/runcontrol.sh
 #	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 #	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/singledaqenv.sh
 #	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/dispatcher.sh
@@ -52,7 +52,7 @@ fi
 if [ $HOSTNAME == "minervatest02.fnal.gov" ]; then
 	echo "Setting up single and multi-node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_single.sh $HOME/acquisitionmanager.sh
-	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
@@ -66,7 +66,7 @@ fi
 # minervatest03 - Multi-node DAQ with no hardware.
 if [ $HOSTNAME == "minervatest03.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_multi.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
@@ -79,7 +79,7 @@ fi
 if [ $HOSTNAME == "minervatest04.fnal.gov" ]; then
 	echo "Setting up single and multi-node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_single.sh $HOME/acquisitionmanager.sh
-	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_multi.sh $HOME/multi_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
@@ -101,7 +101,7 @@ if [ $HOSTNAME == "mnvonline0.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
 fi
@@ -117,7 +117,7 @@ if [ $HOSTNAME == "mnvonline1.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
 fi
@@ -132,7 +132,7 @@ if [ $HOSTNAME == "mnvonline2.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/singleruncontrol.sh $HOME/single_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
 fi
@@ -154,7 +154,7 @@ fi
 # mnvonlinemaster - Multi-node DAQ with no hardware.
 if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 	ln -sf $HOME/mnvdaqrunscripts/restart_all_multi_mnvonline.sh $HOME/hard_daq_restart.sh
@@ -167,7 +167,7 @@ fi
 # mnvonlinebck1 - Multi-node DAQ with no hardware.
 #if [ $HOSTNAME == "mnvonlinebck1.fnal.gov" ]; then
 #	echo "Setting up multi-node scripts on ${HOSTNAME}..."
-#	ln -sf $HOME/mnvdaqrunscripts/multiruncontrol.sh $HOME/runcontrol.sh
+#	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
 #	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 #	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
 #	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh

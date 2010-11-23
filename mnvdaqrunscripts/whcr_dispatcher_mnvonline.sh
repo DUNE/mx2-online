@@ -9,12 +9,6 @@
 # Need to kerberize first. 
 . $HOME/mnvdaqrunscripts/Kerberize
 
-# Kill everything.
-echo "Going to kill remote processes..."
-`ssh ${REMDAQACCT}@${SOLDERMACH} ${SCRIPTSDIR}/allkiller_silent.sh`
-`ssh ${REMDAQACCT}@${WORKERMACH} ${SCRIPTSDIR}/allkiller_silent.sh`
-echo "Waiting 2..."
-sleep 2
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
 `ssh ${REMDAQACCT}@${SOLDERMACH} source ${SCRIPTSDIR}/dispatcher_multi.sh`
