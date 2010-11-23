@@ -25,7 +25,7 @@ fi
 # 	Uses "new" wxPython install method - have to use python2.6
 if [ $HOSTNAME == "mnvtbonline2.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/rcc26.sh $HOME/rcc.sh
+	ln -sf $HOME/mnvdaqrunscripts/configure_RunCo26.sh $HOME/runCoConfig.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi26.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_multi26.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
@@ -66,6 +66,7 @@ fi
 # minervatest03 - Multi-node DAQ with no hardware.
 if [ $HOSTNAME == "minervatest03.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/configure_RunCo.sh $HOME/runCoConfig.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_multi.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
@@ -154,6 +155,7 @@ fi
 # mnvonlinemaster - Multi-node DAQ with no hardware.
 if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/configure_RunCo.sh $HOME/runCoConfig.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
