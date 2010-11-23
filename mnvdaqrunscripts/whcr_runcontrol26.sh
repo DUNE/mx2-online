@@ -12,7 +12,7 @@ then
 fi
 
 # First, clear any old RC clients...
-$HOME/mnvdaqrunscripts/rckiller26.pl
+$HOME/mnvdaqrunscripts/proc_kill_RunCo26.pl
 
 # Restart the acquisition manager, just in case.
 source $HOME/mnvdaqrunscripts/whcr_acquistionmanager26.sh 

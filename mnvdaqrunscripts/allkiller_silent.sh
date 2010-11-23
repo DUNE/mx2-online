@@ -1,10 +1,11 @@
 #!/bin/sh
 
-$HOME/mnvdaqrunscripts/etkiller.pl >& /dev/null
+$HOME/mnvdaqrunscripts/proc_kill_ET.pl >& /dev/null
 sleep 1
-$HOME/mnvdaqrunscripts/daqkiller.pl >& /dev/null
+$HOME/mnvdaqrunscripts/proc_kill_mnvdaq.pl >& /dev/null
 sleep 1
-$HOME/mnvdaqrunscripts/rckiller.pl >& /dev/null
+$HOME/mnvdaqrunscripts/proc_kill_RunCo.pl >& /dev/null
 sleep 1
-$HOME/mnvdaqrunscripts/rdkiller.pl >& /dev/null
+$HOME/mnvdaqrunscripts/proc_kill_ReadDisp.pl >& /dev/null
+sleep 1
 

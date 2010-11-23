@@ -9,11 +9,15 @@
 . $HOME/mnvdaqrunscripts/defs_mnvonline
 
 echo "Going to kill all ET processes on local master..."
-$SCRIPTSDIR/etkiller.pl
+$SCRIPTSDIR/proc_kill_ET.pl
+echo "Waiting 1..."
+sleep 1
+echo "Going to kill all minervadaq processes on local master..."
+$SCRIPTSDIR/proc_kill_mnvdaq.pl
 echo "Waiting 1..."
 sleep 1
 echo "Going to kill the Run Control on local master..."
-$SCRIPTSDIR/mnvdaqrunscripts/rckiller.pl
+$SCRIPTSDIR/proc_kill_RunCo.pl
 echo "Waiting 1..."
 sleep 1
 

@@ -1,19 +1,19 @@
 #!/bin/sh
 
 echo "Going to kill all ET processes..."
-$HOME/mnvdaqrunscripts/etkiller.pl
+$HOME/mnvdaqrunscripts/proc_kill_ET.pl
 echo "Waiting..."
 sleep 1
 echo "Going to kill all DAQ processes..."
-$HOME/mnvdaqrunscripts/daqkiller.pl
+$HOME/mnvdaqrunscripts/proc_kill_mnvdaq.pl
 echo "Waiting..."
 sleep 1
 echo "Going to kill the Run Control..."
-$HOME/mnvdaqrunscripts/rckiller.pl
+$HOME/mnvdaqrunscripts/proc_kill_RunCo.pl
 echo "Waiting..."
 sleep 1
 echo "Going to kill the Dispatcher..."
-$HOME/mnvdaqrunscripts/rdkiller.pl
+$HOME/mnvdaqrunscripts/proc_kill_ReadDisp.pl
 echo "Waiting..."
 sleep 1
 

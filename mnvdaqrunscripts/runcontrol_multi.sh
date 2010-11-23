@@ -12,7 +12,7 @@ then
 fi
 
 # First, clear any old RC clients...
-$HOME/mnvdaqrunscripts/rckiller.pl
+$HOME/mnvdaqrunscripts/proc_kill_RunCo.pl
 
 # Now, start the RC
 pushd ${RCROOT}/frontend >& /dev/null

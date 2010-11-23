@@ -9,11 +9,11 @@
 . $HOME/mnvdaqrunscripts/Kerberize
 
 echo "Going to kill all ET processes..."
-`ssh ${REMDAQACCT}@${MASTERMACH} ${SCRIPTSDIR}/etkiller.pl`
+`ssh ${REMDAQACCT}@${MASTERMACH} ${SCRIPTSDIR}/proc_kill_ET.pl`
 echo "Waiting 1..."
 sleep 1
 echo "Going to kill the Dispatcher..."
-`ssh ${REMDAQACCT}@${MASTERMACH} ${SCRIPTSDIR}/rdkiller.pl`
+`ssh ${REMDAQACCT}@${MASTERMACH} ${SCRIPTSDIR}/proc_kill_ReadDisp.pl`
 echo "Waiting 1..."
 sleep 1
 echo "Going to kill remote processes..."

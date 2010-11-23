@@ -1,16 +1,21 @@
 #!/bin/sh
 
+# Use this script to restart the RunControl on the mnvonline or minervatest cluster when 
+# running "locally" (either at the terminal or via ssh'ed x-forwarding) and a single-node DAQ.
+
+. $HOME/mnvdaqrunscripts/defs_standardpaths
+
 if test -z "$DAQROOT"
 then
 	echo "No DAQROOT defined.  Sourcing the setup script..."
-	source $HOME/mnvdaqrunscripts/setupdaqenv.sh /work/software/mnvsingle/mnvdaq
+	source $HOME/mnvdaqrunscripts/setupdaqenv.sh $SINGLEDAQ
 fi
 
 # First, clear any old RC clients...
-$HOME/mnvdaqrunscripts/rckiller.pl
+$HOME/mnvdaqrunscripts/proc_kill_RunCo.pl
 
 # Now, start the RC
-pushd /work/software/mnvruncontrol/frontend
+pushd ${RCROOT}/frontend
 python RunControl.py &
 popd
 echo "If you get a socket binding error, just close the RC and wait a minute and then try again."
