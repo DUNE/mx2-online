@@ -178,7 +178,7 @@ if [ $HOSTNAME == "mnvnearline1.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/find_om_processes.sh $HOME/find_om_processes.sh
 	ln -sf $HOME/mnvdaqrunscripts/nearlinekiller.pl $HOME/kill_all.pl
 	ln -sf $HOME/mnvdaqrunscripts/cvs_setup.sh $HOME/cvs_setup.sh
-	ln -sf $HOME/mnvdaqrunscripts/nearline_restart.sh $HOME/hard_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/restart_all_nearline.sh $HOME/hard_restart.sh
 fi
 
 
