@@ -311,7 +311,7 @@ else:
 							continue
 						
 						# lists are trickier
-						if Configuration.types[current_section][param] != list:
+						if Configuration.types[current_section][param] not in (list, dict):
 							print "Changing value for '%s'." % param
 							print "Old value: ", Configuration.params[current_section][param]
 							print "Enter new value (just press 'Enter' to cancel):"
