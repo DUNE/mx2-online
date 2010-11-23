@@ -929,6 +929,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			xrc.XRCCTRL(self.frame, "status_trigger_time_label").SetLabel( "time (%s):" % time.strftime("%Z") )
 			xrc.XRCCTRL(self.frame, "status_trigger_time").SetLabel( time.strftime("%H:%M:%S", time.localtime(status["current_gate"]["time"])) )
 			
+			self.alert_thread.TriggerUpdate()
+			
 			update_event = Events.UpdateProgressEvent()
 #			update_event.progress = (status["current_gate"]["number"], self.status["configuration"].num_gates)
 #			update_event.text = "Running:\nGate %d/%d" % (status["current_gate"]["number"], self.status["configuration"].num_gates)
@@ -982,13 +984,18 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		# update the 'status' areas at the bottom
 		if "running" in status:
-			self.status["running"] = status["running"]
 			if status["running"] is None:
 				status_text = "TRANSITION"
-			elif status["running"] == True:
-				status_text = "RUNNING"
 			elif status["running"] == False:
 				status_text = "IDLE"
+			elif status["running"] == True:
+				
+				status_text = "RUNNING"
+			
+			# should stop measuring 'last trigger' updates
+			# if we're not actually running.
+			if status["running"] != True:
+				self.alert_thread.TriggerUpdate(turn_off=True)
 			
 			# a right-facing triangle (like a "play" symbol)
 			# or a square (like a "stop" symbol), respectively
@@ -999,8 +1006,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			xrc.XRCCTRL(self.frame, "status_symbol").SetLabel(status_symbol)
 
 			if "configuration" in status:
-				run = str(status["configuration"].run) # if status["running"] else "-"
-				subrun = str(status["configuration"].subrun) # if status["running"] else "-"
+				run = str(status["configuration"].run) 
+				subrun = str(status["configuration"].subrun) 
 				
 				xrc.XRCCTRL(self.frame, "status_runinfo_run").SetLabel(run)
 				xrc.XRCCTRL(self.frame, "status_daq_run").SetLabel(run)
@@ -1504,6 +1511,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			self.status["running"] = False
 			wx.PostEvent(self, Events.StatusUpdateEvent(status=self.status))
 		else:
+			# the baseline time that trigger updates ought to be measured from
+			# should be when the run starts.  that's now.
+			self.alert_thread.TriggerUpdate()
 			self.logger.info("Startup sequence initiated on DAQ.")
 		
 	def StopRunning(self):

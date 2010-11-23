@@ -212,13 +212,18 @@ class AlertThread(threading.Thread):
 	""" A custom thread dedicated to keeping the user
 	    up-to-date on what's going on in the run control.
 	    
-	    It's currently used for two purposes:
+	    It's currently used for three purposes:
 	      (a) to manage incoming Alerts, which require
 	          recurring notifications to the frontend
 	      (b) to send events to the frontend when the
 	          progress gauge is in "indeterminate" mode
 	          ('pulse' events need to be sent at regular
-	          intervals to get motion from the little bar). """
+	          intervals to get motion from the little bar).
+	      (c) check how long it's been since the last trigger
+	          notification was received.  If it has been
+	          longer than the interval specified in the
+	          Configuration, an alert is generated to make
+	          sure that the shifter is paying attention. """
 	          
 	def __init__(self, parent_app):
 		threading.Thread.__init__(self)
@@ -241,6 +246,9 @@ class AlertThread(threading.Thread):
 		self._last_blink = 0
 		self._last_pulse = 0
 		
+		self._last_trigger = None
+		self._trigger_alert_id = None
+		
 		self.start()
 
 	def run(self):
@@ -252,6 +260,22 @@ class AlertThread(threading.Thread):
 			# if the place to send the alert no longer exists, then this thread is pointless.
 			if not self._parent_app:
 				return
+				
+			# check if we should be creating a "no triggers" alert
+			# (only if the config says to do it,
+			#  the appropriate amount of time has elapsed,
+			#  and we haven't already created one)
+			trigger_interval = None if self._last_trigger is None else (time.time() - self._last_trigger) / 60.
+			if Configuration.params["Front end"]["maxTriggerInterval"] > 0 \
+			   and self._last_trigger is not None \
+			   and self._parent_app.in_control \
+			   and trigger_interval > Configuration.params["Front end"]["maxTriggerInterval"] \
+			   and self._trigger_alert_id is None:
+				alert = Alert.Alert(notice="No triggers have been received for the last %d minutes.  Is this what you're expecting?  (Is the beam down?)" % trigger_interval,
+				                    severity=Alert.WARNING)
+				self._trigger_alert_id = alert.id
+				self.NewAlert(alert)
+				                           
 
 			# if there's nothing to do, just keep looping.
 			if self._current_alert is None \
@@ -342,6 +366,18 @@ class AlertThread(threading.Thread):
 		log_method = { Alert.WARNING: self._logger.warning,
 		               Alert.ERROR:   self._logger.error }
 		log_method[alert.severity](prefix + alert.notice)
+		
+	def TriggerUpdate(self, turn_off=False):
+		""" Method used to declare a trigger update. """
+
+		if self._trigger_alert_id is not None:
+			self.AcknowledgeAlert(self._trigger_alert_id)
+
+		if turn_off:
+			self._last_trigger = None
+		else:
+			self._last_trigger = time.time()
+			self._trigger_alert_id = None
 			
 	def Abort(self):
 		self.time_to_quit = True
