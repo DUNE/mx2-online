@@ -1,0 +1,7 @@
+# mnvonline cluster defs
+MASTERMACH=mnvonlinemaster.fnal.gov
+SOLDERMACH=mnvonline0.fnal.gov
+WORKERMACH=mnvonline1.fnal.gov
+REMDAQACCT=mnvonline
+SCRIPTDIR=/home/mnvonline/mnvdaqrunscripts
+
