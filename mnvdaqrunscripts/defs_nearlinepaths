@@ -1,5 +1,0 @@
-SINGLEDAQ=/scratch/nearonline/mnvdaq
-MULTIDAQ=/scratch/nearonline/mnvdaq
-RCROOT=/scratch/nearonline/mnvruncontrol
-OMLOGSROOT=/scratch/nearonline/logs
-
