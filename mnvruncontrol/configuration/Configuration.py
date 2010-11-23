@@ -74,7 +74,7 @@ configuration = { "General"          : { "notify_addresses"          : ( Default
                                          "SCBeamFile"                : ( Defaults.SLOWCONTROL_BEAM_FILE,                "'Beam' HW configuration file",                    str   ),
                                          "SCLIFile"                  : ( Defaults.SLOWCONTROL_LI_FILE,                  "'Light injection' HW configuration file",         str   ),
                                          "SCLIDiscriminatorsFile"    : ( Defaults.SLOWCONTROL_LI_DISCRIMINATORS_FILE,   "'LI with discriminators' HW configuration file",  str   ),
-                                         "SCHVthresholds"            : ( Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS,    "Slow control HV warning thresholds (ADC counts)", list  ),
+                                         "SCHVthresholds"            : ( Defaults.SLOWCONTROL_ALLOWED_HV_THRESHOLDS,    "Slow control HV warning thresholds (ADC counts)", dict  ),
                                          "SCperiodThreshold"         : ( Defaults.SLOWCONTROL_ALLOWED_PERIOD_THRESHOLD, "Slow control period warning threshold",           int   ),
                                          "SCHWwriteAttempts"         : ( Defaults.SLOWCONTROL_NUM_WRITE_ATTEMPTS,       "Max number of attempts to write HW",              int   )  },
                   
