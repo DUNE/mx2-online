@@ -1,10 +1,10 @@
 #!/bin/sh
 
-$HOME/mnvdaqrunscripts/etkiller.pl
+$HOME/mnvdaqrunscripts/etkiller.pl >& /dev/null
 sleep 1
-$HOME/mnvdaqrunscripts/daqkiller.pl
+$HOME/mnvdaqrunscripts/daqkiller.pl >& /dev/null
 sleep 1
-$HOME/mnvdaqrunscripts/rckiller.pl
+$HOME/mnvdaqrunscripts/rckiller.pl >& /dev/null
 sleep 1
-$HOME/mnvdaqrunscripts/rdkiller.pl
+$HOME/mnvdaqrunscripts/rdkiller.pl >& /dev/null
 
