@@ -1,20 +1,21 @@
 #!/bin/sh
 
-# Here, we have some possible confusion for a remote $HOME.  
-MASTERMACH=mnvonlinemaster.fnal.gov
-SOLDERMACH=mnvonline0.fnal.gov
-WORKERMACH=mnvonline1.fnal.gov
-REMDAQACCT=mnvonline
-SCRIPTDIR=/home/mnvonline/mnvdaqrunscripts
+# Use this script to restart the dispatchers on the mnvonline cluster 
+# readout nodes when on the mnvonline cluster master node.  Assumes a 
+# valid kerberos ticket!
+
+. $HOME/mnvdaqrunscripts/mnvonline_defs
 
 # Assumes a valid kerberos ticket!
 echo "Going to kill remote processes..."
-`ssh ${REMDAQACCT}@${SOLDERMACH} ${SCRIPTDIR}/allkiller_silent.sh`
-`ssh ${REMDAQACCT}@${WORKERMACH} ${SCRIPTDIR}/allkiller_silent.sh`
+`ssh ${REMDAQACCT}@${SOLDERMACH} ${SCRIPTSDIR}/allkiller_silent.sh`
+`ssh ${REMDAQACCT}@${WORKERMACH} ${SCRIPTSDIR}/allkiller_silent.sh`
+echo "Waiting 2..."
 sleep 2
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
-`ssh ${REMDAQACCT}@${SOLDERMACH} source ${SCRIPTDIR}/multidispatcher.sh`
-`ssh ${REMDAQACCT}@${WORKERMACH} source ${SCRIPTDIR}/multidispatcher.sh`
+`ssh ${REMDAQACCT}@${SOLDERMACH} source ${SCRIPTSDIR}/multidispatcher.sh`
+`ssh ${REMDAQACCT}@${WORKERMACH} source ${SCRIPTSDIR}/multidispatcher.sh`
+echo "Waiting 2..."
 sleep 2
 

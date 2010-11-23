@@ -30,7 +30,7 @@ if [ $HOSTNAME == "mnvtbonline2.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/multiacquisitionmanager26.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller_remote_remoteconsole_minervatest26.sh $HOME/hard_daq_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/remote_restart_all_multi_minervatest.sh $HOME/hard_daq_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_minervatest_dispatcher_restart_hard.sh $HOME/hard_dispatcher_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_minervatest_dispatcher_restart_soft.sh $HOME/soft_dispatcher_restart.sh
 fi
