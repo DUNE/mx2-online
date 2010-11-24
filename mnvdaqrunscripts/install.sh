@@ -145,10 +145,9 @@ if [ $HOSTNAME == "minerva-rc.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/whcr_runcontrol26.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_acquistionmanager26.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_restart_all_daqrc_mnvonline.sh $HOME/hard_restart_daq.sh
 
-	ln -sf $HOME/mnvdaqrunscripts/restart_all_multi_mnvonline.sh $HOME/hard_restart_daq.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_nearline_restart.sh $HOME/hard_restart_monitoring.sh
-	ln -sf $HOME/mnvdaqrunscripts/whcr_allkiller_mnvonline.sh $HOME/hard_restart_all.sh
 
 fi
 
