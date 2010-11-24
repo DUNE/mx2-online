@@ -16,4 +16,8 @@ echo "Going to kill the Dispatcher..."
 $HOME/mnvdaqrunscripts/proc_kill_ReadDisp.pl
 echo "Waiting..."
 sleep 1
+echo "Going to kill the AcquisitionManager..."
+$HOME/mnvdaqrunscripts/proc_kill_AcqMan.pl
+echo "Waiting..."
+sleep 1
 

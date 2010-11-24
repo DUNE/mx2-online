@@ -9,7 +9,7 @@ if [ $HOSTNAME == "mnvtbonline0.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/singledaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+	ln -sf $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC.sh $HOME/kill_all_daqrc.sh
 fi
 
 # mnvtbonline1 - Single node DAQ with hardware.
@@ -45,7 +45,7 @@ if [ $HOSTNAME == "minervatest01.fnal.gov" ]; then
 #	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/singledaqenv.sh
 #	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/dispatcher.sh
 #	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-#	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+#	ln -sf $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC.sh $HOME/kill_all_daqrc.sh
 fi
 
 # minervatest02 - Single & multi-node DAQ with hardware.  
@@ -59,7 +59,7 @@ if [ $HOSTNAME == "minervatest02.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/multi_daqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_multi.sh $HOME/multi_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+	ln -sf $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC.sh.sh $HOME/kill_all_daqrc.sh
 	ln -sf $HOME/mnvdaqrunscripts/singleacquisitionmanager.sh $HOME/acquisitionmanager.sh
 fi
 
@@ -87,7 +87,7 @@ if [ $HOSTNAME == "minervatest04.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/multi_daqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+	ln -sf $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC.sh $HOME/kill_all_daqrc.sh
 	ln -sf $HOME/mnvdaqrunscripts/singleacquisitionmanager.sh $HOME/acquisitionmanager.sh
 fi
 
@@ -100,7 +100,7 @@ if [ $HOSTNAME == "mnvonline0.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+	ln -sf $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC.sh $HOME/kill_all_daqrc.sh
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
@@ -116,7 +116,7 @@ if [ $HOSTNAME == "mnvonline1.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+	ln -sf $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC.sh $HOME/kill_all_daqrc.sh
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
@@ -131,7 +131,7 @@ if [ $HOSTNAME == "mnvonline2.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+	ln -sf $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC.sh $HOME/kill_all_daqrc.sh
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
@@ -148,7 +148,7 @@ if [ $HOSTNAME == "minerva-rc.fnal.gov" ]; then
 
 	ln -sf $HOME/mnvdaqrunscripts/restart_all_multi_mnvonline.sh $HOME/hard_restart_daq.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_nearline_restart.sh $HOME/hard_restart_monitoring.sh
-	ln -sf $HOME/mnvdaqrunscripts/whcr_allkiller_mnvonline26.sh $HOME/hard_restart_all.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_allkiller_mnvonline.sh $HOME/hard_restart_all.sh
 
 fi
 
@@ -172,7 +172,7 @@ fi
 #	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
 #	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 #	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-#	ln -sf $HOME/mnvdaqrunscripts/allkiller.sh $HOME/allkiller.sh
+#	ln -sf $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC.sh $HOME/kill_all_daqrc.sh
 #fi
 
 # mnvnearline1 - Nearonline machine with no DAQ hardware.

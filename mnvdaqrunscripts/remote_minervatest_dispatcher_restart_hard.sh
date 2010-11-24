@@ -9,8 +9,8 @@
 
 # First kill all DAQ stuff (it is useless w/o the dispatchers anyway).
 echo "Going to kill remote processes..."
-`ssh ${REMDAQACCT}@${SOLDERMACH} ${SCRIPTSDIR}/allkiller_silent.sh`
-`ssh ${REMDAQACCT}@${WORKERMACH} ${SCRIPTSDIR}/allkiller_silent.sh`
+`ssh ${REMDAQACCT}@${SOLDERMACH} ${SCRIPTSDIR}/proc_kill_ALLDAQRC_silent.sh`
+`ssh ${REMDAQACCT}@${WORKERMACH} ${SCRIPTSDIR}/proc_kill_ALLDAQRC_silent.sh`
 sleep 2
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
