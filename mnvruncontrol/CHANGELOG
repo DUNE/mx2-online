@@ -1,13 +1,30 @@
 mnvruncontrol -- the MINERvA run control
 ========================================
   Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v5r1  (November 2010)
-  Last update:      November 3, 2010
+  Last revision:    v5r2  (November 2010)
+  Last update:      November 24, 2010
 ========================================
 
 This document briefly summarizes the changes from version to version
 of the MINERvA run control software.  I didn't think to start it
 until most of the way through v4, so it's a bit skimpy below there...
+
+v5r2    - Added front-panel control to force a hardware reload when
+          the next run starts.
+        - The MonitorDispatcher now can be configured to attempt to use
+          a Condor queue to submit its non-'current' DST-making jobs.
+          (Configuration available via frontend/RunControlConfiguration.py.)
+        - By default the run control frontend now issues a warning to
+          the user if no triggers have been reported within a configurable
+          number of minutes of starting a run.  (This behavior can be
+          turned off by setting the 'max trigger interval' to zero.)
+        - The frontend/RunControlConfiguration.py script now has a text-only
+          mode that is used by default when $DISPLAY is not set.
+        - The RC frontend can now be configured not to use sound or 'blinking'
+          for alerts by setting the 'bell' and 'blink interval' parameters
+          to 0 within the Configuration.  (This allows the user to configure
+          the frontend to not attempt to use sound on machines with no sound
+          card.)
 
 v5r1    - Moved rarely used frontend items "Detector type" and "Hardware init
           level" to Configuration.
