@@ -157,10 +157,10 @@ if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal
 	ln -sf $HOME/mnvdaqrunscripts/configure_RunCo.sh $HOME/runCoConfig.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
-	ln -sf $HOME/mnvdaqrunscripts/runcheck.sh $HOME/runcheck.sh
-	ln -sf $HOME/mnvdaqrunscripts/restart_all_multi_mnvonline.sh $HOME/hard_daq_restart.sh
+	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
+	ln -sf $HOME/mnvdaqrunscripts/restart_daq_rc_multi_mnvonline.sh $HOME/restart_daq_rc.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_nearline_restart.sh $HOME/hard_nearline_restart.sh
-	ln -sf $HOME/mnvdaqrunscripts/full_restart_mnvonline.sh $HOME/hard_restart.sh
+#	ln -sf $HOME/mnvdaqrunscripts/full_restart_mnvonline.sh $HOME/hard_restart.sh
 	ln -sf $HOME/mnvdaqrunscripts/remote_mnvonline_dispatcher_restart_hard.sh $HOME/dispatcher_restart.sh
 #	ln -sf $HOME/mnvdaqrunscripts/remote_mnvonline_dispatcher_restart_soft.sh $HOME/soft_dispatcher_restart.sh
 fi
