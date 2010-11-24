@@ -7,6 +7,9 @@
 # Need to kerberize first. 
 source $HOME/mnvdaqrunscripts/Kerberize
 
+# Restart the nearonline... assume the test stand nearonline machine.
+`ssh nearonline@mnvnearline0.fnal.gov source /home/nearonline/mnvdaqrunscripts/restart_nearline.sh`
+
 # Kill all the remote stuff.
 echo "Going to kill remote processes..."
 `ssh ${REMDAQACCT}@${SOLDERMACH} ${SCRIPTSDIR}/proc_kill_ALLDAQRC_silent.sh`
