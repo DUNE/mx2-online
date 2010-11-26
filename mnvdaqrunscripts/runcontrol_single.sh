@@ -2,6 +2,7 @@
 
 # Use this script to restart the RunControl on the mnvonline or minervatest cluster when 
 # running "locally" (either at the terminal or via ssh'ed x-forwarding) and a single-node DAQ.
+# Should also work on the mnvtbonline machines (any machine with standard paths).
 
 . $HOME/mnvdaqrunscripts/defs_standardpaths
 
