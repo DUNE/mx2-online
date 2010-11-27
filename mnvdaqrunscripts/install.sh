@@ -18,7 +18,7 @@ fi
 # 	Uses "new" wxPython install method - have to use python2.6
 if [ $HOSTNAME == "mnvtbonline2.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/configure_RunCo26.sh $HOME/configure_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi26.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_multi26.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
@@ -38,7 +38,7 @@ fi
 # minervatest04 - Single & multi-node DAQ with hardware.  WH14 Test Stand DAQ.  (Single & Worker)
 if [ $HOSTNAME == "minervatest02.fnal.gov" -o $HOSTNAME == "minervatest04.fnal.gov" ]; then
 	echo "Setting up single and multi-node scripts (with hardware) on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/configure_RunCo.sh $HOME/configure_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_single.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
@@ -53,7 +53,7 @@ fi
 # minervatest03 - Multi-node DAQ with no hardware.  WH14 Test Stand DAQ.  (Master)
 if [ $HOSTNAME == "minervatest03.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/configure_RunCo.sh $HOME/configure_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_multi.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
@@ -84,7 +84,7 @@ fi
 # mnvonlinebck1 - Multi-node DAQ with no hardware.  MINERvA Online Cluster.  (Master Backup)
 if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/configure_RunCo.sh $HOME/configure_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
@@ -110,7 +110,7 @@ fi
 if [ $HOSTNAME == "minerva-rc.fnal.gov" ]; then
 	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/whcr_acquistionmanager26.sh $HOME/acquisitionmanager.sh
-	ln -sf $HOME/mnvdaqrunscripts/whcr_configure_RunCo26.sh $HOME/configure_runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_dispatcher_mnvonline.sh $HOME/hard_restart_dispatchers.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_runcontrol26.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
