@@ -24,6 +24,7 @@ if [ $HOSTNAME == "mnvtbonline2.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
 	ln -sf $HOME/mnvdaqrunscripts/restart_all_minervatest26.sh $HOME/hard_restart_all.sh
+	ln -sf $HOME/mnvdaqrunscripts/restart_daq_rc_minervatest26.sh $HOME/hard_restart_daq_rc.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_minervatest_ssh.sh $HOME/hard_restart_dispatchers.sh
 fi
 
