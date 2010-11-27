@@ -37,6 +37,7 @@ fi
 # minervatest04 - Single & multi-node DAQ with hardware.  WH14 Test Stand DAQ.  (Single & Worker)
 if [ $HOSTNAME == "minervatest02.fnal.gov" -o $HOSTNAME == "minervatest04.fnal.gov" ]; then
 	echo "Setting up single and multi-node scripts (with hardware) on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/configure_RunCo.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_single.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
@@ -45,7 +46,7 @@ if [ $HOSTNAME == "minervatest02.fnal.gov" -o $HOSTNAME == "minervatest04.fnal.g
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/multi_daqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_multi.sh $HOME/multi_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
-	ln -sf $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC.sh.sh $HOME/kill_all_daqrc.sh
+	ln -sf $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC.sh $HOME/kill_all_daqrc.sh
 fi
 
 # minervatest03 - Multi-node DAQ with no hardware.  WH14 Test Stand DAQ.  (Master)
