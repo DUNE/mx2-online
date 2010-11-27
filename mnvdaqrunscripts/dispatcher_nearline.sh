@@ -10,9 +10,9 @@ fi
 
 #### ATTENTION: this script needs to be updated for new framework versions!!!
 source /scratch/nearonline/software_releases/${SOFTREL}/setup.sh ${SOFTREL} /scratch/nearonline/software_releases/${SOFTREL}
-pushd /home/nearonline/cmtuser/Minerva_${SOFTREL}/Tools/DaqRecv/cmt/
+pushd /home/nearonline/cmtuser/Minerva_${SOFTREL}/Tools/DaqRecv/cmt/ >& /dev/null
 source ./setup.sh
-popd
+popd >& /dev/null
 
 export PATH=/scratch/nearonline/python/bin:$PATH		# newer version of Python
 export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH		# for log4cpp

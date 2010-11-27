@@ -12,10 +12,13 @@ then
 	source $HOME/mnvdaqrunscripts/setupdaqenv.sh $SINGLEDAQ
 fi
 
-# First, clear any old RC clients...
+# Clear any old RC clients.
 $HOME/mnvdaqrunscripts/proc_kill_RunCo.pl
 
-# Now, start the RC
+# Restart the acquisition manager too.
+source $HOME/mnvdaqrunscripts/acquistionmanager_single.sh
+
+# Now, start the RC.
 pushd ${RCROOT}/frontend
 python RunControl.py &
 popd
