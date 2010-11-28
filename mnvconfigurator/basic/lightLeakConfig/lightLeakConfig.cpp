@@ -30,9 +30,7 @@ log4cpp::Category& root     = log4cpp::Category::getRoot();
 log4cpp::Category& llConfig = log4cpp::Category::getInstance(std::string("llConfig"));
 
 const int NRegisters = 54; // Using v80+ firmware on all FEBs now.
-const int maxHits    = 8;  // maxHits should not be changed independent of the DAQ!
-
-const int febFirmware = 90;
+const int maxHits    = 6;  // maxHits should not be changed independent of the DAQ!
 
 const int tripRegIBP        =  60;
 const int tripRegIBBNFOLL   = 120;
@@ -44,7 +42,7 @@ const int tripRegIFFP2      =   0;
 const int tripRegIBCOMP     =  20;
 const int tripRegVREF       = 165;
 const int tripRegVTH        =   0; // Turn discr. off for light leak checkout.
- const int tripRegPIPEDEL    =  2*maxHits - 1; 
+// const int tripRegPIPEDEL    =  2*maxHits - 1; 
 const int tripRegGAIN       =  11;
 const int tripRegIRSEL      =   3;
 const int tripRegIWSEL      =   3;
@@ -408,10 +406,6 @@ int FEBFPGAWrite(controller *myController, acquire *myAcquire, croc *myCroc,
 		myFeb->SetTripPowerOff(val); //turn the trips on
 		myFeb->SetGateStart(43000);      
 		myFeb->SetGateLength(1702);  
-		//unsigned char previewEnable[] = {0x1};
-		unsigned char previewEnable[] = {0x0};
-		myFeb->SetPreviewEnable(previewEnable);
-
 		if (HVEnableFlag) {
 			//std::cout << "HV Enable Flag is set to ON!\n";
 			val[0]=0x1; 

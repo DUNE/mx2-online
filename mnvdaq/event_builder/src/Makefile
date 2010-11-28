@@ -1,11 +1,12 @@
 CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
-
-#--DEBUG FLAGS--
-#COMPILE_OPTIONS += -DDEBUG_EBTIMING 
-#COMPILE_OPTIONS += -DDEBUG_DECODEBUFFER # CAREFUL!  This dumps a lot into the logs.
+#COMPILE_OPTIONS += -DTHREAD_ME
+#COMPILE_OPTIONS += -DDEBUG_THREAD
+COMPILE_OPTIONS += -DNO_THREAD
+#COMPILE_OPTIONS += -DDEBUG_VERBOSE 
 #COMPILE_OPTIONS += -DDEBUG_BUFFERS
-#COMPILE_OPTIONS += -DDEBUG_BANKHEADER
 #COMPILE_OPTIONS += -DDEBUG_REPORT_EVENT
+#COMPILE_OPTIONS += -DTIME_ME
+#COMPILE_OPTIONS += -DMULTIPC
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
@@ -14,7 +15,6 @@ TARGET=event_builder
 
 LDLIBS += -L$(DAQROOT)/lib -lhardware -levent_structure -L$(ET_LIBROOT)/lib -let
 include $(DAQROOT)/Make.include
-include $(DAQROOT)/Make.options
 
 $(TARGET): $(OBJS)
 	@echo $(OBJS)

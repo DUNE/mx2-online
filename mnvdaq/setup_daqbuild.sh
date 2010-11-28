@@ -17,7 +17,7 @@ echo ---------------------------------------------------------------------------
 
 if [ $LOCALE == 'FNAL' ]
 then
-	export DAQROOT=/work/software/mnvsingle/mnvdaq
+	export DAQROOT=/work/software/mnvonline/mnvdaq
         export CAEN_DIR=/work/software/CAENVMElib
 	export ET_HOME=$DAQROOT/et_9.0/Linux-x86_64-64
 	export ET_LIBROOT=$ET_HOME/Linux-x86_64-64

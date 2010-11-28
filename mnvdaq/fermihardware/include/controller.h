@@ -15,7 +15,6 @@
 /* custom headers here */
 #include "crim.h"
 #include "croc.h"
-#include "log4cppHeaders.h"
 
 /*********************************************************************************
 * Class for creating CAEN VME V2718 Controller objects for use with the 
@@ -25,10 +24,6 @@
 * Gabriel Perdue, The University of Rochester
 *
 **********************************************************************************/
-
-// Further category hierarchy.
-log4cpp::Category& controllerLog = log4cpp::Category::getInstance(std::string("controller"));
-
 
 /*! \class controller
  *
@@ -43,56 +38,33 @@ class controller {
 		CVAddressModifier addressModifier;
 		CVDataWidth dataWidth;
 
-		std::vector<crim*> interfaceModule; /*!< A vector of CROC Interface Module (CRIM) objects. */
-		std::vector<croc*> readOutController;  /*!< A vector of CROC objects. */
-		std::vector<channels*> feChannels;  /*!< A vector of CROC FE channel objects. */
+		std::vector<crim*> interfaceModule; /*!< a vector of CROC interface module objects */
+		std::vector<croc*> readOutController;  /*!< a vector of CROC objects */
 		/*! these are the controller registers for the VME controller */
 		unsigned short status, control, irq, irqMask, input, output,
 			clearOutput, inputMux, inputMuxClear, outPutMux;
 		char firmware[1];
-		int transferBytes, crocVectorLength, crimVectorLength, feChannelsVectorLength, controller_id;
-
-		// log4cpp appender for printing log statements.
-		log4cpp::Appender* ctrlAppender;
+		int transferBytes, crocVectorLength, crimVectorLength, controller_id;
+		// std::ofstream &log_file; /*!<a log file for debugging output */
 
 	public: 
-
 		unsigned short *shortBuffer; /*!<a short buffer for registers*/
 		int handle; /*!<a device handle returned by the initialization function*/
 
 		/*! the specialty constructor */
-		controller(int a, int id, log4cpp::Appender* appender) { 
-			address         = a;
-			addressModifier = cvA24_U_DATA; // default address modifier
-			dataWidth       = cvD16;    // default data width
-			controllerType  = cvV2718;  // this is the only controller board we have
-			bridgeType      = cvA2818;  // this is the only PCI card we have
-			slotNumber      = 0; // by construction 
-			pciSlotNumber   = 0; // link - probably always 0.
-			boardNumber     = 0; // we basically use controller_id for this...
-			handle          = -1;
-			firmware[0]     = 0;
-			controller_id   = id; //an internal ID used for sorting data
-			ctrlAppender    = appender; 
-			controllerLog.setPriority(log4cpp::Priority::DEBUG);
-		};
 		controller(int a, int id) { 
-			address         = a;
-			addressModifier = cvA24_U_DATA; // default address modifier
-			dataWidth       = cvD16;    // default data width
-			controllerType  = cvV2718;  // this is the only controller board we have
-			bridgeType      = cvA2818;  // this is the only PCI card we have
-			slotNumber      = 0; // by construction 
-			pciSlotNumber   = 0; // link - probably always 0.
-			boardNumber     = 0; // we basically use controller_id for this...
-			handle          = -1;
-			firmware[0]     = 0;
-			controller_id   = id; //an internal ID used for sorting data
-			ctrlAppender = new log4cpp::FileAppender("default", "/work/data/logs/config.txt");
-			ctrlAppender->setLayout(new log4cpp::BasicLayout());
-			log4cpp::Category::getRoot().addAppender(ctrlAppender);
-			log4cpp::Category::getRoot().setPriority(log4cpp::Priority::DEBUG);
-			controllerLog.setPriority(log4cpp::Priority::DEBUG);
+			address = a;
+			addressModifier = cvA24_U_DATA; //default address modifier
+			dataWidth = cvD16; //default data width
+			controllerType = cvV2718;  //this is the only controller board we have
+			bridgeType = cvA2818;  //this is the only PCI card we have
+			slotNumber=0; //by construction 
+			pciSlotNumber=0; //don't really know at the moment, will have to check & fix (link)
+			boardNumber = 0;
+			handle = -1;
+			firmware[0]=0;
+			controller_id = id; //an internal ID used for sorting data 
+
 		};
 
 		/*! the specialty destructor */
@@ -103,9 +75,6 @@ class controller {
 			for (std::vector<croc*>::iterator p=readOutController.begin();
 				p!=readOutController.end();p++) delete (*p);
 			readOutController.clear();
-			for (std::vector<channels*>::iterator p=feChannels.begin();
-				p!=feChannels.end();p++) delete (*p);
-			feChannels.clear();
 		};
 
 		/*! Get functions */
@@ -122,13 +91,9 @@ class controller {
 		void MakeCrim(unsigned int a, int b); //make up each interface module
 		void MakeCroc(unsigned int a, int b); //make up each croc
 
-		// By convention (& hopefully construction), the first CRIM (indexed to 1) 
-		// will always be the MASTER CRIM (the interrupt handler we poll or IACK).
-		crim *GetCrim();       // Return the pointer to the *first* CRIM.
-		crim *GetCrim(int a);  // Return the pointer to the requested CRIM.
-		croc *GetCroc(int a);  // Return the pointer to the requested CROC.
-		std::vector<croc*> inline *GetCrocVector() {return &readOutController;};
-		std::vector<crim*> inline *GetCrimVector() {return &interfaceModule;};
+		crim *GetCrim();       //return the pointer to the *first* crim
+		crim *GetCrim(int a);  //return the pointer to the requested crim
+		croc *GetCroc(int a);  //return the pointer to the requested croc
 
 		void inline SetDataWidth(CVDataWidth a) {dataWidth=a;}; 
 
@@ -142,11 +107,7 @@ class controller {
 		void SetCrocVectorLength() {crocVectorLength = readOutController.size();};
 		int inline GetCrimVectorLength() {return crimVectorLength;};
 		void SetCrimVectorLength() {crimVectorLength = interfaceModule.size();};
-		int inline GetFEChannelsVectorLength() {return feChannelsVectorLength;};
-		void SetFEChannelsVectorLength() {feChannelsVectorLength = interfaceModule.size();};
 		
 		void ReportError(int error);
-
-
 };
 #endif

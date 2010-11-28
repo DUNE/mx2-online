@@ -74,33 +74,33 @@ typedef enum crimTimingFrequencies { //cast this to unsigned short
  *
  */
 typedef enum crimRegisters { //cast this to unsigned int
-	crimMemory                 = 0x0000,
-	crimInput                  = 0x2000,
-	crimResetFIFO              = 0x2008,
-	crimSendMessage            = 0x2010,
-	crimStatus                 = 0x2020,
-	crimClearStatus            = 0x2030,
-	crimSendSynch              = 0x2040,
-	crimDPMPointer             = 0x2050,
-	crimDecodedCommand         = 0x2060,
-	crimControl                = 0x2070,
-	crimTimingSetup            = 0xC010,
-	crimSGATEWidth             = 0xC020,
-	crimTCALBDelay             = 0xC030,
-	crimSoftwareTrigger        = 0xC040,
-	crimSoftwareTCALB          = 0xC050,
-	crimSoftwareSGATE          = 0xC060,
-	crimSequencerControlLatch  = 0xC070, // Register for external trigger modes (cosmic - v5 firmware only) 
-	crimSoftwareCNRST          = 0xC080,
-	crimTimingOverlapViolation = 0xC090, // Readonly check for timing signal overlaps (obsolete)
-	crimTestRegister           = 0xC0A0, // CG, Synch Test facility?
-	crimGateTimeWordLow        = 0xC0B0, // MINOS SGATE least significant bits
-	crimGateTimeWordHigh       = 0xC0C0, // MINOS SGATE most significant bits (total 28 meaningful bits)
-	crimInterruptMask          = 0xF000,
-	crimInterruptStatus        = 0xF010,
-	crimClearInterrupts        = 0xF020,
-	crimInterruptConfig        = 0xF040,
-	crimInterruptVectors       = 0xF800  // 16 bytes
+	crimMemory           = 0x0000,
+	crimInput            = 0x2000,
+	crimResetFIFO        = 0x2008,
+	crimSendMessage      = 0x2010,
+	crimStatus           = 0x2020,
+	crimClearStatus      = 0x2030,
+	crimSendSynch        = 0x2040,
+	crimDPMPointer       = 0x2050,
+	crimDecodedCommand   = 0x2060,
+	crimControl          = 0x2070,
+	crimTimingSetup      = 0xC010,
+	SGATEWidth           = 0xC020,
+	TCALBDelay           = 0xC030,
+	TriggerPulse         = 0xC040,
+	TCALBPulse           = 0xC050,
+	SGATEStartStop       = 0xC060,
+	SequencerControlLatch = 0xC070, // Register added for external trigger modes in CRIM v4.x+ firmware
+	CNRSTPulse           = 0xC080,
+	TimingOverlapViolation = 0xC090, // Readonly check for timing signal overlaps in CRIM v4.5(?)+ firmware
+	TestRegister         = 0xC0A0, // CG, Synch Test facility?
+	GateTimeWordLow      = 0xC0B0, // MINOS SGATE least significant bits
+	GateTimeWordHigh     = 0xC0C0, // MINOS SGATE most significant bits (total 28 meaningful bits)
+	crimInterruptMask    = 0xF000,
+	crimInterruptStatus  = 0xF010,
+	crimClearInterrupts  = 0xF020,
+	crimInterruptConfig  = 0xF040,
+	crimInterruptVectors = 0xF800  // 16 bytes
 };
 
 
