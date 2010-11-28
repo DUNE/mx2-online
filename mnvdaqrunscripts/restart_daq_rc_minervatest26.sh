@@ -10,7 +10,7 @@
 
 # Kill all the local stuff.
 echo "Going to kill local processes..."
-source $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC_silent.sh
+source $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC26_silent.sh
 
 # Kill all the remote stuff.
 echo "Going to kill remote processes..."
