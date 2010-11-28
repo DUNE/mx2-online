@@ -9,7 +9,7 @@ $HOME/mnvdaqrunscripts/proc_kill_mnvdaq.pl
 echo "Waiting..."
 sleep 1
 echo "Going to kill the Run Control..."
-$HOME/mnvdaqrunscripts/proc_kill_RunCo.pl
+$HOME/mnvdaqrunscripts/proc_kill_RunCo26.pl
 echo "Waiting..."
 sleep 1
 echo "Going to kill the Dispatcher..."
