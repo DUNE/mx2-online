@@ -8,6 +8,10 @@
 
 . $HOME/mnvdaqrunscripts/defs_minervatest
 
+# Kill all the local stuff.
+echo "Going to kill local processes..."
+source $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC_silent.sh
+
 # Kill all the remote stuff.
 echo "Going to kill remote processes..."
 echo "Killing processes on the master node..."
@@ -21,6 +25,8 @@ sleep 1
 
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
+echo "Restarting processes on the master node..."
+`ssh ${REMDAQACCT}@${MASTERMACH} source ${SCRIPTSDIR}/acquisitionmanager_multi.sh`
 echo "Restarting processes on the soldier node..."
 `ssh ${REMDAQACCT}@${SOLDERMACH} source ${SCRIPTSDIR}/dispatcher_multi.sh`
 echo "Restarting processes on the worker node..."
@@ -28,7 +34,6 @@ echo "Restarting processes on the worker node..."
 echo "Waiting..."
 sleep 1
 
-# Restart acquisition manager in the RC script...
 # Now, relaunch the RC.
 echo "Restarting the Run Control!"
 source $HOME/mnvdaqrunscripts/runcontrol_multi26.sh 

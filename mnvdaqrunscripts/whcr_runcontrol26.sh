@@ -14,9 +14,6 @@ fi
 # First, clear any old RC clients...
 $HOME/mnvdaqrunscripts/proc_kill_RunCo26.pl
 
-# Restart the acquisition manager, just in case.
-source $HOME/mnvdaqrunscripts/whcr_acquistionmanager26.sh 
-
 # Now, start the RC
 pushd ${RCROOT}/frontend
 python2.6 RunControl.py &

@@ -20,7 +20,7 @@ if [ $HOSTNAME == "mnvtbonline2.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi26.sh $HOME/runcontrol.sh
-	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_multi.sh $HOME/acquisitionmanager.sh
+	ln -sf $HOME/mnvdaqrunscripts/acquisitionmanager_multi.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
 	ln -sf $HOME/mnvdaqrunscripts/restart_all_minervatest26.sh $HOME/hard_restart_all.sh
@@ -39,7 +39,7 @@ fi
 if [ $HOSTNAME == "minervatest02.fnal.gov" -o $HOSTNAME == "minervatest04.fnal.gov" ]; then
 	echo "Setting up single and multi-node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/configure_runcontrol.sh $HOME/configure_runcontrol.sh
-	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_single.sh $HOME/acquisitionmanager.sh
+	ln -sf $HOME/mnvdaqrunscripts/acquisitionmanager_single.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
@@ -55,7 +55,7 @@ if [ $HOSTNAME == "minervatest03.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
-	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_multi.sh $HOME/acquisitionmanager.sh
+	ln -sf $HOME/mnvdaqrunscripts/acquisitionmanager_multi.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
 	ln -sf $HOME/mnvdaqrunscripts/restart_all_minervatest.sh $HOME/hard_restart_all.sh
@@ -76,7 +76,7 @@ if [ $HOSTNAME == "mnvonline0.fnal.gov" -o $HOSTNAME == "mnvonline1.fnal.gov" -o
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_single.sh $HOME/single_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_single.sh $HOME/single_dispatcher.sh
-	ln -sf $HOME/mnvdaqrunscripts/acquistionmanager_single.sh $HOME/single_acquistionmanager.sh
+	ln -sf $HOME/mnvdaqrunscripts/acquisitionmanager_single.sh $HOME/single_acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/singledaqenv.sh $HOME/single_daqenv.sh
 fi
 
@@ -109,7 +109,7 @@ fi
 # minerva-rc - Main MINERvA Control Room PC in WH12.
 if [ $HOSTNAME == "minerva-rc.fnal.gov" ]; then
 	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/whcr_acquistionmanager.sh $HOME/acquisitionmanager.sh
+#	ln -sf $HOME/mnvdaqrunscripts/whcr_acquisitionmanager.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_dispatcher_mnvonline.sh $HOME/hard_restart_dispatchers.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_runcontrol26.sh $HOME/runcontrol.sh

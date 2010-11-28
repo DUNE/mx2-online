@@ -14,9 +14,6 @@ fi
 # Clear any old RC clients.
 $HOME/mnvdaqrunscripts/proc_kill_RunCo.pl
 
-# Restart the acquisition manager too.
-source $HOME/mnvdaqrunscripts/acquistionmanager_multi.sh
-
 # Now, start the RC.
 pushd ${RCROOT}/frontend >& /dev/null
 python RunControl.py &
