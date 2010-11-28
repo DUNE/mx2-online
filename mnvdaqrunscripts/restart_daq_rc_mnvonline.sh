@@ -10,22 +10,25 @@
 
 # Kill all the remote stuff.
 echo "Going to kill remote processes..."
+echo "Killing processes on the master node..."
+`ssh ${REMDAQACCT}@${MASTERMACH} ${SCRIPTSDIR}/proc_kill_ALLDAQRC_silent.sh`
+echo "Killing processes on the soldier node..."
 `ssh ${REMDAQACCT}@${SOLDERMACH} ${SCRIPTSDIR}/proc_kill_ALLDAQRC_silent.sh`
+echo "Killing processes on the worker node..."
 `ssh ${REMDAQACCT}@${WORKERMACH} ${SCRIPTSDIR}/proc_kill_ALLDAQRC_silent.sh`
-echo "Waiting 2..."
-sleep 2
+echo "Waiting..."
+sleep 1
 
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
+echo "Restarting processes on the soldier node..."
 `ssh ${REMDAQACCT}@${SOLDERMACH} source ${SCRIPTSDIR}/dispatcher_multi.sh`
+echo "Restarting processes on the worker node..."
 `ssh ${REMDAQACCT}@${WORKERMACH} source ${SCRIPTSDIR}/dispatcher_multi.sh`
-echo "Waiting 2..."
-sleep 2
+echo "Waiting..."
+sleep 1
 
-# Restart acquisition manager.
-$HOME/mnvdaqrunscripts/proc_kill_AcqMan.pl
-source $HOME/mnvdaqrunscripts/acquistionmanager_multi.sh
-
+# Restart acquisition manager in the RC script...
 # Now, relaunch the RC.
 echo "Restarting the Run Control!"
 source $HOME/mnvdaqrunscripts/runcontrol_multi.sh 
