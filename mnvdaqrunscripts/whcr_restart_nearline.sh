@@ -8,7 +8,3 @@ source $HOME/mnvdaqrunscripts/Kerberize
 # Restart the nearonline...
 `ssh nearonline@mnvnearline1.fnal.gov source /home/nearonline/mnvdaqrunscripts/restart_nearline.sh`
 
-# Now blow away kerberos ticket. (?)
-kdestroy -c $KRB5CCNAME
-
-
