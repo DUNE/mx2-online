@@ -25,6 +25,7 @@ import mnvruncontrol.configuration.Logging
 
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Configuration
+from mnvruncontrol.configuration import Defaults
 
 from mnvruncontrol.backend import Dispatcher
 from mnvruncontrol.backend import PostOffice
@@ -139,7 +140,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 					response.subject = "request_response"
 					response.success = status
 					
-		self.logger.debug("response message:\n%s", response)
+#		self.logger.debug("response message:\n%s", response)
 		self.postoffice.Send(response)
 
 	def daq_status(self):
@@ -262,7 +263,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		self.logger.debug("Configuring LI using parameters: %s, %s", li_level, led_groups)
 		
 		if self.li_box is None:
-			self.li_box = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
+			self.li_box = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"], echocmds=True)
 		
 		need_LI = True
 		if li_level == MetaData.LILevels.ONE_PE:
