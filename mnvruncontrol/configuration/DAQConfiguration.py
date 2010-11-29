@@ -19,6 +19,13 @@ from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
 
+# these keys are special because the value stored
+# in the last run for them is irrelevant.  all that matters is
+# what's in the Configuration.
+_exceptions = { "detector" : MetaData.DetectorTypes[Configuration.params["Master node"]["detectorType"]],
+                "hw_init"  : MetaData.HardwareInitLevels[Configuration.params["Master node"]["hwInitLevel"]],
+                "num_febs" : Configuration.params["Hardware"]["num_FEBs"] }
+
 class DAQConfiguration:
 	""" Wraps the run-time detector configuration. """
 
@@ -86,12 +93,16 @@ class DAQConfiguration:
 #		print isinstance(self.auto_close, bool) 
 #		print isinstance(self.auto_start_series, bool)
 
+		exceptions_pass = True
+		for key in _exceptions:
+			if not self.__dict__[key] == _exceptions[key]:
+				exceptions_pass = False
+				break
 
-		return     (isinstance(self.run, int) and self.run > 0) \
+		return exceptions_pass \
+		       and (isinstance(self.run, int) and self.run > 0) \
 		       and (isinstance(self.subrun, int) and self.subrun > 0) \
 		       and (isinstance(self.et_port, int) and self.et_port - Configuration.params["Socket setup"]["etPortBase"] in range(Configuration.params["Socket setup"]["numETports"])) \
-		       and self.hw_init == Configuration.params["Master node"]["hwInitLevel"] \
-		       and self.detector == Configuration.params["Master node"]["detectorType"] \
 		       and isinstance(self.is_single_run, bool) \
 		       and (isinstance(self.num_gates, int) and self.num_gates > 0) \
 		       and self.run_mode in MetaData.RunningModes \
@@ -125,16 +136,10 @@ class DAQConfiguration:
 		except anydbm.error:
 			pass
 			
-		# these two keys are special because the value stored
-		# in the last run for them is irrelevant.  all that matters is
-		# what's in the Configuration.
-		exceptions = { "detector": MetaData.DetectorTypes[Configuration.params["Master node"]["detectorType"]],
-		               "hw_init" : MetaData.HardwareInitLevels[Configuration.params["Master node"]["hwInitLevel"]] }
-
 		has_all_keys = True
 		for key in DAQConfiguration.default_config.keys():
-			if key in exceptions:
-				self.__dict__[key] = exceptions[key]
+			if key in _exceptions:
+				self.__dict__[key] = _exceptions[key]
 			elif db is not None and db.has_key(key) and type(db[key]) == type(DAQConfiguration.default_config[key]):
 				self.__dict__[key] = db[key]
 			else:

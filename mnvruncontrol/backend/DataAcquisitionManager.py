@@ -629,7 +629,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    
 		assert len(self.errors) == 0
 		assert configuration.Validate()
-		    
+		
 		self.configuration = configuration
 		
 		# get the run series ready
