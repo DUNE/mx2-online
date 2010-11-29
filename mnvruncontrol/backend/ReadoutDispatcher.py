@@ -286,6 +286,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		self.li_box.LED_groups = led_groups.description
 
 		try:
+			self.li_box.reset()
 			self.li_box.write_configuration()
 		except LIBox.Error as e:
 			self.logger.error("The LI box is not responding!  Check the cable and serial port settings.")
@@ -300,9 +301,9 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		    file.  Returns True on success, False if there is no such file,
 		    and the exception itself if one is raised during loading. """
 		hwfile = Configuration.params["Readout nodes"][hw_config.code] 
-		self.logger.info("Manager wants to load slow control configuration file: '%s'.", hw_config.description)
-		
 		fullpath = "%s/%s" % (Configuration.params["Readout nodes"]["SCfileLocation"], hwfile)
+	
+		self.logger.info("Manager wants to load slow control configuration file: '%s' at location '%s'", hw_config.description, fullpath)
 		
 		if not os.path.isfile(fullpath):
 			self.logger.warning("Specified slow control configuration file does not exist: %s", fullpath)
