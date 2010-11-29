@@ -84,6 +84,7 @@ fi
 # mnvonlinebck1 - Multi-node DAQ with no hardware.  MINERvA Online Cluster.  (Master Backup)
 if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal.gov" ]; then
 	echo "Setting up multi-node scripts on ${HOSTNAME}..."
+	ln -sf $HOME/mnvdaqrunscripts/acquisitionmanager_multi.sh $HOME/acquisitionmanager.sh
 	ln -sf $HOME/mnvdaqrunscripts/configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
