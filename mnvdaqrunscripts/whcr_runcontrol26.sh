@@ -11,6 +11,9 @@ then
 	source $HOME/mnvdaqrunscripts/setupdaqenv.sh $MULTIDAQ
 fi
 
+# Need to kerberize first. 
+. $HOME/mnvdaqrunscripts/Kerberize
+
 # First, clear any old RC clients...
 $HOME/mnvdaqrunscripts/proc_kill_RunCo26.pl
 
