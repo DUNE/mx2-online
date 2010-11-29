@@ -514,7 +514,7 @@ class SCHWSetupThread(threading.Thread):
 			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=e, state="hw_error"))
 		else:
 			self.dispatcher.logger.info("HW file %s was loaded.  Informing manager." % self.filename)
-			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=None, state="ready"))
+			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=None, state="hw_ready"))
 		
 
 
