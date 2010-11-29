@@ -423,7 +423,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		elif message.state == "hw_ready":
 			self.remote_nodes[message.sender].status = RemoteNode.OK
-			self.logger.debug("    ==> '%s' node reports it's ready.", message.sender)
+			self.logger.debug("    ==> '%s' node reports it's finished loading hardware.", message.sender)
 
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
 			
@@ -1134,12 +1134,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		if self.configuration.hw_config != MetaData.HardwareConfigurations.NOFILE \
 		   and ( self.configuration.hw_config != self.last_HW_config or self.configuration.force_hw_reload ):
 			for node_name in self.remote_nodes:
-				node = self.remote_nodes[node_name]
-				if node.type == RemoteNode.READOUT:
-					node.status = RemoteNode.IDLE
-					node.hw_init = False
+				if self.remote_nodes[node_name].type == RemoteNode.READOUT:
+					self.remote_nodes[node_name].status = RemoteNode.IDLE
+					self.remote_nodes[node_name].hw_init = False
 			
 			try:
+				self.logger.info("Instructing readout nodes to initialize hardware...")
 				responses = self.NodeSendWithResponse(PostOffice.Message(subject="readout_directive", directive="hw_config", hw_config=self.configuration.hw_config, mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10)
 			except DAQErrors.NodeError:
 				self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
@@ -1147,15 +1147,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 			for response in responses:
 				if response.success == True:
-					node.hw_init = True
-					node.status = ReadoutNode.OK
+					self.remote_nodes[response.sender].hw_init = True
+					self.logger.info("  ==> '%s' node has initialized.", response.sender)
 				else:
 					if response.success == False:
 						self.NewAlert( notice="Hardware configuration file for configuration '%s' could not be found on the '%s' readout node..." % (self.configuration.hw_config, response.sender), severity=Alert.ERROR )
 					elif isinstance(response.success, Exception):
 						self.NewAlert( notice="Error configuring hardware on '%s' node.  Error text:\n%s" % (response.sender, response.success), severity=Alert.ERROR )
 					
-					node.status = RemoteNode.ERROR
+					self.remote_nodes[response.sender].status = RemoteNode.ERROR
 					
 					# this will force HW to be reloaded next time a subrun is started
 					self.last_HW_config = None
@@ -1187,11 +1187,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			for node_name in self.remote_nodes:
 				node = self.remote_nodes[node_name]
 				if node.type == RemoteNode.READOUT:
-					node.status = RemoteNode.OK
 					node.hw_init = True
 
-			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
-			
 			self.last_HW_config = self.configuration.hw_config
 			self.logger.info("   ==> No HW configuration necessary.")
 			return True
@@ -1220,9 +1217,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			return False
 
 		for response in responses:
-			if response.success:
-				self.remote_nodes[response.sender].status = RemoteNode.OK
-			else:
+			if not response.success:
 				self.NewAlert( notice="The LI box on the '%s' node could not be configured!" % response.sender, severity=Alert.ERROR )
 				if isinstance(response.success, Exception):
 					self.logger.error("LI error text:\n%s", response.success)
@@ -1512,6 +1507,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		nodes_checked = 0
 		problem_boards = []
 		for response in responses:
+			if isinstance(response.sc_board_list, Exception):
+				self.NewAlert(notice="The '%s' node reports a slow control error while trying to read the boards.  Error text: '%s'" % (response.sender, response.sc_board_list), severity=Alert.ERROR)
+				self.StopDataAcquisition(do_auto_start=False)
+				return
+
 			if len(response.sc_board_list) == 0:
 				self.NewAlert(notice="The '%s' node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty..." % response.sender, severity=Alert.WARNING)
 			
