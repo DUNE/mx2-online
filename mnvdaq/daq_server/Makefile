@@ -1,13 +1,21 @@
 CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
-
-#COMPILE_OPTIONS += -DDEBUG_GENERAL 
+COMPILE_OPTIONS = -DTAKE_DATA 
+#COMPILE_OPTIONS += -DTHREAD_ME
+COMPILE_OPTIONS += -DNO_THREAD
+#COMPILE_OPTIONS += -DDEBUG_ME 
+#COMPILE_OPTIONS += -DDEBUG_THREAD
+COMPILE_OPTIONS += -DRECORD_EVENT
+#COMPILE_OPTIONS += -DCRIM #TODO - Remove this!
+#COMPILE_OPTIONS += -DASSERT_INTERRUPT
+COMPILE_OPTIONS += -DKEEP_DATA
+#COMPILE_OPTIONS += -DTIME_ME
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
 TARGET=daq_slave_service
 
-include $(DAQROOT)/Make.include
+#include $(DAQROOT)/Make.include
 
 $(TARGET): $(OBJS)
 	@echo $(OBJS)

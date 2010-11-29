@@ -6,8 +6,7 @@ LDFLAGS += -shared -Wl,-soname
 #COMPILE_OPTIONS += -DDEBUG_FEB
 #COMPILE_OPTIONS += -DDEBUG_CROC
 #COMPILE_OPTIONS += -DDEBUG_VERBOSE
-#COMPILE_OPTIONS += -DDEBUG_CRIM
-#COMPILE_OPTIONS += -DDEBUG_CHPREVIEW
+COMPILE_OPTIONS += -DDEBUG_CRIM
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
@@ -15,7 +14,6 @@ SRC = $(wildcard *.cpp)
 TARGET=libhardware.so
 
 include $(DAQROOT)/Make.include
-include $(DAQROOT)/Make.options
 
 $(TARGET): $(OBJS)
 	@echo $(OBJS)
