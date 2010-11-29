@@ -25,14 +25,14 @@ sleep 1
 
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
-echo "Restarting processes on the master node..."
-`ssh ${REMDAQACCT}@${MASTERMACH} source ${SCRIPTSDIR}/acquisitionmanager_multi.sh`
 echo "Restarting processes on the soldier node..."
 `ssh ${REMDAQACCT}@${SOLDERMACH} source ${SCRIPTSDIR}/dispatcher_multi.sh`
 echo "Restarting processes on the worker node..."
 `ssh ${REMDAQACCT}@${WORKERMACH} source ${SCRIPTSDIR}/dispatcher_multi.sh`
 echo "Waiting..."
-sleep 1
+sleep 2
+echo "Restarting processes on the master node..."
+`ssh ${REMDAQACCT}@${MASTERMACH} source ${SCRIPTSDIR}/acquisitionmanager_multi.sh`
 
 # Now, relaunch the RC.
 echo "Restarting the Run Control!"
