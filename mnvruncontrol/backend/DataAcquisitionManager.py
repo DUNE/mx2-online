@@ -1246,11 +1246,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			over = {}
 			for board in problem_boards:
 				if board["period"] < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
-					self.logger.warning("Board (node-croc-chain-board) %s-%s-%s is below the period threshold (period: %d)", board["node"], board["croc"], board["chain"], board["board"], board["period"])
+					self.logger.warning("Board (node-croc-chain-board) %s-%d-%d-%d is below the period threshold (period: %d)", board["node"], board["croc"], board["chain"], board["board"], board["period"])
 					needs_intervention = True
 					break
 				else:
-					self.logger.warning("Board (node-croc-chain-board) %s-%s-%s is outside the minimum HV range tolerance (deviation from target in ADC counts: %d)", board["node"], board["croc"], board["chain"], board["board"], board["hv_deviation"])
+					self.logger.warning("Board (node-croc-chain-board) %s-%d-%d-%d is outside the minimum HV range tolerance (deviation from target in ADC counts: %d)", board["node"], board["croc"], board["chain"], board["board"], board["hv_deviation"])
 				
 
 				for threshold in thresholds:
