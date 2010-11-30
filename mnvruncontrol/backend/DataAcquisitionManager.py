@@ -629,6 +629,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    
 		assert len(self.errors) == 0
 		assert configuration.Validate()
+
+		# if the run number is changing, we should
+		# save the run/subrun number NOW.  that way
+		# if we stop the run before everything gets going
+		# (for example, if the user clicks "stop" 
+		#  when the PMT voltage verification window
+		#  is up) the numbers will still be sane.
+		if configuration.run > self.configuration.run:
+			configuration.Save(filepath=Configuration.params["Master node"]["runinfoFile"])
 		
 		self.configuration = configuration
 		
@@ -1240,27 +1249,25 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# or if the hardware configuration has changed
 		if self.do_pmt_check:
 			problem_boards = self.GetProblemPMTs()
-			thresholds = sorted(Configuration.params["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
-			needs_intervention = False
-                        
+			thresholds = sorted(Configuration.params["Master node"]["SCHVthresholds"].keys(), reverse=True)
+			ranges = {}
+			for i in range(len(thresholds)):
+				ranges[i+1] = Configuration.params["Master node"]["SCHVthresholds"][thresholds[i]]
+			
 			over = {}
+			needs_intervention = False
 			for board in problem_boards:
-				if board["period"] < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
-					self.logger.warning("Board (node-croc-chain-board) %s-%d-%d-%d is below the period threshold (period: %d)", board["node"], board["croc"], board["chain"], board["board"], board["period"])
+				if board["failure"] == "period":
 					needs_intervention = True
 					break
-				else:
-					self.logger.warning("Board (node-croc-chain-board) %s-%d-%d-%d is outside the minimum HV range tolerance (deviation from target in ADC counts: %d)", board["node"], board["croc"], board["chain"], board["board"], board["hv_deviation"])
-				
+				elif board["failure"] == "hv_range":
+					rng = board["range"]
+					if rng in over:
+						over[rng] += 1
+					else:
+						over[rng] = 1
 
-				for threshold in thresholds:
-					if board["hv_deviation"] > threshold:
-						if threshold in over:
-							over[threshold] += 1
-						else:
-							over[threshold] = 1
-
-					if over[threshold] > Configuration.params["Readout nodes"]["SCHVthresholds"][threshold]:
+					if over[rng] > ranges[rng]:
 						needs_intervention = True
 						break
 
@@ -1275,9 +1282,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				  self.postoffice.Send(PostOffice.Message(subject="frontend_info", info="need_HV_confirmation", pmt_info=problem_boards))
 				  self.problem_pmt_list = problem_boards
 				  return None
+			else:
+				self.logger.info("  ... PMT voltages are ok.")
+		else:
+			self.logger.info("  ... don't need to check PMT voltages.")
 
-
-		self.logger.info("  ... PMT voltages are ok.")
 		self.problem_pmt_list = None
 		
 		# ok to proceed to next step
@@ -1428,8 +1437,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# to make sure we are in a well-defined starting state
 		self.logger.info("  clearing the DAQ to make sure it's ready...")
 		
-		print "In thread %s" % threading.current_thread().name
-
 		try:
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
@@ -1500,7 +1507,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    from the readout nodes and returns any that are
 		    over the specified thresholds. """
 
-		thresholds = sorted(Configuration.params["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
+		thresholds = sorted(Configuration.params["Master node"]["SCHVthresholds"].keys(), reverse=True)
 
 		try:		
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
@@ -1522,7 +1529,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			voltage_list = "  voltage deviations & HV periods of PMTs attached to the '%s' node:\ncroc-channel-board: HV dev, HV period\n=====================================\n" % response.sender
 			for board in response.sc_board_list:
 				voltage_list += "%d-%d-%d: %5d, %5d\n" % (board["croc"], board["chain"], board["board"], board["hv_deviation"], board["period"])
-				if board["hv_deviation"] > min(thresholds) or board["period"] < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
+				if abs(board["hv_deviation"]) > min(thresholds) or board["period"] < Configuration.params["Master node"]["SCperiodThreshold"]:
 					board["node"] = response.sender
 					problem_boards.append(board)
 					
@@ -1533,6 +1540,25 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		if nodes_checked == 0:
 			self.NewAlert(notice="No nodes responded with PMT voltages.  Check the dispatchers on your readout nodes!", severity=Alert.ERROR)
 			self.StopDataAcquisition(do_auto_start=False)
+
+		for board in problem_boards:
+			if board["period"] < Configuration.params["Master node"]["SCperiodThreshold"]:
+				self.logger.warning("Board (node-croc-chain-board) %s-%d-%d-%d is below the period threshold (period: %d)", board["node"], board["croc"], board["chain"], board["board"], board["period"])
+				board["failure"] = "period"
+			else:
+				self.logger.warning("Board (node-croc-chain-board) %s-%d-%d-%d is outside the minimum HV range tolerance (deviation from target in ADC counts: %d)", board["node"], board["croc"], board["chain"], board["board"], board["hv_deviation"])
+				board["failure"] = "hv_range"
+			
+				# which HV range is it?
+				# the frontend uses this to color-code
+				assigned_range = False
+				i = 0
+				for threshold in thresholds:
+					i += 1
+					if abs(board["hv_deviation"]) > threshold:
+						if not assigned_range:
+							assigned_range = True
+							board["range"] = i
 
 		if send_results:
 			self.postoffice.Send( PostOffice.Message(subject="frontend_info", info="pmt_update", pmt_info=problem_boards) )
