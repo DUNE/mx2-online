@@ -649,17 +649,11 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		pmt_list = xrc.XRCCTRL(self.frame, "pmt_check_list")
 		pmt_list.DeleteAllItems()
 		
-		colors = ["red", "orange", "yellow"]		# used to demarcate the boards that have exceeded certain thresholds
+		colors = { 1: "red", 2: "orange", 3: "yellow" }		# used to demarcate the boards that have exceeded certain thresholds
+		color_norange = "white"
 		
 		# eventually we'll want to do some sorting, but for now ...
-		thresholds = sorted(Configuration.params["Readout nodes"]["SCHVthresholds"].keys(), reverse=True)
-		over = {}
-		needs_intervention = False
 		for board in evt.pmt_info:
-			# if this board isn't an alarm, don't show it.
-			if abs(int(board["hv_deviation"])) < min(thresholds) and int(board["period"]) >= Configuration.params["Readout nodes"]["SCperiodThreshold"]:
-				continue
-				
 			index = pmt_list.InsertStringItem(sys.maxint, board["node"])
 			pmt_list.SetStringItem(index, 1, str(board["croc"]))
 			pmt_list.SetStringItem(index, 2, str(board["chain"]))
@@ -668,34 +662,15 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			pmt_list.SetStringItem(index, 5, str(board["period"]))
 			
 			# low-HV period boards will probably show up at the top this way.
-			if int(board["period"]) < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
+			if board["failure"] == "period":
 				pmt_list.SetItemData(index, int(board["period"]))
-			else:
+				pmt_list.SetItemBackgroundColour(index, wx.NamedColour("blue"))
+			elif board["failure"] == "hv_range":
 				data = abs(int(board["hv_deviation"]))
 				pmt_list.SetItemData(index, data)
+				color = color_norange if board["range"] not in colors else colors[board["range"]]
+				pmt_list.SetItemBackgroundColour(index, wx.NamedColour(color))
 
-		index = pmt_list.GetNextItem(-1)
-		while index != -1:
-			listitem = pmt_list.GetItem(index, 4)
-			dev = abs(int(listitem.GetText()))
-			listitem = pmt_list.GetItem(index, 5)
-			period = int(listitem.GetText())
-			
-			for threshold in thresholds:
-				if dev > threshold:
-					pmt_list.SetItemBackgroundColour(index, wx.NamedColour(colors[thresholds.index(threshold)]))
-					if threshold in over:
-						over[threshold] += 1
-					else:
-						over[threshold] = 1
-					
-					break
-					
-			if period < Configuration.params["Readout nodes"]["SCperiodThreshold"]:
-				pmt_list.SetItemBackgroundColour(index, wx.NamedColour("blue"))
-			
-			index = pmt_list.GetNextItem(index)
-			
 		# sort them in DESCENDING order.
 		pmt_list.SortItems(lambda a,b : 0 if a == b else (-1 if a > b else 1))
 		
