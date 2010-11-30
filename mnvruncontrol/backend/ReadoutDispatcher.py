@@ -25,7 +25,6 @@ import mnvruncontrol.configuration.Logging
 
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Configuration
-from mnvruncontrol.configuration import Defaults
 
 from mnvruncontrol.backend import Dispatcher
 from mnvruncontrol.backend import PostOffice
@@ -140,7 +139,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 					response.subject = "request_response"
 					response.success = status
 					
-#		self.logger.debug("response message:\n%s", response)
+		self.logger.debug("response message:\n%s", response)
 		self.postoffice.Send(response)
 
 	def daq_status(self):
@@ -263,7 +262,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		self.logger.debug("Configuring LI using parameters: %s, %s", li_level, led_groups)
 		
 		if self.li_box is None:
-			self.li_box = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"], echocmds=True)
+			self.li_box = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"])
 		
 		need_LI = True
 		if li_level == MetaData.LILevels.ONE_PE:
@@ -287,7 +286,6 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		self.li_box.LED_groups = led_groups.description
 
 		try:
-			self.li_box.reset()
 			self.li_box.write_configuration()
 		except LIBox.Error as e:
 			self.logger.error("The LI box is not responding!  Check the cable and serial port settings.")
@@ -302,9 +300,9 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		    file.  Returns True on success, False if there is no such file,
 		    and the exception itself if one is raised during loading. """
 		hwfile = Configuration.params["Readout nodes"][hw_config.code] 
+		self.logger.info("Manager wants to load slow control configuration file: '%s'.", hw_config.description)
+		
 		fullpath = "%s/%s" % (Configuration.params["Readout nodes"]["SCfileLocation"], hwfile)
-	
-		self.logger.info("Manager wants to load slow control configuration file: '%s' at location '%s'", hw_config.description, fullpath)
 		
 		if not os.path.isfile(fullpath):
 			self.logger.warning("Specified slow control configuration file does not exist: %s", fullpath)
@@ -515,7 +513,7 @@ class SCHWSetupThread(threading.Thread):
 			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=e, state="hw_error"))
 		else:
 			self.dispatcher.logger.info("HW file %s was loaded.  Informing manager." % self.filename)
-			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=None, state="hw_ready"))
+			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=None, state="ready"))
 		
 
 
