@@ -23,17 +23,18 @@ sleep 1
 
 # Restart the dispatchers...
 echo "Now restarting the dispatchers..."
-echo "Restarting processes on the master node..."
-`ssh ${REMDAQACCT}@${MASTERMACH} source ${SCRIPTSDIR}/acquisitionmanager_multi.sh`
 echo "Restarting processes on the soldier node..."
 `ssh ${REMDAQACCT}@${SOLDERMACH} source ${SCRIPTSDIR}/dispatcher_multi.sh`
 echo "Restarting processes on the worker node..."
 `ssh ${REMDAQACCT}@${WORKERMACH} source ${SCRIPTSDIR}/dispatcher_multi.sh`
 echo "Waiting..."
 sleep 1
+echo "Waiting..."
+sleep 1
+echo "Restarting processes on the master node..."
+`ssh ${REMDAQACCT}@${MASTERMACH} source ${SCRIPTSDIR}/acquisitionmanager_multi.sh`
 
 # Have to keep ticket around in order to allow RC to function...
-# Restart acquisition manager - handled in whcr_runcontrol26.sh
 # Now, relaunch the RC on the LOCAL machine using the softlink.
 echo "Restarting the Run Control!"
 source $HOME/mnvdaqrunscripts/whcr_runcontrol26.sh 

@@ -30,7 +30,9 @@ echo "Restarting processes on the soldier node..."
 echo "Restarting processes on the worker node..."
 `ssh ${REMDAQACCT}@${WORKERMACH} source ${SCRIPTSDIR}/dispatcher_multi.sh`
 echo "Waiting..."
-sleep 2
+sleep 1
+echo "Waiting..."
+sleep 1
 echo "Restarting processes on the master node..."
 `ssh ${REMDAQACCT}@${MASTERMACH} source ${SCRIPTSDIR}/acquisitionmanager_multi.sh`
 
