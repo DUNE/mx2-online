@@ -4,7 +4,7 @@
   Contains the graphical implementation of an options
   setter for the run control.  Mainly intended to be
   run as a standalone program, but can also be imported
-  into another wx application as necessary.
+  into another wx application.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     Feb.-Mar. 2010
@@ -12,367 +12,159 @@
    Address all complaints to the management.
 """
 
-import os
-import sys
+import wx
 import shelve
 import anydbm
-import os.path
 
 from mnvruncontrol.configuration import Defaults
-from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration import MetaData
+from mnvruncontrol.backend import ReadoutNode
+from mnvruncontrol.backend import Events
 
-# only do the graphical stuff if $DISPLAY is defined!
-if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
-	import wx
-	from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
-	from wx.lib.mixins.listctrl import ListRowHighlighter
-	from wx.lib.mixins.listctrl import TextEditMixin
-	from mnvruncontrol.backend import Events
+#########################################################
+#   OptionsFrame
+#########################################################
 
-	# there are a couple controls for simple types that can't be done automatically
-	# because they use the metadata as the source of their options
-	metadata_ctrls = { "detectorType" : MetaData.DetectorTypes,
-	                   "hwInitLevel"  : MetaData.HardwareInitLevels }
-
-	#########################################################
-	#   Configuration
-	#########################################################
-
-	class ConfigurationFrame(wx.Frame):
-		""" A window for configuration of various options in the run control """
-		def __init__(self, parent=None):
-			wx.Frame.__init__(self, parent, -1, "Run control configuration", size=(600,600))
+class OptionsFrame(wx.Frame):
+	""" A window for configuration of various options in the run control """
+	def __init__(self, parent=None):
+		wx.Frame.__init__(self, parent, -1, "Run control configuration", size=(600,400))
 		
-			self.parent = parent
+		self.parent = parent
 
-			panel = wx.Panel(self)
-			nb = wx.Notebook(panel)
-			self.pages = {}
-			for pagename in Configuration.names:
-				self.pages[pagename] = wx.Panel(nb)
-		
-		
-			###########################################################################
-			# first, the ones that can be automatically placed on the panels
-			###########################################################################
-		
-			labels = {}
-			self.entries = {}
-			gridSizers = {}
-		
-			for param_set in Configuration.params:
-				labels[param_set] = {}
-				self.entries[param_set] = {}
+		try:
+			db = shelve.open(Defaults.CONFIG_DB_LOCATION)
+		except anydbm.error:
+			# the user has already been informed once (when the main frame was opened)
+			# if the DB is not accessible, so we'll just silently go to the defaults here.
+			runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
+			logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
+			etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
+			rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
+			ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
+			readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
+		else:
+			try:	runinfoFile = db["runinfoFile"]
+			except KeyError: runinfoFile = Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT
 
-				for param_name in Configuration.params[param_set]:
-					# any iterable types will need to be added by hand.
-					if hasattr(Configuration.params[param_set][param_name], '__iter__') \
-					  or param_name in metadata_ctrls:
-						continue
-
-					labels[param_set][param_name] = wx.StaticText(self.pages[param_set], -1, Configuration.names[param_set][param_name])
-					# booleans are special.  they need checkboxes instead of textctrls
-					if isinstance(Configuration.params[param_set][param_name], bool):
-						self.entries[param_set][param_name] = wx.CheckBox(self.pages[param_set], -1)
-						self.entries[param_set][param_name].SetValue(Configuration.params[param_set][param_name])
-					else:
-						self.entries[param_set][param_name] = wx.TextCtrl(self.pages[param_set], -1, str(Configuration.params[param_set][param_name]))
-					
-				gridSizers[param_set] = wx.FlexGridSizer(len(labels), 2, 5, 5)
-				for param_name in labels[param_set]:
-					gridSizers[param_set].Add(labels[param_set][param_name], flag=wx.ALIGN_CENTER_VERTICAL)
-					gridSizers[param_set].Add(self.entries[param_set][param_name], proportion=0, flag=wx.EXPAND)
-					gridSizers[param_set].SetFlexibleDirection(wx.HORIZONTAL)
-					gridSizers[param_set].AddGrowableCol(1)
-				
-				self.pages[param_set].SetSizer(gridSizers[param_set])
+			try:	logfileLocation = db["logfileLocation"]
+			except KeyError: logfileLocation = Defaults.LOGFILE_LOCATION_DEFAULT
 			
-		
-			###########################################################################
-			# now anything that needs to be added by hand
-			###########################################################################
-		
-			self.AddButtons = {}
-			self.DeleteButtons = {}
+			try:	etSystemFileLocation = db["etSystemFileLocation"]
+			except KeyError: etSystemFileLocation = Defaults.ET_SYSTEM_LOCATION_DEFAULT
+			
+			try:	rawdataLocation = db["rawdataLocation"]
+			except KeyError: rawdataLocation = Defaults.RAW_DATA_LOCATION_DEFAULT
+			
+			try:	ResourceLocation = db["ResourceLocation"]
+			except KeyError: ResourceLocation = Defaults.RESOURCE_LOCATION_DEFAULT
+			
+			try: readoutNodes = db["readoutNodes"]
+			except KeyError: readoutNodes = [ ReadoutNode.ReadoutNode("local", "localhost") ]
 
-#			# first: log file locations
-#			labels["Front end"]["logFileLocations"] = wx.StaticText(self.pages["Front end"], -1, Configuration.names["Front end"]["logFileLocations"])
-#			self.entries["Front end"]["logFileLocations"] = AutoSizingEditableListCtrl(self.pages["Front end"], style=wx.LC_REPORT | wx.LC_HRULES)
-#			self.entries["Front end"]["logFileLocations"].InsertColumn(0, "Location")
+		panel = wx.Panel(self)
+		
+		warningText = wx.StaticText(panel, -1, "** PLEASE don't change these values unless you know what you're doing! **")
+		
+		runInfoDBLabel = wx.StaticText(panel, -1, "Run/subrun info database file")
+		self.runInfoDBEntry = wx.TextCtrl(panel, -1, runinfoFile)
+		
+		logfileLocationLabel = wx.StaticText(panel, -1, "Log file location")
+		self.logfileLocationEntry = wx.TextCtrl(panel, -1, logfileLocation)
+
+		etSystemFileLocationLabel = wx.StaticText(panel, -1, "ET system file location")
+		self.etSystemFileLocationEntry = wx.TextCtrl(panel, -1, etSystemFileLocation)
+		
+		rawDataLocationLabel = wx.StaticText(panel, -1, "Raw data location")
+		self.rawDataLocationEntry = wx.TextCtrl(panel, -1, rawdataLocation)
+		
+		ResourceLocationLabel = wx.StaticText(panel, -1, "Resource files location")
+		self.ResourceLocationEntry = wx.TextCtrl(panel, -1, ResourceLocation)
+		
+		readoutNodesLabel = wx.StaticText(panel, -1, "Readout nodes:")
+#		self.readoutNodesEntry = wx.
+		
+		pathsGridSizer = wx.GridSizer(6, 2, 10, 10)
+		pathsGridSizer.Add(runInfoDBLabel,                               flag=wx.ALIGN_CENTER_VERTICAL)
+		pathsGridSizer.Add(self.runInfoDBEntry,            proportion=0, flag=wx.EXPAND)
+		pathsGridSizer.Add(logfileLocationLabel,                         flag=wx.ALIGN_CENTER_VERTICAL)
+		pathsGridSizer.Add(self.logfileLocationEntry,      proportion=0, flag=wx.EXPAND)
+		pathsGridSizer.Add(etSystemFileLocationLabel,                    flag=wx.ALIGN_CENTER_VERTICAL)
+		pathsGridSizer.Add(self.etSystemFileLocationEntry, proportion=0, flag=wx.EXPAND)
+		pathsGridSizer.Add(rawDataLocationLabel,                         flag=wx.ALIGN_CENTER_VERTICAL)
+		pathsGridSizer.Add(self.rawDataLocationEntry,      proportion=0, flag=wx.EXPAND)
+		pathsGridSizer.Add(ResourceLocationLabel,                        flag=wx.ALIGN_CENTER_VERTICAL)
+		pathsGridSizer.Add(self.ResourceLocationEntry,     proportion=0, flag=wx.EXPAND)
+
+		pathsSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Paths"), orient=wx.VERTICAL)
+		pathsSizer.Add(pathsGridSizer, 1, wx.EXPAND)
+		
+#		DAQrootLabel = wx.StaticText(panel, -1, "$DAQROOT")
+#		DAQrootText = wx.TextCtrl(panel, -1, os.environ["DAQROOT"], style=wx.TE_READONLY)
+#		DAQrootText.Disable()
 #		
-#			for location in Configuration.params["Front end"]["logFileLocations"]:
-#				self.entries["Front end"]["logFileLocations"].InsertStringItem(sys.maxint, location)
-
-#			self.AddButtons["logFileLocations"] = wx.Button(self.pages["Front end"], wx.ID_ADD, style=wx.BU_EXACTFIT)
-#			self.pages["Front end"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["logFileLocations"])
-
-#			self.DeleteButtons["logFileLocations"] = wx.Button(self.pages["Front end"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
-#			self.pages["Front end"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["logFileLocations"])
+#		EThomeLabel = wx.StaticText(panel, -1, "$ET_HOME")
+#		EThomeText = wx.TextCtrl(panel, -1, os.environ["ET_HOME"], style=wx.TE_READONLY)
+#		EThomeText.Disable()
 #		
-#			buttonSizer = wx.BoxSizer(wx.VERTICAL)
-#			buttonSizer.AddMany ( ( (self.AddButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
+#		environGridSizer = wx.GridSizer(2, 2, 10, 10)
+#		environGridSizer.AddMany( ( DAQrootLabel, (DAQrootText, 1, wx.EXPAND),
+#		                            EThomeLabel,  (EThomeText, 1, wx.EXPAND) ) )
 #		
-#			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-#			entrySizer.AddMany( ( (self.entries["Front end"]["logFileLocations"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
-#		
-#			gridSizers["Front end"].Add(labels["Front end"]["logFileLocations"], flag=wx.ALIGN_CENTER_VERTICAL)
-#			gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
+#		environSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1, "Environment"), orient=wx.VERTICAL)
+#		environSizer.Add(environGridSizer, flag = wx.EXPAND)
+		
+		saveButton = wx.Button(panel, wx.ID_SAVE)
+		self.Bind(wx.EVT_BUTTON, self.SaveAll, saveButton)
 
-			# first: config choices that need list boxes.
-			for key in metadata_ctrls:
-				labels["Master node"][key] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["Master node"][key])
-				self.entries["Master node"][key] = wx.Choice(self.pages["Master node"], -1, choices=metadata_ctrls[key].descriptions())
-				self.entries["Master node"][key].SetSelection( metadata_ctrls[key].index(Configuration.params["Master node"][key]) )
-				gridSizers["Master node"].Add(labels["Master node"][key], flag=wx.ALIGN_CENTER_VERTICAL)
-				gridSizers["Master node"].Add(self.entries["Master node"][key], proportion=0, flag=wx.EXPAND)
+		cancelButton = wx.Button(panel, wx.ID_CANCEL)
+		self.Bind(wx.EVT_BUTTON, self.Cancel, cancelButton)
+
+		buttonSizer = wx.GridSizer(1, 2, 10, 10)
+		buttonSizer.AddMany( ( (saveButton, 1, wx.ALIGN_CENTER_HORIZONTAL), (cancelButton, 1, wx.ALIGN_CENTER_HORIZONTAL) ) )
+
+		globalSizer = wx.BoxSizer(wx.VERTICAL)
+		globalSizer.Add(warningText, flag=wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL, border=10)
+		globalSizer.Add(pathsSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=10)
+#		globalSizer.Add(environSizer, flag=wx.ALL | wx.EXPAND, border=10)
+		globalSizer.Add(buttonSizer, flag=wx.ALIGN_CENTER_HORIZONTAL)		
+		panel.SetSizer(globalSizer)
+		
+		self.Layout()
+		
+	def SaveAll(self, evt=None):
+		try:
+			db = shelve.open(Defaults.CONFIG_DB_LOCATION, "w")
+		except anydbm.error:
+			errordlg = wx.MessageDialog( None, "The configuration file cannot be opened.  Values will not be saved.", "Config file inaccessible", wx.OK | wx.ICON_WARNING )
+			errordlg.ShowModal()
+		else:
+			db["runinfoFile"] = self.runInfoDBEntry.GetValue()
+			db["logfileLocation"] = self.logfileLocationEntry.GetValue()
+			db["etSystemFileLocation"] = self.etSystemFileLocationEntry.GetValue()
+			db["rawdataLocation"] = self.rawDataLocationEntry.GetValue()
+#			db["ResourceLocation"] = self.ResourceLocationEntry.GetValue()
 			
-			# next: remote node config
-			labels["Master node"]["nodeAddresses"] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["Master node"]["nodeAddresses"])
-			self.entries["Master node"]["nodeAddresses"] = AutoSizingEditableListCtrl(self.pages["Master node"], style=wx.LC_REPORT | wx.LC_HRULES)
-			self.entries["Master node"]["nodeAddresses"].InsertColumn(0, "Node type")
-			self.entries["Master node"]["nodeAddresses"].InsertColumn(1, "Name")
-			self.entries["Master node"]["nodeAddresses"].InsertColumn(2, "Address (IPv4/DNS)")
+			db.close()
 		
-			for node in Configuration.params["Master node"]["nodeAddresses"]:
-				index = self.entries["Master node"]["nodeAddresses"].InsertStringItem(sys.maxint, str(node["type"]))
-				self.entries["Master node"]["nodeAddresses"].SetStringItem(index, 1, node["name"])
-				self.entries["Master node"]["nodeAddresses"].SetStringItem(index, 2, node["address"])
+		if self.parent is not None:	
+			wx.PostEvent(self.parent, Events.ConfigUpdatedEvent())
 
-			self.AddButtons["nodeAddresses"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
-			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["nodeAddresses"])
-
-			self.DeleteButtons["nodeAddresses"] = wx.Button(self.pages["Master node"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
-			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["nodeAddresses"])
+		self.Close()
 		
-			buttonSizer = wx.BoxSizer(wx.VERTICAL)
-			buttonSizer.AddMany ( ( (self.AddButtons["nodeAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["nodeAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
-		
-			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-			entrySizer.AddMany( ( (self.entries["Master node"]["nodeAddresses"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
-		
-			gridSizers["Master node"].Add(labels["Master node"]["nodeAddresses"], flag=wx.ALIGN_CENTER_VERTICAL)
-			gridSizers["Master node"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
-	
-			gridSizers["Master node"].SetFlexibleDirection(wx.BOTH)
+	def Cancel(self, evt=None):
+		self.Close()
 
-			# these are added like this so that they show up in a predictable order
-			for name in ("Front end", "Hardware", "Socket setup", "Master node", "Readout nodes", "Monitoring nodes", "MTest beam nodes", "Logging"):
-				nb.AddPage(self.pages[name], name)
-			
-			saveButton = wx.Button(panel, wx.ID_SAVE)
-			self.Bind(wx.EVT_BUTTON, self.SaveAll, saveButton)
+#########################################################
+#   MainApp
+#########################################################
 
-			cancelButton = wx.Button(panel, wx.ID_CANCEL)
-			self.Bind(wx.EVT_BUTTON, self.Cancel, cancelButton)
-
-			buttonSizer = wx.GridSizer(1, 2, 10, 10)
-			buttonSizer.AddMany( ( (saveButton, 1, wx.ALIGN_CENTER_HORIZONTAL), (cancelButton, 1, wx.ALIGN_CENTER_HORIZONTAL) ) )
-
-			globalSizer = wx.BoxSizer(wx.VERTICAL)
-			globalSizer.Add(nb, flag=wx.EXPAND, proportion=1)
-			globalSizer.Add(buttonSizer, flag=wx.ALIGN_CENTER_HORIZONTAL, proportion=0)		
-			panel.SetSizer(globalSizer)
-
-		
-			self.Layout()
-		
-		def AddNode(self, evt):
-			""" Add a node to the list. """
-			for itemname in self.AddButtons:
-				if evt.EventObject == self.AddButtons[itemname]:
-					for page in self.entries:
-						if itemname in self.entries[page]:
-							itemlocation = self.entries[page]
-							break
-				
-					index = itemlocation[itemname].InsertStringItem(sys.maxint, "[text]")
-					for col in range(1, itemlocation[itemname].GetColumnCount()):
-						itemlocation[itemname].SetStringItem(index, col, "[text]")
-	
-		def DeleteNodes(self, evt):
-			""" Delete all selected nodes from the list. """
-			for itemname in self.DeleteButtons:
-				if evt.EventObject == self.DeleteButtons[itemname]:
-					index = -1
-					toDelete = []
-
-					for page in self.entries:
-						if itemname in self.entries[page]:
-							itemlocation = self.entries[page]
-							break
-
-					while True:
-						index = itemlocation[itemname].GetNextSelected(index)
-		
-						if index == -1:
-							break
-						else:
-							toDelete.append(index)
-			
-					# want to delete from the back to the front so that we don't skip any
-					toDelete = sorted(toDelete, reverse=True)
-					for item in toDelete:
-						itemlocation[itemname].DeleteItem(item)
-		
-		def SaveAll(self, evt=None):
-			""" Save the configuration. """
-		
-			# first do the automatic ones
-			for param_set in self.entries:
-				for param_name in self.entries[param_set]:
-					if isinstance(self.entries[param_set][param_name], wx.TextCtrl) or isinstance(self.entries[param_set][param_name], wx.CheckBox):
-						# note that this must saved as the correct type (hence the Configuration.types() call).
-						Configuration.params[param_set][param_name] = Configuration.types[param_set][param_name](self.entries[param_set][param_name].GetValue())
-	
-			# now any that need to be handled in a particular way
-	
-			# first: choices
-			for item in metadata_ctrls:
-				Configuration.params["Master node"][item] = metadata_ctrls[item].item(self.entries["Master node"][item].GetSelection()).hash
-	
-			# now remote nodes
-			nodelist= []
-			index = -1
-			while True:
-				index = self.entries["Master node"]["nodeAddresses"].GetNextItem(index)
-		
-				if index == -1:
-					break
-				
-				try:
-					nodetype = int(self.entries["Master node"]["nodeAddresses"].GetItem(index, 0).GetText())
-				except ValueError:
-					nodetype = 1		# default to READOUT
-		
-				nodedescr = { "type":     nodetype,
-				              "name":     self.entries["Master node"]["nodeAddresses"].GetItem(index, 1).GetText(),
-				              "address" : self.entries["Master node"]["nodeAddresses"].GetItem(index, 2).GetText() }
-				nodelist.append(nodedescr)
-		
-			Configuration.params["Master node"]["nodeAddresses"] = nodelist
-			
-			Configuration.SaveToDB()
-			
-			self.Close()
-		
-		def Cancel(self, evt=None):
-			self.Close()
-
-	#########################################################
-	#   AutoSizingEditableListCtrl
-	#########################################################
-	class AutoSizingEditableListCtrl(wx.ListCtrl,  ListCtrlAutoWidthMixin, ListRowHighlighter, TextEditMixin):
-		def __init__(self, parent, id=-1, style=wx.LC_REPORT):
-			wx.ListCtrl.__init__(self, parent, id, style=style)
-			ListCtrlAutoWidthMixin.__init__(self)
-			ListRowHighlighter.__init__(self)
-			TextEditMixin.__init__(self)	
-
-	#########################################################
-	#   MainApp
-	#########################################################
-
-	class MainApp(wx.App):
-		def OnInit(self):
-			frame = ConfigurationFrame()
-			self.SetTopWindow(frame)
-			frame.Show(True)
-			return True
-
-else:
-	#########################################################
-	#   TextApp
-	#########################################################
-
-	class TextApp:
-		def ConsoleLoop(self):
-			""" A text-entry interface. """
-			
-			quit = False
-			
-			while not quit:
-				current_section = None
-				while current_section is None:
-					current_section = self.MenuSelection(Configuration.params.keys())
-					
-					# user just pushed 'enter'
-					if current_section is None:
-						quit = True
-						break
-				
-					while current_section is not None:
-						print "Section '%s'" % current_section
-						print "==========================================================="
-						param = self.MenuSelection(Configuration.names[current_section].keys(), Configuration.names[current_section].values())
-						
-						if param is None:
-							current_section = None
-							continue
-						
-						# lists are trickier
-						if Configuration.types[current_section][param] not in (list, dict):
-							print "Changing value for '%s'." % param
-							print "Old value: ", Configuration.params[current_section][param]
-							print "Enter new value (just press 'Enter' to cancel):"
-							
-							try:
-								v = raw_input(">>> ")
-							except EOFError:
-								return
-							
-							if v == "":
-								continue
-							
-							try:
-								# beware.  bool(<string>) = len(<string>) > 0!
-								if Configuration.types[current_section][param] == bool and isinstance(v, basestring):
-									Configuration.params[current_section][param] = v in ("True", "true", "1")
-								else:
-									Configuration.params[current_section][param] = Configuration.types[current_section][param](v)
-							except ValueError:
-								print "Invalid input!"
-								continue
-					
-						else:
-							print "List/dictionary editing doesn't work yet in text-only mode."
-							print "Either use the GUI editor or edit the Configuration by hand"
-							print "and use its SaveToDB() function.\n"
-			### while not quit
-			
-			Configuration.SaveToDB()
-		
-		def MenuSelection(self, choices, descriptions=None):
-			""" Displays a menu to the user and requests
-			    that s/he pick one of the options. """
-			
-			print "Choices:"
-			print "--------"
-			
-			for i in range(len(choices)):
-				descr = " " if descriptions is None else (" (%s)" % descriptions[i])
-				print "[%d] %-25s%s" % (i+1, choices[i], descr)
-			
-			while True:
-				print "\nPlease enter the number of the menu item you want"
-				print "(just press 'Enter' to go back/quit)"
-
-				try:
-					r = raw_input(">>> ")
-				except EOFError:
-					return None
-
-				if r == "":
-					return None
-			
-				try:
-					if int(r) - 1 in range(len(choices)):
-						return choices[int(r)-1]
-					else:
-						raise ValueError()
-				except ValueError:
-					print "Invalid entry."
-		
+class MainApp(wx.App):
+	def OnInit(self):
+		frame = OptionsFrame()
+		self.SetTopWindow(frame)
+		frame.Show(True)
+		return True
 
 #########################################################
 #   Main execution
@@ -380,15 +172,6 @@ else:
 
 
 if __name__ == '__main__':		# make sure that this file isn't being included somewhere else
-	if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
-		app = MainApp(redirect=False)
-		app.MainLoop()
-	# a VERY simple text-mode dump of the values
-	else:
-#		for section in Configuration.params:
-#			print "Section '%s':" % section
-#			for key in Configuration.params[section]:
-#				print "   %-25s:  %s" % ("'" + key + "'", Configuration.params[section][key])
-		app = TextApp()
-		app.ConsoleLoop()
+	app = MainApp(redirect=False)
+	app.MainLoop()
 
