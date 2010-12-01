@@ -109,7 +109,6 @@ fi
 if [ $HOSTNAME == "minerva-rc.fnal.gov" ]; then
 	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
-	ln -sf $HOME/mnvdaqrunscripts/whcr_configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_restart_all_mnvonline.sh $HOME/hard_restart_all.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_restart_daq_rc_mnvonline.sh $HOME/hard_restart_daq_rc.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_dispatcher_mnvonline.sh $HOME/hard_restart_dispatchers.sh
