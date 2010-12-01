@@ -101,7 +101,6 @@ if [ $HOSTNAME == "mnvnearline1.fnal.gov" ]; then
 	ln -sf $HOME/mnvdaqrunscripts/check_nearline_procs.sh $HOME/check_nearline_procs.sh
 	ln -sf $HOME/mnvdaqrunscripts/check_om_log.sh $HOME/check_om_log.sh
 	ln -sf $HOME/mnvdaqrunscripts/dispatcher_nearline.sh $HOME/dispatcher_nearline.sh
-#	ln -sf $HOME/mnvdaqrunscripts/find_om_processes.sh $HOME/find_om_processes.sh # In attic.
 	ln -sf $HOME/mnvdaqrunscripts/configure_cvs_env.sh $HOME/configure_cvs_env.sh
 	ln -sf $HOME/mnvdaqrunscripts/restart_nearline.sh $HOME/hard_restart.sh
 fi
@@ -109,11 +108,12 @@ fi
 # minerva-rc - Main MINERvA Control Room PC in WH12.
 if [ $HOSTNAME == "minerva-rc.fnal.gov" ]; then
 	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
-	ln -sf $HOME/mnvdaqrunscripts/whcr_configure_runcontrol.sh $HOME/configure_runcontrol.sh
-	ln -sf $HOME/mnvdaqrunscripts/whcr_dispatcher_mnvonline.sh $HOME/hard_restart_dispatchers.sh
-	ln -sf $HOME/mnvdaqrunscripts/whcr_runcontrol26.sh $HOME/runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_restart_all_mnvonline.sh $HOME/hard_restart_all.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_restart_daq_rc_mnvonline.sh $HOME/hard_restart_daq_rc.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_dispatcher_mnvonline.sh $HOME/hard_restart_dispatchers.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_restart_nearline.sh $HOME/hard_restart_monitoring.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_runcontrol26.sh $HOME/runcontrol.sh
 fi
 
