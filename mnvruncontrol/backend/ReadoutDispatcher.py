@@ -98,7 +98,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 	def ReadoutDirectiveHandler(self, message):
 		""" Handles incoming directives for a readout node. """
 		
-		self.logger.debug("Manager directive message:\n%s", message)
+		self.logger.log(5, "Manager directive message:\n%s", message)
 		
 		if not ( hasattr(message, "directive") ):
 			self.logger.info("Readout directive message is improperly formatted.  Ignoring...")
@@ -286,7 +286,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 			try:
 				self.li_box.reset()
 				return True
-			except LIBox.Error as e:
+			except Exception as e:
 				return e
 
 		self.logger.info("Client wants the light injection system configured as follows:\n  LI level: %s\n  LED groups enabled: %s", li_level, led_groups)
