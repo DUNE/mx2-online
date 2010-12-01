@@ -19,8 +19,8 @@ LOGFILE_GATE_COUNT_INTERVAL = 50	# the master log file will get a notice every t
 
 # Data acquisition properties.
 EVENT_SIZE                = 2048 
-FRAMES                    = 5
-NUM_FEBS                  = 491				# full detector
+FRAMES                    = 4
+NUM_FEBS                  = 509				# full detector
 DAQ_HEADER_VERSION_STRING = "v09"
 
 # LI settings
