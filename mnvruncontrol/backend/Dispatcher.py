@@ -76,9 +76,18 @@ class Dispatcher(PostOffice.MessageTerminus):
 		# make sure that the process shuts down gracefully given the right signals.
 		# these lines set up the signal HANDLERS: which functions are called
 		# when each signal is received.
-		signal.signal(signal.SIGINT, self._Shutdown)
+		signal.signal(signal.SIGINT,  self._Shutdown)
 		signal.signal(signal.SIGTERM, self._Shutdown)
+		signal.signal(signal.SIGHUP, self._ReloadConfig)
+
+	def _ReloadConfig(self, signum=None, sigframe=None):
+		""" Reloads the configuration.
 		
+		    The extra parameters are because this is a signal handler. """
+		
+		self.__logger.info("Received SIGHUP.  Reloading configuration...")
+		Configuration.LoadFromDB()
+
 	def _Setup(self):
 		try:
 			server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	# create an IPv4 TCP socket.

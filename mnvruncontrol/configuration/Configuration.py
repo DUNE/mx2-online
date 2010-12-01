@@ -87,7 +87,7 @@ configuration = { "General"          : { "notify_addresses"          : ( Default
                                          "om_DSTminJobTime"          : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",           float ),
                                          "om_useCondor"              : ( False,                                         "Use a Condor queue?",                              bool  ),
                                          "om_condorHost"             : ( Defaults.OM_CONDOR_HOST,                       "The machine hosting the Condor queue manager",     str   ),
-                                         "om_maxCondorBacklog"       : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",           float ),
+                                         "om_maxCondorBacklog"       : ( Defaults.OM_MAX_CONDOR_BACKLOG,                "Max number of jobs backlogged in Condor queue",    int ),
                                          "om_rawdataLocation"        : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                             str   )  },
 
                   "MTest beam nodes" : { "mtest_PIDfileLocation"     : ( Defaults.MTEST_DISPATCHER_PIDFILE,             "MTest dispatcher PID file location",               str   ),
@@ -112,30 +112,50 @@ def SaveToDB():
 
 	print "Wrote configuration to '%s'." % config_file_location
 
-# the basic dictionary is structured a bit deep
-# (though it's nice for entering data).
-# below it's reworked for easier access
-# (can write Configuration.params[]... in other modules).
+def LoadFromDB():
+	""" Load the configuration from the specified DB.
+	
+	    This is used when the module is first loaded,
+	    but also can be called to reload the configuration
+	    later on.  Helpful if you don't want to restart
+	    your program but want to take advantage of new
+	    configuration options in the config file. """
+	
+	# need to specify that 'params' is global,
+	# otherwise we'll be setting a local version of it
+	# in this function that will disappear when the
+	# function ends
+	global params
+
+	if not (config_file_inaccessible or config_file_empty):
+		db = shelve.open(config_file_location, "r")
+		for param_set in params:
+			for param_name in params[param_set]:
+				try:
+					params[param_set][param_name] = db[param_name]
+				except KeyError:
+					pass		# the default is already set
+		db.close()
+	else:
+		print "Note: configuration file is empty or inaccessible.  Defaults are in use..."
+
+##################################################################################################
+
+# module globals
+user_specified_db = None
+config_file_inaccessible = True
+config_file_empty = False
+config_file_location = None
 
 params = {}
 names = {}
 types = {}
 
-for param_set in configuration:
-	params[param_set] = {}
-	names[param_set] = {}
-	types[param_set] = {}
-	for param_name in configuration[param_set]:
-		params[param_set][param_name] = configuration[param_set][param_name][0]
-		names[param_set][param_name]  = configuration[param_set][param_name][1]
-		types[param_set][param_name]  = configuration[param_set][param_name][2]
-
-
+# which file to use?
 # first, we check if the user passed a location for the main config DB
 # in the environment or on the command line.
 # (e.g. maybe there's no '/work' directory.)
 # if none is supplied, we use the default from Defaults.
-user_specified_db = None
 if os.getenv("RC_CONFIG_PATH") is not None:
 	user_specified_db = os.getenv("RC_CONFIG_PATH")
 
@@ -153,27 +173,26 @@ if "-c" in sys.argv:
 	del sys.argv[index + 1]
 	del sys.argv[index]
 
-# now update using any values that are set in the DB.
-# first look in the specified location (or, if that's not
+# now look in the specified location (or, if that's not
 # set, the default); if nothing's there or it can't be opened,
 # try the current directory.
 locations_to_try = ["%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_NAME),]
 if user_specified_db is not None:
 #	print "trying user-specified DB: ", user_specified_db
 	locations_to_try = [user_specified_db,] + locations_to_try
-	
-config_file_inaccessible = True
-config_file_empty = False
-config_file_location = None
+
 for location in locations_to_try:
 	try:
 		db = shelve.open(location, "r")
+		db.close()
 	except anydbm.error:
 		try:
 			db = shelve.open(location, "c")
+			db.close()
 		except anydbm.error as e:
 			pass
 		else:
+			config_file_location = location
 			config_file_inaccessible = False
 			config_file_empty = True
 			break
@@ -183,14 +202,21 @@ for location in locations_to_try:
 		config_file_inaccessible = False
 		break
 
-if not (config_file_inaccessible or config_file_empty):
-	for param_set in params:
-		for param_name in params[param_set]:
-			try:
-				params[param_set][param_name] = db[param_name]
-			except KeyError:
-				pass		# the default is already set
-	db.close()
-else:
-	print "Note: configuration file is inaccessible.  Defaults are in use..."
-			
+
+# the basic dictionary is structured a bit deep
+# (though it's nice for entering data).
+# below it's reworked for easier access
+# (can write Configuration.params[]... in other modules).
+
+for param_set in configuration:
+	params[param_set] = {}
+	names[param_set] = {}
+	types[param_set] = {}
+	for param_name in configuration[param_set]:
+		params[param_set][param_name] = configuration[param_set][param_name][0]
+		names[param_set][param_name]  = configuration[param_set][param_name][1]
+		types[param_set][param_name]  = configuration[param_set][param_name][2]
+
+# load 'em up!
+LoadFromDB()
+
