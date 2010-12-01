@@ -78,9 +78,9 @@ class LIBox:
 		""" Sends the commands in the command stack to the LI box. """
 		self.check_commands()
 		
-		if not self.disable:
-			for command in self.command_stack:
-				self.command_log.append(command)		# store this in a log for later review.
+		for command in self.command_stack:
+			self.command_log.append(command)		# store this in a log for later review.
+			if not self.disable:
 				try:
 					if self.echocmds:
 						print "Sending command:   '" + command + "'"
@@ -92,10 +92,10 @@ class LIBox:
 					char = self.port.read(1)
 					if self.echocmds:
 						print "Received from box: '" + char + "'"
-			
+		
 					if char != "K":
 						raise Error("The LI box didn't respond affirmatively to the command: '" + command + "'.")
-			
+		
 				time.sleep(0.02)
 		
 		self.command_stack = []
