@@ -1,15 +1,22 @@
 """
-  RunControlDispatcher.py:
-   Listener service that runs on a DAQ slave ("soldier" or "worker" node
-   in Gabe's terminology) to manage the DAQ process and slow control.
-   It inherits most of its functionality from Dispatcher.
+  Package: mnvruncontrol
+   The MINERvA run control
   
-   Original author: J. Wolcott (jwolcott@fnal.gov)
-                    Feb.-Mar. 2010
-                    
-   Address all complaints to the management.
-"""
+  File: RunControlDispatcher.py
+  
+  Notes:
+   Listener service that runs on a DAQ slave ("soldier"
+   or "worker" node in DAQ terminology) to manage
+   the DAQ process and slow control.
+   It inherits most of its functionality from Dispatcher.
 
+  
+  Original author: J. Wolcott (jwolcott@fnal.gov)
+                   first version,  Feb.-Mar. 2010
+                   second version, Aug. 2010
+                    
+  Address all complaints to the management.
+"""
 import subprocess
 import threading
 import time
@@ -292,10 +299,12 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		except LIBox.Error as e:
 			self.logger.error("The LI box is not responding!  Check the cable and serial port settings.")
 			return e
-		finally:
+		except Exception as e:
+			self.logger.exception("An error occurred while trying to communicate with the LI box:")
+			return e
+		else:
 			self.logger.info( "     Commands issued to the LI box:\n%s", "\n".join(self.li_box.get_command_history()) )
-
-		return True
+			return True
 		
 	def sc_sethw(self, hw_config, identity_to_report=None):
 		""" Uses the slow control library to load a hardware configuration

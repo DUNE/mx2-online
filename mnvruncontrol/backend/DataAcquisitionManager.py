@@ -1226,7 +1226,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			return False
 
 		for response in responses:
-			if not response.success:
+			if response.success != True:
 				self.NewAlert( notice="The LI box on the '%s' node could not be configured!" % response.sender, severity=Alert.ERROR )
 				if isinstance(response.success, Exception):
 					self.logger.error("LI error text:\n%s", response.success)
