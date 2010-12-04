@@ -108,7 +108,7 @@ class LIBox:
 					command_ok = True
 					break
 			
-			if command_ok == False:
+			if not command_ok:
 				raise Error("Command '" + command + "' is invalid and cannot be sent to the LI box.")
 				
 				

@@ -1028,6 +1028,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# but don't worry too much if it can't be--
 		# it might already be unset, etc.  we'll
 		# panic on the startup end if need be.
+		self.logger.info("Resetting the light injection box(es)...")
 		message = PostOffice.Message(subject="readout_directive", mgr_id=self.id,
 		                             directive="li_configure",
 		                             li_level=MetaData.LILevels.ZERO_PE,
