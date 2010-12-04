@@ -79,7 +79,6 @@ class LIBox:
 		self.check_commands()
 		
 		for command in self.command_stack:
-			self.command_log.append(command)		# store this in a log for later review.
 			if not self.disable:
 				try:
 					if self.echocmds:
@@ -95,7 +94,8 @@ class LIBox:
 		
 					if char != "K":
 						raise Error("The LI box didn't respond affirmatively to the command: '" + command + "'.")
-		
+
+				self.command_log.append(command)		# store this in a log for later review.
 				time.sleep(0.02)
 		
 		self.command_stack = []
@@ -113,17 +113,17 @@ class LIBox:
 				
 				
 	def get_command_history(self):
-		tmp = [cmd for cmd in self.command_log]		# can't just make a direct assignment or we'll only get a reference
+		tmp = self.command_log[:]		# need to slice or we'll only get a reference
 		self.command_log = []
 		return tmp
 				
 	def write_configuration(self):
 		""" Builds a stack of commands based on this object's parameters, then calls communicate(). """
 		
-		self.command_stack = []
-		
 		if not self.initialized:
 			self.initialize()
+
+		self.command_stack = []
 		
 		# first, LED group.
 		# remove whitespace, capitalize, and alphabetize for easy processing.
