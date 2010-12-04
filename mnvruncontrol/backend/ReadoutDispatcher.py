@@ -280,21 +280,24 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		else:
 			need_LI = False
 
+		self.logger.info("Resetting the light injection box...")
+		try:
+			self.li_box.reset()
+			return True
+		except Exception as e:
+			self.logger.exception("An error occurred while trying to reset the LI box:")
+			return e
+		self.logger.debug(" ... done.")
+
 		# if the LEDs are supposed to be off anyway, just reset the box and be done
 		if not need_LI:
-			self.logger.info("Disabling light injection for this subrun...")
-			try:
-				self.li_box.reset()
-				return True
-			except Exception as e:
-				return e
+			return True
 
 		self.logger.info("Client wants the light injection system configured as follows:\n  LI level: %s\n  LED groups enabled: %s", li_level, led_groups)
 
 		self.li_box.LED_groups = led_groups.description
 
 		try:
-			self.li_box.reset()
 			self.li_box.write_configuration()
 		except LIBox.Error as e:
 			self.logger.error("The LI box is not responding!  Check the cable and serial port settings.")
@@ -303,6 +306,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 			self.logger.exception("An error occurred while trying to communicate with the LI box:")
 			return e
 		else:
+			self.logger.debug("     ... done.")
 			self.logger.info( "     Commands issued to the LI box:\n%s", "\n".join(self.li_box.get_command_history()) )
 			return True
 		

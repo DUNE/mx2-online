@@ -454,7 +454,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.current_gate["type"]   = message.last_trigger_type
 				self.current_gate["time"]   = message.last_trigger_time
 				
-				self.postoffice.Send( self.StatusReport( items=["current_gate", "waiting"] ) )
+				self.postoffice.Send( self.StatusReport( items=["current_gate", "waiting"], do_log=False ) )
 			
 		elif message.state == "finished":
 			self.remote_nodes[message.sender].completed = True
@@ -1219,23 +1219,35 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		message = PostOffice.Message(subject="readout_directive", mgr_id=self.id, directive="li_configure",
 		                             li_level=li_level, led_groups=led_groups)
 		
+		skip = False
+		
 		try:
 			responses = self.NodeSendWithResponse(message, node_type=RemoteNode.READOUT, timeout=10)
 		except DAQErrors.NodeError:
-			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
-			return False
-
-		for response in responses:
-			if response.success != True:
-				self.NewAlert( notice="The LI box on the '%s' node could not be configured!" % response.sender, severity=Alert.ERROR )
-				if isinstance(response.success, Exception):
-					self.logger.error("LI error text:\n%s", response.success)
+			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive during LI box setup.  Please document this in CRL (with run, subrun, and this message) and notify the expert shifter.  I will skip to the next subrun and try again...", severity=Alert.WARNING)
+			skip = True
+		else:
+			for response in responses:
+				if response.success != True:
+					self.NewAlert( notice="The LI box on the '%s' node could not be configured!  Please document this in CRL (with run, subrun, and this message) and notify the expert shifter.  I will skip to the next subrun and try again..." % response.sender, severity=Alert.WARNING )
+					if isinstance(response.success, Exception):
+						self.logger.error("LI error text:\n%s", response.success)
 			
-				self.remote_nodes[response.sender].status = RemoteNode.ERROR
-				return False
-					
-		# ok to proceed to next step
-		return True
+					self.remote_nodes[response.sender].status = RemoteNode.ERROR
+					skip = True
+		
+		if skip:
+			# for now, if the LI configuration didn't work,
+			# we just go on to the next subrun.  we'll make that
+			# happen manually here.
+			self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end", auto_start=True) )
+			
+			# return None so that the subrun doesn't try to continue,
+			# but also doesn't abort the run series altogether.
+			return None
+		else:
+			# ok to proceed to next step
+			return True
 	
 	def ReadoutNodeHVCheck(self):
 		"""
@@ -1595,7 +1607,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					missing_nodes.append(node)
 		
 		if len(missing_nodes) > 0:
-			raise DAQErrors.NodeError("Responses were not received from the following nodes: %s" % missing_nodes)
+			e = DAQErrors.NodeError("Responses were not received from the following nodes: %s" % missing_nodes)
+			self.logger.warning( str(e) )
+			raise e
 		
 		return out_responses
 		
@@ -1685,10 +1699,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		self.postoffice.Send(message)
 	
-	def StatusReport(self, message=None, items=[]):
+	def StatusReport(self, message=None, items=[], do_log=True):
 		""" Fills a message with a bunch of status information.
 		
-		    It is only all given only when a client
+		    It is only all given when a client
 		    specifically requests it or a subrun is beginning
 		    (it generates a fair bit of information and sending
 		    it over the network unasked-for would probably
@@ -1707,7 +1721,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			          "errors", "warnings", "problem_pmt_list", "remote_nodes", "running", "run_series",
 			          "control_info", "waiting" )
 
-		self.logger.debug("Generating status report with the following items: %s", items)
+		if do_log:
+			self.logger.debug("Generating status report with the following items: %s", items)
 
 		message.status = {}
 		for item in items:
