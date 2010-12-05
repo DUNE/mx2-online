@@ -447,7 +447,7 @@ class MessageTerminus:
 		
 		self.time_to_quit = True
 		
-		if self.delivery_thread and self.delivery_thread.is_alive():
+		if hasattr(self, "delivery_thread") and self.delivery_thread and self.delivery_thread.is_alive():
 			self.delivery_thread.join()
 	
 		self.delivery_thread = None

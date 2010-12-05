@@ -182,7 +182,8 @@ class Dispatcher(PostOffice.MessageTerminus):
 		# we want it to do the other shutdown stuff		
 		if sig is None and frame is None:
 			self.Close()
-			self.postoffice.Shutdown()
+			if self.postoffice is not None:
+				self.postoffice.Shutdown()
 
 		self.quit = True
 
