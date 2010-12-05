@@ -813,7 +813,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress"] ) )
 				
 				# then run the appropriate method.
-				status = task["method"]()
+				try:
+					status = task["method"]()
+				except Exception as e:
+					self.logger.exception("Error in task execution:")
+					status = False
+
 				task["completed"] = True
 			
 				# the return value of each task can be one of three things:
@@ -1328,7 +1333,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			#  might signal before the DAQStartTask has fully finished)
 			self.startup_step += 1
 			self.current_DAQ_thread += 1
-			self.DAQStartTasks[self.current_DAQ_thread-1]["method"]()
+			try:
+				self.DAQStartTasks[self.current_DAQ_thread-1]["method"]()
+			except Exception as e:
+				self.NewAlert(notice="There was an error executing a DAQ startup task: '%s'.  Running will be halted..." % e, severity=Alert.ERROR)
+				self.StopDataAcquisition(do_auto_start=False)
 		else:
 			signal.signal(signal.SIGUSR1, signal.SIG_IGN)		# go back to ignoring the signal...
 			self.logger.warning("Note: requested a new thread but no more threads to start...")
