@@ -283,7 +283,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		self.logger.info("Resetting the light injection box...")
 		try:
 			self.li_box.reset()
-			return True
+			self.logger.info( " ... used LI commands:\n%s", "\n".join(self.li_box.get_command_history()) )
 		except Exception as e:
 			self.logger.exception("An error occurred while trying to reset the LI box:")
 			return e
