@@ -158,11 +158,21 @@ class WorkerThread(threading.Thread):
 	    perform run control functionality on behalf
 	    of the message handlers (so that we don't
 	    tie up the message handler thread). """
-	def __init__(self):
+	def __init__(self, logger=None):
+		""" Constructor.
+		
+		    If you pass a Python logger object (see the
+		    documentation for the 'logging' module) as
+		    the 'logger' parameter, the worker will
+		    send announcements immediately before and
+		    after running each work function.  This can
+		    help to pin down thread deadlocks. """
+
 		threading.Thread.__init__(self)
 		
 		self.queue = Queue()
 		self.time_to_quit = False
+		self._logger = logger
 		
 		self.start()
 	
@@ -173,22 +183,25 @@ class WorkerThread(threading.Thread):
 		     { "method": <function object>,
 		       "args":   <non-keyword arguments as a list>,
 		       "kwargs": <keyword arguments as a dictionary> }
-		    into the WorkerThread's queue.   The method will
-		    then execute the function with these arguments."""
+		    into its queue.   The worker will then execute
+		    the function with these arguments. """
+		    
 		    
 		while True:
 			method_info = self.queue.get()
 			
 			# this is how the main thread signals us to quit
 			if method_info == "QUIT":
+				if self._logger is not None:
+					self._logger.debug("Worker thread instructed to quit...")
 				break
 			
 			# call the specified method with the specified non-keyword and keyword arguments
 			args = [] if "args" not in method_info else method_info["args"]
 			kwargs = {} if "kwargs" not in method_info else method_info["kwargs"]
-#			print "args:", args
-#			print "kwargs:", kwargs
-#			print "Calling method %s..." % method_info["method"]
+
+			if self._logger is not None:
+				self._logger.debug("Worker thread is about to go to work using the following items:\n  Function: %s\n  args:     %s\n  kwargs:   %s", method_info["method"], args, kwargs)
 
 			# functions being run using this thread
 			# can raise a StopWorkingException if they
@@ -198,6 +211,9 @@ class WorkerThread(threading.Thread):
 				method_info["method"](*args, **kwargs)
 			except StopWorkingException:
 				pass
+			
+			if self._logger is not None:
+				self._logger.debug("Worker thread returned from work function: %s", method_info["method"])
 		
 #########################################################
 #   AlertThread

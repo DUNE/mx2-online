@@ -153,7 +153,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.info("Starting a fresh session.")
 
 		self.logger.debug("Creating worker thread.")
-		self.worker_thread = Threads.WorkerThread()
+		self.worker_thread = Threads.WorkerThread(logger=self.logger)
 
 		self.remote_nodes = {}
 		self.logger.info("Contacting nodes to announce that I am up...")
@@ -323,6 +323,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.info("Stopping worker thread...")
 		self.worker_thread.queue.put("QUIT")
 		self.worker_thread.join()
+		self.logger.info("  ... done.")
 
 #		delete_session = True
 #		# release any locks that might still be open
@@ -820,6 +821,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					status = False
 
 				task["completed"] = True
+				self.logger.debug("Finished task: %s" % task["message"])
 			
 				# the return value of each task can be one of three things:
 				#   (1) True.   in this case it's safe to move on.
@@ -900,7 +902,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# start the first thread manually.
 		# the rest will be started in turn as SIGUSR1 signals
 		# are received by the program.		
-		self.StartNextThread()			
+		self.StartNextThread()
+
+		self.logger.debug("StartNextSubrun() finished.")
 		
 	def EndSubrun(self, sentinel=False, auto_start=True):
 		""" Performs the jobs that need to be done when a subrun ends. 
