@@ -95,6 +95,7 @@ if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal
 	ln -sf $HOME/mnvdaqrunscripts/restart_daq_rc_mnvonline.sh $HOME/hard_restart_daq_rc.sh
 	ln -sf $HOME/mnvdaqrunscripts/restart_nearline_ssh.sh $HOME/hard_restart_nearline.sh
 	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi.sh $HOME/runcontrol.sh
+	ln -sf $HOME/mnvdaqrunscripts/runcontrol_multi_soft.sh $HOME/soft_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/setupdaqenv.sh $HOME/setupdaqenv.sh
 fi
 
