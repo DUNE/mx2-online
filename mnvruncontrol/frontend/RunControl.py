@@ -69,7 +69,15 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.frame.Show()
 
 		# prepare the post office and threads
-		self.postoffice = PostOffice.PostOffice(listen_port=Configuration.params["Front end"]["frontend_listenPort"])
+		try:
+			self.postoffice = PostOffice.PostOffice(listen_port=Configuration.params["Front end"]["frontend_listenPort"])
+		except socket.error:
+			self.logger.exception("Socket error trying to start up the post office:")
+			self.logger.fatal("Can't get a socket.  Quitting.")
+			sys.stderr.write("I can't bind my listening socket.  Are you sure there's no other copy of the run control running?")
+			sys.stderr.write("Wait 60 seconds and try again.  If you see this message again, contact your expert shifter.")
+			return False
+			
 		self.worker_thread = Threads.WorkerThread()
 		self.alert_thread = Threads.AlertThread(parent_app=self)
 
