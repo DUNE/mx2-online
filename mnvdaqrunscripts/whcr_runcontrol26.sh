@@ -5,12 +5,6 @@
 
 . $HOME/mnvdaqrunscripts/defs_crpaths
 
-if test -z "$DAQROOT"
-then
-	echo "No DAQROOT defined.  Sourcing the setup script..."
-	source $HOME/mnvdaqrunscripts/setupdaqenv.sh $MULTIDAQ
-fi
-
 # Need to kerberize first. 
 . $HOME/mnvdaqrunscripts/Kerberize
 
