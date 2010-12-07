@@ -111,7 +111,11 @@ if [ $HOSTNAME == "mnvnearline1.fnal.gov" ]; then
 fi
 
 # minerva-rc - Main MINERvA Control Room PC in WH12.
-if [ $HOSTNAME == "minerva-rc.fnal.gov" ]; then
+# ksmcf-cart.pas.rochester.edu - UROC at Rochester
+# uroc.phy.tufts.edu - UROC at Tufts
+# uroc.hep.utexas.edu - UROC at Austin
+
+if [ "$HOSTNAME" == "minerva-rc.fnal.gov" -o "$HOSTNAME" == "ksmcf-cart.pas.rochester.edu" -o "$HOSTNAME" == "uroc.phy.tufts.edu" -o "$HOSTNAME" == "uroc.hep.utexas.edu" ]; then
 	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_restart_all_mnvonline.sh $HOME/hard_restart_all.sh
