@@ -19,6 +19,11 @@ default=false
 wantshelp=false
 force=false
 
+# check if there is an automatic way to guess the appropriate principal
+if [ -d "$HOME/Krb5" -a -e "$HOME/Krb5/principal" ]; then
+	principal=`cat $HOME/Krb5/principal`
+fi
+
 # getopts will barf if OPTIND is too high from some previous usage
 unset OPTIND
 while getopts "p:d:h:f:" options; do
@@ -34,10 +39,11 @@ if [ $wantshelp == true ]; then
 	echo "Usage:"
 	echo "Kerberize [-d] [-p <principal name>]"
 	echo "  options:"
-	echo "    -d        use the default Kerberos cache file (/tmp/krb5cc_1000)"
-	echo "              instead of providing a custom time-stamped version"
+	echo "    -d        use the default Kerberos cache file (/tmp/krb5cc_[UID], where"
+	echo "              UID=your user ID) instead of providing a custom time-stamped version"
 	echo "    -p        use the specified Kerberos principal instead of the default"
-	echo "              (the MINERvA Wilson Hall control room principal)"
+	echo "              (the contents of $HOME/Krb5/principal, or, if that is"
+	echo "              inaccessible, the MINERvA Wilson Hall control room principal)"
 	echo "    -f        force retrieval of new ticket.  If not specified this script"
 	echo "              will check for an existing one first."
 	echo "    -h        this help message"
