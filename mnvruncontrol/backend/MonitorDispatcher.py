@@ -93,7 +93,7 @@ class MonitorDispatcher(Dispatcher):
 		use_condor = True
 
 		# first ask Condor for names and statuses of its slots.
-		condor_command = "condor_status -avail -format \"%s \" Name -format \"%s\\n\" State"
+		condor_command = "condor_status -format \"%s \" Name -format \"%s\\n\" State"
 		p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
 		status_text = p.stdout.read()
 		return_code = p.wait()
@@ -148,6 +148,7 @@ class MonitorDispatcher(Dispatcher):
 			self.logger.info("Sending mail to notification addresses.")
 			MailTools.sendMail(fro=sender, to=Configuration.params["General"]["notify_addresses"], subject=subject, text=messagebody)
 
+		self.use_condor = use_condor
 
 	def DAQMgrStatusHandler(self, message):
 		""" Method to respond to changes in status of the
