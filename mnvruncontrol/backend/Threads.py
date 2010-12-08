@@ -1,13 +1,18 @@
 """
-   Threads.py:
+  Package: mnvruncontrol
+   The MINERvA run control
+   
+  File: Threads.py
+  
+  Notes:
    Some custom threads that are used in the main
    run control.  Extracted here to prevent clutter
    in the main files.
   
-   Original author: J. Wolcott (jwolcott@fnal.gov)
+  Original author: J. Wolcott (jwolcott@fnal.gov)
                     Feb.-Mar. 2010
                     
-   Address all complaints to the management.
+  Address all complaints to the management.
 """
 
 import os
