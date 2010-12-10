@@ -1294,10 +1294,10 @@ class PostOffice(MessageTerminus):
 						# expecting.
 						if self.pending_messages[message.in_reply_to]["response_requested"]:
 							if self.pending_messages[message.in_reply_to]["return_address"] is not None:
-								response_subscr = Subscription(in_reply_to=message.in_reply_to, \
-									                          action=Subscription.FORWARD, \
-									                          delivery_address=self.pending_messages[message.in_reply_to]["return_address"], \
-									                          postmaster_ok=False, \
+								response_subscr = Subscription(in_reply_to=message.in_reply_to, 
+									                          action=Subscription.FORWARD, 
+									                          delivery_address=self.pending_messages[message.in_reply_to]["return_address"], 
+									                          postmaster_ok=False, 
 									                          expiry=len(message.delivered_to) )
 								try:
 									with self.subscription_lock:
@@ -1340,6 +1340,7 @@ class PostOffice(MessageTerminus):
 			# postmaster subscription covers it).
 			#
 			if slots_left == 0:
+				logger().debug("Pending message status for message %s:\n%s", message.in_reply_to, self.pending_messages[message.in_reply_to])
 				recipient_list = []
 				with self.pending_message_lock:
 					for slot in self.pending_messages[message.in_reply_to]["recipient_status"]:
@@ -1354,7 +1355,7 @@ class PostOffice(MessageTerminus):
 				
 				done_msg = Message(subject="postmaster", in_reply_to=message.in_reply_to, delivered_to=recipient_list)
 				self.Send(done_msg)
-				logger().debug("All confirmations received from upstream.  Sent single confirmation downstream...")
+				logger().debug("All confirmations for message %s received from upstream.  Sent single confirmation downstream...", message.in_reply_to)
 			else:
 				logger().debug("Message %s: still waiting for confirmation from %d nodes.", message.in_reply_to, slots_left)
 				logger().debug("   recipient status list: %s", self.pending_messages[message.in_reply_to]["recipient_status"])
