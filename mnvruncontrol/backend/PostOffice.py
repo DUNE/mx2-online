@@ -121,6 +121,73 @@ CHECKSUM_BYTES = 8
 SOCKET_TIMEOUT   = 1.5  # how long a socket is given to connect, in seconds
 SUBSCRIPTION_TTL = 60   # time a subscription can have delivery failures before it's deleted, in seconds
 
+class IPv4Address:
+	""" An IPv4 address wrapper that does intelligent things
+	    like translate DNS-resolvable names to IP addresses. """
+	def __init__(self, host, port):
+		self.set_host(host)
+		self.set_port(port)
+		
+	def __eq__(self, other):
+		if hasattr(other, "__iter__"):
+			try:
+				other = IPv4Address.from_iter(other)
+			except (TypeError, ValueError):
+				return False
+
+		if not hasattr(other, "host") or not hasattr(other, "port"):
+			return False
+
+		return other.host == self.host and other.port == self.port
+		
+	def __repr__(self):
+		return "('%s', %d)" % (self.host, self.port)
+		
+	def set_host(self, host):
+		# None is allowed for not-yet-fully-configured addresses
+		if host is None:
+			self.host = None
+			return
+			
+		if not isinstance(host, basestring):
+			raise TypeError("Host must be str or unicode, not %s", type(host))
+		
+		try:
+		 	self.host = socket.gethostbyname(host)
+		except socket.gaierror:
+			self.host = host
+	
+	def set_port(self, port):
+		# None is allowed for not-yet-fully-configured addresses
+		if port is None:
+			self.port = None
+			return
+			
+		if not isinstance(port, int):
+			raise TypeError("Port must be int, not %s", type(port))
+
+		self.port = port		
+	
+	def to_tuple(self):
+		""" Returns a list of the form ('host', port). """
+		
+		return (self.host, self.port)
+	
+	@staticmethod
+	def from_iter(lst):
+		""" Get an IPv4Address from an iterable."""
+		
+		if isinstance(lst, basestring):
+			raise TypeError("lst must not be a string!")
+		
+		if not hasattr(lst, "__iter__"):
+			raise TypeError("lst must be an iterable type!")
+		
+		if len(lst) != 2:
+			raise ValueError("lst must be of the form ['host', port]")
+		
+		return IPv4Address(lst[0], lst[1])
+
 class Message:
 	""" Models a message. """
 
@@ -217,8 +284,12 @@ class Subscription:
 #		if action is None and delivery_address is not None:
 #			raise AttributeError("A message subscription with no action is not deliverable!")
 		if action in (Subscription.FORWARD, Subscription.DELIVER):
-			if action == Subscription.FORWARD and len(delivery_address) != 2:
-				raise AttributeError("FORWARD action requires a delivery_address in (host, port) format...")
+			if action == Subscription.FORWARD:
+				if not isinstance(delivery_address, IPv4Address):
+					try:
+						delivery_address = IPv4Address.from_iter(delivery_address)
+					except Exception:
+						raise AttributeError("FORWARD action requires a delivery_address in (host, port) format...")
 			elif action == Subscription.DELIVER and not hasattr(delivery_address, "_TakeDelivery"):
 				raise AttributeError("DELIVER action requires delivery_address to be a MessageTerminus object...")
 		elif action is not None:
@@ -776,6 +847,24 @@ class PostOffice(MessageTerminus):
 							logger().debug("Message %s matched subscription: %s", message.id, subscription)
 							matched = True
 							
+							# make sure this location is in the list of deliveries	 
+							if message.id in self.pending_messages:
+								if hasattr(subscription.delivery_address, "_TakeDelivery"):	 
+									address = None	 
+								else:	 
+									address = subscription.delivery_address
+
+								need_update = True
+								for status in self.pending_messages[message.id]["recipient_status"]:
+									if address == status[0]:
+										need_update = False
+										break
+								if need_update:
+									with self.pending_message_lock:	 
+										logger().log(5, "Acquired pending message lock...")	 
+
+										self.pending_messages[message.id]["recipient_status"].append( [address, None] )
+										logger().debug("Added address %s to message %s recipient-waiting list.", address, message.id)
 							
 							# if the subscription is locked, or there is a queue
 							# of messages waiting to be sent using this subscription,
@@ -1032,10 +1121,10 @@ class PostOffice(MessageTerminus):
 							message.sender_certificate = certificate_reformat
 
 						# the delivery thread sending this message to us
-						# should have appended a tuple to return_path
+						# should have appended an IPv4Address to return_path
 						# containing the port number we should be contacting it at.
 						# now we add the IP address as we see it from here.
-						message.return_path[-1][0] = client_address
+						message.return_path[-1].set_host(client_address)
 	#					print "message came from: %s" % message.return_path
 
 						self.message_queue.put_nowait(message)
@@ -1274,11 +1363,11 @@ class PostOffice(MessageTerminus):
 				
 				return
 			
+			slots_left = 0
+			matched = False
 			logger().debug("_PostMasterMessages() acquiring pending message lock...")
 			with self.pending_message_lock:
 				logger().debug("_PostMasterMessages() got pending message lock.")
-				slots_left = 0
-				matched = False
 				for slot in self.pending_messages[message.in_reply_to]["recipient_status"]:
 					# locally-delivered messages never update this return path.
 					if not matched and (   (len(message.return_path) == 0 and slot[0] is None and slot[1] is None) \
@@ -1372,7 +1461,7 @@ class PostOffice(MessageTerminus):
 			# because only the listener knows what port it's listening at....
 			for subscription in message.subscriptions:
 				subscription.action = Subscription.FORWARD
-				subscription.delivery_address = [message.return_path[-1][0], subscription.delivery_address[1]]
+				subscription.delivery_address = IPv4Address(message.return_path[-1].host, subscription.delivery_address.port)
 				if message.remote_request == "forward_request":
 					self.AddSubscription(subscription)
 					logger().debug("Added forwarding subscription: %s", subscription)
@@ -1599,7 +1688,7 @@ class DeliveryThread(threading.Thread):
 			# update the return path (because one ALWAYS goes
 			# through the local node for delivery). 
 			if subscription.action != Subscription.DELIVER:
-				message.return_path.append( [None, self.postoffice.listen_port] ) 
+				message.return_path.append( IPv4Address(None, self.postoffice.listen_port) ) 
 			
 			# wait until it's safe to deliver this message
 			try:
@@ -1649,8 +1738,7 @@ class DeliveryThread(threading.Thread):
 								else:
 									sock = s
 
-								# the socket constructor is picky.  it HAS to be a tuple (lists don't work)
-								sock.connect( tuple(subscription.delivery_address) )
+								sock.connect( subscription.delivery_address.to_tuple() )
 					
 #								# unfortunately the SSL wrapper uses different method names ...
 #								if hasattr(sock, "read") and hasattr(sock, "write"):
@@ -1729,13 +1817,7 @@ class DeliveryThread(threading.Thread):
 							if hasattr(subscription.delivery_address, "_TakeDelivery"):
 								address = None
 							else:
-								# we convert to an IP address here so that it matches
-								# with all of the other places we store addresses
-								try:
-									delivery_addr = socket.gethostbyname(subscription.delivery_address[0])
-								except socket.gaierror:		#... but if it's an invalid hostname, we can't.
-									delivery_addr = subscription.delivery_address[0]
-								address = [delivery_addr, subscription.delivery_address[1]]
+								address = subscription.delivery_address
 							
 							# if we are trying to send the same message to the same place,
 							# we shouldn't be duplicating its status...
@@ -1744,7 +1826,7 @@ class DeliveryThread(threading.Thread):
 								self.postoffice.pending_messages[message.id]["recipient_status"].append(delivery_status)
 					
 						else:					
-							logger().info(" ==> Reporting delivery failed to (%s, %d)...", subscription.delivery_address[0], subscription.delivery_address[1])
+							logger().info(" ==> Reporting delivery failed to %s...", subscription.delivery_address)
 							for slot in self.postoffice.pending_messages[message.id]["recipient_status"]:
 								if slot[0] == message.return_path[-1]:
 									slot[1] = []
@@ -1752,11 +1834,7 @@ class DeliveryThread(threading.Thread):
 			
 							# we "forge" a message from this address indicating no deliveries there
 							nodelivery_msg = Message(subject="postmaster", in_reply_to=message.id, delivered_to=[])
-							try:
-								delivery_addr = socket.gethostbyname(subscription.delivery_address[0])
-							except socket.gaierror:		# if it's an invalid hostname
-								delivery_addr = subscription.delivery_address[0]
-							nodelivery_msg.return_path = [ [delivery_addr, subscription.delivery_address[1]], ]
+							nodelivery_msg.return_path = [ copy.deepcopy(subscription.delivery_address), ]
 							
 					# note: can't do this within the 'with' block above
 					# because _PostMasterMessages also wants that same lock...
