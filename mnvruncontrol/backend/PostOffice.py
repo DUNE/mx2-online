@@ -280,9 +280,19 @@ class Subscription:
 	           other_attributes: other attributes that a message must have,
 	                             specified as {attr_name: required_value} in
 	                             the dictionary.  """
+
+		# try to forestall any problems.  if the delivery_address is
+		# an iterable type, it's probably supposed to be an IP address.
+		# convert it to an IPv4Address straightaway.
+		# however, if that doesn't work, don't fail yet -- we don't
+		# know what the action is supposed to be yet.
+		if hasattr(delivery_address, "__iter__"):
+			try:
+				delivery_address = IPv4Address.from_iter(delivery_address)
+			except Exception:
+				pass			
 	    
-#		if action is None and delivery_address is not None:
-#			raise AttributeError("A message subscription with no action is not deliverable!")
+		# NOW we check against the action.
 		if action in (Subscription.FORWARD, Subscription.DELIVER):
 			if action != Subscription.DELIVER:
 				if not isinstance(delivery_address, IPv4Address):
@@ -1461,7 +1471,6 @@ class PostOffice(MessageTerminus):
 			# because only the listener knows what port it's listening at....
 			for subscription in message.subscriptions:
 				subscription.action = Subscription.FORWARD
-				print subscription.delivery_address
 				subscription.delivery_address = IPv4Address(message.return_path[-1].host, subscription.delivery_address.port)
 				if message.remote_request == "forward_request":
 					self.AddSubscription(subscription)
