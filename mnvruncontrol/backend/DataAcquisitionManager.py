@@ -461,6 +461,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.remote_nodes[message.sender].completed = True
 			self.remote_nodes[message.sender].sent_sentinel = message.sentinel
 			self.remote_nodes[message.sender].status = RemoteNode.IDLE
+			self.postoffice.Send( self.StatusReport(items=["remote_nodes",]) )
 			self.logger.debug("    ==> '%s' node reports it's done taking data and %s send a sentinel.", message.sender, "DID" if message.sentinel else "DID NOT")
 			
 			# loop and check if they're all finished
@@ -1207,7 +1208,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				node = self.remote_nodes[node_name]
 				if node.type == RemoteNode.READOUT:
 					node.hw_init = True
+					node.status = RemoteNode.OK
 
+			self.postoffice.Send( self.StatusReport(items=["remote_nodes",]) )
 			self.last_HW_config = self.configuration.hw_config
 			self.logger.info("   ==> No HW configuration necessary.")
 			return True
