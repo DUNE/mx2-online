@@ -1245,8 +1245,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		for subscription in self.handlers:
 			newsub = copy.copy(subscription)
 			newsub.action = PostOffice.Subscription.FORWARD
-			newsub.delivery_address = [None, self.postoffice.listen_port]
-
+			newsub.delivery_address = PostOffice.IPv4Address(None, self.postoffice.listen_port)
 			subscriptions.append(newsub)
 		self.postoffice.ForwardRequest( host=(host, remote_port), subscriptions=subscriptions )
 				
