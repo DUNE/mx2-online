@@ -420,6 +420,9 @@ class Subscription:
 		if not (hasattr(message, "subject") and hasattr(message, "sender") and hasattr(message, "in_reply_to")):
 			raise TypeError("_MessageMatch() can only be used on Message objects!")
 
+		if not self._Validate():
+			raise ValueError("Subscription's parameters are invalid: %s", self)
+
 		# if this subscription has expired but not yet been removed,
 		# it still shouldn't be matching!
 		if self.expiry > 0 and self.times_matched > self.expiry:
@@ -473,6 +476,26 @@ class Subscription:
 			self.times_matched += 1
 		
 		return matched
+		
+	def _Validate(self):
+		""" Checks that the internal state of the subscription makes sense.
+		
+		    This is supposed to help prevent accidental reassignments of
+		    subscription parameters from sneaking by (and thus causing
+		    strange, inexplicable errors). """
+		
+		action_ok = self.action in (None, Subscription.FORWARD, Subscription.DELIVER)
+		if not action_ok:
+			logger().warning("Subscription %s has invalid 'action' parameter...", self)
+		
+		addr_ok = (self.action is None and self.delivery_address is None) \
+		          or ( self.action == Subscription.DELIVER and isinstance(self.delivery_address, MessageTerminus) ) \
+		          or ( self.action == Subscription.FORWARD and isinstance(self.delivery_address, IPv4Address) )
+		if not addr_ok:
+			logger().warning("Subscription %s has invalid 'delivery_address' parameter...", self)
+			
+		return action_ok and addr_ok
+		
 
 class MessageTerminus:
 	""" MessageTerminus objects can have messages delivered to them.
