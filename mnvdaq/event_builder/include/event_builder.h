@@ -2,7 +2,6 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include <signal.h>
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
@@ -26,8 +25,10 @@
 * the final event model.  The final event will then be placed on
 * the Event Transfer system for storage.
 *
-* Elaine Schulte, Rutgers University
-* Gabriel Perdue, The University of Rochester
+* Elaine Schulte
+* Rutgers University
+* August 18, 2009
+*
 */
 
 /*! \struct event_handler
@@ -36,6 +37,10 @@
  */
 struct event_handler { //the structure to hold the data
 	bool quit, new_event, done; /*!<we need some status info */
+	/*
+	unsigned int run_info[5]; // 0: detector, 1: configuration, 2: run number, 3: sub-run number, 4: trigger type 
+	unsigned int gate_info[5];  // 0: g_gate, 1: gate, 2: trig_time, 3: error, 4: minos; gate information 
+	*/
 	unsigned char		detectorType;   // Enumerated in the DAQHeader Class 
 	unsigned short int	detectorConfig; // Number of modules in the detector
 	unsigned int		runNumber;      // Run series demarcator.
@@ -48,7 +53,6 @@ struct event_handler { //the structure to hold the data
 	unsigned long long	triggerTime;    // Time in microseconds after the epoch. 		
 	unsigned short int	readoutInfo;    // Readout type and errors... break these up? timingVio is obsolete
 	unsigned int 		minosSGATE;     // Only 28 significant bits.
-	unsigned int            readoutTime;    // We will only report 24 bits (DAQ Header v8+).
 	unsigned int feb_info[9]; /*!<0: link_no, 1: crate_no, 2: croc_no, 3: chan_no, 4: bank, 5: buffer length, 
                                       6: feb number, 7: feb firmware, 8: hits; //hardware info & data type */
 	unsigned char event_data[FEB_DISC_SIZE]; /*!<the data we're going to process - largest possible frame? */
@@ -63,7 +67,7 @@ template <class X> void DecodeBuffer(event_handler *evt, X *frame, int i, int le
 /*! a function which build the necessary/header for each data bank */
 template <class X> MinervaHeader* BuildBankHeader(event_handler *evt, X *frame); 
 
-int CheckBufferLength(int length, int frame_length); //just what it says
+void CheckBufferLength(int length, int frame_length); //just what it says
 
 void HandleErrors(int i); //an error handling function
 
@@ -73,15 +77,5 @@ void HandleErrors(int i); //an error handling function
  */
 
 bool quit, done;
-
-/*! How long the event builder will wait for new frames before declaring no more are coming.
- * Only relevant after receiving SIGTERM/SIGINT (otherwise we just wait until we get the
- * sentinel gate instead).
- */
-const int SECONDS_BEFORE_TIMEOUT = 60;
-
-sig_atomic_t waiting_to_quit;          /*!< Used by the SIGTERM/SIGINT signal handler to tell the main loop to quit (guaranteed atomic write) */
-sig_atomic_t quit_now;          /*!< Used by the SIGTERM/SIGINT signal handler to tell the main loop to quit NOW (guaranteed atomic write) */
-void quitsignal_handler(int signum);   /*!< The signal handler for SIGTERM/SIGINT */
 
 MinervaEvent *event;
