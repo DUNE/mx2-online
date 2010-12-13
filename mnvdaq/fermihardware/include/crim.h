@@ -66,16 +66,9 @@ class crim {
 		unsigned int statusRegisterAddress;
 		unsigned int clearStatusRegister;
 
-		/*! "external" data register addresses */
-		unsigned int gateTimeWordLowAddress;
-		unsigned int gateTimeWordHighAddress;
-
 		/*! variables for holding information about the setup of the crim for use. */
 		unsigned short timingSetup, gateWidthSetup, TCALBDelaySetup;
-	
-		/*! cosmic mode control registers. */
-		unsigned int sequencerResetRegister;
-	
+		
 		unsigned short crimStatusValue;
 
 		/*!  these are the various masks that are used to set up  running conditions */
@@ -137,17 +130,8 @@ class crim {
 #endif
 		}; 
 		// setup gate width register - arguments are tcalb enable bit and gate width
-		//  tcalb enable - a
-		//  gate width   - b
 		void SetupGateWidth(unsigned short a, unsigned short b) {
-			gateWidthSetup = ((a & 0x1)<<15) | (b & GateWidthRegisterMask);
-		};  
-		// setup gate width register - arguments are tcalb enable bit, gate width, and sequencer control enable bit
-		//  tcalb enable     - a
-		//  gate width       - b
-		//  sequencer enable - c 
-		void SetupGateWidth(unsigned short a, unsigned short b, unsigned short c) {
-			gateWidthSetup = ((a & 0x1)<<15) | ((c & 0x1)<<10) | (b & GateWidthRegisterMask);
+			gateWidthSetup = ( (a & 0x1)<<15 ) | (b & GateWidthRegisterMask);
 		};  
 		// set pluse delay - argument is the pulse delay
 		void SetupTCALBPulse(unsigned short a) {
@@ -167,6 +151,7 @@ class crim {
 		unsigned short GetSoftSGATEStop() {return softSGATEstop;};
 		unsigned short GetSoftCNRST() {return softCNRST;};
 		unsigned short GetSoftCNRSTSeq() {return softCNRSTseq;};
+		void SetupOneShot();
 
 		unsigned int GetTimingRegister() {return timingRegister;};
 		unsigned int GetSGATEWidthRegister() {return SGATEWidthRegister;};
@@ -179,8 +164,6 @@ class crim {
 		/*! interrupt stuff */
 		void inline SetIRQLevel(CVIRQLevels a) {irqLevel = a;};  //sets the IRQ Level (CAEN)
 		void inline SetIRQLine(crimInterrupts a) {irqLine = a;}; //sets the IRQ Level (CAEN)
-		CVIRQLevels inline GetIRQLevel() {return irqLevel;}; //returns the irq level (CAEN)
-		unsigned char inline GetIRQLine() { return (unsigned char)irqLine; };
 
 		void inline SetInterruptMask() {
 			interruptValue = ((unsigned short)irqLine & InterruptMaskRegisterMask);
@@ -192,7 +175,7 @@ class crim {
 
 		void inline SetInterruptConfigValue(unsigned short a) {
 			interruptConfigValue = a;
-		}; //interrupt level - must match the IRQ value!
+		}; //must match the IRQ vlaue
 		
 		void inline SetInterruptGlobalEnable(bool a) {
 			interruptConfigValue |= ((a << 7) & InterruptConfigGlobalEnableMask);
@@ -222,6 +205,8 @@ class crim {
 			return interruptConfig;
 		}; //returns the interrupt config address
 
+		CVIRQLevels inline GetIRQLevel() {return irqLevel;}; //returns the irq level (CAEN)
+
 		unsigned int inline GetInterruptStatusAddress() {
 			return interruptStatusRegister;
 		}; // Return the interrupt status register address. 
@@ -233,18 +218,6 @@ class crim {
 		unsigned int inline GetClearInterruptsAddress() {
 			return interruptsClear;
 		}; //returns the clear interrupts register address
-
-		unsigned int inline GetGateTimeWordLowAddress() { 
-			return gateTimeWordLowAddress;
-		}; // returns the least significant 16 bits of the MINOS GATE time address
-                unsigned int inline GetGateTimeWordHighAddress() {
-			return gateTimeWordHighAddress;
-		}; // returns the most significant 16 bits of the MINOS GATE time address
-
-		unsigned int inline GetSequencerResetRegister() {
-			return sequencerResetRegister;
-		} // returns the sequencer reset register
-
 
 		/*! control stuff */
 		void SetCRCEnable(bool a);
