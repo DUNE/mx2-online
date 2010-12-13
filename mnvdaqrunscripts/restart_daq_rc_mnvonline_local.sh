@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# THIS SCRIPT IS A CANDIDATE FOR REMOVAL...
+# Best when running directly on mnvonlinemaster...
 
 # Kill them all, let God sort them out.
 # -------------------------------------
@@ -16,8 +16,6 @@ source $HOME/mnvdaqrunscripts/proc_kill_ALLDAQRC_silent.sh
 
 # Kill all the remote stuff.
 echo "Going to kill remote processes..."
-echo "Killing processes on the master node..."
-`ssh ${REMDAQACCT}@${MASTERMACH} ${SCRIPTSDIR}/proc_kill_ALLDAQRC_silent.sh`
 echo "Killing processes on the soldier node..."
 `ssh ${REMDAQACCT}@${SOLDERMACH} ${SCRIPTSDIR}/proc_kill_ALLDAQRC_silent.sh`
 echo "Killing processes on the worker node..."
@@ -36,7 +34,7 @@ sleep 1
 echo "Waiting..."
 sleep 1
 echo "Restarting processes on the master node..."
-`ssh ${REMDAQACCT}@${MASTERMACH} source ${SCRIPTSDIR}/acquisitionmanager_multi.sh`
+source ${SCRIPTSDIR}/acquisitionmanager_multi.sh
 
 # Now, relaunch the RC.
 echo "Restarting the Run Control!"

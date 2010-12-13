@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# THIS SCRIPT IS A CANDIDATE FOR REMOVAL...
+
 # Kill them all, let God sort them out.
 # -------------------------------------
 # Run this to kill and restart all the DAQ and RC scripts on the mnvonline 
