@@ -367,6 +367,24 @@ class AlertThread(threading.Thread):
 		if alert is not None and alert.is_manager_alert and send_acknowledgment:
 			self._logger.debug("Sending manager acknowledgement.")
 			self._parent_app.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="alert_acknowledge", alert_id=alert.id, client_id=self._parent_app.id) )
+	
+	def DropManagerAlerts(self):
+		""" When a client disconnects from the DAQ,
+		    all the alerts that came from the DAQ manager
+		    are no longer relevant.  They should be
+		    summarily dismissed (they will be re-sent by
+		    the manager if this client should re-connect). """
+		
+		# be careful.  don't want to call AcknowledgeAlert
+		# within the loop because it would modify the the
+		# list of alerts and might cause us to skip some...
+		alerts_to_remove = []
+		for alert in self._alerts:
+			if alert.is_manager_alert:
+				alerts_to_remove.append(alert.id)
+		
+		for alert_id in alerts_to_remove:
+			self.AcknowledgeAlert(alert_id)
 		
 	def NewAlert(self, alert):
 		""" Adds a new alert to the stack. """

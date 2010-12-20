@@ -97,7 +97,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.status = None
 		self.problem_pmt_list = None
 
-		self.panel_state = {}
+		self.panel_stack = { "main": [], "status": [] }
 		self.current_alert = None
 		self.last_bknd_color = None
 		
@@ -112,6 +112,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		                         "LED error": wx.Bitmap(path_template % "LED_error.png", type=wx.BITMAP_TYPE_PNG) }
 
 		self.Redraw()
+
+		# collections of panels
+		self.panel_collections = {}
+		self.panel_collections["main"] = (xrc.XRCCTRL(self.frame, "notebook"), xrc.XRCCTRL(self.frame, "pmt_check_panel"), xrc.XRCCTRL(self.frame, "alert_panel"), xrc.XRCCTRL(self.frame, "connection_panel"))
+		self.panel_collections["status"] = (xrc.XRCCTRL(self.frame, "summary_info_panel"), xrc.XRCCTRL(self.frame, "summary_alert_panel"))
+
 
 		# try to figure out what my externally-visible IP address is
 		try:
@@ -366,6 +372,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		""" Makes sure the appropriate things happen
 		    when an alert is received. """
 		
+		self.logger.debug("Alert received: %s", evt.alert)
+		
 		alert_panel = xrc.XRCCTRL(self.frame, "alert_panel")
 		
 		# we do DRASTICALLY different things depending on
@@ -375,6 +383,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		if self.in_control or not evt.alert.is_manager_alert:
 			# show the alert panel, etc.
 			if self.current_alert is None:
+				self.logger.info("Showing alert: %s", evt.alert)
 				self.ShowPanel(alert_panel, save_state=True)
 			
 				xrc.XRCCTRL(self.frame, "alert_header").SetLabel( "ERROR" if evt.alert.severity == Alert.ERROR else "WARNING" )
@@ -400,7 +409,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			# the status area shows that we've got
 			# an alert (and what it is).
 			titles = { Alert.ERROR:   "ERROR",
-			           Alert.WARNING: "warning" }
+			           Alert.WARNING: "Warning" }
 			text = "%s:\n%s" % (titles[evt.alert.severity], evt.alert.notice)
 			xrc.XRCCTRL(self.frame, "summary_alert_text").SetLabel(text)
 			xrc.XRCCTRL(self.frame, "summary_alert_text").Wrap(xrc.XRCCTRL(self.frame, "summary_alert_panel").GetClientSize().width - 10)
@@ -458,13 +467,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def OnCommStateChange(self, evt):
 		""" Performs the GUI stuff needed when a connection
 		    to the DAQ manager changes state. """
-		    
+		
 		if not hasattr(evt, "connected"):
 			return
 
 		# restore the panels to their former state
-		if len(self.panel_state) > 0:
-			self.RestorePanelState()
+		self.RestorePanelState()
 
 		# and erase any alerts (we're not in control any more)
 		self.current_alert = None
@@ -613,8 +621,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		self.ConfigControlsEnable()
 		
-		if len(self.panel_state) > 0:
-			self.RestorePanelState()
+		self.RestorePanelState()
 
 		# erase any alerts (start fresh)
 		self.current_alert = None
@@ -1106,6 +1113,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    repositioned and redrawn as necessary. """
 
 #		self.frame.Refresh()
+
+		if not xrc.XRCCTRL(self.frame, "control_panel").IsShown():
+			self.logger.debug("Control panel not shown.  Not redrawing.")
+			return
 		
 		# force the auto-layout algorithms to run
 		xrc.XRCCTRL(self.frame, "control_page").Layout()
@@ -1132,9 +1143,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		""" Restores the panel state previously set
 		    by using SavePanelState(). """
 		
-		if len(self.panel_state) == 0:
-			return
-		
 		self.logger.debug("Restoring panel state.")
 
 		# if the alert panel is still "blinked", reset it
@@ -1143,31 +1151,34 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			panel.SetBackgroundColour(self.last_bknd_color)
 		self.last_bknd_color = None
 		
-		for panel_id in self.panel_state:
-			wx.FindWindowById(panel_id).Show(self.panel_state[panel_id])
-		
-		self.panel_state = {}
+		for collection in self.panel_stack:
+			if len(self.panel_stack[collection]) > 0:
+				for panel in self.panel_collections[collection]:
+					panel_id = panel.GetId()
+					self.logger.debug("Showing panel: %s", panel_id)
+					panel.Show(panel_id == self.panel_stack[collection][-1])
+				do_redraw = True
 
-		self.Redraw()
+		#self.Redraw()
 	
 	def SavePanelState(self):
 		""" Puts the display state of the panels
 		    into a storage 'register' for later retrieval. """
 
 		self.logger.debug("Saving panel state.")
-
-		main_collection = (xrc.XRCCTRL(self.frame, "notebook"), xrc.XRCCTRL(self.frame, "pmt_check_panel"), xrc.XRCCTRL(self.frame, "alert_panel"), xrc.XRCCTRL(self.frame, "connection_panel"))
-		status_collection = (xrc.XRCCTRL(self.frame, "summary_info_panel"), xrc.XRCCTRL(self.frame, "summary_alert_panel"))
-
-		for panel in main_collection + status_collection:
-			self.panel_state[panel.GetId()] = panel.IsShown()
+		
+		for collection in self.panel_collections:
+			for panel in self.panel_collections[collection]:
+				if panel.IsShown():
+					if len(self.panel_stack[collection]) == 0 or self.panel_stack[collection][-1] != panel.GetId():
+						self.panel_stack[collection].append(panel.GetId())
+						break
 	
 	def ShowPanel(self, panel_in, save_state=False):
 		""" Show a particular panel and (optionally)
 		    save the state using SavePanelState. """
-		   
-		if save_state:
-			self.SavePanelState()
+		
+		self.logger.debug("Showing panel: %s", panel_in)
 		
 		# if it's not a panel object, then maybe it's an XRC ID...
 		if isinstance(panel_in, wx.Window):
@@ -1181,22 +1192,33 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		if panel is None:
 			raise ValueError("'panel' must be a wx.Panel object, the xrc identifier of a panel object in the resource file, or the wx ID of a panel.")
 
-		main_collection = (xrc.XRCCTRL(self.frame, "notebook"), xrc.XRCCTRL(self.frame, "pmt_check_panel"), xrc.XRCCTRL(self.frame, "alert_panel"), xrc.XRCCTRL(self.frame, "connection_panel"))
-		status_collection = (xrc.XRCCTRL(self.frame, "summary_info_panel"), xrc.XRCCTRL(self.frame, "summary_alert_panel"))
 
 		collection = None
-		for c in (main_collection, status_collection):
-			if panel in c:
+		for c in self.panel_collections:
+			if panel in self.panel_collections[c]:
 				collection = c
 				break
 		
 		assert collection is not None
+
+		# if there is an alert currently up, that needs to take precedence.
+		# just put the window that wants to be shown on the stack;
+		# when the "restore" comes after the alert, it'll be shown then.
+		if (collection == "main" and xrc.XRCCTRL(self.frame, "alert_panel").IsShown()) \
+		  or (collection == "status" and xrc.XRCCTRL(self.frame, "summary_alert_panel").IsShown()):
+		  	self.logger.debug("Alert is up... won't hide it.")
+		  	if 
+			self.panel_stack[collection] = [panel.GetId()] + self.panel_stack[collection]		# put it at the front
+			return
+		# only store the state & show the new panel if the alert panel isn't being shown...
+		elif save_state:
+			self.SavePanelState()
 		
-		for other_panel in collection:
+		for other_panel in self.panel_collections[collection]:
 			if panel != other_panel:
 				other_panel.Hide()
 		
-		panel.Show()
+			panel.Show()
 		self.Redraw()
 		
 		
@@ -1280,6 +1302,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		if self.daq is False:
 			return
 			
+		self.logger.debug("Disconnecting from DAQ.")
+		
 		if self.in_control:
 			self.RelinquishControl(self.id)
 			
@@ -1301,6 +1325,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			
 		if use_ssh:
 			self.KillSSHProcesses()
+
+		self.alert_thread.DropManagerAlerts()
 
 		self.daq = False
 		wx.PostEvent(self, Events.CommStatusEvent(connected=False))
