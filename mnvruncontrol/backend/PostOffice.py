@@ -420,7 +420,7 @@ class Subscription:
 		if not (hasattr(message, "subject") and hasattr(message, "sender") and hasattr(message, "in_reply_to")):
 			raise TypeError("_MessageMatch() can only be used on Message objects!")
 
-		if not self._Validate():
+		if not self.Validate():
 			raise ValueError("Subscription's parameters are invalid: %s", self)
 
 		# if this subscription has expired but not yet been removed,
@@ -477,7 +477,7 @@ class Subscription:
 		
 		return matched
 		
-	def _Validate(self):
+	def Validate(self):
 		""" Checks that the internal state of the subscription makes sense.
 		
 		    This is supposed to help prevent accidental reassignments of
@@ -1353,6 +1353,8 @@ class PostOffice(MessageTerminus):
 		
 		new_subscriptions = []
 		for subscr in subscriptions:
+			if not subscr.Validate():
+				raise ValueError("Subscription's parameters are invalid: %s", self)
 			new_subscriptions.append(copy.deepcopy(subscr))
 		
 		message = Message(subject="postmaster", remote_request="forward_request", subscriptions=new_subscriptions)
@@ -1367,7 +1369,13 @@ class PostOffice(MessageTerminus):
 		
 		    See the caveat for ForwardRequest().  """
 
-		message = Message(subject="postmaster", remote_request="forward_cancel", subscriptions=subscriptions)
+		new_subscriptions = []
+		for subscr in subscriptions:
+			if not subscr.Validate():
+				raise ValueError("Subscription's parameters are invalid: %s", self)
+			new_subscriptions.append(copy.deepcopy(subscr))
+
+		message = Message(subject="postmaster", remote_request="forward_cancel", subscriptions=new_subscriptions)
 
 		forward_subscr = Subscription(subject="postmaster", action=Subscription.FORWARD, delivery_address=host, postmaster_ok=True, expiry=1, other_attributes={"id": message.id})
 		self.AddSubscription(forward_subscr)
