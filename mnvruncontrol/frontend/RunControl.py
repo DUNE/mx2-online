@@ -22,6 +22,7 @@ import time
 import copy
 import logging
 import socket
+import pprint
 import urllib2
 import subprocess
 import wx
@@ -1153,12 +1154,15 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		for collection in self.panel_stack:
 			if len(self.panel_stack[collection]) > 0:
+				panel_to_show = self.panel_stack[collection].pop()
 				for panel in self.panel_collections[collection]:
 					panel_id = panel.GetId()
-					self.logger.debug("Showing panel: %s", panel_id)
-					panel.Show(panel_id == self.panel_stack[collection][-1])
+					shown = panel_id == panel_to_show
+					self.logger.debug("Restoring panel %s to shown state: %s", panel_id, shown)
+					panel.Show(shown)
 				do_redraw = True
 
+		self.logger.debug("Panel stack state: %s", pprint.pformat(self.panel_stack))
 		#self.Redraw()
 	
 	def SavePanelState(self):
@@ -1190,6 +1194,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				panel = wx.FindWindowById(panel_in)
 				
 		if panel is None:
+			self.logger.warning("Asked to show a non-panel!")
 			raise ValueError("'panel' must be a wx.Panel object, the xrc identifier of a panel object in the resource file, or the wx ID of a panel.")
 
 
@@ -1207,8 +1212,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		if (collection == "main" and xrc.XRCCTRL(self.frame, "alert_panel").IsShown()) \
 		  or (collection == "status" and xrc.XRCCTRL(self.frame, "summary_alert_panel").IsShown()):
 		  	self.logger.debug("Alert is up... won't hide it.")
-		  	if 
-			self.panel_stack[collection] = [panel.GetId()] + self.panel_stack[collection]		# put it at the front
+			self.panel_stack[collection].append(panel.GetId())
+#			self.logger.debug("Panel stack state: %s", pprint.pformat(self.panel_stack))
 			return
 		# only store the state & show the new panel if the alert panel isn't being shown...
 		elif save_state:
@@ -1218,7 +1223,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			if panel != other_panel:
 				other_panel.Hide()
 		
-			panel.Show()
+		self.logger.debug("Panel shown: %s", panel.GetLabel())
+#		self.logger.debug("Panel stack state: %s", pprint.pformat(self.panel_stack))
+		panel.Show()
 		self.Redraw()
 		
 		
@@ -1318,7 +1325,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		for subscription in self.handlers:
 			newsub = copy.copy(subscription)
 			newsub.action = PostOffice.Subscription.FORWARD
-			newsub.delivery_address = [None, self.postoffice.listen_port]
+			newsub.delivery_address = PostOffice.IPv4Address(None, self.postoffice.listen_port)
 
 			subscriptions.append(newsub)
 		self.postoffice.ForwardCancel( host=(host, remote_port), subscriptions=subscriptions )
