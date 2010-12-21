@@ -1567,8 +1567,6 @@ def BeginSession():
 	    on this machine via a PID file.  If not,
 	    creates its own PID file. """
 
-#	print Configuration.params["Front end"]["frontend_PIDfile"]
-
 	if os.path.isfile(Configuration.params["Front end"]["frontend_PIDfile"]):
 		pidfile = open(Configuration.params["Front end"]["frontend_PIDfile"])
 		pid = int(pidfile.readline())
