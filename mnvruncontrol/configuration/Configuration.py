@@ -82,13 +82,15 @@ configuration = { "General"          : { "notify_addresses"          : ( Default
                   
                   "Monitoring nodes" : { "om_PIDfileLocation"        : ( Defaults.OM_DISPATCHER_PIDFILE,                "OM dispatcher PID file location",                  str   ),
                                          "om_logfileLocation"        : ( Defaults.OM_LOGFILE_LOCATION_DEFAULT,          "OM dispatcher log file location",                  str   ),
+                                         "om_runCurrentJob"          : ( Defaults.OM_GAUDI_RUNCURRENTJOB,               "Run the 'current' monitoring job?",                bool  ),
+                                         "om_runDSTjobs"             : ( Defaults.OM_GAUDI_RUNDSTJOBS,                  "Run the DST jobs?",                                bool  ),
                                          "om_GaudiOutputOptionsFile" : ( Defaults.OM_GAUDI_OUTPUTOPTIONSFILE,           "OM Gaudi process 'output file' options file",      str   ),
                                          "om_GaudiInputOptionsFile"  : ( Defaults.OM_GAUDI_INPUTOPTIONSFILE,            "OM Gaudi process 'input file' options file",       str   ),
                                          "om_DSTTargetPath"          : ( Defaults.OM_DST_TARGET_PATH,                   "Copy target for DSTs created by OM dispather",     str   ),
                                          "om_DSTminJobTime"          : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",           float ),
                                          "om_useCondor"              : ( False,                                         "Use a Condor queue?",                              bool  ),
                                          "om_condorHost"             : ( Defaults.OM_CONDOR_HOST,                       "The machine hosting the Condor queue manager",     str   ),
-                                         "om_maxCondorBacklog"       : ( Defaults.OM_MAX_CONDOR_BACKLOG,                "Max number of jobs backlogged in Condor queue",    int ),
+                                         "om_maxCondorBacklog"       : ( Defaults.OM_MAX_CONDOR_BACKLOG,                "Max number of jobs backlogged in Condor queue",    int   ),
                                          "om_rawdataLocation"        : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                             str   )  },
 
                   "MTest beam nodes" : { "mtest_PIDfileLocation"     : ( Defaults.MTEST_DISPATCHER_PIDFILE,             "MTest dispatcher PID file location",               str   ),

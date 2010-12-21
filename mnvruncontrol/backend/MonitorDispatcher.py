@@ -262,9 +262,11 @@ class MonitorDispatcher(Dispatcher):
 
 			# now start a new copy of each of the Gaudi jobs.
 			gaudi_processes = ( { "processname": "monitoring",
-				                 "executable" : "%s/%s/MinervaNearline.exe %s/options/NearlineCurrent.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]) },
+				                 "executable" : "%s/%s/MinervaNearline.exe %s/options/NearlineCurrent.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]),
+				                 "run"        : Configuration.params["Monitoring nodes"]["om_runCurrentJob"] },
 				               { "processname": "dst",
-				                 "executable" : "%s/%s/MinervaNearline.exe %s/options/Nearline.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]) } )
+				                 "executable" : "%s/%s/MinervaNearline.exe %s/options/Nearline.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]),
+				                 "run"        : Configuration.params["Monitoring nodes"]["om_runDSTjobs"] } )
 
 			for process in gaudi_processes:
 				# we will only keep track of the monitoring thread, because this one
@@ -277,7 +279,11 @@ class MonitorDispatcher(Dispatcher):
 				# so that they run unmolested until they finish.
 				# of course, if this thread is killed, they might go with it, but that
 				# depends on whether or not they fork first.  (i don't think they do.)
-				
+			
+				# user can configure not to run either of the types of Gaudi job
+				if not process["run"]:
+					continue
+					
 				interactive = process["processname"] == "monitoring" or (process["processname"] == "dst" and not self.use_condor)
 				
 				if interactive:
