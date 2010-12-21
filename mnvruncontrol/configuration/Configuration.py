@@ -30,6 +30,7 @@ configuration = { "General"          : { "notify_addresses"          : ( Default
 
                   "Front end"        : { "ResourceLocation"          : ( Defaults.RESOURCE_LOCATION_DEFAULT,            "Resource files location",                          str   ),
                                          "frontend_listenPort"       : ( Defaults.FRONTEND_LISTEN_PORT,                 "Frontend client listener port",                    int   ),
+                                         "frontend_PIDfile"          : ( Defaults.FRONTEND_PID_FILE,                    "Frontend client PID file location",                str   ),
                                          "maxTriggerInterval"        : ( Defaults.FRONTEND_MAX_TRIGGER_INTERVAL,        "Max interval between triggers before warning (m)", float ),
                                          "bellInterval"              : ( Defaults.BELL_INTERVAL,                        "Interval between alert bells (s)",                 float ),
                                          "blinkInterval"             : ( Defaults.BLINK_INTERVAL,                       "Interval between alert blinks (s)",                float ), },

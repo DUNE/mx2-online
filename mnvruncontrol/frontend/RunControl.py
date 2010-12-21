@@ -56,8 +56,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	###   * 'real work' methods                ( ...              1200)
 
 	def OnInit(self):
-		sys.stdout.write("Setting up.  Please wait a moment...\n")
+		sys.stdout.write("Setting up.  Please wait a moment... ")
 		sys.stdout.flush()
+		
 		PostOffice.MessageTerminus.__init__(self)
 
 		# prepare the logging		
@@ -137,6 +138,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			ctrl = xrc.XRCCTRL(self.frame, "control_connection_button")	 
 			ctrl.Command(wx.CommandEvent(wx.wxEVT_COMMAND_BUTTON_CLICKED, ctrl.GetId()))
 		
+
+		sys.stdout.write("done.\n")
+		sys.stdout.flush()
+
 		return True
 	
 	def BindEvents(self):
@@ -153,8 +158,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.frame.Bind(wx.EVT_BUTTON, self.OnStopClick, id=xrc.XRCID("control_stop_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnConnectClick, id=xrc.XRCID("control_connection_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnControlClick, id=xrc.XRCID("control_connection_owner_button"))
-		self.frame.Bind(wx.EVT_BUTTON, self.OnStopClick, id=xrc.XRCID("pmt_check_cancel_button"))
-		self.frame.Bind(wx.EVT_BUTTON, self.OnHVContinueClick, id=xrc.XRCID("pmt_check_continue_button"))
+		self.frame.Bind(wx.EVT_BUTTON, self.OnHVDismissClick, id=xrc.XRCID("pmt_check_dismiss_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnHVRefreshClick, id=xrc.XRCID("pmt_check_refresh_button"))
 		
 		self.frame.Bind(wx.EVT_RADIOBUTTON, self.OnSeriesClick, id=xrc.XRCID("config_global_singlerun_button"))
@@ -286,12 +290,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 #			self.logger.debug("Got status report.")
 			wx.PostEvent( self, Events.StatusUpdateEvent(status=message.status) )
 			
-		elif message.info == "need_HV_confirmation" and hasattr(message, "pmt_info"):
-			self.logger.info("Need to confirm HV voltages/periods.")
-			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=message.pmt_info, ask_confirm=True) )
+		elif message.info == "HV_warning" and hasattr(message, "pmt_info"):
+			self.logger.info("DAQ manager warns about out-of-range HV voltages/periods.")
+			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=message.pmt_info, warning=True) )
 		
 		elif message.info == "pmt_update" and hasattr(message, "pmt_info"):
-			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=message.pmt_info, ask_confirm=False) )
+			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=message.pmt_info, warning=False) )
 			
 		elif message.info == "series_update" and hasattr(message, "series") and hasattr(message, "series_details"):
 			wx.PostEvent( self, Events.UpdateSeriesEvent(series=message.series, details=message.series_details) )
@@ -632,17 +636,17 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# if the PMT high voltages are still awaiting confirmation,
 		# send out a new event
 		if self.problem_pmt_list is not None:
-			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=self.problem_pmt_list, ask_confirm=True) )
+			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=self.problem_pmt_list, warning=True) )
 		
 		self.Redraw()
 
-	def OnHVContinueClick(self, evt):
+	def OnHVDismissClick(self, evt):
 		""" Continues the run sequence after a PMT HV/period check. """
 
 		self.RestorePanelState()
 		self.problem_pmt_list = None
 		
-		self.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="continue", client_id=self.id) )
+		self.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="pmt_dismiss", client_id=self.id) )
 		
 	def OnHVUpdate(self, evt):
 		""" Presents the user with a list of PMT voltages
@@ -653,12 +657,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		# only if the DAQ manager is explicitly asking
 		# for confirmation do we force the PMT display to be shown.
-		if hasattr(evt, "ask_confirm") and evt.ask_confirm:
+		if hasattr(evt, "warning") and evt.warning:
 			self.problem_pmt_list = evt.pmt_info
 			if self.in_control:
 				self.ShowPanel("pmt_check_panel", save_state=True)
 			else:
-				xrc.XRCCTRL(self.frame, "summary_alert_text").SetLabel("Waiting for confirmation of PMT high voltage and period state.")
+				xrc.XRCCTRL(self.frame, "summary_alert_text").SetLabel("PMT high voltage or period state is outside tolerances.")
 				self.ShowPanel("summary_alert_panel", save_state=True)
 		elif evt.pmt_info is None:
 			self.RestorePanelState()
@@ -937,7 +941,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				update_event.text = status["current_state"]
 			if "current_progress" in status:
 				update_event.progress = status["current_progress"]
-				wx.PostEvent(self, update_event)
+			wx.PostEvent(self, update_event)
 
 		
 		# update the remote node indicators
@@ -1076,10 +1080,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		for alert in status["warnings"] + status["errors"]:
 			self.alert_thread.NewAlert(alert)
 		
-		# and if we're waiting on PMT HV confirmation, be sure the user knows
+		# and if there's a PMT HV warning, be sure the user knows
 		if "problem_pmt_list" in status:
-			ask_confirm = status["problem_pmt_list"] is not None
-			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=status["problem_pmt_list"], ask_confirm=ask_confirm) )
+			warning = status["problem_pmt_list"] is not None
+			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=status["problem_pmt_list"], warning=warning) )
 			
 		# make sure the alert thread is doing the right thing
 		# about the status bar ('pulsing' while waiting, and
@@ -1096,14 +1100,15 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		assert self.status["running"] == True
 
 		# make sure we're showing the right panel...
-#		xrc.XRCCTRL(self.frame, "pmt_check_panel").Hide()
-#		xrc.XRCCTRL(self.frame, "notebook").Show()
 		self.ShowPanel("notebook")
 
 		# disable ALL the controls so shutdown can't be interrupted
 		# ("Start" will be re-enabled when we reach idle)
 		self.status["running"] = None
 		self.ConfigControlsEnable()
+		
+		# make sure it's clear to the user that we're trying to stop
+		wx.PostEvent( self, Events.UpdateProgressEvent(progress=(0, 0), text="Stopping...") )
 
 		# clear the PMT list now so that we don't accidentally keep showing the window.
 		# if there still are problem PMTs, they will be added BACK to the list when
@@ -1552,24 +1557,68 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				self.alert_thread.NewAlert( Alert.Alert(notice="The DAQ could not be stopped for an unspecified reason.  Have an expert check the DAQ manager log..."), severity=Alert.ERROR )
 			else:
 				self.logger.info("DAQ reports it was successfully stopped.")
+
+#########################################################
+#   Global-scope functions
+#########################################################
+
+def BeginSession():
+	""" Checks that no other copy of the RC is running
+	    on this machine via a PID file.  If not,
+	    creates its own PID file. """
+
+#	print Configuration.params["Front end"]["frontend_PIDfile"]
+
+	if os.path.isfile(Configuration.params["Front end"]["frontend_PIDfile"]):
+		pidfile = open(Configuration.params["Front end"]["frontend_PIDfile"])
+		pid = int(pidfile.readline())
+		pidfile.close()
+
+		try:
+			os.kill(pid, 0)		# send it the null signal to check if it's there and alive.
+		except OSError:			# you get an OSError if the PID doesn't exist.  it's safe to clean up then.
+			os.remove(Configuration.params["Front end"]["frontend_PIDfile"])
+		else:
+			sys.stderr.write("There is already a copy of the run control running with process ID %d.\n" % pid)
+			sys.stderr.write("Close that instance first, then try starting this one again.\n")
+			return False
+
+	pidfile = open(Configuration.params["Front end"]["frontend_PIDfile"], 'w')
+	pidfile.write(str(os.getpid()) + "\n")
+	pidfile.close()
 	
+	return True
+
+
+def EndSession():
+	""" Removes the PID file for this copy of the RC. """
+
+	if os.path.isfile(Configuration.params["Front end"]["frontend_PIDfile"]):
+		os.remove(Configuration.params["Front end"]["frontend_PIDfile"])
+
+
 #########################################################
 #   Main execution
 #########################################################
 
 
 if __name__ == '__main__':		# make sure that this file isn't being included somewhere else
-	app = MainApp(redirect=False)
+	app = None
 	
 	# try to make sure that an organized cleanup happens no matter what
 	try:
-		app.MainLoop()
-		app.logger.info("Bye.")
-		sys.stdout.write("Bye.\n")
+		if BeginSession():
+			app = MainApp(redirect=False)
+			app.MainLoop()
+			app.logger.info("Bye.")
+			EndSession()
+
+		sys.stdout.write("Shutting down.  Bye.\n")
 	except Exception as e:
 		try:
 			print "Unhandled exception!  Trying close down in an orderly fashion...."
-			app.OnClose()
+			if app:
+				app.OnClose()
 		except:
 			pass
 		raise e

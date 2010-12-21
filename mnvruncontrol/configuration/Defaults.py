@@ -33,6 +33,7 @@ BELL_INTERVAL                 = 10	# in seconds
 FRONTEND_MAX_TRIGGER_INTERVAL = 5  # in minutes
 FRONTEND_LISTEN_PORT          = 3000
 RESOURCE_LOCATION_DEFAULT     = "/work/software/mnvruncontrol/resources"
+FRONTEND_PID_FILE             = "/tmp/runcontrol.pid"
 
 #LOGFILE_NAME_PATTERN = "^(?P<detector>\w\w)_(?P<run>\d{8})_(?P<subrun>\d{4})_(?P<type>\w{5})_v\d+_(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})_Controller(?P<controller>[01])Log.txt$"
 
