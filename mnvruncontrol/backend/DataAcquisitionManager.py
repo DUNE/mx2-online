@@ -1428,6 +1428,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.info("  initializing any online monitoring nodes...")
 		message = PostOffice.Message(subject="om_directive", directive="start", mgr_id=self.id, et_pattern=self.configuration.et_filename, et_port=self.configuration.et_port)
 
+		responses = None
+
 		try:
 			responses = self.NodeSendWithResponse(message, node_type=RemoteNode.MONITORING, timeout=10)
 		except DAQErrors.NodeError:
