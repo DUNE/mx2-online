@@ -1003,8 +1003,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			thread = self.DAQ_threads[threadname]
 			
 			# the ET system process stops on its own.  just cut off its display feed.
+			# we also don't want a notification if it crashes now...
 			if threadname == "et system":
 				thread.relay_output = False
+				thread.is_essential_service = False
 
 			# the event builder needs to know if it should expect a sentinel.
 			elif threadname == "event builder":
@@ -1017,8 +1019,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					except OSError:
 						pass
 				
-				# either way, we stop displaying its output.
+				# either way, we stop displaying its output
+				# and ask that alerts be suppressed if it crashes.
 				thread.relay_output = False
+				thread.is_essential_service = False
 				
 			# any other threads should be aborted.
 			elif hasattr(thread, "Abort"):
