@@ -570,7 +570,14 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 						self.logger.warning("Got 'alert_acknowledge' message with no alert ID!  Ignoring...")
 					self.logger.info("Frontend client '%s' acknowledged alert %s.", message.client_id, message.alert_id)
 					status = self.AcknowledgeAlert(message.alert_id)
+				
+				elif message.directive == "pmt_dismiss":
+					self.logger.info("Frontend client '%s' dismissed PMT HV/period notification.", message.client_id)
 
+					# clear out the PMT list (otherwise non-control clients will always be stuck on it)
+					self.problem_pmt_list = None
+					self.postoffice.Send( self.StatusReport(items=["problem_pmt_list",]) )
+			
 				if status is None:
 					response.subject = "invalid_request"
 				else:
@@ -862,10 +869,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.logger.debug("Skipping task (already done): %s", task["message"])
 			self.startup_step += 1
 
-		# clear out the PMT list (otherwise non-control clients will always be stuck on it)
-		self.problem_pmt_list = None
-		self.postoffice.Send( self.StatusReport(items=["problem_pmt_list",]) )
-			
 		# if running needs to end, there's some cleanup we need to do first.
 		if quitting:
 			self.logger.warning("Subrun %d aborted.", self.configuration.subrun)
@@ -1273,10 +1276,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		If not, control is passed to a window that asks
 		the user for input.
 		"""
-		
+
 		# this check is only done at the beginning of a run series
 		# or if the hardware configuration has changed
 		if self.do_pmt_check:
+			self.problem_pmt_list = None
+
 			problem_boards = self.GetProblemPMTs()
 			thresholds = sorted(Configuration.params["Master node"]["SCHVthresholds"].keys(), reverse=True)
 			ranges = {}
@@ -1297,7 +1302,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 						over[rng] = 1
 
 					if over[rng] > ranges[rng]:
-						needs_intervention = True
+						notify = True
 						break
 
 			# we've done the PMT check now, so unless the HW config changes,
@@ -1305,19 +1310,16 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.do_pmt_check = False
 
 			# does the user need to look at it?
-			# if so, send control back to the main thread.
-			if needs_intervention:
-				  self.logger.info("  ... need user intervention to verify PMT high voltages.")
-				  self.postoffice.Send(PostOffice.Message(subject="frontend_info", info="need_HV_confirmation", pmt_info=problem_boards))
+			# if so, send out a notice.
+			if notify:
+				  self.logger.info("  ... warning user about errant PMT high voltages.")
+				  self.postoffice.Send(PostOffice.Message(subject="frontend_info", info="HV_warning", pmt_info=problem_boards))
 				  self.problem_pmt_list = problem_boards
-				  return None
 			else:
 				self.logger.info("  ... PMT voltages are ok.")
 		else:
 			self.logger.info("  ... don't need to check PMT voltages.")
 
-		self.problem_pmt_list = None
-		
 		# ok to proceed to next step
 		return True
 
@@ -1517,7 +1519,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 			# we're waiting now for the 'done' signal from the DAQ
 			self.waiting = True
-			self.postoffice.Send( self.StatusReport(items=["waiting"]) )
+			self.postoffice.Send( self.StatusReport(items=["current_state", "waiting"]) )
 			
 			self.logger.info("  All DAQ services started.  Data acquisition for subrun %d underway." % (self.configuration.subrun) )
 		
