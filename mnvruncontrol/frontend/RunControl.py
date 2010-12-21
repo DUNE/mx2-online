@@ -56,6 +56,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	###   * 'real work' methods                ( ...              1200)
 
 	def OnInit(self):
+		sys.stdout.write("Setting up.  Please wait a moment...\n")
+		sys.stdout.flush()
 		PostOffice.MessageTerminus.__init__(self)
 
 		# prepare the logging		
@@ -75,10 +77,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		except socket.error:
 			self.logger.exception("Socket error trying to start up the post office:")
 			self.logger.fatal("Can't get a socket.  Quitting.")
-			sys.stderr.write("I can't bind my listening socket.  Are you sure there's no other copy of the run control running?")
-			sys.stderr.write("Wait 60 seconds and try again.  If you see this message again, contact your expert shifter.")
+			sys.stderr.write("I can't bind my listening socket.  Are you sure there's no other copy of the run control running?\n")
+			sys.stderr.write("Wait 60 seconds and try again.  If you see this message again, contact your expert shifter.\n")
 			return False
-			
+
 		self.worker_thread = Threads.WorkerThread()
 		self.alert_thread = Threads.AlertThread(parent_app=self)
 
@@ -119,12 +121,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.panel_collections["main"] = (xrc.XRCCTRL(self.frame, "notebook"), xrc.XRCCTRL(self.frame, "pmt_check_panel"), xrc.XRCCTRL(self.frame, "alert_panel"), xrc.XRCCTRL(self.frame, "connection_panel"))
 		self.panel_collections["status"] = (xrc.XRCCTRL(self.frame, "summary_info_panel"), xrc.XRCCTRL(self.frame, "summary_alert_panel"))
 
-
 		# try to figure out what my externally-visible IP address is
 		try:
-			self.ip_addr = urllib2.urlopen("http://whatismyip.org").read()
+			self.ip_addr = urllib2.urlopen("http://www.whatismyip.com/automation/n09230945.asp").read()
 		except urllib2.URLError:
 			self.ip_addr = None
+
 
 		# make sure the controls are set up as we expect
 		self.ConfigControlsEnable()
@@ -1562,6 +1564,7 @@ if __name__ == '__main__':		# make sure that this file isn't being included some
 	try:
 		app.MainLoop()
 		app.logger.info("Bye.")
+		sys.stdout.write("Bye.\n")
 	except Exception as e:
 		try:
 			print "Unhandled exception!  Trying close down in an orderly fashion...."
