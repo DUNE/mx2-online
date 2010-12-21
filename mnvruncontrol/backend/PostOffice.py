@@ -486,13 +486,13 @@ class Subscription:
 		
 		action_ok = self.action in (None, Subscription.FORWARD, Subscription.DELIVER)
 		if not action_ok:
-			logger().warning("Subscription %s has invalid 'action' parameter...", self)
+			logger().warning("Subscription %s has invalid 'action' parameter... (value: %d)", self, self.action)
 		
 		addr_ok = (self.action is None and self.delivery_address is None) \
 		          or ( self.action == Subscription.DELIVER and isinstance(self.delivery_address, MessageTerminus) ) \
 		          or ( self.action == Subscription.FORWARD and isinstance(self.delivery_address, IPv4Address) )
 		if not addr_ok:
-			logger().warning("Subscription %s has invalid 'delivery_address' parameter...", self)
+			logger().warning("Subscription %s has invalid 'delivery_address' parameter (value: %s)...", self, self.delivery_address)
 			
 		return action_ok and addr_ok
 		
@@ -1354,7 +1354,7 @@ class PostOffice(MessageTerminus):
 		new_subscriptions = []
 		for subscr in subscriptions:
 			if not subscr.Validate():
-				raise ValueError("Subscription's parameters are invalid: %s", self)
+				raise ValueError("Subscription's parameters are invalid: %s", subscr)
 			new_subscriptions.append(copy.deepcopy(subscr))
 		
 		message = Message(subject="postmaster", remote_request="forward_request", subscriptions=new_subscriptions)

@@ -183,7 +183,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				                RemoteNode.MTEST:      "beamdaq_status",
 				                RemoteNode.PERIPHERAL: "device_status" }
 
-				subscr = PostOffice.Subscription(subject=subject_map[node.type], delivery_address=(None, self.socket_port))
+				subscr = PostOffice.Subscription(subject=subject_map[node.type], action=PostOffice.Subscription.FORWARD, delivery_address=(None, self.socket_port))
 				self.postoffice.ForwardRequest( node.address, [subscr,] )
 				self.logger.info("   ... done.")
 
