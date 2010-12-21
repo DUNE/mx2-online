@@ -374,7 +374,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 			# notice that we insist that messages to be forwarded
 			# must come from the DAQ manager itself (max_forward_hops=0)
 			for subject in ["mgr_status", "lock_request"] + additional_notification_requests:
-				subscr_list.append( PostOffice.Subscription(subject=subject, delivery_address=[None, self.socket_port], max_forward_hops=0) )
+				subscr_list.append( PostOffice.Subscription(subject=subject, action=PostOffice.Subscription.FORWARD, delivery_address=[None, self.socket_port], max_forward_hops=0) )
 			
 			self.postoffice.ForwardRequest(message.return_path[0], subscr_list)
 			
