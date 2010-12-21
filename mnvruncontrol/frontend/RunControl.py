@@ -1096,8 +1096,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		assert self.status["running"] == True
 
 		# make sure we're showing the right panel...
-		xrc.XRCCTRL(self.frame, "pmt_check_panel").Hide()
-		xrc.XRCCTRL(self.frame, "notebook").Show()
+#		xrc.XRCCTRL(self.frame, "pmt_check_panel").Hide()
+#		xrc.XRCCTRL(self.frame, "notebook").Show()
+		self.ShowPanel("notebook")
 
 		# disable ALL the controls so shutdown can't be interrupted
 		# ("Start" will be re-enabled when we reach idle)
