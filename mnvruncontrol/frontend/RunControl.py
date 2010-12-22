@@ -74,7 +74,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		# prepare the post office and threads
 		try:
-			self.postoffice = PostOffice.PostOffice(listen_port=Configuration.params["Front end"]["frontend_listenPort"])
+			self.postoffice = PostOffice.PostOffice(listen_port=Configuration.params["frnt_listenPort"])
 		except socket.error:
 			self.logger.exception("Socket error trying to start up the post office:")
 			self.logger.fatal("Can't get a socket.  Quitting.")
@@ -108,7 +108,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.stop_connecting = False
 		
 		# other resources that can't be stored in the resource file
-		path_template = Configuration.params["Front end"]["ResourceLocation"] + "/%s"
+		path_template = Configuration.params["frnt_resourceLocation"] + "/%s"
 		self.audio_resources = { Alert.ERROR:  wx.Sound(path_template % "error.wav"),
 		                         Alert.WARNING: wx.Sound(path_template % "alert.wav") }
 		self.image_resources = { "LED on":    wx.Bitmap(path_template % "LED_on.png", type=wx.BITMAP_TYPE_PNG),
@@ -1269,7 +1269,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.postoffice.AddSubscription( PostOffice.Subscription(subject="mgr_directive", action=PostOffice.Subscription.FORWARD, delivery_address=(host, remote_port)) )
 		
 		# get the current status of the DAQ and draw it
-		response = self.DAQSendWithResponse( PostOffice.Message(subject="mgr_directive", directive="status_report", client_id=self.id), timeout=Configuration.params["Socket setup"]["messageTimeout"] )
+		response = self.DAQSendWithResponse( PostOffice.Message(subject="mgr_directive", directive="status_report", client_id=self.id), timeout=Configuration.params["sock_messageTimeout"] )
 		
 		if response is None:
 			self.DisconnectDAQ(use_ssh, remote_host, remote_port)
@@ -1349,7 +1349,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def GetControl(self, my_id, my_name, my_location):
 		""" Requests control of the DAQ from the DAQ manager. """
 		
-		response = self.DAQSendWithResponse( PostOffice.Message(subject="control_request", request="get", requester_id=my_id, requester_name=my_name, requester_location=my_location), timeout=Configuration.params["Socket setup"]["messageTimeout"] )
+		response = self.DAQSendWithResponse( PostOffice.Message(subject="control_request", request="get", requester_id=my_id, requester_name=my_name, requester_location=my_location), timeout=Configuration.params["sock_messageTimeout"] )
 		
 		if response is not None:
 			self.in_control = True
@@ -1481,7 +1481,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def RelinquishControl(self, my_id):
 		""" Relinquishes control of the DAQ. """
 		
-		response = self.DAQSendWithResponse( PostOffice.Message(subject="control_request", request="release", requester_id=my_id), timeout=Configuration.params["Socket setup"]["messageTimeout"], panic_if_no_connection=False )
+		response = self.DAQSendWithResponse( PostOffice.Message(subject="control_request", request="release", requester_id=my_id), timeout=Configuration.params["sock_messageTimeout"], panic_if_no_connection=False )
 		
 		if response is not None:
 			self.in_control = False
@@ -1510,7 +1510,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		                                                        directive="start",
 		                                                        client_id=self.id,
 		                                                        configuration=self.status["configuration"]),
-		                                     timeout=Configuration.params["Socket setup"]["messageTimeout"]  )
+		                                     timeout=Configuration.params["sock_messageTimeout"]  )
 
 		if response is None:
 			success = False
@@ -1546,7 +1546,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		response = self.DAQSendWithResponse( PostOffice.Message(subject="mgr_directive",
 		                                                        directive="stop",
 		                                                        client_id=self.id),
-		                                     timeout=Configuration.params["Socket setup"]["messageTimeout"]  )
+		                                     timeout=Configuration.params["sock_messageTimeout"]  )
 		
 		if response is None:
 			success = False
@@ -1567,21 +1567,21 @@ def BeginSession():
 	    on this machine via a PID file.  If not,
 	    creates its own PID file. """
 
-	if os.path.isfile(Configuration.params["Front end"]["frontend_PIDfile"]):
-		pidfile = open(Configuration.params["Front end"]["frontend_PIDfile"])
+	if os.path.isfile(Configuration.params["frnt_PIDfile"]):
+		pidfile = open(Configuration.params["frnt_PIDfile"])
 		pid = int(pidfile.readline())
 		pidfile.close()
 
 		try:
 			os.kill(pid, 0)		# send it the null signal to check if it's there and alive.
 		except OSError:			# you get an OSError if the PID doesn't exist.  it's safe to clean up then.
-			os.remove(Configuration.params["Front end"]["frontend_PIDfile"])
+			os.remove(Configuration.params["frnt_PIDfile"])
 		else:
 			sys.stderr.write("There is already a copy of the run control running with process ID %d.\n" % pid)
 			sys.stderr.write("Close that instance first, then try starting this one again.\n")
 			return False
 
-	pidfile = open(Configuration.params["Front end"]["frontend_PIDfile"], 'w')
+	pidfile = open(Configuration.params["frnt_PIDfile"], 'w')
 	pidfile.write(str(os.getpid()) + "\n")
 	pidfile.close()
 	
@@ -1591,8 +1591,8 @@ def BeginSession():
 def EndSession():
 	""" Removes the PID file for this copy of the RC. """
 
-	if os.path.isfile(Configuration.params["Front end"]["frontend_PIDfile"]):
-		os.remove(Configuration.params["Front end"]["frontend_PIDfile"])
+	if os.path.isfile(Configuration.params["frnt_PIDfile"]):
+		os.remove(Configuration.params["frnt_PIDfile"])
 
 
 #########################################################

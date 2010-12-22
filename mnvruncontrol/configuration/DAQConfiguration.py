@@ -22,9 +22,9 @@ from mnvruncontrol.configuration import MetaData
 # these keys are special because the value stored
 # in the last run for them is irrelevant.  all that matters is
 # what's in the Configuration.
-_exceptions = { "detector" : MetaData.DetectorTypes[Configuration.params["Master node"]["detectorType"]],
-                "hw_init"  : MetaData.HardwareInitLevels[Configuration.params["Master node"]["hwInitLevel"]],
-                "num_febs" : Configuration.params["Hardware"]["num_FEBs"] }
+_exceptions = { "detector" : MetaData.DetectorTypes[Configuration.params["mstr_detectorType"]],
+                "hw_init"  : MetaData.HardwareInitLevels[Configuration.params["mstr_hwInitLevel"]],
+                "num_febs" : Configuration.params["hw_numFEBs"] }
 
 class DAQConfiguration:
 	""" Wraps the run-time detector configuration. """
@@ -32,7 +32,7 @@ class DAQConfiguration:
 	default_config = { "run"                      : 1,
 	                   "subrun"                   : 1,
 	                   
-	                   "et_port"                  : Configuration.params["Socket setup"]["etPortBase"],
+	                   "et_port"                  : Configuration.params["sock_etPortBase"],
 	                   "et_filename"              : "etsysfile",
 
 	                   "hw_init"                  : MetaData.HardwareInitLevels.FULL_HW_INIT,
@@ -70,9 +70,9 @@ class DAQConfiguration:
 		# they must match what's in the configuration DB
 #		print     (isinstance(self.run, int) and self.run > 0) 
 #		print (isinstance(self.subrun, int) and self.subrun > 0) 
-#		print (isinstance(self.et_port, int) and self.et_port - Configuration.params["Socket setup"]["etPortBase"] in range(Configuration.params["Socket setup"]["numETports"])) 
-#		print self.hw_init == Configuration.params["Master node"]["hwInitLevel"] 
-#		print self.detector == Configuration.params["Master node"]["detectorType"] 
+#		print (isinstance(self.et_port, int) and self.et_port - Configuration.params["sock_etPortBase"] in range(Configuration.params["sock_numETports"])) 
+#		print self.hw_init == Configuration.params["mstr_hwInitLevel"] 
+#		print self.detector == Configuration.params["mstr_detectorType"] 
 #		print isinstance(self.is_single_run, bool) 
 #		print (isinstance(self.num_gates, int) and self.num_gates > 0) 
 #		print self.run_mode in MetaData.RunningModes 
@@ -102,7 +102,7 @@ class DAQConfiguration:
 		return exceptions_pass \
 		       and (isinstance(self.run, int) and self.run > 0) \
 		       and (isinstance(self.subrun, int) and self.subrun > 0) \
-		       and (isinstance(self.et_port, int) and self.et_port - Configuration.params["Socket setup"]["etPortBase"] in range(Configuration.params["Socket setup"]["numETports"])) \
+		       and (isinstance(self.et_port, int) and self.et_port - Configuration.params["sock_etPortBase"] in range(Configuration.params["sock_numETports"])) \
 		       and isinstance(self.is_single_run, bool) \
 		       and (isinstance(self.num_gates, int) and self.num_gates > 0) \
 		       and self.run_mode in MetaData.RunningModes \
@@ -128,7 +128,7 @@ class DAQConfiguration:
 		""" Loads the config. from the default location
 		    or (if filepath is not None) the specified file. """
 		
-		run_info_file = Configuration.params["Master node"]["runinfoFile"] if filepath is None else filepath
+		run_info_file = Configuration.params["mstr_runinfoFile"] if filepath is None else filepath
 		db = None
 		
 		try:
@@ -156,7 +156,7 @@ class DAQConfiguration:
 		""" Saves the config to a shelve database
 		    in the default location or (if filepath
 		    is not None) the specified file. """
-		run_info_file = Configuration.params["Master node"]["runinfoFile"] if filepath is None else filepath
+		run_info_file = Configuration.params["mstr_runinfoFile"] if filepath is None else filepath
 		   
 		try:
 			db = shelve.open(run_info_file)

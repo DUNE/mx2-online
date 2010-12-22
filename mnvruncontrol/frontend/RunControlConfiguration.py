@@ -32,8 +32,8 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 
 	# there are a couple controls for simple types that can't be done automatically
 	# because they use the metadata as the source of their options
-	metadata_ctrls = { "detectorType" : MetaData.DetectorTypes,
-	                   "hwInitLevel"  : MetaData.HardwareInitLevels }
+	metadata_ctrls = { "mstr_detectorType" : MetaData.DetectorTypes,
+	                   "mstr_hwInitLevel"  : MetaData.HardwareInitLevels }
 
 	#########################################################
 	#   Configuration
@@ -42,14 +42,14 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 	class ConfigurationFrame(wx.Frame):
 		""" A window for configuration of various options in the run control """
 		def __init__(self, parent=None):
-			wx.Frame.__init__(self, parent, -1, "Run control configuration", size=(600,600))
+			wx.Frame.__init__(self, parent, -1, "Run control configuration", size=(800,600))
 		
 			self.parent = parent
 
 			panel = wx.Panel(self)
 			nb = wx.Notebook(panel)
 			self.pages = {}
-			for pagename in Configuration.names:
+			for pagename in Configuration.categories:
 				self.pages[pagename] = wx.Panel(nb)
 		
 		
@@ -61,30 +61,30 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			self.entries = {}
 			gridSizers = {}
 		
-			for param_set in Configuration.params:
+			for param_set in Configuration.categories:
 				labels[param_set] = {}
 				self.entries[param_set] = {}
 
-				for param_name in Configuration.params[param_set]:
+				for param_name in sorted(Configuration.categories[param_set]):
 					# any iterable types will need to be added by hand.
-					if hasattr(Configuration.params[param_set][param_name], '__iter__') \
+					if hasattr(Configuration.params[param_name], '__iter__') \
 					  or param_name in metadata_ctrls:
 						continue
 
-					labels[param_set][param_name] = wx.StaticText(self.pages[param_set], -1, Configuration.names[param_set][param_name])
+					labels[param_set][param_name] = wx.StaticText(self.pages[param_set], -1, Configuration.names[param_name])
 					# booleans are special.  they need checkboxes instead of textctrls
-					if isinstance(Configuration.params[param_set][param_name], bool):
+					if isinstance(Configuration.params[param_name], bool):
 						self.entries[param_set][param_name] = wx.CheckBox(self.pages[param_set], -1)
-						self.entries[param_set][param_name].SetValue(Configuration.params[param_set][param_name])
+						self.entries[param_set][param_name].SetValue(Configuration.params[param_name])
 					else:
-						self.entries[param_set][param_name] = wx.TextCtrl(self.pages[param_set], -1, str(Configuration.params[param_set][param_name]))
+						self.entries[param_set][param_name] = wx.TextCtrl(self.pages[param_set], -1, str(Configuration.params[param_name]))
 					
 				gridSizers[param_set] = wx.FlexGridSizer(len(labels), 2, 5, 5)
+				gridSizers[param_set].SetFlexibleDirection(wx.HORIZONTAL)
+				gridSizers[param_set].AddGrowableCol(1)
 				for param_name in labels[param_set]:
 					gridSizers[param_set].Add(labels[param_set][param_name], flag=wx.ALIGN_CENTER_VERTICAL)
 					gridSizers[param_set].Add(self.entries[param_set][param_name], proportion=0, flag=wx.EXPAND)
-					gridSizers[param_set].SetFlexibleDirection(wx.HORIZONTAL)
-					gridSizers[param_set].AddGrowableCol(1)
 				
 				self.pages[param_set].SetSizer(gridSizers[param_set])
 			
@@ -97,67 +97,153 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			self.DeleteButtons = {}
 
 #			# first: log file locations
-#			labels["Front end"]["logFileLocations"] = wx.StaticText(self.pages["Front end"], -1, Configuration.names["Front end"]["logFileLocations"])
-#			self.entries["Front end"]["logFileLocations"] = AutoSizingEditableListCtrl(self.pages["Front end"], style=wx.LC_REPORT | wx.LC_HRULES)
-#			self.entries["Front end"]["logFileLocations"].InsertColumn(0, "Location")
+#			labels["logFileLocations"] = wx.StaticText(self.pages, -1, Configuration.names["logFileLocations"])
+#			self.entries["logFileLocations"] = AutoSizingEditableListCtrl(self.pages, style=wx.LC_REPORT | wx.LC_HRULES)
+#			self.entries["logFileLocations"].InsertColumn(0, "Location")
 #		
-#			for location in Configuration.params["Front end"]["logFileLocations"]:
-#				self.entries["Front end"]["logFileLocations"].InsertStringItem(sys.maxint, location)
+#			for location in Configuration.params["logFileLocations"]:
+#				self.entries["logFileLocations"].InsertStringItem(sys.maxint, location)
 
-#			self.AddButtons["logFileLocations"] = wx.Button(self.pages["Front end"], wx.ID_ADD, style=wx.BU_EXACTFIT)
-#			self.pages["Front end"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["logFileLocations"])
+#			self.AddButtons["logFileLocations"] = wx.Button(self.pages, wx.ID_ADD, style=wx.BU_EXACTFIT)
+#			self.pages.Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["logFileLocations"])
 
-#			self.DeleteButtons["logFileLocations"] = wx.Button(self.pages["Front end"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
-#			self.pages["Front end"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["logFileLocations"])
+#			self.DeleteButtons["logFileLocations"] = wx.Button(self.pages, wx.ID_DELETE, style=wx.BU_EXACTFIT)
+#			self.pages.Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["logFileLocations"])
 #		
 #			buttonSizer = wx.BoxSizer(wx.VERTICAL)
 #			buttonSizer.AddMany ( ( (self.AddButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
 #		
 #			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-#			entrySizer.AddMany( ( (self.entries["Front end"]["logFileLocations"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
+#			entrySizer.AddMany( ( (self.entries["logFileLocations"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
 #		
-#			gridSizers["Front end"].Add(labels["Front end"]["logFileLocations"], flag=wx.ALIGN_CENTER_VERTICAL)
-#			gridSizers["Front end"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
+#			gridSizers.Add(labels["logFileLocations"], flag=wx.ALIGN_CENTER_VERTICAL)
+#			gridSizers.Add(entrySizer, proportion=0, flag=wx.EXPAND)
 
 			# first: config choices that need list boxes.
 			for key in metadata_ctrls:
-				labels["Master node"][key] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["Master node"][key])
+				labels["Master node"][key] = wx.StaticText(self.pages["Master node"], -1, Configuration.names[key])
 				self.entries["Master node"][key] = wx.Choice(self.pages["Master node"], -1, choices=metadata_ctrls[key].descriptions())
-				self.entries["Master node"][key].SetSelection( metadata_ctrls[key].index(Configuration.params["Master node"][key]) )
+				self.entries["Master node"][key].SetSelection( metadata_ctrls[key].index(Configuration.params[key]) )
 				gridSizers["Master node"].Add(labels["Master node"][key], flag=wx.ALIGN_CENTER_VERTICAL)
-				gridSizers["Master node"].Add(self.entries["Master node"][key], proportion=0, flag=wx.EXPAND)
+				gridSizers["Master node"].Add(self.entries["Master node"][key], proportion=1, flag=wx.EXPAND)
 			
 			# next: remote node config
-			labels["Master node"]["nodeAddresses"] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["Master node"]["nodeAddresses"])
-			self.entries["Master node"]["nodeAddresses"] = AutoSizingEditableListCtrl(self.pages["Master node"], style=wx.LC_REPORT | wx.LC_HRULES)
-			self.entries["Master node"]["nodeAddresses"].InsertColumn(0, "Node type")
-			self.entries["Master node"]["nodeAddresses"].InsertColumn(1, "Name")
-			self.entries["Master node"]["nodeAddresses"].InsertColumn(2, "Address (IPv4/DNS)")
+			labels["Master node"]["mstr_nodeAddresses"] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["mstr_nodeAddresses"])
+			self.entries["Master node"]["mstr_nodeAddresses"] = AutoSizingEditableListCtrl(self.pages["Master node"], style=wx.LC_REPORT | wx.LC_HRULES)
+			self.entries["Master node"]["mstr_nodeAddresses"].InsertColumn(0, "Node type")
+			self.entries["Master node"]["mstr_nodeAddresses"].InsertColumn(1, "Name")
+			self.entries["Master node"]["mstr_nodeAddresses"].InsertColumn(2, "Address (IPv4/DNS)")
 		
-			for node in Configuration.params["Master node"]["nodeAddresses"]:
-				index = self.entries["Master node"]["nodeAddresses"].InsertStringItem(sys.maxint, str(node["type"]))
-				self.entries["Master node"]["nodeAddresses"].SetStringItem(index, 1, node["name"])
-				self.entries["Master node"]["nodeAddresses"].SetStringItem(index, 2, node["address"])
+			for node in Configuration.params["mstr_nodeAddresses"]:
+				index = self.entries["Master node"]["mstr_nodeAddresses"].InsertStringItem(sys.maxint, str(node["type"]))
+				self.entries["Master node"]["mstr_nodeAddresses"].SetStringItem(index, 1, node["name"])
+				self.entries["Master node"]["mstr_nodeAddresses"].SetStringItem(index, 2, node["address"])
 
-			self.AddButtons["nodeAddresses"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
-			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["nodeAddresses"])
+			self.AddButtons["mstr_nodeAddresses"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
+			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["mstr_nodeAddresses"])
 
-			self.DeleteButtons["nodeAddresses"] = wx.Button(self.pages["Master node"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
-			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["nodeAddresses"])
+			self.DeleteButtons["mstr_nodeAddresses"] = wx.Button(self.pages["Master node"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
+			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["mstr_nodeAddresses"])
 		
 			buttonSizer = wx.BoxSizer(wx.VERTICAL)
-			buttonSizer.AddMany ( ( (self.AddButtons["nodeAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["nodeAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
+			buttonSizer.AddMany ( ( (self.AddButtons["mstr_nodeAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["mstr_nodeAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
 		
 			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-			entrySizer.AddMany( ( (self.entries["Master node"]["nodeAddresses"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
+			entrySizer.AddMany( ( (self.entries["Master node"]["mstr_nodeAddresses"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
 		
-			gridSizers["Master node"].Add(labels["Master node"]["nodeAddresses"], flag=wx.ALIGN_CENTER_VERTICAL)
+			gridSizers["Master node"].Add(labels["Master node"]["mstr_nodeAddresses"], flag=wx.ALIGN_CENTER_VERTICAL)
 			gridSizers["Master node"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
 	
 			gridSizers["Master node"].SetFlexibleDirection(wx.BOTH)
+			
+			# next: HV thresholds
+			labels["Master node"]["mstr_HVthresholds"] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["mstr_HVthresholds"])
+			self.entries["Master node"]["mstr_HVthresholds"] = AutoSizingEditableListCtrl(self.pages["Master node"], style=wx.LC_REPORT | wx.LC_HRULES)
+			self.entries["Master node"]["mstr_HVthresholds"].InsertColumn(0, "HV dev (ADC)")
+			self.entries["Master node"]["mstr_HVthresholds"].InsertColumn(1, "# PMTs allowed above threshold")
+		
+			for thresh in Configuration.params["mstr_HVthresholds"]:
+				index = self.entries["Master node"]["mstr_HVthresholds"].InsertStringItem(sys.maxint, str(thresh))
+				self.entries["Master node"]["mstr_HVthresholds"].SetStringItem(index, 1, str(Configuration.params["mstr_HVthresholds"][thresh]))
+
+			self.AddButtons["mstr_HVthresholds"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
+			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["mstr_HVthresholds"])
+
+			self.DeleteButtons["mstr_HVthresholds"] = wx.Button(self.pages["Master node"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
+			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["mstr_HVthresholds"])
+		
+			buttonSizer = wx.BoxSizer(wx.VERTICAL)
+			buttonSizer.AddMany ( ( (self.AddButtons["mstr_HVthresholds"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["mstr_HVthresholds"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
+		
+			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
+			entrySizer.AddMany( ( (self.entries["Master node"]["mstr_HVthresholds"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
+		
+			gridSizers["Master node"].Add(labels["Master node"]["mstr_HVthresholds"], flag=wx.ALIGN_CENTER_VERTICAL)
+			gridSizers["Master node"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
+	
+			gridSizers["Master node"].SetFlexibleDirection(wx.BOTH)
+			
+			# then: boards to ignore in HV threshold check
+			labels["Master node"]["mstr_HVignoreFEBs"] = wx.StaticText(self.pages["Master node"], -1, Configuration.names["mstr_HVignoreFEBs"])
+			self.entries["Master node"]["mstr_HVignoreFEBs"] = AutoSizingEditableListCtrl(self.pages["Master node"], style=wx.LC_REPORT | wx.LC_HRULES)
+			self.entries["Master node"]["mstr_HVignoreFEBs"].InsertColumn(0, "Node")
+			self.entries["Master node"]["mstr_HVignoreFEBs"].InsertColumn(1, "Croc")
+			self.entries["Master node"]["mstr_HVignoreFEBs"].InsertColumn(2, "Chain")
+			self.entries["Master node"]["mstr_HVignoreFEBs"].InsertColumn(3, "Board")
+		
+			for addr in Configuration.params["mstr_HVignoreFEBs"]:
+				index = self.entries["Master node"]["mstr_HVignoreFEBs"].InsertStringItem(sys.maxint, addr["node"])
+				self.entries["Master node"]["mstr_HVignoreFEBs"].SetStringItem(index, 1, str(addr["croc"]))
+				self.entries["Master node"]["mstr_HVignoreFEBs"].SetStringItem(index, 2, str(addr["chain"]))
+				self.entries["Master node"]["mstr_HVignoreFEBs"].SetStringItem(index, 3, str(addr["board"]))
+
+			self.AddButtons["mstr_HVignoreFEBs"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
+			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["mstr_HVignoreFEBs"])
+
+			self.DeleteButtons["mstr_HVignoreFEBs"] = wx.Button(self.pages["Master node"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
+			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["mstr_HVignoreFEBs"])
+		
+			buttonSizer = wx.BoxSizer(wx.VERTICAL)
+			buttonSizer.AddMany ( ( (self.AddButtons["mstr_HVignoreFEBs"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["mstr_HVignoreFEBs"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
+		
+			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
+			entrySizer.Add(self.entries["Master node"]["mstr_HVignoreFEBs"], proportion=1, flag=wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
+			entrySizer.Add(buttonSizer, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL)
+		
+			gridSizers["Master node"].Add(labels["Master node"]["mstr_HVignoreFEBs"], flag=wx.ALIGN_CENTER_VERTICAL, proportion=0)
+			gridSizers["Master node"].Add(entrySizer, proportion=1, flag=wx.EXPAND)
+	
+			gridSizers["Master node"].SetFlexibleDirection(wx.BOTH)
+		
+			
+			# finally: notification addresses
+			labels["General"]["gen_notifyAddresses"] = wx.StaticText(self.pages["General"], -1, Configuration.names["gen_notifyAddresses"])
+			self.entries["General"]["gen_notifyAddresses"] = AutoSizingEditableListCtrl(self.pages["General"], style=wx.LC_REPORT | wx.LC_HRULES)
+			self.entries["General"]["gen_notifyAddresses"].InsertColumn(0, "Address")
+		
+			for addr in Configuration.params["gen_notifyAddresses"]:
+				self.entries["General"]["gen_notifyAddresses"].InsertStringItem(sys.maxint, addr)
+
+			self.AddButtons["gen_notifyAddresses"] = wx.Button(self.pages["General"], wx.ID_ADD, style=wx.BU_EXACTFIT)
+			self.pages["General"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["gen_notifyAddresses"])
+
+			self.DeleteButtons["gen_notifyAddresses"] = wx.Button(self.pages["General"], wx.ID_DELETE, style=wx.BU_EXACTFIT)
+			self.pages["General"].Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["gen_notifyAddresses"])
+		
+			buttonSizer = wx.BoxSizer(wx.VERTICAL)
+			buttonSizer.AddMany ( ( (self.AddButtons["gen_notifyAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["gen_notifyAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
+		
+			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
+			entrySizer.Add(self.entries["General"]["gen_notifyAddresses"], proportion=1, flag=wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
+			entrySizer.Add(buttonSizer, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL)
+		
+			gridSizers["General"].Add(labels["General"]["gen_notifyAddresses"], flag=wx.ALIGN_CENTER_VERTICAL, proportion=0)
+			gridSizers["General"].Add(entrySizer, proportion=1, flag=wx.EXPAND)
+	
+			gridSizers["General"].SetFlexibleDirection(wx.BOTH)
 
 			# these are added like this so that they show up in a predictable order
-			for name in ("Front end", "Hardware", "Socket setup", "Master node", "Readout nodes", "Monitoring nodes", "MTest beam nodes", "Logging"):
+			for name in sorted(Configuration.categories.keys()):
 				nb.AddPage(self.pages[name], name)
 			
 			saveButton = wx.Button(panel, wx.ID_SAVE)
@@ -175,6 +261,9 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			panel.SetSizer(globalSizer)
 
 		
+			for page in self.pages:
+				self.pages[page].Layout()
+				
 			self.Layout()
 		
 		def AddNode(self, evt):
@@ -223,35 +312,85 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 				for param_name in self.entries[param_set]:
 					if isinstance(self.entries[param_set][param_name], wx.TextCtrl) or isinstance(self.entries[param_set][param_name], wx.CheckBox):
 						# note that this must saved as the correct type (hence the Configuration.types() call).
-						Configuration.params[param_set][param_name] = Configuration.types[param_set][param_name](self.entries[param_set][param_name].GetValue())
+						Configuration.params[param_name] = Configuration.types[param_name](self.entries[param_set][param_name].GetValue())
 	
 			# now any that need to be handled in a particular way
 	
 			# first: choices
 			for item in metadata_ctrls:
-				Configuration.params["Master node"][item] = metadata_ctrls[item].item(self.entries["Master node"][item].GetSelection()).hash
+				Configuration.params[item] = metadata_ctrls[item].item(self.entries["Master node"][item].GetSelection()).hash
 	
 			# now remote nodes
 			nodelist= []
 			index = -1
 			while True:
-				index = self.entries["Master node"]["nodeAddresses"].GetNextItem(index)
-		
+				index = self.entries["Master node"]["mstr_nodeAddresses"].GetNextItem(index)
 				if index == -1:
 					break
 				
 				try:
-					nodetype = int(self.entries["Master node"]["nodeAddresses"].GetItem(index, 0).GetText())
+					nodetype = int(self.entries["Master node"]["mstr_nodeAddresses"].GetItem(index, 0).GetText())
 				except ValueError:
 					nodetype = 1		# default to READOUT
 		
 				nodedescr = { "type":     nodetype,
-				              "name":     self.entries["Master node"]["nodeAddresses"].GetItem(index, 1).GetText(),
-				              "address" : self.entries["Master node"]["nodeAddresses"].GetItem(index, 2).GetText() }
+				              "name":     self.entries["Master node"]["mstr_nodeAddresses"].GetItem(index, 1).GetText(),
+				              "address" : self.entries["Master node"]["mstr_nodeAddresses"].GetItem(index, 2).GetText() }
 				nodelist.append(nodedescr)
-		
-			Configuration.params["Master node"]["nodeAddresses"] = nodelist
+			Configuration.params["mstr_nodeAddresses"] = nodelist
 			
+			# then HV thresholds
+			thresholds = {}
+			index = -1
+			while True:
+				index = self.entries["Master node"]["mstr_HVthresholds"].GetNextItem(index)
+				if index == -1:
+					break
+				
+				try:
+					thresh = int(self.entries["Master node"]["mstr_HVthresholds"].GetItem(index, 0).GetText())
+					count = int(self.entries["Master node"]["mstr_HVthresholds"].GetItem(index, 1).GetText())
+				except ValueError:
+					dlg = wx.MessageDialog(None, 'Invalid threshold value/count!', 'Error', wx.OK | wx.ICON_ERROR)
+					dlg.ShowModal()
+					return
+				
+				thresholds[thresh] = count
+			Configuration.params["mstr_HVthresholds"] = thresholds
+
+			# after that, the boards to ignore in HV threshold check
+			boards = []
+			index = -1
+			while True:
+				index = self.entries["Master node"]["mstr_HVignoreFEBs"].GetNextItem(index)
+				if index == -1:
+					break
+				
+				board_info = {}
+				try:
+					board_info["node"] = self.entries["Master node"]["mstr_HVignoreFEBs"].GetItem(index, 0).GetText()
+					board_info["croc"] = int(self.entries["Master node"]["mstr_HVignoreFEBs"].GetItem(index, 1).GetText())
+					board_info["chain"] = int(self.entries["Master node"]["mstr_HVignoreFEBs"].GetItem(index, 2).GetText())
+					board_info["board"] = int(self.entries["Master node"]["mstr_HVignoreFEBs"].GetItem(index, 3).GetText())
+					boards.append(board_info)
+				except ValueError:
+					dlg = wx.MessageDialog(None, 'Invalid FEB info!', 'Error', wx.OK | wx.ICON_ERROR)
+					dlg.ShowModal()
+					return
+			Configuration.params["mstr_HVignoreFEBs"] = boards
+
+			# then finally, notification addresses
+			addresses = []
+			index = -1
+			while True:
+				index = self.entries["General"]["gen_notifyAddresses"].GetNextItem(index)
+				if index == -1:
+					break
+				
+				addresses.append(self.entries["General"]["gen_notifyAddresses"].GetItem(index, 0).GetText())
+			Configuration.params["gen_notifyAddresses"] = addresses
+			
+			# now save everything
 			Configuration.SaveToDB()
 			
 			self.Close()
@@ -337,7 +476,7 @@ else:
 						else:
 							print "List/dictionary editing doesn't work yet in text-only mode."
 							print "Either use the GUI editor or edit the Configuration by hand"
-							print "and use its SaveToDB() function.\n"
+							print "in a Python shell and use its SaveToDB() function.\n"
 			### while not quit
 			
 			Configuration.SaveToDB()
