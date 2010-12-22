@@ -40,7 +40,6 @@ class RemoteNode:
 		self.type = nodetype	
 		self.name = name
 		self.address = (address, Configuration.params["sock_dispatcherPort"])
-		self.crate = crate
 		
 		self.connection_made = False
 		self.status = IDLE
