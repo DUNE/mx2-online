@@ -39,7 +39,8 @@ class RemoteNode:
 	def __init__(self, nodetype, name, address):
 		self.type = nodetype	
 		self.name = name
-		self.address = (address, Configuration.params["Socket setup"]["dispatcherPort"])
+		self.address = (address, Configuration.params["sock_dispatcherPort"])
+		self.crate = crate
 		
 		self.connection_made = False
 		self.status = IDLE
@@ -62,7 +63,7 @@ class RemoteNode:
 #		# unfortunately it's difficult to implement using the shelve db.
 #		    
 
-#		filename = Configuration.params["Master node"]["sessionfile"]
+#		filename = Configuration.params["sessionfile"]
 #		
 #		# we need a lock on this file so that it doesn't change under our feet
 #		# (if another node gets a lock, for example).
@@ -101,7 +102,7 @@ class RemoteNode:
 		message = PostOffice.Message(subject="mgr_status", status="online", mgr_id=mgr_id, node_identity=self.name)
 		
 		try:
-			deliveries = postoffice.SendTo(message=message, recipient_list=[self.address,], timeout=Configuration.params["Socket setup"]["messageTimeout"])
+			deliveries = postoffice.SendTo(message=message, recipient_list=[self.address,], timeout=Configuration.params["sock_messageTimeout"])
 		except PostOffice.TimeoutError:
 			deliveries = []
 		

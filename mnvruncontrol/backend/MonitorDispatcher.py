@@ -43,7 +43,7 @@ class MonitorDispatcher(Dispatcher):
 		# need to shut down the subprocesses...
 		self.cleanup_methods += [self.om_stop]
 		                        
-		self.pidfilename = Configuration.params["Monitoring nodes"]["om_PIDfileLocation"]
+		self.pidfilename = Configuration.params["mon_PIDfile"]
 		                   
 		self.om_eb_thread = None
 		self.om_Gaudi_thread = None
@@ -51,7 +51,7 @@ class MonitorDispatcher(Dispatcher):
 		self.etpattern = None
 		self.evbfile = None
 		
-		self.use_condor = Configuration.params["Monitoring nodes"]["om_useCondor"]
+		self.use_condor = Configuration.params["mon_useCondor"]
 		
 		# has the "OM ready" signal been sent to the
 		# DAQ manager for this subrun?
@@ -86,7 +86,7 @@ class MonitorDispatcher(Dispatcher):
 		    and accepting jobs. """
 		
 		# don't do anything if we don't want to use Condor.
-		if not Configuration.params["Monitoring nodes"]["om_useCondor"]:
+		if not Configuration.params["mon_useCondor"]:
 			return
 		
 		# local variable that will be compared with self.use_condor in a minute
@@ -127,7 +127,7 @@ class MonitorDispatcher(Dispatcher):
 			# only start sending mail when the threshold is crossed.
 			# maybe the user is ok with a job or two in the backlog.
 			self.logger.info("Idle Condor jobs: %d", idle_job_count)
-			if idle_job_count >= Configuration.params["Monitoring nodes"]["om_maxCondorBacklog"]:
+			if idle_job_count >= Configuration.params["mon_maxCondorBacklog"]:
 				condor_command = "condor_q"
 				p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
 				status_text = p.stdout.read()
@@ -146,7 +146,7 @@ class MonitorDispatcher(Dispatcher):
 
 		if subject is not None and messagebody is not None:
 			self.logger.info("Sending mail to notification addresses.")
-			MailTools.sendMail(fro=sender, to=Configuration.params["General"]["notify_addresses"], subject=subject, text=messagebody)
+			MailTools.sendMail(fro=sender, to=Configuration.params["notify_addresses"], subject=subject, text=messagebody)
 
 		self.use_condor = use_condor
 
@@ -201,8 +201,8 @@ class MonitorDispatcher(Dispatcher):
 			self.om_eb_thread.join()
 		
 		self.etpattern = etpattern
-		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
-		self.raweventfile = "%s/%s_RawEvent.root" % ( Configuration.params["Monitoring nodes"]["om_rawdataLocation"], self.etpattern )
+		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["mon_rawdataLocation"], self.etpattern )
+		self.raweventfile = "%s/%s_RawEvent.root" % ( Configuration.params["mon_rawdataLocation"], self.etpattern )
 		
 		
 		try:
@@ -216,7 +216,7 @@ class MonitorDispatcher(Dispatcher):
 	
 	def om_start_eb(self, etfile, etport):
 		""" Start the event builder process. """
-		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Configuration.params["Master node"]["etSystemFileLocation"], etfile, self.evbfile, etport, os.getpid()) ) 
+		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Configuration.params["mstr_etSystemFileLocation"], etfile, self.evbfile, etport, os.getpid()) ) 
 		self.logger.info("   event_builder command:\n      '%s'...", executable)
 		
 		self.om_eb_thread = OMThread(self, executable, "eventbuilder")
@@ -234,8 +234,8 @@ class MonitorDispatcher(Dispatcher):
 		
 		try:
 			# replace the options file so that we get the new event builder output.
-			with open(Configuration.params["Monitoring nodes"]["om_GaudiOutputOptionsFile"], "w") as optsfile:
-				path = Configuration.params["Monitoring nodes"]["om_DSTTargetPath"]
+			with open(Configuration.params["mon_GaudiOutputOptionsFile"], "w") as optsfile:
+				path = Configuration.params["mon_DSTTargetPath"]
 				optsfile.write("HistogramSaver.Outputfile = \"%s/%s_Histos.root\";\n" % (path, self.etpattern ) )
 
 				dstfiles = []
@@ -250,7 +250,7 @@ class MonitorDispatcher(Dispatcher):
 				optsfile.write( "MaxPEGainAlg.ProblemChannelFileName = \"%s/%s_problemchannels.dat\";\n" % (path, self.etpattern) )
 				optsfile.write( "MaxPEGainAlg.HVFileName = \"%s/%s_tunedHVs.dat\";\n" % (path, self.etpattern) )
 
-			with open(Configuration.params["Monitoring nodes"]["om_GaudiInputOptionsFile"], "w") as optsfile:
+			with open(Configuration.params["mon_GaudiInputOptionsFile"], "w") as optsfile:
 				optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\" ;\n" % self.evbfile)
 			
 			# if the Gaudi (monitoring) thread is still running, it needs to be stopped.
@@ -263,10 +263,10 @@ class MonitorDispatcher(Dispatcher):
 			# now start a new copy of each of the Gaudi jobs.
 			gaudi_processes = ( { "processname": "monitoring",
 				                 "executable" : "%s/%s/MinervaNearline.exe %s/options/NearlineCurrent.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]),
-				                 "run"        : Configuration.params["Monitoring nodes"]["om_runCurrentJob"] },
+				                 "run"        : Configuration.params["mon_runCurrentJob"] },
 				               { "processname": "dst",
 				                 "executable" : "%s/%s/MinervaNearline.exe %s/options/Nearline.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]),
-				                 "run"        : Configuration.params["Monitoring nodes"]["om_runDSTjobs"] } )
+				                 "run"        : Configuration.params["mon_runDSTjobs"] } )
 
 			for process in gaudi_processes:
 				# we will only keep track of the monitoring thread, because this one
@@ -300,8 +300,8 @@ class MonitorDispatcher(Dispatcher):
 				
 					self.logger.info("     ==> process id: %d" % thread.pid)
 				else:
-					fmt = { "host":        Configuration.params["Monitoring nodes"]["om_condorHost"],
-					        "notify":      ",".join(Configuration.params["General"]["notify_addresses"]),
+					fmt = { "host":        Configuration.params["mon_condorHost"],
+					        "notify":      ",".join(Configuration.params["notify_addresses"]),
 					        "release":     os.environ["MINERVA_RELEASE"],
 					        "siteroot":    os.environ["MYSITEROOT"],
 					        "daqrecvroot": os.environ["DAQRECVROOT"],
@@ -317,7 +317,7 @@ class MonitorDispatcher(Dispatcher):
 						subject = "MINERvA near-online Condor submission problem"
 						messagebody = "A job submission to the mnvnearline* Condor queue returned a non-zero exit code: %d." % return_code
 						messagebody += "The command was:\n%s" % executable 			
-						MailTools.sendMail(fro=sender, to=Configuration.params["General"]["notify_addresses"], subject=subject, text=messagebody)
+						MailTools.sendMail(fro=sender, to=Configuration.params["notify_addresses"], subject=subject, text=messagebody)
 					else:
 						self.logger.info("  ... submitted successfully.")
 					
@@ -384,7 +384,7 @@ class OMThread(threading.Thread):
 		error = None
 		timediff = 0
 		while True:
-			filename = "%s/%s.%d.log" % (Configuration.params["Monitoring nodes"]["om_logfileLocation"], self.processname, i)
+			filename = "%s/%s.%d.log" % (Configuration.params["mon_logfileLocation"], self.processname, i)
 			# open the file in append mode so that if it's locked,
 			# we don't erase the whole thing when opening it
 			with open(filename, "a") as fileobj:
@@ -425,17 +425,17 @@ class OMThread(threading.Thread):
 		# send an e-mail to the addresses listed in the
 		# NOTIFY_ADDRESSES configuration parameter with the
 		# log file.
-		if error is not None or timediff < Configuration.params["Monitoring nodes"]["om_DSTminJobTime"]:
+		if error is not None or timediff < Configuration.params["mon_DSTminJobTime"]:
 			subject = "MINERvA near-online automatic DST production warning"
 			if error:
 				messagebody = "There was an error during automatic DST processing.  The error message is:\n\n%s\n\n" % str(error)
 			else:
-				messagebody = "An automatically-produced DST on the near-online system finished in less than the specified time interval (%i s)." % Configuration.params["Monitoring nodes"]["om_DSTminJobTime"]
+				messagebody = "An automatically-produced DST on the near-online system finished in less than the specified time interval (%i s)." % Configuration.params["mon_DSTminJobTime"]
 			messagebody += "\nPlease see that attached log file for further information."
 			
 			sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
 
-			MailTools.sendMail(fro=sender, to=Configuration.params["General"]["notify_addresses"], subject=subject, text=messagebody, files=[filename,])
+			MailTools.sendMail(fro=sender, to=Configuration.params["notify_addresses"], subject=subject, text=messagebody, files=[filename,])
 			
 			# inform the DAQ manager if necessary.
 			if not self.parent.signalled_ready:
@@ -462,7 +462,7 @@ if __name__ == "__main__":
 	             "DAQRECVROOT", "CMTCONFIG", "MINERVA_RELEASE",
 	             "MYSITEROOT", "LD_LIBRARY_PATH" ]
 
-	if Configuration.params["Monitoring nodes"]["om_useCondor"]:
+	if Configuration.params["mon_useCondor"]:
 		var_list += ["CONDOR_TMP", "CONDOR_EXEC"]
 		
 	for var in var_list:

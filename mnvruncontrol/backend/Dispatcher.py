@@ -46,7 +46,7 @@ class Dispatcher(PostOffice.MessageTerminus):
 		self.postoffice = None
 		
 		# this can be overridden by a derived class if it wants
-		self.socket_port = Configuration.params["Socket setup"]["dispatcherPort"]
+		self.socket_port = Configuration.params["sock_dispatcherPort"]
 		self.server_socket = None
 		
 		# where this log goes is set up in the Logging module

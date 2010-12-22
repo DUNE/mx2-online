@@ -36,7 +36,7 @@ class MTestBeamDispatcher(Dispatcher):
 		# need to shut down the subprocesses...
 		self.cleanup_methods += [self.beamdaq_stop]
 		                        
-		self.pidfilename = Configuration.params["MTest beam nodes"]["mtest_PIDfileLocation"]
+		self.pidfilename = Configuration.params["mtest_PIDfileLocation"]
 		                   
 		self.daq_threads =  { "wire chamber": None, "tof": None}
 		self.daq_starters = { "wire chamber": self.start_wire_chamber,
@@ -132,19 +132,19 @@ class MTestBeamDispatcher(Dispatcher):
 	
 	def crate_initialize(self, message):
 		self.logger.info("  ==> Initializing the crate...")
-		subprocess.call("%s/camac/example/cz %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], message.branch, message.crate, message.type), shell=True)
+		subprocess.call("%s/camac/example/cz %s %s %s" % (Configuration.params["mtest_installLocation"], message.branch, message.crate, message.type), shell=True)
 		
 	def gate_inhibit(self, message, inhibit_status):
 		self.logger.info("  ==> Sending a gate inhibit command: inhibit " + ("on" if inhibit_status == True else "off"))
 		inhibit_status = 1 if inhibit_status == True else 0
-		subprocess.call("%s/misc/gateinhibit/gate_inhibit %s %s %s %s %d" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], message.branch, message.crate, message.type, message.gate_slot, inhibit_status), shell=True)
+		subprocess.call("%s/misc/gateinhibit/gate_inhibit %s %s %s %s %d" % (Configuration.params["mtest_installLocation"], message.branch, message.crate, message.type, message.gate_slot, inhibit_status), shell=True)
 	
 	def start_wire_chamber(self, message):
 		""" Starts the wire chamber process.
 		
 		    Returns a DAQThread containing the subprocess it was started in. """
 		    
-		command = "%s/PCOS/PCOS_readout_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], message.branch, message.crate, message.mem_slot, message.type, message.wc_rst_gate_slot, message.num_events, message.filepattern, message.run, message.subrun, message.runmode)
+		command = "%s/PCOS/PCOS_readout_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["mtest_installLocation"], message.branch, message.crate, message.mem_slot, message.type, message.wc_rst_gate_slot, message.num_events, message.filepattern, message.run, message.subrun, message.runmode)
 		self.logger.info("  ==> Using command: '%s'" % command)
 		return DAQThread(command, "wire chamber")
 
@@ -153,7 +153,7 @@ class MTestBeamDispatcher(Dispatcher):
 		
 		    Returns a DAQThread containing the subprocess it was started in. """
 		    
-		command = "%s/tof/src/run_rik_t977_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["MTest beam nodes"]["mtest_installLocation"], message.branch, message.crate, message.tdc_slot, message.adc_slot, message.tof_rst_gate_slot, message.num_events, message.filepattern, message.run, message.subrun, message.runmode)
+		command = "%s/tof/src/run_rik_t977_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["mtest_installLocation"], message.branch, message.crate, message.tdc_slot, message.adc_slot, message.tof_rst_gate_slot, message.num_events, message.filepattern, message.run, message.subrun, message.runmode)
 		self.logger.info("  ==> Using command: '%s'" % command)
 		return DAQThread(command, "tof")
 	
@@ -198,7 +198,7 @@ class DAQThread(threading.Thread):
 	def run(self):
 
 		# redirect any output to a log file
-		filename = "%s/%s.log" % (Configuration.params["MTest beam nodes"]["mtest_logfileLocation"], self.processname)
+		filename = "%s/%s.log" % (Configuration.params["mtest_logfileLocation"], self.processname)
 		with open(filename, "w") as fileobj:
 			# start the process
 			self.process = subprocess.Popen(self.command.split(), shell=False, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)

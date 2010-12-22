@@ -70,7 +70,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 
 		self.cleanup_methods += [self.daq_stop]
 		
-		self.pidfilename = Configuration.params["Readout nodes"]["readout_PIDfileLocation"]
+		self.pidfilename = Configuration.params["read_PIDfile"]
 		self.current_HW_file = "NOFILE"
 
 		self.daq_thread = None
@@ -207,7 +207,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 			
 		# clean up the 'last trigger' file
 		try:
-			os.remove(Configuration.params["Readout nodes"]["lastTriggerFile"])
+			os.remove(Configuration.params["read_lastTriggerFile"])
 		except OSError:
 			pass
 		
@@ -270,7 +270,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		self.logger.debug("Configuring LI using parameters: %s, %s", li_level, led_groups)
 		
 		if self.li_box is None:
-			self.li_box = LIBox.LIBox(disable_LI=not(Configuration.params["Hardware"]["LIBoxEnabled"]), wait_response=Configuration.params["Hardware"]["LIBoxWaitForResponse"], echocmds=True)
+			self.li_box = LIBox.LIBox(disable_LI=not(Configuration.params["hw_LIBoxEnabled"]), wait_response=Configuration.params["hw_LIBoxWaitForResponse"], echocmds=True)
 		
 		need_LI = True
 		if li_level == MetaData.LILevels.ONE_PE:
@@ -314,8 +314,8 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		""" Uses the slow control library to load a hardware configuration
 		    file.  Returns True on success, False if there is no such file,
 		    and the exception itself if one is raised during loading. """
-		hwfile = Configuration.params["Readout nodes"][hw_config.code] 
-		fullpath = "%s/%s" % (Configuration.params["Readout nodes"]["SCfileLocation"], hwfile)
+		hwfile = Configuration.params[hw_config.code] 
+		fullpath = "%s/%s" % (Configuration.params["read_SCfileLocation"], hwfile)
 	
 		self.logger.info("Manager wants to load slow control configuration file: '%s' at location '%s'", hw_config.description, fullpath)
 		
@@ -392,7 +392,7 @@ class DAQThread(threading.Thread):
 		self.owner_process = owner_process
 		self.daq_command = daq_command
 		self.identity = identity
-#		self.sam_file = "%s/%s_SAM.py" % (Configuration.params["Readout nodes"]["SAMfileLocation"], etfile)
+#		self.sam_file = "%s/%s_SAM.py" % (Configuration.params["read_SAMfileLocation"], etfile)
 		
 		self.daemon = True
 		
@@ -402,7 +402,7 @@ class DAQThread(threading.Thread):
 		try:
 			# dump the output of minervadaq to a file so that crashes can be investigated.
 			# we only keep one copy because it will be rare that anyone is interested.
-			filename = "%s/minervadaq.log" % Configuration.params["Readout nodes"]["readout_logfileLocation"]
+			filename = "%s/minervadaq.log" % Configuration.params["read_logfileLocation"]
 			with open(filename, "w") as logfile:
 				self.daq_process = subprocess.Popen(self.daq_command, env=environment, stdout=logfile.fileno(), stderr=subprocess.STDOUT)
 				self.pid = self.daq_process.pid		# less typing.
@@ -429,7 +429,7 @@ class DAQThread(threading.Thread):
 					
 					stats = None
 					try:
-						stats = os.stat(Configuration.params["Readout nodes"]["lastTriggerFile"])
+						stats = os.stat(Configuration.params["read_lastTriggerFile"])
 					except OSError:
 						pass
 					finally:
@@ -474,7 +474,7 @@ class DAQThread(threading.Thread):
 		# gotta beware.  the DAQ is writing to this file repeatedly,
 		# so we might wind up with an unsuccessful open.
 		try:
-			with open(Configuration.params["Readout nodes"]["lastTriggerFile"], "r") as trigger_file:
+			with open(Configuration.params["read_lastTriggerFile"], "r") as trigger_file:
 				# we attempt to get the whole file at once -- it's short.
 				# this way it (hopefully) won't be changing under our feet.
 				trigger_data = trigger_file.read()

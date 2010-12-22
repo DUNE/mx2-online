@@ -76,9 +76,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	def __init__(self):
 		Dispatcher.Dispatcher.__init__(self)
 
-		self.pidfilename = Configuration.params["Master node"]["master_PIDfileLocation"]
+		self.pidfilename = Configuration.params["mstr_PIDfile"]
 
-		self.socket_port = Configuration.params["Socket setup"]["masterPort"]
+		self.socket_port = Configuration.params["sock_masterPort"]
 
 		# threads that this object will be managing.
 		self.worker_thread = None
@@ -157,7 +157,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		self.remote_nodes = {}
 		self.logger.info("Contacting nodes to announce that I am up...")
-		for node_config in Configuration.params["Master node"]["nodeAddresses"]:
+		for node_config in Configuration.params["mstr_nodeAddresses"]:
 			# if we had a startup error in another thread,
 			# we should bail here.
 			if self.quit:
@@ -194,7 +194,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 #		# first check for an old session.
 #		# if there is one, load in the IDs from the nodes that were in use.
 #		try:
-#			sessionfile = open(Configuration.params["Master node"]["sessionfile"], "r")
+#			sessionfile = open(Configuration.params["sessionfile"], "r")
 #		except (OSError, IOError):
 #			self.logger.info("No previous session detected.  Starting fresh.")
 #			return
@@ -304,7 +304,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    
 #		# release any outstanding locks
 #		self.logger.info("Releasing outstanding locks...")
-#		msgs = self.postoffice.SendAndWaitForResponse(PostOffice.Message(subject="lock_request", request="release", requester_id=self.id), timeout=Configuration.params["Socket setup"]["socketTimeout"])
+#		msgs = self.postoffice.SendAndWaitForResponse(PostOffice.Message(subject="lock_request", request="release", requester_id=self.id), timeout=Configuration.params["socketTimeout"])
 #			
 #		for message in msgs:
 #			if len(message.return_path) == 0:
@@ -337,7 +337,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 #		# locks that are still open...
 #		if delete_session:
 #			try:
-#				os.remove(Configuration.params["Master node"]["sessionfile"])
+#				os.remove(Configuration.params["sessionfile"])
 #			except (IOError, OSError):		# if the file doesn't exist, no problem
 #				pass
 
@@ -445,7 +445,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			# we can't rely on getting a notice for every single gate
 			# (the test stand and MTest read out too fast for that in some modes).
 			# so we use the integer division (//) construction below.
-			stride = Configuration.params["Master node"]["logfileGateCount"]
+			stride = Configuration.params["mstr_logfileGateCount"]
 			if message.gate_count // stride > self.last_logged_gate // stride:
 				self.logger.info("  DAQ has reached gate %d..." % message.gate_count)
 				self.last_logged_gate = message.gate_count
@@ -646,7 +646,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		#  when the PMT voltage verification window
 		#  is up) the numbers will still be sane.
 		if configuration.run > self.configuration.run:
-			configuration.Save(filepath=Configuration.params["Master node"]["runinfoFile"])
+			configuration.Save(filepath=Configuration.params["mstr_runinfoFile"])
 		
 		self.configuration = configuration
 		
@@ -1112,7 +1112,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.info("Trying to find a port for use by ET.")
 		self.configuration.et_port = None
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		for port in range(Configuration.params["Socket setup"]["etPortBase"], Configuration.params["Socket setup"]["etPortBase"] + Configuration.params["Socket setup"]["numETports"]):
+		for port in range(Configuration.params["sock_etPortBase"], Configuration.params["sock_etPortBase"] + Configuration.params["sock_numETports"]):
 			try:
 				self.logger.debug("  trying port %d...", port)
 				s.bind( ("", port) )
@@ -1283,10 +1283,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.problem_pmt_list = None
 
 			problem_boards = self.GetProblemPMTs()
-			thresholds = sorted(Configuration.params["Master node"]["SCHVthresholds"].keys(), reverse=True)
+			thresholds = sorted(Configuration.params["mstr_HVthresholds"].keys(), reverse=True)
 			ranges = {}
 			for i in range(len(thresholds)):
-				ranges[i+1] = Configuration.params["Master node"]["SCHVthresholds"][thresholds[i]]
+				ranges[i+1] = Configuration.params["mstr_HVthresholds"][thresholds[i]]
 			
 			over = {}
 			needs_intervention = False
@@ -1360,12 +1360,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		self.logger.info("  starting the ET system (using ET filename: '%s_RawData')...", self.configuration.et_filename)
 		
-		events = self.configuration.num_gates * Configuration.params["Hardware"]["eventFrames"] * Configuration.params["Hardware"]["num_FEBs"]
+		events = self.configuration.num_gates * Configuration.params["hw_eventFrames"] * Configuration.params["hw_numFEBs"]
 
 		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d -c %d -p %d" % ( os.environ["ET_HOME"],
-		                                                                                          Configuration.params["Master node"]["etSystemFileLocation"],
+		                                                                                          Configuration.params["mstr_etSystemFileLocation"],
 		                                                                                          self.configuration.et_filename + "_RawData",
-		                                                                                          events, Configuration.params["Hardware"]["frameSize"],
+		                                                                                          events, Configuration.params["hw_frameSize"],
 		                                                                                          os.getpid(),
 		                                                                                          self.configuration.et_port )
 
@@ -1379,7 +1379,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    
 		self.logger.info("  starting the ET monitor...")
 		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s -c %d -p %d" % ( os.environ["ET_HOME"], 
-		                                                                             Configuration.params["Master node"]["etSystemFileLocation"],
+		                                                                             Configuration.params["mstr_etSystemFileLocation"],
 		                                                                             self.configuration.et_filename + "_RawData",
 		                                                                             os.getpid(),
 		                                                                             self.configuration.et_port )
@@ -1393,9 +1393,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.info("  starting the event builder...")
 		    
 		eb_command = '%s/bin/event_builder %s/%s %s/%s %d %d' % ( os.environ['DAQROOT'],
-		                                                          Configuration.params["Master node"]["etSystemFileLocation"],
+		                                                          Configuration.params["mstr_etSystemFileLocation"],
 		                                                          self.configuration.et_filename + "_RawData",
-		                                                          Configuration.params["Master node"]["master_rawdataLocation"],
+		                                                          Configuration.params["mstr_rawdataLocation"],
 		                                                          self.raw_data_filename,
 		                                                          self.configuration.et_port, os.getpid())
 
@@ -1516,7 +1516,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			# the next one won't overwrite it -- then decrement it again
 			# so that our bookkeeping is accurate
 			self.configuration.subrun += 1
-			self.configuration.Save(filepath=Configuration.params["Master node"]["runinfoFile"])
+			self.configuration.Save(filepath=Configuration.params["mstr_runinfoFile"])
 			self.configuration.subrun -= 1
 			
 			# we're waiting now for the 'done' signal from the DAQ
@@ -1544,7 +1544,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    from the readout nodes and returns any that are
 		    over the specified thresholds. """
 
-		thresholds = sorted(Configuration.params["Master node"]["SCHVthresholds"].keys(), reverse=True)
+		thresholds = sorted(Configuration.params["mstr_HVthresholds"].keys(), reverse=True)
 
 		try:		
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
@@ -1565,9 +1565,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 			voltage_list = "  voltage deviations & HV periods of PMTs attached to the '%s' node:\ncroc-channel-board: HV dev, HV period\n=====================================\n" % response.sender
 			for board in response.sc_board_list:
+				board["node"] = response.sender
 				voltage_list += "%d-%d-%d: %5d, %5d\n" % (board["croc"], board["chain"], board["board"], board["hv_deviation"], board["period"])
-				if abs(board["hv_deviation"]) > min(thresholds) or board["period"] < Configuration.params["Master node"]["SCperiodThreshold"]:
-					board["node"] = response.sender
+				
+				# don't consider FEB IDs that are in our blacklist
+				board_id_info = { "node": board["node"], "croc": board["croc"], "chain": board["chain"], "board": board["board"] }
+				if board_id_info in Configuration.params["mstr_HVignoreFEBs"]:
+					continue
+				
+				if abs(board["hv_deviation"]) > min(thresholds) or board["period"] < Configuration.params["mstr_HVperiodThreshold"]:
 					problem_boards.append(board)
 					
 			self.logger.info(voltage_list)
@@ -1579,7 +1585,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.StopDataAcquisition(do_auto_start=False)
 
 		for board in problem_boards:
-			if board["period"] < Configuration.params["Master node"]["SCperiodThreshold"]:
+			if board["period"] < Configuration.params["mstr_HVperiodThreshold"]:
 				self.logger.warning("Board (node-croc-chain-board) %s-%d-%d-%d is below the period threshold (period: %d)", board["node"], board["croc"], board["chain"], board["board"], board["period"])
 				board["failure"] = "period"
 			else:
@@ -1692,7 +1698,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.run_series.AppendRun(run)
 		else:
 			try:
-				dblocation = "%s/%s" % (Configuration.params["Master node"]["runSeriesLocation"], self.configuration.run_series.code)
+				dblocation = "%s/%s" % (Configuration.params["mstr_runSeriesLocation"], self.configuration.run_series.code)
 				db = shelve.open(dblocation)
 				self.run_series = db["series"]
 				db.close()
@@ -1713,7 +1719,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		message = PostOffice.Message(subject="frontend_info", info="series_update", series=series)
 		
 		try:
-			dblocation = "%s/%s" % (Configuration.params["Master node"]["runSeriesLocation"], series.code)
+			dblocation = "%s/%s" % (Configuration.params["mstr_runSeriesLocation"], series.code)
 			db = shelve.open(dblocation)
 			message.series_details = db["series"]
 			db.close()

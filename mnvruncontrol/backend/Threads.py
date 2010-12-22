@@ -287,10 +287,10 @@ class AlertThread(threading.Thread):
 			#  the appropriate amount of time has elapsed,
 			#  and we haven't already created one)
 			trigger_interval = None if self._last_trigger is None else (time.time() - self._last_trigger) / 60.
-			if Configuration.params["Front end"]["maxTriggerInterval"] > 0 \
+			if Configuration.params["frnt_maxTriggerInterval"] > 0 \
 			   and self._last_trigger is not None \
 			   and self._parent_app.in_control \
-			   and trigger_interval > Configuration.params["Front end"]["maxTriggerInterval"] \
+			   and trigger_interval > Configuration.params["frnt_maxTriggerInterval"] \
 			   and self._trigger_alert_id is None:
 				alert = Alert.Alert(notice="No triggers have been received for the last %d minutes.  Is this what you're expecting?  (Is the beam down?)" % trigger_interval,
 				                    severity=Alert.WARNING)
@@ -309,13 +309,13 @@ class AlertThread(threading.Thread):
 				with self._alert_lock:
 					self._current_alert = self._alerts.pop(0)
 					
-					if Configuration.params["Front end"]["bellInterval"] > 0:
+					if Configuration.params["frnt_bellInterval"] > 0:
 						self._last_bell = time.time()
 						bell = True
 					else:
 						bell = False
 
-					if Configuration.params["Front end"]["blinkInterval"] > 0:
+					if Configuration.params["frnt_blinkInterval"] > 0:
 						self._last_blink = time.time()
 						blink = True
 					else:
@@ -330,12 +330,12 @@ class AlertThread(threading.Thread):
 			if self._current_alert is not None:
 				bell = False
 				blink = False
-				if Configuration.params["Front end"]["bellInterval"] > 0 and \
-				   time.time() - self._last_bell > Configuration.params["Front end"]["bellInterval"]:
+				if Configuration.params["frnt_bellInterval"] > 0 and \
+				   time.time() - self._last_bell > Configuration.params["frnt_bellInterval"]:
 					bell = True
 					self._last_bell = time.time()
-				elif Configuration.params["Front end"]["blinkInterval"] and \
-				     time.time() - self._last_blink > Configuration.params["Front end"]["blinkInterval"]:
+				elif Configuration.params["frnt_blinkInterval"] and \
+				     time.time() - self._last_blink > Configuration.params["frnt_blinkInterval"]:
 					blink = True
 					self._last_blink = time.time()
 				
