@@ -38,8 +38,11 @@ from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import Alert
 from mnvruncontrol.backend import RemoteNode		# needed for 'status' enumeration
 
-ver = "$Name:  $".split("$Name:  $", "")
-VERSION = "HEAD (%s)" % "$Date: 2010/12/23 16:31:46 $".split("$Date: 2010/12/23 16:31:46 $", "") if ver == "" else ver
+ver = "$Name:  $".split("Name: ")[1]
+ver = ver.replace("$", "").replace(" ", "")
+date = "$Date: 2010/12/23 16:35:42 $".split("Date: ")[1]
+date = date.replace("$", "")
+VERSION = "HEAD (%s)" % date if ver == "" else ver
 
 #########################################################
 #   MainApp
