@@ -151,6 +151,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.Bind(wx.EVT_MENU, self.OnClose, id=xrc.XRCID("menu_exit"))
 		self.Bind(wx.EVT_MENU, self.OnSave, id=xrc.XRCID("menu_save"))
 		self.Bind(wx.EVT_MENU, self.ConfigControlsEnable, id=xrc.XRCID("menu_lockdown"))
+		self.Bind(wx.EVT_MENU, self.OnAbout, id=xrc.XRCID("menu_about"))
 
 		self.frame.Bind(wx.EVT_BUTTON, self.OnAlertAcknowledgeClick, id=xrc.XRCID("alert_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnStartClick, id=xrc.XRCID("control_start_button"))
@@ -374,6 +375,21 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		                  and self.in_control
 		for control in (xrc.XRCCTRL(self.frame, "control_skip_button"), xrc.XRCCTRL(self.frame, "control_stop_button")):
 			control.Enable(control_enabled)
+
+	def OnAbout(self, evt):
+		""" Shows the 'about' box. """
+		
+		about_info = wx.AboutDialogInfo()
+		about_info.SetName(u"MINER\u03bdA Run Control")
+		about_info.SetVersion("$Name:  $")
+		about_info.SetDescription(u"The MINER\u03bdA Run Control provides a user-friendly interface to the DAQ software.  It starts & stops the DAQ and provides means for automating its running with run series.")
+		about_info.AddDeveloper("Jeremy Wolcott <jwolcott@fnal.gov>")
+		about_info.AddDeveloper("Aaron Mislivec (run series configurator) <mislivec@pas.rochester.edu>")
+		about_info.SetWebSite( ("http://substitute.pas.rochester.edu/mediawiki/index.php?title=Running_the_DAQ_system", "Online documentation") )
+		about_info.AddDocWriter("Jeremy Wolcott <jwolcott@fnal.gov>")
+		about_info.SetIcon(wx.Icon(Configuration.params["frnt_resourceLocation"]+"/minerva-small.png", wx.BITMAP_TYPE_PNG))
+		
+		about_box = wx.AboutBox(about_info)
 
 	def OnAlert(self, evt):
 		""" Makes sure the appropriate things happen
