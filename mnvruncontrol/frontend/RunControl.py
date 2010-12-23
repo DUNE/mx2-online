@@ -38,6 +38,9 @@ from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import Alert
 from mnvruncontrol.backend import RemoteNode		# needed for 'status' enumeration
 
+ver = "$Name:  $".split("$Name:  $", "")
+VERSION = "HEAD (%s)" % "$Date: 2010/12/23 16:31:46 $".split("$Date: 2010/12/23 16:31:46 $", "") if ver == "" else ver
+
 #########################################################
 #   MainApp
 #########################################################
@@ -381,7 +384,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		about_info = wx.AboutDialogInfo()
 		about_info.SetName(u"MINER\u03bdA Run Control")
-		about_info.SetVersion("$Name:  $")
+		about_info.SetVersion(VERSION)
 		about_info.SetDescription(u"The MINER\u03bdA Run Control provides a user-friendly interface to the DAQ software.  It starts & stops the DAQ and provides means for automating its running with run series.")
 		about_info.AddDeveloper("Jeremy Wolcott <jwolcott@fnal.gov>")
 		about_info.AddDeveloper("Aaron Mislivec (run series configurator) <mislivec@pas.rochester.edu>")
