@@ -665,6 +665,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				xrc.XRCCTRL(self.frame, "summary_alert_text").SetLabel("PMT high voltage or period state is outside tolerances.")
 				self.ShowPanel("summary_alert_panel", save_state=True)
 		elif evt.pmt_info is None:
+			self.problem_pmt_list = None
 			self.RestorePanelState()
 			return
 		
