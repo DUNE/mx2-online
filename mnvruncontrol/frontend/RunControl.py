@@ -39,10 +39,8 @@ from mnvruncontrol.backend import Alert
 from mnvruncontrol.backend import RemoteNode		# needed for 'status' enumeration
 
 ver = "$Name:  $".split("Name: ")[1]
-ver = ver.replace("$", "").replace(" ", "")
-date = "$Date: 2010/12/23 16:35:42 $".split("Date: ")[1]
-date = date.replace("$", "")
-VERSION = "HEAD (%s)" % date if ver == "" else ver
+ver = ver.replace("$", "").rstrip(" ")
+VERSION = ver
 
 #########################################################
 #   MainApp
@@ -76,6 +74,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.frame = self.res.LoadFrame(None, 'main_frame')
 		self.frame.SetDimensions(0, 0, 1000, 1000)
 		self.SetTopWindow(self.frame)
+		self.frame.SetIcon( wx.Icon(Configuration.params["frnt_resourceLocation"]+"/minerva-small.png", wx.BITMAP_TYPE_PNG) )
 		self.frame.Show()
 
 		# prepare the post office and threads

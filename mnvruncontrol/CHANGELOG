@@ -1,13 +1,24 @@
 mnvruncontrol -- the MINERvA run control
 ========================================
   Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v5r2  (November 2010)
-  Last update:      November 24, 2010
+  Last revision:    v5r3  (December 2010)
+  Last update:      December 23, 2010
 ========================================
 
 This document briefly summarizes the changes from version to version
 of the MINERvA run control software.  I didn't think to start it
 until most of the way through v4, so it's a bit skimpy below there...
+
+v5r3    - PMT high voltage check no longer waits for user confirmation before
+          starting the run; it just puts up the notice and continues.
+        - The DST jobs started by the MonitorDispatcher can be turned on
+          and off independently using the Configuration.
+        - Wide-scale overhaul of Configuration parameter names & usage.
+        - PMT HV thresholds & e-mail notification addresses can now be set
+          using the RunControlConfiguration script.
+        - Front-end now has an "about" box with some developer info &
+          link to online documentation.
+        - A few bugfixes (see Redmine).
 
 v5r2    - Added front-panel control to force a hardware reload when
           the next run starts.
