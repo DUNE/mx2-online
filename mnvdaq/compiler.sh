@@ -44,8 +44,8 @@ if [ $DAQROOT == "/work/software/mnvonline/mnvdaq" ]; then
 	fi
 # Edit this section for the appropriate crate config.
 	if [ $HOSTNAME == "mnvonline2.fnal.gov" ]; then 
-		cp ${DAQROOT}/options/mnvonline2crate0.opts $DAQROOT/Make.options   # Replace mnvonline0
-#		cp ${DAQROOT}/options/mnvonline2crate1.opts $DAQROOT/Make.options   # Replace mnvonline1
+		cp ${DAQROOT}/options/mnvonline2crate0multi.opts $DAQROOT/Make.options   # Replace mnvonline0
+#		cp ${DAQROOT}/options/mnvonline2crate1multi.opts $DAQROOT/Make.options   # Replace mnvonline1
 	fi
 	if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" ]; then 
 		cp ${DAQROOT}/options/mnvonlinemastermulti.opts $DAQROOT/Make.options
