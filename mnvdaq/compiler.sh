@@ -42,8 +42,16 @@ if [ $DAQROOT == "/work/software/mnvonline/mnvdaq" ]; then
 	if [ $HOSTNAME == "mnvonline1.fnal.gov" ]; then 
 		cp ${DAQROOT}/options/mnvonline1multi.opts $DAQROOT/Make.options
 	fi
+# Edit this section for the appropriate crate config.
+	if [ $HOSTNAME == "mnvonline2.fnal.gov" ]; then 
+		cp ${DAQROOT}/options/mnvonline2crate0.opts $DAQROOT/Make.options   # Replace mnvonline0
+#		cp ${DAQROOT}/options/mnvonline2crate1.opts $DAQROOT/Make.options   # Replace mnvonline1
+	fi
 	if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" ]; then 
 		cp ${DAQROOT}/options/mnvonlinemastermulti.opts $DAQROOT/Make.options
+	fi
+	if [ $HOSTNAME == "mnvonlinebck1.fnal.gov" ]; then 
+		cp ${DAQROOT}/options/mnvonlinebck1multi.opts $DAQROOT/Make.options
 	fi
 fi
 
@@ -63,3 +71,14 @@ if [ $# -gt 0 ]; then
 else
 	gmake relink
 fi
+
+if [ $HOSTNAME == "mnvonline2.fnal.gov" ]; then 
+	echo " --- PLEASE NOTE! ---- "
+	echo " You are building a back-up node that can be used for either VME hardware crate! "
+	echo " Please check the compiler script to be sure you are set-up for the right hardware "
+	echo " configuration.  Edit as needed (should be as simple as commenting out a line) and "
+	echo " recompile as needed. "
+fi
+
+
+

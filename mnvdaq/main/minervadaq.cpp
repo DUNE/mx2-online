@@ -292,8 +292,16 @@ int main(int argc, char *argv[])
 #else
 	sprintf(hostName,    "mnvonlinemaster.fnal.gov");
 #endif
+#if BACKUPCRATE0
+	sprintf(soldierName, "mnvonline2.fnal.gov");
+#else
 	sprintf(soldierName, "mnvonline0.fnal.gov");
+#endif 
+#if BACKUPCRATE1
+	sprintf(workerName,  "mnvonline2.fnal.gov");
+#else
 	sprintf(workerName,  "mnvonline1.fnal.gov");
+#endif
 #endif
 #endif
 	et_open_config_sethost(openconfig, hostName);  
@@ -1857,7 +1865,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-09'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-07-10'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
