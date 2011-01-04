@@ -79,6 +79,7 @@ SAM_FILE_LOCATION                    = "/work/data/sam"
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT  = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
 
 # master node
+MASTER_CONTROL_XFER_WAIT = 60			# in seconds
 HW_INIT_LEVEL            = MetaData.HardwareInitLevels.FULL_HW_INIT.hash
 DETECTOR_TYPE            = MetaData.DetectorTypes.MINERVA.hash
 REMOTE_NODE_ADDRESSES    = []

@@ -76,6 +76,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.SetTopWindow(self.frame)
 		self.frame.SetIcon( wx.Icon(Configuration.params["frnt_resourceLocation"]+"/minerva-small.png", wx.BITMAP_TYPE_PNG) )
 		self.frame.Show()
+		
+		self.ctl_xfer_dlg = self.res.LoadDialog(self.frame, "transfer_dialog")
+		self.ctl_xfer_dlg.Hide()
 
 		# prepare the post office and threads
 		try:
@@ -182,6 +185,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.Bind(Events.EVT_ALERT, self.OnAlert)
 		self.Bind(Events.EVT_COMM_STATUS, self.OnCommStateChange)
 		self.Bind(Events.EVT_CONTROL_STATUS, self.OnControlStateChange)
+		self.Bind(Events.EVT_CONTROL_TRANSFER, self.OnControlTransferProposal)
 		self.Bind(Events.EVT_DAQ_QUIT, self.OnConnectClick)
 		self.Bind(Events.EVT_PMT_VOLTAGE_UPDATE, self.OnHVUpdate)
 		self.Bind(Events.EVT_STATUS_UPDATE, self.OnStatusUpdate)
@@ -291,6 +295,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		if message.info == "control_update" and hasattr(message, "control_info"):
 			self.in_control = message.control_info is not None and "client_id" in message.control_info and message.control_info["client_id"] == self.id
 			wx.PostEvent( self, Events.ControlStatusEvent(control_info=message.control_info) )
+			
+		elif message.info == "control_transfer_proposal" and hasattr(message, "who"):
+			# maybe we need to show the "allow transfer?" dialog
+			wx.PostEvent( self, Events.ControlTransferEvent(who=message.who) )
 
 		elif message.info == "status_update" and hasattr(message, "status"):
 #			self.logger.debug("Got status report.")
@@ -630,14 +638,22 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		entry = xrc.XRCCTRL(self.frame, "control_connection_owner_entry")
 		label = xrc.XRCCTRL(self.frame, "control_connection_owner_label")
 		status = xrc.XRCCTRL(self.frame, "control_connection_owner_status")
+		notice = xrc.XRCCTRL(self.frame, "control_connection_notice")
 		if self.in_control:
 			label.Hide()
 			entry.Hide()
+			notice.Hide()
 			status.SetLabel("In control")
 			button.SetLabel("Relinquish control")
+		# another client has control.
+		# we need to wait on their response.
+		elif self.in_control is None:
+			notice.SetLabel("Request pending")
+			notice.Show()
 		else:
 			entry.Show()
 			label.Show()
+			notice.Hide()
 			status.SetLabel("Not in control")
 			button.SetLabel("Request control")
 		
@@ -660,6 +676,26 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=self.problem_pmt_list, warning=True) )
 		
 		self.Redraw()
+
+	def OnControlTransferProposal(self, evt):
+		""" Control transfers require a new dialog
+		   (if in control) or some explanatory text
+		   (if not). """
+		
+		if self.in_control:
+			xrc.XRCCTRL(self.ctl_xfer_dlg, "transfer_client_identity").SetLabel(evt.who["identity"])
+			xrc.XRCCTRL(self.ctl_xfer_dlg, "transfer_client_ip").SetLabel(evt.who["location"])
+			response = self.ctl_xfer_dlg.ShowModal()
+			if response == wx.ID_NO:
+				directive = "control_transfer_deny"
+			elif response == wx.ID_YES:
+				directive = "control_transfer_allow"
+			self.postoffice.Send( PostOffice.Message(subject="mgr_directive",
+			                                         directive=directive,
+			                                         mgr_id=self.id) )
+		else:
+			xrc.XRCCTRL(self.frame, "control_connection_notice").SetLabel("Another request pending")
+			xrc.XRCCTRL(self.frame, "control_connection_button").Disable()
 
 	def OnHVDismissClick(self, evt):
 		""" Continues the run sequence after a PMT HV/period check. """
@@ -1373,8 +1409,15 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		response = self.DAQSendWithResponse( PostOffice.Message(subject="control_request", request="get", requester_id=my_id, requester_name=my_name, requester_location=my_location), timeout=Configuration.params["sock_messageTimeout"] )
 		
-		if response is not None:
-			self.in_control = True
+		if response is None:
+			self.alert_thread.NewAlert( Alert.Alert(notice="The DAQ manager didn't respond to the control request!", severity=Alert.ERROR) )
+			return
+		
+		if response.subject == "invalid_request":
+			self.alert_thread.NewAlert( Alert.Alert(notice="The DAQ manager rejected the control request as invalid!", severity=Alert.ERROR) )
+			return
+		elif response.subject == "request_response":
+			response.success = self.in_control
 			wx.PostEvent(self, Events.ControlStatusEvent())
 
 	def LoadConfig(self):

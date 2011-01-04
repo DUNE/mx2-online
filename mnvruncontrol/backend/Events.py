@@ -21,6 +21,8 @@ ConfigUpdatedEvent,      EVT_CONFIG_UPDATED        = wx.lib.newevent.NewEvent()
 
 ControlStatusEvent,      EVT_CONTROL_STATUS        = wx.lib.newevent.NewEvent()
 
+ControlTransferEvent,    EVT_CONTROL_TRANSFER      = wx.lib.newevent.NewEvent()
+
 DAQQuitEvent,            EVT_DAQ_QUIT              = wx.lib.newevent.NewEvent()
 
 EndSubrunEvent,          EVT_END_SUBRUN            = wx.lib.newevent.NewEvent()

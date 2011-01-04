@@ -84,6 +84,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.worker_thread = None
 		self.DAQ_threads = {}
 		
+		# timer for use in control transfers
+		self.transfer_timer = None
+		
 		# methods that will be started sequentially
 		# by various processes and accompanying messages
 		self.SubrunStartTasks = [ { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
@@ -130,6 +133,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		# information about which client is currently in control of the DAQ
 		self.control_info = None
+		self.control_pending = None
 		
 		self.last_HW_config = None		# this way we don't write the HW config more often than necessary
 
@@ -383,10 +387,41 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			if message.request == "get":
 				if not ( hasattr(message, "requester_name") and hasattr(message, "requester_location") ):
 					response_msg.subject = "invalid_request"
-				else:
+				# nobody's currently in control
+				elif self.control_info is None:
 					self.logger.info("Granted control to client %s (reporting identity '%s') located at %s.", message.requester_id, message.requester_name, message.requester_location)
-					self.control_info = {"client_id": message.requester_id, "client_identity": message.requester_name, "client_location": message.requester_location}
+					self.control_info = { "client_id": message.requester_id,
+					                      "client_identity": message.requester_name,
+					                      "client_location": message.requester_location }
 					response_msg.success = True
+				elif message.requester_id == self.control_info["client_id"]:
+					self.logger.info("Client %s is already in control.  No action taken." % message.requester_id)
+					response_msg.success = True
+				# another request is already pending
+				elif self.control_pending is not None:
+					self.logger.info("Client %s wants control, but another request is already pending.  Denying request.", message.requester_name)
+					response_msg.success = False
+				# new client requesting control, but
+				# another client is already in control
+				else:
+					msg = "Client %s requests control, but client %s is already in control.  " % (message.requester_id, self.control_info["client_id"])
+					msg += "Client %s has %d seconds to veto control transfer..." % (self.control_info["client_id"], Configuration.params["mstr_controlXferWait"])
+					self.logger.info(msg)
+					self.control_pending = { "client_id": message.requester_id,
+					                         "client_identity": message.requester_name,
+					                         "client_location": message.requester_location }
+					response_msg.success = None
+					
+					# send out message soliciting objections if there are any
+					self.postoffice.Send( PostOffice.Message(subject="frontend_info",
+					                                         info="control_transfer_proposal",
+					                                         who={"identity": message.requester_name, "location": message.requester_location }) )
+					
+					# set up a timer to check after the appropriate interval
+					self.transfer_timer = threading.Timer(Configuration.params["mstr_controlXferWait"],
+					                                      self.ControlTransfer,
+					                                      kwargs={"do_transfer": True})
+					self.transfer_timer.start()
 
 			elif message.request == "release":
 				if self.control_info is None or self.control_info["client_id"] != message.requester_id:
@@ -395,11 +430,30 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					self.control_info = None
 					self.logger.info("Client %s relinquished control.", message.requester_id)
 					response_msg.success = True
+					
 
 		self.postoffice.Send(response_msg)
 		
 		notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
 		self.postoffice.Send(notify_msg)
+	
+	def ControlTransfer(self, do_transfer=True):
+		""" Handles requests for transfers of control. """
+		
+		if self.transfer_timer is not None:
+			self.transfer_timer.cancel()		# won't hurt if it's already done
+			self.transfer_timer = None
+		
+		# nothing to do if there's no client waiting
+		if self.control_pending is None:
+			return
+		
+		if do_transfer:
+			self.logger.info("Control transferred to new client: %s", self.control_pending["client_id"])
+			self.control_info = self.control_pending
+
+		self.control_pending = None
+		self.postoffice.Send( self.StatusReport(items=["control_info",]) )
 	
 	def DAQStatusHandler(self, message):
 		""" Handles updates from the readout nodes regarding
@@ -577,6 +631,14 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					# clear out the PMT list (otherwise non-control clients will always be stuck on it)
 					self.problem_pmt_list = None
 					self.postoffice.Send( self.StatusReport(items=["problem_pmt_list",]) )
+					
+				elif message.directive == "control_transfer_allow":
+					self.logger.info("Frontend client '%s' is ok transferring control.", message.client_id)
+					self.ControlTransfer(do_transfer=True)
+				
+				elif message.directive == "control_transfer_deny":
+					self.logger.info("Frontend client '%s' refused to transfer control.", message.client_id)
+					self.ControlTransfer(do_transfer=False)
 			
 				if status is None:
 					response.subject = "invalid_request"
