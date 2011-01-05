@@ -114,11 +114,13 @@ fi
 # ksmcf-cart.pas.rochester.edu - UROC at Rochester
 # uroc.phy.tufts.edu - UROC at Tufts
 # uroc.hep.utexas.edu - UROC at Austin
-# uroc.wm.edu - UROC at William and Mary
+# uroc.fis.utfsm.cl - UROC at USM (Chile)
+# uroc.wm.edu - UROC at William & Mary
 
-if [ "$HOSTNAME" == "minerva-rc.fnal.gov" -o "$HOSTNAME" == "ksmcf-cart.pas.rochester.edu" -o "$HOSTNAME" == "uroc.phy.tufts.edu" -o "$HOSTNAME" == "uroc.hep.utexas.edu" -o "$HOSTNAME" == "uroc.wm.edu" ]; then
+if [ "$HOSTNAME" == "minerva-rc.fnal.gov" -o "$HOSTNAME" == "ksmcf-cart.pas.rochester.edu" -o "$HOSTNAME" == "uroc.phy.tufts.edu" -o "$HOSTNAME" == "uroc.hep.utexas.edu" -o "$HOSTNAME" == "uroc.fis.utfsm.cl" -o "$HOSTNAME" == "uroc.wm.edu"  ]; then
 	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
+	ln -sf $HOME/mnvdaqrunscripts/whcr_configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_restart_all_mnvonline.sh $HOME/hard_restart_all.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_restart_daq_rc_mnvonline.sh $HOME/hard_restart_daq_rc.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_dispatcher_mnvonline.sh $HOME/hard_restart_dispatchers.sh
