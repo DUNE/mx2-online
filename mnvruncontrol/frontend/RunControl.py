@@ -612,6 +612,11 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# when confirmation or timeout is received, it will be re-enabled.
 		xrc.XRCCTRL(self.frame, "control_connection_owner_button").Disable()
 
+		notice = xrc.XRCCTRL(self.frame, "control_connection_notice")
+		notice.SetLabel("Request pending")
+		notice.Show()
+		self.Redraw()
+
 		if not self.in_control:
 			# this is a bit ugly, but it doesn't seem worth the effort to carry around
 			# a whole other property for who else is in control when it will only be used here.
@@ -637,30 +642,24 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    of the DAQ changes hands. """
 		    
 		if self.ctl_xfer_dlg.IsShown():
-			self.ctl_xfer_dlg.EndModal(0)
+			self.ctl_xfer_dlg.EndModal(0)	# 0 is the return value.  no button was clicked!
 		    
 		button = xrc.XRCCTRL(self.frame, "control_connection_owner_button")
+		notice = xrc.XRCCTRL(self.frame, "control_connection_notice")
 		button.Enable()
+		notice.Hide()
 
 		entry = xrc.XRCCTRL(self.frame, "control_connection_owner_entry")
 		label = xrc.XRCCTRL(self.frame, "control_connection_owner_label")
 		status = xrc.XRCCTRL(self.frame, "control_connection_owner_status")
-		notice = xrc.XRCCTRL(self.frame, "control_connection_notice")
 		if self.in_control:
 			label.Hide()
 			entry.Hide()
-			notice.Hide()
 			status.SetLabel("In control")
 			button.SetLabel("Relinquish control")
-		# another client has control.
-		# we need to wait on their response.
-		elif self.in_control is None:
-			notice.SetLabel("Request pending")
-			notice.Show()
 		else:
 			entry.Show()
 			label.Show()
-			notice.Hide()
 			status.SetLabel("Not in control")
 			button.SetLabel("Request control")
 		
@@ -693,12 +692,11 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			xrc.XRCCTRL(self.ctl_xfer_dlg, "transfer_client_identity").SetLabel(evt.who["identity"])
 			xrc.XRCCTRL(self.ctl_xfer_dlg, "transfer_client_ip").SetLabel(evt.who["location"])
 			response = self.ctl_xfer_dlg.ShowModal()
-			if response == wx.ID_NO:
+			if response in (wx.ID_NO, wx.ID_CANCEL):
 				directive = "control_transfer_deny"
-			elif response == wx.ID_YES:
+			elif response in (wx.ID_YES, wx.ID_OK):
 				directive = "control_transfer_allow"
 			else:
-				directive = None
 				return
 			
 			self.postoffice.Send( PostOffice.Message(subject="mgr_directive",
@@ -707,7 +705,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		else:
 			xrc.XRCCTRL(self.frame, "control_connection_notice").SetLabel("Another request pending")
 			xrc.XRCCTRL(self.frame, "control_connection_notice").Show()
-			xrc.XRCCTRL(self.frame, "control_connection_button").Disable()
+			xrc.XRCCTRL(self.frame, "control_connection_owner_button").Disable()
+			self.Redraw()
 
 	def OnHVDismissClick(self, evt):
 		""" Continues the run sequence after a PMT HV/period check. """
