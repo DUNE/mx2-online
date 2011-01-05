@@ -434,8 +434,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		self.postoffice.Send(response_msg)
 		
-		notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
-		self.postoffice.Send(notify_msg)
+		# if the 'success' paramter is None,
+		# nothing has changed yet.  don't send
+		# an update until it does.
+		if response_msg.success is not None:
+			notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
+			self.postoffice.Send(notify_msg)
 	
 	def ControlTransfer(self, do_transfer=True):
 		""" Handles requests for transfers of control. """
@@ -449,11 +453,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			return
 		
 		if do_transfer:
-			self.logger.info("Control transferred to new client: %s", self.control_pending["client_id"])
 			self.control_info = self.control_pending
+			self.logger.info("Control transferred to new client: %s", self.control_info["client_id"])
 
 		self.control_pending = None
-		self.postoffice.Send( self.StatusReport(items=["control_info",]) )
+		notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
+		self.postoffice.Send(notify_msg)
 	
 	def DAQStatusHandler(self, message):
 		""" Handles updates from the readout nodes regarding
