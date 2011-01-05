@@ -296,8 +296,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			return
 		
 		if message.info == "control_update" and hasattr(message, "control_info"):
-			self.in_control = message.control_info is not None and "client_id" in message.control_info and message.control_info["client_id"] == self.id
-			wx.PostEvent( self, Events.ControlStatusEvent(control_info=message.control_info) )
+			new_ctrl = message.control_info is not None \
+			           and "client_id" in message.control_info \
+			           and message.control_info["client_id"] == self.id
+			control_denied = self.in_control is None and not new_ctrl
+			self.in_control = new_ctrl
+			wx.PostEvent( self, Events.ControlStatusEvent(control_info=message.control_info, control_denied=control_denied) )
 			
 		elif message.info == "control_transfer_proposal" and hasattr(message, "who"):
 			# maybe we need to show the "allow transfer?" dialog
@@ -344,7 +348,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		enabled =    self.status is not None \
 		          and ("running" in self.status and self.status["running"] == False) \
-		          and self.in_control
+		          and bool(self.in_control)
 
 		menu_items = [ self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_autostart")),
 		               self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_lockdown")) ]
@@ -388,7 +392,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# the 'skip' and 'stop' buttons should be enabled when we ARE running
 		control_enabled =     self.status is not None\
 		                  and ("running" in self.status and self.status["running"] == True) \
-		                  and self.in_control
+		                  and bool(self.in_control)
 		for control in (xrc.XRCCTRL(self.frame, "control_skip_button"), xrc.XRCCTRL(self.frame, "control_stop_button")):
 			control.Enable(control_enabled)
 
@@ -624,6 +628,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				dlg = wx.MessageDialog(self.frame, message="Another client currently has control of the DAQ.  Are you sure you want to take over?", caption="Confirm control request", style=wx.YES_NO | wx.ICON_EXCLAMATION | wx.NO_DEFAULT)
 				if dlg.ShowModal() == wx.ID_NO:
 					xrc.XRCCTRL(self.frame, "control_connection_owner_button").Enable()
+					notice.Hide()
+					self.Redraw()
 					return
 			
 			my_location = socket.gethostbyname(socket.gethostname()) if self.ip_addr is None else self.ip_addr
@@ -646,12 +652,14 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    
 		button = xrc.XRCCTRL(self.frame, "control_connection_owner_button")
 		notice = xrc.XRCCTRL(self.frame, "control_connection_notice")
-		button.Enable()
-		notice.Hide()
-
 		entry = xrc.XRCCTRL(self.frame, "control_connection_owner_entry")
 		label = xrc.XRCCTRL(self.frame, "control_connection_owner_label")
 		status = xrc.XRCCTRL(self.frame, "control_connection_owner_status")
+
+		if self.in_control is not None:
+			notice.Hide()
+			button.Enable()
+
 		if self.in_control:
 			label.Hide()
 			entry.Hide()
@@ -668,6 +676,14 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 					entry.SetLabel("--")
 				else:
 					entry.SetLabel( "%s\n(%s)" % (evt.control_info["client_identity"], evt.control_info["client_location"]) )
+					
+			if hasattr(evt, "control_denied") and evt.control_denied:
+				dlg = wx.MessageDialog(self.frame,
+				                       message="The current control holder vetoed your control request.",
+				                       caption="Control request denied",
+				                       style=wx.ICON_EXCLAMATION)
+				dlg.ShowModal()
+				
 
 		self.ConfigControlsEnable()
 		
@@ -702,9 +718,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			self.postoffice.Send( PostOffice.Message(subject="mgr_directive",
 			                                         directive=directive,
 			                                         client_id=self.id) )
-		else:
-			xrc.XRCCTRL(self.frame, "control_connection_notice").SetLabel("Another request pending")
-			xrc.XRCCTRL(self.frame, "control_connection_notice").Show()
+
+
+		notice = xrc.XRCCTRL(self.frame, "control_connection_notice")
+		if not notice.IsShown():
+			notice.SetLabel("Another request pending")
+			notice.Show()
 			xrc.XRCCTRL(self.frame, "control_connection_owner_button").Disable()
 			self.Redraw()
 
@@ -1428,7 +1447,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			self.alert_thread.NewAlert( Alert.Alert(notice="The DAQ manager rejected the control request as invalid!", severity=Alert.ERROR) )
 			return
 		elif response.subject == "request_response":
-			response.success = self.in_control
+			self.in_control = response.success
 			wx.PostEvent(self, Events.ControlStatusEvent())
 
 	def LoadConfig(self):
