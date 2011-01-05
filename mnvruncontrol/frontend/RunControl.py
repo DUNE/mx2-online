@@ -182,6 +182,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		self.frame.Bind(wx.EVT_SPINCTRL, self.OnRunNumberAdjust, id=xrc.XRCID("config_global_run_entry"))
 
+		self.ctl_xfer_dlg.SetAffirmativeId(wx.ID_YES)
+		self.ctl_xfer_dlg.SetEscapeId(wx.ID_NO)
+
 		self.Bind(Events.EVT_ALERT, self.OnAlert)
 		self.Bind(Events.EVT_COMM_STATUS, self.OnCommStateChange)
 		self.Bind(Events.EVT_CONTROL_STATUS, self.OnControlStateChange)
@@ -632,6 +635,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def OnControlStateChange(self, evt):
 		""" Adjust the appropriate GUI elements when control
 		    of the DAQ changes hands. """
+		    
+		if self.ctl_xfer_dlg.IsShown():
+			self.ctl_xfer_dlg.EndModal(0)
+		    
 		button = xrc.XRCCTRL(self.frame, "control_connection_owner_button")
 		button.Enable()
 
@@ -690,11 +697,16 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				directive = "control_transfer_deny"
 			elif response == wx.ID_YES:
 				directive = "control_transfer_allow"
+			else:
+				directive = None
+				return
+			
 			self.postoffice.Send( PostOffice.Message(subject="mgr_directive",
 			                                         directive=directive,
-			                                         mgr_id=self.id) )
+			                                         client_id=self.id) )
 		else:
 			xrc.XRCCTRL(self.frame, "control_connection_notice").SetLabel("Another request pending")
+			xrc.XRCCTRL(self.frame, "control_connection_notice").Show()
 			xrc.XRCCTRL(self.frame, "control_connection_button").Disable()
 
 	def OnHVDismissClick(self, evt):

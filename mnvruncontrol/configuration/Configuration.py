@@ -77,7 +77,7 @@ configuration = {
 	"log_mtest"                   : ( Defaults.MTEST_DISPATCHER_LOGFILE,             "MTest dispatcher log file name",                      str   ),
 
 	# master node stuff
-	"mstr_controlXferWait"        : ( Defaults.MASTER_CONTROL_XFER_WAIT,             "Interval before automatically allowing control xfer", str   ),
+	"mstr_controlXferWait"        : ( Defaults.MASTER_CONTROL_XFER_WAIT,             "Interval before automatically allowing control xfer", int   ),
 	"mstr_PIDfile"                : ( Defaults.MASTER_DISPATCHER_PIDFILE,            "DAQ manager dispatcher PID file",                     str   ),
 	"mstr_runinfoFile"            : ( Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT,       "Run/subrun info database file",                       str   ),
 	"mstr_logfileGateCount"       : ( Defaults.LOGFILE_GATE_COUNT_INTERVAL,          "Interval to write gate count to log file",            int   ),
