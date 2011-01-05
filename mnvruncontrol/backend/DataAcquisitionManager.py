@@ -1283,7 +1283,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes",]) )
 			self.last_HW_config = self.configuration.hw_config
-			self.logger.info("   ==> No HW configuration necessary.")
+
+			if self.configuration.hw_config == MetaData.HardwareConfigurations.NOFILE:
+				self.logger.info("   ==> Hardware config is 'current state': won't reload hardware.")
+			else:
+				self.logger.info("   ==> No HW configuration necessary.")
+
 			return True
 		
 		# need to wait on HW init (it can take a while).  don't proceed to next step yet.
