@@ -107,7 +107,7 @@ class DAQConfiguration:
 		       and (isinstance(self.num_gates, int) and self.num_gates > 0) \
 		       and self.run_mode in MetaData.RunningModes \
 		       and self.hw_config in MetaData.HardwareConfigurations \
-		       and isinstance(self.force_hw_config, bool) \
+		       and isinstance(self.force_hw_reload, bool) \
 		       and self.led_groups in MetaData.LEDGroups \
 		       and self.li_level in MetaData.LILevels \
 		       and self.run_series in MetaData.RunSeriesTypes \

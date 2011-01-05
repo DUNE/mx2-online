@@ -607,6 +607,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 						self.logger.error("Directive message requests invalid run/subrun numbers: %d/%d (last config was %d/%d)", message.configuration.run, message.configuration.subrun, last_config.run, last_config.subrun)
 						status = DAQErrors.ConfigurationError("Invalid run/subrun pair.")
 					else:
+						self.logger.debug("Client's proposed configuration:\n%s", pprint.pformat(message.configuration.__dict__))
 						self.worker_thread.queue.put( {"method": self.StartDataAcquisition, "kwargs": {"configuration": message.configuration}} )
 						status = True
 				elif message.directive == "continue":
@@ -918,8 +919,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				#               this method needs to be exited
 				#               immediately.
 				#
-				# we should inform the front end any time the 'waiting'
-				# status changes.
+				# finally, we should inform the front end any time
+				# the 'waiting' status changes.
 
 				do_update = self.waiting != (status is None)
 				self.waiting = (status is None)
@@ -1106,8 +1107,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.DAQ_threads = {}
 			
 			
-#		wx.PostEvent( self.main_window, Events.UpdateProgressEvent(text="Subrun finishing:\nClearing the LI system...", progress=(step, numsteps)) )
-
 		# try to reset the LI box...
 		# but don't worry too much if it can't be--
 		# it might already be unset, etc.  we'll
@@ -1137,8 +1136,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.current_progress = (numsteps, numsteps)
 		self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress"] ) )
 		
-#		wx.PostEvent( self.main_window, Events.SubrunOverEvent(run=self.run, subrun=self.first_subrun + self.subrun) )
-
 		if self.running and (self.configuration.subrun - self.first_subrun) < len(self.run_series.Runs):
 			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="subrun_auto_start"))
 		else:
