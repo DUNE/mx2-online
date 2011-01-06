@@ -196,7 +196,7 @@ class WorkerThread(threading.Thread):
 			method_info = self.queue.get()
 			
 			# this is how the main thread signals us to quit
-			if method_info == "QUIT":
+			if isinstance(method_info, StopWorkingException):
 				if self._logger is not None:
 					self._logger.debug("Worker thread instructed to quit...")
 				break

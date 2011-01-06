@@ -325,7 +325,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.postoffice.Send( PostOffice.Message(subject="mgr_status", status="offline", mgr_id=self.id) )
 		
 		self.logger.info("Stopping worker thread...")
-		self.worker_thread.queue.put("QUIT")
+		self.worker_thread.queue.put(Threads.StopWorkingException())
 		self.worker_thread.join()
 		self.logger.info("  ... done.")
 

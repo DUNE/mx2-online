@@ -16,6 +16,11 @@
   Address all complaints to the management.
 """
 
+# you might notice that this file is heavily patterned on RunControl.py.
+# you'd be right.  however, there are some noticeable differences in the
+# implementations of most of the methods, so don't bother trying to
+# abstract them into some superclass.  you'll just give yourself a headache.
+
 import wx
 import wx.lib.newevent
 from wx import xrc
@@ -26,7 +31,6 @@ import socket
 import subprocess
 
 from mnvruncontrol.configuration import Configuration
-from mnvruncontrol.configuration import MetaData
 
 from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import Threads
@@ -34,8 +38,9 @@ from mnvruncontrol.backend import Threads
 #########################################################
 #   Custom events used herein
 #########################################################
-ErrorEvent,      EVT_ERROR      = wx.lib.newevent.NewEvent()
-ConnectionEvent, EVT_CONNECTION = wx.lib.newevent.NewEvent()
+ClientListEvent, EVT_CLIENT_LIST = wx.lib.newevent.NewEvent()
+ErrorEvent,      EVT_ERROR       = wx.lib.newevent.NewEvent()
+ConnectionEvent, EVT_CONNECTION  = wx.lib.newevent.NewEvent()
 
 
 #########################################################
@@ -81,20 +86,26 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.ssh_details = {}
 		self.stop_connecting = False
 		
+		self.client_list = []
+		
 		return True
 	
 	def BindEvents(self):
-		""" The resource file's event handlers are evidently ignored by wxPython.
-		    So I need to specify them here. """
+		""" Bind events to their handler methods. """
 
+		self.frame.Bind(wx.EVT_BUTTON, self.OnAssignControlClick, id=xrc.XRCID("control_assign_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnClose, id=wx.ID_CLOSE)
 		self.frame.Bind(wx.EVT_BUTTON, self.OnConnectClick, id=xrc.XRCID("connect_button"))
+		self.frame.Bind(wx.EVT_BUTTON, self.OnKillSessionClick, id=xrc.XRCID("session_kill_button"))
+		self.frame.Bind(wx.EVT_BUTTON, self.OnRevokeControlClick, id=xrc.XRCID("control_revoke_button"))
+		self.frame.Bind(wx.EVT_BUTTON, self.OnRefreshClick, id=wx.ID_REFRESH)
 
 		self.frame.Bind(wx.EVT_CHECKBOX, self.OnSSHTunnelClick, id=xrc.XRCID("connection_usessh_entry"))
 
 		self.frame.Bind(wx.EVT_CLOSE, self.OnClose, self.frame)
 
 		self.Bind(EVT_ERROR, self.OnError)
+		self.Bind(EVT_CLIENT_LIST, self.OnClientListUpdate)
 		self.Bind(EVT_CONNECTION, self.OnCommStateChange)
 		
 	def BindChoices(self):
@@ -125,13 +136,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def ClientInfoHandler(self, message):
 		""" Handles alert messages. """
 		
-		if not (hasattr(message, "mgr_id") and hasattr(message, "alert") and hasattr(message, "action")):
-			self.logger.warning("DAQMgr's 'client_alert' message is poorly formed.  Ignoring...   Message:\n%s", message)
+		if not hasattr(message, "info"):
+			return
 		
-		if message.action == "new":
-			self.alert_thread.NewAlert(message.alert)
-		elif message.action == "clear":
-			self.alert_thread.AcknowledgeAlert(message.alert)
+		if message.info == "client_list" and hasattr(message, "client_list"):
+			self.client_list = message.client_list
+			wx.PostEvent(self, ClientListEvent())
 				
 	def DAQMgrStatusHandler(self, message):
 		""" Decides what to do when the DAQ manager changes status. """
@@ -153,6 +163,17 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	# (wx) Event handlers / wx object manipulators
 	######################################################
 	
+	def GetCredentials(self):
+		""" Asks the user for credentials. """
+		
+		msg = "Enter your password to perform the selected action:"
+		caption = "Enter credentials"
+		dlg = wx.TextEntryDialog(parent=self.frame, message=msg, caption=caption,
+		                         style=wx.OK|wx.CANCEL|wx.TE_PASSWORD, defaultValue="")
+		
+		return_val = dlg.ShowModal()
+		return None if return_val == wx.ID_CANCEL else dlg.GetValue()
+	
 	def LoadConfig(self):
 		""" Loads the connection settings from the
 		    file they were stored in and sets the
@@ -169,6 +190,24 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		xrc.XRCCTRL(self.frame, "connection_remoteport_entry").SetValue(remote_port)
 		xrc.XRCCTRL(self.frame, "connection_usessh_entry").SetValue(use_ssh)
 		xrc.XRCCTRL(self.frame, "connection_sshuser_entry").SetValue(ssh_user)
+	
+	def OnAssignControlClick(self, evt):
+		pass
+	
+	def OnClientListUpdate(self, evt):
+		""" Update the list on the panel when a new
+		    list is received from the DAQ. """
+		
+		control = xrc.XRCCTRL(self.frame, "client_list")
+		control.DeleteAllItems()
+		for i in range(len(self.client_list)):
+			client = self.client_list[i]
+			index = control.InsertStringItem(sys.maxint, client["identity"])
+			control.SetStringItem(index, 1, client["location"]))
+			if client["in_control"]:
+				control.SetStringItem(index, 2, u"\u2714"))	# a check mark
+			controlSetItemData(index, i)
+				
 				
 	def OnClose(self, evt=None):
 		""" Shuts everything down nicely. """
@@ -176,7 +215,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.postoffice.Shutdown()
 		self.Close()		# message terminus
 		self.KillSSHProcesses()
-		self.worker_thread.queue.put("QUIT")
+		self.worker_thread.queue.put(Threads.StopWorkingException())
 		self.worker_thread.join()
 		self.SaveConfig()
 		self.frame.Destroy()
@@ -198,6 +237,11 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		else:
 			connect_statustext.SetLabel("Not connected")
 			connect_button.SetLabel("Connect")
+
+			connect_who_entry = xrc.XRCCTRL(self.frame, "connection_host_entry").Enable()
+			use_ssh_entry = xrc.XRCCTRL(self.frame, "connection_usessh_entry").Enable()
+			ssh_user_entry = xrc.XRCCTRL(self.frame, "connection_sshuser_entry").Enable()
+			remote_port_entry = xrc.XRCCTRL(self.frame, "connection_remoteport_entry").Enable()
 			
 		self.frame.Layout()
 
@@ -246,7 +290,15 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		dlg = wx.MessageDialog(parent=self.frame, message=evt.message, caption=caption, style=wx.OK|wx.ICON_ERROR)
 		dlg.ShowModal()
-		
+
+	def OnKillSessionClick(self, evt):
+		pass		
+	
+	def OnRefreshClick(self, evt):
+		pass
+	
+	def OnRevokeControlClick(self, evt):
+		pass
 	
 	def OnSSHTunnelClick(self, evt):
 		""" Flip the entry's enabled status. """

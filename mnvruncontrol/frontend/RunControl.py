@@ -494,7 +494,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.KillSSHProcesses()
 
 		self.logger.info("Shutting down worker thread...")
-		self.worker_thread.queue.put("QUIT")
+		self.worker_thread.queue.put(Threads.StopWorkingException())
 		self.worker_thread.join()
 		
 		self.logger.info("Shutting down alert thread...")
