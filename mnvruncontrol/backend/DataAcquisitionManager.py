@@ -637,6 +637,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					# clear out the PMT list (otherwise non-control clients will always be stuck on it)
 					self.problem_pmt_list = None
 					self.postoffice.Send( self.StatusReport(items=["problem_pmt_list",]) )
+					status = True
 					
 				elif message.directive == "control_transfer_allow":
 					self.logger.info("Frontend client '%s' is ok transferring control.", message.client_id)
