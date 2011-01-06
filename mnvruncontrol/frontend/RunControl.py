@@ -70,7 +70,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.logger.info("Starting up.")
 		
 		# load and show the graphics
-		self.res = xrc.XmlResource('../resources/frontend.xrc')
+		self.res = xrc.XmlResource('%s/frontend.xrc' % Configuration.params["frnt_resourceLocation"])
 		self.frame = self.res.LoadFrame(None, 'main_frame')
 		self.frame.SetDimensions(0, 0, 1000, 1000)
 		self.SetTopWindow(self.frame)
