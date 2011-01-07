@@ -279,29 +279,28 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	def BookSubscriptions(self):
 		""" Books all the standing subscriptions the DAQMgr will want
 		    and assigns handlers for those messages. """
-		    
-		# daq_status:    from readout nodes (informs us if something happened on the readout nodes)
-		# device_status: from peripherals
-		# mgr_internal:  from this DAQ manager to itself
-		# mgr_directive: from front-end client (tells the DAQ manager what to do)
-		subscriptions = [ PostOffice.Subscription(subject="control_request", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="daq_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="om_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="beamdaq_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="device_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="mgr_internal", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="mgr_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) ]
-		handlers = [ self.ControlRequestHandler,
-		             self.DAQStatusHandler,
-		             self.OMStatusHandler,
-		             self.BeamDAQStatusHandler,
-		             self.DeviceStatusHandler,
-		             self.MgrInternalHandler,
-		             self.MgrDirectiveHandler ]
+		
+		# control_request: from frontend clients
+		# client_admin:    from the client manager app
+		# daq_status:      from readout nodes (informs us if something happened on the readout nodes)
+		# device_status:   from peripherals
+		# mgr_internal:    from this DAQ manager to itself
+		# mgr_directive:   from front-end client (tells the DAQ manager what to do)
+		subscription_handlers = { "control_request": self.ControlRequestHandler,
+		                          "client_admin":    self.ClientAdminHandler,
+		                          "daq_status":      self.DAQStatusHandler,
+		                          "om_status":       self.OMStatusHandler,
+		                          "beamdaq_status":  self.BeamDAQStatusHandler,
+		                          "device_status":   self.DeviceStatusHandler,
+		                          "mgr_internal":    self.MgrInternalHandler,
+		                          "mgr_directive":   self.MgrDirectiveHandler }
 	
-		for (subscription, handler) in zip(subscriptions, handlers):
-			self.postoffice.AddSubscription(subscription)
-			self.AddHandler(subscription, handler)
+		for subject in subscription_handlers:
+			subscr = PostOffice.Subscription(subject=subject,
+		                                      action=PostOffice.Subscription.DELIVER,
+		                                      delivery_address=self)
+			self.postoffice.AddSubscription(subscr)
+			self.AddHandler(subscr, subscription_handlers[subject])
 		
 	def Cleanup(self):
 		""" Any clean-up actions that need to be taken before shutdown.  """
@@ -349,12 +348,59 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	# Message handlers & access control
 	##########################################
 	
+	def AdminAllowed(self, token, password_hash):
+		""" Determines if a client admin message
+		    is authorized based on its token & password hash. """
+		
+		# not implemented yet.
+		return True
+	
 	def BeamDAQStatusHandler(self, message):
 		""" Handles updates from the MTest beam DAQ
 		    about changes in its state. """
 		
 		pass	
 		
+	def ClientAdminHandler(self, message):
+		""" Handles messages from the client manager
+		    application. """
+		
+		if not hasattr(message, "action"):
+			self.logger.warning("client_admin message is improperly formatted.  Ignoring.\n%s", message)
+			return
+		
+		response = message.ResponseMessage(subject="request_response")
+		response.success = True
+		
+		if message.action == "list_request":
+			self.worker_thread.queue.put( { "method": self.SendClientInfo } )
+		
+		# everything else requires authorization
+		else:
+			if not (hasattr(message, "token") and hasattr(message, "password_hash")):
+				self.logger.info("'client admin' message is not properly constructed.  Ignoring.\n%s", message)
+				response.subject = "invalid_request"
+				response.success = False
+			else:
+				if self.AdminAllowed(message.token, message.password_hash):
+					if message.action == "assign_control" and hasattr(message, "client"):
+						self.control_pending = message.client
+						self.ControlTransfer(do_transfer=True)
+					elif message.action == "revoke_control" and hasattr(message, "client"):
+						if self.control_info is not None and message.client["client_id"] == self.control_info["client_id"]:
+							self.control_info = None
+							notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
+							self.postoffice.Send(notify_msg)
+							self.worker_thread.queue.put( { "method": self.SendClientInfo } )
+						else:
+							response.success = False
+							response.error_msg = "Specified client was not in control."
+				else:
+					response.success = False
+					response.error_msg = "Invalid credentials."
+		
+		self.postoffice.Send(response)
+
 	def ClientAllowed(self, client_id):
 		""" Overridden from Dispatcher -- checks if a client is
 		    allowed to give instructions. """
@@ -367,10 +413,14 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    Note: locks on the DAQManager work differently than in
 		    other dispatchers: anybody can request control
 		    at any time (even if somebody else already has
-		    control).  (We want to avoid the situation where
-		    somebody has a lock then their connection gets broken,
-		    preventing anybody else from controlling the DAQ until
-		    the DAQ manager is reset.) """
+		    control).  (If a client already has control, s/he
+		    is given a timeout, defaulting to 15 seconds, during
+		    which s/he can refuse to transfer control.  If no
+		    response is received during that time, the new client
+		    is granted control.  The timeout is enforced to avoid
+		    the situation where somebody has a lock then their
+		    connection gets broken, preventing anybody else
+		    from controlling the DAQ until the DAQ manager is reset.) """
 
 		response_msg = message.ResponseMessage()
 
@@ -440,6 +490,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		if response_msg.success is not None:
 			notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
 			self.postoffice.Send(notify_msg)
+			
+			# if control changed, we should also update
+			# any admins out there who are watching
+			self.worker_thread.queue.put( { "method": self.SendClientInfo } )
+
 	
 	def ControlTransfer(self, do_transfer=True):
 		""" Handles requests for transfers of control. """
@@ -459,6 +514,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.control_pending = None
 		notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
 		self.postoffice.Send(notify_msg)
+		self.worker_thread.queue.put( { "method": self.SendClientInfo } )
 	
 	def DAQStatusHandler(self, message):
 		""" Handles updates from the readout nodes regarding
@@ -1780,6 +1836,28 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.do_pmt_check = True
 		
 		return True
+		
+	def SendClientInfo(self):
+		""" Sends out a message containing a list
+		    of all currently active clients. """
+		
+		self.logger.info("Generating client list.")
+		
+		msg = PostOffice.Message(subject="frontend_info", mgr_id=self.id, info="roll_call")
+		responses = self.postoffice.SendAndWaitForResponse(msg, timeout=10)
+		
+		client_info = []
+		for response in responses:
+			info = response.my_info
+			info["in_control"] = self.control_info is not None \
+			                     and self.control_info["client_id"] == info["client_id"]
+				
+			client_info.append(info)
+		
+		self.logger.debug("Connected clients:\n%s", pprint.pformat(client_info))
+			
+		msg = PostOffice.Message(subject="client_info", mgr_id=self.id, client_info=client_info)
+		self.postoffice.Send(msg)
 
 	def SeriesInfo(self, series):
 		""" Answers inquiries from clients asking about
