@@ -23,11 +23,8 @@
 """
 
 import os
-import re
 import sys
 import signal
-import errno
-import fcntl
 import datetime
 import time
 import uuid
@@ -36,9 +33,10 @@ import pprint
 import shelve
 import socket
 import anydbm
+import hashlib
+from functools import wraps
 import threading
 import logging
-import logging.handlers
 
 # run control-specific modules.
 # note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
@@ -56,6 +54,24 @@ from mnvruncontrol.backend import Alert
 from mnvruncontrol.backend import Threads
 from mnvruncontrol.backend import DAQErrors
 
+
+### a decorator for scrubbing old tokens out of the authorization list ###
+def cleanup_tokens(f):
+	@wraps(f)
+	def callf(self, *args, **kwargs):
+		if not isinstance(self, DataAcquisitionManager):
+			raise TypeError("Can only use @cleanup_tokens on DataAcquisitionManager methods...")
+
+		# note that we COPY the key list so we can delete on the fly.
+		for token in self.authorization_tokens.keys()[:]:
+			# you get 15 seconds to use a token.  no more.
+			if time.time() - self.authorization_tokens[token] > 15:
+				del self.authorization_tokens[token]
+		
+		return f(self, *args, **kwargs)
+	
+	return callf
+##########################################################################		
 
 class DataAcquisitionManager(Dispatcher.Dispatcher):
 	""" Object that does the actual coordination of data acquisition.
@@ -96,7 +112,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.DAQStartTasks = [ { "method": self.StartETSys,          "message": "Starting ET system..." },
 		                       { "method": self.StartEBSvc,          "message": "Starting event builder..." },
 		                       { "method": self.StartOM,             "message": "Starting online monitoring..." },
-		                       { "method": self.StartETMon,          "message": "Starting ET monitor..." },
+#		                       { "method": self.StartETMon,          "message": "Starting ET monitor..." },
 		                       { "method": self.StartRemoteServices, "message": "Starting remote services..."} ]
 
 		# will be filled by the session creator.
@@ -134,6 +150,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# information about which client is currently in control of the DAQ
 		self.control_info = None
 		self.control_pending = None
+		
+		# used to authenticate client admins (see AdminAllowed())
+		self.authorization_tokens = {}
 		
 		self.last_HW_config = None		# this way we don't write the HW config more often than necessary
 
@@ -194,88 +213,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.remote_nodes[node_config["name"]] = node
 			
 
-#		self.logger.info("Starting up: checking for leftover session...")
-#		# first check for an old session.
-#		# if there is one, load in the IDs from the nodes that were in use.
-#		try:
-#			sessionfile = open(Configuration.params["sessionfile"], "r")
-#		except (OSError, IOError):
-#			self.logger.info("No previous session detected.  Starting fresh.")
-#			return
-
-#		self.logger.info("Old session detected.  Restoring any old node IDs...")
-#		# try to get a lock on the file.  that way we know it isn't being
-#		# updated while we try to read it.
-#		fcntl.flock(sessionfile.fileno(), fcntl.LOCK_EX)
-#		try:
-#			pattern = re.compile("^(?P<type>\S+) (?P<id>[a-eA-E\w\-]+) (?P<address>\S+)$")
-#			node_map = { "readout": self.readoutNodes, "monitoring": self.monitorNodes, "mtestbeam": self.mtestBeamDAQNodes }
-#			do_reset = False
-#			for line in sessionfile:
-#				matches = pattern.match(line)
-#				if matches is not None and matches.group("type").lower() in node_map:
-#					for node in node_map[matches.group("type").lower()]:
-#						if node.address == matches.group("address"):
-#							node.id = matches.group("id")
-#							node.own_lock = True
-#							do_reset = True
-#		finally:
-#			fcntl.flock(sessionfile.fileno(), fcntl.LOCK_UN)
-
-#		sessionfile.close()
-#		
-#		self.logger.info("Resetting any nodes that are still running...")
-#		# now reset any nodes that were previously locked & running.
-#		if do_reset:
-#			# first inform the main window that it needs to wait until we're done cleaning up.
-#			wx.PostEvent(self.main_window, Events.WaitForCleanupEvent())
-#			
-#			# next, reset the monitoring nodes.  they're simple
-#			# because we don't really care too much about whether
-#			# they're actually behaving.
-#			for node in self.monitorNodes:
-#				if node.own_lock:
-#					node.om_stop()
-
-#			# now any MTest beamline DAQ nodes
-#			if self.mtest_useBeamDAQ:
-#				for node in self.mtestBeamDAQNodes:
-#					if node.own_lock:
-#						node.stop()
-
-#			self.can_shutdown = True
-#			self.first_subrun = 0
-#			
-#			# finally, deal with the readout nodes.
-#			# remember, we need to loop twice so that all subscriptions
-#			# are booked before issuing any stops.
-#			for node in self.readoutNodes:
-#				if node.own_lock:
-#					self.socketThread.Subscribe(node.id, node.name, "daq_finished", callback=self, waiting=True, notice="Cleaning up from previous run...")
-#			
-#			wait_for_reset = False	
-#			for node in self.readoutNodes:
-#				if node.own_lock:
-#					success = False
-#					try:
-#						success = node.daq_stop()
-#					except ReadoutNode.ReadoutNodeNoDAQRunningException:
-#						pass
-#					
-#					if success:
-#						wait_for_reset = True
-#					# otherwise we'll be stuck... forever...
-#					else:
-#						node.completed = True
-#						self.socketThread.Unsubscribe(node.id, node.name, "daq_finished", callback=self)
-#				# if it's not locked, then we can't stop it, so it may as well be "completed"
-#				# (otherwise we'll stuck waiting forever)
-#				else:
-#					node.completed = True
-#			
-#			if not wait_for_reset:
-#				wx.PostEvent(self, Events.EndSubrunEvent(allclear=True, sentinel=False))
-
 	def BookSubscriptions(self):
 		""" Books all the standing subscriptions the DAQMgr will want
 		    and assigns handlers for those messages. """
@@ -305,21 +242,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	def Cleanup(self):
 		""" Any clean-up actions that need to be taken before shutdown.  """
 		    
-#		# release any outstanding locks
-#		self.logger.info("Releasing outstanding locks...")
-#		msgs = self.postoffice.SendAndWaitForResponse(PostOffice.Message(subject="lock_request", request="release", requester_id=self.id), timeout=Configuration.params["socketTimeout"])
-#			
-#		for message in msgs:
-#			if len(message.return_path) == 0:
-#				continue
-#		
-#			if message.success == True:
-#				self.logger.info("   ... got release confirmation from '%s' node", message.sender)
-#			elif message.success == False:
-#				self.logger.warning("  ... couldn't release lock on '%s' node!", message.sender)
-#			elif isinstance(message.success, Exception):
-#				self.logger.warning("  ... error during release of lock on '%s' node.  Error text:\n%s", message.success)
-		
 		self.logger.info("Informing nodes I'm going down...")
 		self.postoffice.Send( PostOffice.Message(subject="mgr_status", status="offline", mgr_id=self.id) )
 		
@@ -328,32 +250,31 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.worker_thread.join()
 		self.logger.info("  ... done.")
 
-#		delete_session = True
-#		# release any locks that might still be open
-#		for node in self.readoutNodes + self.monitorNodes + self.mtestBeamDAQNodes:
-#			if node.own_lock:
-#				success = node.release_lock()
-#				
-#				delete_session = delete_session and success
-#		
-#		# remove the session file, but only if there's no more
-#		# locks that are still open...
-#		if delete_session:
-#			try:
-#				os.remove(Configuration.params["sessionfile"])
-#			except (IOError, OSError):		# if the file doesn't exist, no problem
-#				pass
-
 	##########################################
 	# Message handlers & access control
 	##########################################
 	
+	@cleanup_tokens
 	def AdminAllowed(self, token, password_hash):
 		""" Determines if a client admin message
 		    is authorized based on its token & password hash. """
 		
-		# not implemented yet.
-		return True
+		if token not in self.authorization_tokens:
+			self.logger.info("Denied attempt to authenticate with invalid token.")
+			return False
+		
+		# delete the token from the whitelist
+		# so it can't be used any more
+		del self.authorization_tokens[token]
+		
+		true_hash = hashlib.sha224(token + Configuration.params["mstr_adminPwd"]).hexdigest()
+		hash_ok = password_hash == true_hash
+		
+		if not hash_ok:
+			self.logger.info("Hashes don't match.  Authentication denied.")
+		
+		return hash_ok
+
 	
 	def BeamDAQStatusHandler(self, message):
 		""" Handles updates from the MTest beam DAQ
@@ -374,6 +295,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		if message.action == "list_request":
 			self.worker_thread.queue.put( { "method": self.SendClientInfo } )
+		elif message.action == "get_token":
+			response.token = self.GetNewToken()
+#			print 'authorized use of token: %s' % response.token
 		
 		# everything else requires authorization
 		else:
@@ -397,7 +321,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 							response.error_msg = "Specified client was not in control."
 				else:
 					response.success = False
-					response.error_msg = "Invalid credentials."
+					response.error_msg = "Credentials were invalid or another authorization error occurred.  Try again."
 		
 		self.postoffice.Send(response)
 
@@ -597,7 +521,19 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    changes in their state. """
 		
 		pass	
+	
+	@cleanup_tokens
+	def GetNewToken(self):
+		""" Gets a new authorization token. 
 		
+		    Exists only because I want to 
+		    apply the decorator to it. """
+		
+		token = str(uuid.uuid4())
+		self.authorization_tokens[token] = time.time()
+		
+		return token
+	
 	def MgrDirectiveHandler(self, message):
 		""" Handles messages from front-end clients: requests
 		    for status updates, instructions for starting/stopping,
