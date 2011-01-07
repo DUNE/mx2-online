@@ -1292,15 +1292,15 @@ class PostOffice(MessageTerminus):
 
 		deliveries = self.SendWithConfirmation(message, timeout)
 		response_messages = []
+
+		logger().debug("Clearing message %s for delivery...", message.id)
+		clear_msg = Message(subject="postmaster", in_reply_to=message.id, response_clear=True)
+		self.Send(clear_msg)
 		
 		# obviously we don't want to continue to wait if the message was never delivered
 		if len(deliveries) == 0:
-			logger().debug("Message was not accepted for delivery anywhere.  Not waiting...")
+			logger().debug("Message %s was not accepted for delivery anywhere.  Not waiting...", message.id)
 		else:
-			logger().debug("Clearing message %s for delivery...", message.id)
-			clear_msg = Message(subject="postmaster", in_reply_to=message.id, response_clear=True)
-			self.Send(clear_msg)
-		
 			logger().debug("Waiting for %d responses from the following nodes: %s", len(deliveries), deliveries)
 		
 			# now, we wait.  the empty list in unanswered_messages will be
