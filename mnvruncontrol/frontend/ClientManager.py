@@ -573,13 +573,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    Be sure you don't call this from within a
 		    message handler or you'll get a deadlock."""
 		
-		# for now, the password stuff isn't implemented
-		# on the server side.  just send the message.
-		message.token = None
-		message.password_hash = None
-		self.postoffice.Send(message)
-		return
-		
 		# first, we need a token.
 		token_request = PostOffice.Message(subject="client_admin", action="get_token")
 		response = self.DAQSendWithResponse(token_request, timeout=10)
@@ -592,7 +585,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# now send the message.
 		message.token = response.token
 		message.password_hash = pwd_hash
-		response = self.DAQSendWithResponse(message)
+		response = self.DAQSendWithResponse(message, timeout=10)
 		
 		if not response.success:
 			wx.PostEvent(self, ErrorEvent(message=response.error_msg, caption="Action failed"))
