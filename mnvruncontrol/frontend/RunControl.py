@@ -105,6 +105,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.daq = False
 		self.ssh_processes = []
 		self.ssh_details = {}
+		self.identity = None
 		self.in_control = False
 		self.status = None
 		self.problem_pmt_list = None
@@ -306,6 +307,13 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		elif message.info == "control_transfer_proposal" and hasattr(message, "who"):
 			# maybe we need to show the "allow transfer?" dialog
 			wx.PostEvent( self, Events.ControlTransferEvent(who=message.who) )
+		
+		elif message.info == "roll_call":
+			response = message.ResponseMessage("request_response")
+			response.my_info = { "client_id": self.id,
+			                     "client_location":  self.ip_addr,
+			                     "client_identity":  self.identity }
+			self.postoffice.Send(response)
 
 		elif message.info == "status_update" and hasattr(message, "status"):
 #			self.logger.debug("Got status report.")
@@ -409,7 +417,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		about_info.AddDocWriter("Jeremy Wolcott <jwolcott@fnal.gov>")
 		about_info.SetIcon(wx.Icon(Configuration.params["frnt_resourceLocation"]+"/minerva-small.png", wx.BITMAP_TYPE_PNG))
 		
-		about_box = wx.AboutBox(about_info)
+		wx.AboutBox(about_info)
 
 	def OnAlert(self, evt):
 		""" Makes sure the appropriate things happen
@@ -588,6 +596,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			xrc.XRCCTRL(self.frame, "config_connection_usessh_entry").Disable()
 			xrc.XRCCTRL(self.frame, "config_connection_sshuser_entry").Disable()
 
+			self.identity = xrc.XRCCTRL(self.frame, "config_connection_identity_entry").GetValue()
+
 			work = { "method": self.ConnectDAQ, "kwargs": self.ssh_details }
 
 		# in the process of setting up the connection
@@ -635,7 +645,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			my_location = socket.gethostbyname(socket.gethostname()) if self.ip_addr is None else self.ip_addr
 				
 			work = { "method": self.GetControl, 
-			         "kwargs": { "my_name": xrc.XRCCTRL(self.frame, "config_connection_identity_entry").GetValue(),
+			         "kwargs": { "my_name": self.identity,
 			                     "my_id": self.id,
 			                     "my_location": my_location } }
 		else:
@@ -973,7 +983,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.status["configuration"].subrun            = xrc.XRCCTRL(self.frame, "config_global_subrun_entry").GetValue()
 		self.status["configuration"].is_single_run     = xrc.XRCCTRL(self.frame, "config_global_singlerun_button").GetValue()
 		self.status["configuration"].num_gates         = xrc.XRCCTRL(self.frame, "config_singlerun_gates_entry").GetValue()
-		self.status["configuration"].force_hw_config   = xrc.XRCCTRL(self.frame, "config_global_hwreload_button").GetValue()
+		self.status["configuration"].force_hw_reload   = xrc.XRCCTRL(self.frame, "config_global_hwreload_button").GetValue()
 		self.status["configuration"].run_mode          = MetaData.RunningModes.item(xrc.XRCCTRL(self.frame, "config_singlerun_runmode_entry").GetSelection())
 		self.status["configuration"].hw_config         = MetaData.HardwareConfigurations.item(xrc.XRCCTRL(self.frame, "config_singlerun_hwconfig_entry").GetSelection())
 		self.status["configuration"].li_level          = MetaData.LILevels.item(xrc.XRCCTRL(self.frame, "config_singlerun_lilevel_entry").GetSelection())

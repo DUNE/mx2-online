@@ -28,6 +28,7 @@ import sys
 import time
 import copy
 import socket
+import hashlib
 import subprocess
 
 from mnvruncontrol.configuration import Configuration
@@ -54,7 +55,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# load and show the graphics
 		self.res = xrc.XmlResource('%s/clientmanager.xrc' % Configuration.params["frnt_resourceLocation"])
 		self.frame = self.res.LoadFrame(None, 'main_frame')
-		self.frame.SetDimensions(0, 0, 400, 550)
+		self.frame.SetDimensions(-1, -1, 550, 550)
 		self.SetTopWindow(self.frame)
 		self.frame.SetIcon( wx.Icon("%s/minerva-small.png" % Configuration.params["frnt_resourceLocation"], wx.BITMAP_TYPE_PNG) )
 		self.frame.Show()
@@ -114,7 +115,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		control = xrc.XRCCTRL(self.frame, "client_list")
 		cols = ("Identity", "Location", "In control")
 		for col in cols:
-			control.InsertColumn(control.GetColumnCount(), col)
+			control.InsertColumn(control.GetColumnCount(), col, format=wx.LIST_FORMAT_CENTER, width=140)
 			
 	def SetupHandlers(self):
 		""" Set up the handlers for PostOffice messages. """
@@ -136,11 +137,11 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def ClientInfoHandler(self, message):
 		""" Handles alert messages. """
 		
-		if not hasattr(message, "info"):
+		if not hasattr(message, "client_info"):
 			return
 		
-		if message.info == "client_list" and hasattr(message, "client_list"):
-			self.client_list = message.client_list
+		if message.subject == "client_info" and hasattr(message, "client_info"):
+			self.client_list = message.client_info
 			wx.PostEvent(self, ClientListEvent())
 				
 	def DAQMgrStatusHandler(self, message):
@@ -162,6 +163,32 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	######################################################
 	# (wx) Event handlers / wx object manipulators
 	######################################################
+	
+	def ClientAction(self, action):
+		""" Initiates an action on a client. """
+
+		# determine the selected client's index
+		# in self.client_list
+		list_ctrl = xrc.XRCCTRL(self.frame, "client_list")
+		index = list_ctrl.GetFirstSelected()
+		if index == -1:	# nothing selected
+			return
+		client_index = list_ctrl.GetItemData(index)
+
+		# now authenticate
+		password = self.GetCredentials()
+		if password is None:
+			return
+		
+		# finally, put together the details so
+		# the password hasher can do its thing and send
+		msg = PostOffice.Message( subject="client_admin",
+		                          action=action,
+		                          client=self.client_list[client_index] )
+		work = { "method": self.SendWithPasswordHash,
+		         "kwargs": { "message": msg,
+		                     "password": password } }
+		self.worker_thread.queue.put(work)
 	
 	def GetCredentials(self):
 		""" Asks the user for credentials. """
@@ -192,7 +219,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		xrc.XRCCTRL(self.frame, "connection_sshuser_entry").SetValue(ssh_user)
 	
 	def OnAssignControlClick(self, evt):
-		pass
+		""" Do the right stuff when the user clicks
+		    the 'assign control' button. """
+
+		self.ClientAction("assign_control")
 	
 	def OnClientListUpdate(self, evt):
 		""" Update the list on the panel when a new
@@ -202,12 +232,14 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		control.DeleteAllItems()
 		for i in range(len(self.client_list)):
 			client = self.client_list[i]
-			index = control.InsertStringItem(sys.maxint, client["identity"])
-			control.SetStringItem(index, 1, client["location"]))
+			index = control.InsertStringItem(sys.maxint, client["client_identity"])
+			control.SetStringItem(index, 1, client["client_location"])
 			if client["in_control"]:
-				control.SetStringItem(index, 2, u"\u2714"))	# a check mark
-			controlSetItemData(index, i)
-				
+				control.SetStringItem(index, 2, u"\u2714")	# a check mark
+			control.SetItemData(index, i)
+
+		# re-enable the 'refresh' button
+		xrc.XRCCTRL(self.frame, "wxID_REFRESH").Enable()				
 				
 	def OnClose(self, evt=None):
 		""" Shuts everything down nicely. """
@@ -229,19 +261,33 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		connect_button = xrc.XRCCTRL(self.frame, "connect_button")
 		connect_statustext = xrc.XRCCTRL(self.frame, "connection_status")
-
+		
+		disable_on_connect = [ xrc.XRCCTRL(self.frame, "connection_host_entry"),
+		                       xrc.XRCCTRL(self.frame, "connection_usessh_entry"),
+		                       xrc.XRCCTRL(self.frame, "connection_sshuser_entry"),
+		                       xrc.XRCCTRL(self.frame, "connection_remoteport_entry") ]
+		enable_on_connect = [ xrc.XRCCTRL(self.frame, "control_assign_button"),
+		                      xrc.XRCCTRL(self.frame, "control_revoke_button"),
+		                      xrc.XRCCTRL(self.frame, "session_kill_button"),
+		                      xrc.XRCCTRL(self.frame, "wxID_REFRESH") ]
+		
 		if evt.connected:
 			connect_statustext.SetLabel("Connected")
 			connect_button.SetLabel("Disconnect")
+			
+			for ctrl in disable_on_connect:
+				ctrl.Disable()
+			for ctrl in enable_on_connect:
+				ctrl.Enable()
 
 		else:
 			connect_statustext.SetLabel("Not connected")
 			connect_button.SetLabel("Connect")
 
-			connect_who_entry = xrc.XRCCTRL(self.frame, "connection_host_entry").Enable()
-			use_ssh_entry = xrc.XRCCTRL(self.frame, "connection_usessh_entry").Enable()
-			ssh_user_entry = xrc.XRCCTRL(self.frame, "connection_sshuser_entry").Enable()
-			remote_port_entry = xrc.XRCCTRL(self.frame, "connection_remoteport_entry").Enable()
+			for ctrl in disable_on_connect:
+				ctrl.Enable()
+			for ctrl in enable_on_connect:
+				ctrl.Disable()
 			
 		self.frame.Layout()
 
@@ -292,14 +338,24 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		dlg.ShowModal()
 
 	def OnKillSessionClick(self, evt):
-		pass		
-	
+		password = self.GetCredentials()
+		if password is None:
+			return	
+			
 	def OnRefreshClick(self, evt):
-		pass
+		""" Asks for an updated client list from the DAQ mgr. """
+		
+		# disable the 'refresh' button
+		# to avoid sending multiple messages.
+		# it'll be re-enabled when the message comes back.
+		
+		xrc.XRCCTRL(self.frame, "wxID_REFRESH").Disable()
+	
+		self.postoffice.Send(PostOffice.Message(subject="client_admin", action="list_request"))
 	
 	def OnRevokeControlClick(self, evt):
-		pass
-	
+		self.ClientAction("revoke_control")
+				
 	def OnSSHTunnelClick(self, evt):
 		""" Flip the entry's enabled status. """
 		xrc.XRCCTRL(self.frame, "connection_sshuser_entry").Enable(xrc.XRCCTRL(self.frame, "connection_usessh_entry").IsChecked())
@@ -363,6 +419,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				
 		self.daq = True
 
+		self.postoffice.Send(PostOffice.Message(subject="client_admin", action="list_request"))
+
 		wx.PostEvent(self, ConnectionEvent(connected=True))
 
 	def DAQSendWithResponse(self, message, panic_if_no_connection=True, timeout=None, with_exception=False):
@@ -381,7 +439,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			else:
 				return []
 		elif len(responses) > 1:
-			wx.PostEvent(self, ErrorEvent(message="ot too many DAQ manager responses!  Check the network setup...", caption="Connection problem") )
+			wx.PostEvent(self, ErrorEvent(message="Got too many DAQ manager responses!  Check the network setup...", caption="Connection problem") )
 			return None
 		else:
 			return responses[0]
@@ -409,6 +467,24 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		self.daq = False
 		wx.PostEvent(self, ConnectionEvent(connected=False))
+
+	def KillSSHProcesses(self):
+		""" Kills any SSH processes that are running. """
+
+		# first ask all processes to quit
+		for process in self.ssh_processes:
+			if process.poll() is None:
+				process.terminate()
+
+		# now wait until they have all finished
+		# (we need to do this so that the dead processes
+		#  get 'reaped' -- otherwise we get a bunch of
+		#  'defunct' processes cluttering up the process
+		#  table while the run control is still open)
+		while len(self.ssh_processes) > 0:
+			process = self.ssh_processes.pop()
+			if process.poll() is None:
+				self.ssh_processes.insert(0, process)
 	
 	def PrepareSSHTunnels(self, ssh_user, remote_host, remote_port):
 		""" Prepares the SSH tunnels needed for the run control.
@@ -486,24 +562,40 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 					pass
 					
 		return outgoing_connection and incoming_connection
-	
-	def KillSSHProcesses(self):
-		""" Kills any SSH processes that are running. """
-
-		# first ask all processes to quit
-		for process in self.ssh_processes:
-			if process.poll() is None:
-				process.terminate()
-
-		# now wait until they have all finished
-		# (we need to do this so that the dead processes
-		#  get 'reaped' -- otherwise we get a bunch of
-		#  'defunct' processes cluttering up the process
-		#  table while the run control is still open)
-		while len(self.ssh_processes) > 0:
-			process = self.ssh_processes.pop()
-			if process.poll() is None:
-				self.ssh_processes.insert(0, process)
+		
+	def SendWithPasswordHash(self, message, password):
+		""" Performs the grunt work of properly
+		    hashing the token using the password 
+		    so that the DAQ manger can understand it,
+		    then sends the message with the hashed
+		    password attached. 
+		    
+		    Be sure you don't call this from within a
+		    message handler or you'll get a deadlock."""
+		
+		# for now, the password stuff isn't implemented
+		# on the server side.  just send the message.
+		message.token = None
+		message.password_hash = None
+		self.postoffice.Send(message)
+		return
+		
+		# first, we need a token.
+		token_request = PostOffice.Message(subject="client_admin", action="get_token")
+		response = self.DAQSendWithResponse(token_request, timeout=10)
+		
+		# use the token + the password to generate a hash
+		# that the server can check (since it knows the
+		# right password & it specified the token)
+		pwd_hash = hashlib.sha224(response.token + password).hexdigest()
+		
+		# now send the message.
+		message.token = response.token
+		message.password_hash = pwd_hash
+		response = self.DAQSendWithResponse(message)
+		
+		if not response.success:
+			wx.PostEvent(self, ErrorEvent(message=response.error_msg, caption="Action failed"))
 	
 #########################################################
 #   Main execution
