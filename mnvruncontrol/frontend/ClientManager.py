@@ -17,7 +17,7 @@
 """
 
 # you might notice that this file is heavily patterned on RunControl.py.
-# you'd be right.  however, there are some noticeable differences in the
+# you'd be right.  however, there are some important differences in the
 # implementations of most of the methods, so don't bother trying to
 # abstract them into some superclass.  you'll just give yourself a headache.
 
@@ -179,6 +179,15 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		password = self.GetCredentials()
 		if password is None:
 			return
+
+		# disable the buttons so we don't make
+		# multiple concurrent requests
+		buttons = [ xrc.XRCCTRL(self.frame, "control_assign_button"),
+		            xrc.XRCCTRL(self.frame, "control_revoke_button"),
+		            xrc.XRCCTRL(self.frame, "session_kill_button"),
+		            xrc.XRCCTRL(self.frame, "wxID_REFRESH") ]
+		for button in buttons:
+			button.Disable()
 		
 		# finally, put together the details so
 		# the password hasher can do its thing and send
@@ -238,8 +247,13 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				control.SetStringItem(index, 2, u"\u2714")	# a check mark
 			control.SetItemData(index, i)
 
-		# re-enable the 'refresh' button
-		xrc.XRCCTRL(self.frame, "wxID_REFRESH").Enable()				
+		# re-enable the buttons, etc.
+		buttons = [ xrc.XRCCTRL(self.frame, "control_assign_button"),
+		            xrc.XRCCTRL(self.frame, "control_revoke_button"),
+		            xrc.XRCCTRL(self.frame, "session_kill_button"),
+		            xrc.XRCCTRL(self.frame, "wxID_REFRESH") ]
+		for button in buttons:
+			button.Enable()
 				
 	def OnClose(self, evt=None):
 		""" Shuts everything down nicely. """
@@ -288,6 +302,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				ctrl.Enable()
 			for ctrl in enable_on_connect:
 				ctrl.Disable()
+				
+		xrc.XRCCTRL(self.frame, "client_list").DeleteAllItems()
 			
 		self.frame.Layout()
 
@@ -345,11 +361,15 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def OnRefreshClick(self, evt):
 		""" Asks for an updated client list from the DAQ mgr. """
 		
-		# disable the 'refresh' button
+		# disable the various buttons
 		# to avoid sending multiple messages.
-		# it'll be re-enabled when the message comes back.
-		
-		xrc.XRCCTRL(self.frame, "wxID_REFRESH").Disable()
+		# they'll be re-enabled when the message comes back.
+		buttons = [ xrc.XRCCTRL(self.frame, "control_assign_button"),
+		            xrc.XRCCTRL(self.frame, "control_revoke_button"),
+		            xrc.XRCCTRL(self.frame, "session_kill_button"),
+		            xrc.XRCCTRL(self.frame, "wxID_REFRESH") ]
+		for button in buttons:
+			button.Disable()
 	
 		self.postoffice.Send(PostOffice.Message(subject="client_admin", action="list_request"))
 	
@@ -577,6 +597,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		token_request = PostOffice.Message(subject="client_admin", action="get_token")
 		response = self.DAQSendWithResponse(token_request, timeout=10)
 		
+		# broken connection or some such
+		if response is None:
+			return
+		
 		# use the token + the password to generate a hash
 		# that the server can check (since it knows the
 		# right password & it specified the token)
@@ -586,6 +610,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		message.token = response.token
 		message.password_hash = pwd_hash
 		response = self.DAQSendWithResponse(message, timeout=10)
+	
+		if response is None:
+			return
 		
 		if not response.success:
 			wx.PostEvent(self, ErrorEvent(message=response.error_msg, caption="Action failed"))
