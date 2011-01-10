@@ -1,13 +1,25 @@
 mnvruncontrol -- the MINERvA run control
-========================================
+===================================================
   Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v5r3  (December 2010)
-  Last update:      December 23, 2010
-========================================
+  Last revision:    v5r4  (January 2011)
+  Last update:      January 10, 2011
+===================================================
 
 This document briefly summarizes the changes from version to version
 of the MINERvA run control software.  I didn't think to start it
 until most of the way through v4, so it's a bit skimpy below there...
+
+v5r4    - Change to control transfer architecture: if client A currently has
+          control and client B requests it, client A is given a configurable
+          amount of time (defaults to 15 seconds) to confirm or veto this
+          request via a pop-up window.  If client A does nothing before the
+          timeout, control is automatically transferred to client B.
+        - New "client manager" frontend application.  When connected to a DAQ
+          manager, the client manager lists all currently connected clients,
+          and can assign or revoke control to/from any of the clients.
+          (These administrative actions require the entry of a password which
+          is set in the DAQ manager's configuration.)
+        - Fixed 'force reload hardware' button so that it actually works.
 
 v5r3    - PMT high voltage check no longer waits for user confirmation before
           starting the run; it just puts up the notice and continues.
@@ -47,7 +59,7 @@ v5r0     (Beta version.)  Massive overhaul of run control system:
          - DataAcquisitionManager is now a SERVER process (a Dispatcher
            like the others).  Start the other Dispatchers on the
            appropriate nodes first.  It can run the DAQ with any number
-           of frontend clients (including 0).
+           of frontend clients (including 0).  See next point.
          - Frontend CLIENTs now are run locally on the machine where
            they are to be used (instead of being X-forwarded via SSH).
          - A multitude of adjustments were made to the thread
