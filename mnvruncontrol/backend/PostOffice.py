@@ -893,8 +893,9 @@ class PostOffice(MessageTerminus):
 										need_update = False
 										break
 								if need_update:
+									logger().log(5, "Message %s trying to get pending message lock...", message.id)
 									with self.pending_message_lock:	 
-										logger().log(5, "Acquired pending message lock...")	 
+										logger().log(5, "Message %s acquired pending message lock.", message.id)
 
 										self.pending_messages[message.id]["recipient_status"].append( [address, None] )
 										logger().debug("Added address %s to message %s recipient-waiting list.", address, message.id)
@@ -1041,7 +1042,7 @@ class PostOffice(MessageTerminus):
 			# check for moldy old messages in pending_messages and messages_awaiting_release
 			# that have been around for too long.  they probably won't ever get responses,
 			# so just get rid of them.  (we hold them for an hour before expunging.)
-			logger().log(5, "Pending messages check.")
+#			logger().log(5, "Pending messages check.")
 			if len(self.pending_messages) > 0:
 				with self.pending_message_lock:
 					new_pending_messages = {}
@@ -1248,9 +1249,9 @@ class PostOffice(MessageTerminus):
 		
 		while True:
 			if (timeout is not None) and (time.time() - self.unconfirmed_messages[message.id]["time_started"] > timeout):
-				logger().debug("Timeout expired.")
+				logger().debug("Timeout for message %s expired.", message.id)
 				if with_exception:
-					raise TimeoutError("Message send timed out...")
+					raise TimeoutError("Message %s send timed out...", message.id)
 				else:
 					break
 			
@@ -1391,6 +1392,14 @@ class PostOffice(MessageTerminus):
 		
 		# "delivered_to" messages are for delivery confirmation
 		if hasattr(message, "delivered_to"):
+			# be careful.  we need to make sure that the
+			# pending_messages information doesn't change under our feet.
+			# make a copy of it here (while protected by a lock).
+			pending_info = None
+			with self.pending_message_lock:
+				if message.in_reply_to in self.pending_messages:
+					pending_info = copy.deepcopy(self.pending_messages[message.in_reply_to])
+		
 			# if nothing's left in pending_messages, then this
 			# is the final confirmation that responses have
 			# been received from all nodes that had messages
@@ -1398,7 +1407,7 @@ class PostOffice(MessageTerminus):
 			# moreover, if this is the node from which the message
 			# originated, we need to update the dictionary that
 			# the main thread is waiting on so it knows we're done.
-			if not message.in_reply_to in self.pending_messages:
+			if pending_info is None:
 				if message.in_reply_to in self.unconfirmed_messages:
 					self.unconfirmed_messages[message.in_reply_to]["deliveries"] = message.delivered_to
 				
@@ -1406,60 +1415,60 @@ class PostOffice(MessageTerminus):
 			
 			slots_left = 0
 			matched = False
-			logger().debug("_PostMasterMessages() acquiring pending message lock...")
-			with self.pending_message_lock:
-				logger().debug("_PostMasterMessages() got pending message lock.")
-				for slot in self.pending_messages[message.in_reply_to]["recipient_status"]:
-					# locally-delivered messages never update this return path.
-					if not matched and (   (len(message.return_path) == 0 and slot[0] is None and slot[1] is None) \
-					                    or (len(message.return_path) > 0 and slot[0] == message.return_path[-1]) ):
-						slot[1] = message.delivered_to
-						matched = True
-						
-						logger().debug("Got confirmation for %s from %s.", message.in_reply_to, message.return_path)
-						
-						# if this message also wants a reply, we ensure
-						# that any forwarding requests back to the previous node
-						# will allow at least as many forwards as replies we're
-						# expecting.
-						if self.pending_messages[message.in_reply_to]["response_requested"]:
-							if self.pending_messages[message.in_reply_to]["return_address"] is not None:
-								response_subscr = Subscription(in_reply_to=message.in_reply_to, 
-									                          action=Subscription.FORWARD, 
-									                          delivery_address=self.pending_messages[message.in_reply_to]["return_address"], 
-									                          postmaster_ok=False, 
-									                          expiry=len(message.delivered_to) )
-								try:
-									with self.subscription_lock:
-										i = self.subscriptions.index(response_subscr)
-										if self.subscriptions[i].expiry > 0:
-											self.subscriptions[i].expiry += response_subscr.expiry
-											logger().debug("Updated subscription %s to expire after %d forwards", self.subscriptions[i], self.subscriptions[i].expiry)
-								# ValueError is thrown when the index() call above can't find a match
-								except ValueError:
-									self.AddSubscription(response_subscr)
-									logger().debug("booked response subscription: %s", pprint.pformat(response_subscr))
+			
+			for slot in pending_info["recipient_status"]:
+				# locally-delivered messages never update this return path.
+				if not matched and (   (len(message.return_path) == 0 and slot[0] is None and slot[1] is None) \
+				                    or (len(message.return_path) > 0 and slot[0] == message.return_path[-1]) ):
+					slot[1] = message.delivered_to
+					matched = True
+					
+					logger().debug("Got confirmation for %s from %s.", message.in_reply_to, message.return_path)
+					
+					# if this message also wants a reply, we ensure
+					# that any forwarding requests back to the previous node
+					# will allow at least as many forwards as replies we're
+					# expecting.
+					if pending_info["response_requested"]:
+						if pending_info["return_address"] is not None:
+							response_subscr = Subscription(in_reply_to=message.in_reply_to, 
+								                          action=Subscription.FORWARD, 
+								                          delivery_address=pending_info["return_address"], 
+								                          postmaster_ok=False, 
+								                          expiry=len(message.delivered_to) )
+							try:
+								with self.subscription_lock:
+									i = self.subscriptions.index(response_subscr)
+									if self.subscriptions[i].expiry > 0:
+										self.subscriptions[i].expiry += response_subscr.expiry
+										logger().debug("Updated subscription %s to expire after %d forwards", self.subscriptions[i], self.subscriptions[i].expiry)
+							# ValueError is thrown when the index() call above can't find a match
+							except ValueError:
+								self.AddSubscription(response_subscr)
+								logger().debug("booked response subscription: %s", pprint.pformat(response_subscr))
 
-							# set up a single-use subscription to forward the "response_clear"
-							# message to the node who just told us they got a delivery confirmation.
-							# that node will then release any responses it's holding
-							if len(message.return_path) > 0:
-								clear_subscr = Subscription( subject="postmaster", \
-								                             in_reply_to=message.in_reply_to, \
-									                        action=Subscription.FORWARD, \
-									                        delivery_address=message.return_path[-1], \
-									                        postmaster_ok=True, \
-									                        expiry=1, \
-									                        other_attributes={"response_clear": True} )
-								self.AddSubscription(clear_subscr)
-				
+						# set up a single-use subscription to forward the "response_clear"
+						# message to the node who just told us they got a delivery confirmation.
+						# that node will then release any responses it's holding
+						if len(message.return_path) > 0:
+							clear_subscr = Subscription( subject="postmaster", \
+							                             in_reply_to=message.in_reply_to, \
+								                        action=Subscription.FORWARD, \
+								                        delivery_address=message.return_path[-1], \
+								                        postmaster_ok=True, \
+								                        expiry=1, \
+								                        other_attributes={"response_clear": True} )
+							self.AddSubscription(clear_subscr)
+			
 #					else:
 #						print "didn't match: return path[-1][0] = %s; slot[0] = %s;  (bool: %s)" % (message.return_path[-1], slot[0], message.return_path[-1] == slot[0])
-					
-					if slot[1] is None:
-						slots_left += 1
 				
-#				print slots_left, self.pending_messages[message.in_reply_to]["recipient_status"]
+				if slot[1] is None:
+					slots_left += 1
+		
+			### END for slot in pending_info["recipient_status"]
+
+#			print slots_left, self.pending_messages[message.in_reply_to]["recipient_status"]
 			
 			# if this was the last response we were waiting on,
 			# it's go time.  we assemble the final list of end
@@ -1470,17 +1479,17 @@ class PostOffice(MessageTerminus):
 			# postmaster subscription covers it).
 			#
 			if slots_left == 0:
-				logger().debug("Pending message status for message %s:\n%s", message.in_reply_to, self.pending_messages[message.in_reply_to])
+				logger().debug("Pending message status for message %s:\n%s", message.in_reply_to, pending_info)
 				recipient_list = []
-				with self.pending_message_lock:
-					for slot in self.pending_messages[message.in_reply_to]["recipient_status"]:
-						recipient_list.extend(slot[1])
-					
-					return_address = self.pending_messages[message.in_reply_to]["return_address"]
-					if return_address is not None:
-						forward_subscr = Subscription(subject="postmaster", in_reply_to=message.in_reply_to, action=Subscription.FORWARD, delivery_address=return_address, expiry=1)
-						self.AddSubscription(forward_subscr)
+				for slot in pending_info["recipient_status"]:
+					recipient_list.extend(slot[1])
 				
+				return_address = pending_info["return_address"]
+				if return_address is not None:
+					forward_subscr = Subscription(subject="postmaster", in_reply_to=message.in_reply_to, action=Subscription.FORWARD, delivery_address=return_address, expiry=1)
+					self.AddSubscription(forward_subscr)
+				
+				with self.pending_message_lock:
 					del self.pending_messages[message.in_reply_to]
 				
 				done_msg = Message(subject="postmaster", in_reply_to=message.in_reply_to, delivered_to=recipient_list)
@@ -1488,7 +1497,7 @@ class PostOffice(MessageTerminus):
 				logger().debug("All confirmations for message %s received from upstream.  Sent single confirmation downstream...", message.in_reply_to)
 			else:
 				logger().debug("Message %s: still waiting for confirmation from %d nodes.", message.in_reply_to, slots_left)
-				logger().debug("   recipient status list: %s", self.pending_messages[message.in_reply_to]["recipient_status"])
+				logger().debug("   recipient status list: %s", pending_info["recipient_status"])
 						
 			
 		# "remote_request" messages, on the other hand, are
@@ -1901,7 +1910,7 @@ class DeliveryThread(threading.Thread):
 
 			self.busy = False
 			
-			logger().log(5, "Done handling message.  Time spent: %f seconds.", time.time()-start_time)
+			logger().log(5, "Done handling message %s.  Time spent: %f seconds.", message.id, time.time()-start_time)
 
 
 class Error(Exception):
