@@ -308,10 +308,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			else:
 				if self.AdminAllowed(message.token, message.password_hash):
 					if message.action == "assign_control" and hasattr(message, "client"):
+						self.logger.info("Admin assigned control to client %s.", message.client["client_id"])
 						self.control_pending = message.client
 						self.ControlTransfer(do_transfer=True)
 					elif message.action == "revoke_control" and hasattr(message, "client"):
 						if self.control_info is not None and message.client["client_id"] == self.control_info["client_id"]:
+							self.logger.info("Admin revoked control from client %s.", message.client["client_id"])
 							self.control_info = None
 							notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
 							self.postoffice.Send(notify_msg)
@@ -400,6 +402,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			elif message.request == "release":
 				if self.control_info is None or self.control_info["client_id"] != message.requester_id:
 					self.logger.info("Client %s wants to relinquish control, but isn't the controlling node.  Ignoring.", message.requester_id)
+					response_msg.success = True
 				else:
 					self.control_info = None
 					self.logger.info("Client %s relinquished control.", message.requester_id)
