@@ -815,7 +815,7 @@ class PostOffice(MessageTerminus):
 			except Queue.Empty:
 				pass
 			
-#			logger().log(5, "Handling messages.  Message count: %d", len(messages))
+#			logger().debug("Handling messages.  Message count: %d", len(messages))
 			# now handle them.
 			for message in messages:
 				# "reponse_requested" messages need to wait
@@ -1030,7 +1030,7 @@ class PostOffice(MessageTerminus):
 
 			### END   for message in messages ###
 
-#			logger().log(5, "Done handling messages.")
+#			logger().debug("Done handling messages.")
 
 			# avoid busy-waiting.
 			# backlogs aren't generally cleared this fast,
@@ -1042,7 +1042,7 @@ class PostOffice(MessageTerminus):
 			# check for moldy old messages in pending_messages and messages_awaiting_release
 			# that have been around for too long.  they probably won't ever get responses,
 			# so just get rid of them.  (we hold them for an hour before expunging.)
-#			logger().log(5, "Pending messages check.")
+#			logger().debug("Pending messages check.")
 			if len(self.pending_messages) > 0:
 				with self.pending_message_lock:
 					new_pending_messages = {}
@@ -1059,7 +1059,7 @@ class PostOffice(MessageTerminus):
 							new_msgs[msg_id] = self.messages_awaiting_release[msg_id]
 					self.messages_awaiting_release = new_msgs
 			
-#			logger().log(5, "Checking socket.")
+#			logger().debug("Checking socket.")
 			try:
 				# this will return the socket when it's got a client ready
 #				logger().debug("trying SELECT")
@@ -1465,8 +1465,13 @@ class PostOffice(MessageTerminus):
 				
 				if slot[1] is None:
 					slots_left += 1
-		
 			### END for slot in pending_info["recipient_status"]
+
+			# need to copy the updated status in.
+			# otherwise the "received messages" count
+			# never changes.
+			with self.pending_message_lock:
+				self.pending_messages[message.in_reply_to] = pending_info
 
 #			print slots_left, self.pending_messages[message.in_reply_to]["recipient_status"]
 			
