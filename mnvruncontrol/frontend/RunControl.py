@@ -465,8 +465,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			xrc.XRCCTRL(self.frame, "summary_alert_text").SetLabel(text)
 			xrc.XRCCTRL(self.frame, "summary_alert_text").Wrap(xrc.XRCCTRL(self.frame, "summary_alert_panel").GetClientSize().width - 10)
 			
-			if len(self.panel_state) == 0:
-				self.ShowPanel("summary_alert_panel", save_state=True)
+			self.ShowPanel("summary_alert_panel", save_state=True)
 			
 	def OnAlertAcknowledgeClick(self, evt):
 		""" Informs the alert thread that an alert
