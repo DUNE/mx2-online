@@ -757,10 +757,11 @@ class PostOffice(MessageTerminus):
 
 		logger().debug("Postoffice %s socket listener starting.", self.id)
 		while not self.time_to_quit:
-#			time.sleep(0.001)
+			time.sleep(0.001)
 			try:
-				# this will block until the socket has client ready
-				select.select([self.listen_socket], [], [])
+				# this will return the socket when it has a client ready
+				if not select.select([self.listen_socket], [], [], 0)[0]:
+					continue
 
 				certificate = None
 				client_socket, client_address = self.listen_socket.accept()
@@ -1674,11 +1675,13 @@ class PostOffice(MessageTerminus):
 		self.time_to_quit = True
 		worker_threads = { "listener": self.listener_thread,
 		                   "scheduler": self.scheduler_thread }
+		logger().info("Checking worker threads for shutdown...")
 		for thread_name in worker_threads:
 			thread = worker_threads[thread_name]
 			if thread.is_alive():
-				logger().info("Shutting down %s..." % thread_name)
+				logger().info("  ... %s ...", thread_name)
 				thread.join()
+			logger().info("  ... %s shut down.", thread_name)
 
 		if self.listen_socket:
 			logger().info("Shutting down listening socket...")
@@ -1697,6 +1700,8 @@ class PostOffice(MessageTerminus):
 		# finally, shut down the thread inherited from the MessageTerminus
 		logger().info("Shutting down the PostOffice's MessageTerminus...")
 		self.Close()
+		
+		logger().info("PostOffice %s shut down successfully.", self.id)
 		
 
 class DeliveryThread(threading.Thread):
