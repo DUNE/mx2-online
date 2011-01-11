@@ -723,6 +723,8 @@ class PostOffice(MessageTerminus):
 		self.messages_awaiting_release_lock = threading.Lock()
 		
 		# and finally, the worker threads.
+		self.listener_thread = threading.Thread(target=self._Listen)
+		self.listener_thread.daemon = True
 		self.scheduler_thread = threading.Thread(target=self._Schedule)
 		self.scheduler_thread.daemon = True
 		
@@ -743,6 +745,141 @@ class PostOffice(MessageTerminus):
 		# if full configuration for the listener was provided, start it.
 		if (self.listen_port is None and self.listen_socket is not None) or (self.listen_port is not None and self.listen_socket is None):
 			self.StartListening()
+	
+	def _Listen(self):
+		""" The method that runs the incoming socket communication
+		    service.  (Outgoing socket communication is handled
+		    via DeliveryThread objects.)
+		    
+		    It should be run in its own thread to ensure it doesn't
+		    block things up while it waits for socket traffic (this is
+		    arranged by default by the constructor). """
+
+		logger().debug("Postoffice %s socket listener starting.", self.id)
+		while not self.time_to_quit:
+#			time.sleep(0.001)
+			try:
+				# this will block until the socket has client ready
+				select.select([self.listen_socket], [], [])
+
+				certificate = None
+				client_socket, client_address = self.listen_socket.accept()
+			
+				# we can discard the port number.  it's not important
+				# since it will be a dynamic-use port (>32000) and
+				# we can't contact that node there after this socket
+				# has been closed.
+				client_address = client_address[0]
+
+
+				# if this is an SSL socket, get the other side's certificate
+				if hasattr(client_socket, "getpeercert"):
+					certificate = client_socket.getpeercert()					
+
+				# unfortunately, the SSL wrapper gives the methods different names (argh...)
+				if hasattr(client_socket, "read") and hasattr(client_socket, "write"):
+					send = client_socket.write
+					recv = client_socket.read
+				else:
+					send = client_socket.send
+					recv = client_socket.recv
+
+				# read from the socket.
+				msg = ""
+				datalen = -1
+				while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire msg
+					data = recv(1024)
+					datalen = len(data)
+					# if the first few characters don't
+					# look like a PostOffice message,
+					# don't waste time getting the rest of it.
+					if datalen < 0:
+						for i in range(len(MESSAGE_MAGIC)):
+							if datalen > i and data[i] != MESSAGE_MAGIC[i]:
+								break
+					msg += data
+	
+				if msg == "":
+					logger().info("Blank message from '%s'.  Assuming pipe was broken and ignoring.", client_address)
+					client_socket.close()
+					continue
+				elif msg == "ping":
+					logger().debug("Responding to ping...")
+					send("1")
+					client_socket.shutdown(socket.SHUT_WR)
+					continue
+				elif len(msg) < len(MESSAGE_MAGIC) + CHECKSUM_BYTES:
+					logger().info("Garbage message from %s (too short).  Message:\n%s", client_address, msg)
+					logger().warning(" ==> Ignoring.")
+					continue
+				elif msg[:len(MESSAGE_MAGIC)] != MESSAGE_MAGIC:
+					logger().info("Garbage message from %s (no message magic).  Message:\n%s", client_address, msg)
+					logger().warning(" ==> Ignoring.")
+					continue
+				
+				# verify that the message's checksum is really how long it is...
+				# note that we use 7-bit (not 8-bit) 'bytes' because the socket protocol
+				# can't handle strings with code points higher than 127...
+				checksum_string = msg[len(MESSAGE_MAGIC)+1:len(MESSAGE_MAGIC)+CHECKSUM_BYTES]
+				checksum = 0
+				for char in checksum_string:
+					checksum <<= 7
+					checksum += ord(char)
+				if len(msg) - len(MESSAGE_MAGIC) - CHECKSUM_BYTES != checksum:
+					logger().info("Garbage message from %s (checksum [%d] doesn't match message length [%d]).  Message:\n%s", client_address, checksum, len(msg) - len(MESSAGE_MAGIC) - CHECKSUM_BYTES, msg)
+					logger().warning(" ==> Suggesting client re-send.")
+					send("RECV_ERR")
+					client_socket.shutdown(socket.SHUT_WR)
+					continue
+				
+				# strip off the magic bytes and checksum
+				msg = msg[len(MESSAGE_MAGIC)+CHECKSUM_BYTES:]
+				try:
+					message =  cPickle.loads(msg)
+				except cPickle.UnpicklingError:
+					logger().info("Garbage message from %s containing the appropriate message magic and checksum.  Message:\n%s", client_address, msg)
+		 			logger().warning("  ==> Ignoring.")
+					continue
+				except EOFError:
+					logger().info("Broken pipe getting message.  Dropping.")
+					continue
+			
+				if hasattr(message, "subject") and hasattr(message, "id") and hasattr(message, "return_path") and len(message.return_path) > 0:
+					send("RECV_ACK %s" % message.id)
+					client_socket.shutdown(socket.SHUT_WR)
+
+					logger().info("RECEIVED:\n%s", str(message))
+					logger().info(" ... from client at address '%s'", client_address)
+					if certificate is not None:
+						# the format of the certificate returned by getpeercert()
+						# is *terrible*.  let's reformat it a bit.
+						certificate_reformat = {}
+						for item in certificate["subject"]:
+							certificate_reformat[item[0][0]] = item[0][1]
+						logger().info( " ... identifying themselves with security certificate commonName '%s'", certificate_reformat["commonName"] )
+					
+						message.sender_certificate = certificate_reformat
+
+					# the delivery thread sending this message to us
+					# should have appended an IPv4Address to return_path
+					# containing the port number we should be contacting it at.
+					# now we add the IP address as we see it from here.
+					message.return_path[-1].set_host(client_address)
+					self.message_queue.put_nowait(message)
+				else:
+					logger().info("Incomplete message from client '%s':\n%s", client_address, message )
+					logger().warning("  ==> Ignoring.")
+			
+				client_socket.close()
+					
+			except (socket.error, select.error), (errnum, msg):
+				if errnum == errno.EINTR:		# the code for an interrupted system call
+					logger().warning("Recv was interrupted by system call.  Will try again.")
+					pass
+				else:
+					logger().exception("Error trying to receive incoming data:")
+		logger().debug("Listener thread shut down.")	
+
 	
 	def StartListening(self):
 		""" Start up the various listener services.
@@ -783,12 +920,15 @@ class PostOffice(MessageTerminus):
 				logger().fatal("Can't get a socket.")
 				raise
 		
+		self.listen_socket.settimeout(SOCKET_TIMEOUT)
+		self.listener_thread.start()
 		self.scheduler_thread.start()
 		
 		
 	def _Schedule(self):
-		""" The method that handles incoming messages over the socket
-		    and assigns outgoing messages to delivery threads. 
+		""" The method that assigns outgoing messages to delivery threads,
+		    dispatches locally deliverable messages to their recipients,
+		    and manages subscriptions. 
 		    
 		    It should be run in its own thread to ensure it doesn't
 		    block things up while it waits for messages (this is
@@ -1058,124 +1198,11 @@ class PostOffice(MessageTerminus):
 						if time.time() - self.messages_awaiting_release[msg_id] < 3600:
 							new_msgs[msg_id] = self.messages_awaiting_release[msg_id]
 					self.messages_awaiting_release = new_msgs
-			
-#			logger().debug("Checking socket.")
-			try:
-				# this will return the socket when it's got a client ready
-#				logger().debug("trying SELECT")
-				if select.select([self.listen_socket], [], [], 0)[0]:		
-					certificate = None
-					client_socket, client_address = self.listen_socket.accept()
-				
-					# we can discard the port number.  it's not important
-					# since it will be a dynamic-use port (>32000) and
-					# we can't contact that node there after this socket
-					# has been closed.
-					client_address = client_address[0]
 
+		### END while not self.time_to_quit ###
 
-					# if this is an SSL socket, get the other side's certificate
-					if hasattr(client_socket, "getpeercert"):
-						certificate = client_socket.getpeercert()					
-
-					# unfortunately, the SSL wrapper gives the methods different names (argh...)
-					if hasattr(client_socket, "read") and hasattr(client_socket, "write"):
-						send = client_socket.write
-						recv = client_socket.read
-					else:
-						send = client_socket.send
-						recv = client_socket.recv
-
-					msg = ""
-					datalen = -1
-					while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire msg
-						data = recv(1024)
-						datalen = len(data)
-						msg += data
-		
-					if msg == "":
-						logger().info("Blank message from '%s'.  Assuming pipe was broken and ignoring.", client_address)
-						client_socket.close()
-						continue
-					elif msg == "ping":
-						logger().debug("Responding to ping...")
-						send("1")
-						client_socket.shutdown(socket.SHUT_WR)
-						continue
-					elif len(msg) < len(MESSAGE_MAGIC) + CHECKSUM_BYTES:
-						logger().info("Garbage message from %s (too short).  Message:\n%s", client_address, msg)
-						logger().warning(" ==> Ignoring.")
-						continue
-					elif msg[:len(MESSAGE_MAGIC)] != MESSAGE_MAGIC:
-						logger().info("Garbage message from %s (no message magic).  Message:\n%s", client_address, msg)
-						logger().warning(" ==> Ignoring.")
-						continue
-					
-					# verify that the message's checksum is really how long it is...
-					# note that we use 7-bit (not 8-bit) 'bytes' because the socket protocol
-					# can't handle strings with code points higher than 127...
-					checksum_string = msg[len(MESSAGE_MAGIC)+1:len(MESSAGE_MAGIC)+CHECKSUM_BYTES]
-					checksum = 0
-					for char in checksum_string:
-						checksum <<= 7
-						checksum += ord(char)
-					if len(msg) - len(MESSAGE_MAGIC) - CHECKSUM_BYTES != checksum:
-						logger().info("Garbage message from %s (checksum [%d] doesn't match message length [%d]).  Message:\n%s", client_address, checksum, len(msg) - len(MESSAGE_MAGIC) - CHECKSUM_BYTES, msg)
-						logger().warning(" ==> Suggesting client re-send.")
-						send("RECV_ERR")
-						client_socket.shutdown(socket.SHUT_WR)
-						continue
-					
-					# strip off the magic bytes and checksum
-					msg = msg[len(MESSAGE_MAGIC)+CHECKSUM_BYTES:]
-					try:
-						message =  cPickle.loads(msg)
-					except cPickle.UnpicklingError:
-						logger().info("Garbage message from %s containing the appropriate message magic and checksum.  Message:\n%s", client_address, msg)
-			 			logger().warning("  ==> Ignoring.")
-						continue
-					except EOFError:
-						logger().info("Broken pipe getting message.  Dropping.")
-						continue
-				
-					if hasattr(message, "subject") and hasattr(message, "id") and hasattr(message, "return_path") and len(message.return_path) > 0:
-						send("RECV_ACK %s" % message.id)
-						client_socket.shutdown(socket.SHUT_WR)
-
-						logger().info("RECEIVED:\n%s", str(message))
-						logger().info(" ... from client at address '%s'", client_address)
-						if certificate is not None:
-							# the format of the certificate returned by getpeercert()
-							# is *terrible*.  let's reformat it a bit.
-							certificate_reformat = {}
-							for item in certificate["subject"]:
-								certificate_reformat[item[0][0]] = item[0][1]
-							logger().info( " ... identifying themselves with security certificate commonName '%s'", certificate_reformat["commonName"] )
-						
-							message.sender_certificate = certificate_reformat
-
-						# the delivery thread sending this message to us
-						# should have appended an IPv4Address to return_path
-						# containing the port number we should be contacting it at.
-						# now we add the IP address as we see it from here.
-						message.return_path[-1].set_host(client_address)
-	#					print "message came from: %s" % message.return_path
-
-						self.message_queue.put_nowait(message)
-					else:
-						logger().info("Incomplete message from client '%s':\n%s", client_address, message )
-						logger().warning("  ==> Ignoring.")
-				
-					client_socket.close()
-					
-			except (socket.error, select.error), (errnum, msg):
-				if errnum == errno.EINTR:		# the code for an interrupted system call
-					logger().warning("Recv was interrupted by system call.  Will try again.")
-					pass
-				else:
-					logger().exception("Error trying to receive incoming data:")
 		logger().debug("Scheduler thread shut down.")	
-				
+			
 	def Send(self, message):
 		""" Send a message.
 		
@@ -1645,9 +1672,13 @@ class PostOffice(MessageTerminus):
 
 		# first shut down the scheduler thread
 		self.time_to_quit = True
-		if self.scheduler_thread.is_alive():
-			logger().info("Shutting down scheduler...")
-			self.scheduler_thread.join()
+		worker_threads = { "listener": self.listener_thread,
+		                   "scheduler": self.scheduler_thread }
+		for thread_name in worker_threads:
+			thread = worker_threads[thread_name]
+			if thread.is_alive():
+				logger().info("Shutting down %s..." % thread_name)
+				thread.join()
 
 		if self.listen_socket:
 			logger().info("Shutting down listening socket...")
