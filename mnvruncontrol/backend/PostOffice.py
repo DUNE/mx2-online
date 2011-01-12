@@ -756,129 +756,140 @@ class PostOffice(MessageTerminus):
 		    arranged by default by the constructor). """
 
 		logger().debug("Postoffice %s socket listener starting.", self.id)
+		open_client_socks = {}
+		finished_client_socks = {}
 		while not self.time_to_quit:
-			time.sleep(0.001)
 			try:
-				# this will return the socket when it has a client ready
-				if not select.select([self.listen_socket], [], [], 0)[0]:
-					continue
-
-				certificate = None
-				client_socket, client_address = self.listen_socket.accept()
-			
-				# we can discard the port number.  it's not important
-				# since it will be a dynamic-use port (>32000) and
-				# we can't contact that node there after this socket
-				# has been closed.
-				client_address = client_address[0]
-
-
-				# if this is an SSL socket, get the other side's certificate
-				if hasattr(client_socket, "getpeercert"):
-					certificate = client_socket.getpeercert()					
-
-				# unfortunately, the SSL wrapper gives the methods different names (argh...)
-				if hasattr(client_socket, "read") and hasattr(client_socket, "write"):
-					send = client_socket.write
-					recv = client_socket.read
-				else:
-					send = client_socket.send
-					recv = client_socket.recv
-
-				# read from the socket.
-				msg = ""
-				datalen = -1
-				while datalen != 0:		# when the socket closes (a receive of 0 bytes) we assume we have the entire msg
-					data = recv(1024)
-					datalen = len(data)
-					# if the first few characters don't
-					# look like a PostOffice message,
-					# don't waste time getting the rest of it.
-					if datalen < 0:
-						for i in range(len(MESSAGE_MAGIC)):
-							if datalen > i and data[i] != MESSAGE_MAGIC[i]:
-								break
-					msg += data
-	
-				if msg == "":
-					logger().info("Blank message from '%s'.  Assuming pipe was broken and ignoring.", client_address)
-					client_socket.close()
-					continue
-				elif msg == "ping":
-					logger().debug("Responding to ping...")
-					send("1")
-					client_socket.shutdown(socket.SHUT_WR)
-					continue
-				elif len(msg) < len(MESSAGE_MAGIC) + CHECKSUM_BYTES:
-					logger().info("Garbage message from %s (too short).  Message:\n%s", client_address, msg)
-					logger().warning(" ==> Ignoring.")
-					continue
-				elif msg[:len(MESSAGE_MAGIC)] != MESSAGE_MAGIC:
-					logger().info("Garbage message from %s (no message magic).  Message:\n%s", client_address, msg)
-					logger().warning(" ==> Ignoring.")
+				# select returns a 3-tuple:
+				#  ( [list of readers ready], [list of writers ready], [list of error state] )
+				# we only will do something when we have readers ready.
+				potential_readers = [self.listen_socket,] + open_client_socks.keys()
+				socks_ready = select.select(potential_readers, [], [], 0.1)[0]
+				if len(socks_ready) == 0:
 					continue
 				
-				# verify that the message's checksum is really how long it is...
-				# note that we use 7-bit (not 8-bit) 'bytes' because the socket protocol
-				# can't handle strings with code points higher than 127...
-				checksum_string = msg[len(MESSAGE_MAGIC)+1:len(MESSAGE_MAGIC)+CHECKSUM_BYTES]
-				checksum = 0
-				for char in checksum_string:
-					checksum <<= 7
-					checksum += ord(char)
-				if len(msg) - len(MESSAGE_MAGIC) - CHECKSUM_BYTES != checksum:
-					logger().info("Garbage message from %s (checksum [%d] doesn't match message length [%d]).  Message:\n%s", client_address, checksum, len(msg) - len(MESSAGE_MAGIC) - CHECKSUM_BYTES, msg)
-					logger().warning(" ==> Suggesting client re-send.")
-					send("RECV_ERR")
-					client_socket.shutdown(socket.SHUT_WR)
-					continue
+				if self.listen_socket in socks_ready:
+					# we can discard the port number.  it's not important
+					# since it will be a dynamic-use port (>32000) and
+					# we can't contact that node there after this socket
+					# has been closed.
+					client_socket, client_address = self.listen_socket.accept()
+					client_address = client_address[0]
+					socks_ready.remove(self.listen_socket)
+
+					certificate = None
+
+					# if this is an SSL socket, get the other side's certificate
+					if hasattr(client_socket, "getpeercert"):
+						certificate = client_socket.getpeercert()					
+					
+					sock_info = { "conn_info"  : client_address,
+					              "data"       : "",
+					              "certificate": certificate }
+					open_client_socks[client_socket] = sock_info
 				
-				# strip off the magic bytes and checksum
-				msg = msg[len(MESSAGE_MAGIC)+CHECKSUM_BYTES:]
-				try:
-					message =  cPickle.loads(msg)
-				except cPickle.UnpicklingError:
-					logger().info("Garbage message from %s containing the appropriate message magic and checksum.  Message:\n%s", client_address, msg)
-		 			logger().warning("  ==> Ignoring.")
-					continue
-				except EOFError:
-					logger().info("Broken pipe getting message.  Dropping.")
-					continue
-			
-				if hasattr(message, "subject") and hasattr(message, "id") and hasattr(message, "return_path") and len(message.return_path) > 0:
-					send("RECV_ACK %s" % message.id)
-					client_socket.shutdown(socket.SHUT_WR)
+				# read the waiting data out of the listener sockets.
+				for sock in socks_ready:
+					# non-blocking read.  read only what's there!
+					data = sock.recv(1024, socket.MSG_DONTWAIT)
 
-					logger().info("RECEIVED:\n%s", str(message))
-					logger().info(" ... from client at address '%s'", client_address)
-					if certificate is not None:
-						# the format of the certificate returned by getpeercert()
-						# is *terrible*.  let's reformat it a bit.
-						certificate_reformat = {}
-						for item in certificate["subject"]:
-							certificate_reformat[item[0][0]] = item[0][1]
-						logger().info( " ... identifying themselves with security certificate commonName '%s'", certificate_reformat["commonName"] )
+					# a read of 0 bytes signifies the client
+					# has closed the socket.  done reading!
+					if len(data) == 0:
+						finished_client_socks[sock] = open_client_socks[sock]
+						del open_client_socks[sock]
+					else:
+						open_client_socks[sock]["data"] += data
 					
-						message.sender_certificate = certificate_reformat
-
-					# the delivery thread sending this message to us
-					# should have appended an IPv4Address to return_path
-					# containing the port number we should be contacting it at.
-					# now we add the IP address as we see it from here.
-					message.return_path[-1].set_host(client_address)
-					self.message_queue.put_nowait(message)
-				else:
-					logger().info("Incomplete message from client '%s':\n%s", client_address, message )
-					logger().warning("  ==> Ignoring.")
+				# now deal with the messages that have
+				# been completely received.
+				for sock in finished_client_socks.keys()[:]:
+					sock_info = finished_client_socks.pop(sock)
+					msg = sock_info["data"]
+					certificate = sock_info["certificate"]
+					client_address = sock_info["conn_info"]
+					
+					if msg == "":
+						logger().info("Blank message from '%s'.  Assuming pipe was broken and ignoring.", client_address)
+						sock.close()
+						continue
+					elif len(msg) < len(MESSAGE_MAGIC) + CHECKSUM_BYTES:
+						logger().info("Garbage message from %s (too short).  Message:\n%s", client_address, msg)
+						logger().warning(" ==> Ignoring.")
+						sock.close()
+						continue
+					elif msg[:len(MESSAGE_MAGIC)] != MESSAGE_MAGIC:
+						logger().info("Garbage message from %s (no message magic).  Message:\n%s", client_address, msg)
+						logger().warning(" ==> Ignoring.")
+						sock.close()
+						continue
+				
+					# verify that the message's checksum is really how long it is...
+					# note that we use 7-bit (not 8-bit) 'bytes' because the socket protocol
+					# can't handle strings with code points higher than 127...
+					checksum_string = msg[len(MESSAGE_MAGIC)+1:len(MESSAGE_MAGIC)+CHECKSUM_BYTES]
+					checksum = 0
+					for char in checksum_string:
+						checksum <<= 7
+						checksum += ord(char)
+					if len(msg) - len(MESSAGE_MAGIC) - CHECKSUM_BYTES != checksum:
+						logger().info("Garbage message from %s (checksum [%d] doesn't match message length [%d]).  Message:\n%s", client_address, checksum, len(msg) - len(MESSAGE_MAGIC) - CHECKSUM_BYTES, msg)
+						logger().warning(" ==> Suggesting client re-send.")
+						sock.send("RECV_ERR")
+						sock.shutdown(socket.SHUT_RDWR)
+						sock.close()
+						continue
+				
+					# strip off the magic bytes and checksum
+					msg = msg[len(MESSAGE_MAGIC)+CHECKSUM_BYTES:]
+					try:
+						message =  cPickle.loads(msg)
+					except cPickle.UnpicklingError:
+						logger().info("Garbage message from %s containing the appropriate message magic and checksum.  Message:\n%s", client_address, msg)
+			 			logger().warning("  ==> Ignoring.")
+			 			sock.close()
+						continue
+					except EOFError:
+						logger().info("Broken pipe getting message.  Dropping.")
+			 			sock.close()
+						continue
 			
-				client_socket.close()
+					if hasattr(message, "subject") and hasattr(message, "id") and hasattr(message, "return_path") and len(message.return_path) > 0:
+						sock.send("RECV_ACK %s" % message.id)
+						sock.shutdown(socket.SHUT_WR)
+
+						logger().info("RECEIVED:\n%s", str(message))
+						logger().info(" ... from client at address '%s'", client_address)
+						if certificate is not None:
+							# the format of the certificate returned by getpeercert()
+							# is *terrible*.  let's reformat it a bit.
+							certificate_reformat = {}
+							for item in certificate["subject"]:
+								certificate_reformat[item[0][0]] = item[0][1]
+							logger().info( " ... identifying themselves with security certificate commonName '%s'", certificate_reformat["commonName"] )
 					
+							message.sender_certificate = certificate_reformat
+
+						# the delivery thread sending this message to us
+						# should have appended an IPv4Address to return_path
+						# containing the port number we should be contacting it at.
+						# now we add the IP address as we see it from here.
+						message.return_path[-1].set_host(client_address)
+						self.message_queue.put_nowait(message)
+					else:
+						logger().info("Incomplete message from client '%s':\n%s", client_address, message )
+						logger().warning("  ==> Ignoring.")
+			
+					sock.close()
+				
+				### END for sock in finished_client_socks.keys()[:] ###
 			except (socket.error, select.error), (errnum, msg):
 				if errnum == errno.EINTR:		# the code for an interrupted system call
 					logger().warning("Recv was interrupted by system call.  Will try again.")
 					pass
 				else:
 					logger().exception("Error trying to receive incoming data:")
+			
 		logger().debug("Listener thread shut down.")	
 
 	
