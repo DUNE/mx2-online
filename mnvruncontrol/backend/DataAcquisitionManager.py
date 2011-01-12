@@ -141,6 +141,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		self.current_DAQ_thread = 0			# the next thread to start
 		self.can_shutdown = False			# used in between subruns to prevent shutting down twice for different reasons
+		
+		self.auto_start = False				# whether to auto-start the next run series
 
 		self.problem_pmt_list = None
 		self.do_pmt_check = True
@@ -459,7 +461,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		if message.state == "hw_error":
 			self.NewAlert(notice="A hardware error was reported on the '%s' node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
 			self.remote_nodes[message.sender].status = RemoteNode.ERROR
-			self.StopDataAcquisition(do_auto_start=False)
+			self.auto_start = False
+			self.StopDataAcquisition()
 			self.last_HW_config = None
 
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
@@ -612,12 +615,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 				elif message.directive == "stop":
 					self.logger.info("Frontend client requests stoppage of data acquisition.")
-					self.worker_thread.queue.put( {"method": self.StopDataAcquisition, "kwargs": {"do_auto_start": False}} )
+					self.auto_start = False
+					self.worker_thread.queue.put( {"method": self.StopDataAcquisition} )
 					status = True
 					
 				elif message.directive == "skip":
 					self.logger.info("Frontend client requests skip to next subrun.")
-					self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end", auto_start=True) )
+					self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end") )
 					status = True
 				
 				elif message.directive == "alert_acknowledge":
@@ -670,8 +674,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.worker_thread.queue.put({"method": self.StartNextSubrun})
 			
 		elif message.event == "subrun_end":
-			auto_start = True if not hasattr(message, "auto_start") else message.auto_start
-			self.worker_thread.queue.put({"method": self.EndSubrun, "kwargs": {"auto_start": auto_start} })
+			if hasattr(message, "auto_start"):
+				self.auto_start = message.auto_start
+			self.worker_thread.queue.put({"method": self.EndSubrun})
 
 		elif message.event == "series_auto_start":
 			self.configuration.run += 1
@@ -685,12 +690,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					warning_msg += "  (due to crash of '%s' process).  Last 2000 characters of output from this process:\n%s" % (message.lost_process, message.output_history)
 					self.logger.warning(warning_msg)
 					self.NewAlert(notice="'%s' process crashed!\nRunning has been halted for troubleshooting." % message.lost_process, severity=Alert.ERROR)
-				auto_start = False
+				self.auto_start = False
 			else:
-				auto_start = True if not hasattr(message, "auto_start") else message.auto_start
+				if hasattr(message, "auto_start"):
+					self.auto_start = message.auto_start
 			# should auto-start next series if configuration allows it
 			# and the series ended nicely
-			self.worker_thread.queue.put( {"method": self.StopDataAcquisition, "kwargs": {"do_auto_start": auto_start}} )
+			self.worker_thread.queue.put( {"method": self.StopDataAcquisition} )
 		
 	##########################################
 	# Global starters and stoppers
@@ -777,19 +783,24 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			if node.type == RemoteNode.READOUT:
 				node.completed = False
 
+		# if we have to bail early, we set self.auto_start to False.
+		# but otherwise, whether to auto-start the next run series
+		# is controlled by the configuration sent by the client.
+		self.auto_start = self.configuration.auto_start_series
+
 		# want to return so that client knows we started ok
 		self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_auto_start") )
 		self.postoffice.Send( self.StatusReport( items=["running", "run_series", "first_subrun"]) )
 		return True
 		
-	def StopDataAcquisition(self, do_auto_start=True):
+	def StopDataAcquisition(self):
 		""" Stop data acquisition altogether. """
 
 		# if we are currently still running, the subrun needs to be stopped first!
 		if self.running:
 			self.running = False
 			self.logger.info("Stopping data acquisition sequence...")
-			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="subrun_end", auto_start=do_auto_start))
+			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="subrun_end"))
 			return
 		else:
 			self.logger.debug("Not running, so we don't need to stop the DAQ.")
@@ -833,9 +844,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 #		self.logger.info("Informing frontend that run series is over.")
 #		self.postoffice.Send( PostOffice.Message(subject="frontend_info", info="series_end") )
-#		print "do_auto_start is: ", do_auto_start
+#		print "self.auto_start is: ", self.auto_start
 		
-		if not self.configuration.is_single_run and self.configuration.auto_start_series and do_auto_start:
+		if not self.configuration.is_single_run and self.auto_start:
 			self.logger.info("Auto-starting next run series...")
 			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="series_auto_start"))
 		else:
@@ -974,7 +985,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		self.logger.debug("StartNextSubrun() finished.")
 		
-	def EndSubrun(self, sentinel=False, auto_start=True):
+	def EndSubrun(self, sentinel=False):
 		""" Performs the jobs that need to be done when a subrun ends. 
 		
 		    Generally it is only executed as the handler for a
@@ -1136,7 +1147,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="subrun_auto_start"))
 		else:
 			self.running = False
-			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="series_end", early_abort=False, auto_start=auto_start))		
+			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="series_end", early_abort=False))		
 
 	##########################################
 	# Helper methods used by StartNextSubrun()
@@ -1325,7 +1336,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			# for now, if the LI configuration didn't work,
 			# we just go on to the next subrun.  we'll make that
 			# happen manually here.
-			self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end", auto_start=True) )
+			self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end") )
 			
 			# return None so that the subrun doesn't try to continue,
 			# but also doesn't abort the run series altogether.
@@ -1415,7 +1426,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.DAQStartTasks[self.current_DAQ_thread-1]["method"]()
 			except Exception as e:
 				self.NewAlert(notice="There was an error executing a DAQ startup task: '%s'.  Running will be halted..." % e, severity=Alert.ERROR)
-				self.StopDataAcquisition(do_auto_start=False)
+				self.auto_start = False
+				self.StopDataAcquisition()
 		else:
 			signal.signal(signal.SIGUSR1, signal.SIG_IGN)		# go back to ignoring the signal...
 			self.logger.warning("Note: requested a new thread but no more threads to start...")
@@ -1543,13 +1555,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
-			self.StopDataAcquisition(do_auto_start=False)
+			self.auto_start = False
+			self.StopDataAcquisition()
 			return
 
 		for response in responses:
 			if isinstance(response.success, Exception):
 				self.NewAlert(notice="Error stopping the DAQ on the '%s' readout node.  Error message text:\n%s" % (response.sender, response.success), severity=Alert.ERROR)
-				self.StopDataAcquisition(do_auto_start=False)
+				self.auto_start = False
+				self.StopDataAcquisition()
 				return
 
 		# now start the DAQ(s)
@@ -1559,14 +1573,16 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
-			self.StopDataAcquisition(do_auto_start=False)
+			self.auto_start = False
+			self.StopDataAcquisition()
 			return
 
 
 		for response in responses:
 			if isinstance(response.success, Exception):
 				self.NewAlert(notice="Error starting the DAQ on the '%s' readout node.  Error message text:\n%s" % (response.sender, response.success), severity=Alert.ERROR)
-				self.StopDataAcquisition(do_auto_start=False)
+				self.auto_start = False
+				self.StopDataAcquisition()
 				return
 			elif response.success == False:
 				self.NewAlert(notice="The DAQ on the '%s' node is already running (even after being issued a 'STOP' command)!  Stopping run for troubleshooting..." % response.sender, severity=Alert.ERROR)
@@ -1615,14 +1631,16 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
-			self.StopDataAcquisition(do_auto_start=False)
+			self.auto_start = False
+			self.StopDataAcquisition()
 		
 		nodes_checked = 0
 		problem_boards = []
 		for response in responses:
 			if isinstance(response.sc_board_list, Exception):
 				self.NewAlert(notice="The '%s' node reports a slow control error while trying to read the boards.  Error text: '%s'" % (response.sender, response.sc_board_list), severity=Alert.ERROR)
-				self.StopDataAcquisition(do_auto_start=False)
+				self.auto_start = False
+				self.StopDataAcquisition()
 				return
 
 			if len(response.sc_board_list) == 0:
@@ -1647,7 +1665,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		if nodes_checked == 0:
 			self.NewAlert(notice="No nodes responded with PMT voltages.  Check the dispatchers on your readout nodes!", severity=Alert.ERROR)
-			self.StopDataAcquisition(do_auto_start=False)
+			self.auto_start = False
+			self.StopDataAcquisition()
 
 		for board in problem_boards:
 			if board["period"] < Configuration.params["mstr_HVperiodThreshold"]:
@@ -1740,7 +1759,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		if message.state == "om_error":
 			self.NewAlert(notice="An error was reported on the '%s' monitoring node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
 			self.remote_nodes[message.sender].status = RemoteNode.ERROR
-			self.StopDataAcquisition(do_auto_start=False)
+			self.StopDataAcquisition()
 
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
 
