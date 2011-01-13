@@ -616,6 +616,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		if not response.success:
 			wx.PostEvent(self, ErrorEvent(message=response.error_msg, caption="Action failed"))
+			wx.PostEvent(self, ClientListEvent())
 	
 #########################################################
 #   Main execution
