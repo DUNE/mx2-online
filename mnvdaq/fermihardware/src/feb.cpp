@@ -2,6 +2,7 @@
 #define feb_cpp
 
 #include "feb.h"
+#include "exit_codes.h"
 /*********************************************************************************
 * Class for creating Front-End Board (FEB) objects for use with the 
 * MINERvA data acquisition system and associated software projects.
@@ -72,7 +73,7 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 			default: 
 				std::cout << "Invalid TriP ChipID at instantiation!" << std::endl;
 				if (febAppender!=0) { febLog.fatalStream() << "Invalid TriP ChipID at instantiation!"; }
-				exit(1);
+				exit(EXIT_FEB_UNSPECIFIED_ERROR);
 		}
 		tripChips[i] = new trips(boardNumber,chipFunction,maxHits); 
 	}
@@ -114,7 +115,7 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 		std::cout << "Invalid number of maximum hits!  Only 1, 5, 6, or 8 are accepted right now!" << std::endl;
 		if (febAppender!=0) febLog.fatalStream() << 
 			"Invalid number of maximum hits!  Only 1, 5, 6, or 8 are accepted right now!";
-		exit(-1);		
+		exit(EXIT_FEB_NHITS_ERROR);		
 	}
 	if (febAppender!=0) {
 		febLog.infoStream() << "Created a new FEB! " << (int)febNumber[0];
@@ -387,7 +388,7 @@ int feb::DecodeRegisterValues(int buffersize)
 			febLog.critStream() << " Expected: " << TrueIncomingMessageLength;
 			febLog.critStream() << " Had     : " << buffersize;
 		}
-		exit(1);
+		exit(EXIT_FEB_UNSPECIFIED_ERROR);
 	} else if ((!initialized)&&(buffersize<TrueIncomingMessageLength)) {
 		std::cout<<"FEB: "<<(int) febNumber[0]<<" is not available on this channel."<<std::endl;
 		initialized = false;
@@ -612,7 +613,7 @@ int feb::DecodeRegisterValues(int buffersize)
 		} else { // frame error check
 			std::cout << "The FPGA frame had errors!" << std::endl;
 			if (febAppender!=0) febLog.fatalStream() << "The FPGA frame had errors!";
-			exit(1); 
+			exit(EXIT_FEB_UNSPECIFIED_ERROR); 
 		}
 
 	} // end if initialized

@@ -1,4 +1,5 @@
 #include "event_builder.h"
+#include "exit_codes.h"
 //#include "event_builder_templates.h"
 #include <ctime>
 #include <sys/time.h>
@@ -28,7 +29,7 @@ int main(int argc, char **argv)
 	if (argc < 3) {
 		printf("Usage: event_builder <et_filename> <rawdata_filename> <network port (default 1201)> <callback PID (default: no PID)>\n");
 		printf("  Please supply the full path!\n");
-		exit(1);
+		exit(EXIT_CONFIG_ERROR);
 	}
 
 	std::cout << "ET Filesystem          = " << argv[1] << std::endl;
@@ -142,7 +143,7 @@ int main(int argc, char **argv)
 	if (et_open(&sys_id, argv[1], openconfig) != ET_OK) {
 		printf("event_builder::main(): et_producer: et_open problems\n");
 		ebuilder.fatal("event_builder::main(): et_producer: et_open problems\n");
-		exit(1);
+		exit(EXIT_ETSTARTUP_ERROR);
 	}
 	et_open_config_destroy(openconfig);
 
@@ -176,7 +177,7 @@ int main(int argc, char **argv)
 		std::cout << "ET System did not start properly!  Exiting..." << std::endl;
 		ebuilder.fatalStream() << "Error in event_builder::main()!";
 		ebuilder.fatalStream() << "ET System did not start properly!  Exiting...";
-		exit(-5);
+		exit(EXIT_ETSTARTUP_ERROR);
 	} 
 #endif
 
@@ -199,7 +200,7 @@ int main(int argc, char **argv)
 	if (et_station_attach(sys_id, cu_station, &attach) < 0) {
 		printf("event_builder::main(): et_producer: error in station attach\n");
 		system("sleep 10s");
-		exit(1);
+		exit(EXIT_ETSTARTUP_ERROR);
 	}
 	
 	/* send the SIGUSR1 signal to the specified process signalling that ET is ready */
@@ -410,7 +411,7 @@ int main(int argc, char **argv)
 		printf("et_producer: error in station detach\n");
 		ebuilder.fatal("et_producer: error in station detach\n");
 		system("sleep 10s");
-		exit(1);
+		exit(EXIT_ETSTARTUP_ERROR);
 	}
 
 	// Close ET
@@ -418,7 +419,7 @@ int main(int argc, char **argv)
 		printf("et_producer: error in ET close\n");
 		ebuilder.fatal("et_producer: error in ET close\n");
 		system("sleep 10s");
-		exit(1);
+		exit(EXIT_ETSTARTUP_ERROR);
 	}
 	binary_outputfile.close(); 
 
@@ -604,7 +605,7 @@ int event_builder(event_handler *evt)
 				if ( CheckBufferLength(evt->feb_info[5]+2, info_length) ) {
 					std::cout << "Buffer length error for the ADC's!" << std::endl;
 					ebuilder.fatalStream() << "Buffer length error for the ADC's!";
-					exit(1);
+					exit(EXIT_FEB_UNSPECIFIED_ERROR);
 				}
 				for (unsigned int i=0; i<evt->feb_info[5]; i+=info_length) {
 					DecodeBuffer(evt, dummy_feb->GetADC(0), i, info_length);
@@ -620,7 +621,7 @@ int event_builder(event_handler *evt)
 				if ( CheckBufferLength(evt->feb_info[5]+2, info_length) ) {
 					std::cout << "Buffer length error for the Disciminators!" << std::endl;
 					ebuilder.fatalStream() << "Buffer length error for the Discriminators!";
-					exit(1);
+					exit(EXIT_FEB_UNSPECIFIED_ERROR);
 				}
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
 					DecodeBuffer(evt, dummy_feb->GetDisc(), i, info_length);
@@ -636,7 +637,7 @@ int event_builder(event_handler *evt)
 				if ( CheckBufferLength(evt->feb_info[5]+2, info_length) ) {
 					std::cout << "Buffer length error for the FPGA's!" << std::endl;
 					ebuilder.fatalStream() << "Buffer length error for the FPGA's!";
-					exit(1);
+					exit(EXIT_FEB_UNSPECIFIED_ERROR);
 				}
 				for (unsigned int i = 0; i < evt->feb_info[5]; i+=info_length) {
 					DecodeBuffer(evt, dummy_feb, i, info_length);
@@ -691,7 +692,7 @@ void HandleErrors(int success)
 	} catch (int e) {
 		perror("server read");
 		ebuilder.fatal("server read error in HandleErrors");
-		exit(EXIT_FAILURE);
+		exit(EXIT_UNSPECIFIED_ERROR);
 	}
 } 
 

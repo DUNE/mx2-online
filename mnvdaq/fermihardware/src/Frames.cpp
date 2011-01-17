@@ -264,14 +264,4 @@ void Frames::DecodeHeader()
 	targetDevice[0]   = (message[word]&0xF0); // extract the device which responded
 }
 
-
-int Frames::DecodeRegisterValues(int a) 
-{
-	std::cout << "Must Make One of these in each frame-inheriting class!!!" << std::endl;
-	exit(-2);
-	return -1;
-}
-
-
-
 #endif

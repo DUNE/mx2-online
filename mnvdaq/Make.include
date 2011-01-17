@@ -5,6 +5,9 @@
 
 LDLIBS += -L/usr/lib64 -ldl
 
+# main include
+INCLUDE += -I$(DAQROOT)/include
+
 #CAEN libraries & drivers needed
 INCLUDE += -I$(CAEN_DIR)/include
 LDLIBS += -L$(CAEN_DIR)/lib/x86_64 -lCAENVME

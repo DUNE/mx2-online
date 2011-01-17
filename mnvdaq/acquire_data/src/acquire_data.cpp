@@ -11,6 +11,7 @@
 #define acquire_data_cxx
 
 #include "acquire_data.h"
+#include "exit_codes.h"
 #include <sys/time.h>
 
 const int acquire_data::dpmMax                  = 1024*6; // we have only 6 Kb of space in the DPM Memory per channel
@@ -48,9 +49,9 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 		int error = daqController->ContactController();
 		if (error) throw error;
 	} catch (int e) {
-		std::cout << "acquire_data::InitializeDaq(): Error contacting the VME controller!" << std::endl;
-		acqData.fatalStream() << "acquire_data::InitializeDaq(): Error contacting the VME controller!";
-		exit(e);
+		std::cout << "acquire_data::InitializeDaq(): Error contacting the VME controller!  Error code: " << e << std::endl;
+		acqData.fatalStream() << "acquire_data::InitializeDaq(): Error contacting the VME controller!  Error code: " << e;
+		exit(EXIT_CAEN_CONTROLLER_ERROR);
 	} 
 
 	// Hardware configurations.
@@ -147,7 +148,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 		std::cout << "Error in acquire_data::InitializeDaq() enabling CAEN VME IRQ handler!" << std::endl;
 		daqController->ReportError(e);
 		acqData.fatalStream() << "Error in acquire_data::InitializeDaq() enabling CAEN VME IRQ handler!";
-		exit(-8);
+		exit(EXIT_CAEN_INTERRUPT_FAILURE);
 	}    
 
 	// Initialize readoutObjects list for data acquisition.
@@ -191,10 +192,10 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		if (status) throw status;
 	} catch (int e)  {
 		std::cout << "Unable to read the status register for CRIM with Address " << 
-			((daqController->GetCrim(index)->GetCrimAddress())>>16) << std::endl;
+			((daqController->GetCrim(index)->GetCrimAddress())>>16) << ".  Status code: " << e << std::endl;
 		acqData.fatalStream() << "Unable to read the status register for CRIM with Address " << 
-			((daqController->GetCrim(index)->GetCrimAddress())>>16);
-		exit(e);
+			((daqController->GetCrim(index)->GetCrimAddress())>>16) << ".  Status code: " << e;
+		exit(EXIT_CRIM_UNSPECIFIED_ERROR);
 	} 
 
 	// Note IRQLine is set in the CRIM constructor.  The default is SGATEFall, 
@@ -305,7 +306,7 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
 		default:
 			std::cout << "Error in acquire_data::InitializeCrim()! No Running Mode defined!" << std::endl;
 			acqData.fatalStream() << "Error in acquire_data::InitializeCrim()! No Running Mode defined!";
-			exit(-4);
+			exit(EXIT_CONFIG_ERROR);
 	}
 
 
@@ -434,10 +435,10 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 		if (status) throw status;
 	} catch (int e)  {
 		std::cout << "Error in acquire_data::InitializeCroc!  Cannot read the status register for CROC " <<
-			(address>>16) << std::endl;
+			(address>>16) << ".  Status code: " << e << std::endl;
 		acqData.fatalStream() << "Error in acquire_data::InitializeCroc!  Cannot read the status register for CROC " <<
-			(address>>16);
-		exit(e);
+			(address>>16) << ".  Status code: " << e;
+		exit(EXIT_CROC_UNSPECIFIED_ERROR);
 	}
 
 	// Set the timing mode to EXTERNAL: clock mode, test pulse enable, test pulse delay
@@ -475,11 +476,11 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 			} catch (int e) {
 				std::cout << "Cannot locate all FEB's on CROC " <<
 					(daqController->GetCroc(crocNo)->GetCrocAddress()>>16) << 
-					" Chain " << i << std::endl;
+					" Chain " << i << ".  Status code: " << e << std::endl;
 				acqData.fatalStream() << "Cannot locate all FEB's on CROC " <<
 					(daqController->GetCroc(crocNo)->GetCrocAddress()>>16) << 
-					" Chain " << i;
-				exit(e);	
+					" Chain " << i << ".  Status code: " << e;
+				exit(EXIT_CROC_UNSPECIFIED_ERROR);	
 			}
 		}
 	}
@@ -1930,11 +1931,11 @@ int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
 		case MonteCarlo:
 			std::cout << "WHY ARE YOU TRYING TO WRITE A MC TRIGGER INTO THE DAQ HEADER!?" << std::endl;
 			acqData.fatalStream() << "WHY ARE YOU TRYING TO WRITE A MC TRIGGER INTO THE DAQ HEADER!?";
-			exit(-2000);
+			exit(EXIT_DAQ_TRIGGER_ERROR);
 		default:
 			std::cout << "Invalid trigger mode in acquire_data::TriggerDAQ!" << std::endl;
 			acqData.fatalStream() << "Invalid trigger mode in acquire_data::TriggerDAQ!";
-			exit(-2001);
+			exit(EXIT_DAQ_TRIGGER_ERROR);
 	}  
 	return 0;
 }
@@ -2111,13 +2112,13 @@ int acquire_data::AcknowledgeIRQ()
 					std::cout << "Error clearing crim interrupts in acquire_data::AcknowledgeIRQ!" << std::endl;
 					daqController->ReportError(e);
 					acqData.fatalStream() <<"Error clearing crim interrupts in acquire_data::AcknowledgeIRQ!";
-					exit(-6);
+					exit(EXIT_CRIM_INTERRUPT_ERROR);
 				} 
 			} catch (int e) {
 				std::cout << "Error getting crim interrupt status in acquire_data::AcknowledgeIRQ!" << std::endl;
 				daqController->ReportError(e);
 				acqData.fatalStream() << "Error getting crim interrupt status in acquire_data::AcknowledgeIRQ!";
-				exit(-5);
+				exit(EXIT_CRIM_INTERRUPT_ERROR);
 			}
 		}
 		if (error) throw error;
@@ -2135,7 +2136,7 @@ int acquire_data::AcknowledgeIRQ()
 		std::cout << "The IRQ Wait probably timed-out in acquire_data::AcknowledgeIRQ!" << std::endl;
 		daqController->ReportError(e);
 		acqData.fatalStream() << "The IRQ Wait probably timed-out in acquire_data::AcknowledgeIRQ!";
-		exit(-3000);  
+		exit(EXIT_CRIM_IRQTIMEOUT_ERROR);  
 	}
 	return 0;
 }
@@ -2486,11 +2487,13 @@ void acquire_data::SendClearAndReset(channels *theChain)
 		daqController->ReportError(e);
 		std::cout << "VME Error in SendClearAndReset!  Cannot write to the status register!" << std::endl;
 		std::cout << "  Error on CROC " << crocAddress <<
-			" Chain " << theChain->GetChainNumber() << std::endl;
+			" Chain " << theChain->GetChainNumber() <<
+			".  Status code: " << e << std::endl;
 		acqData.critStream() << "VME Error in SendClearAndReset!  Cannot write to the status register!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
-			" Chain " << theChain->GetChainNumber();
-		exit(e);
+			" Chain " << theChain->GetChainNumber() <<
+			".  Status code: " << e;
+		exit(EXIT_CROC_WRITE_ERROR);
 	}
 #if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)      
 	acqData.debugStream() << "Executed SendClearAndReset for CROC " << crocAddress <<
@@ -2525,11 +2528,13 @@ void acquire_data::SendClear(channels *theChain)
 		daqController->ReportError(e);
 		std::cout << "VME Error in SendClear!  Cannot write to the status register!" << std::endl;
 		std::cout << "  Error on CROC " << crocAddress <<
-			" Chain " << theChain->GetChainNumber() << std::endl;
+			" Chain " << theChain->GetChainNumber() <<
+			".  Status code: " << e << std::endl;
 		acqData.critStream() << "VME Error in SendClear!  Cannot write to the status register!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
-			" Chain " << theChain->GetChainNumber();
-		exit(e);
+			" Chain " << theChain->GetChainNumber() <<
+			".  Status code: " << e;
+		exit(EXIT_CROC_WRITE_ERROR);
 	}
 #if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)      
 	acqData.debugStream() << "Executed SendClear for CROC " << crocAddress <<
@@ -2564,11 +2569,13 @@ void acquire_data::SendReset(channels *theChain)
 		daqController->ReportError(e);
 		std::cout << "VME Error in SendReset!  Cannot write to the status register!" << std::endl;
 		std::cout << "  Error on CROC " << crocAddress <<
-			" Chain " << theChain->GetChainNumber() << std::endl;
+			" Chain " << theChain->GetChainNumber() <<
+			".  Status code: " << e << std::endl;
 		acqData.critStream() << "VME Error in SendReset!  Cannot write to the status register!";
 		acqData.critStream() << "  Error on CROC " << crocAddress <<
-			" Chain " << theChain->GetChainNumber();
-		exit(e);
+			" Chain " << theChain->GetChainNumber() <<
+			".  Status code: " << e;
+		exit(EXIT_CROC_WRITE_ERROR);
 	}
 #if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)      
 	acqData.debugStream() << "Executed SendReset for CROC " << crocAddress <<
@@ -2738,13 +2745,15 @@ template <class X> void acquire_data::SendFrameData(X *device, channels *theChan
 	} catch (int e) {
 		std::cout << " Error in SendFrameData while writing to the FIFO!" << std::endl;
 		std::cout << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
-			" Chain " << theChannel->GetChainNumber() << std::endl;
+			" Chain " << theChannel->GetChainNumber() <<
+			".  Status code: " << e << std::endl;
 		daqController->ReportError(e);
 		acqData.fatalStream() << "Error in SendFrameData while writing to the FIFO!";
 		acqData.fatalStream() << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
-			" Chain " << theChannel->GetChainNumber();
+			" Chain " << theChannel->GetChainNumber() <<
+			".  Status code: " << e;
 		// Hard exit used for thread "friendliness" later...
-		exit(e);
+		exit(EXIT_CROC_WRITE_ERROR);
 	}
 	// Send the message.
 	try {
@@ -2754,13 +2763,15 @@ template <class X> void acquire_data::SendFrameData(X *device, channels *theChan
 	} catch (int e) {
 		std::cout << " Error in SendFrameData while writing to the SendMessage address!" << std::endl;
 		std::cout << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
-			" Chain " << theChannel->GetChainNumber() << std::endl;
+			" Chain " << theChannel->GetChainNumber() <<
+			".  Status code: " << e << std::endl;
 		daqController->ReportError(e);
 		acqData.fatalStream() << "Error in SendFrameData while writing to the SendMessage address!";
 		acqData.fatalStream() << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
-			" Chain " << theChannel->GetChainNumber();
+			" Chain " << theChannel->GetChainNumber() <<
+			".  Status code: " << e;
 		// Hard exit used for thread "friendliness" later...
-		exit(e);
+		exit(EXIT_CROC_WRITE_ERROR);
 	}
 #if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   Finished SendFrameData!";
@@ -2797,13 +2808,15 @@ template <class X> void acquire_data::SendFrameDataFIFOBLT(X *device, channels *
 	} catch (int e) {
 		std::cout << " Error in SendFrameDataFIFOBLT while writing to the FIFO!" << std::endl;
 		std::cout << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
-			" Chain " << theChannel->GetChainNumber() << std::endl;
+			" Chain " << theChannel->GetChainNumber() <<
+			".  Status code: " << e << std::endl;
 		daqController->ReportError(e);
 		acqData.fatalStream() << "Error in SendFrameDataFIFOBLT while writing to the FIFO!";
 		acqData.fatalStream() << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
-			" Chain " << theChannel->GetChainNumber();
+			" Chain " << theChannel->GetChainNumber() <<
+			".  Status code: " << e;
 		// Hard exit used for thread "friendliness" later...
-		exit(e);
+		exit(EXIT_CROC_WRITE_ERROR);
 	}
 	// Send the message.
 	try {
@@ -2813,13 +2826,15 @@ template <class X> void acquire_data::SendFrameDataFIFOBLT(X *device, channels *
 	} catch (int e) {
 		std::cout << " Error in SendFrameDataFIFOBLT while writing to the SendMessage address!" << std::endl;
 		std::cout << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
-			" Chain " << theChannel->GetChainNumber() << std::endl;
+			" Chain " << theChannel->GetChainNumber() <<
+			".  Status code: " << e << std::endl;
 		daqController->ReportError(e);
 		acqData.fatalStream() << "Error in SendFrameDataFIFOBLT while writing to the SendMessage address!";
 		acqData.fatalStream() << "  Error on CROC " << ((theChannel->GetClearStatusAddress()&0xFFFF0000)>>16) <<
-			" Chain " << theChannel->GetChainNumber();
+			" Chain " << theChannel->GetChainNumber() <<
+			".  Status code: " << e;
 		// Hard exit used for thread "friendliness" later...
-		exit(e);
+		exit(EXIT_CROC_WRITE_ERROR);
 	}
 #if (DEBUG_VERBOSE)&&(DEBUG_NEWREADOUT)
 	acqData.debugStream() << "   Finished SendFrameDataFIFOBLT!";
@@ -3311,7 +3326,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 				// Make a pointer to the FEB on the channel with board number febid
 					tmpFEB  = (*rop)->getChannel(i)->GetFebVector(febindex);
 					int brdnum = tmpFEB->GetBoardNumber();
-					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(EXIT_UNSPECIFIED_ERROR); }
 #if DEBUG_NEWREADOUT
 					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
 					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
@@ -3370,7 +3385,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					// Make a pointer to the FEB on the channel with board number febid
 					tmpFEB = (*rop)->getChannel(i)->GetFebVector(febindex);
 					int brdnum = tmpFEB->GetBoardNumber();
-					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(EXIT_UNSPECIFIED_ERROR); }
 #if DEBUG_NEWREADOUT
 					acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
 						(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum;
@@ -3535,7 +3550,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					// Make a pointer to the FEB on the channel with board number febid
 					tmpFEB = (*rop)->getChannel(i)->GetFebVector(febindex);
 					int brdnum = tmpFEB->GetBoardNumber();
-					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(EXIT_UNSPECIFIED_ERROR); }
 #if DEBUG_NEWREADOUT
 					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
 					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
@@ -3602,7 +3617,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					// Make a pointer to the FEB on the channel with board number febid
 					tmpFEB = (*rop)->getChannel(i)->GetFebVector(febindex);
 					int brdnum = tmpFEB->GetBoardNumber();
-					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(EXIT_UNSPECIFIED_ERROR); }
 #if DEBUG_NEWREADOUT
 					acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
 						(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum;
@@ -3697,7 +3712,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					// Make a pointer to the FEB on the channel with board number febid
 					tmpFEB  = (*rop)->getChannel(i)->GetFebVector(febindex);
 					int brdnum = tmpFEB->GetBoardNumber();
-					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(EXIT_UNSPECIFIED_ERROR); }
 #if DEBUG_NEWREADOUT
 					unsigned int clrstsAddr = (*rop)->getChannel(i)->GetClearStatusAddress();
 					unsigned int crocAddr   = (clrstsAddr & 0xFF0000)>>16;
@@ -3739,7 +3754,7 @@ int acquire_data::WriteAllData(event_handler *evt, et_att_id attach, et_sys_id s
 					// Make a pointer to the FEB on the channel with board number febid
 					tmpFEB = (*rop)->getChannel(i)->GetFebVector(febindex);
 					int brdnum = tmpFEB->GetBoardNumber();
-					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(1); }
+					if (brdnum!=febid) { acqData.fatalStream() << "Major error!"; exit(EXIT_UNSPECIFIED_ERROR); }
 #if DEBUG_NEWREADOUT
 					acqData.debugStream() << "  CROC = " << crocAddr << ", Chain Number = " << 
 						(*rop)->getChannel(i)->GetChainNumber() << ", FEB = " << brdnum << 

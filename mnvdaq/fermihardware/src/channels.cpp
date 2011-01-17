@@ -2,6 +2,7 @@
 #define channels_cpp
 
 #include "channels.h"
+#include "exit_codes.h"
 
 /*********************************************************************************
 * Class for creating Chain Read-Out Controller channel objects for use with the 
@@ -123,7 +124,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tCRC Error!" << std::endl;
-		exit(-105); 
+		exit(EXIT_CROC_CRC_ERROR); 
 	}
 	
 	checkValue = TimeoutError;
@@ -135,7 +136,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tTimeout Error!" << std::endl;
-		exit(-106); 
+		exit(EXIT_CROC_TIMEOUT_ERROR); 
 	}
 	
 	checkValue = FIFONotEmpty;
@@ -147,7 +148,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tFIFO Not Empty!" << std::endl;
-		exit(-107); 
+		exit(EXIT_CROC_FIFOEMPTY_ERROR); 
 	}
 
 	checkValue = FIFOFull;
@@ -159,7 +160,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tFIFO Full!" << std::endl;
-		exit(-108); 
+		exit(EXIT_CROC_FIFOFULL_ERROR); 
 	}
 
 	checkValue = DPMFull;
@@ -171,7 +172,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tDPM Full!" << std::endl;
-		exit(-109); 
+		exit(EXIT_CROC_DMPFULL_ERROR); 
 	}
 	
 	// PLL?, etc.?
