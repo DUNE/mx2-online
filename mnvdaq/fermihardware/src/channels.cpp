@@ -172,7 +172,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tDPM Full!" << std::endl;
-		exit(EXIT_CROC_DMPFULL_ERROR); 
+		exit(EXIT_CROC_DPMFULL_ERROR); 
 	}
 	
 	// PLL?, etc.?
