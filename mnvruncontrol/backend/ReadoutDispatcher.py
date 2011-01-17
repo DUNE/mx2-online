@@ -228,7 +228,9 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 				          "-cf", self.current_HW_file ) 
 			self.logger.info("   minervadaq command:")
 			self.logger.info("      '" + ("%s " * len(executable)) % executable + "'...")
-			self.daq_thread = DAQThread(owner_process=self, daq_command=executable, etfile=configuration.et_filename, identity=identity)
+			self.daq_thread = DAQThread(owner_process=self, daq_command=executable,
+			                            etfile=configuration.et_filename, identity=identity, 
+			                            runinfo={"run": configuration.run, "subrun": configuration.subrun})
 		except Exception, e:
 			self.logger.exception("   ==> DAQ process can't be started! Error message: ")
 			return e
@@ -384,7 +386,7 @@ class DAQThread(threading.Thread):
 	    so that they can be monitored continuously.  When
 	    they terminate, a socket is opened to the master
 	    node to emit a "done" signal."""
-	def __init__(self, owner_process, daq_command, etfile, identity):
+	def __init__(self, owner_process, daq_command, etfile, identity, runinfo):
 		threading.Thread.__init__(self)
 		
 		self.daq_process = None
@@ -392,6 +394,7 @@ class DAQThread(threading.Thread):
 		self.owner_process = owner_process
 		self.daq_command = daq_command
 		self.identity = identity
+		self.runinfo = runinfo
 #		self.sam_file = "%s/%s_SAM.py" % (Configuration.params["read_SAMfileLocation"], etfile)
 		
 		self.daemon = True
@@ -458,14 +461,22 @@ class DAQThread(threading.Thread):
 				
 				self.returncode = self.daq_process.returncode
 		
-				self.logger.info("DAQ subprocess finished.  Its output will be written to '%s'.", filename)
+				self.logger.info("DAQ subprocess finished.  Its output has been written to '%s'.", filename)
 		except (OSError, IOError) as e:
 			self.logger.exception("minervadaq log file error: %s", e.message)
 			self.logger.warning("   ==> log file information will be discarded.")
 		
-		sentinel = self.returncode == 0
+		# "sentinel-indicating" return codes are 2 & 3.
+		# anything else indicates an error
+		# (minervadaq doesn't use code 0.)
+		if self.returncode in (2, 3):
+			sentinel = self.returncode == 2
 		
-		self.owner_process.postoffice.Send(PostOffice.Message(subject="daq_status", state="finished", sentinel=sentinel, sender=self.identity))
+			self.owner_process.postoffice.Send(PostOffice.Message(subject="daq_status", state="finished", sentinel=sentinel, sender=self.identity,
+			                                                      run=self.runinfo["run"], subrun=self.runinfo["subrun"]))
+		else:
+			self.owner_process.postoffice.Send(PostOffice.Message(subject="daq_status", state="exit_error", sender=self.identity,
+			                                                      run=self.runinfo["run"], subrun=self.runinfo["subrun"], code=self.returncode ))
 		
 	def ReportNewGate(self, file_mod_time):
 		""" Opens up the last trigger file and parses it to find the gate count,
