@@ -79,14 +79,15 @@ SAM_FILE_LOCATION                    = "/work/data/sam"
 SLOWCONTROL_CONFIG_LOCATION_DEFAULT  = "/work/conditions/MParamFiles/data/DAQ/hardware_config"
 
 # master node
-MASTER_ADMIN_PWD         = "rcadmin"
-MASTER_CONTROL_XFER_WAIT = 15			# in seconds
-HW_INIT_LEVEL            = MetaData.HardwareInitLevels.FULL_HW_INIT.hash
-DETECTOR_TYPE            = MetaData.DetectorTypes.MINERVA.hash
-REMOTE_NODE_ADDRESSES    = []
-ALLOWED_HV_THRESHOLDS    = {200: 0}	# that is, { threshold : num allowed over that threshold, ... }
-ALLOWED_PERIOD_THRESHOLD = 15000
-HV_IGNORE_FEBS           = []
+MASTER_ADMIN_PWD           = "rcadmin"
+MASTER_CONTROL_XFER_WAIT   = 15			# in seconds
+MASTER_MAX_DAQ_ERROR_COUNT = 3
+HW_INIT_LEVEL              = MetaData.HardwareInitLevels.FULL_HW_INIT.hash
+DETECTOR_TYPE              = MetaData.DetectorTypes.MINERVA.hash
+REMOTE_NODE_ADDRESSES      = []
+ALLOWED_HV_THRESHOLDS      = {200: 0}	# that is, { threshold : num allowed over that threshold, ... }
+ALLOWED_PERIOD_THRESHOLD   = 15000
+HV_IGNORE_FEBS             = []
 
 # mtest configuration
 MTEST_BRANCH             = 1

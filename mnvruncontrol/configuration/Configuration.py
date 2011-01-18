@@ -79,6 +79,7 @@ configuration = {
 	# master node stuff
 	"mstr_controlXferWait"        : ( Defaults.MASTER_CONTROL_XFER_WAIT,             "Interval before automatically allowing control xfer", int   ),
 	"mstr_adminPwd"               : ( Defaults.MASTER_ADMIN_PWD,                     "Client admin password",                               str   ),
+	"mstr_maxDAQErrorCount"       : ( Defaults.MASTER_MAX_DAQ_ERROR_COUNT,           "Max allowed DAQ startup errors before stopping run",  int   ),
 	"mstr_PIDfile"                : ( Defaults.MASTER_DISPATCHER_PIDFILE,            "DAQ manager dispatcher PID file",                     str   ),
 	"mstr_runinfoFile"            : ( Defaults.RUN_SUBRUN_DB_LOCATION_DEFAULT,       "Run/subrun info database file",                       str   ),
 	"mstr_logfileGateCount"       : ( Defaults.LOGFILE_GATE_COUNT_INTERVAL,          "Interval to write gate count to log file",            int   ),
