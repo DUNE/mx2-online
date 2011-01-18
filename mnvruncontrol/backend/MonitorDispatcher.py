@@ -146,7 +146,7 @@ class MonitorDispatcher(Dispatcher):
 
 		if subject is not None and messagebody is not None:
 			self.logger.info("Sending mail to notification addresses.")
-			MailTools.sendMail(fro=sender, to=Configuration.params["notify_addresses"], subject=subject, text=messagebody)
+			MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
 
 		self.use_condor = use_condor
 
@@ -301,7 +301,7 @@ class MonitorDispatcher(Dispatcher):
 					self.logger.info("     ==> process id: %d" % thread.pid)
 				else:
 					fmt = { "host":        Configuration.params["mon_condorHost"],
-					        "notify":      ",".join(Configuration.params["notify_addresses"]),
+					        "notify":      ",".join(Configuration.params["gen_notifyAddresses"]),
 					        "release":     os.environ["MINERVA_RELEASE"],
 					        "siteroot":    os.environ["MYSITEROOT"],
 					        "daqrecvroot": os.environ["DAQRECVROOT"],
@@ -317,7 +317,7 @@ class MonitorDispatcher(Dispatcher):
 						subject = "MINERvA near-online Condor submission problem"
 						messagebody = "A job submission to the mnvnearline* Condor queue returned a non-zero exit code: %d." % return_code
 						messagebody += "The command was:\n%s" % executable 			
-						MailTools.sendMail(fro=sender, to=Configuration.params["notify_addresses"], subject=subject, text=messagebody)
+						MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
 					else:
 						self.logger.info("  ... submitted successfully.")
 					
@@ -423,7 +423,7 @@ class OMThread(threading.Thread):
 		
 		# if an error happened, or if the job was too short,
 		# send an e-mail to the addresses listed in the
-		# NOTIFY_ADDRESSES configuration parameter with the
+		# gen_notifyAddresses configuration parameter with the
 		# log file.
 		if error is not None or timediff < Configuration.params["mon_DSTminJobTime"]:
 			subject = "MINERvA near-online automatic DST production warning"
@@ -435,7 +435,7 @@ class OMThread(threading.Thread):
 			
 			sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
 
-			MailTools.sendMail(fro=sender, to=Configuration.params["notify_addresses"], subject=subject, text=messagebody, files=[filename,])
+			MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody, files=[filename,])
 			
 			# inform the DAQ manager if necessary.
 			if not self.parent.signalled_ready:
