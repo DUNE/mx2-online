@@ -40,6 +40,16 @@ from mnvruncontrol.backend import LIBox
 
 from mnvconfigurator.SlowControl.SC_MainMethods import SC as SlowControl
 
+#################################################
+#  these are the return codes used by the DAQ
+#  subprocess.  they're enumerated here so that
+#  they are centralized and easy to change if
+#  necessary.
+
+class DAQ_EXIT_CODES:
+	SENTINEL = 2
+	NO_SENTINEL = 3
+#################################################
 
 class ReadoutDispatcher(Dispatcher.Dispatcher):
 	"""
@@ -469,8 +479,8 @@ class DAQThread(threading.Thread):
 		# "sentinel-indicating" return codes are 2 & 3.
 		# anything else indicates an error
 		# (minervadaq doesn't use code 0.)
-		if self.returncode in (2, 3):
-			sentinel = self.returncode == 2
+		if self.returncode in (DAQ_EXIT_CODES.SENTINEL, DAQ_EXIT_CODES.NO_SENTINEL):
+			sentinel = self.returncode == DAQ_EXIT_CODES.SENTINEL
 		
 			self.owner_process.postoffice.Send(PostOffice.Message(subject="daq_status", state="finished", sentinel=sentinel, sender=self.identity,
 			                                                      run=self.runinfo["run"], subrun=self.runinfo["subrun"]))
