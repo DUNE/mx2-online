@@ -53,6 +53,7 @@ from mnvruncontrol.backend import RemoteNode
 from mnvruncontrol.backend import Alert
 from mnvruncontrol.backend import Threads
 from mnvruncontrol.backend import DAQErrors
+from mnvruncontrol.backend import MailTools
 
 
 ### a decorator for scrubbing old tokens out of the authorization list ###
@@ -141,6 +142,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		self.current_DAQ_thread = 0			# the next thread to start
 		self.can_shutdown = False			# used in between subruns to prevent shutting down twice for different reasons
+		self.daq_exit_error_count = 0
+		self.daq_exit_error_this_subrun = False
 		
 		self.auto_start = False				# whether to auto-start the next run series
 
@@ -458,11 +461,61 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 #		self.logger.debug("DAQ status message:\n%s", message)
 		
-		if message.state == "hw_error":
+		# "exit_error" is when the DAQ exits with an error code
+		if message.state == "exit_error":
+			if not (hasattr(message, "run") and hasattr(message, "subrun")):
+				return
+
+			self.logger.warning("The '%s' node reports that the DAQ process for run %d/%d exited with an error (code: %d)...", message.sender, message.run, message.subrun, message.code)
+			
+			# skip the alert part if it's already been given once this subrun
+			if self.daq_exit_error_this_subrun:
+				return
+
+
+			# we only want to directly inform the user
+			# about unexpected exit codes if that's the
+			# run that's still going.
+			# otherwise, inform the expert via e-mail.
+			current_run = self.configuration.run
+			current_subrun = self.configuration.subrun
+			currently_running = self.running
+			if not currently_running or message.run != current_run or message.subrun != current_subrun:
+				sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
+				subject = "DAQ process returned unexpected exit code"
+				fmt = (message.run, message.subrun, message.sender, message.code)
+				messagebody = "The DAQ process for run %d/%d on the %s node returned exit code %d... (expected: 2 or 3)" % fmt
+				MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"],
+				                   subject=subject, text=messagebody)
+				                   
+				if not currently_running:
+					message = "Not running,"
+				else:
+					message = "Current run is %d/%d," % (current_run, current_subrun)
+				message += " so will inform the expert(s) by email instead of warning the user."
+				self.logger.warning(message)
+				return
+			
+			self.daq_exit_error_count += 1
+			self.daq_exit_error_this_subrun = True
+			
+			if self.daq_exit_error_count >= Configuration.params["mstr_maxDAQErrorCount"]:
+				# reset the count so we can start again
+				self.daq_exit_error_count = 0
+			
+				message = "The DAQ has exited with an error %d consecutive times.  Run has been halted for troubleshooting." % (Configuration.params["mstr_maxDAQErrorCount"])
+				self.NewAlert(notice=message, severity=Alert.ERROR)
+				self.StopDataAcquisition(auto_start_ok=False)
+			else:
+				message = "The DAQ on the '%s' node exited with an error (code: %d) during run %d, subrun %d.  Will skip to the next subrun..." % (message.sender, message.code, self.configuration.run, self.configuration.subrun)
+				self.NewAlert(notice=message, severity=Alert.WARNING)
+				# skip to the next subrun and try again.
+				self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end") )
+		
+		elif message.state == "hw_error":
 			self.NewAlert(notice="A hardware error was reported on the '%s' node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
 			self.remote_nodes[message.sender].status = RemoteNode.ERROR
-			self.auto_start = False
-			self.StopDataAcquisition()
+			self.StopDataAcquisition(auto_start_ok=False)
 			self.last_HW_config = None
 
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
@@ -483,6 +536,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.StartNextSubrun()
 		
 		elif message.state == "running" and hasattr(message, "gate_count"):
+			# this is the signal that the DAQ is running ok.
+			# reset the error count.
+			self.daq_exit_error_count = 0
+
 			# updates are only relevant if we're still doing the same subrun...
 			if message.run_num != self.configuration.run or message.subrun_num != self.configuration.subrun:
 				return
@@ -615,8 +672,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 				elif message.directive == "stop":
 					self.logger.info("Frontend client requests stoppage of data acquisition.")
-					self.auto_start = False
-					self.worker_thread.queue.put( {"method": self.StopDataAcquisition} )
+					self.worker_thread.queue.put( {"method": self.StopDataAcquisition, "kwargs": {"auto_start_ok": False}} )
 					status = True
 					
 				elif message.directive == "skip":
@@ -793,8 +849,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.postoffice.Send( self.StatusReport( items=["running", "run_series", "first_subrun"]) )
 		return True
 		
-	def StopDataAcquisition(self):
+	def StopDataAcquisition(self, auto_start_ok=None):
 		""" Stop data acquisition altogether. """
+
+		if auto_start_ok is not None:
+			self.auto_start = auto_start_ok
 
 		# if we are currently still running, the subrun needs to be stopped first!
 		if self.running:
@@ -880,6 +939,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.num_startup_steps = len(self.SubrunStartTasks) + len(self.DAQStartTasks)
 		self.startup_step = 0
 		self.last_logged_gate = 0
+		self.daq_exit_error_this_subrun = False
 
 		# run the startup tasks sequentially.
 		for task in self.SubrunStartTasks:
@@ -1135,9 +1195,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# we should only increment the subrun number if we
 		# started up ET.  otherwise there's nothing on disk
 		# with the old subrun number, which means we can
-		# reuse it.
+		# reuse it.  if we haven't started ET, we should
+		# make sure that the current config matches what's
+		# in the stored config.
 		if self.started_et:
 			self.configuration.subrun += 1
+		else:
+			self.configuration.Save()
 
 		self.current_state = "Subrun completed."
 		self.current_progress = (numsteps, numsteps)
@@ -1426,8 +1490,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.DAQStartTasks[self.current_DAQ_thread-1]["method"]()
 			except Exception as e:
 				self.NewAlert(notice="There was an error executing a DAQ startup task: '%s'.  Running will be halted..." % e, severity=Alert.ERROR)
-				self.auto_start = False
-				self.StopDataAcquisition()
+				self.StopDataAcquisition(auto_start_ok=False)
 		else:
 			signal.signal(signal.SIGUSR1, signal.SIG_IGN)		# go back to ignoring the signal...
 			self.logger.warning("Note: requested a new thread but no more threads to start...")
@@ -1555,50 +1618,55 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
-			self.auto_start = False
-			self.StopDataAcquisition()
+			self.StopDataAcquisition(auto_start_ok=False)
 			return
 
 		for response in responses:
 			if isinstance(response.success, Exception):
 				self.NewAlert(notice="Error stopping the DAQ on the '%s' readout node.  Error message text:\n%s" % (response.sender, response.success), severity=Alert.ERROR)
-				self.auto_start = False
-				self.StopDataAcquisition()
+				self.StopDataAcquisition(auto_start_ok=False)
 				return
 
-		# now start the DAQ(s)
+		# now start the DAQ(s).
+		# first, set their statuses to 'running' and 'not yet completed'.
+		# we'll change that below (or in a message handler) if they report an error.
 		self.logger.info("  starting the DAQ on the readout nodes...")
+		for node in self.remote_nodes:
+			node = self.remote_nodes[node]
+			if node.type == RemoteNode.READOUT:
+				node.running = True
+				node.completed = False
 
 		try:
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
-			self.auto_start = False
-			self.StopDataAcquisition()
+			self.StopDataAcquisition(auto_start_ok=False)
 			return
 
-
 		for response in responses:
-			if isinstance(response.success, Exception):
-				self.NewAlert(notice="Error starting the DAQ on the '%s' readout node.  Error message text:\n%s" % (response.sender, response.success), severity=Alert.ERROR)
-				self.auto_start = False
-				self.StopDataAcquisition()
+			if isinstance(response.success, Exception) or not response.success:
+				if isinstance(response.success, Exception):
+					notice = "Error starting the DAQ on the '%s' readout node.  Error message text:\n%s" % (response.sender, response.success)
+				else:
+					notice = "The DAQ on the '%s' node is already running (even after being issued a 'STOP' command)!  Stopping run for troubleshooting..." % response.sender
+				self.NewAlert(notice=notice, severity=Alert.ERROR)
+				self.remote_nodes[response.sender].status = RemoteNode.ERROR
+				self.StopDataAcquisition(auto_start_ok=False)
 				return
-			elif response.success == False:
-				self.NewAlert(notice="The DAQ on the '%s' node is already running (even after being issued a 'STOP' command)!  Stopping run for troubleshooting..." % response.sender, severity=Alert.ERROR)
-			elif response.success == True:
+			else:	# response.success is True
 				self.logger.info("   '%s' node started...", response.sender)
-				self.remote_nodes[response.sender].running = True
-				self.remote_nodes[response.sender].completed = False
 				
 		if self.running:
 			self.current_state = "Running"
 			# increment the subrun number so that if this run crashes,
-			# the next one won't overwrite it -- then decrement it again
-			# so that our bookkeeping is accurate
-			self.configuration.subrun += 1
-			self.configuration.Save(filepath=Configuration.params["mstr_runinfoFile"])
-			self.configuration.subrun -= 1
+			# the next one won't overwrite it, then save this state.
+			# note that we use a COPY to save the state so that there's
+			# no chance that the one we work with in memory (self.configuration)
+			# ever has the wrong number in it.
+			config = copy.copy(self.configuration)
+			config.subrun += 1
+			config.Save(filepath=Configuration.params["mstr_runinfoFile"])
 			
 			# we're waiting now for the 'done' signal from the DAQ
 			self.waiting = True
@@ -1631,16 +1699,14 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
-			self.auto_start = False
-			self.StopDataAcquisition()
+			self.StopDataAcquisition(auto_start_ok=False)
 		
 		nodes_checked = 0
 		problem_boards = []
 		for response in responses:
 			if isinstance(response.sc_board_list, Exception):
 				self.NewAlert(notice="The '%s' node reports a slow control error while trying to read the boards.  Error text: '%s'" % (response.sender, response.sc_board_list), severity=Alert.ERROR)
-				self.auto_start = False
-				self.StopDataAcquisition()
+				self.StopDataAcquisition(auto_start_ok=False)
 				return
 
 			if len(response.sc_board_list) == 0:
@@ -1665,8 +1731,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		if nodes_checked == 0:
 			self.NewAlert(notice="No nodes responded with PMT voltages.  Check the dispatchers on your readout nodes!", severity=Alert.ERROR)
-			self.auto_start = False
-			self.StopDataAcquisition()
+			self.StopDataAcquisition(auto_start_ok=False)
 
 		for board in problem_boards:
 			if board["period"] < Configuration.params["mstr_HVperiodThreshold"]:
