@@ -35,6 +35,31 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 	metadata_ctrls = { "mstr_detectorType" : MetaData.DetectorTypes,
 	                   "mstr_hwInitLevel"  : MetaData.HardwareInitLevels }
 
+	ID_FRONTEND = wx.NewId()
+	ID_MASTER   = wx.NewId()
+	ID_READOUT  = wx.NewId()
+	ID_OM       = wx.NewId()
+	ID_MTEST    = wx.NewId()
+	option_collections = { ID_FRONTEND : "Front end client",
+	                       ID_MASTER   : "Master node",
+	                       ID_READOUT  : "Readout node",
+	                       ID_OM       : "Online monitoring node", 
+	                       ID_MTEST    : "MTest beam DAQ node" }
+	
+	tabs_enabled = { ID_FRONTEND: [Configuration.prefixes["frnt"], Configuration.prefixes["log"]],
+	                 ID_MASTER:   [Configuration.prefixes["log"], Configuration.prefixes["gen"],
+	                               Configuration.prefixes["hw"], Configuration.prefixes["mstr"],
+	                               Configuration.prefixes["sock"]],
+	                 ID_READOUT:  [Configuration.prefixes["log"], Configuration.prefixes["gen"],
+	                               Configuration.prefixes["hw"], Configuration.prefixes["read"],
+	                               Configuration.prefixes["sock"]],
+	                 ID_OM:       [Configuration.prefixes["log"], Configuration.prefixes["gen"],
+	                               Configuration.prefixes["hw"], Configuration.prefixes["mon"],
+	                               Configuration.prefixes["sock"]],
+	                 ID_MTEST:    [Configuration.prefixes["log"], Configuration.prefixes["gen"],
+	                               Configuration.prefixes["hw"], Configuration.prefixes["mtst"],
+	                               Configuration.prefixes["sock"]] }
+
 	#########################################################
 	#   Configuration
 	#########################################################
@@ -42,19 +67,29 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 	class ConfigurationFrame(wx.Frame):
 		""" A window for configuration of various options in the run control """
 		def __init__(self, parent=None):
-			wx.Frame.__init__(self, parent, -1, "Run control configuration", size=(800,600))
+			wx.Frame.__init__(self, parent, -1, "Run control configuration", size=(800,700))
 		
 			self.parent = parent
 
+			self.menu = wx.Menu()
+			for collection_id in option_collections:
+				collection_name = option_collections[collection_id]
+				self.menu.Append(collection_id, collection_name, collection_name, kind=wx.ITEM_CHECK)
+			self.menuBar = wx.MenuBar()
+			self.menuBar.Append(self.menu, "&Show these options...");
+			self.SetMenuBar(self.menuBar)
+			
+			self.Bind(wx.EVT_MENU, self.OnShowOptionsClick)
+
 			panel = wx.Panel(self)
-			nb = wx.Notebook(panel)
+			self.nb = wx.Notebook(panel)
 			self.pages = {}
 			for pagename in Configuration.categories:
-				self.pages[pagename] = wx.Panel(nb)
+				self.pages[pagename] = wx.Panel(self.nb)
 		
 		
 			###########################################################################
-			# first, the ones that can be automatically placed on the panels
+			# first, the items that can be automatically placed on the panels
 			###########################################################################
 		
 			labels = {}
@@ -95,29 +130,6 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 		
 			self.AddButtons = {}
 			self.DeleteButtons = {}
-
-#			# first: log file locations
-#			labels["logFileLocations"] = wx.StaticText(self.pages, -1, Configuration.names["logFileLocations"])
-#			self.entries["logFileLocations"] = AutoSizingEditableListCtrl(self.pages, style=wx.LC_REPORT | wx.LC_HRULES)
-#			self.entries["logFileLocations"].InsertColumn(0, "Location")
-#		
-#			for location in Configuration.params["logFileLocations"]:
-#				self.entries["logFileLocations"].InsertStringItem(sys.maxint, location)
-
-#			self.AddButtons["logFileLocations"] = wx.Button(self.pages, wx.ID_ADD, style=wx.BU_EXACTFIT)
-#			self.pages.Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["logFileLocations"])
-
-#			self.DeleteButtons["logFileLocations"] = wx.Button(self.pages, wx.ID_DELETE, style=wx.BU_EXACTFIT)
-#			self.pages.Bind(wx.EVT_BUTTON, self.DeleteNodes, self.DeleteButtons["logFileLocations"])
-#		
-#			buttonSizer = wx.BoxSizer(wx.VERTICAL)
-#			buttonSizer.AddMany ( ( (self.AddButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["logFileLocations"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
-#		
-#			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-#			entrySizer.AddMany( ( (self.entries["logFileLocations"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
-#		
-#			gridSizers.Add(labels["logFileLocations"], flag=wx.ALIGN_CENTER_VERTICAL)
-#			gridSizers.Add(entrySizer, proportion=0, flag=wx.EXPAND)
 
 			# first: config choices that need list boxes.
 			for key in metadata_ctrls:
@@ -242,9 +254,14 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 	
 			gridSizers["General"].SetFlexibleDirection(wx.BOTH)
 
-			# these are added like this so that they show up in a predictable order
-			for name in sorted(Configuration.categories.keys()):
-				nb.AddPage(self.pages[name], name)
+			###########################################################################
+			# and finally, assemble the panel
+			###########################################################################
+#			for name in sorted(Configuration.categories.keys()):
+#				self.nb.AddPage(self.pages[name], name)
+			
+			self.LoadConfig()
+			self.OnShowOptionsClick()
 			
 			saveButton = wx.Button(panel, wx.ID_SAVE)
 			self.Bind(wx.EVT_BUTTON, self.SaveAll, saveButton)
@@ -256,7 +273,7 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			buttonSizer.AddMany( ( (saveButton, 1, wx.ALIGN_CENTER_HORIZONTAL), (cancelButton, 1, wx.ALIGN_CENTER_HORIZONTAL) ) )
 
 			globalSizer = wx.BoxSizer(wx.VERTICAL)
-			globalSizer.Add(nb, flag=wx.EXPAND, proportion=1)
+			globalSizer.Add(self.nb, flag=wx.EXPAND, proportion=1)
 			globalSizer.Add(buttonSizer, flag=wx.ALIGN_CENTER_HORIZONTAL, proportion=0)		
 			panel.SetSizer(globalSizer)
 
@@ -303,6 +320,66 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 					toDelete = sorted(toDelete, reverse=True)
 					for item in toDelete:
 						itemlocation[itemname].DeleteItem(item)
+		
+		def LoadConfig(self):
+			""" Loads the saved GUI settings from the
+			    file they were stored in and sets the
+			    values of the checkboxes appropriately. """
+
+			self.cfg = wx.Config('mnvrcc')
+		
+			enable_frontend = self.cfg.ReadBool("frontend", False)
+			enable_master   = self.cfg.ReadBool("master", False)
+			enable_readout  = self.cfg.ReadBool("readout", False)
+			enable_om       = self.cfg.ReadBool("om", False)
+			enable_mtest    = self.cfg.ReadBool("mtest", False)
+		
+			self.GetMenuBar().FindItemById(ID_FRONTEND).Check(enable_frontend)
+			self.GetMenuBar().FindItemById(ID_MASTER).Check(enable_master)
+			self.GetMenuBar().FindItemById(ID_READOUT).Check(enable_readout)
+			self.GetMenuBar().FindItemById(ID_OM).Check(enable_om)
+			self.GetMenuBar().FindItemById(ID_MTEST).Check(enable_mtest)
+
+		def OnShowOptionsClick(self, evt=None):
+			""" Update the options shown when the user
+			    clicks on a menu item. """
+	
+			tabs_to_enable = {}
+			for tab_name in self.pages:
+				tabs_to_enable[tab_name] = False
+	
+			for item_id in option_collections:
+				if not self.GetMenuBar().FindItemById(item_id).IsChecked():
+					continue
+				
+				for tab_name in tabs_enabled[item_id]:
+					tabs_to_enable[tab_name] = True
+			
+			# don't use DeleteAllPages() because that
+			# destroys the panels too (which would mean
+			# they couldn't be used again later)
+			while self.nb.GetPageCount() > 0:
+				self.nb.RemovePage(0)
+
+			page_count = 0
+			for page_name in sorted(self.pages.keys()):
+				if tabs_to_enable[page_name]:
+					self.nb.AddPage(self.pages[page_name], page_name)
+					page_count += 1
+			
+			# display an informational notice if nothing is enabled
+			if page_count == 0:
+				panel = wx.Panel(self.nb)
+				sizer = wx.BoxSizer(wx.HORIZONTAL)
+				text = wx.StaticText(panel, -1, "Select the arrangement(s) corresponding to your installation from the menu...")
+				sizer.AddStretchSpacer()
+				sizer.Add(text, proportion=0, flag=wx.ALIGN_CENTER)
+				sizer.AddStretchSpacer()
+				panel.SetSizer(sizer)
+				self.nb.AddPage(panel, "Select configuration!")
+				self.nb.Layout()
+				
+			self.Layout()
 		
 		def SaveAll(self, evt=None):
 			""" Save the configuration. """
@@ -392,8 +469,20 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			
 			# now save everything
 			Configuration.SaveToDB()
-			
+			self.SaveConfig()
+
 			self.Close()
+		
+		def SaveConfig(self):
+			""" Saves the GUI-specific settings. """
+		
+			self.cfg.WriteBool("frontend", self.GetMenuBar().FindItemById(ID_FRONTEND).IsChecked())
+			self.cfg.WriteBool("master", self.GetMenuBar().FindItemById(ID_MASTER).IsChecked())
+			self.cfg.WriteBool("readout", self.GetMenuBar().FindItemById(ID_READOUT).IsChecked())
+			self.cfg.WriteBool("om", self.GetMenuBar().FindItemById(ID_OM).IsChecked())
+			self.cfg.WriteBool("mtest", self.GetMenuBar().FindItemById(ID_MTEST).IsChecked())
+	
+			self.cfg.Flush()
 		
 		def Cancel(self, evt=None):
 			self.Close()
