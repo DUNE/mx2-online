@@ -696,7 +696,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		self.ConfigControlsEnable()
 		
-		self.RestorePanelState()
+		# we are starting fresh here, so don't bother
+		# restoring the panel history (or saving where it's at now)
+		self.ShowPanel("notebook")
+		self.ShowPanel("summary_info_panel")
 
 		# erase any alerts (start fresh)
 		self.current_alert = None
