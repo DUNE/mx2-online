@@ -12,11 +12,13 @@
                     
   Changelog:  
     01/14/11, J. Wolcott: first version
+    01/21/11, J. Wolcott: add mnvonlinemaster
 ================================================================================
 
-Port     Assignee machine name          Assignee description
+Port     Assignee machine address       Assignee description
 ------------------------------------------------------------------
 3001     minerva-rc.fnal.gov            WH12 control room
+3002     mnvonlinemaster.fnal.gov       Online master node (fallback)
 3005     j-wolcott.pas.rochester.edu    Jeremy Wolcott (Rochester)
 3010                                    Pittsburgh UROC
 3011     ksmcf-cart.pas.rochester.edu   Rochester UROC

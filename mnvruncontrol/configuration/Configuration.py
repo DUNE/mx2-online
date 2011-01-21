@@ -112,7 +112,7 @@ configuration = {
 	"mon_runDSTjobs"              : ( Defaults.OM_GAUDI_RUNDSTJOBS,                  "Run the DST jobs?",                                   bool  ),
 	"mon_GaudiOutputOptionsFile"  : ( Defaults.OM_GAUDI_OUTPUTOPTIONSFILE,           "OM Gaudi process 'output file' options file",         str   ),
 	"mon_GaudiInputOptionsFile"   : ( Defaults.OM_GAUDI_INPUTOPTIONSFILE,            "OM Gaudi process 'input file' options file",          str   ),
-	"mon_DSTTargetPath"           : ( Defaults.OM_DST_TARGET_PATH,                   "Copy target for DSTs created by OM dispather",        str   ),
+	"mon_DSTTargetPath"           : ( Defaults.OM_DST_TARGET_PATH,                   "Copy target for DSTs created by OM dispatcher",        str   ),
 	"mon_DSTminJobTime"           : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",              float ),
 	"mon_useCondor"               : ( Defaults.OM_USE_CONDOR,                        "Use a Condor queue?",                                 bool  ),
 	"mon_condorHost"              : ( Defaults.OM_CONDOR_HOST,                       "The machine hosting the Condor queue manager",        str   ),
