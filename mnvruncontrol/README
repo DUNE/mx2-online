@@ -1,8 +1,8 @@
 mnvruncontrol -- the MINERvA run control
 ========================================
   Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v5r1  (October 2010)
-  Last update:      October 13, 2010
+  Last revision:    v5r4  (January 2011)
+  Last update:      January 21, 2011
 ========================================
 
 This document briefly describes the configuration and usage of the MINERvA run
@@ -84,26 +84,11 @@ Contents:
     of these dispatchers, or they will complain.
   
   * Most other configuration of the run control can be done through the program
-    RunControlConfiguration.py, which lives in mnvruncontrol/frontend.  
+    RunControlConfiguration.py, which lives in mnvruncontrol/frontend.  You
+    should always run this script at first installation of the run control.
     
-    Before starting any run control component, you should run this program on
-    any node you intend to use the run control on.  All of the various modules
-    in the run control that are startable from the command line will use the
-    settings in one central configuration file (though of course they ignore
-    settings that are irrelevant for them).  Since each node maintains its own
-    configuration file (as in the second bullet in this section), you need to
-    ensure that the settings there are appropriate for the node you are running
-    on.
+    Documentation for it can be found in the file README.CONFIGURATION.
     
-    Particularly important to properly configure is the "listener" port for
-    your local run control node ("Front end" tab, item "Frontend client listener
-    port").  If you are using an SSH tunnel to connect to the DAQ machine
-    (and most likely you are), this number MUST BE UNIQUE among all clients
-    concurrently connected to the DAQ.  I suggest using ports in the range
-    3000-3019, since
-    those are unlikely to be used by any process on your machine.  [The numbers
-    you pick are ultimately irrelevant; the only constraint is that the port
-    numbers you choose be unused by some other process on both ends.]
     
 3. OVERVIEW AND USAGE NOTES
     The run control is built on a "client-server" model.  There is a "server"
