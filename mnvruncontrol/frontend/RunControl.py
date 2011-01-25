@@ -1317,8 +1317,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# if there is an alert currently up, that needs to take precedence.
 		# just put the window that wants to be shown on the stack;
 		# when the "restore" comes after the alert, it'll be shown then.
-		if (collection == "main" and xrc.XRCCTRL(self.frame, "alert_panel").IsShown()) \
-		  or (collection == "status" and xrc.XRCCTRL(self.frame, "summary_alert_panel").IsShown()):
+		if (collection == "main" and xrc.XRCCTRL(self.frame, "alert_panel").IsShown()):
+#		  or (collection == "status" and xrc.XRCCTRL(self.frame, "summary_alert_panel").IsShown()):
 		  	self.logger.debug("Alert is up... won't hide it.")
 			self.panel_stack[collection].append(panel.GetId())
 #			self.logger.debug("Panel stack state: %s", pprint.pformat(self.panel_stack))
