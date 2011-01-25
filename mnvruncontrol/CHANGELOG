@@ -2,14 +2,15 @@ mnvruncontrol -- the MINERvA run control
 ===================================================
   Original author:  J. Wolcott  (jwolcott@fnal.gov)
   Last revision:    v5r4  (January 2011)
-  Last update:      January 10, 2011
+  Last update:      January 25, 2011
 ===================================================
 
 This document briefly summarizes the changes from version to version
 of the MINERvA run control software.  I didn't think to start it
 until most of the way through v4, so it's a bit skimpy below there...
 
-v5r4    - Change to control transfer architecture: if client A currently has
+v5r4    - Added README.CONFIGURATION for how to use RunControlConfiguration.py.
+        - Change to control transfer architecture: if client A currently has
           control and client B requests it, client A is given a configurable
           amount of time (defaults to 15 seconds) to confirm or veto this
           request via a pop-up window.  If client A does nothing before the
@@ -20,6 +21,7 @@ v5r4    - Change to control transfer architecture: if client A currently has
           (These administrative actions require the entry of a password which
           is set in the DAQ manager's configuration.)
         - Fixed 'force reload hardware' button so that it actually works.
+        - A handful of bugfixes (see Redmine).
 
 v5r3    - PMT high voltage check no longer waits for user confirmation before
           starting the run; it just puts up the notice and continues.
