@@ -1429,10 +1429,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				ranges[i+1] = Configuration.params["mstr_HVthresholds"][thresholds[i]]
 			
 			over = {}
-			needs_intervention = False
+			notify = False
 			for board in problem_boards:
 				if board["failure"] == "period":
-					needs_intervention = True
+					notify = True
 					break
 				elif board["failure"] == "hv_range":
 					rng = board["range"]
