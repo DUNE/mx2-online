@@ -577,7 +577,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 			# all nodes are finished.  end the subrun.
 			self.logger.info("All nodes finished.  Sentinel status: %s", str(sentinel))
-			self.EndSubrun(sentinel=sentinel)
+			self.worker_thread.queue.put( {"method": self.EndSubrun, "kwargs": {"sentinel": sentinel}} )
 
 	def DeviceStatusHandler(self, message):
 		""" Handles updates from various peripherals about
@@ -1122,6 +1122,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			all_completed = all_completed and (node.type == RemoteNode.READOUT and node.completed)
 			
 		if wait_for_DAQ and not all_completed:
+			self.logger.debug("  Not all nodes completed yet.  Waiting...")
 			self.can_shutdown = True
 			return
 		
