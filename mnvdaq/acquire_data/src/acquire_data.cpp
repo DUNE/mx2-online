@@ -13,6 +13,7 @@
 #include "acquire_data.h"
 #include "exit_codes.h"
 #include <sys/time.h>
+#include <signal.h>   // for sig_atomic_t
 
 const int acquire_data::dpmMax                  = 1024*6; // we have only 6 Kb of space in the DPM Memory per channel
 const unsigned int acquire_data::timeOutSec     = 3600;   // be careful shortening this w.r.t. multi-PC sync issues
@@ -1941,7 +1942,7 @@ int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
 }
 
 
-int acquire_data::WaitOnIRQ() 
+int acquire_data::WaitOnIRQ(sig_atomic_t & continueFlag) 
 {
 /*! \fn void acquire_data::WaitOnIRQ() 
  *
@@ -2000,6 +2001,12 @@ int acquire_data::WaitOnIRQ()
 #endif
 
 	while ( !( interrupt_status & iline ) ) {
+		if ( !continueFlag )
+		{
+			acqData.debug("Caught exit signal.  Bailing on CRIM IRQ wait.");
+			return 1;
+		}
+	
 		try {
 			crim_send[0] = crim_send[1] = 0;
 			error = daqAcquire->ReadCycle(daqController->handle, crim_send,

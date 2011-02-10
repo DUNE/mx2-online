@@ -19,7 +19,7 @@
 #include <sys/time.h>
 #include <sys/stat.h> // for file sizes, not actually used... (can't trust answers)
 #include <stdlib.h>   // for file sizes, not actually used...
-#include <signal.h>
+#include <signal.h>   // for sig_atomic_t, signal names, etc.
 
 #define THREAD_COUNT 4  /*!< a thread count var if we aren't finding the # of threads needed */
 #if MASTER||SINGLEPC // Soldier Node
@@ -1591,7 +1591,8 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 } // end TakeData
 
 
-int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode, controller *tmpController) 
+int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode,
+	controller *tmpController, sig_atomic_t const & continueFlag) 
 {
 /*! \fn int TriggerDAQ(acquire_data *data, unsigned short int triggerType)
  *
@@ -1610,6 +1611,7 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
  *  \param triggerType Identifies the gate data type (trigger type).
  *  \param runningMode Identifies the mode of the subrun.
  *  \param *tmpController Pointer to the controller object (for accessing all CRIMs).
+ *  \param & continueFlag Flag that will be set by the signal handler if the user sends a SIGTERM.
  *
  * Returns a status integer (0 for success).
  */
@@ -1649,7 +1651,7 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 				}
 			}  
 			try {
-				int error = daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
+				int error = daq->WaitOnIRQ(continueFlag);    // wait for the trigger to be set (only returns if successful)
 				if (error) throw error;
 			} catch (int e) {
 				std::cout << "Warning in minervadaq::TriggerDAQ!  IRQ Wait failed or timed out!" << std::endl;
@@ -1675,7 +1677,7 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 			}
 #endif
 			try {
-				int error = daq->WaitOnIRQ();    // wait for the trigger to be set (only returns if successful)
+				int error = daq->WaitOnIRQ(continueFlag);    // wait for the trigger to be set (only returns if successful)
 				if (error) throw error;
 			} catch (int e) {
 				std::cout << "Warning in minervadaq::TriggerDAQ!  IRQ Wait failed or timed out!" << std::endl;

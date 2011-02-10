@@ -21,7 +21,8 @@ int minervasleep(int us);
 
 bool data_ready, evt_record_available;   /*!<data status variables */
 /*! a function for selecting a trigger and waiting on it */
-int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode, controller *tmpController); 
+int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode,
+	controller *tmpController, sig_atomic_t & continueFlag); 
 /*! the function which governs the entire data acquisition sequence */
 int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,int thread, 
               et_att_id  attach, et_sys_id  sys_id, bool readFPGA=true, int nReadoutADC=8); 

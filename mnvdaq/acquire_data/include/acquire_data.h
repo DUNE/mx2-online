@@ -15,7 +15,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
-
+#include <signal.h>   // for sig_atomic_t
 
 // We do not read the FPGA's on every trigger, so the firmware version is not generally available
 // "dynamically."  Therefore we have to set it BY HAND.  Be sure that this is set correctly for 
@@ -234,7 +234,7 @@ class acquire_data {
 		int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
 
 		/*! Function that waits for the interrupt handler to raise an interrupt */
-		int WaitOnIRQ();
+		int WaitOnIRQ(sig_atomic_t & continueFlag);
 
 		/*! Function that acknowledges the interrupt and resets the interrupt handler */
 		int AcknowledgeIRQ();
