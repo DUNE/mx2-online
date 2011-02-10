@@ -1942,7 +1942,7 @@ int acquire_data::TriggerDAQ(unsigned short int triggerBit, int crimID)
 }
 
 
-int acquire_data::WaitOnIRQ(sig_atomic_t & continueFlag) 
+int acquire_data::WaitOnIRQ(sig_atomic_t const & continueFlag) 
 {
 /*! \fn void acquire_data::WaitOnIRQ() 
  *

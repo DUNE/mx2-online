@@ -234,7 +234,7 @@ class acquire_data {
 		int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
 
 		/*! Function that waits for the interrupt handler to raise an interrupt */
-		int WaitOnIRQ(sig_atomic_t & continueFlag);
+		int WaitOnIRQ(sig_atomic_t const & continueFlag);
 
 		/*! Function that acknowledges the interrupt and resets the interrupt handler */
 		int AcknowledgeIRQ();

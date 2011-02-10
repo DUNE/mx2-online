@@ -984,7 +984,7 @@ int main(int argc, char *argv[])
 		// Trigger the DAQ (active communication with the electronics in internal timing modes only).
 		// TODO - Have the DAQ handle "timeouts" differently from real VME errors!
 		try {
-			int error = TriggerDAQ(daq, triggerType, runningMode, currentController);
+			int error = TriggerDAQ(daq, triggerType, runningMode, currentController, continueRunning);
 			if (error) throw error;
 		} catch (int e) {
 			std::cout << "Warning in minervadaq::main()!  Cannot trigger the DAQ for Gate = " << gate << 
@@ -1592,7 +1592,7 @@ int TakeData(acquire_data *daq, event_handler *evt, int croc_id, int channel_id,
 
 
 int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes runningMode,
-	controller *tmpController, sig_atomic_t const & continueFlag) 
+	controller *tmpController, sig_atomic_t & continueFlag) 
 {
 /*! \fn int TriggerDAQ(acquire_data *data, unsigned short int triggerType)
  *
