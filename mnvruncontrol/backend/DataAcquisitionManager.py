@@ -1713,7 +1713,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			if len(response.sc_board_list) == 0:
 				self.NewAlert(notice="The '%s' node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty..." % response.sender, severity=Alert.WARNING)
 			
-			voltage_list = "  voltage deviations & HV periods of PMTs attached to the '%s' node:\ncroc-channel-board: HV dev, HV period\n=====================================\n" % response.sender
+			voltage_list = "  voltage deviations & HV periods of PMTs attached to the '%s' node:\ncroc-chain-board: HV dev, HV period\n=====================================\n" % response.sender
 			for board in response.sc_board_list:
 				board["node"] = response.sender
 				voltage_list += "%d-%d-%d: %5d, %5d\n" % (board["croc"], board["chain"], board["board"], board["hv_deviation"], board["period"])
