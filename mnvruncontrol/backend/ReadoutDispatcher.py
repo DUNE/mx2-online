@@ -306,6 +306,8 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 			return True
 
 		self.logger.info("Client wants the light injection system configured as follows:\n  LI level: %s\n  LED groups enabled: %s", li_level, led_groups)
+		if self.li_box.disable:
+		    self.logger.warning("The LI box is currently disabled!  No configuration will actually be done...")
 
 		self.li_box.LED_groups = led_groups.description
 
