@@ -1696,6 +1696,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		thresholds = sorted(Configuration.params["mstr_HVthresholds"].keys(), reverse=True)
 
+		responses = []
 		try:		
 			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
