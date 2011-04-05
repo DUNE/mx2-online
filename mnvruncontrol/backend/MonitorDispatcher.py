@@ -14,6 +14,7 @@ import subprocess
 import threading
 import signal
 import shutil
+import shlex
 import fcntl
 import time
 import sys
@@ -404,7 +405,12 @@ class OMThread(threading.Thread):
 				try:
 					starttime = time.time()
 
-					self.process = subprocess.Popen(self.command.split(), shell=False, env=os.environ, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
+					self.process = subprocess.Popen(shlex.split(self.command),
+						shell=False,
+						close_fds=True,
+						env=os.environ,
+						stdout=fileobj.fileno(),
+						stderr=subprocess.STDOUT)
 					self.pid = self.process.pid		# less typing.
 
 					# now wait until it finishes.

@@ -201,7 +201,11 @@ class DAQThread(threading.Thread):
 		filename = "%s/%s.log" % (Configuration.params["mtest_logfileLocation"], self.processname)
 		with open(filename, "w") as fileobj:
 			# start the process
-			self.process = subprocess.Popen(self.command.split(), shell=False, stdout=fileobj.fileno(), stderr=subprocess.STDOUT)
+			self.process = subprocess.Popen(shlex.split(self.command),
+				close_fds=True,
+				shell=False,
+				stdout=fileobj.fileno(),
+				stderr=subprocess.STDOUT)
 			self.pid = self.process.pid		# less typing.
 
 			# now wait until the process finishes

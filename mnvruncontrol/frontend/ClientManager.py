@@ -27,6 +27,7 @@ from wx import xrc
 import sys
 import time
 import copy
+import shlex
 import socket
 import hashlib
 import subprocess
@@ -526,7 +527,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		local_command = "ssh %s -NL %d:localhost:%d %s@%s" % (option_string, remote_port, remote_port, ssh_user, remote_host)
 		
 		for ssh_command in (local_command, remote_command):
-			self.ssh_processes.append(subprocess.Popen(ssh_command.split(), shell=False))
+			self.ssh_processes.append(subprocess.Popen(shlex.split(ssh_command), shell=False, close_fds=True))
 		
 		# give the SSH processes 60 seconds to set up.
 		# normally we won't need all that time, but if

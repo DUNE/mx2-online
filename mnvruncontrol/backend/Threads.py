@@ -18,6 +18,7 @@
 import os
 import re
 import time
+import shlex
 import socket
 import select
 import fcntl
@@ -68,7 +69,11 @@ class DAQthread(threading.Thread):
 	
 	def run(self):
 		''' The stuff to do while this thread is going.  Overridden from threading.Thread. '''
-		self.process = subprocess.Popen(self.command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=self.environment)
+		self.process = subprocess.Popen(shlex.split(self.command),
+			close_fds=True,
+			stdout=subprocess.PIPE,
+			stderr=subprocess.STDOUT,
+			env=self.environment)
 		self.pid = self.process.pid
 
 		while self.process.poll() is None:

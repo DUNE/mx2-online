@@ -19,6 +19,7 @@
 """
 import subprocess
 import threading
+import shlex
 import time
 import copy
 import sys
@@ -229,7 +230,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 				          "-g",  str(configuration.num_gates),
 				          "-m",  str(configuration.run_mode.hash),
 				          "-r",  str(configuration.run),
-					     "-s",  str(configuration.subrun),
+					      "-s",  str(configuration.subrun),
 				          "-d",  str(configuration.detector.hash),
 				          "-dc", str(configuration.num_febs),
 				          "-ll", str(configuration.li_level.hash),
@@ -419,7 +420,11 @@ class DAQThread(threading.Thread):
 			# we only keep one copy because it will be rare that anyone is interested.
 			filename = "%s/minervadaq.log" % Configuration.params["read_logfileLocation"]
 			with open(filename, "w") as logfile:
-				self.daq_process = subprocess.Popen(self.daq_command, env=environment, stdout=logfile.fileno(), stderr=subprocess.STDOUT)
+				self.daq_process = subprocess.Popen(shlex.split(self.daq_command),
+					close_fds=True,
+					env=environment,
+					stdout=logfile.fileno(),
+					stderr=subprocess.STDOUT)
 				self.pid = self.daq_process.pid		# less typing.
 
 				self.logger.info("   ==>  Process id: " + str(self.pid) + ".")

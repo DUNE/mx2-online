@@ -20,6 +20,7 @@ import os
 import sys
 import time
 import copy
+import shlex
 import logging
 import socket
 import pprint
@@ -39,8 +40,7 @@ from mnvruncontrol.backend import Alert
 from mnvruncontrol.backend import RemoteNode		# needed for 'status' enumeration
 
 ver = "$Name:  $".split("Name: ")[1]
-ver = ver.replace("$", "").rstrip(" ")
-VERSION = ver
+VERSION = ver.replace("$", "").rstrip(" ")
 
 #########################################################
 #   MainApp
@@ -1506,7 +1506,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		local_command = "ssh %s -NL %d:localhost:%d %s@%s" % (option_string, remote_port, remote_port, ssh_user, remote_host)
 		
 		for ssh_command in (local_command, remote_command):
-			self.ssh_processes.append(subprocess.Popen(ssh_command.split(), shell=False))
+			self.ssh_processes.append(subprocess.Popen(shlex.split(ssh_command), shell=False, close_fds=True))
 			self.logger.info("Trying to establish SSH tunnel using command '%s' (PID: %d)", ssh_command, self.ssh_processes[-1].pid)
 		
 		# give the SSH processes 60 seconds to set up.
