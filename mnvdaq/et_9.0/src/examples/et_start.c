@@ -28,13 +28,16 @@
 #include <time.h>
 #include "et.h"
 
-/* used by the signal handler */
-sig_atomic_t time_to_quit = 0;
+/* signal handler stuff */
+sig_atomic_t quit_now = 0;
+sig_atomic_t parent_detached = 0;
 
-void quit_signal_handler(int signum);
+void term_signal_handler(int signum);
+void hup_signal_handler(int signum);
 
 void flush_and_exit(int code);
 
+/* now the main body */
 int main(int argc, char **argv)
 {  
   int           c;
@@ -250,9 +253,18 @@ int main(int argc, char **argv)
     printf("et_start: couldn't unblock SIGINT and SIGTERM (pthread_sigmask failure)\n");
     flush_and_exit(1);
   }
-  /* set the signal handler */
-  signal(SIGINT,  quit_signal_handler);
-  signal(SIGTERM, quit_signal_handler);
+  /* ... and do the same for SIGHUP */
+  sigemptyset(&sighandleset);
+  sigaddset(&sighandleset, SIGHUP);
+  status = pthread_sigmask(SIG_UNBLOCK, &sighandleset, NULL);
+  if (status != 0) {
+    printf("et_start: couldn't unblock SIGHUP (pthread_sigmask failure)\n");
+    flush_and_exit(1);
+  }
+  /* set the signal handlers */
+  signal(SIGINT,  term_signal_handler);
+  signal(SIGTERM, term_signal_handler);
+  signal(SIGHUP,  hup_signal_handler);
   
   /*************************/
   /*    start ET system    */
@@ -286,9 +298,9 @@ int main(int argc, char **argv)
      once the station count has gone above 0,
      we exit as soon as all stations have detached. */
   sleeptime.tv_sec = 0;
-  sleeptime.tv_nsec = 1000000;	/* 10 ms */
+  sleeptime.tv_nsec = 1000000;	/* 1 ms */
   int nattachments;
-  while ( ! time_to_quit )
+  while ( ! quit_now )
   {
      /* don't busy-wait. */
      nanosleep(&sleeptime, (struct timespec *)NULL);
@@ -303,7 +315,7 @@ int main(int argc, char **argv)
      if (status != ET_OK)
      {
        printf("et_start: error monitoring attachment count (errno: %d)!  quitting.\n", status);
-       time_to_quit = 1;
+       quit_now = 1;
      }
      
      if ( !had_attachments && nattachments > 0 )
@@ -313,8 +325,14 @@ int main(int argc, char **argv)
         then it's time to close down the system. */
      if ( had_attachments && nattachments == 0 )
      {
-       time_to_quit = 1;
+       quit_now = 1;
        printf("All stations detached.  System will close.\n");
+     }
+     
+     if ( nattachments == 0 && parent_detached )
+     {
+       quit_now = 1;
+       printf("Parent process detached and no attachments to station.  System will close.\n");
      }
   }
   
@@ -326,17 +344,29 @@ int main(int argc, char **argv)
 }
 
 /* this function is intended to be the signal handler
-   for SIGINT and SIGTERM.  all it does is set time_to_quit
+   for SIGINT and SIGTERM.  all it does is set quit_now
    to 1, which will cause the main program to shut down
    gracefully. */
-   
-void quit_signal_handler(int signum)
+void term_signal_handler(int signum)
 {
 	printf("Received SIGTERM or SIGINT.\n");
-	time_to_quit = 1;
+	quit_now = 1;
 	
 	/* don't bother resetting the signal handler.
 	   we don't need to call this function more than once. */
+}
+
+/* this function is intended to be the signal handler
+   for SIGHUP.  it is similarly simple: its flag is
+   parent_detached, which will cause an exit if there
+   are currently no ET attachments, and won't do anything
+   if the attachment count is > 0. */
+void hup_signal_handler(int signum)
+{
+	printf("Recieved SIGHUP.\n");
+	parent_detached = 1;
+	/* again we don't bother resetting the signal handler
+	   since a second SIGHUP is meaningless. */
 }
 
 /* this function flushes all buffers before exiting
