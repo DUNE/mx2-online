@@ -206,13 +206,14 @@ class DAQThread(threading.Thread):
 			self.process = subprocess.Popen(shlex.split(str(self.command)),
 				close_fds=True,
 				shell=False,
-				stdout=fileobj.fileno(),
+				stdout=subprocess.PIPE,
 				stderr=subprocess.STDOUT)
 			self.pid = self.process.pid		# less typing.
 
 			# now wait until the process finishes
-			# (wait() returns the process's return code)
-			self.returncode = self.process.wait()
+			# and write its output to the log file
+			output, discarded = self.process.communicate()
+			fileobj.write(output)
 		
                         
 ####################################################################

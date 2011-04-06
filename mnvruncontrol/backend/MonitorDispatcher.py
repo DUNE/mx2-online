@@ -410,12 +410,13 @@ class OMThread(threading.Thread):
 						shell=False,
 						close_fds=True,
 						env=os.environ,
-						stdout=fileobj.fileno(),
+						stdout=subprocess.PIPE,
 						stderr=subprocess.STDOUT)
 					self.pid = self.process.pid		# less typing.
 
-					# now wait until it finishes.
-					self.returncode = self.process.wait()
+					# now wait until it finishes, then write its output to the file.
+					output, discarded = self.process.communicate()
+					fileobj.write(output)
 
 					# calculate how long the job took.
 					# if it was too short, we'll email the notify addresses below.
