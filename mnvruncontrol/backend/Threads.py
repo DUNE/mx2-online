@@ -97,6 +97,7 @@ class DAQthread(threading.Thread):
 			self.output_history = self.output_history[-2000:]	# trim to 2000 characters
 					
 		# do one final read to clean up anything left in the pipe.
+#		print "last read!"
 		newdata = self.read()
 		if self.relay_output:
 			if len(newdata) > 0:
@@ -113,6 +114,8 @@ class DAQthread(threading.Thread):
 		# non-zero return value, however.
 		if self.is_essential_service and not self.time_to_quit and self.process.returncode != 0:
 			self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="series_end", early_abort=True, lost_process=self.process_identity, output_history=self.output_history) )
+#		else:
+#			print "Process '%s' ended.\n"
 			
 			
 	def read(self, want_cleanup_read = False):
@@ -153,6 +156,8 @@ class DAQthread(threading.Thread):
 				break
 			
 			data += newdata
+		
+#		print "from process '%s': %s" % (self.process_identity, data)
 		
 		return data
 	

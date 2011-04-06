@@ -415,65 +415,64 @@ class DAQThread(threading.Thread):
 		self.start()		# inherited from threading.Thread.  starts run() in a separate thread.
 		
 	def run(self):
-		try:
-			# note that shlex.split doesn't understand Unicode...
-			self.daq_process = subprocess.Popen(shlex.split(str(self.daq_command)),
-				close_fds=True,
-				env=environment)
-			self.pid = self.daq_process.pid		# less typing.
+		# note that shlex.split doesn't understand Unicode...
+		self.daq_process = subprocess.Popen(self.daq_command,
+			close_fds=True,
+			env=environment)
+		self.pid = self.daq_process.pid		# less typing.
 
-			self.logger.info("   ==>  Process id: " + str(self.pid) + ".")
+		self.logger.info("   ==>  Process id: " + str(self.pid) + ".")
+		
+		# how often to check, and how many times to check at that frequency
+		# (we do some throttling to keep the disk wear down)
+		# { frequency (in seconds): count, frequency: count, ... }
+		check_count_max = {0.1: 20, 1: 5, 5: 25, 15: None}
+		check_frequencies = sorted(check_count_max.keys())
+		check_counts = {0.1: 0, 1: 0, 5: 0}
+		check_frequency = 0.1
+
+		self.trigger_file_last_look = 0
+		
+		# check the 'last trigger' file every so often
+		while self.daq_process.poll() is None:
+			# don't busy-wait
+			time.sleep(0.1)
+
+			if time.time() - self.trigger_file_last_look < check_frequency:
+				continue
 			
-			# how often to check, and how many times to check at that frequency
-			# (we do some throttling to keep the disk wear down)
-			# { frequency (in seconds): count, frequency: count, ... }
-			check_count_max = {0.1: 20, 1: 5, 5: 25, 15: None}
-			check_frequencies = sorted(check_count_max.keys())
-			check_counts = {0.1: 0, 1: 0, 5: 0}
-			check_frequency = 0.1
+			stats = None
+			try:
+				stats = os.stat(Configuration.params["read_lastTriggerFile"])
+			except OSError:
+				pass
+			finally:
+				# if the file has been modified since the last look, report a new gate.
+				# but we want to make sure we throttle the updates a bit so that we don't
+				# overwhelm the receiving end, so we make sure we leave at least 0.5s
+				# between updates.
+				if stats is not None and stats.st_mtime - self.trigger_file_last_look > 0.5:
+					# reset the counter to the fastest check frequency
+					# since we know some activity has been happening
+					check_frequency = check_frequencies[0]
+					check_counts[check_frequency] = 0
 
-			self.trigger_file_last_look = 0
-			
-			# check the 'last trigger' file every so often
-			while self.daq_process.poll() is None:
-				# don't busy-wait
-				time.sleep(0.1)
-
-				if time.time() - self.trigger_file_last_look < check_frequency:
-					continue
-				
-				stats = None
-				try:
-					stats = os.stat(Configuration.params["read_lastTriggerFile"])
-				except OSError:
-					pass
-				finally:
-					# if the file has been modified since the last look, report a new gate.
-					# but we want to make sure we throttle the updates a bit so that we don't
-					# overwhelm the receiving end, so we make sure we leave at least 0.5s
-					# between updates.
-					if stats is not None and stats.st_mtime - self.trigger_file_last_look > 0.5:
-						# reset the counter to the fastest check frequency
-						# since we know some activity has been happening
-						check_frequency = check_frequencies[0]
+					self.ReportNewGate(stats.st_mtime)
+				elif check_frequencies.index(check_frequency) < len(check_frequencies) - 1:
+					if check_counts[check_frequency] <= check_count_max[check_frequency]:
+						check_counts[check_frequency] += 1
+					# if it hasn't been modified, and we've looked the maximum number of times
+					# at this frequency, move to the next one.  
+					else:
+						check_frequency = check_frequencies[check_frequencies.index(check_frequency) + 1]
 						check_counts[check_frequency] = 0
+		
+		# last 'cleanup' read
+		self.ReportNewGate(time.time())
+		
+		self.returncode = self.daq_process.returncode
 
-						self.ReportNewGate(stats.st_mtime)
-					elif check_frequencies.index(check_frequency) < len(check_frequencies) - 1:
-						if check_counts[check_frequency] <= check_count_max[check_frequency]:
-							check_counts[check_frequency] += 1
-						# if it hasn't been modified, and we've looked the maximum number of times
-						# at this frequency, move to the next one.  
-						else:
-							check_frequency = check_frequencies[check_frequencies.index(check_frequency) + 1]
-							check_counts[check_frequency] = 0
-			
-			# last 'cleanup' read
-			self.ReportNewGate(time.time())
-			
-			self.returncode = self.daq_process.returncode
-	
-			self.logger.info("DAQ subprocess finished.  Check its logfile for more details.")
+		self.logger.info("DAQ subprocess finished.  Check its logfile for more details.")
 		
 		# "sentinel-indicating" return codes are 2 & 3.
 		# anything else indicates an error
