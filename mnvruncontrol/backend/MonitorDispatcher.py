@@ -405,7 +405,8 @@ class OMThread(threading.Thread):
 				try:
 					starttime = time.time()
 
-					self.process = subprocess.Popen(shlex.split(self.command),
+					# note that shlex.split doesn't understand Unicode...
+					self.process = subprocess.Popen(shlex.split(str(self.command)),
 						shell=False,
 						close_fds=True,
 						env=os.environ,

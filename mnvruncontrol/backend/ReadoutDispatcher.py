@@ -420,7 +420,8 @@ class DAQThread(threading.Thread):
 			# we only keep one copy because it will be rare that anyone is interested.
 			filename = "%s/minervadaq.log" % Configuration.params["read_logfileLocation"]
 			with open(filename, "w") as logfile:
-				self.daq_process = subprocess.Popen(shlex.split(self.daq_command),
+				# note that shlex.split doesn't understand Unicode...
+				self.daq_process = subprocess.Popen(shlex.split(str(self.daq_command)),
 					close_fds=True,
 					env=environment,
 					stdout=logfile.fileno(),

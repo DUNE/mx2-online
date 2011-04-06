@@ -12,6 +12,7 @@
 import subprocess
 import threading
 import signal
+import shlex
 import time
 import sys
 import os
@@ -201,7 +202,8 @@ class DAQThread(threading.Thread):
 		filename = "%s/%s.log" % (Configuration.params["mtest_logfileLocation"], self.processname)
 		with open(filename, "w") as fileobj:
 			# start the process
-			self.process = subprocess.Popen(shlex.split(self.command),
+			# note that shlex.split doesn't understand Unicode...
+			self.process = subprocess.Popen(shlex.split(str(self.command)),
 				close_fds=True,
 				shell=False,
 				stdout=fileobj.fileno(),

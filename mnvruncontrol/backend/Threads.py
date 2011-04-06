@@ -69,7 +69,8 @@ class DAQthread(threading.Thread):
 	
 	def run(self):
 		''' The stuff to do while this thread is going.  Overridden from threading.Thread. '''
-		self.process = subprocess.Popen(shlex.split(self.command),
+		# note that shlex.split doesn't understand Unicode...
+		self.process = subprocess.Popen(shlex.split(str(self.command)),
 			close_fds=True,
 			stdout=subprocess.PIPE,
 			stderr=subprocess.STDOUT,
