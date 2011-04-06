@@ -114,7 +114,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		                       { "method": self.StartEBSvc,          "message": "Starting event builder..." },
 		                       { "method": self.StartOM,             "message": "Starting online monitoring..." },
 #		                       { "method": self.StartETMon,          "message": "Starting ET monitor..." },
-		                       { "method": self.StartRemoteServices, "message": "Starting remote services..."} ]
+		                       { "method": self.StartRemoteServices, "message": "Starting remote services..."},
+		                      ]
 
 		# will be filled by the session creator.
 		self.remote_nodes = {}
@@ -1141,9 +1142,14 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 			thread = self.DAQ_threads[threadname]
 			
-			# the ET system process stops on its own.  just cut off its display feed.
-			# we also don't want a notification if it crashes now...
+			# the ET system process stops on its own, usually,
+			# but it needs to know that we are detaching here
+			# in case it has no other attachments -- hence the SIGHUP.
+			# (in that case it will stop immediately.)
+			# we also cut off its display feed and silence
+			# any warnings about it closing down.
 			if threadname == "et system":
+				os.kill(thread.process.pid, signal.SIGHUP)
 				thread.relay_output = False
 				thread.is_essential_service = False
 
