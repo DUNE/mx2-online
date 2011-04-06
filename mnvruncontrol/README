@@ -1,9 +1,9 @@
 mnvruncontrol -- the MINERvA run control
-========================================
-  Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v5r4  (January 2011)
-  Last update:      January 21, 2011
-========================================
+==================================================================
+  Original author:               J. Wolcott  (jwolcott@fnal.gov)
+  Last revision:                 v5r4p3  (April 2011)
+  Last update to this document:  April 6, 2011
+==================================================================
 
 This document briefly describes the configuration and usage of the MINERvA run
 control software contained in this package.  More extensive documentation on
@@ -25,7 +25,7 @@ Contents:
     >= 2.6.2 (but it isn't Python-3.0 compatible).  If you need to install
     Python, visit www.python.org.
   
-  * wxPython >= 2.8.10
+  * wxPython >= 2.8.10 (for front-end components)
     The graphical framework of mnvruncontrol (and some of its event model)
     depends heavily on the Python implementation of wxWidgets.  You can get
     wxPython from www.wxpython.org.
@@ -77,11 +77,11 @@ Contents:
     For your sanity I recommend either option (a) or (b).
     
   * The DataAcquisitionManager, ReadoutDispatcher, and MonitorDispatcher all
-    depend on the DAQ, so they expects a certain set of parameters set by the
+    depend on the DAQ, so they expect a certain set of parameters set by the
     DAQ to be in their environment ($DAQROOT, $ETHOME, etc.) when started.  
     This environment can be obtained by sourcing the script 'setupdaqenv.sh',
     which lives in the mnvdaq package.  You should do this before starting any
-    of these dispatchers, or they will complain.
+    of these dispatchers, or they will complain vociferously.
   
   * Most other configuration of the run control can be done through the program
     RunControlConfiguration.py, which lives in mnvruncontrol/frontend.  You
@@ -95,13 +95,13 @@ Contents:
     backend, which is run on the master DAQ machine (the "queen" node, in multi-
     node readout, or of course the only node in single-node mode).  This process
     oversees the activity of the DAQ itself and should rarely (if ever) need to
-    be directly manipulated.  In turn, each remote node--whether it supports a
-    readout process (the "soldier" and "worker" DAQ nodes), an online monitoring
-    system, or something else--runs a so-called "dispatcher" customized for its
-    job that communicates with the main server described above.  (Hereafter I
-    will refer to the main server as the "DAQ manager.")  Again, this activity
-    is intended to be automatic and should need little (if any) user
-    intervention.
+    be directly manipulated once started.  In turn, each remote node--whether it
+    supports a readout process (the "soldier" and "worker" DAQ nodes), an online
+    monitoring system, or something else--runs a so-called "dispatcher"
+    customized for its job that communicates with the main server described
+    above.  (Hereafter I will refer to the main server as the "DAQ manager.")
+    Again, this activity is intended to be automatic and should need little (if
+    any) user intervention once the dispatcher has been started.
     
     The "client" for all of this is the graphical run control frontend.  It
     connects to the DAQ manager over a network socket to give it what
@@ -126,7 +126,10 @@ Contents:
     a way that the error wasn't caught; in these cases, a "traceback" will be
     printed out to the console from which the RC was started.  Including the
     traceback in any communication to the maintainer of the code is EXTREMELY
-    helpful and is requested as a matter of practice.
+    helpful and is requested as a matter of practice.  The dispatchers also
+    maintain log files (the location of which is completely configurable); an
+    expert wishing to diagnose some failure should be sure to examine them as
+    a first point of entry.
 
 4. HACKING
   For more detailed notes about the guts of the run control, consult the file

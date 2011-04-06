@@ -1,9 +1,9 @@
 mnvruncontrol -- the MINERvA run control
-===================================================
-  Original author:  J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:    v5r4  (January 2011)
-  Last update:      January 25, 2011
-===================================================
+==================================================================
+  Original author:               J. Wolcott  (jwolcott@fnal.gov)
+  Last revision:                 v5r4p3  (April 2011)
+  Last update to this document:  January 25, 2011
+==================================================================
 
 This document briefly summarizes the changes from version to version
 of the MINERvA run control software.  I didn't think to start it
