@@ -117,7 +117,7 @@ fi
 # uroc.fis.utfsm.cl - UROC at USM (Chile)
 # uroc.wm.edu - UROC at William & Mary
 
-if [ "$HOSTNAME" == "minerva-rc.fnal.gov" -o "$HOSTNAME" == "ksmcf-cart.pas.rochester.edu" -o "$HOSTNAME" == "uroc.phy.tufts.edu" -o "$HOSTNAME" == "uroc.hep.utexas.edu" -o "$HOSTNAME" == "uroc.fis.utfsm.cl" -o "$HOSTNAME" == "uroc.wm.edu"  ]; then
+if [ "$HOSTNAME" == "minerva-rc.fnal.gov" -o "$HOSTNAME" == "ksmcf-cart.pas.rochester.edu" -o "$HOSTNAME" == "uroc.phy.tufts.edu" -o "$HOSTNAME" == "uroc.hep.utexas.edu" -o "$HOSTNAME" == "uroc.fis.utfsm.cl" -o "$HOSTNAME" == "uroc.wm.edu" -o "$HOSTNAME" == "uroc.d.umn.edu" ]; then
 	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
 	ln -sf $HOME/mnvdaqrunscripts/check_daq_rc.sh $HOME/check_daq_rc.sh
 	ln -sf $HOME/mnvdaqrunscripts/whcr_configure_runcontrol.sh $HOME/configure_runcontrol.sh
