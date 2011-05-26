@@ -216,13 +216,20 @@ void acquire_data::InitializeCrim(int address, int index, RunningModes runningMo
         // if we decide we need it (as a reminder).  
 	switch (runningMode) {
 		// "OneShot" is the casual name for CRIM internal timing with software gates.
+		// We can use MTM mode though and prefer to when an MTM is available. This 
+		// removes the need to switch clock modes for pure pedestal. We keep the name
+		// "OneShot" for historical reasons no matter the clock mode.
 		case OneShot:
 			std::cout << " Running Mode is OneShot." << std::endl;
 			acqData.infoStream() << " Running Mode is OneShot.";
 			GateWidth    = 0x7F;
 			TCALBDelay   = 0x3FF;
 			Frequency    = ZeroFreq;
+			TimingMode   = MTM;
+#if NOMTMPEDESTAL 
 			TimingMode   = crimInternal; 
+#endif
+			acqData.infoStream() << "  Clock Mode is " << TimingMode;
 			TCALBEnable  = 0x1;
 			break;
 		// All of the NuMI and dedicated LI modes use MTM timing.  
