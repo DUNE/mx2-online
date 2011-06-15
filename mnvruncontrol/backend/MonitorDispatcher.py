@@ -99,8 +99,16 @@ class MonitorDispatcher(Dispatcher):
 		status_text = p.stdout.read()
 		return_code = p.wait()
 		available_slots = status_text.count("Unclaimed")
-		
+
+		# job status == 1 is an "idle" job.
+		condor_command = "condor_q -constraint \"JobStatus == 1\" -format \"%d \" JobStatus"
+		p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
+		status_text = p.stdout.read()
+		p.wait()
+		idle_job_count = len(status_text.split(" "))
+
 		self.logger.info("Condor reports the following status:\n====================================\n%s", status_text)
+		self.logger.info("Idle jobs: %d", idle_job_count)
 		
 		# in case we need to send mail below
 		sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
@@ -118,24 +126,36 @@ class MonitorDispatcher(Dispatcher):
 		elif available_slots == 0:
 			self.logger.warning("Condor slots are all full!  This job will be queued for processing when a slot becomes available...")
 
-			# job status == 1 is an "idle" job.
-			condor_command = "condor_q -constraint \"JobStatus == 1\" -format \"%d \" JobStatus"
+			condor_command = "condor_q"
 			p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
 			status_text = p.stdout.read()
 			p.wait()
-			idle_job_count = len(status_text.split(" "))
-			
-			# only start sending mail when the threshold is crossed.
-			# maybe the user is ok with a job or two in the backlog.
-			self.logger.info("Idle Condor jobs: %d", idle_job_count)
-			if idle_job_count >= Configuration.params["mon_maxCondorBacklog"]:
-				condor_command = "condor_q"
-				p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
-				status_text = p.stdout.read()
-				p.wait()
 
-				subject = "MINERvA near-online Condor queue is full"
-				messagebody = "The Condor queue on mnvnearline* is full.  The queue currently looks like:\n%s" % status_text
+			subject = "MINERvA near-online Condor queue is full"
+			messagebody = "The Condor queue on mnvnearline* is full.  The queue currently looks like:\n%s" % status_text
+		
+		# only start sending mail when the threshold is crossed.
+		# maybe the user is ok with a job or two in the backlog.
+		elif idle_job_count >= Configuration.params["mon_maxCondorBacklog"]:
+			self.logger.warning("There are %d jobs sitting idle in the Condor queue...", idle_job_count)
+
+			# idle jobs
+			condor_command = "condor_q -constraint \"JobStatus == 1\""
+			p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
+			status_text = p.stdout.read()
+			p.wait()
+			
+			# why the idle jobs are idle
+			condor_command = "condor_q -constraint \"JobStatus == 1\" -better-analyze"
+			p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
+			details_text = p.stdout.read()
+			p.wait()
+			
+
+			subject = "MINERvA near-online Condor queue has %d idle jobs" % idle_job_count
+			messagebody = "The Condor queue on mnvnearline* has %d idle jobs in its queue.  The idle jobs are:\n%s" % (idle_job_count, status_text)
+			messagebody += "\n\nCondor explains their status as follows:\n%s" % details_text
+			
 		
 		# if Condor has gone down, send a notification
 		if not use_condor and self.use_condor:
@@ -146,7 +166,7 @@ class MonitorDispatcher(Dispatcher):
 			messagebody = "The mnvnearline* Condor queue has returned to normal working order." 			
 
 		if subject is not None and messagebody is not None:
-			self.logger.info("Sending mail to notification addresses.")
+			self.logger.info("Sending mail to notification addresses: %s", Configuration.params["gen_notifyAddresses"])
 			MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
 
 		self.use_condor = use_condor
