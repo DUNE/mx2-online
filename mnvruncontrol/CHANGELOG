@@ -1,13 +1,17 @@
 mnvruncontrol -- the MINERvA run control
 ==================================================================
   Original author:               J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:                 v5r4p3  (April 2011)
-  Last update to this document:  January 25, 2011
+  Last revision:                 v5r5  (June 2011)
+  Last update to this document:  June 16, 2011
 ==================================================================
 
 This document briefly summarizes the changes from version to version
 of the MINERvA run control software.  I didn't think to start it
 until most of the way through v4, so it's a bit skimpy below there...
+v5r5    - Location, phone # now added to info collected from user before
+          connection to DAQ (and presented when in control/making a
+          control request).
+        - See Redmine for bugfixes.
 
 v5r4    - Added README.CONFIGURATION for how to use RunControlConfiguration.py.
         - Change to control transfer architecture: if client A currently has
