@@ -472,11 +472,18 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    has been acknowledged (when the button
 		    is clicked). """
 
-		alert_id = self.current_alert.id		    
-		self.current_alert = None
-
 		# restore the previous window state
 		self.RestorePanelState()
+
+		if self.current_alert is None:
+			self.ShowPanel("notebook")
+			self.logger.warning("Alert acknowledged with no current alert??")
+			print evt
+			print "Alert acknowledged with no current alert??"
+			return
+
+		alert_id = self.current_alert.id		    
+		self.current_alert = None
 		
 		# save this until last because it might have
 		# another alert waiting.  we want to be set
@@ -696,18 +703,26 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		self.ConfigControlsEnable()
 		
-		# we are starting fresh here, so don't bother
-		# restoring the panel history (or saving where it's at now)
+		# we are starting fresh here, so erase the panel history 
+		# and alert status, and show the normal front panels
+		# (we'll re-impose the alert status if necessary
+		#  after we re-draw)
+		tmp_alert = self.current_alert
+		self.current_alert = None
 		self.ShowPanel("notebook")
 		self.ShowPanel("summary_info_panel")
+		for collection in self.panel_stack:
+			self.panel_stack[collection] = []
 
-		# erase any alerts (start fresh)
-		self.current_alert = None
-		
 		# if the PMT high voltages are still awaiting confirmation,
 		# send out a new event
 		if self.problem_pmt_list is not None:
 			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=self.problem_pmt_list, warning=True) )
+		
+		# re-raise the alert if there was one
+		if tmp_alert is not None:
+			self.logger.debug("Re-raising alert: %s", tmp_alert)
+			wx.PostEvent( self, Events.AlertEvent(alert=tmp_alert) )
 		
 		self.Redraw()
 
@@ -1290,7 +1305,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		""" Show a particular panel and (optionally)
 		    save the state using SavePanelState. """
 		
-		self.logger.debug("Showing panel: %s", panel_in)
+		self.logger.debug("Showing panel: '%s'", panel_in)
 		
 		# if it's not a panel object, then maybe it's an XRC ID...
 		if isinstance(panel_in, wx.Window):
