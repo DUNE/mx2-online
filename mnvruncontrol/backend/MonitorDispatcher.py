@@ -114,6 +114,7 @@ class MonitorDispatcher(Dispatcher):
 		sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
 		subject = None
 		messagebody = None
+		force_notify = False
 		
 		if return_code != 0:
 			self.logger.warning("Condor status query returned non-zero exit code (code: %d)!  Falling back to unmonitored job submission...", return_code)
@@ -133,6 +134,8 @@ class MonitorDispatcher(Dispatcher):
 
 			subject = "MINERvA near-online Condor queue is full"
 			messagebody = "The Condor queue on mnvnearline* is full.  The queue currently looks like:\n%s" % status_text
+			
+			force_notify = True
 		
 		# only start sending mail when the threshold is crossed.
 		# maybe the user is ok with a job or two in the backlog.
@@ -156,6 +159,8 @@ class MonitorDispatcher(Dispatcher):
 			messagebody = "The Condor queue on mnvnearline* has %d idle jobs in its queue.  The idle jobs are:\n%s" % (idle_job_count, status_text)
 			messagebody += "\n\nCondor explains their status as follows:\n%s" % details_text
 			
+			force_notify = True
+			
 		
 		# if Condor has gone down, send a notification
 		if not use_condor and self.use_condor:
@@ -164,6 +169,9 @@ class MonitorDispatcher(Dispatcher):
 		elif use_condor and not self.use_condor:
 			subject = "MINERvA near-online Condor is back up"
 			messagebody = "The mnvnearline* Condor queue has returned to normal working order." 			
+		# under certain circumstances we want to notify every time we check
+		elif not force_notify:
+			subject = messagebody = None
 
 		if subject is not None and messagebody is not None:
 			self.logger.info("Sending mail to notification addresses: %s", Configuration.params["gen_notifyAddresses"])
