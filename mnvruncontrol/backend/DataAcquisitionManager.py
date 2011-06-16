@@ -1581,18 +1581,18 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			responses = self.NodeSendWithResponse(message, node_type=RemoteNode.MONITORING, timeout=10)
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the monitoring node(s) has become unresponsive.  Check the logs for more details.  The run will be allowed to continue, but you will not have online monitoring...", severity=Alert.ERROR)
+		else:
+			for response in responses:
+				if response.subject == "invalid_request" \
+				  or response.success == False:
+					self.NewAlert(notice="Couldn't start the '%s' online monitoring node.  The run will be allowed to continue, but you will not have online monitoring..." % response.sender, severity=Alert.ERROR)
+				elif isinstance(response.success, Exception):
+					self.NewAlert(notice="Error starting the '%s' online monitoring node.  Error message text:\n%s\nThe run will be allowed to continue, but you will not have online monitoring..." % (response.sender, response.success), severity=Alert.ERROR)
+				else:
+					self.remote_nodes[response.sender].status = RemoteNode.OK
+					self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
 
-		for response in responses:
-			if response.subject == "invalid_request" \
-			  or response.success == False:
-				self.NewAlert(notice="Couldn't start the '%s' online monitoring node.  The run will be allowed to continue, but you will not have online monitoring..." % response.sender, severity=Alert.ERROR)
-			elif isinstance(response.success, Exception):
-				self.NewAlert(notice="Error starting the '%s' online monitoring node.  Error message text:\n%s\nThe run will be allowed to continue, but you will not have online monitoring..." % (response.sender, response.success), severity=Alert.ERROR)
-			else:
-				self.remote_nodes[response.sender].status = RemoteNode.OK
-				self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
-
-				self.logger.info("    ... '%s' node started.", response.sender)
+					self.logger.info("    ... '%s' node started.", response.sender)
 		
 		os.kill(os.getpid(), signal.SIGUSR1)
 
