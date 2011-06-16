@@ -367,14 +367,17 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		else:
 			response_msg.subject = "request_response"
 			if message.request == "get":
-				if not ( hasattr(message, "requester_name") and hasattr(message, "requester_location") ):
+				if not ( hasattr(message, "requester_name") and hasattr(message, "requester_ip")
+				         and hasattr(message, "location") and hasattr(message, "phone") ):
 					response_msg.subject = "invalid_request"
 				# nobody's currently in control
 				elif self.control_info is None:
-					self.logger.info("Granted control to client %s (reporting identity '%s') located at %s.", message.requester_id, message.requester_name, message.requester_location)
+					self.logger.info("Granted control to client %s (reporting identity '%s') located at %s.", message.requester_id, message.requester_name, message.requester_ip)
 					self.control_info = { "client_id": message.requester_id,
 					                      "client_identity": message.requester_name,
-					                      "client_location": message.requester_location }
+					                      "client_ip": message.requester_ip,
+					                      "client_location": message.requester_location,
+					                      "client_phone": message.requester_phone }
 					response_msg.success = True
 				elif message.requester_id == self.control_info["client_id"]:
 					self.logger.info("Client %s is already in control.  No action taken." % message.requester_id)
@@ -391,13 +394,18 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					self.logger.info(msg)
 					self.control_pending = { "client_id": message.requester_id,
 					                         "client_identity": message.requester_name,
-					                         "client_location": message.requester_location }
+					                         "client_ip": message.requester_ip,
+					                         "client_location": message.requester_location,
+					                         "client_phone": message.requester_phone }
 					response_msg.success = None
 					
 					# send out message soliciting objections if there are any
 					self.postoffice.Send( PostOffice.Message(subject="frontend_info",
 					                                         info="control_transfer_proposal",
-					                                         who={"identity": message.requester_name, "location": message.requester_location }) )
+					                                         who={"identity": message.requester_name, 
+					                                              "ip": message.requester_ip,
+					                                              "location": message.requester_location,
+					                                              "phone": message.requester_phone }) )
 					
 					# set up a timer to check after the appropriate interval
 					self.transfer_timer = threading.Timer(Configuration.params["mstr_controlXferWait"],

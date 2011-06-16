@@ -133,10 +133,11 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		# try to figure out what my externally-visible IP address is
 		try:
-			self.ip_addr = urllib2.urlopen("http://www.whatismyip.com/automation/n09230945.asp").read()
+			self.ip_addr = urllib2.urlopen("http://automation.whatismyip.com/n09230945.asp").read()
+			xrc.XRCCTRL(self.frame, "main_statusbar").SetStatusText( "Running from IP: " + self.ip_addr)
 		except urllib2.URLError:
-			self.ip_addr = None
-
+			self.logger.exception("Couldn't guess IP address...")
+			self.ip_addr = "??"
 
 		# make sure the controls are set up as we expect
 		self.ConfigControlsEnable()
@@ -311,7 +312,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		elif message.info == "roll_call":
 			response = message.ResponseMessage("request_response")
 			response.my_info = { "client_id": self.id,
-			                     "client_location":  self.ip_addr,
+			                     "client_ip":  self.ip_addr,
 			                     "client_identity":  self.identity }
 			self.postoffice.Send(response)
 
@@ -413,7 +414,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		about_info.SetDescription(u"The MINER\u03bdA Run Control provides a user-friendly interface to the DAQ software.  It starts & stops the DAQ and provides means for automating its running with run series.")
 		about_info.AddDeveloper("Jeremy Wolcott <jwolcott@fnal.gov>")
 		about_info.AddDeveloper("Aaron Mislivec (run series configurator) <mislivec@pas.rochester.edu>")
-		about_info.SetWebSite( ("http://substitute.pas.rochester.edu/mediawiki/index.php?title=Running_the_DAQ_system", "Online documentation") )
+		about_info.SetWebSite( ("https://cdcvs.fnal.gov/redmine/projects/minerva-ops/wiki/Running_the_DAQ_system", "Online documentation") )
 		about_info.AddDocWriter("Jeremy Wolcott <jwolcott@fnal.gov>")
 		about_info.SetIcon(wx.Icon(Configuration.params["frnt_resourceLocation"]+"/minerva-small.png", wx.BITMAP_TYPE_PNG))
 		
@@ -566,6 +567,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			self.ShowPanel("connection_panel")
 
 			xrc.XRCCTRL(self.frame, "config_connection_identity_entry").Enable()
+			xrc.XRCCTRL(self.frame, "config_connection_location_entry").Enable()
+			xrc.XRCCTRL(self.frame, "config_connection_phone_entry").Enable()
 			xrc.XRCCTRL(self.frame, "config_connection_host_entry").Enable()
 			xrc.XRCCTRL(self.frame, "config_connection_remoteport_entry").Enable()
 			xrc.XRCCTRL(self.frame, "config_connection_usessh_entry").Enable()
@@ -597,12 +600,16 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			connect_button.SetLabel("Cancel connection")
 
 			xrc.XRCCTRL(self.frame, "config_connection_identity_entry").Disable()
+			xrc.XRCCTRL(self.frame, "config_connection_location_entry").Disable()
+			xrc.XRCCTRL(self.frame, "config_connection_phone_entry").Disable()
 			xrc.XRCCTRL(self.frame, "config_connection_host_entry").Disable()
 			xrc.XRCCTRL(self.frame, "config_connection_remoteport_entry").Disable()
 			xrc.XRCCTRL(self.frame, "config_connection_usessh_entry").Disable()
 			xrc.XRCCTRL(self.frame, "config_connection_sshuser_entry").Disable()
 
 			self.identity = xrc.XRCCTRL(self.frame, "config_connection_identity_entry").GetValue()
+			self.location = xrc.XRCCTRL(self.frame, "config_connection_location_entry").GetValue()
+			self.phone = xrc.XRCCTRL(self.frame, "config_connection_phone_entry").GetValue()
 
 			work = { "method": self.ConnectDAQ, "kwargs": self.ssh_details }
 
@@ -648,12 +655,14 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 					self.Redraw()
 					return
 			
-			my_location = socket.gethostbyname(socket.gethostname()) if self.ip_addr is None else self.ip_addr
+			my_ip = socket.gethostbyname(socket.gethostname()) if self.ip_addr is None else self.ip_addr
 				
 			work = { "method": self.GetControl, 
 			         "kwargs": { "my_name": self.identity,
 			                     "my_id": self.id,
-			                     "my_location": my_location } }
+			                     "my_ip": my_ip,
+			                     "my_location": self.location,
+			                     "my_phone": self.phone } }
 		else:
 			work = { "method": self.RelinquishControl, "kwargs": {"my_id": self.id} }
 
@@ -691,7 +700,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				if evt.control_info is None:
 					entry.SetLabel("--")
 				else:
-					entry.SetLabel( "%s\n(%s)" % (evt.control_info["client_identity"], evt.control_info["client_location"]) )
+					entry.SetLabel( "%s\n%s\n%s" % (evt.control_info["client_identity"],
+						evt.control_info["client_location"],
+						evt.control_info["client_phone"]) )
 					
 			if hasattr(evt, "control_denied") and evt.control_denied:
 				dlg = wx.MessageDialog(self.frame,
@@ -733,7 +744,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		if self.in_control:
 			xrc.XRCCTRL(self.ctl_xfer_dlg, "transfer_client_identity").SetLabel(evt.who["identity"])
-			xrc.XRCCTRL(self.ctl_xfer_dlg, "transfer_client_ip").SetLabel(evt.who["location"])
+			xrc.XRCCTRL(self.ctl_xfer_dlg, "transfer_client_ip").SetLabel(evt.who["ip"])
+			xrc.XRCCTRL(self.ctl_xfer_dlg, "transfer_client_location").SetLabel(evt.who["location"])
+			xrc.XRCCTRL(self.ctl_xfer_dlg, "transfer_client_phone").SetLabel(evt.who["phone"])
 			response = self.ctl_xfer_dlg.ShowModal()
 			if response in (wx.ID_NO, wx.ID_CANCEL):
 				directive = "control_transfer_deny"
@@ -1461,10 +1474,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.daq = False
 		wx.PostEvent(self, Events.CommStatusEvent(connected=False))
 	
-	def GetControl(self, my_id, my_name, my_location):
+	def GetControl(self, my_id, my_name, my_ip, my_location, my_phone):
 		""" Requests control of the DAQ from the DAQ manager. """
 		
-		response = self.DAQSendWithResponse( PostOffice.Message(subject="control_request", request="get", requester_id=my_id, requester_name=my_name, requester_location=my_location), timeout=Configuration.params["sock_messageTimeout"] )
+		response = self.DAQSendWithResponse( PostOffice.Message(subject="control_request", request="get", requester_id=my_id, requester_name=my_name, requester_ip=my_ip, requester_location=my_location, requester_phone=my_phone), timeout=Configuration.params["sock_messageTimeout"] )
 		
 		if response is None:
 			self.alert_thread.NewAlert( Alert.Alert(notice="The DAQ manager didn't respond to the control request!", severity=Alert.ERROR) )
@@ -1485,6 +1498,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.cfg = wx.Config('mnvruncontrol')
 		
 		identity     = self.cfg.Read("identity", "Anonymous coward")
+		location     = self.cfg.Read("location", "")
+		phone        = self.cfg.Read("phone", "")
 		remote_host  = self.cfg.Read("remote_host", "mnvonlinemaster.fnal.gov")
 		remote_port  = self.cfg.ReadInt("remote_port", 1090)
 		use_ssh      = self.cfg.ReadBool("use_ssh", True)
@@ -1493,6 +1508,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		auto_connect = self.cfg.ReadBool("auto_connect", False)
 		
 		xrc.XRCCTRL(self.frame, "config_connection_identity_entry").SetValue(identity)
+		xrc.XRCCTRL(self.frame, "config_connection_location_entry").SetValue(location)
+		xrc.XRCCTRL(self.frame, "config_connection_phone_entry").SetValue(phone)
 		xrc.XRCCTRL(self.frame, "config_connection_host_entry").SetValue(remote_host)
 		xrc.XRCCTRL(self.frame, "config_connection_remoteport_entry").SetValue(remote_port)
 		xrc.XRCCTRL(self.frame, "config_connection_usessh_entry").SetValue(use_ssh)
@@ -1616,6 +1633,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    the user doesn't have to enter them every time. """
 		
 		self.cfg.Write("identity", xrc.XRCCTRL(self.frame, "config_connection_identity_entry").GetValue())
+		self.cfg.Write("location", xrc.XRCCTRL(self.frame, "config_connection_location_entry").GetValue())
+		self.cfg.Write("phone", xrc.XRCCTRL(self.frame, "config_connection_phone_entry").GetValue())
 		self.cfg.Write("remote_host", xrc.XRCCTRL(self.frame, "config_connection_host_entry").GetValue())
 		self.cfg.WriteInt("remote_port", xrc.XRCCTRL(self.frame, "config_connection_remoteport_entry").GetValue())
 		self.cfg.WriteBool("use_ssh", xrc.XRCCTRL(self.frame, "config_connection_usessh_entry").GetValue())
