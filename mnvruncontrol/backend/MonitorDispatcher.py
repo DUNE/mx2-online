@@ -100,14 +100,15 @@ class MonitorDispatcher(Dispatcher):
 		return_code = p.wait()
 		available_slots = status_text.count("Unclaimed")
 
+		self.logger.info("Condor reports the following status:\n====================================\n%s", status_text)
+
 		# job status == 1 is an "idle" job.
 		condor_command = "condor_q -constraint \"JobStatus == 1\" -format \"%d \" JobStatus"
 		p = subprocess.Popen(condor_command, shell=True, stdout=subprocess.PIPE)
 		status_text = p.stdout.read()
 		p.wait()
-		idle_job_count = len(status_text.split(" "))
+		idle_job_count = 0 if len(status_text) == 0 else len(status_text.split(" "))
 
-		self.logger.info("Condor reports the following status:\n====================================\n%s", status_text)
 		self.logger.info("Idle jobs: %d", idle_job_count)
 		
 		# in case we need to send mail below
@@ -139,7 +140,7 @@ class MonitorDispatcher(Dispatcher):
 		
 		# only start sending mail when the threshold is crossed.
 		# maybe the user is ok with a job or two in the backlog.
-		elif idle_job_count >= Configuration.params["mon_maxCondorBacklog"]:
+		elif idle_job_count > Configuration.params["mon_maxCondorBacklog"]:
 			self.logger.warning("There are %d jobs sitting idle in the Condor queue...", idle_job_count)
 
 			# idle jobs
@@ -175,7 +176,10 @@ class MonitorDispatcher(Dispatcher):
 
 		if subject is not None and messagebody is not None:
 			self.logger.info("Sending mail to notification addresses: %s", Configuration.params["gen_notifyAddresses"])
-			MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
+			try:
+				MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
+			except Exception as e:
+				self.logger.exception("Can't send mail!")
 
 		self.use_condor = use_condor
 
@@ -345,8 +349,12 @@ class MonitorDispatcher(Dispatcher):
 						sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
 						subject = "MINERvA near-online Condor submission problem"
 						messagebody = "A job submission to the mnvnearline* Condor queue returned a non-zero exit code: %d." % return_code
-						messagebody += "The command was:\n%s" % executable 			
-						MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
+						messagebody += "The command was:\n%s" % executable 
+						try:			
+							MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
+						except Exception as e:
+							self.logger.exception("Can't send mail!")
+
 					else:
 						self.logger.info("  ... submitted successfully.")
 					
@@ -471,7 +479,10 @@ class OMThread(threading.Thread):
 			
 			sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
 
-			MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody, files=[filename,])
+			try:
+				MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody, files=[filename,])
+			except Exception as e:
+				self.logger.exception("Can't send mail!")
 			
 			# inform the DAQ manager if necessary.
 			if not self.parent.signalled_ready:
