@@ -368,8 +368,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			response_msg.subject = "request_response"
 			if message.request == "get":
 				if not ( hasattr(message, "requester_name") and hasattr(message, "requester_ip")
-				         and hasattr(message, "location") and hasattr(message, "phone") ):
+				         and hasattr(message, "requester_location") and hasattr(message, "requester_phone") ):
+					self.logger.info("Request from client is invalid (missing parameters).")
 					response_msg.subject = "invalid_request"
+					response_msg.success = False
 				# nobody's currently in control
 				elif self.control_info is None:
 					self.logger.info("Granted control to client %s (reporting identity '%s') located at %s.", message.requester_id, message.requester_name, message.requester_ip)
