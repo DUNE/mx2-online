@@ -836,9 +836,10 @@ int main(int argc, char *argv[])
 				break;
 			case PureLightInjection:
 				triggerType = LightInjection;
-				allowedReadoutTime = allowedLightInjection;
+				allowedReadoutTime = allowedCosmic; // Basically, infinity...
 				zeroSuppress = false; // Should always read all boards for LI & Discr. may be off.
 #if SINGLEPIPELI
+				allowedReadoutTime = allowedLightInjection; // Assume in this case we are worried about time.
 				nReadoutADC = 1;      // Deepest only.
 #endif
 				break;
@@ -1870,7 +1871,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-11-00'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-11-01'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.
