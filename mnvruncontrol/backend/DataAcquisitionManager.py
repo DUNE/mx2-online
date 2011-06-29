@@ -1725,7 +1725,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			if isinstance(response.sc_board_list, Exception):
 				self.NewAlert(notice="The '%s' node reports a slow control error while trying to read the boards.  Error text: '%s'" % (response.sender, response.sc_board_list), severity=Alert.ERROR)
 				self.StopDataAcquisition(auto_start_ok=False)
-				return
+				return []
 
 			if len(response.sc_board_list) == 0:
 				self.NewAlert(notice="The '%s' node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty..." % response.sender, severity=Alert.WARNING)
