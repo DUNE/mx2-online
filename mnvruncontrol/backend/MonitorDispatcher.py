@@ -57,16 +57,17 @@ class MonitorDispatcher(Dispatcher):
 		# has the "OM ready" signal been sent to the
 		# DAQ manager for this subrun?
 		self.signalled_ready = False
-		
-		# this is how we know to start the second part
-		# of the nearline system, which needs to wait
-		# until the event builder has set up: the EB
-		# signals this process.  we have to set the
+
+		# this is how we know when the event builder
+		# has finished setting up and connecting to
+		# the ET system (once that's happened, the
+		# DAQ can go ahead and finish starting the run):
+		# the EB signals this process.  we have to set the
 		# signal handler up here (instead of only when
 		# starting the EB) because Python's 'signal'
 		# module refuses to do anything anywhere
 		# except in the main thread.
-		signal.signal(signal.SIGUSR1, self.om_start_Gaudi)
+		signal.signal(signal.SIGUSR1, self.om_notify_daq)
 		
 	def BookSubscriptions(self):
 		""" Overrides Dispatcher's BookSubscriptions()
@@ -76,7 +77,8 @@ class MonitorDispatcher(Dispatcher):
 		# as well as when the OM system on this node is supposed
 		# to start or stop
 		handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.DAQMgrStatusHandler,
-			        PostOffice.Subscription(subject="om_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.OMDirectiveHandler }
+			        PostOffice.Subscription(subject="om_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.OMDirectiveHandler,
+			        PostOffice.Subscription(subject="om_internal", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.OMInternalHandler }
 	
 		for subscription in handlers:
 			self.postoffice.AddSubscription(subscription)
@@ -220,6 +222,31 @@ class MonitorDispatcher(Dispatcher):
 				response.success = status
 		self.postoffice.Send(response)
 
+	def OMInternalHandler(self, message):
+		""" Handles internal messages within the online monitoring dispatcher. """
+		
+		# ignore ill-formed messages
+		if not hasattr(message, "event"):
+			self.logger.warning("Internal message is badly formed!  Message:\n%s", message)
+			return
+		
+		# internal messages better actually be internal! ...
+		if len(message.return_path) > 0:
+			self.logger.info("Got 'OM internal' message over the network.  Ignoring.  Message:\n%s", message)
+			return
+		
+		if message.event == "eb_finished" and message.eb_ok:
+			self.om_start_Gaudi()
+
+	def om_notify_daq(self):
+		""" Lets the DAQ manager know that the event builder is done setting up. """
+
+		self.logger.info(" got message that event builder is ready.  Signalling main DAQ.")
+		message = PostOffice.Message(subject="om_status", state="om_ready", sender=self.identities[self.lock_id])
+		self.postoffice.Send(message)
+		
+		self.signalled_ready = True
+
 	def om_start(self, etpattern, etport):
 		""" Starts the online monitoring services as subprocesses.  First checks
 		    to make sure it's not already running, and if it is, does nothing. """
@@ -256,36 +283,9 @@ class MonitorDispatcher(Dispatcher):
 	
 	def om_start_Gaudi(self, signum=None, sigframe=None):
 		""" Start the Gaudi processes. """
-		# let the DAQ manager know that the event builder
-		# is done setting up
-		message = PostOffice.Message(subject="om_status", state="om_ready", sender=self.identities[self.lock_id])
-		self.postoffice.Send(message)
-		
-		self.signalled_ready = True
-		
 		self.CheckCondor()
 		
 		try:
-			# replace the options file so that we get the new event builder output.
-			with open(Configuration.params["mon_GaudiOutputOptionsFile"], "w") as optsfile:
-				path = Configuration.params["mon_DSTTargetPath"]
-				optsfile.write("HistogramSaver.Outputfile = \"%s/%s_Histos.root\";\n" % (path, self.etpattern ) )
-
-				dstfiles = []
-				for dsttype in ("linjc", "numib"):
-					prefix = "Linjc" if dsttype == "linjc" else ""
-					dstfiles.append( { "DSTWriter": dsttype.capitalize(), "filename": "%s/%s_%sDST.root" % (path, self.etpattern, prefix) } )
-
-				for dstinfo in dstfiles:
-					optsfile.write("%sDSTWriter.OutputFile = \"%s\";\n" % (dstinfo["DSTWriter"], dstinfo["filename"]) )
-				
-				optsfile.write( "MaxPEGainAlg.OutfileName = \"%s/%s_gain_table.dat\";\n" % (path, self.etpattern) )
-				optsfile.write( "MaxPEGainAlg.ProblemChannelFileName = \"%s/%s_problemchannels.dat\";\n" % (path, self.etpattern) )
-				optsfile.write( "MaxPEGainAlg.HVFileName = \"%s/%s_tunedHVs.dat\";\n" % (path, self.etpattern) )
-
-			with open(Configuration.params["mon_GaudiInputOptionsFile"], "w") as optsfile:
-				optsfile.write("BuildRawEventAlg.InputFileName   = \"%s\" ;\n" % self.evbfile)
-			
 			# if the Gaudi (monitoring) thread is still running, it needs to be stopped.
 			if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
 				self.logger.info(" ... stopping previous monitoring thread...")
@@ -305,7 +305,7 @@ class MonitorDispatcher(Dispatcher):
 				# we will only keep track of the monitoring thread, because this one
 				# is the one that will be replaced.
 				# 
-				# if we're using Condor, the others will be submitted as jobs via minerva_jobsub.
+				# if we're using Condor, the others will be submitted as jobs via mnvnearline_jobsub.
 				# that will be the last that we ever see of them here.
 				# otherwise, they'll run 'interactively' in the background,
 				# but we won't keep a handle for them (not assign to a variable)
@@ -318,9 +318,13 @@ class MonitorDispatcher(Dispatcher):
 					continue
 					
 				interactive = process["processname"] == "monitoring" or (process["processname"] == "dst" and not self.use_condor)
+				extra_env = { "ETPATTERN": self.etpattern }
 				
 				if interactive:
-					thread = OMThread(self, process["executable"], "gaudi_%s" % process["processname"], persistent=(process["processname"] == "dst"))
+					thread = OMThread(self, process["executable"],
+						"gaudi_%s" % process["processname"],
+						persistent=(process["processname"] == "dst"),
+						extra_env=extra_env)
 					if process["processname"] == "monitoring":
 						self.om_Gaudi_thread = thread
 
@@ -329,17 +333,22 @@ class MonitorDispatcher(Dispatcher):
 					# want to record the PID.  wait until it's ready.
 					while thread.pid is None:
 						time.sleep(0.01)
-						pass
 				
 					self.logger.info("     ==> process id: %d" % thread.pid)
 				else:
-					fmt = { "host":        Configuration.params["mon_condorHost"],
-					        "notify":      ",".join(Configuration.params["gen_notifyAddresses"]),
+					fmt = { "notify":      ",".join(Configuration.params["gen_notifyAddresses"]),
 					        "release":     os.environ["MINERVA_RELEASE"],
 					        "siteroot":    os.environ["MYSITEROOT"],
 					        "daqrecvroot": os.environ["DAQRECVROOT"],
+					        "rawdatafile": self.evbfile,
 					        "executable":  process["executable"] }
-					executable = "minerva_jobsub -l \"notify_user = %(notify)s\" -submit_host %(host)s -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s -q %(executable)s" % fmt
+					executable =  "minerva_jobsub -l \"notify_user = %(notify)s\""
+					executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
+					executable += " -e ETPATTERN"
+					executable += " -f %(rawdatafile) -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
+					executable += " -q"
+					executable += " %(executable)s"
+					executable = executable % fmt
 					self.logger.info("  Submitting a Condor job using the following command:\n%s", executable)
 					return_code = subprocess.call(executable, shell=True)
 					
@@ -401,7 +410,7 @@ class MonitorDispatcher(Dispatcher):
 class OMThread(threading.Thread):
 	""" OM processes need to be run in a separate thread
 	    so that we know if they finish. """
-	def __init__(self, parent, command, processname, persistent=False):
+	def __init__(self, parent, command, processname, persistent=False, extra_env={}):
 		threading.Thread.__init__(self)
 		
 		self.parent = parent
@@ -410,6 +419,7 @@ class OMThread(threading.Thread):
 		self.command = command
 		self.processname = processname
 		self.persistent = persistent		# if this thread is supposed to run until it finishes
+		self.env = extra_env
 		
 		self.daemon = True
 		
@@ -445,7 +455,7 @@ class OMThread(threading.Thread):
 					self.process = subprocess.Popen(shlex.split(str(self.command)),
 						shell=False,
 						close_fds=True,
-						env=os.environ,
+						env=self.env.update(os.environ),
 						stdout=subprocess.PIPE,
 						stderr=subprocess.STDOUT)
 					self.pid = self.process.pid		# less typing.
@@ -488,6 +498,11 @@ class OMThread(threading.Thread):
 			if not self.parent.signalled_ready:
 				msg = PostOffice.Message(subject="om_status", state="om_error", sender=self.parent.identities[self.parent.lock_id], error="Process '%s' quit early." % self.processname)
 				self.parent.postoffice.Send(msg)
+				
+		# if the event builder finished normally,
+		# tell the dispatcher so.
+		elif self.processname == "eventbuilder":
+			self.parent.postoffice.Send(PostOffice.Message(subject="om_internal", event="eb_finished", eb_ok=True))
 		
                         
 ####################################################################
