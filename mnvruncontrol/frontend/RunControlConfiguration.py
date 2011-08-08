@@ -522,7 +522,7 @@ else:
 			while not quit:
 				current_section = None
 				while current_section is None:
-					current_section = self.MenuSelection(Configuration.params.keys())
+					current_section = self.MenuSelection(Configuration.categories.keys())
 					
 					# user just pushed 'enter'
 					if current_section is None:
@@ -532,16 +532,19 @@ else:
 					while current_section is not None:
 						print "Section '%s'" % current_section
 						print "==========================================================="
-						param = self.MenuSelection(Configuration.names[current_section].keys(), Configuration.names[current_section].values())
+						params = []
+						for key in Configuration.categories[current_section]:
+							params.append(key)
+						param = self.MenuSelection(params, [Configuration.names[k] for k in params])
 						
 						if param is None:
 							current_section = None
 							continue
 						
-						# lists are trickier
-						if Configuration.types[current_section][param] not in (list, dict):
+						# lists are trickier.  not supported...
+						if Configuration.types[param] not in (list, dict):
 							print "Changing value for '%s'." % param
-							print "Old value: ", Configuration.params[current_section][param]
+							print "Old value: ", Configuration.params[param]
 							print "Enter new value (just press 'Enter' to cancel):"
 							
 							try:
@@ -554,10 +557,10 @@ else:
 							
 							try:
 								# beware.  bool(<string>) = len(<string>) > 0!
-								if Configuration.types[current_section][param] == bool and isinstance(v, basestring):
-									Configuration.params[current_section][param] = v in ("True", "true", "1")
+								if Configuration.types[param] == bool and isinstance(v, basestring):
+									Configuration.params[param] = v in ("True", "true", "1")
 								else:
-									Configuration.params[current_section][param] = Configuration.types[current_section][param](v)
+									Configuration.params[param] = Configuration.types[param](v)
 							except ValueError:
 								print "Invalid input!"
 								continue
