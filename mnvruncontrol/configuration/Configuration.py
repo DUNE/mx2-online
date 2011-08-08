@@ -115,7 +115,6 @@ configuration = {
 	"mon_DSTTargetPath"           : ( Defaults.OM_DST_TARGET_PATH,                   "Copy target for DSTs created by OM dispatcher",        str   ),
 	"mon_DSTminJobTime"           : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",              float ),
 	"mon_useCondor"               : ( Defaults.OM_USE_CONDOR,                        "Use a Condor queue?",                                 bool  ),
-	"mon_condorHost"              : ( Defaults.OM_CONDOR_HOST,                       "The machine hosting the Condor queue manager",        str   ),
 	"mon_maxCondorBacklog"        : ( Defaults.OM_MAX_CONDOR_BACKLOG,                "Max number of jobs backlogged in Condor queue",       int   ),
 	"mon_rawdataLocation"         : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                                str   ),
 
