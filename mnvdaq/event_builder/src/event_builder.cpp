@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 	sprintf(hostName, "minervatest03.fnal.gov");
 #endif
 
-#if CRATE0||CRATE1||NEARLINEPRO
+#if CRATE0||CRATE1||NEARLINEPRO||NEARLINEBCK
 #if BACKUPNODE
 	sprintf(hostName, "mnvonlinebck1.fnal.gov");
 #else
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
 
 	// Create & attach to a new station for making the final output file.
 	std::cout << "Creating new station for output..." << std::endl;
-#if NEARLINEPRO
+#if NEARLINEPRO||NEARLINEBCK
 	et_station_create(sys_id,&cu_station,"RIODEJANEIRO",sconfig);
 	ebuilder.infoStream() << "Creating new station RIODEJANEIRO for output...";
 #elif NEARLINEDEV

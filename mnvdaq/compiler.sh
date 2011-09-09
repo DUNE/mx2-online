@@ -60,6 +60,8 @@ if [ $HOSTNAME == "mnvnearline0.fnal.gov" ]; then
 	cp ${DAQROOT}/options/mnvnearline0.opts $DAQROOT/Make.options
 elif [ "$HOSTNAME" == "mnvnearline1.fnal.gov" ]; then
 	cp ${DAQROOT}/options/mnvnearline1.opts $DAQROOT/Make.options
+elif [ "$HOSTNAME" == "mnvonlinebck2.fnal.gov" ]; then
+	cp ${DAQROOT}/options/mnvonlinebck2.opts $DAQROOT/Make.options
 fi
 
 pushd ${DAQROOT}/et_9.0/
