@@ -50,8 +50,8 @@ int main(int argc, char **argv)
 	struct timeval hpnow; gettimeofday(&hpnow,NULL);
 	char log_filename[100]; sprintf(log_filename,"./event_builder_%d_Log.txt",(int)hpnow.tv_sec); 
 #if NEARLINE
-#if NEARLINEPRO
-	sprintf(log_filename,"/scratch/nearonline/logs/event_builder_nearline_%d_Log.txt",(int)hpnow.tv_sec);
+#if NEARLINEPRO||NEARLINEBCK
+	sprintf(log_filename,"/scratch/nearonline/var/logs/event_builder_nearline_%d_Log.txt",(int)hpnow.tv_sec);
 #endif
 #if NEARLINEDEV
 	sprintf(log_filename,"/work/logs/event_builder_nearline_%d_Log.txt",(int)hpnow.tv_sec);
