@@ -6,5 +6,5 @@
 source $HOME/mnvdaqrunscripts/Kerberize
 
 # Restart the nearonline...
-`ssh nearonline@mnvnearline1.fnal.gov source /home/nearonline/mnvdaqrunscripts/restart_nearline.sh`
+`ssh nearonline@mnvnearline1.fnal.gov source /scratch/nearonline/mirror/mnvdaqrunscripts/restart_nearline.sh`
 

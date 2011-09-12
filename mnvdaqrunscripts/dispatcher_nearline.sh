@@ -1,52 +1,36 @@
-export LOCALE=NEARLINE
-export SOFTREL=v8r2
+#!/bin/sh
 
 source /scratch/nearonline/mirror/mnvdaq/setupdaqenv.sh
 
-# need to set up Condor if it's available
-if [ -e /grid/fermiapp/minerva/condor-scripts/setup.minerva.condor.sh ]; then
-	source /grid/fermiapp/minerva/condor-scripts/setup.minerva.condor.sh
-fi
-
-#### ATTENTION: this script needs to be updated for new framework versions!!!
-source /scratch/nearonline/mirror/software_releases/${SOFTREL}/setup.sh ${SOFTREL} /scratch/nearonline/software_releases/${SOFTREL}
-pushd /home/nearonline/cmtuser/Minerva_${SOFTREL}/Tools/DaqRecv/cmt/ >& /dev/null
+# set up the MINERvA framework & condor, then the DaqRecv package
+source $HOME/scripts/setup_nearline_software.sh 
+pushd /home/nearonline/cmtuser/Minerva_${MINERVA_RELEASE}/Tools/DaqRecv/cmt/ >& /dev/null
 source ./setup.sh
 popd >& /dev/null
 
-export PATH=/scratch/nearonline/mirror/python/bin:$PATH		# newer version of Python
-export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH		# for log4cpp
-export PYTHONPATH=/scratch/nearonline/mirror:$PYTHONPATH		# so that mnvruncontrol shows up as a package in Python
+export PATH=/scratch/nearonline/mirror/python/bin:$PATH     # newer version of Python
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH      # for log4cpp
+export PYTHONPATH=/scratch/nearonline/mirror:$PYTHONPATH    # so that mnvruncontrol shows up as a package in Python
 
 
 #  The following lines kill any old dispatchers, 
 #  clear any leftover subprocesses, and start a new dispatcher.
 
-# first, find out if there are any leftover processes.
-# if there are, they will have the same session ID as the dispatcher.
+# is there still a dispatcher going?
 if [ -e "/tmp/om_dispatcher.pid" ]; then
 	dispatcher_pid=$(cat /tmp/om_dispatcher.pid)
-	processes=$(ps --sid $(ps -o sid $dispatcher_pid | grep -oE "[[:digit:]]+") -o pid | grep -oE "[[:digit:]]+")
 fi
 
-pushd /scratch/nearonline/mirror/mnvruncontrol/backend
-#python ./MonitorDispatcher.py stop		# first clear any old copies  
-
-# kill all processes in the same process group as the dispatcher.
-# this should prevent any leftover processes from hanging on to the socket.
-if [ -n "$processes" ]; then
-	for process in $processes
-	do
-		# if this is still alive (determined by sending signal 0),
-		# kill it.
-		kill -s 0 $process > /dev/null 2>&1
-	        if [ $? -eq 0 ]; then
-        	        echo $process
-	        fi
-	done
-fi
 # stop the dispatcher if it's still going
+pushd /scratch/nearonline/mirror/mnvruncontrol/backend
 python ./MonitorDispatcher.py stop
+
+# check -- did it REALLY stop?
+# if not, force the issue.
+if `kill -0 $dispatcher_pid`; then
+	kill -9 $dispatcher_pid
+fi
+
 # now start a fresh dispatcher.
 python ./MonitorDispatcher.py start
 popd
