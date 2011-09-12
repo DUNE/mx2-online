@@ -1,7 +1,7 @@
 export LOCALE=NEARLINE
-export SOFTREL=v8r0
+export SOFTREL=v8r2
 
-source /scratch/nearonline/mnvdaq/setupdaqenv.sh
+source /scratch/nearonline/mirror/mnvdaq/setupdaqenv.sh
 
 # need to set up Condor if it's available
 if [ -e /grid/fermiapp/minerva/condor-scripts/setup.minerva.condor.sh ]; then
@@ -9,14 +9,14 @@ if [ -e /grid/fermiapp/minerva/condor-scripts/setup.minerva.condor.sh ]; then
 fi
 
 #### ATTENTION: this script needs to be updated for new framework versions!!!
-source /scratch/nearonline/software_releases/${SOFTREL}/setup.sh ${SOFTREL} /scratch/nearonline/software_releases/${SOFTREL}
+source /scratch/nearonline/mirror/software_releases/${SOFTREL}/setup.sh ${SOFTREL} /scratch/nearonline/software_releases/${SOFTREL}
 pushd /home/nearonline/cmtuser/Minerva_${SOFTREL}/Tools/DaqRecv/cmt/ >& /dev/null
 source ./setup.sh
 popd >& /dev/null
 
-export PATH=/scratch/nearonline/python/bin:$PATH		# newer version of Python
+export PATH=/scratch/nearonline/mirror/python/bin:$PATH		# newer version of Python
 export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH		# for log4cpp
-export PYTHONPATH=/scratch/nearonline:$PYTHONPATH		# so that mnvruncontrol shows up as a package in Python
+export PYTHONPATH=/scratch/nearonline/mirror:$PYTHONPATH		# so that mnvruncontrol shows up as a package in Python
 
 
 #  The following lines kill any old dispatchers, 
@@ -29,7 +29,7 @@ if [ -e "/tmp/om_dispatcher.pid" ]; then
 	processes=$(ps --sid $(ps -o sid $dispatcher_pid | grep -oE "[[:digit:]]+") -o pid | grep -oE "[[:digit:]]+")
 fi
 
-pushd /scratch/nearonline/mnvruncontrol/backend
+pushd /scratch/nearonline/mirror/mnvruncontrol/backend
 #python ./MonitorDispatcher.py stop		# first clear any old copies  
 
 # kill all processes in the same process group as the dispatcher.
