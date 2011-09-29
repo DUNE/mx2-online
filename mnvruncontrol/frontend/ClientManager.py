@@ -243,7 +243,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		for i in range(len(self.client_list)):
 			client = self.client_list[i]
 			index = control.InsertStringItem(sys.maxint, client["client_identity"])
-			control.SetStringItem(index, 1, client["client_location"])
+			control.SetStringItem(index, 1, client["client_ip"])
 			if client["in_control"]:
 				control.SetStringItem(index, 2, u"\u2714")	# a check mark
 			control.SetItemData(index, i)
