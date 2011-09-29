@@ -67,8 +67,8 @@ except NameError:
 	PO_logger = logging.getLogger("PostOffice")
 
 	PO_filehandler = logging.handlers.RotatingFileHandler(Configuration.params["log_PO"], maxBytes=204800, backupCount=5, delay=True)
-	PO_logger.setLevel(logging.DEBUG)
-	PO_filehandler.setLevel(logging.DEBUG)
+	PO_logger.setLevel(logging.INFO)
+	PO_filehandler.setLevel(logging.INFO)
 
 # when you need to see all the gory details, these settings are helpful
 #	PO_filehandler = logging.FileHandler(Configuration.params["log_PO"], 'w')
