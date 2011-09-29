@@ -677,17 +677,17 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 						self.worker_thread.queue.put( {"method": self.StartDataAcquisition, "kwargs": {"configuration": message.configuration}} )
 						status = True
 				elif message.directive == "continue":
-					self.logger.info("Frontend client requests continuation of running.")
+					self.logger.info("Frontend client '%s' requests continuation of running.", message.client_id)
 					self.worker_thread.queue.put({"method": self.StartNextSubrun})
 					status = True
 			
 				elif message.directive == "stop":
-					self.logger.info("Frontend client requests stoppage of data acquisition.")
+					self.logger.info("Frontend client '%s' requests stoppage of data acquisition.", message.client_id)
 					self.worker_thread.queue.put( {"method": self.StopDataAcquisition, "kwargs": {"auto_start_ok": False}} )
 					status = True
 					
 				elif message.directive == "skip":
-					self.logger.info("Frontend client requests skip to next subrun.")
+					self.logger.info("Frontend client '%s' requests skip to next subrun.", message.client_id)
 					self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end") )
 					status = True
 				
