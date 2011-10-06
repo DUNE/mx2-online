@@ -88,23 +88,23 @@ const int physReadoutMicrosec = 13500; //microseconds, useful test stand value
 const int physReadoutMicrosec = 150000; //microseconds, useful test stand value?
 #endif // WH14
 #else
-const int physReadoutMicrosec = 999000; //microseconds, good MINERvA value (testing)
+const int physReadoutMicrosec = 900000; //microseconds, good MINERvA value for 2.06 s spill cycle?
 #endif
 
 // Total allowed readout times (microseconds).
 int allowedReadoutTime;
 // Bail on any gate taking longer than these times and set an error flag.
 // Label by triggerType.
-const int allowedPedestal       =  1000000;
+const int allowedPedestal       =   900000;
 //const int allowedPedestal       =  5000;  // Play-around test value.  
 const int allowedNuMI           =  4000000; // Block for at most one spill?
 const int allowedCosmic         = 10000000; // UNTESTED! (Really, an MTest value.)
-const int allowedLightInjection =  1000000; // Same as pedestal (we are mixing now).
+const int allowedLightInjection =   900000; // Same as pedestal (we are mixing now).
 
 
 /*! \class acquire_data
  *  \brief The class containing all methods necessary for 
- *  requesting and manipulating data from teh MINERvA detector.
+ *  requesting and manipulating data from the MINERvA detector.
  *
  *  This class contains all of the necessary functions 
  *  for acquiring and manipulating data from the MINERvA detector.
