@@ -116,7 +116,8 @@ configuration = {
 	"mon_DSTminJobTime"           : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",              float ),
 	"mon_useCondor"               : ( Defaults.OM_USE_CONDOR,                        "Use a Condor queue?",                                 bool  ),
 	"mon_maxCondorBacklog"        : ( Defaults.OM_MAX_CONDOR_BACKLOG,                "Max number of jobs backlogged in Condor queue",       int   ),
-	"mon_rawdataLocation"         : ( Defaults.OM_DATAFILE_LOCATION_DEFAULT,         "OM raw data location",                                str   ),
+	"mon_rawdataLocation"         : ( Defaults.OM_RAWDATA_LOCATION_DEFAULT,          "OM raw data location",                                str   ),
+	"mon_swapArea"                : ( Defaults.OM_SWAP_AREA_DEFAULT,                 "Swap area for OM input/output files",                 str   ),
 
 	# mtest beam nodes
 	"mtst_PIDfile"                : ( Defaults.MTEST_DISPATCHER_PIDFILE,             "MTest dispatcher PID file location",                  str   ),
