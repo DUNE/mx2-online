@@ -1583,7 +1583,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# the ET system is all set up, so the online monitoring nodes
 		# can be told to connect.
 		self.logger.info("  initializing any online monitoring nodes...")
-		message = PostOffice.Message(subject="om_directive", directive="start", mgr_id=self.id, et_pattern=self.configuration.et_filename, et_port=self.configuration.et_port)
+		message = PostOffice.Message(subject="om_directive",
+			directive="start",
+			mgr_id=self.id,
+			et_pattern=self.configuration.et_filename,
+			et_sys_location=Configuration.params["mstr_etSystemFileLocation"],
+			et_port=self.configuration.et_port)
 
 		responses = None
 

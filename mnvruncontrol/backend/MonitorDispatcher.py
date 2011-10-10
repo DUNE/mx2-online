@@ -238,10 +238,10 @@ class MonitorDispatcher(Dispatcher):
 			response.subject = "not_allowed"
 		else:
 			if message.directive == "start":
-				if not (hasattr(message, "et_pattern") and hasattr(message, "et_port")):
+				if not (hasattr(message, "et_pattern") and hasattr(message, "et_sys_location") and hasattr(message, "et_port")):
 					status = None
 				else:
-					status = self.om_start(message.et_pattern, message.et_port)
+					status = self.om_start(message.et_pattern, message.et_sys_location, message.et_port)
 			
 			elif message.directive == "stop":
 				status = self.om_stop()
@@ -269,7 +269,7 @@ class MonitorDispatcher(Dispatcher):
 		if message.event == "eb_finished" and message.eb_ok:
 			self.StartGaudiJob("dst")
 
-	def om_start(self, etpattern, etport):
+	def om_start(self, etpattern, et_sys_location, etport):
 		""" Starts the online monitoring services as subprocesses.  First checks
 		    to make sure it's not already running, and if it is, does nothing. """
 		    
@@ -288,7 +288,7 @@ class MonitorDispatcher(Dispatcher):
 		
 		
 		try:
-			self.StartEventBuilder(etfile="%s_RawData" % etpattern, etport=etport)
+			self.StartEventBuilder(etfile="%s/%s_RawData" % (et_sys_location, etpattern), etport=etport)
 		except Exception as excpt:
 			self.logger.error("   ==> The event builder process can't be started!")
 			self.logger.error("   ==> Error message: '%s'", excpt)
@@ -331,7 +331,7 @@ class MonitorDispatcher(Dispatcher):
 	
 	def StartEventBuilder(self, etfile, etport):
 		""" Start the event builder process. """
-		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Configuration.params["mstr_etSystemFileLocation"], etfile, self.evbfile, etport, os.getpid()) ) 
+		executable = ( "%s/bin/event_builder %s %s %s %d" % (environment["DAQROOT"], etfile, self.evbfile, etport, os.getpid()) ) 
 		self.logger.info("   event_builder command:\n      '%s'...", executable)
 		
 		self.om_eb_thread = OMThread(self, executable, "eventbuilder")
