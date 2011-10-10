@@ -79,6 +79,7 @@ import logging
 import cPickle
 import warnings
 import threading
+import traceback
 
 # mute the UnicodeWarning that sometimes comes up
 # when a non-PostOffice client tries to send us
@@ -416,6 +417,8 @@ class Subscription:
 		    uses of subscriptions (e.g., handlers).  A message will only
 		    be allowed to match once for_delivery, but it can match
 		    an infinite number of times otherwise. """
+		    
+		logger().log(5, "Entering _MessageMatch() for subscription: %s", self._id)
 		
 		if not (hasattr(message, "subject") and hasattr(message, "sender") and hasattr(message, "in_reply_to")):
 			raise TypeError("_MessageMatch() can only be used on Message objects!")
@@ -426,19 +429,23 @@ class Subscription:
 		# if this subscription has expired but not yet been removed,
 		# it still shouldn't be matching!
 		if self.expiry > 0 and self.times_matched > self.expiry:
+			logger().log(5, "Exiting _MessageMatch() for subscription: %s", self._id)
 			return False
 			
 		# we also need to enforce the "maximum number of forwards" policies here.
 		if self.action == Subscription.FORWARD:
 			if hasattr(self, "max_forward_hops") and self.max_forward_hops >= 0 and len(message.return_path) > self.max_forward_hops:
+				logger().log(5, "Exiting _MessageMatch() for subscription: %s", self._id)
 				return False
 			elif hasattr(message, "max_forward_hops") and message.max_forward_hops >=0 and len(message.return_path) > message.max_forward_hops:
+				logger().log(5, "Exiting _MessageMatch() for subscription: %s", self._id)
 				return False
 				
 		# and it also shouldn't allow the same message
 		# to be delivered to the same location twice...
 		if for_delivery and message.id in self.messages_delivered:
 			logger().log(5, "Not matching message %s to subscription %s again...", message.id, self)
+			logger().log(5, "Exiting _MessageMatch() for subscription: %s", self._id)
 			return False
 			
 		# finally, if this message is designated for direct delivery,
@@ -447,6 +454,7 @@ class Subscription:
 		# allowed to match it.
 		if message._direct_delivery and len(message.return_path) == 0 and not "id" in self.other_attributes:
 			logger().log(5, "Not matching message %s with subscription %s because it's marked 'for direct delivery'...", message.id, self)
+			logger().log(5, "Exiting _MessageMatch() for subscription: %s", self._id)
 			return False
 		
 		subject_match = (self.subject == "*" and (self.postmaster_ok or message.subject != "postmaster")) or self.subject == message.subject
@@ -468,6 +476,8 @@ class Subscription:
 		# an expiry would otherwise still "match" and could get
 		# removed before the delivery thread could do anything
 		# about it.
+
+		logger().log(5, "Exiting _MessageMatch() for subscription: %s", self._id)
 
 		if matched:
 			if self.action == Subscription.FORWARD and self.delivery_address in message.return_path:
@@ -529,7 +539,7 @@ class MessageTerminus:
 		
 		self.time_to_quit = False
 		
-		self.delivery_thread = threading.Thread(target=self._MailboxMonitor)
+		self.delivery_thread = threading.Thread(target=self._MailboxMonitor, name="terminus/"+str(self.id))
 		self.delivery_thread.daemon = True
 		self.delivery_thread.start()
 	
@@ -595,6 +605,7 @@ class MessageTerminus:
 				logger().log(5, "MessageTerminus matched message %s to a subscription: %s", message.id, matched)
 			
 				self.handlers = handlers
+			logger().log(5, "MessageTerminus released handler lock.")
 					
 	def AddHandler(self, subscription, handler):
 		""" Add a handler for messages.
@@ -723,9 +734,9 @@ class PostOffice(MessageTerminus):
 		self.messages_awaiting_release_lock = threading.Lock()
 		
 		# and finally, the worker threads.
-		self.listener_thread = threading.Thread(target=self._Listen)
+		self.listener_thread = threading.Thread(target=self._Listen, name="postoffice/listener")
 		self.listener_thread.daemon = True
-		self.scheduler_thread = threading.Thread(target=self._Schedule)
+		self.scheduler_thread = threading.Thread(target=self._Schedule, name="postoffice/scheduler")
 		self.scheduler_thread.daemon = True
 		
 		# notice we're using a thread *pool* for the delivery threads.
@@ -739,6 +750,16 @@ class PostOffice(MessageTerminus):
 		# delivery for that message)
 		self.delivery_threads = [DeliveryThread(self) for i in range(3)]
 		self.delivering = False
+		
+		# keep track of how many messages we're waiting for confirmation
+		# and/or responses for.  unless you pass "force=True" to the
+		# SendWithConfirmation and/or SendAndWaitForResponse methods,
+		# you can only wait for one at a time.  (if you use the 'force'
+		# parameter, you assume responsibility for any deadlocks that
+		# may occur!)
+		self._wait_for_confirmation_count = 0
+		self._wait_for_response_count = 0
+		self._abort_message_wait = False
 		
 		self.time_to_quit = False
 		
@@ -892,6 +913,25 @@ class PostOffice(MessageTerminus):
 			
 		logger().debug("Listener thread shut down.")	
 
+	def AbortMessageWait(self):
+		""" Abort a SendWithConfirmation or SendAndWaitForResponse.
+		
+		    Note that you will still get something back from the
+		    SendAndWaitForResponse method when you do this: it
+		    may just wind up being incomplete.  Be careful if you
+		    are relying on getting a particular number of responses
+		    in the code that follows!
+		    
+		    Also note that this will abort ALL waits that are in
+		    progress (i.e., if you have passed force=True to one
+		    of the wait methods)."""
+	
+		logger().info("Requested to abort message waits...")
+		self._abort_message_wait = True
+		while self._wait_for_confirmation_count > 0 and self._wait_for_response_count > 0:
+			time.sleep(0.01)
+		self._abort_message_wait = False
+		logger().info("Message waits aborted.")
 	
 	def StartListening(self):
 		""" Start up the various listener services.
@@ -1009,7 +1049,7 @@ class PostOffice(MessageTerminus):
 					
 					self.delivering = True
 					
-					logger().log(5, "Acquired subscription lock.")
+					logger().log(5, "Acquired global subscription lock for scheduling loop.")
 #						logger().log(5, "Subscriptions to check: \n%s", pprint.pformat(self.subscriptions))
 
 					# normally this would be two of the same "for" loop
@@ -1019,6 +1059,7 @@ class PostOffice(MessageTerminus):
 					# is False before continuing anyway.
 					subscriptions = []				
 					for subscription in self.subscriptions:
+						logger().log(5, "Considering subscription: %s", subscription)
 						# remove any subscriptions that are undeliverable
 						if hasattr(subscription, "failed_deliveries") \
 						   and subscription.failed_deliveries >= 3 \
@@ -1160,7 +1201,7 @@ class PostOffice(MessageTerminus):
 				finally:
 					self.delivering = False
 					self.subscription_lock.release()
-					logger().log(5, "Released subscription lock.")
+					logger().log(5, "Released global subscription lock (scheduling loop).")
 				
 				if not matched:
 					# if there were no matches and the message requests
@@ -1268,7 +1309,7 @@ class PostOffice(MessageTerminus):
 		
 		return responses
 	
-	def SendWithConfirmation(self, message, timeout=None, with_exception=False):
+	def SendWithConfirmation(self, message, timeout=None, with_exception=False, force=False):
 		""" Sends a message and then blocks until it gets
 		    confirmation that it has been delivered (or
 		    delivery failed) to all matching subscriptions,
@@ -1276,9 +1317,14 @@ class PostOffice(MessageTerminus):
 		    
 		    If the message is delivered only to local objects
 		    then this should return almost immediately. """
-
+		    
 		if not hasattr(message, "subject") and hasattr(message, "id"):
 			raise MessageError("Message is badly formed.  Won't be sent...")
+			
+		if self._wait_for_confirmation_count > 0 and not force:
+				raise AlreadyWaitingError("Already waiting for confirmation for another message!  If you *really* want to wait for different messages simultaneously (maybe you're doing it in different threads?), pass force=True to SendWithConfirmation... but then you assume any responsibility for any deadlocks that may occur!")
+
+		self._wait_for_confirmation_count += 1
 			
 		message.status_reports = True
 		self.unconfirmed_messages[message.id] = {"deliveries": None, "time_started": time.time()}
@@ -1287,7 +1333,9 @@ class PostOffice(MessageTerminus):
 		#threading.enumerate()
 		
 		while True:
-			if (timeout is not None) and (time.time() - self.unconfirmed_messages[message.id]["time_started"] > timeout):
+			if timeout is not None \
+			   and (time.time() - self.unconfirmed_messages[message.id]["time_started"] > timeout) \
+			   and not self._abort_message_wait:
 				logger().debug("Timeout for message %s expired.", message.id)
 				if with_exception:
 					raise TimeoutError("Message %s send timed out...", message.id)
@@ -1306,16 +1354,23 @@ class PostOffice(MessageTerminus):
 			logger().debug("Confirmations for message %s received from all nodes.", message.id)
 		
 		del self.unconfirmed_messages[message.id]
+
+		self._wait_for_confirmation_count -= 1
 		
 		return deliveries
 		
 	
-	def SendAndWaitForResponse(self, message, timeout=None, with_exception=False):
+	def SendAndWaitForResponse(self, message, timeout=None, with_exception=False, force=False):
 		""" Sends a message and waits for a response from the
 		    remote end, with optional timeout. """
 		
 		if not hasattr(message, "subject") and hasattr(message, "id"):
 			raise MessageError("Message is badly formed.  Won't be sent...")
+
+		if self._wait_for_response_count > 0 and not force:
+			raise AlreadyWaitingError("Already waiting for responses for another message!  If you *really* want to wait for different messages simultaneously (maybe you're doing it in different threads?), pass force=True to SendWithConfirmation... but then you assume any responsibility for any deadlocks that may occur!")
+				
+		self._wait_for_response_count += 1
 
 		# book a subscription for all non-postmaster messages responding to this one
 		response_subscr =  Subscription(in_reply_to=message.id, action=Subscription.DELIVER, delivery_address=self, postmaster_ok=False)
@@ -1330,10 +1385,10 @@ class PostOffice(MessageTerminus):
 		
 		self.unanswered_messages[message.id] = {"messages": [], "time_started": time.time()}
 
-		deliveries = self.SendWithConfirmation(message, timeout)
+		deliveries = self.SendWithConfirmation(message, timeout, with_exception=with_exception, force=force)
 		response_messages = []
 
-		logger().debug("Clearing message %s for delivery...", message.id)
+		logger().debug("Clearing responses to message %s for delivery...", message.id)
 		clear_msg = Message(subject="postmaster", in_reply_to=message.id, response_clear=True)
 		self.Send(clear_msg)
 		
@@ -1353,7 +1408,9 @@ class PostOffice(MessageTerminus):
 			# we just wait until we get the same NUMBER of messages
 			# back as there were recipients of the original message.
 			while True:
-				if timeout is not None and time.time() - self.unanswered_messages[message.id]["time_started"] > timeout:
+				if timeout is not None \
+				   and time.time() - self.unanswered_messages[message.id]["time_started"] > timeout \
+				   and not self._abort_message_wait:
 					logger().debug("Timeout expired.")
 					if with_exception:
 						raise TimeoutError("Timed out waiting for responses...")
@@ -1375,6 +1432,8 @@ class PostOffice(MessageTerminus):
 			del self.handlers[response_subscr]
 		del self.unanswered_messages[message.id]
 		
+		self._wait_for_response_count -= 1
+
 		logger().log(5, "Returning!")
 		
 		return response_messages
@@ -1601,6 +1660,7 @@ class PostOffice(MessageTerminus):
 		    when a subscription joins the collection.  """
 		
 		logger().log(5, "Entering AddSubscription()")
+#		logger().log(5, "Call stack:\n%s", pprint.pformat(traceback.extract_stack()))
 		
 		with self.subscription_lock:
 			matched = False
@@ -1653,10 +1713,10 @@ class PostOffice(MessageTerminus):
 		    subscription you pass as an argument to this
 		    method is specific! """
 
+		logger().log(5, "Going to drop subscription: %s", subscr_to_delete)
+
 		# notice the lock.  this is very important
 		# because otherwise this method is NOT thread-safe!
-		logger().log(5, "Going to drop subscription: %s", subscr_to_delete)
-		
 		with self.subscription_lock:
 			new_list = []
 			for subscription in self.subscriptions:
@@ -1722,7 +1782,7 @@ class DeliveryThread(threading.Thread):
 	    of these guys). """
 
 	def __init__(self, postoffice):
-		threading.Thread.__init__(self)
+		threading.Thread.__init__(self, name="postoffice/delivery")
 		
 		self.deliveries = Queue.Queue()
 		self.daemon = True
@@ -1966,6 +2026,9 @@ class DeliveryThread(threading.Thread):
 
 
 class Error(Exception):
+	pass
+
+class AlreadyWaitingError(Exception):
 	pass
 	
 class TimeoutError(Exception):
