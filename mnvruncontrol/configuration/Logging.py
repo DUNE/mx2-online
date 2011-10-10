@@ -24,6 +24,7 @@ except NameError:
 
 	# now configure the loggers for the various services
 	formatter = logging.Formatter("[%(asctime)s] %(levelname)8s:  %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+	thread_formatter = logging.Formatter("[%(asctime)s] %(threadName)s %(levelname)8s:  %(message)s", datefmt="%H:%M:%S")
 
 	# first, the generic dispatcher's console logger.
 	# it's console-only (we add files for specific instances below).
@@ -69,13 +70,15 @@ except NameError:
 	PO_filehandler = logging.handlers.RotatingFileHandler(Configuration.params["log_PO"], maxBytes=204800, backupCount=5, delay=True)
 	PO_logger.setLevel(logging.INFO)
 	PO_filehandler.setLevel(logging.INFO)
+	PO_filehandler.setFormatter(formatter)
 
 # when you need to see all the gory details, these settings are helpful
+# (use them instead of the corresponding lines in the block just above)
 #	PO_filehandler = logging.FileHandler(Configuration.params["log_PO"], 'w')
 #	PO_logger.setLevel(5)
 #	PO_filehandler.setLevel(5)
-
-	PO_filehandler.setFormatter(formatter)
+#	PO_filehandler.setFormatter(thread_formatter)
+	
 	PO_logger.addHandler(PO_filehandler)
 	
 	# the frontend
