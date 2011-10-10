@@ -6,6 +6,7 @@
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
                     July-Aug. 2010
+                    updated for new near-online systems, fall 2011
                     
    Address all complaints to the management.
 """
@@ -30,6 +31,24 @@ from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.backend.Dispatcher import Dispatcher
 from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import MailTools
+
+# configuration for the Gaudi-based jobs
+gaudi_processes = {
+	"monitoring": {
+		"executable" : "%s/%s/MinervaNearline.exe %s/options/NearlineCurrent.opts" % (os.environ["DAQRECVROOT"],
+			os.environ["CMTCONFIG"],
+			os.environ["DAQRECVROOT"]),
+		"run"        : Configuration.params["mon_runCurrentJob"]
+	},
+	
+	"dst" : {
+		"executable" : "%s/%s/MinervaNearline.exe %s/options/Nearline.opts" % (os.environ["DAQRECVROOT"],
+			os.environ["CMTCONFIG"],
+			os.environ["DAQRECVROOT"]),
+		"run" : Configuration.params["mon_runDSTjobs"]
+	}
+}
+
 
 class MonitorDispatcher(Dispatcher):
 	"""
@@ -67,7 +86,7 @@ class MonitorDispatcher(Dispatcher):
 		# starting the EB) because Python's 'signal'
 		# module refuses to do anything anywhere
 		# except in the main thread.
-		signal.signal(signal.SIGUSR1, self.om_notify_daq)
+		signal.signal(signal.SIGUSR1, self.NotifyDAQ)
 		
 	def BookSubscriptions(self):
 		""" Overrides Dispatcher's BookSubscriptions()
@@ -191,6 +210,18 @@ class MonitorDispatcher(Dispatcher):
 
 		self.DAQMgrStatusUpdate(message, ["om_directive",])		    
 	
+	def NotifyDAQ(self, signum=None, sigframe=None):
+		""" Lets the DAQ manager know that the event builder is done setting up. """
+
+		self.logger.info(" got message that event builder is ready.  Signalling main DAQ.")
+		message = PostOffice.Message(subject="om_status", state="om_ready", sender=self.identities[self.lock_id])
+		self.postoffice.Send(message)
+		
+		self.signalled_ready = True
+		
+		# start the monitoring job too, since the event builder is ready now
+		self.StartGaudiJob("monitoring")
+
 	def OMDirectiveHandler(self, message):
 		""" Handles incoming directives for the online monitoring system. """
 		
@@ -236,16 +267,7 @@ class MonitorDispatcher(Dispatcher):
 			return
 		
 		if message.event == "eb_finished" and message.eb_ok:
-			self.om_start_Gaudi()
-
-	def om_notify_daq(self):
-		""" Lets the DAQ manager know that the event builder is done setting up. """
-
-		self.logger.info(" got message that event builder is ready.  Signalling main DAQ.")
-		message = PostOffice.Message(subject="om_status", state="om_ready", sender=self.identities[self.lock_id])
-		self.postoffice.Send(message)
-		
-		self.signalled_ready = True
+			self.StartGaudiJob("dst")
 
 	def om_start(self, etpattern, etport):
 		""" Starts the online monitoring services as subprocesses.  First checks
@@ -266,109 +288,13 @@ class MonitorDispatcher(Dispatcher):
 		
 		
 		try:
-			self.om_start_eb(etfile="%s_RawData" % etpattern, etport=etport)
+			self.StartEventBuilder(etfile="%s_RawData" % etpattern, etport=etport)
 		except Exception as excpt:
 			self.logger.error("   ==> The event builder process can't be started!")
 			self.logger.error("   ==> Error message: '%s'", excpt)
 			return False
 		
 		return True
-	
-	def om_start_eb(self, etfile, etport):
-		""" Start the event builder process. """
-		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Configuration.params["mstr_etSystemFileLocation"], etfile, self.evbfile, etport, os.getpid()) ) 
-		self.logger.info("   event_builder command:\n      '%s'...", executable)
-		
-		self.om_eb_thread = OMThread(self, executable, "eventbuilder")
-	
-	def om_start_Gaudi(self, signum=None, sigframe=None):
-		""" Start the Gaudi processes. """
-		self.CheckCondor()
-		
-		try:
-			# if the Gaudi (monitoring) thread is still running, it needs to be stopped.
-			if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
-				self.logger.info(" ... stopping previous monitoring thread...")
-				self.om_Gaudi_thread.process.terminate()
-				self.om_Gaudi_thread.join()
-				self.logger.info(" ... done.")
-
-			# now start a new copy of each of the Gaudi jobs.
-			gaudi_processes = ( { "processname": "monitoring",
-				                 "executable" : "%s/%s/MinervaNearline.exe %s/options/NearlineCurrent.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]),
-				                 "run"        : Configuration.params["mon_runCurrentJob"] },
-				               { "processname": "dst",
-				                 "executable" : "%s/%s/MinervaNearline.exe %s/options/Nearline.opts" % (os.environ["DAQRECVROOT"], os.environ["CMTCONFIG"], os.environ["DAQRECVROOT"]),
-				                 "run"        : Configuration.params["mon_runDSTjobs"] } )
-
-			for process in gaudi_processes:
-				# we will only keep track of the monitoring thread, because this one
-				# is the one that will be replaced.
-				# 
-				# if we're using Condor, the others will be submitted as jobs via mnvnearline_jobsub.
-				# that will be the last that we ever see of them here.
-				# otherwise, they'll run 'interactively' in the background,
-				# but we won't keep a handle for them (not assign to a variable)
-				# so that they run unmolested until they finish.
-				# of course, if this thread is killed, they might go with it, but that
-				# depends on whether or not they fork first.  (i don't think they do.)
-			
-				# user can configure not to run either of the types of Gaudi job
-				if not process["run"]:
-					continue
-					
-				interactive = process["processname"] == "monitoring" or (process["processname"] == "dst" and not self.use_condor)
-				extra_env = { "ETPATTERN": self.etpattern }
-				
-				if interactive:
-					thread = OMThread(self, process["executable"],
-						"gaudi_%s" % process["processname"],
-						persistent=(process["processname"] == "dst"),
-						extra_env=extra_env)
-					if process["processname"] == "monitoring":
-						self.om_Gaudi_thread = thread
-
-					self.logger.info("  Starting a copy of MinervaNearline.exe with the following command:\n%s", process["executable"])
-			
-					# want to record the PID.  wait until it's ready.
-					while thread.pid is None:
-						time.sleep(0.01)
-				
-					self.logger.info("     ==> process id: %d" % thread.pid)
-				else:
-					fmt = { "notify":      ",".join(Configuration.params["gen_notifyAddresses"]),
-					        "release":     os.environ["MINERVA_RELEASE"],
-					        "siteroot":    os.environ["MYSITEROOT"],
-					        "daqrecvroot": os.environ["DAQRECVROOT"],
-					        "rawdatafile": self.evbfile,
-					        "executable":  process["executable"] }
-					executable =  "minerva_jobsub -l \"notify_user = %(notify)s\""
-					executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
-					executable += " -e ETPATTERN"
-					executable += " -f %(rawdatafile) -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
-					executable += " -q"
-					executable += " %(executable)s"
-					executable = executable % fmt
-					self.logger.info("  Submitting a Condor job using the following command:\n%s", executable)
-					return_code = subprocess.call(executable, shell=True)
-					
-					if return_code != 0:
-						self.logger.warning("Condor submission exited with non-zero return code: %d.  This job was probably not submitted!" % return_code)
-						
-						sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
-						subject = "MINERvA near-online Condor submission problem"
-						messagebody = "A job submission to the mnvnearline* Condor queue returned a non-zero exit code: %d." % return_code
-						messagebody += "The command was:\n%s" % executable 
-						try:			
-							MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
-						except Exception as e:
-							self.logger.exception("Can't send mail!")
-
-					else:
-						self.logger.info("  ... submitted successfully.")
-					
-		except Exception:
-			self.logger.exception("  Error starting the Gaudi processes!:")
 	
 	def om_stop(self, matches=None, show_details=True, **kwargs):
 		""" Stops the online monitor processes.  Only really needed
@@ -402,6 +328,100 @@ class MonitorDispatcher(Dispatcher):
 			self.logger.info("   ==> Stopped successfully.")
 		
 		return True if not errors else False
+	
+	def StartEventBuilder(self, etfile, etport):
+		""" Start the event builder process. """
+		executable = ( "%s/bin/event_builder %s/%s %s %s %d" % (environment["DAQROOT"], Configuration.params["mstr_etSystemFileLocation"], etfile, self.evbfile, etport, os.getpid()) ) 
+		self.logger.info("   event_builder command:\n      '%s'...", executable)
+		
+		self.om_eb_thread = OMThread(self, executable, "eventbuilder")
+	
+	def StartGaudiJob(self, processname):
+		""" Start a Gaudi process. """
+
+		process = gaudi_processes[processname]
+		extra_env = { "ETPATTERN": self.etpattern,
+			"SWAP_AREA": Configuration.params["mon_swapArea"]
+		}
+
+		# user can configure not to run either of the types of Gaudi job
+		if not process["run"]:
+			return
+
+		try:
+			if processname == "dst":
+				# if we're using Condor, the DST jobs will be submitted as jobs via mnvnearline_jobsub.
+				# that will be the last that we ever see of them here.
+				# otherwise, they'll run 'interactively' in the background,
+				# but we won't keep a handle for them (not assign to a variable)
+				# so that they run unmolested until they finish.
+				# of course, if this thread is killed, they might go with it, but that
+				# depends on whether or not they fork first.  (i don't think they do.)
+				self.CheckCondor()
+				
+				interactive = not self.use_condor
+		
+			if processname == "monitoring":
+				# if the monitoring thread is still running, it needs to be stopped.
+				# we will only keep track of the that thread, because it's
+				# the one that will be replaced.
+				if self.om_Gaudi_thread is not None and self.om_Gaudi_thread.is_alive():
+					self.logger.info(" ... stopping previous monitoring thread...")
+					self.om_Gaudi_thread.process.terminate()
+					self.om_Gaudi_thread.join()
+					self.logger.info(" ... done.")
+
+				interactive = True			
+				
+			if interactive:
+				thread = OMThread(self, process["executable"],
+					"gaudi_%s" % processname,
+					persistent=(processname == "dst"),
+					extra_env=extra_env)
+				if processname == "monitoring":
+					self.om_Gaudi_thread = thread
+
+				self.logger.info("  Starting a copy of MinervaNearline.exe with the following command:\n%s", process["executable"])
+		
+				# want to record the PID.  wait until it's ready.
+				while thread.pid is None:
+					time.sleep(0.01)
+			
+				self.logger.info("     ==> process id: %d" % thread.pid)
+			else:
+				fmt = { "notify":      ",".join(Configuration.params["gen_notifyAddresses"]),
+				        "release":     os.environ["MINERVA_RELEASE"],
+				        "siteroot":    os.environ["MYSITEROOT"],
+				        "daqrecvroot": os.environ["DAQRECVROOT"],
+				        "rawdatafile": self.evbfile,
+				        "executable":  process["executable"] }
+				executable =  "minerva_jobsub -l \"notify_user = %(notify)s\""
+				executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
+				executable += " -e ETPATTERN"
+				executable += " -f %(rawdatafile) -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
+				executable += " -q"
+				executable += " %(executable)s"
+				executable = executable % fmt
+				self.logger.info("  Submitting a Condor job using the following command:\n%s", executable)
+				return_code = subprocess.call(executable, shell=True)
+				
+				if return_code != 0:
+					self.logger.warning("Condor submission exited with non-zero return code: %d.  This job was probably not submitted!" % return_code)
+					
+					sender = "%s@%s" % (os.environ["LOGNAME"], socket.getfqdn())
+					subject = "MINERvA near-online Condor submission problem"
+					messagebody = "A job submission to the mnvnearline* Condor queue returned a non-zero exit code: %d." % return_code
+					messagebody += "The command was:\n%s" % executable 
+					try:			
+						MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
+					except Exception as e:
+						self.logger.exception("Can't send mail!")
+
+				else:
+					self.logger.info("  ... submitted successfully.")
+					
+		except Exception:
+			self.logger.exception("  Error starting Gaudi process ('%s'):", processname)
 		
 
 #########################
@@ -422,6 +442,8 @@ class OMThread(threading.Thread):
 		self.env = extra_env
 		
 		self.daemon = True
+		
+		self.env.update(os.environ)
 		
 		self.start()		# inherited from threading.Thread.  starts run() in a separate thread.
 		
@@ -455,7 +477,7 @@ class OMThread(threading.Thread):
 					self.process = subprocess.Popen(shlex.split(str(self.command)),
 						shell=False,
 						close_fds=True,
-						env=self.env.update(os.environ),
+						env=self.env,
 						stdout=subprocess.PIPE,
 						stderr=subprocess.STDOUT)
 					self.pid = self.process.pid		# less typing.
