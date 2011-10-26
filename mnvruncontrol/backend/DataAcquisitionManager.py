@@ -136,6 +136,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.waiting = False
 		self.started_et = False
 		self.first_subrun = self.configuration.subrun
+
+		self.om_startup_lock = threading.Lock()
+
 		
 		self.current_state = None
 		self.current_progress = (0, 0)
@@ -1593,24 +1596,29 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		responses = None
 
 		ok_node = False
-		try:
-			responses = self.NodeSendWithResponse(message, node_type=RemoteNode.MONITORING, timeout=10)
-		except DAQErrors.NodeError:
-			self.NewAlert(notice="At least one of the monitoring node(s) has become unresponsive.  Check the logs for more details.  The run will be allowed to continue, but you will not have online monitoring...", severity=Alert.ERROR)
-		else:
-			for response in responses:
-				if response.subject == "invalid_request" \
-				  or response.success == False:
-					self.NewAlert(notice="Couldn't start the '%s' online monitoring node.  The run will be allowed to continue, but you will not have online monitoring..." % response.sender, severity=Alert.ERROR)
-				elif isinstance(response.success, Exception):
-					self.NewAlert(notice="Error starting the '%s' online monitoring node.  Error message text:\n%s\nThe run will be allowed to continue, but you will not have online monitoring..." % (response.sender, response.success), severity=Alert.ERROR)
-				else:
-					self.logger.info("    ... '%s' node starting.  Awaiting confirmation of full startup.", response.sender)
-					ok_node = True
+		with self.om_startup_lock:
+			try:
+				responses = self.NodeSendWithResponse(message, node_type=RemoteNode.MONITORING, timeout=10)
+			except DAQErrors.NodeError:
+				self.waiting_for_om_startup = False
+				self.NewAlert(notice="At least one of the monitoring node(s) has become unresponsive.  Check the logs for more details.  The run will be allowed to continue, but you will not have online monitoring...", severity=Alert.ERROR)
+			else:
+				self.waiting_for_om_startup = False
+				for response in responses:
+					if response.subject == "invalid_request" \
+					  or not response.success:
+						self.NewAlert(notice="Couldn't start the '%s' online monitoring node.  The run will be allowed to continue, but you will not have online monitoring..." % response.sender, severity=Alert.ERROR)
+					elif isinstance(response.success, Exception):
+						self.NewAlert(notice="Error starting the '%s' online monitoring node.  Error message text:\n%s\nThe run will be allowed to continue, but you will not have online monitoring..." % (response.sender, response.success), severity=Alert.ERROR)
+					else:
+						self.logger.info("    ... '%s' node starting.  Awaiting confirmation of full startup.", response.sender)
+						ok_node = True
 		
 		# if there weren't any nodes that were ok,
-		# then we don't need to wait.  just go on.
+		# or they're all ready now, then we don't
+		# need to wait.  just go on.
 		if not ok_node:
+			self.logger.info("No OM nodes responded.  Continuing with startup.")
 			os.kill(os.getpid(), signal.SIGUSR1)
 		
 
@@ -1854,27 +1862,20 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
 		elif message.state == "om_ready":
-			self.remote_nodes[message.sender].status = RemoteNode.OK
-			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+			with self.om_startup_lock:
+				self.remote_nodes[message.sender].status = RemoteNode.OK
+				self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
 
-			self.logger.info("    ... '%s' node started.", message.sender)
+				self.logger.info("    ... '%s' node startup is complete.", message.sender)
 		
-			all_ready = True
-			for node_name in self.remote_nodes:
-				all_ready = all_ready and self.remote_nodes[node_name].status == RemoteNode.OK
+				all_ready = True
+				for node_name in self.remote_nodes:
+					if self.remote_nodes[node_name].type != RemoteNode.MONITORING:
+						continue
+					all_ready = all_ready and self.remote_nodes[node_name].status == RemoteNode.OK
 			
 			if all_ready:
-				self.logger.info("All monitoring nodes are ready.  Continuing in startup sequence.")
-				
-				# the main thread might still be waiting for
-				# confirmation messages that the nodes have begun
-				# the initialization (see StartOM()) -- the message
-				# receipt order is not guaranteed if the OM node
-				# starts up quickly.  so, to make sure we don't
-				# deadlock, we cancel any waiting-for-confirmation here.
-				self.postoffice.AbortMessageWait()
-				
-				# signal this process that we can go on to the next stage
+				self.logger.info("  ... all monitoring nodes are ready.  Continuing in startup sequence.")
 				os.kill(os.getpid(), signal.SIGUSR1)
 				
 	def PrepareRunSeries(self):
