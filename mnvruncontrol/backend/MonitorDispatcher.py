@@ -398,7 +398,7 @@ class MonitorDispatcher(Dispatcher):
 				executable =  "minerva_jobsub -l \"notify_user = %(notify)s\""
 				executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
 				executable += " -e ETPATTERN"
-				executable += " -f %(rawdatafile) -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
+				executable += " -f %(rawdatafile)s -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
 				executable += " -q"
 				executable += " %(executable)s"
 				executable = executable % fmt
