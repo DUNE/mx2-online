@@ -12,9 +12,11 @@ script_dir="$( cd "$( dirname "$0" )" && pwd )"
 # mnvtbonline1 - Single node DAQ with hardware.  Lab F PMT X-Talk DAQ; MTest Backup DAQ.
 if [ $HOSTNAME == "mnvtbonline0.fnal.gov" -o $HOSTNAME == "mnvtbonline1.fnal.gov" ]; then
 	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
+	ln -sf $script_dir/configure_runcontrol.sh $HOME/configure_runcontrol.sh
 	ln -sf $script_dir/runcontrol_single.sh $HOME/runcontrol.sh
 	ln -sf $script_dir/slowcontrol.sh $HOME/slowcontrol.sh
 	ln -sf $script_dir/singledaqenv.sh $HOME/singledaqenv.sh
+	ln -sf $script_dir/acquisitionmanager_single.sh $HOME/acquisitionmanager.sh
 	ln -sf $script_dir/dispatcher_single.sh $HOME/dispatcher.sh
 	ln -sf $script_dir/check_daq_rc.sh $HOME/check_daq_rc.sh
 	ln -sf $script_dir/proc_kill_ALLDAQRC.sh $HOME/kill_all_daqrc.sh
