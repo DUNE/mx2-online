@@ -15,9 +15,12 @@ fi
 # Clear any old RC clients.
 $HOME/mnvdaqrunscripts/proc_kill_RunCo.pl
 
+which python2.6 >& /tmp/pytest.txt
+PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+
 # Now, start the RC.
 pushd ${RCROOT}/frontend
-python RunControl.py &
+$PYV RunControl.py &
 popd
 echo "If you get a socket binding error, just close the RC and wait a minute and then try again."
 echo "If you get a warning about the last subrun not finishing cleanly, just wait for the status "

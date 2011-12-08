@@ -1,5 +1,8 @@
 #!/bin/sh
 
+which python2.6 >& /tmp/pytest.txt
+PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+
 pushd /work/software/mnvconfigurator/SlowControl >& /dev/null
-python SC_MainApp.py &
+$PYV SC_MainApp.py &
 popd >& /dev/null

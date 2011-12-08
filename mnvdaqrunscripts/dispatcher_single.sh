@@ -13,14 +13,18 @@ then
         source $HOME/mnvdaqrunscripts/setupdaqenv.sh $SINGLEDAQ
 fi
 
+# Get Python version.
+which python2.6 >& /tmp/pytest.txt
+PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+
 # Check to see if the dispatcher is running.  If it is, stop/kill it.
 pushd ${RCROOT}/backend >& /dev/null
-python ReadoutDispatcher.py stop
+$PYV ReadoutDispatcher.py stop
 popd >& /dev/null
 
 # Start the dispatcher.
 pushd ${RCROOT}/backend >& /dev/null
-python ReadoutDispatcher.py start 
+$PYV ReadoutDispatcher.py start 
 popd >& /dev/null
 
 ps -leaf | grep ReadoutDispatcher | grep -v grep
