@@ -389,21 +389,23 @@ class MonitorDispatcher(Dispatcher):
 			
 				self.logger.info("     ==> process id: %d" % thread.pid)
 			else:
+				env = extra_env
+				env.update(os.environ)
 				fmt = { "notify":      ",".join(Configuration.params["gen_notifyAddresses"]),
 				        "release":     os.environ["MINERVA_RELEASE"],
 				        "siteroot":    os.environ["MYSITEROOT"],
 				        "daqrecvroot": os.environ["DAQRECVROOT"],
 				        "rawdatafile": self.evbfile,
 				        "executable":  process["executable"] }
-				executable =  "minerva_jobsub -l \"notify_user = %(notify)s\""
+				executable =  "$HOME/scripts/mnvnearline_jobsub -l \"notify_user = %(notify)s\""
 				executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
-				executable += " -e ETPATTERN"
+				executable += " -e ETPATTERN -e NOBLUEARC"
 				executable += " -f %(rawdatafile)s -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
 				executable += " -q"
 				executable += " %(executable)s"
 				executable = executable % fmt
 				self.logger.info("  Submitting a Condor job using the following command:\n%s", executable)
-				return_code = subprocess.call(executable, shell=True)
+				return_code = subprocess.call(executable, shell=True, env=env)
 				
 				if return_code != 0:
 					self.logger.warning("Condor submission exited with non-zero return code: %d.  This job was probably not submitted!" % return_code)
