@@ -107,15 +107,12 @@ if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal
 	ln -sf $script_dir/setupdaqenv.sh $HOME/setupdaqenv.sh
 fi
 
-# mnvnearline0 - Nearonline (development) machine with no DAQ hardware?
-# mnvnearline1 - Nearonline (production) machine with no DAQ hardware.
-# mnvonlinebck2 - Nearonline (emergency underground backup) machine with no DAQ hardware.
-if [ $HOSTNAME == "mnvnearline1.fnal.gov" -o "$HOSTNAME" == "mnvonlinebck2.fnal.gov" ]; then
+# mnvonlinelogger  - Near-online (production) head node.  No DAQ hardware attached.
+if [ "$HOSTNAME" == "mnvonlinelogger.fnal.gov" ]; then
 	echo "Setting up nearline scripts on ${HOSTNAME}..."
 	ln -sf $script_dir/check_nearline_procs.sh $HOME/check_nearline_procs.sh
 	ln -sf $script_dir/check_om_log.sh $HOME/check_om_log.sh
 	ln -sf $script_dir/dispatcher_nearline.sh $HOME/dispatcher_nearline.sh
-	ln -sf $script_dir/configure_cvs_env.sh $HOME/configure_cvs_env.sh
 	ln -sf $script_dir/restart_nearline.sh $HOME/hard_restart.sh
 fi
 
