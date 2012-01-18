@@ -1,17 +1,7 @@
 #!/bin/sh
 
-source /scratch/nearonline/mirror/mnvdaq/setupdaqenv.sh
-
-# set up the MINERvA framework & condor, then the DaqRecv package
+# sets up all the various pieces of software 
 source $HOME/scripts/setup_nearline_software.sh 
-pushd /home/nearonline/cmtuser/Minerva_${MINERVA_RELEASE}/Tools/DaqRecv/cmt/ >& /dev/null
-source ./setup.sh
-popd >& /dev/null
-
-export PATH=/scratch/nearonline/mirror/python/bin:$PATH     # newer version of Python
-export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH      # for log4cpp
-export PYTHONPATH=/scratch/nearonline/mirror:$PYTHONPATH    # so that mnvruncontrol shows up as a package in Python
-
 
 #  The following lines kill any old dispatchers, 
 #  clear any leftover subprocesses, and start a new dispatcher.
