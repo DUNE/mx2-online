@@ -65,7 +65,7 @@ class MonitorDispatcher(Dispatcher):
 		                        
 		self.pidfilename = Configuration.params["mon_PIDfile"]
 		                   
-		self.om_eb_thread = None
+		self.om_eb_threads = []
 		self.om_Gaudi_thread = None
 		
 		self.etpattern = None
@@ -278,9 +278,9 @@ class MonitorDispatcher(Dispatcher):
 		self.signalled_ready = False
 
 		# first clear up any old event builder processes.
-		if self.om_eb_thread and self.om_eb_thread.is_alive() is None:
-			self.om_eb_thread.terminate()
-			self.om_eb_thread.join()
+#		if self.om_eb_thread and self.om_eb_thread.is_alive() is None:
+#			self.om_eb_thread.terminate()
+#			self.om_eb_thread.join()
 		
 		self.etpattern = etpattern
 		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["mon_rawdataLocation"], self.etpattern )
@@ -304,15 +304,17 @@ class MonitorDispatcher(Dispatcher):
 		self.logger.info("Client wants to stop the OM processes.")
 		
 		errors = False
-		if self.om_eb_thread and self.om_eb_thread.is_alive():
-			self.logger.info("   ==> Attempting to stop the event builder thread.")
-			try:
-				self.om_eb_thread.process.terminate()
-				self.om_eb_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
-			except Exception, excpt:
-				self.logger.error("   ==> event builder process couldn't be stopped!")
-				self.logger.exception("   ==> Error message:")
-				errors = True
+		if len(self.om_eb_threads) > 0:
+			for thread in self.om_eb_threads:
+				if thread.is_alive():
+					self.logger.info("   ==> Attempting to stop the event builder thread with PID: %d", thread.pid)
+					try:
+						self.thread.process.kill()
+						self.thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
+					except Exception, excpt:
+						self.logger.error("    ... event builder process couldn't be stopped!")
+						self.logger.exception("       ==> Error message:")
+						errors = True
 
 		if self.om_Gaudi_thread and self.om_Gaudi_thread.is_alive():
 			self.logger.info("   ==> Attempting to stop the Gaudi thread.")
@@ -333,11 +335,19 @@ class MonitorDispatcher(Dispatcher):
 		""" Start the event builder process. """
 		executable = ( "%s/bin/event_builder %s %s %s %d" % (environment["DAQROOT"], etfile, self.evbfile, etport, os.getpid()) ) 
 		self.logger.info("   event_builder command:\n      '%s'...", executable)
-		
-		self.om_eb_thread = OMThread(self, executable, "eventbuilder")
+	
+		# clean up any old event builders that have finished
+		threads_to_keep = []
+		for thread in self.om_eb_threads:
+			if thread.process.returncode is None:
+				threads_to_keep.append(thread)
+		self.om_eb_threads = threads_to_keep
+		self.om_eb_threads.append(OMThread(self, executable, "eventbuilder"))
 	
 	def StartGaudiJob(self, processname):
 		""" Start a Gaudi process. """
+		
+		self.logger.debug("Starting DST job named '%s'..." % processname)
 
 		process = gaudi_processes[processname]
 		extra_env = { "ETPATTERN": self.etpattern,
@@ -346,6 +356,7 @@ class MonitorDispatcher(Dispatcher):
 
 		# user can configure not to run either of the types of Gaudi job
 		if not process["run"]:
+			self.logger.debug(" ... process is configured not to be run.")
 			return
 
 		try:
@@ -381,7 +392,7 @@ class MonitorDispatcher(Dispatcher):
 				if processname == "monitoring":
 					self.om_Gaudi_thread = thread
 
-				self.logger.info("  Starting a copy of MinervaNearline.exe with the following command:\n%s", process["executable"])
+				self.logger.info("  Starting an interactive copy of MinervaNearline.exe with the following command:\n%s", process["executable"])
 		
 				# want to record the PID.  wait until it's ready.
 				while thread.pid is None:
@@ -525,7 +536,7 @@ class OMThread(threading.Thread):
 				
 		# if the event builder finished normally,
 		# tell the dispatcher so.
-		elif self.processname == "eventbuilder":
+		if self.processname == "eventbuilder":
 			self.parent.postoffice.Send(PostOffice.Message(subject="om_internal", event="eb_finished", eb_ok=True))
 		
                         
