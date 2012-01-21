@@ -68,8 +68,7 @@ class MonitorDispatcher(Dispatcher):
 		self.om_eb_threads = []
 		self.om_Gaudi_thread = None
 		
-		self.etpattern = None
-		self.evbfile = None
+		self.last_et_config = None
 		
 		self.use_condor = Configuration.params["mon_useCondor"]
 		
@@ -220,7 +219,7 @@ class MonitorDispatcher(Dispatcher):
 		self.signalled_ready = True
 		
 		# start the monitoring job too, since the event builder is ready now
-		self.StartGaudiJob("monitoring")
+		self.StartGaudiJob("monitoring", et_config=self.last_et_config)
 
 	def OMDirectiveHandler(self, message):
 		""" Handles incoming directives for the online monitoring system. """
@@ -267,7 +266,7 @@ class MonitorDispatcher(Dispatcher):
 			return
 		
 		if message.event == "eb_finished" and message.eb_ok:
-			self.StartGaudiJob("dst")
+			self.StartGaudiJob("dst", message.et_config)
 
 	def om_start(self, etpattern, et_sys_location, etport):
 		""" Starts the online monitoring services as subprocesses.  First checks
@@ -277,21 +276,15 @@ class MonitorDispatcher(Dispatcher):
 		
 		self.signalled_ready = False
 
-		# first clear up any old event builder processes.
-#		if self.om_eb_thread and self.om_eb_thread.is_alive() is None:
-#			self.om_eb_thread.terminate()
-#			self.om_eb_thread.join()
-		
-		self.etpattern = etpattern
-		self.evbfile = "%s/%s_RawData.dat" % ( Configuration.params["mon_rawdataLocation"], self.etpattern )
-		self.raweventfile = "%s/%s_RawEvent.root" % ( Configuration.params["mon_rawdataLocation"], self.etpattern )
-		
-		
+		self.last_et_config = {
+			"sys_location": et_sys_location,
+			"pattern": etpattern,
+			"port": etport
+		}
 		try:
-			self.StartEventBuilder(etfile="%s/%s_RawData" % (et_sys_location, etpattern), etport=etport)
+			self.StartEventBuilder(self.last_et_config) 
 		except Exception as excpt:
-			self.logger.error("   ==> The event builder process can't be started!")
-			self.logger.error("   ==> Error message: '%s'", excpt)
+			self.logger.exception("   ==> The event builder process can't be started!")
 			return False
 		
 		return True
@@ -331,9 +324,13 @@ class MonitorDispatcher(Dispatcher):
 		
 		return True if not errors else False
 	
-	def StartEventBuilder(self, etfile, etport):
+	def StartEventBuilder(self, et_config):
 		""" Start the event builder process. """
-		executable = ( "%s/bin/event_builder %s %s %s %d" % (environment["DAQROOT"], etfile, self.evbfile, etport, os.getpid()) ) 
+
+		et_config["evbfile"] = "%s/%s_RawData.dat" % ( Configuration.params["mon_rawdataLocation"], et_config["pattern"] )
+		et_config["etfile"] = "%s/%s_RawData" % (et_config["sys_location"], et_config["pattern"])
+		
+		executable = ( "%s/bin/event_builder %s %s %s %d" % (environment["DAQROOT"], et_config["etfile"], et_config["evbfile"], et_config["port"], os.getpid()) ) 
 		self.logger.info("   event_builder command:\n      '%s'...", executable)
 	
 		# clean up any old event builders that have finished
@@ -342,15 +339,15 @@ class MonitorDispatcher(Dispatcher):
 			if thread.process.returncode is None:
 				threads_to_keep.append(thread)
 		self.om_eb_threads = threads_to_keep
-		self.om_eb_threads.append(OMThread(self, executable, "eventbuilder"))
+		self.om_eb_threads.append(OMThread(self, executable, "eventbuilder", et_config=et_config))
 	
-	def StartGaudiJob(self, processname):
+	def StartGaudiJob(self, processname, et_config):
 		""" Start a Gaudi process. """
 		
 		self.logger.debug("Starting DST job named '%s'..." % processname)
 
 		process = gaudi_processes[processname]
-		extra_env = { "ETPATTERN": self.etpattern,
+		extra_env = { "ETPATTERN": et_config["pattern"],
 			"SWAP_AREA": Configuration.params["mon_swapArea"]
 		}
 
@@ -406,11 +403,11 @@ class MonitorDispatcher(Dispatcher):
 				        "release":     os.environ["MINERVA_RELEASE"],
 				        "siteroot":    os.environ["MYSITEROOT"],
 				        "daqrecvroot": os.environ["DAQRECVROOT"],
-				        "rawdatafile": self.evbfile,
+				        "rawdatafile": et_config["evbfile"],
 				        "executable":  process["executable"] }
 				executable =  "$HOME/scripts/mnvnearline_jobsub -l \"notify_user = %(notify)s\""
 				executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
-				executable += " -e ETPATTERN -e NOBLUEARC"
+				executable += " -e ETPATTERN"
 				executable += " -f %(rawdatafile)s -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
 				executable += " -q"
 				executable += " %(executable)s"
@@ -443,7 +440,7 @@ class MonitorDispatcher(Dispatcher):
 class OMThread(threading.Thread):
 	""" OM processes need to be run in a separate thread
 	    so that we know if they finish. """
-	def __init__(self, parent, command, processname, persistent=False, extra_env={}):
+	def __init__(self, parent, command, processname, persistent=False, extra_env={}, et_config={}):
 		threading.Thread.__init__(self)
 		
 		self.parent = parent
@@ -451,6 +448,7 @@ class OMThread(threading.Thread):
 		self.pid = None
 		self.command = command
 		self.processname = processname
+		self.et_config = et_config
 		self.persistent = persistent		# if this thread is supposed to run until it finishes
 		self.env = extra_env
 		
@@ -537,7 +535,11 @@ class OMThread(threading.Thread):
 		# if the event builder finished normally,
 		# tell the dispatcher so.
 		if self.processname == "eventbuilder":
-			self.parent.postoffice.Send(PostOffice.Message(subject="om_internal", event="eb_finished", eb_ok=True))
+			self.parent.postoffice.Send(PostOffice.Message(subject="om_internal",
+				event="eb_finished",
+				eb_ok=True,
+				et_config=self.et_config
+			))
 		
                         
 ####################################################################
