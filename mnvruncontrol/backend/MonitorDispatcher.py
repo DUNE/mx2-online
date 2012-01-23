@@ -399,15 +399,19 @@ class MonitorDispatcher(Dispatcher):
 			else:
 				env = extra_env
 				env.update(os.environ)
-				fmt = { "notify":      ",".join(Configuration.params["gen_notifyAddresses"]),
-				        "release":     os.environ["MINERVA_RELEASE"],
-				        "siteroot":    os.environ["MYSITEROOT"],
-				        "daqrecvroot": os.environ["DAQRECVROOT"],
-				        "rawdatafile": et_config["evbfile"],
-				        "executable":  process["executable"] }
+				fmt = { 
+					"notify":      ",".join(Configuration.params["gen_notifyAddresses"]),
+					"release":     os.environ["MINERVA_RELEASE"],
+					"siteroot":    os.environ["MYSITEROOT"],
+					"daqrecvroot": os.environ["DAQRECVROOT"],
+					"rawdatafile": et_config["evbfile"],
+					"etpattern":   et_config["etpattern"]
+					"executable":  process["executable"],
+				}
+				
 				executable =  "$HOME/scripts/mnvnearline_jobsub -l \"notify_user = %(notify)s\""
 				executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
-				executable += " -e ETPATTERN"
+				executable += " -e ETPATTERN -L %(etpattern)"
 				executable += " -f %(rawdatafile)s -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
 				executable += " -q"
 				executable += " %(executable)s"
