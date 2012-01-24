@@ -405,13 +405,13 @@ class MonitorDispatcher(Dispatcher):
 					"siteroot":    os.environ["MYSITEROOT"],
 					"daqrecvroot": os.environ["DAQRECVROOT"],
 					"rawdatafile": et_config["evbfile"],
-					"etpattern":   et_config["etpattern"]
+					"etpattern":   et_config["pattern"],
 					"executable":  process["executable"],
 				}
 				
 				executable =  "$HOME/scripts/mnvnearline_jobsub -l \"notify_user = %(notify)s\""
 				executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
-				executable += " -e ETPATTERN -L %(etpattern)"
+				executable += " -e ETPATTERN -L %(etpattern)s_LogFile.joblog"
 				executable += " -f %(rawdatafile)s -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
 				executable += " -q"
 				executable += " %(executable)s"
