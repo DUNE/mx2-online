@@ -5,5 +5,5 @@
 # Assumes a valid kerberos ticket!  (Assumes running from non-control room PC.)
 
 # Restart the nearonline...
-`ssh nearonline@mnvnearline1.fnal.gov source /scratch/nearonline/mirror/mnvdaqrunscripts/restart_nearline.sh`
+`ssh nearonline@mnvonlinelogger.fnal.gov source /scratch/nearonline/mirror/mnvdaqrunscripts/restart_nearline.sh`
 

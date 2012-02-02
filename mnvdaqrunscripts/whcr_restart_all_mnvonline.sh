@@ -8,7 +8,7 @@
 source $HOME/mnvdaqrunscripts/Kerberize
 
 # Restart the nearonline...
-`ssh nearonline@mnvnearline1.fnal.gov source /home/nearonline/mnvdaqrunscripts/restart_nearline.sh`
+`ssh nearonline@mnvonlinelogger.fnal.gov source /home/nearonline/mnvdaqrunscripts/restart_nearline.sh`
 
 # Kill all the remote stuff.
 echo "Going to kill remote processes..."

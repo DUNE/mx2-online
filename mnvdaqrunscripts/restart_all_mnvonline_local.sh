@@ -9,7 +9,7 @@
 # kerberos ticket!
 
 # Restart the nearonline...
-`ssh nearonline@mnvnearline1.fnal.gov source /home/nearonline/mnvdaqrunscripts/restart_nearline.sh`
+`ssh nearonline@mnvonlinelogger.fnal.gov source /home/nearonline/mnvdaqrunscripts/restart_nearline.sh`
  
 # Restart the DAQ/RC...
 source $HOME/mnvdaqrunscripts/restart_daq_rc_mnvonline_local.sh
