@@ -2,7 +2,6 @@
 #define trips_cpp
 
 #include "trips.h"
-#include "exit_codes.h"
 /*********************************************************************************
 * Class for creating Trip-t objects for use with the 
 * MINERvA data acquisition system and associated software projects.
@@ -236,12 +235,11 @@ void trips::SortNSet(bool reset, long_m data, int bits, bool control, bool lowTo
 }
 
 
-int trips::DecodeRegisterValues(int messageLength) 
+void trips::DecodeRegisterValues(int messageLength) 
 {
 /*! \fn 
  *  This function decodes an incoming message into the values of the
- *  particular settings on a trip.  It returns a success integer (0 for 
- *  success).
+ *  particular settings on a trip.
  *
  *  Input:
  *  \param messageLength:  the length of the incoming message as produred from the 
@@ -300,9 +298,8 @@ int trips::DecodeRegisterValues(int messageLength)
 		}
 	} else {
 		std::cout << "Errors Found in Trip Message" << std::endl;
-		return 1;
+		exit(1);
 	}
-	return 0;
 }
 
 
@@ -362,7 +359,7 @@ void trips::ParseError(int i, int j)
  *  \param j: message array index
  */
 	std::cout << "Parse Error for register: " << i << " at index: " << j << std::endl;
-	exit(EXIT_FEB_UNSPECIFIED_ERROR);
+	exit(1);
 }
 
 
@@ -376,7 +373,7 @@ void trips::ParseError(int i)
  *  \param i: message array index
  */
 	std::cout << "Parse Error at index: " << i << " while getting register value." << std::endl;
-	exit(EXIT_FEB_UNSPECIFIED_ERROR);
+	exit(1);
 }
 
 

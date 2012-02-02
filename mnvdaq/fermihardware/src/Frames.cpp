@@ -17,42 +17,18 @@ const int Frames::MaxSendLength=2046; //maximum send message length
 const int Frames::MaxReceiveLength=6124; //maximum receive message length
 const int Frames::MinHeaderLength=9; //size (in bytes) of an outgoing FPGA header for ANY device
 const int Frames::MinBroadcastLength=2; //I'm not sure this is ever used in our setup
-const int Frames::NDiscrChPerTrip=16;
-
-#if V81FIRMWARE||V83FIRMWARE||V85FIRMWARE
 const int Frames::ADCFrameLength=875; //bytes of course (dpm pointer should be this +2)
-#endif
-#if (V90FIRMWARE)||(V91FIRMWARE)
-const int Frames::ADCFrameLength=443; //bytes of course (dpm pointer should be this +2)
-#endif
-
-// log4cpp category hierarchy.
-log4cpp::Category& framesLog = log4cpp::Category::getInstance(std::string("frames"));
+const int Frames::NDiscrChPerTrip=16;
 
 Frames::Frames() 
 { 
 /*! \fn 
- * The basic constructor sets the FrameID bytes and sets the log4cpp appender to null.
+ * The constructor sets the FrameID bytes and then moves on.
  */
+	FrameID[0] = 0x00; 
+	FrameID[1] = 0x00; //initialize the frame id to no value
 	// These don't seem to need a value...
-	FrameID[0]   = 0x00; 
-	FrameID[1]   = 0x00; //initialize the frame id to no value
-	frmsAppender = 0;
 }
-
-
-Frames::Frames(log4cpp::Appender* appender) 
-{ 
-/*! \fn 
- * The basic constructor sets the FrameID bytes and sets the log4cpp appender to null.
- */
-	// These don't seem to need a value...
-	FrameID[0]   = 0x00; 
-	FrameID[1]   = 0x00; //initialize the frame id to no value
-	frmsAppender = appender;
-	framesLog.setPriority(log4cpp::Priority::ERROR);
-}
-
 
 void Frames::MakeDeviceFrameTransmit(Devices dev,Broadcasts b, Directions d, 
 	unsigned int f, unsigned int feb) 
@@ -108,6 +84,7 @@ void Frames::MakeHeader()
 	frameHeader[3] = FrameID[0]; frameHeader[4] = FrameID[1];
 
 	/* words 5 - 8 are reserved for response information */
+
 	frameHeader[5] = frameHeader[6] = frameHeader[7] = frameHeader[8] = 0x00; //initialize them to null
 }
 
@@ -116,9 +93,9 @@ void Frames::MakeMessage() { std::cout << "Hi Elaine!" << std::endl;}
 
 bool Frames::CheckForErrors() 
 {
-/*! \fn bool Frames::CheckForErrors()
- * Check incoming frame header data for errors.
- */
+/*! \fn********************************************************************************
+ * a function which checks incoming FPGA frame header data for errors.
+ *********************************************************************************/
 	bool errors[10], error;
 	error = false; //initialize error 
 	for (int i=0;i<10;i++) {
@@ -141,10 +118,7 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: Direction: " << errors[0] << std::endl;
 #endif
 	if (errors[0]) {
-		error = true; 
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: Direction: "<<errors[0];
-		}
+		error = true; std::cout<<"CheckForErrors: Direction: "<<errors[0]<<std::endl;
 	}
 
 	word = DeviceStatus; flag = DeviceOK; //check status
@@ -153,10 +127,7 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: DeviceOK: " << errors[1] << std::endl;
 #endif
 	if (errors[1]) {
-		error = true; 
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: DeviceOK: "<<errors[1];
-		}
+		error = true; std::cout<<"CheckForErrors: DeviceOK: "<<errors[1]<<std::endl;
 	}
 
 	word = DeviceStatus; flag = FunctionOK; //check execution status
@@ -165,10 +136,7 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: FunctionOK: " << errors[2] << std::endl;
 #endif
 	if (errors[2]) {
-		error = true; 
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: FunctionOK: "<<errors[2];
-		}
+		error = true; std::cout<<"CheckForErrors: FunctionOK: "<<errors[2]<<std::endl;
 	}
 
 	word = FrameStatus; flag = CRCOK; //check CRC error bit
@@ -177,10 +145,7 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: CRCOK: " << errors[3] << std::endl;
 #endif
 	if (errors[3]) {
-		error = true; 
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: CRCOK: "<<errors[3];
-		}
+		error = true; std::cout<<"CheckForErrors: CRCOK: "<<errors[3]<<std::endl;
 	}
 
 	word = FrameStatus; flag = EndHeader; //message ended properly
@@ -189,10 +154,7 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: EndHeader: " << errors[4] << std::endl;
 #endif
 	if (errors[4]) {
-		error = true; 
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: EndHeader: "<<errors[4];
-		}
+		error = true; std::cout<<"CheckForErrors: EndHeader: "<<errors[4]<<std::endl;
 	}
 
 	word = FrameStatus; flag = MaxLen; //message exceeded maximum message length
@@ -201,10 +163,7 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: MaxLen: " << errors[5] << std::endl;
 #endif
 	if (errors[5]) {
-		error = true; 
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: MaxLen: "<<errors[5];
-		}
+		error = true; std::cout<<"CheckForErrors: MaxLen: "<<errors[5]<<std::endl;
 	}
 
 	word = FrameStatus; flag = SecondStart;
@@ -213,10 +172,7 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: SecondStart: " << errors[6] << std::endl;
 #endif
 	if (errors[6]) {
-		error = true; 
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: SecondStart: "<<errors[6];
-		}
+		error = true; std::cout<<"CheckForErrors: SecondStart: "<<errors[6]<<std::endl;
 	}
 
 	word = FrameStatus; flag = NAHeader;
@@ -225,10 +181,7 @@ bool Frames::CheckForErrors()
 	std::cout << "\tCheckForErrors: NAHeader: " << errors[7] << std::endl;
 #endif
 	if (errors[7]) {
-		error = true; 
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: NAHeader: "<<errors[7];
-		}
+		error = true; std::cout<<"CheckForErrors: NAHeader: "<<errors[7]<<std::endl;
 	}
 
 	return error; // true if *any* error was found!
@@ -263,5 +216,13 @@ void Frames::DecodeHeader()
 	deviceFunction[0] = (message[word]&0x0F); // extract the device function executed 
 	targetDevice[0]   = (message[word]&0xF0); // extract the device which responded
 }
+
+
+void Frames::DecodeRegisterValues(int a) 
+{
+	std::cout << "Must Make One of these in each frame-inheriting class!!!" << std::endl;
+	exit(-2);
+}
+
 
 #endif
