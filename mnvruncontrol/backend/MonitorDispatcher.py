@@ -49,6 +49,20 @@ gaudi_processes = {
 	}
 }
 
+# generates the executable.  here because
+# it's also used by the nearline scripts
+# to submit jobs manually.
+def CondorCommand(fmt):
+	executable =  "$HOME/scripts/mnvnearline_jobsub -l \"notify_user = %(notify)s\""
+	executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
+	executable += " -e ETPATTERN -L %(etpattern)s_LogFile.joblog"
+	executable += " -f %(rawdatafile)s -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
+	executable += " -q"
+	executable += " %(executable)s"
+	executable = executable % fmt
+	
+	return executable
+
 
 class MonitorDispatcher(Dispatcher):
 	"""
@@ -409,13 +423,7 @@ class MonitorDispatcher(Dispatcher):
 					"executable":  process["executable"],
 				}
 				
-				executable =  "$HOME/scripts/mnvnearline_jobsub -l \"notify_user = %(notify)s\""
-				executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
-				executable += " -e ETPATTERN -L %(etpattern)s_LogFile.joblog"
-				executable += " -f %(rawdatafile)s -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
-				executable += " -q"
-				executable += " %(executable)s"
-				executable = executable % fmt
+				executable = CondorCommand(fmt)
 				self.logger.info("  Submitting a Condor job using the following command:\n%s", executable)
 				return_code = subprocess.call(executable, shell=True, env=env)
 				
@@ -549,15 +557,9 @@ class OMThread(threading.Thread):
 ####################################################################
 ####################################################################
 """
-  This module should probably never be imported elsewhere.
-  It's designed to run directly as a background process that handles
-  incoming requests for the online monitoring system.
-  
-  If it IS running as a stand-alone, it will need to daemonize
+  If this module is running as a stand-alone, it will need to daemonize
   and begin listening on the specified port (both of which are
   taken care of by the Dispatcher superclass's method bootstrap()).
-  
-  Otherwise this implementation will bail with an error.
 """
 if __name__ == "__main__":
 	environment = {}
@@ -582,7 +584,4 @@ if __name__ == "__main__":
 	dispatcher.Bootstrap()
 
 	sys.exit(0)
-	
-else:
-	raise RuntimeError("This module is not designed to be imported!")
 
