@@ -1498,7 +1498,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		if self.current_DAQ_thread < len(self.DAQStartTasks):
 			self.current_state = "Setting up run:\n" + self.DAQStartTasks[self.current_DAQ_thread]["message"]
-			self.current_progress = (self.startup_step, self.num_startup_steps)
+			self.current_progress = (self.startup_step+1, self.num_startup_steps)
 			self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress"] ) )
 			
 			# do the increments first to prevent race conditions

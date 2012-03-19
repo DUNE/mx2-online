@@ -1045,7 +1045,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		else:
 			for item in status:
 				self.status[item] = status[item]
-		
+				
 		# keep the gate count current
 		if "current_gate" in status and status["current_gate"] is not None \
 		   and "running" in self.status and self.status["running"]:
@@ -1252,18 +1252,22 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    to reflect if the RC thinks it was recent enough.  This
 		    method handles the events specifying the warning level. """
 		
-		ok_colors = [ wx.NamedColour("lightblue1"), wx.NamedColour("lightblue2") ]
+		#ok_colors = [ wx.NamedColour("lightblue2"), wx.NamedColour("dark cyan") ]
+		ok_colors = [ "#B1DAFB", "#77CAFF" ]
 		warning_colors = {
-			Alert.WARNING: wx.NamedColour("orange"),
-			Alert.ERROR: wx.NamedColour("red"),
+			Alert.WARNING: "orange",
+			Alert.ERROR: "red",
 		}
 		
 		status_panel = xrc.XRCCTRL(self.frame, "summary_info_panel")
+		time_entry = xrc.XRCCTRL(self.frame, "status_trigger_time")
 		if evt.warning_level is None:
 			prev_color = status_panel.GetBackgroundColour()
 			color = ok_colors[1 if prev_color == ok_colors[0] else 0]
+			time_entry.SetForegroundColour(wx.NullColor)
 		elif evt.warning_level in warning_colors:
 			color = warning_colors[evt.warning_level]
+			time_entry.SetForegroundColour("white")
 		else:
 			raise ValueError("Invalid warning level: '%s'" % evt.warning_level)
 		status_panel.SetBackgroundColour(color)
@@ -1425,8 +1429,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		if response is None:
 			self.DisconnectDAQ(use_ssh, remote_host, remote_port)
 			return
-		else:
-			wx.PostEvent(self, Events.StatusUpdateEvent(status=response.status))
 		
 		# ask for the necessary forwarding subscriptions from the DAQ manager
 		subscriptions = []
@@ -1441,6 +1443,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		wx.PostEvent( self, Events.UpdateProgressEvent(progress=(0,1), text="Connected.") )
 		wx.PostEvent(self, Events.CommStatusEvent(connected=True))
+
+		wx.PostEvent(self, Events.StatusUpdateEvent(status=response.status))
 
 	def DAQSendWithResponse(self, message, panic_if_no_connection=True, timeout=None, with_exception=False):
 		""" Sends a message to the DAQ and waits for a response.

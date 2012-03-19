@@ -32,7 +32,7 @@ ENABLE_LI            = True
 LI_WAIT_FOR_RESPONSE = True
 
 # Front-end properties
-BLINK_INTERVAL                    = 2		# in seconds
+BLINK_INTERVAL                    = 1		# in seconds
 BELL_INTERVAL                     = 10	# in seconds
 FRONTEND_WARNING_TRIGGER_INTERVAL = 30 # in seconds
 FRONTEND_MAX_TRIGGER_INTERVAL     = 5  # in minutes

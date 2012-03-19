@@ -315,9 +315,9 @@ class AlertThread(threading.Thread):
 			# the background of the "last trigger" status area
 			# is meant to reflect the run control's best knowledge
 			# of how recent the last trigger was:
-			#  - "ok"
+			#  - "ok" if none of the following conditions are met
 			#  - "warning" if it's been longer than a configurable number of seconds
-			#    but the trigger warning hasn't been sounded yet
+			#    but the full-screen trigger warning hasn't been sounded yet
 			#  - "alarm" if the trigger warning is in effect
 			if self._parent_app.daq and time.time() - self._last_trigger_status_update > Configuration.params["frnt_blinkInterval"]:
 				level = None
@@ -326,11 +326,19 @@ class AlertThread(threading.Thread):
 						level = Alert.ERROR
 					elif trigger_interval is None or trigger_interval > Configuration.params["frnt_triggerWarningInterval"]:
 						level = Alert.WARNING
-				wx.PostEvent(
-					self._parent_app,
-					Events.TriggerStatusEvent(warning_level=level)
-				)
-				self._last_trigger_status_update = time.time()
+				
+				# criteria:
+				#  - always propagate 'warning' or 'error' messages
+				#  - send an update if none has yet been sent
+				#  - send an update if a trigger has happened more recently than the last update.
+				if level is not None \
+				  or self._last_trigger_status_update is None \
+				  or self._last_trigger > self._last_trigger_status_update:
+					wx.PostEvent(
+						self._parent_app,
+						Events.TriggerStatusEvent(warning_level=level)
+					)
+					self._last_trigger_status_update = time.time()
 
 			# if there's nothing to do, just keep looping.
 			if self._current_alert is None \
