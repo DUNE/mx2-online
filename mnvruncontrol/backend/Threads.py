@@ -277,6 +277,7 @@ class AlertThread(threading.Thread):
 		self._last_bell = 0
 		self._last_blink = 0
 		self._last_pulse = 0
+		self._last_trigger_status_update = 0
 		
 		self._last_trigger = None
 		self._trigger_alert_id = None
@@ -297,17 +298,39 @@ class AlertThread(threading.Thread):
 			# (only if the config says to do it,
 			#  the appropriate amount of time has elapsed,
 			#  and we haven't already created one)
-			trigger_interval = None if self._last_trigger is None else (time.time() - self._last_trigger) / 60.
+			trigger_interval = None if self._last_trigger is None else (time.time() - self._last_trigger)
+			trigger_interval_min = None if trigger_interval is None else int(trigger_interval/60.)
 			if Configuration.params["frnt_maxTriggerInterval"] > 0 \
 			   and self._last_trigger is not None \
 			   and self._parent_app.in_control \
-			   and trigger_interval > Configuration.params["frnt_maxTriggerInterval"] \
+			   and trigger_interval_min > Configuration.params["frnt_maxTriggerInterval"] \
 			   and self._trigger_alert_id is None:
-				alert = Alert.Alert(notice="No triggers have been received for the last %d minutes.  Is this what you're expecting?  (Is the beam down?)" % trigger_interval,
-				                    severity=Alert.WARNING)
+				alert = Alert.Alert(
+					notice="No triggers have been received for the last %d minutes.  Is this what you're expecting?  (Is the beam down?)" % trigger_interval_min,
+					severity=Alert.WARNING
+				)
 				self._trigger_alert_id = alert.id
 				self.NewAlert(alert)
-				                           
+			
+			# the background of the "last trigger" status area
+			# is meant to reflect the run control's best knowledge
+			# of how recent the last trigger was:
+			#  - "ok"
+			#  - "warning" if it's been longer than a configurable number of seconds
+			#    but the trigger warning hasn't been sounded yet
+			#  - "alarm" if the trigger warning is in effect
+			if self._parent_app.daq and time.time() - self._last_trigger_status_update > Configuration.params["frnt_blinkInterval"]:
+				level = None
+				if Configuration.params["frnt_triggerWarningInterval"] is not None:
+					if self._trigger_alert_id is not None:
+						level = Alert.ERROR
+					elif trigger_interval is None or trigger_interval > Configuration.params["frnt_triggerWarningInterval"]:
+						level = Alert.WARNING
+				wx.PostEvent(
+					self._parent_app,
+					Events.TriggerStatusEvent(warning_level=level)
+				)
+				self._last_trigger_status_update = time.time()
 
 			# if there's nothing to do, just keep looping.
 			if self._current_alert is None \

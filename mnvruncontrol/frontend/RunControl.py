@@ -194,6 +194,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.Bind(Events.EVT_DAQ_QUIT, self.OnConnectClick)
 		self.Bind(Events.EVT_PMT_VOLTAGE_UPDATE, self.OnHVUpdate)
 		self.Bind(Events.EVT_STATUS_UPDATE, self.OnStatusUpdate)
+		self.Bind(Events.EVT_TRIGGER_STATUS, self.OnTriggerStatusUpdate)
 		self.Bind(Events.EVT_UPDATE_PROGRESS, self.OnProgressUpdate)
 		self.Bind(Events.EVT_UPDATE_SERIES, self.OnSeriesUpdate)
 		
@@ -1244,6 +1245,28 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.problem_pmt_list = None
 		
 		self.worker_thread.queue.put( {"method": self.StopRunning} )
+		
+	def OnTriggerStatusUpdate(self, evt):
+		""" In addition to the actual content of the "last trigger"
+		    status area, the background of this area is color-coded
+		    to reflect if the RC thinks it was recent enough.  This
+		    method handles the events specifying the warning level. """
+		
+		ok_colors = [ wx.NamedColour("lightblue1"), wx.NamedColour("lightblue2") ]
+		warning_colors = {
+			Alert.WARNING: wx.NamedColour("orange"),
+			Alert.ERROR: wx.NamedColour("red"),
+		}
+		
+		status_panel = xrc.XRCCTRL(self.frame, "summary_info_panel")
+		if evt.warning_level is None:
+			prev_color = status_panel.GetBackgroundColour()
+			color = ok_colors[1 if prev_color == ok_colors[0] else 0]
+		elif evt.warning_level in warning_colors:
+			color = warning_colors[evt.warning_level]
+		else:
+			raise ValueError("Invalid warning level: '%s'" % evt.warning_level)
+		status_panel.SetBackgroundColour(color)
 	
 	def Redraw(self):
 		""" Makes sure that everything is completely

@@ -45,6 +45,8 @@ SubrunOverEvent,         EVT_SUBRUN_OVER           = wx.lib.newevent.NewEvent()
 
 SubrunStartingEvent,     EVT_SUBRUN_STARTING       = wx.lib.newevent.NewEvent()
 
+TriggerStatusEvent,      EVT_TRIGGER_STATUS        = wx.lib.newevent.NewEvent()
+
 UpdateNodeEvent,         EVT_UPDATE_NODE           = wx.lib.newevent.NewEvent()
 
 UpdateProgressEvent,     EVT_UPDATE_PROGRESS       = wx.lib.newevent.NewEvent()

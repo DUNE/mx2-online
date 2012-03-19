@@ -1322,7 +1322,8 @@ class PostOffice(MessageTerminus):
 			raise MessageError("Message is badly formed.  Won't be sent...")
 			
 		if self._wait_for_confirmation_count > 0 and not force:
-				raise AlreadyWaitingError("Already waiting for confirmation for another message!  If you *really* want to wait for different messages simultaneously (maybe you're doing it in different threads?), pass force=True to SendWithConfirmation... but then you assume any responsibility for any deadlocks that may occur!")
+			raise AlreadyWaitingError("SendWithConfirmation can't wait for multiple messages simultaneously.")
+#				raise AlreadyWaitingError("Already waiting for confirmation for another message!  If you *really* want to wait for different messages simultaneously (maybe you're doing it in different threads?), pass force=True to SendWithConfirmation... but then you assume any responsibility for any deadlocks that may occur!")
 
 		self._wait_for_confirmation_count += 1
 			

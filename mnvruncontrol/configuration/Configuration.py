@@ -48,9 +48,10 @@ configuration = {
 	"frnt_resourceLocation"       : ( Defaults.RESOURCE_LOCATION_DEFAULT,            "Resource files location",                             str   ),
 	"frnt_listenPort"             : ( Defaults.FRONTEND_LISTEN_PORT,                 "Frontend client listener port",                       int   ),
 	"frnt_PIDfile"                : ( Defaults.FRONTEND_PID_FILE,                    "Frontend client PID file location",                   str   ),
-	"frnt_maxTriggerInterval"     : ( Defaults.FRONTEND_MAX_TRIGGER_INTERVAL,        "Max interval between triggers before warning (m)",    float ),
+	"frnt_maxTriggerInterval"     : ( Defaults.FRONTEND_MAX_TRIGGER_INTERVAL,        "Max interval between triggers before full-screen warning (m)",    float ),
 	"frnt_bellInterval"           : ( Defaults.BELL_INTERVAL,                        "Interval between alert bells (s)",                    float ),
 	"frnt_blinkInterval"          : ( Defaults.BLINK_INTERVAL,                       "Interval between alert blinks (s)",                   float ),
+	"frnt_triggerWarningInterval" : ( Defaults.FRONTEND_WARNING_TRIGGER_INTERVAL,    "Interval between triggers before warning color (s)",  float ),
 
 	# hardware
 	"hw_eventFrames"              : ( Defaults.FRAMES,                               "Number of frames in an event",                        int   ),

@@ -32,12 +32,13 @@ ENABLE_LI            = True
 LI_WAIT_FOR_RESPONSE = True
 
 # Front-end properties
-BLINK_INTERVAL                = 2		# in seconds
-BELL_INTERVAL                 = 10	# in seconds
-FRONTEND_MAX_TRIGGER_INTERVAL = 5  # in minutes
-FRONTEND_LISTEN_PORT          = 3000
-RESOURCE_LOCATION_DEFAULT     = "/work/software/mnvruncontrol/resources"
-FRONTEND_PID_FILE             = "/tmp/runcontrol.pid"
+BLINK_INTERVAL                    = 2		# in seconds
+BELL_INTERVAL                     = 10	# in seconds
+FRONTEND_WARNING_TRIGGER_INTERVAL = 30 # in seconds
+FRONTEND_MAX_TRIGGER_INTERVAL     = 5  # in minutes
+FRONTEND_LISTEN_PORT              = 3000
+RESOURCE_LOCATION_DEFAULT         = "/work/software/mnvruncontrol/resources"
+FRONTEND_PID_FILE                 = "/tmp/runcontrol.pid"
 
 # logging!
 FRONTEND_LOGFILE_DEFAULT    = "/tmp/runcontrol.log"
