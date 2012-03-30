@@ -1175,6 +1175,9 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			for char in "ABCD":
 				xrc.XRCCTRL(self.frame, "config_singlerun_ledgroups_%s_entry" % char).SetValue( char in status["configuration"].led_groups.description )
 
+			# make sure the correct panel is showing
+			self.OnSeriesClick()
+
 
 			if not "running" in self.status or not self.status["running"]:
 				symbol = u"\u25a1"		# a square: like a "stop" symbol
@@ -1443,8 +1446,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		wx.PostEvent( self, Events.UpdateProgressEvent(progress=(0,1), text="Connected.") )
 		wx.PostEvent(self, Events.CommStatusEvent(connected=True))
-
 		wx.PostEvent(self, Events.StatusUpdateEvent(status=response.status))
+
 
 	def DAQSendWithResponse(self, message, panic_if_no_connection=True, timeout=None, with_exception=False):
 		""" Sends a message to the DAQ and waits for a response.
