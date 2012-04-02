@@ -1323,7 +1323,6 @@ class PostOffice(MessageTerminus):
 			
 		if self._wait_for_confirmation_count > 0 and not force:
 			raise AlreadyWaitingError("SendWithConfirmation can't wait for multiple messages simultaneously.")
-#				raise AlreadyWaitingError("Already waiting for confirmation for another message!  If you *really* want to wait for different messages simultaneously (maybe you're doing it in different threads?), pass force=True to SendWithConfirmation... but then you assume any responsibility for any deadlocks that may occur!")
 
 		self._wait_for_confirmation_count += 1
 			
@@ -1369,7 +1368,7 @@ class PostOffice(MessageTerminus):
 			raise MessageError("Message is badly formed.  Won't be sent...")
 
 		if self._wait_for_response_count > 0 and not force:
-			raise AlreadyWaitingError("Already waiting for responses for another message!  If you *really* want to wait for different messages simultaneously (maybe you're doing it in different threads?), pass force=True to SendWithConfirmation... but then you assume any responsibility for any deadlocks that may occur!")
+			raise AlreadyWaitingError("SendAndWaitForResponse can't wait for multiple messages simultaneously.")
 				
 		self._wait_for_response_count += 1
 
@@ -1464,7 +1463,7 @@ class PostOffice(MessageTerminus):
 		
 		self.Send(message)
 		
-	def ForwardCancel(self, host, subscriptions):
+	def ForwardCancel(self, host, subscriptions, with_confirmation=False):
 		""" Contacts a remote node to cancel forwarding subscriptions.
 		
 		    See the caveat for ForwardRequest().  """
@@ -1480,7 +1479,10 @@ class PostOffice(MessageTerminus):
 		forward_subscr = Subscription(subject="postmaster", action=Subscription.FORWARD, delivery_address=host, postmaster_ok=True, expiry=1, other_attributes={"id": message.id})
 		self.AddSubscription(forward_subscr)
 		
-		self.Send(message)
+		if with_confirmation:
+			self.SendWithConfirmation(message, timeout=10)
+		else:
+			self.Send(message)
 		
 		
 	
@@ -1958,7 +1960,8 @@ class DeliveryThread(threading.Thread):
 									subscription.failed_deliveries += 1
 								else:
 									subscription.failed_deliveries = 1
-								subscription.first_failure_time = time.time()
+									subscription.first_failure_time = time.time()
+								logger().debug("Subscription %s has %d delivery failures...", subscription, subscription.failed_deliveries)
 									
 							finally:
 								sock.close()

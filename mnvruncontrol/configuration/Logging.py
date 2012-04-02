@@ -74,17 +74,17 @@ except NameError:
 	# the post office
 	PO_logger = logging.getLogger("PostOffice")
 
-	PO_filehandler = logging.handlers.TimedRotatingFileHandler(Configuration.params["log_PO"], **ROTATING_LOG_COMMON_CONFIG)
-	PO_logger.setLevel(logging.INFO)
-	PO_filehandler.setLevel(logging.INFO)
-	PO_filehandler.setFormatter(formatter)
+#	PO_filehandler = logging.handlers.TimedRotatingFileHandler(Configuration.params["log_PO"], **ROTATING_LOG_COMMON_CONFIG)
+#	PO_logger.setLevel(logging.INFO)
+#	PO_filehandler.setLevel(logging.INFO)
+#	PO_filehandler.setFormatter(formatter)
 
 # when you need to see all the gory details, these settings are helpful
 # (use them instead of the corresponding lines in the block just above)
-#	PO_filehandler = logging.FileHandler(Configuration.params["log_PO"], 'w')
-#	PO_logger.setLevel(5)
-#	PO_filehandler.setLevel(5)
-#	PO_filehandler.setFormatter(thread_formatter)
+	PO_filehandler = logging.FileHandler(Configuration.params["log_PO"], 'w')
+	PO_logger.setLevel(5)
+	PO_filehandler.setLevel(5)
+	PO_filehandler.setFormatter(thread_formatter)
 	
 	PO_logger.addHandler(PO_filehandler)
 	
