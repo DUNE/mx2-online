@@ -1,8 +1,8 @@
 mnvruncontrol -- the MINERvA run control
 ==================================================================
   Original author:               J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:                 v5r6p1  (March 2012)
-  Last update to this document:  April 6, 2011
+  Last revision:                 v5r6p2  (April 2012)
+  Last update to this document:  April 2, 2012
 ==================================================================
 
 This document briefly describes the configuration and usage of the MINERvA run
@@ -31,7 +31,7 @@ Contents:
     wxPython from www.wxpython.org.
   
   * pySerial >= 2.4 (only when light injection is needed)
-    The light injection box uses an RS-232 (i.e., serial) interface.  The best
+    The light injection boxes use an RS-232 (i.e., serial) interface.  The best
     Python serial library I found (there isn't one built in, strangely) is
     pySerial, which you can get from pyserial.sourceforge.net.  Follow its
     instructions to install either in the default location or in a location
