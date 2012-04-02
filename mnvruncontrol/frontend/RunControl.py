@@ -497,17 +497,15 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def OnClose(self, evt=None):
 		""" Shuts everything down nicely. """
 		
-		if self.in_control:
-			self.RelinquishControl(self.id)
+		self.logger.info("Disconnecting from DAQ...")
+		if self.daq:
+			self.DisconnectDAQ(**self.ssh_details)
 		
 		self.logger.info("Shutting down post office...")
 		self.postoffice.Shutdown()
 
 		self.logger.info("Shutting down message terminus...")
 		self.Close()
-
-		self.logger.info("Clearing any SSH connections...")
-		self.KillSSHProcesses()
 
 		self.logger.info("Shutting down worker thread...")
 		self.worker_thread.queue.put(Threads.StopWorkingException())
@@ -1494,7 +1492,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			newsub.delivery_address = PostOffice.IPv4Address(None, self.postoffice.listen_port)
 
 			subscriptions.append(newsub)
-		self.postoffice.ForwardCancel( host=(host, remote_port), subscriptions=subscriptions )
+		self.postoffice.ForwardCancel( host=(host, remote_port), subscriptions=subscriptions, with_confirmation=True )
 			
 		if use_ssh:
 			self.KillSSHProcesses()
