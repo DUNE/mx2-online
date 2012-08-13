@@ -114,5 +114,6 @@ OM_USE_CONDOR          = False
 # readout nodes
 SLOWCONTROL_NUM_WRITE_ATTEMPTS       = 3
 SLOWCONTROL_BEAM_FILE                = "beam.hwcfg"
+SLOWCONTROL_HVOFF_FILE               = "hvoff.hwcfg"
 SLOWCONTROL_LI_FILE                  = "li.hwcfg"
 SLOWCONTROL_LI_DISCRIMINATORS_FILE   = "li_with_discriminators.hwcfg"

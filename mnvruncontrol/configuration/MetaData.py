@@ -245,7 +245,8 @@ DetectorTypes		= MetaData(( ("UNKNOWN",        "Unknown",            0,  "UN"),
 HardwareConfigurations = MetaData(( ("NOFILE",     "Current state",          0, "[no HW file -- current configuration]"),
                                     ("BEAM",       "Beam settings",          1, "read_SCBeamFile"),
                                     ("LI",         "LI settings",            2, "read_SCLIFile"),
-                                    ("LI_DISCRIM", "LI with discriminators", 3, "read_SCLIDiscriminatorsFile") ))
+                                    ("LI_DISCRIM", "LI with discriminators", 3, "read_SCLIDiscriminatorsFile"),
+                                    ("HV_OFF",     "High voltage off",       4, "read_SCHVOffFile") ))
                                     
 HardwareInitLevels	= MetaData(( ("NO_HW_INIT",   "No HW init",   0, None),
 				             ("FULL_HW_INIT", "Full HW init", 1, None) ))

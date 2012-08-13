@@ -102,6 +102,7 @@ configuration = {
 	"read_lastTriggerFile"        : ( Defaults.LAST_TRIGGER_FILE,                    "Location and filename of last trigger file",          str   ),
 	"read_SCfileLocation"         : ( Defaults.SLOWCONTROL_CONFIG_LOCATION_DEFAULT,  "Slow control HW file location",                       str   ),
 	"read_SCBeamFile"             : ( Defaults.SLOWCONTROL_BEAM_FILE,                "'Beam' HW configuration file name",                   str   ),
+	"read_SCHVOffFile"            : ( Defaults.SLOWCONTROL_HVOFF_FILE,               "'High voltage off' HW configuration file name",       str   ),
 	"read_SCLIFile"               : ( Defaults.SLOWCONTROL_LI_FILE,                  "'Light injection' HW configuration file name",        str   ),
 	"read_SCLIDiscriminatorsFile" : ( Defaults.SLOWCONTROL_LI_DISCRIMINATORS_FILE,   "'LI with discriminators' HW configuration file name", str   ),
 	"read_HWwriteAttempts"        : ( Defaults.SLOWCONTROL_NUM_WRITE_ATTEMPTS,       "Max number of attempts to write HW",                  int   ),
