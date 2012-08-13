@@ -33,6 +33,7 @@ import pprint
 import shelve
 import socket
 import anydbm
+import inspect
 import hashlib
 from functools import wraps
 import threading
@@ -139,7 +140,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.first_subrun = self.configuration.subrun
 
 		self.om_startup_lock = threading.Lock()
-
+		self.startup_interlock = DAQStartupLock()      # there are cases where startup must be prevented
 		
 		self.current_state = None
 		self.current_progress = (0, 0)
@@ -704,6 +705,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					self.problem_pmt_list = None
 					self.postoffice.Send( self.StatusReport(items=["problem_pmt_list",]) )
 					status = True
+				
+				elif message.directive == "hv_off":
+					self.logger.info("Frontend client '%s' requests PMT HVs be set to 0.", message.client_id)
+					self.worker_thread.queue.put( {"method": self.ZeroHVs} )
+					status = True
 					
 				elif message.directive == "control_transfer_allow":
 					self.logger.info("Frontend client '%s' is ok transferring control.", message.client_id)
@@ -775,6 +781,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    
 		assert len(self.errors) == 0
 		assert configuration.Validate()
+		
+		# self.startup_interlock will contain the name
+		# of the procedure that has startup locked out.
+		self.logger.debug("Acquiring startup interlock...")
+		success = self.startup_interlock.acquire(blocking=False, locker_name="StartDataAcquisition()")
+		if not success:
+			self.logger.error("Startup requested, but the DAQ is interlocked by the following process: %s", self.startup_interlock.locker)
+			self.NewAlert(notice="The DAQ is currently locked from startup.  Check the logs for more information...", severity=Alert.ERROR)
+			return False
 
 		# if the run number is changing, we should
 		# save the run/subrun number NOW.  that way
@@ -874,6 +889,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			return
 		else:
 			self.logger.debug("Not running, so we don't need to stop the DAQ.")
+			return
 
 		self.logger.info("Unlocking remote nodes...")
 		# release locks from the remote nodes
@@ -915,6 +931,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 #		self.logger.info("Informing frontend that run series is over.")
 #		self.postoffice.Send( PostOffice.Message(subject="frontend_info", info="series_end") )
 #		print "self.auto_start is: ", self.auto_start
+		
+		self.logger.debug("Releasing startup interlock...")
+		self.startup_interlock.release()
 		
 		if not self.configuration.is_single_run and self.auto_start:
 			self.logger.info("Auto-starting next run series...")
@@ -1286,7 +1305,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# ok to proceed to next step
 		return True
 	
-	def ReadoutNodeHWConfig(self):
+	def ReadoutNodeHWCheck(self):
 		""" Initializes the hardware configuration on the readout nodes.
 		    This process takes some time on the full detector, so this
 		    method exits after starting the process.  When the SocketThread
@@ -1316,41 +1335,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				if self.remote_nodes[node_name].type == RemoteNode.READOUT:
 					self.remote_nodes[node_name].status = RemoteNode.IDLE
 					self.remote_nodes[node_name].hw_init = False
-			
-			try:
-				self.logger.info("Instructing readout nodes to initialize hardware...")
-				responses = self.NodeSendWithResponse(PostOffice.Message(subject="readout_directive", directive="hw_config", hw_config=self.configuration.hw_config, mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10)
-			except DAQErrors.NodeError:
-				self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
-				return False
-			
-			for response in responses:
-				if response.success == True:
-					self.remote_nodes[response.sender].hw_init = True
-					self.logger.info("  ==> '%s' node has initialized.", response.sender)
-				else:
-					if response.success == False:
-						self.NewAlert( notice="Hardware configuration file for configuration '%s' could not be found on the '%s' readout node..." % (self.configuration.hw_config, response.sender), severity=Alert.ERROR )
-					elif isinstance(response.success, Exception):
-						self.NewAlert( notice="Error configuring hardware on '%s' node.  Error text:\n%s" % (response.sender, response.success), severity=Alert.ERROR )
-					
-					self.remote_nodes[response.sender].status = RemoteNode.ERROR
-					
-					# this will force HW to be reloaded next time a subrun is started
-					self.last_HW_config = None
-					return False
-					
-			# we've succeeded if initialization of all the hardware
-			# on the readout nodes was successful.
-			# what the other nodes are doing is irrelevant at the moment.
-			success = True
-			for node_name in self.remote_nodes:
-				node = self.remote_nodes[node_name]
-				success = success and (node.type != RemoteNode.READOUT or node.hw_init)
-				if not success:
-					self.NewAlert(notice="Couldn't initialize hardware on '%s' node... " % node.name, severity=Alert.ERROR)
-					return False
-			
+
+			success = self.ReadoutNodeHWConfig(self.configuration.hw_config)
+			if not success:
+				return success
 			
 			# record what we did so that the next time we don't have to do it again.
 			self.last_HW_config = self.configuration.hw_config
@@ -1934,6 +1922,43 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.do_pmt_check = True
 		
 		return True
+
+	def ReadoutNodeHWConfig(self, hw_config):
+		try:
+			self.logger.info("Instructing readout nodes to initialize hardware to configuration: %s", hw_config)
+			responses = self.NodeSendWithResponse(PostOffice.Message(subject="readout_directive", directive="hw_config", hw_config=hw_config, mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10)
+		except DAQErrors.NodeError:
+			self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
+			return False
+		
+		for response in responses:
+			if response.success == True:
+				self.remote_nodes[response.sender].hw_init = True
+				self.logger.info("  ==> '%s' node has initialized.", response.sender)
+			else:
+				if response.success == False:
+					self.NewAlert( notice="Hardware configuration file for configuration '%s' could not be found on the '%s' readout node..." % (self.configuration.hw_config, response.sender), severity=Alert.ERROR )
+				elif isinstance(response.success, Exception):
+					self.NewAlert( notice="Error configuring hardware on '%s' node.  Error text:\n%s" % (response.sender, response.success), severity=Alert.ERROR )
+				
+				self.remote_nodes[response.sender].status = RemoteNode.ERROR
+				
+				# this will force HW to be reloaded next time a subrun is started
+				self.last_HW_config = None
+				return False
+
+		# we've succeeded if initialization of all the hardware
+		# on the readout nodes was successful.
+		# what the other nodes are doing is irrelevant at the moment.
+		success = True
+		for node_name in self.remote_nodes:
+			node = self.remote_nodes[node_name]
+			success = success and (node.type != RemoteNode.READOUT or node.hw_init)
+			if not success:
+				self.NewAlert(notice="Couldn't initialize hardware on '%s' node... " % node.name, severity=Alert.ERROR)
+				return False
+
+		return True
 		
 	def SendClientInfo(self):
 		""" Sends out a message containing a list
@@ -2008,6 +2033,82 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		message.status["time_generated"] = time.time()
 		
 		return message
+		
+	def ZeroHVs(self):
+		""" Instructs the readout nodes to set PMT high voltages to zero. """
+		
+		self.logger.info("Requested to set HW to zero high voltages.")
+		
+		# first, check if there's a run currently going on.
+		# if there is, it will be stopped by this procedure...
+		if self.running:
+			self.NewAlert(notice="Running was stopped to comply with request to turn off PMT HVs", severity=Alert.WARNING)
+			self.StopDataAcquisition(auto_start_ok=False)
+		
+		try:
+			self.logger.debug("Acquiring startup interlock in ZeroHVs()...")
+			self.startup_interlock.acquire(locker_name="ZeroHVs()")
+		
+			# tell the frontend clients what's going on.
+			self.current_state = "Zeroing PMT HVs."
+			self.current_progress = (0, 0)
+			self.waiting = True
+			self.postoffice.Send( self.StatusReport(items=["current_state", "current_progress", "waiting"]) )
+
+			# begin the actual work:
+			# first, request the readout nodes load the 'HVOff' config
+			# (that method throws its own errors if it has trouble)
+			self.logger.debug("Instructing readout nodes to zero hardware...")
+			success = self.ReadoutNodeHWConfig(hw_config=MetaData.HardwareConfigurations.HV_OFF)
+			if not success:
+				return
+			
+			# now reread the boards.  are the targets 0?
+			board_lists = self.GetPMTInfo()
+			# the GetPMTInfo() method sets the 'hv_on' attribute
+			# to 'true' if ANY PMT has a target > 0.
+			if self.hv_on:
+				boards = []
+				for board_list in board_lists.itervalues():
+					for board in board_list:
+						if board["target"] > 0:
+							boards.append(board)
+				self.error("Could not turn off the HV for the following boards:\n%s", "\n".join( " ".join(map(str, board)) ) )
+				self.NewAlert(notice="Could not turn off the HV for all boards!", severity=Alert.ERROR)
+			
+			# now go back to idle
+			self.current_state = "Idle."
+			self.waiting = False
+			
+			self.postoffice.Send(self.StatusReport())
+
+		finally:
+			self.startup_interlock.release()	
+
+class DAQStartupLock:
+	""" A simple locking mechanism that retains the additional
+	    information of who did the locking.
+	    
+	    NOTE that this lock does NOT support the 'with' context manager.
+	    It's also not strictly thread-safe (though it's pretty good)."""
+
+	def __init__(self):
+		self.locker = None
+		self._lock = threading.Lock()
+	
+	def acquire(self, blocking=True, locker_name=None):
+		success = self._lock.acquire(blocking)
+		if success:
+			self.locker = locker_name if locker_name is not None else inspect.stack()[1][3]
+		
+		return success
+		
+	def is_locked(self):
+		return self.locker is not None
+		
+	def release(self):
+		self.locker = None
+		self._lock.release()
 		
 ####################################################################
 ####################################################################
