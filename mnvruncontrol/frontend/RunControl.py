@@ -366,9 +366,12 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		for item in menu_items:
 			item.Enable(enabled)
 
-		# the start button has the same stipulations.
+		# the 'start' button has the same stipulations.
 		xrc.XRCCTRL(self.frame, "control_start_button").Enable(enabled)
 
+		# the 'turn HV off' button has one further requirement:
+		# the HV should not already be off.
+		xrc.XRCCTRL(self.frame, "control_HVoff_button").Enable(enabled and self.status["hv_on"])
 
 		enabled = enabled and not self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_lockdown")).IsChecked()
 		controls = [ xrc.XRCCTRL(self.frame, "config_global_run_entry"),
@@ -774,6 +777,11 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		
 		self.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="pmt_dismiss", client_id=self.id) )
 		
+	def OnHVOffClick(self, evt):
+		""" Requests that the DAQ manager start the 'turn off HV' process. """
+		
+		self.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="hv_off", client_id=self.id) )
+		
 	def OnHVUpdate(self, evt):
 		""" Presents the user with a list of PMT voltages
 		    that are likely to be problematic and solicits
@@ -1141,6 +1149,11 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			
 			for menu_item in [ "menu_lockdown", ]:
 				self.frame.GetMenuBar().FindItemById(xrc.XRCID(menu_item)).Enable(self.in_control and not status["running"])
+
+		# react to the HV
+		if "hv_on" in status:
+			label = "Disable HV" if status["hv_on"] else "(HV is off)"
+			xrc.XRCCTRL(self.frame, "control_HVoff_button").SetLabel(label)
 
 		if "first_subrun" in status:
 			self.min_subrun = status["first_subrun"]
