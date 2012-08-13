@@ -357,14 +357,14 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		     (2) the HV period (in seconds)
 
 		    On success, returns a list of dictionaries with the following
-		    keys: "croc", "channel", "board", "hv_deviation", "period"
+		    keys: "croc", "channel", "board", "target", "hv_deviation", "period"
 		    
 		    If an exception occurs during the read, that exception is returned."""
 
 		self.logger.info("Manager wants high voltage details of front-end boards.")
 		try:
 			self.sc_init()
-			feblist = self.slow_control.HVReadAll(0)		# we want ALL boards, that is, those that deviate from target HV by at least 0...
+			feblist = self.slow_control.HVReadAll(0)		# we want ALL boards, that is, those that deviate from target HV by 0 or more...
 		except Exception, e:
 			self.logger.exception("Error trying to read the voltages:")
 			self.logger.warning("No read performed.")
@@ -374,6 +374,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		formatted_feblist = [ { "croc"        : febdetails['FPGA']["CROC"],
 		                        "chain"       : febdetails["FPGA"]["Channel"],		# NOT a typo.  these are CHAINS -- they go from 0!
 		                        "board"       : febdetails["FPGA"]["FEB"],
+		                        "target"      : febdetails["Target"],
 		                        "hv_deviation": febdetails["A-T"],
 		                        "period"      : (febdetails["PeriodMan"] if febdetails["Mode"] == "Manual" else febdetails["PeriodAuto"]) } \
 		                          for febdetails in feblist ]

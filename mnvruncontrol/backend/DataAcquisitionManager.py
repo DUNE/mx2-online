@@ -132,6 +132,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.PrepareRunSeries()
 
 		# status stuff
+		self.hv_on = False
 		self.running = False
 		self.waiting = False
 		self.started_et = False
@@ -175,15 +176,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.cleanup_methods += [self.Cleanup]
 		
 	def BeginSession(self):
-		""" Checks if there's a session that was already open.
-		    If so, cleans up (stops the remote nodes), etc.
-		    
-		    Otherwise, starts a new session: contacts nodes
+		""" Performs basic setup needed prior to running: contacts nodes
 		    to inform them that the manager is up and running, etc. """
 		    
-		self.logger.info("Old session resumption is disabled for now.")
-		self.logger.info("Starting a fresh session.")
-
 		self.logger.debug("Creating worker thread.")
 		self.worker_thread = Threads.WorkerThread(logger=self.logger)
 
@@ -220,7 +215,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.logger.info("   ... done.")
 
 			self.remote_nodes[node_config["name"]] = node
-			
+
+		# ask for PMT info so as to get the HV status right...
+		self.GetPMTInfo()			
 
 	def BookSubscriptions(self):
 		""" Books all the standing subscriptions the DAQMgr will want
@@ -1720,6 +1717,51 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		# make sure ALL clients know that this alert was cleared
 		self.postoffice.Send( PostOffice.Message(subject="client_alert", action="clear", alert=alert, mgr_id=self.id) )
+		
+	def GetPMTInfo(self):
+		""" Requests information on the PMTs from the readout nodes. """
+		
+		responses = []
+		board_lists = {}
+		self.logger.debug("Getting PMT HV info...")
+		try:		
+			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+		except DAQErrors.NodeError:
+			notice = "At least one of the readout node(s) has become unresponsive.  Check the logs for more details."
+			if self.running:
+				notice += "  Running will be halted..."
+			self.NewAlert(notice=notice, severity=Alert.ERROR)
+			
+			if self.running:
+				self.StopDataAcquisition(auto_start_ok=False)
+		
+		nodes_checked = 0
+
+		hv_on = False
+		for response in responses:
+			if isinstance(response.sc_board_list, Exception):
+				self.NewAlert(notice="The '%s' node reports a slow control error while trying to get PMT info.  Error text: '%s'" % (response.sender, response.sc_board_list), severity=Alert.ERROR)
+				self.StopDataAcquisition(auto_start_ok=False)
+				return {}
+
+			if response.sender not in board_lists:
+				board_lists[response.sender] = []
+
+			if len(response.sc_board_list) == 0:
+				self.NewAlert(notice="The '%s' node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty..." % response.sender, severity=Alert.WARNING)
+			else:
+				for board in response.sc_board_list:
+					board["node"] = response.sender
+					board_lists[response.sender].append(board)
+					
+					hv_on = hv_on or board["target"] > 0
+
+		# we only want to set the HV status if we actually found some boards...		
+		if len(board_lists) > 0 and sum( ( len(board_list) for board_list in board_lists.itervalues() ) ) > 0:
+			self.logger.info("PMT HVs are currently %s", "ON" if self.hv_on else "OFF")
+			self.hv_on = hv_on
+			
+		return board_lists
 	
 	def GetProblemPMTs(self, send_results=False):
 		""" Requests PMT high voltage and period information
@@ -1728,27 +1770,21 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		thresholds = sorted(Configuration.params["mstr_HVthresholds"].keys(), reverse=True)
 
-		responses = []
-		try:		
-			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
-		except DAQErrors.NodeError:
-			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
-			self.StopDataAcquisition(auto_start_ok=False)
-		
-		nodes_checked = 0
 		problem_boards = []
-		for response in responses:
-			if isinstance(response.sc_board_list, Exception):
-				self.NewAlert(notice="The '%s' node reports a slow control error while trying to read the boards.  Error text: '%s'" % (response.sender, response.sc_board_list), severity=Alert.ERROR)
-				self.StopDataAcquisition(auto_start_ok=False)
-				return []
+		board_lists = self.GetPMTInfo()
 
-			if len(response.sc_board_list) == 0:
-				self.NewAlert(notice="The '%s' node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty..." % response.sender, severity=Alert.WARNING)
-			
-			voltage_list = "  voltage deviations & HV periods of PMTs attached to the '%s' node:\ncroc-chain-board: HV dev, HV period\n=====================================\n" % response.sender
-			for board in response.sc_board_list:
-				board["node"] = response.sender
+		if len(board_lists) == 0:
+			self.NewAlert(notice="No nodes responded with PMT voltages.  Check the dispatchers on your readout nodes!", severity=Alert.ERROR)
+			self.StopDataAcquisition(auto_start_ok=False)
+			return []
+		elif sum( ( len(board_list) for board_list in board_lists.itervalues() ) ) == 0:
+			self.NewAlert(notice="All nodes reported having 0 FEBs attached.  Check the hardware!", severity=Alert.ERROR)
+			self.StopDataAcquisition(auto_start_ok=False)
+			return []
+		
+		for node, board_list in board_lists.iteritems():
+			voltage_list = "  voltage deviations & HV periods of PMTs attached to the '%s' node:\ncroc-chain-board: HV dev, HV period\n=====================================\n" % node
+			for board in board_list:
 				voltage_list += "%d-%d-%d: %5d, %5d\n" % (board["croc"], board["chain"], board["board"], board["hv_deviation"], board["period"])
 				
 				# don't consider FEB IDs that are in our blacklist
@@ -1761,12 +1797,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					
 			self.logger.info(voltage_list)
 				
-			nodes_checked += 1
-
-		if nodes_checked == 0:
-			self.NewAlert(notice="No nodes responded with PMT voltages.  Check the dispatchers on your readout nodes!", severity=Alert.ERROR)
-			self.StopDataAcquisition(auto_start_ok=False)
-
 		for board in problem_boards:
 			if board["period"] < Configuration.params["mstr_HVperiodThreshold"]:
 				self.logger.warning("Board (node-croc-chain-board) %s-%d-%d-%d is below the period threshold (period: %d)", board["node"], board["croc"], board["chain"], board["board"], board["period"])
@@ -1966,14 +1996,14 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		if len(items) == 0:
 			items = ( "configuration", "current_state", "current_progress", "current_gate", "first_subrun",
 			          "errors", "warnings", "problem_pmt_list", "remote_nodes", "running", "run_series",
-			          "control_info", "waiting" )
+			          "control_info", "waiting", "hv_on" )
 
 		if do_log:
 			self.logger.debug("Generating status report with the following items: %s", items)
 
 		message.status = {}
 		for item in items:
-			message.status[item] = copy.deepcopy(self.__dict__[item])
+			message.status[item] = copy.deepcopy(getattr(self, item))
 			
 		message.status["time_generated"] = time.time()
 		
