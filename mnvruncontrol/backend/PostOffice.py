@@ -2021,7 +2021,8 @@ class DeliveryThread(threading.Thread):
 						
 
 			finally:
-				self.postoffice.delivery_locks[subscription].release()
+				if subscription in self.postoffice.delivery_locks:
+					self.postoffice.delivery_locks[subscription].release()
 				logger().log(5, "Released lock for subscription id %s (delivery): %s", subscription._id, subscription)		
 
 			self.busy = False
