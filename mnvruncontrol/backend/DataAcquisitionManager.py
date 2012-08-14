@@ -109,7 +109,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# by various processes and accompanying messages
 		self.SubrunStartTasks = [ { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
 		                          { "method": self.LIBoxSetup,                "message": "Initializing light injection..." },
-		                          { "method": self.ReadoutNodeHWConfig,       "message": "Loading hardware..." },
+		                          { "method": self.ReadoutNodeHWCheck,       "message": "Loading hardware..." },
 		                          { "method": self.ReadoutNodeHVCheck,        "message": "Checking hardware..." } ]
 		self.DAQStartTasks = [ { "method": self.StartETSys,          "message": "Starting ET system..." },
 		                       { "method": self.StartEBSvc,          "message": "Starting event builder..." },
@@ -218,7 +218,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.remote_nodes[node_config["name"]] = node
 
 		# ask for PMT info so as to get the HV status right...
-		self.GetPMTInfo()			
+		board_lists = self.GetPMTInfo()
+#		self.logger.debug("%s", board_lists)
 
 	def BookSubscriptions(self):
 		""" Books all the standing subscriptions the DAQMgr will want
@@ -889,7 +890,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			return
 		else:
 			self.logger.debug("Not running, so we don't need to stop the DAQ.")
-			return
 
 		self.logger.info("Unlocking remote nodes...")
 		# release locks from the remote nodes
@@ -933,7 +933,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 #		print "self.auto_start is: ", self.auto_start
 		
 		self.logger.debug("Releasing startup interlock...")
-		self.startup_interlock.release()
+		if self.startup_interlock.is_locked():
+			self.startup_interlock.release()
 		
 		if not self.configuration.is_single_run and self.auto_start:
 			self.logger.info("Auto-starting next run series...")
@@ -1742,11 +1743,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					board["node"] = response.sender
 					board_lists[response.sender].append(board)
 					
-					hv_on = hv_on or board["target"] > 0
+					hv_on = hv_on or (board["hv_enabled"] and board["target"] > 0)
 
 		# we only want to set the HV status if we actually found some boards...		
 		if len(board_lists) > 0 and sum( ( len(board_list) for board_list in board_lists.itervalues() ) ) > 0:
-			self.logger.info("PMT HVs are currently %s", "ON" if self.hv_on else "OFF")
+			self.logger.info("PMT HVs are currently %s", "ON" if hv_on else "OFF")
 			self.hv_on = hv_on
 			
 		return board_lists
