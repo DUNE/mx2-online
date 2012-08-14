@@ -375,6 +375,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		                        "chain"       : febdetails["FPGA"]["Channel"],		# NOT a typo.  these are CHAINS -- they go from 0!
 		                        "board"       : febdetails["FPGA"]["FEB"],
 		                        "target"      : febdetails["Target"],
+		                        "hv_enabled"  : True if febdetails["Enabled"] == "True" else False,
 		                        "hv_deviation": febdetails["A-T"],
 		                        "period"      : (febdetails["PeriodMan"] if febdetails["Mode"] == "Manual" else febdetails["PeriodAuto"]) } \
 		                          for febdetails in feblist ]
