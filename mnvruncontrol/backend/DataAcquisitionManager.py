@@ -539,10 +539,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
 		
 		elif message.state == "hw_ready":
-			# if we get a "HW ready" message but we're not running,
-			# it's because we told the crates to load the "HV off" config.
-			# they're "idle" in that case.
-			self.remote_nodes[message.sender].status = RemoteNode.OK if self.running else RemoteNode.IDLE
+			self.remote_nodes[message.sender].status = RemoteNode.OK
 			self.logger.debug("    ==> '%s' node reports it's finished loading hardware.", message.sender)
 
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
@@ -565,6 +562,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.StartNextSubrun()
 			else:
 				# now go back to idle
+				for node in self.remote_nodes:
+					if self.remote_nodes[node].type == RemoteNode.READOUT:
+						self.remote_nodes[node].status = RemoteNode.IDLE
 				self.current_state = "Idle."
 				self.waiting = False
 			
