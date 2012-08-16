@@ -170,6 +170,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.frame.Bind(wx.EVT_BUTTON, self.OnConnectClick, id=xrc.XRCID("control_connection_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnControlClick, id=xrc.XRCID("control_connection_owner_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnHVDismissClick, id=xrc.XRCID("pmt_check_dismiss_button"))
+		self.frame.Bind(wx.EVT_BUTTON, self.OnHVOffClick, id=xrc.XRCID("control_HVoff_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnHVRefreshClick, id=xrc.XRCID("pmt_check_refresh_button"))
 		
 		self.frame.Bind(wx.EVT_RADIOBUTTON, self.OnSeriesClick, id=xrc.XRCID("config_global_singlerun_button"))
@@ -369,9 +370,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# the 'start' button has the same stipulations.
 		xrc.XRCCTRL(self.frame, "control_start_button").Enable(enabled)
 
-		# the 'turn HV off' button has one further requirement:
-		# the HV should not already be off.
-		xrc.XRCCTRL(self.frame, "control_HVoff_button").Enable(enabled and self.status["hv_on"])
+		# the 'turn HV off' button two one further requirements:
+		#  - the HV should not already be off
+		#  - turnoff should not be already in progress.  (the implementation of this one is ugly... but it's quick.)
+		xrc.XRCCTRL(self.frame, "control_HVoff_button").Enable(enabled and self.status["hv_on"] and xrc.XRCCTRL(self.frame, "control_HVoff_button").GetLabel() != "(HV turnoff\nin progress)")
 
 		enabled = enabled and not self.frame.GetMenuBar().FindItemById(xrc.XRCID("menu_lockdown")).IsChecked()
 		controls = [ xrc.XRCCTRL(self.frame, "config_global_run_entry"),
@@ -780,6 +782,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def OnHVOffClick(self, evt):
 		""" Requests that the DAQ manager start the 'turn off HV' process. """
 		
+		# disable the button to prevent duplicate attempts
+		xrc.XRCCTRL(self.frame, "control_HVoff_button").SetLabel("(HV turnoff\nin progress)")
+		xrc.XRCCTRL(self.frame, "control_HVoff_button").Disable()
+		
 		self.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="hv_off", client_id=self.id) )
 		
 	def OnHVUpdate(self, evt):
@@ -1145,8 +1151,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				xrc.XRCCTRL(self.frame, "status_daq_run").SetLabel(run)
 				xrc.XRCCTRL(self.frame, "status_runinfo_subrun").SetLabel(subrun)
 
-			self.ConfigControlsEnable()
-			
 			for menu_item in [ "menu_lockdown", ]:
 				self.frame.GetMenuBar().FindItemById(xrc.XRCID(menu_item)).Enable(self.in_control and not status["running"])
 
@@ -1227,7 +1231,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		if "problem_pmt_list" in status:
 			warning = status["problem_pmt_list"] is not None
 			wx.PostEvent( self, Events.PMTVoltageUpdateEvent(pmt_info=status["problem_pmt_list"], warning=warning) )
-			
+		
+		# enable/disable buttons as appropriate
+		self.ConfigControlsEnable()
+
 		# make sure the alert thread is doing the right thing
 		# about the status bar ('pulsing' while waiting, and
 		# leaving it alone when not).
