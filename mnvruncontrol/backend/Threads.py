@@ -230,6 +230,53 @@ class WorkerThread(threading.Thread):
 			
 			if self._logger is not None:
 				self._logger.debug("Worker thread returned from work function: %s", method_info["method"])
+
+#########################################################
+#   AlertThread
+#########################################################
+class ActivityMonitorThread(threading.Thread):
+	""" A custom thread that keeps track of when the
+	    last activity from the DAQ was, and notifies the
+	    DAQ manager if it's been a configurable amount
+	    of time since the last activity. """
+	    
+	def __init__(self, parent_app):
+		threading.Thread.__init__(self)
+		self._parent_app = parent_app
+		self.daemon = True
+		
+		# user-accessible parameters.
+		self.last_activity = time.time()
+		self.time_to_quit = False
+		
+		# internals
+		self._notified = False
+		
+		self.start()
+		
+	def run(self):
+		# if the config has the interval set to 0 or negative,
+		# the user wants no notifications.  don't even start the loop.
+		if Configuration.params["mstr_noActivityAlarmTimeout"] <= 0:
+			return
+	
+		while not self.time_to_quit:
+			# avoid busy-waiting
+			time.sleep(0.1)
+			
+			# if the place to send the alert no longer exists, then this thread is pointless.
+			if not self._parent_app:
+				return
+				
+			activity_interval = (time.time() - self.last_activity) / 60   # convert to minutes
+			if activity_interval > Configuration.params["mstr_noActivityAlarmTimeout"] and not self._notified:
+				self._parent_app.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="inactivity_alert", interval=activity_interval) )
+				self._notified = True
+			elif self._notified and activity_interval <= Configuration.params["mstr_noActivityAlarmTimeout"]:
+				self._notified = False
+
+	def ReportActivity(self):
+		self.last_activity = time.time()
 		
 #########################################################
 #   AlertThread

@@ -93,6 +93,7 @@ configuration = {
 	"mstr_HVthresholds"           : ( Defaults.ALLOWED_HV_THRESHOLDS,                "Slow control HV warning thresholds (ADC counts)",     dict  ),
 	"mstr_HVperiodThreshold"      : ( Defaults.ALLOWED_PERIOD_THRESHOLD,             "Slow control period warning threshold",               int   ),
 	"mstr_rawdataLocation"        : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (master node)",                     str   ),
+	"mstr_noActivityAlarmTimeout" : ( Defaults.MASTER_NO_ACTIVITY_ALARM_TIMEOUT,     "Time of no activity before HV turnoff (master node)", str   ),
 
 	# readout nodes
 	"read_rawdataLocation"        : ( Defaults.RAW_DATA_LOCATION_DEFAULT,            "Raw data location (readout nodes)",                   str   ),

@@ -183,6 +183,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    
 		self.logger.debug("Creating worker thread.")
 		self.worker_thread = Threads.WorkerThread(logger=self.logger)
+		
+		self.logger.debug("Creating activity monitor thread.")
+		self.activity_monitor_thread = Threads.ActivityMonitorThread(parent_app=self)
 
 		self.remote_nodes = {}
 		self.logger.info("Contacting nodes to announce that I am up...")
@@ -253,6 +256,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    
 		self.logger.info("Informing nodes I'm going down...")
 		self.postoffice.Send( PostOffice.Message(subject="mgr_status", status="offline", mgr_id=self.id) )
+		
+		self.logger.info("Stopping activity monitor thread...")
+		self.activity_monitor_thread.time_to_quit = True
+		self.activity_monitor_thread.join()
+		self.logger.info("  ... done.")
 		
 		self.logger.info("Stopping worker thread...")
 		self.worker_thread.queue.put(Threads.StopWorkingException())
@@ -477,7 +485,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		# any time a DAQ status message comes through,
 		# the "activity monitor" needs to be notified.
-		
+		self.activity_monitor_thread.ReportActivity()
 		
 		# "exit_error" is when the DAQ exits with an error code
 		if message.state == "exit_error":
@@ -793,6 +801,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			# should auto-start next series if configuration allows it
 			# and the series ended nicely
 			self.worker_thread.queue.put( {"method": self.StopDataAcquisition} )
+		
+		elif message.event == "inactivity_alert" and hasattr(message, "interval"):
+			self.logger.info("No DAQ activity for the last %d minutes.  Turning off HV...", message.interval)
+			self.worker_thread.queue.put( {"method": self.ZeroHVs} )
 		
 	##########################################
 	# Global starters and stoppers
