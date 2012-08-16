@@ -99,8 +99,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.socket_port = Configuration.params["sock_masterPort"]
 
 		# threads that this object will be managing.
-		self.worker_thread = None
+		self.activity_monitor_thread = None
 		self.DAQ_threads = {}
+		self.worker_thread = None
 		
 		# timer for use in control transfers
 		self.transfer_timer = None
@@ -473,6 +474,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			return
 			
 #		self.logger.debug("DAQ status message:\n%s", message)
+
+		# any time a DAQ status message comes through,
+		# the "activity monitor" needs to be notified.
+		
 		
 		# "exit_error" is when the DAQ exits with an error code
 		if message.state == "exit_error":
@@ -534,7 +539,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
 		
 		elif message.state == "hw_ready":
-			self.remote_nodes[message.sender].status = RemoteNode.OK
+			# if we get a "HW ready" message but we're not running,
+			# it's because we told the crates to load the "HV off" config.
+			# they're "idle" in that case.
+			self.remote_nodes[message.sender].status = RemoteNode.OK if self.running else RemoteNode.IDLE
 			self.logger.debug("    ==> '%s' node reports it's finished loading hardware.", message.sender)
 
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
@@ -544,9 +552,23 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				if self.remote_nodes[node].type == RemoteNode.READOUT and self.remote_nodes[node].status is not RemoteNode.OK:
 					return
 
+			# update the PMT status...
+			# (beware: don't do this until all nodes respond,
+			#  or you'll interfere with the SlowControl on
+			#  the nodes that are still being configured!)
+			self.GetPMTInfo()
+			self.postoffice.Send( self.StatusReport(items=["hv_on"]) )
+
 			# all nodes are ready.  continue the startup sequence.
-			self.logger.info("    ==> all readout nodes ready.")
-			self.StartNextSubrun()
+			if self.running:
+				self.logger.info("    ==> all readout nodes ready.")
+				self.StartNextSubrun()
+			else:
+				# now go back to idle
+				self.current_state = "Idle."
+				self.waiting = False
+			
+				self.postoffice.Send(self.StatusReport())
 		
 		elif message.state == "running" and hasattr(message, "gate_count"):
 			# this is the signal that the DAQ is running ok.
@@ -2040,7 +2062,21 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		self.logger.info("Requested to set HW to zero high voltages.")
 		
-		# first, check if there's a run currently going on.
+		# if this method is already being waited on, don't do it again!
+		# (note that this has the following weakness: if this method is
+		#  blocking at the acquire() below--waiting for data acquisition
+		#  to end--then the 'locker' won't be 'ZeroHVs()' yet.  in principle
+		#  this could lead to a queue of requests to ZeroHVs() while the
+		#  run is stopping.  however, since we don't anticipate this
+		#  function existing after normal data running resumes, and anyway,
+		#  only one client would ever be using this at a time, I don't
+		#  expect this to be a serious problem.  a more robust locking
+		#  scheme can be devised if that assumption turns out to be false.)
+		if self.startup_interlock.is_locked() and self.startup_interlock.locker == "ZeroHVs()":
+			self.logger.warning(" ... but zeroing is already in progress.  Won't do it twice.")
+			return
+		
+		# now check if there's a run currently going on.
 		# if there is, it will be stopped by this procedure...
 		if self.running:
 			self.NewAlert(notice="Running was stopped to comply with request to turn off PMT HVs", severity=Alert.WARNING)
@@ -2061,28 +2097,6 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			# (that method throws its own errors if it has trouble)
 			self.logger.debug("Instructing readout nodes to zero hardware...")
 			success = self.ReadoutNodeHWConfig(hw_config=MetaData.HardwareConfigurations.HV_OFF)
-			if not success:
-				return
-			
-			# now reread the boards.  are the targets 0?
-			board_lists = self.GetPMTInfo()
-			# the GetPMTInfo() method sets the 'hv_on' attribute
-			# to 'true' if ANY PMT has a target > 0.
-			if self.hv_on:
-				boards = []
-				for board_list in board_lists.itervalues():
-					for board in board_list:
-						if board["target"] > 0:
-							boards.append(board)
-				self.error("Could not turn off the HV for the following boards:\n%s", "\n".join( " ".join(map(str, board)) ) )
-				self.NewAlert(notice="Could not turn off the HV for all boards!", severity=Alert.ERROR)
-			
-			# now go back to idle
-			self.current_state = "Idle."
-			self.waiting = False
-			
-			self.postoffice.Send(self.StatusReport())
-
 		finally:
 			self.startup_interlock.release()	
 
