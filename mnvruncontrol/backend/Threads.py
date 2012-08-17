@@ -281,7 +281,7 @@ class ActivityMonitorThread(threading.Thread):
 				self._notified = False
 
 	def ReportActivity(self):
-		self._parent_app.logger.debug("DAQ activity reported.  Timeout reset.")
+#		self._parent_app.logger.debug("DAQ activity reported.  Timeout reset.")
 		self.last_activity = time.time()
 		
 #########################################################
