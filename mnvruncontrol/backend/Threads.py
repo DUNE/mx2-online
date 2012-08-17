@@ -258,7 +258,10 @@ class ActivityMonitorThread(threading.Thread):
 		# if the config has the interval set to 0 or negative,
 		# the user wants no notifications.  don't even start the loop.
 		if Configuration.params["mstr_noActivityAlarmTimeout"] <= 0:
+			self._parent_app.logger.debug("Activity monitor info is disabled per configuration.")
 			return
+		else:
+			self._parent_app.logger.debug("Activity monitor timeout is configured as: %.1f minutes", Configuration.params["mstr_noActivityAlarmTimeout"])
 	
 		while not self.time_to_quit:
 			# avoid busy-waiting
@@ -269,13 +272,16 @@ class ActivityMonitorThread(threading.Thread):
 				return
 				
 			activity_interval = (time.time() - self.last_activity) / 60   # convert to minutes
+#			self._parent_app.logger.debug("  activity interval: %.2f", activity_interval)
 			if activity_interval > Configuration.params["mstr_noActivityAlarmTimeout"] and not self._notified:
+				self._parent_app.logger.debug("DAQ inactivity timeout reached.  Notifying manager...")
 				self._parent_app.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="inactivity_alert", interval=activity_interval) )
 				self._notified = True
 			elif self._notified and activity_interval <= Configuration.params["mstr_noActivityAlarmTimeout"]:
 				self._notified = False
 
 	def ReportActivity(self):
+		self._parent_app.logger.debug("DAQ activity reported.  Timeout reset.")
 		self.last_activity = time.time()
 		
 #########################################################

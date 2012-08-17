@@ -542,8 +542,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		elif message.state == "hw_error":
 			self.NewAlert(notice="A hardware error was reported on the '%s' node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
 			self.remote_nodes[message.sender].status = RemoteNode.ERROR
-			self.StopDataAcquisition(auto_start_ok=False)
 			self.last_HW_config = None
+			if self.running:
+				self.StopDataAcquisition(auto_start_ok=False)
 
 			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
 		
@@ -1762,11 +1763,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		nodes_checked = 0
 
 		hv_on = False
+		exception = False
 		for response in responses:
 			if isinstance(response.sc_board_list, Exception):
+				exception = True
 				self.NewAlert(notice="The '%s' node reports a slow control error while trying to get PMT info.  Error text: '%s'" % (response.sender, response.sc_board_list), severity=Alert.ERROR)
-				self.StopDataAcquisition(auto_start_ok=False)
-				return {}
+				continue
+
 
 			if response.sender not in board_lists:
 				board_lists[response.sender] = []
@@ -1779,6 +1782,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					board_lists[response.sender].append(board)
 					
 					hv_on = hv_on or (board["hv_enabled"] and board["target"] > 0)
+
+		if exception:
+			if self.running:
+				self.StopDataAcquisition(auto_start_ok=False)
+			return {}
 
 		# we only want to set the HV status if we actually found some boards...		
 		if len(board_lists) > 0 and sum( ( len(board_list) for board_list in board_lists.itervalues() ) ) > 0:
@@ -1973,7 +1981,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.logger.info("  ==> '%s' node has initialized.", response.sender)
 			else:
 				if response.success == False:
-					self.NewAlert( notice="Hardware configuration file for configuration '%s' could not be found on the '%s' readout node..." % (self.configuration.hw_config, response.sender), severity=Alert.ERROR )
+					self.NewAlert( notice="Hardware configuration file for configuration '%s' could not be found on the '%s' readout node..." % (hw_config, response.sender), severity=Alert.ERROR )
 				elif isinstance(response.success, Exception):
 					self.NewAlert( notice="Error configuring hardware on '%s' node.  Error text:\n%s" % (response.sender, response.success), severity=Alert.ERROR )
 				
