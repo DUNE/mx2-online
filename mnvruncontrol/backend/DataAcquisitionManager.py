@@ -485,7 +485,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		# any time a DAQ status message comes through,
 		# the "activity monitor" needs to be notified.
-		self.activity_monitor_thread.ReportActivity()
+		if self.running:
+			self.activity_monitor_thread.ReportActivity()
 		
 		# "exit_error" is when the DAQ exits with an error code
 		if message.state == "exit_error":
