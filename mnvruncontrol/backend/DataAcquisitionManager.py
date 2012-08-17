@@ -1975,6 +1975,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			return False
 		
+		success = True
 		for response in responses:
 			if response.success == True:
 				self.remote_nodes[response.sender].hw_init = True
@@ -1987,9 +1988,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				
 				self.remote_nodes[response.sender].status = RemoteNode.ERROR
 				
-				# this will force HW to be reloaded next time a subrun is started
-				self.last_HW_config = None
-				return False
+				success = False
+		
+		if not success:
+			# this will force HW to be reloaded next time a subrun is started
+			self.last_HW_config = None
+			return success
 
 		# we've succeeded if initialization of all the hardware
 		# on the readout nodes was successful.
@@ -2119,6 +2123,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.logger.debug("Instructing readout nodes to zero hardware...")
 			success = self.ReadoutNodeHWConfig(hw_config=MetaData.HardwareConfigurations.HV_OFF)
 		finally:
+			self.logger.debug("Releasing startup interlock in ZeroHVs()...")
 			self.startup_interlock.release()	
 
 class DAQStartupLock:
