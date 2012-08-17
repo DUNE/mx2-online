@@ -865,7 +865,7 @@ class PostOffice(MessageTerminus):
 					msg = msg[len(MESSAGE_MAGIC)+CHECKSUM_BYTES:]
 					try:
 						message =  cPickle.loads(msg)
-					except cPickle.UnpicklingError:
+					except cPickle.UnpicklingError, TypeError:
 						logger().info("Garbage message from %s containing the appropriate message magic and checksum.  Message:\n%s", client_address, msg)
 			 			logger().warning("  ==> Ignoring.")
 			 			sock.close()
