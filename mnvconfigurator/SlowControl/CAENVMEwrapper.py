@@ -48,7 +48,7 @@ class CAENVMETypes():
         cvD64_swapped = 24
 
 class CAENErr(Exception):
-    def __init__(self, cvNumber):
+    def __init__(self, cvNumber=-3):
         self.value = CAENVMETypes.cvErrorsDict[cvNumber]
     def __str__(self):
         return repr(self.value)
