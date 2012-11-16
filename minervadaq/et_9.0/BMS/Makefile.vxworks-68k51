@@ -1,5 +1,5 @@
 #
-# $Header: /tmp/mnvsoft/Online/mnvdaq/et_9.0/BMS/Makefile.vxworks-68k51,v 1.1 2010/03/13 00:22:22 perdue Exp $
+# $Header: /cvs/mnvsoft/Online/mnvdaq/et_9.0/BMS/Makefile.vxworks-68k51,v 1.1 2010/03/13 00:22:22 perdue Exp $
 #
 
 CC     = cc68k

@@ -1,28 +1,18 @@
-# CVS default ignores begin
-tags
-TAGS
-.make.state
-.nse_depinfo
-*~
-\#*
-.#*
-,*
-_$*
-*$
-*.old
-*.bak
-*.BAK
-*.orig
-*.rej
-.del-*
-*.a
-*.olb
+.DS_Store
 *.o
-*.obj
-*.so
-*.exe
-*.Z
-*.elc
-*.ln
-core
-# CVS default ignores end
+
+# .gitignore:
+# 1) Blank lines are ignored, and a pound sign (#) can be used for comments.
+# 2) A simple, literal filename matches a file in any directory with that name.
+# 3) A directory name is marked by a trailing slash character, like so/
+# 4) A pattern containing shell glob characters (*) is expanded as a shell glob pattern, e.g. debug/32bit/*.o
+# 5) An initial ! inverts the pattern over the line.
+# 6) You may have a gitignore in any directoy in the repository, and files in lower directories override higher directories.
+#
+# So, for example:
+# ------
+# *.o
+# !driver.o
+#
+# Excludes .o files, except for driver.o.
+
