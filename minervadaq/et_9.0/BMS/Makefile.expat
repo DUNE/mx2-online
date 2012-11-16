@@ -1,0 +1,13 @@
+#
+# Makefile for expat XML parsing package
+#
+
+ifndef EXPAT_HOME
+  EXPAT_HOME = /apps/expat
+endif
+
+EXPAT_INC = $(EXPAT_HOME)/include
+CFLAGS   += -I$(EXPAT_INC)
+CXXFLAGS += -I$(EXPAT_INC)
+
+MISC_LIBS += -L$(EXPAT_HOME)/lib -lexpat

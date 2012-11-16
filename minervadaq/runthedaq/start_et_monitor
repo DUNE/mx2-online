@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Argument List:
+#  $1 == et_system file name (should include full path).
+if [ $# -ne 1 ]; then
+	echo Please supply et_system file name.
+	exit 1
+fi
+
+ETSYS=$1
+
+if [ "$LOCALE" == "" ]
+then
+	echo No LOCALE defined!  It is impossible to configure the MINERvA DAQ Environment!
+	exit 1
+fi
+
+if [ "$ET_HOME" == "" ]
+then
+        echo No ET_HOME defined!  Please configure your environment!
+        exit 1
+fi
+
+# Pass the full path to the ET system!
+$ET_HOME/Linux-x86_64-64/bin/et_monitor -f $ETSYS 
+

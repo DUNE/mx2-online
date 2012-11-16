@@ -1,0 +1,7 @@
+.svn
+doxyerrors.log
+doc/javadoc/*
+tar/et*
+src/libsrc/.*
+src/examples/.*
+build
