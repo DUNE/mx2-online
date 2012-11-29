@@ -93,4 +93,4 @@ relink: FORCE
 	gmake main;
 
 FORCE:
-
+	if test -d lib; then echo LibOk; else mkdir -p lib; fi
