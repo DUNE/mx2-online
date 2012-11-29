@@ -161,8 +161,9 @@ typedef enum crocRegisters { //typecast to unsigned int
 
 
 // Need to clarify how these function differently from broadcasts - may affect naming conventions.
-typedef enum FastCommands { //typecast to unsigned char
-	fcOpenGate     = 0xB1,  // 3 0 -> 1011 0001
+// Most and least significant bit are always 1 for FastCommands.
+typedef enum FastCommands {     //typecast to unsigned char
+	fcOpenGate     = 0xB1,  // 3 0 -> 1011 0001 -> X011 000X
 	fcResetFPGA    = 0x8D,  // 0 C / 0 12, etc.
 	fcResetTimer   = 0xC5,
 	fcLoadTimer    = 0xC9,
