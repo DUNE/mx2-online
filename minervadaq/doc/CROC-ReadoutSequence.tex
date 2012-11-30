@@ -19,6 +19,18 @@
 
 This document describes the commands required to readout the \minerva CROC \cite{refcroc}.
 
+\section{Reading Data from the FEBs}
+\label{sec:readfromfebs}
+
+\begin{enumerate}
+\item First, we must clear the status register and reset the pointer.
+\begin{enumerate}
+\item VME WriteCycle, sending the CROC DPM Reset Value to the CROC Base + Clear Status (\hex{2030}) + Channel Offset Address. The DPM Reset Value is an array of bytes (unsigned char) with value $\left\{\hex{08},\hex{08}\right\}$. The VME address 
+\item 
+\end{enumerate}
+\item Next, we may read data from the FEBs.
+\end{enumerate}
+
 \bibliographystyle{plain}
 \bibliography{DAQElectronics}
 
