@@ -39,7 +39,7 @@ A common first step in readout is to clear the status register and reset the Dua
 \item First, we must clear the status register and reset the Dual Port Memory (DPM) pointer. See Section \ref{sec:readandclearcrocstatus}.
 \item Next, we may read data from the FEBs.
 \begin{enumerate}
-\item First, we must compose a message frame.
+\item First, we must compose a message frame (a request for data of a certain type).
 \item Then, we write the frame to the CROC Channel Channel FIFO Input register: VME Write Cycle to CROC Base + FIFO Input (\hex{2000}) + Channel Offset Address ($i \times \hex{4000}$).
 \item Once we have written the message, we send the Send Message command to the CROC: VME Write Cycle Send Message $\left\{\hex{01},\hex{01}\right\}$ to CROC Base + CROC Send Message (\hex{2010}) + Channel Offset Address ($i \times \hex{4000}$).
 \item While the message is being processed, read the CROC status register and check for errors. We want to find \hex{3703} where the last byte encodes that the message has been successfully sent and received.
@@ -51,9 +51,16 @@ A common first step in readout is to clear the status register and reset the Dua
 \section{Writing Data to the FEBs}
 \label{sec:writetofebs}
 
+The process of writing to the FEBs is almost identical to the process of reading from the FEBs. The only truly significant difference is the frame composition - one uses different FPGA functions. (Of course, one must also more carefully consider the values in the registers encoded in the frame.)
+
 \begin{enumerate}
-\item 
-\item 
+\item First, we must clear the status register and reset the Dual Port Memory (DPM) pointer. See Section \ref{sec:readandclearcrocstatus}.
+\item Second, we must compose a frame to send. Typically we are configuring either the Spartan 3e FPGA device registers, or configuring one of the TRIP-Ts.
+\item Next, we write the frame to the CROC FIFO (swapped!), VME Write Cycle to CROC Base + CROC Input (\hex{2000}) + Channel Offset Address ($i \times \hex{4000}$)
+\item Once we have written the message, we send the Send Message command to the CROC: VME Write Cycle Send Message $\left\{\hex{01},\hex{01}\right\}$ to CROC Base + CROC Send Message (\hex{2010}) + Channel Offset Address ($i \times \hex{4000}$).
+\item While the message is being processed, read the CROC status register and check for errors. We want to find \hex{3703} where the last byte encodes that the message has been successfully sent and received.
+\item Once the message has been sent and received, read the DPM Pointer to see if any data is available. When writing to the FEBs, the boards respond with the value of their registers after the write. VME Read Cycle, reading CROC Base + CROC DPM Pointer (\hex{2050}) + Channel Offset Address ($i \times \hex{4000}$). 
+\item Finally, if the DPM pointer length indicates we have data to read, one may execute a VME Read BLT for an array of size equal to the pointer length at CROC Base + CROC Memory (\hex{0000}) + Channel Offset Address ($i \times \hex{4000}$). In principle, one can just trust the write when under time pressure.
 \end{enumerate}
 
 
