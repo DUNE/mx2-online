@@ -6,6 +6,7 @@ minervadaq/doc/*.aux
 minervadaq/doc/*.bbl
 minervadaq/doc/*.blg
 minervadaq/doc/*.log   
+minervadaq/doc/CROC-ReadoutSequence.log
 minervadaq/doc/*.out
 minervadaq/doc/*.pdf
 
