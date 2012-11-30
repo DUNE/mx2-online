@@ -1,6 +1,13 @@
 .DS_Store
 *.o
 
+# LaTeX detritus.
+*.aux
+*.bbl
+*.blg
+*.log   # Careful...
+*.pdf
+
 # .gitignore:
 # 1) Blank lines are ignored, and a pound sign (#) can be used for comments.
 # 2) A simple, literal filename matches a file in any directory with that name.
