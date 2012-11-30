@@ -1,0 +1,153 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Document definition
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[fleqn,letterpaper,11pt,oneside]{article}
+
+% font selection
+%----------------------
+\usepackage{palatino}
+%\usepackage{times}
+%\usepackage{newcent}
+%\usepackage{bookman}
+%\usepackage{avant}
+%\usepackage{helvet}
+
+% Packages
+%----------------------
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{enumerate}
+\usepackage{indentfirst}
+\usepackage{xspace}
+\usepackage{array}
+\usepackage{rotating}
+\usepackage[
+  pdfusetitle,
+  pdfkeywords={minerva, software, inclusive},
+  bookmarks,bookmarksopen,
+  bookmarksnumbered,
+  pdfpagelabels,
+  colorlinks,linkcolor=black,citecolor=black,
+  pdfview={Fit},
+]
+{hyperref}
+
+% Need this for \toprule, etc.
+\usepackage{booktabs}
+
+% Add line numbers w/ \linenumbers.
+\usepackage{lineno}
+
+% Get basic author block formatting.
+\usepackage{authblk}
+
+% Multipage tables?
+\usepackage{longtable}
+
+% Page dimensions
+%----------------------
+\setlength{\hoffset}{0.05in}
+\setlength{\oddsidemargin}{0.25in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textwidth}{6.2in} 
+
+\setlength{\voffset}{-0.25in}
+\setlength{\topmargin}{0.0in}
+\setlength{\headsep}{0.2in}
+\setlength{\topskip}{0.0in}
+\setlength{\headheight}{14.0pt}
+\setlength{\footskip}{0.5in}
+\setlength{\textheight}{8.9in}
+
+\renewcommand{\baselinestretch}{1.6}
+\setlength{\parindent}{0.25in}
+
+% Define headers/footers
+%----------------------
+\pagestyle{fancy}
+\fancyhead{}
+\fancyfoot{}
+\setlength{\marginparwidth}{0.25cm}
+\setlength{\marginparsep}{0.1cm}
+\addtolength{\headwidth}{\marginparsep}   
+\addtolength{\headwidth}{\marginparwidth}  
+
+% Experiment
+%------------
+\newcommand{\minerva}{MINER$\nu$A\xspace}
+
+% General Math
+%-------------------
+\newcommand{\be}{\begin{equation}}
+\newcommand{\ee}{\end{equation}}
+\newcommand{\bea}{\begin{eqnarray}}
+\newcommand{\eea}{\end{eqnarray}}
+\newcommand{\abs}[1]{\mathopen| #1 \mathclose|}
+\newcommand{\bra}[1]{\langle #1|}
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\braket}[2]{\langle #1|#2\rangle}
+
+% Theorems
+%  Number lemmas within theorems, http://www.mackichan.com/index.html?techtalk/611.htm~mainFrame
+%-------------------------------------------------------------------------------------------------
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}{Lemma}
+\numberwithin{lemma}{theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+% Formatting
+%  Overbar idea from:
+%   http://tex.stackexchange.com/questions/22100/the-bar-and-overline-commands
+%-------------------------------------------------------------------------------
+\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu}
+
+% Places
+%---------
+\newcommand{\FNAL}{Fermi National Accelerator Laboratory, Batavia, Illinois 60510, USA}
+\newcommand{\Rochester}{University of Rochester, Rochester, New York 14610 USA}
+
+
+% Examples:
+%
+% Matrix
+%--------
+% A = \begin{pmatrix} A_{11} & A_{12} \\ A_{21} & A_{22} \end{pmatrix}
+%
+% Table
+%----------
+%\begin{table}[htb]
+%\centering
+%\begin{tabular}{crr}
+%\toprule
+%$X$: & 1 & 2 \\
+%\midrule
+%$Y$: & 2 & 3 \\
+%\bottomrule
+%\end{tabular}
+%\caption{A table}
+%\label{tbl:atable}
+%\end{table}
+%
+% Figure
+%----------
+%\begin{figure}
+%  \centering
+%  \includegraphics[height=0.32\textheight]{RecursionTree}
+%  \caption{A caption.}
+%  \label{fig:recursiontree}
+%\end{figure}
+%
+% Braced Equation
+%------------------
+%\[
+%  f(n) = \left\{ 
+%  \begin{array}{l l}
+%    n/2 & \quad \text{if $n$ is even}\\
+%    -(n+1)/2 & \quad \text{if $n$ is odd}\\
+%  \end{array} \right.
+%\]
+
