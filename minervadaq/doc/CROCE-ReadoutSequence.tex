@@ -17,11 +17,45 @@
 \section{Introduction}
 \label{sec:introduction}
 
-This document describes the commands required to readout the \minerva CROC.
+This document describes the commands required to readout the \minerva CROC-E.
 % \cite{refcroce} - No DocDB available yet.
+We assume there is interesting data sitting on the FEB in this document.
+
+\section{CROC+ Mode: Sequencer Readout Disabled}
+\label{sec:seqreaddisab}
+
+Tentative sequence (assuming one FEB); all addresses assume CROCE Base + Channel Offset Address ($i \times \hex{4000}$):
+\begin{enumerate}
+\item Configuration (\hex{28002}): \hex{0001} to disable the Sequencer Readout mode and set the number of FEBs to one.
+\item Command (\hex{2804}): \hex{B000} to clear the status register and reset both the send and receive memory pointers.
+\item Read the Frame (\hex{28020}) and Tx/Rx (\hex{28040}) Status registers? Or only one?
+\item Write the frame we would like to send/read to the Send Memory Register (\hex{22000}). 
+\item Write send message (\hex{40000}) to the Command Register (\hex{28004}) to send the message.
+\item Poll the status register looking for Sequencer Done and Frame Received bits to go to one (mask for those two bits: \hex{0410}). Once both bits are one, we may begin readout. What value of the register constitutes perfect health?
+\item Read the Receive Memory Pointer (\hex{28080}) to get the amount of data.
+\item Read the Receive Memory Register (\hex{00000}), using the result from the pointer read, to get that many bytes. 
+\item At the end of readout, optionally read the Event Counter register (\hex{28008}).
+\end{enumerate}
+
+
+\section{CROC+ Mode: Sequencer Readout Enabled}
+\label{sec:seqreadenab}
+
+Tentative sequence (assuming one FEB); all addresses assume CROCE Base + Channel Offset Address ($i \times \hex{4000}$):
+\begin{enumerate}
+\item Configuration (\hex{28002}): \hex{8001} to enable the Sequencer Readout mode and set the number of FEBs to one.
+\item Command (\hex{2804}): \hex{B000} to clear the status register and reset both the send and receive memory pointers.
+\item Read the Frame (\hex{28020}) and Tx/Rx (\hex{28040}) Status registers? Or only one?
+\item Send an RDFE signal.
+\item Poll the status register looking for Sequencer Done and Frame Received bits to go to one (mask for those two bits: \hex{0410}). Once both bits are one, we may begin readout.
+\item Read the Receive Memory Pointer (\hex{28080}) to get the amount of data.
+\item Read the Receive Memory Register (\hex{00000}), using the result from the pointer read, to get that many bytes. In this case, we have a glob with all the frame data from the FEB.
+\item At the end of readout, optionally read the Event Counter register (\hex{28008}).
+\end{enumerate}
 
 \section{CROC+ Mode: Reading and Clearing the CROC Status Register}
 \label{sec:readandclearcrocstatus}
+
 
 
 \section{CROC+ Mode: Reading Data from the FEBs}
