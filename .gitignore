@@ -2,11 +2,11 @@
 *.o
 
 # LaTeX detritus.
-*.aux
-*.bbl
-*.blg
-*.log   # Careful...
-*.pdf
+minervadaq/doc/*.aux
+minervadaq/doc/*.bbl
+minervadaq/doc/*.blg
+minervadaq/doc/*.log   
+minervadaq/doc/*.pdf
 
 # .gitignore:
 # 1) Blank lines are ignored, and a pound sign (#) can be used for comments.
