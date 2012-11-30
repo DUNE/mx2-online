@@ -1,6 +1,14 @@
 .DS_Store
 *.o
 
+# LaTeX detritus.
+minervadaq/doc/*.aux
+minervadaq/doc/*.bbl
+minervadaq/doc/*.blg
+minervadaq/doc/*.log   
+minervadaq/doc/*.out
+minervadaq/doc/*.pdf
+
 # .gitignore:
 # 1) Blank lines are ignored, and a pound sign (#) can be used for comments.
 # 2) A simple, literal filename matches a file in any directory with that name.
