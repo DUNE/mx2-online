@@ -8,7 +8,7 @@
  *
  * Elaine Schulte, Rutgers University
  * Gabriel Perdue, The University of Rochester
-********************************************************************************/
+ ********************************************************************************/
 
 #include <cmath>
 
@@ -20,12 +20,13 @@
 
 /* A new, shiny "Minerva Long" for those pesky >32-bit integers on a 32-bit kernel 
    Elaine Schulte, June 4, 2009 
-*/
+ */
 #ifdef SYS_32
 typedef unsigned long long long_m;
 #else
 typedef unsigned long long_m;
 #endif 
+
 
 
 //---------------
@@ -194,5 +195,24 @@ typedef enum StatusBits { //typecast to unsigned short
 	EncodedCommandReceived = 0x8000   // CRIM only
 };
 
+//---------------
+/* croc types */
+//---------------
+
+static const int ecrocAddressShift = 24;
+
+// All CROC-E channel registers may have a n * 0x400000 modifier, where n is the channel number (0-3).
+typedef enum ecrocChannelRegisters { //typecast to unsigned int
+	ecrocReceiveMemory             = 0x00000,
+	ecrocSendMemory                = 0x22000,
+	ecrocFramePointersMemory       = 0x24000,
+	ecrocConfiguration             = 0x28002,
+	ecrocCommand                   = 0x28004,
+	ecrocEventCounter	       = 0x28008,
+	ecrocFramesCounterAndLoopDelay = 0x28010,
+	ecrocFrameStatus               = 0x28020,
+	ecrocTxRxStatus                = 0x28040,
+	ecrocReceiveMemoryPointer      = 0x28080
+}
 
 #endif
