@@ -120,11 +120,11 @@ unsigned short ecroc::GetTimingRegisterMessage()
 }
 
 //----------------------------------------
-void ecroc::SetTimingRegisterMessage( unsigned short clockMode, 
+void ecroc::SetTimingRegisterMessage( crocClockModes clockMode, 
 	unsigned short testPulseDelayEnabled, 
 	unsigned short testPulseDelayValue )
 {
-	timingRegisterMessage  = (clockMode & 0x1)<<15 ;            // the clock mode  (0x8000 is the bitmask for bit 15 high)
+	timingRegisterMessage  = clockMode;   	                    // the clock mode  (0x8000 is the bitmask for bit 15 high)
 	timingRegisterMessage |= (testPulseDelayEnabled & 0x1)<<12; // test pulse delay enable bit (bit 12)
 	timingRegisterMessage |= testPulseDelayValue & 0x3FF;       // test pules delay values (in 18.9 ns units) bits 0-9
 	timingRegisterMessage &= 0xFFFF;
@@ -134,8 +134,8 @@ void ecroc::SetTimingRegisterMessage( unsigned short clockMode,
 //----------------------------------------
 void ecroc::SetResetAndTestPulseRegisterMessage( unsigned short resetEnable, unsigned short testPulseEnable )
 {
-	resetAndTestPulseMaskRegisterMessage  = resetEnable     & 0xF00; //the reset enable (bits 8-11)
-	resetAndTestPulseMaskRegisterMessage |= testPulseEnable & 0x00F; //the test pules enable (bits 0-3)
+	resetAndTestPulseMaskRegisterMessage  = (resetEnable & 0x1)<<8;  //the reset enable bit is 8
+	resetAndTestPulseMaskRegisterMessage |= (testPulseEnable & 0x1); //the test pulse enable bit is 0
 }
 
 //----------------------------------------
@@ -157,7 +157,7 @@ void ecroc::SetFastCommandRegisterMessage( unsigned short value )
 }
 
 //----------------------------------------
-void ecroc::InitializeRegisters( ecrocRegisters clockMode, 
+void ecroc::InitializeRegisters( crocClockModes clockMode, 
 		unsigned short testPulseDelayValue,
 		unsigned short testPulseDelayEnabled ) 
 {

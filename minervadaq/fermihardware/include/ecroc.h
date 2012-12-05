@@ -63,7 +63,7 @@ class ecroc {
 		std::list<echannels*>* GetChannelsList(); 
 
 		unsigned int GetTimingSetupAddress();
-		void SetTimingRegisterMessage(unsigned short cm, unsigned short tpde, unsigned short tpdval); 
+		void SetTimingRegisterMessage(crocClockModes clockMode, unsigned short testPulseDelayEnabled, unsigned short testPulseDelayValue); 
 		unsigned short GetTimingRegisterMessage(); 
 
 		void SetResetAndTestPulseRegisterMessage( unsigned short resetEnable, unsigned short testPulseEnable ); 
@@ -72,7 +72,7 @@ class ecroc {
 		unsigned int GetFastCommandAddress();
 		unsigned short GetFastCommandRegisterMessage();
 
-		void InitializeRegisters( ecrocRegisters clockMode, 
+		void InitializeRegisters( crocClockModes clockMode, 
 				unsigned short testPulseDelayValue,
 				unsigned short testPulseDelayEnabled ); 
 
