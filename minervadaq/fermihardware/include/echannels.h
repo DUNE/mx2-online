@@ -35,16 +35,13 @@
 
 class echannels {
 	private:
-		unsigned int channelNumber;             /*!<the channel identifying index, used for retrieval, currently indexed 0-3 */  
-		unsigned int channelBaseAddress;        /*!<channelBaseAddress is the CROC address */
-		unsigned int channelDirectAddress;		
-		CVAddressModifier bltAddressModifier;   /*!<block transfers require a special modifier */
-		std::vector<feb*> febsVector;           /*!<need to be able to direct access an FEB by index (address/number) */
-		int FIFOMaxSize; 	                /*!< bytes */
-		int MemoryMaxSize;                      /*!< bytes */
+		unsigned int channelNumber;             /*!< the channel identifying index, used for retrieval, currently indexed 0-3 */  
+		unsigned int channelBaseAddress;        /*!< channelBaseAddress is the CROC address */
+		unsigned int channelDirectAddress;	/*!< base + offset */
+		CVAddressModifier bltAddressModifier;   /*!< block transfers require a special modifier */
 
 		unsigned int receiveMemoryAddress;
-		unsigned int crocSendMemoryAddress;
+		unsigned int sendMemoryAddress;
 		unsigned int framePointersMemoryAddress;
 		unsigned int configurationAddress;
 		unsigned int commandAddress;
@@ -56,18 +53,23 @@ class echannels {
 
 		unsigned short channelStatus;
 		unsigned short dpmPointer; 
-		bool has_febs;                          /*!< a flag for sorting available echannels with or without FEB's */
+		bool use_sequencer_mode;
+
+		std::vector<feb*> febsVector;           /*!< need to be able to direct access an FEB by index (address/number) */
 
 		unsigned char *buffer; 			/*!< a buffer to hold unsorted DPM Memory */
 
 	public:
-		echannels(unsigned int, int);
+		echannels( unsigned int baseVMEAddress, unsigned int channelNumber );
 		~echannels();
 
 		unsigned int GetChannelNumber();
+		unsigned int GetParentECROCAddress();
+		unsigned int GetDirectAddress();
+		CVAddressModifier GetBLTModifier();
 
 		unsigned int GetReceiveMemoryAddress();
-		unsigned int GetCrocSendMemoryAddress();
+		unsigned int GetSendMemoryAddress();
 		unsigned int GetFramePointersMemoryAddress();
 		unsigned int GetConfigurationAddress();
 		unsigned int GetCommandAddress();
@@ -77,28 +79,22 @@ class echannels {
 		unsigned int GetTxRxStatusAddress();
 		unsigned int GetReceiveMemoryPointerAddress();
 
-		unsigned short inline GetChannelStatus() {return channelStatus;};
-		unsigned int inline GetDPMPointer() {return dpmPointer;};
-		bool inline GetHasFebs() {return has_febs;};
-		unsigned char inline *GetBuffer() {return buffer;};
-		CVAddressModifier inline GetBLTModifier() {return bltAddressModifier;};
+		unsigned short GetChannelStatus(); 
+		void SetChannelStatus( unsigned short status );
 
-		/*! set functions for various data members*/
-		void SetFEBs(int a, int nHits, log4cpp::Appender* appender=0); //feb address, maxHits, log appender
-		void inline SetHasFebs(bool a) {has_febs = a;};
-		void inline SetChannelStatus(unsigned short a) {channelStatus=a;};
-		void inline SetDPMPointer(unsigned short a) {dpmPointer = a;};
-		void SetBuffer(unsigned char *b); 
-		void inline DeleteBuffer() {delete [] buffer;};
+		unsigned int GetDPMPointer();
+		void SetDPMPointer( unsigned short pointer );
 
-		/*! misc. channel setup and data handling functions */
-		feb *MakeTrialFEB(int a, int nHits, log4cpp::Appender* appender=0); //feb address, maxHits, log appender
+		unsigned char *GetBuffer();
+		void SetBuffer( unsigned char *data ); 
+		void DeleteBuffer(); 
+
 		int DecodeStatusMessage();
-		void inline ClearBuffer() {delete [] buffer;};
 		int CheckHeaderErrors(int dataLength);
 
-		std::vector<feb*> inline *GetFebVector() {return &febsVector;};
-		feb inline *GetFebVector(int i) {return febsVector[i];};
+		void AddFEB( feb* FEB ); 
+		std::vector<feb*>* GetFebVector();
+		feb* GetFebVector( int index /* should always equal FEB address */ );
 
 		
 };

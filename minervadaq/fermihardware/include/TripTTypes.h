@@ -18,7 +18,7 @@ typedef enum TRiPFunctions { //typecast to unsigned char
 	tTR4  = 0x06,
 	tTR5  = 0x07
 };
-
+/*
 typedef struct TripRegisterValues {
 	int tripRegIBP;
 	int tripRegIBBNFOLL;
@@ -35,6 +35,6 @@ typedef struct TripRegisterValues {
 	int tripRegIRSEL;
 	int tripRegIWSEL;
 };
-
+*/
 
 #endif
