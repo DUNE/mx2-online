@@ -16,12 +16,10 @@
 #include "FrameTypes.h"
 
 /*********************************************************************************
-* Class for creating Chain Read-Out Controller channel objects for use with the 
+* Class for creating CROC-E channel objects for use with the 
 * MINERvA data acquisition system and associated software projects.
 * 
-* Elaine Schulte, Rutgers University
 * Gabriel Perdue, The University of Rochester
-*
 ***********************************************************************************/
 
 /*! \class echannels

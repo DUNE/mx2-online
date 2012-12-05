@@ -196,7 +196,7 @@ typedef enum StatusBits { //typecast to unsigned short
 };
 
 //---------------
-/* croc types */
+/* croce types */
 //---------------
 
 static const int ecrocAddressShift = 24;
@@ -215,4 +215,13 @@ typedef enum ecrocChannelRegisters { //typecast to unsigned int
 	ecrocReceiveMemoryPointer      = 0x28080
 };
 
+typedef enum ecrocRegisters { //typecast to unsigned int
+	ecrocTimingSetup               = 0xFF000,
+	ecrocResetAndTestPulseMask     = 0xFF010,
+	ecrocChannelReset              = 0xFF020,
+	ecrocFastCommand               = 0xFF030,
+	ecrocTestPulse                 = 0xFF040,
+	ecrocRdfePulseDelay            = 0xFF050,
+	ecrocRdfePulseCommand          = 0xFF060
+};
 #endif
