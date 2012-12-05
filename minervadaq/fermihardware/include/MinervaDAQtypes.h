@@ -129,7 +129,7 @@ typedef enum crocChannels{
 	Ch4 = 4
 };
 
-
+// These values are good for the ecroc as well.
 typedef enum crocClockModes { //typecast to unsigned int
 	crocInternal = 0x0000,
 	crocExternal = 0x8000
@@ -139,7 +139,7 @@ typedef enum crocClockModes { //typecast to unsigned int
 typedef enum crocTestPulseDelay { //typecast to unsigned int
 	Disabled = 0x0000,
 	Enabled  = 0x1000,
-	Mask     = 0x03FF
+	Mask     = 0x01FF  // 1FF is mask for ecroc. ocroc was 3FF
 };
 
 
@@ -224,4 +224,5 @@ typedef enum ecrocRegisters { //typecast to unsigned int
 	ecrocRdfePulseDelay            = 0xFF050,
 	ecrocRdfePulseCommand          = 0xFF060
 };
+
 #endif
