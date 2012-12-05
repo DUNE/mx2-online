@@ -213,6 +213,6 @@ typedef enum ecrocChannelRegisters { //typecast to unsigned int
 	ecrocFrameStatus               = 0x28020,
 	ecrocTxRxStatus                = 0x28040,
 	ecrocReceiveMemoryPointer      = 0x28080
-}
+};
 
 #endif
