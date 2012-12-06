@@ -2,8 +2,7 @@
 #define controller_h
 
 #include <iostream>
-#include <cstdlib> //this gives us access to "sleep" so we can
-				//pause and wait for something to happen if needed.
+#include <cstdlib> 
 #include <vector>
 #include <fstream>
 
@@ -40,11 +39,9 @@ class controller {
 		CVAddressModifier addressModifier;
 		CVDataWidth dataWidth;
 
-		std::vector<crim*> interfaceModule; 
-		std::vector<croc*> readOutController;  
+		std::vector<crim*> interfaceModules; 
+		std::vector<croc*> readOutControllers;  
 		std::vector<ecroc*> eReadOutControllers; 
-		std::vector<channels*> feChannels;  
-		std::vector<echannels*> eFeChannels;  
 
 		/*! these are the controller registers for the VME controller */
 		unsigned short status, control, irq, irqMask, input, output,
@@ -97,15 +94,12 @@ class controller {
 
 		/*! the specialty destructor */
 		~controller() {
-			for (std::vector<crim*>::iterator p=interfaceModule.begin();
-				p!=interfaceModule.end();p++) delete (*p);
-			interfaceModule.clear();
-			for (std::vector<croc*>::iterator p=readOutController.begin();
-				p!=readOutController.end();p++) delete (*p);
-			readOutController.clear();
-			for (std::vector<channels*>::iterator p=feChannels.begin();
-				p!=feChannels.end();p++) delete (*p);
-			feChannels.clear();
+			for (std::vector<crim*>::iterator p=interfaceModules.begin();
+				p!=interfaceModules.end();p++) delete (*p);
+			interfaceModules.clear();
+			for (std::vector<croc*>::iterator p=readOutControllers.begin();
+				p!=readOutControllers.end();p++) delete (*p);
+			readOutControllers.clear();
 		};
 
 		/*! Get functions */
@@ -117,25 +111,23 @@ class controller {
 		int inline GetHandle() {return handle;};
 		int inline GetID() {return controller_id;};
 
-		/*! Object assignment functions */
-		void MakeCrim(unsigned int a);        //make *one* interface module, w/id==1
-		void MakeCrim(unsigned int a, int b); //make up each interface module
-		void MakeCroc(unsigned int a, int b); //make up each croc
+		void MakeCrim(unsigned int vmeAddress, int crimID); // Address should already be shifted.
+		void MakeCroc(unsigned int vmeAddress, int crocID); // Address should already be shifted.
+		void MakeECroc(unsigned int vmeAddress, int crocID); // Address should already be shifted.
 
 		// By convention (& hopefully construction), the first CRIM (indexed to 1) 
 		// will always be the MASTER CRIM (the interrupt handler we poll or IACK).
-		crim *GetCrim();       // Return the pointer to the *first* CRIM.
-		crim *GetCrim(int a);  // Return the pointer to the requested CRIM.
-		croc *GetCroc(int a);  // Return the pointer to the requested CROC.
-		std::vector<croc*> inline *GetCrocVector() {return &readOutController;};
-		std::vector<crim*> inline *GetCrimVector() {return &interfaceModule;};
+		crim *GetCrim();            // Return the pointer to the *first* CRIM. (Worth doing fast.)
+		crim *GetCrim(int crimID);  // Return the pointer to the requested CRIM.
+		croc *GetCroc(int crocID);  // Return the pointer to the requested CROC.
+		std::vector<croc*> inline *GetCrocVector() {return &readOutControllers;};
+		std::vector<crim*> inline *GetCrimVector() {return &interfaceModules;};
 
 		void inline SetDataWidth(CVDataWidth a) {dataWidth=a;}; 
 
-		/*! wrapper functions for contacting the controller & getting information back */
 		int ContactController();
-		int GetCrimStatus(int crimID); //get card status for the requested crim in the list
-		int GetCrocStatus(int crocID); //get card status for the requested croc in the list
+		int GetCrimStatus(int crimID); 
+		int GetCrocStatus(int crocID); 
 		int GetCrocVectorLength(); 
 		int GetCrimVectorLength();
 		
