@@ -1,20 +1,18 @@
 #ifndef controller_h
 #define controller_h
 
-/* system specific headers here */
 #include <iostream>
 #include <cstdlib> //this gives us access to "sleep" so we can
 				//pause and wait for something to happen if needed.
 #include <vector>
 #include <fstream>
 
-/* CAEN VME specific headers here */
 #include "CAENVMEtypes.h"
 #include "CAENVMElib.h"
 
-/* custom headers here */
 #include "crim.h"
 #include "croc.h"
+#include "ecroc.h"
 #include "log4cppHeaders.h"
 
 /*********************************************************************************
@@ -23,7 +21,6 @@
 *
 * Elaine Schulte, Rutgers University
 * Gabriel Perdue, The University of Rochester
-*
 **********************************************************************************/
 
 // Further category hierarchy.
@@ -43,14 +40,17 @@ class controller {
 		CVAddressModifier addressModifier;
 		CVDataWidth dataWidth;
 
-		std::vector<crim*> interfaceModule; /*!< A vector of CROC Interface Module (CRIM) objects. */
-		std::vector<croc*> readOutController;  /*!< A vector of CROC objects. */
-		std::vector<channels*> feChannels;  /*!< A vector of CROC FE channel objects. */
+		std::vector<crim*> interfaceModule; 
+		std::vector<croc*> readOutController;  
+		std::vector<ecroc*> eReadOutControllers; 
+		std::vector<channels*> feChannels;  
+		std::vector<echannels*> eFeChannels;  
+
 		/*! these are the controller registers for the VME controller */
 		unsigned short status, control, irq, irqMask, input, output,
 			clearOutput, inputMux, inputMuxClear, outPutMux;
 		char firmware[1];
-		int transferBytes, crocVectorLength, crimVectorLength, feChannelsVectorLength, controller_id;
+		int transferBytes, crocVectorLength, crimVectorLength, feChannelsVectorLength, eFeChannelsVectorLength, controller_id;
 
 		// log4cpp appender for printing log statements.
 		log4cpp::Appender* ctrlAppender;
@@ -134,10 +134,8 @@ class controller {
 
 		/*! wrapper functions for contacting the controller & getting information back */
 		int ContactController();
-		int GetCardStatus();      //get card status for the *first* crim in the list
-		int GetCardStatus(int a); //get card status for the requested croc in the list
-		int GetCrimStatus(int a); //get card status for the requested crim in the list
-		int GetCrocStatus(int a); //get card status for the requested croc in the list
+		int GetCrimStatus(int crimID); //get card status for the requested crim in the list
+		int GetCrocStatus(int crocID); //get card status for the requested croc in the list
 		int inline GetCrocVectorLength() {return crocVectorLength;};
 		void SetCrocVectorLength() {crocVectorLength = readOutController.size();};
 		int inline GetCrimVectorLength() {return crimVectorLength;};
