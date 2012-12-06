@@ -439,7 +439,7 @@ void acquire_data::InitializeCroc(int address, int crocNo, int nFEBchain0, int n
 
 	// Make sure that we can actually talk to the cards.
 	try {
-		int status = daqController->GetCardStatus(crocNo);  
+		int status = daqController->GetCrocStatus(crocNo);  
 		if (status) throw status;
 	} catch (int e)  {
 		std::cout << "Error in acquire_data::InitializeCroc!  Cannot read the status register for CROC " <<

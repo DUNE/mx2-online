@@ -4,13 +4,12 @@
 #include "controller.h"
 
 /*********************************************************************************
-* Class for creating CAEN VME V2718 Controller objects for use with the 
-* MINERvA data acquisition system and associated software projects.
-*
-* Elaine Schulte, Rutgers University
-* Gabriel Perdue, The University of Rochester
-*
-**********************************************************************************/
+ * Class for creating CAEN VME V2718 Controller objects for use with the 
+ * MINERvA data acquisition system and associated software projects.
+ *
+ * Elaine Schulte, Rutgers University
+ * Gabriel Perdue, The University of Rochester
+ **********************************************************************************/
 
 void controller::ReportError(int error)
 {
@@ -49,17 +48,17 @@ void controller::ReportError(int error)
 
 int controller::ContactController() 
 {
-/*! \fn
- *
- * This function will try to contact the CAEN v2718 controller via the internally 
- * mounted a2818 pci card & read the status register of the controller.
- */
+	/*! \fn
+	 *
+	 * This function will try to contact the CAEN v2718 controller via the internally 
+	 * mounted a2818 pci card & read the status register of the controller.
+	 */
 	int error; // The error returned by the CAEN libraries.
 
 	// Initialize the controller.
 	try {
 		error = CAENVME_Init(controllerType, (unsigned short) boardNumber,
-			(unsigned short) pciSlotNumber, &handle); 
+				(unsigned short) pciSlotNumber, &handle); 
 		if (error) throw error;
 	} catch (int e) {
 		ReportError(e);
@@ -75,7 +74,6 @@ int controller::ContactController()
 		controllerLog.critStream() << "  sudo sh a2818_load.2.6";
 		return e;
 	} 
-	//suppress//std::cout << "Controller " << controller_id << " is initialized." << std::endl; 
 	controllerLog.infoStream() << "Controller " << controller_id << " is initialized.";
 
 	// Get the firmware version of the controller card.
@@ -88,7 +86,6 @@ int controller::ContactController()
 		controllerLog.critStream() << "Unable to obtain the controller firmware version!";
 		return e;
 	}
-	//suppress//std::cout << "The controller firmware version is: " << firmware << std::endl; 
 	controllerLog.infoStream() << "The controller firmware version is: " << firmware; 
 
 	// Get the status of the controller.
@@ -112,54 +109,26 @@ int controller::ContactController()
 } 
 
 
-int controller::GetCardStatus() 
+int controller::GetCrimStatus( int crimID ) 
 {
-/*! \fn
- * CRIM version, assuming a 1-crim set-up -> i.e., only access *first* element in the card vector. 
- * This function returns the status of the crim associated with the current controller object.  This 
- * is basically a LEGACY function.  Do not use it except to access the "master" CRIM! 
- */
-	if (interfaceModule.size() < 1) { return 1; } // No crims!
-	long_m registerAddress = interfaceModule[0]->GetStatusRegisterAddress(); 
-	int error; //error returned by the CAEN libraries
-	shortBuffer = new unsigned short; //hold the crim status in a short
-	try {
-		error = CAENVME_ReadCycle(handle,registerAddress,shortBuffer,
-			interfaceModule[0]->GetAddressModifier(),
-			interfaceModule[0]->GetDataWidth()); 
-		if (error) throw error;
-	} catch (int e) {
-		std::cout << "Error in controller()::GetCardStatus()!" << std::endl;
-		controllerLog.critStream() << "Error in controller()::GetCardStatus()!";
-		ReportError(e);
-		delete shortBuffer; //clean up 
-		return e;
-	}
-	delete shortBuffer; //clean up 
-	return 0;
-} 
-
-
-int controller::GetCrimStatus(int a) 
-{
-/*! \fn
- * The vector CRIM version: this function returns the status of the selected crim (a) associated 
- * with the current controller object from its vector of crim's. 
- * \param a the CRIM index number ((internal to DAQ code, not a physical quanitiy)
- */
+	/*! \fn
+	 * The vector CRIM version: this function returns the status of the selected crim (a) associated 
+	 * with the current controller object from its vector of crim's. 
+	 * \param crimID the CRIM index number ((internal to DAQ code, not a physical quanitiy)
+	 */
 	bool foundModule = false;
 	//loop over all the crims associated with this controller object
 	for (std::vector<crim*>::iterator p=interfaceModule.begin(); p!=interfaceModule.end(); p++) { 
 		//select the crim requested
-		if ((*p)->GetCrimID()==a) { 
+		if (crimID == (*p)->GetCrimID()) { 
 			foundModule = true;
 			long_m registerAddress = (*p)->GetStatusRegisterAddress(); 
 			int error; //error from the CAEN libraries
 			shortBuffer = new unsigned short; //a short to hold the status message
 			try {
 				error = CAENVME_ReadCycle(handle, registerAddress, shortBuffer,
-					(*p)->GetAddressModifier(),
-					(*p)->GetDataWidth()); 
+						(*p)->GetAddressModifier(),
+						(*p)->GetDataWidth()); 
 				if (error)  throw error;
 			} catch (int e) {
 				std::cout << "Error in controller()::GetCrimStatus() for Addr " << 
@@ -179,31 +148,19 @@ int controller::GetCrimStatus(int a)
 } 
 
 
-int controller::GetCardStatus(int a) 
+int controller::GetCrocStatus( int crocID ) 
 {
-/*! \fn
- * This function returns the status of the selected croc (a) associated with the current
- * controller object from its vector of croc's - it is redundant but included for backwards 
- * compatibility.  It is a LEGACY function and should not be called anymore.
- * \param a the CROC index number (internal to DAQ code, not a physical quanitiy)
- */ 
-	return controller::GetCrocStatus(a);
-}
-
-
-int controller::GetCrocStatus(int a) 
-{
-/*! \fn
- * The croc version: this function returns the status of the selected croc (a) associated with the 
- * current controller object from its vector of croc's.  It does so by reading the status register 
- * of each front end channel.  If they are all okay, the croc is okay!  
- * \param a the CROC index number (internal to DAQ code, not a physical quanitiy)
- */
+	/*! \fn
+	 * The croc version: this function returns the status of the selected croc (a) associated with the 
+	 * current controller object from its vector of croc's.  It does so by reading the status register 
+	 * of each front end channel.  If they are all okay, the croc is okay!  
+	 * \param crocID the CROC index number (internal to DAQ code, not a physical quanitiy)
+	 */
 	bool foundModule = false;
 	//loop over all the crocs associated with this controller object
 	for (std::vector<croc*>::iterator p=readOutController.begin(); p!=readOutController.end();p++) { 
 		//select the croc requested
-		if ((*p)->GetCrocID()==a) { 
+		if (crocID == (*p)->GetCrocID()) { 
 			foundModule = true;
 			//we have 4 channels per croc; loop over all channels
 			for (int i=0;i<4;i++) { 
@@ -237,11 +194,11 @@ int controller::GetCrocStatus(int a)
 
 void controller::MakeCrim(unsigned int crimAddress, int id) 
 {
-/*! \fn
- * This function instantiates a crim software object belonging to the current controller object.
- * \param crimAddress the physical VME address of the crim.
- * \param id an index for use in DAQ code, internal.
- */
+	/*! \fn
+	 * This function instantiates a crim software object belonging to the current controller object.
+	 * \param crimAddress the physical VME address of the crim.
+	 * \param id an index for use in DAQ code, internal.
+	 */
 	crim *tmp = new crim(crimAddress, id, addressModifier, dataWidth);
 	interfaceModule.push_back(tmp);
 	controllerLog.infoStream() << "Added a CRIM with id=" << id << " and Address=" << (crimAddress>>16);
@@ -250,11 +207,11 @@ void controller::MakeCrim(unsigned int crimAddress, int id)
 
 void controller::MakeCrim(unsigned int crimAddress) 
 {
-/*! \fn
- * This function instantiates a crim object belonging to the current controller object - it is 
- * LEGACY code and should not be called.  A crim with id==1 is created. 
- * \param crimAddress the physical VME address of the crim
- */
+	/*! \fn
+	 * This function instantiates a crim object belonging to the current controller object - it is 
+	 * LEGACY code and should not be called.  A crim with id==1 is created. 
+	 * \param crimAddress the physical VME address of the crim
+	 */
 	crim *tmp = new crim(crimAddress, (int)1, addressModifier, dataWidth);
 	interfaceModule.push_back(tmp);
 	controllerLog.infoStream() << "Added a CRIM with id=1 and Address=" << (crimAddress>>16);
@@ -263,11 +220,11 @@ void controller::MakeCrim(unsigned int crimAddress)
 
 void controller::MakeCroc(unsigned int crocAddress, int a) 
 {
-/*! \fn
- * This function instantiates a croc object with index (a) belonging to the current controller object.
- *  \param crocAddress the physical VME address of the CROC
- *  \param a an internal index for the CROC for use in DAQ code only
- */
+	/*! \fn
+	 * This function instantiates a croc object with index (a) belonging to the current controller object.
+	 *  \param crocAddress the physical VME address of the CROC
+	 *  \param a an internal index for the CROC for use in DAQ code only
+	 */
 	croc *tmp = new croc(crocAddress, a, addressModifier, dataWidth, cvD16_swapped);
 	readOutController.push_back(tmp); 
 	controllerLog.infoStream() << "Added a CROC with id=" << a << " and Address=" << 
@@ -277,14 +234,14 @@ void controller::MakeCroc(unsigned int crocAddress, int a)
 
 croc *controller::GetCroc(int a) 
 {
-/*! \fn 
- * This function returns a croc specified by INDEX from the vector of croc's belonging to this 
- * controller object.  Note that if the CROC is not found, the return value is a pointer to 
- * zero.  There is no error checking on this and it can lead to bizarre results!  It is the 
- * responsibility of the rest of the code to *not* request an "un-fetchable" CROC.
- *
- * \param a an internal index for the CROC for use in DAQ code only
- */
+	/*! \fn 
+	 * This function returns a croc specified by INDEX from the vector of croc's belonging to this 
+	 * controller object.  Note that if the CROC is not found, the return value is a pointer to 
+	 * zero.  There is no error checking on this and it can lead to bizarre results!  It is the 
+	 * responsibility of the rest of the code to *not* request an "un-fetchable" CROC.
+	 *
+	 * \param a an internal index for the CROC for use in DAQ code only
+	 */
 	std::vector<croc*>::iterator p; //an iterator over the vector of croc's
 	croc *tmp = 0; //a temporary croc object (we need to return one no matter what)
 	//loop over all croc objects in the vector
@@ -300,10 +257,10 @@ croc *controller::GetCroc(int a)
 
 crim *controller::GetCrim() 
 {
-/*! \fn 
- * Returns a pointer to the *first* CRIM object.  This is by convention & construction 
- * the master CRIM for a given crate and is our designated interrupt handler. 
- */
+	/*! \fn 
+	 * Returns a pointer to the *first* CRIM object.  This is by convention & construction 
+	 * the master CRIM for a given crate and is our designated interrupt handler. 
+	 */
 	crim *tmp = 0; // temp object, have to return something...
 	if (interfaceModule.size() > 0) { 
 		tmp = interfaceModule[0]; 
@@ -319,14 +276,14 @@ crim *controller::GetCrim()
 
 crim *controller::GetCrim(int a) 
 {
-/*! \fn
- * This function returns a crim specified by INDEX from the vector of crim's belonging to this 
- * controller object.  Note that if the CRIM is not found, the return value is a pointer to
- * zero.  There is no error checking on this and it can lead to bizarre results!  It is the 
- * responsibility of the rest of the code to *not* request an "un-fetchable" CRIM.
- *
- * \param a the internal CRIM index
- */
+	/*! \fn
+	 * This function returns a crim specified by INDEX from the vector of crim's belonging to this 
+	 * controller object.  Note that if the CRIM is not found, the return value is a pointer to
+	 * zero.  There is no error checking on this and it can lead to bizarre results!  It is the 
+	 * responsibility of the rest of the code to *not* request an "un-fetchable" CRIM.
+	 *
+	 * \param a the internal CRIM index
+	 */
 	std::vector<crim*>::iterator p; //an iterator over the vector of crim's
 	crim *tmp = 0; //a temporary crim object (we need to return one no matter what)
 	//loop over all crim objects in the vector
