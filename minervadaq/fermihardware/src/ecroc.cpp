@@ -38,7 +38,7 @@ ecroc::ecroc(unsigned int address, int ecrocid,
 
 	ecrocAppender = appender;
 
-	InitializeRegisters((ecrocRegisters) 0x1, 0x0, 0x0 );
+	InitializeRegisters( crocExternal, (short unsigned int)0x0, (short unsigned int)0x0 );
 }
 
 //----------------------------------------

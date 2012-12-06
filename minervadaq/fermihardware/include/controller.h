@@ -50,7 +50,7 @@ class controller {
 		unsigned short status, control, irq, irqMask, input, output,
 			clearOutput, inputMux, inputMuxClear, outPutMux;
 		char firmware[1];
-		int transferBytes, crocVectorLength, crimVectorLength, feChannelsVectorLength, eFeChannelsVectorLength, controller_id;
+		int transferBytes, controller_id;
 
 		// log4cpp appender for printing log statements.
 		log4cpp::Appender* ctrlAppender;
@@ -136,12 +136,8 @@ class controller {
 		int ContactController();
 		int GetCrimStatus(int crimID); //get card status for the requested crim in the list
 		int GetCrocStatus(int crocID); //get card status for the requested croc in the list
-		int inline GetCrocVectorLength() {return crocVectorLength;};
-		void SetCrocVectorLength() {crocVectorLength = readOutController.size();};
-		int inline GetCrimVectorLength() {return crimVectorLength;};
-		void SetCrimVectorLength() {crimVectorLength = interfaceModule.size();};
-		int inline GetFEChannelsVectorLength() {return feChannelsVectorLength;};
-		void SetFEChannelsVectorLength() {feChannelsVectorLength = interfaceModule.size();};
+		int GetCrocVectorLength(); 
+		int GetCrimVectorLength();
 		
 		void ReportError(int error);
 

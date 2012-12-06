@@ -125,8 +125,6 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	maxFebs = 10;					//				---211
 #endif
 	// Set the flags that tells us how many VME cards are installed for this controller.
-	daqController->SetCrocVectorLength(); 
-	daqController->SetCrimVectorLength();
 	acqData.infoStream() << " Total Number of Initialized CRIMs attached to this controller = " << 
 		daqController->GetCrimVectorLength(); 
 	acqData.infoStream() << " Total Number of Initialized CROCs attached to this controller = " << 
