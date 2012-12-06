@@ -19,7 +19,7 @@ ecroc::ecroc(unsigned int address, int ecrocid, log4cpp::Appender* appender )
 	vmeAddress       = address;
 	id               = ecrocid;
 	addressModifier  = cvA32_U_DATA;
-	dataWidth        = cvD32; 
+	dataWidth        = cvD32;  // not clear we have one data width - is cvD16 for register reads
 	dataWidthSwapped = cvD16_swapped;
 
 	timingSetupAddress           = address + ecrocTimingSetup;
