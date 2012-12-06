@@ -142,9 +142,11 @@ bool Frames::CheckForErrors()
 #endif
 	if (errors[0]) {
 		error = true; 
+/*
 		if (frmsAppender!=0) {
 			framesLog.errorStream()<<"CheckForErrors: Direction: "<<errors[0];
 		}
+*/
 	}
 
 	word = DeviceStatus; flag = DeviceOK; //check status
@@ -154,9 +156,11 @@ bool Frames::CheckForErrors()
 #endif
 	if (errors[1]) {
 		error = true; 
+/*
 		if (frmsAppender!=0) {
 			framesLog.errorStream()<<"CheckForErrors: DeviceOK: "<<errors[1];
 		}
+*/
 	}
 
 	word = DeviceStatus; flag = FunctionOK; //check execution status
@@ -166,9 +170,11 @@ bool Frames::CheckForErrors()
 #endif
 	if (errors[2]) {
 		error = true; 
+/*
 		if (frmsAppender!=0) {
 			framesLog.errorStream()<<"CheckForErrors: FunctionOK: "<<errors[2];
 		}
+*/
 	}
 
 	word = FrameStatus; flag = CRCOK; //check CRC error bit
@@ -178,9 +184,11 @@ bool Frames::CheckForErrors()
 #endif
 	if (errors[3]) {
 		error = true; 
+/*
 		if (frmsAppender!=0) {
 			framesLog.errorStream()<<"CheckForErrors: CRCOK: "<<errors[3];
 		}
+*/
 	}
 
 	word = FrameStatus; flag = EndHeader; //message ended properly
@@ -190,9 +198,11 @@ bool Frames::CheckForErrors()
 #endif
 	if (errors[4]) {
 		error = true; 
+/*
 		if (frmsAppender!=0) {
 			framesLog.errorStream()<<"CheckForErrors: EndHeader: "<<errors[4];
 		}
+*/
 	}
 
 	word = FrameStatus; flag = MaxLen; //message exceeded maximum message length
@@ -202,9 +212,11 @@ bool Frames::CheckForErrors()
 #endif
 	if (errors[5]) {
 		error = true; 
+/*
 		if (frmsAppender!=0) {
 			framesLog.errorStream()<<"CheckForErrors: MaxLen: "<<errors[5];
 		}
+*/
 	}
 
 	word = FrameStatus; flag = SecondStart;
@@ -214,9 +226,11 @@ bool Frames::CheckForErrors()
 #endif
 	if (errors[6]) {
 		error = true; 
+/*
 		if (frmsAppender!=0) {
 			framesLog.errorStream()<<"CheckForErrors: SecondStart: "<<errors[6];
 		}
+*/
 	}
 
 	word = FrameStatus; flag = NAHeader;
@@ -226,9 +240,11 @@ bool Frames::CheckForErrors()
 #endif
 	if (errors[7]) {
 		error = true; 
+/*
 		if (frmsAppender!=0) {
 			framesLog.errorStream()<<"CheckForErrors: NAHeader: "<<errors[7];
 		}
+*/
 	}
 
 	return false; // let everything through for now...
