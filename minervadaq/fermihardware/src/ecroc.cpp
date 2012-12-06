@@ -4,12 +4,10 @@
 #include "ecroc.h"
 
 /*********************************************************************************
-* Class for creating Chain Read-Out Controller objects for use with the 
-* MINERvA data acquisition system and associated software projects.
+* Class for creating CROC-E objects for use with the MINERvA data acquisition 
+* system and associated software projects.
 *
-* Elaine Schulte, Rutgers University
 * Gabriel Perdue, The University of Rochester
-*
 **********************************************************************************/
 
 // log4cpp category hierarchy.

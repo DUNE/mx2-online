@@ -117,19 +117,23 @@ class controller {
 
 		// By convention (& hopefully construction), the first CRIM (indexed to 1) 
 		// will always be the MASTER CRIM (the interrupt handler we poll or IACK).
-		crim *GetCrim();            // Return the pointer to the *first* CRIM. (Worth doing fast.)
-		crim *GetCrim(int crimID);  // Return the pointer to the requested CRIM.
-		croc *GetCroc(int crocID);  // Return the pointer to the requested CROC.
-		std::vector<croc*> inline *GetCrocVector() {return &readOutControllers;};
+		crim *GetCrim();             // Return the pointer to the *first* CRIM. (Worth doing fast.)
+		crim *GetCrim(int crimID);   // Return the pointer to the requested CRIM.
+		croc *GetCroc(int crocID);   // Return the pointer to the requested CROC.
+		ecroc *GetECroc(int crocID);  // Return the pointer to the requested CROC.
 		std::vector<crim*> inline *GetCrimVector() {return &interfaceModules;};
+		std::vector<croc*> inline *GetCrocVector() {return &readOutControllers;};
+		std::vector<ecroc*> inline *GetECrocVector() {return &eReadOutControllers;};
 
 		void inline SetDataWidth(CVDataWidth a) {dataWidth=a;}; 
 
 		int ContactController();
 		int GetCrimStatus(int crimID); 
 		int GetCrocStatus(int crocID); 
-		int GetCrocVectorLength(); 
+		int GetECrocStatus(int crocID); 
 		int GetCrimVectorLength();
+		int GetCrocVectorLength(); 
+		int GetECrocVectorLength(); 
 		
 		void ReportError(int error);
 
