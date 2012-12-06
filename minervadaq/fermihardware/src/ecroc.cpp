@@ -16,15 +16,13 @@
 log4cpp::Category& ecrocLog = log4cpp::Category::getInstance(std::string("ecroc"));
 
 //----------------------------------------
-ecroc::ecroc(unsigned int address, int ecrocid, 
-	CVAddressModifier modifier, CVDataWidth width, CVDataWidth swappedWidth,
-	log4cpp::Appender* appender ) 
+ecroc::ecroc(unsigned int address, int ecrocid, log4cpp::Appender* appender ) 
 {
 	vmeAddress       = address;
 	id               = ecrocid;
-	addressModifier  = modifier; 
-	dataWidth        = width; 
-	dataWidthSwapped = swappedWidth;
+	addressModifier  = cvA32_U_DATA;
+	dataWidth        = cvD32; 
+	dataWidthSwapped = cvD16_swapped;
 
 	timingSetupAddress           = address + ecrocTimingSetup;
 	resetAndTestPulseMaskAddress = address + ecrocResetAndTestPulseMask;

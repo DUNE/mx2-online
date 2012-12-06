@@ -118,7 +118,7 @@ int controller::GetCrimStatus( int crimID )
 	 */
 	bool foundModule = false;
 	//loop over all the crims associated with this controller object
-	for (std::vector<crim*>::iterator p=interfaceModule.begin(); p!=interfaceModule.end(); p++) { 
+	for (std::vector<crim*>::iterator p=interfaceModules.begin(); p!=interfaceModules.end(); p++) { 
 		//select the crim requested
 		if (crimID == (*p)->GetCrimID()) { 
 			foundModule = true;
@@ -158,7 +158,7 @@ int controller::GetCrocStatus( int crocID )
 	 */
 	bool foundModule = false;
 	//loop over all the crocs associated with this controller object
-	for (std::vector<croc*>::iterator p=readOutController.begin(); p!=readOutController.end();p++) { 
+	for (std::vector<croc*>::iterator p=readOutControllers.begin(); p!=readOutControllers.end();p++) { 
 		//select the croc requested
 		if (crocID == (*p)->GetCrocID()) { 
 			foundModule = true;
@@ -200,39 +200,39 @@ void controller::MakeCrim(unsigned int crimAddress, int id)
 	 * \param id an index for use in DAQ code, internal.
 	 */
 	crim *tmp = new crim(crimAddress, id, addressModifier, dataWidth);
-	interfaceModule.push_back(tmp);
+	interfaceModules.push_back(tmp);
 	controllerLog.infoStream() << "Added a CRIM with id=" << id << " and Address=" << (crimAddress>>16);
 }
 
 
-void controller::MakeCrim(unsigned int crimAddress) 
+void controller::MakeCroc(unsigned int crocAddress, int id) 
 {
 	/*! \fn
-	 * This function instantiates a crim object belonging to the current controller object - it is 
-	 * LEGACY code and should not be called.  A crim with id==1 is created. 
-	 * \param crimAddress the physical VME address of the crim
-	 */
-	crim *tmp = new crim(crimAddress, (int)1, addressModifier, dataWidth);
-	interfaceModule.push_back(tmp);
-	controllerLog.infoStream() << "Added a CRIM with id=1 and Address=" << (crimAddress>>16);
-}
-
-
-void controller::MakeCroc(unsigned int crocAddress, int a) 
-{
-	/*! \fn
-	 * This function instantiates a croc object with index (a) belonging to the current controller object.
+	 * This function instantiates a croc object with index (id) belonging to the current controller object.
 	 *  \param crocAddress the physical VME address of the CROC
-	 *  \param a an internal index for the CROC for use in DAQ code only
+	 *  \param id an internal index for the CROC for use in DAQ code only
 	 */
-	croc *tmp = new croc(crocAddress, a, addressModifier, dataWidth, cvD16_swapped);
-	readOutController.push_back(tmp); 
-	controllerLog.infoStream() << "Added a CROC with id=" << a << " and Address=" << 
+	croc *tmp = new croc( crocAddress, id, addressModifier, dataWidth, cvD16_swapped );
+	readOutControllers.push_back(tmp); 
+	controllerLog.infoStream() << "Added a CROC with id=" << id << " and Address=" << 
 		(crocAddress>>16);
 }
 
+void controller::MakeECroc(unsigned int crocAddress, int id) 
+{
+	/*! \fn
+	 * This function instantiates an ecroc object with index (id) belonging to the current controller object.
+	 *  \param crocAddress the physical VME address of the CROC-E
+	 *  \param id an internal index for the CROC-E for use in DAQ code only
+	 */
+	ecroc *tmp = new ecroc( crocAddress, id, ctrlAppender );
+	eReadOutControllers.push_back(tmp); 
+	controllerLog.infoStream() << "Added a CROC-E with id=" << id << " and Address=" << 
+		(crocAddress>>ecrocAddressShift);
+}
 
-croc *controller::GetCroc(int a) 
+
+croc *controller::GetCroc( int crocID ) 
 {
 	/*! \fn 
 	 * This function returns a croc specified by INDEX from the vector of croc's belonging to this 
@@ -242,16 +242,14 @@ croc *controller::GetCroc(int a)
 	 *
 	 * \param a an internal index for the CROC for use in DAQ code only
 	 */
-	std::vector<croc*>::iterator p; //an iterator over the vector of croc's
-	croc *tmp = 0; //a temporary croc object (we need to return one no matter what)
-	//loop over all croc objects in the vector
-	for (p=readOutController.begin();p!=readOutController.end();p++) { 
-		int id=(*p)->GetCrocID(); //extract & check the croc's id number
-		if (id==a) tmp=(*p); //assign that croc fro return by the function
+	croc *tmp = 0; 
+	for (std::vector<croc*>::iterator p=readOutControllers.begin(); p!=readOutControllers.end(); ++p) { 
+		if ( crocID == (*p)->GetCrocID() ) { 
+			tmp=(*p); 
+			break;
+		}
 	}
-	return tmp; //return the pointer to the croc extracted from the vector
-	// Add error handling if we don't find the croc?  Don't want to weigh this 
-	// function down...
+	return tmp; 
 }
 
 
@@ -261,20 +259,19 @@ crim *controller::GetCrim()
 	 * Returns a pointer to the *first* CRIM object.  This is by convention & construction 
 	 * the master CRIM for a given crate and is our designated interrupt handler. 
 	 */
-	crim *tmp = 0; // temp object, have to return something...
-	if (interfaceModule.size() > 0) { 
-		tmp = interfaceModule[0]; 
+	crim *tmp = 0; 
+	if (interfaceModules.size() > 0) { 
+		tmp = interfaceModules[0]; 
 	} else {
-		controllerLog.critStream() << "Error in controller::GetCrim()!";
-		std::cout << "Error in controller::GetCrim()!" << std::endl;
-		std::cout << "CRIM interfaceModule vector has size zero!" << std::endl;
+		controllerLog.critStream() << "controller::GetCrim(): CRIM interfaceModules vector has size zero! Exiting!";
+		std::cout << "controller::GetCrim(): CRIM interfaceModules vector has size zero! Exiting!" << std::endl;
 		exit (-1);
 	}  
 	return tmp;
 }
 
 
-crim *controller::GetCrim(int a) 
+crim *controller::GetCrim( int crimID ) 
 {
 	/*! \fn
 	 * This function returns a crim specified by INDEX from the vector of crim's belonging to this 
@@ -284,26 +281,24 @@ crim *controller::GetCrim(int a)
 	 *
 	 * \param a the internal CRIM index
 	 */
-	std::vector<crim*>::iterator p; //an iterator over the vector of crim's
-	crim *tmp = 0; //a temporary crim object (we need to return one no matter what)
-	//loop over all crim objects in the vector
-	for (p=interfaceModule.begin();p!=interfaceModule.end();p++) { 
-		int id=(*p)->GetCrimID(); //extract & check the crim's id number
-		if (id==a) tmp=(*p); //assign that crim for return by the function
+	crim *tmp = 0; 
+	for (std::vector<crim*>::iterator p=interfaceModules.begin(); p!=interfaceModules.end(); ++p) { 
+		if ( crimID == (*p)->GetCrimID() ) { 
+			tmp=(*p); 
+			break;
+		}
 	}
-	return tmp; //return the pointer to the crim extracted from the vector
-	// Add error handling in case we don't find the CRIM?  Don't want to weigh 
-	// this function down...
+	return tmp; 
 }
 
 int controller::GetCrocVectorLength() 
 {
-	return readOutController.size();
+	return readOutControllers.size();
 }
 
 int controller::GetCrimVectorLength() 
 {
-	return interfaceModule.size();
+	return interfaceModules.size();
 }
 
 #endif

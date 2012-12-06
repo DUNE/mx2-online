@@ -47,9 +47,7 @@ class ecroc {
 		log4cpp::Appender* ecrocAppender;
 
 	public:
-		ecroc( unsigned int address, int ecrocid, 
-				CVAddressModifier modifier, CVDataWidth width, CVDataWidth swappedWidth,
-				log4cpp::Appender* appender=0 ); 
+		ecroc( unsigned int address, int ecrocid, log4cpp::Appender* appender=0 ); 
 		~ecroc(); 
 
 		unsigned int GetAddress(); 
