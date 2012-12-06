@@ -27,16 +27,19 @@ We assume there is interesting data sitting on the FEB in this document.
 Tentative sequence (assuming one FEB); all addresses assume CROCE Base + Channel Offset Address ($i \times \hex{4000}$):
 \begin{enumerate}
 \item Configuration (\hex{28002}): \hex{0001} to disable the Sequencer Readout mode and set the number of FEBs to one.
-\item Command (\hex{2804}): \hex{B000} to clear the status register and reset both the send and receive memory pointers.
+\item Command (\hex{2804}): \hex{8000} to clear the status register.
 \item Read the Frame (\hex{28020}) and Tx/Rx (\hex{28040}) Status registers? Or only one?
 \item Write the frame we would like to send/read to the Send Memory Register (\hex{22000}). 
-\item Write send message (\hex{40000}) to the Command Register (\hex{28004}) to send the message.
+\item Write send message (\hex{4000}) to the Command Register (\hex{28004}) to send the message.
 \item Poll the status register looking for Sequencer Done and Frame Received bits to go to one (mask for those two bits: \hex{0410}). Once both bits are one, we may begin readout. What value of the register constitutes perfect health?
 \item Read the Receive Memory Pointer (\hex{28080}) to get the amount of data.
 \item Read the Receive Memory Register (\hex{00000}), using the result from the pointer read, to get that many bytes. 
 \item At the end of readout, optionally read the Event Counter register (\hex{28008}).
 \end{enumerate}
 
+\section{Comments on the CROC+ Mode: Sequencer Readout Disabled}
+
+It is sufficient to send the ClearStatus command \hex{8000}. ClearStatus will reset almost ALL LOGIC inside the channel's FPGA, including, the send and receive memory write pointers. The ResetSendMemoryPointer command (0x2000) is active only when the SendMemoryWriteMode is set to FIFOMode (default). It is a distinct command to allow the flexibility to reset only this pointer, WITHOUT resetting the ReceiveMemWritePointer. This way one may write / send / receive a new frame(s) and have them ALL stored, one after the other, in ReceiveMemory. Otherwise, if you do ClearStatus then ALL incoming frames will overwrite each other since they will be written starting from address zero of the ReceiveMemory. Similarly the ResetReceiveMemoryWritePointer \hex{1000} gives you the flexibility to reset ONLY this pointer.
 
 \section{CROC+ Mode: Sequencer Readout Enabled}
 \label{sec:seqreadenab}
