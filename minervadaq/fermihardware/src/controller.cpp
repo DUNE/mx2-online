@@ -192,6 +192,46 @@ int controller::GetCrocStatus( int crocID )
 } 
 
 
+int controller::GetECrocStatus( int crocID ) 
+{
+	/*! \fn
+	 * This function returns the status of the selected ecroc (crocID) associated with the 
+	 * current controller object from its vector of ecroc's.  It does so by reading the status register 
+	 * of each front end channel.  If they are all okay, the croc is okay!  
+	 * \param crocID the CROC-E index number (internal to DAQ code, not a physical quanitiy)
+	 */
+	bool foundModule = false;
+	for (std::vector<ecroc*>::iterator p=eReadOutControllers.begin(); p!=eReadOutControllers.end(); ++p) { 
+		if ( crocID == (*p)->GetCrocID() ) { 
+			foundModule = true;
+			for ( int i=0; i<4; i++ ) { 
+				unsigned int location = (*p)->GetChannel(i)->GetFrameStatusAddress();
+				int error; 
+				shortBuffer = new unsigned short; 
+				try {
+					// TODO: These address modifiers / data widths are temporary. Need to reorganize the 
+					// VME communication responsibilities...
+					error = CAENVME_ReadCycle( handle, location, shortBuffer, cvA32_U_DATA, cvD32 ); 
+					if (error)  throw error;
+					(*p)->GetChannel(i)->SetChannelStatus((*shortBuffer)); 
+				} catch (int e) {
+					std::cout << "Error in controller()::GetECrocStatus() for Addr " << 
+						((*p)->GetAddress()>>ecrocAddressShift) << " Chain " << i  << std::endl;
+					controllerLog.critStream() << "Error in controller()::GetCrocStatus() for Addr " << 
+						((*p)->GetAddress()>>ecrocAddressShift) << " Chain " << i;
+					ReportError(e);
+					foundModule = false;
+					delete shortBuffer; 
+					continue;
+				} 
+				delete shortBuffer; 
+			}  
+		}
+	}
+	if (!foundModule) { return 1; }
+	return 0;
+} 
+
 void controller::MakeCrim(unsigned int crimAddress, int id) 
 {
 	/*! \fn
@@ -236,14 +276,30 @@ croc *controller::GetCroc( int crocID )
 {
 	/*! \fn 
 	 * This function returns a croc specified by INDEX from the vector of croc's belonging to this 
-	 * controller object.  Note that if the CROC is not found, the return value is a pointer to 
-	 * zero.  There is no error checking on this and it can lead to bizarre results!  It is the 
-	 * responsibility of the rest of the code to *not* request an "un-fetchable" CROC.
+	 * controller object.  Note that if the CROC is not found, the return value is a NULL pointer.
 	 *
 	 * \param a an internal index for the CROC for use in DAQ code only
 	 */
 	croc *tmp = 0; 
 	for (std::vector<croc*>::iterator p=readOutControllers.begin(); p!=readOutControllers.end(); ++p) { 
+		if ( crocID == (*p)->GetCrocID() ) { 
+			tmp=(*p); 
+			break;
+		}
+	}
+	return tmp; 
+}
+
+ecroc *controller::GetECroc( int crocID ) 
+{
+	/*! \fn 
+	 * This function returns an ecroc specified by INDEX from the vector of ecroc's belonging to this 
+	 * controller object.  Note that if the CROC-E is not found, the return value is a NULL pointer.
+	 *
+	 * \param a an internal index for the CROC for use in DAQ code only
+	 */
+	ecroc *tmp = 0; 
+	for (std::vector<ecroc*>::iterator p=eReadOutControllers.begin(); p!=eReadOutControllers.end(); ++p) { 
 		if ( crocID == (*p)->GetCrocID() ) { 
 			tmp=(*p); 
 			break;
@@ -291,14 +347,19 @@ crim *controller::GetCrim( int crimID )
 	return tmp; 
 }
 
+int controller::GetCrimVectorLength() 
+{
+	return interfaceModules.size();
+}
+
 int controller::GetCrocVectorLength() 
 {
 	return readOutControllers.size();
 }
 
-int controller::GetCrimVectorLength() 
+int controller::GetECrocVectorLength() 
 {
-	return interfaceModules.size();
+	return eReadOutControllers.size();
 }
 
 #endif
