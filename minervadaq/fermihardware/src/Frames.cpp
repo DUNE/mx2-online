@@ -231,7 +231,8 @@ bool Frames::CheckForErrors()
 		}
 	}
 
-	return error; // true if *any* error was found!
+	return false; // let everything through for now...
+//	return error; // true if *any* error was found!
 }
 
 

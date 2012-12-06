@@ -199,7 +199,8 @@ typedef enum StatusBits { //typecast to unsigned short
 /* croce types */
 //---------------
 
-static const int ecrocAddressShift = 24;
+static const unsigned int ecrocAddressShift = 24;
+static const unsigned int echannelOffset    = 0x40000;
 
 // All CROC-E channel registers may have a n * 0x400000 modifier, where n is the channel number (0-3).
 typedef enum ecrocChannelRegisters { //typecast to unsigned int
