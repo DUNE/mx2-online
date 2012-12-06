@@ -296,4 +296,14 @@ crim *controller::GetCrim(int a)
 	// this function down...
 }
 
+int controller::GetCrocVectorLength() 
+{
+	return readOutController.size();
+}
+
+int controller::GetCrimVectorLength() 
+{
+	return interfaceModule.size();
+}
+
 #endif
