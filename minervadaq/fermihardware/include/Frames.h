@@ -35,16 +35,13 @@ class Frames {
  *  through the crate & cards.  
  */
 	protected:
-		static const int MaxSendLength;  
-		static const int MaxReceiveLength; 
 		static const int MinHeaderLength;
-		static const int MinBroadcastLength;
 		static const int ADCFrameLength;
 		static const int NDiscrChPerTrip;
-		unsigned short sequentialIndex; //for frame ID
-		unsigned char FrameID[2]; //Starts out Empty, filled on return of message
-		unsigned char frameHeader[9]; //a frame header, add this to the message
-		unsigned char *outgoingMessage; //the character string for the message sent to a device
+		unsigned short sequentialIndex;  // for frame ID
+		unsigned char FrameID[2];        // Starts out Empty, filled on return of message
+		unsigned char frameHeader[9];    // a frame header, add this to the message
+		unsigned char *outgoingMessage;  // the character string for the message sent to a device
 		unsigned char broadcastCommand[1], febNumber[1], 
 			messageDirection[1], targetDevice[1], 
 			deviceFunction[1];
@@ -54,7 +51,6 @@ class Frames {
                 log4cpp::Appender* frmsAppender;
 	
 	public:
-		Frames(); 
 		Frames(log4cpp::Appender* appender);
 		virtual ~Frames() { };
 

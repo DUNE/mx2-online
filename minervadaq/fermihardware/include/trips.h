@@ -1,13 +1,9 @@
 #ifndef trips_h
 #define trips_h
 
-/* system header files go here */
 #include <vector>
 #include <iostream>
 
-/* CAEN VME header files go here */
-
-/* custom header files go here */
 #include "Frames.h"
 
 /*********************************************************************************
@@ -16,7 +12,6 @@
 *
 * Elaine Schulte, Rutgers University
 * Gabriel Perdue, The University of Rochester
-*
 **********************************************************************************/
 
 /*! \class trips
@@ -73,9 +68,12 @@ class trips : public Frames {
 		bool read; /*!< read(true) or write(false) to the trip registers */
 		int bufferSize; /*! the length of the trip buffer */
 
+                // log4cpp appender for printing log statements.
+                log4cpp::Appender* tripsAppender;
+
 	public:
 		/*! specific constructor */
-		trips(febAddresses a, TRiPFunctions f, int a);
+		trips(febAddresses a, TRiPFunctions f, int a, log4cpp::Appender* appender);
 		/*! default destructor */
 		~trips() { };
 		/*! Function to assign a value to a logical trip_value entry */

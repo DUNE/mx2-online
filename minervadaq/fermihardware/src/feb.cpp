@@ -31,7 +31,11 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 	febNumber[0] = (unsigned char) a; // put the feb number into it's character.
 	NRegisters   = reg;      // # of one byte registers in the data frame
 	febAppender  = appender; // log4cpp appender
-	if (febAppender!=0) febLog.setPriority(log4cpp::Priority::ERROR);
+	if (febAppender == 0 ) {
+		std::cout << "FEB Log Appender is NULL!" << std::endl;
+		exit(EXIT_FEB_UNSPECIFIED_ERROR);
+	}
+	febLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
 	
 	// Make the header for this frame; frames default to read. 
 	Devices dev = FPGA;     //the device type for the header
@@ -71,15 +75,14 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 				chipFunction = tTR5;
 				break;
 			default: 
-				std::cout << "Invalid TriP ChipID at instantiation!" << std::endl;
-				if (febAppender!=0) { febLog.fatalStream() << "Invalid TriP ChipID at instantiation!"; }
+				febLog.fatalStream() << "Invalid TriP ChipID at instantiation!"; 
 				exit(EXIT_FEB_UNSPECIFIED_ERROR);
 		}
-		tripChips[i] = new trips(boardNumber,chipFunction,maxHits); 
+		tripChips[i] = new trips( boardNumber, chipFunction, maxHits, febAppender ); 
 	}
 
 	// Instantiate a discriminator.  
-	hits_n_timing = new disc(a); 
+	hits_n_timing = new disc( a, febAppender ); 
 	
 	// Instantiate objects for the ADC's
 	// We read the RAMFunctions in "reverse" order:
@@ -88,49 +91,45 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 	//  5,4,3,2,1,0     for 6 Hit firmware (PIPEDEL 11).
 	//  7,6,5,4,3,2,1,0 for 8 Hit firmware (PIPEDEL 15).
 	if (maxHits == 1) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0 ); 
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender ); 
 	} else if (maxHits == 5) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit4 );
-		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit3 );
-		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit2 );
-		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit1 );
-		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit0 );
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit4, febAppender );
+		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit3, febAppender );
+		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit2, febAppender );
+		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit1, febAppender );
+		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender );
 	} else if (maxHits == 6) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit5 );
-		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit4 );
-		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit3 );
-		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit2 );
-		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit1 );
-		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit0 );
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit5, febAppender );
+		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit4, febAppender );
+		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit3, febAppender );
+		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit2, febAppender );
+		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit1, febAppender );
+		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender );
 	} else if (maxHits == 8) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit7 );
-		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit6 );
-		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit5 );
-		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit4 );
-		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit3 );
-		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit2 );
-		adcHits[6] = new adc( a, (RAMFunctionsHit)ReadHit1 );
-		adcHits[7] = new adc( a, (RAMFunctionsHit)ReadHit0 );
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit7, febAppender );
+		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit6, febAppender );
+		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit5, febAppender );
+		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit4, febAppender );
+		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit3, febAppender );
+		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit2, febAppender );
+		adcHits[6] = new adc( a, (RAMFunctionsHit)ReadHit1, febAppender );
+		adcHits[7] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender );
 	} else {
-		std::cout << "Invalid number of maximum hits!  Only 1, 5, 6, or 8 are accepted right now!" << std::endl;
-		if (febAppender!=0) febLog.fatalStream() << 
-			"Invalid number of maximum hits!  Only 1, 5, 6, or 8 are accepted right now!";
+		febLog.fatalStream() << "Invalid number of maximum hits!  Only 1, 5, 6, or 8 are accepted right now!";
 		exit(EXIT_FEB_NHITS_ERROR);		
 	}
-	if (febAppender!=0) {
-		febLog.infoStream() << "Created a new FEB! " << (int)febNumber[0];
-		febLog.infoStream() << "  BoardNumber = " << boardNumber;
-		febLog.infoStream() << "  Max hits    =  "<< maxHits;
-	}
+	febLog.infoStream() << "Created a new FEB! " << (int)febNumber[0];
+	febLog.infoStream() << "  BoardNumber = " << boardNumber;
+	febLog.infoStream() << "  Max hits    =  "<< maxHits;
 }
 
 
 void feb::MakeShortMessage()
 {
-/*! \fn ********************************************************************|
- * MakeShortMessage uses FPGA Dump Read instead of the regular Read.        |
- ***************************************************************************|
- */
+	/*! \fn ********************************************************************|
+	 * MakeShortMessage uses FPGA Dump Read instead of the regular Read.        |
+	 ***************************************************************************|
+	 */
 	// Update the header for this frame (frames default to read). 
 	Devices dev     = FPGA;          //the device type for the header
 	Broadcasts b    = None;          //broadcast type for header
@@ -144,7 +143,7 @@ void feb::MakeShortMessage()
 
 	// Make a new out-going message buffer of suitable size.
 	outgoingMessage = new unsigned char [OutgoingMessageLength];  
-												
+
 	// Eschew the local "non-dyamic" (for lack of a better description)
 	// copy of the message buffer (dynamic).  May not work right?...
 	// Put the message in the inherited out-going message bufer.
@@ -155,16 +154,16 @@ void feb::MakeShortMessage()
 
 void feb::MakeMessage() 
 {
-/*! \fn ********************************************************************************
- * MakeMessage is the local implimentation of a virtual function of the same
- * name inherited from Frames.  This function bit-packs the data into an OUTGOING
- * message from values set using the get/set functions assigned to this class (see feb.h).
- *
- * The packing for v90 firmware is described below. Header takes up First 11 bytes.  
- * Registers start at indx==11.  See docdb 4311 for a description of the bit-by-bit packing.
- * Note that we must clean up the outgoingMessages in the functions that call MakeMessage!
- ********************************************************************************
- */
+	/*! \fn ********************************************************************************
+	 * MakeMessage is the local implimentation of a virtual function of the same
+	 * name inherited from Frames.  This function bit-packs the data into an OUTGOING
+	 * message from values set using the get/set functions assigned to this class (see feb.h).
+	 *
+	 * The packing for v90 firmware is described below. Header takes up First 11 bytes.  
+	 * Registers start at indx==11.  See docdb 4311 for a description of the bit-by-bit packing.
+	 * Note that we must clean up the outgoingMessages in the functions that call MakeMessage!
+	 ********************************************************************************
+	 */
 	// Message must have an odd number of bytes!
 	message = new unsigned char [NRegisters + (NRegisters+1)%2]; 
 
@@ -238,15 +237,15 @@ void feb::MakeMessage()
 	message[15] = (TestPulseCount >> 0x18) & 0xFF; //shift bits 24-31 to bits 0-7 & mask off
 
 	/* message word 16 - 21 (bits 0-1): 
-		The Injector counts 6 at 7 bits each, and the 8th bit of each word  is the enable status */
+	   The Injector counts 6 at 7 bits each, and the 8th bit of each word  is the enable status */
 	for (int i=16;i<22;i++ ) {
 		message[i] = InjectCount[(i-16)][0] & 0x7F; //mask off bits 0-6 (InjectCount)
 		message[i] |= (InjectEnable[(i-16)][0] & 0x01) << 0x07; //mask off bit 0 (InjectEnable) and shift to bit 7
 	}
 
 	/* message word 22, bits 0-5:  trip power off, 1 bit for each trip 
-	*     message word 22, bit 6: HV manual
-	*     message word 22, bit 7: HV enabled */
+	 *     message word 22, bit 6: HV manual
+	 *     message word 22, bit 7: HV enabled */
 	message[22] = TripPowerOff[0] & 0x3F; //mask off bits 0-5;
 	message[22] |= (HVManual[0] & 0x01) << 0x06; //mask off bits 0, shift left 6
 	message[22] |= (HVEnabled[0] & 0x01) << 0x07; //mask off bits 0, shift left 7
@@ -254,11 +253,11 @@ void feb::MakeMessage()
 	/* message word 23-24: HV target value, 16 bits */
 	message[23] = (HVTarget & 0xFF); //mask off bits 0-7
 	message[24] = (HVTarget >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7. 
-						//and mask off bits 0-7
+	//and mask off bits 0-7
 	/* message word 25-26: HV actual value, 16 bits */
 	message[25] = (HVActual & 0xFF); //mask off bits 0-7
 	message[26] = (HVActual >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7. 
-						//and mask off bits 0-7
+	//and mask off bits 0-7
 	/* message word 27: AfterPulseExtendedWidth, 4 bits */
 	//message[27] = (HVControl[0] & 0xFF); //mask off bits 0-7, HV Control is irrelevant for this (all firmwares).
 	message[27] = (AfterPulseExtendedWidth[0] & 0x0F); //mask off bits 0-3, set 4-7 to zero (unused bits).
@@ -266,19 +265,19 @@ void feb::MakeMessage()
 	/* message word 28-29, bits 0-3: Inject DAC value, 12 bits */
 	message[28] = (InjectDACValue & 0xFF); //mask off bits 0-7
 	message[29] = (InjectDACValue & 0x0F00) >> 8; //shift bits 8-11 to bits 0-3
-							//and mask off bits 0-3
+	//and mask off bits 0-3
 	/* message word 29, bits 4-7: InjectDACMode, 2 bits; InjectDACDone, 1 bit, 
-	*     InjectDACStart, 1 bit */
+	 *     InjectDACStart, 1 bit */
 	message[29] |= (InjectDACMode[0] & 0x03) << 0x04; //mask off bits 0-1 & shift left 4 bits
-							// to bits 4-5
+	// to bits 4-5
 	message[29] |= (InjectDACDone[0] & 0x01) << 0x06; //mask off bits 0 & shift left 6 bits
-							// to bit 6
+	// to bit 6
 	message[29] |= (InjectDACStart[0] & 0x01) << 0x07; //mask off bits 0 & shift left 7 bits
-							// to bit 7
+	// to bit 7
 	/* message word 30: Inject range (bits 0-3), Inject phase (bits 4-7) */
 	message[30] = (InjectRange[0] & 0x0F); //mask off bits 0-3
 	message[30] |= (InjectPhase[0] & 0x0F) << 0x04; //mask off bits 0-3 and
-							//shift left 4 bits to 4-7
+	//shift left 4 bits to 4-7
 	/* message word 31: BoardID (bits 0-3), HVNumAve (bits 4-6), and PreviewEnable (bit 7) */
 	message[31] = (boardID[0] & 0x0F); //mask off bits 0-3
 	message[31] |= (HVNumAve[0] & 0x07) << 0x04; //mask off bits 0-2 and shift left 4 bits to 4-6
@@ -290,18 +289,18 @@ void feb::MakeMessage()
 	/* message word 33 - 34: HV period manual, 16 bits */
 	message[33] = (HVPeriodManual & 0xFF); //mask off bits 0-7
 	message[34] = (HVPeriodManual >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
-							//and mask off ibt 0-7
+	//and mask off ibt 0-7
 	/* message word 35 - 36: HV period auto, 16 bits */
 	message[35] = (HVPeriodAuto & 0xFF); //mask off bits 0-7
 	message[36] = (HVPeriodAuto >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
-						//and mask off ibt 0-7
+	//and mask off ibt 0-7
 	/* message word 37: HV pulse width, 8 bits */
 	message[37] = (HVPulseWidth[0] & 0xFF); //mask off bits 0-7
 
 	/* message word 38 - 39: Temperature, 16 bits */
 	message[38] = (Temperature & 0xFF); //mask off bits 0-7
 	message[39] = (Temperature >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
-						//and mask off ibt 0-7
+	//and mask off ibt 0-7
 	/* message word 40: TripX Thresh , 8 bits */
 	message[40] = (TripXThresh[0] & 0xFF); //mask off bits 0-7
 
@@ -332,7 +331,7 @@ void feb::MakeMessage()
 
 	// Make a new out-going message buffer of suitable size.
 	outgoingMessage = new unsigned char [OutgoingMessageLength];  
-												
+
 	// Create a local "non-dyamic" (for lack of a better description)
 	// copy of the message buffer (dynamic) for use in working around
 	// a potential memory leak problems.  While mildly redundant, it 
@@ -362,40 +361,34 @@ void feb::MakeMessage()
 // register values while the discr and adc frame decode functions do... 
 int feb::DecodeRegisterValues(int buffersize) 
 {
-/*! \fn********************************************************************************
- *  DecodeMessage takes the incoming message and unpacks the bits into the
- *  variables which hold the data.
- * The packing is described below.
- * inputs:
- *
- * \param buffersize:  the size of the total message, extracted from the dpm pointer 
- * register on the croc
- *********************************************************************************/
+	/*! \fn********************************************************************************
+	 *  DecodeMessage takes the incoming message and unpacks the bits into the
+	 *  variables which hold the data.
+	 * The packing is described below.
+	 * inputs:
+	 *
+	 * \param buffersize:  the size of the total message, extracted from the dpm pointer 
+	 * register on the croc
+	 *********************************************************************************/
 
 #if DEBUG_FEB
-	std::cout << "BoardNumber--Decode: " << boardNumber << std::endl;
+	febLog.debugStream() << "BoardNumber--Decode: " << boardNumber << " for buffer size = " << buffersize;
 #endif
 	// Check for errors
 	if ((buffersize < TrueIncomingMessageLength)&&(initialized)) { 
 		// The buffer is too short, so we need to stop execution, and notify the user!
-		std::cout << "The FPGA buffer for FEB " << (int)febNumber[0]
-			<< " is too short!" << std::endl;
-		std::cout << " Expected: " << TrueIncomingMessageLength << std::endl;
-		std::cout << " Had     : " << buffersize << std::endl;
-		if (febAppender!=0) {
-			febLog.critStream() << "The FPGA buffer for FEB " << (int)febNumber[0]
-				<< " is too short!";
-			febLog.critStream() << " Expected: " << TrueIncomingMessageLength;
-			febLog.critStream() << " Had     : " << buffersize;
-		}
+		febLog.fatalStream() << "The FPGA buffer for FEB " << (int)febNumber[0]
+			<< " is too short!";
+		febLog.fatalStream() << " Expected: " << TrueIncomingMessageLength;
+		febLog.fatalStream() << " Had     : " << buffersize;
 		exit(EXIT_FEB_UNSPECIFIED_ERROR);
 	} else if ((!initialized)&&(buffersize<TrueIncomingMessageLength)) {
-		std::cout<<"FEB: "<<(int) febNumber[0]<<" is not available on this channel."<<std::endl;
+		febLog.debugStream()<<"FEB: "<<(int) febNumber[0]<<" is not available on this channel.";
 		initialized = false;
 	} else if ((!initialized)&&(buffersize==TrueIncomingMessageLength)) {
 #if DEBUG_FEB 
 		// Need a better mechanism for this...
-		std::cout<<"FEB: "<<(int)febNumber[0]<<" is available on this channel."<<std::endl;
+		febLog.debugStream()<<"FEB: "<<(int)febNumber[0]<<" is available on this channel.";
 #endif
 		initialized = true;
 	}
@@ -403,13 +396,14 @@ int feb::DecodeRegisterValues(int buffersize)
 	if (initialized) {
 		/* have the frame check for status errors */
 		int frameError = this->CheckForErrors();
-#if DEBUG_VERBOSE
-		std::cout << "\tfeb::DecodeRegisterValues CheckForErrors value = " << frameError << std::endl;
+#if DEBUG_FEB
+		febLog.debugStream() << "\tfeb::DecodeRegisterValues CheckForErrors value = " << frameError;
 #endif
 
 		if (!frameError) {
-			int startByte = 2 + MinHeaderLength; //this should be byte 11
-		
+			febLog.debugStream() <<  "No frame errors; parsing...";
+			int startByte = 2 + 2 + MinHeaderLength; //this should be byte 13 for CROC-E
+
 			/* message word 0 - 3:  The timer information, 32 bits for the timer */
 			Timer = (message[startByte] & 0xFF); //mask off bits 0-7
 			startByte++;
@@ -495,7 +489,7 @@ int feb::DecodeRegisterValues(int buffersize)
 			TestPulseCount |= (message[startByte] & 0xFF) << 0x18; //mask off and shift to bits 24-31
 
 			/* message word 16 - 21 (bits 0-1): 
-				The Injector counts 6 at 7 bits each, and the 8th bit of each word is the enable status */
+			   The Injector counts 6 at 7 bits each, and the 8th bit of each word is the enable status */
 			int tmp=0;
 			int tmp1=startByte+1; int tmp2 = startByte+6; //we need to sort out the injector bits
 			for (int i=tmp1;i<=tmp2;i++ ) {
@@ -506,8 +500,8 @@ int feb::DecodeRegisterValues(int buffersize)
 			}
 
 			/* message word 22, bits 0-5:  trip power off, 1 bit for each trip 
-			*     message word 22, bit 6: HV manual
-			*     message word 22, bit 7: HV enabled*/
+			 *     message word 22, bit 6: HV manual
+			 *     message word 22, bit 7: HV enabled*/
 			startByte++;
 			TripPowerOff[0] = (message[startByte] & 0x3F); //mask off bits 0-5;
 			HVManual[0] = (message[startByte] & 0x40) >> 0x06; //mask off bits 6
@@ -535,10 +529,10 @@ int feb::DecodeRegisterValues(int buffersize)
 			InjectDACValue = (message[startByte] & 0xFF); //mask off bits 0-7
 			startByte++;
 			InjectDACValue |= (message[startByte] & 0x0F) << 0x08; //shift bits 8-11 to bits 0-3
-										//and mask off bits 0-3
+			//and mask off bits 0-3
 
 			/* message word 29, bits 4-7: InjectDACMode, 2 bits; InjectDACDone, 1 bit, 
-			*     InjectDACStart, 1 bit */
+			 *     InjectDACStart, 1 bit */
 			InjectDACMode[0]  = (message[startByte] & 0x30) >> 0x04; //mask off bits 4 & 5 
 			InjectDACDone[0]  = (message[startByte] & 0x40) >> 0x06; //mask off bits 6 
 			InjectDACStart[0] = (message[startByte] & 0x80) >> 0x07; //mask off bits 7 
@@ -579,7 +573,7 @@ int feb::DecodeRegisterValues(int buffersize)
 			Temperature = (message[startByte] & 0xFF); //mask off bits 0-7
 			startByte++;
 			Temperature |= (message[startByte] & 0xFF) << 0x08;  //shift bits 8-15 to bits 0-7
-										//and mask off ibt 0-7
+			//and mask off ibt 0-7
 
 			/* message word 40: TripXThresh , 8 bits */
 			startByte++;
@@ -599,7 +593,7 @@ int feb::DecodeRegisterValues(int buffersize)
 				startByte++;
 				DiscrimEnableMask[i] |= (message[startByte] & 0xFF) << 0x08;                        
 			}
-		
+
 			/* message word 50-53 Gate Time Stamp, 32 bits */
 			startByte++;
 			GateTimeStamp = (message[startByte] & 0xFF);                        
@@ -609,9 +603,9 @@ int feb::DecodeRegisterValues(int buffersize)
 			GateTimeStamp |= (message[startByte] & 0xFF) << 0x10;                        
 			startByte++;
 			GateTimeStamp |= (message[startByte] & 0xFF) << 0x18;                        
-		
+
 		} else { // frame error check
-			std::cout << "The FPGA frame had errors!" << std::endl;
+			febLog.debugStream() << "The FPGA frame had errors!";
 			if (febAppender!=0) febLog.fatalStream() << "The FPGA frame had errors!";
 			exit(EXIT_FEB_UNSPECIFIED_ERROR); 
 		}
@@ -619,8 +613,7 @@ int feb::DecodeRegisterValues(int buffersize)
 	} // end if initialized
 
 #if DEBUG_FEB           
-	std::cout << "Decoded FPGA register values:" << std::endl;
-	ShowValues();   
+	febLog.debugStream() << "Decoded FPGA register values.";
 #endif                  
 
 	// This finishes the incoming message.
@@ -630,13 +623,13 @@ int feb::DecodeRegisterValues(int buffersize)
 
 void feb::SetFEBDefaultValues() 
 {
-/*! \fn ********************************************************************************
- * Sets default (pre-defined) values for feb information.  These are hard-coded
- * in this function.  No real reason not to hard-code the default values unless
- * the situation arises where different FEB's would indeed need to have different
- * default values.  Then this would need to be changed.  There are a number of 
- * readonly registers initialized anyway (not all are marked with comments!).
- *********************************************************************************/
+	/*! \fn ********************************************************************************
+	 * Sets default (pre-defined) values for feb information.  These are hard-coded
+	 * in this function.  No real reason not to hard-code the default values unless
+	 * the situation arises where different FEB's would indeed need to have different
+	 * default values.  Then this would need to be changed.  There are a number of 
+	 * readonly registers initialized anyway (not all are marked with comments!).
+	 *********************************************************************************/
 	Timer           = 12;
 	GateStart       = 43300; // (65535 - 43300 ticks ) * 9.4 ns/tick ~ 209 us delay before gate open
 	GateLength      = 1702;  // 1702 clock ticks * ~9.4 ns/tick ~ 15.999 us
@@ -687,7 +680,7 @@ void feb::SetFEBDefaultValues()
 	for (int i=0; i<4; i++) {DiscrimEnableMask[i]=0xFFFF;} // default to discr. enabled
 	GateTimeStamp = 0; // readonly
 #if DEBUG_FEB&&DEBUG_VERBOSE
-	std::cout << "Default FPGA register values set." << std::endl;
+	febLog.debugStream() << "Default FPGA register values set.";
 	ShowValues();
 #endif
 }
@@ -695,61 +688,61 @@ void feb::SetFEBDefaultValues()
 
 void feb::ShowValues() 
 {
-/*! \fn **************************************************************************
- * Show the current values for the data members of an FEB.  
- *********************************************************************************/
-	std::cout<<"************** FEB Current Values *******************"<<std::endl; 
-	std::cout<<"Timer           : "<<Timer<<std::endl; 
-	std::cout<<"GateStart       : "<<GateStart<<std::endl;
-	std::cout<<"GateLength      : "<<GateLength<<std::endl; // in ~9.4 ns clock ticks
-	std::cout<<"TripPowerOff    : "<<(int)TripPowerOff[0]<<std::endl;  
+	/*! \fn **************************************************************************
+	 * Show the current values for the data members of an FEB.  
+	 *********************************************************************************/
+	febLog.debugStream()<<"************** FEB Current Values *******************"; 
+	febLog.debugStream()<<"Timer           : "<<Timer; 
+	febLog.debugStream()<<"GateStart       : "<<GateStart;
+	febLog.debugStream()<<"GateLength      : "<<GateLength; // in ~9.4 ns clock ticks
+	febLog.debugStream()<<"TripPowerOff    : "<<(int)TripPowerOff[0];  
 	for (int i=0;i<6;i++) {
-		std::cout<<"Inject Count    : "<<(int)InjectCount[i][0]<<std::endl;;
-		std::cout<<"Inject Enable   : "<<(int)InjectEnable[i][0]<<std::endl;
+		febLog.debugStream()<<"Inject Count    : "<<(int)InjectCount[i][0];
+		febLog.debugStream()<<"Inject Enable   : "<<(int)InjectEnable[i][0];
 	}
-	std::cout<<"Inject Range    : "<<(int)InjectRange[0]<<std::endl;;
-	std::cout<<"Inject Phase    : "<<(int)InjectPhase[0]<<std::endl;;
-	std::cout<<"Inject DACValue : "<<(int)InjectDACValue<<std::endl;;
-	std::cout<<"Inject DACMode  : "<<(int)InjectDACMode[0]<<std::endl;;
-	std::cout<<"Inject DACDone  : "<<(int)InjectDACDone[0]<<std::endl;;
-	std::cout<<"Inject DACStart : "<<(int)InjectDACStart[0]<<std::endl;;
-	std::cout<<"HVEnabled       : "<<(int)HVEnabled[0]<<std::endl;;
-	std::cout<<"HVTarget        : "<<(int)HVTarget<<std::endl;;
-	std::cout<<"HVActual        : "<<(int)HVActual<<std::endl;
-	std::cout<<"AfterPulse Delay: "<<(int)AfterPulseExtendedWidth[0]<<std::endl;
-	std::cout<<"HVManual        : "<<(int)HVManual[0]<<std::endl;
-	std::cout<<"statusRXLock    : "<<(int)statusRXLock[0]<<std::endl;
-	std::cout<<"statusTXSyncLock: "<<(int)statusTXSyncLock[0]<<std::endl;
-	std::cout<<"PhaseStart      : "<<(int)PhaseStart[0]<<std::endl;
-	std::cout<<"PhaseIncrement  : "<<(int)PhaseIncrement[0]<<std::endl;
-	std::cout<<"ExtTriggerFound : "<<(int)ExtTriggerFound[0]<<std::endl; 
-	std::cout<<"ExtTriggerRearm : "<<(int)ExtTriggerRearm[0]<<std::endl; 
-	std::cout<<"StatusSCMDUnkwn : "<<(int)statusSCMDUnknown[0]<<std::endl;
-	std::cout<<"StatusFCMDUnkwn : "<<(int)statusFCMDUnknown[0]<<std::endl;
-	std::cout<<"PhaseCount      : "<<(int)PhaseCount[0]<<std::endl;
-	std::cout<<"DCM1Lock        : "<<(int)DCM1Lock[0]<<std::endl;
-	std::cout<<"DCM2Lock        : "<<(int)DCM2Lock[0]<<std::endl;
-	std::cout<<"DCM1NoClock     : "<<(int)DCM1NoClock[0]<<std::endl;
-	std::cout<<"DCM2NoClock     : "<<(int)DCM2NoClock[0]<<std::endl;
-	std::cout<<"DCM2PhaseDone   : "<<(int)DCM2PhaseDone[0]<<std::endl;
-	std::cout<<"DCM2PhaseTotal  : "<<(int)DCM2PhaseTotal<<std::endl;
-	std::cout<<"TestPulse2Bit   : "<<(int)TestPulse2Bit[0]<<std::endl;
-	std::cout<<"TestPulseCount  : "<<(int)TestPulseCount<<std::endl;
-	std::cout<<"BoardID         : "<<(int)boardID[0]<<std::endl;
-	std::cout<<"FirmwareVersion : "<<(int)FirmwareVersion[0]<<std::endl;
-	std::cout<<"PreviewEnable   : "<<(int)PreviewEnable[0]<<std::endl;
-	std::cout<<"HVNumAve        : "<<(int)HVNumAve[0]<<std::endl;
-	std::cout<<"HVPeriodAuto    : "<<(int)HVPeriodAuto<<std::endl;
-	std::cout<<"HVPeriodManual  : "<<(int)HVPeriodManual<<std::endl;
-	std::cout<<"HVPulseWidth    : "<<(int)HVPulseWidth[0]<<std::endl;
-	std::cout<<"Temperature     : "<<(int)Temperature<<std::endl;
-	std::cout<<"TripXThresh     : "<<(int)TripXThresh[0]<<std::endl;
-	std::cout<<"TripXCompEnc    : "<<(int)TripXCompEnc[0]<<std::endl;
+	febLog.debugStream()<<"Inject Range    : "<<(int)InjectRange[0];
+	febLog.debugStream()<<"Inject Phase    : "<<(int)InjectPhase[0];
+	febLog.debugStream()<<"Inject DACValue : "<<(int)InjectDACValue;
+	febLog.debugStream()<<"Inject DACMode  : "<<(int)InjectDACMode[0];
+	febLog.debugStream()<<"Inject DACDone  : "<<(int)InjectDACDone[0];
+	febLog.debugStream()<<"Inject DACStart : "<<(int)InjectDACStart[0];
+	febLog.debugStream()<<"HVEnabled       : "<<(int)HVEnabled[0];
+	febLog.debugStream()<<"HVTarget        : "<<(int)HVTarget;
+	febLog.debugStream()<<"HVActual        : "<<(int)HVActual;
+	febLog.debugStream()<<"AfterPulse Delay: "<<(int)AfterPulseExtendedWidth[0];
+	febLog.debugStream()<<"HVManual        : "<<(int)HVManual[0];
+	febLog.debugStream()<<"statusRXLock    : "<<(int)statusRXLock[0];
+	febLog.debugStream()<<"statusTXSyncLock: "<<(int)statusTXSyncLock[0];
+	febLog.debugStream()<<"PhaseStart      : "<<(int)PhaseStart[0];
+	febLog.debugStream()<<"PhaseIncrement  : "<<(int)PhaseIncrement[0];
+	febLog.debugStream()<<"ExtTriggerFound : "<<(int)ExtTriggerFound[0]; 
+	febLog.debugStream()<<"ExtTriggerRearm : "<<(int)ExtTriggerRearm[0]; 
+	febLog.debugStream()<<"StatusSCMDUnkwn : "<<(int)statusSCMDUnknown[0];
+	febLog.debugStream()<<"StatusFCMDUnkwn : "<<(int)statusFCMDUnknown[0];
+	febLog.debugStream()<<"PhaseCount      : "<<(int)PhaseCount[0];
+	febLog.debugStream()<<"DCM1Lock        : "<<(int)DCM1Lock[0];
+	febLog.debugStream()<<"DCM2Lock        : "<<(int)DCM2Lock[0];
+	febLog.debugStream()<<"DCM1NoClock     : "<<(int)DCM1NoClock[0];
+	febLog.debugStream()<<"DCM2NoClock     : "<<(int)DCM2NoClock[0];
+	febLog.debugStream()<<"DCM2PhaseDone   : "<<(int)DCM2PhaseDone[0];
+	febLog.debugStream()<<"DCM2PhaseTotal  : "<<(int)DCM2PhaseTotal;
+	febLog.debugStream()<<"TestPulse2Bit   : "<<(int)TestPulse2Bit[0];
+	febLog.debugStream()<<"TestPulseCount  : "<<(int)TestPulseCount;
+	febLog.debugStream()<<"BoardID         : "<<(int)boardID[0];
+	febLog.debugStream()<<"FirmwareVersion : "<<(int)FirmwareVersion[0];
+	febLog.debugStream()<<"PreviewEnable   : "<<(int)PreviewEnable[0];
+	febLog.debugStream()<<"HVNumAve        : "<<(int)HVNumAve[0];
+	febLog.debugStream()<<"HVPeriodAuto    : "<<(int)HVPeriodAuto;
+	febLog.debugStream()<<"HVPeriodManual  : "<<(int)HVPeriodManual;
+	febLog.debugStream()<<"HVPulseWidth    : "<<(int)HVPulseWidth[0];
+	febLog.debugStream()<<"Temperature     : "<<(int)Temperature;
+	febLog.debugStream()<<"TripXThresh     : "<<(int)TripXThresh[0];
+	febLog.debugStream()<<"TripXCompEnc    : "<<(int)TripXCompEnc[0];
 	for (int i=0; i<4; i++) {
-		printf("DiscrimEnabledMask[%d]: 0x%04X\n",i,DiscrimEnableMask[i]);
+		febLog.debugStream() << "DiscrimEnabledMask[ " << i << "]: 0x" << std::hex << DiscrimEnableMask[i];
 	}
-	std::cout<<"GateTimeStamp   : "<<(unsigned int)GateTimeStamp<<std::endl; // only meaningful for 78+ firmware 
-	std::cout<<"************* End FEB Current Values ****************"<<std::endl; 
+	febLog.debugStream()<<"GateTimeStamp   : "<<(unsigned int)GateTimeStamp; // only meaningful for 78+ firmware 
+	febLog.debugStream()<<"************* End FEB Current Values ****************"; 
 }
 
 // All of the Set functions that take unsigned char* need to be overloaded to take

@@ -64,7 +64,7 @@ class feb : public Frames {
 
 	public:
 		/*! The constructor.  The appender is initialized to null as a default for log-less mode. */
-		feb(int mh, bool init, febAddresses, int reg, log4cpp::Appender* appender=0); 
+		feb(int mh, bool init, febAddresses, int reg, log4cpp::Appender* appender); 
 		/*! The destructor */
 		~feb() {
 			for (int i=0;i<6;i++) delete tripChips[i]; 
