@@ -1,20 +1,14 @@
 #ifndef adctdc_h
 #define adctdc_h
 
-/* system headers go here */
-
-/* CAEN VME headers go here */
-
-/* custom headers go here */
 #include "Frames.h"
 /*********************************************************************************
-* Class for creating RAM request frame objects for use with the 
-* MINERvA data acquisition system and associated software projects.
-* 
-* Elaine Schulte, Rutgers University
-* Gabriel Perdue, The University of Rochester
-*
-***********************************************************************************/
+ * Class for creating RAM request frame objects for use with the 
+ * MINERvA data acquisition system and associated software projects.
+ * 
+ * Elaine Schulte, Rutgers University
+ * Gabriel Perdue, The University of Rochester
+ ***********************************************************************************/
 
 const int nPixelsPerFEB         = 64;
 const int nHiMedTripsPerFEB     = 4;
@@ -25,7 +19,7 @@ const int nChannelsPerTrip      = 36;  // 1 dummy ADC reading + 32 real channel 
 const int nSkipChannelsPerTrip  = 3;
 
 /*! \class adc
-*
+ *
  * \brief This class controls the ADC frames.
  *
  * This class controls the adc frames.  It sets up the outgoing read request
@@ -36,9 +30,12 @@ class adc : public Frames {
 	private:
 		unsigned char *buffer; /*!<A buffer for holding ADC raw data */  
 
+		// log4cpp appender for printing log statements. 
+		log4cpp::Appender* adcAppender;
+
 	public: 
 		/*! The specialized constructor which makes up the read frame */
-		adc(febAddresses a, RAMFunctionsHit f); 
+		adc(febAddresses a, RAMFunctionsHit f, log4cpp::Appender* appender); 
 		/*! The default destructor */
 		~adc() { delete [] outgoingMessage; };
 
@@ -88,9 +85,12 @@ class disc : public Frames {
 		int MaxHits;
 		unsigned char *buffer; /*!<A buffer for holding discriminator raw data */ 
 
+		// log4cpp appender for printing log statements. 
+		log4cpp::Appender* tdcAppender;
+
 	public: 
 		/*! The specialized constructor which makes up the read frame */
-		disc(febAddresses a); // always takes the same RAMFunction, outgoing message is always the same!
+		disc(febAddresses a, log4cpp::Appender* appender); // always takes the same RAMFunction, outgoing message is always the same!
 		/*! The default destructor */
 		~disc() { delete [] outgoingMessage; }; //we build a new outgoing message in MakeMessage!
 

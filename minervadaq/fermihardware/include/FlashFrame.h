@@ -1,12 +1,8 @@
 #ifndef FlashFrame_h
 #define FlashFrame_h
 
-// system headers go here
 #include<fstream>
 
-// CAEN VME headers go here 
-
-// custom headers go here
 #include "Frames.h"
 
 // ********************************************************************************
@@ -20,8 +16,10 @@ class FlashFrame : public Frames {
 		static const int Spartan_3E_PageSize;
 		febAddresses boardNumber;
 
+                log4cpp::Appender* flashAppender;
+
 	public:
-		FlashFrame(febAddresses);
+		FlashFrame(febAddresses, log4cpp::Appender* appender);
 		virtual ~FlashFrame() { };
 
 };

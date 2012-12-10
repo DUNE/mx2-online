@@ -2,21 +2,18 @@
 #define Frames_cpp
 
 #include "Frames.h"
+#include "exit_codes.h"
 
 /*********************************************************************************
-* Class for creating FPGA Frame header objects for use with the 
-* MINERvA data acquisition system and associated software projects.
-*
-* Elaine Schulte, Rutgers University
-* Gabriel Perdue, The University of Rochester
-*
-**********************************************************************************/
+ * Class for creating FPGA Frame header objects for use with the 
+ * MINERvA data acquisition system and associated software projects.
+ *
+ * Elaine Schulte, Rutgers University
+ * Gabriel Perdue, The University of Rochester
+ **********************************************************************************/
 
 /*! all of these values are in bytes */
-const int Frames::MaxSendLength=2046; //maximum send message length
-const int Frames::MaxReceiveLength=6124; //maximum receive message length
 const int Frames::MinHeaderLength=9; //size (in bytes) of an outgoing FPGA header for ANY device
-const int Frames::MinBroadcastLength=2; //I'm not sure this is ever used in our setup
 const int Frames::NDiscrChPerTrip=16;
 
 #if V81FIRMWARE||V83FIRMWARE||V85FIRMWARE
@@ -29,48 +26,40 @@ const int Frames::ADCFrameLength=443; //bytes of course (dpm pointer should be t
 // log4cpp category hierarchy.
 log4cpp::Category& framesLog = log4cpp::Category::getInstance(std::string("frames"));
 
-Frames::Frames() 
-{ 
-/*! \fn 
- * The basic constructor sets the FrameID bytes and sets the log4cpp appender to null.
- */
-	// These don't seem to need a value...
-	FrameID[0]   = 0x00; 
-	FrameID[1]   = 0x00; //initialize the frame id to no value
-	frmsAppender = 0;
-}
-
-
 Frames::Frames(log4cpp::Appender* appender) 
 { 
-/*! \fn 
- * The basic constructor sets the FrameID bytes and sets the log4cpp appender to null.
- */
+	/*! \fn 
+	 * The basic constructor sets the FrameID bytes and sets the log4cpp appender to null.
+	 */
 	// These don't seem to need a value...
 	FrameID[0]   = 0x00; 
 	FrameID[1]   = 0x00; //initialize the frame id to no value
 	frmsAppender = appender;
+	if (frmsAppender == 0 ) {
+		std::cout << "FEB Log Appender is NULL!" << std::endl;
+		exit(EXIT_FEB_UNSPECIFIED_ERROR);
+	}
 	framesLog.setPriority(log4cpp::Priority::ERROR);
 }
 
 
 void Frames::MakeDeviceFrameTransmit(Devices dev,Broadcasts b, Directions d, 
-	unsigned int f, unsigned int feb) 
+		unsigned int f, unsigned int feb) 
 {
-/*! \fn********************************************************************************
- * a function which makes up an FPGA frame for transmitting information from
- * the data acquisition routines to the FPGA on the front end board (FEB) and
- * on to the requested device.
- *
- * Inputs:
- *
- * \param dev:  The device to which the message is destined
- * \param b: whether or not this is a broadcast request
- * \param d: the direction of the message:  either master-to-slave (true for transmit) or
- *    slave-to-master (receive)
- * \param f: the device function.  This is specific to the device (dev) receiving the message
- * \param feb: the number of the FEB to which this frame is destined
- *********************************************************************************/
+	/*! \fn********************************************************************************
+	 * a function which makes up an FPGA frame for transmitting information from
+	 * the data acquisition routines to the FPGA on the front end board (FEB) and
+	 * on to the requested device.
+	 *
+	 * Inputs:
+	 *
+	 * \param dev:  The device to which the message is destined
+	 * \param b: whether or not this is a broadcast request
+	 * \param d: the direction of the message:  either master-to-slave (true for transmit) or
+	 *    slave-to-master (receive)
+	 * \param f: the device function.  This is specific to the device (dev) receiving the message
+	 * \param feb: the number of the FEB to which this frame is destined
+	 *********************************************************************************/
 
 	/* set up the basics of the header */
 	broadcastCommand[0]= (unsigned char) b;
@@ -85,11 +74,11 @@ void Frames::MakeDeviceFrameTransmit(Devices dev,Broadcasts b, Directions d,
 
 void Frames::MakeHeader() 
 {
-/*! \fn********************************************************************************
- * a function which packs FPGA frame header data for transmitting information from
- * the data acquisition routines to the FPGA on the front end board (FEB) and
- * on to the requested device.
- *********************************************************************************/
+	/*! \fn********************************************************************************
+	 * a function which packs FPGA frame header data for transmitting information from
+	 * the data acquisition routines to the FPGA on the front end board (FEB) and
+	 * on to the requested device.
+	 *********************************************************************************/
 
 	/* we've done all the conversion & stuff so we can make up the frame header now! */
 	/* word 1: the broadcast direction, command, and feb number */
@@ -116,9 +105,9 @@ void Frames::MakeMessage() { std::cout << "Hi Elaine!" << std::endl;}
 
 bool Frames::CheckForErrors() 
 {
-/*! \fn bool Frames::CheckForErrors()
- * Check incoming frame header data for errors.
- */
+	/*! \fn bool Frames::CheckForErrors()
+	 * Check incoming frame header data for errors.
+	 */
 	bool errors[10], error;
 	error = false; //initialize error 
 	for (int i=0;i<10;i++) {
@@ -137,130 +126,74 @@ bool Frames::CheckForErrors()
 
 	word = FrameStart; flag = Direction; //check direction
 	errors[0] = !(message[word] & flag); 
-#if DEBUG_VERBOSE
-	std::cout << "\tCheckForErrors: Direction: " << errors[0] << std::endl;
-#endif
 	if (errors[0]) {
 		error = true; 
-/*
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: Direction: "<<errors[0];
-		}
-*/
+		framesLog.errorStream()<<"CheckForErrors: Direction: "<<errors[0];
 	}
 
 	word = DeviceStatus; flag = DeviceOK; //check status
 	errors[1] = !(message[word] & flag);
-#if DEBUG_VERBOSE
-	std::cout << "\tCheckForErrors: DeviceOK: " << errors[1] << std::endl;
-#endif
 	if (errors[1]) {
 		error = true; 
-/*
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: DeviceOK: "<<errors[1];
-		}
-*/
+		framesLog.errorStream()<<"CheckForErrors: DeviceOK: "<<errors[1];
 	}
 
 	word = DeviceStatus; flag = FunctionOK; //check execution status
 	errors[2] = !(message[word]&flag);
-#if DEBUG_VERBOSE
-	std::cout << "\tCheckForErrors: FunctionOK: " << errors[2] << std::endl;
-#endif
 	if (errors[2]) {
 		error = true; 
-/*
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: FunctionOK: "<<errors[2];
-		}
-*/
+		framesLog.errorStream()<<"CheckForErrors: FunctionOK: "<<errors[2];
 	}
 
 	word = FrameStatus; flag = CRCOK; //check CRC error bit
 	errors[3] = !(message[word] & flag);
-#if DEBUG_VERBOSE
-	std::cout << "\tCheckForErrors: CRCOK: " << errors[3] << std::endl;
-#endif
 	if (errors[3]) {
 		error = true; 
-/*
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: CRCOK: "<<errors[3];
-		}
-*/
+		framesLog.errorStream()<<"CheckForErrors: CRCOK: "<<errors[3];
 	}
 
 	word = FrameStatus; flag = EndHeader; //message ended properly
 	errors[4] = !(message[word] & flag);
-#if DEBUG_VERBOSE
-	std::cout << "\tCheckForErrors: EndHeader: " << errors[4] << std::endl;
-#endif
 	if (errors[4]) {
 		error = true; 
-/*
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: EndHeader: "<<errors[4];
-		}
-*/
+		framesLog.errorStream()<<"CheckForErrors: EndHeader: "<<errors[4];
 	}
 
 	word = FrameStatus; flag = MaxLen; //message exceeded maximum message length
 	errors[5] = (message[word] & flag);
-#if DEBUG_VERBOSE
-	std::cout << "\tCheckForErrors: MaxLen: " << errors[5] << std::endl;
-#endif
 	if (errors[5]) {
 		error = true; 
-/*
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: MaxLen: "<<errors[5];
-		}
-*/
+		framesLog.errorStream()<<"CheckForErrors: MaxLen: "<<errors[5];
 	}
 
 	word = FrameStatus; flag = SecondStart;
 	errors[6] = (message[word] & flag);
-#if DEBUG_VERBOSE
-	std::cout << "\tCheckForErrors: SecondStart: " << errors[6] << std::endl;
-#endif
 	if (errors[6]) {
 		error = true; 
-/*
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: SecondStart: "<<errors[6];
-		}
-*/
+		framesLog.errorStream()<<"CheckForErrors: SecondStart: "<<errors[6];
 	}
 
 	word = FrameStatus; flag = NAHeader;
 	errors[7] = (message[word] & flag);
-#if DEBUG_VERBOSE
-	std::cout << "\tCheckForErrors: NAHeader: " << errors[7] << std::endl;
-#endif
 	if (errors[7]) {
 		error = true; 
-/*
-		if (frmsAppender!=0) {
-			framesLog.errorStream()<<"CheckForErrors: NAHeader: "<<errors[7];
-		}
-*/
+		framesLog.errorStream()<<"CheckForErrors: NAHeader: "<<errors[7];
 	}
 
 	return false; // let everything through for now...
-//	return error; // true if *any* error was found!
+	//	return error; // true if *any* error was found!
 }
 
 
 void Frames::DecodeHeader() 
 {
-/*! \fn 
- * extract device information from the FPGA header sent back from
- * the electronics by a read request.
- *
- * note:  these should be decoded using the enumerated types in 
- * FrameTypes.h 
- */
+	/*! \fn 
+	 * extract device information from the FPGA header sent back from
+	 * the electronics by a read request.
+	 *
+	 * note:  these should be decoded using the enumerated types in 
+	 * FrameTypes.h 
+	 */
 #if DEBUG_VERBOSE
 	std::cout << " Entering Frames::DecodeHeader..." << std::endl;
 #endif

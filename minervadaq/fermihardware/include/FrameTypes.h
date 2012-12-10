@@ -132,16 +132,18 @@ typedef enum FlashFunctions { //typecast to unsigned char
 typedef enum ResponseWords { //typecast to unsigned char
 	ResponseLength0 = 0,
 	ResponseLength1 = 1,
-	FrameStart      = 2,
-	DeviceStatus    = 3,
-	FrameStatus     = 4,
-	FrameID0        = 5,
-	FrameID1        = 6,
-	Timestamp0      = 7,
-	Timestamp1      = 8,
-	Timestamp2      = 9,
-	Timestamp3      = 10,
-	Data            = 11
+	FrameStatus0    = 2,  // New for CROC-E
+	FrameStatus1	= 3,  // New for CROC-E
+	FrameStart      = 4,
+	DeviceStatus    = 5,
+	FrameStatus     = 6,
+	FrameID0        = 7,
+	FrameID1        = 8,
+	Timestamp0      = 9,
+	Timestamp1      = 10,
+	Timestamp2      = 11,
+	Timestamp3      = 12,
+	Data            = 13
 };
 
 
