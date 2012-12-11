@@ -1,6 +1,7 @@
 #ifndef Frames_cpp
 #define Frames_cpp
 
+#include <iomanip>
 #include "Frames.h"
 #include "exit_codes.h"
 
@@ -39,7 +40,7 @@ Frames::Frames(log4cpp::Appender* appender)
 		std::cout << "FEB Log Appender is NULL!" << std::endl;
 		exit(EXIT_FEB_UNSPECIFIED_ERROR);
 	}
-	framesLog.setPriority(log4cpp::Priority::ERROR);
+	framesLog.setPriority(log4cpp::Priority::DEBUG);
 }
 
 
@@ -214,4 +215,19 @@ void Frames::DecodeHeader()
 	targetDevice[0]   = (message[word]&0xF0); // extract the device which responded
 }
 
+void Frames::printMessageBufferToLog( int buffersize )
+{
+	framesLog.debugStream() << "Printing message buffer of size = " << buffersize;
+	if (buffersize > 0) 
+		for (int i=0; i<buffersize; i+=2 ) {
+			int j = i + 1;
+			framesLog.debugStream() 
+				<< std::setfill('0') << std::setw( 2 ) << std::hex << (int)message[i] << " " 
+				<< std::setfill('0') << std::setw( 2 ) << std::hex << (int)message[j] << " " 
+				<< "\t" 
+				<< std::setfill('0') << std::setw( 4 ) << std::dec << i << " " 
+				<< std::setfill('0') << std::setw( 4 ) << std::dec << j;
+			
+		}
+}
 #endif

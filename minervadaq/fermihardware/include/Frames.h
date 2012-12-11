@@ -38,7 +38,6 @@ class Frames {
 		static const int MinHeaderLength;
 		static const int ADCFrameLength;
 		static const int NDiscrChPerTrip;
-		unsigned short sequentialIndex;  // for frame ID
 		unsigned char FrameID[2];        // Starts out Empty, filled on return of message
 		unsigned char frameHeader[9];    // a frame header, add this to the message
 		unsigned char *outgoingMessage;  // the character string for the message sent to a device
@@ -54,7 +53,8 @@ class Frames {
 		Frames(log4cpp::Appender* appender);
 		virtual ~Frames() { };
 
-		unsigned char *message; //the message that will be sent or received.
+		unsigned char *message; //the message that will be sent or received. mostly received...
+		void printMessageBufferToLog( int buffersize );
 
 		/*! transmission frame...These are for sending messages out */
 		void MakeDeviceFrameTransmit(Devices, Broadcasts, Directions, unsigned int, unsigned int); 
@@ -63,8 +63,8 @@ class Frames {
 		virtual int DecodeRegisterValues(int a) = 0;
 		void DecodeHeader();
 		bool CheckForErrors();
-		inline unsigned char *GetOutgoingMessage() {return outgoingMessage;};
 
+		inline unsigned char *GetOutgoingMessage() {return outgoingMessage;};
 		void DeleteOutgoingMessage() {delete [] outgoingMessage;};
 
 		void inline SetIncomingMessageLength(int a) {IncomingMessageLength = a;};
