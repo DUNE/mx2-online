@@ -118,9 +118,9 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 		febLog.fatalStream() << "Invalid number of maximum hits!  Only 1, 5, 6, or 8 are accepted right now!";
 		exit(EXIT_FEB_NHITS_ERROR);		
 	}
-	febLog.infoStream() << "Created a new FEB! " << (int)febNumber[0];
-	febLog.infoStream() << "  BoardNumber = " << boardNumber;
-	febLog.infoStream() << "  Max hits    =  "<< maxHits;
+	febLog.debugStream() << "Created a new FEB! " << (int)febNumber[0];
+	febLog.debugStream() << "  BoardNumber = " << boardNumber;
+	febLog.debugStream() << "  Max hits    =  "<< maxHits;
 }
 
 

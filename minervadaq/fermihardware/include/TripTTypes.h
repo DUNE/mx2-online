@@ -18,7 +18,7 @@ typedef enum TRiPFunctions { //typecast to unsigned char
 	tTR4  = 0x06,
 	tTR5  = 0x07
 };
-/*
+
 typedef struct TripRegisterValues {
 	int tripRegIBP;
 	int tripRegIBBNFOLL;
@@ -35,6 +35,22 @@ typedef struct TripRegisterValues {
 	int tripRegIRSEL;
 	int tripRegIWSEL;
 };
-*/
+
+static const TripRegisterValues DefaultTripRegisterValues = {
+60  , /* tripRegIBP */
+120 , /* tripRegIBBNFOLL */
+0   , /* tripRegIFF */
+160 , /* tripRegIBPIFF1REF */
+40  , /* tripRegIBOPAMP */
+0   , /* tripRegIB_T */
+0   , /* tripRegIFFP2 */
+20  , /* tripRegIBCOMP */
+165 , /* tripRegVREF */
+238 , /* tripRegVTH */  
+15  , /* tripRegPIPEDEL */
+11  , /* tripRegGAIN */
+3   , /* tripRegIRSEL */
+3   , /* tripRegIWSEL */
+};
 
 #endif
