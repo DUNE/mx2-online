@@ -77,20 +77,19 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
 	maxFebs = 5;
 #endif
 #if WH14T
-	detectorString        = "WH14 Top Crate.";
+	detectorString        = "WH14 Top Crate. (minervatest02)";
 	std::cout            << "Initializing hardware for the " << detectorString << std::endl; 
 	acqData.infoStream() << "Initializing hardware for the " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
-	InitializeCroc(0x010000, 1, 1, 1, 1, 0);
-	maxFebs = 1;
+	InitializeCroc(0x010000, 1, 2, 0, 0, 0);
+	maxFebs = 2;
 #endif
 #if WH14B
-	detectorString        = "WH14 Bottom Crate.";
+	detectorString        = "WH14 Bottom Crate. (minervatest04)";
 	std::cout            << "Initializing hardware for the " << detectorString << std::endl; 
 	acqData.infoStream() << "Initializing hardware for the " << detectorString; 
 	InitializeCrim(0xE00000, 1, runningMode);
-	InitializeCroc(0x010000, 1, 1, 2, 1, 0);
-	InitializeCroc(0x050000, 2, 0, 0, 0, 2);
+	InitializeCroc(0x010000, 1, 2, 0, 0, 0);
 	maxFebs = 2;
 #endif
 #if CRATE0 // Current as of March 22 Begin-Of-Run  
