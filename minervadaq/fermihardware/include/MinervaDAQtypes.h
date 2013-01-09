@@ -226,4 +226,32 @@ typedef enum ecrocRegisters { //typecast to unsigned int
   ecrocRdfePulseCommand          = 0xFF060
 };
 
+
+static const unsigned int ECROCAddressShift = 24;
+static const unsigned int EChannelOffset    = 0x40000;
+
+// All CROC-E channel registers may have a n * 0x400000 modifier, where n is the channel number (0-3).
+typedef enum ECROCChannelRegisters { //typecast to unsigned int
+  ECROCReceiveMemory             = 0x00000,
+  ECROCSendMemory                = 0x22000,
+  ECROCFramePointersMemory       = 0x24000,
+  ECROCConfiguration             = 0x28002,
+  ECROCCommand                   = 0x28004,
+  ECROCEventCounter              = 0x28008,
+  ECROCFramesCounterAndLoopDelay = 0x28010,
+  ECROCFrameStatus               = 0x28020,
+  ECROCTxRxStatus                = 0x28040,
+  ECROCReceiveMemoryPointer      = 0x28080
+};
+
+typedef enum ECROCRegisters { //typecast to unsigned int
+  ECROCTimingSetup               = 0xFF000,
+  ECROCResetAndTestPulseMask     = 0xFF010,
+  ECROCChannelReset              = 0xFF020,
+  ECROCFastCommand               = 0xFF030,
+  ECROCTestPulse                 = 0xFF040,
+  ECROCRdfePulseDelay            = 0xFF050,
+  ECROCRdfePulseCommand          = 0xFF060
+};
+
 #endif
