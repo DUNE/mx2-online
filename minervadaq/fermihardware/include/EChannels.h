@@ -11,7 +11,7 @@
 #include "CAENVMEtypes.h"
 
 /* custom header files here */
-#include "feb.h"
+#include "FEB.h"
 #include "MinervaDAQtypes.h"
 #include "FrameTypes.h"
 #include "VMECommunicator.h"
@@ -51,7 +51,7 @@ class EChannels : public VMECommunicator {
 		unsigned short dpmPointer; 
 		bool use_sequencer_mode;
 
-		std::vector<feb*> febsVector;           /*!< need to be able to direct access an FEB by index (address/number) */
+		std::vector<FEB*> FEBsVector;           /*!< need to be able to direct access an FEB by index (address/number) */
 
 		unsigned char *buffer; 			/*!< a buffer to hold unsorted DPM Memory */
 
@@ -88,9 +88,9 @@ class EChannels : public VMECommunicator {
 		int DecodeStatusMessage();
 		int CheckHeaderErrors(int dataLength);
 
-		void AddFEB( feb* FEB );  // TODO add a function in here that checks we are always adding a good number (0, 1, 2 in seq)
-		std::vector<feb*>* GetFebVector();
-		feb* GetFebVector( int index /* should always equal FEB address */ );
+		void SetupNFEBs( int nFEBs );
+		std::vector<FEB*>* GetFEBVector();
+		FEB* GetFEBVector( int index /* should always equal FEB address */ );
 
 		
 };
