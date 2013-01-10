@@ -29,19 +29,26 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number, log4cpp::App
 	 */
 	channelNumber        = number;       //the channel number (0-3 here, 1-4 is stenciled on the cards themselves)
 	channelDirectAddress = this->address + EChannelOffset * (unsigned int)(channelNumber);
+  echanAppender        = appender;
+  if ( echanAppender == 0 ) {
+    std::cout << "EChannel Log Appender is NULL!" << std::endl;
+    exit(EXIT_CROC_UNSPECIFIED_ERROR);
+  }
+  EChannelLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
 
-	receiveMemoryAddress             = channelDirectAddress + (unsigned int)ECROCReceiveMemory;
-	sendMemoryAddress                = channelDirectAddress + (unsigned int)ECROCSendMemory;
-	framePointersMemoryAddress       = channelDirectAddress + (unsigned int)ECROCFramePointersMemory;
-	configurationAddress             = channelDirectAddress + (unsigned int)ECROCConfiguration;
-	commandAddress                   = channelDirectAddress + (unsigned int)ECROCCommand;
-	eventCounterAddress              = channelDirectAddress + (unsigned int)ECROCEventCounter;
-	framesCounterAndLoopDelayAddress = channelDirectAddress + (unsigned int)ECROCFramesCounterAndLoopDelay;
-	frameStatusAddress               = channelDirectAddress + (unsigned int)ECROCFrameStatus;
-	txRxStatusAddress                = channelDirectAddress + (unsigned int)ECROCTxRxStatus;
-	receiveMemoryPointerAddress      = channelDirectAddress + (unsigned int)ECROCReceiveMemoryPointer;
 
-	dpmPointer    = 0;     // start pointing at zero
+  receiveMemoryAddress             = channelDirectAddress + (unsigned int)ECROCReceiveMemory;
+  sendMemoryAddress                = channelDirectAddress + (unsigned int)ECROCSendMemory;
+  framePointersMemoryAddress       = channelDirectAddress + (unsigned int)ECROCFramePointersMemory;
+  configurationAddress             = channelDirectAddress + (unsigned int)ECROCConfiguration;
+  commandAddress                   = channelDirectAddress + (unsigned int)ECROCCommand;
+  eventCounterAddress              = channelDirectAddress + (unsigned int)ECROCEventCounter;
+  framesCounterAndLoopDelayAddress = channelDirectAddress + (unsigned int)ECROCFramesCounterAndLoopDelay;
+  frameStatusAddress               = channelDirectAddress + (unsigned int)ECROCFrameStatus;
+  txRxStatusAddress                = channelDirectAddress + (unsigned int)ECROCTxRxStatus;
+  receiveMemoryPointerAddress      = channelDirectAddress + (unsigned int)ECROCReceiveMemoryPointer;
+
+  dpmPointer    = 0;     // start pointing at zero
 
   EChannelLog.setPriority(log4cpp::Priority::DEBUG);
 }
@@ -49,162 +56,163 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number, log4cpp::App
 //----------------------------------------
 EChannels::~EChannels() 
 {
-	for (std::vector<FEB*>::iterator p=FEBsVector.begin(); p!=FEBsVector.end(); p++) delete (*p);
-	FEBsVector.clear();
+  for (std::vector<FEB*>::iterator p=FEBsVector.begin(); p!=FEBsVector.end(); p++) delete (*p);
+  FEBsVector.clear();
 }
 
 //----------------------------------------
 unsigned int EChannels::GetChannelNumber() 
 {
-	return channelNumber;
+  return channelNumber;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetParentECROCAddress() 
 {
-	return this->address;
+  return this->address;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetDirectAddress() 
 {
-	return channelDirectAddress;
+  return channelDirectAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetReceiveMemoryAddress()
 {
-	return receiveMemoryAddress;
+  return receiveMemoryAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetSendMemoryAddress()
 {
-	return sendMemoryAddress;
+  return sendMemoryAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetFramePointersMemoryAddress() 
 {
-	return framePointersMemoryAddress;
+  return framePointersMemoryAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetConfigurationAddress() 
 {
-	return configurationAddress;
+  return configurationAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetCommandAddress() 
 {
-	return commandAddress;
+  return commandAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetEventCounterAddress() 
 {
-	return eventCounterAddress;
+  return eventCounterAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetFramesCounterAndLoopDelayAddress() 
 {
-	return framesCounterAndLoopDelayAddress;
+  return framesCounterAndLoopDelayAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetFrameStatusAddress() 
 {
-	return frameStatusAddress;
+  return frameStatusAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetTxRxStatusAddress() 
 {
-	return txRxStatusAddress;
+  return txRxStatusAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetReceiveMemoryPointerAddress() 
 {
-	return receiveMemoryPointerAddress;
+  return receiveMemoryPointerAddress;
 }
 
 //----------------------------------------
 unsigned int EChannels::GetDPMPointer() 
 {
-	return dpmPointer;
+  return dpmPointer;
 }
 
 //----------------------------------------
 void EChannels::SetDPMPointer( unsigned short pointer ) 
 {
-	dpmPointer = pointer;
+  dpmPointer = pointer;
 }
 
 //----------------------------------------
 unsigned char* EChannels::GetBuffer() 
 {
-	return buffer;
+  return buffer;
 }
 
 //----------------------------------------
 void EChannels::SetBuffer( unsigned char *data ) 
 {
-	/*! \fn 
-	 * Puts data into the data buffer assigned to this channel.
-	 * \param data the data buffer
-	 */
+  /*! \fn 
+   * Puts data into the data buffer assigned to this channel.
+   * \param data the data buffer
+   */
 
-	EChannelLog.debugStream() << "     Setting Buffer for Chain " << this->GetChannelNumber();
-	buffer = new unsigned char [(int)dpmPointer];
-	for (int i=0;i<(int)dpmPointer;i++) {
-		buffer[i]=data[i];
-		EChannelLog.debugStream() << "       SetBuffer: buffer[" 
+  EChannelLog.debugStream() << "     Setting Buffer for Chain " << this->GetChannelNumber();
+  buffer = new unsigned char [(int)dpmPointer];
+  for (int i=0;i<(int)dpmPointer;i++) {
+    buffer[i]=data[i];
+    EChannelLog.debugStream() << "       SetBuffer: buffer[" 
       << std::setfill('0') << std::setw( 3 ) << i  << "] = 0x" 
       << std::setfill('0') << std::setw( 2 ) << std::hex << buffer[i];
-	}
-	EChannelLog.debugStream() << "     Done with SetBuffer... Returning...";
-	return; 
+  }
+  EChannelLog.debugStream() << "     Done with SetBuffer... Returning...";
+  return; 
 }
 
 //----------------------------------------
 void EChannels::DeleteBuffer() 
 {
-	delete [] buffer;
+  delete [] buffer;
 }
 
 //----------------------------------------
 int EChannels::DecodeStatusMessage() 
 {
-	/* TODO: Re-implement this correctly for new channels. */
-	return 0;
+  /* TODO: Re-implement this correctly for new channels. */
+  return 0;
 }
 
 //----------------------------------------
 int EChannels::CheckHeaderErrors(int dataLength)
 {                  
-	/* TODO: Re-implement this correctly for new channels. */
-	return 0;
+  /* TODO: Re-implement this correctly for new channels. */
+  return 0;
 }
 
 //----------------------------------------
 void EChannels::SetupNFEBs( int nFEBs )
 {
+  EChannelLog.debugStream() << "SetupNFEBs for " << nFEBs << " FEBs...";
   if ( ( nFEBs < 0 ) || (nFEBs > 10) ) {
     EChannelLog.fatalStream() << "Cannot have less than 0 or more than 10 FEBs on a Channel!";
     exit(EXIT_CONFIG_ERROR);
   }
   for ( int i=1; i<=nFEBs; ++i ) {
-
-    /*
-    FEB *feb = new FEB(maxHits, init, boardID, NRegisters, myAppender);
-    feb->SetFEBDefaultValues();
-  */
-
-
-
+    EChannelLog.debugStream() << "Setting up FEB " << i << " ...";
+    FEB *feb = new FEB( (febAddresses)i, echanAppender );
+    if ( isAvailable( feb ) ) {
+      FEBsVector.push_back( feb );
+    } else {
+      EChannelLog.fatalStream() << "Requested FEB with address " << i << " is not avialable!";
+      exit(EXIT_CONFIG_ERROR);
+    }
   }
 }
 
@@ -217,18 +225,63 @@ std::vector<FEB*>* EChannels::GetFEBVector()
 //----------------------------------------
 FEB* EChannels::GetFEBVector( int index /* should always equal FEB address */ ) 
 {
+  // TODO: add check for null here? or too slow? (i.e., live fast and dangerouss)
+  // Check that address = index?
+  // Maybe add a precompiler flag, SAFE_MODE or something, that makes these checks, 
+  // but we wouldn't use it when optimizing for speed...
   return FEBsVector[index];
+}
+
+//----------------------------------------
+bool EChannels::isAvailable( FEB* feb )
+{
+  EChannelLog.debugStream() << "isAvailable FEB with class address = " << feb->GetBoardNumber();
+  bool available = false;
+  this->ClearAndResetStatusRegister();
+
+  // Make sure FEB FPGA function is read.
+  Devices dev     = FPGA;
+  Broadcasts b    = None;
+  Directions d    = MasterToSlave;
+  FPGAFunctions f = Read;
+  feb->MakeDeviceFrameTransmit( dev, b, d, f, (unsigned int)feb->GetBoardNumber() );
+  feb->MakeMessage(); 
+
+  EChannelLog.debugStream() << "Send Memory Address   = 0x" << std::hex << sendMemoryAddress;
+  EChannelLog.debugStream() << "Message Length        = " << feb->GetOutgoingMessageLength();
+  int error = WriteCycle( feb->GetOutgoingMessageLength(), feb->GetOutgoingMessage(), 
+      sendMemoryAddress, addressModifier, dataWidthSwappedReg );
+  if( error ) exitIfError( error, "Failure writing to CROC FIFO!"); 
+  feb->DeleteOutgoingMessage(); // must clean up FEB messages manually on a case-by-case basis
+
+  this->SendMessage();
+  this->WaitForMessageReceived();
+  unsigned short dataLength = this->ReadDPMPointer();
+  unsigned char* dataBuffer = this->ReadMemory( dataLength ); 
+
+  feb->message = dataBuffer;
+  feb->DecodeRegisterValues(dataLength);
+  /* feb->ShowValues(); */
+  EChannelLog.debugStream() << "Decoded FEB address = " << (int)feb->GetBoardID();
+  // Check to see if the readonly BoardID == Class value;
+  if( (int)feb->GetBoardID() == feb->GetBoardNumber() ) available = true;
+
+  feb->message = 0;
+  delete [] dataBuffer;
+
+  EChannelLog.debugStream() << "FEB " << feb->GetBoardNumber() << " isAvailable = " << available;
+  return available;
 }
 
 //----------------------------------------
 void EChannels::ClearAndResetStatusRegister()
 {
-  EChannelLog.debugStream() << " Command Address        = 0x" 
+  EChannelLog.debugStream() << "Command Address        = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << commandAddress;
-  EChannelLog.debugStream() << " Address Modifier       = " 
+  EChannelLog.debugStream() << "Address Modifier       = " 
     << (CVAddressModifier)addressModifier;
-  EChannelLog.debugStream() << " Data Width (Registers) = " << dataWidthReg;
+  EChannelLog.debugStream() << "Data Width (Registers) = " << dataWidthReg;
 
   int error = WriteCycle( 2,  RegisterWords::channelReset,  commandAddress, addressModifier, dataWidthReg ); 
   if( error ) exitIfError( error, "Failure clearing the status!");
@@ -238,7 +291,7 @@ void EChannels::ClearAndResetStatusRegister()
 unsigned short EChannels::ReadFrameStatusRegister()
 {
   unsigned char receivedMessage[] = {0x0,0x0};
-  EChannelLog.debugStream() << " Frame Status Address = 0x" 
+  EChannelLog.debugStream() << "Frame Status Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << frameStatusAddress;
 
@@ -252,7 +305,7 @@ unsigned short EChannels::ReadFrameStatusRegister()
 unsigned short EChannels::ReadTxRxStatusRegister()
 {
   unsigned char receivedMessage[] = {0x0,0x0};
-  EChannelLog.debugStream() << " Tx/Rx Status Address = 0x" 
+  EChannelLog.debugStream() << "Tx/Rx Status Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << txRxStatusAddress;
 
@@ -263,5 +316,63 @@ unsigned short EChannels::ReadTxRxStatusRegister()
 }
 
 
+//----------------------------------------
+void EChannels::SendMessage()
+{
+  //#ifndef GOFAST
+  //#endif
+  EChannelLog.debugStream() << "SendMessage Address = 0x" 
+    << std::setfill('0') << std::setw( 8 ) << std::hex << commandAddress 
+    << "; Message = 0x" << std::hex << RegisterWords::sendMessage[1] << RegisterWords::sendMessage[0];
+  int error = WriteCycle( 2, RegisterWords::sendMessage, commandAddress, addressModifier, dataWidthReg); 
+  if( error ) exitIfError( error, "Failure writing to CROC Send Message Register!"); 
+}
+
+//----------------------------------------
+void EChannels::WaitForMessageReceived()
+{
+  unsigned short status = 0;
+  do {
+    status = this->ReadFrameStatusRegister();
+  } while ( 
+      (status & 0x1000) &&   // TODO: MAGIC NUMBERS MUST DIE
+      !(status & 0x8000) &&  // send memory full
+      !(status & 0x0080) &&  // receive memory full
+      !(status & 0x0010) &&  // frame received
+      !(status & 0x0008) &&  // timeout error
+      !(status & 0x0004) &&  // crc error
+      !(status & 0x0002)     // header error
+      );
+  // TODO decodeStatus(status); // maybe use this in the while also?
+  EChannelLog.debugStream() << "Message was received with status = 0x" 
+    << std::setfill('0') << std::setw( 4 ) << std::hex << status;
+}
+
+//----------------------------------------
+unsigned short EChannels::ReadDPMPointer()
+{
+  unsigned short receiveMemoryPointer = 0;
+  unsigned char pointer[] = {0x0,0x0};
+
+  EChannelLog.debugStream() << "Read ReceiveMemoryPointer Address = 0x" << std::hex << address;
+  int error = ReadCycle( pointer, receiveMemoryPointerAddress, addressModifier, dataWidthReg); 
+  if( error ) exitIfError( error, "Failure reading the Receive Memory Pointer!"); 
+  receiveMemoryPointer = pointer[1]<<0x08 | pointer[0];
+  EChannelLog.debugStream() << "Pointer Length = " << receiveMemoryPointer;
+
+  return receiveMemoryPointer;
+}
+
+//----------------------------------------
+unsigned char* EChannels::ReadMemory( unsigned short dataLength )
+{
+  if (dataLength%2) {dataLength -= 1;} else {dataLength -= 2;} //must be even
+  unsigned char *dataBuffer = new unsigned char [dataLength];
+
+  int error = ReadBLT( dataBuffer, dataLength, receiveMemoryAddress, bltAddressModifier, dataWidthSwapped );
+  if( error ) exitIfError( error, "Error in BLT ReadCycle!");
+
+  return dataBuffer;
+}
 
 #endif
