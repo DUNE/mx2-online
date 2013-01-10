@@ -49,8 +49,8 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number, log4cpp::App
 //----------------------------------------
 EChannels::~EChannels() 
 {
-	for (std::vector<feb*>::iterator p=febsVector.begin(); p!=febsVector.end(); p++) delete (*p);
-	febsVector.clear();
+	for (std::vector<FEB*>::iterator p=FEBsVector.begin(); p!=FEBsVector.end(); p++) delete (*p);
+	FEBsVector.clear();
 }
 
 //----------------------------------------
@@ -190,21 +190,34 @@ int EChannels::CheckHeaderErrors(int dataLength)
 }
 
 //----------------------------------------
-void EChannels::AddFEB( feb* FEB ) 
+void EChannels::SetupNFEBs( int nFEBs )
 {
-	febsVector.push_back( FEB );
+  if ( ( nFEBs < 0 ) || (nFEBs > 10) ) {
+    EChannelLog.fatalStream() << "Cannot have less than 0 or more than 10 FEBs on a Channel!";
+    exit(EXIT_CONFIG_ERROR);
+  }
+  for ( int i=1; i<=nFEBs; ++i ) {
+
+    /*
+    FEB *feb = new FEB(maxHits, init, boardID, NRegisters, myAppender);
+    feb->SetFEBDefaultValues();
+  */
+
+
+
+  }
 }
 
 //----------------------------------------
-std::vector<feb*>* EChannels::GetFebVector() 
+std::vector<FEB*>* EChannels::GetFEBVector() 
 {
-	return &febsVector;
+  return &FEBsVector;
 }
 
 //----------------------------------------
-feb* EChannels::GetFebVector( int index /* should always equal FEB address */ ) 
+FEB* EChannels::GetFEBVector( int index /* should always equal FEB address */ ) 
 {
-	return febsVector[index];
+  return FEBsVector[index];
 }
 
 //----------------------------------------
