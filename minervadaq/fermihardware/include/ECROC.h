@@ -4,7 +4,7 @@
 #include <list>
 #include <fstream>
 #include "CAENVMEtypes.h"
-#include "echannels.h"
+#include "EChannels.h"
 #include "MinervaDAQtypes.h"
 
 /*********************************************************************************
@@ -20,14 +20,10 @@
  *
  */
 
-class ECROC {
+class ECROC : public VMECommunicator {
+
 	private:
-		unsigned int vmeAddress; 		// the bit-shifted VME address
-		int id; 				// the id is an "index" used by the controller
-		std::list<echannels*> ECROCChannels; 
-		CVAddressModifier addressModifier; 
-		CVDataWidth dataWidth;
-		CVDataWidth dataWidthSwapped;
+		std::vector<EChannels*> ECROCChannels; 
 
 		unsigned int timingSetupAddress;
 		unsigned int resetAndTestPulseMaskAddress;
@@ -45,19 +41,16 @@ class ECROC {
 
 		log4cpp::Appender* ECROCAppender;
 
+		void SetupChannels(); 
+
 	public:
-		ECROC( unsigned int address, int ECROCid, log4cpp::Appender* appender=0 ); 
+		ECROC( unsigned int address, log4cpp::Appender* appender, Controller* controller); 
 		~ECROC(); 
 
 		unsigned int GetAddress(); 
-		int GetCrocID(); 
-		CVAddressModifier GetAddressModifier(); 
-		CVDataWidth GetDataWidth();
-		CVDataWidth GetDataWidthSwapped(); 
 
-		void SetupChannels(); 
-		echannels *GetChannel( unsigned int i ); 
-		std::list<echannels*>* GetChannelsList(); 
+		EChannels *GetChannel( unsigned int i ); 
+		std::vector<EChannels*>* GetChannelsVector(); 
 
 		unsigned int GetTimingSetupAddress();
 		void SetTimingRegisterMessage(crocClockModes clockMode, unsigned short testPulseDelayEnabled, unsigned short testPulseDelayValue); 
@@ -73,7 +66,9 @@ class ECROC {
 				unsigned short testPulseDelayValue,
 				unsigned short testPulseDelayEnabled ); 
 
-
+    void ClearAndResetStatusRegisters();
+    void ClearAndResetStatusRegisters( unsigned int channelNumber );
+    void ClearAndResetStatusRegisters( EChannels* channel );
 
 };
 

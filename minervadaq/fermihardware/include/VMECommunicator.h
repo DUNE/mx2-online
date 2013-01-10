@@ -8,6 +8,7 @@
 #include "CAENVMEtypes.h"
 #include "CAENVMElib.h"
 
+#include "Controller.h"
 #include "log4cppHeaders.h"
 
 /*! \class VMECommunicator
@@ -15,38 +16,40 @@
  *
  */
 
+
 class VMECommunicator {
 
   private:
+    Controller*        controller;
+    int                controllerHandle;
+    log4cpp::Appender* commAppender;
 
   protected:
-    unsigned int      address;
-    CVAddressModifier addressModifier;
-    CVDataWidth       dataWidth;
-    CVDataWidth       dataWidthSwapped;
-
-    log4cpp::Appender* commAppender;
+    unsigned int       address;             // this is the most basic address available 
+                                            // (for channels, it will be the CROC address), bit-shifted
+    CVAddressModifier  addressModifier;
+    CVAddressModifier  bltAddressModifier;  // block transfers use a different address modifier
+    CVDataWidth        dataWidth;
+    CVDataWidth        dataWidthSwapped;
+    CVDataWidth        dataWidthReg;        // use a different data width for talking to registers (as opposed to data)
+    CVDataWidth        dataWidthSwappedReg; // use a different data width for talking to registers (as opposed to data)
 
   public:
 
-    VMECommunicator( unsigned int address, log4cpp::Appender* appender=0 );
+    VMECommunicator( unsigned int address, log4cpp::Appender* appender, Controller* controller );
     ~VMECommunicator() { }; 
 
-    unsigned int      GetAddress();
-    CVAddressModifier GetAddressModifier();
-    CVDataWidth       GetDataWidth();
-    CVDataWidth       GetDataWidthSwapped();
+    Controller* GetController();
 
-
-    int WriteCycle(int handle, int ml, unsigned char *send_message,  unsigned int address, 
+    int WriteCycle(int messageLength, unsigned char *send_message,  unsigned int address, 
         CVAddressModifier AM, CVDataWidth DW); /*!<Member function for writing to a VME address */
 
-    int ReadCycle(int handle, unsigned char *received_message,  unsigned int address, 
+    int ReadCycle(unsigned char *received_message,  unsigned int address, 
         CVAddressModifier AM, CVDataWidth DW); /*!<Member function for reading from a VME address */
 
-    int ReadBLT(int handle, unsigned char *received_message,  int blocks, unsigned int address, 
+    int ReadBLT(unsigned char *received_message,  int blocks, unsigned int address, 
         CVAddressModifier AM, CVDataWidth DW); /*!<Member function for block-transfer reads */
 
-    int WriteFIFOBLT(int handle, int ml, unsigned char *send_message,  unsigned int address, 
+    int WriteFIFOBLT(int messageLength, unsigned char *send_message,  unsigned int address, 
         CVAddressModifier AM, CVDataWidth DW); /*!<Member function for block-transfer writes to the FIFO */
 };
