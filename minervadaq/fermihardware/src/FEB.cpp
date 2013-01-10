@@ -14,23 +14,22 @@
 // log4cpp category hierarchy.
 log4cpp::Category& FEBLog = log4cpp::Category::getInstance(std::string("FEB"));
 
-FEB::FEB(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender) : Frames(appender) 
+FEB::FEB( febAddresses a, log4cpp::Appender* appender ) : Frames(appender) 
 {
 /*! \fn********************************************************************************
  * The log-free constructor takes the following arguments:
- * \param mh: maximum number of hits per tdc
- * \param init: the FEB is initialized (i.e. an FEB is available)
  * \param a: The address (number) of the FEB
  * \param reg:  The number of one byte registers in the FEB message body
  *       The message body is set up for FEB Firmware Versions 78+ (54 registers).  
  *       It will need to be adjusted for other firmware versions. ECS & GNP
  */
-	maxHits      = mh;     // Maximum number of hits
-	initialized  = false;  // Frames are not initialized by default
-	boardNumber  = a;      // FEB address (also called board number)
-	febNumber[0] = (unsigned char) a; // put the FEB number into it's character.
-	NRegisters   = reg;      // # of one byte registers in the data frame
-	febAppender  = appender; // log4cpp appender
+  // maxHits and NRegisters are FEB firmware dependent! You may need to modify code to handle 
+  // new FEB firmwares! These values (8, 54) are guaranteed good for VERSION 91.
+	maxHits      = 8;   // Maximum number of hits
+	NRegisters   = 54;  // # of one byte registers in the FPGA Programming Registers frame
+	boardNumber  = a;      
+	febNumber[0] = (unsigned char) a; // put the FEB number into it's character (for Frames base class).
+	febAppender  = appender; 
 	if (febAppender == 0 ) {
 		std::cout << "FEB Log Appender is NULL!" << std::endl;
 		exit(EXIT_FEB_UNSPECIFIED_ERROR);
@@ -87,24 +86,9 @@ FEB::FEB(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 	// Instantiate objects for the ADC's
 	// We read the RAMFunctions in "reverse" order:
 	//  0               for 1 Hit (any firmware) - this *assumes* a PIPEDEL of 1!  This is a user responsibility! 
-	//  4,3,2,1,0       for 5 Hit firmware (PIPEDEL 9).
-	//  5,4,3,2,1,0     for 6 Hit firmware (PIPEDEL 11).
 	//  7,6,5,4,3,2,1,0 for 8 Hit firmware (PIPEDEL 15).
 	if (maxHits == 1) {
 		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender ); 
-	} else if (maxHits == 5) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit4, febAppender );
-		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit3, febAppender );
-		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit2, febAppender );
-		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit1, febAppender );
-		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender );
-	} else if (maxHits == 6) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit5, febAppender );
-		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit4, febAppender );
-		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit3, febAppender );
-		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit2, febAppender );
-		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit1, febAppender );
-		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender );
 	} else if (maxHits == 8) {
 		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit7, febAppender );
 		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit6, febAppender );
@@ -115,9 +99,13 @@ FEB::FEB(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 		adcHits[6] = new adc( a, (RAMFunctionsHit)ReadHit1, febAppender );
 		adcHits[7] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender );
 	} else {
-		FEBLog.fatalStream() << "Invalid number of maximum hits!  Only 1, 5, 6, or 8 are accepted right now!";
+		FEBLog.fatalStream() << "Invalid number of maximum hits!  Only 1 or 8 are accepted right now!";
 		exit(EXIT_FEB_NHITS_ERROR);		
 	}
+
+  // Set default frame values (DOES NOT WRITE TO HARDWARE OR WRITE A MESSAGE, just configure properties).
+  this->SetFEBDefaultValues();
+
 	FEBLog.debugStream() << "Created a new FEB! " << (int)febNumber[0];
 	FEBLog.debugStream() << "  BoardNumber = " << boardNumber;
 	FEBLog.debugStream() << "  Max hits    =  "<< maxHits;
@@ -374,26 +362,17 @@ int FEB::DecodeRegisterValues(int buffersize)
 #if DEBUG_FEB
 	FEBLog.debugStream() << "BoardNumber--Decode: " << boardNumber << " for buffer size = " << buffersize;
 #endif
-	// Check for errors
-	if ((buffersize < TrueIncomingMessageLength)&&(initialized)) { 
+	if ( buffersize < TrueIncomingMessageLength ) { 
+
 		// The buffer is too short, so we need to stop execution, and notify the user!
 		FEBLog.fatalStream() << "The FPGA buffer for FEB " << (int)febNumber[0]
 			<< " is too short!";
 		FEBLog.fatalStream() << " Expected: " << TrueIncomingMessageLength;
 		FEBLog.fatalStream() << " Had     : " << buffersize;
 		exit(EXIT_FEB_UNSPECIFIED_ERROR);
-	} else if ((!initialized)&&(buffersize<TrueIncomingMessageLength)) {
-		FEBLog.debugStream()<<"FEB: "<<(int) febNumber[0]<<" is not available on this channel.";
-		initialized = false;
-	} else if ((!initialized)&&(buffersize==TrueIncomingMessageLength)) {
-#if DEBUG_FEB 
-		// Need a better mechanism for this...
-		FEBLog.debugStream()<<"FEB: "<<(int)febNumber[0]<<" is available on this channel.";
-#endif
-		initialized = true;
-	}
 
-	if (initialized) {
+	} else {
+
 		/* have the frame check for status errors */
 		int frameError = this->CheckForErrors();
 #if DEBUG_FEB
@@ -610,7 +589,7 @@ int FEB::DecodeRegisterValues(int buffersize)
 			exit(EXIT_FEB_UNSPECIFIED_ERROR); 
 		}
 
-	} // end if initialized
+	} 
 
 #if DEBUG_FEB           
 	FEBLog.debugStream() << "Decoded FPGA register values.";

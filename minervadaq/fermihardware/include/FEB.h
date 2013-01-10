@@ -31,14 +31,13 @@
 
 class FEB : public Frames {
 	private:
-		febAddresses boardNumber; /*!< the FEB board number (1-15) */
+		febAddresses boardNumber;         /*!< the FEB board number (1-15) */
 		unsigned char firmwareVersion[1]; /*!< the firmware version on this board */
-		int maxHits; /*!< the maximum number of hits a discriminator can take */
-		int TrueIncomingMessageLength; /*!< true FEB incoming message length */
-		bool initialized;    /*!< a flag for the initialization state of this FEB */
-		trips *tripChips[6]; /*!< the trip objects for this FEB */
-		adc *adcHits[8];     /*!< The ADC objects for this FEB; We can have as many as 8 hits. */
-		disc *hits_n_timing; //timing & number of hits /*!< The discriminator for this FEB */
+		int maxHits;                      /*!< the maximum number of hits a discriminator can take */
+		int TrueIncomingMessageLength;    /*!< true FEB incoming message length */
+		trips *tripChips[6];              /*!< the trip objects for this FEB */
+		adc *adcHits[8];                  /*!< The ADC objects for this FEB; We can have as many as 8 hits. */
+		disc *hits_n_timing;              /*!< The discriminator for this FEB */
 
 		unsigned char *buffer; /*!< a buffer for FEB data */
 		int NRegisters; /*!< the number of registers this FEB's firmware has */
@@ -59,13 +58,10 @@ class FEB : public Frames {
 			ExtTriggerFound[1], ExtTriggerRearm[1], AfterPulseExtendedWidth[1],
 			PreviewEnable[1];
 
-		// log4cpp appender for printing log statements.
 		log4cpp::Appender* febAppender;
 
 	public:
-		/*! The constructor.  The appender is initialized to null as a default for log-less mode. */
-		FEB(int mh, bool init, febAddresses, int reg, log4cpp::Appender* appender); 
-		/*! The destructor */
+		FEB(febAddresses, log4cpp::Appender* appender); 
 		~FEB() {
 			for (int i=0;i<6;i++) delete tripChips[i]; 
 			for (int i=0;i<maxHits;i++) delete adcHits[i]; 
@@ -79,7 +75,6 @@ class FEB : public Frames {
 		febAddresses inline GetBoardNumber() {return boardNumber;};
 		int inline GetFirmwareVersion() {return (int)FirmwareVersion[0];};
 		int inline GetMaxHits() {return maxHits;};
-		bool inline GetInit() {return initialized;};
 		inline unsigned char *GetBuffer() {return buffer;};
 
 		inline trips *GetTrip(int i) {return tripChips[i];};
@@ -88,8 +83,6 @@ class FEB : public Frames {
 		inline disc *GetDisc() {return hits_n_timing;};
 
 		/*! Set functions */
-		void inline SetMaxHits(int a) {maxHits=a;};
-		void inline SetInitialized(bool a) {initialized=a;};
 		void SetFEBDefaultValues();
 		void ShowValues();
 		void MakeMessage();
@@ -101,6 +94,7 @@ class FEB : public Frames {
 		unsigned int inline   GetTimer() {return Timer;};
 		unsigned short inline GetGateStart() {return GateStart;};
 		unsigned short inline GetGateLength() {return GateLength;};
+    unsigned char inline  GetBoardID() {return boardID[0];};
 		unsigned char inline  GetTripPowerOff() {return TripPowerOff[0];};
 		unsigned char inline  GetInjCount0() {return InjectCount[0][0];};
 		unsigned char inline  GetInjCount1() {return InjectCount[1][0];};

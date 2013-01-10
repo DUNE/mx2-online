@@ -2,6 +2,7 @@
 #define VMECommunicator_cpp
 
 #include "VMECommunicator.h"
+#include "exit_codes.h"
 
 log4cpp::Category& commLog = log4cpp::Category::getInstance(std::string("comm"));
 
@@ -11,6 +12,10 @@ VMECommunicator::VMECommunicator( unsigned int address, log4cpp::Appender* appen
   controllerHandle = controller->GetHandle();
   this->address    = address;
   commAppender     = appender;
+  if ( commAppender == 0 ) {
+    std::cout << "VMECommunicator Log Appender is NULL!" << std::endl;
+    exit(EXIT_CROC_UNSPECIFIED_ERROR);
+  }
 
 	this->addressModifier     = cvA32_U_DATA;
 	this->bltAddressModifier  = cvA32_U_BLT;

@@ -36,6 +36,7 @@ class EChannels : public VMECommunicator {
 	private:
 		unsigned int channelNumber;             /*!< the channel identifying index, used for retrieval, currently indexed 0-3 */  
 		unsigned int channelDirectAddress;	    /*!< base + offset */
+    log4cpp::Appender* echanAppender;
 
 		unsigned int receiveMemoryAddress;
 		unsigned int sendMemoryAddress;
@@ -55,6 +56,8 @@ class EChannels : public VMECommunicator {
 
 		unsigned char *buffer; 			/*!< a buffer to hold unsorted DPM Memory */
 
+    bool isAvailable( FEB* feb );
+
 	public:
 		EChannels( unsigned int baseVMEAddress, unsigned int channelNumber, log4cpp::Appender* appender, Controller* controller );
 		~EChannels();
@@ -62,6 +65,12 @@ class EChannels : public VMECommunicator {
     void ClearAndResetStatusRegister();  
     unsigned short ReadFrameStatusRegister();
     unsigned short ReadTxRxStatusRegister();
+
+    void SendMessage();
+    void WaitForMessageReceived();
+    unsigned short ReadDPMPointer();
+    /* void ReadMemory( unsigned short dataLength, unsigned char* dataBuffer ); */ 
+    unsigned char* ReadMemory( unsigned short dataLength ); 
 
 		unsigned int GetChannelNumber();
 		unsigned int GetParentECROCAddress();

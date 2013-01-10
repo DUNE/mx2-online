@@ -2,6 +2,7 @@
 #define ECROC_cpp
 
 #include "ECROC.h"
+#include "exit_codes.h"
 
 /*********************************************************************************
 * Class for creating CROC-E objects for use with the MINERvA data acquisition 
@@ -24,9 +25,13 @@ ECROC::ECROC(unsigned int address, log4cpp::Appender* appender, Controller* cont
 	rdfePulseDelayAddress        = this->address + ECROCRdfePulseDelay;
 	rdfePulseCommandAddress      = this->address + ECROCRdfePulseCommand;
 
-	SetupChannels(); 
-
 	ECROCAppender = appender;
+  if (ECROCAppender == 0 ) {
+    std::cout << "ECROC Log Appender is NULL!" << std::endl;
+    exit(EXIT_CROC_UNSPECIFIED_ERROR);
+  }
+
+	SetupChannels(); 
 
 	InitializeRegisters( crocExternal, (short unsigned int)0x0, (short unsigned int)0x0 );
 }
