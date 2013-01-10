@@ -10,25 +10,19 @@
 * Gabriel Perdue, The University of Rochester
 **********************************************************************************/
 
-// log4cpp category hierarchy.
 log4cpp::Category& ECROCLog = log4cpp::Category::getInstance(std::string("ECROC"));
 
 //----------------------------------------
-ECROC::ECROC(unsigned int address, int ECROCid, log4cpp::Appender* appender ) 
+ECROC::ECROC(unsigned int address, log4cpp::Appender* appender, Controller* controller) :
+  VMECommunicator( address, appender, controller )
 {
-	vmeAddress       = address;
-	id               = ECROCid;
-	addressModifier  = cvA32_U_DATA;
-	dataWidth        = cvD32;  // not clear we have one data width - is cvD16 for register reads
-	dataWidthSwapped = cvD16_swapped;
-
-	timingSetupAddress           = address + ECROCTimingSetup;
-	resetAndTestPulseMaskAddress = address + ECROCResetAndTestPulseMask;
-	channelResetAddress          = address + ECROCChannelReset;
-	fastCommandAddress           = address + ECROCFastCommand;
-	testPulseAddress             = address + ECROCTestPulse;
-	rdfePulseDelayAddress        = address + ECROCRdfePulseDelay;
-	rdfePulseCommandAddress      = address + ECROCRdfePulseCommand;
+	timingSetupAddress           = this->address + ECROCTimingSetup;
+	resetAndTestPulseMaskAddress = this->address + ECROCResetAndTestPulseMask;
+	channelResetAddress          = this->address + ECROCChannelReset;
+	fastCommandAddress           = this->address + ECROCFastCommand;
+	testPulseAddress             = this->address + ECROCTestPulse;
+	rdfePulseDelayAddress        = this->address + ECROCRdfePulseDelay;
+	rdfePulseCommandAddress      = this->address + ECROCRdfePulseCommand;
 
 	SetupChannels(); 
 
@@ -40,7 +34,7 @@ ECROC::ECROC(unsigned int address, int ECROCid, log4cpp::Appender* appender )
 //----------------------------------------
 ECROC::~ECROC() 
 { 
-	for (std::list<echannels*>::iterator p=ECROCChannels.begin();
+	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
 			p!=ECROCChannels.end();
 			p++) 
 		delete (*p);
@@ -50,55 +44,26 @@ ECROC::~ECROC()
 //----------------------------------------
 unsigned int ECROC::GetAddress() 
 {
-	return vmeAddress;
-}
-
-//----------------------------------------
-int ECROC::GetCrocID() 
-{
-	return id;
-}
-
-//----------------------------------------
-CVAddressModifier ECROC::GetAddressModifier() 
-{
-	return addressModifier;
-}
-
-//----------------------------------------
-CVDataWidth ECROC::GetDataWidth() 
-{
-	return dataWidth;
-}
-
-//----------------------------------------
-CVDataWidth ECROC::GetDataWidthSwapped() 
-{
-	return dataWidthSwapped;
+	return this->address;
 }
 
 //----------------------------------------
 void ECROC::SetupChannels() 
 {
 	for ( unsigned int i=0; i<4; ++i ) { 
-		echannels *tmp = new echannels( vmeAddress, i );
+		EChannels *tmp = new EChannels( this->address, i, ECROCAppender, this->GetController() );
 		ECROCChannels.push_back( tmp ); 
 	}
 }
 
 //----------------------------------------
-echannels* ECROC::GetChannel( unsigned int i ) { 
-	echannels *tmp=0; 
-	for (std::list<echannels*>::iterator p=ECROCChannels.begin(); 
-			p!=ECROCChannels.end(); 
-			++p) { 
-		if ( i == (*p)->GetChannelNumber() ) tmp = (*p); 
-	}
-	return tmp; 
+EChannels* ECROC::GetChannel( unsigned int i ) 
+{ 
+	return ECROCChannels[i];   // TODO : use an enum for this, perhaps add some bounds checks? or too slow?
 }
 
 //----------------------------------------
-std::list<echannels*>* ECROC::GetChannelsList() 
+std::vector<EChannels*>* ECROC::GetChannelsVector() 
 {
 	return &ECROCChannels;
 }
@@ -161,6 +126,30 @@ void ECROC::InitializeRegisters( crocClockModes clockMode,
 	SetResetAndTestPulseRegisterMessage( 0, 0 );
 }
 
+//----------------------------------------
+void ECROC::ClearAndResetStatusRegisters()
+{
+	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
+			p!=ECROCChannels.end();
+			p++) 
+		ClearAndResetStatusRegisters( *p );
+}
+
+//----------------------------------------
+void ECROC::ClearAndResetStatusRegisters( unsigned int channelNumber )
+{
+	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
+			p!=ECROCChannels.end();
+			p++) 
+    if( (*p)->GetChannelNumber() == channelNumber )
+      ClearAndResetStatusRegisters( *p );
+}
+
+//----------------------------------------
+void ECROC::ClearAndResetStatusRegisters( EChannels* channel )
+{
+  channel->ClearAndResetStatusRegister();
+}
 
 
 
