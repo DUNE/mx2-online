@@ -50,9 +50,6 @@ croc::croc(unsigned int a, int crocid, CVAddressModifier b, CVDataWidth c, CVDat
 
 	SetupChannels(); //load the data/associate objects which belong to this croc
 
-	// DPM transfers are byte-swapped.  Set this value for future reference.
-	CVDataWidth dpmDataWidth = dataWidthSwapped; 
-					
 	// Initialize all channels on all crocs to false, i.e. it isn't connected
 	// note the usual chain/channel issue exists here as well...
 	for (int i=0;i<4;i++) {
