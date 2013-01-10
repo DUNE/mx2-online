@@ -28,7 +28,7 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number, log4cpp::App
    * \param *controller :  Pointer to the VME 2718 Controller servicing this device.
 	 */
 	channelNumber        = number;       //the channel number (0-3 here, 1-4 is stenciled on the cards themselves)
-	channelDirectAddress = this->address + 0x4000 * (unsigned int)(channelNumber);
+	channelDirectAddress = this->address + EChannelOffset * (unsigned int)(channelNumber);
 
 	receiveMemoryAddress             = channelDirectAddress + (unsigned int)ECROCReceiveMemory;
 	sendMemoryAddress                = channelDirectAddress + (unsigned int)ECROCSendMemory;
@@ -210,27 +210,27 @@ feb* EChannels::GetFebVector( int index /* should always equal FEB address */ )
 //----------------------------------------
 void EChannels::ClearAndResetStatusRegister()
 {
-  EChannelLog.debugStream() << " Command Address        = " << commandAddress;
-  EChannelLog.debugStream() << " Address Modifier       = " << addressModifier;
+  EChannelLog.debugStream() << " Command Address        = 0x" 
+    << std::setfill('0') << std::setw( 8 ) << std::hex 
+    << commandAddress;
+  EChannelLog.debugStream() << " Address Modifier       = " 
+    << (CVAddressModifier)addressModifier;
   EChannelLog.debugStream() << " Data Width (Registers) = " << dataWidthReg;
 
   int error = WriteCycle( 2,  RegisterWords::channelReset,  commandAddress, addressModifier, dataWidthReg ); 
-  if (!error) {
-    EChannelLog.fatalStream() << "Failure clearing the status!";
-    exit(error);
-  }
+  if( error ) exitIfError( error, "Failure clearing the status!");
 }
 
 //----------------------------------------
 unsigned short EChannels::ReadFrameStatusRegister()
 {
   unsigned char receivedMessage[] = {0x0,0x0};
+  EChannelLog.debugStream() << " Frame Status Address = 0x" 
+    << std::setfill('0') << std::setw( 8 ) << std::hex 
+    << frameStatusAddress;
 
   int error = ReadCycle(receivedMessage, frameStatusAddress, addressModifier, dataWidthReg); 
-  if (!error) {
-    EChannelLog.fatalStream() << "Failure reading Frame Status!";
-    exit(error);
-  }
+  if( error ) exitIfError( error, "Failure reading Frame Status!");
 
   return ( (receivedMessage[1] << 8) | receivedMessage[0] );
 }
@@ -239,12 +239,12 @@ unsigned short EChannels::ReadFrameStatusRegister()
 unsigned short EChannels::ReadTxRxStatusRegister()
 {
   unsigned char receivedMessage[] = {0x0,0x0};
+  EChannelLog.debugStream() << " Tx/Rx Status Address = 0x" 
+    << std::setfill('0') << std::setw( 8 ) << std::hex 
+    << txRxStatusAddress;
 
   int error = ReadCycle(receivedMessage, txRxStatusAddress, addressModifier, dataWidthReg); 
-  if (!error) {
-    EChannelLog.fatalStream() << "Failure reading Tx/Rx Status!";
-    exit(error);
-  }
+  if( error ) exitIfError( error, "Failure reading Tx/Rx Status!");
 
   return ( (receivedMessage[1] << 8) | receivedMessage[0] );
 }

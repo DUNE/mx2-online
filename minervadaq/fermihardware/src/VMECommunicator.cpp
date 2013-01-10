@@ -139,4 +139,13 @@ int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned 
   return error;
 }
 
+void  VMECommunicator::exitIfError( int error, const std::string& msg ) 
+{
+  if (error) {
+    commLog.fatalStream() << msg;
+    this->GetController()->ReportError(error);
+    exit(error);
+  }
+}
+
 #endif
