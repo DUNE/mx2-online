@@ -72,6 +72,9 @@ class EChannels : public VMECommunicator {
     /* void ReadMemory( unsigned short dataLength, unsigned char* dataBuffer ); */ 
     unsigned char* ReadMemory( unsigned short dataLength ); 
 
+    void WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb );
+    unsigned short ReadFPGAProgrammingRegistersToMemory( FEB *feb );
+
 		unsigned int GetChannelNumber();
 		unsigned int GetParentECROCAddress();
 		unsigned int GetDirectAddress();

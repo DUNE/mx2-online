@@ -239,24 +239,7 @@ bool EChannels::isAvailable( FEB* feb )
   bool available = false;
   this->ClearAndResetStatusRegister();
 
-  // Make sure FEB FPGA function is read.
-  Devices dev     = FPGA;
-  Broadcasts b    = None;
-  Directions d    = MasterToSlave;
-  FPGAFunctions f = Read;
-  feb->MakeDeviceFrameTransmit( dev, b, d, f, (unsigned int)feb->GetBoardNumber() );
-  feb->MakeMessage(); 
-
-  EChannelLog.debugStream() << "Send Memory Address   = 0x" << std::hex << sendMemoryAddress;
-  EChannelLog.debugStream() << "Message Length        = " << feb->GetOutgoingMessageLength();
-  int error = WriteCycle( feb->GetOutgoingMessageLength(), feb->GetOutgoingMessage(), 
-      sendMemoryAddress, addressModifier, dataWidthSwappedReg );
-  if( error ) exitIfError( error, "Failure writing to CROC FIFO!"); 
-  feb->DeleteOutgoingMessage(); // must clean up FEB messages manually on a case-by-case basis
-
-  this->SendMessage();
-  this->WaitForMessageReceived();
-  unsigned short dataLength = this->ReadDPMPointer();
+  unsigned short dataLength = this->ReadFPGAProgrammingRegistersToMemory( feb );
   unsigned char* dataBuffer = this->ReadMemory( dataLength ); 
 
   feb->message = dataBuffer;
@@ -366,7 +349,9 @@ unsigned short EChannels::ReadDPMPointer()
 //----------------------------------------
 unsigned char* EChannels::ReadMemory( unsigned short dataLength )
 {
-  if (dataLength%2) {dataLength -= 1;} else {dataLength -= 2;} //must be even
+  // -> possible shenanigans! -> 
+  if (dataLength%2) {dataLength -= 1;} else {dataLength -= 2;} //must be even  //TODO: should this be in ReadDPMPointer?
+  EChannelLog.debugStream() << "ReadMemory for buffer size = " << dataLength;
   unsigned char *dataBuffer = new unsigned char [dataLength];
 
   int error = ReadBLT( dataBuffer, dataLength, receiveMemoryAddress, bltAddressModifier, dataWidthSwapped );
@@ -374,5 +359,40 @@ unsigned char* EChannels::ReadMemory( unsigned short dataLength )
 
   return dataBuffer;
 }
+
+
+void EChannels::WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb )
+{
+  // Note: this function does not send the message! It only write the message to the CROC memory.
+  Devices dev     = FPGA;
+  Broadcasts b    = None;
+  Directions d    = MasterToSlave;
+  FPGAFunctions f = Read;
+  feb->MakeDeviceFrameTransmit( dev, b, d, f, (unsigned int)feb->GetBoardNumber() );
+  feb->MakeMessage(); 
+
+  EChannelLog.debugStream() << "Send Memory Address   = 0x" << std::hex << sendMemoryAddress;
+  EChannelLog.debugStream() << "Message Length        = " << feb->GetOutgoingMessageLength();
+  int error = WriteCycle( feb->GetOutgoingMessageLength(), feb->GetOutgoingMessage(), 
+      sendMemoryAddress, addressModifier, dataWidthSwappedReg );
+  if( error ) exitIfError( error, "Failure writing to CROC FIFO!"); 
+  feb->DeleteOutgoingMessage(); 
+}
+
+
+unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( FEB *feb )
+{
+  // Note: this function does not retrieve the data from memory! It only loads it and reads the pointer.
+  this->ClearAndResetStatusRegister();
+  this->WriteFPGAProgrammingRegistersReadFrameToMemory( feb );
+  this->SendMessage();
+  this->WaitForMessageReceived();
+  unsigned short dataLength = this->ReadDPMPointer();
+
+  return dataLength;
+}
+
+
+
 
 #endif
