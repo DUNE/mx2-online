@@ -36,7 +36,6 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number, log4cpp::App
   }
   EChannelLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
 
-
   receiveMemoryAddress             = channelDirectAddress + (unsigned int)ECROCReceiveMemory;
   sendMemoryAddress                = channelDirectAddress + (unsigned int)ECROCSendMemory;
   framePointersMemoryAddress       = channelDirectAddress + (unsigned int)ECROCFramePointersMemory;
@@ -47,10 +46,6 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number, log4cpp::App
   frameStatusAddress               = channelDirectAddress + (unsigned int)ECROCFrameStatus;
   txRxStatusAddress                = channelDirectAddress + (unsigned int)ECROCTxRxStatus;
   receiveMemoryPointerAddress      = channelDirectAddress + (unsigned int)ECROCReceiveMemoryPointer;
-
-  dpmPointer    = 0;     // start pointing at zero
-
-  EChannelLog.setPriority(log4cpp::Priority::DEBUG);
 }
 
 //----------------------------------------
@@ -139,50 +134,6 @@ unsigned int EChannels::GetReceiveMemoryPointerAddress()
 }
 
 //----------------------------------------
-unsigned int EChannels::GetDPMPointer() 
-{
-  return dpmPointer;
-}
-
-//----------------------------------------
-void EChannels::SetDPMPointer( unsigned short pointer ) 
-{
-  dpmPointer = pointer;
-}
-
-//----------------------------------------
-unsigned char* EChannels::GetBuffer() 
-{
-  return buffer;
-}
-
-//----------------------------------------
-void EChannels::SetBuffer( unsigned char *data ) 
-{
-  /*! \fn 
-   * Puts data into the data buffer assigned to this channel.
-   * \param data the data buffer
-   */
-
-  EChannelLog.debugStream() << "     Setting Buffer for Chain " << this->GetChannelNumber();
-  buffer = new unsigned char [(int)dpmPointer];
-  for (int i=0;i<(int)dpmPointer;i++) {
-    buffer[i]=data[i];
-    EChannelLog.debugStream() << "       SetBuffer: buffer[" 
-      << std::setfill('0') << std::setw( 3 ) << i  << "] = 0x" 
-      << std::setfill('0') << std::setw( 2 ) << std::hex << buffer[i];
-  }
-  EChannelLog.debugStream() << "     Done with SetBuffer... Returning...";
-  return; 
-}
-
-//----------------------------------------
-void EChannels::DeleteBuffer() 
-{
-  delete [] buffer;
-}
-
-//----------------------------------------
 int EChannels::DecodeStatusMessage() 
 {
   /* TODO: Re-implement this correctly for new channels. */
@@ -223,7 +174,7 @@ std::vector<FEB*>* EChannels::GetFEBVector()
 }
 
 //----------------------------------------
-FEB* EChannels::GetFEBVector( int index /* should always equal FEB address */ ) 
+FEB* EChannels::GetFEBVector( int index /* should always equal FEB address - 1 (vect:0..., addr:1...) */ ) 
 {
   // TODO: add check for null here? or too slow? (i.e., live fast and dangerouss)
   // Check that address = index?
@@ -360,7 +311,25 @@ unsigned char* EChannels::ReadMemory( unsigned short dataLength )
   return dataBuffer;
 }
 
+//----------------------------------------
+void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength )
+{
+  EChannelLog.debugStream() << "Send Memory Address   = 0x" << std::hex << sendMemoryAddress;
+  EChannelLog.debugStream() << "Message Length        = " << messageLength;
+  int error = WriteCycle( messageLength, message, sendMemoryAddress, addressModifier, dataWidthSwappedReg );
+  if( error ) exitIfError( error, "Failure writing to CROC FIFO!"); 
+}
 
+//----------------------------------------
+void EChannels::WriteFPGAProgrammingRegistersToMemory( FEB *feb )
+{
+  // Note: this function does not send the message! It only write the message to the CROC memory.
+  feb->MakeMessage(); 
+  this->WriteMessageToMemory( feb->GetOutgoingMessage(), feb->GetOutgoingMessageLength() );
+  feb->DeleteOutgoingMessage(); 
+}
+
+//----------------------------------------
 void EChannels::WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb )
 {
   // Note: this function does not send the message! It only write the message to the CROC memory.
@@ -369,17 +338,26 @@ void EChannels::WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb )
   Directions d    = MasterToSlave;
   FPGAFunctions f = Read;
   feb->MakeDeviceFrameTransmit( dev, b, d, f, (unsigned int)feb->GetBoardNumber() );
-  feb->MakeMessage(); 
-
-  EChannelLog.debugStream() << "Send Memory Address   = 0x" << std::hex << sendMemoryAddress;
-  EChannelLog.debugStream() << "Message Length        = " << feb->GetOutgoingMessageLength();
-  int error = WriteCycle( feb->GetOutgoingMessageLength(), feb->GetOutgoingMessage(), 
-      sendMemoryAddress, addressModifier, dataWidthSwappedReg );
-  if( error ) exitIfError( error, "Failure writing to CROC FIFO!"); 
-  feb->DeleteOutgoingMessage(); 
+  this->WriteFPGAProgrammingRegistersToMemory( feb );
 }
 
+//----------------------------------------
+void EChannels::WriteTRIPRegistersToMemory( FEB *feb, int tripNumber )
+{
+  feb->GetTrip(tripNumber)->MakeMessage();
+  this->WriteMessageToMemory( feb->GetTrip(tripNumber)->GetOutgoingMessage(), 
+      feb->GetTrip(tripNumber)->GetOutgoingMessageLength() );
+  feb->GetTrip(tripNumber)->DeleteOutgoingMessage();
+}
 
+//----------------------------------------
+void EChannels::WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber )
+{
+  feb->GetTrip(tripNumber)->SetRead(true);
+  this->WriteTRIPRegistersToMemory( feb, tripNumber );
+}
+
+//----------------------------------------
 unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( FEB *feb )
 {
   // Note: this function does not retrieve the data from memory! It only loads it and reads the pointer.

@@ -11,7 +11,6 @@
  * Gabriel Perdue, The University of Rochester
  **********************************************************************************/
 
-// log4cpp category hierarchy.
 log4cpp::Category& tripsLog = log4cpp::Category::getInstance(std::string("trips"));
 
 trips::trips(febAddresses a, TRiPFunctions f, int maxHits, log4cpp::Appender* appender) : Frames(appender) 

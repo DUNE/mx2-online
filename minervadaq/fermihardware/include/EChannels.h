@@ -49,14 +49,12 @@ class EChannels : public VMECommunicator {
 		unsigned int txRxStatusAddress;
 		unsigned int receiveMemoryPointerAddress;
 
-		unsigned short dpmPointer; 
 		bool use_sequencer_mode;
 
 		std::vector<FEB*> FEBsVector;           /*!< need to be able to direct access an FEB by index (address/number) */
 
-		unsigned char *buffer; 			/*!< a buffer to hold unsorted DPM Memory */
-
     bool isAvailable( FEB* feb );
+    void WriteMessageToMemory( unsigned char* message, int messageLength );
 
 	public:
 		EChannels( unsigned int baseVMEAddress, unsigned int channelNumber, log4cpp::Appender* appender, Controller* controller );
@@ -72,38 +70,37 @@ class EChannels : public VMECommunicator {
     /* void ReadMemory( unsigned short dataLength, unsigned char* dataBuffer ); */ 
     unsigned char* ReadMemory( unsigned short dataLength ); 
 
-    void WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb );
+    // write the frames - load them to memory (don't send messages)
+    // no WriteFrame is deliberate - too many configs - we just offer preconfigured reads
+    void WriteFPGAProgrammingRegistersToMemory( FEB *feb );
+    void WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb ); 
+    void WriteTRIPRegistersToMemory( FEB *feb, int tripNumber );
+    void WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber ); 
+    // read the frames - load messages to memory, send them, and then check the dpm pointer
     unsigned short ReadFPGAProgrammingRegistersToMemory( FEB *feb );
 
-		unsigned int GetChannelNumber();
-		unsigned int GetParentECROCAddress();
-		unsigned int GetDirectAddress();
+    unsigned int GetChannelNumber();
+    unsigned int GetParentECROCAddress();
+    unsigned int GetDirectAddress();
 
-		unsigned int GetReceiveMemoryAddress();
-		unsigned int GetSendMemoryAddress();
-		unsigned int GetFramePointersMemoryAddress();
-		unsigned int GetConfigurationAddress();
-		unsigned int GetCommandAddress();
-		unsigned int GetEventCounterAddress();
-		unsigned int GetFramesCounterAndLoopDelayAddress();
-		unsigned int GetFrameStatusAddress();
-		unsigned int GetTxRxStatusAddress();
-		unsigned int GetReceiveMemoryPointerAddress();
+    unsigned int GetReceiveMemoryAddress();
+    unsigned int GetSendMemoryAddress();
+    unsigned int GetFramePointersMemoryAddress();
+    unsigned int GetConfigurationAddress();
+    unsigned int GetCommandAddress();
+    unsigned int GetEventCounterAddress();
+    unsigned int GetFramesCounterAndLoopDelayAddress();
+    unsigned int GetFrameStatusAddress();
+    unsigned int GetTxRxStatusAddress();
+    unsigned int GetReceiveMemoryPointerAddress();
 
-		unsigned int GetDPMPointer();
-		void SetDPMPointer( unsigned short pointer );
+    int DecodeStatusMessage();
+    int CheckHeaderErrors(int dataLength);
 
-		unsigned char *GetBuffer();
-		void SetBuffer( unsigned char *data ); 
-		void DeleteBuffer(); 
+    void SetupNFEBs( int nFEBs );
+    std::vector<FEB*>* GetFEBVector();
+    FEB* GetFEBVector( int index /* should always equal FEB address */ );
 
-		int DecodeStatusMessage();
-		int CheckHeaderErrors(int dataLength);
 
-		void SetupNFEBs( int nFEBs );
-		std::vector<FEB*>* GetFEBVector();
-		FEB* GetFEBVector( int index /* should always equal FEB address */ );
-
-		
 };
 #endif
