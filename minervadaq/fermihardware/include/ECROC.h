@@ -66,9 +66,11 @@ class ECROC : public VMECommunicator {
 				unsigned short testPulseDelayValue,
 				unsigned short testPulseDelayEnabled ); 
 
+    void FastCommandOpenGate();
+
     void ClearAndResetStatusRegisters();
-    void ClearAndResetStatusRegisters( unsigned int channelNumber );
-    void ClearAndResetStatusRegisters( EChannels* channel );
+    void EnableSequencerReadout();
+    void DisableSequencerReadout();
 
 };
 
