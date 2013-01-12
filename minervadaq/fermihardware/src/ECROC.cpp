@@ -132,30 +132,39 @@ void ECROC::InitializeRegisters( crocClockModes clockMode,
 }
 
 //----------------------------------------
+void ECROC::FastCommandOpenGate()
+{
+  unsigned char command[] = {0xB1};
+  int error = WriteCycle(1, command, fastCommandAddress, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Failure writing to CROC FastCommand Register!");
+}
+
+//----------------------------------------
 void ECROC::ClearAndResetStatusRegisters()
 {
 	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
 			p!=ECROCChannels.end();
 			p++) 
-		ClearAndResetStatusRegisters( *p );
+		(*p)->ClearAndResetStatusRegister();
 }
 
 //----------------------------------------
-void ECROC::ClearAndResetStatusRegisters( unsigned int channelNumber )
+void ECROC::EnableSequencerReadout()
 {
 	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
 			p!=ECROCChannels.end();
 			p++) 
-    if( (*p)->GetChannelNumber() == channelNumber )
-      ClearAndResetStatusRegisters( *p );
+		(*p)->EnableSequencerReadout();
 }
 
 //----------------------------------------
-void ECROC::ClearAndResetStatusRegisters( EChannels* channel )
+void ECROC::DisableSequencerReadout()
 {
-  channel->ClearAndResetStatusRegister();
+	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
+			p!=ECROCChannels.end();
+			p++) 
+		(*p)->DisableSequencerReadout();
 }
-
 
 
 

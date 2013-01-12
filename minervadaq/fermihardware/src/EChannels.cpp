@@ -165,7 +165,62 @@ void EChannels::SetupNFEBs( int nFEBs )
       exit(EXIT_CONFIG_ERROR);
     }
   }
+  this->UpdateConfigurationForVal( (unsigned short)(0xF & nFEBs), (unsigned short)0xFFF0 );
 }
+
+//----------------------------------------
+void EChannels::EnableSequencerReadout()
+{
+  this->UpdateConfigurationForVal( (unsigned short)(0x8000), (unsigned short)(0x7FFF) );
+}
+
+//----------------------------------------
+void EChannels::DisableSequencerReadout()
+{
+  this->UpdateConfigurationForVal( (unsigned short)(0x0000), (unsigned short)(0x7FFF) );
+}
+
+//----------------------------------------
+unsigned short EChannels::GetChannelConfiguration()
+{
+  unsigned short configuration = 0;
+  unsigned char receivedMessage[] = {0x0,0x0};
+
+  EChannelLog.debugStream() << "Read ReceiveMemoryPointer Address = 0x" << std::hex << configurationAddress;
+  int error = ReadCycle( receivedMessage, configurationAddress, addressModifier, dataWidthReg); 
+  if( error ) exitIfError( error, "Failure reading the Channel Configuration!"); 
+  configuration = receivedMessage[1]<<0x08 | receivedMessage[0];
+  EChannelLog.debugStream() << "Channel " << channelNumber << " Configuration = 0x" 
+    << std::setfill('0') << std::setw( 4 ) << std::hex << configuration;
+
+  return configuration;
+}
+
+//----------------------------------------
+void EChannels::UpdateConfigurationForVal( unsigned short val, unsigned short mask )
+{
+  // maintain state - we only want to update the val
+  unsigned short configuration = this->GetChannelConfiguration();  
+  configuration &= mask; 
+  configuration |= val; 
+  unsigned char config[] = {0x0,0x0};
+  config[0] = configuration & 0xFF;
+  config[1] = (configuration & 0xFF00)>>8;
+  this->SetChannelConfiguration( config );
+  unsigned short configurationCheck = this->GetChannelConfiguration();
+  if( configuration != configurationCheck ) exit(EXIT_CONFIG_ERROR);
+}
+
+//----------------------------------------
+void EChannels::SetChannelConfiguration( unsigned char* message )
+{
+  // message length should always be two or there could be problems!
+  EChannelLog.debugStream() << "Channel " << channelNumber << " Target Configuration: 0x" 
+    << std::setfill('0') << std::setw( 2 ) << std::hex << (int)message[1] << (int)message[0];
+  int error = WriteCycle( 2, message, configurationAddress, addressModifier, dataWidthReg); 
+  if( error ) exitIfError( error, "Failure writing to Channel Configuration Register!"); 
+}
+
 
 //----------------------------------------
 std::vector<FEB*>* EChannels::GetFEBVector() 
@@ -213,10 +268,6 @@ void EChannels::ClearAndResetStatusRegister()
   EChannelLog.debugStream() << "Command Address        = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << commandAddress;
-  EChannelLog.debugStream() << "Address Modifier       = " 
-    << (CVAddressModifier)addressModifier;
-  EChannelLog.debugStream() << "Data Width (Registers) = " << dataWidthReg;
-
   int error = WriteCycle( 2,  RegisterWords::channelReset,  commandAddress, addressModifier, dataWidthReg ); 
   if( error ) exitIfError( error, "Failure clearing the status!");
 }
@@ -288,7 +339,7 @@ unsigned short EChannels::ReadDPMPointer()
   unsigned short receiveMemoryPointer = 0;
   unsigned char pointer[] = {0x0,0x0};
 
-  EChannelLog.debugStream() << "Read ReceiveMemoryPointer Address = 0x" << std::hex << address;
+  EChannelLog.debugStream() << "Read ReceiveMemoryPointer Address = 0x" << std::hex << receiveMemoryPointerAddress;
   int error = ReadCycle( pointer, receiveMemoryPointerAddress, addressModifier, dataWidthReg); 
   if( error ) exitIfError( error, "Failure reading the Receive Memory Pointer!"); 
   receiveMemoryPointer = pointer[1]<<0x08 | pointer[0];
@@ -369,8 +420,5 @@ unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( FEB *feb )
 
   return dataLength;
 }
-
-
-
 
 #endif

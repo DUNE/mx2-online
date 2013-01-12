@@ -49,12 +49,12 @@ class EChannels : public VMECommunicator {
 		unsigned int txRxStatusAddress;
 		unsigned int receiveMemoryPointerAddress;
 
-		bool use_sequencer_mode;
-
-		std::vector<FEB*> FEBsVector;           /*!< need to be able to direct access an FEB by index (address/number) */
+		std::vector<FEB*> FEBsVector;     
 
     bool isAvailable( FEB* feb );
     void WriteMessageToMemory( unsigned char* message, int messageLength );
+    void UpdateConfigurationForVal( unsigned short val, unsigned short mask );
+    void SetChannelConfiguration( unsigned char* message );
 
 	public:
 		EChannels( unsigned int baseVMEAddress, unsigned int channelNumber, log4cpp::Appender* appender, Controller* controller );
@@ -67,7 +67,6 @@ class EChannels : public VMECommunicator {
     void SendMessage();
     void WaitForMessageReceived();
     unsigned short ReadDPMPointer();
-    /* void ReadMemory( unsigned short dataLength, unsigned char* dataBuffer ); */ 
     unsigned char* ReadMemory( unsigned short dataLength ); 
 
     // write the frames - load them to memory (don't send messages)
@@ -97,9 +96,14 @@ class EChannels : public VMECommunicator {
     int DecodeStatusMessage();
     int CheckHeaderErrors(int dataLength);
 
+    void EnableSequencerReadout();
+    void DisableSequencerReadout();
+
     void SetupNFEBs( int nFEBs );
     std::vector<FEB*>* GetFEBVector();
-    FEB* GetFEBVector( int index /* should always equal FEB address */ );
+    FEB* GetFEBVector( int index /* should always equal (FEB address - 1) */ );
+
+    unsigned short GetChannelConfiguration();
 
 
 };
