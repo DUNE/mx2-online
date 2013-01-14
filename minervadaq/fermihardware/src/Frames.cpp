@@ -109,11 +109,8 @@ bool Frames::CheckForErrors()
   /*! \fn bool Frames::CheckForErrors()
    * Check incoming frame header data for errors.
    */
-  bool errors[10], error;
-  error = false; //initialize error 
-  for (int i=0;i<10;i++) {
-    errors[i] = false; //initialize error array
-  }
+  bool errors[10] = {false};
+  bool error = false; //initialize error 
 
   ResponseWords word; //which word of the message do we check
   ResponseFlags flag; //what status bits are we checking
