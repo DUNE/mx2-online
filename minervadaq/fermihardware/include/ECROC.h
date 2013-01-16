@@ -71,7 +71,8 @@ class ECROC : public VMECommunicator {
     void ClearAndResetStatusRegisters();
     void EnableSequencerReadout();
     void DisableSequencerReadout();
-
+    void SendSoftwareRDFE(); // manually start sequencer readout
+    void WaitForSequencerReadoutCompletion();
 };
 
 #endif

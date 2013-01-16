@@ -65,7 +65,9 @@ class EChannels : public VMECommunicator {
     unsigned short ReadTxRxStatusRegister();
 
     void SendMessage();
-    void WaitForMessageReceived();
+    unsigned short ReadEventCounter();
+    unsigned short WaitForSequencerReadoutCompletion();
+    unsigned short WaitForMessageReceived();
     unsigned short ReadDPMPointer();
     unsigned char* ReadMemory( unsigned short dataLength ); 
 

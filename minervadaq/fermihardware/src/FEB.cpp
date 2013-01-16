@@ -28,13 +28,13 @@ FEB::FEB( febAddresses a, log4cpp::Appender* appender ) : Frames(appender)
   maxHits      = 8;   // Maximum number of hits
   NRegisters   = 54;  // # of one byte registers in the FPGA Programming Registers frame
   boardNumber  = a;      
-  febNumber[0] = (unsigned char) a; // put the FEB number into it's character (for Frames base class).
+  febNumber[0] = (unsigned char) a; 
   febAppender  = appender; 
   if (febAppender == 0 ) {
     std::cout << "FEB Log Appender is NULL!" << std::endl;
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
-  FEBLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
+  FEBLog.setPriority(log4cpp::Priority::NOTICE);  
 
   // Make the header for this frame; frames default to read. 
   Devices dev = FPGA;     //the device type for the header

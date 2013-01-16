@@ -34,7 +34,7 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number, log4cpp::App
     std::cout << "EChannel Log Appender is NULL!" << std::endl;
     exit(EXIT_CROC_UNSPECIFIED_ERROR);
   }
-  EChannelLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
+  EChannelLog.setPriority(log4cpp::Priority::NOTICE);  
 
   receiveMemoryAddress             = channelDirectAddress + (unsigned int)ECROCReceiveMemory;
   sendMemoryAddress                = channelDirectAddress + (unsigned int)ECROCSendMemory;
@@ -314,7 +314,7 @@ void EChannels::SendMessage()
 }
 
 //----------------------------------------
-void EChannels::WaitForMessageReceived()
+unsigned short EChannels::WaitForMessageReceived()
 {
   unsigned short status = 0;
   do {
@@ -328,9 +328,21 @@ void EChannels::WaitForMessageReceived()
       !(status & 0x0004) &&  // crc error
       !(status & 0x0002)     // header error
       );
-  // TODO decodeStatus(status); // maybe use this in the while also?
+  // TODO decodeStatus(status); // maybe use this in the while instead?
+  // TODO if error(status) exit(code); 
   EChannelLog.debugStream() << "Message was received with status = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << status;
+  return status;
+}
+
+//----------------------------------------
+unsigned short EChannels::WaitForSequencerReadoutCompletion()
+{
+  unsigned short status = 0;
+  do {
+    status = this->ReadFrameStatusRegister();
+  } while ( 0 == (status & 0x0400) );  // TODO: MAGIC NUMBERS MUST DIE
+  return status;
 }
 
 //----------------------------------------
@@ -340,12 +352,27 @@ unsigned short EChannels::ReadDPMPointer()
   unsigned char pointer[] = {0x0,0x0};
 
   EChannelLog.debugStream() << "Read ReceiveMemoryPointer Address = 0x" << std::hex << receiveMemoryPointerAddress;
-  int error = ReadCycle( pointer, receiveMemoryPointerAddress, addressModifier, dataWidthReg); 
+  int error = ReadCycle( pointer, receiveMemoryPointerAddress, addressModifier, dataWidthReg ); 
   if( error ) exitIfError( error, "Failure reading the Receive Memory Pointer!"); 
   receiveMemoryPointer = pointer[1]<<0x08 | pointer[0];
   EChannelLog.debugStream() << "Pointer Length = " << receiveMemoryPointer;
 
   return receiveMemoryPointer;
+}
+
+//----------------------------------------
+unsigned short EChannels::ReadEventCounter()
+{
+  unsigned short eventCounter = 0;
+  unsigned char counter[] = {0x0,0x0};
+
+  EChannelLog.debugStream() << "Read EventCounter Address = 0x" << std::hex << eventCounterAddress;
+  int error = ReadCycle( counter, eventCounterAddress, addressModifier, dataWidthReg ); 
+  if( error ) exitIfError( error, "Failure reading the Event Counter!"); 
+  eventCounter = counter[1]<<0x08 | counter[0];
+  EChannelLog.debugStream() << "Event Counter = " << eventCounter;
+
+  return eventCounter;
 }
 
 //----------------------------------------
