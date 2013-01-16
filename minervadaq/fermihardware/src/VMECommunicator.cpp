@@ -25,6 +25,11 @@ VMECommunicator::VMECommunicator( unsigned int address, log4cpp::Appender* appen
 	this->dataWidthSwappedReg = cvD16_swapped;
 }
 
+VMECommunicator::~VMECommunicator()
+{
+  this->controller = NULL;
+}
+
 Controller* VMECommunicator::GetController()
 {
   return this->controller;
