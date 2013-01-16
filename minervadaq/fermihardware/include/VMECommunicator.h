@@ -39,7 +39,7 @@ class VMECommunicator {
   public:
 
     VMECommunicator( unsigned int address, log4cpp::Appender* appender, Controller* controller );
-    ~VMECommunicator() { }; 
+    ~VMECommunicator(); 
 
     Controller* GetController();
 
