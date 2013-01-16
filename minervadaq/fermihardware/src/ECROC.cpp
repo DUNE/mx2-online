@@ -166,6 +166,21 @@ void ECROC::DisableSequencerReadout()
 		(*p)->DisableSequencerReadout();
 }
 
+//----------------------------------------
+void ECROC::SendSoftwareRDFE()
+{
+  unsigned char command[] = {0x1F};
+  int error = WriteCycle(1, command, rdfePulseCommandAddress, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Failure writing to CROC Software RDFE Register!");
+}
 
+//----------------------------------------
+void ECROC::WaitForSequencerReadoutCompletion()
+{
+	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
+			p!=ECROCChannels.end();
+			p++) 
+		(*p)->WaitForSequencerReadoutCompletion();
+}
 
 #endif
