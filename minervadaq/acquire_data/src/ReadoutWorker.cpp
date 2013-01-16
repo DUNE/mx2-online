@@ -12,8 +12,8 @@
 
 #include "ReadoutWorker.h"
 #include "exit_codes.h"
-#include <sys/time.h>
-#include <signal.h>   // for sig_atomic_t
+//#include <sys/time.h>
+//#include <signal.h>   // for sig_atomic_t
 
 
 
