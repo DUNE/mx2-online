@@ -1,3 +1,6 @@
+#ifndef EventBuilder_h
+#define EventBuilder_h
+
 //we're gonna need some threads to make this even remotely efficient...
 #include <string>
 #include <sstream>
@@ -85,3 +88,6 @@ sig_atomic_t quit_now;          /*!< Used by the SIGTERM/SIGINT signal handler t
 void quitsignal_handler(int signum);   /*!< The signal handler for SIGTERM/SIGINT */
 
 MinervaEvent *event;
+
+
+#endif

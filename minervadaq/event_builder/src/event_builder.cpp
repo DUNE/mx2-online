@@ -1,3 +1,6 @@
+#ifndef EventBuilder_cxx
+#define EventBuilder_cxx
+
 #include "event_builder.h"
 #include "exit_codes.h"
 //#include "event_builder_templates.h"
@@ -831,3 +834,5 @@ void quitsignal_handler(int signum)
     signal (signum, quitsignal_handler);
   }
 }
+
+#endif
