@@ -8,9 +8,8 @@
 
 #include "ReadoutTypes.h"
 
-/* Comment these out for now, problems building with event_builder/event_builder.h due to globals vars in that header */
-/* #include "MinervaEvent.h" */
-/* #include "event_builder.h" */
+#include "MinervaEvent.h"
+#include "event_builder.h"
 
 #include <fstream>
 #include <string>
