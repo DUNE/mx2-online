@@ -38,12 +38,12 @@ typedef unsigned long long_m;
  * \brief The register values for different timing modes 
  *
  */
-typedef enum crimTimingModes { //cast this to unsigned short
+typedef enum { //cast this to unsigned short
   DAQ          = 0x1000,
   crimExternal = 0x2000,
   crimInternal = 0x4000,
   MTM          = 0x8000
-};
+} crimTimingModes, CRIMTimingModes;
 
 
 /*! \enum crimTimingFrequencies
@@ -51,7 +51,7 @@ typedef enum crimTimingModes { //cast this to unsigned short
  * \brief The register values for different frequencies. 
  *
  */
-typedef enum crimTimingFrequencies { //cast this to unsigned short
+typedef enum { //cast this to unsigned short
   // For internal timing mode - only one frequency bit may be set at a time!
   ZeroFreq = 0x0000, // Really "no" frequency - correct mode for OneShot, MTM running.
   F0       = 0x0001, // fastest, too fast for our FEB's
@@ -66,8 +66,7 @@ typedef enum crimTimingFrequencies { //cast this to unsigned short
   F9       = 0x0200,
   F10      = 0x0400,
   F11      = 0x0800 // slowest
-};
-
+} crimTimingFrequencies, CRIMTimingFrequencies;
 
 /*! \enum crimRegisters
  *
@@ -103,6 +102,35 @@ typedef enum crimRegisters { //cast this to unsigned int
   crimInterruptConfig        = 0xF040,
   crimInterruptVectors       = 0xF800  // 16 bytes
 };
+typedef enum CRIMRegisters { //cast this to unsigned int
+  CRIMMemory                 = 0x0000,
+  CRIMInput                  = 0x2000,
+  CRIMResetFIFO              = 0x2008,
+  CRIMSendMessage            = 0x2010,
+  CRIMStatus                 = 0x2020,
+  CRIMClearStatus            = 0x2030,
+  CRIMSendSynch              = 0x2040,
+  CRIMDPMPointer             = 0x2050,
+  CRIMDecodedCommand         = 0x2060,
+  CRIMControl                = 0x2070,
+  CRIMTimingSetup            = 0xC010,
+  CRIMSGATEWidth             = 0xC020,
+  CRIMTCALBDelay             = 0xC030,
+  CRIMSoftwareTrigger        = 0xC040,
+  CRIMSoftwareTCALB          = 0xC050,
+  CRIMSoftwareSGATE          = 0xC060,
+  CRIMSequencerControlLatch  = 0xC070, // Register for external trigger modes (cosmic - v5 firmware only) 
+  CRIMSoftwareCNRST          = 0xC080,
+  CRIMTimingOverlapViolation = 0xC090, // Readonly check for timing signal overlaps (obsolete)
+  CRIMTestRegister           = 0xC0A0, // CG, Synch Test facility?
+  CRIMGateTimeWordLow        = 0xC0B0, // MINOS SGATE least significant bits
+  CRIMGateTimeWordHigh       = 0xC0C0, // MINOS SGATE most significant bits (total 28 meaningful bits)
+  CRIMInterruptMask          = 0xF000,
+  CRIMInterruptStatus        = 0xF010,
+  CRIMClearInterrupts        = 0xF020,
+  CRIMInterruptConfig        = 0xF040,
+  CRIMInterruptVectors       = 0xF800  // 16 bytes
+};
 
 
 /*! \enum crimInterrupts
@@ -110,13 +138,13 @@ typedef enum crimRegisters { //cast this to unsigned int
  * \brief The interrupt bit masks   
  *
  */
-typedef enum crimInterrupts { //typecast to unsigned char
+typedef enum  { //typecast to unsigned char
   Trigger   = 0x01,
   SGATERise = 0x02,
   SGATEFall = 0x04,
   CNRST     = 0x08,
   TCALB     = 0x10
-};
+} crimInterrupts, CRIMInterrupts;
 
 
 //---------------
