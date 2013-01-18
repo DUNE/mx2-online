@@ -73,7 +73,7 @@ unsigned int EChannels::GetDirectAddress()
   return channelDirectAddress;
 }
 
-//----------------------------------------
+//---------------------------------------- // TODO : Get rid of all these stupid getters we'll never use.
 unsigned int EChannels::GetReceiveMemoryAddress()
 {
   return receiveMemoryAddress;
