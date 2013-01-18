@@ -1,3 +1,5 @@
+#ifndef VMECommunicator_h
+#define VMECommunicator_h
 /*! \file VMECommunicator.h 
  *
  * \brief The header file for the VMECommunicator class.
@@ -55,3 +57,5 @@ class VMECommunicator {
     int WriteFIFOBLT(int messageLength, unsigned char *send_message,  unsigned int address, 
         CVAddressModifier AM, CVDataWidth DW); /*!<Member function for block-transfer writes to the FIFO */
 };
+
+#endif

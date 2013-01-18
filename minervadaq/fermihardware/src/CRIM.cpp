@@ -1,8 +1,10 @@
 #ifndef CRIM_cpp
 #define CRIM_cpp
 
-#include "CRIM.h"
 #include <iostream>
+#include <iomanip>
+#include "CRIM.h"
+#include "exit_codes.h"
 
 /*********************************************************************************
 * Class for creating Chain Read-Out Controller Interfact Module objects for 
@@ -10,8 +12,9 @@
 *
 * Elaine Schulte, Rutgers University
 * Gabriel Perdue, The University of Rochester
-*
 **********************************************************************************/
+
+log4cpp::Category& CRIMLog = log4cpp::Category::getInstance(std::string("CRIM"));
 
 /*! mask constants for the CRIM */
 unsigned short const CRIM::TimingSetupRegisterModeMask      = 0xF000;
@@ -48,137 +51,147 @@ const unsigned short CRIM::softSGATEstop  = 0x0402;
 const unsigned short CRIM::softCNRST      = 0x0202;
 const unsigned short CRIM::softCNRSTseq   = 0x0808;
 
-
-CRIM::CRIM(unsigned int ca, int CRIMid, CVAddressModifier a, CVDataWidth w) 
+//----------------------------------------
+CRIM::CRIM( unsigned int address, bool isCrateMasterCRIM, log4cpp::Appender* appender, Controller* controller ) :
+  VMECommunicator( address, appender, controller )
 {
-/*! \fn
- * constructor takes the following arguments:
- * \param a:  The CRIM address 
- * \param b: The VME address modifier
- * \param c:  The VME data width
- */
-	id              = CRIMid; // internal tracking value
-	CRIMAddress     = ca; // the CRIM address
-	addressModifier = a;  // the VME Address Modifier
-	dataWidth       = w;  // the VME Data Witdth
-	irqLine = SGATEFall;  // default, but configurable
+	this->addressModifier = cvA24_U_DATA; 
+
 	// NOTE: The IRQ level must be the same as the configuration register level.  
 	// The BIT MASKS for these levels, however are not the same!
+	irqLine = SGATEFall;           // default, but configurable
 	irqLevel             = cvIRQ5; // interrupt level 5 for the CAEN interrupt handler
-	interruptConfigValue = 5;    // the interrupt level stored in the interrupt config register
-	resetInterrupts      = 0x81; // the value to clear all pending interrupts
+	interruptConfigValue = 5;      // the interrupt level stored in the interrupt config register
+	resetInterrupts      = 0x81;   // the value to clear all pending interrupts
 
-	CRIMRegisters statusRegister; // a temp for use in setting the register addresses
+	CRIMAppender = appender;
+  if (CRIMAppender == 0 ) {
+    std::cout << "CRIM Log Appender is NULL!" << std::endl;
+    exit(EXIT_CRIM_UNSPECIFIED_ERROR);
+  }
 
-	// interrupt registers
-	statusRegister          = CRIMInterruptStatus;
-	interruptStatusRegister = CRIMAddress + (unsigned int)statusRegister;
-	//
-	statusRegister          = CRIMInterruptConfig;
-	interruptConfig         = CRIMAddress + (unsigned int)statusRegister;
-	//
-	statusRegister          = CRIMClearInterrupts;
-	interruptsClear         = CRIMAddress + (unsigned int)statusRegister;
-	//
-	statusRegister          = CRIMInterruptMask;
-	interruptAddress        = CRIMAddress + (unsigned int)statusRegister;
+	interruptStatusRegister = this->address + (unsigned int)CRIMInterruptStatus;
+	interruptConfig         = this->address + (unsigned int)CRIMInterruptConfig;
+	interruptsClear         = this->address + (unsigned int)CRIMClearInterrupts;
+	interruptAddress        = this->address + (unsigned int)CRIMInterruptMask;
+	timingRegister          = this->address + (unsigned int)CRIMTimingSetup;
+	SGATEWidthRegister      = this->address + (unsigned int)CRIMSGATEWidth;
+	TCALBDelayRegister      = this->address + (unsigned int)CRIMTCALBDelay;
+	softwareTriggerRegister = this->address + (unsigned int)CRIMSoftwareTrigger;
+	softwareTCALBRegister   = this->address + (unsigned int)CRIMSoftwareTCALB;
+	softwareSGATERegister   = this->address + (unsigned int)CRIMSoftwareSGATE;
+	softwareCNRSTRegister   = this->address + (unsigned int)CRIMSoftwareCNRST;
+	controlRegisterAddress  = this->address + (unsigned int)CRIMControl;
+	statusRegisterAddress   = this->address + (unsigned int)CRIMStatus;
+	clearStatusRegister     = this->address + (unsigned int)CRIMClearStatus;
+	gateTimeWordLowAddress  = this->address + (unsigned int)CRIMGateTimeWordLow;
+	gateTimeWordHighAddress = this->address + (unsigned int)CRIMGateTimeWordHigh;
+	sequencerResetRegister  = this->address + (unsigned int)CRIMSequencerControlLatch;
 
-	// timing registers
-	statusRegister      = CRIMTimingSetup;
-	timingRegister      = CRIMAddress + (unsigned int)statusRegister;
-	//
-	statusRegister      = CRIMSGATEWidth;
-	SGATEWidthRegister  = CRIMAddress + (unsigned int)statusRegister;
-	//
-	statusRegister      = CRIMTCALBDelay;
-	TCALBDelayRegister  = CRIMAddress + (unsigned int)statusRegister;
-	//
-	statusRegister          = CRIMSoftwareTrigger;
-	softwareTriggerRegister = CRIMAddress + (unsigned int)statusRegister;
-	//
-	statusRegister          = CRIMSoftwareTCALB;
-	softwareTCALBRegister   = CRIMAddress + (unsigned int)statusRegister;
-	//
-	statusRegister          = CRIMSoftwareSGATE;
-	softwareSGATERegister   = CRIMAddress + (unsigned int)statusRegister;
-	//
-	statusRegister          = CRIMSoftwareCNRST;
-	softwareCNRSTRegister   = CRIMAddress + (unsigned int)statusRegister;
-
-	// control registers
-	statusRegister         = CRIMControl;
-	controlRegisterAddress = CRIMAddress + (unsigned int)statusRegister;
-	//
-	statusRegister         = CRIMStatus;
-	statusRegisterAddress  = CRIMAddress + (unsigned int)statusRegister;
-
-	//
-	statusRegister         = CRIMClearStatus;
-	clearStatusRegister    = CRIMAddress + (unsigned int)statusRegister;
-
-	// External data registers
-	statusRegister          = CRIMGateTimeWordLow;
-	gateTimeWordLowAddress  = CRIMAddress + (unsigned int)statusRegister;
-	statusRegister          = CRIMGateTimeWordHigh;
-	gateTimeWordHighAddress = CRIMAddress + (unsigned int)statusRegister;
-
-	// Cosmic mode control (only meaningful for v5 CRIM firmware)
-	statusRegister		= CRIMSequencerControlLatch;
-	sequencerResetRegister  = CRIMAddress + (unsigned int)statusRegister;
-
-	//register value for control register (DAQ Mode control)
-	controlRegister = ControlRegisterCRCMask | ControlRegisterSendMask 
-		& ~ControlRegisterRetransmitMask; //set crc & send to true and retransmit to false
+  // register value for control register (DAQ Mode control)
+  // set crc & send to true and retransmit to false	
+  controlRegister = ControlRegisterCRCMask | ControlRegisterSendMask 
+    & ~ControlRegisterRetransmitMask; 
 }
 
+//----------------------------------------
+unsigned int CRIM::GetAddress() 
+{
+  return this->address;
+}
 
+//----------------------------------------
 void CRIM::SetCRCEnable(bool a) 
 {
-/*! \fn
- *
- * this filps the crc enable bit(s) on the control register value
- *
- *  \param a status bit to decide how to set the bit
- */
-	if (a) {
-		controlRegister |= ControlRegisterCRCMask;
-	} else {
-		controlRegister &= ~ControlRegisterCRCMask;
-	}
+  /*! \fn
+   *
+   * this filps the crc enable bit(s) on the control register value
+   *
+   *  \param a status bit to decide how to set the bit
+   */
+  if (a) {
+    controlRegister |= ControlRegisterCRCMask;
+  } else {
+    controlRegister &= ~ControlRegisterCRCMask;
+  }
 }
 
-
+//----------------------------------------
 void CRIM::SetSendEnable(bool a) 
 {
-/*! \fn
- *
- * this filps the send enable bit(s) on the control register value
- *
- *  \param a status bit to decide how to set the bit
- */
-	if (a) {
-		controlRegister |= ControlRegisterSendMask;
-	} else {
-		controlRegister &= ~ControlRegisterSendMask;
-	}
+  /*! \fn
+   *
+   * this filps the send enable bit(s) on the control register value
+   *
+   *  \param a status bit to decide how to set the bit
+   */
+  if (a) {
+    controlRegister |= ControlRegisterSendMask;
+  } else {
+    controlRegister &= ~ControlRegisterSendMask;
+  }
 }
 
-
+//----------------------------------------
 void CRIM::SetReTransmitEnable(bool a) 
 {
-/*! \fn
- *
- * this filps the transmit enable bit(s) on the control register value
- *
- *  \param a status bit to decide how to set th bit
- */
-	if (a) {
-		controlRegister |= ControlRegisterRetransmitMask;
-	} else {
-		controlRegister &= ~ControlRegisterRetransmitMask;
-	}
+  /*! \fn
+   *
+   * this filps the transmit enable bit(s) on the control register value
+   *
+   *  \param a status bit to decide how to set th bit
+   */
+  if (a) {
+    controlRegister |= ControlRegisterRetransmitMask;
+  } else {
+    controlRegister &= ~ControlRegisterRetransmitMask;
+  }
 }
 
+//----------------------------------------
+void CRIM::SetupTiming( CRIMTimingModes a, CRIMTimingFrequencies b ) 
+{
+  timingSetup = ( a & TimingSetupRegisterModeMask ) | 
+    (b & TimingSetupRegisterFrequencyMask);
+
+  CRIMLog.debugStream() << "  CRIM timingSetup = 0x" 
+    << std::setfill('0') << std::setw( 4 ) << std::hex << timingSetup;
+  CRIMLog.debugStream() << "        timingMode = 0x" 
+    << std::setfill('0') << std::setw( 4 ) << std::hex << a;
+  CRIMLog.debugStream() << "         frequency = 0x" 
+    << std::setfill('0') << std::setw( 4 ) << std::hex << b;
+} 
+
+//----------------------------------------
+void CRIM::SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth ) 
+{
+  gateWidthSetup = ((tcalbEnable & 0x1)<<15) | (gateWidth & GateWidthRegisterMask);
+}  
+
+//----------------------------------------
+void CRIM::SetupGateWidth( unsigned short tcalbEnable, 
+    unsigned short gateWidth, unsigned short sequencerEnable ) 
+{
+  gateWidthSetup = ((tcalbEnable & 0x1)<<15) | 
+    ((sequencerEnable & 0x1)<<10)            | 
+    (gateWidth & GateWidthRegisterMask);
+}
+
+//----------------------------------------
+void CRIM::SetupTCALBPulse( unsigned short pulseDelay ) 
+{
+  TCALBDelaySetup = pulseDelay & TCALBDelayRegisterMask;
+} 
+
+//----------------------------------------
+unsigned short CRIM::GetStatus()
+{
+  unsigned char dataBuffer[] = {0x0,0x0}; 
+  int error = ReadCycle( dataBuffer, statusRegisterAddress, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Failure reading the CRIM Status Register!");
+  unsigned short status = dataBuffer[1]<<8 | dataBuffer[0];
+  return status;
+}
 
 
 #endif

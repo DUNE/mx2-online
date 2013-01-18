@@ -85,7 +85,7 @@ unsigned short ECROC::GetTimingRegisterMessage()
 	return timingRegisterMessage;
 }
 
-//----------------------------------------
+//----------------------------------------  // TODO: write to the hardware!
 void ECROC::SetTimingRegisterMessage( crocClockModes clockMode, 
 	unsigned short testPulseDelayEnabled, 
 	unsigned short testPulseDelayValue )
@@ -97,7 +97,7 @@ void ECROC::SetTimingRegisterMessage( crocClockModes clockMode,
 	ECROCLog.debugStream() << "    Timing Register = " << timingRegisterMessage; // TODO: hex!
 }
 
-//----------------------------------------
+//---------------------------------------- // TODO: write to the hardware!
 void ECROC::SetResetAndTestPulseRegisterMessage( unsigned short resetEnable, unsigned short testPulseEnable )
 {
 	resetAndTestPulseMaskRegisterMessage  = (resetEnable & 0x1)<<8;  //the reset enable bit is 8
@@ -116,13 +116,13 @@ unsigned short ECROC::GetFastCommandRegisterMessage()
 	return fastCommandRegisterMessage;
 }
 
-//----------------------------------------
+//---------------------------------------- // TODO: write to the hardware!
 void ECROC::SetFastCommandRegisterMessage( unsigned short value ) 
 {
 	fastCommandRegisterMessage = value & 0xFF;
 }
 
-//----------------------------------------
+//---------------------------------------- // TODO: write to the hardware!
 void ECROC::InitializeRegisters( crocClockModes clockMode, 
 		unsigned short testPulseDelayValue,
 		unsigned short testPulseDelayEnabled ) 

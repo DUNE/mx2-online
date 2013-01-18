@@ -10,7 +10,6 @@
  * Gabriel Perdue, The University of Rochester
  **********************************************************************************/
 
-// Further category hierarchy.
 log4cpp::Category& ctrlLog = log4cpp::Category::getInstance(std::string("ctrl"));
 
 Controller::Controller(int addr, int id, log4cpp::Appender* appender) {

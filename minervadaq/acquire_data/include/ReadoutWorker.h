@@ -3,7 +3,7 @@
 #include "MinervaDAQtypes.h"
 #include "Controller.h" 
 #include "ECROC.h"
-#include "crim.h"
+#include "CRIM.h"
 #include "log4cppHeaders.h"
 
 #include "ReadoutTypes.h"
@@ -33,53 +33,44 @@ class ReadoutWorker {
 	private: 
 		Controller *daqController;
     std::vector<ECROC*> ecrocs;
-    std::vector<crim*>  crims;
+    std::vector<CRIM*>  crims;
 
 		log4cpp::Appender* rwAppender;
 
+    int controllerID;  // == crate ID/Address
 		bool vmeModuleInit;    
+
+    void InitializeCRIM( unsigned int address, bool isMaster, log4cpp::Appender* appender );
 
 	public:
 
-		ReadoutWorker( log4cpp::Appender* appender, log4cpp::Priority::Value priority, bool vmeInit=false) {
-			rwAppender = appender;
-			readoutLogger.setPriority(priority);
-      vmeModuleInit = vmeInit;
-		};
-		~ReadoutWorker() {
-      for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
-        delete (*p);
-      }
-      ecrocs.clear();
-      for( std::vector<crim*>::iterator p=crims.begin(); p!=crims.end(); ++p ) {
-        delete (*p);
-      }
-      crims.clear();
-			delete daqController; 
-		};
+    ReadoutWorker( int controllerID, log4cpp::Appender* appender, log4cpp::Priority::Value priority, bool vmeInit=false); 
+    ~ReadoutWorker();
 
-		Controller inline *GetController() {return daqController;};
+    void InitializeCrate( RunningModes runningMode );
+
+    Controller inline *GetController() {return daqController;};
     /*
-		void InitializeDaq(int id, RunningModes runningMode);
+       void InitializeDaq(int id, RunningModes runningMode);
 
-		void InitializeCrim(int address, int index, RunningModes runningMode); 
-		void InitializeCroc(int address, int crocNo, int nFEBchain0=11, int nFEBchain1=11, int nFEBchain2=11, int nFEBchain3=11); 
-		int SetupIRQ(int index);
-		int ResetGlobalIRQEnable(int index);
-		int BuildFEBList(int chainID, int crocNo, int nFEBs=11);
-		int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
-		int WaitOnIRQ(sig_atomic_t const & continueFlag);
-		int AcknowledgeIRQ();
-		unsigned int GetMINOSSGATE();
-    */
+       void InitializeCrim(int address, int index, RunningModes runningMode); 
+       void InitializeCroc(int address, int crocNo, int nFEBchain0=11, int nFEBchain1=11, int nFEBchain2=11, int nFEBchain3=11); 
+       int SetupIRQ(int index);
+       int ResetGlobalIRQEnable(int index);
+       int BuildFEBList(int chainID, int crocNo, int nFEBs=11);
+       int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
+       int WaitOnIRQ(sig_atomic_t const & continueFlag);
+       int AcknowledgeIRQ();
+       unsigned int GetMINOSSGATE();
+       */
 
-		/*! Function which fills an event structure for further data handling by the event builder; templated */
+    /*! Function which fills an event structure for further data handling by the event builder; templated */
     /*
-		template <class X> void FillEventStructure(event_handler *evt, int bank, X *frame, 
-			channels *channelTrial);
-		bool ContactEventBuilder(event_handler *evt, int thread, et_att_id attach, et_sys_id sys_id);
-		void FillEventStructure(event_handler *evt, int bank, channels *theChannel);
-    */
+       template <class X> void FillEventStructure(event_handler *evt, int bank, X *frame, 
+       channels *channelTrial);
+       bool ContactEventBuilder(event_handler *evt, int thread, et_att_id attach, et_sys_id sys_id);
+       void FillEventStructure(event_handler *evt, int bank, channels *theChannel);
+       */
 
 };
 

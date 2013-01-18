@@ -9,13 +9,13 @@
 
 /* custom headers go here */
 #include "MinervaDAQtypes.h"
+#include "VMECommunicator.h"
 
 
 /*********************************************************************************
 * Class for creating Chain Read-Out Controller Interfact Module objects for 
 * use with the MINERvA data acquisition system and associated software projects.
 *
-* Elaine Schulte, Rutgers University
 * Gabriel Perdue, The University of Rochester
 **********************************************************************************/
 
@@ -25,28 +25,26 @@
  *
  * This class contains all of the data associated with a CRIM object.  This includes
  * the register addresses and interrupt information .
- *
  */
 
-class CRIM {
+class CRIM : public VMECommunicator {
+
 	private:
-		int id; 
-		unsigned int CRIMAddress;  
-		CVAddressModifier addressModifier; /*!<the address width */
-		CVDataWidth dataWidth; /*!<the data transfer width */
-		CVIRQLevels irqLevel; /*!<the interrupt priority level */
-		CRIMInterrupts irqLine; /*!<the interrupt to be monitored */
-		unsigned short interruptValue; /*!<the bitmask for the interrupt line */
-		unsigned short interruptStatus; /*!<the status of the interrupts */
-		unsigned short resetInterrupts; /*!<the value to be sent to the 
-		clear interrupts register on the CRIM */
+    bool isCrateMasterCRIM;
+
+		log4cpp::Appender* CRIMAppender;
+
+    CVIRQLevels irqLevel;                /*!<the interrupt priority level */
+		CRIMInterrupts irqLine;              /*!<the interrupt to be monitored */
+		unsigned short interruptValue;       /*!<the bitmask for the interrupt line */
+		unsigned short interruptStatus;      /*!<the status of the interrupts */
+		unsigned short resetInterrupts;      /*!<the value to be sent to the clear interrupts register on the CRIM */
 		unsigned short interruptConfigValue; /*!<the configuration value sent to the
 		configuration register (must match the 
 		IRQLevel for the CAEN interrupt handler:
 		i.e. if this value is 5 (the default)
 		the IRQLevel for the CAEN must be IRQ5. */
 
-		/*!register value needed to control the behavior of the CRIM */
 		unsigned short controlRegister; 
 
 		/*! interrupt register addresses
@@ -76,8 +74,6 @@ class CRIM {
 		/*! cosmic mode control registers. */
 		unsigned int sequencerResetRegister;
 	
-		unsigned short CRIMStatusValue;
-
 		/*!  these are the various masks that are used to set up  running conditions */
 		static unsigned short const TimingSetupRegisterModeMask;
 		static unsigned short const TimingSetupRegisterFrequencyMask;
@@ -111,48 +107,19 @@ class CRIM {
 			softSGATEstop, softCNRST, softCNRSTseq;
 
 	public:
-		/*! The default constructor */
-		CRIM() { };
-		/*! The specialized constructor */
-		CRIM(unsigned int, int, CVAddressModifier, CVDataWidth); // constructor
-		/*! The default destructor */
-		~CRIM() { }; //destructor
+    
+		CRIM( unsigned int address, bool isCrateMasterCRIM, log4cpp::Appender* appender, Controller* controller ); 
+		~CRIM() { }; 
 
+		unsigned int GetAddress();
 
-		/*! get & set functions for information about the CRIM */
-		CVAddressModifier inline GetAddressModifier() {return addressModifier;};
-		CVDataWidth inline GetDataWidth() {return dataWidth;};
-		unsigned int inline GetAddress() {return CRIMAddress;}; 
-		int inline GetCRIMID() {return id;};
-		unsigned int inline GetCRIMAddress() {return CRIMAddress;};
+    unsigned short GetStatus();
 
-		// setup the timing register - arguments are the timing mode and frequency
-		void SetupTiming(CRIMTimingModes a, CRIMTimingFrequencies b) {
-			timingSetup = ( a & TimingSetupRegisterModeMask ) | 
-				(b & TimingSetupRegisterFrequencyMask);
-#if DEBUG_CRIM
-			printf("  CRIM timingSetup = 0x%04X\n",timingSetup);
-			printf("       timingMode  = 0x%04X\n",a);
-			printf("       frequency   = 0x%04X\n",b);
-#endif
-		}; 
-		// setup gate width register - arguments are tcalb enable bit and gate width
-		//  tcalb enable - a
-		//  gate width   - b
-		void SetupGateWidth(unsigned short a, unsigned short b) {
-			gateWidthSetup = ((a & 0x1)<<15) | (b & GateWidthRegisterMask);
-		};  
-		// setup gate width register - arguments are tcalb enable bit, gate width, and sequencer control enable bit
-		//  tcalb enable     - a
-		//  gate width       - b
-		//  sequencer enable - c 
-		void SetupGateWidth(unsigned short a, unsigned short b, unsigned short c) {
-			gateWidthSetup = ((a & 0x1)<<15) | ((c & 0x1)<<10) | (b & GateWidthRegisterMask);
-		};  
-		// set pluse delay - argument is the pulse delay
-		void SetupTCALBPulse(unsigned short a) {
-			TCALBDelaySetup = a & TCALBDelayRegisterMask;
-		}; 
+    // TODO : write to physical registers!
+		void SetupTiming( CRIMTimingModes a, CRIMTimingFrequencies b ); 
+		void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth); 
+		void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth, unsigned short sequencerEnable ); 
+		void SetupTCALBPulse( unsigned short pulseDelay );
 
 		// functions which return the timing/trigger info
 		unsigned short GetGateWidthSetup() {return gateWidthSetup;};
@@ -184,73 +151,72 @@ class CRIM {
 
 		void inline SetInterruptMask() {
 			interruptValue = ((unsigned short)irqLine & InterruptMaskRegisterMask);
-		}; //sets the interrupt value bitmask
+		}; 
 
 		void inline SetInterruptStatus(unsigned short a) {
 			interruptStatus = a & InterruptStatusRegisterMask;
-		}; //stores the interrupt status
+		}; 
 
 		void inline SetInterruptConfigValue(unsigned short a) {
 			interruptConfigValue = a;
-		}; //interrupt level - must match the IRQ value!
+		}; 
 		
 		void inline SetInterruptGlobalEnable(bool a) {
 			interruptConfigValue |= ((a << 7) & InterruptConfigGlobalEnableMask);
-		}; //sets the global enable bit
+		}; 
 
 		unsigned short inline GetInterruptMask() {
 			return interruptValue;
-		}; //returns the interrupt bitmask
+		}; 
 		
 		unsigned int inline GetInterruptMaskAddress() {
 			return interruptAddress;
-		}; //return the register address to set the interrupt bitmask
+		}; 
 		
 		unsigned short inline GetInterruptStatus() {
 			return (interruptStatus & InterruptStatusRegisterMask);
-		}; //returns the interrupt status
+		}; 
 
 		unsigned short inline GetInterruptGlobalEnable() {
 			return interruptConfigValue & InterruptConfigGlobalEnableMask;
-		}; //returns the global enable status
+		}; 
 		
 		unsigned short inline GetInterruptConfig() {
 			return interruptConfigValue;
-		}; //returns the value of the interrupt level & enable bit
+		}; 
 		
 		unsigned int inline GetInterruptsConfigAddress() {
 			return interruptConfig;
-		}; //returns the interrupt config address
+		}; 
 
 		unsigned int inline GetInterruptStatusAddress() {
 			return interruptStatusRegister;
-		}; // Return the interrupt status register address. 
+		}; 
 
 		unsigned short inline GetClearInterrupts() {
 			return resetInterrupts;
-		}; //returns the reset interrupt bitmask
+		}; 
 
 		unsigned int inline GetClearInterruptsAddress() {
 			return interruptsClear;
-		}; //returns the clear interrupts register address
+		};
 
 		unsigned int inline GetGateTimeWordLowAddress() { 
 			return gateTimeWordLowAddress;
-		}; // returns the least significant 16 bits of the MINOS GATE time address
+		}; 
                 unsigned int inline GetGateTimeWordHighAddress() {
 			return gateTimeWordHighAddress;
-		}; // returns the most significant 16 bits of the MINOS GATE time address
+		}; 
 
 		unsigned int inline GetSequencerResetRegister() {
 			return sequencerResetRegister;
-		} // returns the sequencer reset register
+		} 
 
 
 		/*! control stuff */
 		void SetCRCEnable(bool a);
 		void SetSendEnable(bool a);
 		void SetReTransmitEnable(bool a);
-		unsigned short inline GetStatus() {return CRIMStatusValue;};
 		unsigned short inline GetControlRegister() {return controlRegisterAddress;};
 		long_m inline GetStatusRegisterAddress() {return statusRegisterAddress;}; 
 		unsigned int inline GetClearRegisterAddress() {return clearStatusRegister;};
