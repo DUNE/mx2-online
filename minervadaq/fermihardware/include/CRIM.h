@@ -9,6 +9,7 @@
 
 /* custom headers go here */
 #include "MinervaDAQtypes.h"
+#include "ReadoutTypes.h"
 #include "VMECommunicator.h"
 
 
@@ -111,8 +112,9 @@ class CRIM : public VMECommunicator {
 		CRIM( unsigned int address, log4cpp::Appender* appender, Controller* controller ); 
 		~CRIM() { }; 
 
-		unsigned int GetAddress();
+    void Initialize( RunningModes runningMode );
 
+		unsigned int GetAddress();
     unsigned short GetStatus();
 
     // TODO : write to physical registers!
