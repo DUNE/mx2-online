@@ -33,6 +33,9 @@ typedef unsigned long long_m;
 /* crim types */
 //---------------
 
+// CRIM has 24-bit addressing. Addrr = 8 bits << 16 
+static const unsigned int CRIMAddressShift = 16;
+
 /*! \enum crimTimingModes
  *
  * \brief The register values for different timing modes 
