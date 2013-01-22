@@ -95,6 +95,14 @@ CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, Controller* contr
 }
 
 //----------------------------------------
+void CRIM::Initialize( RunningModes runningMode )
+{
+  CRIMLog.infoStream() << "Initializing CRIM 0x" << std::hex << this->address 
+    << " for Running Mode " << std::dec << runningMode;
+
+}
+
+//----------------------------------------
 unsigned int CRIM::GetAddress() 
 {
   return this->address;

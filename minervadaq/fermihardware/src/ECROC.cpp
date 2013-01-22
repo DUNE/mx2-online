@@ -31,7 +31,7 @@ ECROC::ECROC(unsigned int address, log4cpp::Appender* appender, Controller* cont
     exit(EXIT_CROC_UNSPECIFIED_ERROR);
   }
 
-	SetupChannels(); 
+	MakeChannels(); 
 
 	InitializeRegisters( crocExternal, (short unsigned int)0x0, (short unsigned int)0x0 );
 }
@@ -53,7 +53,7 @@ unsigned int ECROC::GetAddress()
 }
 
 //----------------------------------------
-void ECROC::SetupChannels() 
+void ECROC::MakeChannels() 
 {
 	for ( unsigned int i=0; i<4; ++i ) { 
 		EChannels *tmp = new EChannels( this->address, i, ECROCAppender, this->GetController() );
@@ -181,6 +181,12 @@ void ECROC::WaitForSequencerReadoutCompletion()
 			p!=ECROCChannels.end();
 			p++) 
 		(*p)->WaitForSequencerReadoutCompletion();
+}
+
+//----------------------------------------
+void ECROC::Initialize()
+{
+  ECROCLog.infoStream() << "Initializing ECROC 0x" << std::hex << this->address;
 }
 
 #endif
