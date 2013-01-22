@@ -33,7 +33,6 @@ class ECROC : public VMECommunicator {
 		unsigned int rdfePulseDelayAddress;
 		unsigned int rdfePulseCommandAddress;
 
-		unsigned short timingRegisterMessage;
 		unsigned short resetAndTestPulseMaskRegisterMessage;
 		unsigned short channelResetRegisterMessage;
 		unsigned short fastCommandRegisterMessage;
@@ -53,22 +52,14 @@ class ECROC : public VMECommunicator {
 		EChannels *GetChannel( unsigned int i ); 
 		std::vector<EChannels*>* GetChannelsVector(); 
 
-		unsigned int GetTimingSetupAddress();
-		void SetTimingRegisterMessage(crocClockModes clockMode, unsigned short testPulseDelayEnabled, unsigned short testPulseDelayValue); 
-		unsigned short GetTimingRegisterMessage(); 
-
+		void SetupTimingRegister(crocClockModes clockMode, unsigned short testPulseDelayEnabled, unsigned short testPulseDelayValue); 
 		void SetResetAndTestPulseRegisterMessage( unsigned short resetEnable, unsigned short testPulseEnable ); 
-
 		void SetFastCommandRegisterMessage(unsigned short value);
-		unsigned int GetFastCommandAddress();
-		unsigned short GetFastCommandRegisterMessage();
-
 		void InitializeRegisters( crocClockModes clockMode, 
 				unsigned short testPulseDelayValue,
 				unsigned short testPulseDelayEnabled ); 
 
     void FastCommandOpenGate();
-
     void ClearAndResetStatusRegisters();
     void EnableSequencerReadout();
     void DisableSequencerReadout();
