@@ -85,29 +85,29 @@ void ECROC::SetupTimingRegister( crocClockModes clockMode,
   unsigned char command[] = { timingRegisterMessage & 0xFF, (timingRegisterMessage & 0xFF00)>>8 }; 
 	ECROCLog.debugStream() << " Timing Register Bytes   = 0x" << std::hex << (int)command[0] << ", 0x" << (int)command[1]; 
   int error = WriteCycle(2, command, timingSetupAddress, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure writing to CROC Software RDFE Register!");
+  if( error ) exitIfError( error, "Failure writing to CROC Timing Register!");
 }
 
-//---------------------------------------- // TODO: write to the hardware!
-void ECROC::SetResetAndTestPulseRegisterMessage( unsigned short resetEnable, unsigned short testPulseEnable )
+//---------------------------------------- 
+void ECROC::SetupResetAndTestPulseRegister( unsigned short resetEnable, unsigned short testPulseEnable )
 {
-	resetAndTestPulseMaskRegisterMessage  = (resetEnable & 0x1)<<8;  //the reset enable bit is 8
-	resetAndTestPulseMaskRegisterMessage |= (testPulseEnable & 0x1); //the test pulse enable bit is 0
+	unsigned short resetAndTestPulseMaskRegisterMessage = (resetEnable & 0x1)<<8;  //the reset enable bit is 8
+	resetAndTestPulseMaskRegisterMessage |= (testPulseEnable & 0x1);               //the test pulse enable bit is 0
+	ECROCLog.debugStream() << " Reset and Test Pulse Register Message = 0x" << std::hex << resetAndTestPulseMaskRegisterMessage; 
+  unsigned char command[] = { resetAndTestPulseMaskRegisterMessage & 0xFF, (resetAndTestPulseMaskRegisterMessage & 0xFF00)>>8 }; 
+	ECROCLog.debugStream() << " Reset and Test Pulse Register Bytes   = 0x" << std::hex << (int)command[0] << ", 0x" << (int)command[1]; 
+  int error = WriteCycle(2, command, resetAndTestPulseMaskAddress, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Failure writing to CROC Reset and Test Pulse Register!");
+
 }
 
-//---------------------------------------- // TODO: write to the hardware!
-void ECROC::SetFastCommandRegisterMessage( unsigned short value ) 
-{
-	fastCommandRegisterMessage = value & 0xFF;
-}
-
-//---------------------------------------- // TODO: write to the hardware!
+//---------------------------------------- 
 void ECROC::InitializeRegisters( crocClockModes clockMode, 
 		unsigned short testPulseDelayValue,
 		unsigned short testPulseDelayEnabled ) 
 {
 	SetupTimingRegister( clockMode, testPulseDelayEnabled, testPulseDelayValue );
-	SetResetAndTestPulseRegisterMessage( 0, 0 );
+	SetupResetAndTestPulseRegister( 0, 0 );
 }
 
 //----------------------------------------
