@@ -21,7 +21,7 @@ ReadoutWorker::ReadoutWorker( int controllerID, log4cpp::Appender* appender, log
   vmeModuleInit      = vmeInit;
   readoutLogger.setPriority(priority);
 
-  Controller *controller = new Controller(0x00, controllerID, appender);
+  controller = new Controller(0x00, controllerID, appender);
   int error = controller->ContactController();
   if ( 0 != error ) {
     readoutLogger.fatalStream() << "Controller contact error: " << error; 
@@ -55,14 +55,14 @@ Controller* ReadoutWorker::GetController()
 void ReadoutWorker::InitializeCrate( RunningModes runningMode )
 {
   readoutLogger.debugStream() << "Initialize Crate " << controllerID << " for Running Mode: " << (RunningModes)runningMode;
-/*
+
   for( std::vector<CRIM*>::iterator p=crims.begin(); p!=crims.end(); ++p ) {
     (*p)->Initialize( runningMode );
   }
   for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
     (*p)->Initialize();
   }
-*/
+
 }
 
 //---------------------------
@@ -93,10 +93,15 @@ void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1
 
   ECROC *theECROC = new ECROC( address, this->rwAppender, this->controller );
   theECROC->ClearAndResetStatusRegisters();
+  readoutLogger.debugStream() << " Adding FEBs to Channels...";
   theECROC->GetChannel( 0 )->SetupNFEBs( nFEBchan0 );
+  readoutLogger.debugStream() << " Setup Channel 0";
   theECROC->GetChannel( 1 )->SetupNFEBs( nFEBchan1 );
+  readoutLogger.debugStream() << " Setup Channel 1";
   theECROC->GetChannel( 2 )->SetupNFEBs( nFEBchan2 );
+  readoutLogger.debugStream() << " Setup Channel 2";
   theECROC->GetChannel( 3 )->SetupNFEBs( nFEBchan3 );
+  readoutLogger.debugStream() << " Setup Channel 3";
   ecrocs.push_back( theECROC );
   readoutLogger.debugStream() << "Added ECROC.";
 }
@@ -109,7 +114,7 @@ void ReadoutWorker::AddCRIM( unsigned int address )
   }
   readoutLogger.debugStream() << "Adding CRIM with address = 0x" << std::hex << address; 
   CRIM* crim = new CRIM( address, this->rwAppender, this->controller );
-  readoutLogger.debugStream() << " CRIM Status = " << crim->GetStatus();
+  readoutLogger.debugStream() << " CRIM Status = 0x" << std::hex << crim->GetStatus();
   crims.push_back( crim );
   readoutLogger.debugStream() << "Added CRIM.";
 }

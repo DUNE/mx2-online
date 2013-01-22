@@ -34,7 +34,7 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number, log4cpp::App
     std::cout << "EChannel Log Appender is NULL!" << std::endl;
     exit(EXIT_CROC_UNSPECIFIED_ERROR);
   }
-  EChannelLog.setPriority(log4cpp::Priority::NOTICE);  
+  EChannelLog.setPriority(log4cpp::Priority::DEBUG);  
 
   receiveMemoryAddress             = channelDirectAddress + (unsigned int)ECROCReceiveMemory;
   sendMemoryAddress                = channelDirectAddress + (unsigned int)ECROCSendMemory;

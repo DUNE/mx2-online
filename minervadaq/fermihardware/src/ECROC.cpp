@@ -30,6 +30,7 @@ ECROC::ECROC(unsigned int address, log4cpp::Appender* appender, Controller* cont
     std::cout << "ECROC Log Appender is NULL!" << std::endl;
     exit(EXIT_CROC_UNSPECIFIED_ERROR);
   }
+  ECROCLog.setPriority(log4cpp::Priority::DEBUG); 
 
 	MakeChannels(); 
 

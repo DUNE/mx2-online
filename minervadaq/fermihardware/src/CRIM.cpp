@@ -69,6 +69,7 @@ CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, Controller* contr
     std::cout << "CRIM Log Appender is NULL!" << std::endl;
     exit(EXIT_CRIM_UNSPECIFIED_ERROR);
   }
+  CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
 
 	interruptStatusRegister = this->address + (unsigned int)CRIMInterruptStatus;
 	interruptConfig         = this->address + (unsigned int)CRIMInterruptConfig;
