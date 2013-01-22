@@ -31,7 +31,7 @@ log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("r
  */
 class ReadoutWorker {
 	private: 
-		Controller *daqController;
+		Controller *controller;
     std::vector<ECROC*> ecrocs;
     std::vector<CRIM*>  crims;
 
@@ -40,7 +40,7 @@ class ReadoutWorker {
     int controllerID;  // == crate ID/Address
 		bool vmeModuleInit;    
 
-    void InitializeCRIM( unsigned int address, bool isMaster, log4cpp::Appender* appender );
+    CRIM* masterCRIM();
 
 	public:
 
@@ -49,7 +49,10 @@ class ReadoutWorker {
 
     void InitializeCrate( RunningModes runningMode );
 
-    Controller inline *GetController() {return daqController;};
+    Controller* GetController();
+
+    void AddECROC( unsigned int address, int nFEBchan0=11, int nFEBchan1=11, int nFEBchan2=11, int nFEBchan3=11 );
+    void AddCRIM( unsigned int address );
     /*
        void InitializeDaq(int id, RunningModes runningMode);
 

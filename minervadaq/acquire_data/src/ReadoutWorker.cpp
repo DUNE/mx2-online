@@ -21,12 +21,15 @@ ReadoutWorker::ReadoutWorker( int controllerID, log4cpp::Appender* appender, log
   vmeModuleInit      = vmeInit;
   readoutLogger.setPriority(priority);
 
-  Controller *daqController = new Controller(0x00, controllerID, appender);
-  int error = daqController->ContactController();
+  Controller *controller = new Controller(0x00, controllerID, appender);
+  int error = controller->ContactController();
   if ( 0 != error ) {
     readoutLogger.fatalStream() << "Controller contact error: " << error; 
     exit(error);
   }
+  readoutLogger.debugStream() << "Made new ReadoutWokrer with crate ID = " << controllerID 
+    << "; VME Init = " << vmeInit
+    << "; Logging Level = " << priority;
 }
 
 //---------------------------
@@ -39,27 +42,76 @@ ReadoutWorker::~ReadoutWorker() {
     delete (*p);
   }
   crims.clear();
-  delete daqController; 
+  delete controller; 
+}
+
+//---------------------------
+Controller* ReadoutWorker::GetController() 
+{
+  return controller;
 }
 
 //---------------------------
 void ReadoutWorker::InitializeCrate( RunningModes runningMode )
 {
   readoutLogger.debugStream() << "Initialize Crate " << controllerID << " for Running Mode: " << (RunningModes)runningMode;
-
-  InitializeCRIM( 0xE00000 /* "224" */, true, rwAppender );
+/*
+  for( std::vector<CRIM*>::iterator p=crims.begin(); p!=crims.end(); ++p ) {
+    (*p)->Initialize( runningMode );
+  }
+  for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
+    (*p)->Initialize();
+  }
+*/
 }
 
 //---------------------------
-void ReadoutWorker::InitializeCRIM( unsigned int address, bool isMaster, log4cpp::Appender* appender )
+CRIM* ReadoutWorker::masterCRIM()
 {
-  readoutLogger.debugStream() << "Initialize CRIM " << address << " with status == Master == " << isMaster;
-  CRIM* crim = new CRIM( address, isMaster, appender, daqController );
+  CRIM* crim = NULL;
+  if( crims.size() ) { 
+    crim = crims[0];
+  } else {
+    readoutLogger.fatalStream() << "CRIM vector length is 0! Cannot return a master CRIM!";
+    exit(EXIT_CRIM_UNSPECIFIED_ERROR);
+  }
+  return crim;
+}
 
-  // TODO configure
+//---------------------------
+void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1, int nFEBchan2, int nFEBchan3 )
+{
+  if (address < (1<<ECROCAddressShift)) {
+    address = address << ECROCAddressShift;
+  }
+  readoutLogger.debugStream() << "Adding ECROC with address = 0x" << std::hex << address << " and FEBs-to-Channel of (" 
+    << std::dec << nFEBchan0 << ", " << nFEBchan1 << ", " << nFEBchan2 << ", " << nFEBchan3 << ")";
+  if (nFEBchan0<0 || nFEBchan0>10) nFEBchan0 = 0;
+  if (nFEBchan1<0 || nFEBchan1>10) nFEBchan1 = 0;
+  if (nFEBchan2<0 || nFEBchan2>10) nFEBchan2 = 0;
+  if (nFEBchan3<0 || nFEBchan3>10) nFEBchan3 = 0;
+
+  ECROC *theECROC = new ECROC( address, this->rwAppender, this->controller );
+  theECROC->ClearAndResetStatusRegisters();
+  theECROC->GetChannel( 0 )->SetupNFEBs( nFEBchan0 );
+  theECROC->GetChannel( 1 )->SetupNFEBs( nFEBchan1 );
+  theECROC->GetChannel( 2 )->SetupNFEBs( nFEBchan2 );
+  theECROC->GetChannel( 3 )->SetupNFEBs( nFEBchan3 );
+  ecrocs.push_back( theECROC );
+  readoutLogger.debugStream() << "Added ECROC.";
+}
+
+//---------------------------
+void ReadoutWorker::AddCRIM( unsigned int address )
+{
+  if (address < (1<<CRIMAddressShift)) {
+    address = address << CRIMAddressShift;
+  }
+  readoutLogger.debugStream() << "Adding CRIM with address = 0x" << std::hex << address; 
+  CRIM* crim = new CRIM( address, this->rwAppender, this->controller );
   readoutLogger.debugStream() << " CRIM Status = " << crim->GetStatus();
-
   crims.push_back( crim );
+  readoutLogger.debugStream() << "Added CRIM.";
 }
 
 #endif

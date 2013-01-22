@@ -30,8 +30,8 @@
 class CRIM : public VMECommunicator {
 
 	private:
-    bool isCrateMasterCRIM;
-
+    /* We will always use the first CRIM in the vector of CRIMs held by the 
+       DAQ worker classes as the master CRIM. */
 		log4cpp::Appender* CRIMAppender;
 
     CVIRQLevels irqLevel;                /*!<the interrupt priority level */
@@ -108,7 +108,7 @@ class CRIM : public VMECommunicator {
 
 	public:
     
-		CRIM( unsigned int address, bool isCrateMasterCRIM, log4cpp::Appender* appender, Controller* controller ); 
+		CRIM( unsigned int address, log4cpp::Appender* appender, Controller* controller ); 
 		~CRIM() { }; 
 
 		unsigned int GetAddress();
