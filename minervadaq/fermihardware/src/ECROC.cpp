@@ -33,8 +33,6 @@ ECROC::ECROC(unsigned int address, log4cpp::Appender* appender, Controller* cont
   ECROCLog.setPriority(log4cpp::Priority::DEBUG); 
 
 	MakeChannels(); 
-
-	InitializeRegisters( crocExternal, (short unsigned int)0x0, (short unsigned int)0x0 );
 }
 
 //----------------------------------------
@@ -74,28 +72,20 @@ std::vector<EChannels*>* ECROC::GetChannelsVector()
 	return &ECROCChannels;
 }
 
-//----------------------------------------
-unsigned int ECROC::GetTimingSetupAddress()
-{
-	return timingSetupAddress;
-}
-
-//----------------------------------------
-unsigned short ECROC::GetTimingRegisterMessage() 
-{
-	return timingRegisterMessage;
-}
-
-//----------------------------------------  // TODO: write to the hardware!
-void ECROC::SetTimingRegisterMessage( crocClockModes clockMode, 
+//----------------------------------------  
+void ECROC::SetupTimingRegister( crocClockModes clockMode, 
 	unsigned short testPulseDelayEnabled, 
 	unsigned short testPulseDelayValue )
 {
-	timingRegisterMessage  = clockMode;   	                    // the clock mode  (0x8000 is the bitmask for bit 15 high)
+	unsigned short timingRegisterMessage  = clockMode;   	      // the clock mode  (0x8000 is the bitmask for bit 15 high)
 	timingRegisterMessage |= (testPulseDelayEnabled & 0x1)<<12; // test pulse delay enable bit (bit 12)
 	timingRegisterMessage |= testPulseDelayValue & 0x3FF;       // test pules delay values (in 18.9 ns units) bits 0-9
 	timingRegisterMessage &= 0xFFFF;
-	ECROCLog.debugStream() << "    Timing Register = " << timingRegisterMessage; // TODO: hex!
+	ECROCLog.debugStream() << " Timing Register Message = 0x" << std::hex << timingRegisterMessage; 
+  unsigned char command[] = { timingRegisterMessage & 0xFF, (timingRegisterMessage & 0xFF00)>>8 }; 
+	ECROCLog.debugStream() << " Timing Register Bytes   = 0x" << std::hex << (int)command[0] << ", 0x" << (int)command[1]; 
+  int error = WriteCycle(2, command, timingSetupAddress, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Failure writing to CROC Software RDFE Register!");
 }
 
 //---------------------------------------- // TODO: write to the hardware!
@@ -103,18 +93,6 @@ void ECROC::SetResetAndTestPulseRegisterMessage( unsigned short resetEnable, uns
 {
 	resetAndTestPulseMaskRegisterMessage  = (resetEnable & 0x1)<<8;  //the reset enable bit is 8
 	resetAndTestPulseMaskRegisterMessage |= (testPulseEnable & 0x1); //the test pulse enable bit is 0
-}
-
-//----------------------------------------
-unsigned int ECROC::GetFastCommandAddress()
-{
-	return fastCommandAddress;
-}
-
-//----------------------------------------
-unsigned short ECROC::GetFastCommandRegisterMessage()
-{
-	return fastCommandRegisterMessage;
 }
 
 //---------------------------------------- // TODO: write to the hardware!
@@ -128,7 +106,7 @@ void ECROC::InitializeRegisters( crocClockModes clockMode,
 		unsigned short testPulseDelayValue,
 		unsigned short testPulseDelayEnabled ) 
 {
-	SetTimingRegisterMessage( clockMode, testPulseDelayEnabled, testPulseDelayValue );
+	SetupTimingRegister( clockMode, testPulseDelayEnabled, testPulseDelayValue );
 	SetResetAndTestPulseRegisterMessage( 0, 0 );
 }
 
@@ -188,6 +166,9 @@ void ECROC::WaitForSequencerReadoutCompletion()
 void ECROC::Initialize()
 {
   ECROCLog.infoStream() << "Initializing ECROC 0x" << std::hex << this->address;
+	unsigned short testPulseDelayEnabled = 0;  // we do not use the test pulse delay in data-taking
+	unsigned short testPulseDelayValue   = 0;
+  this->InitializeRegisters( (crocClockModes)crocExternal, testPulseDelayEnabled, testPulseDelayValue );
 }
 
 #endif
