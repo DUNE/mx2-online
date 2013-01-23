@@ -98,7 +98,6 @@ void ECROC::SetupResetAndTestPulseRegister( unsigned short resetEnable, unsigned
 	ECROCLog.debugStream() << " Reset and Test Pulse Register Bytes   = 0x" << std::hex << (int)command[0] << ", 0x" << (int)command[1]; 
   int error = WriteCycle(2, command, resetAndTestPulseMaskAddress, addressModifier, dataWidthReg );
   if( error ) exitIfError( error, "Failure writing to CROC Reset and Test Pulse Register!");
-
 }
 
 //---------------------------------------- 

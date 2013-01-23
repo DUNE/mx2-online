@@ -150,6 +150,7 @@ void CRIM::Initialize( RunningModes runningMode )
   CRIMLog.debugStream() << " Frequency       = " << Frequency;
   CRIMLog.debugStream() << " Timing Mode     = " << TimingMode;
 
+  this->SetupTiming( TimingMode, Frequency );
 }
 
 //----------------------------------------
@@ -184,6 +185,27 @@ void CRIM::logRunningMode( RunningModes runningMode )
       CRIMLog.critStream() << "Error in ReadoutWorker::logRunningMode()! Undefined Running Mode!";
   }
 }
+
+//----------------------------------------
+void CRIM::SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ) 
+{
+  unsigned short timingSetup = 
+    ( timingMode & TimingSetupRegisterModeMask ) | 
+    ( frequency  & TimingSetupRegisterFrequencyMask );
+
+  CRIMLog.debugStream() << "  CRIM timingSetup = 0x" 
+    << std::setfill('0') << std::setw( 4 ) << std::hex << timingSetup;
+  CRIMLog.debugStream() << "        timingMode = 0x" 
+    << std::setfill('0') << std::setw( 4 ) << std::hex << timingMode;
+  CRIMLog.debugStream() << "         frequency = 0x" 
+    << std::setfill('0') << std::setw( 4 ) << std::hex << frequency;
+
+  unsigned char message[] = {0x0, 0x0};
+  message[0] = timingSetup & 0xFF;
+  message[1] = (timingSetup>>8) & 0xFF;
+  int error = WriteCycle( 2, message, timingRegister, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Failure writing to CRIM Timing Register!");
+} 
 
 //----------------------------------------
 unsigned int CRIM::GetAddress() 
@@ -238,20 +260,6 @@ void CRIM::SetReTransmitEnable(bool a)
     controlRegister &= ~ControlRegisterRetransmitMask;
   }
 }
-
-//----------------------------------------
-void CRIM::SetupTiming( CRIMTimingModes a, CRIMTimingFrequencies b ) 
-{
-  timingSetup = ( a & TimingSetupRegisterModeMask ) | 
-    (b & TimingSetupRegisterFrequencyMask);
-
-  CRIMLog.debugStream() << "  CRIM timingSetup = 0x" 
-    << std::setfill('0') << std::setw( 4 ) << std::hex << timingSetup;
-  CRIMLog.debugStream() << "        timingMode = 0x" 
-    << std::setfill('0') << std::setw( 4 ) << std::hex << a;
-  CRIMLog.debugStream() << "         frequency = 0x" 
-    << std::setfill('0') << std::setw( 4 ) << std::hex << b;
-} 
 
 //----------------------------------------
 void CRIM::SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth ) 
