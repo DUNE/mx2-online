@@ -70,7 +70,7 @@ class CRIM : public VMECommunicator {
     unsigned int gateTimeWordHighAddress;
 
     /*! variables for holding information about the setup of the CRIM for use. */
-    unsigned short timingSetup, gateWidthSetup, TCALBDelaySetup;
+    unsigned short gateWidthSetup, TCALBDelaySetup;
 
     /*! cosmic mode control registers. */
     unsigned int sequencerResetRegister;
@@ -119,35 +119,10 @@ class CRIM : public VMECommunicator {
     unsigned int GetAddress();
     unsigned short GetStatus();
 
-    // TODO : write to physical registers!
-    void SetupTiming( CRIMTimingModes a, CRIMTimingFrequencies b ); 
+    void SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ); 
     void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth); 
     void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth, unsigned short sequencerEnable ); 
     void SetupTCALBPulse( unsigned short pulseDelay );
-
-    // functions which return the timing/trigger info
-    /*
-    unsigned short GetGateWidthSetup() {return gateWidthSetup;};
-    unsigned short GetTCALBPulse() {return TCALBDelaySetup;};
-    unsigned short GetTimingSetup() {return timingSetup;};
-    unsigned short GetGateWidth() {return (gateWidthSetup & GateWidthRegisterMask);};
-    unsigned short GetGateTCALBEnable() {return ((gateWidthSetup & 0x8000)>>15);};
-    unsigned short GetTiming() {return ((timingSetup & TimingSetupRegisterModeMask)>>12);}; 
-    unsigned short GetSoftTrig() {return softTrigger;};
-    unsigned short GetSoftTCALB() {return softTCALB;};
-    unsigned short GetSoftSGATEStart() {return softSGATEstart;};
-    unsigned short GetSoftSGATEStop() {return softSGATEstop;};
-    unsigned short GetSoftCNRST() {return softCNRST;};
-    unsigned short GetSoftCNRSTSeq() {return softCNRSTseq;};
-
-    unsigned int GetTimingRegister() {return timingRegister;};
-    unsigned int GetSGATEWidthRegister() {return SGATEWidthRegister;};
-    unsigned int GetTCALBRegister() {return TCALBDelayRegister;};
-    unsigned int GetSoftTriggerRegister() {return softwareTriggerRegister;};
-    unsigned int GetSoftTCALBRegister() {return softwareTCALBRegister;};
-    unsigned int GetSoftSGATERegister() {return softwareSGATERegister;};
-    unsigned int GetSoftCNRSTRegister() {return softwareCNRSTRegister;};
-    */
 
     /*! interrupt stuff */
     void inline SetIRQLevel(CVIRQLevels a) {irqLevel = a;};  //sets the IRQ Level (CAEN)
