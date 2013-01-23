@@ -73,66 +73,6 @@ unsigned int EChannels::GetDirectAddress()
   return channelDirectAddress;
 }
 
-//---------------------------------------- // TODO : Get rid of all these stupid getters we'll never use.
-unsigned int EChannels::GetReceiveMemoryAddress()
-{
-  return receiveMemoryAddress;
-}
-
-//----------------------------------------
-unsigned int EChannels::GetSendMemoryAddress()
-{
-  return sendMemoryAddress;
-}
-
-//----------------------------------------
-unsigned int EChannels::GetFramePointersMemoryAddress() 
-{
-  return framePointersMemoryAddress;
-}
-
-//----------------------------------------
-unsigned int EChannels::GetConfigurationAddress() 
-{
-  return configurationAddress;
-}
-
-//----------------------------------------
-unsigned int EChannels::GetCommandAddress() 
-{
-  return commandAddress;
-}
-
-//----------------------------------------
-unsigned int EChannels::GetEventCounterAddress() 
-{
-  return eventCounterAddress;
-}
-
-//----------------------------------------
-unsigned int EChannels::GetFramesCounterAndLoopDelayAddress() 
-{
-  return framesCounterAndLoopDelayAddress;
-}
-
-//----------------------------------------
-unsigned int EChannels::GetFrameStatusAddress() 
-{
-  return frameStatusAddress;
-}
-
-//----------------------------------------
-unsigned int EChannels::GetTxRxStatusAddress() 
-{
-  return txRxStatusAddress;
-}
-
-//----------------------------------------
-unsigned int EChannels::GetReceiveMemoryPointerAddress() 
-{
-  return receiveMemoryPointerAddress;
-}
-
 //----------------------------------------
 int EChannels::DecodeStatusMessage() 
 {

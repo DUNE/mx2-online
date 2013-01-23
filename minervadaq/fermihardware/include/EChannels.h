@@ -84,17 +84,6 @@ class EChannels : public VMECommunicator {
     unsigned int GetParentECROCAddress();
     unsigned int GetDirectAddress();
 
-    unsigned int GetReceiveMemoryAddress();
-    unsigned int GetSendMemoryAddress();
-    unsigned int GetFramePointersMemoryAddress();
-    unsigned int GetConfigurationAddress();
-    unsigned int GetCommandAddress();
-    unsigned int GetEventCounterAddress();
-    unsigned int GetFramesCounterAndLoopDelayAddress();
-    unsigned int GetFrameStatusAddress();
-    unsigned int GetTxRxStatusAddress();
-    unsigned int GetReceiveMemoryPointerAddress();
-
     int DecodeStatusMessage();
     int CheckHeaderErrors(int dataLength);
 
