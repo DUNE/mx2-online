@@ -249,10 +249,173 @@ void CRIM::SetupTCALBPulse( unsigned short pulseDelay )
 } 
 
 //----------------------------------------
+void CRIM::SetupIRQ()
+{
+  /*!\fn void CRIM::SetupIRQ()
+   *
+   * These are the steps to setting the IRQ:
+   *  1) Select an IRQ LINE on which the system will wait for an assert.  
+   *
+   *  2) Set the Interrupt mask on the crim.
+   *
+   *  3) Check the interrupt status & clear any pending interrupts.  
+   *
+   *  4) Set the IRQ LEVEl which is asserted on the LINE.  We have set this to IRQ5, or 5 in the register
+   *  when the CRIM is created.  (This also happens to be the power on default.)
+   *
+   *  5) Set the Global IRQ Enable bit.
+   *
+   *  6) Send this bitmask to the CRIM.
+   *
+   *  7) Enable the IRQ LINE on the CAEN controller to be the NOT of the IRQ LINE sent to the CRIM.
+   */
+  CRIMLog.debugStream() << "SetupIRQ for CRIM 0x" << std::hex << this->address;
+  CRIMLog.debugStream() << "    IRQ Line      = " << this->GetIRQLine();
+  int error = 0;
+
+  this->SetupInterruptMask();
+  /*
+
+  // Check the interrupt status.
+  try {
+    crim_send[0] = 0; crim_send[1] = 0;
+    error = daqAcquire->ReadCycle( daqController->handle, crim_send,
+        daqController->GetCrim(index)->GetInterruptStatusAddress(), daqController->GetAddressModifier(),
+        daqController->GetDataWidth() );
+    if (error) throw error;
+
+    // Clear any pending interrupts.
+    unsigned short interrupt_status = 0;
+    interrupt_status = (unsigned short) (crim_send[0]|(crim_send[1]<<0x08));
+    CRIMLog.debugStream() << "     Current interrupt status = " << interrupt_status;
+    if (interrupt_status!=0) {
+      // Clear the pending interrupts.
+      crim_send[0] = daqController->GetCrim(index)->GetClearInterrupts() & 0xff;
+      crim_send[1] = (daqController->GetCrim(index)->GetClearInterrupts()>>0x08) & 0xff;
+      CRIMLog.debug("     Clearing pending interrupts with message: 0x%02X%02X",
+          crim_send[1], crim_send[0]);
+      try {
+        error = daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
+            daqController->GetCrim(index)->GetClearInterruptsAddress(),
+            daqController->GetAddressModifier(),
+            daqController->GetDataWidth() );
+        if (error) throw error;
+      } catch (int e) {
+        std::cout << "Error clearing crim interrupts in acquire_data::SetupIRQ for CRIM "
+          << (daqController->GetCrim(index)->GetCrimAddress()>>16) << std::endl;
+        daqController->ReportError(e);
+        CRIMLog.critStream() << "Error clearing crim interrupts in acquire_data::SetupIRQ for CRIM "
+          << (daqController->GetCrim(index)->GetCrimAddress()>>16);
+        return e;
+      }
+    }
+  } catch (int e) {
+    std::cout << "Error getting crim interrupt status in acquire_data::SetupIRQ for CRIM "
+      << (daqController->GetCrim(index)->GetCrimAddress()>>16) << std::endl;
+    daqController->ReportError(e);
+    CRIMLog.critStream() << "Error getting crim interrupt status in acquire_data::SetupIRQ for CRIM "
+      << (daqController->GetCrim(index)->GetCrimAddress()>>16);
+    return e;
+  }
+
+  // Now set the IRQ LEVEL.
+  try {
+    error = ResetGlobalIRQEnable(index);
+    if (error) throw error;
+  } catch (int e) {
+    std::cout << "Failed to ResetGlobalIRQ for CRIM "
+      << (daqController->GetCrim(index)->GetCrimAddress()>>16) << ".  Status code = " << e << std::endl;
+    CRIMLog.critStream() << "Failed to ResetGlobalIRQ for CRIM "
+      << (daqController->GetCrim(index)->GetCrimAddress()>>16) << ".  Status code = " << e;
+    return e;
+  }
+  crim_send[0] = (daqController->GetCrim(index)->GetInterruptConfig()) & 0xff;
+  crim_send[1] = ((daqController->GetCrim(index)->GetInterruptConfig())>>0x08) & 0xff;
+  CRIMLog.debug("     IRQ CONFIG = 0x%04X",daqController->GetCrim(index)->GetInterruptConfig());
+  CRIMLog.debug("     IRQ ADDR   = 0x%04X",daqController->GetCrim(index)->GetInterruptsConfigAddress());
+  try {
+    error = daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
+        daqController->GetCrim(index)->GetInterruptsConfigAddress(),
+        daqController->GetAddressModifier(),
+        daqController->GetDataWidth() );
+    if (error) throw error;
+  } catch (int e) {
+    std::cout << "Error setting crim IRQ mask in acquire_data::SetupIRQ for CRIM "
+      << (daqController->GetCrim(index)->GetCrimAddress()>>16) << std::endl;
+    daqController->ReportError(e);
+    CRIMLog.critStream() << "Error setting crim IRQ mask in acquire_data::SetupIRQ for CRIM "
+      << (daqController->GetCrim(index)->GetCrimAddress()>>16);
+    return e;
+  }
+
+  // Now enable the line on the CAEN controller.
+  CRIMLog.debug("     IRQ LINE   = 0x%02X",daqController->GetCrim(index)->GetIRQLine());
+  CRIMLog.debug("     IRQ MASK   = 0x%04X",daqController->GetCrim(index)->GetInterruptMask());
+  try {
+    error = CAENVME_IRQEnable(daqController->handle,~daqController->GetCrim(index)->GetInterruptMask());
+    if (error) throw error;
+  } catch (int e) {
+    std::cout << "Error in acquire_data::SetupIRQ!  Cannot execut IRQEnable for CRIM "
+      << (daqController->GetCrim(index)->GetCrimAddress()>>16) << std::endl;
+    daqController->ReportError(e);
+    CRIMLog.critStream() << "Error in acquire_data::SetupIRQ!  Cannot execut IRQEnable for CRIM "
+      << (daqController->GetCrim(index)->GetCrimAddress()>>16);
+    return e;
+  }
+  CRIMLog.debugStream() << "   Exiting acquire_data::SetupIRQ().";
+  return 0;
+  */
+
+}
+
+//----------------------------------------
+void CRIM::SetupInterruptMask()
+{
+  // Note that we assume the irqLine instance variable.
+  unsigned short mask = this->GetInterruptMask();
+  CRIMLog.debugStream() << "InterruptMask = " << mask;
+  unsigned char message[2] = {0,0};
+  message[0] = mask & 0xFF;
+  message[1] = (mask>>0x08) & 0xFF;
+  int error = WriteCycle( 2, message, interruptAddress, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Error setting CRIM IRQ mask!");
+}
+
+//----------------------------------------
 unsigned int CRIM::GetAddress() 
 {
   return this->address;
 }
+
+//----------------------------------------
+void CRIM::SetIRQLevel(CVIRQLevels a) 
+{
+  irqLevel = a;
+} 
+
+//----------------------------------------
+void CRIM::SetIRQLine(CRIMInterrupts a) 
+{
+  irqLine = a;
+}
+
+//----------------------------------------
+CVIRQLevels CRIM::GetIRQLevel() 
+{
+  return irqLevel;
+}
+
+//----------------------------------------
+unsigned char CRIM::GetIRQLine() 
+{ 
+  return (unsigned char)irqLine; 
+}
+
+//----------------------------------------
+unsigned short CRIM::GetInterruptMask() 
+{
+  return ((unsigned short)irqLine & InterruptMaskRegisterMask);
+} 
 
 //----------------------------------------
 void CRIM::SetCRCEnable(bool a) 
