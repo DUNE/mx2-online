@@ -150,7 +150,9 @@ void CRIM::Initialize( RunningModes runningMode )
   CRIMLog.debugStream() << " Frequency       = " << Frequency;
   CRIMLog.debugStream() << " Timing Mode     = " << TimingMode;
 
+  this->SetupGateWidth( TCALBEnable, GateWidth, SequencerEnable );
   this->SetupTiming( TimingMode, Frequency );
+  this->SetupTCALBPulse( TCALBDelay );
 }
 
 //----------------------------------------
@@ -208,6 +210,45 @@ void CRIM::SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies freque
 } 
 
 //----------------------------------------
+void CRIM::SetupGateWidth( unsigned short tcalbEnable, 
+    unsigned short gateWidth, unsigned short sequencerEnable ) 
+{
+  // sequencerEnable bit is ignored on CRIM firmwares earlier than v9
+  unsigned short gateWidthSetup = 
+    ((tcalbEnable & 0x1)<<15)            | 
+    ((sequencerEnable & 0x1)<<10)        | 
+    (gateWidth & GateWidthRegisterMask);
+
+  CRIMLog.debugStream() << "  CRIM gateWidthSetup = 0x"
+    << std::setfill('0') << std::setw( 4 ) << std::hex << gateWidthSetup;
+  CRIMLog.debugStream() << "            gateWidth = 0x" 
+    << std::setfill('0') << std::setw( 4 ) << std::hex << gateWidth;
+  CRIMLog.debugStream() << "     sequencer enable = " << sequencerEnable;
+  CRIMLog.debugStream() << "         tcalb enable = " << tcalbEnable;
+
+  unsigned char message[] = {0x0, 0x0};
+  message[0] = gateWidthSetup & 0xFF;
+  message[1] = (gateWidthSetup>>8) & 0xFF;
+  int error = WriteCycle( 2, message, SGATEWidthRegister, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Failure writing to CRIM Gate Width Register!");
+}
+
+//----------------------------------------
+void CRIM::SetupTCALBPulse( unsigned short pulseDelay ) 
+{
+  unsigned short TCALBDelaySetup = pulseDelay & TCALBDelayRegisterMask;
+
+  CRIMLog.debugStream() << "  CRIM TCALBDelaySetup = 0x"
+    << std::setfill('0') << std::setw( 4 ) << std::hex << TCALBDelaySetup;
+
+  unsigned char message[] = {0x0, 0x0};
+  message[0] = TCALBDelaySetup & 0xFF;
+  message[1] = (TCALBDelaySetup>>8) & 0xFF;
+  int error = WriteCycle( 2, message, TCALBDelayRegister, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Failure writing to CRIM TCALB Pulse Delay Register!");
+} 
+
+//----------------------------------------
 unsigned int CRIM::GetAddress() 
 {
   return this->address;
@@ -260,27 +301,6 @@ void CRIM::SetReTransmitEnable(bool a)
     controlRegister &= ~ControlRegisterRetransmitMask;
   }
 }
-
-//----------------------------------------
-void CRIM::SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth ) 
-{
-  gateWidthSetup = ((tcalbEnable & 0x1)<<15) | (gateWidth & GateWidthRegisterMask);
-}  
-
-//----------------------------------------
-void CRIM::SetupGateWidth( unsigned short tcalbEnable, 
-    unsigned short gateWidth, unsigned short sequencerEnable ) 
-{
-  gateWidthSetup = ((tcalbEnable & 0x1)<<15) | 
-    ((sequencerEnable & 0x1)<<10)            | 
-    (gateWidth & GateWidthRegisterMask);
-}
-
-//----------------------------------------
-void CRIM::SetupTCALBPulse( unsigned short pulseDelay ) 
-{
-  TCALBDelaySetup = pulseDelay & TCALBDelayRegisterMask;
-} 
 
 //----------------------------------------
 unsigned short CRIM::GetStatus()

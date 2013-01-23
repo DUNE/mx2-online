@@ -69,9 +69,6 @@ class CRIM : public VMECommunicator {
     unsigned int gateTimeWordLowAddress;
     unsigned int gateTimeWordHighAddress;
 
-    /*! variables for holding information about the setup of the CRIM for use. */
-    unsigned short gateWidthSetup, TCALBDelaySetup;
-
     /*! cosmic mode control registers. */
     unsigned int sequencerResetRegister;
 
@@ -120,7 +117,6 @@ class CRIM : public VMECommunicator {
     unsigned short GetStatus();
 
     void SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ); 
-    void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth); 
     void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth, unsigned short sequencerEnable ); 
     void SetupTCALBPulse( unsigned short pulseDelay );
 
