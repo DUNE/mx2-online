@@ -35,7 +35,7 @@ class CRIM : public VMECommunicator {
        DAQ worker classes as the master CRIM. */
     log4cpp::Appender* CRIMAppender;
 
-    CVIRQLevels irqLevel;                /*!<the interrupt priority level */
+    CVIRQLevels    irqLevel;             /*!<the interrupt priority level */
     CRIMInterrupts irqLine;              /*!<the interrupt to be monitored */
     unsigned short interruptValue;       /*!<the bitmask for the interrupt line */
     unsigned short interruptStatus;      /*!<the status of the interrupts */
@@ -119,16 +119,15 @@ class CRIM : public VMECommunicator {
     void SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ); 
     void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth, unsigned short sequencerEnable ); 
     void SetupTCALBPulse( unsigned short pulseDelay );
+    void SetupIRQ();
+    void SetupInterruptMask();
 
-    /*! interrupt stuff */
-    void inline SetIRQLevel(CVIRQLevels a) {irqLevel = a;};  //sets the IRQ Level (CAEN)
-    void inline SetIRQLine(CRIMInterrupts a) {irqLine = a;}; //sets the IRQ Level (CAEN)
-    CVIRQLevels inline GetIRQLevel() {return irqLevel;}; //returns the irq level (CAEN)
-    unsigned char inline GetIRQLine() { return (unsigned char)irqLine; };
+    void SetIRQLevel(CVIRQLevels level);
+    void SetIRQLine(CRIMInterrupts line);
+    CVIRQLevels GetIRQLevel(); 
+    unsigned char GetIRQLine();
+    unsigned short GetInterruptMask(); 
 
-    void inline SetInterruptMask() {
-      interruptValue = ((unsigned short)irqLine & InterruptMaskRegisterMask);
-    }; 
 
     void inline SetInterruptStatus(unsigned short a) {
       interruptStatus = a & InterruptStatusRegisterMask;
@@ -140,14 +139,6 @@ class CRIM : public VMECommunicator {
 
     void inline SetInterruptGlobalEnable(bool a) {
       interruptConfigValue |= ((a << 7) & InterruptConfigGlobalEnableMask);
-    }; 
-
-    unsigned short inline GetInterruptMask() {
-      return interruptValue;
-    }; 
-
-    unsigned int inline GetInterruptMaskAddress() {
-      return interruptAddress;
     }; 
 
     unsigned short inline GetInterruptStatus() {
