@@ -62,7 +62,6 @@ CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, Controller* contr
   irqLine              = SGATEFall; // correct choice for every running mode but Cosmics
   irqLevel             = cvIRQ5;    // interrupt level 5 for the CAEN interrupt handler
   interruptConfigValue = 5;         // the interrupt level stored in the interrupt config register
-  resetInterrupts      = 0x81;      // clear all pending interrupts
 
   CRIMAppender = appender;
   if (CRIMAppender == 0 ) {
@@ -153,6 +152,7 @@ void CRIM::Initialize( RunningModes runningMode )
   this->SetupGateWidth( TCALBEnable, GateWidth, SequencerEnable );
   this->SetupTiming( TimingMode, Frequency );
   this->SetupTCALBPulse( TCALBDelay );
+  this->SetupIRQ();
 }
 
 //----------------------------------------
@@ -270,65 +270,15 @@ void CRIM::SetupIRQ()
    *  7) Enable the IRQ LINE on the CAEN controller to be the NOT of the IRQ LINE sent to the CRIM.
    */
   CRIMLog.debugStream() << "SetupIRQ for CRIM 0x" << std::hex << this->address;
-  CRIMLog.debugStream() << "    IRQ Line      = " << this->GetIRQLine();
-  int error = 0;
+  CRIMLog.debugStream() << "    IRQ Line = " << (int)this->GetIRQLine();
 
   this->SetupInterruptMask();
+  unsigned short interruptStatus = this->GetInterruptStatus();
+  this->ClearPendingInterrupts( interruptStatus );
+  this->ResetGlobalIRQEnable();
   /*
 
-  // Check the interrupt status.
-  try {
-    crim_send[0] = 0; crim_send[1] = 0;
-    error = daqAcquire->ReadCycle( daqController->handle, crim_send,
-        daqController->GetCrim(index)->GetInterruptStatusAddress(), daqController->GetAddressModifier(),
-        daqController->GetDataWidth() );
-    if (error) throw error;
-
-    // Clear any pending interrupts.
-    unsigned short interrupt_status = 0;
-    interrupt_status = (unsigned short) (crim_send[0]|(crim_send[1]<<0x08));
-    CRIMLog.debugStream() << "     Current interrupt status = " << interrupt_status;
-    if (interrupt_status!=0) {
-      // Clear the pending interrupts.
-      crim_send[0] = daqController->GetCrim(index)->GetClearInterrupts() & 0xff;
-      crim_send[1] = (daqController->GetCrim(index)->GetClearInterrupts()>>0x08) & 0xff;
-      CRIMLog.debug("     Clearing pending interrupts with message: 0x%02X%02X",
-          crim_send[1], crim_send[0]);
-      try {
-        error = daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
-            daqController->GetCrim(index)->GetClearInterruptsAddress(),
-            daqController->GetAddressModifier(),
-            daqController->GetDataWidth() );
-        if (error) throw error;
-      } catch (int e) {
-        std::cout << "Error clearing crim interrupts in acquire_data::SetupIRQ for CRIM "
-          << (daqController->GetCrim(index)->GetCrimAddress()>>16) << std::endl;
-        daqController->ReportError(e);
-        CRIMLog.critStream() << "Error clearing crim interrupts in acquire_data::SetupIRQ for CRIM "
-          << (daqController->GetCrim(index)->GetCrimAddress()>>16);
-        return e;
-      }
-    }
-  } catch (int e) {
-    std::cout << "Error getting crim interrupt status in acquire_data::SetupIRQ for CRIM "
-      << (daqController->GetCrim(index)->GetCrimAddress()>>16) << std::endl;
-    daqController->ReportError(e);
-    CRIMLog.critStream() << "Error getting crim interrupt status in acquire_data::SetupIRQ for CRIM "
-      << (daqController->GetCrim(index)->GetCrimAddress()>>16);
-    return e;
-  }
-
   // Now set the IRQ LEVEL.
-  try {
-    error = ResetGlobalIRQEnable(index);
-    if (error) throw error;
-  } catch (int e) {
-    std::cout << "Failed to ResetGlobalIRQ for CRIM "
-      << (daqController->GetCrim(index)->GetCrimAddress()>>16) << ".  Status code = " << e << std::endl;
-    CRIMLog.critStream() << "Failed to ResetGlobalIRQ for CRIM "
-      << (daqController->GetCrim(index)->GetCrimAddress()>>16) << ".  Status code = " << e;
-    return e;
-  }
   crim_send[0] = (daqController->GetCrim(index)->GetInterruptConfig()) & 0xff;
   crim_send[1] = ((daqController->GetCrim(index)->GetInterruptConfig())>>0x08) & 0xff;
   CRIMLog.debug("     IRQ CONFIG = 0x%04X",daqController->GetCrim(index)->GetInterruptConfig());
@@ -371,7 +321,7 @@ void CRIM::SetupIRQ()
 //----------------------------------------
 void CRIM::SetupInterruptMask()
 {
-  // Note that we assume the irqLine instance variable.
+  // Note that we use the irqLine instance variable.
   unsigned short mask = this->GetInterruptMask();
   CRIMLog.debugStream() << "InterruptMask = " << mask;
   unsigned char message[2] = {0,0};
@@ -380,6 +330,75 @@ void CRIM::SetupInterruptMask()
   int error = WriteCycle( 2, message, interruptAddress, addressModifier, dataWidthReg );
   if( error ) exitIfError( error, "Error setting CRIM IRQ mask!");
 }
+
+//----------------------------------------
+unsigned short CRIM::GetInterruptStatus()
+{
+  unsigned char message[] = {0x0,0x0};
+  int error = ReadCycle( message, interruptStatusRegister, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Error reading CRIM Interrupt Status Register!");
+  unsigned short status = (message[1]<<8) | message[0];
+  CRIMLog.debugStream() << "Interrupt Status = 0x" << std::hex << status;
+  return status;
+}
+    
+//----------------------------------------
+void CRIM::ClearPendingInterrupts( unsigned short interruptStatus )
+{
+  if ( interruptStatus !=0 ) {
+    unsigned short resetInterrupts = 0x81;  // clear all pending interrupts
+    unsigned char message[] = {0x0,0x0};
+    message[0] = resetInterrupts & 0xFF;
+    message[1] = (resetInterrupts>>0x08) & 0xFF;
+    CRIMLog.debugStream() << " Clearing pending interrupts with message: 0x"
+      << std::setfill('0') << std::setw(2) << std::hex << (int)message[1]
+      << std::setfill('0') << std::setw(2) << std::hex << (int)message[0];
+    int error = WriteCycle( 2, message, interruptsClear, addressModifier, dataWidthReg );
+    if( error ) exitIfError( error, "Error clearing pending CRIM Interrupts!");
+  }
+}
+
+//----------------------------------------
+void CRIM::ResetGlobalIRQEnable()
+{
+  CRIMLog.debugStream() << "ResetGlobalIRQEnable for CRIM 0x" << std::hex << this->address;
+  this->SetInterruptGlobalEnable(true); // configure the ivar
+  unsigned char message[] = {0x0,0x0};
+  message[0] = (this->GetInterruptConfig()) & 0xFF;
+  message[1] = (this->GetInterruptConfig()>>0x08) & 0xFF;
+  CRIMLog.debugStream() << " Resetting Global IRQ Enable with message 0x" 
+    << std::setfill('0') << std::setw(2) << std::hex << (int)message[1]
+    << std::setfill('0') << std::setw(2) << std::hex << (int)message[0];
+  int error = WriteCycle( 2, message, interruptConfig, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Error setting IRQ Global Enable Bit!");
+}
+
+//----------------------------------------
+void CRIM::SetInterruptConfigValue(unsigned short a) 
+{
+  interruptConfigValue = a;
+} 
+
+//----------------------------------------
+void CRIM::SetInterruptGlobalEnable(bool a) 
+{
+  CRIMLog.debugStream() << "SetInterruptGlobalEnable " << a << "; interruptConfigValue = 0x" << std::hex << interruptConfigValue;
+  interruptConfigValue |= ((a << 7) & InterruptConfigGlobalEnableMask);
+  CRIMLog.debugStream() << " Updated interruptConfigValue = 0x" << std::hex << interruptConfigValue;
+} 
+
+//----------------------------------------
+unsigned short CRIM::GetInterruptGlobalEnable() 
+{
+  return interruptConfigValue & InterruptConfigGlobalEnableMask;
+} 
+
+//----------------------------------------
+unsigned short CRIM::GetInterruptConfig() 
+{
+  CRIMLog.debugStream() << "GetInterruptConfig = 0x" << std::hex << interruptConfigValue;
+  return interruptConfigValue;
+} 
 
 //----------------------------------------
 unsigned int CRIM::GetAddress() 
