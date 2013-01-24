@@ -38,8 +38,6 @@ class CRIM : public VMECommunicator {
     CVIRQLevels    irqLevel;             /*!<the interrupt priority level */
     CRIMInterrupts irqLine;              /*!<the interrupt to be monitored */
     unsigned short interruptValue;       /*!<the bitmask for the interrupt line */
-    unsigned short interruptStatus;      /*!<the status of the interrupts */
-    unsigned short resetInterrupts;      /*!<the value to be sent to the clear interrupts register on the CRIM */
     unsigned short interruptConfigValue; /*!<the configuration value sent to the
                                            configuration register (must match the 
                                            IRQLevel for the CAEN interrupt handler:
@@ -121,6 +119,9 @@ class CRIM : public VMECommunicator {
     void SetupTCALBPulse( unsigned short pulseDelay );
     void SetupIRQ();
     void SetupInterruptMask();
+    unsigned short GetInterruptStatus();
+    void ClearPendingInterrupts( unsigned short interruptStatus );
+    void ResetGlobalIRQEnable();
 
     void SetIRQLevel(CVIRQLevels level);
     void SetIRQLine(CRIMInterrupts line);
@@ -128,58 +129,10 @@ class CRIM : public VMECommunicator {
     unsigned char GetIRQLine();
     unsigned short GetInterruptMask(); 
 
-
-    void inline SetInterruptStatus(unsigned short a) {
-      interruptStatus = a & InterruptStatusRegisterMask;
-    }; 
-
-    void inline SetInterruptConfigValue(unsigned short a) {
-      interruptConfigValue = a;
-    }; 
-
-    void inline SetInterruptGlobalEnable(bool a) {
-      interruptConfigValue |= ((a << 7) & InterruptConfigGlobalEnableMask);
-    }; 
-
-    unsigned short inline GetInterruptStatus() {
-      return (interruptStatus & InterruptStatusRegisterMask);
-    }; 
-
-    unsigned short inline GetInterruptGlobalEnable() {
-      return interruptConfigValue & InterruptConfigGlobalEnableMask;
-    }; 
-
-    unsigned short inline GetInterruptConfig() {
-      return interruptConfigValue;
-    }; 
-
-    unsigned int inline GetInterruptsConfigAddress() {
-      return interruptConfig;
-    }; 
-
-    unsigned int inline GetInterruptStatusAddress() {
-      return interruptStatusRegister;
-    }; 
-
-    unsigned short inline GetClearInterrupts() {
-      return resetInterrupts;
-    }; 
-
-    unsigned int inline GetClearInterruptsAddress() {
-      return interruptsClear;
-    };
-
-    unsigned int inline GetGateTimeWordLowAddress() { 
-      return gateTimeWordLowAddress;
-    }; 
-    unsigned int inline GetGateTimeWordHighAddress() {
-      return gateTimeWordHighAddress;
-    }; 
-
-    unsigned int inline GetSequencerResetRegister() {
-      return sequencerResetRegister;
-    } 
-
+    void SetInterruptConfigValue(unsigned short a);
+    void SetInterruptGlobalEnable(bool a); 
+    unsigned short GetInterruptGlobalEnable(); 
+    unsigned short GetInterruptConfig(); 
 
     /*! control stuff */
     void SetCRCEnable(bool a);
