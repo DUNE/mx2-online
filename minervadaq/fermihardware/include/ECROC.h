@@ -41,7 +41,7 @@ class ECROC : public VMECommunicator {
 		void MakeChannels(); 
 
 	public:
-		ECROC( unsigned int address, log4cpp::Appender* appender, Controller* controller); 
+		explicit ECROC( unsigned int address, log4cpp::Appender* appender, const Controller* controller); 
 		~ECROC(); 
 
     void Initialize();

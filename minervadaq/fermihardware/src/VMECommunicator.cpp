@@ -6,7 +6,7 @@
 
 log4cpp::Category& commLog = log4cpp::Category::getInstance(std::string("comm"));
 
-VMECommunicator::VMECommunicator( unsigned int address, log4cpp::Appender* appender, Controller* controller )
+VMECommunicator::VMECommunicator( unsigned int address, log4cpp::Appender* appender, const Controller* controller )
 {
   this->controller = controller;
   if( NULL == this->controller ) {
@@ -34,7 +34,7 @@ VMECommunicator::~VMECommunicator()
   this->controller = NULL;
 }
 
-Controller* VMECommunicator::GetController()
+const Controller* VMECommunicator::GetController() const
 {
   return this->controller;
 }

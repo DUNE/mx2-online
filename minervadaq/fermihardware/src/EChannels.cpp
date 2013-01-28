@@ -17,7 +17,8 @@
 log4cpp::Category& EChannelLog = log4cpp::Category::getInstance(std::string("EChannel"));
 
 //----------------------------------------
-EChannels::EChannels( unsigned int vmeAddress, unsigned int number, log4cpp::Appender* appender, Controller* controller ) : 
+EChannels::EChannels( unsigned int vmeAddress, unsigned int number, 
+    log4cpp::Appender* appender, const Controller* controller ) : 
   VMECommunicator( vmeAddress, appender, controller )
 {
 	/*! \fn 

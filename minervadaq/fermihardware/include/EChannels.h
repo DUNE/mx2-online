@@ -57,7 +57,8 @@ class EChannels : public VMECommunicator {
     void SetChannelConfiguration( unsigned char* message );
 
 	public:
-		EChannels( unsigned int baseVMEAddress, unsigned int channelNumber, log4cpp::Appender* appender, Controller* controller );
+		explicit EChannels( unsigned int baseVMEAddress, unsigned int channelNumber, 
+        log4cpp::Appender* appender, const Controller* controller );
 		~EChannels();
 
     void ClearAndResetStatusRegister();  
