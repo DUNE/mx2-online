@@ -43,7 +43,7 @@ class Controller {
 
 	public: 
 
-		Controller(int addr, int id, log4cpp::Appender* appender);
+		explicit Controller(int addr, int id, log4cpp::Appender* appender);
 		~Controller() {};
 
 		unsigned int GetAddress();
@@ -51,11 +51,11 @@ class Controller {
 		CVDataWidth GetDataWidth();
 		CVBoardTypes GetControllerType();
 		CVBoardTypes GetBridgeType();
-		int GetHandle();
+		int GetHandle() const;
 		int GetID();
 
 		int ContactController();
-		void ReportError(int error);
+		void ReportError(int error) const;
 
 
 };

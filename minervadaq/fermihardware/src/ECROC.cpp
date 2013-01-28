@@ -14,7 +14,7 @@
 log4cpp::Category& ECROCLog = log4cpp::Category::getInstance(std::string("ECROC"));
 
 //----------------------------------------
-ECROC::ECROC(unsigned int address, log4cpp::Appender* appender, Controller* controller) :
+ECROC::ECROC(unsigned int address, log4cpp::Appender* appender, const Controller* controller) :
   VMECommunicator( address, appender, controller )
 {
 	timingSetupAddress           = this->address + ECROCTimingSetup;

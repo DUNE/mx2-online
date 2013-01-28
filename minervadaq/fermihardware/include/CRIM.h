@@ -106,7 +106,7 @@ class CRIM : public VMECommunicator {
 
   public:
 
-    CRIM( unsigned int address, log4cpp::Appender* appender, Controller* controller ); 
+    explicit CRIM( unsigned int address, log4cpp::Appender* appender, const Controller* controller ); 
     ~CRIM() { }; 
 
     void Initialize( RunningModes runningMode );

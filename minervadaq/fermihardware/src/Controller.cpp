@@ -53,7 +53,7 @@ CVBoardTypes Controller::GetBridgeType()
   return bridgeType;
 }
 
-int Controller::GetHandle() 
+int Controller::GetHandle() const
 {
   return handle;
 }
@@ -64,7 +64,7 @@ int Controller::GetID()
 }
 
 
-void Controller::ReportError(int error)
+void Controller::ReportError(int error) const
 {
   switch(error) {
     case cvSuccess:

@@ -52,7 +52,7 @@ const unsigned short CRIM::softCNRST      = 0x0202;
 const unsigned short CRIM::softCNRSTseq   = 0x0808;
 
 //----------------------------------------
-CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, Controller* controller ) :
+CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, const Controller* controller ) :
   VMECommunicator( address, appender, controller )
 {
   this->addressModifier = cvA24_U_DATA; 

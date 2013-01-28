@@ -22,7 +22,7 @@
 class VMECommunicator {
 
   private:
-    Controller*        controller;
+    const Controller*  controller;
     int                controllerHandle;
     log4cpp::Appender* commAppender;
 
@@ -40,10 +40,10 @@ class VMECommunicator {
 
   public:
 
-    VMECommunicator( unsigned int address, log4cpp::Appender* appender, Controller* controller );
+    explicit VMECommunicator( unsigned int address, log4cpp::Appender* appender, const Controller* controller );
     ~VMECommunicator(); 
 
-    Controller* GetController();
+    const Controller* GetController() const;
 
     int WriteCycle(int messageLength, unsigned char *send_message,  unsigned int address, 
         CVAddressModifier AM, CVDataWidth DW); /*!<Member function for writing to a VME address */
