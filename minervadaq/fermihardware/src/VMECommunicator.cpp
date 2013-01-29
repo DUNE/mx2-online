@@ -40,7 +40,7 @@ const Controller* VMECommunicator::GetController() const
 }
 
 int VMECommunicator::WriteCycle(int ml, unsigned char *send_message, unsigned int address, 
-    CVAddressModifier AM, CVDataWidth DW) 
+    CVAddressModifier AM, CVDataWidth DW) const
 {
   /*!
    * \fn int VMECommunicator::WriteCycle(int ml, unsigned char *send_message,  unsigned int address,
@@ -79,7 +79,7 @@ int VMECommunicator::WriteCycle(int ml, unsigned char *send_message, unsigned in
 
 
 int VMECommunicator::ReadCycle(unsigned char *received_message, unsigned int address, 
-    CVAddressModifier AM, CVDataWidth DW) 
+    CVAddressModifier AM, CVDataWidth DW) const
 {
   /*!
    * \fn int VMECommunicator::ReadCycle(unsigned char *received_message,  
@@ -101,7 +101,8 @@ int VMECommunicator::ReadCycle(unsigned char *received_message, unsigned int add
 
 
 int VMECommunicator::ReadBLT(unsigned char *received_message, int blocks, unsigned int address, 
-    CVAddressModifier AM, CVDataWidth DW) {
+    CVAddressModifier AM, CVDataWidth DW) const 
+{
   /*!
    * \fn int VMECommunicator::ReadBLT(unsigned char *received_message,  
    *                            unsigned int address, CVAddressModifier AM, CVDataWidth DW)
@@ -124,7 +125,7 @@ int VMECommunicator::ReadBLT(unsigned char *received_message, int blocks, unsign
 
 
 int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned int address, 
-    CVAddressModifier AM, CVDataWidth DW) 
+    CVAddressModifier AM, CVDataWidth DW) const
 {
   /*!
    * \fn int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message,  unsigned int address,

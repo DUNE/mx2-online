@@ -40,22 +40,23 @@ class VMECommunicator {
 
   public:
 
-    explicit VMECommunicator( unsigned int address, log4cpp::Appender* appender, const Controller* controller );
+    explicit VMECommunicator( unsigned int address, 
+        log4cpp::Appender* appender, const Controller* controller );
     ~VMECommunicator(); 
 
     const Controller* GetController() const;
 
     int WriteCycle(int messageLength, unsigned char *send_message,  unsigned int address, 
-        CVAddressModifier AM, CVDataWidth DW); /*!<Member function for writing to a VME address */
+        CVAddressModifier AM, CVDataWidth DW) const; 
 
     int ReadCycle(unsigned char *received_message,  unsigned int address, 
-        CVAddressModifier AM, CVDataWidth DW); /*!<Member function for reading from a VME address */
+        CVAddressModifier AM, CVDataWidth DW) const; 
 
     int ReadBLT(unsigned char *received_message,  int blocks, unsigned int address, 
-        CVAddressModifier AM, CVDataWidth DW); /*!<Member function for block-transfer reads */
+        CVAddressModifier AM, CVDataWidth DW) const; 
 
     int WriteFIFOBLT(int messageLength, unsigned char *send_message,  unsigned int address, 
-        CVAddressModifier AM, CVDataWidth DW); /*!<Member function for block-transfer writes to the FIFO */
+        CVAddressModifier AM, CVDataWidth DW) const; 
 };
 
 #endif

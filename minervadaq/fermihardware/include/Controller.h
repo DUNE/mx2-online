@@ -31,7 +31,7 @@ class Controller {
 		CVDataWidth       dataWidth;
 
 		char firmware[1];
-		int transferBytes, controller_id;
+		int crateNumber;
 		int handle; /*!<a device handle returned by the initialization function*/
 		unsigned short *shortBuffer; /*!<a short buffer for messaging*/
 
@@ -43,18 +43,19 @@ class Controller {
 
 	public: 
 
-		explicit Controller(int addr, int id, log4cpp::Appender* appender);
+		explicit Controller(int addr, int crateNum, log4cpp::Appender* appender);
 		~Controller() {};
 
-		unsigned int GetAddress();
-		CVAddressModifier GetAddressModifier();
-		CVDataWidth GetDataWidth();
-		CVBoardTypes GetControllerType();
-		CVBoardTypes GetBridgeType();
-		int GetHandle() const;
-		int GetID();
+		int Initialize();
 
-		int ContactController();
+		unsigned int GetAddress() const;
+		CVAddressModifier GetAddressModifier() const;
+		CVDataWidth GetDataWidth() const;
+		CVBoardTypes GetControllerType() const;
+		CVBoardTypes GetBridgeType() const;
+		int GetHandle() const;
+		int GetCrateNumber() const;
+
 		void ReportError(int error) const;
 
 

@@ -12,7 +12,7 @@
 
 log4cpp::Category& ctrlLog = log4cpp::Category::getInstance(std::string("ctrl"));
 
-Controller::Controller(int addr, int id, log4cpp::Appender* appender) {
+Controller::Controller(int addr, int crateNum, log4cpp::Appender* appender) {
   address         = addr;
   addressModifier = cvA24_U_DATA; // default address modifier
   dataWidth       = cvD16;    // default data width
@@ -23,32 +23,32 @@ Controller::Controller(int addr, int id, log4cpp::Appender* appender) {
   boardNumber     = 0; // we basically use controller_id for this...
   handle          = -1;
   firmware[0]     = 0;
-  controller_id   = id; //an internal ID used for sorting data
+  crateNumber     = crateNum; //an internal ID used for sorting data
   ctrlAppender    = appender;
   ctrlLog.setPriority(log4cpp::Priority::DEBUG);
 }
 
-unsigned int Controller::GetAddress() 
+unsigned int Controller::GetAddress() const
 {
   return address;
 }
 
-CVAddressModifier Controller::GetAddressModifier() 
+CVAddressModifier Controller::GetAddressModifier() const
 {
   return addressModifier;
 }
 
-CVDataWidth Controller::GetDataWidth() 
+CVDataWidth Controller::GetDataWidth() const
 {
   return dataWidth;
 }
 
-CVBoardTypes Controller::GetControllerType() 
+CVBoardTypes Controller::GetControllerType() const
 {
   return controllerType;
 }
 
-CVBoardTypes Controller::GetBridgeType() 
+CVBoardTypes Controller::GetBridgeType() const
 {
   return bridgeType;
 }
@@ -58,9 +58,9 @@ int Controller::GetHandle() const
   return handle;
 }
 
-int Controller::GetID() 
+int Controller::GetCrateNumber() const
 {
-  return controller_id;
+  return crateNumber;
 }
 
 
@@ -92,7 +92,7 @@ void Controller::ReportError(int error) const
 }
 
 
-int Controller::ContactController() 
+int Controller::Initialize() 
 {
   /*! \fn
    *
@@ -103,8 +103,8 @@ int Controller::ContactController()
 
   // Initialize the Controller.
   try {
-    error = CAENVME_Init(controllerType, (unsigned short) boardNumber,
-        (unsigned short) pciSlotNumber, &handle); 
+    error = CAENVME_Init(controllerType, (unsigned short)boardNumber,
+        (unsigned short)pciSlotNumber, &handle); 
     if (error) throw error;
   } catch (int e) {
     ReportError(e);
@@ -115,7 +115,7 @@ int Controller::ContactController()
     ctrlLog.critStream() << "  sudo sh a2818_load.2.6";
     return e;
   } 
-  ctrlLog.infoStream() << "Controller " << controller_id << " is initialized.";
+  ctrlLog.infoStream() << "Controller " << crateNumber << " is initialized.";
 
   // Get the firmware version of the controller card.
   try {
