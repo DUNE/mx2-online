@@ -22,7 +22,7 @@ ReadoutWorker::ReadoutWorker( int controllerID, log4cpp::Appender* appender, log
   readoutLogger.setPriority(priority);
 
   controller = new Controller(0x00, controllerID, appender);
-  int error = controller->ContactController();
+  int error = controller->Initialize();
   if ( 0 != error ) {
     readoutLogger.fatalStream() << "Controller contact error: " << error; 
     exit(error);
