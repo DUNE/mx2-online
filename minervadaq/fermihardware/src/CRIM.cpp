@@ -419,5 +419,79 @@ unsigned short CRIM::GetStatus()
   return status;
 }
 
+//----------------------------------------
+void CRIM::ResetSequencerLatch()
+{
+  /*! \fn void CRIM::ResetSequencerLatch()
+   *
+   * This function resets the CRIM sequencer latch in cosmic mode to restart the seqeuncer in 
+   * internal timing mode.  This only affects CRIMs with v5 firmware.
+   */
+  CRIMLog.debugStream() << "ResetSequencerLatch for CRIM 0x" << std::hex << this->address;
+  unsigned char message[] = { 0x02, 0x02 };
+  int error = WriteCycle( 2, message, sequencerResetRegister, addressModifier, dataWidthReg );
+  if( error ) exitIfError( error, "Error resetting the sequencer latch!");
+}
+
+//---------------------------
+void CRIM::WaitOnIRQ( sig_atomic_t const & continueFlag )
+{
+  /*! \fn void ReadoutWorker::WaitOnIRQ() 
+   *
+   * A function which waits on the interrupt handler to set an interrupt.  This function 
+   * only checks the "master" CRIM.  The implicit assumption is that a trigger on any 
+   * CRIM is a trigger on all CRIMs (this assumption is true by design). This function 
+   * is "dumb" with respect to interrupts and only polls the interrupt status. See older
+   * versions of the DAQ software for guesses on how to handle asserted interrupts.
+   */
+  int error;
+  int success = 0;
+  acqData.debugStream() << "  Entering acquire_data::WaitOnIRQ: IRQLevel = " << daqController->GetCrim()->GetIRQLevel();
+
+  int intcounter = 0;
+  // Wait length vars... (don't want to spend forever waiting around).
+  unsigned long long startTime, nowTime;
+  struct timeval waitstart, waitnow;
+  gettimeofday(&waitstart, NULL);
+  startTime = (unsigned long long)(waitstart.tv_sec);
+  // VME manip.
+  unsigned short interrupt_status = 0;
+  unsigned short iline = (unsigned short)daqController->GetCrim()->GetIRQLine();
+  unsigned char crim_send[2];
+  acqData.debugStream() << "  Interrupt line = " << iline;
+
+  while ( !( interrupt_status & iline ) ) {
+    if ( !continueFlag ) {
+      acqData.debug("Caught exit signal.  Bailing on CRIM IRQ wait.");
+      return 1;
+    }
+
+    crim_send[0] = crim_send[1] = 0;
+    error = daqAcquire->ReadCycle(daqController->handle, crim_send,
+        daqController->GetCrim()->GetInterruptStatusAddress(), 
+        daqController->GetAddressModifier(),
+        daqController->GetDataWidth());  
+    intcounter++;
+    if (!(intcounter%10000)) { 
+      acqData.debug("    %06d - Interrrupt status = 0x%02X", intcounter, 
+          (crim_send[0] + (crim_send[1]<<8)));  
+    } 
+    if (error) throw error;
+    gettimeofday(&waitnow, NULL);
+    nowTime = (unsigned long long)(waitnow.tv_sec);
+    interrupt_status =  (crim_send[0]|(crim_send[1]<<0x08));
+    if ( (nowTime-startTime) > timeOutSec) { 
+      success = 1;
+      break; 
+    } 
+  }
+  // Clear the interrupt after acknowledging it.
+  crim_send[0] = daqController->GetCrim()->GetClearInterrupts() & 0xff;
+  crim_send[1] = (daqController->GetCrim()->GetClearInterrupts()>>0x08) & 0xff;
+  error=daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
+      daqController->GetCrim()->GetClearInterruptsAddress(), 
+      daqController->GetAddressModifier(),
+      daqController->GetDataWidth()); 
+}
 
 #endif

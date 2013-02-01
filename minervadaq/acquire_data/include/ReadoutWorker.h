@@ -54,13 +54,6 @@ class ReadoutWorker {
     void AddECROC( unsigned int address, int nFEBchan0=11, int nFEBchan1=11, int nFEBchan2=11, int nFEBchan3=11 );
     void AddCRIM( unsigned int address );
     /*
-       void InitializeDaq(int id, RunningModes runningMode);
-
-       void InitializeCrim(int address, int index, RunningModes runningMode); 
-       void InitializeCroc(int address, int crocNo, int nFEBchain0=11, int nFEBchain1=11, int nFEBchain2=11, int nFEBchain3=11); 
-       int SetupIRQ(int index);
-       int ResetGlobalIRQEnable(int index);
-       int BuildFEBList(int chainID, int crocNo, int nFEBs=11);
        int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
        int WaitOnIRQ(sig_atomic_t const & continueFlag);
        int AcknowledgeIRQ();

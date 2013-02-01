@@ -3,6 +3,8 @@
 
 /* system specific headers go here */
 #include <fstream>
+#include <sys/time.h>
+#include <signal.h>   // for sig_atomic_t
 
 /* CAEN headers go here */
 #include "CAENVMEtypes.h"
@@ -120,6 +122,8 @@ class CRIM : public VMECommunicator {
     unsigned short GetInterruptStatus();
     void ClearPendingInterrupts( unsigned short interruptStatus );
     void ResetGlobalIRQEnable();
+    void ResetSequencerLatch();
+    void WaitOnIRQ( sig_atomic_t const & continueFlag );
 
     unsigned short GetInterruptMask(); 
 
