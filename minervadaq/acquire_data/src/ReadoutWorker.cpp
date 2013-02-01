@@ -14,20 +14,20 @@
 //#include <signal.h>   // for sig_atomic_t
 
 //---------------------------
-ReadoutWorker::ReadoutWorker( int controllerID, log4cpp::Appender* appender, log4cpp::Priority::Value priority, bool vmeInit ) 
+ReadoutWorker::ReadoutWorker( int crateID, log4cpp::Appender* appender, log4cpp::Priority::Value priority, bool vmeInit ) 
 {
-  this->controllerID = controllerID;
-  rwAppender         = appender;
-  vmeModuleInit      = vmeInit;
+  this->crateID = crateID;
+  rwAppender    = appender;
+  vmeModuleInit = vmeInit;
   readoutLogger.setPriority(priority);
 
-  controller = new Controller(0x00, controllerID, appender);
+  controller = new Controller(0x00, crateID, appender);
   int error = controller->Initialize();
   if ( 0 != error ) {
     readoutLogger.fatalStream() << "Controller contact error: " << error; 
     exit(error);
   }
-  readoutLogger.debugStream() << "Made new ReadoutWokrer with crate ID = " << controllerID 
+  readoutLogger.debugStream() << "Made new ReadoutWokrer with crate ID = " << crateID 
     << "; VME Init = " << vmeInit
     << "; Logging Level = " << priority;
 }
@@ -46,7 +46,7 @@ ReadoutWorker::~ReadoutWorker() {
 }
 
 //---------------------------
-Controller* ReadoutWorker::GetController() 
+const Controller* ReadoutWorker::GetController() const
 {
   return controller;
 }
@@ -54,7 +54,7 @@ Controller* ReadoutWorker::GetController()
 //---------------------------
 void ReadoutWorker::InitializeCrate( RunningModes runningMode )
 {
-  readoutLogger.debugStream() << "Initialize Crate " << controllerID << " for Running Mode: " << (RunningModes)runningMode;
+  readoutLogger.debugStream() << "Initialize Crate " << crateID << " for Running Mode: " << (RunningModes)runningMode;
 
   for( std::vector<CRIM*>::iterator p=crims.begin(); p!=crims.end(); ++p ) {
     (*p)->Initialize( runningMode );
