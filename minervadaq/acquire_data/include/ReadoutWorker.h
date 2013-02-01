@@ -37,19 +37,19 @@ class ReadoutWorker {
 
 		log4cpp::Appender* rwAppender;
 
-    int controllerID;  // == crate ID/Address
+    int crateID;  // == crate ID/Address for Controller
 		bool vmeModuleInit;    
 
     CRIM* masterCRIM();
 
 	public:
 
-    ReadoutWorker( int controllerID, log4cpp::Appender* appender, log4cpp::Priority::Value priority, bool vmeInit=false); 
+    explicit ReadoutWorker( int crateID, log4cpp::Appender* appender, log4cpp::Priority::Value priority, bool vmeInit=false); 
     ~ReadoutWorker();
 
     void InitializeCrate( RunningModes runningMode );
 
-    Controller* GetController();
+    const Controller* GetController() const;
 
     void AddECROC( unsigned int address, int nFEBchan0=11, int nFEBchan1=11, int nFEBchan2=11, int nFEBchan3=11 );
     void AddCRIM( unsigned int address );
