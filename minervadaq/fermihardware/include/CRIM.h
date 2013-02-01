@@ -35,14 +35,8 @@ class CRIM : public VMECommunicator {
        DAQ worker classes as the master CRIM. */
     log4cpp::Appender* CRIMAppender;
 
-    CVIRQLevels    irqLevel;             /*!<the interrupt priority level */
-    CRIMInterrupts irqLine;              /*!<the interrupt to be monitored */
-    unsigned short interruptValue;       /*!<the bitmask for the interrupt line */
-    unsigned short interruptConfigValue; /*!<the configuration value sent to the
-                                           configuration register (must match the 
-                                           IRQLevel for the CAEN interrupt handler:
-                                           i.e. if this value is 5 (the default)
-                                           the IRQLevel for the CAEN must be IRQ5. */
+    unsigned short irqLevel;  /*!<the interrupt priority level */
+    CRIMInterrupts irqLine;   /*!<the interrupt to be monitored */
 
     unsigned short controlRegister; 
 
@@ -103,36 +97,31 @@ class CRIM : public VMECommunicator {
                  softSGATEstop, softCNRST, softCNRSTseq;
 
     void logRunningMode( RunningModes runningMode );
+    void CAENVMEIRQEnable(); 
 
   public:
 
-    explicit CRIM( unsigned int address, log4cpp::Appender* appender, const Controller* controller ); 
+    // SGATEFall is the correct interrupt for every mode but cosmic. IRQ5 is always(?) correct...
+    // For Cosmics (TestBeam) use irqLine = Trigger;  
+    explicit CRIM( unsigned int address, log4cpp::Appender* appender, const Controller* controller, 
+       CRIMInterrupts line=SGATEFall, unsigned short level=5 ); 
     ~CRIM() { }; 
 
     void Initialize( RunningModes runningMode );
 
-    unsigned int GetAddress();
+    const unsigned int GetAddress() const;
     unsigned short GetStatus();
 
     void SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ); 
     void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth, unsigned short sequencerEnable ); 
     void SetupTCALBPulse( unsigned short pulseDelay );
-    void SetupIRQ();
+    void IRQEnable();
     void SetupInterruptMask();
     unsigned short GetInterruptStatus();
     void ClearPendingInterrupts( unsigned short interruptStatus );
     void ResetGlobalIRQEnable();
 
-    void SetIRQLevel(CVIRQLevels level);
-    void SetIRQLine(CRIMInterrupts line);
-    CVIRQLevels GetIRQLevel(); 
-    unsigned char GetIRQLine();
     unsigned short GetInterruptMask(); 
-
-    void SetInterruptConfigValue(unsigned short a);
-    void SetInterruptGlobalEnable(bool a); 
-    unsigned short GetInterruptGlobalEnable(); 
-    unsigned short GetInterruptConfig(); 
 
     /*! control stuff */
     void SetCRCEnable(bool a);
