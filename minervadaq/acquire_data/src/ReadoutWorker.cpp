@@ -62,7 +62,7 @@ void ReadoutWorker::InitializeCrate( RunningModes runningMode )
   for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
     (*p)->Initialize();
   }
-
+  this->masterCRIM()->IRQEnable();
 }
 
 //---------------------------
