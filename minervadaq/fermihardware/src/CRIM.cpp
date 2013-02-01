@@ -52,16 +52,16 @@ const unsigned short CRIM::softCNRST      = 0x0202;
 const unsigned short CRIM::softCNRSTseq   = 0x0808;
 
 //----------------------------------------
-CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, const Controller* controller ) :
+CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, const Controller* controller, 
+    CRIMInterrupts line, unsigned short level ) :
   VMECommunicator( address, appender, controller )
 {
   this->addressModifier = cvA24_U_DATA; 
 
   // NOTE: The IRQ level must be the same as the configuration register level.  
   // The BIT MASKS for these levels, however are not the same!
-  irqLine              = SGATEFall; // correct choice for every running mode but Cosmics
-  irqLevel             = cvIRQ5;    // interrupt level 5 for the CAEN interrupt handler
-  interruptConfigValue = 5;         // the interrupt level stored in the interrupt config register
+  irqLine              = line; 
+  irqLevel             = level;    // interrupt level 5 for the CAEN interrupt handler
 
   CRIMAppender = appender;
   if (CRIMAppender == 0 ) {
@@ -70,6 +70,9 @@ CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, const Controller*
   }
   CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
 
+  CRIMLog.debugStream() << "Creating CRIM with address = 0x" << std::hex 
+    << this->address << "; IRQ Line = 0x" << this->irqLine 
+    << "; IRQ Level = 0x" << this->irqLevel;
   interruptStatusRegister = this->address + (unsigned int)CRIMInterruptStatus;
   interruptConfig         = this->address + (unsigned int)CRIMInterruptConfig;
   interruptsClear         = this->address + (unsigned int)CRIMClearInterrupts;
@@ -124,7 +127,7 @@ void CRIM::Initialize( RunningModes runningMode )
 #if MTEST
       // Because no MTM is available at MTest, LI will use internal timing.
       TimingMode   = CRIMInternal;
-      CRIMLog.infoStream() << " ->Using MTest timing (CRIM Internal).";
+      CRIMLog.infoStream() << "->Using MTest timing (CRIM Internal).";
 #endif
       break;
     case MixedBeamPedestal:
@@ -134,9 +137,8 @@ void CRIM::Initialize( RunningModes runningMode )
     case MTBFBeamMuon:
     case MTBFBeamOnly:
       // Cosmics, Beam-Muon, & Beam-Only use CRIM internal timing with gates send at a set frequency.
-      Frequency    = F2;
-      TimingMode   = crimInternal;
-      this->SetIRQLine(Trigger); //crimInterrupts type
+      Frequency     = F2;
+      TimingMode    = crimInternal;
       break;
     default:
       CRIMLog.fatalStream() << "Error in acquire_data::InitializeCrim()! No Running Mode defined!";
@@ -152,7 +154,6 @@ void CRIM::Initialize( RunningModes runningMode )
   this->SetupGateWidth( TCALBEnable, GateWidth, SequencerEnable );
   this->SetupTiming( TimingMode, Frequency );
   this->SetupTCALBPulse( TCALBDelay );
-  this->SetupIRQ();
 }
 
 //----------------------------------------
@@ -195,11 +196,11 @@ void CRIM::SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies freque
     ( timingMode & TimingSetupRegisterModeMask ) | 
     ( frequency  & TimingSetupRegisterFrequencyMask );
 
-  CRIMLog.debugStream() << "  CRIM timingSetup = 0x" 
+  CRIMLog.debugStream() << "CRIM timingSetup = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << timingSetup;
-  CRIMLog.debugStream() << "        timingMode = 0x" 
+  CRIMLog.debugStream() << "      timingMode = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << timingMode;
-  CRIMLog.debugStream() << "         frequency = 0x" 
+  CRIMLog.debugStream() << "       frequency = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << frequency;
 
   unsigned char message[] = {0x0, 0x0};
@@ -219,12 +220,12 @@ void CRIM::SetupGateWidth( unsigned short tcalbEnable,
     ((sequencerEnable & 0x1)<<10)        | 
     (gateWidth & GateWidthRegisterMask);
 
-  CRIMLog.debugStream() << "  CRIM gateWidthSetup = 0x"
+  CRIMLog.debugStream() << "CRIM gateWidthSetup = 0x"
     << std::setfill('0') << std::setw( 4 ) << std::hex << gateWidthSetup;
-  CRIMLog.debugStream() << "            gateWidth = 0x" 
+  CRIMLog.debugStream() << "       gateWidth = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << gateWidth;
-  CRIMLog.debugStream() << "     sequencer enable = " << sequencerEnable;
-  CRIMLog.debugStream() << "         tcalb enable = " << tcalbEnable;
+  CRIMLog.debugStream() << " sequencer enable = " << sequencerEnable;
+  CRIMLog.debugStream() << "     tcalb enable = " << tcalbEnable;
 
   unsigned char message[] = {0x0, 0x0};
   message[0] = gateWidthSetup & 0xFF;
@@ -238,7 +239,7 @@ void CRIM::SetupTCALBPulse( unsigned short pulseDelay )
 {
   unsigned short TCALBDelaySetup = pulseDelay & TCALBDelayRegisterMask;
 
-  CRIMLog.debugStream() << "  CRIM TCALBDelaySetup = 0x"
+  CRIMLog.debugStream() << "CRIM TCALBDelaySetup = 0x"
     << std::setfill('0') << std::setw( 4 ) << std::hex << TCALBDelaySetup;
 
   unsigned char message[] = {0x0, 0x0};
@@ -249,9 +250,9 @@ void CRIM::SetupTCALBPulse( unsigned short pulseDelay )
 } 
 
 //----------------------------------------
-void CRIM::SetupIRQ()
+void CRIM::IRQEnable()
 {
-  /*!\fn void CRIM::SetupIRQ()
+  /*!\fn void CRIM::IRQEnable()
    *
    * These are the steps to setting the IRQ:
    *  1) Select an IRQ LINE on which the system will wait for an assert.  
@@ -269,53 +270,15 @@ void CRIM::SetupIRQ()
    *
    *  7) Enable the IRQ LINE on the CAEN controller to be the NOT of the IRQ LINE sent to the CRIM.
    */
-  CRIMLog.debugStream() << "SetupIRQ for CRIM 0x" << std::hex << this->address;
-  CRIMLog.debugStream() << "    IRQ Line = " << (int)this->GetIRQLine();
+  CRIMLog.debugStream() << "IRQEnable for CRIM 0x" << std::hex << this->address;
+  CRIMLog.debugStream() << " IRQ Line  = " << (int)this->irqLine;
+  CRIMLog.debugStream() << " IRQ Level = " << (int)this->irqLevel;
 
   this->SetupInterruptMask();
   unsigned short interruptStatus = this->GetInterruptStatus();
   this->ClearPendingInterrupts( interruptStatus );
   this->ResetGlobalIRQEnable();
-  /*
-
-  // Now set the IRQ LEVEL.
-  crim_send[0] = (daqController->GetCrim(index)->GetInterruptConfig()) & 0xff;
-  crim_send[1] = ((daqController->GetCrim(index)->GetInterruptConfig())>>0x08) & 0xff;
-  CRIMLog.debug("     IRQ CONFIG = 0x%04X",daqController->GetCrim(index)->GetInterruptConfig());
-  CRIMLog.debug("     IRQ ADDR   = 0x%04X",daqController->GetCrim(index)->GetInterruptsConfigAddress());
-  try {
-    error = daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
-        daqController->GetCrim(index)->GetInterruptsConfigAddress(),
-        daqController->GetAddressModifier(),
-        daqController->GetDataWidth() );
-    if (error) throw error;
-  } catch (int e) {
-    std::cout << "Error setting crim IRQ mask in acquire_data::SetupIRQ for CRIM "
-      << (daqController->GetCrim(index)->GetCrimAddress()>>16) << std::endl;
-    daqController->ReportError(e);
-    CRIMLog.critStream() << "Error setting crim IRQ mask in acquire_data::SetupIRQ for CRIM "
-      << (daqController->GetCrim(index)->GetCrimAddress()>>16);
-    return e;
-  }
-
-  // Now enable the line on the CAEN controller.
-  CRIMLog.debug("     IRQ LINE   = 0x%02X",daqController->GetCrim(index)->GetIRQLine());
-  CRIMLog.debug("     IRQ MASK   = 0x%04X",daqController->GetCrim(index)->GetInterruptMask());
-  try {
-    error = CAENVME_IRQEnable(daqController->handle,~daqController->GetCrim(index)->GetInterruptMask());
-    if (error) throw error;
-  } catch (int e) {
-    std::cout << "Error in acquire_data::SetupIRQ!  Cannot execut IRQEnable for CRIM "
-      << (daqController->GetCrim(index)->GetCrimAddress()>>16) << std::endl;
-    daqController->ReportError(e);
-    CRIMLog.critStream() << "Error in acquire_data::SetupIRQ!  Cannot execut IRQEnable for CRIM "
-      << (daqController->GetCrim(index)->GetCrimAddress()>>16);
-    return e;
-  }
-  CRIMLog.debugStream() << "   Exiting acquire_data::SetupIRQ().";
-  return 0;
-  */
-
+  this->CAENVMEIRQEnable();
 }
 
 //----------------------------------------
@@ -341,7 +304,7 @@ unsigned short CRIM::GetInterruptStatus()
   CRIMLog.debugStream() << "Interrupt Status = 0x" << std::hex << status;
   return status;
 }
-    
+
 //----------------------------------------
 void CRIM::ClearPendingInterrupts( unsigned short interruptStatus )
 {
@@ -355,17 +318,22 @@ void CRIM::ClearPendingInterrupts( unsigned short interruptStatus )
       << std::setfill('0') << std::setw(2) << std::hex << (int)message[0];
     int error = WriteCycle( 2, message, interruptsClear, addressModifier, dataWidthReg );
     if( error ) exitIfError( error, "Error clearing pending CRIM Interrupts!");
+  } else {
+    CRIMLog.debugStream() << "No pending interrupts to clear.";
   }
 }
 
 //----------------------------------------
-void CRIM::ResetGlobalIRQEnable()
+void CRIM::ResetGlobalIRQEnable()  
 {
   CRIMLog.debugStream() << "ResetGlobalIRQEnable for CRIM 0x" << std::hex << this->address;
-  this->SetInterruptGlobalEnable(true); // configure the ivar
+  CRIMLog.debugStream() << " Enable bit = 0x" << std::hex << (1 << 7);
+  CRIMLog.debugStream() << " IRQ Level  = 0x" << std::hex << irqLevel;
+  unsigned short interruptMessage = (1 << 7) | irqLevel;  // 1 << 7 sets the enable bit to true.
+  CRIMLog.debugStream() << " interruptMessage = 0x" << std::hex << interruptMessage;
   unsigned char message[] = {0x0,0x0};
-  message[0] = (this->GetInterruptConfig()) & 0xFF;
-  message[1] = (this->GetInterruptConfig()>>0x08) & 0xFF;
+  message[0] = (interruptMessage) & 0xFF;
+  message[1] = (interruptMessage >> 0x08) & 0xFF;
   CRIMLog.debugStream() << " Resetting Global IRQ Enable with message 0x" 
     << std::setfill('0') << std::setw(2) << std::hex << (int)message[1]
     << std::setfill('0') << std::setw(2) << std::hex << (int)message[0];
@@ -374,60 +342,17 @@ void CRIM::ResetGlobalIRQEnable()
 }
 
 //----------------------------------------
-void CRIM::SetInterruptConfigValue(unsigned short a) 
+void CRIM::CAENVMEIRQEnable()
 {
-  interruptConfigValue = a;
-} 
+  CRIMLog.debugStream() << "CAENVMEIRQEnable for mask 0x" << std::hex << ~this->GetInterruptMask();
+  int error = CAENVME_IRQEnable(this->GetController()->GetHandle(),~this->GetInterruptMask());
+  if( error ) exitIfError( error, "Error writing to CAEN VME IRQ Enable for CRIM!");
+}
 
 //----------------------------------------
-void CRIM::SetInterruptGlobalEnable(bool a) 
-{
-  CRIMLog.debugStream() << "SetInterruptGlobalEnable " << a << "; interruptConfigValue = 0x" << std::hex << interruptConfigValue;
-  interruptConfigValue |= ((a << 7) & InterruptConfigGlobalEnableMask);
-  CRIMLog.debugStream() << " Updated interruptConfigValue = 0x" << std::hex << interruptConfigValue;
-} 
-
-//----------------------------------------
-unsigned short CRIM::GetInterruptGlobalEnable() 
-{
-  return interruptConfigValue & InterruptConfigGlobalEnableMask;
-} 
-
-//----------------------------------------
-unsigned short CRIM::GetInterruptConfig() 
-{
-  CRIMLog.debugStream() << "GetInterruptConfig = 0x" << std::hex << interruptConfigValue;
-  return interruptConfigValue;
-} 
-
-//----------------------------------------
-unsigned int CRIM::GetAddress() 
+const unsigned int CRIM::GetAddress() const
 {
   return this->address;
-}
-
-//----------------------------------------
-void CRIM::SetIRQLevel(CVIRQLevels a) 
-{
-  irqLevel = a;
-} 
-
-//----------------------------------------
-void CRIM::SetIRQLine(CRIMInterrupts a) 
-{
-  irqLine = a;
-}
-
-//----------------------------------------
-CVIRQLevels CRIM::GetIRQLevel() 
-{
-  return irqLevel;
-}
-
-//----------------------------------------
-unsigned char CRIM::GetIRQLine() 
-{ 
-  return (unsigned char)irqLine; 
 }
 
 //----------------------------------------
