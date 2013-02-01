@@ -157,6 +157,7 @@ int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned 
 void  VMECommunicator::exitIfError( int error, const std::string& msg ) 
 {
   if (error) {
+    commLog.fatalStream() << "Fatal error for device with address = 0x" << std::hex << this->address;
     commLog.fatalStream() << msg;
     this->GetController()->ReportError(error);
     exit(error);
