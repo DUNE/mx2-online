@@ -47,8 +47,6 @@ main-clean: FORCE
 	cd ../;
 	cd bin; rm minervadaq; rm daq_master; rm daq_slave_service; rm event_builder;
 	cd ../;
-	cd lib; rm *.so;
-	cd ../;
 
 hardware-clean: FORCE
 	cd fermihardware/src; make clean;
