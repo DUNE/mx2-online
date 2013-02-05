@@ -1,4 +1,3 @@
-/* header file for minervadaq main. */
 #include <string>
 /*! The include files needed for the network
  *  sockets 
@@ -8,7 +7,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <signal.h>
-/*! "New" readout structure. */
 #include "readoutObject.h"
 
 sig_atomic_t continueRunning;          /*!< Used by the SIGTERM/SIGINT signal handler to tell the main loop to quit (guaranteed atomic write) */

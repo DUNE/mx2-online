@@ -87,7 +87,9 @@ int main(int argc, char *argv[])
 #endif
 	unsigned long long startTime, stopTime;          // For SAM.  Done at second & microsecond precision.
 	unsigned long long startReadout, stopReadout;    // For gate monitoring.  Done at microsecond precision.
+#if DEBUG_TIMING
 	unsigned long long debugTimeStart, debugTimeEnd; // Misc. debug vars.
+#endif
 
 	/*********************************************************************************/
 	/* Process the command line argument set.                                        */
@@ -620,7 +622,10 @@ int main(int argc, char *argv[])
 	mnvdaq.infoStream() << "Returned from electronics initialization.";
 
 	// Start to setup vars for SAM metadata.
-	struct timeval runstart, readend, readstart, debugstart;
+	struct timeval runstart, readend, readstart;
+#if DEBUG_TIMING
+  struct timeval debugstart;
+#endif
 	gettimeofday(&runstart, NULL);
 	startTime = (unsigned long long)(runstart.tv_sec);
 	// Set initial start & stop readout times.
