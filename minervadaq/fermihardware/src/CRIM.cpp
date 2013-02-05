@@ -51,6 +51,8 @@ const unsigned short CRIM::softSGATEstop  = 0x0402;
 const unsigned short CRIM::softCNRST      = 0x0202;
 const unsigned short CRIM::softCNRSTseq   = 0x0808;
 
+const unsigned long long CRIM::timeOutSec = 3600;   // be careful shortening this w.r.t. multi-PC sync issues
+
 //----------------------------------------
 CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, const Controller* controller, 
     CRIMInterrupts line, unsigned short level ) :
@@ -434,7 +436,7 @@ void CRIM::ResetSequencerLatch()
 }
 
 //---------------------------
-void CRIM::WaitOnIRQ( sig_atomic_t const & continueFlag )
+int CRIM::WaitOnIRQ( sig_atomic_t const & continueFlag )
 {
   /*! \fn void ReadoutWorker::WaitOnIRQ() 
    *
@@ -444,54 +446,36 @@ void CRIM::WaitOnIRQ( sig_atomic_t const & continueFlag )
    * is "dumb" with respect to interrupts and only polls the interrupt status. See older
    * versions of the DAQ software for guesses on how to handle asserted interrupts.
    */
-  int error;
   int success = 0;
-  acqData.debugStream() << "  Entering acquire_data::WaitOnIRQ: IRQLevel = " << daqController->GetCrim()->GetIRQLevel();
+  CRIMLog.debugStream() << "Entering CRIM::WaitOnIRQ: IRQLevel = " << this->irqLevel;
 
-  int intcounter = 0;
   // Wait length vars... (don't want to spend forever waiting around).
   unsigned long long startTime, nowTime;
   struct timeval waitstart, waitnow;
   gettimeofday(&waitstart, NULL);
   startTime = (unsigned long long)(waitstart.tv_sec);
   // VME manip.
-  unsigned short interrupt_status = 0;
-  unsigned short iline = (unsigned short)daqController->GetCrim()->GetIRQLine();
-  unsigned char crim_send[2];
-  acqData.debugStream() << "  Interrupt line = " << iline;
+  unsigned short interruptStatus = 0;
+  unsigned short iline = (unsigned short)this->irqLine;
+  CRIMLog.debugStream() << "  Interrupt line = " << iline;
 
-  while ( !( interrupt_status & iline ) ) {
+  while ( !( interruptStatus & iline ) ) {
     if ( !continueFlag ) {
-      acqData.debug("Caught exit signal.  Bailing on CRIM IRQ wait.");
+      CRIMLog.debug("Caught exit signal.  Bailing on CRIM IRQ wait.");
       return 1;
     }
-
-    crim_send[0] = crim_send[1] = 0;
-    error = daqAcquire->ReadCycle(daqController->handle, crim_send,
-        daqController->GetCrim()->GetInterruptStatusAddress(), 
-        daqController->GetAddressModifier(),
-        daqController->GetDataWidth());  
-    intcounter++;
-    if (!(intcounter%10000)) { 
-      acqData.debug("    %06d - Interrrupt status = 0x%02X", intcounter, 
-          (crim_send[0] + (crim_send[1]<<8)));  
-    } 
-    if (error) throw error;
+    interruptStatus = this->GetInterruptStatus();
     gettimeofday(&waitnow, NULL);
     nowTime = (unsigned long long)(waitnow.tv_sec);
-    interrupt_status =  (crim_send[0]|(crim_send[1]<<0x08));
     if ( (nowTime-startTime) > timeOutSec) { 
       success = 1;
       break; 
     } 
   }
   // Clear the interrupt after acknowledging it.
-  crim_send[0] = daqController->GetCrim()->GetClearInterrupts() & 0xff;
-  crim_send[1] = (daqController->GetCrim()->GetClearInterrupts()>>0x08) & 0xff;
-  error=daqAcquire->WriteCycle(daqController->handle, 2, crim_send,
-      daqController->GetCrim()->GetClearInterruptsAddress(), 
-      daqController->GetAddressModifier(),
-      daqController->GetDataWidth()); 
+  this->ClearPendingInterrupts( interruptStatus );
+
+  return success;
 }
 
 #endif

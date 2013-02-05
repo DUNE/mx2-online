@@ -101,6 +101,8 @@ class CRIM : public VMECommunicator {
     void logRunningMode( RunningModes runningMode );
     void CAENVMEIRQEnable(); 
 
+    static const unsigned long long timeOutSec;
+
   public:
 
     // SGATEFall is the correct interrupt for every mode but cosmic. IRQ5 is always(?) correct...
@@ -123,7 +125,7 @@ class CRIM : public VMECommunicator {
     void ClearPendingInterrupts( unsigned short interruptStatus );
     void ResetGlobalIRQEnable();
     void ResetSequencerLatch();
-    void WaitOnIRQ( sig_atomic_t const & continueFlag );
+    int WaitOnIRQ( sig_atomic_t const & continueFlag );
 
     unsigned short GetInterruptMask(); 
 
