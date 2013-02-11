@@ -10,33 +10,32 @@ struct DAQWorkerArgs {
   int runNumber;
   int subRunNumber;
   int numberOfGates;
-  int runMode;
-  int detector;
+  RunningModes runMode;
+  DetectorTypes detector;
   int detectorConfigCode;
-  int ledLevel;
-  int ledGroup;
+  unsigned char ledLevel;
+  unsigned char ledGroup;
   int hardwareInitLevel;
   int networkPort;
   std::string etFileName;
   std::string logFileName;
   std::string samFileName;
+  std::string dataFileName;
   std::string hardwareConfigFileName;
 
 };
 
-log4cpp::Category& daqLogger = 
-  log4cpp::Category::getInstance(std::string("daqLogger"));
 
 class DAQWorker {
   private:  
     const DAQWorkerArgs* args;
-    log4cpp::Appender* daqAppender;
+    log4cpp::Appender* appender;
 
     std::vector<ReadoutWorker*> readoutWorkerVect;
 
   public:
-    explicit DAQWorker( const DAQWorkerArgs* daqArgs, 
-        log4cpp::Appender* appender, log4cpp::Priority::Value priority );
+    explicit DAQWorker( const DAQWorkerArgs* theArgs, 
+        log4cpp::Appender* theAppender, log4cpp::Priority::Value priority );
     ~DAQWorker();
 
 };
