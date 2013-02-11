@@ -31,6 +31,9 @@ int main( int argc, char * argv[] )
 
   DAQWorker * worker = new DAQWorker( args, baseAppender, log4cpp::Priority::DEBUG );
 
+  // worker->setUpET();  // ?
+  // worker->TakeData();
+
   delete worker;
   delete args;
 
