@@ -33,10 +33,15 @@ class DAQWorker {
 
     std::vector<ReadoutWorker*> readoutWorkerVect;
 
+    // void Initialize();  // Prep VME hardware - add CROCs and CRIMs, Init Crate
+
   public:
     explicit DAQWorker( const DAQWorkerArgs* theArgs, 
         log4cpp::Appender* theAppender, log4cpp::Priority::Value priority );
     ~DAQWorker();
+
+    // void SetUpET();  // ?
+    // void TakeData();
 
 };
 
