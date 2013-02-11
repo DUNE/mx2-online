@@ -34,16 +34,15 @@ class ReadoutWorker {
     std::vector<ECROC*> ecrocs;
     std::vector<CRIM*>  crims;
 
-		log4cpp::Appender* rwAppender;
-
     int crateID;  // == crate ID/Address for Controller
-		bool vmeModuleInit;    
+		log4cpp::Appender* appender;
+		bool vmeInit;    
 
     CRIM* masterCRIM();
 
 	public:
 
-    explicit ReadoutWorker( int crateID, log4cpp::Appender* appender, log4cpp::Priority::Value priority, bool vmeInit=false); 
+    explicit ReadoutWorker( int theCrateID, log4cpp::Appender* theAppender, log4cpp::Priority::Value priority, bool VMEInit=false); 
     ~ReadoutWorker();
 
     void InitializeCrate( RunningModes runningMode );
