@@ -13,6 +13,8 @@
 //#include <sys/time.h>
 //#include <signal.h>   // for sig_atomic_t
 
+log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
+
 //---------------------------
 ReadoutWorker::ReadoutWorker( int crateID, log4cpp::Appender* appender, log4cpp::Priority::Value priority, bool vmeInit ) 
 {
