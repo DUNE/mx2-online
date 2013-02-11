@@ -6,16 +6,18 @@
 
 log4cpp::Category& commLog = log4cpp::Category::getInstance(std::string("comm"));
 
-VMECommunicator::VMECommunicator( unsigned int address, log4cpp::Appender* appender, const Controller* controller )
+VMECommunicator::VMECommunicator( unsigned int theAddress, 
+    log4cpp::Appender* theAppender, 
+    const Controller* theController ) : 
+  controller(theController),
+  address(theAddress),
+  commAppender(theAppender)
 {
-  this->controller = controller;
   if( NULL == this->controller ) {
     std::cout << "Crate Controller is NULL in VMECommunicator::VMECommunicator!" << std::endl;
     exit(EXIT_CROC_UNSPECIFIED_ERROR);
   }
   controllerHandle = this->controller->GetHandle();
-  this->address    = address;
-  commAppender     = appender;
   if ( commAppender == 0 ) {
     std::cout << "VMECommunicator Log Appender is NULL in VMECommunicator::VMECommunicator!" << std::endl;
     exit(EXIT_CROC_UNSPECIFIED_ERROR);
