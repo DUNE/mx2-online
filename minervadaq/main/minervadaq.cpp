@@ -49,7 +49,7 @@ log4cpp::Category& mnvdaq = log4cpp::Category::getInstance(std::string("mnvdaq")
 
 using namespace std;
 
-int main(int argc, char *argv[]) 
+int oldmain(int argc, char *argv[]) 
 {
   /*********************************************************************************/
   /*      Initialize some execution status variables                               */
