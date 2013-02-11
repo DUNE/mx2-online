@@ -15,7 +15,6 @@
 #include <string>
 #include <sstream>
 
-log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
 
 /*! \class ReadoutWorker
  *  \brief The class containing all methods necessary for 
