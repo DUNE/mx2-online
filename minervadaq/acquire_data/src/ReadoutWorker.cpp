@@ -16,11 +16,14 @@
 log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
 
 //---------------------------
-ReadoutWorker::ReadoutWorker( int crateID, log4cpp::Appender* appender, log4cpp::Priority::Value priority, bool vmeInit ) 
+ReadoutWorker::ReadoutWorker( int theCrateID, log4cpp::Appender* theAppender, log4cpp::Priority::Value priority, bool VMEInit ) :
+  crateID(theCrateID),
+  appender(theAppender),
+  vmeInit(VMEInit)
 {
-  this->crateID = crateID;
-  rwAppender    = appender;
-  vmeModuleInit = vmeInit;
+  /* this->crateID = crateID; */
+  /* rwAppender    = appender; */
+  /* vmeModuleInit = vmeInit; */
   readoutLogger.setPriority(priority);
 
   controller = new Controller(0x00, crateID, appender);
@@ -93,7 +96,7 @@ void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1
   if (nFEBchan2<0 || nFEBchan2>10) nFEBchan2 = 0;
   if (nFEBchan3<0 || nFEBchan3>10) nFEBchan3 = 0;
 
-  ECROC *theECROC = new ECROC( address, this->rwAppender, this->controller );
+  ECROC *theECROC = new ECROC( address, this->appender, this->controller );
   theECROC->ClearAndResetStatusRegisters();
   readoutLogger.debugStream() << " Adding FEBs to Channels...";
   theECROC->GetChannel( 0 )->SetupNFEBs( nFEBchan0 );
@@ -115,7 +118,7 @@ void ReadoutWorker::AddCRIM( unsigned int address )
     address = address << CRIMAddressShift;
   }
   readoutLogger.debugStream() << "Adding CRIM with address = 0x" << std::hex << address; 
-  CRIM* crim = new CRIM( address, this->rwAppender, this->controller );
+  CRIM* crim = new CRIM( address, this->appender, this->controller );
   readoutLogger.debugStream() << " CRIM Status = 0x" << std::hex << crim->GetStatus();
   crims.push_back( crim );
   readoutLogger.debugStream() << "Added CRIM.";
