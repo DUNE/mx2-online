@@ -3,11 +3,14 @@
 
 #include "DAQWorker.h"
 
-DAQWorker::DAQWorker( const DAQWorkerArgs* daqArgs, 
-    log4cpp::Appender* appender, log4cpp::Priority::Value priority )
+log4cpp::Category& daqLogger = 
+  log4cpp::Category::getInstance(std::string("daqLogger"));
+
+DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs, 
+    log4cpp::Appender* theAppender, log4cpp::Priority::Value priority ) :
+  args(theArgs),
+  appender(theAppender)
 {
-  args = daqArgs;
-  daqAppender = appender;
   daqLogger.setPriority(priority);
 
   daqLogger.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
@@ -30,7 +33,7 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* daqArgs,
   daqLogger.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
   ReadoutWorker* readoutWorker = 
-    new ReadoutWorker( 0, daqAppender, priority, (bool)args->hardwareInitLevel );
+    new ReadoutWorker( 0, appender, priority, (bool)args->hardwareInitLevel );
   readoutWorkerVect.push_back( readoutWorker );
 }
 
