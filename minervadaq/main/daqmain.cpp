@@ -34,6 +34,7 @@ int main( int argc, char * argv[] )
   // worker->setUpET();  // ?
   // worker->TakeData();
 
+  log4cpp::Category::shutdown();
   delete worker;
   delete args;
 
