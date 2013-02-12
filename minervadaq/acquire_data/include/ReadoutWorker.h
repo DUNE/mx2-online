@@ -34,6 +34,11 @@ class ReadoutWorker {
     std::vector<ECROC*> ecrocs;
     std::vector<CRIM*>  crims;
 
+    /* std::vector<const EChannels*> readoutChannels; */
+    /* std::vector<const EChannels*>::iterator currentChannel; */
+    std::vector<EChannels*> readoutChannels;
+    std::vector<EChannels*>::iterator currentChannel;
+
     int crateID;  // == crate ID/Address for Controller
 		log4cpp::Appender* appender;
 		bool vmeInit;    
@@ -51,6 +56,9 @@ class ReadoutWorker {
     void AddCRIM( unsigned int address );
     void InitializeCrate( RunningModes runningMode );
 
+    bool MoveToNextChannel();
+    unsigned short GetNextDataBlockSize();
+    unsigned char* GetNextDataBlock( unsigned short blockSize );
 
     /*
        int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
