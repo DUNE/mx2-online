@@ -45,12 +45,13 @@ class ReadoutWorker {
     explicit ReadoutWorker( int theCrateID, log4cpp::Appender* theAppender, log4cpp::Priority::Value priority, bool VMEInit=false); 
     ~ReadoutWorker();
 
-    void InitializeCrate( RunningModes runningMode );
-
     const Controller* GetController() const;
 
     void AddECROC( unsigned int address, int nFEBchan0=11, int nFEBchan1=11, int nFEBchan2=11, int nFEBchan3=11 );
     void AddCRIM( unsigned int address );
+    void InitializeCrate( RunningModes runningMode );
+
+
     /*
        int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
        int WaitOnIRQ(sig_atomic_t const & continueFlag);
