@@ -21,9 +21,6 @@ ReadoutWorker::ReadoutWorker( int theCrateID, log4cpp::Appender* theAppender, lo
   appender(theAppender),
   vmeInit(VMEInit)
 {
-  /* this->crateID = crateID; */
-  /* rwAppender    = appender; */
-  /* vmeModuleInit = vmeInit; */
   readoutLogger.setPriority(priority);
 
   controller = new Controller(0x00, crateID, appender);
