@@ -46,7 +46,7 @@ ECROC::~ECROC()
 }
 
 //----------------------------------------
-unsigned int ECROC::GetAddress() 
+unsigned int ECROC::GetAddress() const
 {
 	return this->address;
 }
@@ -75,7 +75,7 @@ std::vector<EChannels*>* ECROC::GetChannelsVector()
 //----------------------------------------  
 void ECROC::SetupTimingRegister( crocClockModes clockMode, 
 	unsigned short testPulseDelayEnabled, 
-	unsigned short testPulseDelayValue )
+	unsigned short testPulseDelayValue ) const
 {
 	unsigned short timingRegisterMessage  = clockMode;   	      // the clock mode  (0x8000 is the bitmask for bit 15 high)
 	timingRegisterMessage |= (testPulseDelayEnabled & 0x1)<<12; // test pulse delay enable bit (bit 12)
@@ -89,7 +89,7 @@ void ECROC::SetupTimingRegister( crocClockModes clockMode,
 }
 
 //---------------------------------------- 
-void ECROC::SetupResetAndTestPulseRegister( unsigned short resetEnable, unsigned short testPulseEnable )
+void ECROC::SetupResetAndTestPulseRegister( unsigned short resetEnable, unsigned short testPulseEnable ) const
 {
 	unsigned short resetAndTestPulseMaskRegisterMessage = (resetEnable & 0x1)<<8;  //the reset enable bit is 8
 	resetAndTestPulseMaskRegisterMessage |= (testPulseEnable & 0x1);               //the test pulse enable bit is 0
@@ -103,14 +103,14 @@ void ECROC::SetupResetAndTestPulseRegister( unsigned short resetEnable, unsigned
 //---------------------------------------- 
 void ECROC::InitializeRegisters( crocClockModes clockMode, 
 		unsigned short testPulseDelayValue,
-		unsigned short testPulseDelayEnabled ) 
+		unsigned short testPulseDelayEnabled ) const
 {
 	SetupTimingRegister( clockMode, testPulseDelayEnabled, testPulseDelayValue );
 	SetupResetAndTestPulseRegister( 0, 0 );
 }
 
 //----------------------------------------
-void ECROC::FastCommandOpenGate()
+void ECROC::FastCommandOpenGate() const
 {
   unsigned char command[] = {0xB1};
   int error = WriteCycle(1, command, fastCommandAddress, addressModifier, dataWidthReg );
@@ -118,34 +118,34 @@ void ECROC::FastCommandOpenGate()
 }
 
 //----------------------------------------
-void ECROC::ClearAndResetStatusRegisters()
+void ECROC::ClearAndResetStatusRegisters() const
 {
-	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
+	for (std::vector<EChannels*>::const_iterator p=ECROCChannels.begin();
 			p!=ECROCChannels.end();
 			p++) 
 		(*p)->ClearAndResetStatusRegister();
 }
 
 //----------------------------------------
-void ECROC::EnableSequencerReadout()
+void ECROC::EnableSequencerReadout() const
 {
-	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
+	for (std::vector<EChannels*>::const_iterator p=ECROCChannels.begin();
 			p!=ECROCChannels.end();
 			p++) 
 		(*p)->EnableSequencerReadout();
 }
 
 //----------------------------------------
-void ECROC::DisableSequencerReadout()
+void ECROC::DisableSequencerReadout() const
 {
-	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
+	for (std::vector<EChannels*>::const_iterator p=ECROCChannels.begin();
 			p!=ECROCChannels.end();
 			p++) 
 		(*p)->DisableSequencerReadout();
 }
 
 //----------------------------------------
-void ECROC::SendSoftwareRDFE()
+void ECROC::SendSoftwareRDFE() const
 {
   unsigned char command[] = {0x1F};
   int error = WriteCycle(1, command, rdfePulseCommandAddress, addressModifier, dataWidthReg );
@@ -153,16 +153,16 @@ void ECROC::SendSoftwareRDFE()
 }
 
 //----------------------------------------
-void ECROC::WaitForSequencerReadoutCompletion()
+void ECROC::WaitForSequencerReadoutCompletion() const
 {
-	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
+	for (std::vector<EChannels*>::const_iterator p=ECROCChannels.begin();
 			p!=ECROCChannels.end();
 			p++) 
 		(*p)->WaitForSequencerReadoutCompletion();
 }
 
 //----------------------------------------
-void ECROC::Initialize()
+void ECROC::Initialize() const
 {
   ECROCLog.infoStream() << "Initializing ECROC 0x" << std::hex << this->address;
 	unsigned short testPulseDelayEnabled = 0;  // we do not use the test pulse delay in data-taking

@@ -10,8 +10,8 @@ VMECommunicator::VMECommunicator( unsigned int theAddress,
     log4cpp::Appender* theAppender, 
     const Controller* theController ) : 
   controller(theController),
-  address(theAddress),
-  commAppender(theAppender)
+  commAppender(theAppender),
+  address(theAddress)
 {
   if( NULL == this->controller ) {
     std::cout << "Crate Controller is NULL in VMECommunicator::VMECommunicator!" << std::endl;
@@ -156,7 +156,7 @@ int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned 
   return error;
 }
 
-void  VMECommunicator::exitIfError( int error, const std::string& msg ) 
+void  VMECommunicator::exitIfError( int error, const std::string& msg ) const
 {
   if (error) {
     commLog.fatalStream() << "Fatal error for device with address = 0x" << std::hex << this->address;

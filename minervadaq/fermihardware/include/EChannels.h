@@ -51,52 +51,50 @@ class EChannels : public VMECommunicator {
 
 		std::vector<FEB*> FEBsVector;     
 
-    bool isAvailable( FEB* feb );
-    void WriteMessageToMemory( unsigned char* message, int messageLength );
-    void UpdateConfigurationForVal( unsigned short val, unsigned short mask );
-    void SetChannelConfiguration( unsigned char* message );
+    bool isAvailable( FEB* feb ) const;
+    void WriteMessageToMemory( unsigned char* message, int messageLength ) const;
+    void UpdateConfigurationForVal( unsigned short val, unsigned short mask ) const;
+    void SetChannelConfiguration( unsigned char* message ) const;
 
 	public:
 		explicit EChannels( unsigned int baseVMEAddress, unsigned int channelNumber, 
         log4cpp::Appender* appender, const Controller* controller );
 		~EChannels();
 
-    void ClearAndResetStatusRegister();  
-    unsigned short ReadFrameStatusRegister();
-    unsigned short ReadTxRxStatusRegister();
+    void ClearAndResetStatusRegister() const;  
+    unsigned short ReadFrameStatusRegister() const;
+    unsigned short ReadTxRxStatusRegister() const;
+    unsigned short GetChannelConfiguration() const;
 
-    void SendMessage();
-    unsigned short ReadEventCounter();
-    unsigned short WaitForSequencerReadoutCompletion();
-    unsigned short WaitForMessageReceived();
-    unsigned short ReadDPMPointer();
-    unsigned char* ReadMemory( unsigned short dataLength ); 
+    void SendMessage() const;
+    unsigned short ReadEventCounter() const;
+    unsigned short WaitForSequencerReadoutCompletion() const;
+    unsigned short WaitForMessageReceived() const;
+    unsigned short ReadDPMPointer() const;
+    unsigned char* ReadMemory( unsigned short dataLength ) const; 
 
     // write the frames - load them to memory (don't send messages)
     // no WriteFrame is deliberate - too many configs - we just offer preconfigured reads
-    void WriteFPGAProgrammingRegistersToMemory( FEB *feb );
-    void WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb ); 
-    void WriteTRIPRegistersToMemory( FEB *feb, int tripNumber );
-    void WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber ); 
+    void WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const;
+    void WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb ) const; 
+    void WriteTRIPRegistersToMemory( FEB *feb, int tripNumber ) const;
+    void WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber ) const; 
     // read the frames - load messages to memory, send them, and then check the dpm pointer
-    unsigned short ReadFPGAProgrammingRegistersToMemory( FEB *feb );
+    unsigned short ReadFPGAProgrammingRegistersToMemory( FEB *feb ) const;
 
-    unsigned int GetChannelNumber();
-    unsigned int GetParentECROCAddress();
-    unsigned int GetDirectAddress();
+    unsigned int GetChannelNumber() const;
+    unsigned int GetParentECROCAddress() const;
+    unsigned int GetDirectAddress() const;
 
-    int DecodeStatusMessage();
-    int CheckHeaderErrors(int dataLength);
+    int DecodeStatusMessage( const unsigned short& status ) const;
+    int CheckHeaderErrors(int dataLength) const;
 
-    void EnableSequencerReadout();
-    void DisableSequencerReadout();
+    void EnableSequencerReadout() const;
+    void DisableSequencerReadout() const;
 
     void SetupNFEBs( int nFEBs );
     std::vector<FEB*>* GetFEBVector();
     FEB* GetFEBVector( int index /* should always equal (FEB address - 1) */ );
-
-    unsigned short GetChannelConfiguration();
-
 
 };
 #endif
