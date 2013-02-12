@@ -48,5 +48,21 @@ DAQWorker::~DAQWorker()
   readoutWorkerVect.clear();
 }
 
+// void DAQWorker::SetUpET()  
+
+/*
+void DAQWorker::TakeData()
+{
+  // loop over gates
+  readoutWorker->Reset();
+  readoutWorker->Trigger();
+  do {
+    unsigned short dataBlockSize = readoutWorker->GetNextDataBlockSize();
+    unsigned char* dataBlock     = readoutWorker->GetNextDataBlock( dataBlock );
+    // declare block to ET
+    // delete dataBlock;  // newed way down inside Channels object
+  } while ( readoutWorker->MoveToNextChannel() );
+}
+*/
 
 #endif

@@ -36,6 +36,7 @@ ReadoutWorker::ReadoutWorker( int theCrateID, log4cpp::Appender* theAppender, lo
 
 //---------------------------
 ReadoutWorker::~ReadoutWorker() {
+  readoutChannels.clear();
   for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
     delete (*p);
   }
@@ -121,5 +122,32 @@ void ReadoutWorker::AddCRIM( unsigned int address )
   readoutLogger.debugStream() << "Added CRIM.";
 }
 
+//---------------------------
+bool ReadoutWorker::MoveToNextChannel()
+{
+  currentChannel++;
+  if (currentChannel == readoutChannels.end()) {
+    return false;
+  }
+  return true;
+}
+
+//---------------------------
+unsigned short ReadoutWorker::GetNextDataBlockSize()
+{
+  if (currentChannel != readoutChannels.end()) {
+    return (*currentChannel)->ReadDPMPointer();
+  }
+  return 0;
+}
+
+//---------------------------
+unsigned char* ReadoutWorker::GetNextDataBlock( unsigned short blockSize )
+{
+  if (currentChannel == readoutChannels.end()) {
+    exit( EXIT_CROC_UNSPECIFIED_ERROR );
+  }
+  return (*currentChannel)->ReadMemory( blockSize );
+}
 
 #endif
