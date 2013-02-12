@@ -44,27 +44,27 @@ class ECROC : public VMECommunicator {
 		explicit ECROC( unsigned int address, log4cpp::Appender* appender, const Controller* controller); 
 		~ECROC(); 
 
-    void Initialize();
-		unsigned int GetAddress(); 
+    void Initialize() const;
+		unsigned int GetAddress() const; 
 
 		EChannels *GetChannel( unsigned int i ); 
 		std::vector<EChannels*>* GetChannelsVector(); 
 
 		void SetupTimingRegister(crocClockModes clockMode, 
         unsigned short testPulseDelayEnabled, 
-        unsigned short testPulseDelayValue); 
+        unsigned short testPulseDelayValue) const; 
 		void SetupResetAndTestPulseRegister( unsigned short resetEnable, 
-        unsigned short testPulseEnable ); 
+        unsigned short testPulseEnable ) const; 
 		void InitializeRegisters( crocClockModes clockMode, 
 				unsigned short testPulseDelayValue,
-				unsigned short testPulseDelayEnabled ); 
+				unsigned short testPulseDelayEnabled ) const; 
 
-    void FastCommandOpenGate();
-    void ClearAndResetStatusRegisters();
-    void EnableSequencerReadout();
-    void DisableSequencerReadout();
-    void SendSoftwareRDFE(); // manually start sequencer readout
-    void WaitForSequencerReadoutCompletion();
+    void FastCommandOpenGate() const;
+    void ClearAndResetStatusRegisters() const;
+    void EnableSequencerReadout() const;
+    void DisableSequencerReadout() const;
+    void SendSoftwareRDFE() const; // manually start sequencer readout
+    void WaitForSequencerReadoutCompletion() const;
 };
 
 #endif

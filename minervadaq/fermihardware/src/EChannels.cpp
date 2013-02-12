@@ -57,32 +57,32 @@ EChannels::~EChannels()
 }
 
 //----------------------------------------
-unsigned int EChannels::GetChannelNumber() 
+unsigned int EChannels::GetChannelNumber() const
 {
   return channelNumber;
 }
 
 //----------------------------------------
-unsigned int EChannels::GetParentECROCAddress() 
+unsigned int EChannels::GetParentECROCAddress() const
 {
   return this->address;
 }
 
 //----------------------------------------
-unsigned int EChannels::GetDirectAddress() 
+unsigned int EChannels::GetDirectAddress() const
 {
   return channelDirectAddress;
 }
 
 //----------------------------------------
-int EChannels::DecodeStatusMessage() 
+int EChannels::DecodeStatusMessage( const unsigned short& status ) const
 {
   /* TODO: Re-implement this correctly for new channels. */
   return 0;
 }
 
 //----------------------------------------
-int EChannels::CheckHeaderErrors(int dataLength)
+int EChannels::CheckHeaderErrors(int dataLength) const
 {                  
   /* TODO: Re-implement this correctly for new channels. */
   return 0;
@@ -110,19 +110,19 @@ void EChannels::SetupNFEBs( int nFEBs )
 }
 
 //----------------------------------------
-void EChannels::EnableSequencerReadout()
+void EChannels::EnableSequencerReadout() const
 {
   this->UpdateConfigurationForVal( (unsigned short)(0x8000), (unsigned short)(0x7FFF) );
 }
 
 //----------------------------------------
-void EChannels::DisableSequencerReadout()
+void EChannels::DisableSequencerReadout() const
 {
   this->UpdateConfigurationForVal( (unsigned short)(0x0000), (unsigned short)(0x7FFF) );
 }
 
 //----------------------------------------
-unsigned short EChannels::GetChannelConfiguration()
+unsigned short EChannels::GetChannelConfiguration() const
 {
   unsigned short configuration = 0;
   unsigned char receivedMessage[] = {0x0,0x0};
@@ -138,7 +138,7 @@ unsigned short EChannels::GetChannelConfiguration()
 }
 
 //----------------------------------------
-void EChannels::UpdateConfigurationForVal( unsigned short val, unsigned short mask )
+void EChannels::UpdateConfigurationForVal( unsigned short val, unsigned short mask ) const
 {
   // maintain state - we only want to update the val
   unsigned short configuration = this->GetChannelConfiguration();  
@@ -153,7 +153,7 @@ void EChannels::UpdateConfigurationForVal( unsigned short val, unsigned short ma
 }
 
 //----------------------------------------
-void EChannels::SetChannelConfiguration( unsigned char* message )
+void EChannels::SetChannelConfiguration( unsigned char* message ) const
 {
   // message length should always be two or there could be problems!
   EChannelLog.debugStream() << "Channel " << channelNumber << " Target Configuration: 0x" 
@@ -180,7 +180,7 @@ FEB* EChannels::GetFEBVector( int index /* should always equal FEB address - 1 (
 }
 
 //----------------------------------------
-bool EChannels::isAvailable( FEB* feb )
+bool EChannels::isAvailable( FEB* feb ) const
 {
   EChannelLog.debugStream() << "isAvailable FEB with class address = " << feb->GetBoardNumber();
   bool available = false;
@@ -191,9 +191,7 @@ bool EChannels::isAvailable( FEB* feb )
 
   feb->message = dataBuffer;
   feb->DecodeRegisterValues(dataLength);
-  /* feb->ShowValues(); */
   EChannelLog.debugStream() << "Decoded FEB address = " << (int)feb->GetBoardID();
-  // Check to see if the readonly BoardID == Class value;
   if( (int)feb->GetBoardID() == feb->GetBoardNumber() ) available = true;
 
   feb->message = 0;
@@ -204,7 +202,7 @@ bool EChannels::isAvailable( FEB* feb )
 }
 
 //----------------------------------------
-void EChannels::ClearAndResetStatusRegister()
+void EChannels::ClearAndResetStatusRegister() const
 {
   EChannelLog.debugStream() << "Command Address        = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
@@ -214,7 +212,7 @@ void EChannels::ClearAndResetStatusRegister()
 }
 
 //----------------------------------------
-unsigned short EChannels::ReadFrameStatusRegister()
+unsigned short EChannels::ReadFrameStatusRegister() const
 {
   unsigned char receivedMessage[] = {0x0,0x0};
   EChannelLog.debugStream() << "Frame Status Address = 0x" 
@@ -228,7 +226,7 @@ unsigned short EChannels::ReadFrameStatusRegister()
 }
 
 //----------------------------------------
-unsigned short EChannels::ReadTxRxStatusRegister()
+unsigned short EChannels::ReadTxRxStatusRegister() const
 {
   unsigned char receivedMessage[] = {0x0,0x0};
   EChannelLog.debugStream() << "Tx/Rx Status Address = 0x" 
@@ -243,7 +241,7 @@ unsigned short EChannels::ReadTxRxStatusRegister()
 
 
 //----------------------------------------
-void EChannels::SendMessage()
+void EChannels::SendMessage() const
 {
   //#ifndef GOFAST
   //#endif
@@ -255,7 +253,7 @@ void EChannels::SendMessage()
 }
 
 //----------------------------------------
-unsigned short EChannels::WaitForMessageReceived()
+unsigned short EChannels::WaitForMessageReceived() const
 {
   unsigned short status = 0;
   do {
@@ -277,7 +275,7 @@ unsigned short EChannels::WaitForMessageReceived()
 }
 
 //----------------------------------------
-unsigned short EChannels::WaitForSequencerReadoutCompletion()
+unsigned short EChannels::WaitForSequencerReadoutCompletion() const
 {
   unsigned short status = 0;
   do {
@@ -287,7 +285,7 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion()
 }
 
 //----------------------------------------
-unsigned short EChannels::ReadDPMPointer()
+unsigned short EChannels::ReadDPMPointer() const
 {
   unsigned short receiveMemoryPointer = 0;
   unsigned char pointer[] = {0x0,0x0};
@@ -302,7 +300,7 @@ unsigned short EChannels::ReadDPMPointer()
 }
 
 //----------------------------------------
-unsigned short EChannels::ReadEventCounter()
+unsigned short EChannels::ReadEventCounter() const
 {
   unsigned short eventCounter = 0;
   unsigned char counter[] = {0x0,0x0};
@@ -317,7 +315,7 @@ unsigned short EChannels::ReadEventCounter()
 }
 
 //----------------------------------------
-unsigned char* EChannels::ReadMemory( unsigned short dataLength )
+unsigned char* EChannels::ReadMemory( unsigned short dataLength ) const
 {
   // -> possible shenanigans! -> 
   if (dataLength%2) {dataLength -= 1;} else {dataLength -= 2;} //must be even  //TODO: should this be in ReadDPMPointer?
@@ -331,7 +329,7 @@ unsigned char* EChannels::ReadMemory( unsigned short dataLength )
 }
 
 //----------------------------------------
-void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength )
+void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength ) const
 {
   EChannelLog.debugStream() << "Send Memory Address   = 0x" << std::hex << sendMemoryAddress;
   EChannelLog.debugStream() << "Message Length        = " << messageLength;
@@ -340,7 +338,7 @@ void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength 
 }
 
 //----------------------------------------
-void EChannels::WriteFPGAProgrammingRegistersToMemory( FEB *feb )
+void EChannels::WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const
 {
   // Note: this function does not send the message! It only write the message to the CROC memory.
   feb->MakeMessage(); 
@@ -349,7 +347,7 @@ void EChannels::WriteFPGAProgrammingRegistersToMemory( FEB *feb )
 }
 
 //----------------------------------------
-void EChannels::WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb )
+void EChannels::WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb ) const
 {
   // Note: this function does not send the message! It only write the message to the CROC memory.
   Devices dev     = FPGA;
@@ -361,7 +359,7 @@ void EChannels::WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb )
 }
 
 //----------------------------------------
-void EChannels::WriteTRIPRegistersToMemory( FEB *feb, int tripNumber )
+void EChannels::WriteTRIPRegistersToMemory( FEB *feb, int tripNumber ) const
 {
   feb->GetTrip(tripNumber)->MakeMessage();
   this->WriteMessageToMemory( feb->GetTrip(tripNumber)->GetOutgoingMessage(), 
@@ -370,14 +368,14 @@ void EChannels::WriteTRIPRegistersToMemory( FEB *feb, int tripNumber )
 }
 
 //----------------------------------------
-void EChannels::WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber )
+void EChannels::WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber ) const
 {
   feb->GetTrip(tripNumber)->SetRead(true);
   this->WriteTRIPRegistersToMemory( feb, tripNumber );
 }
 
 //----------------------------------------
-unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( FEB *feb )
+unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( FEB *feb ) const
 {
   // Note: this function does not retrieve the data from memory! It only loads it and reads the pointer.
   this->ClearAndResetStatusRegister();
