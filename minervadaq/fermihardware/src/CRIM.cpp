@@ -159,7 +159,7 @@ void CRIM::Initialize( RunningModes runningMode )
 }
 
 //----------------------------------------
-void CRIM::logRunningMode( RunningModes runningMode )
+void CRIM::logRunningMode( const RunningModes& runningMode ) const
 {
   switch (runningMode) {
     case OneShot:
@@ -192,7 +192,7 @@ void CRIM::logRunningMode( RunningModes runningMode )
 }
 
 //----------------------------------------
-void CRIM::SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ) 
+void CRIM::SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ) const
 {
   unsigned short timingSetup = 
     ( timingMode & TimingSetupRegisterModeMask ) | 
@@ -214,7 +214,7 @@ void CRIM::SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies freque
 
 //----------------------------------------
 void CRIM::SetupGateWidth( unsigned short tcalbEnable, 
-    unsigned short gateWidth, unsigned short sequencerEnable ) 
+    unsigned short gateWidth, unsigned short sequencerEnable ) const
 {
   // sequencerEnable bit is ignored on CRIM firmwares earlier than v9
   unsigned short gateWidthSetup = 
@@ -237,7 +237,7 @@ void CRIM::SetupGateWidth( unsigned short tcalbEnable,
 }
 
 //----------------------------------------
-void CRIM::SetupTCALBPulse( unsigned short pulseDelay ) 
+void CRIM::SetupTCALBPulse( unsigned short pulseDelay ) const
 {
   unsigned short TCALBDelaySetup = pulseDelay & TCALBDelayRegisterMask;
 
@@ -252,9 +252,9 @@ void CRIM::SetupTCALBPulse( unsigned short pulseDelay )
 } 
 
 //----------------------------------------
-void CRIM::IRQEnable()
+void CRIM::IRQEnable() const
 {
-  /*!\fn void CRIM::IRQEnable()
+  /*!\fn void CRIM::IRQEnable() const
    *
    * These are the steps to setting the IRQ:
    *  1) Select an IRQ LINE on which the system will wait for an assert.  
@@ -284,7 +284,7 @@ void CRIM::IRQEnable()
 }
 
 //----------------------------------------
-void CRIM::SetupInterruptMask()
+void CRIM::SetupInterruptMask() const
 {
   // Note that we use the irqLine instance variable.
   unsigned short mask = this->GetInterruptMask();
@@ -297,7 +297,7 @@ void CRIM::SetupInterruptMask()
 }
 
 //----------------------------------------
-unsigned short CRIM::GetInterruptStatus()
+unsigned short CRIM::GetInterruptStatus() const
 {
   unsigned char message[] = {0x0,0x0};
   int error = ReadCycle( message, interruptStatusRegister, addressModifier, dataWidthReg );
@@ -308,7 +308,7 @@ unsigned short CRIM::GetInterruptStatus()
 }
 
 //----------------------------------------
-void CRIM::ClearPendingInterrupts( unsigned short interruptStatus )
+void CRIM::ClearPendingInterrupts( unsigned short interruptStatus ) const
 {
   if ( interruptStatus !=0 ) {
     unsigned short resetInterrupts = 0x81;  // clear all pending interrupts
@@ -326,7 +326,7 @@ void CRIM::ClearPendingInterrupts( unsigned short interruptStatus )
 }
 
 //----------------------------------------
-void CRIM::ResetGlobalIRQEnable()  
+void CRIM::ResetGlobalIRQEnable() const
 {
   CRIMLog.debugStream() << "ResetGlobalIRQEnable for CRIM 0x" << std::hex << this->address;
   CRIMLog.debugStream() << " Enable bit = 0x" << std::hex << (1 << 7);
@@ -344,7 +344,7 @@ void CRIM::ResetGlobalIRQEnable()
 }
 
 //----------------------------------------
-void CRIM::CAENVMEIRQEnable()
+void CRIM::CAENVMEIRQEnable() const
 {
   CRIMLog.debugStream() << "CAENVMEIRQEnable for mask 0x" << std::hex << ~this->GetInterruptMask();
   int error = CAENVME_IRQEnable(this->GetController()->GetHandle(),~this->GetInterruptMask());
@@ -358,7 +358,7 @@ const unsigned int CRIM::GetAddress() const
 }
 
 //----------------------------------------
-unsigned short CRIM::GetInterruptMask() 
+unsigned short CRIM::GetInterruptMask() const
 {
   return ((unsigned short)irqLine & InterruptMaskRegisterMask);
 } 
@@ -436,7 +436,7 @@ void CRIM::ResetSequencerLatch() const
 }
 
 //---------------------------
-int CRIM::WaitOnIRQ( sig_atomic_t const & continueFlag )
+int CRIM::WaitOnIRQ( sig_atomic_t const & continueFlag ) const
 {
   /*! \fn void ReadoutWorker::WaitOnIRQ() 
    *
@@ -461,13 +461,14 @@ int CRIM::WaitOnIRQ( sig_atomic_t const & continueFlag )
 
   while ( !( interruptStatus & iline ) ) {
     if ( !continueFlag ) {
-      CRIMLog.debug("Caught exit signal.  Bailing on CRIM IRQ wait.");
+      CRIMLog.debugStream() << "Caught exit signal.  Bailing on CRIM IRQ wait.";
       return 1;
     }
     interruptStatus = this->GetInterruptStatus();
     gettimeofday(&waitnow, NULL);
     nowTime = (unsigned long long)(waitnow.tv_sec);
     if ( (nowTime-startTime) > timeOutSec) { 
+      CRIMLog.debugStream() << "Timing out. No interrupt after " << timeOutSec << " seconds.";
       success = 1;
       break; 
     } 

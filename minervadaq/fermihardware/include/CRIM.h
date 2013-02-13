@@ -92,8 +92,8 @@ class CRIM : public VMECommunicator {
     static const unsigned short softTrigger, softTCALB, softSGATEstart, 
                  softSGATEstop, softCNRST, softCNRSTseq;
 
-    void logRunningMode( RunningModes runningMode );
-    void CAENVMEIRQEnable(); 
+    void logRunningMode( const RunningModes& runningMode ) const;
+    void CAENVMEIRQEnable() const; 
 
     static const unsigned long long timeOutSec;
 
@@ -110,18 +110,18 @@ class CRIM : public VMECommunicator {
     const unsigned int GetAddress() const;
     unsigned short GetStatus() const;
 
-    void SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ); 
-    void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth, unsigned short sequencerEnable ); 
-    void SetupTCALBPulse( unsigned short pulseDelay );
-    void IRQEnable();
-    void SetupInterruptMask();
-    unsigned short GetInterruptStatus();
-    void ClearPendingInterrupts( unsigned short interruptStatus );
-    void ResetGlobalIRQEnable();
+    void SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ) const; 
+    void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth, unsigned short sequencerEnable ) const; 
+    void SetupTCALBPulse( unsigned short pulseDelay ) const;
+    void IRQEnable() const;
+    void SetupInterruptMask() const;
+    unsigned short GetInterruptStatus() const;
+    void ClearPendingInterrupts( unsigned short interruptStatus ) const;
+    void ResetGlobalIRQEnable() const;
     void ResetSequencerLatch() const;
-    int WaitOnIRQ( sig_atomic_t const & continueFlag );
+    int WaitOnIRQ( sig_atomic_t const & continueFlag ) const;
 
-    unsigned short GetInterruptMask(); 
+    unsigned short GetInterruptMask() const; 
 
     /*! control stuff */
     void SetCRCEnable(bool a);
