@@ -3,7 +3,9 @@
 
 /*! \fn
  *
- * Templated function for making up the MINERvA event model data block
+ * Templated function for making up the MINERvA event model data block. 
+ * That means taking a frame, prepending the Minerva Frame Header, and 
+ * then filling the rest of the fram back in.
  *
  * \param X *frame  a device frame containing data
  * \param MinervaHeader *header a MINERvA event block header
