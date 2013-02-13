@@ -22,39 +22,39 @@
 #define MAX_CONNECTIONS 500
 
 /*! \file
-*
-* The Event Builder is a separate process which will act as a 
-* simple local socket-based server process.  This will take in 
-* data from the main minervadaq program and process it into 
-* the final event model.  The final event will then be placed on
-* the Event Transfer system for storage.
-*
-* Elaine Schulte, Rutgers University
-* Gabriel Perdue, The University of Rochester
-*/
+ *
+ * The Event Builder is a separate process which will act as a 
+ * simple local socket-based server process.  This will take in 
+ * data from the main minervadaq program and process it into 
+ * the final event model.  The final event will then be placed on
+ * the Event Transfer system for storage.
+ *
+ * Elaine Schulte, Rutgers University
+ * Gabriel Perdue, The University of Rochester
+ */
 
 /*! \struct event_handler
  *
  * \brief Holds frame data and run associated data for passing around through different functions.
  */
 struct event_handler { //the structure to hold the data
-	bool quit, new_event, done; /*!<we need some status info */
-	unsigned char		detectorType;   // Enumerated in the DAQHeader Class 
-	unsigned short int	detectorConfig; // Number of modules in the detector
-	unsigned int		runNumber;      // Run series demarcator.
-	unsigned int		subRunNumber;   // Run within a series.
-	unsigned short int	triggerType;    // Mask to select 8 least significant bits
-	unsigned char		ledLevel;       // Sets OnePE vs. MaxPE in header.
-	unsigned char		ledGroup;       // Which LED group is fired? - Valid for 2009 LED box.
-	unsigned long long	globalGate;     // Total gate for the detector.
-	unsigned long long	gate;           // Gate within a subrun.
-	unsigned long long	triggerTime;    // Time in microseconds after the epoch. 		
-	unsigned short int	readoutInfo;    // Readout type and errors... break these up? timingVio is obsolete
-	unsigned int 		minosSGATE;     // Only 28 significant bits.
-	unsigned int            readoutTime;    // We will only report 24 bits (DAQ Header v8+).
-	unsigned int feb_info[9]; /*!<0: link_no, 1: crate_no, 2: croc_no, 3: chan_no, 4: bank, 5: buffer length, 
-                                      6: feb number, 7: feb firmware, 8: hits; //hardware info & data type */
-	unsigned char event_data[FEB_DISC_SIZE]; /*!<the data we're going to process - largest possible frame? */
+  bool quit, new_event, done; /*!<we need some status info */
+  unsigned char		detectorType;   // Enumerated in the DAQHeader Class 
+  unsigned short int	detectorConfig; // Number of modules in the detector
+  unsigned int		runNumber;      // Run series demarcator.
+  unsigned int		subRunNumber;   // Run within a series.
+  unsigned short int	triggerType;    // Mask to select 8 least significant bits
+  unsigned char		ledLevel;       // Sets OnePE vs. MaxPE in header.
+  unsigned char		ledGroup;       // Which LED group is fired? - Valid for 2009 LED box.
+  unsigned long long	globalGate;     // Total gate for the detector.
+  unsigned long long	gate;           // Gate within a subrun.
+  unsigned long long	triggerTime;    // Time in microseconds after the epoch. 		
+  unsigned short int	readoutInfo;    // Readout type and errors... break these up? timingVio is obsolete
+  unsigned int 		minosSGATE;     // Only 28 significant bits.
+  unsigned int            readoutTime;    // We will only report 24 bits (DAQ Header v8+).
+  unsigned int feb_info[9]; /*!<0: link_no, 1: crate_no, 2: croc_no, 3: chan_no, 4: bank, 5: buffer length, 
+6: feb number, 7: feb firmware, 8: hits; //hardware info & data type */
+  unsigned char event_data[FEB_DISC_SIZE]; /*!<the data we're going to process - largest possible frame? */
 }; 
 
 /*! a helper function which sorts data into the event */
