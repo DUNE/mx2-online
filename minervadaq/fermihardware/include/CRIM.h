@@ -42,12 +42,6 @@ class CRIM : public VMECommunicator {
 
     unsigned short controlRegister; 
 
-    /*! interrupt register addresses
-     * interruptAddress:  the address of the Interrupt Mask Register, i.e. which line to monitor
-     * interruptStatusRegister:  the address of the register which reports the interrupt status
-     * interruptsClear: the address to which a "clear" is sent to acknowledge pending interrupts
-     * interruptConfig:  the address to the register which sets the interrupt priority levels
-     */
     unsigned int interruptAddress, interruptStatusRegister, interruptsClear, interruptConfig;
 
     /*! timing & software register addresses */
@@ -114,7 +108,7 @@ class CRIM : public VMECommunicator {
     void Initialize( RunningModes runningMode );
 
     const unsigned int GetAddress() const;
-    unsigned short GetStatus();
+    unsigned short GetStatus() const;
 
     void SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ); 
     void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth, unsigned short sequencerEnable ); 
@@ -124,7 +118,7 @@ class CRIM : public VMECommunicator {
     unsigned short GetInterruptStatus();
     void ClearPendingInterrupts( unsigned short interruptStatus );
     void ResetGlobalIRQEnable();
-    void ResetSequencerLatch();
+    void ResetSequencerLatch() const;
     int WaitOnIRQ( sig_atomic_t const & continueFlag );
 
     unsigned short GetInterruptMask(); 
