@@ -6,6 +6,7 @@
 
 log4cpp::Category& commLog = log4cpp::Category::getInstance(std::string("comm"));
 
+//-----------------------------
 VMECommunicator::VMECommunicator( unsigned int theAddress, 
     log4cpp::Appender* theAppender, 
     const Controller* theController ) : 
@@ -31,11 +32,13 @@ VMECommunicator::VMECommunicator( unsigned int theAddress,
 	this->dataWidthSwappedReg = cvD16_swapped;
 }
 
+//-----------------------------
 VMECommunicator::~VMECommunicator()
 {
   this->controller = NULL;
 }
 
+//-----------------------------
 const Controller* VMECommunicator::GetController() const
 {
   return this->controller;
@@ -80,6 +83,7 @@ int VMECommunicator::WriteCycle(int ml, unsigned char *send_message, unsigned in
 }
 
 
+//-----------------------------
 int VMECommunicator::ReadCycle(unsigned char *received_message, unsigned int address, 
     CVAddressModifier AM, CVDataWidth DW) const
 {
@@ -102,6 +106,7 @@ int VMECommunicator::ReadCycle(unsigned char *received_message, unsigned int add
 }
 
 
+//-----------------------------
 int VMECommunicator::ReadBLT(unsigned char *received_message, int blocks, unsigned int address, 
     CVAddressModifier AM, CVDataWidth DW) const 
 {
@@ -126,6 +131,7 @@ int VMECommunicator::ReadBLT(unsigned char *received_message, int blocks, unsign
 }
 
 
+//-----------------------------
 int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned int address, 
     CVAddressModifier AM, CVDataWidth DW) const
 {
@@ -156,7 +162,8 @@ int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned 
   return error;
 }
 
-void  VMECommunicator::exitIfError( int error, const std::string& msg ) const
+//-----------------------------
+void VMECommunicator::exitIfError( int error, const std::string& msg ) const
 {
   if (error) {
     commLog.fatalStream() << "Fatal error for device with address = 0x" << std::hex << this->address;
