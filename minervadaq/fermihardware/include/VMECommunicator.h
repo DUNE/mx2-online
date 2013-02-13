@@ -24,7 +24,6 @@ class VMECommunicator {
   private:
     const Controller*  controller;
     int                controllerHandle;
-    log4cpp::Appender* commAppender;
 
   protected:
     unsigned int       address;             // this is the most basic address available 
@@ -41,7 +40,7 @@ class VMECommunicator {
   public:
 
     explicit VMECommunicator( unsigned int address, 
-        log4cpp::Appender* appender, const Controller* controller );
+        const Controller* controller );
     virtual ~VMECommunicator(); 
 
     const Controller* GetController() const;

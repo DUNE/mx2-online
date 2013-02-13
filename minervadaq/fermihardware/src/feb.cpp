@@ -14,7 +14,7 @@
 // log4cpp category hierarchy.
 log4cpp::Category& febLog = log4cpp::Category::getInstance(std::string("feb"));
 
-feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender) : Frames(appender) 
+feb::feb(int mh, bool init, febAddresses a, int reg) : Frames() 
 {
 /*! \fn********************************************************************************
  * The log-free constructor takes the following arguments:
@@ -30,11 +30,6 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 	boardNumber  = a;      // feb address (also called board number)
 	febNumber[0] = (unsigned char) a; // put the feb number into it's character.
 	NRegisters   = reg;      // # of one byte registers in the data frame
-	febAppender  = appender; // log4cpp appender
-	if (febAppender == 0 ) {
-		std::cout << "FEB Log Appender is NULL!" << std::endl;
-		exit(EXIT_FEB_UNSPECIFIED_ERROR);
-	}
 	febLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
 	
 	// Make the header for this frame; frames default to read. 
@@ -78,11 +73,11 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 				febLog.fatalStream() << "Invalid TriP ChipID at instantiation!"; 
 				exit(EXIT_FEB_UNSPECIFIED_ERROR);
 		}
-		tripChips[i] = new trips( boardNumber, chipFunction, maxHits, febAppender ); 
+		tripChips[i] = new trips( boardNumber, chipFunction, maxHits ); 
 	}
 
 	// Instantiate a discriminator.  
-	hits_n_timing = new disc( a, febAppender ); 
+	hits_n_timing = new disc( a ); 
 	
 	// Instantiate objects for the ADC's
 	// We read the RAMFunctions in "reverse" order:
@@ -91,29 +86,29 @@ feb::feb(int mh, bool init, febAddresses a, int reg, log4cpp::Appender* appender
 	//  5,4,3,2,1,0     for 6 Hit firmware (PIPEDEL 11).
 	//  7,6,5,4,3,2,1,0 for 8 Hit firmware (PIPEDEL 15).
 	if (maxHits == 1) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender ); 
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0 ); 
 	} else if (maxHits == 5) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit4, febAppender );
-		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit3, febAppender );
-		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit2, febAppender );
-		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit1, febAppender );
-		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender );
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit4 );
+		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit3 );
+		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit2 );
+		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit1 );
+		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit0 );
 	} else if (maxHits == 6) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit5, febAppender );
-		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit4, febAppender );
-		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit3, febAppender );
-		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit2, febAppender );
-		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit1, febAppender );
-		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender );
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit5 );
+		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit4 );
+		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit3 );
+		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit2 );
+		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit1 );
+		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit0 );
 	} else if (maxHits == 8) {
-		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit7, febAppender );
-		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit6, febAppender );
-		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit5, febAppender );
-		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit4, febAppender );
-		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit3, febAppender );
-		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit2, febAppender );
-		adcHits[6] = new adc( a, (RAMFunctionsHit)ReadHit1, febAppender );
-		adcHits[7] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender );
+		adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit7 );
+		adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit6 );
+		adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit5 );
+		adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit4 );
+		adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit3 );
+		adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit2 );
+		adcHits[6] = new adc( a, (RAMFunctionsHit)ReadHit1 );
+		adcHits[7] = new adc( a, (RAMFunctionsHit)ReadHit0 );
 	} else {
 		febLog.fatalStream() << "Invalid number of maximum hits!  Only 1, 5, 6, or 8 are accepted right now!";
 		exit(EXIT_FEB_NHITS_ERROR);		
@@ -605,8 +600,7 @@ int feb::DecodeRegisterValues(int buffersize)
 			GateTimeStamp |= (message[startByte] & 0xFF) << 0x18;                        
 
 		} else { // frame error check
-			febLog.debugStream() << "The FPGA frame had errors!";
-			if (febAppender!=0) febLog.fatalStream() << "The FPGA frame had errors!";
+			febLog.fatalStream() << "The FPGA frame had errors!";
 			exit(EXIT_FEB_UNSPECIFIED_ERROR); 
 		}
 

@@ -36,12 +36,10 @@ class ECROC : public VMECommunicator {
 		unsigned short channelResetRegisterMessage;
 		unsigned short testPulseRegisterMessage;
 
-		log4cpp::Appender* ECROCAppender;
-
 		void MakeChannels(); 
 
 	public:
-		explicit ECROC( unsigned int address, log4cpp::Appender* appender, const Controller* controller); 
+		explicit ECROC( unsigned int address, const Controller* controller); 
 		~ECROC(); 
 
     void Initialize() const;

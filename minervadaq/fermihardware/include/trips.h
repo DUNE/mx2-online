@@ -68,11 +68,9 @@ class trips : public Frames {
     bool read; /*!< read(true) or write(false) to the trip registers */
     int bufferSize; /*! the length of the trip buffer */
 
-    log4cpp::Appender* tripsAppender;
-
   public:
     /*! specific constructor */
-    trips(febAddresses a, TRiPFunctions f, int a, log4cpp::Appender* appender);
+    trips(febAddresses a, TRiPFunctions f, int a);
     /*! default destructor */
     ~trips() { };
     /*! Function to assign a value to a logical trip_value entry */

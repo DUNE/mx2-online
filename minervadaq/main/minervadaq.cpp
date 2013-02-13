@@ -594,9 +594,9 @@ int oldmain(int argc, char *argv[])
   // Make an acquire data object containing functions for performing initialization and acquisition.
   mnvdaq.infoStream() << "~~~~~~~ Begin Hardware Setup";
 #if DEBUG_GENERAL||DEBUG_SOCKETS||DEBUG_MIXEDMODE||DEBUG_TIMING
-  acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::DEBUG, hardwareInit); 
+  acquire_data *daq = new acquire_data(et_filename, log4cpp::Priority::DEBUG, hardwareInit); 
 #else
-  acquire_data *daq = new acquire_data(et_filename, daqAppender, log4cpp::Priority::INFO, hardwareInit); 
+  acquire_data *daq = new acquire_data(et_filename, log4cpp::Priority::INFO, hardwareInit); 
 #endif
   mnvdaq.infoStream() << "Got the acquire_data functions.";
 

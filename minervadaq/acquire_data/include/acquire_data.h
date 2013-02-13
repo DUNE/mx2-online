@@ -133,20 +133,17 @@ class acquire_data {
 		std::ofstream frame_acquire_log;      /*!< log file streamer for timing output */
 		std::string et_filename;              /*!< A string object for the Event Transfer output filename */
 		static const unsigned int timeOutSec; /*!< How long we will wait for a beam spill before moving on... */
-		log4cpp::Appender* acqAppender;
 		int hwInitLevel;        /*!< Flag that controls whether or not we setup the timing registers of the VME cards (CROCs & CRIMs). */
 
 		static const bool checkForMessRecvd, doNotCheckForMessRecvd; 
 		static const bool checkForErrs, doNotCheckForErrs;       
 	public:
 		/*! Specialized constructor. */
-		acquire_data(std::string fn, log4cpp::Appender* appender, log4cpp::Priority::Value priority, 
-			int hwInit=0) {
+		acquire_data(std::string fn, log4cpp::Priority::Value priority, int hwInit=0) {
 #if TIME_ME
 			frame_acquire_log.open("frame_data_time_log.csv"); 
 #endif
 			et_filename = fn;
-			acqAppender = appender;
 			acqData.setPriority(priority);
 			hwInitLevel = hwInit;
 		};

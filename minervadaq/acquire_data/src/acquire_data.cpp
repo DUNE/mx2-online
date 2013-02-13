@@ -45,7 +45,7 @@ void acquire_data::InitializeDaq(int id, RunningModes runningMode, std::list<rea
   daqAcquire = new acquire(); 
 
   // We need a controller to control the VME bus.
-  daqController = new controller(0x00, id, acqAppender); 
+  daqController = new controller(0x00, id); 
   try {
     int error = daqController->ContactController();
     if (error) throw error;
@@ -732,7 +732,7 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
   for (int j = 1; j <= nFEBs; j++) { 
     acqData.debugStream() << "    Trying to make FEB " << j << " on chain " << i;
     // Make a "trial" FEB for the current address.
-    feb *tmpFEB = tmpChan->MakeTrialFEB(j, numberOfHits, acqAppender); 
+    feb *tmpFEB = tmpChan->MakeTrialFEB(j, numberOfHits); 
 
     // Build an outgoing message to test if an FEB of this address is available on this channel.
     tmpFEB->MakeMessage(); 
@@ -752,7 +752,7 @@ int acquire_data::BuildFEBList(int i, int croc_id, int nFEBs)
         << tmpChan->GetChainNumber() << " with init. level " << tmpFEB->GetInit();
 
       // Add the FEB to the list.
-      tmpChan->SetFEBs(j, numberOfHits, acqAppender); 
+      tmpChan->SetFEBs(j, numberOfHits); 
 
       // Set the FEB available flag.
       tmpChan->SetHasFebs(true);

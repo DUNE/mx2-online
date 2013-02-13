@@ -89,7 +89,7 @@ class channels {
 		std::list<feb*> inline *GetFebList() {return &febs;};
 
 		/*! set functions for various data members*/
-		void SetFEBs(int a, int nHits, log4cpp::Appender* appender=0); //feb address, maxHits, log appender
+		void SetFEBs(int a, int nHits); //feb address, maxHits
 		void inline SetHasFebs(bool a) {has_febs = a;};
 		void inline SetChannelStatus(unsigned short a) {channelStatus=a;};
 		void inline SetDPMPointer(unsigned short a) {dpmPointer = a;};
@@ -97,7 +97,7 @@ class channels {
 		void inline DeleteBuffer() {delete [] buffer;};
 
 		/*! misc. channel setup and data handling functions */
-		feb *MakeTrialFEB(int a, int nHits, log4cpp::Appender* appender=0); //feb address, maxHits, log appender
+		feb *MakeTrialFEB(int a, int nHits); //feb address, maxHits
 		int DecodeStatusMessage();
 		void inline ClearBuffer() {delete [] buffer;};
 		int CheckHeaderErrors(int dataLength);

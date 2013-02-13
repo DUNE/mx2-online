@@ -59,12 +59,9 @@ class feb : public Frames {
 			ExtTriggerFound[1], ExtTriggerRearm[1], AfterPulseExtendedWidth[1],
 			PreviewEnable[1];
 
-		// log4cpp appender for printing log statements.
-		log4cpp::Appender* febAppender;
-
 	public:
-		/*! The constructor.  The appender is initialized to null as a default for log-less mode. */
-		feb(int mh, bool init, febAddresses, int reg, log4cpp::Appender* appender); 
+		/*! The constructor. */
+		feb(int mh, bool init, febAddresses, int reg); 
 		/*! The destructor */
 		~feb() {
 			for (int i=0;i<6;i++) delete tripChips[i]; 

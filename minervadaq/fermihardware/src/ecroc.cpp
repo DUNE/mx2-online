@@ -14,7 +14,7 @@
 log4cpp::Category& ecrocLog = log4cpp::Category::getInstance(std::string("ecroc"));
 
 //----------------------------------------
-ecroc::ecroc(unsigned int address, int ecrocid, log4cpp::Appender* appender ) 
+ecroc::ecroc(unsigned int address, int ecrocid ) 
 {
 	vmeAddress       = address;
 	id               = ecrocid;
@@ -31,9 +31,6 @@ ecroc::ecroc(unsigned int address, int ecrocid, log4cpp::Appender* appender )
 	rdfePulseCommandAddress      = address + ecrocRdfePulseCommand;
 
 	SetupChannels(); 
-
-	ecrocAppender = appender;
-
 	InitializeRegisters( crocExternal, (short unsigned int)0x0, (short unsigned int)0x0 );
 }
 

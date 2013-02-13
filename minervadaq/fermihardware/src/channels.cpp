@@ -48,31 +48,29 @@ channels::channels(unsigned int a, int b)
 }
 
 
-void channels::SetFEBs(int a, int nHits, log4cpp::Appender* appender) 
+void channels::SetFEBs(int a, int nHits) 
 {
 /*! \fn
  * This function loads FEB's belonging to this channel into a vector of febs once
  * the feb has been found
  * \param a the FEB number
  * \param nHits max Hits
- * \param appender log4cpp Appender
  */
 	// if we found this feb on this channel, put it into the list 
-	febs.push_back(new feb(nHits, false, (febAddresses)a, 54, appender)); 
+	febs.push_back(new feb(nHits, false, (febAddresses)a, 54)); 
 	return;
 }
 
 
-feb *channels::MakeTrialFEB(int a, int nHits, log4cpp::Appender* appender) 
+feb *channels::MakeTrialFEB(int a, int nHits) 
 {
 /*! \fn 
  * This function creates a disposable "trial" FEB.
  * \param a the FEB number
  * \param nHits max Hits
- * \param appender log4cpp Appender
  */
 	febAddresses f = (febAddresses)a; //store the trial feb address
-	feb *trialFeb = new feb(nHits, false, f, 54, appender); //make up the trial feb
+	feb *trialFeb = new feb(nHits, false, f, 54); //make up the trial feb
 	trialFeb->SetFEBDefaultValues(); //set default values for convenience; be careful about *writing*!
 	return trialFeb;
 }

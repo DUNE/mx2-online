@@ -18,23 +18,17 @@ log4cpp::Category& EChannelLog = log4cpp::Category::getInstance(std::string("ECh
 
 //----------------------------------------
 EChannels::EChannels( unsigned int vmeAddress, unsigned int number, 
-    log4cpp::Appender* appender, const Controller* controller ) : 
-  VMECommunicator( vmeAddress, appender, controller )
+    const Controller* controller ) : 
+  VMECommunicator( vmeAddress, controller )
 {
 	/*! \fn 
 	 * constructor takes the following arguments:
 	 * \param vmeAddress  :  The channel base address (already bit-shifted)
 	 * \param number      :  The channel number (0-3)
-   * \param *appender   :  Pointer to the log4cpp appender.
    * \param *controller :  Pointer to the VME 2718 Controller servicing this device.
 	 */
 	channelNumber        = number;       //the channel number (0-3 here, 1-4 is stenciled on the cards themselves)
 	channelDirectAddress = this->address + EChannelOffset * (unsigned int)(channelNumber);
-  echanAppender        = appender;
-  if ( echanAppender == 0 ) {
-    std::cout << "EChannel Log Appender is NULL!" << std::endl;
-    exit(EXIT_CROC_UNSPECIFIED_ERROR);
-  }
   EChannelLog.setPriority(log4cpp::Priority::DEBUG);  
 
   receiveMemoryAddress             = channelDirectAddress + (unsigned int)ECROCReceiveMemory;
@@ -104,7 +98,7 @@ void EChannels::SetupNFEBs( int nFEBs )
   }
   for ( int i=1; i<=nFEBs; ++i ) {
     EChannelLog.debugStream() << "Setting up FEB " << i << " ...";
-    FEB *feb = new FEB( (febAddresses)i, echanAppender );
+    FEB *feb = new FEB( (febAddresses)i );
     if ( isAvailable( feb ) ) {
       FEBsVector.push_back( feb );
     } else {

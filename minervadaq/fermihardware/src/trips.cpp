@@ -13,7 +13,7 @@
 
 log4cpp::Category& tripsLog = log4cpp::Category::getInstance(std::string("trips"));
 
-trips::trips(febAddresses a, TRiPFunctions f, int maxHits, log4cpp::Appender* appender) : Frames(appender) 
+trips::trips(febAddresses a, TRiPFunctions f, int maxHits) : Frames() 
 {
   /*! \fn
    * constructor takes the following arguments:
@@ -21,11 +21,6 @@ trips::trips(febAddresses a, TRiPFunctions f, int maxHits, log4cpp::Appender* ap
    * \param f: the Trip function (read or write)
    * \param maxHits: the maximum number of hits that can be serviced
    */
-  tripsAppender  = appender; // log4cpp appender
-  if (tripsAppender == 0 ) {
-    std::cout << "Trips Log Appender is NULL!" << std::endl;
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
-  }               
   tripsLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
 
   TripTChipID[0]=0x0A; //the id number for the trip; they're all 10 for MINERvA

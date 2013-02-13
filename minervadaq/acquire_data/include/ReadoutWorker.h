@@ -40,14 +40,13 @@ class ReadoutWorker {
     std::vector<EChannels*>::iterator currentChannel;
 
     int crateID;  // == crate ID/Address for Controller
-		log4cpp::Appender* appender;
 		bool vmeInit;    
 
     CRIM* masterCRIM();
 
 	public:
 
-    explicit ReadoutWorker( int theCrateID, log4cpp::Appender* theAppender, log4cpp::Priority::Value priority, bool VMEInit=false); 
+    explicit ReadoutWorker( int theCrateID, log4cpp::Priority::Value priority, bool VMEInit=false); 
     ~ReadoutWorker();
 
     const Controller* GetController() const;
