@@ -42,11 +42,8 @@ class Frames {
                   deviceFunction[1];
     int IncomingMessageLength, OutgoingMessageLength;
 
-    // log4cpp appender for printing log statements.
-    log4cpp::Appender* frmsAppender;
-
   public:
-    Frames(log4cpp::Appender* appender);
+    Frames();
     virtual ~Frames() { };
 
     unsigned char *message; //the message that will be sent or received. mostly received...

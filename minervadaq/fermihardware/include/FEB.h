@@ -58,10 +58,8 @@ class FEB : public Frames {
 			ExtTriggerFound[1], ExtTriggerRearm[1], AfterPulseExtendedWidth[1],
 			PreviewEnable[1];
 
-		log4cpp::Appender* febAppender;
-
 	public:
-		FEB(febAddresses, log4cpp::Appender* appender); 
+		FEB( febAddresses theAddress ); 
 		~FEB() {
 			for (int i=0;i<6;i++) delete tripChips[i]; 
 			for (int i=0;i<maxHits;i++) delete adcHits[i]; 

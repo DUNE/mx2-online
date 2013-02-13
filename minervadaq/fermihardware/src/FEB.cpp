@@ -14,7 +14,7 @@
 // log4cpp category hierarchy.
 log4cpp::Category& FEBLog = log4cpp::Category::getInstance(std::string("FEB"));
 
-FEB::FEB( febAddresses a, log4cpp::Appender* appender ) : Frames(appender) 
+FEB::FEB( febAddresses a ) : Frames() 
 {
   /*! \fn********************************************************************************
    * The log-free constructor takes the following arguments:
@@ -29,11 +29,6 @@ FEB::FEB( febAddresses a, log4cpp::Appender* appender ) : Frames(appender)
   NRegisters   = 54;  // # of one byte registers in the FPGA Programming Registers frame
   boardNumber  = a;      
   febNumber[0] = (unsigned char) a; 
-  febAppender  = appender; 
-  if (febAppender == 0 ) {
-    std::cout << "FEB Log Appender is NULL!" << std::endl;
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
-  }
   FEBLog.setPriority(log4cpp::Priority::NOTICE);  
 
   // Make the header for this frame; frames default to read. 
@@ -77,27 +72,27 @@ FEB::FEB( febAddresses a, log4cpp::Appender* appender ) : Frames(appender)
         FEBLog.fatalStream() << "Invalid TriP ChipID at instantiation!"; 
         exit(EXIT_FEB_UNSPECIFIED_ERROR);
     }
-    tripChips[i] = new trips( boardNumber, chipFunction, maxHits, febAppender ); 
+    tripChips[i] = new trips( boardNumber, chipFunction, maxHits ); 
   }
 
   // Instantiate a discriminator.  
-  hits_n_timing = new disc( a, febAppender ); 
+  hits_n_timing = new disc( a ); 
 
   // Instantiate objects for the ADC's
   // We read the RAMFunctions in "reverse" order:
   //  0               for 1 Hit (any firmware) - this *assumes* a PIPEDEL of 1!  This is a user responsibility! 
   //  7,6,5,4,3,2,1,0 for 8 Hit firmware (PIPEDEL 15).
   if (maxHits == 1) {
-    adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender ); 
+    adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0 ); 
   } else if (maxHits == 8) {
-    adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit7, febAppender );
-    adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit6, febAppender );
-    adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit5, febAppender );
-    adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit4, febAppender );
-    adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit3, febAppender );
-    adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit2, febAppender );
-    adcHits[6] = new adc( a, (RAMFunctionsHit)ReadHit1, febAppender );
-    adcHits[7] = new adc( a, (RAMFunctionsHit)ReadHit0, febAppender );
+    adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit7 );
+    adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit6 );
+    adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit5 );
+    adcHits[3] = new adc( a, (RAMFunctionsHit)ReadHit4 );
+    adcHits[4] = new adc( a, (RAMFunctionsHit)ReadHit3 );
+    adcHits[5] = new adc( a, (RAMFunctionsHit)ReadHit2 );
+    adcHits[6] = new adc( a, (RAMFunctionsHit)ReadHit1 );
+    adcHits[7] = new adc( a, (RAMFunctionsHit)ReadHit0 );
   } else {
     FEBLog.fatalStream() << "Invalid number of maximum hits!  Only 1 or 8 are accepted right now!";
     exit(EXIT_FEB_NHITS_ERROR);		
@@ -584,8 +579,7 @@ int FEB::DecodeRegisterValues(int buffersize)
       GateTimeStamp |= (message[startByte] & 0xFF) << 0x18;                        
 
     } else { // frame error check
-      FEBLog.debugStream() << "The FPGA frame had errors!";
-      if (febAppender!=0) FEBLog.fatalStream() << "The FPGA frame had errors!";
+      FEBLog.fatalStream() << "The FPGA frame had errors!";
       exit(EXIT_FEB_UNSPECIFIED_ERROR); 
     }
 

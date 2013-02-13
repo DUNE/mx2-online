@@ -43,11 +43,8 @@ class ecroc {
 		unsigned short fastCommandRegisterMessage;
 		unsigned short testPulseRegisterMessage;
 
-		// TODO: Figure out how the heck this works, I have totally forgotten!
-		log4cpp::Appender* ecrocAppender;
-
 	public:
-		ecroc( unsigned int address, int ecrocid, log4cpp::Appender* appender=0 ); 
+		ecroc( unsigned int address, int ecrocid ); 
 		~ecroc(); 
 
 		unsigned int GetAddress(); 

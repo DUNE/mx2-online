@@ -36,7 +36,6 @@ class EChannels : public VMECommunicator {
 	private:
 		unsigned int channelNumber;             /*!< the channel identifying index, used for retrieval, currently indexed 0-3 */  
 		unsigned int channelDirectAddress;	    /*!< base + offset */
-    log4cpp::Appender* echanAppender;
 
 		unsigned int receiveMemoryAddress;
 		unsigned int sendMemoryAddress;
@@ -58,7 +57,7 @@ class EChannels : public VMECommunicator {
 
 	public:
 		explicit EChannels( unsigned int baseVMEAddress, unsigned int channelNumber, 
-        log4cpp::Appender* appender, const Controller* controller );
+        const Controller* controller );
 		~EChannels();
 
     virtual void exitIfError( int error, const std::string& msg ) const;

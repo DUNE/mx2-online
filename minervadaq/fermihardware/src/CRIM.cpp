@@ -54,9 +54,9 @@ const unsigned short CRIM::softCNRSTseq   = 0x0808;
 const unsigned long long CRIM::timeOutSec = 3600;   // be careful shortening this w.r.t. multi-PC sync issues
 
 //----------------------------------------
-CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, const Controller* controller, 
+CRIM::CRIM( unsigned int address, const Controller* controller, 
     CRIMInterrupts line, unsigned short level ) :
-  VMECommunicator( address, appender, controller )
+  VMECommunicator( address, controller )
 {
   this->addressModifier = cvA24_U_DATA; 
 
@@ -65,16 +65,11 @@ CRIM::CRIM( unsigned int address, log4cpp::Appender* appender, const Controller*
   irqLine              = line; 
   irqLevel             = level;    // interrupt level 5 for the CAEN interrupt handler
 
-  CRIMAppender = appender;
-  if (CRIMAppender == 0 ) {
-    std::cout << "CRIM Log Appender is NULL!" << std::endl;
-    exit(EXIT_CRIM_UNSPECIFIED_ERROR);
-  }
   CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
-
   CRIMLog.debugStream() << "Creating CRIM with address = 0x" << std::hex 
     << this->address << "; IRQ Line = 0x" << this->irqLine 
     << "; IRQ Level = 0x" << this->irqLevel;
+
   interruptStatusRegister = this->address + (unsigned int)CRIMInterruptStatus;
   interruptConfig         = this->address + (unsigned int)CRIMInterruptConfig;
   interruptsClear         = this->address + (unsigned int)CRIMClearInterrupts;

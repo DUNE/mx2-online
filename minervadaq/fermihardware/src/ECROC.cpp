@@ -14,8 +14,8 @@
 log4cpp::Category& ECROCLog = log4cpp::Category::getInstance(std::string("ECROC"));
 
 //----------------------------------------
-ECROC::ECROC(unsigned int address, log4cpp::Appender* appender, const Controller* controller) :
-  VMECommunicator( address, appender, controller )
+ECROC::ECROC(unsigned int address, const Controller* controller) :
+  VMECommunicator( address, controller )
 {
 	timingSetupAddress           = this->address + ECROCTimingSetup;
 	resetAndTestPulseMaskAddress = this->address + ECROCResetAndTestPulseMask;
@@ -25,11 +25,6 @@ ECROC::ECROC(unsigned int address, log4cpp::Appender* appender, const Controller
 	rdfePulseDelayAddress        = this->address + ECROCRdfePulseDelay;
 	rdfePulseCommandAddress      = this->address + ECROCRdfePulseCommand;
 
-	ECROCAppender = appender;
-  if (ECROCAppender == 0 ) {
-    std::cout << "ECROC Log Appender is NULL!" << std::endl;
-    exit(EXIT_CROC_UNSPECIFIED_ERROR);
-  }
   ECROCLog.setPriority(log4cpp::Priority::DEBUG); 
 
 	MakeChannels(); 
@@ -55,7 +50,7 @@ unsigned int ECROC::GetAddress() const
 void ECROC::MakeChannels() 
 {
 	for ( unsigned int i=0; i<4; ++i ) { 
-		EChannels *tmp = new EChannels( this->address, i, ECROCAppender, this->GetController() );
+		EChannels *tmp = new EChannels( this->address, i, this->GetController() );
 		ECROCChannels.push_back( tmp ); 
 	}
 }

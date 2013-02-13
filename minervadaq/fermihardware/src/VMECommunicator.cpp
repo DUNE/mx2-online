@@ -8,10 +8,8 @@ log4cpp::Category& commLog = log4cpp::Category::getInstance(std::string("comm"))
 
 //-----------------------------
 VMECommunicator::VMECommunicator( unsigned int theAddress, 
-    log4cpp::Appender* theAppender, 
     const Controller* theController ) : 
   controller(theController),
-  commAppender(theAppender),
   address(theAddress)
 {
   if( NULL == this->controller ) {
@@ -19,10 +17,6 @@ VMECommunicator::VMECommunicator( unsigned int theAddress,
     exit(EXIT_CROC_UNSPECIFIED_ERROR);
   }
   controllerHandle = this->controller->GetHandle();
-  if ( commAppender == 0 ) {
-    std::cout << "VMECommunicator Log Appender is NULL in VMECommunicator::VMECommunicator!" << std::endl;
-    exit(EXIT_CROC_UNSPECIFIED_ERROR);
-  }
 
 	this->addressModifier     = cvA32_U_DATA;
 	this->bltAddressModifier  = cvA32_U_BLT;

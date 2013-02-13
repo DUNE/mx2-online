@@ -30,12 +30,9 @@ class adc : public Frames {
 	private:
 		unsigned char *buffer; /*!<A buffer for holding ADC raw data */  
 
-		// log4cpp appender for printing log statements. 
-		log4cpp::Appender* adcAppender;
-
 	public: 
 		/*! The specialized constructor which makes up the read frame */
-		adc(febAddresses a, RAMFunctionsHit f, log4cpp::Appender* appender); 
+		adc(febAddresses a, RAMFunctionsHit f); 
 		/*! The default destructor */
 		~adc() { delete [] outgoingMessage; };
 
@@ -85,12 +82,9 @@ class disc : public Frames {
 		int MaxHits;
 		unsigned char *buffer; /*!<A buffer for holding discriminator raw data */ 
 
-		// log4cpp appender for printing log statements. 
-		log4cpp::Appender* tdcAppender;
-
 	public: 
 		/*! The specialized constructor which makes up the read frame */
-		disc(febAddresses a, log4cpp::Appender* appender); // always takes the same RAMFunction, outgoing message is always the same!
+		disc(febAddresses a); // always takes the same RAMFunction, outgoing message is always the same!
 		/*! The default destructor */
 		~disc() { delete [] outgoingMessage; }; //we build a new outgoing message in MakeMessage!
 

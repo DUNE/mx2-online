@@ -11,16 +11,14 @@
 
 class FlashFrame : public Frames {
 
-	private:
-		static const int Spartan_3E_Npages;
-		static const int Spartan_3E_PageSize;
-		febAddresses boardNumber;
+  private:
+    static const int Spartan_3E_Npages;
+    static const int Spartan_3E_PageSize;
+    febAddresses boardNumber;
 
-                log4cpp::Appender* flashAppender;
-
-	public:
-		FlashFrame(febAddresses, log4cpp::Appender* appender);
-		virtual ~FlashFrame() { };
+  public:
+    FlashFrame(febAddresses theAddress);
+    virtual ~FlashFrame() { };
 
 };
 

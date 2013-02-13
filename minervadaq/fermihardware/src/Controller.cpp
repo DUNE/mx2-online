@@ -12,7 +12,7 @@
 
 log4cpp::Category& ctrlLog = log4cpp::Category::getInstance(std::string("ctrl"));
 
-Controller::Controller(int addr, int crateNum, log4cpp::Appender* appender) {
+Controller::Controller(int addr, int crateNum) {
   address         = addr;
   addressModifier = cvA24_U_DATA; // default address modifier
   dataWidth       = cvD16;    // default data width
@@ -24,7 +24,6 @@ Controller::Controller(int addr, int crateNum, log4cpp::Appender* appender) {
   handle          = -1;
   firmware[0]     = 0;
   crateNumber     = crateNum; //an internal ID used for sorting data
-  ctrlAppender    = appender;
   ctrlLog.setPriority(log4cpp::Priority::DEBUG);
 }
 

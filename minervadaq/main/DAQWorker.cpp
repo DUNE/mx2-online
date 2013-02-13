@@ -7,9 +7,8 @@ log4cpp::Category& daqLogger =
   log4cpp::Category::getInstance(std::string("daqLogger"));
 
 DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs, 
-    log4cpp::Appender* theAppender, log4cpp::Priority::Value priority ) :
-  args(theArgs),
-  appender(theAppender)
+    log4cpp::Priority::Value priority ) :
+  args(theArgs)
 {
   daqLogger.setPriority(priority);
 
@@ -33,7 +32,7 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs,
   daqLogger.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
   ReadoutWorker* readoutWorker = 
-    new ReadoutWorker( 0, appender, priority, (bool)args->hardwareInitLevel );
+    new ReadoutWorker( 0, priority, (bool)args->hardwareInitLevel );
   readoutWorkerVect.push_back( readoutWorker );
 }
 

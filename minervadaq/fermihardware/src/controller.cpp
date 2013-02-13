@@ -265,7 +265,7 @@ void controller::MakeECroc(unsigned int crocAddress, int id)
 	 *  \param crocAddress the physical VME address of the CROC-E
 	 *  \param id an internal index for the CROC-E for use in DAQ code only
 	 */
-	ecroc *tmp = new ecroc( crocAddress, id, ctrlAppender );
+	ecroc *tmp = new ecroc( crocAddress, id );
 	eReadOutControllers.push_back(tmp); 
 	controllerLog.infoStream() << "Added a CROC-E with id=" << id << " and Address=" << 
 		(crocAddress>>ecrocAddressShift);

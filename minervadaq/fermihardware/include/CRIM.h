@@ -35,7 +35,6 @@ class CRIM : public VMECommunicator {
   private:
     /* We will always use the first CRIM in the vector of CRIMs held by the 
        DAQ worker classes as the master CRIM. */
-    log4cpp::Appender* CRIMAppender;
 
     unsigned short irqLevel;  /*!<the interrupt priority level */
     CRIMInterrupts irqLine;   /*!<the interrupt to be monitored */
@@ -101,7 +100,7 @@ class CRIM : public VMECommunicator {
 
     // SGATEFall is the correct interrupt for every mode but cosmic. IRQ5 is always(?) correct...
     // For Cosmics (TestBeam) use irqLine = Trigger;  
-    explicit CRIM( unsigned int address, log4cpp::Appender* appender, const Controller* controller, 
+    explicit CRIM( unsigned int address, const Controller* controller, 
        CRIMInterrupts line=SGATEFall, unsigned short level=5 ); 
     ~CRIM() { }; 
 

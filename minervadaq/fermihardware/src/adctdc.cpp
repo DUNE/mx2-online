@@ -25,7 +25,7 @@ log4cpp::Category& adcLog = log4cpp::Category::getInstance(std::string("adc"));
 log4cpp::Category& tdcLog = log4cpp::Category::getInstance(std::string("tdc"));
 
 
-adc::adc(febAddresses a, RAMFunctionsHit b, log4cpp::Appender* appender) : Frames(appender)
+adc::adc(febAddresses a, RAMFunctionsHit b) : Frames()
 {
   /*! \fn
    * \param a The address (number) of the feb
@@ -39,11 +39,6 @@ adc::adc(febAddresses a, RAMFunctionsHit b, log4cpp::Appender* appender) : Frame
   outgoingMessage = new unsigned char [MinHeaderLength+2]; // always the same message!
   MakeMessage(); //make up the message
   OutgoingMessageLength = MinHeaderLength+2; //set the outgoing message length
-  adcAppender  = appender; // log4cpp appender
-  if (adcAppender == 0 ) {
-    std::cout << "ADC Log Appender is NULL!" << std::endl;
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
-  }
   adcLog.setPriority(log4cpp::Priority::NOTICE);  // ERROR?
   adcLog.debugStream() << "Made ADC " << b << " for FEB " << a; 
 }
@@ -173,7 +168,7 @@ int adc::DecodeRegisterValues(int febFirmware)
 }
 
 
-disc::disc(febAddresses a, log4cpp::Appender* appender) : Frames(appender)
+disc::disc(febAddresses a) : Frames()
 {
   /*! \fn
    * \param a: The address (number) of the feb
@@ -189,11 +184,6 @@ disc::disc(febAddresses a, log4cpp::Appender* appender) : Frames(appender)
   outgoingMessage = new unsigned char [MinHeaderLength];
   MakeMessage(); //make up the message
   OutgoingMessageLength = MinHeaderLength; //set the outgoing message length
-  tdcAppender  = appender; // log4cpp appender
-  if (tdcAppender == 0 ) {
-    std::cout << "Discr Log Appender is NULL!" << std::endl;
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
-  }
   tdcLog.setPriority(log4cpp::Priority::NOTICE);  // ERROR?
   tdcLog.debugStream() << "Made DISC for FEB " << a; 
 }

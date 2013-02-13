@@ -29,7 +29,7 @@ int main( int argc, char * argv[] )
   rootCat.setPriority(log4cpp::Priority::DEBUG);
   daqmain.setPriority(log4cpp::Priority::DEBUG);
 
-  DAQWorker * worker = new DAQWorker( args, baseAppender, log4cpp::Priority::DEBUG );
+  DAQWorker * worker = new DAQWorker( args, log4cpp::Priority::DEBUG );
 
   // worker->setUpET();  // ?
   // worker->TakeData();

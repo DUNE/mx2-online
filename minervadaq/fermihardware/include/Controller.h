@@ -35,15 +35,13 @@ class Controller {
 		int handle; /*!<a device handle returned by the initialization function*/
 		unsigned short *shortBuffer; /*!<a short buffer for messaging*/
 
-		log4cpp::Appender* ctrlAppender;
-
 		/*! these are the controller registers for the VME controller - basically unused, will implement someday? */
 		unsigned short status, control, irq, irqMask, input, output,
 			clearOutput, inputMux, inputMuxClear, outPutMux;
 
 	public: 
 
-		explicit Controller(int addr, int crateNum, log4cpp::Appender* appender);
+		explicit Controller(int addr, int crateNum);
 		~Controller() {};
 
 		int Initialize();

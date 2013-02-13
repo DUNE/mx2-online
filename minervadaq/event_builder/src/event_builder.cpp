@@ -484,7 +484,7 @@ int event_builder(event_handler *evt)
   int gate_counter = 0;	
   // 56?  TODO 54 registers in modern feb firmware, should replace with variable argument anyway...
   // Some possibility 56 is a legacy from attempts to read the FPGA's via FIFOBLT messages.
-  feb *dummy_feb = new feb(6,1,(febAddresses)0,56,ebAppender); // Make a dummy feb for access to the header decoding functions. 
+  feb *dummy_feb = new feb(6,1,(febAddresses)0,56); // Make a dummy feb for access to the header decoding functions. 
   if (evt->feb_info[4]==3) {
     gate_counter = evt->gate;
     if (!(gate_counter%gate_print_freq)) { 

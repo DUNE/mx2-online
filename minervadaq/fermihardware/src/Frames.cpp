@@ -27,19 +27,11 @@ const int Frames::ADCFrameLength=443; //bytes of course (dpm pointer should be t
 // log4cpp category hierarchy.
 log4cpp::Category& framesLog = log4cpp::Category::getInstance(std::string("frames"));
 
-Frames::Frames(log4cpp::Appender* appender) 
+Frames::Frames() 
 { 
-  /*! \fn 
-   * The basic constructor sets the FrameID bytes and sets the log4cpp appender to null.
-   */
   // These don't seem to need a value...
   FrameID[0]   = 0x00; 
   FrameID[1]   = 0x00; //initialize the frame id to no value
-  frmsAppender = appender;
-  if (frmsAppender == 0 ) {
-    std::cout << "FEB Log Appender is NULL!" << std::endl;
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
-  }
   framesLog.setPriority(log4cpp::Priority::DEBUG);
 }
 

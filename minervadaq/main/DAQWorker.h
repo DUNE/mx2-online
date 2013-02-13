@@ -29,7 +29,6 @@ struct DAQWorkerArgs {
 class DAQWorker {
   private:  
     const DAQWorkerArgs* args;
-    log4cpp::Appender* appender;
 
     std::vector<ReadoutWorker*> readoutWorkerVect;
 
@@ -44,7 +43,7 @@ class DAQWorker {
 
   public:
     explicit DAQWorker( const DAQWorkerArgs* theArgs, 
-        log4cpp::Appender* theAppender, log4cpp::Priority::Value priority );
+        log4cpp::Priority::Value priority );
     ~DAQWorker();
 
     // void SetUpET();  // ?
