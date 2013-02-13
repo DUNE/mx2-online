@@ -35,6 +35,13 @@ class DAQWorker {
 
     // void Initialize();  // Prep VME hardware - add CROCs and CRIMs, Init Crate
 
+    // bool EstablishETHeartBeat();
+
+    /* unsigned long long GetGlobalGate(); */
+    /* void PutGlobalGate( unsigned long long globalGate ); */
+
+    // bool Trigger(); // set trigger type for header?, reset sequencer latch?, rearm interrupt stuff?
+
   public:
     explicit DAQWorker( const DAQWorkerArgs* theArgs, 
         log4cpp::Appender* theAppender, log4cpp::Priority::Value priority );
