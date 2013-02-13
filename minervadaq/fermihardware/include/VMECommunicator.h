@@ -36,13 +36,13 @@ class VMECommunicator {
     CVDataWidth        dataWidthReg;        // use a different data width for talking to registers (as opposed to data)
     CVDataWidth        dataWidthSwappedReg; // use a different data width for talking to registers (as opposed to data)
 
-    void exitIfError( int error, const std::string& msg ) const;
+    virtual void exitIfError( int error, const std::string& msg ) const;
 
   public:
 
     explicit VMECommunicator( unsigned int address, 
         log4cpp::Appender* appender, const Controller* controller );
-    ~VMECommunicator(); 
+    virtual ~VMECommunicator(); 
 
     const Controller* GetController() const;
 

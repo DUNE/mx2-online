@@ -61,6 +61,8 @@ class EChannels : public VMECommunicator {
         log4cpp::Appender* appender, const Controller* controller );
 		~EChannels();
 
+    virtual void exitIfError( int error, const std::string& msg ) const;
+
     void ClearAndResetStatusRegister() const;  
     unsigned short ReadFrameStatusRegister() const;
     unsigned short ReadTxRxStatusRegister() const;
@@ -84,6 +86,7 @@ class EChannels : public VMECommunicator {
 
     unsigned int GetChannelNumber() const;
     unsigned int GetParentECROCAddress() const;
+    unsigned int GetParentCROCNumber() const;
     unsigned int GetDirectAddress() const;
 
     int DecodeStatusMessage( const unsigned short& status ) const;

@@ -69,6 +69,12 @@ unsigned int EChannels::GetParentECROCAddress() const
 }
 
 //----------------------------------------
+unsigned int EChannels::GetParentCROCNumber() const
+{
+  return ( this->address >> ECROCAddressShift);
+}
+
+//----------------------------------------
 unsigned int EChannels::GetDirectAddress() const
 {
   return channelDirectAddress;
@@ -385,6 +391,18 @@ unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( FEB *feb ) const
   unsigned short dataLength = this->ReadDPMPointer();
 
   return dataLength;
+}
+
+//----------------------------------------
+void EChannels::exitIfError( int error, const std::string& msg ) const
+{
+  if (error) {
+    EChannelLog.fatalStream() << "Fatal error for Channel with address = 0x" << std::hex << this->channelDirectAddress;
+    EChannelLog.fatalStream() << " CROC Number = " << this->GetParentCROCNumber() << "; Channel Number = " << channelNumber;
+    EChannelLog.fatalStream() << msg;
+    this->GetController()->ReportError(error);
+    exit(error);
+  }
 }
 
 #endif
