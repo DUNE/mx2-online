@@ -412,7 +412,7 @@ void CRIM::SetReTransmitEnable(bool a)
 }
 
 //----------------------------------------
-unsigned short CRIM::GetStatus()
+unsigned short CRIM::GetStatus() const
 {
   unsigned char dataBuffer[] = {0x0,0x0}; 
   int error = ReadCycle( dataBuffer, statusRegisterAddress, addressModifier, dataWidthReg );
@@ -422,7 +422,7 @@ unsigned short CRIM::GetStatus()
 }
 
 //----------------------------------------
-void CRIM::ResetSequencerLatch()
+void CRIM::ResetSequencerLatch() const
 {
   /*! \fn void CRIM::ResetSequencerLatch()
    *
