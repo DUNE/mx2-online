@@ -11,19 +11,6 @@
 using namespace std;
 
 /*
-const int  adcFrameWarningCount = 600;
-int gate_print_freq = 1;
-static unsigned short int adcFrameCount   = 0;
-static unsigned short int discFrameCount  = 0;
-static unsigned short int fpgaFrameCount  = 0;
-
-// log4cpp Variables - Needed throughout the event_builder functions.
-log4cpp::Appender* eventBuilderAppender;
-log4cpp::Category& rootCategory = log4cpp::Category::getRoot();
-log4cpp::Category& eventbuilder = log4cpp::Category::getInstance(std::string("eventbuilder"));
-
-bool quit, done;
-
 // How long the event builder will wait for new frames before declaring no more are coming.
 // Only relevant after receiving SIGTERM/SIGINT (otherwise we just wait until we get the
 // sentinel gate instead).
@@ -35,6 +22,11 @@ void quitsignal_handler(int signum);
 
 DAQEvent *event;
 */
+
+// log4cpp Variables - Needed throughout the event_builder functions.
+log4cpp::Appender* eventBuilderAppender;
+log4cpp::Category& rootCategory = log4cpp::Category::getRoot();
+log4cpp::Category& eventbuilder = log4cpp::Category::getInstance(std::string("eventbuilder"));
 
 int new_main(int argc, char **argv) 
 {
