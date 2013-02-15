@@ -75,7 +75,7 @@ all: FORCE
 	gmake event_structure-lib;
 	gmake event_builder;
 	gmake main;
-	gamke tests;
+	gmake tests;
 
 clean: FORCE
 	gmake hardware-clean;

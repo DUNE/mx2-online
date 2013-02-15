@@ -20,4 +20,4 @@ $(OBJS): %.o: %.cpp
 
 clean:
 	rm *.o; 
-
+	cd $(DAQROOT)/lib; rm $(TARGET)
