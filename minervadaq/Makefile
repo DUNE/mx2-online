@@ -34,6 +34,10 @@ main: FORCE
 	cd daq_server; gmake
 	cd ../;
 
+tests: FORCE
+	cd tests; make;
+	cd ../;
+
 event_builder-clean: FORCE
 	cd event_builder/src; gmake clean;
 	cd ../;
@@ -60,6 +64,10 @@ acquire_data-clean: FORCE
 event_structure-clean: FORCE
 	cd event_structure/src; make clean;
 
+tests-clean: FORCE
+	cd tests; gmake clean;
+	cd ../;
+
 all: FORCE
 	gmake hardware-lib;
 	gmake caenint-lib;
@@ -67,6 +75,7 @@ all: FORCE
 	gmake event_structure-lib;
 	gmake event_builder;
 	gmake main;
+	gamke tests;
 
 clean: FORCE
 	gmake hardware-clean;
@@ -75,6 +84,7 @@ clean: FORCE
 	gmake event_structure-clean;
 	gmake event_builder-clean;
 	gmake main-clean;
+	gmake tests-clean;
 
 relink: FORCE
 	gmake hardware-clean;
@@ -83,12 +93,14 @@ relink: FORCE
 	gmake event_structure-clean;
 	gmake event_builder-clean;
 	gmake main-clean;
+	gmake tests-clean;
 	gmake hardware-lib;
 	gmake caenint-lib;
 	gmake acquire_data-lib;
 	gmake event_structure-lib;
 	gmake event_builder;
 	gmake main;
+	gmake tests;
 
 FORCE:
 	if test -d lib; then echo LibOk; else mkdir -p lib; fi
