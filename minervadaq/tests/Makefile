@@ -21,4 +21,4 @@ $(OBJS): %.o: %.cpp
 
 clean:
 	rm *.o; 
-
+	cd $(DAQROOT)/bin; rm $(TARGET)
