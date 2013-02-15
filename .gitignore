@@ -13,6 +13,7 @@ minervadaq/doc/*.out
 minervadaq/doc/*.pdf
 
 # Buid Stuff
+minervadaq/bin/tests
 minervadaq/bin/daq_master
 minervadaq/bin/daq_slave_service
 minervadaq/bin/event_builder
