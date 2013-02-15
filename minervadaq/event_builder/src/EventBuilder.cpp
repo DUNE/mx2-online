@@ -35,7 +35,6 @@ int new_main(int argc, char **argv)
     printf("  Please supply the full path!\n");
     exit(EXIT_CONFIG_ERROR);
   }
-/* ******************************************************
   std::cout << "ET Filesystem          = " << argv[1] << std::endl;
   string output_filename(argv[2]);
   // Open the file for binary output.
@@ -51,6 +50,7 @@ int new_main(int argc, char **argv)
     std::cout << "Notifying process " << callback_pid << " when ready to accept events." << std::endl;
   }
 
+/* ******************************************************
   struct timeval hpnow; gettimeofday(&hpnow,NULL);
   char log_filename[100]; sprintf(log_filename,"./event_builder_%d_Log.txt",(int)hpnow.tv_sec); 
 #if NEARLINE
