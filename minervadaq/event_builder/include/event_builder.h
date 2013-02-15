@@ -1,5 +1,5 @@
-#ifndef EventBuilder_h
-#define EventBuilder_h
+#ifndef event_builder_h
+#define event_builder_h
 
 //we're gonna need some threads to make this even remotely efficient...
 #include <string>

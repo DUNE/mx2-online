@@ -1,5 +1,5 @@
-#ifndef EventBuilder_cxx
-#define EventBuilder_cxx
+#ifndef event_builder_cxx
+#define event_builder_cxx
 
 #include "event_builder.h"
 #include "exit_codes.h"
