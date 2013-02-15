@@ -22,7 +22,7 @@ static int testCount = 0;
 // 338 == 18 + 40 per hit per TRiP
 // At some point, we expect 3 x 446 bytes for ADC Frames when the Channel reads
 // the "un-timed" hit buffer as well (N+1 readout mode).
-static const int chgInjReadoutBytesPerBoard = 1298;
+static const int chgInjReadoutBytesPerBoard = FPGAFrameMaxSize + 2*ADCFrameMaxSize + 338;
 
 int main( int argc, char * argv[] ) 
 {

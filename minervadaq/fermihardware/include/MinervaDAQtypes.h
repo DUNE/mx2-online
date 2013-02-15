@@ -285,4 +285,15 @@ typedef enum ECROCRegisters { //typecast to unsigned int
   ECROCRdfePulseCommand          = 0xFF060
 };
 
+static const unsigned int ADCFramesMaxNumber  = 7 + 1; // timed + 1 untimed
+static const unsigned int FPGAFrameMaxSize    =  68;   // bytes
+static const unsigned int ADCFrameMaxSize     =  446;  // bytes
+static const unsigned int DiscrFrameMaxSize   = 1138;  // bytes, == 18 + 40 * 4 * 7 (40 bytes / trip / hit)
+static const unsigned int FEBTotalDataMaxSize = FPGAFrameMaxSize + 
+  ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize;
+
+static const unsigned int MaxFEBsPerChain = 10;
+
+static const unsigned int MaxTotalDataPerChain = MaxFEBsPerChain * FEBTotalDataMaxSize;
+
 #endif
