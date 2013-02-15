@@ -19,15 +19,15 @@
 /*! \file
  *
  * The Event Builder is a separate process which will act as a 
- * simple local socket-based server process.  This will take in 
- * data from the main minervadaq program and process it into 
- * the final event model.  The final event will then be placed on
- * the Event Transfer system for storage.
- *
- * Elaine Schulte, Rutgers University
- * Gabriel Perdue, The University of Rochester
+ * simple local socket-based server process that consumes data 
+ * for storage and publication to the monitoring framework.  
  */
 
+// The CROC-E DAQ receives "globs" of data spanning entire chains.
+
+struct EventHandler {
+  unsigned char eventData[ MaxTotalDataPerChain ];
+};
 
 /*
 
