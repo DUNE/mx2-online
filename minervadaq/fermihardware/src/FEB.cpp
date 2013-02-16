@@ -25,7 +25,7 @@ FEB::FEB( febAddresses a ) : Frames()
    */
   boardNumber  = a;      
   febNumber[0] = (unsigned char) a; 
-  FEBLog.setPriority(log4cpp::Priority::NOTICE);  
+  FEBLog.setPriority(log4cpp::Priority::DEBUG);  
 
   // Make the header for this frame; frames default to read. 
   Devices dev = FPGA;     //the device type for the header
