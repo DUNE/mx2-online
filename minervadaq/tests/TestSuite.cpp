@@ -85,7 +85,8 @@ int main( int argc, char * argv[] )
   TestChannel( ecroc, channel, nFEBs );
   EChannels * echannel = ecroc->GetChannel( channel ); 
   SetupChargeInjection( echannel, nFEBs );
-  unsigned char * dataBuffer = ReadDPMTest( ecroc, channel, nFEBs ); 
+  unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); 
+  unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); 
 
   /* std::cout << "\n" << sizeof( dataBuffer )/sizeof( unsigned char ) << std::endl; */
   delete [] dataBuffer;
@@ -96,27 +97,16 @@ int main( int argc, char * argv[] )
   return 0;
 }
 
-unsigned char * ReadDPMTest( ECROC * ecroc, unsigned int channel, unsigned int nFEBs ) 
-{
-  std::cout << "Testing ReadDPM... ";  
 
-  ecroc->ClearAndResetStatusRegisters();
+//---------------------------------------------------
+unsigned char * ReadDPMTestData( ECROC * ecroc, unsigned int channel, unsigned int nFEBs, unsigned short pointer ) 
+{
+  std::cout << "Testing ReadDPM Data... ";  
+
   EChannels * echannel = ecroc->GetChannel( channel );
   assert( nFEBs == echannel->GetFEBVector()->size() );
 
-  unsigned short pointer = echannel->ReadDPMPointer();
-  /* std::cout << "\n After reset, pointer = " << pointer << std::endl; */
-  assert( (0 == pointer) || (1 == pointer) );  // ??? 1 ???
-  ecroc->FastCommandOpenGate();
-  ecroc->EnableSequencerReadout();
-  ecroc->SendSoftwareRDFE();
-
-  echannel->WaitForSequencerReadoutCompletion();
-  pointer = echannel->ReadDPMPointer();
-  /* std::cout << "\n After open gate, pointer = " << pointer << std::endl; */
-  logger.infoStream() << " After open gate, pointer = " << pointer;
-  assert( chgInjReadoutBytesPerBoard * nFEBs == pointer );
-  unsigned short counter = ecroc->GetChannel( channel )->ReadEventCounter();
+  unsigned short counter = echannel->ReadEventCounter();
   logger.infoStream() << " After open gate, event counter = " << counter;
   assert( 0 != counter );
   unsigned char* dataBuffer = echannel->ReadMemory( pointer );
@@ -138,11 +128,51 @@ unsigned char * ReadDPMTest( ECROC * ecroc, unsigned int channel, unsigned int n
 }
 
 //---------------------------------------------------
+unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, unsigned int nFEBs )
+{
+  std::cout << "Testing ReadDPM Pointer... ";  
+
+  ecroc->ClearAndResetStatusRegisters();
+  EChannels * echannel = ecroc->GetChannel( channel );
+  assert( nFEBs == echannel->GetFEBVector()->size() );
+
+  unsigned short pointer = echannel->ReadDPMPointer();
+  /* std::cout << "\n After reset, pointer = " << pointer << std::endl; */
+  assert( (0 == pointer) || (1 == pointer) );  // ??? 1 ???
+  ecroc->FastCommandOpenGate();
+  ecroc->EnableSequencerReadout();
+  ecroc->SendSoftwareRDFE();
+
+  echannel->WaitForSequencerReadoutCompletion();
+  pointer = echannel->ReadDPMPointer();
+  /* std::cout << "\n After open gate, pointer = " << pointer << std::endl; */
+  logger.infoStream() << " After open gate, pointer = " << pointer;
+  assert( chgInjReadoutBytesPerBoard * nFEBs == pointer );
+
+  std::cout << "Passed!" << std::endl;
+  testCount++;
+  return pointer;
+
+
+}
+
+//---------------------------------------------------
+void SetupGenericFEBSettings( EChannels* channel, unsigned int nFEBs )
+{
+  // This is not exactly a test, per se. If the setup is 
+  // done incorrectly, it will show in *later* tests.
+  for (unsigned int nboard = 1; nboard <= nFEBs; nboard++) {
+    FPGASetupForGeneric( channel, nboard );
+    TRIPSetupForGeneric( channel, nboard );
+  }
+}
+
+//---------------------------------------------------
 void SetupChargeInjection( EChannels* channel, unsigned int nFEBs )
 {
   // This is not exactly a test, per se. If the setup is 
   // done incorrectly, it will show in *later* tests.
-  for (int nboard = 1; nboard <= nFEBs; nboard++) {
+  for (unsigned int nboard = 1; nboard <= nFEBs; nboard++) {
     FPGASetupForChargeInjection( channel, nboard );
     TRIPSetupForChargeInjection( channel, nboard );
   }
@@ -163,7 +193,7 @@ void TRIPSetupForChargeInjection( EChannels* channel, int boardID )
 {
   // No real point in reading and decoding the response frame - the TRiP's send 
   // a response frame composed entirely of zeroes when being *written* to.        
-  logger.debugStream() << "TRIPSetup";
+  logger.debugStream() << "TRIPSetup for Charge Injection";
   logger.debugStream() << " EChannels Direct Address = " << std::hex << channel->GetDirectAddress()
     << std::dec << "; FEB Addr = " << boardID;
 
@@ -217,16 +247,18 @@ void TRIPSetupForChargeInjection( EChannels* channel, int boardID )
 
     channel->WriteTRIPRegistersToMemory( feb, i );
     channel->SendMessage();
-    channel->WaitForMessageReceived();
+    unsigned short status = channel->WaitForMessageReceived();
     unsigned short dataLength = channel->ReadDPMPointer();
-    logger.debugStream() << " receiveMemoryPointer after Trip Write = " << dataLength;
+    logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
+      << "; TRIPSetupForChargeInjection dataLength = " << std::dec << dataLength;
+    assert( dataLength == TRiPProgrammingFrameReadSize ); 
   }
 }
 
 //---------------------------------------------------
 void FPGASetupForChargeInjection( EChannels* channel, int boardID )
 {
-  logger.debugStream() << "FPGASetup";
+  logger.debugStream() << "FPGASetup for Charge Injection";
   logger.debugStream() << " EChannels Direct Address = " << std::hex << channel->GetDirectAddress()
     << std::dec << "; FEB Addr = " << boardID;
 
@@ -275,6 +307,92 @@ void FPGASetupForChargeInjection( EChannels* channel, int boardID )
   // Reset DAC Start
   unsigned char injReset[] = {0x0};
   feb->SetInjectDACStart(injReset);
+  FPGAWriteConfiguredFrame( channel, feb );
+}
+
+//---------------------------------------------------
+void TRIPSetupForGeneric( EChannels* channel, int boardID )
+{
+  // No real point in reading and decoding the response frame - the TRiP's send 
+  // a response frame composed entirely of zeroes when being *written* to.        
+  logger.debugStream() << "TRIPSetup for Generic Settings";
+  logger.debugStream() << " EChannels Direct Address = " << std::hex << channel->GetDirectAddress()
+    << std::dec << "; FEB Addr = " << boardID;
+
+  int vectorIndex = boardID - 1;
+  FEB *feb = channel->GetFEBVector( vectorIndex );
+
+  for ( int i=0; i<6 /* 6 trips per FEB */; i++ ) {
+    // Clear Status & Reset
+    channel->ClearAndResetStatusRegister();
+
+    // Set up the message...
+    feb->GetTrip(i)->SetRead(false);
+    {
+      feb->GetTrip(i)->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
+      feb->GetTrip(i)->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
+      feb->GetTrip(i)->SetRegisterValue( 2, DefaultTripRegisterValues.tripRegIFF );
+      feb->GetTrip(i)->SetRegisterValue( 3, DefaultTripRegisterValues.tripRegIBPIFF1REF );
+      feb->GetTrip(i)->SetRegisterValue( 4, DefaultTripRegisterValues.tripRegIBOPAMP );
+      feb->GetTrip(i)->SetRegisterValue( 5, DefaultTripRegisterValues.tripRegIB_T );
+      feb->GetTrip(i)->SetRegisterValue( 6, DefaultTripRegisterValues.tripRegIFFP2 );
+      feb->GetTrip(i)->SetRegisterValue( 7, DefaultTripRegisterValues.tripRegIBCOMP );
+      feb->GetTrip(i)->SetRegisterValue( 8, DefaultTripRegisterValues.tripRegVREF );
+      feb->GetTrip(i)->SetRegisterValue( 9, DefaultTripRegisterValues.tripRegVTH );
+      feb->GetTrip(i)->SetRegisterValue(10, DefaultTripRegisterValues.tripRegPIPEDEL);
+      feb->GetTrip(i)->SetRegisterValue(11, DefaultTripRegisterValues.tripRegGAIN );
+      feb->GetTrip(i)->SetRegisterValue(12, DefaultTripRegisterValues.tripRegIRSEL );
+      feb->GetTrip(i)->SetRegisterValue(13, DefaultTripRegisterValues.tripRegIWSEL );
+      feb->GetTrip(i)->SetRegisterValue(14, 0x0 ); 
+    }
+
+    channel->WriteTRIPRegistersToMemory( feb, i );
+    channel->SendMessage();
+    unsigned short status = channel->WaitForMessageReceived();
+    unsigned short dataLength = channel->ReadDPMPointer();
+    std::cout << "TRIPSetupForGeneric dataLength = " << dataLength << std::endl;
+    logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
+      << "; TRIPSetupForGeneric dataLength = " << std::dec << dataLength;
+    assert( dataLength == TRiPProgrammingFrameReadSize ); 
+  }
+}
+
+//---------------------------------------------------
+void FPGASetupForGeneric( EChannels* channel, int boardID )
+{
+  logger.debugStream() << "FPGASetup for Generic Settings";
+  logger.debugStream() << " EChannels Direct Address = " << std::hex << channel->GetDirectAddress()
+    << std::dec << "; FEB Addr = " << boardID;
+
+  int vectorIndex = boardID - 1;
+  FEB *feb = channel->GetFEBVector( vectorIndex );
+  {
+    unsigned char val[]={0x0};
+    feb->SetTripPowerOff(val);
+    feb->SetGateStart(40938);
+    feb->SetGateLength( 1600 );
+    feb->SetHVPeriodManual(44337);
+    feb->SetHVTarget(25000);
+    unsigned char previewEnable[] = {0x0};
+    feb->SetPreviewEnable(previewEnable);
+    for (int i=0; i<4; i++) {
+      unsigned char inj[] = { 1 + (unsigned char)i*(2) + 2*((int)boardID) };
+      unsigned char enable[] = {0x0};
+      feb->SetInjectCount(inj,i);
+      feb->SetInjectEnable(enable,i);
+      feb->SetDiscrimEnableMask(0xFFFF,i);
+    }
+    unsigned short int dacval = 0;
+    feb->SetInjectDACValue(dacval);
+    unsigned char injPhase[] = {0x0};
+    feb->SetInjectPhase(injPhase);
+    // Change FEB fpga function to write
+    Devices dev     = FPGA;
+    Broadcasts b    = None;
+    Directions d    = MasterToSlave;
+    FPGAFunctions f = Write;
+    feb->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)feb->GetBoardNumber());
+  }
   FPGAWriteConfiguredFrame( channel, feb );
 }
 
