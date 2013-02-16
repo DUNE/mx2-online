@@ -23,7 +23,6 @@ FEB::FEB( febAddresses a ) : Frames()
    *       The message body is set up for FEB Firmware Versions 78+ (54 registers).  
    *       It will need to be adjusted for other firmware versions. ECS & GNP
    */
-  NRegisters   = 54;  // # of one byte registers in the FPGA Programming Registers frame
   boardNumber  = a;      
   febNumber[0] = (unsigned char) a; 
   FEBLog.setPriority(log4cpp::Priority::NOTICE);  
@@ -37,9 +36,9 @@ FEB::FEB( febAddresses a ) : Frames()
   MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
 
   // the header + information part of the message 
-  OutgoingMessageLength = MinHeaderLength + NRegisters; //length of the outgoing message message
+  OutgoingMessageLength = MinHeaderLength + FPGANumRegisters; //length of the outgoing message message
   TrueIncomingMessageLength = 
-    2 + MinHeaderLength + NRegisters + (NRegisters + 1) % 2; //the length of the incoming message
+    2 + MinHeaderLength + FPGANumRegisters + (FPGANumRegisters + 1) % 2; //the length of the incoming message
   // Note above: incoming messages are ALWAYS 2 bytes LARGER than outgoing messages!
 
   // Instantiate objects for the trip chips on the board - loop over possible trips.
@@ -145,7 +144,7 @@ void FEB::MakeMessage()
    ********************************************************************************
    */
   // Message must have an odd number of bytes!
-  message = new unsigned char [NRegisters + (NRegisters+1)%2]; 
+  message = new unsigned char [FPGANumRegisters + (FPGANumRegisters+1)%2]; 
 
   /* message word 0 - 3:  The timer information, 32 bits for the timer */
   message[0] = (Timer & 0xFF); //mask off bits 0-7
