@@ -133,7 +133,7 @@ typedef enum ResponseWords { //typecast to unsigned char
 	ResponseLength0 = 0,
 	ResponseLength1 = 1,
 	FrameStatus0    = 2,  // New for CROC-E
-	FrameStatus1	= 3,  // New for CROC-E
+	FrameStatus1	  = 3,  // New for CROC-E
 	FrameStart      = 4,
 	DeviceStatus    = 5,
 	FrameStatus     = 6,
