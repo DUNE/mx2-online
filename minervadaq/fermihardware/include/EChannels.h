@@ -89,7 +89,6 @@ class EChannels : public VMECommunicator {
     unsigned int GetDirectAddress() const;
 
     int DecodeStatusMessage( const unsigned short& status ) const;
-    int CheckHeaderErrors(int dataLength) const;
 
     void EnableSequencerReadout() const;
     void DisableSequencerReadout() const;

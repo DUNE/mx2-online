@@ -139,13 +139,6 @@ int EChannels::DecodeStatusMessage( const unsigned short& status ) const
 }
 
 //----------------------------------------
-int EChannels::CheckHeaderErrors(int dataLength) const
-{                  
-  /* TODO: Re-implement this correctly for new channels. */
-  return 0;
-}
-
-//----------------------------------------
 void EChannels::SetupNFEBs( int nFEBs )
 {
   EChannelLog.debugStream() << "SetupNFEBs for " << nFEBs << " FEBs...";
