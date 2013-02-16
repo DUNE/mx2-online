@@ -23,9 +23,6 @@ FEB::FEB( febAddresses a ) : Frames()
    *       The message body is set up for FEB Firmware Versions 78+ (54 registers).  
    *       It will need to be adjusted for other firmware versions. ECS & GNP
    */
-  // maxHits and NRegisters are FEB firmware dependent! You may need to modify code to handle 
-  // new FEB firmwares! These values (8, 54) are guaranteed good for VERSION 91.
-  maxHits      = 8;   // Maximum number of hits
   NRegisters   = 54;  // # of one byte registers in the FPGA Programming Registers frame
   boardNumber  = a;      
   febNumber[0] = (unsigned char) a; 
@@ -72,7 +69,7 @@ FEB::FEB( febAddresses a ) : Frames()
         FEBLog.fatalStream() << "Invalid TriP ChipID at instantiation!"; 
         exit(EXIT_FEB_UNSPECIFIED_ERROR);
     }
-    tripChips[i] = new trips( boardNumber, chipFunction, maxHits ); 
+    tripChips[i] = new trips( boardNumber, chipFunction, ADCFramesMaxNumber ); 
   }
 
   // Instantiate a discriminator.  
@@ -82,9 +79,9 @@ FEB::FEB( febAddresses a ) : Frames()
   // We read the RAMFunctions in "reverse" order:
   //  0               for 1 Hit (any firmware) - this *assumes* a PIPEDEL of 1!  This is a user responsibility! 
   //  7,6,5,4,3,2,1,0 for 8 Hit firmware (PIPEDEL 15).
-  if (maxHits == 1) {
+  if (ADCFramesMaxNumber == 1) {
     adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit0 ); 
-  } else if (maxHits == 8) {
+  } else if (ADCFramesMaxNumber == 8) {
     adcHits[0] = new adc( a, (RAMFunctionsHit)ReadHit7 );
     adcHits[1] = new adc( a, (RAMFunctionsHit)ReadHit6 );
     adcHits[2] = new adc( a, (RAMFunctionsHit)ReadHit5 );
@@ -103,7 +100,7 @@ FEB::FEB( febAddresses a ) : Frames()
 
   FEBLog.debugStream() << "Created a new FEB! " << (int)febNumber[0];
   FEBLog.debugStream() << "  BoardNumber = " << boardNumber;
-  FEBLog.debugStream() << "  Max hits    =  "<< maxHits;
+  FEBLog.debugStream() << "  Max hits    =  "<< ADCFramesMaxNumber;
 }
 
 

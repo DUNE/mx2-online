@@ -285,6 +285,26 @@ typedef enum ECROCRegisters { //typecast to unsigned int
   ECROCRdfePulseCommand          = 0xFF060
 };
 
+typedef enum ECCROCChannelFrameStatusBits { //typecast to unsigned short
+  ReceiveMemoryFrameDiscType    = 0x0001,
+  ReceiveMemoryFrameHeaderError = 0x0002,
+  ReceiveMemoryCRCError         = 0x0004,
+  ReceiveMemoryFrameTimeout     = 0x0008,
+  ReceiveMemoryFrameReceived    = 0x0010,
+  ReceiveMemoryFrameCountFull   = 0x0020,
+  ReceiveMemoryEmpty            = 0x0040,
+  ReceiveMemoryFull             = 0x0080,  
+  SendMemoryUnusedBit0          = 0x0100,
+  SendMemoryUnusedBit1          = 0x0200,
+  SendMemoryRDFEDone            = 0x0400,
+  SendMemoryRDFEUpdating        = 0x0800,  
+  SendMemoryFrameSent           = 0x1000,
+  SendMemoryFrameSending        = 0x2000,  
+  SendMemoryEmpty               = 0x4000,  
+  SendMemoryFull                = 0x8000   
+};
+
+
 static const unsigned int ADCFramesMaxNumber  = 7 + 1; // timed + 1 untimed
 static const unsigned int FPGAFrameMaxSize    =  68;   // bytes
 static const unsigned int ADCFrameMaxSize     =  446;  // bytes
