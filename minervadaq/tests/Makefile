@@ -1,4 +1,4 @@
-CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
+CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC -Werror
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
