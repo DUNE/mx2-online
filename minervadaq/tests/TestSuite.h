@@ -16,6 +16,7 @@ unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel,
 
 void SetupChargeInjection( EChannels* channel, unsigned int nFEBs );
 void SetupGenericFEBSettings( EChannels* channel, unsigned int nFEBs );
+void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs );
 void FPGAWriteConfiguredFrame( EChannels* channel, FEB* feb );
 void FPGASetupForChargeInjection( EChannels* channel, int boardID );
 void TRIPSetupForChargeInjection( EChannels* channel, int boardID );

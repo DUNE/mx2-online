@@ -84,6 +84,8 @@ int main( int argc, char * argv[] )
   ECROC * ecroc = GetAndTestECROC( ecrocCardAddress, controller );
   TestChannel( ecroc, channel, nFEBs );
   EChannels * echannel = ecroc->GetChannel( channel ); 
+  SetupGenericFEBSettings( echannel, nFEBs );
+  FEBFPGAWriteReadTest( echannel, nFEBs );
   SetupChargeInjection( echannel, nFEBs );
   unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); 
   unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); 
@@ -179,13 +181,55 @@ void SetupChargeInjection( EChannels* channel, unsigned int nFEBs )
 }
 
 //---------------------------------------------------
+void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
+{
+  std::cout << "Testing FEB FPGA Write and Read back...";  
+  logger.debugStream() << "FEBFPGAWriteReadTest";
+  logger.debugStream() << " EChannels Direct Address = " << std::hex << channel->GetDirectAddress();
+
+  for (unsigned int nboard = 1; nboard <= nFEBs; nboard++) {
+    // Recall the FEB vect attached to the channel is indexed from 0.
+    int vectorIndex = nboard - 1;
+
+    FEB *feb = channel->GetFEBVector( vectorIndex );
+
+    // Re-set to defaults.
+    feb->SetFEBDefaultValues();
+    // Change FEB fpga function to write
+    Devices dev     = FPGA;
+    Broadcasts b    = None;
+    Directions d    = MasterToSlave;
+    FPGAFunctions f = Write;
+    feb->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)feb->GetBoardNumber());
+    FPGAWriteConfiguredFrame( channel, feb );
+
+    // ReadFPGAProgrammingRegisters sets up the message and reads the data into the channel memory...
+    unsigned short dataLength = channel->ReadFPGAProgrammingRegistersToMemory( feb );
+    assert( dataLength == FPGAFrameMaxSize );
+    // ...then ReadMemory retrieves the data.
+    unsigned char * dataBuffer = channel->ReadMemory( dataLength );
+    feb->message = dataBuffer;
+    feb->DecodeRegisterValues(dataLength);
+    feb->printMessageBufferToLog(dataLength);
+    logger.debugStream() << "We read fpga's for feb " << (int)feb->GetBoardID();
+    feb->ShowValues();
+
+    assert( feb->GetGateStart() == 43300 );  // TODO: move these defaults to a struct
+
+    feb->message = 0;
+    delete [] dataBuffer;
+  }
+  std::cout << "Passed!" << std::endl;
+  testCount++;
+}
+
+//---------------------------------------------------
 void FPGAWriteConfiguredFrame( EChannels* channel, FEB* feb )
 {
   channel->ClearAndResetStatusRegister();
   channel->WriteFPGAProgrammingRegistersToMemory( feb );
   channel->SendMessage();
   channel->WaitForMessageReceived();
-  /* unsigned short dataLength = channel->ReadDPMPointer(); */
 }
 
 //---------------------------------------------------
@@ -270,7 +314,7 @@ void FPGASetupForChargeInjection( EChannels* channel, int boardID )
     unsigned int gateTimeMod = sTimeVal.tv_sec % 1000;
     unsigned char val[]={0x0};
     feb->SetTripPowerOff(val);
-    feb->SetGateStart(42938);
+    feb->SetGateStart(41938);
     // we should see something different call to call
     feb->SetGateLength( 1000 + gateTimeMod );
     feb->SetHVPeriodManual(41337);
@@ -350,7 +394,6 @@ void TRIPSetupForGeneric( EChannels* channel, int boardID )
     channel->SendMessage();
     unsigned short status = channel->WaitForMessageReceived();
     unsigned short dataLength = channel->ReadDPMPointer();
-    std::cout << "TRIPSetupForGeneric dataLength = " << dataLength << std::endl;
     logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
       << "; TRIPSetupForGeneric dataLength = " << std::dec << dataLength;
     assert( dataLength == TRiPProgrammingFrameReadSize ); 
