@@ -305,14 +305,20 @@ typedef enum ECCROCChannelFrameStatusBits { //typecast to unsigned short
 };
 
 
-static const unsigned int ADCFramesMaxNumber  = 7 + 1; // timed + 1 untimed
-static const unsigned int FPGAFrameMaxSize    =  68;   // bytes
+static const unsigned int NDiscrChPerTrip = 16; // number of channels
+
+static const unsigned int ADCFramesMaxNumber        = 7 + 1; // timed + 1 untimed
+static const unsigned int FrameHeaderLengthOutgoing = 9; //size (in bytes) of an outgoing LVDS header for ANY device
+static const unsigned int FrameHeaderLengthIncoming = 9; //12? size (in bytes) of an outgoing LVDS header for ANY device
+
+static const unsigned int FPGANumRegisters    =   54;  // Firmware Dependent!
+static const unsigned int FPGAFrameMaxSize    =   68;  // bytes, Firmware Dependent!
 static const unsigned int ADCFrameMaxSize     =  446;  // bytes
 static const unsigned int DiscrFrameMaxSize   = 1138;  // bytes, == 18 + 40 * 4 * 7 (40 bytes / trip / hit)
 static const unsigned int FEBTotalDataMaxSize = FPGAFrameMaxSize + 
-  ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize;
+  ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize; // bytes
 
-static const unsigned int TRiPProgrammingFrameReadSize = 762;
+static const unsigned int TRiPProgrammingFrameReadSize = 762; // bytes
 
 static const unsigned int MaxFEBsPerChain = 10;
 

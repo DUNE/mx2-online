@@ -34,7 +34,6 @@ class FEB : public Frames {
 		disc *hits_n_timing;              /*!< The discriminator for this FEB */
 
 		unsigned char *buffer; 
-		int NRegisters; 
 
 		/*! here are some variables for the data about the FEB */
 		unsigned int Timer, TestPulseCount, GateTimeStamp;
