@@ -330,35 +330,12 @@ unsigned short EChannels::WaitForMessageReceived() const
       && !(status & ReceiveMemoryCRCError)         
       && !(status & ReceiveMemoryFrameHeaderError)
       );
-  EChannelLog.debugStream() << "Conditions: ";
-  EChannelLog.debugStream() << "  !(status & SendMemoryFull)                = " << !(status & SendMemoryFull);
-  EChannelLog.debugStream() << "  !(status & ReceiveMemoryFull)             = " << !(status & ReceiveMemoryFull);
-  EChannelLog.debugStream() << "  !(status & ReceiveMemoryFrameReceived)    = " << !(status & ReceiveMemoryFrameReceived);
-  EChannelLog.debugStream() << "  !(status & ReceiveMemoryFrameTimeout)     = " << !(status & ReceiveMemoryFrameTimeout);
-  EChannelLog.debugStream() << "  !(status & ReceiveMemoryCRCError)         = " << !(status & ReceiveMemoryCRCError);
-  EChannelLog.debugStream() << "  !(status & ReceiveMemoryFrameHeaderError) = " << !(status & ReceiveMemoryFrameHeaderError);
   int error = DecodeStatusMessage(status);
   EChannelLog.debugStream() << " Decoded Status Error Level = " << error;
   EChannelLog.debugStream() << "Message was received with status = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << status;
   return status;
 }
-/* ReceiveMemoryFrameDiscType    = 0x0001, */
-/* ReceiveMemoryFrameHeaderError = 0x0002, */
-/* ReceiveMemoryCRCError         = 0x0004, */
-/* ReceiveMemoryFrameTimeout     = 0x0008, */
-/* ReceiveMemoryFrameReceived    = 0x0010, */
-/* ReceiveMemoryFrameCountFull   = 0x0020, */
-/* ReceiveMemoryEmpty            = 0x0040, */
-/* ReceiveMemoryFull             = 0x0080, */  
-/* SendMemoryUnusedBit0          = 0x0100, */
-/* SendMemoryUnusedBit1          = 0x0200, */
-/* SendMemoryRDFEDone            = 0x0400, */
-/* SendMemoryRDFEUpdating        = 0x0800, */  
-/* SendMemoryFrameSent           = 0x1000, */
-/* SendMemoryFrameSending        = 0x2000, */  
-/* SendMemoryEmpty               = 0x4000, */  
-/* SendMemoryFull                = 0x8000 */   
 
 //----------------------------------------
 unsigned short EChannels::WaitForSequencerReadoutCompletion() const
@@ -366,7 +343,7 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion() const
   unsigned short status = 0;
   do {
     status = this->ReadFrameStatusRegister();
-  } while ( 0 == (status & 0x0400) );  // TODO: MAGIC NUMBERS MUST DIE
+  } while ( 0 == (status & SendMemoryRDFEDone /*0x0400*/ ) );  
   return status;
 }
 
