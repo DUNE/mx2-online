@@ -312,6 +312,8 @@ static const unsigned int DiscrFrameMaxSize   = 1138;  // bytes, == 18 + 40 * 4 
 static const unsigned int FEBTotalDataMaxSize = FPGAFrameMaxSize + 
   ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize;
 
+static const unsigned int TRiPProgrammingFrameReadSize = 762;
+
 static const unsigned int MaxFEBsPerChain = 10;
 
 static const unsigned int MaxTotalDataPerChain = MaxFEBsPerChain * FEBTotalDataMaxSize;
