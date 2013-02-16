@@ -46,7 +46,7 @@ class Frames {
     Frames();
     virtual ~Frames() { };
 
-    unsigned char *message; //the message that will be sent or received. mostly received...
+    unsigned char *message; 
     void printMessageBufferToLog( int buffersize );
 
     /*! transmission frame...These are for sending messages out */
