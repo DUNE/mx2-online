@@ -318,7 +318,10 @@ static const unsigned int DiscrFrameMaxSize   = 1138;  // bytes, == 18 + 40 * 4 
 static const unsigned int FEBTotalDataMaxSize = FPGAFrameMaxSize + 
   ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize; // bytes
 
-static const unsigned int TRiPProgrammingFrameReadSize = 762; // bytes
+static const unsigned int TRiPProgrammingFrameReadSize = 652; // bytes; THIS IS THE compose SIZE!
+static const unsigned int TRiPProgrammingFrameWriteSize = 758; // bytes; THIS IS THE compose SIZE!
+static const unsigned int TRiPProgrammingFrameReadResponseSize = 656; // bytes; THIS IS THE RESPONSE SIZE!
+static const unsigned int TRiPProgrammingFrameWriteResponseSize = 762; // bytes; THIS IS THE RESPONSE SIZE!
 
 static const unsigned int MaxFEBsPerChain = 10;
 
