@@ -80,12 +80,27 @@ int main( int argc, char * argv[] )
   logger.setPriority(log4cpp::Priority::DEBUG);
   logger.infoStream() << "--Starting " << thisScript << " Script.--";
 
+  // Get & initialize a Controller object.
   Controller * controller = GetAndTestController( 0x00, controllerID );
+
+  // Get & initialize a CROC-E.
   ECROC * ecroc = GetAndTestECROC( ecrocCardAddress, controller );
+
+  // Test that the specified number of FEBs are available & set up the channel.
   TestChannel( ecroc, channel, nFEBs );
+
+  // Grab a pointer to our configured channel for later use.
   EChannels * echannel = ecroc->GetChannel( channel ); 
+
+  // Write some generic values to the FEB that are different than what we use 
+  // for charge injection and different from the power on defaults. Then read them 
+  // back over the course of the next two tests.
   SetupGenericFEBSettings( echannel, nFEBs );
   FEBFPGAWriteReadTest( echannel, nFEBs );
+  FEBTRiPWriteReadTest( echannel, nFEBs );
+
+  // Set up charge injection and read the data. We test for data sizes equal 
+  // to what we expect. Get a copy of the buffer and its size for parsing.
   SetupChargeInjection( echannel, nFEBs );
   unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); 
   unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); 
@@ -103,7 +118,7 @@ int main( int argc, char * argv[] )
 //---------------------------------------------------
 unsigned char * ReadDPMTestData( ECROC * ecroc, unsigned int channel, unsigned int nFEBs, unsigned short pointer ) 
 {
-  std::cout << "Testing ReadDPM Data... ";  
+  std::cout << "Testing ReadDPM Data...";  
 
   EChannels * echannel = ecroc->GetChannel( channel );
   assert( nFEBs == echannel->GetFEBVector()->size() );
@@ -132,7 +147,7 @@ unsigned char * ReadDPMTestData( ECROC * ecroc, unsigned int channel, unsigned i
 //---------------------------------------------------
 unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, unsigned int nFEBs )
 {
-  std::cout << "Testing ReadDPM Pointer... ";  
+  std::cout << "Testing ReadDPM Pointer...";  
 
   ecroc->ClearAndResetStatusRegisters();
   EChannels * echannel = ecroc->GetChannel( channel );
@@ -211,6 +226,8 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
     feb->message = dataBuffer;
     feb->DecodeRegisterValues(dataLength);
     feb->printMessageBufferToLog(dataLength);
+    // This works as a "read" because the FPGA's response 
+    // to a write includes the current register values.
     logger.debugStream() << "We read fpga's for feb " << (int)feb->GetBoardID();
     feb->ShowValues();
 
@@ -218,6 +235,61 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
 
     feb->message = 0;
     delete [] dataBuffer;
+  }
+  std::cout << "Passed!" << std::endl;
+  testCount++;
+}
+
+//---------------------------------------------------
+void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
+{
+  std::cout << "Testing TRiP Write and Read back...";  
+
+  for (unsigned int boardID = 1; boardID <= nFEBs; boardID++ ) {
+    int vectorIndex = boardID - 1;
+    FEB *feb = channel->GetFEBVector( vectorIndex );
+
+    for ( int i=0; i<6 /* 6 trips per FEB */; i++ ) {
+      // Clear Status & Reset
+      channel->ClearAndResetStatusRegister();
+
+      // Set up the message...
+      feb->GetTrip(i)->SetRead(true);
+      feb->GetTrip(i)->MakeMessage();
+      unsigned int tmpML = feb->GetTrip(i)->GetMessageSize();
+      assert( TRiPProgrammingFrameReadSize == tmpML );
+
+      std::stringstream ss;
+      ss << "Trip " << i << std::endl;
+      unsigned char *message = feb->GetTrip(i)->GetOutgoingMessage();
+      for (unsigned int j = 0; j < tmpML; j +=4 ) {
+        ss << j << "\t" << (int)message[j];
+        if (j+1 < tmpML) ss << "\t" << (int)message[j+1];
+        if (j+2 < tmpML) ss << "\t" << (int)message[j+2];
+        if (j+3 < tmpML) ss << "\t" << (int)message[j+3];
+        ss << std::endl;
+      }
+      assert( message[0] == (unsigned char)boardID );
+      assert( message[2] == 0 );
+      assert( message[3] == 0 );
+      message = 0;
+
+
+      channel->WriteTRIPRegistersToMemory( feb, i );
+      channel->SendMessage();
+      unsigned short status = channel->WaitForMessageReceived();
+      unsigned short dataLength = channel->ReadDPMPointer();
+      logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
+        << "; TRIPSetupForChargeInjection dataLength = " << std::dec << dataLength;
+      assert( dataLength == TRiPProgrammingFrameReadResponseSize ); 
+
+      for (unsigned int k=0;k<14;k++) {
+        ss << "Trip Register " << k << "; Value = " << 
+          (int)feb->GetTrip(i)->GetTripValue(k) << std::endl;
+      }
+      logger.debugStream() << ss.str();
+
+    }
   }
   std::cout << "Passed!" << std::endl;
   testCount++;
@@ -250,6 +322,9 @@ void TRIPSetupForChargeInjection( EChannels* channel, int boardID )
 
     // Set up the message...
     feb->GetTrip(i)->SetRead(false);
+    feb->GetTrip(i)->MakeMessage();  // ?? needed ??
+    unsigned int tmpML = feb->GetTrip(i)->GetMessageSize();
+    assert( TRiPProgrammingFrameWriteSize == tmpML );
     {
       feb->GetTrip(i)->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
       feb->GetTrip(i)->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
@@ -295,7 +370,7 @@ void TRIPSetupForChargeInjection( EChannels* channel, int boardID )
     unsigned short dataLength = channel->ReadDPMPointer();
     logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
       << "; TRIPSetupForChargeInjection dataLength = " << std::dec << dataLength;
-    assert( dataLength == TRiPProgrammingFrameReadSize ); 
+    assert( dataLength == TRiPProgrammingFrameWriteResponseSize ); 
   }
 }
 
@@ -372,6 +447,7 @@ void TRIPSetupForGeneric( EChannels* channel, int boardID )
 
     // Set up the message...
     feb->GetTrip(i)->SetRead(false);
+    feb->GetTrip(i)->MakeMessage();  // ?? needed ??
     {
       feb->GetTrip(i)->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
       feb->GetTrip(i)->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
@@ -382,7 +458,7 @@ void TRIPSetupForGeneric( EChannels* channel, int boardID )
       feb->GetTrip(i)->SetRegisterValue( 6, DefaultTripRegisterValues.tripRegIFFP2 );
       feb->GetTrip(i)->SetRegisterValue( 7, DefaultTripRegisterValues.tripRegIBCOMP );
       feb->GetTrip(i)->SetRegisterValue( 8, DefaultTripRegisterValues.tripRegVREF );
-      feb->GetTrip(i)->SetRegisterValue( 9, DefaultTripRegisterValues.tripRegVTH );
+      feb->GetTrip(i)->SetRegisterValue( 9, 0 ); // we'll turn the TRiPs on before we do chg inj
       feb->GetTrip(i)->SetRegisterValue(10, DefaultTripRegisterValues.tripRegPIPEDEL);
       feb->GetTrip(i)->SetRegisterValue(11, DefaultTripRegisterValues.tripRegGAIN );
       feb->GetTrip(i)->SetRegisterValue(12, DefaultTripRegisterValues.tripRegIRSEL );
@@ -396,7 +472,7 @@ void TRIPSetupForGeneric( EChannels* channel, int boardID )
     unsigned short dataLength = channel->ReadDPMPointer();
     logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
       << "; TRIPSetupForGeneric dataLength = " << std::dec << dataLength;
-    assert( dataLength == TRiPProgrammingFrameReadSize ); 
+    assert( dataLength == TRiPProgrammingFrameWriteResponseSize ); 
   }
 }
 
