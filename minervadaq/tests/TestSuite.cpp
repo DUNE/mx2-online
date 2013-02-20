@@ -108,6 +108,9 @@ int main( int argc, char * argv[] )
   // Read the ADC and parse them.
   ReadADCTest( echannel, nFEBs );
 
+  // Read the Discriminators and parse them.
+  ReadDiscrTest( echannel, nFEBs );
+
   /* std::cout << "\n" << sizeof( dataBuffer )/sizeof( unsigned char ) << std::endl; */
   delete [] dataBuffer;
   delete ecroc;
@@ -117,6 +120,57 @@ int main( int argc, char * argv[] )
   return 0;
 }
 
+
+//---------------------------------------------------
+void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
+{
+  std::cout << "Testing Read Discrs...";  
+
+  for (unsigned int nboard = 1; nboard <= 1/*nFEBs*/; nboard++) {
+
+    channel->ClearAndResetStatusRegister();
+
+    // Recall the FEB vect attached to the channel is indexed from 0.
+    int vectorIndex = nboard - 1;
+    FEB *feb = channel->GetFEBVector( vectorIndex );
+
+    channel->WriteMessageToMemory( feb->GetDisc()->GetOutgoingMessage(), 
+        feb->GetDisc()->GetMessageSize() );
+    channel->SendMessage();
+    unsigned short status = channel->WaitForMessageReceived();
+    assert( 0x1010 == status );
+    unsigned short pointer = channel->ReadDPMPointer();
+    std::cout << "\n pointer = " << pointer << std::endl;
+    assert( 18/*header*/ + 2/*nhits*/*4/*ntrips*/*40/*bytes/trip*/ == pointer ); 
+    unsigned char* data = channel->ReadMemory( pointer );
+
+    feb->GetDisc()->message = data;
+    assert( !feb->GetDisc()->CheckForErrors() );
+    assert( !feb->GetDisc()->DecodeRegisterValues((int)0)); 
+
+    /*
+    unsigned char TripXNHits[4]; 
+    TripXNHits[0] = 0x0F & data[12];
+    TripXNHits[1] = (0xF0 & data[12]) >> 4;
+    TripXNHits[2] = 0x0F & data[13];
+    TripXNHits[3] = (0xF0 & data[13]) >> 4;
+    assert( 2 == TripXNHits[0] );
+    assert( 2 == TripXNHits[1] );
+    assert( 2 == TripXNHits[2] );
+    assert( 2 == TripXNHits[3] );
+    */
+
+    feb->GetDisc()->message = 0;
+    delete [] data;
+
+  }
+
+  std::cout << "Passed!" << std::endl;
+  testCount++;
+}
+
+
+//---------------------------------------------------
 void ReadADCTest( EChannels* channel, unsigned int nFEBs )
 {
   std::cout << "Testing Read ADCs...";  
