@@ -36,6 +36,8 @@ unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel,
 // This test should be called eigth.
 void ReadADCTest( EChannels* channel, unsigned int nFEBs );
 
+// This test should be called ninth.
+void ReadDiscrTest( EChannels* channel, unsigned int nFEBs );
 
 // Helper Functions - not tests per se.
 void FPGAWriteConfiguredFrame( EChannels* channel, FEB* feb );
