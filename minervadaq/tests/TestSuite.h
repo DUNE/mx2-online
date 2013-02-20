@@ -33,6 +33,8 @@ unsigned char * ReadDPMTestData( ECROC * ecroc, unsigned int channel,
 unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, 
     unsigned int nFEBs );
 
+// This test should be called eigth.
+void ReadADCTest( EChannels* channel, unsigned int nFEBs );
 
 
 // Helper Functions - not tests per se.
