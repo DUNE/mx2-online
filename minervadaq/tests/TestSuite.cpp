@@ -105,6 +105,9 @@ int main( int argc, char * argv[] )
   unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); 
   unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); 
 
+  // Read the ADC and parse them.
+  ReadADCTest( echannel, nFEBs );
+
   /* std::cout << "\n" << sizeof( dataBuffer )/sizeof( unsigned char ) << std::endl; */
   delete [] dataBuffer;
   delete ecroc;
@@ -112,6 +115,41 @@ int main( int argc, char * argv[] )
 
   std::cout << "Passed all tests! Executed " << testCount << " tests." << std::endl;
   return 0;
+}
+
+void ReadADCTest( EChannels* channel, unsigned int nFEBs )
+{
+  std::cout << "Testing Read ADCs...";  
+
+  int iHit = 1; // 0 - 1 should be charge injected
+
+  for (unsigned int nboard = 1; nboard <= nFEBs; nboard++) {
+
+    channel->ClearAndResetStatusRegister();
+
+    // Recall the FEB vect attached to the channel is indexed from 0.
+    int vectorIndex = nboard - 1;
+    FEB *feb = channel->GetFEBVector( vectorIndex );
+
+    channel->WriteMessageToMemory( feb->GetADC(iHit)->GetOutgoingMessage(), 
+        feb->GetADC(iHit)->GetMessageSize() );
+    channel->SendMessage();
+    unsigned short status = channel->WaitForMessageReceived();
+    assert( 0x1010 == status );
+    unsigned short pointer = channel->ReadDPMPointer();
+    assert( ADCFrameMaxSize == pointer ); 
+    unsigned char* data = channel->ReadMemory( pointer );
+
+    feb->GetADC(iHit)->message = data;
+    assert( !feb->GetADC(iHit)->CheckForErrors() );
+    assert( !feb->GetADC(iHit)->DecodeRegisterValues((int)90)); // 90 == FEB firmware ver, for now...
+    feb->GetADC(iHit)->message = 0;
+    delete [] data;
+
+  }
+
+  std::cout << "Passed!" << std::endl;
+  testCount++;
 }
 
 
