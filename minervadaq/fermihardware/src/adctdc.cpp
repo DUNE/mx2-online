@@ -1,6 +1,7 @@
 #ifndef adctdc_cpp
 #define adctdc_cpp
 
+#include <iomanip>
 #include "adctdc.h"
 #include "exit_codes.h"
 
@@ -39,7 +40,7 @@ adc::adc(febAddresses a, RAMFunctionsHit b) : Frames()
   outgoingMessage = new unsigned char [MinHeaderLength+2]; // always the same message!
   MakeMessage(); //make up the message
   OutgoingMessageLength = MinHeaderLength+2; //set the outgoing message length
-  adcLog.setPriority(log4cpp::Priority::NOTICE);  // ERROR?
+  adcLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
   adcLog.debugStream() << "Made ADC " << b << " for FEB " << a; 
 }
 
@@ -72,24 +73,22 @@ int adc::DecodeRegisterValues(int febFirmware)
    * \param febFirmware, the FEB firmware.
    */
   // Check to see if the frame is right length...
-  unsigned short ml = (message[ResponseLength1] << 8) | message[ResponseLength0];
+  unsigned short ml = (message[ResponseLength1]) | (message[ResponseLength0] << 8);
   if ( ml == 0 ) {
-    std::cout << "Can't parse an empty InpFrame!" << std::endl;
-    // -> Throw exception here.
-    return 1;
+    adcLog.fatalStream() << "Can't parse an empty InpFrame!";
+    exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
-  if ( ml != ADCFrameLength ) { 
-    std::cout << "ADC Frame length mismatch!" << std::endl;
-    std::cout << "  Message Length = " << ml << std::endl;
-    std::cout << "  Expected       = " << ADCFrameLength << std::endl;
-    // -> Throw exception here.
-    return 1;		
+  if ( ml != ADCFrameMaxSize) { 
+    adcLog.fatalStream() << "ADC Frame length mismatch!";
+    adcLog.fatalStream() << "  Message Length = " << ml;
+    adcLog.fatalStream() << "  Expected       = " << ADCFrameMaxSize;
+    this->printMessageBufferToLog(12); // print the header to log
+    exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
   // Check that the dummy byte is zero...
   if ( message[Data] != 0 ) {
-    std::cout << "Dummy byte is non-zero!" << std::endl;
-    // -> Throw exception here.
-    return 1;				
+    adcLog.fatalStream() << "Dummy byte is non-zero!";
+    exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
 
   // Eventually put all of this into a try-catch block...
@@ -98,7 +97,7 @@ int adc::DecodeRegisterValues(int febFirmware)
   int hword = 0;
   for (int i=0; i<12; i+=2) {
     unsigned short int val = (message[i+1] << 8) | message[i];
-    printf("Header Word %d = %d (%04X)\n",hword,val,val);
+    adcLog.debug("Header Word %d = %d (%04X)",hword,val,val);
     hword++;
   }
 
@@ -120,9 +119,9 @@ int adc::DecodeRegisterValues(int febFirmware)
     AmplVal = ((message[i - 2] << 8) + message[i - 3]);
     TimeVal = ((message[i] << 8) + message[i - 1]); //timeval not useful for MINERvA (D0 thing)
     // Show.  Recall that no *hit index* is shown because each analog bank *is* a "hit" index.
-    printf("ChIndx = %d, TripIndx = %d\n", ChIndx,TripIndx);
+    adcLog.debug("ChIndx = %d, TripIndx = %d", ChIndx,TripIndx);
     // Apply "data mask" (pick out 12 bit adc) and shift two bits to the right (lower).
-    printf("  Masked AmplVal = %d\n", (AmplVal & 0x3FFC)>>2); // 0x3FFC = 0011 1111 1111 1100, 12-bit adc 
+    adcLog.debug("  Masked AmplVal = %d", (AmplVal & 0x3FFC)>>2); // 0x3FFC = 0011 1111 1111 1100, 12-bit adc 
     ChIndx++;
     if (ChIndx == NTimeAmplCh) { TripIndx++; ChIndx = 0; }
   } //end for - show frame sequential
@@ -145,16 +144,16 @@ int adc::DecodeRegisterValues(int febFirmware)
     int hiChannel = nSkipChannelsPerTrip + (pixel % nPixelsPerTrip);
     int medChannel = hiChannel + nPixelsPerTrip;
     int loChannel = lowMap[pixel];
-    printf("Pixel = %d, HiMedTrip = %d, hiChannel = %d, medChannel = %d, loTrip = %d, lowChannel = %d\n",
+    adcLog.debug("Pixel = %d, HiMedTrip = %d, hiChannel = %d, medChannel = %d, loTrip = %d, lowChannel = %d",
         pixel, hiMedTrip, hiChannel, medChannel, loTrip, loChannel);
     // Calculate the offsets (in bytes_per_row increments).
     // The header offset is an additional 12 bytes... 
     int hiOffset = hiMedTrip * nChannelsPerTrip + hiChannel;
     int medOffset = hiMedTrip * nChannelsPerTrip + medChannel;
     int loOffset = loTrip * nChannelsPerTrip + loChannel;
-    printf("hiOffset = %d, medOffset = %d, loOffset = %d\n", hiOffset, medOffset, loOffset);
+    adcLog.debug("hiOffset = %d, medOffset = %d, loOffset = %d", hiOffset, medOffset, loOffset);
     unsigned short int dataMask = 0x3FFC;
-    printf("Qhi = %d, Qmed = %d, Qlo = %d\n", 
+    adcLog.debug("Qhi = %d, Qmed = %d, Qlo = %d", 
         ( ( ( (message[headerLength + bytes_per_row*hiOffset + 1] << 8) | message[headerLength + bytes_per_row*hiOffset] ) 
             & dataMask ) >> 2),
         ( ( ( (message[headerLength + bytes_per_row*medOffset + 1] << 8) | message[headerLength + bytes_per_row*medOffset] ) 
