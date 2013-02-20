@@ -51,7 +51,6 @@ class EChannels : public VMECommunicator {
 		std::vector<FEB*> FEBsVector;     
 
     bool isAvailable( FEB* feb ) const;
-    void WriteMessageToMemory( unsigned char* message, int messageLength ) const;
     void UpdateConfigurationForVal( unsigned short val, unsigned short mask ) const;
     void SetChannelConfiguration( unsigned char* message ) const;
 
@@ -67,7 +66,9 @@ class EChannels : public VMECommunicator {
     unsigned short ReadTxRxStatusRegister() const;
     unsigned short GetChannelConfiguration() const;
 
+    void WriteMessageToMemory( unsigned char* message, int messageLength ) const;
     void SendMessage() const;
+
     unsigned short ReadEventCounter() const;
     unsigned short WaitForSequencerReadoutCompletion() const;
     unsigned short WaitForMessageReceived() const;
