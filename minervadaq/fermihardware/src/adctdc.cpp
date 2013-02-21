@@ -206,27 +206,22 @@ int disc::DecodeRegisterValues(int a)
    *  Returns 0 for success or an error code (eventually)...
    */
   // Check to see if the frame is more than zero length...
-  unsigned short ml = (message[ResponseLength1] << 8) | message[ResponseLength0];
+  unsigned short ml = (message[ResponseLength1]) | (message[ResponseLength0] << 8);
   if ( ml == 0 ) {
-    std::cout << "Can't parse an empty InpFrame!" << std::endl;
-    // -> Throw exception here.
-    return 1;
+    tdcLog.fatalStream() << "Can't parse an empty InpFrame!";
+    exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
   // Check that the dummy byte is zero...
   if ( message[Data] != 0 ) {
-    std::cout << "Dummy byte is non-zero!" << std::endl;
-    // -> Throw exception here.
-    return 1;				
+    tdcLog.fatalStream() << "Dummy byte is non-zero!";
+    exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
 
   int *TripXNHits = new int [4];
-  //Retrieve the number of hits for each Trip chip.
-  TripXNHits[0] = 0x0F & message[12];
-  TripXNHits[1] = (0xF0 & message[12]) >> 4;
-  TripXNHits[2] = 0x0F & message[13];
-  TripXNHits[3] = (0xF0 & message[13]) >> 4;
+  for (unsigned int i = 0; i < 4; ++i)
+    TripXNHits[i] = GetNHitsOnTRiP(i);
 #if SHOWNHITS
-  printf("Trip Nhits: %d,%d,%d,%d\n", TripXNHits[0], TripXNHits[1], TripXNHits[2], TripXNHits[3]);
+  tdcLog.debug("Trip Nhits: %d,%d,%d,%d\n", TripXNHits[0], TripXNHits[1], TripXNHits[2], TripXNHits[3]);
 #endif
 
   //Retrieve the acual disciminators' timing info.
@@ -245,22 +240,22 @@ int disc::DecodeRegisterValues(int a)
         TempHitArray[i] = (unsigned short int)(message[indx] + (message[indx + 1] << 8));
         indx += 2;
 #if SHOWBRAM
-        printf("response[%d] = %d, response[%d] << 8 = %d\n", indx, message[indx], 
+        tdcLog.debug("response[%d] = %d, response[%d] << 8 = %d\n", indx, message[indx], 
             indx + 1, message[indx + 1] << 8);
-        printf("  BRAMWord[%d] = %u\n", i, TempHitArray[i]);
+        tdcLog.debug("  BRAMWord[%d] = %u\n", i, TempHitArray[i]);
 #endif                            
       } // end loop over temp hit array
       //update the DiscTSTicks (Time Stamp Ticks is a 32 bit long number)
       //Here we shift the last 16 bit word 16 bits to the left to make it the most significant word.
       unsigned int TempDiscTicks = ((TempHitArray[19] << 16) + TempHitArray[18]);
 #if SHOWBRAM
-      printf("BRAMWord[19] << 16 = %u, BRAMWord[18] = %u\n", (TempHitArray[19] << 16), TempHitArray[18]);
-      printf("  Time Stamp Ticks: = %u\n", TempDiscTicks);
+      tdcLog.debug("BRAMWord[19] << 16 = %u, BRAMWord[18] = %u\n", (TempHitArray[19] << 16), TempHitArray[18]);
+      tdcLog.debug("  Time Stamp Ticks: = %u\n", TempDiscTicks);
 #endif
       //update the DiscQuaterTicks (Discriminator's Quater Tick is a two bit number = 0, 1, 2 or 3)
 #if SHOWQUARTERTICKS
-      printf("Update Disc Quarter Ticks:\n");
-      printf(" TempHitArray[17] = %d, TempHitArray[16] = %d\n", TempHitArray[17], TempHitArray[16]);
+      tdcLog.debug("Update Disc Quarter Ticks:\n");
+      tdcLog.debug(" TempHitArray[17] = %d, TempHitArray[16] = %d\n", TempHitArray[17], TempHitArray[16]);
 #endif
       //Here we pull a single bit from a sixteen bit word, mapping channel to bit number.
       //The "second" word (TempHitArray[17] encodes the true second bit, and hence adds 0 or 2.
@@ -272,7 +267,7 @@ int disc::DecodeRegisterValues(int a)
         TempDiscQuaterTicks = 2 * GetBitFromWord(TempHitArray[17], iCh) +
           GetBitFromWord(TempHitArray[16], iCh);
 #if SHOWQUARTERTICKS
-        printf("  iCh = %d, iHit-1 = %d, DQ Ticks = %d\n", iCh, iHit - 1, TempDiscQuaterTicks);
+        tdcLog.debug("  iCh = %d, iHit-1 = %d, DQ Ticks = %d\n", iCh, iHit - 1, TempDiscQuaterTicks);
 #endif
       }
       /*! \note {update the DiscDelTicks (Discriminator's Delay Tick is an integer between 0 and 
@@ -297,7 +292,7 @@ int disc::DecodeRegisterValues(int a)
       //are several valid algorithms that could pick this information out.  Also note: this example should not 
       //be interpreted to imply the delay tick number should or will always climb with channel number.
 #if SHOWDELAYTICKS
-      printf("Update Disc Delay Ticks:\n");
+      tdcLog.debug("Update Disc Delay Ticks:\n");
 #endif
       unsigned int TempDiscDelTicks = 0;
       for (int iCh = 0; iCh < NDiscrChPerTrip; iCh++) {
@@ -305,7 +300,7 @@ int disc::DecodeRegisterValues(int a)
         for (unsigned int iSRL = 0; iSRL < SRLDepth; iSRL++)
           TempDiscDelTicks = TempDiscDelTicks + GetBitFromWord(TempHitArray[iSRL], iCh);
 #if SHOWDELAYTICKS
-        printf("  iCh = %d, iHit-1 = %d, Del Ticks = %d\n", iCh, iHit - 1, SRLDepth - TempDiscDelTicks);
+        tdcLog.debug("  iCh = %d, iHit-1 = %d, Del Ticks = %d\n", iCh, iHit - 1, SRLDepth - TempDiscDelTicks);
 #endif
       }
     } // end loop over hits per trip
@@ -316,7 +311,34 @@ int disc::DecodeRegisterValues(int a)
   return 0;
 }
 
+//-----------------------------------------------------
+unsigned int disc::GetNHitsOnTRiP(const unsigned int& tripNumber) const // 0 <= tripNumber <= 3
+{
+  if (NULL == message) {
+    tdcLog.fatalStream() << "Null message buffer in GetNHitsOnTRiP!";
+    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+  }
+  switch (tripNumber) {
+    case 0:
+      return (0x0F & message[discrNumHits01]);
+      break;
+    case 1:
+      return (0xF0 & message[discrNumHits01]) >> 4;
+      break;
+    case 2:
+      return (0x0F & message[discrNumHits23]);
+      break;
+    case 3:
+      return (0xF0 & message[discrNumHits23]) >> 4;
+      break;
+    default:
+      tdcLog.fatalStream() << "Only TRiPs 0-3 are valid for GetNHitsOnTRiP.";
+      exit(EXIT_FEB_UNSPECIFIED_ERROR);
+  }
+  return 0;
+}
 
+// TODO - this method is bad and should be removed...
 int disc::GetDiscrFired(int a)
 {
   /*! \fn 
@@ -325,23 +347,21 @@ int disc::GetDiscrFired(int a)
    * \param a an integer placeholder from inheritance
    */
   // Check to see if the frame is more than zero length...
-  unsigned short ml = (message[ResponseLength1] << 8) | message[ResponseLength0];
+  unsigned short ml = (message[ResponseLength1]) | (message[ResponseLength0] << 8);
   if ( ml == 0 ) {
-    std::cout << "Can't parse an empty InpFrame!" << std::endl;
-    // -> Throw exception here.
-    return -1;
+    tdcLog.fatalStream() << "Can't parse an empty InpFrame!";
+    exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
   // Check that the dummy byte is zero...
   if ( message[Data] != 0 ) {
-    std::cout << "Dummy byte is non-zero!" << std::endl;
-    // -> Throw exception here.
-    return -1;				
+    tdcLog.fatalStream() << "Dummy byte is non-zero!";
+    exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
+
   if ( ( (0x0F & message[12]) != ((0xF0 & message[12]) >> 4)) ||
       ( (0x0F & message[13]) != ((0xF0 & message[13]) >> 4)) ) 
   {
-    std::cout << "Mismatch in pushed trip discriminator counts in disc::GetDiscrFired!" << std::endl;
-    // -> Throw exception here.
+    tdcLog.errorStream() << "Mismatch in pushed trip discriminator counts in disc::GetDiscrFired!";
     return -1;
   }
   return ((0x0F & message[12]) > (0x0F & message[13])) ? (0x0F & message[12]) : (0x0F & message[13]);

@@ -98,6 +98,8 @@ class disc : public Frames {
 		/*! Decodes the register to return the number of hits */
 		int GetDiscrFired(int a); //decodes the registers (so we can get the number of hits to process)
 
+    unsigned int GetNHitsOnTRiP(const unsigned int& tripNumber) const; // 0 <= tripNumber <= 3
+
 		/*! Helper functions to decode */
 		int GetBitFromWord(unsigned short int word, int index);
 		int GetBitFromWord(unsigned int word, int index);

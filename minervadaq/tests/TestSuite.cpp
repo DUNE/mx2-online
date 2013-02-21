@@ -140,29 +140,18 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
     unsigned short status = channel->WaitForMessageReceived();
     assert( 0x1010 == status );
     unsigned short pointer = channel->ReadDPMPointer();
-    std::cout << "\n pointer = " << pointer << std::endl;
     assert( 18/*header*/ + 2/*nhits*/*4/*ntrips*/*40/*bytes/trip*/ == pointer ); 
     unsigned char* data = channel->ReadMemory( pointer );
 
     feb->GetDisc()->message = data;
     assert( !feb->GetDisc()->CheckForErrors() );
     assert( !feb->GetDisc()->DecodeRegisterValues((int)0)); 
+    for (unsigned int i = 0; i < 4; ++i) 
+      assert( 2 == feb->GetDisc()->GetNHitsOnTRiP(i) );
 
-    /*
-    unsigned char TripXNHits[4]; 
-    TripXNHits[0] = 0x0F & data[12];
-    TripXNHits[1] = (0xF0 & data[12]) >> 4;
-    TripXNHits[2] = 0x0F & data[13];
-    TripXNHits[3] = (0xF0 & data[13]) >> 4;
-    assert( 2 == TripXNHits[0] );
-    assert( 2 == TripXNHits[1] );
-    assert( 2 == TripXNHits[2] );
-    assert( 2 == TripXNHits[3] );
-    */
-
+    feb->GetDisc()->printMessageBufferToLog(pointer);
     feb->GetDisc()->message = 0;
     delete [] data;
-
   }
 
   std::cout << "Passed!" << std::endl;
@@ -345,7 +334,7 @@ void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
       // Clear Status & Reset
       channel->ClearAndResetStatusRegister();
 
-      // Set up the message...
+      // Set up the message... (just to look at)
       feb->GetTrip(i)->SetRead(true);
       feb->GetTrip(i)->MakeMessage();
       unsigned int tmpML = feb->GetTrip(i)->GetMessageSize();
@@ -365,8 +354,9 @@ void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
       assert( message[2] == 0 );
       assert( message[3] == 0 );
       message = 0;
+      feb->GetTrip(i)->DeleteOutgoingMessage();
 
-
+      // remake the message internally
       channel->WriteTRIPRegistersToMemory( feb, i );
       channel->SendMessage();
       unsigned short status = channel->WaitForMessageReceived();
@@ -380,7 +370,7 @@ void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
           (int)feb->GetTrip(i)->GetTripValue(k) << std::endl;
       }
       logger.debugStream() << ss.str();
-
+      assert( 0 == feb->GetTrip(i)->GetTripValue(9) );  // we set this
     }
   }
   std::cout << "Passed!" << std::endl;
@@ -414,9 +404,6 @@ void TRIPSetupForChargeInjection( EChannels* channel, int boardID )
 
     // Set up the message...
     feb->GetTrip(i)->SetRead(false);
-    feb->GetTrip(i)->MakeMessage();  // ?? needed ??
-    unsigned int tmpML = feb->GetTrip(i)->GetMessageSize();
-    assert( TRiPProgrammingFrameWriteSize == tmpML );
     {
       feb->GetTrip(i)->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
       feb->GetTrip(i)->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
@@ -539,7 +526,6 @@ void TRIPSetupForGeneric( EChannels* channel, int boardID )
 
     // Set up the message...
     feb->GetTrip(i)->SetRead(false);
-    feb->GetTrip(i)->MakeMessage();  // ?? needed ??
     {
       feb->GetTrip(i)->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
       feb->GetTrip(i)->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
