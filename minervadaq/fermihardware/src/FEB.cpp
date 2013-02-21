@@ -143,6 +143,7 @@ void FEB::MakeMessage()
    * Note that we must clean up the outgoingMessages in the functions that call MakeMessage!
    ********************************************************************************
    */
+  OutgoingMessageLength = MinHeaderLength + FPGANumRegisters; //length of the outgoing message message
   // Message must have an odd number of bytes!
   message = new unsigned char [FPGANumRegisters + (FPGANumRegisters+1)%2]; 
 

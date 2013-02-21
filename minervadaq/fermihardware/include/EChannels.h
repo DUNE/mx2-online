@@ -79,6 +79,7 @@ class EChannels : public VMECommunicator {
     // no WriteFrame is deliberate - too many configs - we just offer preconfigured reads
     void WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const;
     void WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb ) const; 
+    void WriteFPGAProgrammingRegistersDumpReadToMemory( FEB *feb ) const; 
     void WriteTRIPRegistersToMemory( FEB *feb, int tripNumber ) const;
     void WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber ) const; 
     // read the frames - load messages to memory, send them, and then check the dpm pointer
