@@ -28,7 +28,7 @@ class LVDSFrames {
   protected:
     static const int MinHeaderLength;
     static const int NDiscrChPerTrip;
-    unsigned char FrameID[2];        // Starts out Empty, filled on return of message
+    unsigned char FrameID[2];        
     unsigned char frameHeader[9];    // a frame header, add this to the message
     unsigned char *outgoingMessage;  // the character string for the message sent to a device
     unsigned char broadcastCommand[1], febNumber[1], 
@@ -50,14 +50,14 @@ class LVDSFrames {
     void DecodeHeader();
     bool CheckForErrors();
 
-    inline unsigned char *GetOutgoingMessage() {return outgoingMessage;};
-    void DeleteOutgoingMessage() {delete [] outgoingMessage;};
+    inline unsigned char *GetOutgoingMessage() { return outgoingMessage; };
+    inline void DeleteOutgoingMessage() { delete [] outgoingMessage; };
 
-    void inline SetIncomingMessageLength(int a) {IncomingMessageLength = a;};
-    int inline GetIncomingMessageLength() {return IncomingMessageLength;};
-    int inline GetOutgoingMessageLength() {return OutgoingMessageLength;};
-    int inline GetFEBNumber() {return (int)febNumber[0];};
-    int inline GetDeviceType() {return (int) targetDevice[0];};
+    void inline SetIncomingMessageLength(int a) { IncomingMessageLength = a; };
+    int inline GetIncomingMessageLength() { return IncomingMessageLength; };
+    int inline GetOutgoingMessageLength() { return OutgoingMessageLength; };
+    int inline GetFEBNumber() { return (int)febNumber[0]; };
+    int inline GetDeviceType() { return (int)targetDevice[0]; };
 
 };
 

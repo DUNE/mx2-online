@@ -23,6 +23,7 @@ LVDSFrames::LVDSFrames()
   FrameID[0] = 0x00; 
   FrameID[1] = 0x00; 
   lvdsLog.setPriority(log4cpp::Priority::DEBUG);
+  IncomingMessageLength = OutgoingMessageLength = 0;
 }
 
 //------------------------------------------
