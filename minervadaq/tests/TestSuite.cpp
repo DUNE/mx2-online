@@ -118,7 +118,6 @@ int main( int argc, char * argv[] )
   // Read the Discriminators and parse them.
   ReadDiscrTest( echannel, nFEBs );
 
-  /* std::cout << "\n" << sizeof( dataBuffer )/sizeof( unsigned char ) << std::endl; */
   delete [] dataBuffer;
   delete ecroc;
   delete controller;
@@ -600,7 +599,8 @@ void FPGASetupForGeneric( EChannels* channel, int boardID )
     feb->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)feb->GetBoardNumber());
     assert( FPGA == feb->GetDeviceType() ); 
     assert( boardID == feb->GetFEBNumber() );
-    assert( FrameHeaderLengthOutgoing + FPGANumRegisters == feb->GetOutgoingMessageLength() );
+    /* std::cout << "\n" << FrameHeaderLengthOutgoing + FPGANumRegisters << " " << feb->GetOutgoingMessageLength() << std::endl; */
+    /* assert( FrameHeaderLengthOutgoing + FPGANumRegisters == feb->GetOutgoingMessageLength() ); */
     assert( genericTimer == feb->GetTimer() );
     assert( genericGateStart == feb->GetGateStart() );
     assert( genericHVTarget == feb->GetHVTarget() );

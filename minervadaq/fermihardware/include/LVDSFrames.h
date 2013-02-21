@@ -34,7 +34,10 @@ class LVDSFrames {
     unsigned char broadcastCommand[1], febNumber[1], 
                   messageDirection[1], targetDevice[1], 
                   deviceFunction[1];
-    int IncomingMessageLength, OutgoingMessageLength;
+    int IncomingMessageLength, OutgoingMessageLength; // careful, these break things
+                                                      // if operations are done in a non-standard 
+                                                      // order. TODO: get rid of these for a 
+                                                      // different mechanism
 
   public:
     LVDSFrames();

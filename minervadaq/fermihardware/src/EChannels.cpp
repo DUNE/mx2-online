@@ -396,8 +396,17 @@ void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength 
 //----------------------------------------
 void EChannels::WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const
 {
-  // Note: this function does not send the message! It only write the message to the CROC memory.
+  // Note: this function does not send the message! It only writes the message to the CROC memory.
   feb->MakeMessage(); 
+  this->WriteMessageToMemory( feb->GetOutgoingMessage(), feb->GetOutgoingMessageLength() );
+  feb->DeleteOutgoingMessage(); 
+}
+
+//----------------------------------------
+void EChannels::WriteFPGAProgrammingRegistersDumpReadToMemory( FEB *feb ) const
+{
+  // Note: this function does not send the message! It only writes the message to the CROC memory.
+  feb->MakeShortMessage();  // Use the "DumpRead" option.
   this->WriteMessageToMemory( feb->GetOutgoingMessage(), feb->GetOutgoingMessageLength() );
   feb->DeleteOutgoingMessage(); 
 }
@@ -405,7 +414,7 @@ void EChannels::WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const
 //----------------------------------------
 void EChannels::WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb ) const
 {
-  // Note: this function does not send the message! It only write the message to the CROC memory.
+  // Note: this function does not send the message! It only writes the message to the CROC memory.
   Devices dev     = FPGA;
   Broadcasts b    = None;
   Directions d    = MasterToSlave;
@@ -435,7 +444,8 @@ unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( FEB *feb ) const
 {
   // Note: this function does not retrieve the data from memory! It only loads it and reads the pointer.
   this->ClearAndResetStatusRegister();
-  this->WriteFPGAProgrammingRegistersReadFrameToMemory( feb );
+  /* this->WriteFPGAProgrammingRegistersReadFrameToMemory( feb ); */
+  this->WriteFPGAProgrammingRegistersDumpReadToMemory( feb );
   this->SendMessage();
   this->WaitForMessageReceived();
   unsigned short dataLength = this->ReadDPMPointer();
