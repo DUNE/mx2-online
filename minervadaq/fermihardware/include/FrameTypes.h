@@ -210,5 +210,10 @@ typedef enum febAddresses {
 	FE15   =15
 };
 
+typedef enum discrHeaderWords {
+  discrNumHits01 = 14,  // CROCE-era values
+  discrNumHits23 = 15
+};
+
 
 #endif
