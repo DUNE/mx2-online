@@ -296,15 +296,8 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
 
     FEB *feb = channel->GetFEBVector( vectorIndex );
 
-    // Re-set to defaults.
+    // Re-set to defaults (to make sure we read new values in).
     feb->SetFEBDefaultValues();
-    // Change FEB fpga function to read
-    Devices dev     = FPGA;
-    Broadcasts b    = None;
-    Directions d    = MasterToSlave;
-    FPGAFunctions f = Read;
-    feb->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)feb->GetBoardNumber());
-    FPGAWriteConfiguredFrame( channel, feb );
 
     // ReadFPGAProgrammingRegisters sets up the message and reads the data into the channel memory...
     unsigned short dataLength = channel->ReadFPGAProgrammingRegistersToMemory( feb );
@@ -314,8 +307,6 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
     feb->message = dataBuffer;
     feb->DecodeRegisterValues(dataLength);
     feb->printMessageBufferToLog(dataLength);
-    // This works as a "read" because the FPGA's response 
-    // to a write includes the current register values.
     logger.debugStream() << "We read fpga's for feb " << (int)feb->GetBoardID();
     feb->ShowValues();
 
