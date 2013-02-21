@@ -24,6 +24,13 @@ static int testCount = 0;
 // the "un-timed" hit buffer as well (N+1 readout mode).
 static const int chgInjReadoutBytesPerBoard = FPGAFrameMaxSize + 2*ADCFrameMaxSize + 338;
 
+static const unsigned short genericGateStart = 40938;
+static const unsigned short genericHVTarget = 25000;
+static const unsigned short genericGateLength = 1600;
+static const unsigned short genericHVPeriodManual = 35000;
+static const unsigned short genericDiscEnableMask = 0xFFFF;
+static const unsigned int   genericTimer = 12;
+
 int main( int argc, char * argv[] ) 
 {
   std::cout << "Starting test suite..." << std::endl;
@@ -279,7 +286,7 @@ void SetupChargeInjection( EChannels* channel, unsigned int nFEBs )
 //---------------------------------------------------
 void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
 {
-  std::cout << "Testing FEB FPGA Write and Read back...";  
+  std::cout << "Testing FEB FPGA Read back...";  
   logger.debugStream() << "FEBFPGAWriteReadTest";
   logger.debugStream() << " EChannels Direct Address = " << std::hex << channel->GetDirectAddress();
 
@@ -291,11 +298,11 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
 
     // Re-set to defaults.
     feb->SetFEBDefaultValues();
-    // Change FEB fpga function to write
+    // Change FEB fpga function to read
     Devices dev     = FPGA;
     Broadcasts b    = None;
     Directions d    = MasterToSlave;
-    FPGAFunctions f = Write;
+    FPGAFunctions f = Read;
     feb->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)feb->GetBoardNumber());
     FPGAWriteConfiguredFrame( channel, feb );
 
@@ -312,7 +319,17 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
     logger.debugStream() << "We read fpga's for feb " << (int)feb->GetBoardID();
     feb->ShowValues();
 
-    assert( feb->GetGateStart() == 43300 );  // TODO: move these defaults to a struct
+    assert( FPGA == feb->GetDeviceType() ); 
+    assert( nboard == (unsigned int)feb->GetFEBNumber() );
+    assert( genericTimer == feb->GetTimer() );
+    assert( genericGateStart == feb->GetGateStart() );
+    assert( genericHVTarget == feb->GetHVTarget() );
+    assert( genericGateLength == feb->GetGateLength() );
+    assert( genericHVPeriodManual == feb->GetHVPeriodManual() );
+    assert( genericDiscEnableMask == feb->GetDiscEnMask0() );
+    assert( genericDiscEnableMask == feb->GetDiscEnMask1() );
+    assert( genericDiscEnableMask == feb->GetDiscEnMask2() );
+    assert( genericDiscEnableMask == feb->GetDiscEnMask3() );
 
     feb->message = 0;
     delete [] dataBuffer;
@@ -324,7 +341,7 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
 //---------------------------------------------------
 void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
 {
-  std::cout << "Testing TRiP Write and Read back...";  
+  std::cout << "Testing TRiP Read back...";  
 
   for (unsigned int boardID = 1; boardID <= nFEBs; boardID++ ) {
     int vectorIndex = boardID - 1;
@@ -357,7 +374,7 @@ void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
       feb->GetTrip(i)->DeleteOutgoingMessage();
 
       // remake the message internally
-      channel->WriteTRIPRegistersToMemory( feb, i );
+      channel->WriteTRIPRegistersReadFrameToMemory( feb, i );
       channel->SendMessage();
       unsigned short status = channel->WaitForMessageReceived();
       unsigned short dataLength = channel->ReadDPMPointer();
@@ -566,10 +583,11 @@ void FPGASetupForGeneric( EChannels* channel, int boardID )
   {
     unsigned char val[]={0x0};
     feb->SetTripPowerOff(val);
-    feb->SetGateStart(40938);
-    feb->SetGateLength( 1600 );
-    feb->SetHVPeriodManual(44337);
-    feb->SetHVTarget(25000);
+    feb->SetTimer( genericTimer );
+    feb->SetGateStart( genericGateStart );
+    feb->SetGateLength( genericGateLength );
+    feb->SetHVPeriodManual( genericHVPeriodManual );
+    feb->SetHVTarget( genericHVTarget );
     unsigned char previewEnable[] = {0x0};
     feb->SetPreviewEnable(previewEnable);
     for (int i=0; i<4; i++) {
@@ -589,6 +607,18 @@ void FPGASetupForGeneric( EChannels* channel, int boardID )
     Directions d    = MasterToSlave;
     FPGAFunctions f = Write;
     feb->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)feb->GetBoardNumber());
+    assert( FPGA == feb->GetDeviceType() ); 
+    assert( boardID == feb->GetFEBNumber() );
+    assert( FrameHeaderLengthOutgoing + FPGANumRegisters == feb->GetOutgoingMessageLength() );
+    assert( genericTimer == feb->GetTimer() );
+    assert( genericGateStart == feb->GetGateStart() );
+    assert( genericHVTarget == feb->GetHVTarget() );
+    assert( genericGateLength == feb->GetGateLength() );
+    assert( genericHVPeriodManual == feb->GetHVPeriodManual() );
+    assert( genericDiscEnableMask == feb->GetDiscEnMask0() );
+    assert( genericDiscEnableMask == feb->GetDiscEnMask1() );
+    assert( genericDiscEnableMask == feb->GetDiscEnMask2() );
+    assert( genericDiscEnableMask == feb->GetDiscEnMask3() );
   }
   FPGAWriteConfiguredFrame( channel, feb );
 }

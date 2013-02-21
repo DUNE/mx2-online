@@ -33,6 +33,7 @@ Frames::Frames()
   FrameID[0]   = 0x00; 
   FrameID[1]   = 0x00; //initialize the frame id to no value
   framesLog.setPriority(log4cpp::Priority::DEBUG);
+  IncomingMessageLength = OutgoingMessageLength = 0;
 }
 
 
