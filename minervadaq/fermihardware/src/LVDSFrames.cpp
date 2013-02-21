@@ -80,12 +80,12 @@ void LVDSFrames::MakeHeader()
   frameHeader[3] = FrameID[0]; frameHeader[4] = FrameID[1];
 
   /* words 5 - 8 are reserved for response information */
-  frameHeader[5] = frameHeader[6] = frameHeader[7] = frameHeader[8] = 0x00; //initialize them to null
+  frameHeader[5] = frameHeader[6] = frameHeader[7] = frameHeader[8] = 0x00; 
 }
 
 //------------------------------------------
 // Each class which inherits frames makes its own messages!
-void LVDSFrames::MakeMessage() { std::cout << "Hi Elaine!" << std::endl; } 
+void LVDSFrames::MakeMessage() { std::cout << "Hello, world!" << std::endl; } 
 
 //------------------------------------------
 bool LVDSFrames::CheckForErrors() 
@@ -171,25 +171,16 @@ void LVDSFrames::DecodeHeader()
   /*! \fn 
    * extract device information from the FPGA header sent back from
    * the electronics by a read request.
-   *
-   * note:  these should be decoded using the enumerated types in 
-   * FrameTypes.h 
    */
-#if DEBUG_VERBOSE
-  std::cout << " Entering LVDSFrames::DecodeHeader..." << std::endl;
-#endif
+  lvdsLog.debugStream() << " Entering LVDSFrames::DecodeHeader...";
   ResponseWords word;
 
   word = FrameStart; 
   febNumber[0] = (message[word]&0x0F); //extract the feb board number from which this message came
-#if DEBUG_VERBOSE
-  std::cout << "  message at framestart: " << (int)message[word] << std::endl;
-#endif
+  lvdsLog.debugStream() << "  message at framestart: " << (int)message[word];
   broadcastCommand[0] = (message[word]&0xF0); //extract the broadcast command
   messageDirection[0] = (message[word]&0x80); //get the message direction
-#if DEBUG_VERBOSE
-  std::cout << "  direction: " << (int)(message[word]&0x80) << std::endl;
-#endif
+  lvdsLog.debugStream() << "  direction: " << (int)(message[word]&0x80);
   word = DeviceStatus;
   deviceFunction[0] = (message[word]&0x0F); // extract the device function executed 
   targetDevice[0]   = (message[word]&0xF0); // extract the device which responded
