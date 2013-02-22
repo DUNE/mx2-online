@@ -444,7 +444,7 @@ unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( FEB *feb ) const
 {
   // Note: this function does not retrieve the data from memory! It only loads it and reads the pointer.
   this->ClearAndResetStatusRegister();
-  /* this->WriteFPGAProgrammingRegistersReadFrameToMemory( feb ); */
+  /* this->WriteFPGAProgrammingRegistersReadFrameToMemory( feb ); */ // remove this line after adopting FPGAFrame class.
   this->WriteFPGAProgrammingRegistersDumpReadToMemory( feb );
   this->SendMessage();
   this->WaitForMessageReceived();
