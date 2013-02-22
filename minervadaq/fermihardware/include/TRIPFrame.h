@@ -100,7 +100,7 @@ class TRIPFrame : public LVDSFrame {
     /*! Function to filp the read/write message bit */
     void inline SetRead(bool a) {read = a;};
     /*! Function to return the lenght of the outgoing buffer */
-    int inline GetMessageSize() {return bufferSize+MinHeaderLength;};
+    int inline GetMessageSize() { return bufferSize + FrameHeaderLengthOutgoing; };
     /*! Function to return a trip register value */
     long_m inline GetTripValue(int i) {return trip_values[i];};  
 
