@@ -51,11 +51,11 @@ void LVDSFrames::MakeDeviceFrameTransmit( Devices dev, Broadcasts b, Directions 
   deviceFunction[0]   = (unsigned char)f;
   febNumber[0]        = (unsigned char)feb;
 
-  MakeHeader();
+  MakeOutgoingHeader();
 }
 
 //------------------------------------------
-void LVDSFrames::MakeHeader() 
+void LVDSFrames::MakeOutgoingHeader() 
 {
   /*! \fn********************************************************************************
    * a function which packs outgoing frame header data for transmitting information from
@@ -93,76 +93,32 @@ bool LVDSFrames::CheckForErrors()
   /*! \fn bool LVDSFrames::CheckForErrors()
    * Check incoming frame header data for errors.
    */
-  bool errors[10] = {false};
-  bool error = false; //initialize error 
+  bool error = false; 
 
-  ResponseWords word; //which word of the message do we check
-  ResponseFlags flag; //what status bits are we checking
-
-  /* we are looking to see if any of the various bits are set */
   unsigned char messageLength[2];
-  word = ResponseLength0;
+  ResponseWords word = ResponseLength0;
   messageLength[0] = message[word];
   word = ResponseLength1;
   messageLength[1] = message[word];
+  lvdsLog.debugStream() << "CheckForErrors Message Length = " 
+    << ( (messageLength[1]<<8) | messageLength[0] );
 
-  word = FrameStart; flag = Direction; //check direction
-  errors[0] = !(message[word] & flag); 
-  if (errors[0]) {
-    error = true; 
-    lvdsLog.errorStream()<<"CheckForErrors: Direction: "<<errors[0];
+  const unsigned int nflags = 8;
+  ResponseWords words[nflags] = { FrameStart, DeviceStatus, DeviceStatus, FrameStatus, 
+    FrameStatus, FrameStatus, FrameStatus, FrameStatus }; 
+  ResponseFlags flags[nflags] = { Direction, DeviceOK, FunctionOK, CRCOK, 
+    EndHeader, MaxLen, SecondStart, NAHeader }; 
+
+  for (unsigned int i = 0; i < nflags; ++i) {
+    lvdsLog.debugStream() << "Checking word : " << words[i] << "; and flag : " << flags[i];
+    if (!message[ words[i] ] & flags[i]) {
+      error = true;
+      lvdsLog.errorStream() << "HeaderError : " << words[i] 
+        << " for FEB " << this->GetFEBNumber();
+    }
   }
 
-  word = DeviceStatus; flag = DeviceOK; //check status
-  errors[1] = !(message[word] & flag);
-  if (errors[1]) {
-    error = true; 
-    lvdsLog.errorStream()<<"CheckForErrors: DeviceOK: "<<errors[1];
-  }
-
-  word = DeviceStatus; flag = FunctionOK; //check execution status
-  errors[2] = !(message[word]&flag);
-  if (errors[2]) {
-    error = true; 
-    lvdsLog.errorStream()<<"CheckForErrors: FunctionOK: "<<errors[2];
-  }
-
-  word = FrameStatus; flag = CRCOK; //check CRC error bit
-  errors[3] = !(message[word] & flag);
-  if (errors[3]) {
-    error = true; 
-    lvdsLog.errorStream()<<"CheckForErrors: CRCOK: "<<errors[3];
-  }
-
-  word = FrameStatus; flag = EndHeader; //message ended properly
-  errors[4] = !(message[word] & flag);
-  if (errors[4]) {
-    error = true; 
-    lvdsLog.errorStream()<<"CheckForErrors: EndHeader: "<<errors[4];
-  }
-
-  word = FrameStatus; flag = MaxLen; //message exceeded maximum message length
-  errors[5] = (message[word] & flag);
-  if (errors[5]) {
-    error = true; 
-    lvdsLog.errorStream()<<"CheckForErrors: MaxLen: "<<errors[5];
-  }
-
-  word = FrameStatus; flag = SecondStart;
-  errors[6] = (message[word] & flag);
-  if (errors[6]) {
-    error = true; 
-    lvdsLog.errorStream()<<"CheckForErrors: SecondStart: "<<errors[6];
-  }
-
-  word = FrameStatus; flag = NAHeader;
-  errors[7] = (message[word] & flag);
-  if (errors[7]) {
-    error = true; 
-    lvdsLog.errorStream()<<"CheckForErrors: NAHeader: "<<errors[7];
-  }
-
-  return error; // true if *any* error was found!
+  return error; 
 }
 
 //------------------------------------------
@@ -176,14 +132,14 @@ void LVDSFrames::DecodeHeader()
   ResponseWords word;
 
   word = FrameStart; 
-  febNumber[0] = (message[word]&0x0F); //extract the feb board number from which this message came
-  lvdsLog.debugStream() << "  message at framestart: " << (int)message[word];
-  broadcastCommand[0] = (message[word]&0xF0); //extract the broadcast command
-  messageDirection[0] = (message[word]&0x80); //get the message direction
-  lvdsLog.debugStream() << "  direction: " << (int)(message[word]&0x80);
+  febNumber[0]        = (message[word]&0x0F); 
+  broadcastCommand[0] = (message[word]&0xF0); 
+  messageDirection[0] = (message[word]&0x80); 
   word = DeviceStatus;
-  deviceFunction[0] = (message[word]&0x0F); // extract the device function executed 
-  targetDevice[0]   = (message[word]&0xF0); // extract the device which responded
+  deviceFunction[0]   = (message[word]&0x0F); 
+  targetDevice[0]     = (message[word]&0xF0); 
+  lvdsLog.debugStream() << "  message at framestart: " << (int)message[word];
+  lvdsLog.debugStream() << "  direction: " << (int)(message[word]&0x80);
 }
 
 //------------------------------------------
