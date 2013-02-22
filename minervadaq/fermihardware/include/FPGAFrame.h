@@ -2,7 +2,7 @@
 #define FPGAFrame_h
 
 #include "FrameTypes.h"
-#include "LVDSFrames.h"
+#include "LVDSFrame.h"
 
 /*********************************************************************************
 * Class for creating Front-End Board (FPGAFrame) objects for use with the 
@@ -21,7 +21,7 @@
  *
  */
 
-class FPGAFrame : public LVDSFrames {
+class FPGAFrame : public LVDSFrame {
 	private:
 
 		unsigned char *buffer; 

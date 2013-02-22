@@ -1,8 +1,8 @@
-#ifndef LVDSFrames_cpp
-#define LVDSFrames_cpp
+#ifndef LVDSFrame_cpp
+#define LVDSFrame_cpp
 
 #include <iomanip>
-#include "LVDSFrames.h"
+#include "LVDSFrame.h"
 #include "exit_codes.h"
 
 /*********************************************************************************
@@ -13,12 +13,12 @@
  * Gabriel Perdue, The University of Rochester
  **********************************************************************************/
 
-/* const int LVDSFrames::MinHeaderLength=9; // renamed: FrameHeaderLengthOutgoing */
+/* const int LVDSFrame::MinHeaderLength=9; // renamed: FrameHeaderLengthOutgoing */
 
 log4cpp::Category& lvdsLog = log4cpp::Category::getInstance(std::string("frames"));
 
 //------------------------------------------
-LVDSFrames::LVDSFrames() 
+LVDSFrame::LVDSFrame() 
 { 
   FrameID[0] = 0x00; 
   FrameID[1] = 0x00; 
@@ -27,7 +27,7 @@ LVDSFrames::LVDSFrames()
 }
 
 //------------------------------------------
-void LVDSFrames::MakeDeviceFrameTransmit( Devices dev, Broadcasts b, Directions d, 
+void LVDSFrame::MakeDeviceFrameTransmit( Devices dev, Broadcasts b, Directions d, 
     unsigned int f, unsigned int feb ) 
 {
   /*! \fn********************************************************************************
@@ -55,7 +55,7 @@ void LVDSFrames::MakeDeviceFrameTransmit( Devices dev, Broadcasts b, Directions 
 }
 
 //------------------------------------------
-void LVDSFrames::MakeOutgoingHeader() 
+void LVDSFrame::MakeOutgoingHeader() 
 {
   /*! \fn********************************************************************************
    * a function which packs outgoing frame header data for transmitting information from
@@ -85,12 +85,12 @@ void LVDSFrames::MakeOutgoingHeader()
 
 //------------------------------------------
 // Each class which inherits frames makes its own messages!
-void LVDSFrames::MakeMessage() { std::cout << "Hello, world!" << std::endl; } 
+void LVDSFrame::MakeMessage() { std::cout << "Hello, world!" << std::endl; } 
 
 //------------------------------------------
-bool LVDSFrames::CheckForErrors() 
+bool LVDSFrame::CheckForErrors() 
 {
-  /*! \fn bool LVDSFrames::CheckForErrors()
+  /*! \fn bool LVDSFrame::CheckForErrors()
    * Check incoming frame header data for errors.
    */
   bool error = false; 
@@ -122,13 +122,13 @@ bool LVDSFrames::CheckForErrors()
 }
 
 //------------------------------------------
-void LVDSFrames::DecodeHeader() 
+void LVDSFrame::DecodeHeader() 
 {
   /*! \fn 
    * extract device information from the FPGA header sent back from
    * the electronics by a read request.
    */
-  lvdsLog.debugStream() << " Entering LVDSFrames::DecodeHeader...";
+  lvdsLog.debugStream() << " Entering LVDSFrame::DecodeHeader...";
   ResponseWords word;
 
   word = FrameStart; 
@@ -143,7 +143,7 @@ void LVDSFrames::DecodeHeader()
 }
 
 //------------------------------------------
-void LVDSFrames::printMessageBufferToLog( int buffersize )
+void LVDSFrame::printMessageBufferToLog( int buffersize )
 {
   lvdsLog.debugStream() << "Printing message buffer of size = " << buffersize;
   if (buffersize > 0) 

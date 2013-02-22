@@ -1,5 +1,5 @@
-#ifndef LVDSFrames_h
-#define LVDSFrames_h
+#ifndef LVDSFrame_h
+#define LVDSFrame_h
 
 #include <iostream>
 #include <fstream>
@@ -18,13 +18,13 @@
  * Gabriel Perdue, The University of Rochester
  **********************************************************************************/
 
-/*! \class LVDSFrames
+/*! \class LVDSFrame
  *
  * \brief The base class for all LVDS data exchange frames.
  *
  */
 
-class LVDSFrames {
+class LVDSFrame {
   protected:
     static const int MinHeaderLength;
     static const int NDiscrChPerTrip;
@@ -40,8 +40,8 @@ class LVDSFrames {
                                                       // different mechanism
 
   public:
-    LVDSFrames();
-    virtual ~LVDSFrames() { };
+    LVDSFrame();
+    virtual ~LVDSFrame() { };
 
     unsigned char *message; 
     void printMessageBufferToLog( int buffersize );
