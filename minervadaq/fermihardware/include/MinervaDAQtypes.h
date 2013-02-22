@@ -327,4 +327,12 @@ static const unsigned int MaxFEBsPerChain = 10;
 
 static const unsigned int MaxTotalDataPerChain = MaxFEBsPerChain * FEBTotalDataMaxSize;
 
+static const int nPixelsPerFEB         = 64;
+static const int nHiMedTripsPerFEB     = 4;
+static const int nSides                = 2;
+static const int nPixelsPerTrip        = 16;  // nPixelsPerFEB / nHiMedTripsPerFEB
+static const int nPixelsPerSide        = 32;  // nPixelsPerFEB / nSides
+static const int nChannelsPerTrip      = 36;  // 1 dummy ADC reading + 32 real channel + 2 edge channels + 1 ADC latency
+static const int nSkipChannelsPerTrip  = 3;
+
 #endif

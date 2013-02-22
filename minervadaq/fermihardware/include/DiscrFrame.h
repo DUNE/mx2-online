@@ -3,13 +3,6 @@
 
 #include "LVDSFrame.h"
 
-const int nPixelsPerFEB         = 64;
-const int nHiMedTripsPerFEB     = 4;
-const int nSides                = 2;
-const int nPixelsPerTrip        = 16;  // nPixelsPerFEB / nHiMedTripsPerFEB
-const int nPixelsPerSide        = 32;  // nPixelsPerFEB / nSides
-const int nChannelsPerTrip      = 36;  // 1 dummy ADC reading + 32 real channel + 2 edge channels + 1 ADC latency
-const int nSkipChannelsPerTrip  = 3;
 
 /*! \class DiscrFrame
  * 

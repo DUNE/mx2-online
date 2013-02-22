@@ -14,7 +14,6 @@
  *
  * Elaine Schulte, Rutgers University
  * Gabriel Perdue, The University of Rochester
- *
  **********************************************************************************/
 
 log4cpp::Category& ADCFrameLog = log4cpp::Category::getInstance(std::string("ADCFrame"));
