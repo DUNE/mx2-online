@@ -28,15 +28,14 @@ const int nSkipChannelsPerTrip  = 3;
  */
 class ADCFrame : public LVDSFrame {
 	private:
-		unsigned char *buffer; /*!<A buffer for holding ADC raw data */  
 
 	public: 
 		ADCFrame(febAddresses a, RAMFunctionsHit f); 
 		~ADCFrame() { delete [] outgoingMessage; };
 
-		int inline GetMessageSize() { return FrameHeaderLengthOutgoing; };
+    inline unsigned int GetOutgoingMessageLength() { return FrameHeaderLengthOutgoing +2 /* ? */; };
 		void MakeMessage();
-		int DecodeRegisterValues(int febFirmware); // debug function that parses an adc data block
+		void DecodeRegisterValues(); 
 };
 
 #endif

@@ -25,14 +25,13 @@ ADCFrame::ADCFrame(febAddresses a, RAMFunctionsHit b) : LVDSFrame()
    * \param a The address (number) of the feb
    * \param b The "RAM Function" which describes the hit of number to be read off
    */
-  febNumber[0] = (unsigned char) a; //feb number (address)
-  Devices dev = RAM; //device to be addressed
-  Broadcasts broad = None; //we don't broadcast
-  Directions dir = MasterToSlave; //ALL outgoing messages are master-to-slave
+  febNumber[0]     = (unsigned char) a; // feb number (address)
+  Devices dev      = RAM;               // device to be addressed
+  Broadcasts broad = None;              // we don't broadcast
+  Directions dir   = MasterToSlave;     // ALL outgoing messages are master-to-slave
   MakeDeviceFrameTransmit(dev, broad, dir,(unsigned int)b, (unsigned int) febNumber[0]); //make the frame
 
-  OutgoingMessageLength = FrameHeaderLengthOutgoing + 2; //set the outgoing message length
-  outgoingMessage = new unsigned char [ OutgoingMessageLength ]; // always the same message!
+  outgoingMessage = new unsigned char [ this->GetOutgoingMessageLength() ]; // always the same message!
   MakeMessage(); //make up the message
   
   ADCFrameLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
@@ -50,25 +49,22 @@ void ADCFrame::MakeMessage()
   for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) {
     outgoingMessage[i]=frameHeader[i];
   }
-  for (unsigned int i = FrameHeaderLengthOutgoing; i < OutgoingMessageLength; ++i) {
+  for (unsigned int i = FrameHeaderLengthOutgoing; i < this->GetOutgoingMessageLength(); ++i) {
     outgoingMessage[i]=0;
   }
   ADCFrameLog.debugStream() << "Made ADCFrame Message";
 }
 
 
-int ADCFrame::DecodeRegisterValues(int febFirmware)
+void ADCFrame::DecodeRegisterValues()
 {	
   /*! \fn
    *
-   * Based on C. Gingu's ParseInpFrameAsAnaBRAM function (from the FermiDAQ) and D. Casper's DecodeRawEvent
-   * Decode the input frame data as Hit data type from all Analog BRAMs argument is dummy for now...
-   * Returns 0 for success or an error code (eventually)...
-   *
-   * \param febFirmware, the FEB firmware.
+   * Based on C. Gingu's ParseInpFrameAsAnaBRAM function (from the FermiDAQ).
+   * Decode the input frame data as Hit data type from all Analog BRAMs.
    */
   // Check to see if the frame is right length...
-  unsigned short ml = (message[ResponseLength1]) | (message[ResponseLength0] << 8);
+  unsigned short ml = (receivedMessage[ResponseLength1]) | (receivedMessage[ResponseLength0] << 8);
   if ( ml == 0 ) {
     ADCFrameLog.fatalStream() << "Can't parse an empty InpFrame!";
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
@@ -77,11 +73,11 @@ int ADCFrame::DecodeRegisterValues(int febFirmware)
     ADCFrameLog.fatalStream() << "ADCFrame length mismatch!";
     ADCFrameLog.fatalStream() << "  Message Length = " << ml;
     ADCFrameLog.fatalStream() << "  Expected       = " << ADCFrameMaxSize;
-    this->printMessageBufferToLog(12); // print the header to log
+    this->printReceivedMessageToLog(); 
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
   // Check that the dummy byte is zero...
-  if ( message[Data] != 0 ) {
+  if ( receivedMessage[Data] != 0 ) {
     ADCFrameLog.fatalStream() << "Dummy byte is non-zero!";
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
@@ -91,15 +87,16 @@ int ADCFrame::DecodeRegisterValues(int febFirmware)
   // Show header in 16-bit word format...
   int hword = 0;
   for (int i=0; i<12; i+=2) {
-    unsigned short int val = (message[i+1] << 8) | message[i];
+    unsigned short int val = (receivedMessage[i+1] << 8) | receivedMessage[i];
     ADCFrameLog.debug("Header Word %d = %d (%04X)",hword,val,val);
     hword++;
   }
 
   // The number of bytes per row is a function of firmware!!
-  int bytes_per_row = 4; // most firmwares (non 84).
-  if (febFirmware == 84) bytes_per_row = 2;
-  if (febFirmware == 90) bytes_per_row = 2; // 90 & 84 are really the same, but 84 does not live in the wild.
+  // v90+ uses 2 bytes per row, older firmware used 4.
+  // We assume the firmware version is v90+ now.
+  int bytes_per_row = 2; 
+
   // First, show the adc in simple sequential order...
   // Note that the "TimeVal" will disappear in newer firmware!
 #if SHOWSEQ
@@ -111,8 +108,8 @@ int ADCFrame::DecodeRegisterValues(int febFirmware)
   int nrows       = 215; //really 216, but starting just past row 1...
   int max_show    = 15 + bytes_per_row * nrows; 
   for (int i = 15; i <= max_show; i += 4) {
-    AmplVal = ((message[i - 2] << 8) + message[i - 3]);
-    TimeVal = ((message[i] << 8) + message[i - 1]); //timeval not useful for MINERvA (D0 thing)
+    AmplVal = ((receivedMessage[i - 2] << 8) + receivedMessage[i - 3]);
+    TimeVal = ((receivedMessage[i] << 8) + receivedMessage[i - 1]); //timeval not useful for MINERvA (D0 thing)
     // Show.  Recall that no *hit index* is shown because each analog bank *is* a "hit" index.
     ADCFrameLog.debug("ChIndx = %d, TripIndx = %d", ChIndx,TripIndx);
     // Apply "data mask" (pick out 12 bit adc) and shift two bits to the right (lower).
@@ -149,16 +146,15 @@ int ADCFrame::DecodeRegisterValues(int febFirmware)
     ADCFrameLog.debug("hiOffset = %d, medOffset = %d, loOffset = %d", hiOffset, medOffset, loOffset);
     unsigned short int dataMask = 0x3FFC;
     ADCFrameLog.debug("Qhi = %d, Qmed = %d, Qlo = %d", 
-        ( ( ( (message[headerLength + bytes_per_row*hiOffset + 1] << 8) | message[headerLength + bytes_per_row*hiOffset] ) 
+        ( ( ( (receivedMessage[headerLength + bytes_per_row*hiOffset + 1] << 8) | receivedMessage[headerLength + bytes_per_row*hiOffset] ) 
             & dataMask ) >> 2),
-        ( ( ( (message[headerLength + bytes_per_row*medOffset + 1] << 8) | message[headerLength + bytes_per_row*medOffset] ) 
+        ( ( ( (receivedMessage[headerLength + bytes_per_row*medOffset + 1] << 8) | receivedMessage[headerLength + bytes_per_row*medOffset] ) 
             & dataMask ) >> 2),
-        ( ( ( (message[headerLength + bytes_per_row*loOffset + 1] << 8) | message[headerLength + bytes_per_row*loOffset] ) 
+        ( ( ( (receivedMessage[headerLength + bytes_per_row*loOffset + 1] << 8) | receivedMessage[headerLength + bytes_per_row*loOffset] ) 
             & dataMask ) >> 2)
         );
   }                
 #endif
-  return 0;
 }
 
 

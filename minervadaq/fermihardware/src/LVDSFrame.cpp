@@ -22,13 +22,26 @@ LVDSFrame::LVDSFrame()
 { 
   FrameID[0] = 0x00; 
   FrameID[1] = 0x00; 
+  outgoingMessage = NULL;
+  receivedMessage = NULL;
+  febNumber[0]        = 0;
+  targetDevice[0]     = 0;
+  deviceFunction[0]   = 0;
+  broadcastCommand[0] = 0;
+  messageDirection[0] = 0;
   lvdsLog.setPriority(log4cpp::Priority::DEBUG);
-  IncomingMessageLength = OutgoingMessageLength = 0;
 }
+
+//-------------------------------------------------------
+LVDSFrame::~LVDSFrame() 
+{ 
+  if (receivedMessage) delete [] receivedMessage; 
+  if (outgoingMessage) delete [] outgoingMessage; 
+}    
 
 //------------------------------------------
 void LVDSFrame::MakeDeviceFrameTransmit( Devices dev, Broadcasts b, Directions d, 
-    unsigned int f, unsigned int feb ) 
+    unsigned int deviceFun, unsigned int febNum ) 
 {
   /*! \fn********************************************************************************
    * a function which makes up an FPGA frame for transmitting information from
@@ -48,8 +61,8 @@ void LVDSFrame::MakeDeviceFrameTransmit( Devices dev, Broadcasts b, Directions d
   broadcastCommand[0] = (unsigned char)b;
   messageDirection[0] = (unsigned char)d;
   targetDevice[0]     = (unsigned char)dev; 
-  deviceFunction[0]   = (unsigned char)f;
-  febNumber[0]        = (unsigned char)feb;
+  deviceFunction[0]   = (unsigned char)deviceFun;
+  febNumber[0]        = (unsigned char)febNum;
 
   MakeOutgoingHeader();
 }
@@ -65,27 +78,42 @@ void LVDSFrame::MakeOutgoingHeader()
 
   /* we've done all the conversion & stuff so we can make up the frame header now! */
   /* word 1: the broadcast direction, command, and feb number */
-  frameHeader[0] = (messageDirection[0] & 0x80 ); // The direction bit is in bit 7 of word 1
-  frameHeader[0] |= (broadcastCommand[0] & 0xF0); // The broadcast command is in bits 4-6
-  frameHeader[0] |= (febNumber[0] & 0x0F);        // The feb number is bits 0-3
+  frameHeader[0]  = (messageDirection[0] & 0x80 ); // The direction bit is in bit 7 of word 1
+  frameHeader[0] |= (broadcastCommand[0] & 0xF0);  // The broadcast command is in bits 4-6
+  frameHeader[0] |= (febNumber[0] & 0x0F);         // The feb number is bits 0-3
 
   /* word 2:  target device & its function */
-  frameHeader[1] = (targetDevice[0] & 0xF0);     // The target device is in bits 4-7
+  frameHeader[1]  = (targetDevice[0] & 0xF0);    // The target device is in bits 4-7
   frameHeader[1] |= (deviceFunction[0] & 0x0F);  // The function is in bits 0-3
 
   /* word 3:  reserved for response information */
   frameHeader[2] = 0x00; //initialize to null
 
   /* word 4 & 5:  frame ID (whatever that does) */
-  frameHeader[3] = FrameID[0]; frameHeader[4] = FrameID[1];
+  frameHeader[3] = FrameID[0]; 
+  frameHeader[4] = FrameID[1];
 
   /* words 5 - 8 are reserved for response information */
   frameHeader[5] = frameHeader[6] = frameHeader[7] = frameHeader[8] = 0x00; 
 }
 
 //------------------------------------------
-// Each class which inherits frames makes its own messages!
-void LVDSFrame::MakeMessage() { std::cout << "Hello, world!" << std::endl; } 
+void LVDSFrame::MakeMessage() 
+{ 
+  lvdsLog.debugStream() << "Please override LVDSFrame::MakeMessage()!"; 
+}
+
+//------------------------------------------
+unsigned int LVDSFrame::GetOutgoingMessageLength() 
+{ 
+  return 0; 
+}
+
+//------------------------------------------
+void LVDSFrame::DecodeRegisterValues() 
+{ 
+  lvdsLog.debugStream() << "Please override LVDSFrame::DecodeRegisterValues()!"; 
+}
 
 //------------------------------------------
 bool LVDSFrame::CheckForErrors() 
@@ -95,11 +123,13 @@ bool LVDSFrame::CheckForErrors()
    */
   bool error = false; 
 
+  // TODO : check ReceivedMessageStatus()
+
   unsigned char messageLength[2];
   ResponseWords word = ResponseLength0;
-  messageLength[0] = message[word];
+  messageLength[0] = receivedMessage[word];
   word = ResponseLength1;
-  messageLength[1] = message[word];
+  messageLength[1] = receivedMessage[word];
   lvdsLog.debugStream() << "CheckForErrors Message Length = " 
     << ( (messageLength[1]<<8) | messageLength[0] );
 
@@ -111,7 +141,7 @@ bool LVDSFrame::CheckForErrors()
 
   for (unsigned int i = 0; i < nflags; ++i) {
     lvdsLog.debugStream() << "Checking word : " << words[i] << "; and flag : " << flags[i];
-    if (!message[ words[i] ] & flags[i]) {
+    if (!receivedMessage[ words[i] ] & flags[i]) {
       error = true;
       lvdsLog.errorStream() << "HeaderError : " << words[i] 
         << " for FEB " << this->GetFEBNumber();
@@ -120,6 +150,22 @@ bool LVDSFrame::CheckForErrors()
 
   return error; 
 }
+
+
+//------------------------------------------
+unsigned short LVDSFrame::ReceivedMessageLength()
+{
+  if (NULL == receivedMessage) return 0;
+  return ( (receivedMessage[ResponseLength1]<<8) | receivedMessage[ResponseLength0] ); 
+}
+
+//------------------------------------------
+unsigned short LVDSFrame::ReceivedMessageStatus()
+{
+  if (NULL == receivedMessage) return 0;
+  return ( (receivedMessage[FrameStatus1]<<8) | receivedMessage[FrameStatus0] ); 
+}
+
 
 //------------------------------------------
 void LVDSFrame::DecodeHeader() 
@@ -132,30 +178,30 @@ void LVDSFrame::DecodeHeader()
   ResponseWords word;
 
   word = FrameStart; 
-  febNumber[0]        = (message[word]&0x0F); 
-  broadcastCommand[0] = (message[word]&0xF0); 
-  messageDirection[0] = (message[word]&0x80); 
+  febNumber[0]        = (receivedMessage[word]&0x0F); 
+  broadcastCommand[0] = (receivedMessage[word]&0xF0); 
+  messageDirection[0] = (receivedMessage[word]&0x80); 
   word = DeviceStatus;
-  deviceFunction[0]   = (message[word]&0x0F); 
-  targetDevice[0]     = (message[word]&0xF0); 
-  lvdsLog.debugStream() << "  message at framestart: " << (int)message[word];
-  lvdsLog.debugStream() << "  direction: " << (int)(message[word]&0x80);
+  deviceFunction[0]   = (receivedMessage[word]&0x0F); 
+  targetDevice[0]     = (receivedMessage[word]&0xF0); 
+  lvdsLog.debugStream() << "  message at framestart: " << (int)receivedMessage[word];
+  lvdsLog.debugStream() << "  direction: " << (int)(receivedMessage[word]&0x80);
 }
 
 //------------------------------------------
-void LVDSFrame::printMessageBufferToLog( int buffersize )
+void LVDSFrame::printReceivedMessageToLog()
 {
+  unsigned short buffersize = this->ReceivedMessageLength();
   lvdsLog.debugStream() << "Printing message buffer of size = " << buffersize;
-  if (buffersize > 0) 
-    for (int i=0; i<buffersize; i+=2 ) {
-      int j = i + 1;
-      lvdsLog.debugStream() 
-        << std::setfill('0') << std::setw( 2 ) << std::hex << (int)message[i] << " " 
-        << std::setfill('0') << std::setw( 2 ) << std::hex << (int)message[j] << " " 
-        << "\t" 
-        << std::setfill('0') << std::setw( 4 ) << std::dec << i << " " 
-        << std::setfill('0') << std::setw( 4 ) << std::dec << j;
+  for (unsigned short i = 0; i < buffersize; i+=2 ) {
+    int j = i + 1;
+    lvdsLog.debugStream() 
+      << std::setfill('0') << std::setw( 2 ) << std::hex << (int)receivedMessage[i] << " " 
+      << std::setfill('0') << std::setw( 2 ) << std::hex << (int)receivedMessage[j] << " " 
+      << "\t" 
+      << std::setfill('0') << std::setw( 4 ) << std::dec << i << " " 
+      << std::setfill('0') << std::setw( 4 ) << std::dec << j;
 
-    }
+  }
 }
 #endif

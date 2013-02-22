@@ -15,7 +15,6 @@ log4cpp::Category& TRIPFrameLog = log4cpp::Category::getInstance(std::string("TR
 
 TRIPFrame::TRIPFrame(febAddresses a, TRiPFunctions f) : 
   LVDSFrame(),
-  boardNumber(a),
   trip_function((unsigned char)f)
 {
   /*! \fn
@@ -54,6 +53,36 @@ TRIPFrame::TRIPFrame(febAddresses a, TRiPFunctions f) :
   trip_values[14] = (long_m)0; 
 }
 
+void TRIPFrame::MakeMessage() 
+{
+  /*! \fn
+   * MakeMessage is the local implimentation of a virtual function of the same
+   * name inherited from Frames.  This function bit-packs the data into an OUTGOING
+   * message.
+   */
+  // We have to be very careful since message size is dependent on whether the 
+  // user is reading or writing. Perhaps force one frame per purpose?
+  EncodeRegisterValues(); //sets the register values to these defaults
+
+  unsigned int bufferSize = packTripData.size(); 
+  unsigned int messageSize = FrameHeaderLengthOutgoing + bufferSize; 
+  TRIPFrameLog.debugStream() << " messageSize = " << messageSize 
+    << "; outgoing size = " << this->GetOutgoingMessageLength();
+
+  outgoingMessage = new unsigned char [messageSize]; //the final outgoing message
+  for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) {
+    outgoingMessage[i] = frameHeader[i];
+  }
+  for (unsigned int i = FrameHeaderLengthOutgoing; i < messageSize; ++i) {
+    outgoingMessage[i] = packTripData[i - FrameHeaderLengthOutgoing];
+  }
+}
+
+unsigned int TRIPFrame::GetOutgoingMessageLength()
+{
+  if (read) return TRiPProgrammingFrameReadSize;
+  return TRiPProgrammingFrameWriteSize;
+}
 
 void TRIPFrame::EncodeRegisterValues() 
 {
@@ -83,17 +112,16 @@ void TRIPFrame::EncodeRegisterValues()
    * All information is packed up this way.  This is a little tedious,
    * but such is life, what can you do.
    *
-   * That said here's what we're gonna do... \n
-   *   0)  Make a temporary STL vector to build up the array \n
-   *   1)  Build a function to put those 4 bits into a byte (PackBits) \n
-   *   2)  Make a function to sort & set data bits (SortNSet) \n
-   *   3)  Copy the vector to the buffer array. \n
-   *       (this may be redundant, but I think being a little  \n
-   *        parochial might not be too bad for this one) \n
-   *        */
+   * That said here's what we're gonna do... 
+   *   0)  Make a temporary STL vector to build up the array 
+   *   1)  Build a function to put those 4 bits into a byte (PackBits) 
+   *   2)  Make a function to sort & set data bits (SortNSet) 
+   *   3)  Copy the vector to the buffer array. 
+   *       (this may be redundant, but I think being a little  
+   *        parochial might not be too bad for this one) 
+   */
 
-  //we need some flexibility in the packing array, so we'll use an STL list 
-  std::vector<unsigned char> packTripData;  
+  packTripData.clear();  
   /* now we're ready to loop over the values & pack them into the register value array
    * this step is necessary because some of the registers hold multiple values. */
   long_m mask = 0xFF; //mask of 8 bits
@@ -171,13 +199,6 @@ void TRIPFrame::EncodeRegisterValues()
     if (((packTripData.size()) % 2) != 1 )
       PackBits(false, false, false, false, packTripData);
   }
-  bufferSize = (int)packTripData.size(); //having packed the bits into the vector we now want to 
-  //put them into the message buffer.  It made sense at the time
-
-  buffer = new unsigned char [bufferSize];
-  for (int i=0;i<bufferSize; i++ ) {
-    buffer[i]=packTripData[i];
-  }
 }
 
 
@@ -232,73 +253,64 @@ void TRIPFrame::SortNSet(bool reset, long_m data, int bits, bool control, bool l
 }
 
 
-int TRIPFrame::DecodeRegisterValues(int messageLength) 
+void TRIPFrame::DecodeRegisterValues() 
 {
   /*! \fn 
    *  This function decodes an incoming message into the values of the
    *  particular settings on a trip.  It returns a success integer (0 for 
    *  success).
-   *
-   *  Input:
-   *  \param messageLength:  the length of the incoming message as produred from the 
-   *  \param dpm pointer register on the croc
    */
-  int error = CheckForErrors(); //check the header of the frame for errors
-  if (!error) { //if there are none, we're off to the races
-    int startByte = 11; //remember that ALL incoming headers are 11 bytes long 
-    int index = startByte;
-    for (int j=0;j<14;j++) { // loop here is really over *physical* registers (1...12), note j+1's below..
-      if ((j==12)||(j==13)) continue; // These regisers are either not used or not readable.
-      // This initial piece is some kind of error checking? 
-      // It takes up the first 31 bytes (yes bytes) after the data begins.
-      if (message[index] != 0x00) ParseError(j+1, index);
-      index++;
-      if (message[index] != 0x01) ParseError(j+1, index);
-      for (int k=0;k<14;k++) {
-        index++;
-        if (message[index] != 0x03) ParseError(j+1, index);
-        index++;
-        if (message[index] != 0x01) ParseError(j+1, index);
-      }
-      index++;
-      if (message[index] != 0x03) ParseError(j+1, index);
-      index++;
-      // thus endith the header stuff; now for the actual data!
-      switch (j) {
-        case 10:
-          GetRegisterValue(j,index, 10); //GAINPIPEDEL
-          break;
-        case 11:
-          GetRegisterValue(j,index, 4); //IRSELIWSEL
-          break;
-        default:
-          GetRegisterValue(j,index, 8); 
-          break;
-      }  
-      // and then the tail stuff...
-      if ((message[index] & 0x03) != 0x00) ParseError(j+1, index);
-      index++;
-      if ((message[index] & 0x03) != 0x02) ParseError(j+1, index);
-      index++;
-      if (message[index] != 0x00) ParseError(j+1, index);
-      index++;
-      if (message[index] != 0x02) ParseError(j+1, index);
-      index++;
-      if (message[index] != 0x00) ParseError(j+1, index);
-      index++;
-      if (message[index] != 0x00) ParseError(j+1, index);
-      index++;
-      if ((index%2) == 1) {
-        if (message[index] != 0x00) ParseError(j+1, index);
-        index++;
-      }
-      // Finished with the register...
-    }
-  } else {
-    TRIPFrameLog.debugStream() << "Errors Found in Trip Message";
-    return 1;
+  if ( !this->CheckForErrors() ) {
+    exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
-  return 0;
+  int startByte = 11; // header... right size?
+  int index = startByte;
+  for (int j=0;j<14;j++) { // loop here is really over *physical* registers (1...12), note j+1's below..
+    if ((j==12)||(j==13)) continue; // These regisers are either not used or not readable.
+    // This initial piece is some kind of error checking? 
+    // It takes up the first 31 bytes (yes bytes) after the data begins.
+    if (receivedMessage[index] != 0x00) ParseError(j+1, index);
+    index++;
+    if (receivedMessage[index] != 0x01) ParseError(j+1, index);
+    for (int k=0;k<14;k++) {
+      index++;
+      if (receivedMessage[index] != 0x03) ParseError(j+1, index);
+      index++;
+      if (receivedMessage[index] != 0x01) ParseError(j+1, index);
+    }
+    index++;
+    if (receivedMessage[index] != 0x03) ParseError(j+1, index);
+    index++;
+    // thus endith the header stuff; now for the actual data!
+    switch (j) {
+      case 10:
+        GetRegisterValue(j,index, 10); //GAINPIPEDEL
+        break;
+      case 11:
+        GetRegisterValue(j,index, 4); //IRSELIWSEL
+        break;
+      default:
+        GetRegisterValue(j,index, 8); 
+        break;
+    }  
+    // and then the tail stuff...
+    if ((receivedMessage[index] & 0x03) != 0x00) ParseError(j+1, index);
+    index++;
+    if ((receivedMessage[index] & 0x03) != 0x02) ParseError(j+1, index);
+    index++;
+    if (receivedMessage[index] != 0x00) ParseError(j+1, index);
+    index++;
+    if (receivedMessage[index] != 0x02) ParseError(j+1, index);
+    index++;
+    if (receivedMessage[index] != 0x00) ParseError(j+1, index);
+    index++;
+    if (receivedMessage[index] != 0x00) ParseError(j+1, index);
+    index++;
+    if ((index%2) == 1) {
+      if (receivedMessage[index] != 0x00) ParseError(j+1, index);
+      index++;
+    }
+  }
 }
 
 
@@ -320,9 +332,9 @@ void TRIPFrame::GetRegisterValue(int j, int &index, int bits) {
   for (int i=0;i<bits;i++) { //loop to extract the message given the number of bits to extract
     value <<=1;
     unsigned char byte[2];
-    byte[0] = message[index];
+    byte[0] = receivedMessage[index];
     index++;
-    byte[1] = message[index];
+    byte[1] = receivedMessage[index];
     if (((byte[0] & sysMask[0]) != 0x01) || 
         ((i < (bits-1)) && ((byte[1] & sysMask[0]) != 0x03)) ||
         ((i == (bits-1)) && ((byte[1] & sysMask[0])  != 0x01)) ||
@@ -376,34 +388,6 @@ void TRIPFrame::ParseError(int i)
 }
 
 
-void TRIPFrame::MakeMessage() 
-{
-  /*! \fn
-   * MakeMessage is the local implimentation of a virtual function of the same
-   * name inherited from Frames.  This function bit-packs the data into an OUTGOING
-   * message.
-   */
-  EncodeRegisterValues(); //sets the register values to these defaults
-  unsigned int messageSize = FrameHeaderLengthOutgoing + bufferSize;  //set the message size
-  OutgoingMessageLength = messageSize;
-  unsigned char localMessage[messageSize]; //local buffer copy for memory management issues
-  outgoingMessage = new unsigned char [messageSize]; //the final outgoing message
-
-  //load up the local copy
-  for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) {
-    localMessage[i]=frameHeader[i];
-  }
-  for (unsigned int i = FrameHeaderLengthOutgoing; i < messageSize; ++i) {
-    localMessage[i] = buffer[i - FrameHeaderLengthOutgoing];
-  }
-
-  //write this to the frame outgoing message
-  for (unsigned int i=0; i < messageSize; ++i) {  
-    outgoingMessage[i]=localMessage[i];
-  }
-  delete [] buffer; //clean up the memory
-
-}
 
 #endif
 

@@ -4,29 +4,15 @@
 #include "FrameTypes.h"
 #include "LVDSFrame.h"
 
-/*********************************************************************************
-* Class for creating Front-End Board (FPGAFrame) objects for use with the 
-* MINERvA data acquisition system and associated software projects.
-*
-* Elaine Schulte, Rutgers University
-* Gabriel Perdue, The University of Rochester
-**********************************************************************************/
-
 /*! \class FPGAFrame
  *
- * \brief The class which holds all of the information associated with an FPGAFrame 
- *
- * This class holds all of the informatio about an FPGAFrame including the TRiP-T 
- * initialization.
+ * \brief The class which holds all of the information associated with an FPGAFrame.
  *
  */
 
 class FPGAFrame : public LVDSFrame {
 	private:
 
-		unsigned char *buffer; 
-
-		febAddresses boardNumber;         
 		unsigned int Timer, TestPulseCount, GateTimeStamp;
 		unsigned short GateStart, GateLength, InjectDACValue, HVTarget, 
 			HVActual, DCM2PhaseTotal, HVPeriodAuto, HVPeriodManual, Temperature,
@@ -44,193 +30,194 @@ class FPGAFrame : public LVDSFrame {
 
 	public:
 		FPGAFrame( febAddresses theAddress ); 
-		~FPGAFrame() { /* if (outgoingMessage) delete [] outgoingMessage; */ };    
+		~FPGAFrame(){};
 
-		febAddresses inline GetBoardNumber() { return boardNumber; };
-		int inline GetFirmwareVersion() { return (int)FirmwareVersion[0]; };
-		inline unsigned char *GetBuffer() {return buffer;};
 
 		void SetFPGAFrameDefaultValues();
 		void ShowValues();
-		void MakeMessage(); // careful, this changes the OutgoingMessageLength and can break things down the line
+		void MakeMessage(); 
 		void MakeShortMessage();
-		int DecodeRegisterValues(int);
+		void DecodeRegisterValues();
+    unsigned int GetOutgoingMessageLength();
 
-		const unsigned int inline   GetTimer() const {
+		unsigned char inline  GetFirmwareVersion() const { 
+      return FirmwareVersion[0]; 
+    };
+		unsigned int inline   GetTimer() const {
       return Timer; 
     };
-		const unsigned short inline GetGateStart() const {
+		unsigned short inline GetGateStart() const {
       return GateStart; 
     };
-		const unsigned short inline GetGateLength() const {
+		unsigned short inline GetGateLength() const {
       return GateLength; 
     };
-    const unsigned char inline  GetBoardID() const {
+    unsigned char inline  GetBoardID() const {
       return boardID[0]; 
     };
-		const unsigned char inline  GetTripPowerOff() const {
+		unsigned char inline  GetTripPowerOff() const {
       return TripPowerOff[0]; 
     };
-		const unsigned char inline  GetInjCount0() const {
+		unsigned char inline  GetInjCount0() const {
       return InjectCount[0][0]; 
     };
-		const unsigned char inline  GetInjCount1() const {
+		unsigned char inline  GetInjCount1() const {
       return InjectCount[1][0]; 
     };
-		const unsigned char inline  GetInjCount2() const {
+		unsigned char inline  GetInjCount2() const {
       return InjectCount[2][0]; 
     };
-		const unsigned char inline  GetInjCount3() const {
+		unsigned char inline  GetInjCount3() const {
       return InjectCount[3][0]; 
     };
-		const unsigned char inline  GetInjCount4() const {
+		unsigned char inline  GetInjCount4() const {
       return InjectCount[4][0]; 
     };
-		const unsigned char inline  GetInjCount5() const {
+		unsigned char inline  GetInjCount5() const {
       return InjectCount[5][0]; 
     };
-		const unsigned char inline  GetInjEnable0() const {
+		unsigned char inline  GetInjEnable0() const {
       return InjectEnable[0][0]; 
     };
-		const unsigned char inline  GetInjEnable1() const {
+		unsigned char inline  GetInjEnable1() const {
       return InjectEnable[1][0]; 
     };
-		const unsigned char inline  GetInjEnable2() const {
+		unsigned char inline  GetInjEnable2() const {
       return InjectEnable[2][0]; 
     };
-		const unsigned char inline  GetInjEnable3() const {
+		unsigned char inline  GetInjEnable3() const {
       return InjectEnable[3][0]; 
     };
-		const unsigned char inline  GetInjEnable4() const {
+		unsigned char inline  GetInjEnable4() const {
       return InjectEnable[4][0]; 
     };
-		const unsigned char inline  GetInjEnable5() const {
+		unsigned char inline  GetInjEnable5() const {
       return InjectEnable[5][0]; 
     };
-		const unsigned char inline  GetInjectRange() const {
+		unsigned char inline  GetInjectRange() const {
       return InjectRange[0]; 
     };
-		const unsigned char inline  GetInjectPhase() const {
+		unsigned char inline  GetInjectPhase() const {
       return InjectPhase[0]; 
     };
-		const unsigned short inline GetInjDACValue() const {
+		unsigned short inline GetInjDACValue() const {
       return InjectDACValue; 
     };
-		const unsigned char inline  GetInjDACMode() const {
+		unsigned char inline  GetInjDACMode() const {
       return InjectDACMode[0]; 
     };
-		const unsigned char inline  GetInjDACStart() const {
+		unsigned char inline  GetInjDACStart() const {
       return InjectDACStart[0]; 
     };
-		const unsigned char inline  GetInjDACDone() const {
+		unsigned char inline  GetInjDACDone() const {
       return InjectDACDone[0]; 
     };
-		const unsigned char inline  GetHVEnabled() const {
+		unsigned char inline  GetHVEnabled() const {
       return HVEnabled[0]; 
     };
-		const unsigned short inline GetHVTarget() const {
+		unsigned short inline GetHVTarget() const {
       return HVTarget; 
     };
-		const unsigned short inline GetHVActual() const {
+		unsigned short inline GetHVActual() const {
       return HVActual; 
     };
-		const unsigned char inline  GetHVControl() const {
+		unsigned char inline  GetHVControl() const {
       return HVControl[0]; 
     };
-		const unsigned char inline  GetHVManual() const {
+		unsigned char inline  GetHVManual() const {
       return HVManual[0]; 
     };
-		const unsigned char inline  GetStatusRXLock() const {
+		unsigned char inline  GetStatusRXLock() const {
       return statusRXLock[0]; 
     };
-		const unsigned char inline  GetStatusTXSyncLock() const {
+		unsigned char inline  GetStatusTXSyncLock() const {
       return statusTXSyncLock[0]; 
     };
-		const unsigned char inline  GetPhaseStart() const {
+		unsigned char inline  GetPhaseStart() const {
       return PhaseStart[0]; 
     };
-		const unsigned char inline  GetPhaseInc() const {
+		unsigned char inline  GetPhaseInc() const {
       return PhaseIncrement[0]; 
     };
-		const unsigned char inline  GetPhaseCount() const {
+		unsigned char inline  GetPhaseCount() const {
       return PhaseCount[0]; 
     };
-		const unsigned char inline  GetStatusSCMDUnknown() const {
+		unsigned char inline  GetStatusSCMDUnknown() const {
       return statusSCMDUnknown[0]; 
     };
-		const unsigned char inline  GetStatusFCMDUnknown() const {
+		unsigned char inline  GetStatusFCMDUnknown() const {
       return statusFCMDUnknown[0]; 
     };
-		const unsigned char inline  GetDCM1Lock() const {
+		unsigned char inline  GetDCM1Lock() const {
       return DCM1Lock[0]; 
     };
-		const unsigned char inline  GetDCM2Lock() const {
+		unsigned char inline  GetDCM2Lock() const {
       return DCM2Lock[0]; 
     };
-		const unsigned char inline  GetDCM1NoClock() const {
+		unsigned char inline  GetDCM1NoClock() const {
       return DCM1NoClock[0]; 
     };
-		const unsigned char inline  GetDCM2NoClock() const {
+		unsigned char inline  GetDCM2NoClock() const {
       return DCM2NoClock[0]; 
     };
-		const unsigned char inline  GetDCM2PhaseDone() const {
+		unsigned char inline  GetDCM2PhaseDone() const {
       return DCM2PhaseDone[0]; 
     };
-		const unsigned short inline GetDCM2PhaseTotal() const {
+		unsigned short inline GetDCM2PhaseTotal() const {
       return DCM2PhaseTotal; 
     };
-		const unsigned char inline  GetTP2Bit() const {
+		unsigned char inline  GetTP2Bit() const {
       return TestPulse2Bit[0]; 
     };
-		const unsigned int inline   GetTPCount() const {
+		unsigned int inline   GetTPCount() const {
       return TestPulseCount; 
     };
-		const unsigned char inline  GetHVNumAvg() const {
+		unsigned char inline  GetHVNumAvg() const {
       return HVNumAve[0]; 
     };
-		const unsigned short inline GetHVPeriodManual() const {
+		unsigned short inline GetHVPeriodManual() const {
       return HVPeriodManual; 
     };
-		const unsigned short inline GetHVPeriodAuto() const {
+		unsigned short inline GetHVPeriodAuto() const {
       return HVPeriodAuto; 
     };
-		const unsigned char inline  GetHVPulseWidth() const {
+		unsigned char inline  GetHVPulseWidth() const {
       return HVPulseWidth[0]; 
     };
-		const unsigned short inline GetTemperature() const {
+		unsigned short inline GetTemperature() const {
       return Temperature; 
     };
-		const unsigned char inline  GetTripXThresh() const {
+		unsigned char inline  GetTripXThresh() const {
       return TripXThresh[0]; 
     };
-		const unsigned char inline  GetTripXCompEnc() const {
+		unsigned char inline  GetTripXCompEnc() const {
       return TripXCompEnc[0]; 
     };
-		const unsigned char inline  GetExtTriggerFound() const {
+		unsigned char inline  GetExtTriggerFound() const {
       return ExtTriggerFound[0]; 
     };
-		const unsigned char inline  GetExtTriggerRearm() const {
+		unsigned char inline  GetExtTriggerRearm() const {
       return ExtTriggerRearm[0]; 
     };
-		const unsigned short inline GetDiscEnMask0() const {
+		unsigned short inline GetDiscEnMask0() const {
       return DiscrimEnableMask[0]; 
     };
-		const unsigned short inline GetDiscEnMask1() const {
+		unsigned short inline GetDiscEnMask1() const {
       return DiscrimEnableMask[1]; 
     };
-		const unsigned short inline GetDiscEnMask2() const {
+		unsigned short inline GetDiscEnMask2() const {
       return DiscrimEnableMask[2]; 
     };
-		const unsigned short inline GetDiscEnMask3() const {
+		unsigned short inline GetDiscEnMask3() const {
       return DiscrimEnableMask[3]; 
     };
-		const unsigned int inline   GetGateTimeStamp() const {
+		unsigned int inline   GetGateTimeStamp() const {
       return GateTimeStamp; 
     };
-		const unsigned char inline  GetAfterPulseExtendedWidth() const {
+		unsigned char inline  GetAfterPulseExtendedWidth() const {
       return AfterPulseExtendedWidth[0]; 
     };
-		const unsigned char inline  GetPreviewEnable() const {
+		unsigned char inline  GetPreviewEnable() const {
       return PreviewEnable[0]; 
     };
 
