@@ -23,9 +23,7 @@
 class TRIPFrame : public LVDSFrame {
   private:
 
-    unsigned char *buffer; 
     unsigned char TripTChipID[1], TripTRead[1], TripTWrite[1]; /*!< command registers */
-    febAddresses boardNumber;
     /*! the following table describes the 15 entries in trip_values 
      *     These are the *logical* registers:
      *     - 0:  ibp:  preamp drive current (register addres 1)
@@ -69,16 +67,8 @@ class TRIPFrame : public LVDSFrame {
     long_m trip_registers[14];   /*!<these represent the actual registers to which data is written */
     unsigned char trip_function; /*!< Trip to be addressed*/
     bool read;                   /*!< read(true) or write(false) to the trip registers */
-    int bufferSize; /*! the length of the trip buffer */
+    int bufferSize;              /*!< the length of the trip buffer */
 
-  public:
-    TRIPFrame(febAddresses a, TRiPFunctions f);
-    ~TRIPFrame() { };
-
-    /*! Function to assign a value to a logical trip_value entry */
-    void inline SetRegisterValue(int index, int value) {trip_values[index]=value;};
-    /*! Function to decode the register values (inherited from LVDSFrame) */
-    int DecodeRegisterValues(int a);
     /*! Function to encode register values into special trip patters */
     void EncodeRegisterValues();
     /*! Function to pack the bits into the register values for trip patterns */
@@ -91,18 +81,30 @@ class TRIPFrame : public LVDSFrame {
     void ParseError(int i, int index);
     /*! Function to parse return buffers for error bits */
     void ParseError(int i);
+
+    std::vector<unsigned char> packTripData;  
+
+  public:
+    TRIPFrame( febAddresses a, TRiPFunctions f );
+    ~TRIPFrame() { };
+
+    void MakeMessage();
+    void DecodeRegisterValues();
+    unsigned int GetOutgoingMessageLength();
+
+    /*! Function to assign a value to a logical trip_value entry */
+    void inline SetRegisterValue(int index, int value) {trip_values[index]=value;};
     /*! Function to return a register value from the TRIPFrame */
     void GetRegisterValue(int j,int &i, int b);
-    /*! Function to make an outgoing message to TRIPFrame (inherited from LVDSFrame) */
-    void MakeMessage();
-    /*! Function to clean up memory */
-    void DeleteBuffer() {delete [] buffer;};
+    /*! Function to return a trip register value */
+    long_m inline GetTripValue(int i) {return trip_values[i];};  
+
+
     /*! Function to filp the read/write message bit */
     void inline SetRead(bool a) {read = a;};
     /*! Function to return the lenght of the outgoing buffer */
     int inline GetMessageSize() { return bufferSize + FrameHeaderLengthOutgoing; };
-    /*! Function to return a trip register value */
-    long_m inline GetTripValue(int i) {return trip_values[i];};  
+
 
 };
 

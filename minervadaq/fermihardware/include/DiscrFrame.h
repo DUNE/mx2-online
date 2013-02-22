@@ -55,13 +55,12 @@ class DiscrFrame : public LVDSFrame {
 
 	public: 
 
-		DiscrFrame(febAddresses a); // always takes the same RAMFunction, outgoing message is always the same!
-		~DiscrFrame() { delete [] outgoingMessage; }; //we build a new outgoing message in MakeMessage!
+		DiscrFrame(febAddresses a); 
+		~DiscrFrame() {};
 
-		int inline GetMessageSize() { return FrameHeaderLengthOutgoing; };
-		void inline MakeMessage();  //makes the outgoing message
-		int DecodeRegisterValues(int a); // debug function that parses the discriminator block
-		int GetDiscrFired(int a); //decodes the registers (so we can get the number of hits to process)
+		void MakeMessage();  
+		void DecodeRegisterValues(); 
+    unsigned int GetOutgoingMessageLength();
 
     unsigned int GetNHitsOnTRiP(const unsigned int& tripNumber) const; // 0 <= tripNumber <= 3
 

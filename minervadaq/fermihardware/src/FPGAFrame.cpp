@@ -11,9 +11,9 @@
  * Gabriel Perdue, The University of Rochester
  **********************************************************************************/
 
-// log4cpp category hierarchy.
 log4cpp::Category& FPGAFrameLog = log4cpp::Category::getInstance(std::string("FPGAFrame"));
 
+//-------------------------------------------------------
 FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrame() 
 {
   /*! \fn********************************************************************************
@@ -23,58 +23,51 @@ FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrame()
    *       The message body is set up for FPGAFrame Firmware Versions 78+ (54 registers).  
    *       It will need to be adjusted for other firmware versions. ECS & GNP
    */
-  boardNumber  = a;      
-  febNumber[0] = (unsigned char) a; 
+  febNumber[0] = (unsigned char)a; 
   FPGAFrameLog.setPriority(log4cpp::Priority::DEBUG);  
 
-  // Make the header for this frame; frames default to read. 
-  Devices dev = FPGA;           // the device type for the header
-  Broadcasts b = None;          // broadcast type for header
-  Directions d = MasterToSlave; // message direction for header
-  FPGAFunctions f = Read;       // operation to be performed
-  // Compose the transmission FPGA header
+  Devices dev     = FPGA;          
+  Broadcasts b    = None;          
+  Directions d    = MasterToSlave; 
+  FPGAFunctions f = Read;          
   MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
-
-  // the header + information part of the message 
-  OutgoingMessageLength = FrameHeaderLengthOutgoing + FPGANumRegisters; //length of the outgoing message message
 
   // Set default frame values (DOES NOT WRITE TO HARDWARE OR WRITE A MESSAGE, just configure properties).
   this->SetFPGAFrameDefaultValues();
 
   FPGAFrameLog.debugStream() << "Created a new FPGAFrame! " << (int)febNumber[0];
-  FPGAFrameLog.debugStream() << "  BoardNumber = " << boardNumber;
   FPGAFrameLog.debugStream() << "  Max hits    =  "<< ADCFramesMaxNumber;
 }
 
-// careful, this changes the OutgoingMessageLength and can break things down the line
+
+//-------------------------------------------------------
+// Careful, the length is shorter for "ShortMessages" (DumpReads).
+unsigned int FPGAFrame::GetOutgoingMessageLength() 
+{ 
+  return FrameHeaderLengthOutgoing + FPGANumRegisters;
+}
+
+//-------------------------------------------------------
 void FPGAFrame::MakeShortMessage()
 {
   /*! \fn ********************************************************************|
    * MakeShortMessage uses FPGA Dump Read instead of the regular Read.        |
    ***************************************************************************|
    */
-  // Update the header for this frame (frames default to read). 
-  Devices dev     = FPGA;          //the device type for the header
-  Broadcasts b    = None;          //broadcast type for header
-  Directions d    = MasterToSlave; //message direction for header
-  FPGAFunctions f = DumpRead;      //operation to be performed
-  // Compose the transmission FPGA header
+  Devices dev     = FPGA;          
+  Broadcasts b    = None;          
+  Directions d    = MasterToSlave; 
+  FPGAFunctions f = DumpRead;      
   MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
 
-  // the header + information part of the message 
-  OutgoingMessageLength = FrameHeaderLengthOutgoing;     //length of the outgoing message message
-
-  // Make a new out-going message buffer of suitable size.
-  outgoingMessage = new unsigned char [OutgoingMessageLength];  
-
-  // Eschew the local "non-dyamic" (for lack of a better description)
-  // copy of the message buffer (dynamic).  May not work right?...
-  // Put the message in the inherited out-going message bufer.
-  for (unsigned int i = 0; i < OutgoingMessageLength; ++i) { 
+  // For DumpReads, we need only a header-sized message.
+  outgoingMessage = new unsigned char [FrameHeaderLengthOutgoing];  
+  for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) { 
     outgoingMessage[i] = frameHeader[i];
   }
 }
 
+//-------------------------------------------------------
 void FPGAFrame::MakeMessage() 
 {
   /*! \fn ********************************************************************************
@@ -87,8 +80,8 @@ void FPGAFrame::MakeMessage()
    * Note that we must clean up the outgoingMessages in the functions that call MakeMessage!
    ********************************************************************************
    */
-  // Message must have an odd number of bytes!
-  message = new unsigned char [FPGANumRegisters + (FPGANumRegisters+1)%2]; 
+  // In principle, the message size could change as we add and drop registers.
+  unsigned char * message = new unsigned char [FPGANumRegisters + (FPGANumRegisters+1)%2]; 
 
   /* message word 0 - 3:  The timer information, 32 bits for the timer */
   message[0] = (Timer & 0xFF); 
@@ -242,36 +235,22 @@ void FPGAFrame::MakeMessage()
   message[53] = (GateTimeStamp >> 0x18) & 0xFF; 
 
   // Make a new out-going message buffer of suitable size.
-  outgoingMessage = new unsigned char [OutgoingMessageLength];  
-
-  // Create a local "non-dyamic" (for lack of a better description)
-  // copy of the message buffer (dynamic) for use in working around
-  // a potential memory leak problems.  While mildly redundant, it 
-  // doesn't really cause any speed issues either and it helps 
-  // ensure that memory is cleaned up properly.
-  unsigned char localMessage[OutgoingMessageLength]; 
-
-  // Write the message to the localMessage buffer.
-  for (unsigned int i=0; i < (OutgoingMessageLength); ++i) { 
+  outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];  
+  for (unsigned int i=0; i < this->GetOutgoingMessageLength(); ++i) { 
     if ( i < FrameHeaderLengthOutgoing ) {
-      localMessage[i]=frameHeader[i];
+      outgoingMessage[i] = frameHeader[i];
     } else {
-      localMessage[i]=message[i-FrameHeaderLengthOutgoing];
+      outgoingMessage[i] = message[i - FrameHeaderLengthOutgoing];
     }
   }
-  // Put the message in the inherited out-going message bufer.
-  for (unsigned int i = 0; i < OutgoingMessageLength; ++i) { 
-    outgoingMessage[i] = localMessage[i];
-  }
+  
   // Clean up memory.
   delete [] message; 
-  // This finishes the outgoing message.
 }
 
 
-// TODO - ? Maybe... it isn't consistent that the FPGA frame function does not print the 
-// register values while the discr and adc frame decode functions do... 
-int FPGAFrame::DecodeRegisterValues(int buffersize) 
+//-------------------------------------------------------
+void FPGAFrame::DecodeRegisterValues() 
 {
   /*! \fn********************************************************************************
    *  DecodeMessage takes the incoming message and unpacks the bits into the
@@ -283,243 +262,218 @@ int FPGAFrame::DecodeRegisterValues(int buffersize)
    * register on the croc
    *********************************************************************************/
 
-#if DEBUG_FPGAFrame
-  FPGAFrameLog.debugStream() << "BoardNumber--Decode: " << boardNumber << " for buffer size = " << buffersize;
-#endif
-  if ( buffersize < (int)FPGAFrameMaxSize ) { 
-
-    // The buffer is too short, so we need to stop execution, and notify the user!
-    FPGAFrameLog.fatalStream() << "The FPGA buffer for FPGAFrame " << (int)febNumber[0]
-      << " is too short!";
-    FPGAFrameLog.fatalStream() << " Expected: " << FPGAFrameMaxSize;
-    FPGAFrameLog.fatalStream() << " Had     : " << buffersize;
+  if ( this->ReceivedMessageLength() != FPGAFrameMaxSize ) { 
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
-
-  } else {
-
-    /* have the frame check for status errors */
-    int frameError = this->CheckForErrors();
-#if DEBUG_FPGAFrame
-    FPGAFrameLog.debugStream() << "\tFPGAFrame::DecodeRegisterValues CheckForErrors value = " << frameError;
-#endif
-
-    if (!frameError) {
-      FPGAFrameLog.debugStream() <<  "No frame errors; parsing...";
-      int startByte = 4 + FrameHeaderLengthOutgoing; 
-
-      /* message word 0 - 3:  The timer information, 32 bits for the timer */
-      Timer = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      Timer |= (message[startByte] & 0xFF) << 0x08; //mask off and shift to bits 8-15 
-      startByte++;
-      Timer |= (message[startByte] & 0xFF) << 0x10; //mask off and shift to bits 16-23
-      startByte++;
-      Timer |= (message[startByte] & 0xFF) << 0x18; //mask off and shift to bits 24-31 
-
-      /* message word 4 - 5:  The gate start value, 16 bits */
-      startByte++;
-      GateStart = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      GateStart |= (message[startByte] & 0xFF) << 0x08; //maks of and shift to bits 8-15  
-
-      /* message word 6 - 7:  The gate length value, 16 bits */
-      startByte++;
-      GateLength = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      GateLength |= (message[startByte] & 0xFF) << 0x08; //mask of and shift to bits 8-15
-
-      /* message word 8 - 9, bit 0: DCM2 phase total, 9 bits */
-      startByte++;
-      DCM2PhaseTotal = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      DCM2PhaseTotal |= (message[startByte] & 0x01) << 0x08; //mask of and shift to bits 8-15 
-
-      /* message word 9, bit 1: DCM2 phase done, 1 bit */
-      DCM2PhaseDone[0] = (message[startByte] & 0x02); //mask off bit 1
-
-      /* message word 9, bit 2: DCM1 no clock, 1 bit */
-      DCM1NoClock[0] = (message[startByte] & 0x04) >> 0x02; //mask off bit 2
-
-      /* message word 9, bit 3: DCM2 no clock, 1 bit */
-      DCM2NoClock[0] = (message[startByte] & 0x08) >> 0x03; //mask off bit 3
-
-      /* message word 9, bit 4: DCM1 lock, 1 bit */
-      DCM1Lock[0] = (message[startByte] & 0x10) >> 0x04; //mask off bit 4 
-
-      /* message word 9, bit 5: DCM1 lock, 1 bit */
-      DCM2Lock[0] = (message[startByte] & 0x20) >> 0x05; //mask off bit 5
-
-      /* message word 9, bit 6 - 7: Test Pules 2 Bit, 2 bits */
-      TestPulse2Bit[0] = (message[startByte] & 0xC0) >> 0x06; //mask off bit 6 & 7 
-
-      /* message word 10: Phase count, 8 bits */
-      startByte++;
-      PhaseCount[0]= message[startByte];
-
-      /* message word 11, bit 0: Ext. Trigger Found, 1 bit */
-      startByte++;
-      ExtTriggerFound[0] = (message[startByte] & 0x01); //mask off bit 0
-
-      /* message word 11, bit 1: Ext. Trigger Rearm, 1 bit */
-      ExtTriggerRearm[0] = (message[startByte] & 0x02) >> 0x01; //mask off bit 1
-
-      /* message word 11, bit 2: statusSCMDUnknown, 1 bit */
-      statusSCMDUnknown[0] = (message[startByte] & 0x04) >> 0x02; //mask off bits 1
-
-      /* message word 11, bit 3: statusFCMDUnknown, 1 bit */
-      statusFCMDUnknown[0] = (message[startByte] & 0x08) >> 0x03; //mask off bits 3
-
-      /* message word 11, bit 4: Phase increment, 1 bits */
-      PhaseIncrement[0] = (message[startByte]  & 0x10) >> 0x04; //mask off bit 4 
-
-      /* message word 11, bit 5: Phase start, 1 bits */
-      PhaseStart[0] = (message[startByte] & 0x20) >> 0x05; //mask off bit 5
-
-      /* message word 11, bit 6: statusRXLock, 1 bits */
-      statusRXLock[0] = (message[startByte] & 0x40) >> 0x06; //mask off bit 6
-
-      /* message word 11, bit 7: statusTXSyncLock, 1 bits */
-      statusTXSyncLock[0] = (message[startByte] & 0x80) >> 0x07; //mask off bit 7
-
-      /* message word 12 - 15: test pules count */
-      startByte++;
-      TestPulseCount = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      TestPulseCount |= (message[startByte] & 0xFF) << 0x08; //mask off and shift to bits 8-15
-      startByte++;
-      TestPulseCount |= (message[startByte] & 0xFF) << 0x10; //mask off and shift to bits 15-23
-      startByte++;
-      TestPulseCount |= (message[startByte] & 0xFF) << 0x18; //mask off and shift to bits 24-31
-
-      /* message word 16 - 21 (bits 0-1): 
-         The Injector counts 6 at 7 bits each, and the 8th bit of each word is the enable status */
-      int tmp=0;
-      int tmp1=startByte+1; int tmp2 = startByte+6; //we need to sort out the injector bits
-      for (int i=tmp1;i<=tmp2;i++ ) {
-        InjectCount[tmp][0] = (message[i] & 0x7F); //mask off bits 0-6 (InjectCount)
-        InjectEnable[tmp][0] = (message[i] & 0x80) >> 0x07;  //mask off bit 7 (InjectEnable)
-        tmp++;
-        startByte = i;
-      }
-
-      /* message word 22, bits 0-5:  trip power off, 1 bit for each trip 
-       *     message word 22, bit 6: HV manual
-       *     message word 22, bit 7: HV enabled*/
-      startByte++;
-      TripPowerOff[0] = (message[startByte] & 0x3F); //mask off bits 0-5;
-      HVManual[0] = (message[startByte] & 0x40) >> 0x06; //mask off bits 6
-      HVEnabled[0] = (message[startByte] & 0x80) >> 0x07; //mask off bits 7
-
-      /* message word 23-24: HV target value, 16 bits */
-      startByte++;
-      HVTarget = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      HVTarget |= (message[startByte] & 0xFF) << 0x08; //mask & shift bits to 8-15  
-
-      /* message word 25-26: HV actual value, 16 bits */
-      startByte++;
-      HVActual = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      HVActual |= (message[startByte] & 0xFF) << 0x08; //mask & shift bits to 8-15. 
-
-      /* message word 27: HV control value, 8 bits */
-      startByte++;
-      HVControl[0] = 0; // Depricated in v90+, irrelevant in previous.
-      AfterPulseExtendedWidth[0] = (message[startByte] & 0x0F); //mask off bits 0-3
-
-      /* message word 28-29, bits 0-3: Inject DAC value, 12 bits */
-      startByte++;
-      InjectDACValue = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      InjectDACValue |= (message[startByte] & 0x0F) << 0x08; //shift bits 8-11 to bits 0-3
-      //and mask off bits 0-3
-
-      /* message word 29, bits 4-7: InjectDACMode, 2 bits; InjectDACDone, 1 bit, 
-       *     InjectDACStart, 1 bit */
-      InjectDACMode[0]  = (message[startByte] & 0x30) >> 0x04; //mask off bits 4 & 5 
-      InjectDACDone[0]  = (message[startByte] & 0x40) >> 0x06; //mask off bits 6 
-      InjectDACStart[0] = (message[startByte] & 0x80) >> 0x07; //mask off bits 7 
-
-      /* message word 30: Inject range (bits 0-3), Inject phase (bits 4-7) */
-      startByte++;
-      InjectRange[0] = (message[startByte] & 0x0F); //mask off bits 0-3
-      InjectPhase[0] = (message[startByte] & 0xF0) >> 0x04; //mask off bits 4-7 
-
-      /* message word 31: BoardID (bits 0-3), HVNumAve (bits 4-6), and PreviewEnable (bit 7) */
-      startByte++;
-      boardID[0]       = (message[startByte] & 0x0F); //mask off bits 0-3
-      HVNumAve[0]      = (message[startByte] & 0x70) >> 0x04; //mask off bits 4-6 & shift
-      PreviewEnable[0] = (message[startByte] & 0x80) >> 0x07; //mask off bit 7 & shift
-
-      /* message word 32:  Firmware version */
-      startByte++;
-      FirmwareVersion[0] = (message[startByte] & 0xFF); //the firmware version is 8 bits
-
-      /* message word 33 - 34: HV period manual, 16 bits */
-      startByte++;
-      HVPeriodManual = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      HVPeriodManual |= (message[startByte] & 0xFF) << 0x08;  //shift bits to 8-15
-
-      /* message word 35 - 36: HV period auto, 16 bits */
-      startByte++;
-      HVPeriodAuto = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      HVPeriodAuto |= (message[startByte] & 0xFF) << 0x08;  //shift bits to 8-15 
-
-      /* message word 37: HV pulse width, 8 bits */
-      startByte++;
-      HVPulseWidth[0] = (message[startByte] & 0xFF); //mask off bits 0-7
-
-      /* message word 38 - 39: Temperature, 16 bits */
-      startByte++;
-      Temperature = (message[startByte] & 0xFF); //mask off bits 0-7
-      startByte++;
-      Temperature |= (message[startByte] & 0xFF) << 0x08;  //shift bits 8-15 to bits 0-7
-      //and mask off ibt 0-7
-
-      /* message word 40: TripXThresh , 8 bits */
-      startByte++;
-      TripXThresh[0] = (message[startByte] & 0xFF); //mask off bits 0-7
-
-      /* message word 41: whatever this is...TripXCompEnc, 6 bits */
-      startByte++;
-      TripXCompEnc[0] = (message[startByte] & 0x3F); //mask off bits 0-5
-
-      /* message word 42-43 Discriminator Enable Mask Trip 0, 16 bits */
-      /* message word 44-45 Discriminator Enable Mask Trip 1, 16 bits */
-      /* message word 46-47 Discriminator Enable Mask Trip 2, 16 bits */
-      /* message word 48-49 Discriminator Enable Mask Trip 3, 16 bits */
-      for (int i=0; i<4; i++) {
-        startByte++;
-        DiscrimEnableMask[i] = (message[startByte] & 0xFF);
-        startByte++;
-        DiscrimEnableMask[i] |= (message[startByte] & 0xFF) << 0x08;                        
-      }
-
-      /* message word 50-53 Gate Time Stamp, 32 bits */
-      startByte++;
-      GateTimeStamp = (message[startByte] & 0xFF);                        
-      startByte++;
-      GateTimeStamp |= (message[startByte] & 0xFF) << 0x08;                        
-      startByte++;
-      GateTimeStamp |= (message[startByte] & 0xFF) << 0x10;                        
-      startByte++;
-      GateTimeStamp |= (message[startByte] & 0xFF) << 0x18;                        
-
-    } else { // frame error check
-      FPGAFrameLog.fatalStream() << "The FPGA frame had errors!";
-      exit(EXIT_FEB_UNSPECIFIED_ERROR); 
-    }
-
   } 
+  if ( !this->CheckForErrors() ) {
+    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+  }
 
+  FPGAFrameLog.debugStream() <<  "No frame errors; parsing...";
+  int startByte = 4 + FrameHeaderLengthOutgoing; 
 
-  // This finishes the incoming message.
-  return 0;
+  /* receivedMessage word 0 - 3:  The timer information, 32 bits for the timer */
+  Timer = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  Timer |= (receivedMessage[startByte] & 0xFF) << 0x08; 
+  startByte++;
+  Timer |= (receivedMessage[startByte] & 0xFF) << 0x10; 
+  startByte++;
+  Timer |= (receivedMessage[startByte] & 0xFF) << 0x18; 
+  startByte++;
+
+  /* receivedMessage word 4 - 5:  The gate start value, 16 bits */
+  GateStart = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  GateStart |= (receivedMessage[startByte] & 0xFF) << 0x08; 
+  startByte++;
+
+  /* receivedMessage word 6 - 7:  The gate length value, 16 bits */
+  GateLength = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  GateLength |= (receivedMessage[startByte] & 0xFF) << 0x08; 
+  startByte++;
+
+  /* receivedMessage word 8 - 9, bit 0: DCM2 phase total, 9 bits */
+  DCM2PhaseTotal = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  DCM2PhaseTotal |= (receivedMessage[startByte] & 0x01) << 0x08; 
+
+  /* receivedMessage word 9, bit 1: DCM2 phase done, 1 bit */
+  DCM2PhaseDone[0] = (receivedMessage[startByte] & 0x02); 
+
+  /* receivedMessage word 9, bit 2: DCM1 no clock, 1 bit */
+  DCM1NoClock[0] = (receivedMessage[startByte] & 0x04) >> 0x02; 
+
+  /* receivedMessage word 9, bit 3: DCM2 no clock, 1 bit */
+  DCM2NoClock[0] = (receivedMessage[startByte] & 0x08) >> 0x03; 
+
+  /* receivedMessage word 9, bit 4: DCM1 lock, 1 bit */
+  DCM1Lock[0] = (receivedMessage[startByte] & 0x10) >> 0x04; 
+
+  /* receivedMessage word 9, bit 5: DCM1 lock, 1 bit */
+  DCM2Lock[0] = (receivedMessage[startByte] & 0x20) >> 0x05; 
+
+  /* receivedMessage word 9, bit 6 - 7: Test Pules 2 Bit, 2 bits */
+  TestPulse2Bit[0] = (receivedMessage[startByte] & 0xC0) >> 0x06; 
+
+  /* receivedMessage word 10: Phase count, 8 bits */
+  startByte++;
+  PhaseCount[0]= receivedMessage[startByte];
+
+  /* receivedMessage word 11, bit 0: Ext. Trigger Found, 1 bit */
+  startByte++;
+  ExtTriggerFound[0] = (receivedMessage[startByte] & 0x01); 
+
+  /* receivedMessage word 11, bit 1: Ext. Trigger Rearm, 1 bit */
+  ExtTriggerRearm[0] = (receivedMessage[startByte] & 0x02) >> 0x01; 
+
+  /* receivedMessage word 11, bit 2: statusSCMDUnknown, 1 bit */
+  statusSCMDUnknown[0] = (receivedMessage[startByte] & 0x04) >> 0x02; 
+
+  /* receivedMessage word 11, bit 3: statusFCMDUnknown, 1 bit */
+  statusFCMDUnknown[0] = (receivedMessage[startByte] & 0x08) >> 0x03; 
+
+  /* receivedMessage word 11, bit 4: Phase increment, 1 bits */
+  PhaseIncrement[0] = (receivedMessage[startByte]  & 0x10) >> 0x04; 
+
+  /* receivedMessage word 11, bit 5: Phase start, 1 bits */
+  PhaseStart[0] = (receivedMessage[startByte] & 0x20) >> 0x05; 
+
+  /* receivedMessage word 11, bit 6: statusRXLock, 1 bits */
+  statusRXLock[0] = (receivedMessage[startByte] & 0x40) >> 0x06; 
+
+  /* receivedMessage word 11, bit 7: statusTXSyncLock, 1 bits */
+  statusTXSyncLock[0] = (receivedMessage[startByte] & 0x80) >> 0x07; 
+
+  /* receivedMessage word 12 - 15: test pules count */
+  startByte++;
+  TestPulseCount = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  TestPulseCount |= (receivedMessage[startByte] & 0xFF) << 0x08; 
+  startByte++;
+  TestPulseCount |= (receivedMessage[startByte] & 0xFF) << 0x10; 
+  startByte++;
+  TestPulseCount |= (receivedMessage[startByte] & 0xFF) << 0x18; 
+
+  /* receivedMessage word 16 - 21 (bits 0-1): 
+     The Injector counts 6 at 7 bits each, and the 8th bit of each word is the enable status */
+  int tmp=0;
+  int tmp1=startByte+1; int tmp2 = startByte+6; 
+  for (int i=tmp1;i<=tmp2;i++ ) {
+    InjectCount[tmp][0] = (receivedMessage[i] & 0x7F); 
+    InjectEnable[tmp][0] = (receivedMessage[i] & 0x80) >> 0x07;  
+    tmp++;
+    startByte = i;
+  }
+
+  /* receivedMessage word 22, bits 0-5:  trip power off, 1 bit for each trip 
+   *     receivedMessage word 22, bit 6: HV manual
+   *     receivedMessage word 22, bit 7: HV enabled*/
+  startByte++;
+  TripPowerOff[0] = (receivedMessage[startByte] & 0x3F); 
+  HVManual[0] = (receivedMessage[startByte] & 0x40) >> 0x06; 
+  HVEnabled[0] = (receivedMessage[startByte] & 0x80) >> 0x07; 
+
+  /* receivedMessage word 23-24: HV target value, 16 bits */
+  startByte++;
+  HVTarget = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  HVTarget |= (receivedMessage[startByte] & 0xFF) << 0x08; 
+
+  /* receivedMessage word 25-26: HV actual value, 16 bits */
+  startByte++;
+  HVActual = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  HVActual |= (receivedMessage[startByte] & 0xFF) << 0x08; 
+
+  /* receivedMessage word 27: HV control value, 8 bits */
+  startByte++;
+  HVControl[0] = 0; // Depricated in v90+, irrelevant in previous.
+  AfterPulseExtendedWidth[0] = (receivedMessage[startByte] & 0x0F); 
+
+  /* receivedMessage word 28-29, bits 0-3: Inject DAC value, 12 bits */
+  startByte++;
+  InjectDACValue = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  InjectDACValue |= (receivedMessage[startByte] & 0x0F) << 0x08; 
+
+  /* receivedMessage word 29, bits 4-7: InjectDACMode, 2 bits; InjectDACDone, 1 bit, 
+   *     InjectDACStart, 1 bit */
+  InjectDACMode[0]  = (receivedMessage[startByte] & 0x30) >> 0x04; 
+  InjectDACDone[0]  = (receivedMessage[startByte] & 0x40) >> 0x06; 
+  InjectDACStart[0] = (receivedMessage[startByte] & 0x80) >> 0x07; 
+
+  /* receivedMessage word 30: Inject range (bits 0-3), Inject phase (bits 4-7) */
+  startByte++;
+  InjectRange[0] = (receivedMessage[startByte] & 0x0F); 
+  InjectPhase[0] = (receivedMessage[startByte] & 0xF0) >> 0x04; 
+
+  /* receivedMessage word 31: BoardID (bits 0-3), HVNumAve (bits 4-6), and PreviewEnable (bit 7) */
+  startByte++;
+  boardID[0]       = (receivedMessage[startByte] & 0x0F); 
+  HVNumAve[0]      = (receivedMessage[startByte] & 0x70) >> 0x04; 
+  PreviewEnable[0] = (receivedMessage[startByte] & 0x80) >> 0x07; 
+
+  /* receivedMessage word 32:  Firmware version */
+  startByte++;
+  FirmwareVersion[0] = (receivedMessage[startByte] & 0xFF); 
+
+  /* receivedMessage word 33 - 34: HV period manual, 16 bits */
+  startByte++;
+  HVPeriodManual = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  HVPeriodManual |= (receivedMessage[startByte] & 0xFF) << 0x08;  
+
+  /* receivedMessage word 35 - 36: HV period auto, 16 bits */
+  startByte++;
+  HVPeriodAuto = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  HVPeriodAuto |= (receivedMessage[startByte] & 0xFF) << 0x08;  
+
+  /* receivedMessage word 37: HV pulse width, 8 bits */
+  startByte++;
+  HVPulseWidth[0] = (receivedMessage[startByte] & 0xFF); 
+
+  /* receivedMessage word 38 - 39: Temperature, 16 bits */
+  startByte++;
+  Temperature = (receivedMessage[startByte] & 0xFF); 
+  startByte++;
+  Temperature |= (receivedMessage[startByte] & 0xFF) << 0x08;  
+
+  /* receivedMessage word 40: TripXThresh , 8 bits */
+  startByte++;
+  TripXThresh[0] = (receivedMessage[startByte] & 0xFF); 
+
+  /* receivedMessage word 41: whatever this is...TripXCompEnc, 6 bits */
+  startByte++;
+  TripXCompEnc[0] = (receivedMessage[startByte] & 0x3F); 
+
+  /* receivedMessage word 42-43 Discriminator Enable Mask Trip 0, 16 bits */
+  /* receivedMessage word 44-45 Discriminator Enable Mask Trip 1, 16 bits */
+  /* receivedMessage word 46-47 Discriminator Enable Mask Trip 2, 16 bits */
+  /* receivedMessage word 48-49 Discriminator Enable Mask Trip 3, 16 bits */
+  for (int i=0; i<4; i++) {
+    startByte++;
+    DiscrimEnableMask[i] = (receivedMessage[startByte] & 0xFF);
+    startByte++;
+    DiscrimEnableMask[i] |= (receivedMessage[startByte] & 0xFF) << 0x08;                        
+  }
+
+  /* receivedMessage word 50-53 Gate Time Stamp, 32 bits */
+  startByte++;
+  GateTimeStamp = (receivedMessage[startByte] & 0xFF);                        
+  startByte++;
+  GateTimeStamp |= (receivedMessage[startByte] & 0xFF) << 0x08;                        
+  startByte++;
+  GateTimeStamp |= (receivedMessage[startByte] & 0xFF) << 0x10;                        
+  startByte++;
+  GateTimeStamp |= (receivedMessage[startByte] & 0xFF) << 0x18;                        
+
 }
 
 
+//-------------------------------------------------------
 void FPGAFrame::SetFPGAFrameDefaultValues() 
 {
   /*! \fn ********************************************************************************
@@ -585,6 +539,7 @@ void FPGAFrame::SetFPGAFrameDefaultValues()
 }
 
 
+//-------------------------------------------------------
 void FPGAFrame::ShowValues() 
 {
   /*! \fn **************************************************************************

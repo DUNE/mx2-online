@@ -21,6 +21,7 @@
 
 log4cpp::Category& DiscrFrameLog = log4cpp::Category::getInstance(std::string("DiscrFrame"));
 
+//-----------------------------------------------------------
 DiscrFrame::DiscrFrame(febAddresses a) : LVDSFrame()
 {
   /*! \fn
@@ -36,40 +37,44 @@ DiscrFrame::DiscrFrame(febAddresses a) : LVDSFrame()
   unsigned int b   = (unsigned int)ReadHitDiscr;
   MakeDeviceFrameTransmit(dev, broad, dir, (unsigned int)b, (unsigned int)febNumber[0]); 
 
-  outgoingMessage = new unsigned char [FrameHeaderLengthOutgoing];
-  OutgoingMessageLength = FrameHeaderLengthOutgoing;
+  outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];
   MakeMessage(); 
 
   DiscrFrameLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
   DiscrFrameLog.debugStream() << "Made DiscrFrame for FEB " << a; 
 }
 
-
+//-----------------------------------------------------------
 void DiscrFrame::MakeMessage() 
 {
   /*! \fn
    * Makes the outgoing message 
    */
-  for (unsigned int i = 0; i < OutgoingMessageLength; ++i) {
-    outgoingMessage[i]=frameHeader[i];
+  for (unsigned int i = 0; i < this->GetOutgoingMessageLength(); ++i) {
+    outgoingMessage[i] = frameHeader[i];
   }
 }
 
+//-----------------------------------------------------------
+unsigned int DiscrFrame::GetOutgoingMessageLength() 
+{ 
+  return FrameHeaderLengthOutgoing; 
+}
 
-int DiscrFrame::DecodeRegisterValues(int a) 
+//-----------------------------------------------------------
+void DiscrFrame::DecodeRegisterValues() 
 {
   /*! \fn 
-   *  Decode a discriminator frame.  Argument is dummy for now...
-   *  Returns 0 for success or an error code (eventually)...
+   *  Decode a discriminator frame.  
    */
   // Check to see if the frame is more than zero length...
-  unsigned short ml = (message[ResponseLength1]) | (message[ResponseLength0] << 8);
+  unsigned short ml = (receivedMessage[ResponseLength1]) | (receivedMessage[ResponseLength0] << 8);
   if ( ml == 0 ) {
     DiscrFrameLog.fatalStream() << "Can't parse an empty InpFrame!";
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
   // Check that the dummy byte is zero...
-  if ( message[Data] != 0 ) {
+  if ( receivedMessage[Data] != 0 ) {
     DiscrFrameLog.fatalStream() << "Dummy byte is non-zero!";
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
@@ -94,11 +99,11 @@ int DiscrFrame::DecodeRegisterValues(int a)
     for (int iHit = 1; iHit <= TripXNHits[iTrip]; iHit++) {
       //assign InpFrame[] bytes into TempHitArray[] words (16 bits)
       for (int i = 0; i < 20; i++) {
-        TempHitArray[i] = (unsigned short int)(message[indx] + (message[indx + 1] << 8));
+        TempHitArray[i] = (unsigned short int)(receivedMessage[indx] + (receivedMessage[indx + 1] << 8));
         indx += 2;
 #if SHOWBRAM
-        DiscrFrameLog.debug("response[%d] = %d, response[%d] << 8 = %d\n", indx, message[indx], 
-            indx + 1, message[indx + 1] << 8);
+        DiscrFrameLog.debug("response[%d] = %d, response[%d] << 8 = %d\n", indx, receivedMessage[indx], 
+            indx + 1, receivedMessage[indx + 1] << 8);
         DiscrFrameLog.debug("  BRAMWord[%d] = %u\n", i, TempHitArray[i]);
 #endif                            
       } // end loop over temp hit array
@@ -165,28 +170,27 @@ int DiscrFrame::DecodeRegisterValues(int a)
 
   delete [] TripXNHits;
   delete [] TempHitArray;
-  return 0;
 }
 
 //-----------------------------------------------------
 unsigned int DiscrFrame::GetNHitsOnTRiP(const unsigned int& tripNumber) const // 0 <= tripNumber <= 3
 {
-  if (NULL == message) {
+  if (NULL == receivedMessage) {
     DiscrFrameLog.fatalStream() << "Null message buffer in GetNHitsOnTRiP!";
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
   switch (tripNumber) {
     case 0:
-      return (0x0F & message[discrNumHits01]);
+      return (0x0F & receivedMessage[discrNumHits01]);
       break;
     case 1:
-      return (0xF0 & message[discrNumHits01]) >> 4;
+      return (0xF0 & receivedMessage[discrNumHits01]) >> 4;
       break;
     case 2:
-      return (0x0F & message[discrNumHits23]);
+      return (0x0F & receivedMessage[discrNumHits23]);
       break;
     case 3:
-      return (0xF0 & message[discrNumHits23]) >> 4;
+      return (0xF0 & receivedMessage[discrNumHits23]) >> 4;
       break;
     default:
       DiscrFrameLog.fatalStream() << "Only TRiPs 0-3 are valid for GetNHitsOnTRiP.";
@@ -195,37 +199,9 @@ unsigned int DiscrFrame::GetNHitsOnTRiP(const unsigned int& tripNumber) const //
   return 0;
 }
 
-// TODO - this method is bad and should be removed...
-int DiscrFrame::GetDiscrFired(int a)
-{
-  /*! \fn 
-   * The title of this function is a bit misleading - it is calculating the number of hits on a FEB, 
-   * not checking whether the discriminator on channel "a" fired or not.  The argument is a dummy.
-   * \param a an integer placeholder from inheritance
-   */
-  // Check to see if the frame is more than zero length...
-  unsigned short ml = (message[ResponseLength1]) | (message[ResponseLength0] << 8);
-  if ( ml == 0 ) {
-    DiscrFrameLog.fatalStream() << "Can't parse an empty InpFrame!";
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
-  }
-  // Check that the dummy byte is zero...
-  if ( message[Data] != 0 ) {
-    DiscrFrameLog.fatalStream() << "Dummy byte is non-zero!";
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
-  }
 
-  if ( ( (0x0F & message[12]) != ((0xF0 & message[12]) >> 4)) ||
-      ( (0x0F & message[13]) != ((0xF0 & message[13]) >> 4)) ) 
-  {
-    DiscrFrameLog.errorStream() << "Mismatch in pushed trip discriminator counts in DiscrFrame::GetDiscrFired!";
-    return -1;
-  }
-  return ((0x0F & message[12]) > (0x0F & message[13])) ? (0x0F & message[12]) : (0x0F & message[13]);
-}
-
-
-//LSBit has bit_index=0
+//-----------------------------------------------------------
+// LSBit has bit_index=0
 int DiscrFrame::GetBitFromWord(unsigned short int word, int index) 
 {
   int ip = (int)pow(2,index);
@@ -233,7 +209,8 @@ int DiscrFrame::GetBitFromWord(unsigned short int word, int index)
 }
 
 
-//LSBit has bit_index=0
+//-----------------------------------------------------------
+// LSBit has bit_index=0
 int DiscrFrame::GetBitFromWord(unsigned int word, int index) 
 {
   int ip = (int)pow(2,index);
@@ -241,7 +218,8 @@ int DiscrFrame::GetBitFromWord(unsigned int word, int index)
 }
 
 
-//LSBit has bit_index=0
+//-----------------------------------------------------------
+// LSBit has bit_index=0
 int DiscrFrame::GetBitFromWord(long_m word, int index) 
 {
   long_m ip = (long_m)pow(2,index);

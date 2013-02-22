@@ -29,32 +29,29 @@ class LVDSFrame {
     unsigned char FrameID[2];        
     unsigned char frameHeader[9];    
     unsigned char *outgoingMessage;  
-    unsigned char broadcastCommand[1], febNumber[1], 
-                  messageDirection[1], targetDevice[1], 
-                  deviceFunction[1];
-    unsigned int IncomingMessageLength, OutgoingMessageLength; 
+    unsigned char *receivedMessage;  
+    unsigned char febNumber[1], targetDevice[1], deviceFunction[1], 
+                  broadcastCommand[1], messageDirection[1];
 
   public:
     LVDSFrame();
-    virtual ~LVDSFrame() { };
-
-    unsigned char *message; 
-    void printMessageBufferToLog( int buffersize );
+    virtual ~LVDSFrame();
 
     void MakeDeviceFrameTransmit(Devices, Broadcasts, Directions, unsigned int, unsigned int); 
     void MakeOutgoingHeader();
+
     virtual void MakeMessage();
-    /* virtual void DecodeRegisterValues(); */
-    virtual int DecodeRegisterValues(int a) = 0;
+    virtual void DecodeRegisterValues();
+    virtual unsigned int GetOutgoingMessageLength();
+
+    unsigned short ReceivedMessageLength();
+    unsigned short ReceivedMessageStatus();
     void DecodeHeader();
     bool CheckForErrors();
+    void printReceivedMessageToLog();
 
-    inline unsigned char *GetOutgoingMessage() { return outgoingMessage; };
-    inline void DeleteOutgoingMessage() { delete [] outgoingMessage; };
-
-    inline void SetIncomingMessageLength(int a) { IncomingMessageLength = a; };
-    inline int GetIncomingMessageLength() { return IncomingMessageLength; };
-    inline int GetOutgoingMessageLength() { return OutgoingMessageLength; };
+    inline unsigned char *OutgoingMessage() { return outgoingMessage; };
+    inline unsigned char *ReceivedMessage() { return receivedMessage; };
     inline int GetFEBNumber() { return (int)febNumber[0]; };
     inline int GetDeviceType() { return (int)targetDevice[0]; };
 
