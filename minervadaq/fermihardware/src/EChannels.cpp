@@ -19,7 +19,8 @@ log4cpp::Category& EChannelLog = log4cpp::Category::getInstance(std::string("ECh
 //----------------------------------------
 EChannels::EChannels( unsigned int vmeAddress, unsigned int number, 
     const Controller* controller ) : 
-  VMECommunicator( vmeAddress, controller )
+  VMECommunicator( vmeAddress, controller ),
+  channelNumber(number)
 {
 	/*! \fn 
 	 * constructor takes the following arguments:
@@ -27,10 +28,9 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
 	 * \param number      :  The channel number (0-3)
    * \param *controller :  Pointer to the VME 2718 Controller servicing this device.
 	 */
-	channelNumber        = number;       //the channel number (0-3 here, 1-4 is stenciled on the cards themselves)
-	channelDirectAddress = this->address + EChannelOffset * (unsigned int)(channelNumber);
   EChannelLog.setPriority(log4cpp::Priority::DEBUG);  
 
+	channelDirectAddress             = this->address + EChannelOffset * (unsigned int)(channelNumber);
   receiveMemoryAddress             = channelDirectAddress + (unsigned int)ECROCReceiveMemory;
   sendMemoryAddress                = channelDirectAddress + (unsigned int)ECROCSendMemory;
   framePointersMemoryAddress       = channelDirectAddress + (unsigned int)ECROCFramePointersMemory;
