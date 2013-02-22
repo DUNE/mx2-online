@@ -26,18 +26,13 @@
 
 class LVDSFrame {
   protected:
-    static const int MinHeaderLength;
-    static const int NDiscrChPerTrip;
     unsigned char FrameID[2];        
-    unsigned char frameHeader[9];    // a frame header, add this to the message
-    unsigned char *outgoingMessage;  // the character string for the message sent to a device
+    unsigned char frameHeader[9];    
+    unsigned char *outgoingMessage;  
     unsigned char broadcastCommand[1], febNumber[1], 
                   messageDirection[1], targetDevice[1], 
                   deviceFunction[1];
-    int IncomingMessageLength, OutgoingMessageLength; // careful, these break things
-                                                      // if operations are done in a non-standard 
-                                                      // order. TODO: get rid of these for a 
-                                                      // different mechanism
+    unsigned int IncomingMessageLength, OutgoingMessageLength; 
 
   public:
     LVDSFrame();
@@ -49,7 +44,7 @@ class LVDSFrame {
     void MakeDeviceFrameTransmit(Devices, Broadcasts, Directions, unsigned int, unsigned int); 
     void MakeOutgoingHeader();
     virtual void MakeMessage();
-    virtual void DecodeRegisterValues();
+    /* virtual void DecodeRegisterValues(); */
     virtual int DecodeRegisterValues(int a) = 0;
     void DecodeHeader();
     bool CheckForErrors();

@@ -36,7 +36,7 @@ FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrame()
   MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
 
   // the header + information part of the message 
-  OutgoingMessageLength = MinHeaderLength + FPGANumRegisters; //length of the outgoing message message
+  OutgoingMessageLength = FrameHeaderLengthOutgoing + FPGANumRegisters; //length of the outgoing message message
 
   // Set default frame values (DOES NOT WRITE TO HARDWARE OR WRITE A MESSAGE, just configure properties).
   this->SetFPGAFrameDefaultValues();
@@ -62,7 +62,7 @@ void FPGAFrame::MakeShortMessage()
   MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
 
   // the header + information part of the message 
-  OutgoingMessageLength = MinHeaderLength;     //length of the outgoing message message
+  OutgoingMessageLength = FrameHeaderLengthOutgoing;     //length of the outgoing message message
 
   // Make a new out-going message buffer of suitable size.
   outgoingMessage = new unsigned char [OutgoingMessageLength];  
@@ -70,7 +70,7 @@ void FPGAFrame::MakeShortMessage()
   // Eschew the local "non-dyamic" (for lack of a better description)
   // copy of the message buffer (dynamic).  May not work right?...
   // Put the message in the inherited out-going message bufer.
-  for (int i=0;i<(OutgoingMessageLength);i++) { 
+  for (unsigned int i = 0; i < OutgoingMessageLength; ++i) { 
     outgoingMessage[i] = frameHeader[i];
   }
 }
@@ -252,16 +252,16 @@ void FPGAFrame::MakeMessage()
   unsigned char localMessage[OutgoingMessageLength]; 
 
   // Write the message to the localMessage buffer.
-  for (int i=0;i<(OutgoingMessageLength);i++) { 
-    if (i<MinHeaderLength) {
+  for (unsigned int i=0; i < (OutgoingMessageLength); ++i) { 
+    if ( i < FrameHeaderLengthOutgoing ) {
       localMessage[i]=frameHeader[i];
     } else {
-      localMessage[i]=message[i-MinHeaderLength];
+      localMessage[i]=message[i-FrameHeaderLengthOutgoing];
     }
   }
   // Put the message in the inherited out-going message bufer.
-  for (int i=0;i<(OutgoingMessageLength);i++) { 
-    outgoingMessage[i]=localMessage[i];
+  for (unsigned int i = 0; i < OutgoingMessageLength; ++i) { 
+    outgoingMessage[i] = localMessage[i];
   }
   // Clean up memory.
   delete [] message; 
@@ -305,7 +305,7 @@ int FPGAFrame::DecodeRegisterValues(int buffersize)
 
     if (!frameError) {
       FPGAFrameLog.debugStream() <<  "No frame errors; parsing...";
-      int startByte = 2 + 2 + MinHeaderLength; //this should be byte 13 for CROC-E
+      int startByte = 4 + FrameHeaderLengthOutgoing; 
 
       /* message word 0 - 3:  The timer information, 32 bits for the timer */
       Timer = (message[startByte] & 0xFF); //mask off bits 0-7

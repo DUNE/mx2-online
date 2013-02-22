@@ -384,21 +384,21 @@ void TRIPFrame::MakeMessage()
    * message.
    */
   EncodeRegisterValues(); //sets the register values to these defaults
-  int messageSize = MinHeaderLength+bufferSize;  //set the message size
+  unsigned int messageSize = FrameHeaderLengthOutgoing + bufferSize;  //set the message size
   OutgoingMessageLength = messageSize;
   unsigned char localMessage[messageSize]; //local buffer copy for memory management issues
   outgoingMessage = new unsigned char [messageSize]; //the final outgoing message
 
   //load up the local copy
-  for (int i=0;i<MinHeaderLength; i++) {
+  for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) {
     localMessage[i]=frameHeader[i];
   }
-  for (int i=MinHeaderLength;i<messageSize;i++) {
-    localMessage[i] = buffer[i-MinHeaderLength];
+  for (unsigned int i = FrameHeaderLengthOutgoing; i < messageSize; ++i) {
+    localMessage[i] = buffer[i - FrameHeaderLengthOutgoing];
   }
 
   //write this to the frame outgoing message
-  for (int i=0;i<messageSize; i++) {  
+  for (unsigned int i=0; i < messageSize; ++i) {  
     outgoingMessage[i]=localMessage[i];
   }
   delete [] buffer; //clean up the memory
