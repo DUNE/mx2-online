@@ -54,16 +54,15 @@ const unsigned short CRIM::softCNRSTseq   = 0x0808;
 const unsigned long long CRIM::timeOutSec = 3600;   // be careful shortening this w.r.t. multi-PC sync issues
 
 //----------------------------------------
+// NOTE: The IRQ level must be the same as the configuration register level.  
+// The BIT MASKS for these levels, however are not the same!
 CRIM::CRIM( unsigned int address, const Controller* controller, 
     CRIMInterrupts line, unsigned short level ) :
-  VMECommunicator( address, controller )
+  VMECommunicator( address, controller ),
+  irqLevel(level),
+  irqLine(line)
 {
   this->addressModifier = cvA24_U_DATA; 
-
-  // NOTE: The IRQ level must be the same as the configuration register level.  
-  // The BIT MASKS for these levels, however are not the same!
-  irqLine              = line; 
-  irqLevel             = level;    // interrupt level 5 for the CAEN interrupt handler
 
   CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
   CRIMLog.debugStream() << "Creating CRIM with address = 0x" << std::hex 
