@@ -14,7 +14,7 @@
 // log4cpp category hierarchy.
 log4cpp::Category& FPGAFrameLog = log4cpp::Category::getInstance(std::string("FPGAFrame"));
 
-FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrames() 
+FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrame() 
 {
   /*! \fn********************************************************************************
    * The log-free constructor takes the following arguments:
@@ -514,9 +514,6 @@ int FPGAFrame::DecodeRegisterValues(int buffersize)
 
   } 
 
-#if DEBUG_FPGAFrame           
-  FPGAFrameLog.debugStream() << "Decoded FPGA register values.";
-#endif                  
 
   // This finishes the incoming message.
   return 0;
