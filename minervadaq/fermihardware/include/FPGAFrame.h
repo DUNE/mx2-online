@@ -1,10 +1,8 @@
 #ifndef FPGAFrame_h
 #define FPGAFrame_h
 
-#include "trips.h"
 #include "FrameTypes.h"
-#include "Frames.h"
-#include "adctdc.h"
+#include "LVDSFrames.h"
 
 /*********************************************************************************
 * Class for creating Front-End Board (FPGAFrame) objects for use with the 
@@ -12,7 +10,6 @@
 *
 * Elaine Schulte, Rutgers University
 * Gabriel Perdue, The University of Rochester
-*
 **********************************************************************************/
 
 /*! \class FPGAFrame
@@ -24,7 +21,7 @@
  *
  */
 
-class FPGAFrame : public Frames {
+class FPGAFrame : public LVDSFrames {
 	private:
 
 		unsigned char *buffer; 

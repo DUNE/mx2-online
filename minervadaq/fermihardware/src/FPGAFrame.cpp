@@ -14,7 +14,7 @@
 // log4cpp category hierarchy.
 log4cpp::Category& FPGAFrameLog = log4cpp::Category::getInstance(std::string("FPGAFrame"));
 
-FPGAFrame::FPGAFrame( febAddresses a ) : Frames() 
+FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrames() 
 {
   /*! \fn********************************************************************************
    * The log-free constructor takes the following arguments:
@@ -91,166 +91,155 @@ void FPGAFrame::MakeMessage()
   message = new unsigned char [FPGANumRegisters + (FPGANumRegisters+1)%2]; 
 
   /* message word 0 - 3:  The timer information, 32 bits for the timer */
-  message[0] = (Timer & 0xFF); //mask off bits 0-7
-  message[1] = (Timer >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7 and mask off
-  message[2] = (Timer >> 0x10) & 0xFF; //shift bits 16-23 to bits 0-7 and mask off
-  message[3] = (Timer >> 0x18) & 0xFF; //shift bits 24-31 to bits 0-7 and mask off
+  message[0] = (Timer & 0xFF); 
+  message[1] = (Timer >> 0x08) & 0xFF; 
+  message[2] = (Timer >> 0x10) & 0xFF; 
+  message[3] = (Timer >> 0x18) & 0xFF; 
 
   /* message word 4 - 5:  The gate start value, 16 bits */
-  message[4] = (GateStart & 0xFF); //mask off bits 0-7
-  message[5] = (GateStart >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7 and mask off 
+  message[4] = (GateStart & 0xFF); 
+  message[5] = (GateStart >> 0x08) & 0xFF; 
 
   /* message word 6 - 7:  The gate length value, 16 bits */
-  message[6] = (GateLength & 0xFF); //mask off bits 0-7
-  message[7] = (GateLength >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7 and mask off
+  message[6] = (GateLength & 0xFF); 
+  message[7] = (GateLength >> 0x08) & 0xFF; 
 
   /* message word 8 - 9, bit 0: DCM2 phase total, 9 bits */
-  message[8] = (DCM2PhaseTotal & 0xFF); //mask off bits 0-7
-  message[9] = (DCM2PhaseTotal >> 0x08) & 0x01; //shift bits 8-15 to bits 0-7 and mask off bit 0
+  message[8] = (DCM2PhaseTotal & 0xFF); 
+  message[9] = (DCM2PhaseTotal >> 0x08) & 0x01; 
 
   /* message word 9, bit 1: DCM2 phase done, 1 bit */
-  message[9] |= (DCM2PhaseDone[0] & 0x01) << 0x01; //mask off bit 0 & shift left to bit 1
+  message[9] |= (DCM2PhaseDone[0] & 0x01) << 0x01; 
 
   /* message word 9, bit 2: DCM1 no clock, 1 bit */
-  message[9] |= (DCM1NoClock[0] & 0x01) << 0x02; //mask off bit 0 & shift left to bit 2
+  message[9] |= (DCM1NoClock[0] & 0x01) << 0x02; 
 
   /* message word 9, bit 3: DCM2 no clock, 1 bit */
-  message[9] |= (DCM2NoClock[0] & 0x01) << 0x03; //mask off bit 0 & shift left to bit 3
+  message[9] |= (DCM2NoClock[0] & 0x01) << 0x03; 
 
   /* message word 9, bit 4: DCM1 lock, 1 bit */
-  message[9] |= (DCM1Lock[0] & 0x01) << 0x04; //mask off bit 0 & shift left to bit 4
+  message[9] |= (DCM1Lock[0] & 0x01) << 0x04; 
 
   /* message word 9, bit 5: DCM1 lock, 1 bit */
-  message[9] |= (DCM2Lock[0] & 0x01) << 0x05; //mask off bit 0 & shift left to bit 5
+  message[9] |= (DCM2Lock[0] & 0x01) << 0x05; 
 
   /* message word 9, bit 6 - 7: Test Pules 2 Bit, 2 bits */
-  message[9] |= (TestPulse2Bit[0] & 0x03) << 0x06; //mask off bit 0 & shift left to bit 6
+  message[9] |= (TestPulse2Bit[0] & 0x03) << 0x06; 
 
   /* message word 10: Phase count, 8 bits */
   message[10] = PhaseCount[0];
 
   /* message word 11, bit 0: Ext. Trigger Found is readonly. */
-  message[11] = (ExtTriggerFound[0] & 0x01); //mask off bit 0
+  message[11] = (ExtTriggerFound[0] & 0x01); 
 
   /* message word 11, bit 1: Ext. Trigger Rearm is readonly. */
-  message[11] |= (ExtTriggerRearm[0] & 0x01) << 0x01; //mask off bit 0 and shift left to bit 1
+  message[11] |= (ExtTriggerRearm[0] & 0x01) << 0x01; 
 
   /* message word 11, bit 2: statusSCMDUnknown, 1 bit */
-  message[11] |= (statusSCMDUnknown[0] & 0x01) << 0x02; //mask off bit 0 and shift left to bit 2
+  message[11] |= (statusSCMDUnknown[0] & 0x01) << 0x02; 
 
   /* message word 11, bit 3: statusFCMDUnknown, 1 bit */
-  message[11] |= (statusFCMDUnknown[0] & 0x01) << 0x03; //mask off bit 1 and shift left to bit 3
+  message[11] |= (statusFCMDUnknown[0] & 0x01) << 0x03; 
 
   /* message word 11, bit 4: Phase increment, 1 bits */
-  message[11] |= (PhaseIncrement[0] & 0x01) << 0x04; //mask off bit 0 and shift left to bit 4
+  message[11] |= (PhaseIncrement[0] & 0x01) << 0x04; 
 
   /* message word 11, bit 5: Phase start, 1 bits */
-  message[11] |= (PhaseStart[0] & 0x01) << 0x05; //mask off bit 0 and shift left to bit 5
+  message[11] |= (PhaseStart[0] & 0x01) << 0x05; 
 
   /* message word 11, bit 6: statusRXLock, 1 bits */
-  message[11] |= (statusRXLock[0] & 0x01) << 0x06; //mask off bit 0 and shift left to bit 6
+  message[11] |= (statusRXLock[0] & 0x01) << 0x06; 
 
   /* message word 11, bit 7: statusTXSyncLock, 1 bits */
-  message[11] |= (statusTXSyncLock[0] & 0x01) << 0x07; //mask off bit 0 and shift left to bit 7
+  message[11] |= (statusTXSyncLock[0] & 0x01) << 0x07; 
 
   /* message word 12 - 15: test pulse count */
-  message[12] = (TestPulseCount & 0xFF); //mask off bits 0-7
-  message[13] = (TestPulseCount >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7 & mask off
-  message[14] = (TestPulseCount >> 0x10) & 0xFF; //shift bits 15-23 to bits 0-7 & mask off
-  message[15] = (TestPulseCount >> 0x18) & 0xFF; //shift bits 24-31 to bits 0-7 & mask off
+  message[12] = (TestPulseCount & 0xFF); 
+  message[13] = (TestPulseCount >> 0x08) & 0xFF; 
+  message[14] = (TestPulseCount >> 0x10) & 0xFF; 
+  message[15] = (TestPulseCount >> 0x18) & 0xFF; 
 
   /* message word 16 - 21 (bits 0-1): 
      The Injector counts 6 at 7 bits each, and the 8th bit of each word  is the enable status */
   for (int i=16;i<22;i++ ) {
-    message[i] = InjectCount[(i-16)][0] & 0x7F; //mask off bits 0-6 (InjectCount)
-    message[i] |= (InjectEnable[(i-16)][0] & 0x01) << 0x07; //mask off bit 0 (InjectEnable) and shift to bit 7
+    message[i] = InjectCount[(i-16)][0] & 0x7F; 
+    message[i] |= (InjectEnable[(i-16)][0] & 0x01) << 0x07; 
   }
 
   /* message word 22, bits 0-5:  trip power off, 1 bit for each trip 
    *     message word 22, bit 6: HV manual
    *     message word 22, bit 7: HV enabled */
-  message[22] = TripPowerOff[0] & 0x3F; //mask off bits 0-5;
-  message[22] |= (HVManual[0] & 0x01) << 0x06; //mask off bits 0, shift left 6
-  message[22] |= (HVEnabled[0] & 0x01) << 0x07; //mask off bits 0, shift left 7
+  message[22] = TripPowerOff[0] & 0x3F; 
+  message[22] |= (HVManual[0] & 0x01) << 0x06; 
+  message[22] |= (HVEnabled[0] & 0x01) << 0x07; 
 
   /* message word 23-24: HV target value, 16 bits */
-  message[23] = (HVTarget & 0xFF); //mask off bits 0-7
-  message[24] = (HVTarget >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7. 
-  //and mask off bits 0-7
+  message[23] = (HVTarget & 0xFF); 
+  message[24] = (HVTarget >> 0x08) & 0xFF; 
   /* message word 25-26: HV actual value, 16 bits */
-  message[25] = (HVActual & 0xFF); //mask off bits 0-7
-  message[26] = (HVActual >> 0x08) & 0xFF; //shift bits 8-15 to bits 0-7. 
-  //and mask off bits 0-7
+  message[25] = (HVActual & 0xFF); 
+  message[26] = (HVActual >> 0x08) & 0xFF; 
   /* message word 27: AfterPulseExtendedWidth, 4 bits */
-  //message[27] = (HVControl[0] & 0xFF); //mask off bits 0-7, HV Control is irrelevant for this (all firmwares).
-  message[27] = (AfterPulseExtendedWidth[0] & 0x0F); //mask off bits 0-3, set 4-7 to zero (unused bits).
+  message[27] = (AfterPulseExtendedWidth[0] & 0x0F); 
 
   /* message word 28-29, bits 0-3: Inject DAC value, 12 bits */
-  message[28] = (InjectDACValue & 0xFF); //mask off bits 0-7
+  message[28] = (InjectDACValue & 0xFF); 
   message[29] = (InjectDACValue & 0x0F00) >> 8; //shift bits 8-11 to bits 0-3
-  //and mask off bits 0-3
   /* message word 29, bits 4-7: InjectDACMode, 2 bits; InjectDACDone, 1 bit, 
    *     InjectDACStart, 1 bit */
-  message[29] |= (InjectDACMode[0] & 0x03) << 0x04; //mask off bits 0-1 & shift left 4 bits
-  // to bits 4-5
-  message[29] |= (InjectDACDone[0] & 0x01) << 0x06; //mask off bits 0 & shift left 6 bits
-  // to bit 6
-  message[29] |= (InjectDACStart[0] & 0x01) << 0x07; //mask off bits 0 & shift left 7 bits
-  // to bit 7
+  message[29] |= (InjectDACMode[0] & 0x03) << 0x04; 
+  message[29] |= (InjectDACDone[0] & 0x01) << 0x06; 
+  message[29] |= (InjectDACStart[0] & 0x01) << 0x07; 
   /* message word 30: Inject range (bits 0-3), Inject phase (bits 4-7) */
-  message[30] = (InjectRange[0] & 0x0F); //mask off bits 0-3
-  message[30] |= (InjectPhase[0] & 0x0F) << 0x04; //mask off bits 0-3 and
-  //shift left 4 bits to 4-7
+  message[30] = (InjectRange[0] & 0x0F); 
+  message[30] |= (InjectPhase[0] & 0x0F) << 0x04; 
   /* message word 31: BoardID (bits 0-3), HVNumAve (bits 4-6), and PreviewEnable (bit 7) */
-  message[31] = (boardID[0] & 0x0F); //mask off bits 0-3
-  message[31] |= (HVNumAve[0] & 0x07) << 0x04; //mask off bits 0-2 and shift left 4 bits to 4-6
-  message[31] |= (PreviewEnable[0] & 0x01) << 0x07; //mask bit 1 and shift left 7 bits.
+  message[31] = (boardID[0] & 0x0F); 
+  message[31] |= (HVNumAve[0] & 0x07) << 0x04; 
+  message[31] |= (PreviewEnable[0] & 0x01) << 0x07; 
 
   /* message word 32:  Firmware version */
-  message[32] = (FirmwareVersion[0] & 0xFF); //the firmware version is 8 bits
+  message[32] = (FirmwareVersion[0] & 0xFF); 
 
   /* message word 33 - 34: HV period manual, 16 bits */
-  message[33] = (HVPeriodManual & 0xFF); //mask off bits 0-7
-  message[34] = (HVPeriodManual >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
-  //and mask off ibt 0-7
+  message[33] = (HVPeriodManual & 0xFF); 
+  message[34] = (HVPeriodManual >> 0x08) & 0xFF;  
   /* message word 35 - 36: HV period auto, 16 bits */
-  message[35] = (HVPeriodAuto & 0xFF); //mask off bits 0-7
-  message[36] = (HVPeriodAuto >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
-  //and mask off ibt 0-7
+  message[35] = (HVPeriodAuto & 0xFF); 
+  message[36] = (HVPeriodAuto >> 0x08) & 0xFF;  
   /* message word 37: HV pulse width, 8 bits */
-  message[37] = (HVPulseWidth[0] & 0xFF); //mask off bits 0-7
+  message[37] = (HVPulseWidth[0] & 0xFF); 
 
   /* message word 38 - 39: Temperature, 16 bits */
-  message[38] = (Temperature & 0xFF); //mask off bits 0-7
-  message[39] = (Temperature >> 0x08) & 0xFF;  //shift bits 8-15 to bits 0-7
-  //and mask off ibt 0-7
+  message[38] = (Temperature & 0xFF); 
+  message[39] = (Temperature >> 0x08) & 0xFF;  
   /* message word 40: TripX Thresh , 8 bits */
-  message[40] = (TripXThresh[0] & 0xFF); //mask off bits 0-7
+  message[40] = (TripXThresh[0] & 0xFF); 
 
   /* message word 41: TripXCompEnc, 6 (+2 spare) bits */
-  message[41] = (TripXCompEnc[0] & 0x3F); //mask off bits 0-5
+  message[41] = (TripXCompEnc[0] & 0x3F); 
 
   /* message word 42-43 Discriminator Enable Mask Trip 0, 16 bits */
-  message[42] = (DiscrimEnableMask[0] & 0xFF); //mask off bits 0-7
-  message[43] = (DiscrimEnableMask[0] >> 0x08); // shift right 8 bits and mask is redundant here
+  message[42] = (DiscrimEnableMask[0] & 0xFF); 
+  message[43] = (DiscrimEnableMask[0] >> 0x08); 
 
   /* message word 44-45 Discriminator Enable Mask Trip 1, 16 bits */
-  message[44] = (DiscrimEnableMask[1] & 0xFF); //mask off bits 0-7
-  message[45] = (DiscrimEnableMask[1] >> 0x08); // shift right 8 bits and mask is redundant here
+  message[44] = (DiscrimEnableMask[1] & 0xFF); 
+  message[45] = (DiscrimEnableMask[1] >> 0x08); 
 
   /* message word 46-47 Discriminator Enable Mask Trip 2, 16 bits */
-  message[46] = (DiscrimEnableMask[2] & 0xFF); //mask off bits 0-7
-  message[47] = (DiscrimEnableMask[2] >> 0x08); // shift right 8 bits and mask is redundant here
+  message[46] = (DiscrimEnableMask[2] & 0xFF); 
+  message[47] = (DiscrimEnableMask[2] >> 0x08); 
 
   /* message word 48-49 Discriminator Enable Mask Trip 3, 16 bits */
-  message[48] = (DiscrimEnableMask[3] & 0xFF); //mask off bits 0-7
-  message[49] = (DiscrimEnableMask[3] >> 0x08); // shift right 8 bits and mask is redundant here
+  message[48] = (DiscrimEnableMask[3] & 0xFF); 
+  message[49] = (DiscrimEnableMask[3] >> 0x08); 
 
   /* message word 50-53 Gate Time Stamp, 32 bits */
-  message[50] = (GateTimeStamp & 0xFF); //mask off bits 0-7
-  message[51] = (GateTimeStamp >> 0x08) & 0xFF; // shift right 8 bits and mask 
-  message[52] = (GateTimeStamp >> 0x10) & 0xFF; // shift right 16 bits and mask 
-  message[53] = (GateTimeStamp >> 0x18) & 0xFF; // shift right 24 bits and mask 
+  message[50] = (GateTimeStamp & 0xFF); 
+  message[51] = (GateTimeStamp >> 0x08) & 0xFF; 
+  message[52] = (GateTimeStamp >> 0x10) & 0xFF; 
+  message[53] = (GateTimeStamp >> 0x18) & 0xFF; 
 
   // Make a new out-going message buffer of suitable size.
   outgoingMessage = new unsigned char [OutgoingMessageLength];  
@@ -657,9 +646,5 @@ void FPGAFrame::ShowValues()
   FPGAFrameLog.debugStream()<<"GateTimeStamp   : "<<(unsigned int)GateTimeStamp; // only meaningful for 78+ firmware 
   FPGAFrameLog.debugStream()<<"************* End FPGAFrame Current Values ****************"; 
 }
-
-// All of the Set functions that take unsigned char* need to be overloaded to take
-// char* in order to be setable from the Python GUI (convert int->char in Python).
-// -> SlowControl does not use those functions!
 
 #endif

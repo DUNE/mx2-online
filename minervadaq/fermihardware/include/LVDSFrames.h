@@ -47,8 +47,9 @@ class LVDSFrames {
     void printMessageBufferToLog( int buffersize );
 
     void MakeDeviceFrameTransmit(Devices, Broadcasts, Directions, unsigned int, unsigned int); 
-    void MakeHeader();
+    void MakeOutgoingHeader();
     virtual void MakeMessage();
+    virtual void DecodeRegisterValues();
     virtual int DecodeRegisterValues(int a) = 0;
     void DecodeHeader();
     bool CheckForErrors();
@@ -56,11 +57,11 @@ class LVDSFrames {
     inline unsigned char *GetOutgoingMessage() { return outgoingMessage; };
     inline void DeleteOutgoingMessage() { delete [] outgoingMessage; };
 
-    void inline SetIncomingMessageLength(int a) { IncomingMessageLength = a; };
-    int inline GetIncomingMessageLength() { return IncomingMessageLength; };
-    int inline GetOutgoingMessageLength() { return OutgoingMessageLength; };
-    int inline GetFEBNumber() { return (int)febNumber[0]; };
-    int inline GetDeviceType() { return (int)targetDevice[0]; };
+    inline void SetIncomingMessageLength(int a) { IncomingMessageLength = a; };
+    inline int GetIncomingMessageLength() { return IncomingMessageLength; };
+    inline int GetOutgoingMessageLength() { return OutgoingMessageLength; };
+    inline int GetFEBNumber() { return (int)febNumber[0]; };
+    inline int GetDeviceType() { return (int)targetDevice[0]; };
 
 };
 
