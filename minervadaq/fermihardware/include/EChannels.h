@@ -80,13 +80,16 @@ class EChannels : public VMECommunicator {
 
     // write the frames - load them to memory (don't send messages)
     // no WriteFrame is deliberate - too many configs - we just offer preconfigured reads
+    void WriteFrameRegistersToMemory( std::tr1::shared_ptr<LVDSFrame> frame ) const;
     void WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const;
-    void WriteFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const;
+    /* void WriteFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const; */
     void WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb ) const; 
     void WriteFPGAProgrammingRegistersDumpReadToMemory( FEB *feb ) const; 
     void WriteFPGAProgrammingRegistersDumpReadToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const; 
     void WriteTRIPRegistersToMemory( FEB *feb, int tripNumber ) const;
-    void WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber ) const; 
+    /* void WriteTRIPRegistersToMemory( std::tr1::shared_ptr<TRIPFrame> frame ) const; */
+    void WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber ) const;  // TODO - not sure this is worth a whole function
+    void WriteTRIPRegistersReadFrameToMemory( std::tr1::shared_ptr<TRIPFrame> frame ) const; 
     // read the frames - load messages to memory, send them, and then check the dpm pointer
     unsigned short ReadFPGAProgrammingRegistersToMemory( FEB *feb ) const;
     unsigned short ReadFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const;

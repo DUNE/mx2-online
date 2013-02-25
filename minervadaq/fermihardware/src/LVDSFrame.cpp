@@ -35,8 +35,15 @@ LVDSFrame::LVDSFrame()
 //-------------------------------------------------------
 LVDSFrame::~LVDSFrame() 
 { 
-  if (receivedMessage) delete [] receivedMessage; 
-  if (outgoingMessage) delete [] outgoingMessage; 
+  lvdsLog.debugStream() << "LVDSFrame::~LVDSFrame()... LVDSFrame Destructor";
+  if (receivedMessage) {
+    lvdsLog.debugStream() << " Deleting the received message.";
+    delete [] receivedMessage;
+  } 
+  if (outgoingMessage) { 
+    lvdsLog.debugStream() << " Deleting the outgoing message.";
+    delete [] outgoingMessage;
+  } 
 }    
 
 //------------------------------------------

@@ -30,9 +30,6 @@ ADCFrame::ADCFrame(febAddresses a, RAMFunctionsHit b) : LVDSFrame()
   Directions dir   = MasterToSlave;     // ALL outgoing messages are master-to-slave
   MakeDeviceFrameTransmit(dev, broad, dir,(unsigned int)b, (unsigned int) febNumber[0]); //make the frame
 
-  outgoingMessage = new unsigned char [ this->GetOutgoingMessageLength() ]; // always the same message!
-  MakeMessage(); //make up the message
-  
   ADCFrameLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
   ADCFrameLog.debugStream() << "Made ADCFrame " << b << " for FEB " << a; 
 }
@@ -45,6 +42,8 @@ void ADCFrame::MakeMessage()
    * name inherited from LVDSFrame.  This function bit-packs the data into an OUTGOING
    * message from values set using the get/set functions assigned to this class (see feb.h).
    */
+  if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
+  outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];
   for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) {
     outgoingMessage[i]=frameHeader[i];
   }

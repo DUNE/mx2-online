@@ -61,6 +61,7 @@ void FPGAFrame::MakeShortMessage()
   MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
 
   // For DumpReads, we need only a header-sized message.
+  if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
   outgoingMessage = new unsigned char [FrameHeaderLengthOutgoing];  
   for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) { 
     outgoingMessage[i] = frameHeader[i];
@@ -235,6 +236,7 @@ void FPGAFrame::MakeMessage()
   message[53] = (GateTimeStamp >> 0x18) & 0xFF; 
 
   // Make a new out-going message buffer of suitable size.
+  if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
   outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];  
   for (unsigned int i=0; i < this->GetOutgoingMessageLength(); ++i) { 
     if ( i < FrameHeaderLengthOutgoing ) {

@@ -37,9 +37,6 @@ DiscrFrame::DiscrFrame(febAddresses a) : LVDSFrame()
   unsigned int b   = (unsigned int)ReadHitDiscr;
   MakeDeviceFrameTransmit(dev, broad, dir, (unsigned int)b, (unsigned int)febNumber[0]); 
 
-  outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];
-  MakeMessage(); 
-
   DiscrFrameLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
   DiscrFrameLog.debugStream() << "Made DiscrFrame for FEB " << a; 
 }
@@ -50,6 +47,8 @@ void DiscrFrame::MakeMessage()
   /*! \fn
    * Makes the outgoing message 
    */
+  if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
+  outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];
   for (unsigned int i = 0; i < this->GetOutgoingMessageLength(); ++i) {
     outgoingMessage[i] = frameHeader[i];
   }
