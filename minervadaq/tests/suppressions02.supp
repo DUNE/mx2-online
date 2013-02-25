@@ -1,0 +1,342 @@
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   obj:/usr/lib/libCAENVME.so.2.7
+   obj:/usr/lib/libCAENVME.so.2.7
+   obj:/usr/lib/libCAENVME.so.2.7
+   fun:CAENVME_GetFIFOMode
+   fun:CAENVME_Init
+   fun:_ZN10Controller10InitializeEv
+   fun:_Z20GetAndTestControllerii
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_GetFIFOMode
+   fun:CAENVME_Init
+   fun:_ZN10Controller10InitializeEv
+   fun:_Z20GetAndTestControllerii
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   obj:/usr/lib/libCAENVME.so.2.7
+   obj:/usr/lib/libCAENVME.so.2.7
+   obj:/usr/lib/libCAENVME.so.2.7
+   fun:CAENVME_WriteRegister
+   fun:CAENVME_Init
+   fun:_ZN10Controller10InitializeEv
+   fun:_Z20GetAndTestControllerii
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Value8
+   fun:_itoa_word
+   fun:vfprintf
+   fun:vsprintf
+   fun:sprintf
+   fun:CAENVME_BoardFWRelease
+   fun:_ZN10Controller10InitializeEv
+   fun:_Z20GetAndTestControllerii
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:_itoa_word
+   fun:vfprintf
+   fun:vsprintf
+   fun:sprintf
+   fun:CAENVME_BoardFWRelease
+   fun:_ZN10Controller10InitializeEv
+   fun:_Z20GetAndTestControllerii
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:vfprintf
+   fun:vsprintf
+   fun:sprintf
+   fun:CAENVME_BoardFWRelease
+   fun:_ZN10Controller10InitializeEv
+   fun:_Z20GetAndTestControllerii
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   obj:/usr/lib/libCAENVME.so.2.7
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK5ECROC19SetupTimingRegisterE14crocClockModestt
+   fun:_ZNK5ECROC19InitializeRegistersE14crocClockModestt
+   fun:_ZNK5ECROC10InitializeEv
+   fun:_Z15GetAndTestECROCjP10Controller
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK5ECROC30SetupResetAndTestPulseRegisterEtt
+   fun:_ZNK5ECROC19InitializeRegistersE14crocClockModestt
+   fun:_ZNK5ECROC10InitializeEv
+   fun:_Z15GetAndTestECROCjP10Controller
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels27ClearAndResetStatusRegisterEv
+   fun:_ZNK5ECROC28ClearAndResetStatusRegistersEv
+   fun:_Z15GetAndTestECROCjP10Controller
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   obj:/usr/lib/libCAENVME.so.2.7
+   fun:CAENVME_ReadCycle
+   fun:_ZNK15VMECommunicator9ReadCycleEPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels23GetChannelConfigurationEv
+   fun:_ZNK9EChannels25UpdateConfigurationForValEtt
+   fun:_ZNK9EChannels22EnableSequencerReadoutEv
+   fun:_ZNK5ECROC22EnableSequencerReadoutEv
+   fun:_Z15GetAndTestECROCjP10Controller
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels23SetChannelConfigurationEPh
+   fun:_ZNK9EChannels25UpdateConfigurationForValEtt
+   fun:_ZNK9EChannels22EnableSequencerReadoutEv
+   fun:_ZNK5ECROC22EnableSequencerReadoutEv
+   fun:_Z15GetAndTestECROCjP10Controller
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_ReadCycle
+   fun:_ZNK15VMECommunicator9ReadCycleEPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels23GetChannelConfigurationEv
+   fun:_ZNK9EChannels25UpdateConfigurationForValEtt
+   fun:_ZNK9EChannels22EnableSequencerReadoutEv
+   fun:_ZNK5ECROC22EnableSequencerReadoutEv
+   fun:_Z15GetAndTestECROCjP10Controller
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:_ZNK9EChannels25UpdateConfigurationForValEtt
+   fun:_ZNK9EChannels22EnableSequencerReadoutEv
+   fun:_ZNK5ECROC22EnableSequencerReadoutEv
+   fun:_Z15GetAndTestECROCjP10Controller
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_ReadCycle
+   fun:_ZNK15VMECommunicator9ReadCycleEPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels23GetChannelConfigurationEv
+   fun:_ZNK9EChannels25UpdateConfigurationForValEtt
+   fun:_ZNK9EChannels22EnableSequencerReadoutEv
+   fun:_ZNK5ECROC22EnableSequencerReadoutEv
+   fun:_Z15GetAndTestECROCjP10Controller
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels27ClearAndResetStatusRegisterEv
+   fun:_ZNK9EChannels11isAvailableEP13FrontEndBoard
+   fun:_ZN9EChannels20SetupNFrontEndBoardsEi
+   fun:_Z11TestChannelP5ECROCjj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels27ClearAndResetStatusRegisterEv
+   fun:_ZNK9EChannels36ReadFPGAProgrammingRegistersToMemoryENSt3tr110shared_ptrI9FPGAFrameEE
+   fun:_ZNK9EChannels11isAvailableEP13FrontEndBoard
+   fun:_ZN9EChannels20SetupNFrontEndBoardsEi
+   fun:_Z11TestChannelP5ECROCjj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels20WriteMessageToMemoryEPhi
+   fun:_ZNK9EChannels45WriteFPGAProgrammingRegistersDumpReadToMemoryENSt3tr110shared_ptrI9FPGAFrameEE
+   fun:_ZNK9EChannels36ReadFPGAProgrammingRegistersToMemoryENSt3tr110shared_ptrI9FPGAFrameEE
+   fun:_ZNK9EChannels11isAvailableEP13FrontEndBoard
+   fun:_ZN9EChannels20SetupNFrontEndBoardsEi
+   fun:_Z11TestChannelP5ECROCjj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels11SendMessageEv
+   fun:_ZNK9EChannels36ReadFPGAProgrammingRegistersToMemoryENSt3tr110shared_ptrI9FPGAFrameEE
+   fun:_ZNK9EChannels11isAvailableEP13FrontEndBoard
+   fun:_ZN9EChannels20SetupNFrontEndBoardsEi
+   fun:_Z11TestChannelP5ECROCjj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_ReadCycle
+   fun:_ZNK15VMECommunicator9ReadCycleEPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels23ReadFrameStatusRegisterEv
+   fun:_ZNK9EChannels22WaitForMessageReceivedEv
+   fun:_ZNK9EChannels36ReadFPGAProgrammingRegistersToMemoryENSt3tr110shared_ptrI9FPGAFrameEE
+   fun:_ZNK9EChannels11isAvailableEP13FrontEndBoard
+   fun:_ZN9EChannels20SetupNFrontEndBoardsEi
+   fun:_Z11TestChannelP5ECROCjj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_ReadCycle
+   fun:_ZNK15VMECommunicator9ReadCycleEPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels14ReadDPMPointerEv
+   fun:_ZNK9EChannels36ReadFPGAProgrammingRegistersToMemoryENSt3tr110shared_ptrI9FPGAFrameEE
+   fun:_ZNK9EChannels11isAvailableEP13FrontEndBoard
+   fun:_ZN9EChannels20SetupNFrontEndBoardsEi
+   fun:_Z11TestChannelP5ECROCjj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   obj:/usr/lib/libCAENVME.so.2.7
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   obj:/usr/lib/libCAENVME.so.2.7
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   obj:/usr/lib/libCAENVME.so.2.7
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   obj:/usr/lib/libCAENVME.so.2.7
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   obj:/usr/lib/libCAENVME.so.2.7
+   obj:/usr/lib/libCAENVME.so.2.7
+   fun:CAENVME_BLTReadCycle
+   fun:_ZNK15VMECommunicator7ReadBLTEPhij17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels10ReadMemoryEt
+   fun:_ZNK9EChannels11isAvailableEP13FrontEndBoard
+   fun:_ZN9EChannels20SetupNFrontEndBoardsEi
+   fun:_Z11TestChannelP5ECROCjj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   obj:/usr/lib/libCAENVME.so.2.7
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels27ClearAndResetStatusRegisterEv
+   fun:_Z11TestChannelP5ECROCjj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_ReadCycle
+   fun:_ZNK15VMECommunicator9ReadCycleEPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels23ReadFrameStatusRegisterEv
+   fun:_Z11TestChannelP5ECROCjj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_ReadCycle
+   fun:_ZNK15VMECommunicator9ReadCycleEPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels22ReadTxRxStatusRegisterEv
+   fun:_Z11TestChannelP5ECROCjj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels27ClearAndResetStatusRegisterEv
+   fun:_Z24FPGAWriteConfiguredFrameP9EChannelsNSt3tr110shared_ptrI9FPGAFrameEE
+   fun:_Z19FPGASetupForGenericP9EChannelsi
+   fun:_Z23SetupGenericFEBSettingsP9EChannelsj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels20WriteMessageToMemoryEPhi
+   fun:_ZNK9EChannels37WriteFPGAProgrammingRegistersToMemoryENSt3tr110shared_ptrI9FPGAFrameEE
+   fun:_Z24FPGAWriteConfiguredFrameP9EChannelsNSt3tr110shared_ptrI9FPGAFrameEE
+   fun:_Z19FPGASetupForGenericP9EChannelsi
+   fun:_Z23SetupGenericFEBSettingsP9EChannelsj
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:CAENVME_WriteCycle
+   fun:_ZNK15VMECommunicator10WriteCycleEiPhj17CVAddressModifier11CVDataWidth
+   fun:_ZNK9EChannels11SendMessageEv
+   fun:_Z24FPGAWriteConfiguredFrameP9EChannelsNSt3tr110shared_ptrI9FPGAFrameEE
+   fun:_Z19FPGASetupForGenericP9EChannelsi
+   fun:_Z23SetupGenericFEBSettingsP9EChannelsj
+   fun:main
+}
+
