@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <tr1/memory>  // for shared_ptrs
 
 #include "FrameTypes.h"
 #include "MinervaDAQtypes.h"
@@ -50,10 +51,11 @@ class LVDSFrame {
     bool CheckForErrors();
     void printReceivedMessageToLog();
 
-    inline unsigned char *OutgoingMessage() { return outgoingMessage; };
-    inline unsigned char *ReceivedMessage() { return receivedMessage; };
-    inline int GetFEBNumber() { return (int)febNumber[0]; };
-    inline int GetDeviceType() { return (int)targetDevice[0]; };
+    inline unsigned char *GetOutgoingMessage() const { return outgoingMessage; };
+    inline unsigned char *GetReceivedMessage() const { return receivedMessage; };
+    inline void SetReceivedMessage(unsigned char* buffer) { receivedMessage = buffer; };
+    inline int GetFEBNumber() const { return (int)febNumber[0]; };
+    inline int GetDeviceType() const { return (int)targetDevice[0]; };
 
 };
 

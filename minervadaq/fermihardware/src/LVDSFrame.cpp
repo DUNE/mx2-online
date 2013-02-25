@@ -123,15 +123,14 @@ bool LVDSFrame::CheckForErrors()
    */
   bool error = false; 
 
-  // TODO : check ReceivedMessageStatus()
-
-  unsigned char messageLength[2];
-  ResponseWords word = ResponseLength0;
-  messageLength[0] = receivedMessage[word];
-  word = ResponseLength1;
-  messageLength[1] = receivedMessage[word];
-  lvdsLog.debugStream() << "CheckForErrors Message Length = " 
-    << ( (messageLength[1]<<8) | messageLength[0] );
+  // There isn't really a good check we can make on message length here.
+  
+  unsigned short status = this->ReceivedMessageStatus();
+  lvdsLog.debugStream() << "CheckForErrors Frame Status = 0x" << std::hex << status;
+  if (0x1010 != status) {
+    lvdsLog.fatalStream() << "CheckForErrors Frame Status = 0x" << std::hex << status;
+    return true;
+  }
 
   const unsigned int nflags = 8;
   ResponseWords words[nflags] = { FrameStart, DeviceStatus, DeviceStatus, FrameStatus, 
@@ -148,6 +147,7 @@ bool LVDSFrame::CheckForErrors()
     }
   }
 
+  lvdsLog.debugStream() << "Error Status = " << error;
   return error; 
 }
 
@@ -155,15 +155,20 @@ bool LVDSFrame::CheckForErrors()
 //------------------------------------------
 unsigned short LVDSFrame::ReceivedMessageLength()
 {
-  if (NULL == receivedMessage) return 0;
-  return ( (receivedMessage[ResponseLength1]<<8) | receivedMessage[ResponseLength0] ); 
+  lvdsLog.debugStream() << "LVDSFrame::ReceivedMessageLength()";
+  if (NULL == receivedMessage) {
+    lvdsLog.errorStream() << "receivedMessage is NULL!";
+    return 0;
+  }
+  lvdsLog.debugStream() << "Message Length = " << ( (receivedMessage[ResponseLength0]<<8) | receivedMessage[ResponseLength1] );
+  return ( (receivedMessage[ResponseLength0]<<8) | receivedMessage[ResponseLength1] ); 
 }
 
 //------------------------------------------
 unsigned short LVDSFrame::ReceivedMessageStatus()
 {
   if (NULL == receivedMessage) return 0;
-  return ( (receivedMessage[FrameStatus1]<<8) | receivedMessage[FrameStatus0] ); 
+  return ( (receivedMessage[FrameStatus0]<<8) | receivedMessage[FrameStatus1] ); 
 }
 
 

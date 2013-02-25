@@ -262,10 +262,14 @@ void FPGAFrame::DecodeRegisterValues()
    * register on the croc
    *********************************************************************************/
 
+  FPGAFrameLog.debugStream() << "FPGAFrame::DecodeRegisterValues";
+
   if ( this->ReceivedMessageLength() != FPGAFrameMaxSize ) { 
+    FPGAFrameLog.fatalStream() << "Incorrect FPGA Frame Length for FEB " << this->GetFEBNumber();
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   } 
-  if ( !this->CheckForErrors() ) {
+  if ( this->CheckForErrors() ) {
+    FPGAFrameLog.fatalStream() << "FPGA Frame Error for FEB " << this->GetFEBNumber(); 
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
 

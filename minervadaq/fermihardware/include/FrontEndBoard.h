@@ -27,10 +27,9 @@ class FrontEndBoard {
 		FrontEndBoard( febAddresses theAddress ); 
 		~FrontEndBoard() { };    
 
-		/*! Get functions */
-		febAddresses inline GetBoardNumber() {return boardNumber;};
+		febAddresses inline GetBoardNumber() { return boardNumber; };
 
-    std::auto_ptr<FPGAFrame> GetFPGAFrame();
+    std::tr1::shared_ptr<FPGAFrame> GetFPGAFrame();
 
 };
 

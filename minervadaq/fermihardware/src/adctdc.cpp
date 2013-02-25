@@ -3,6 +3,7 @@
 
 #include <iomanip>
 #include "adctdc.h"
+#include "MinervaDAQtypes.h"
 #include "exit_codes.h"
 
 #define SHOWSEQ 1 /*!< \define show unpacked block ram (adc) in internal sequential order...*/

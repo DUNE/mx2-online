@@ -1,6 +1,8 @@
 #ifndef TestSuite_h
 #define TestSuite_h
 
+#include <tr1/memory> 
+
 #include "log4cppHeaders.h"
 
 #include "MinervaDAQtypes.h"
@@ -41,6 +43,7 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs );
 
 // Helper Functions - not tests per se.
 void FPGAWriteConfiguredFrame( EChannels* channel, FEB* feb );
+void FPGAWriteConfiguredFrame( EChannels* channel, std::tr1::shared_ptr<FPGAFrame> frame );
 void FPGASetupForChargeInjection( EChannels* channel, int boardID );
 void TRIPSetupForChargeInjection( EChannels* channel, int boardID );
 void FPGASetupForGeneric( EChannels* channel, int boardID );
