@@ -23,9 +23,9 @@ FrontEndBoard::FrontEndBoard( febAddresses a )
 }
 
 //-----------------------------------------------------
-std::auto_ptr<FPGAFrame> FrontEndBoard::GetFPGAFrame()
+std::tr1::shared_ptr<FPGAFrame> FrontEndBoard::GetFPGAFrame()
 {
-  std::auto_ptr<FPGAFrame> f( new FPGAFrame( boardNumber ) );
+  std::tr1::shared_ptr<FPGAFrame> f( new FPGAFrame( boardNumber ) );
   return f;
 }
 

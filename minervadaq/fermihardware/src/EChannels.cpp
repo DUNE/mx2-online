@@ -160,6 +160,27 @@ void EChannels::SetupNFEBs( int nFEBs )
 }
 
 //----------------------------------------
+void EChannels::SetupNFrontEndBoards( int nFEBs )
+{
+  EChannelLog.debugStream() << "SetupNFrontEndBoards for " << nFEBs << " FEBs...";
+  if ( ( nFEBs < 0 ) || (nFEBs > 10) ) {
+    EChannelLog.fatalStream() << "Cannot have less than 0 or more than 10 FEBs on a Channel!";
+    exit(EXIT_CONFIG_ERROR);
+  }
+  for ( int i=1; i<=nFEBs; ++i ) {
+    EChannelLog.debugStream() << "Setting up FEB " << i << " ...";
+    FrontEndBoard *feb = new FrontEndBoard( (febAddresses)i );
+    if ( isAvailable( feb ) ) {
+      FrontEndBoardsVector.push_back( feb );
+    } else {
+      EChannelLog.fatalStream() << "Requested FrontEndBoard with address " << i << " is not avialable!";
+      exit(EXIT_CONFIG_ERROR);
+    }
+  }
+  this->UpdateConfigurationForVal( (unsigned short)(0xF & nFEBs), (unsigned short)0xFFF0 );
+}
+
+//----------------------------------------
 void EChannels::EnableSequencerReadout() const
 {
   this->UpdateConfigurationForVal( (unsigned short)(0x8000), (unsigned short)(0x7FFF) );
@@ -223,10 +244,20 @@ std::vector<FEB*>* EChannels::GetFEBVector()
 FEB* EChannels::GetFEBVector( int index /* should always equal FEB address - 1 (vect:0..., addr:1...) */ ) 
 {
   // TODO: add check for null here? or too slow? (i.e., live fast and dangerouss)
-  // Check that address = index?
-  // Maybe add a precompiler flag, SAFE_MODE or something, that makes these checks, 
-  // but we wouldn't use it when optimizing for speed...
   return FEBsVector[index];
+}
+
+//----------------------------------------
+std::vector<FrontEndBoard*>* EChannels::GetFrontEndBoardVector() 
+{
+  return &FrontEndBoardsVector;
+}
+
+//----------------------------------------
+FrontEndBoard* EChannels::GetFrontEndBoardVector( int index /* should always equal FrontEndBoard address - 1 (vect:0..., addr:1...) */ ) 
+{
+  // TODO: add check for null here? or too slow? (i.e., live fast and dangerouss)
+  return FrontEndBoardsVector[index];
 }
 
 //----------------------------------------
@@ -248,6 +279,28 @@ bool EChannels::isAvailable( FEB* feb ) const
   delete [] dataBuffer;
 
   EChannelLog.debugStream() << "FEB " << feb->GetBoardNumber() << " isAvailable = " << available;
+  return available;
+}
+
+//----------------------------------------
+bool EChannels::isAvailable( FrontEndBoard* feb ) const
+{
+  EChannelLog.debugStream() << "isAvailable FrontEndBoard with class address = " << feb->GetBoardNumber();
+  bool available = false;
+  this->ClearAndResetStatusRegister();
+
+  std::tr1::shared_ptr<FPGAFrame> frame = feb->GetFPGAFrame();
+  unsigned short dataLength = this->ReadFPGAProgrammingRegistersToMemory( frame );
+  unsigned char* dataBuffer = this->ReadMemory( dataLength ); 
+
+  frame->SetReceivedMessage(dataBuffer);
+  frame->DecodeRegisterValues();
+  EChannelLog.debugStream() << "Decoded FrontEndBoard address = " << (int)feb->GetBoardNumber();
+  if( (int)feb->GetBoardNumber() == frame->GetFEBNumber() ) available = true;
+
+  /* delete [] dataBuffer; */
+
+  EChannelLog.debugStream() << "FrontEndBoard " << feb->GetBoardNumber() << " isAvailable = " << available;
   return available;
 }
 
@@ -403,12 +456,28 @@ void EChannels::WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const
 }
 
 //----------------------------------------
+void EChannels::WriteFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const
+{
+  // Note: this function does not send the message! It only writes the message to the CROC memory.
+  frame->MakeMessage(); 
+  this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() );
+}
+
+//----------------------------------------
 void EChannels::WriteFPGAProgrammingRegistersDumpReadToMemory( FEB *feb ) const
 {
   // Note: this function does not send the message! It only writes the message to the CROC memory.
   feb->MakeShortMessage();  // Use the "DumpRead" option.
   this->WriteMessageToMemory( feb->GetOutgoingMessage(), feb->GetOutgoingMessageLength() );
   feb->DeleteOutgoingMessage(); 
+}
+
+//----------------------------------------
+void EChannels::WriteFPGAProgrammingRegistersDumpReadToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const
+{
+  // Note: this function does not send the message! It only writes the message to the CROC memory.
+  frame->MakeShortMessage();  // Use the "DumpRead" option.
+  this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() );
 }
 
 //----------------------------------------
@@ -446,6 +515,19 @@ unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( FEB *feb ) const
   this->ClearAndResetStatusRegister();
   /* this->WriteFPGAProgrammingRegistersReadFrameToMemory( feb ); */ // remove this line after adopting FPGAFrame class.
   this->WriteFPGAProgrammingRegistersDumpReadToMemory( feb );
+  this->SendMessage();
+  this->WaitForMessageReceived();
+  unsigned short dataLength = this->ReadDPMPointer();
+
+  return dataLength;
+}
+
+//----------------------------------------
+unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const
+{
+  // Note: this function does not retrieve the data from memory! It only loads it and reads the pointer.
+  this->ClearAndResetStatusRegister();
+  this->WriteFPGAProgrammingRegistersDumpReadToMemory( frame );
   this->SendMessage();
   this->WaitForMessageReceived();
   unsigned short dataLength = this->ReadDPMPointer();

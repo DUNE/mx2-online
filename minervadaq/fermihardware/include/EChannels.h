@@ -12,6 +12,7 @@
 
 /* custom header files here */
 #include "FEB.h"
+#include "FrontEndBoard.h"
 #include "MinervaDAQtypes.h"
 #include "FrameTypes.h"
 #include "VMECommunicator.h"
@@ -49,8 +50,10 @@ class EChannels : public VMECommunicator {
 		unsigned int receiveMemoryPointerAddress;
 
 		std::vector<FEB*> FEBsVector;     
+		std::vector<FrontEndBoard*> FrontEndBoardsVector;     
 
     bool isAvailable( FEB* feb ) const;
+    bool isAvailable( FrontEndBoard* feb ) const;
     void UpdateConfigurationForVal( unsigned short val, unsigned short mask ) const;
     void SetChannelConfiguration( unsigned char* message ) const;
 
@@ -78,12 +81,15 @@ class EChannels : public VMECommunicator {
     // write the frames - load them to memory (don't send messages)
     // no WriteFrame is deliberate - too many configs - we just offer preconfigured reads
     void WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const;
+    void WriteFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const;
     void WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb ) const; 
     void WriteFPGAProgrammingRegistersDumpReadToMemory( FEB *feb ) const; 
+    void WriteFPGAProgrammingRegistersDumpReadToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const; 
     void WriteTRIPRegistersToMemory( FEB *feb, int tripNumber ) const;
     void WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber ) const; 
     // read the frames - load messages to memory, send them, and then check the dpm pointer
     unsigned short ReadFPGAProgrammingRegistersToMemory( FEB *feb ) const;
+    unsigned short ReadFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const;
 
     unsigned int GetChannelNumber() const;
     unsigned int GetParentECROCAddress() const;
@@ -99,5 +105,8 @@ class EChannels : public VMECommunicator {
     std::vector<FEB*>* GetFEBVector();
     FEB* GetFEBVector( int index /* should always equal (FEB address - 1) */ );
 
+    void SetupNFrontEndBoards( int nFEBs );
+    std::vector<FrontEndBoard*>* GetFrontEndBoardVector();
+    FrontEndBoard* GetFrontEndBoardVector( int index /* should always equal (FEB address - 1) */ );
 };
 #endif
