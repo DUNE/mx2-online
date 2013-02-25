@@ -69,6 +69,7 @@ void TRIPFrame::MakeMessage()
   TRIPFrameLog.debugStream() << " messageSize = " << messageSize 
     << "; outgoing size = " << this->GetOutgoingMessageLength();
 
+  if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
   outgoingMessage = new unsigned char [messageSize]; //the final outgoing message
   for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) {
     outgoingMessage[i] = frameHeader[i];
@@ -260,10 +261,11 @@ void TRIPFrame::DecodeRegisterValues()
    *  particular settings on a trip.  It returns a success integer (0 for 
    *  success).
    */
-  if ( !this->CheckForErrors() ) {
+  if ( this->CheckForErrors() ) {
+    TRIPFrameLog.fatalStream() << "TRIP Frame Error for FEB " << this->GetFEBNumber(); 
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
-  int startByte = 11; // header... right size?
+  int startByte = Data; // header... right size? from MinervaDAQtypes.h : ResponseWords
   int index = startByte;
   for (int j=0;j<14;j++) { // loop here is really over *physical* registers (1...12), note j+1's below..
     if ((j==12)||(j==13)) continue; // These regisers are either not used or not readable.
@@ -369,7 +371,7 @@ void TRIPFrame::ParseError(int i, int j)
    *  \param i: register being worked on
    *  \param j: message array index
    */
-  TRIPFrameLog.debugStream() << "Parse Error for register: " << i << " at index: " << j;
+  TRIPFrameLog.fatalStream() << "Parse Error for register: " << i << " at index: " << j;
   exit(EXIT_FEB_UNSPECIFIED_ERROR);
 }
 
@@ -383,10 +385,40 @@ void TRIPFrame::ParseError(int i)
    *  Inputs:
    *  \param i: message array index
    */
-  TRIPFrameLog.debugStream() << "Parse Error at index: " << i << " while getting register value.";
+  TRIPFrameLog.fatalStream() << "Parse Error at index: " << i << " while getting register value.";
   exit(EXIT_FEB_UNSPECIFIED_ERROR);
 }
 
+//------------------------------------------
+int TRIPFrame::GetTripNumber() const
+{
+  TRiPFunctions chipFunction = (TRiPFunctions)this->trip_function;
+  int tripNum = -1;
+  switch (chipFunction) {   
+    case tTR0:
+      tripNum = 0;
+      break;
+    case tTR1:
+      tripNum = 1;
+      break;
+    case tTR2:
+      tripNum = 2;
+      break; 
+    case tTR3:
+      tripNum = 3;
+      break;
+    case tTR4:
+      tripNum = 4;
+      break;
+    case tTR5:
+      tripNum = 5;
+      break;
+    default:
+      TRIPFrameLog.fatalStream() << "Invalid TriP ChipID in TRIPFrame::GetTripNumber()!";
+      exit(EXIT_FEB_UNSPECIFIED_ERROR);
+  }
+  return tripNum;
+}
 
 
 #endif

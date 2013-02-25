@@ -48,6 +48,8 @@ EChannels::~EChannels()
 {
   for (std::vector<FEB*>::iterator p=FEBsVector.begin(); p!=FEBsVector.end(); p++) delete (*p);
   FEBsVector.clear();
+  for (std::vector<FrontEndBoard*>::iterator p=FrontEndBoardsVector.begin(); p!=FrontEndBoardsVector.end(); p++) delete (*p);
+  FrontEndBoardsVector.clear();
 }
 
 //----------------------------------------
@@ -427,7 +429,7 @@ unsigned short EChannels::ReadEventCounter() const
 unsigned char* EChannels::ReadMemory( unsigned short dataLength ) const
 {
   // -> possible shenanigans! -> 
-  if (dataLength%2) {dataLength -= 1;} else {dataLength -= 2;} //must be even  //TODO: should this be in ReadDPMPointer?
+  /* if (dataLength%2) {dataLength -= 1;} else {dataLength -= 2;} //must be even  //TODO: should this be in ReadDPMPointer? */
   EChannelLog.debugStream() << "ReadMemory for buffer size = " << dataLength;
   unsigned char *dataBuffer = new unsigned char [dataLength];
 
@@ -447,6 +449,13 @@ void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength 
 }
 
 //----------------------------------------
+void EChannels::WriteFrameRegistersToMemory( std::tr1::shared_ptr<LVDSFrame> frame ) const
+{
+  frame->MakeMessage();
+  this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() );
+}
+
+//----------------------------------------
 void EChannels::WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const
 {
   // Note: this function does not send the message! It only writes the message to the CROC memory.
@@ -456,12 +465,12 @@ void EChannels::WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const
 }
 
 //----------------------------------------
-void EChannels::WriteFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const
-{
-  // Note: this function does not send the message! It only writes the message to the CROC memory.
-  frame->MakeMessage(); 
-  this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() );
-}
+/* void EChannels::WriteFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const */
+/* { */
+/*   // Note: this function does not send the message! It only writes the message to the CROC memory. */
+/*   frame->MakeMessage(); */ 
+/*   this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() ); */
+/* } */
 
 //----------------------------------------
 void EChannels::WriteFPGAProgrammingRegistersDumpReadToMemory( FEB *feb ) const
@@ -502,10 +511,25 @@ void EChannels::WriteTRIPRegistersToMemory( FEB *feb, int tripNumber ) const
 }
 
 //----------------------------------------
+/* void EChannels::WriteTRIPRegistersToMemory( std::tr1::shared_ptr<TRIPFrame> frame ) const */
+/* { */
+/*   frame->MakeMessage(); */
+/*   this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() ); */
+/* } */
+
+//----------------------------------------
 void EChannels::WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber ) const
 {
   feb->GetTrip(tripNumber)->SetRead(true);
   this->WriteTRIPRegistersToMemory( feb, tripNumber );
+}
+
+//----------------------------------------
+void EChannels::WriteTRIPRegistersReadFrameToMemory( std::tr1::shared_ptr<TRIPFrame> frame ) const
+{
+  frame->SetRead(true);
+  /* this->WriteTRIPRegistersToMemory( frame ); */
+  this->WriteFrameRegistersToMemory( frame );
 }
 
 //----------------------------------------

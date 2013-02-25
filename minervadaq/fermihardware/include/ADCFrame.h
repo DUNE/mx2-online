@@ -23,9 +23,9 @@ class ADCFrame : public LVDSFrame {
 
 	public: 
 		ADCFrame(febAddresses a, RAMFunctionsHit f); 
-		~ADCFrame() { delete [] outgoingMessage; };
+		~ADCFrame() {};
 
-    inline unsigned int GetOutgoingMessageLength() { return FrameHeaderLengthOutgoing +2 /* ? */; };
+    inline unsigned int GetOutgoingMessageLength() { return (FrameHeaderLengthOutgoing + 2); };/* +2? */ 
 		void MakeMessage();
 		void DecodeRegisterValues(); 
 };

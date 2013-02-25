@@ -103,22 +103,22 @@ int main( int argc, char * argv[] )
   // for charge injection and different from the power on defaults. Then read them 
   // back over the course of the next two tests.
   SetupGenericFEBSettings( echannel, nFEBs );
-  /* FEBFPGAWriteReadTest( echannel, nFEBs ); */
-  /* FEBTRiPWriteReadTest( echannel, nFEBs ); */
+  FEBFPGAWriteReadTest( echannel, nFEBs );
+  FEBTRiPWriteReadTest( echannel, nFEBs );
 
   /* // Set up charge injection and read the data. We test for data sizes equal */ 
   /* // to what we expect. Get a copy of the buffer and its size for parsing. */
-  /* SetupChargeInjection( echannel, nFEBs ); */
-  /* unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); */ 
-  /* unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); */ 
+  SetupChargeInjection( echannel, nFEBs );
+  unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); 
+  unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); 
 
-  /* // Read the ADC and parse them. */
-  /* ReadADCTest( echannel, nFEBs ); */
+  // Read the ADC and parse them.
+  ReadADCTest( echannel, nFEBs );
 
   /* // Read the Discriminators and parse them. */
   /* ReadDiscrTest( echannel, nFEBs ); */
 
-  /* delete [] dataBuffer; */
+  delete [] dataBuffer;
   delete ecroc;
   delete controller;
 
@@ -178,10 +178,10 @@ void ReadADCTest( EChannels* channel, unsigned int nFEBs )
 
     // Recall the FEB vect attached to the channel is indexed from 0.
     int vectorIndex = nboard - 1;
-    FEB *feb = channel->GetFEBVector( vectorIndex );
+    FrontEndBoard *feb = channel->GetFrontEndBoardVector( vectorIndex );
+    std::tr1::shared_ptr<ADCFrame> frame = feb->GetADCFrame(iHit);
 
-    channel->WriteMessageToMemory( feb->GetADC(iHit)->GetOutgoingMessage(), 
-        feb->GetADC(iHit)->GetMessageSize() );
+    channel->WriteFrameRegistersToMemory( frame );
     channel->SendMessage();
     unsigned short status = channel->WaitForMessageReceived();
     assert( 0x1010 == status );
@@ -189,12 +189,9 @@ void ReadADCTest( EChannels* channel, unsigned int nFEBs )
     assert( ADCFrameMaxSize == pointer ); 
     unsigned char* data = channel->ReadMemory( pointer );
 
-    feb->GetADC(iHit)->message = data;
-    assert( !feb->GetADC(iHit)->CheckForErrors() );
-    assert( !feb->GetADC(iHit)->DecodeRegisterValues((int)90)); // 90 == FEB firmware ver, for now...
-    feb->GetADC(iHit)->message = 0;
-    delete [] data;
-
+    frame->SetReceivedMessage(data);
+    assert( !frame->CheckForErrors() );
+    frame->DecodeRegisterValues(); 
   }
 
   std::cout << "Passed!" << std::endl;
@@ -208,7 +205,7 @@ unsigned char * ReadDPMTestData( ECROC * ecroc, unsigned int channel, unsigned i
   std::cout << "Testing ReadDPM Data...";  
 
   EChannels * echannel = ecroc->GetChannel( channel );
-  assert( nFEBs == echannel->GetFEBVector()->size() );
+  assert( nFEBs == echannel->GetFrontEndBoardVector()->size() );
 
   unsigned short counter = echannel->ReadEventCounter();
   logger.infoStream() << " After open gate, event counter = " << counter;
@@ -238,10 +235,10 @@ unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, unsi
 
   ecroc->ClearAndResetStatusRegisters();
   EChannels * echannel = ecroc->GetChannel( channel );
-  assert( nFEBs == echannel->GetFEBVector()->size() );
+  assert( nFEBs == echannel->GetFrontEndBoardVector()->size() );
 
   unsigned short pointer = echannel->ReadDPMPointer();
-  /* std::cout << "\n After reset, pointer = " << pointer << std::endl; */
+  logger.infoStream() << " After reset, pointer = " << pointer;
   assert( (0 == pointer) || (1 == pointer) );  // ??? 1 ???
   ecroc->FastCommandOpenGate();
   ecroc->EnableSequencerReadout();
@@ -249,7 +246,6 @@ unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, unsi
 
   echannel->WaitForSequencerReadoutCompletion();
   pointer = echannel->ReadDPMPointer();
-  /* std::cout << "\n After open gate, pointer = " << pointer << std::endl; */
   logger.infoStream() << " After open gate, pointer = " << pointer;
   assert( chgInjReadoutBytesPerBoard * nFEBs == pointer );
 
@@ -267,7 +263,7 @@ void SetupGenericFEBSettings( EChannels* channel, unsigned int nFEBs )
   // done incorrectly, it will show in *later* tests.
   for (unsigned int nboard = 1; nboard <= nFEBs; nboard++) {
     FPGASetupForGeneric( channel, nboard );
-    /* TRIPSetupForGeneric( channel, nboard ); */
+    TRIPSetupForGeneric( channel, nboard );
   }
 }
 
@@ -290,39 +286,37 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
   logger.debugStream() << " EChannels Direct Address = " << std::hex << channel->GetDirectAddress();
 
   for (unsigned int nboard = 1; nboard <= nFEBs; nboard++) {
+
     // Recall the FEB vect attached to the channel is indexed from 0.
     int vectorIndex = nboard - 1;
-
-    FEB *feb = channel->GetFEBVector( vectorIndex );
+    FrontEndBoard *feb = channel->GetFrontEndBoardVector( vectorIndex );
 
     // Re-set to defaults (to make sure we read new values in).
-    feb->SetFEBDefaultValues();
+    std::tr1::shared_ptr<FPGAFrame> frame = feb->GetFPGAFrame();
+    frame->SetFPGAFrameDefaultValues();
 
     // ReadFPGAProgrammingRegisters sets up the message and reads the data into the channel memory...
-    unsigned short dataLength = channel->ReadFPGAProgrammingRegistersToMemory( feb );
+    unsigned short dataLength = channel->ReadFPGAProgrammingRegistersToMemory( frame );
     assert( dataLength == FPGAFrameMaxSize );
     // ...then ReadMemory retrieves the data.
     unsigned char * dataBuffer = channel->ReadMemory( dataLength );
-    feb->message = dataBuffer;
-    feb->DecodeRegisterValues(dataLength);
-    feb->printMessageBufferToLog(dataLength);
-    logger.debugStream() << "We read fpga's for feb " << (int)feb->GetBoardID();
-    feb->ShowValues();
+    frame->SetReceivedMessage(dataBuffer);
+    frame->DecodeRegisterValues();
+    frame->printReceivedMessageToLog();
+    logger.debugStream() << "We read fpga's for feb " << (int)frame->GetBoardID();
+    frame->ShowValues();
 
-    assert( FPGA == feb->GetDeviceType() ); 
-    assert( nboard == (unsigned int)feb->GetFEBNumber() );
-    assert( genericTimer == feb->GetTimer() );
-    assert( genericGateStart == feb->GetGateStart() );
-    assert( genericHVTarget == feb->GetHVTarget() );
-    assert( genericGateLength == feb->GetGateLength() );
-    assert( genericHVPeriodManual == feb->GetHVPeriodManual() );
-    assert( genericDiscEnableMask == feb->GetDiscEnMask0() );
-    assert( genericDiscEnableMask == feb->GetDiscEnMask1() );
-    assert( genericDiscEnableMask == feb->GetDiscEnMask2() );
-    assert( genericDiscEnableMask == feb->GetDiscEnMask3() );
-
-    feb->message = 0;
-    delete [] dataBuffer;
+    assert( FPGA == frame->GetDeviceType() ); 
+    assert( nboard == (unsigned int)frame->GetFEBNumber() );
+    assert( genericTimer == frame->GetTimer() );
+    assert( genericGateStart == frame->GetGateStart() );
+    assert( genericHVTarget == frame->GetHVTarget() );
+    assert( genericGateLength == frame->GetGateLength() );
+    assert( genericHVPeriodManual == frame->GetHVPeriodManual() );
+    assert( genericDiscEnableMask == frame->GetDiscEnMask0() );
+    assert( genericDiscEnableMask == frame->GetDiscEnMask1() );
+    assert( genericDiscEnableMask == frame->GetDiscEnMask2() );
+    assert( genericDiscEnableMask == frame->GetDiscEnMask3() );
   }
   std::cout << "Passed!" << std::endl;
   testCount++;
@@ -332,54 +326,65 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
 void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
 {
   std::cout << "Testing TRiP Read back...";  
+  logger.debugStream() << "Testing:--------------FEBTRiPWriteReadTest--------------";
 
   for (unsigned int boardID = 1; boardID <= nFEBs; boardID++ ) {
     int vectorIndex = boardID - 1;
-    FEB *feb = channel->GetFEBVector( vectorIndex );
+    FrontEndBoard *feb = channel->GetFrontEndBoardVector( vectorIndex );
 
     for ( int i=0; i<6 /* 6 trips per FEB */; i++ ) {
       // Clear Status & Reset
       channel->ClearAndResetStatusRegister();
 
-      // Set up the message... (just to look at)
-      feb->GetTrip(i)->SetRead(true);
-      feb->GetTrip(i)->MakeMessage();
-      unsigned int tmpML = feb->GetTrip(i)->GetMessageSize();
-      assert( TRiPProgrammingFrameReadSize == tmpML );
-
-      std::stringstream ss;
-      ss << "Trip " << i << std::endl;
-      unsigned char *message = feb->GetTrip(i)->GetOutgoingMessage();
-      for (unsigned int j = 0; j < tmpML; j +=4 ) {
-        ss << j << "\t" << (int)message[j];
-        if (j+1 < tmpML) ss << "\t" << (int)message[j+1];
-        if (j+2 < tmpML) ss << "\t" << (int)message[j+2];
-        if (j+3 < tmpML) ss << "\t" << (int)message[j+3];
-        ss << std::endl;
+      { // the frame will be local to this block and clean up when we exit the block
+        std::tr1::shared_ptr<TRIPFrame> frame = feb->GetTRIPFrame(i);
+        // Set up the message... (just to look at)
+        frame->SetRead(true);
+        frame->MakeMessage();
+        unsigned int tmpML = frame->GetOutgoingMessageLength();
+        assert( TRiPProgrammingFrameReadSize == tmpML );
+        std::stringstream ss;
+        ss << "Trip " << i << std::endl;
+        unsigned char *message = frame->GetOutgoingMessage();
+        for (unsigned int j = 0; j < tmpML; j +=4 ) {
+          ss << j << "\t" << (int)message[j];
+          if (j+1 < tmpML) ss << "\t" << (int)message[j+1];
+          if (j+2 < tmpML) ss << "\t" << (int)message[j+2];
+          if (j+3 < tmpML) ss << "\t" << (int)message[j+3];
+          ss << std::endl;
+        }
+        assert( message[0] == (unsigned char)boardID );
+        assert( message[2] == 0 );
+        assert( message[3] == 0 );
+        message = 0;
+        logger.debugStream() << ss.str();
       }
-      assert( message[0] == (unsigned char)boardID );
-      assert( message[2] == 0 );
-      assert( message[3] == 0 );
-      message = 0;
-      feb->GetTrip(i)->DeleteOutgoingMessage();
 
-      // remake the message internally
-      channel->WriteTRIPRegistersReadFrameToMemory( feb, i );
+      std::tr1::shared_ptr<TRIPFrame> frame = feb->GetTRIPFrame(i);
+      channel->WriteTRIPRegistersReadFrameToMemory( frame );
       channel->SendMessage();
       unsigned short status = channel->WaitForMessageReceived();
       unsigned short dataLength = channel->ReadDPMPointer();
       logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
-        << "; TRIPSetupForChargeInjection dataLength = " << std::dec << dataLength;
+        << "; FEBTRiPWriteReadTest dataLength = " << std::dec << dataLength;
       assert( dataLength == TRiPProgrammingFrameReadResponseSize ); 
+      unsigned char * dataBuffer = channel->ReadMemory( dataLength );
+      frame->SetReceivedMessage(dataBuffer);
+      frame->DecodeRegisterValues();
+      frame->printReceivedMessageToLog();
+      logger.debugStream() << "We read trip's for feb " << (int)frame->GetFEBNumber() << " trip " << frame->GetTripNumber();
+      // frame->ShowValues(); // TODO add this as a virtual function to LVDSFrame  
 
+      std::stringstream ss;
       for (unsigned int k=0;k<14;k++) {
         ss << "Trip Register " << k << "; Value = " << 
-          (int)feb->GetTrip(i)->GetTripValue(k) << std::endl;
+          (int)frame->GetTripValue(k) << std::endl;
       }
       logger.debugStream() << ss.str();
-      assert( 0 == feb->GetTrip(i)->GetTripValue(9) );  // we set this
+      assert( 0 == frame->GetTripValue(9) );  // we set this
     }
   }
+  logger.debugStream() << "Passed:--------------FEBTRiPWriteReadTest--------------";
   std::cout << "Passed!" << std::endl;
   testCount++;
 }
@@ -397,7 +402,7 @@ void FPGAWriteConfiguredFrame( EChannels* channel, FEB* feb )
 void FPGAWriteConfiguredFrame( EChannels* channel, std::tr1::shared_ptr<FPGAFrame> frame )
 {
   channel->ClearAndResetStatusRegister();
-  channel->WriteFPGAProgrammingRegistersToMemory( frame );
+  channel->WriteFrameRegistersToMemory( frame );
   channel->SendMessage();
   channel->WaitForMessageReceived();
 }
@@ -412,30 +417,31 @@ void TRIPSetupForChargeInjection( EChannels* channel, int boardID )
     << std::dec << "; FEB Addr = " << boardID;
 
   int vectorIndex = boardID - 1;
-  FEB *feb = channel->GetFEBVector( vectorIndex );
+  FrontEndBoard *feb = channel->GetFrontEndBoardVector( vectorIndex );
 
   for ( int i=0; i<6 /* 6 trips per FEB */; i++ ) {
-    // Clear Status & Reset
+
+    std::tr1::shared_ptr<TRIPFrame> frame = feb->GetTRIPFrame(i);
     channel->ClearAndResetStatusRegister();
 
     // Set up the message...
-    feb->GetTrip(i)->SetRead(false);
+    frame->SetRead(false);
     {
-      feb->GetTrip(i)->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
-      feb->GetTrip(i)->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
-      feb->GetTrip(i)->SetRegisterValue( 2, DefaultTripRegisterValues.tripRegIFF );
-      feb->GetTrip(i)->SetRegisterValue( 3, DefaultTripRegisterValues.tripRegIBPIFF1REF );
-      feb->GetTrip(i)->SetRegisterValue( 4, DefaultTripRegisterValues.tripRegIBOPAMP );
-      feb->GetTrip(i)->SetRegisterValue( 5, DefaultTripRegisterValues.tripRegIB_T );
-      feb->GetTrip(i)->SetRegisterValue( 6, DefaultTripRegisterValues.tripRegIFFP2 );
-      feb->GetTrip(i)->SetRegisterValue( 7, DefaultTripRegisterValues.tripRegIBCOMP );
-      feb->GetTrip(i)->SetRegisterValue( 8, DefaultTripRegisterValues.tripRegVREF );
-      feb->GetTrip(i)->SetRegisterValue( 9, DefaultTripRegisterValues.tripRegVTH );
-      feb->GetTrip(i)->SetRegisterValue(10, DefaultTripRegisterValues.tripRegPIPEDEL);
-      feb->GetTrip(i)->SetRegisterValue(11, DefaultTripRegisterValues.tripRegGAIN );
-      feb->GetTrip(i)->SetRegisterValue(12, DefaultTripRegisterValues.tripRegIRSEL );
-      feb->GetTrip(i)->SetRegisterValue(13, DefaultTripRegisterValues.tripRegIWSEL );
-      feb->GetTrip(i)->SetRegisterValue(14, 0x1FE ); //inject, enable first words, 0x1FFFE for two...
+      frame->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
+      frame->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
+      frame->SetRegisterValue( 2, DefaultTripRegisterValues.tripRegIFF );
+      frame->SetRegisterValue( 3, DefaultTripRegisterValues.tripRegIBPIFF1REF );
+      frame->SetRegisterValue( 4, DefaultTripRegisterValues.tripRegIBOPAMP );
+      frame->SetRegisterValue( 5, DefaultTripRegisterValues.tripRegIB_T );
+      frame->SetRegisterValue( 6, DefaultTripRegisterValues.tripRegIFFP2 );
+      frame->SetRegisterValue( 7, DefaultTripRegisterValues.tripRegIBCOMP );
+      frame->SetRegisterValue( 8, DefaultTripRegisterValues.tripRegVREF );
+      frame->SetRegisterValue( 9, DefaultTripRegisterValues.tripRegVTH );
+      frame->SetRegisterValue(10, DefaultTripRegisterValues.tripRegPIPEDEL);
+      frame->SetRegisterValue(11, DefaultTripRegisterValues.tripRegGAIN );
+      frame->SetRegisterValue(12, DefaultTripRegisterValues.tripRegIRSEL );
+      frame->SetRegisterValue(13, DefaultTripRegisterValues.tripRegIWSEL );
+      frame->SetRegisterValue(14, 0x1FE ); //inject, enable first words, 0x1FFFE for two...
       // Injection patterns:
       // ~~~~~~~~~~~~~~~~~~~
       // Funny structure... 34 bits... using "FermiDAQ" nomenclature...
@@ -459,7 +465,7 @@ void TRIPSetupForChargeInjection( EChannels* channel, int boardID )
       // different to TriP 1, etc.
     }
 
-    channel->WriteTRIPRegistersToMemory( feb, i );
+    channel->WriteFrameRegistersToMemory( frame );
     channel->SendMessage();
     unsigned short status = channel->WaitForMessageReceived();
     unsigned short dataLength = channel->ReadDPMPointer();
@@ -477,51 +483,46 @@ void FPGASetupForChargeInjection( EChannels* channel, int boardID )
     << std::dec << "; FEB Addr = " << boardID;
 
   int vectorIndex = boardID - 1;
-  FEB *feb = channel->GetFEBVector( vectorIndex );
+  FrontEndBoard *feb = channel->GetFrontEndBoardVector( vectorIndex );
+  std::tr1::shared_ptr<FPGAFrame> frame = feb->GetFPGAFrame();
   {
-    struct timeval sTimeVal;
-    gettimeofday(&sTimeVal,NULL);
-    unsigned int gateTimeMod = sTimeVal.tv_sec % 1000;
     unsigned char val[]={0x0};
-    feb->SetTripPowerOff(val);
-    feb->SetGateStart(41938);
-    // we should see something different call to call
-    feb->SetGateLength( 1000 + gateTimeMod );
-    feb->SetHVPeriodManual(41337);
-    feb->SetHVTarget(25000);
+    frame->SetTripPowerOff(val);
+    frame->SetGateStart(41938);
+    frame->SetGateLength( 1337 );
+    frame->SetHVPeriodManual(41337);
+    frame->SetHVTarget(25000);
     unsigned char previewEnable[] = {0x0};
-    feb->SetPreviewEnable(previewEnable);
-    // inject registers, DON'T ENABLE THE LOW GAIN TRIPS!
+    frame->SetPreviewEnable(previewEnable);
     for (int i=0; i<4; i++) {
       // try to get hits in different windows (need ~35+ ticks) 
       unsigned char inj[] = { 1 + (unsigned char)i*(40) + 2*((int)boardID) };
       unsigned char enable[] = {0x1};
-      feb->SetInjectCount(inj,i);
-      feb->SetInjectEnable(enable,i);
-      feb->SetDiscrimEnableMask(0xFFFF,i);
+      frame->SetInjectCount(inj,i);
+      frame->SetInjectEnable(enable,i);
+      frame->SetDiscrimEnableMask(0xFFFF,i);
     }
     unsigned short int dacval = 4000;
-    feb->SetInjectDACValue(dacval);
+    frame->SetInjectDACValue(dacval);
     unsigned char injPhase[] = {0x1};
-    feb->SetInjectPhase(injPhase);
-    // Change FEB fpga function to write
+    frame->SetInjectPhase(injPhase);
     Devices dev     = FPGA;
     Broadcasts b    = None;
     Directions d    = MasterToSlave;
     FPGAFunctions f = Write;
-    feb->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)feb->GetBoardNumber());
+    frame->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)frame->GetFEBNumber());
   }
-  FPGAWriteConfiguredFrame( channel, feb );
+  FPGAWriteConfiguredFrame( channel, frame );
 
   // Set up DAC
   unsigned char injStart[] = {0x1};
-  feb->SetInjectDACStart(injStart);
-  FPGAWriteConfiguredFrame( channel, feb );
+  frame->SetInjectDACStart(injStart);
+  FPGAWriteConfiguredFrame( channel, frame );
 
   // Reset DAC Start
   unsigned char injReset[] = {0x0};
-  feb->SetInjectDACStart(injReset);
-  FPGAWriteConfiguredFrame( channel, feb );
+  frame->SetInjectDACStart(injReset);
+  FPGAWriteConfiguredFrame( channel, frame );
 }
 
 //---------------------------------------------------
@@ -529,38 +530,40 @@ void TRIPSetupForGeneric( EChannels* channel, int boardID )
 {
   // No real point in reading and decoding the response frame - the TRiP's send 
   // a response frame composed entirely of zeroes when being *written* to.        
+  logger.debugStream() << "Testing:--------------TRIPSetupForGeneric--------------";
   logger.debugStream() << "TRIPSetup for Generic Settings";
   logger.debugStream() << " EChannels Direct Address = " << std::hex << channel->GetDirectAddress()
     << std::dec << "; FEB Addr = " << boardID;
 
   int vectorIndex = boardID - 1;
-  FEB *feb = channel->GetFEBVector( vectorIndex );
+  FrontEndBoard *feb = channel->GetFrontEndBoardVector( vectorIndex );
 
   for ( int i=0; i<6 /* 6 trips per FEB */; i++ ) {
-    // Clear Status & Reset
+
+    std::tr1::shared_ptr<TRIPFrame> frame = feb->GetTRIPFrame(i);
     channel->ClearAndResetStatusRegister();
 
     // Set up the message...
-    feb->GetTrip(i)->SetRead(false);
+    frame->SetRead(false);
     {
-      feb->GetTrip(i)->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
-      feb->GetTrip(i)->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
-      feb->GetTrip(i)->SetRegisterValue( 2, DefaultTripRegisterValues.tripRegIFF );
-      feb->GetTrip(i)->SetRegisterValue( 3, DefaultTripRegisterValues.tripRegIBPIFF1REF );
-      feb->GetTrip(i)->SetRegisterValue( 4, DefaultTripRegisterValues.tripRegIBOPAMP );
-      feb->GetTrip(i)->SetRegisterValue( 5, DefaultTripRegisterValues.tripRegIB_T );
-      feb->GetTrip(i)->SetRegisterValue( 6, DefaultTripRegisterValues.tripRegIFFP2 );
-      feb->GetTrip(i)->SetRegisterValue( 7, DefaultTripRegisterValues.tripRegIBCOMP );
-      feb->GetTrip(i)->SetRegisterValue( 8, DefaultTripRegisterValues.tripRegVREF );
-      feb->GetTrip(i)->SetRegisterValue( 9, 0 ); // we'll turn the TRiPs on before we do chg inj
-      feb->GetTrip(i)->SetRegisterValue(10, DefaultTripRegisterValues.tripRegPIPEDEL);
-      feb->GetTrip(i)->SetRegisterValue(11, DefaultTripRegisterValues.tripRegGAIN );
-      feb->GetTrip(i)->SetRegisterValue(12, DefaultTripRegisterValues.tripRegIRSEL );
-      feb->GetTrip(i)->SetRegisterValue(13, DefaultTripRegisterValues.tripRegIWSEL );
-      feb->GetTrip(i)->SetRegisterValue(14, 0x0 ); 
+      frame->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
+      frame->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
+      frame->SetRegisterValue( 2, DefaultTripRegisterValues.tripRegIFF );
+      frame->SetRegisterValue( 3, DefaultTripRegisterValues.tripRegIBPIFF1REF );
+      frame->SetRegisterValue( 4, DefaultTripRegisterValues.tripRegIBOPAMP );
+      frame->SetRegisterValue( 5, DefaultTripRegisterValues.tripRegIB_T );
+      frame->SetRegisterValue( 6, DefaultTripRegisterValues.tripRegIFFP2 );
+      frame->SetRegisterValue( 7, DefaultTripRegisterValues.tripRegIBCOMP );
+      frame->SetRegisterValue( 8, DefaultTripRegisterValues.tripRegVREF );
+      frame->SetRegisterValue( 9, 0 ); // we'll turn the TRiPs on before we do chg inj
+      frame->SetRegisterValue(10, DefaultTripRegisterValues.tripRegPIPEDEL);
+      frame->SetRegisterValue(11, DefaultTripRegisterValues.tripRegGAIN );
+      frame->SetRegisterValue(12, DefaultTripRegisterValues.tripRegIRSEL );
+      frame->SetRegisterValue(13, DefaultTripRegisterValues.tripRegIWSEL );
+      frame->SetRegisterValue(14, 0x0 ); 
     }
 
-    channel->WriteTRIPRegistersToMemory( feb, i );
+    channel->WriteFrameRegistersToMemory( frame );
     channel->SendMessage();
     unsigned short status = channel->WaitForMessageReceived();
     unsigned short dataLength = channel->ReadDPMPointer();
@@ -568,6 +571,7 @@ void TRIPSetupForGeneric( EChannels* channel, int boardID )
       << "; TRIPSetupForGeneric dataLength = " << std::dec << dataLength;
     assert( dataLength == TRiPProgrammingFrameWriteResponseSize ); 
   }
+  logger.debugStream() << "Passed:--------------TRIPSetupForGeneric--------------";
 }
 
 //---------------------------------------------------
@@ -579,46 +583,6 @@ void FPGASetupForGeneric( EChannels* channel, int boardID )
 
   int vectorIndex = boardID - 1;
   FrontEndBoard *feb = channel->GetFrontEndBoardVector( vectorIndex );
-  /* { */
-  /*   unsigned char val[]={0x0}; */
-  /*   feb->SetTripPowerOff(val); */
-  /*   feb->SetTimer( genericTimer ); */
-  /*   feb->SetGateStart( genericGateStart ); */
-  /*   feb->SetGateLength( genericGateLength ); */
-  /*   feb->SetHVPeriodManual( genericHVPeriodManual ); */
-  /*   feb->SetHVTarget( genericHVTarget ); */
-  /*   unsigned char previewEnable[] = {0x0}; */
-  /*   feb->SetPreviewEnable(previewEnable); */
-  /*   for (int i=0; i<4; i++) { */
-  /*     unsigned char inj[] = { 1 + (unsigned char)i*(2) + 2*((int)boardID) }; */
-  /*     unsigned char enable[] = {0x0}; */
-  /*     feb->SetInjectCount(inj,i); */
-  /*     feb->SetInjectEnable(enable,i); */
-  /*     feb->SetDiscrimEnableMask(0xFFFF,i); */
-  /*   } */
-  /*   unsigned short int dacval = 0; */
-  /*   feb->SetInjectDACValue(dacval); */
-  /*   unsigned char injPhase[] = {0x0}; */
-  /*   feb->SetInjectPhase(injPhase); */
-  /*   // Change FEB fpga function to write */
-  /*   Devices dev     = FPGA; */
-  /*   Broadcasts b    = None; */
-  /*   Directions d    = MasterToSlave; */
-  /*   FPGAFunctions f = Write; */
-  /*   feb->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)feb->GetBoardNumber()); */
-  /*   assert( FPGA == feb->GetDeviceType() ); */ 
-  /*   assert( boardID == feb->GetFEBNumber() ); */
-  /*   assert( genericTimer == feb->GetTimer() ); */
-  /*   assert( genericGateStart == feb->GetGateStart() ); */
-  /*   assert( genericHVTarget == feb->GetHVTarget() ); */
-  /*   assert( genericGateLength == feb->GetGateLength() ); */
-  /*   assert( genericHVPeriodManual == feb->GetHVPeriodManual() ); */
-  /*   assert( genericDiscEnableMask == feb->GetDiscEnMask0() ); */
-  /*   assert( genericDiscEnableMask == feb->GetDiscEnMask1() ); */
-  /*   assert( genericDiscEnableMask == feb->GetDiscEnMask2() ); */
-  /*   assert( genericDiscEnableMask == feb->GetDiscEnMask3() ); */
-  /* } */
-  /* FPGAWriteConfiguredFrame( channel, feb ); */
   std::tr1::shared_ptr<FPGAFrame> frame = feb->GetFPGAFrame();
   {
     unsigned char val[]={0x0};
@@ -641,7 +605,6 @@ void FPGASetupForGeneric( EChannels* channel, int boardID )
     frame->SetInjectDACValue(dacval);
     unsigned char injPhase[] = {0x0};
     frame->SetInjectPhase(injPhase);
-    // Change frame fpga function to write
     Devices dev     = FPGA;
     Broadcasts b    = None;
     Directions d    = MasterToSlave;
@@ -675,8 +638,6 @@ void TestChannel( ECROC* ecroc, unsigned int channelNumber, unsigned int nFEBs )
   assert( channel->GetParentCROCNumber() == (ecroc->GetAddress() >> ECROCAddressShift) );
   assert( channel->GetDirectAddress() == 
       ecroc->GetAddress() + EChannelOffset * (unsigned int)(channelNumber) );
-  /* channel->SetupNFEBs( nFEBs ); */
-  /* assert( channel->GetFEBVector()->size() == nFEBs ); */ 
   channel->SetupNFrontEndBoards( nFEBs );
   assert( channel->GetFrontEndBoardVector()->size() == nFEBs ); 
   channel->ClearAndResetStatusRegister();
