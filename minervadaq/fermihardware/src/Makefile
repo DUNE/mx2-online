@@ -1,6 +1,6 @@
 CPPFLAGS  = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 CPPFLAGS += -Werror -fno-inline
-LDFLAGS += -shared -Wl,-soname
+LDFLAGS  += -shared -Wl,-soname
 
 #--DEBUG FLAGS--
 #COMPILE_OPTIONS += -DDEBUG 

@@ -25,7 +25,8 @@ ReadoutWorker::ReadoutWorker( int theCrateID, log4cpp::Priority::Value priority,
   controller = new Controller(0x00, crateID);
   int error = controller->Initialize();
   if ( 0 != error ) {
-    readoutLogger.fatalStream() << "Controller contact error: " << error; 
+    readoutLogger.fatalStream() << "Controller contact error: " << error 
+      << "; for Crate ID = " << crateID; 
     exit(error);
   }
   readoutLogger.debugStream() << "Made new ReadoutWokrer with crate ID = " << crateID 
