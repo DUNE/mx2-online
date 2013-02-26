@@ -27,6 +27,12 @@ Controller::Controller(int addr, int crateNum) {
   ctrlLog.setPriority(log4cpp::Priority::DEBUG);
 }
 
+Controller::~Controller()
+{
+  int error = CAENVME_End(handle);
+  if (error) ReportError(error);
+}
+
 unsigned int Controller::GetAddress() const
 {
   return address;

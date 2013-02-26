@@ -42,7 +42,7 @@ class Controller {
 	public: 
 
 		explicit Controller(int addr, int crateNum);
-		~Controller() {};
+		~Controller();
 
 		int Initialize();
 
