@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <sys/time.h>
 
+#include "ReadoutTypes.h"
 #include "TestSuite.h"
 
 const std::string thisScript = "TestSuite";
@@ -43,9 +44,11 @@ int main( int argc, char * argv[] )
   }
 
   unsigned int ecrocCardAddress = 1;
+  unsigned int crimCardAddress  = 224;
   unsigned int channel          = 0;
   unsigned int nFEBs            = 5; // USE SEQUENTIAL ADDRESSING!!!
   int controllerID              = 0;
+  int nch0 = 0, nch1 = 0, nch2 = 0, nch3 = 0;
 
   // Process the command line argument set. opt index == 0 is the executable.
   int optind = 1;
@@ -67,6 +70,11 @@ int main( int argc, char * argv[] )
       nFEBs = (unsigned int)atoi(argv[optind]);
       printf(" Number of FEBs = %02d ", nFEBs);
     }
+    else if (sw=="-r") {
+      optind++;
+      crimCardAddress = (unsigned int)atoi(argv[optind]);
+      printf(" CRIM Address = %03d ", crimCardAddress);
+    }
     else
       std::cout << "\nUnknown switch: " << argv[optind] << std::endl;
     optind++;
@@ -78,6 +86,10 @@ int main( int argc, char * argv[] )
     for (;optind<argc;optind++) std::cout << argv[optind];
     std::cout << std::endl;
   }
+  if (channel == 0) nch0 = nFEBs;
+  if (channel == 1) nch1 = nFEBs;
+  if (channel == 2) nch2 = nFEBs;
+  if (channel == 3) nch3 = nFEBs;
 
   std::string logName = "/work/data/logs/" + thisScript + ".txt";
   appender = new log4cpp::FileAppender( "default", logName, false ); //  cryptic false = do not append
@@ -118,7 +130,11 @@ int main( int argc, char * argv[] )
   // Read the Discriminators and parse them.
   ReadDiscrTest( echannel, nFEBs );
 
+  // Get & initialize a CRIM.
+  CRIM * crim = GetAndTestCRIM( crimCardAddress, controller );
+
   delete [] dataBuffer;
+  delete crim;
   delete ecroc;
   delete controller;
 
@@ -126,6 +142,30 @@ int main( int argc, char * argv[] )
   return 0;
 }
 
+//---------------------------------------------------
+CRIM * GetAndTestCRIM( unsigned int address, Controller * controller )
+{
+  std::cout << "Testing Get and Test CRIM...";  
+  if (address < (1<<CRIMAddressShift)) {
+    address = address << CRIMAddressShift;
+  }
+  RunningModes runningMode = OneShot;
+  CRIM * crim = new CRIM( address, controller );
+
+  assert( crim->GetAddress() == address );
+  crim->Initialize( runningMode );
+  unsigned short status = crim->GetStatus();
+  assert( 0xf200 == status );
+  unsigned short interruptStatus = crim->GetInterruptStatus();
+  crim->ClearPendingInterrupts( interruptStatus );
+  interruptStatus = crim->GetInterruptStatus();
+  assert( 0 == interruptStatus );
+
+  std::cout << "Passed!" << std::endl;
+  testCount++;
+  return crim;
+  
+}
 
 //---------------------------------------------------
 void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )

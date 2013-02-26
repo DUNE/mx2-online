@@ -93,6 +93,7 @@ class CRIM : public VMECommunicator {
 
     void logRunningMode( const RunningModes& runningMode ) const;
     void CAENVMEIRQEnable() const; 
+    unsigned short GetInterruptMask() const; 
 
     static const unsigned long long timeOutSec;
 
@@ -119,8 +120,6 @@ class CRIM : public VMECommunicator {
     void ResetGlobalIRQEnable() const;
     void ResetSequencerLatch() const;
     int WaitOnIRQ( sig_atomic_t const & continueFlag ) const;
-
-    unsigned short GetInterruptMask() const; 
 
     /*! control stuff */
     void SetCRCEnable(bool a);
