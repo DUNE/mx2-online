@@ -99,4 +99,13 @@ std::tr1::shared_ptr<ADCFrame> FrontEndBoard::GetADCFrame(int hitBlock)
   return frame;
 }
 
+//-----------------------------------------------------
+std::tr1::shared_ptr<DiscrFrame> FrontEndBoard::GetDiscrFrame() 
+{
+  std::tr1::shared_ptr<DiscrFrame> frame( new DiscrFrame( this->boardNumber ) );
+  return frame;
+}
+
+
+
 #endif

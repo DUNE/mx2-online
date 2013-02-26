@@ -115,8 +115,8 @@ int main( int argc, char * argv[] )
   // Read the ADC and parse them.
   ReadADCTest( echannel, nFEBs );
 
-  /* // Read the Discriminators and parse them. */
-  /* ReadDiscrTest( echannel, nFEBs ); */
+  // Read the Discriminators and parse them.
+  ReadDiscrTest( echannel, nFEBs );
 
   delete [] dataBuffer;
   delete ecroc;
@@ -138,26 +138,23 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
 
     // Recall the FEB vect attached to the channel is indexed from 0.
     int vectorIndex = nboard - 1;
-    FEB *feb = channel->GetFEBVector( vectorIndex );
+    FrontEndBoard *feb = channel->GetFrontEndBoardVector( vectorIndex );
+    std::tr1::shared_ptr<DiscrFrame> frame = feb->GetDiscrFrame();
 
-    channel->WriteMessageToMemory( feb->GetDisc()->GetOutgoingMessage(), 
-        feb->GetDisc()->GetMessageSize() );
+    channel->WriteFrameRegistersToMemory( frame );
     channel->SendMessage();
     unsigned short status = channel->WaitForMessageReceived();
     assert( 0x1010 == status );
     unsigned short pointer = channel->ReadDPMPointer();
-    assert( 18/*header*/ + 2/*nhits*/*4/*ntrips*/*40/*bytes/trip*/ == pointer ); 
+    assert( 18 + 2/*hits/trip*/ * 4/*trips*/ * 40 /*bytes/hit*/ == pointer ); // 338 assumes 2 hits per trip
     unsigned char* data = channel->ReadMemory( pointer );
 
-    feb->GetDisc()->message = data;
-    assert( !feb->GetDisc()->CheckForErrors() );
-    assert( !feb->GetDisc()->DecodeRegisterValues((int)0)); 
+    frame->SetReceivedMessage(data);
+    assert( !frame->CheckForErrors() );
+    frame->DecodeRegisterValues(); 
     for (unsigned int i = 0; i < 4; ++i) 
-      assert( 2 == feb->GetDisc()->GetNHitsOnTRiP(i) );
-
-    feb->GetDisc()->printMessageBufferToLog(pointer);
-    feb->GetDisc()->message = 0;
-    delete [] data;
+      assert( 2 == frame->GetNHitsOnTRiP(i) );
+    frame->printReceivedMessageToLog();
   }
 
   std::cout << "Passed!" << std::endl;
