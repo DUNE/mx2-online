@@ -32,6 +32,7 @@ class FrontEndBoard {
     std::tr1::shared_ptr<FPGAFrame> GetFPGAFrame();
     std::tr1::shared_ptr<TRIPFrame> GetTRIPFrame(int tripNumber); 
     std::tr1::shared_ptr<ADCFrame> GetADCFrame(int hitBlock); 
+    std::tr1::shared_ptr<DiscrFrame> GetDiscrFrame(); 
 
 };
 

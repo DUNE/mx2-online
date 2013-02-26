@@ -82,7 +82,7 @@ void DiscrFrame::DecodeRegisterValues()
   for (unsigned int i = 0; i < 4; ++i)
     TripXNHits[i] = GetNHitsOnTRiP(i);
 #if SHOWNHITS
-  DiscrFrameLog.debug("Trip Nhits: %d,%d,%d,%d\n", TripXNHits[0], TripXNHits[1], TripXNHits[2], TripXNHits[3]);
+  DiscrFrameLog.debug("Trip Nhits: %d,%d,%d,%d", TripXNHits[0], TripXNHits[1], TripXNHits[2], TripXNHits[3]);
 #endif
 
   //Retrieve the acual disciminators' timing info.
@@ -101,22 +101,22 @@ void DiscrFrame::DecodeRegisterValues()
         TempHitArray[i] = (unsigned short int)(receivedMessage[indx] + (receivedMessage[indx + 1] << 8));
         indx += 2;
 #if SHOWBRAM
-        DiscrFrameLog.debug("response[%d] = %d, response[%d] << 8 = %d\n", indx, receivedMessage[indx], 
+        DiscrFrameLog.debug("response[%d] = %d, response[%d] << 8 = %d", indx, receivedMessage[indx], 
             indx + 1, receivedMessage[indx + 1] << 8);
-        DiscrFrameLog.debug("  BRAMWord[%d] = %u\n", i, TempHitArray[i]);
+        DiscrFrameLog.debug("  BRAMWord[%d] = %u", i, TempHitArray[i]);
 #endif                            
       } // end loop over temp hit array
       //update the DiscTSTicks (Time Stamp Ticks is a 32 bit long number)
       //Here we shift the last 16 bit word 16 bits to the left to make it the most significant word.
       unsigned int TempDiscTicks = ((TempHitArray[19] << 16) + TempHitArray[18]);
 #if SHOWBRAM
-      DiscrFrameLog.debug("BRAMWord[19] << 16 = %u, BRAMWord[18] = %u\n", (TempHitArray[19] << 16), TempHitArray[18]);
-      DiscrFrameLog.debug("  Time Stamp Ticks: = %u\n", TempDiscTicks);
+      DiscrFrameLog.debug("BRAMWord[19] << 16 = %u, BRAMWord[18] = %u", (TempHitArray[19] << 16), TempHitArray[18]);
+      DiscrFrameLog.debug("  Time Stamp Ticks: = %u", TempDiscTicks);
 #endif
       //update the DiscQuaterTicks (Discriminator's Quater Tick is a two bit number = 0, 1, 2 or 3)
 #if SHOWQUARTERTICKS
-      DiscrFrameLog.debug("Update Disc Quarter Ticks:\n");
-      DiscrFrameLog.debug(" TempHitArray[17] = %d, TempHitArray[16] = %d\n", TempHitArray[17], TempHitArray[16]);
+      DiscrFrameLog.debug("Update Disc Quarter Ticks:");
+      DiscrFrameLog.debug(" TempHitArray[17] = %d, TempHitArray[16] = %d", TempHitArray[17], TempHitArray[16]);
 #endif
       //Here we pull a single bit from a sixteen bit word, mapping channel to bit number.
       //The "second" word (TempHitArray[17] encodes the true second bit, and hence adds 0 or 2.
@@ -128,7 +128,7 @@ void DiscrFrame::DecodeRegisterValues()
         TempDiscQuaterTicks = 2 * GetBitFromWord(TempHitArray[17], iCh) +
           GetBitFromWord(TempHitArray[16], iCh);
 #if SHOWQUARTERTICKS
-        DiscrFrameLog.debug("  iCh = %d, iHit-1 = %d, DQ Ticks = %d\n", iCh, iHit - 1, TempDiscQuaterTicks);
+        DiscrFrameLog.debug("  iCh = %d, iHit-1 = %d, DQ Ticks = %d", iCh, iHit - 1, TempDiscQuaterTicks);
 #endif
       }
       /*! \note {update the DiscDelTicks (Discriminator's Delay Tick is an integer between 0 and 
@@ -153,7 +153,7 @@ void DiscrFrame::DecodeRegisterValues()
       //are several valid algorithms that could pick this information out.  Also note: this example should not 
       //be interpreted to imply the delay tick number should or will always climb with channel number.
 #if SHOWDELAYTICKS
-      DiscrFrameLog.debug("Update Disc Delay Ticks:\n");
+      DiscrFrameLog.debug("Update Disc Delay Ticks:");
 #endif
       unsigned int TempDiscDelTicks = 0;
       for (unsigned int iCh = 0; iCh < NDiscrChPerTrip; iCh++) {
@@ -161,7 +161,7 @@ void DiscrFrame::DecodeRegisterValues()
         for (unsigned int iSRL = 0; iSRL < SRLDepth; iSRL++)
           TempDiscDelTicks = TempDiscDelTicks + GetBitFromWord(TempHitArray[iSRL], iCh);
 #if SHOWDELAYTICKS
-        DiscrFrameLog.debug("  iCh = %d, iHit-1 = %d, Del Ticks = %d\n", iCh, iHit - 1, SRLDepth - TempDiscDelTicks);
+        DiscrFrameLog.debug("  iCh = %d, iHit-1 = %d, Del Ticks = %d", iCh, iHit - 1, SRLDepth - TempDiscDelTicks);
 #endif
       }
     } // end loop over hits per trip

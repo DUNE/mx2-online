@@ -8,6 +8,7 @@
 #include "MinervaDAQtypes.h"
 #include "Controller.h"
 #include "ECROC.h"
+#include "CRIM.h"
 
 // The tests cannot be run in any order - there is a specific order.
 
@@ -38,9 +39,14 @@ unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel,
 // This test should be called eigth.
 void ReadADCTest( EChannels* channel, unsigned int nFEBs );
 
-// This test should be called ninth.
+// This test should be called tenth.
 void ReadDiscrTest( EChannels* channel, unsigned int nFEBs );
 
+// This test should be called ninth.
+CRIM * GetAndTestCRIM( unsigned int address, Controller * controller );
+
+
+//--------------------------------------------------------------------------------------
 // Helper Functions - not tests per se.
 void FPGAWriteConfiguredFrame( EChannels* channel, FEB* feb );
 void FPGAWriteConfiguredFrame( EChannels* channel, std::tr1::shared_ptr<FPGAFrame> frame );
