@@ -10,6 +10,8 @@
 #include "ECROC.h"
 #include "CRIM.h"
 
+#include "ReadoutWorker.h"
+
 // The tests cannot be run in any order - there is a specific order.
 
 // This test should be called first.
@@ -45,6 +47,8 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs );
 // This test should be called ninth.
 CRIM * GetAndTestCRIM( unsigned int address, Controller * controller );
 
+ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCardAddress, 
+    unsigned int crimCardAddress, int nch0, int nch1, int nch2, int nch3);
 
 //--------------------------------------------------------------------------------------
 // Helper Functions - not tests per se.

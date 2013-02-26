@@ -32,6 +32,8 @@ static const unsigned short genericHVPeriodManual = 35000;
 static const unsigned short genericDiscEnableMask = 0xFFFF;
 static const unsigned int   genericTimer = 12;
 
+static const RunningModes runningMode = OneShot;
+
 int main( int argc, char * argv[] ) 
 {
   std::cout << "Starting test suite..." << std::endl;
@@ -118,8 +120,8 @@ int main( int argc, char * argv[] )
   FEBFPGAWriteReadTest( echannel, nFEBs );
   FEBTRiPWriteReadTest( echannel, nFEBs );
 
-  /* // Set up charge injection and read the data. We test for data sizes equal */ 
-  /* // to what we expect. Get a copy of the buffer and its size for parsing. */
+  // Set up charge injection and read the data. We test for data sizes equal 
+  // to what we expect. Get a copy of the buffer and its size for parsing.
   SetupChargeInjection( echannel, nFEBs );
   unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); 
   unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); 
@@ -138,9 +140,34 @@ int main( int argc, char * argv[] )
   delete ecroc;
   delete controller;
 
+  ReadoutWorker * worker = GetAndTestReadoutWorker( controllerID, ecrocCardAddress,
+      crimCardAddress, nch0, nch1, nch2, nch3 );
+  delete worker;
+
+
   std::cout << "Passed all tests! Executed " << testCount << " tests." << std::endl;
   return 0;
 }
+
+//---------------------------------------------------
+ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCardAddress, 
+    unsigned int crimCardAddress, int nch0, int nch1, int nch2, int nch3)
+{
+  std::cout << "Testing Get and Test ReadoutWorker...";  
+  ReadoutWorker *worker = NULL;
+  worker = new ReadoutWorker( controllerID, log4cpp::Priority::DEBUG, true );
+  assert( NULL != worker );
+  logger.infoStream() << "Got the ReadoutWorker.";
+
+  worker->AddECROC( ecrocCardAddress, nch0, nch1, nch2, nch3 );
+  worker->AddCRIM( crimCardAddress );
+  worker->InitializeCrate( runningMode );
+
+  std::cout << "Passed!" << std::endl;
+  testCount++;
+  return worker;
+} 
+
 
 //---------------------------------------------------
 CRIM * GetAndTestCRIM( unsigned int address, Controller * controller )
@@ -149,7 +176,6 @@ CRIM * GetAndTestCRIM( unsigned int address, Controller * controller )
   if (address < (1<<CRIMAddressShift)) {
     address = address << CRIMAddressShift;
   }
-  RunningModes runningMode = OneShot;
   CRIM * crim = new CRIM( address, controller );
 
   assert( crim->GetAddress() == address );
@@ -164,7 +190,6 @@ CRIM * GetAndTestCRIM( unsigned int address, Controller * controller )
   std::cout << "Passed!" << std::endl;
   testCount++;
   return crim;
-  
 }
 
 //---------------------------------------------------
