@@ -315,7 +315,7 @@ bool EChannels::isAvailable( FrontEndBoard* feb ) const
 //----------------------------------------
 void EChannels::ClearAndResetStatusRegister() const
 {
-  EChannelLog.debugStream() << "Command Address        = 0x" 
+  EChannelLog.debugStream() << "Clear And Reset Command Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << commandAddress;
   int error = WriteCycle( 2,  RegisterWords::channelReset,  commandAddress, addressModifier, dataWidthReg ); 
@@ -364,7 +364,7 @@ void EChannels::SendMessage() const
   //#endif
   EChannelLog.debugStream() << "SendMessage Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex << commandAddress 
-    << "; Message = 0x" << std::hex << RegisterWords::sendMessage[1] << RegisterWords::sendMessage[0];
+    << "; Message = 0x" << std::hex << (int)RegisterWords::sendMessage[1] << (int)RegisterWords::sendMessage[0];
   int error = WriteCycle( 2, RegisterWords::sendMessage, commandAddress, addressModifier, dataWidthReg); 
   if( error ) exitIfError( error, "Failure writing to CROC Send Message Register!"); 
 }

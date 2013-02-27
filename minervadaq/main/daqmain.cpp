@@ -23,21 +23,23 @@ int main( int argc, char * argv[] )
 
   /* char lasttrigger_filename[100]; sprintf(lasttrigger_filename,"/work/conditions/last_trigger.dat"); */ 
 
-  baseAppender = new log4cpp::FileAppender("default", args->logFileName);
+  baseAppender = new log4cpp::FileAppender("default", args->logFileName, false);
   baseAppender->setLayout(new log4cpp::BasicLayout());
   rootCat.addAppender(baseAppender);
   rootCat.setPriority(log4cpp::Priority::DEBUG);
   daqmain.setPriority(log4cpp::Priority::DEBUG);
 
+  daqmain.infoStream() << "Starting MinervaDAQ...";
   DAQWorker * worker = new DAQWorker( args, log4cpp::Priority::DEBUG );
 
   // worker->setUpET();  // ?
-  // worker->TakeData();
+  worker->TakeData();
 
   log4cpp::Category::shutdown();
   delete worker;
   delete args;
 
+  daqmain.infoStream() << "Finished MinervaDAQ...";
   return 0;
 }
 
@@ -57,10 +59,10 @@ struct DAQWorkerArgs * parseArgs( const int& argc, char * argv[], const std::str
   args->ledGroup = 0;
   args->hardwareInitLevel = 1; // default to VME init, do not touch FEBs 
   args->networkPort = 65535;
-  args->etFileName = fileRoot + "etsys/testme_RawData";
-  args->logFileName = fileRoot + "logs/testme_Log.txt";
-  args->samFileName = fileRoot + "sam/testme_SAM.py";
-  args->dataFileName = fileRoot + "rawdata/testme_RawData.dat";
+  args->etFileName = fileRoot + "etsys/MinervaDAQ_RawData";
+  args->logFileName = fileRoot + "logs/MinervaDAQ_Log.txt";
+  args->samFileName = fileRoot + "sam/MinervaDAQ_SAM.py";
+  args->dataFileName = fileRoot + "rawdata/MinervaDAQ_RawData.dat";
   /* const char* name = dataFileName.c_str(); */ 
   args->hardwareConfigFileName = "unknown"; 
 
