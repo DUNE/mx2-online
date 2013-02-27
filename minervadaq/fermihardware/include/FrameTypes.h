@@ -124,7 +124,7 @@ typedef enum FlashFunctions { //typecast to unsigned char
 };
 
 
-/*! \enum ResponseWords
+/*! \enum ResponseWords  // TODO: Rename ResponseBytes
  *
  * \brief Useful for decoding returning frame headers 
  *
