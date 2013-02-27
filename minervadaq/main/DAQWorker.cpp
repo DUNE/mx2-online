@@ -83,7 +83,7 @@ void DAQWorker::TakeData()
       std::tr1::shared_ptr<SequencerReadoutBlock> block = worker->GetNextDataBlock( blockSize );
       // declare block to ET
         block->ProcessDataIntoFrames();
-        daqLogger.debugStream() << "TakeData : Inspecting Frames for channel " << worker->CurrentChannel();
+        daqLogger.debugStream() << "TakeData : Inspecting Frames for channel " << (*worker->CurrentChannel());
         while (block->FrameCount()) {
           LVDSFrame * frame = block->PopOffFrame();
           daqLogger.debugStream() << (*frame);
@@ -91,7 +91,7 @@ void DAQWorker::TakeData()
           delete frame;
         }
     } while ( worker->MoveToNextChannel() );
-
+    daqLogger.infoStream() << "Finished Data Acquisition...";
   }
 }
 

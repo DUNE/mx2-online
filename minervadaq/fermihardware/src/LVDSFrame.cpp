@@ -37,11 +37,9 @@ LVDSFrame::~LVDSFrame()
 { 
   lvdsLog.debugStream() << "LVDSFrame::~LVDSFrame()... LVDSFrame Destructor";
   if (receivedMessage) {
-    lvdsLog.debugStream() << " Deleting the received message.";
     delete [] receivedMessage;
   } 
   if (outgoingMessage) { 
-    lvdsLog.debugStream() << " Deleting the outgoing message.";
     delete [] outgoingMessage;
   } 
 }    
@@ -142,11 +140,11 @@ bool LVDSFrame::CheckForErrors()
     EndHeader, MaxLen, SecondStart, NAHeader }; 
 
   for (unsigned int i = 0; i < nflags; ++i) {
-    lvdsLog.debugStream() << "Checking word : " << words[i] << "; and flag : " << flags[i];
     if (!receivedMessage[ words[i] ] & flags[i]) {
       error = true;
-      lvdsLog.errorStream() << "HeaderError : " << words[i] 
-        << " for FEB " << this->GetFEBNumber();
+      lvdsLog.errorStream() << "HeaderError for word: " << words[i] 
+        << "; and flag : " << flags[i]
+        << "; for FEB " << this->GetFEBNumber();
     }
   }
 
