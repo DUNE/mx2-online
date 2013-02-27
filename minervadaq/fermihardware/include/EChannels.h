@@ -98,6 +98,7 @@ class EChannels : public VMECommunicator {
     unsigned int GetParentECROCAddress() const;
     unsigned int GetParentCROCNumber() const;
     unsigned int GetDirectAddress() const;
+    virtual unsigned int GetAddress() const;
 
     int DecodeStatusMessage( const unsigned short& status ) const;
 

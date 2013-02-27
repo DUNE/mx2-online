@@ -43,7 +43,7 @@ class ECROC : public VMECommunicator {
 		~ECROC(); 
 
     void Initialize() const;
-		unsigned int GetAddress() const; 
+		virtual unsigned int GetAddress() const; 
 
 		EChannels *GetChannel( unsigned int i ); 
 		std::vector<EChannels*>* GetChannelsVector(); 

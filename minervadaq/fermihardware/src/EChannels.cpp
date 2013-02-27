@@ -52,6 +52,12 @@ EChannels::~EChannels()
   FrontEndBoardsVector.clear();
 }
 
+//-----------------------------
+unsigned int EChannels::GetAddress() const
+{
+  return this->channelDirectAddress;
+}
+
 //----------------------------------------
 unsigned int EChannels::GetChannelNumber() const
 {
@@ -73,7 +79,7 @@ unsigned int EChannels::GetParentCROCNumber() const
 //----------------------------------------
 unsigned int EChannels::GetDirectAddress() const
 {
-  return channelDirectAddress;
+  return this->channelDirectAddress;
 }
 
 //----------------------------------------
