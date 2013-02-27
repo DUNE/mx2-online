@@ -35,11 +35,12 @@ int main( int argc, char * argv[] )
   // worker->setUpET();  // ?
   worker->TakeData();
 
+  daqmain.infoStream() << "Finished MinervaDAQ...";
+
   log4cpp::Category::shutdown();
   delete worker;
   delete args;
 
-  daqmain.infoStream() << "Finished MinervaDAQ...";
   return 0;
 }
 

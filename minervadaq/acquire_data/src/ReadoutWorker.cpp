@@ -100,13 +100,13 @@ void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1
   theECROC->ClearAndResetStatusRegisters();
   readoutLogger.debugStream() << " Adding FEBs to Channels...";
   theECROC->GetChannel( 0 )->SetupNFrontEndBoards( nFEBchan0 );
-  readoutLogger.debugStream() << " Setup Channel 0";
+  readoutLogger.debugStream() << " Setup Channel 0 with " << nFEBchan0 << " FEBS.";
   theECROC->GetChannel( 1 )->SetupNFrontEndBoards( nFEBchan1 );
-  readoutLogger.debugStream() << " Setup Channel 1";
+  readoutLogger.debugStream() << " Setup Channel 1 with " << nFEBchan1 << " FEBS.";
   theECROC->GetChannel( 2 )->SetupNFrontEndBoards( nFEBchan2 );
-  readoutLogger.debugStream() << " Setup Channel 2";
+  readoutLogger.debugStream() << " Setup Channel 2 with " << nFEBchan2 << " FEBS.";
   theECROC->GetChannel( 3 )->SetupNFrontEndBoards( nFEBchan3 );
-  readoutLogger.debugStream() << " Setup Channel 3";
+  readoutLogger.debugStream() << " Setup Channel 3 with " << nFEBchan3 << " FEBS.";
   ecrocs.push_back( theECROC );
   readoutLogger.debugStream() << "Added ECROC.";
 }
@@ -127,6 +127,14 @@ void ReadoutWorker::AddCRIM( unsigned int address )
 //---------------------------
 void ReadoutWorker::Trigger()
 {
+  readoutLogger.debugStream() << "ReadoutWorker::Trigger...";
+  // Use a dummy trigger for now...
+  for (std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) {
+    (*p)->FastCommandOpenGate();
+    (*p)->EnableSequencerReadout();
+    (*p)->SendSoftwareRDFE();
+    (*p)->WaitForSequencerReadoutCompletion();
+  }
 
 }
 
@@ -140,10 +148,13 @@ void ReadoutWorker::Reset()
 //---------------------------
 bool ReadoutWorker::MoveToNextChannel()
 {
+  readoutLogger.debugStream() << "ReadoutWorker::MoveToNextChannel: Current Channel: " << **currentChannel; 
   currentChannel++;
   if (currentChannel == readoutChannels.end()) {
+    readoutLogger.debugStream() << "Reached end of Channels.";
     return false;
   }
+  readoutLogger.debugStream() << "New Channel: " << **currentChannel;
   return true;
 }
 
@@ -166,6 +177,7 @@ unsigned short ReadoutWorker::GetNextDataBlockSize() const
 std::tr1::shared_ptr<SequencerReadoutBlock> ReadoutWorker::GetNextDataBlock( unsigned short blockSize ) const
 {
   if (currentChannel == readoutChannels.end()) {
+    readoutLogger.fatalStream() << "Attempting to read data from a NULL Channel!";
     exit( EXIT_CROC_UNSPECIFIED_ERROR );
   }
   std::tr1::shared_ptr<SequencerReadoutBlock> block(new SequencerReadoutBlock());
