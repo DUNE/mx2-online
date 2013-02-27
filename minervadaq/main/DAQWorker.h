@@ -27,12 +27,16 @@ struct DAQWorkerArgs {
 
 
 class DAQWorker {
+
+  typedef std::vector<ReadoutWorker*> ReadoutWorkerVect;
+  typedef std::vector<ReadoutWorker*>::iterator ReadoutWorkerIt;
+
   private:  
     const DAQWorkerArgs* args;
 
     std::vector<ReadoutWorker*> readoutWorkerVect;
 
-    // void Initialize();  // Prep VME hardware - add CROCs and CRIMs, Init Crate
+    void Initialize();  // Prep VME hardware - add CROCs and CRIMs, Init Crate
 
     // bool EstablishETHeartBeat();
 
@@ -47,7 +51,7 @@ class DAQWorker {
     ~DAQWorker();
 
     // void SetUpET();  // ?
-    // void TakeData();
+    void TakeData();
 
 };
 

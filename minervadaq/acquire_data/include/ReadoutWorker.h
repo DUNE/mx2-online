@@ -1,10 +1,13 @@
 #ifndef ReadoutWorker_h
 #define ReadoutWorker_h
+
+#include "log4cppHeaders.h"
+
 #include "MinervaDAQtypes.h"
 #include "Controller.h" 
 #include "ECROC.h"
 #include "CRIM.h"
-#include "log4cppHeaders.h"
+#include "SequencerReadoutBlock.h"
 
 #include "ReadoutTypes.h"
 
@@ -34,10 +37,8 @@ class ReadoutWorker {
     std::vector<ECROC*> ecrocs;
     std::vector<CRIM*>  crims;
 
-    /* std::vector<const EChannels*> readoutChannels; */
-    /* std::vector<const EChannels*>::iterator currentChannel; */
-    std::vector<EChannels*> readoutChannels;
-    std::vector<EChannels*>::iterator currentChannel;
+    std::vector<const EChannels*> readoutChannels;
+    std::vector<const EChannels*>::iterator currentChannel;
 
     int crateID;  // == crate ID/Address for Controller
 		bool vmeInit;    
@@ -55,9 +56,12 @@ class ReadoutWorker {
     void AddCRIM( unsigned int address );
     void InitializeCrate( RunningModes runningMode );
 
+    void Reset();
+    void Trigger();
     bool MoveToNextChannel();
-    unsigned short GetNextDataBlockSize();
-    unsigned char* GetNextDataBlock( unsigned short blockSize );
+    const EChannels * CurrentChannel() const;
+    unsigned short GetNextDataBlockSize() const;
+    std::tr1::shared_ptr<SequencerReadoutBlock> GetNextDataBlock( unsigned short blockSize ) const;
 
     /*
        int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.

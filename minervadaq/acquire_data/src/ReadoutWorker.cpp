@@ -64,6 +64,8 @@ void ReadoutWorker::InitializeCrate( RunningModes runningMode )
   }
   for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
     (*p)->Initialize();
+    std::vector<EChannels*>* channels = (*p)->GetChannelsVector();
+    readoutChannels.insert(readoutChannels.end(),channels->begin(),channels->end());
   }
   this->masterCRIM()->IRQEnable();
 }
@@ -97,13 +99,13 @@ void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1
   ECROC *theECROC = new ECROC( address, this->controller );
   theECROC->ClearAndResetStatusRegisters();
   readoutLogger.debugStream() << " Adding FEBs to Channels...";
-  theECROC->GetChannel( 0 )->SetupNFEBs( nFEBchan0 );
+  theECROC->GetChannel( 0 )->SetupNFrontEndBoards( nFEBchan0 );
   readoutLogger.debugStream() << " Setup Channel 0";
-  theECROC->GetChannel( 1 )->SetupNFEBs( nFEBchan1 );
+  theECROC->GetChannel( 1 )->SetupNFrontEndBoards( nFEBchan1 );
   readoutLogger.debugStream() << " Setup Channel 1";
-  theECROC->GetChannel( 2 )->SetupNFEBs( nFEBchan2 );
+  theECROC->GetChannel( 2 )->SetupNFrontEndBoards( nFEBchan2 );
   readoutLogger.debugStream() << " Setup Channel 2";
-  theECROC->GetChannel( 3 )->SetupNFEBs( nFEBchan3 );
+  theECROC->GetChannel( 3 )->SetupNFrontEndBoards( nFEBchan3 );
   readoutLogger.debugStream() << " Setup Channel 3";
   ecrocs.push_back( theECROC );
   readoutLogger.debugStream() << "Added ECROC.";
@@ -123,6 +125,19 @@ void ReadoutWorker::AddCRIM( unsigned int address )
 }
 
 //---------------------------
+void ReadoutWorker::Trigger()
+{
+
+}
+
+//---------------------------
+void ReadoutWorker::Reset()
+{
+  currentChannel=readoutChannels.begin();
+}
+
+
+//---------------------------
 bool ReadoutWorker::MoveToNextChannel()
 {
   currentChannel++;
@@ -133,7 +148,13 @@ bool ReadoutWorker::MoveToNextChannel()
 }
 
 //---------------------------
-unsigned short ReadoutWorker::GetNextDataBlockSize()
+const EChannels * ReadoutWorker::CurrentChannel() const
+{
+  return (*currentChannel);
+}
+
+//---------------------------
+unsigned short ReadoutWorker::GetNextDataBlockSize() const
 {
   if (currentChannel != readoutChannels.end()) {
     return (*currentChannel)->ReadDPMPointer();
@@ -142,12 +163,14 @@ unsigned short ReadoutWorker::GetNextDataBlockSize()
 }
 
 //---------------------------
-unsigned char* ReadoutWorker::GetNextDataBlock( unsigned short blockSize )
+std::tr1::shared_ptr<SequencerReadoutBlock> ReadoutWorker::GetNextDataBlock( unsigned short blockSize ) const
 {
   if (currentChannel == readoutChannels.end()) {
     exit( EXIT_CROC_UNSPECIFIED_ERROR );
   }
-  return (*currentChannel)->ReadMemory( blockSize );
+  std::tr1::shared_ptr<SequencerReadoutBlock> block(new SequencerReadoutBlock());
+  block->SetData( (*currentChannel)->ReadMemory( blockSize ), blockSize );
+  return block;
 }
 
 #endif
