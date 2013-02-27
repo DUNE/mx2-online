@@ -33,11 +33,18 @@ VMECommunicator::~VMECommunicator()
 }
 
 //-----------------------------
+unsigned int VMECommunicator::GetAddress() const
+{
+  return this->address;
+}
+
+//-----------------------------
 const Controller* VMECommunicator::GetController() const
 {
   return this->controller;
 }
 
+//-----------------------------
 int VMECommunicator::WriteCycle(int ml, unsigned char *send_message, unsigned int address, 
     CVAddressModifier AM, CVDataWidth DW) const
 {
@@ -160,11 +167,19 @@ int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned 
 void VMECommunicator::exitIfError( int error, const std::string& msg ) const
 {
   if (error) {
-    commLog.fatalStream() << "Fatal error for device with address = 0x" << std::hex << this->address;
+    commLog.fatalStream() << "Fatal error for device " << this;
     commLog.fatalStream() << msg;
     this->GetController()->ReportError(error);
     exit(error);
   }
 }
+
+//-----------------------------
+std::ostream& operator<<(std::ostream& out, const VMECommunicator& s)
+{
+  out << "Address = 0x" << std::hex << s.GetAddress();
+  return out;
+}
+
 
 #endif

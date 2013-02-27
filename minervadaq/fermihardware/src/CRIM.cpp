@@ -346,7 +346,7 @@ void CRIM::CAENVMEIRQEnable() const
 }
 
 //----------------------------------------
-const unsigned int CRIM::GetAddress() const
+unsigned int CRIM::GetAddress() const
 {
   return this->address;
 }

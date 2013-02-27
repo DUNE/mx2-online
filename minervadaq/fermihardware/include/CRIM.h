@@ -107,7 +107,7 @@ class CRIM : public VMECommunicator {
 
     void Initialize( RunningModes runningMode );
 
-    const unsigned int GetAddress() const;
+    virtual unsigned int GetAddress() const;
     unsigned short GetStatus() const;
 
     void SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ) const; 

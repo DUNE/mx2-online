@@ -187,6 +187,7 @@ CRIM * GetAndTestCRIM( unsigned int address, Controller * controller )
   interruptStatus = crim->GetInterruptStatus();
   assert( 0 == interruptStatus );
 
+  logger.infoStream() << "CRIM " << (*crim) << " passed all tests!";
   std::cout << "Passed!" << std::endl;
   testCount++;
   return crim;
@@ -707,6 +708,7 @@ void TestChannel( ECROC* ecroc, unsigned int channelNumber, unsigned int nFEBs )
   assert( /* (status == 0x1010) || */ (status == 0x4040) );
   assert( channel->ReadTxRxStatusRegister() == 0x2410 );
 
+  logger.infoStream() << "EChannel " << (*channel) << " passed all tests!";
   logger.debugStream() << "Passed:--------------TestChannel--------------";
   std::cout << "Passed!" << std::endl;
   testCount++;
@@ -729,6 +731,7 @@ ECROC * GetAndTestECROC( unsigned int address, Controller * controller )
   ecroc->EnableSequencerReadout();
   ecroc->DisableSequencerReadout();
 
+  logger.infoStream() << "ECROC " << (*ecroc) << " passed all tests!";
   std::cout << "Passed!" << std::endl;
   testCount++;
   return ecroc;

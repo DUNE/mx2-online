@@ -21,6 +21,8 @@
 
 class VMECommunicator {
 
+  friend std::ostream& operator<<(std::ostream&, const VMECommunicator&);
+
   private:
     const Controller*  controller;
     int                controllerHandle;
@@ -42,6 +44,8 @@ class VMECommunicator {
     explicit VMECommunicator( unsigned int address, 
         const Controller* controller );
     virtual ~VMECommunicator(); 
+
+    virtual unsigned int GetAddress() const;
 
     const Controller* GetController() const;
 
