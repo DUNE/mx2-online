@@ -126,6 +126,9 @@ int main( int argc, char * argv[] )
   unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); 
   unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); 
 
+  // Process the data from the sequencer.
+  SequencerReadoutBlockTest( dataBuffer, pointer );
+
   // Read the ADC and parse them.
   ReadADCTest( echannel, nFEBs );
 
@@ -135,7 +138,6 @@ int main( int argc, char * argv[] )
   // Get & initialize a CRIM.
   CRIM * crim = GetAndTestCRIM( crimCardAddress, controller );
 
-  delete [] dataBuffer;
   delete crim;
   delete ecroc;
   delete controller;
@@ -144,9 +146,32 @@ int main( int argc, char * argv[] )
       crimCardAddress, nch0, nch1, nch2, nch3 );
   delete worker;
 
-
+  log4cpp::Category::shutdown();
   std::cout << "Passed all tests! Executed " << testCount << " tests." << std::endl;
   return 0;
+}
+
+//---------------------------------------------------
+void SequencerReadoutBlockTest( unsigned char * data, unsigned short dataLength )
+{
+  std::cout << "Testing Get and Test ReadoutWorker...";  
+  logger.debugStream() << "Testing:--------------SequencerReadoutBlockTest--------------";
+  SequencerReadoutBlock * block = new SequencerReadoutBlock();
+  block->SetData( data, dataLength );
+  logger.debugStream() << "SequencerReadoutBlockTest : Parsing Data into Frames";
+  block->ProcessDataIntoFrames();
+  logger.debugStream() << "SequencerReadoutBlockTest : Inspecting Frames";
+  while (block->FrameCount()) {
+    LVDSFrame * frame = block->PopOffFrame();
+    logger.debugStream() << (*frame);  
+    frame->printReceivedMessageToLog();
+    delete frame;
+  }
+  delete block;
+
+  logger.debugStream() << "Passed:--------------SequencerReadoutBlockTest--------------";
+  std::cout << "Passed!" << std::endl;
+  testCount++;
 }
 
 //---------------------------------------------------
