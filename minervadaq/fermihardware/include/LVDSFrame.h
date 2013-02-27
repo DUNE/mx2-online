@@ -26,6 +26,9 @@
  */
 
 class LVDSFrame {
+
+  friend std::ostream& operator<<(std::ostream&, const LVDSFrame&);
+
   protected:
     unsigned char FrameID[2];        
     unsigned char frameHeader[9];    
@@ -46,8 +49,8 @@ class LVDSFrame {
     virtual void DecodeRegisterValues();
     virtual unsigned int GetOutgoingMessageLength();
 
-    unsigned short ReceivedMessageLength();
-    unsigned short ReceivedMessageStatus();
+    unsigned short ReceivedMessageLength() const;
+    unsigned short ReceivedMessageStatus() const;
     void DecodeHeader();
     bool CheckForErrors();
     void printReceivedMessageToLog();
