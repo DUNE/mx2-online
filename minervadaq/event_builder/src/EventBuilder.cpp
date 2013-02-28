@@ -16,19 +16,20 @@ using namespace std;
 // sentinel gate instead).
 const int SECONDS_BEFORE_TIMEOUT = 60; 
 
-sig_atomic_t waiting_to_quit;  
-sig_atomic_t quit_now;        
-void quitsignal_handler(int signum); 
-
 DAQEvent *event;
 */
+
+// TODO: Move the function decl to the header file when we retire the old event_builder.
+sig_atomic_t waiting_to_quit;  
+sig_atomic_t quit_now;        
+void quitsignal_handler(int signum);
 
 // log4cpp Variables - Needed throughout the event_builder functions.
 log4cpp::Appender* eventBuilderAppender;
 log4cpp::Category& rootCategory = log4cpp::Category::getRoot();
 log4cpp::Category& eventbuilder = log4cpp::Category::getInstance(std::string("eventbuilder"));
 
-int new_main(int argc, char **argv) 
+int main(int argc, char **argv) 
 {
   if (argc < 3) {
     printf("Usage: event_builder <et_filename> <rawdata_filename> <network port (default 1201)> <callback PID (default: no PID)>\n");
@@ -50,21 +51,14 @@ int new_main(int argc, char **argv)
     std::cout << "Notifying process " << callback_pid << " when ready to accept events." << std::endl;
   }
 
-/* ******************************************************
-  struct timeval hpnow; gettimeofday(&hpnow,NULL);
-  char log_filename[100]; sprintf(log_filename,"./event_builder_%d_Log.txt",(int)hpnow.tv_sec); 
-#if NEARLINE
-#if NEARLINEPRO||NEARLINEBCK
-  sprintf(log_filename,"/scratch/nearonline/var/logs/event_builder_nearline_%d_Log.txt",(int)hpnow.tv_sec);
-#endif
-#if NEARLINEDEV
-  sprintf(log_filename,"/work/logs/event_builder_nearline_%d_Log.txt",(int)hpnow.tv_sec);
-#endif
-#else
-  sprintf(log_filename,"/work/data/logs/event_builder_daq_%d_Log.txt",(int)hpnow.tv_sec);
-#endif
-  // Set up general logging utilities.
-  eventBuilderAppender = new log4cpp::FileAppender("default", log_filename);
+  struct timeval hpnow; 
+	gettimeofday(&hpnow,NULL);
+
+  char log_filename[100]; 
+  // TODO: Setup precompiler options for logs on Nearline, other machines, and timestamping.
+	sprintf(log_filename, "/work/logs/EventBuilderLog.txt"); 
+
+  eventBuilderAppender = new log4cpp::FileAppender("default", log_filename,false);
   eventBuilderAppender->setLayout(new log4cpp::BasicLayout());
   rootCategory.addAppender(eventBuilderAppender);
   rootCategory.setPriority(log4cpp::Priority::DEBUG);
@@ -78,36 +72,9 @@ int new_main(int argc, char **argv)
   eventbuilder.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
   char hostName[100];
-#if SINGLEPC
+  // TODO: Setup precompiler options for hostnames on multi-PC and various other locations.
   sprintf(hostName, "localhost");
-  std::cout << "Configured for a Single-PC Build..." << std::endl;  
   eventbuilder.infoStream() << "Configured for a Single-PC Build..."; 
-#endif
-
-#if MULTIPC
-
-#if WH14T||WH14B
-  sprintf(hostName, "minervatest03.fnal.gov");
-#endif
-
-#if CRATE0||CRATE1||NEARLINEPRO||NEARLINEBCK
-#if BACKUPNODE
-  sprintf(hostName, "mnvonlinebck1.fnal.gov");
-#else
-  sprintf(hostName, "mnvonlinemaster.fnal.gov");
-  // if BACKUPNODE
-#endif
-
-#elif NEARLINEDEV
-  sprintf(hostName, "mnvonlinemaster.fnal.gov");  // minervatest03.fnal.gov
-  // if CRATE0||CRATE1||NEARLINEPRO
-#endif
-  std::cout << "Configured for a Multi-PC Build..." << std::endl;
-  eventbuilder.infoStream() << "Configured for a Multi-PC Build...";
-  // if MULTIPC
-#endif
-  std::cout << "ET system host machine = " << hostName << std::endl;
-  std::cout << "Ouptut Filename        = " << output_filename << std::endl;
   eventbuilder.infoStream() << "ET system host machine = " << hostName;
 
   // Set up the signal handler so we can always exit cleanly
@@ -118,7 +85,6 @@ int new_main(int argc, char **argv)
 
   sigaction(SIGINT,  &quit_action, NULL);
   sigaction(SIGTERM, &quit_action, NULL);
-
 
   int            status;
   et_openconfig  openconfig;
@@ -151,6 +117,7 @@ int new_main(int argc, char **argv)
   }
   et_open_config_destroy(openconfig);
 
+/* ******************************************************
   // Check if ET is up and running.
 #if !NEARLINE
   std::cout << "Running a DAQ Station..." << std::endl;
@@ -773,6 +740,7 @@ template <class X> void DecodeBuffer(event_handler *evt, X *frame, int i, int le
   eventbuilder.debugStream() << "  Done Decoding the Buffer";
 #endif
 };
+*/
 
 void quitsignal_handler(int signum)
 {
@@ -801,5 +769,4 @@ void quitsignal_handler(int signum)
     signal (signum, quitsignal_handler);
   }
 }
-*/
 #endif
