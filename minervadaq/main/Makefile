@@ -17,7 +17,7 @@ OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
 TARGET=minervadaq
 
-LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_acquire -lcaeninterface
+LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_acquire 
 include $(DAQROOT)/Make.include
 include $(DAQROOT)/Make.options
 

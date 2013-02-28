@@ -36,9 +36,6 @@ INCLUDE += -I/usr/include/boost/thread -I/usr/include/boost
 #Electronics drive code
 INCLUDE += -I$(DAQROOT)/fermihardware/include 
 
-#Acquire Functions (manipulate CAEN)
-INCLUDE += -I$(DAQROOT)/caeninterface/include 
-
 #Data Acquire functions (control acquire loop)
 INCLUDE += -I$(DAQROOT)/acquire_data/include 
 

@@ -10,10 +10,6 @@ hardware-lib: FORCE
 	cd fermihardware/src; make;\
 	cd ../;
 
-caenint-lib: FORCE
-	cd caeninterface/src; make;\
-	cd ../;
-
 acquire_data-lib: FORCE
 	cd acquire_data/src; make;\
 	cd ../;
@@ -55,9 +51,6 @@ main-clean: FORCE
 hardware-clean: FORCE
 	cd fermihardware/src; make clean;
 
-caenint-clean: FORCE
-	cd caeninterface/src; make clean;
-
 acquire_data-clean: FORCE
 	cd acquire_data/src; make clean;
 
@@ -70,7 +63,6 @@ tests-clean: FORCE
 
 all: FORCE
 	gmake hardware-lib;
-	gmake caenint-lib;
 	gmake acquire_data-lib;
 	gmake event_structure-lib;
 	gmake event_builder;
@@ -79,7 +71,6 @@ all: FORCE
 
 clean: FORCE
 	gmake hardware-clean;
-	gmake caenint-clean;
 	gmake acquire_data-clean;
 	gmake event_structure-clean;
 	gmake event_builder-clean;
@@ -88,14 +79,12 @@ clean: FORCE
 
 relink: FORCE
 	gmake hardware-clean;
-	gmake caenint-clean;
 	gmake acquire_data-clean;
 	gmake event_structure-clean;
 	gmake event_builder-clean;
 	gmake main-clean;
 	gmake tests-clean;
 	gmake hardware-lib;
-	gmake caenint-lib;
 	gmake acquire_data-lib;
 	gmake event_structure-lib;
 	gmake event_builder;
