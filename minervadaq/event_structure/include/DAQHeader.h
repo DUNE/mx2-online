@@ -14,6 +14,7 @@ class DAQHeader {
 		unsigned char event_block[daqHeaderSize]; 
 
 	public:
+    DAQHeader(); // by default we build a Sentinel frame.
 		DAQHeader(unsigned char det, unsigned short int config, int run, int sub_run, 
 			unsigned short int trig, unsigned char ledGroup, unsigned char ledLevel, 
 			unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 

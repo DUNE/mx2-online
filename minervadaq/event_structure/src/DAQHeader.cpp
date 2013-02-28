@@ -5,6 +5,16 @@
 
 log4cpp::Category& daqevt = log4cpp::Category::getInstance(std::string("daqevt"));
 
+DAQHeader::DAQHeader()
+{
+  daqevt.setPriority(log4cpp::Priority::DEBUG);
+  daqevt.debugStream() << "->Entering DAQHeader::DAQHeader... Building a Sentinel Frame.";
+  for (int i = 0; i < daqHeaderSize; i++) {
+    event_block[i] = 0;
+    daqevt.debugStream() << "   event_block[" << i << "] = " << (int)event_block[i];  
+  }
+}
+
 DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int sub_run, 
     unsigned short int trig, unsigned char ledLevel, unsigned char ledGroup, 
     unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 
@@ -56,7 +66,7 @@ DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int 
     buffer_index++;
   }
   daqevt.debugStream() << " DAQ Header Data...";
-  for (int i = 0; i < 56; i++) {
+  for (int i = 0; i < daqHeaderSize; i++) {
     daqevt.debugStream() << "   event_block[" << i << "] = " << (int)event_block[i];  
   }
 }
