@@ -1,9 +1,6 @@
 #ifndef DAQHeader_h
 #define DAQHeader_h
 
-static const int febInfoSize = 76;
-static const int febDiscSize = 1146;
-static const int febHitsSize = 885; // 446
 static const int daqHeaderSize = 56;
 
 #include "FrameHeader.h"
