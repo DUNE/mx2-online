@@ -11,8 +11,7 @@
 
 #include "ReadoutTypes.h"
 
-#include "MinervaEvent.h"
-#include "event_builder.h"
+#include "DAQHeader.h"
 
 #include <fstream>
 #include <string>
