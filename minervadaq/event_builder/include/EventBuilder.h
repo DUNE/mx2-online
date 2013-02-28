@@ -5,16 +5,13 @@
 #include <sstream>
 #include <fstream>
 #include <signal.h>
-#include "DAQEvent.h" 
-#include "DAQEventTemplates.h"
+#include "DAQHeader.h" 
 #include "eb_service.h"  // the header files needed to run the service
 #include "et.h"          // the event transfer stuff
 #include "et_private.h"  // event transfer private data types
 #include "et_data.h"     // data structures 
 
-#include "FEB.h"
-
-/* #define MAX_CONNECTIONS 500 */
+#include "MinervaDAQtypes.h"
 
 /*! \file
  *
@@ -26,6 +23,7 @@
 // The CROC-E DAQ receives "globs" of data spanning entire chains.
 
 struct EventHandler {
+  unsigned short dataLength;
   unsigned char eventData[ MaxTotalDataPerChain ];
 };
 

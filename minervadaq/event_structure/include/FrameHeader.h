@@ -8,7 +8,9 @@
  * \brief Class for the Minerva Frame Header.
  *
  * See DocDB 8405. For most frames the CROC-E channel will write 
- * this information directly into the data stream.
+ * this information directly into the data stream. However, for 
+ * DAQHeaders, we will use this class to fill the Minerva Frame
+ * Header part of the buffer.
  */
 class FrameHeader {
 	private:
