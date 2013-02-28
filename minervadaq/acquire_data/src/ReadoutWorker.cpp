@@ -142,6 +142,8 @@ unsigned long long ReadoutWorker::Trigger()
     (*p)->WaitForSequencerReadoutCompletion();
   }
 
+  // TODO: Run sleepy? Will we step on digitization?
+
   return start;
 }
 

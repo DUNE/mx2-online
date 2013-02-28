@@ -42,6 +42,7 @@ FrameHeader::FrameHeader(int crateID, int crocID, int chanID,
   frameheader.debugStream() << " crateID:    " << crateID;
   frameheader.debugStream() << " crocID:     " << crocID;
   frameheader.debugStream() << " chanID:     " << chanID;
+  // bank decoding: 0==ADC, 1==Discr, 2==FPGA, 3==DAQ, 4==TRiP, 5==Sentinel
   frameheader.debugStream() << " bank:       " << bank;
   frameheader.debugStream() << " feb_number: " << feb_no;
   frameheader.debugStream() << " firmware:   " << firmware;
