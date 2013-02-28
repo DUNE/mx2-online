@@ -26,7 +26,7 @@ OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
 TARGET=libminerva_acquire.so
 
-LDLIBS += -L$(DAQROOT)/lib -lhardware -lcaeninterface -L$(ET_LIBROOT)/lib -let
+LDLIBS += -L$(DAQROOT)/lib -lhardware -L$(ET_LIBROOT)/lib -let
 include $(DAQROOT)/Make.include
 include $(DAQROOT)/Make.options
 
