@@ -125,9 +125,15 @@ void ReadoutWorker::AddCRIM( unsigned int address )
 }
 
 //---------------------------
-void ReadoutWorker::Trigger()
+unsigned long long ReadoutWorker::Trigger()
 {
   readoutLogger.debugStream() << "ReadoutWorker::Trigger...";
+
+  struct timeval run;
+  gettimeofday(&runstart, NULL);
+  unsigned long long start = (unsigned long long)(run.tv_sec*1000000)
+    + (unsigned long long)(run.tv_usec);
+
   // Use a dummy trigger for now...
   for (std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) {
     (*p)->FastCommandOpenGate();
@@ -136,6 +142,7 @@ void ReadoutWorker::Trigger()
     (*p)->WaitForSequencerReadoutCompletion();
   }
 
+  return start;
 }
 
 //---------------------------
