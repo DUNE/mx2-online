@@ -130,7 +130,7 @@ unsigned long long ReadoutWorker::Trigger()
   readoutLogger.debugStream() << "ReadoutWorker::Trigger...";
 
   struct timeval run;
-  gettimeofday(&runstart, NULL);
+  gettimeofday(&run, NULL);
   unsigned long long start = (unsigned long long)(run.tv_sec*1000000)
     + (unsigned long long)(run.tv_usec);
 
