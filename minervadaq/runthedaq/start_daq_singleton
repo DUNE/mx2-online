@@ -3,7 +3,7 @@
 Help()
 {
 	echo  "Usage : start_daq_singleton -et <ET filename (stub)> -f <Num FEBS (same as detector config)> -g <Num Gates>" 
-	echo  "          -m <Mode> -r <Run Num> -s <Sub Num> -t <n seconds (not supported)> -d <detector code (see DAQHeader class)>"
+	echo  "          -m <Mode> -r <Run Num> -s <Sub Num> -d <detector code (see DAQHeader class)>"
 	echo  "          -cf <slow control config file> -ll <LED Level> -lg <LED Group (encoded, 8, 16, etc.))>"
 	echo  "          -hw <vme card init. level, 0 no init, non-zero init> -p <port 1201-1250>"
 }
@@ -27,7 +27,6 @@ NGATES=10
 RUNMODE=0
 RUN=1337
 SUB=391
-NSECONDS=0  # NSECONDS is a dummy argument for the DAQ right now.
 DETECTOR=0  # See Event/MinervaEvent/DAQHeader.xml for the detector codes.
 CONFIGFILE=unknown # This is the filename for the config loaded by the slow control.
 LEDLEVEL=0  # Defaults to zero PE.
@@ -55,9 +54,6 @@ do
 			shift 2
 			;;
 		-s)	SUB=$2
-			shift 2
-			;;
-		-t)	NSECONDS=$2
 			shift 2
 			;;
 		-d)	DETECTOR=$2
@@ -134,5 +130,17 @@ sleep 15s
 
 # Note we do not pass the full path of the ET system to the daq.
 # That information is attached within the process itself.
-${DAQROOT}/bin/minervadaq -et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -t $NSECONDS -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT
+echo FILEROOT   = $FILEROOT
+echo NGATES     = $NGATES
+echo RUNMODE    = $RUNMODE
+echo RUN        = $RUN
+echo SUB        = $SUB
+echo DETECTOR   = $DETECTOR
+echo CONFIGFILE = $CONFIGFILE
+echo NFEBS      = $NFEBS
+echo LEDLEVEL   = $LEDLEVEL
+echo LEDGROUP   = $LEDGROUP
+echo INITLEVEL  = $INITLEVEL
+echo PORT       = $PORT
+${DAQROOT}/bin/minervadaq -et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT
 

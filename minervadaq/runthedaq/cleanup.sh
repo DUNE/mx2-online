@@ -1,13 +1,6 @@
 #!/bin/sh
 
-#rm *.csv
-rm /work/data/etsys/testm*
-rm /work/data/rawdata/testm*dat
-rm /work/data/sam/testm*py
-rm /work/data/logs/testm*.txt
-#rm *.txt
-#rm channel*
-#rm controller*
-#rm data_monitor*
-#rm contact_eb*
-#rm take_data_time*
+rm /work/data/etsys/MinervaDA*
+rm /work/data/rawdata/MinervaDA*dat
+rm /work/data/sam/MinervaDA*py
+rm /work/data/logs/MinervaDA*.txt
