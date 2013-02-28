@@ -21,7 +21,6 @@ int main( int argc, char * argv[] )
 {
   struct DAQWorkerArgs * args = parseArgs( argc, argv, "0" );
 
-  /* char lasttrigger_filename[100]; sprintf(lasttrigger_filename,"/work/conditions/last_trigger.dat"); */ 
 
   baseAppender = new log4cpp::FileAppender("default", args->logFileName, false);
   baseAppender->setLayout(new log4cpp::BasicLayout());
@@ -32,8 +31,14 @@ int main( int argc, char * argv[] )
   daqmain.infoStream() << "Starting MinervaDAQ...";
   DAQWorker * worker = new DAQWorker( args, log4cpp::Priority::DEBUG );
 
-  // worker->setUpET();  // ?
-  worker->TakeData();
+  int error = worker->SetUpET(); 
+  if (0 == error) {
+    worker->TakeData();
+    // worker->CloseDownET(); 
+  }
+  else {
+    daqmain.fatalStream() << "Failed to establish ET connection!";
+  }
 
   daqmain.infoStream() << "Finished MinervaDAQ...";
 
@@ -64,8 +69,10 @@ struct DAQWorkerArgs * parseArgs( const int& argc, char * argv[], const std::str
   args->logFileName = fileRoot + "logs/MinervaDAQ_Log.txt";
   args->samFileName = fileRoot + "sam/MinervaDAQ_SAM.py";
   args->dataFileName = fileRoot + "rawdata/MinervaDAQ_RawData.dat";
-  /* const char* name = dataFileName.c_str(); */ 
   args->hardwareConfigFileName = "unknown"; 
+  args->hostName = "localhost";
+  args->lastTriggerFileName = "/work/conditions/last_trigger.dat"; 
+  args->globalGateLogFileName = "/work/conditions/global_gate.dat";
 
   int optind = 1;
   while ((optind < argc) && (argv[optind][0]=='-')) {
@@ -122,6 +129,18 @@ struct DAQWorkerArgs * parseArgs( const int& argc, char * argv[], const std::str
     else if (sw=="-p") {
       optind++;
       args->networkPort = atoi(argv[optind]);
+    }
+    else if (sw=="-h") {
+      optind++;
+      args->hostName = argv[optind];
+    }
+    else if (sw=="-lt") {
+      optind++;
+      args->lastTriggerFileName = argv[optind];
+    }
+    else if (sw=="-gg") {
+      optind++;
+      args->globalGateLogFileName = argv[optind];
     }
     optind++;
   }
