@@ -22,6 +22,9 @@ struct DAQWorkerArgs {
   std::string samFileName;
   std::string dataFileName;
   std::string hardwareConfigFileName;
+  std::string hostName;
+  std::string lastTriggerFileName;
+  std::string globalGateLogFileName;
 
 };
 
@@ -38,20 +41,21 @@ class DAQWorker {
 
     void Initialize();  // Prep VME hardware - add CROCs and CRIMs, Init Crate
 
-    // bool EstablishETHeartBeat();
+    bool WriteToSAMFile();
+    bool WriteLastTrigger();
+    bool DeclareDAQHeaderToET();
 
-    /* unsigned long long GetGlobalGate(); */
-    /* void PutGlobalGate( unsigned long long globalGate ); */
-
-    // bool Trigger(); // set trigger type for header?, reset sequencer latch?, rearm interrupt stuff?
+    unsigned long long GetGlobalGate();
+    bool PutGlobalGate( unsigned long long globalGate );
 
   public:
     explicit DAQWorker( const DAQWorkerArgs* theArgs, 
         log4cpp::Priority::Value priority );
     ~DAQWorker();
 
-    // void SetUpET();  // ?
+    int SetUpET();  
     void TakeData();
+    void CloseDownET();
 
 };
 
