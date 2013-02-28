@@ -5,13 +5,21 @@
 
 log4cpp::Category& daqevt = log4cpp::Category::getInstance(std::string("daqevt"));
 
-DAQHeader::DAQHeader()
+DAQHeader::DAQHeader(FrameHeader *header)
 {
   daqevt.setPriority(log4cpp::Priority::DEBUG);
   daqevt.debugStream() << "->Entering DAQHeader::DAQHeader... Building a Sentinel Frame.";
   for (int i = 0; i < daqHeaderSize; i++) {
     event_block[i] = 0;
-    daqevt.debugStream() << "   event_block[" << i << "] = " << (int)event_block[i];  
+    /* daqevt.debugStream() << "   event_block[" << i << "] = " << (int)event_block[i]; */  
+  }
+  unsigned short *tmpDAQHeader = header->GetBankHeader();
+  int buffer_index = 0; 
+  for (int i = 0; i < 4 ;i++) {
+    event_block[buffer_index] = tmpDAQHeader[i]&0xFF;
+    buffer_index++;
+    event_block[buffer_index] = (tmpDAQHeader[i]&0xFF00)>>0x08;
+    buffer_index++;
   }
 }
 
