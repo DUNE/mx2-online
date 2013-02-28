@@ -43,6 +43,7 @@ class DAQWorker {
 
     bool WriteToSAMFile();
     bool WriteLastTrigger();
+    bool WriteLastTrigger(int triggerNum, int triggerType, unsigned long long triggerTime);
     bool DeclareDAQHeaderToET();
 
     unsigned long long GetGlobalGate();
