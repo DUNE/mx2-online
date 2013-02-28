@@ -5,8 +5,8 @@
 #  $2 == output file name
 #  $3 == port (1201-1250)
 if [ $# -ne 3 ]; then
-	echo "Please supply et_system file name, output file name, and port (1201-1250)."
-	exit 1
+  echo "Please supply et_system file name, output file name, and port (1201-1250)."
+  exit 1
 fi
 
 ETSYS=$1
@@ -15,17 +15,20 @@ PORT=$3
 
 if [ "$LOCALE" == "" ]
 then
-	echo No LOCALE defined!  It is impossible to configure the MINERvA DAQ Environment!
-	exit 1
+  echo No LOCALE defined!  It is impossible to configure the MINERvA DAQ Environment!
+  exit 1
 fi
 
 if [ "$DAQROOT" == "" ]
 then
-	echo No DAQROOT defined!  Please configure your environment!
-	exit 1
+  echo No DAQROOT defined!  Please configure your environment!
+  exit 1
 fi
 
 # We pass both the system name and output file - must contain the full path! 
+echo EBSERV ETSYS = $ETSYS
+echo EBSERV OUTFL = $OUTFL
+echo EBSERV PORT  = $PORT
 nice ${DAQROOT}/bin/event_builder $ETSYS $OUTFL $PORT
 #valgrind -v --log-file-exactly=val_event_builder.txt ${DAQROOT}/bin/event_builder $ETSYS $OUTFL $PORT
 #valgrind -v --log-file-exactly=val_event_builder.txt --leak-check=full ${DAQROOT}/bin/event_builder $ETSYS $OUTFL $PORT
