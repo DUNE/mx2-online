@@ -193,7 +193,6 @@ MinervaEvent::MinervaEvent(unsigned char det, unsigned short int config, int run
 		event_block[buffer_index] = (tmpDAQHeader[i]&0xFF00)>>0x08;
 		buffer_index++;
 	}
-	//InsertData(event_block);
 #if DEBUG_HEADERS
 	if (evtAppender!=0) {
 		mnvevt.debugStream() << " DAQ Header Data...";
