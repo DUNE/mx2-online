@@ -56,7 +56,7 @@ class ReadoutWorker {
     void InitializeCrate( RunningModes runningMode );
 
     void Reset();
-    void Trigger();
+    unsigned long long Trigger();
     bool MoveToNextChannel();
     const EChannels * CurrentChannel() const;
     unsigned short GetNextDataBlockSize() const;
