@@ -136,6 +136,8 @@ void DAQWorker::TakeData()
   for (int ngates = 0; ngates < args->numberOfGates; ++ngates) {
     if (!(ngates % 10)) daqLogger.infoStream() << "Taking data for gate " << ngates;
 
+    unsigned long long triggerTime = 0;
+
     for (ReadoutWorkerIt readoutWorker=readoutWorkerVect.begin(); 
         readoutWorker!=readoutWorkerVect.end();
         ++readoutWorker) {
@@ -143,7 +145,7 @@ void DAQWorker::TakeData()
       ReadoutWorker * worker = (*readoutWorker);
 
       worker->Reset();
-      worker->Trigger();
+      triggerTime = worker->Trigger();
       do {
         unsigned short blockSize = worker->GetNextDataBlockSize();
         std::tr1::shared_ptr<SequencerReadoutBlock> block = worker->GetNextDataBlock( blockSize );
@@ -161,7 +163,7 @@ void DAQWorker::TakeData()
     }
 
     if (!WriteToSAMFile()) break;
-    if (!WriteLastTrigger()) break;
+    if (!WriteLastTrigger(ngates, 0/*trigtype*/, triggerTime)) break;
     if (!DeclareDAQHeaderToET()) break;
   }
 
@@ -178,9 +180,35 @@ bool DAQWorker::WriteToSAMFile()
 }
 
 //---------------------------------------------------------
-bool DAQWorker::WriteLastTrigger()
+bool DAQWorker::WriteLastTrigger(int triggerNum, int triggerType, 
+    unsigned long long triggerTime)
 {
-  daqLogger.debugStream() << "Writing last trigger data to " << args->lastTriggerFileName;
+  daqLogger.debugStream() << "Writing last trigger data to " 
+    << args->lastTriggerFileName;
+
+  FILE *file;
+
+  if ( NULL == (file=fopen((args->lastTriggerFileName).c_str(),"w")) ) {
+    daqLogger.errorStream() << "Error opening last trigger file for writing!";
+    return false;
+  }
+  else {
+    if (!(triggerNum%10)) {
+      daqLogger.infoStream() << "Writing info for trigger " << triggerNum 
+        << " to file " << args->lastTriggerFileName;
+    } else {
+      daqLogger.debugStream() << "Writing info for trigger " << triggerNum 
+        << " to file " << args->lastTriggerFileName;
+    }
+  }
+
+  fprintf(file, "run=%d\n",      args->runNumber);
+  fprintf(file, "subrun=%d\n",   args->subRunNumber);
+  fprintf(file, "number=%d\n",   triggerNum);
+  fprintf(file, "type=%d\n",     triggerType);
+  fprintf(file, "time=%llu\n",   triggerTime);
+
+  fclose(file);
   return true;
 }
 
