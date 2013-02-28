@@ -117,10 +117,74 @@ int DAQWorker::SetUpET()
 }
 
 //---------------------------------------------------------
-void DAQWorker::ContactEventBuilder()
+bool DAQWorker::ContactEventBuilder( EventHandler *handler )
 {
   daqLogger.infoStream() << "Contacting Event Builder...";
 
+  unsigned short length = handler->dataLength;
+
+  while (et_alive(sys_id)) {
+    daqLogger.debugStream() << "  ->ET is Alive!";
+    et_event *pe;         // The event.
+    EventHandler *pdata;  // The data for the event.
+    int status = et_event_new(sys_id, attach, &pe, ET_SLEEP, NULL,
+        sizeof(struct EventHandler)); // Get an event.
+    if (status == ET_ERROR_DEAD) {
+      daqLogger.crit("ET system is dead in acquire_data::ContactEventBuilder!");
+      break;
+    } else if (status == ET_ERROR_TIMEOUT) {
+      daqLogger.crit("Got an ET timeout in acquire_data::ContactEventBuilder!");
+      break;
+    } else if (status == ET_ERROR_EMPTY) {
+      daqLogger.crit("No ET events in acquire_data::ContactEventBuilder!");
+      break;
+    } else if (status == ET_ERROR_BUSY) {
+      daqLogger.crit("ET Grandcentral is busy in acquire_data::ContactEventBuilder!");
+      break;
+    } else if (status == ET_ERROR_WAKEUP) {
+      daqLogger.crit("ET wakeup error in acquire_data::ContactEventBuilder!");
+      break;
+    } else if ((status == ET_ERROR_WRITE) || (status == ET_ERROR_READ)) {
+      daqLogger.crit("ET socket communication error in acquire_data::ContactEventBuilder!");
+      break;
+    } if (status != ET_OK) {
+      daqLogger.fatal("ET et_producer: error in et_event_new in acquire_data::ContactEventBuilder!");
+      return false;
+    }
+    // Put data into the event.
+    if (status == ET_OK) {
+      daqLogger.debugStream() << "Putting Event into ET System...";
+      et_event_getdata(pe, (void **)&pdata); // Get the event ready.
+      { 
+        daqLogger.debugStream() << "-----------------------------------------------";
+        daqLogger.debugStream() << "EventHandler_size: " << sizeof(struct EventHandler);
+        daqLogger.debugStream() << "evt_size:          " << sizeof(handler);
+        daqLogger.debugStream() << "Finished Processing Event Data:";
+        for (int index = 0; index < length; index++) {
+          daqLogger.debug("     Data Byte %02d = 0x%02X",
+              index,(unsigned int)handler->eventData[index]);
+        }
+      }
+      // TODO : memmove?
+      // Also TODO : statically sized EventHandler is typically far too big. Dynamic?
+      memcpy(pdata, handler, sizeof(struct EventHandler));
+      et_event_setlength(pe, sizeof(struct EventHandler));
+    } 
+
+    // Put the event back into the ET system.
+    status = et_event_put(sys_id, attach, pe); // Put the event away.
+    if (status != ET_OK) {
+      daqLogger.fatal("et_producer: put error in acquire_data::ContactEventBuilder!");
+      return false;
+    }
+    if (!et_alive(sys_id)) {
+      et_wait_for_alive(sys_id);
+    }
+    break; // Done processing the event. 
+  } // while alive 
+
+  daqLogger.debugStream() << "  Exiting acquire_data::ContactEventBuilder...";
+  return true;
 }
 
 //---------------------------------------------------------
@@ -128,7 +192,6 @@ bool DAQWorker::CloseDownET()
 {
   daqLogger.infoStream() << "Closing down ET...";
 
-  // Detach from the station.
   if (et_station_detach(sys_id, attach) < 0) {
     daqLogger.fatal("et_producer: error in station detach\n");
     return false;
@@ -176,7 +239,7 @@ void DAQWorker::TakeData()
 
     if (!WriteToSAMFile()) break;
     if (!WriteLastTrigger(ngates, 0/*trigtype*/, triggerTime)) break;
-    if (!DeclareDAQHeaderToET()) break;
+    if (!DeclareDAQHeaderToET(ngates, 0/*trigtype*/, triggerTime)) break;
   }
 
   daqLogger.infoStream() << "Finished Data Acquisition...";
@@ -225,26 +288,33 @@ bool DAQWorker::WriteLastTrigger(int triggerNum, int triggerType,
 }
 
 //---------------------------------------------------------
-bool DAQWorker::DeclareDAQHeaderToET()
+bool DAQWorker::DeclareDAQHeaderToET(int triggerNum, int triggerType,
+    unsigned long long triggerTime)
 {
   daqLogger.debugStream() << "Declaring DAQ Header to ET...";
 
-  /* DAQHeader(unsigned char det, unsigned short int config, int run, int sub_run, */
-  /*     unsigned short int trig, unsigned char ledGroup, unsigned char ledLevel, */
-  /*     unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, */
-  /*     unsigned short int error, unsigned int minos, unsigned int read_time, */
-  /*     FrameHeader *header,  unsigned short int nADCFrames, unsigned short int nDiscFrames, */
-  /*     unsigned short int nFPGAFrames); */
+  unsigned short int error = 0;
+  unsigned int minos = 0;  // TODO - MINOS Time from CRIM
+  unsigned int readoutTime = 0;  // TODO fix this
+  unsigned short nADCFrames  = 0;
+  unsigned short nDiscFrames = 0;
+  unsigned short nFPGAFrames = 0;
+
+  // TODO - don't like asking for ggate twice (also in SAM()) - fix this.
+  unsigned long long ggate = this->GetGlobalGate();
+  if (0 == ggate) return false;
 
   // TODO: Magic numbers must die = make a file for bank encodings (3==DAQ,5==Sent)
   FrameHeader * frameHeader = new FrameHeader(0,0,0,3,0,0,0,daqHeaderSize);
-  // DAQHeader * daqhead = new DAQHeader();
+  DAQHeader * daqhead = new 
+    DAQHeader(args->detector, args->detectorConfigCode, args->runNumber, 
+        args->subRunNumber, triggerType, args->ledGroup, args->ledLevel,
+        ggate, triggerNum, triggerTime, error, minos, readoutTime,
+        frameHeader,  nADCFrames, nDiscFrames, nFPGAFrames);
   // ContactEventBuilder
 
   // then, clean up the frame header and DAQ header...
 
-  unsigned long long ggate = this->GetGlobalGate();
-  if (0 == ggate) return false;
   return PutGlobalGate(++ggate);
 }
 
@@ -257,7 +327,7 @@ bool DAQWorker::SendSentinel()
   FrameHeader * frameHeader = new FrameHeader(0,0,0,5,0,0,0,daqHeaderSize);
   // DAQHeader * sentinel = new DAQHeader( frameHeader );
   // ContactEventBuilder
-  
+
   // then, clean up the frame header and DAQ header...
 
   return true;

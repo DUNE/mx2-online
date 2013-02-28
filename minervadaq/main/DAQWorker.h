@@ -1,14 +1,8 @@
 #ifndef DAQWorker_h
 #define DAQWorker_h
 
-#include <string>
-
-#include "et.h"         // the event transfer stuff
-#include "et_private.h" // event transfer private data types
-#include "et_data.h"    // data structures 
-
 #include "log4cppHeaders.h"
-
+#include "EventBuilder.h"
 #include "ReadoutWorker.h"
 
 struct DAQWorkerArgs {
@@ -48,13 +42,14 @@ class DAQWorker {
 
     et_att_id      attach; 
     et_sys_id      sys_id; 
-    void ContactEventBuilder();
+    bool ContactEventBuilder(EventHandler *handler);
 
     void Initialize();  
     bool WriteToSAMFile();
     bool WriteLastTrigger();
     bool WriteLastTrigger(int triggerNum, int triggerType, unsigned long long triggerTime);
-    bool DeclareDAQHeaderToET();
+    bool DeclareDAQHeaderToET(int triggerNum, int triggerType, 
+        unsigned long long triggerTime);
 
     unsigned long long GetGlobalGate();
     bool PutGlobalGate( unsigned long long globalGate );
