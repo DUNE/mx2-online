@@ -3,12 +3,6 @@ CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 COMPILE_OPTIONS = -DTAKE_DATA 
 #COMPILE_OPTIONS += -DASSERT_INTERRUPT
 
-#--DEBUG FLAGS--
-#COMPILE_OPTIONS += -DDEBUG_GENERAL
-#COMPILE_OPTIONS += -DDEBUG_SOCKETS
-#COMPILE_OPTIONS += -DDEBUG_MIXEDMODE
-#COMPILE_OPTIONS += -DDEBUG_TIMING
-
 #--RUNNING FLAGS--
 COMPILE_OPTIONS += -DRUN_SLEEPY # This flag is required to for FEB digitization.  2009.Dec.16
 
@@ -17,7 +11,7 @@ OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
 TARGET=minervadaq
 
-LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_acquire 
+LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_acquire -levent_structure
 include $(DAQROOT)/Make.include
 include $(DAQROOT)/Make.options
 
