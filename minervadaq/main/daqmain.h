@@ -5,5 +5,9 @@
 
 struct DAQWorkerArgs * parseArgs( const int& argc, char * argv[], const std::string& controllerID );
 
+void SetUpSigAction();
+void quitsignal_handler(int signum);
+
+bool continueRunning;
 
 #endif
