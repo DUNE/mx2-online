@@ -1,13 +1,11 @@
-#ifndef DAQEvent_cxx
-#define DAQEvent_cxx
+#ifndef DAQHeader_cxx
+#define DAQHeader_cxx
 
-#include "DAQEvent.h"
-/* #include "DAQEventTemplates.h" */
+#include "DAQHeader.h"
 
-// log4cpp category hierarchy.
 log4cpp::Category& daqevt = log4cpp::Category::getInstance(std::string("daqevt"));
 
-DAQEvent::DAQEvent(unsigned char det, unsigned short int config, int run, int sub_run, 
+DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int sub_run, 
     unsigned short int trig, unsigned char ledLevel, unsigned char ledGroup, 
     unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 
     unsigned short int error, unsigned int minos, unsigned int read_time, FrameHeader *header, 
@@ -15,7 +13,7 @@ DAQEvent::DAQEvent(unsigned char det, unsigned short int config, int run, int su
     unsigned short int nFPGAFrames)
 {
   daqevt.setPriority(log4cpp::Priority::DEBUG);
-  daqevt.debugStream() << "->Entering DAQEvent::DAQEvent... Building a DAQ Header.";
+  daqevt.debugStream() << "->Entering DAQHeader::DAQHeader... Building a DAQ Header.";
   unsigned int event_info_block[12]; 
 
   event_info_block[0] = det & 0xFF;
@@ -39,8 +37,8 @@ DAQEvent::DAQEvent(unsigned char det, unsigned short int config, int run, int su
   for (int i = 0; i < 12; i++) {
     daqevt.debugStream() << "   DAQHeader Data Int [" << i << "] = " << event_info_block[i];
   }
-  // We need to allow room for the event header we haven't added yet.
-  int buffer_index = 4; // 4+4=8 bytes for the MINERvA Header.
+  // We need to allow room for the Minerva Frame Header we haven't added yet.
+  int buffer_index = 4; // 4+4=8 bytes for the MINERvA Frame Header.
   for (int i = 0; i < 12; i++) {
     buffer_index += 4;   
     event_block[buffer_index]   = event_info_block[i] & 0xFF;
