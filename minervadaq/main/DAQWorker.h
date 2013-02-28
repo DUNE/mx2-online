@@ -2,7 +2,13 @@
 #define DAQWorker_h
 
 #include <string>
+
+#include "et.h"         // the event transfer stuff
+#include "et_private.h" // event transfer private data types
+#include "et_data.h"    // data structures 
+
 #include "log4cppHeaders.h"
+
 #include "ReadoutWorker.h"
 
 struct DAQWorkerArgs {
@@ -36,11 +42,15 @@ class DAQWorker {
 
   private:  
     const DAQWorkerArgs* args;
+    const bool* status;
 
     std::vector<ReadoutWorker*> readoutWorkerVect;
 
-    void Initialize();  // Prep VME hardware - add CROCs and CRIMs, Init Crate
+    et_att_id      attach; 
+    et_sys_id      sys_id; 
+    void ContactEventBuilder();
 
+    void Initialize();  
     bool WriteToSAMFile();
     bool WriteLastTrigger();
     bool WriteLastTrigger(int triggerNum, int triggerType, unsigned long long triggerTime);
@@ -51,12 +61,13 @@ class DAQWorker {
 
   public:
     explicit DAQWorker( const DAQWorkerArgs* theArgs, 
-        log4cpp::Priority::Value priority );
+        log4cpp::Priority::Value priority, bool *status );
     ~DAQWorker();
 
     int SetUpET();  
     void TakeData();
-    void CloseDownET();
+    bool CloseDownET();
+    bool SendSentinel();
 
 };
 

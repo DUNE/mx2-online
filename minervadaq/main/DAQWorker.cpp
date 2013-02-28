@@ -3,21 +3,20 @@
 
 #include <fstream>
 
-#include "et.h"         // the event transfer stuff
-#include "et_private.h" // event transfer private data types
-#include "et_data.h"    // data structures 
-
+#include "DAQHeader.h"
 #include "DAQWorker.h"
 
 #include "exit_codes.h"
 
 log4cpp::Category& daqLogger = 
-  log4cpp::Category::getInstance(std::string("daqLogger"));
+log4cpp::Category::getInstance(std::string("daqLogger"));
 
 //---------------------------------------------------------
 DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs, 
-    log4cpp::Priority::Value priority ) :
-  args(theArgs)
+    log4cpp::Priority::Value priority,
+    bool *theStatus ) :
+  args(theArgs),
+  status(theStatus)
 {
   daqLogger.setPriority(priority);
 
@@ -73,8 +72,6 @@ int DAQWorker::SetUpET()
 {
   daqLogger.infoStream() << "Setting up ET...";
 
-  et_att_id      attach; 
-  et_sys_id      sys_id; 
   et_openconfig  openconfig;
 
   // Configuring the ET system is the first thing we must do.
@@ -120,11 +117,24 @@ int DAQWorker::SetUpET()
 }
 
 //---------------------------------------------------------
-void DAQWorker::CloseDownET()
+void DAQWorker::ContactEventBuilder()
+{
+  daqLogger.infoStream() << "Contacting Event Builder...";
+
+}
+
+//---------------------------------------------------------
+bool DAQWorker::CloseDownET()
 {
   daqLogger.infoStream() << "Closing down ET...";
 
+  // Detach from the station.
+  if (et_station_detach(sys_id, attach) < 0) {
+    daqLogger.fatal("et_producer: error in station detach\n");
+    return false;
+  }     
 
+  return true;
 }
 
 //---------------------------------------------------------
@@ -134,6 +144,8 @@ void DAQWorker::TakeData()
   this->Initialize();
 
   for (int ngates = 0; ngates < args->numberOfGates; ++ngates) {
+    daqLogger.debugStream() << "Continue Running Status = " << (*status);
+    if (!(*status)) break;
     if (!(ngates % 10)) daqLogger.infoStream() << "Taking data for gate " << ngates;
 
     unsigned long long triggerTime = 0;
@@ -217,10 +229,40 @@ bool DAQWorker::DeclareDAQHeaderToET()
 {
   daqLogger.debugStream() << "Declaring DAQ Header to ET...";
 
+  /* DAQHeader(unsigned char det, unsigned short int config, int run, int sub_run, */
+  /*     unsigned short int trig, unsigned char ledGroup, unsigned char ledLevel, */
+  /*     unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, */
+  /*     unsigned short int error, unsigned int minos, unsigned int read_time, */
+  /*     FrameHeader *header,  unsigned short int nADCFrames, unsigned short int nDiscFrames, */
+  /*     unsigned short int nFPGAFrames); */
+
+  // TODO: Magic numbers must die = make a file for bank encodings (3==DAQ,5==Sent)
+  FrameHeader * frameHeader = new FrameHeader(0,0,0,3,0,0,0,daqHeaderSize);
+  // DAQHeader * daqhead = new DAQHeader();
+  // ContactEventBuilder
+
+  // then, clean up the frame header and DAQ header...
+
   unsigned long long ggate = this->GetGlobalGate();
   if (0 == ggate) return false;
   return PutGlobalGate(++ggate);
 }
+
+//---------------------------------------------------------
+bool DAQWorker::SendSentinel()
+{
+  daqLogger.debugStream() << "Sending Sentinel Frame...";
+
+  // TODO: Magic numbers must die = make a file for bank encodings (3==DAQ,5==Sent)
+  FrameHeader * frameHeader = new FrameHeader(0,0,0,5,0,0,0,daqHeaderSize);
+  // DAQHeader * sentinel = new DAQHeader( frameHeader );
+  // ContactEventBuilder
+  
+  // then, clean up the frame header and DAQ header...
+
+  return true;
+}
+
 
 //---------------------------------------------------------
 unsigned long long DAQWorker::GetGlobalGate()
@@ -246,7 +288,7 @@ unsigned long long DAQWorker::GetGlobalGate()
 //---------------------------------------------------------
 bool DAQWorker::PutGlobalGate(unsigned long long ggate)
 {
-  /*! \fn void PutGlobalGate(unsigned long long ggate)
+  /*! \fn bool PutGlobalGate(unsigned long long ggate)
    *
    * This funciton writes a new value into the global gate data log.
    */
