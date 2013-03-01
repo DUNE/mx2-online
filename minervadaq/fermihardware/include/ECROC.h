@@ -47,6 +47,7 @@ class ECROC : public VMECommunicator {
 
 		EChannels *GetChannel( unsigned int i ); 
 		std::vector<EChannels*>* GetChannelsVector(); 
+    void ClearEmptyChannels();
 
 		void SetupTimingRegister(crocClockModes clockMode, 
         unsigned short testPulseDelayEnabled, 
