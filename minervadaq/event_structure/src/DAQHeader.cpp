@@ -5,24 +5,29 @@
 
 log4cpp::Category& daqevt = log4cpp::Category::getInstance(std::string("daqevt"));
 
+//----------------------------------------------------------------
 DAQHeader::DAQHeader(FrameHeader *header)
 {
   daqevt.setPriority(log4cpp::Priority::DEBUG);
   daqevt.debugStream() << "->Entering DAQHeader::DAQHeader... Building a Sentinel Frame.";
-  for (int i = 0; i < daqHeaderSize; i++) {
-    event_block[i] = 0;
-    /* daqevt.debugStream() << "   event_block[" << i << "] = " << (int)event_block[i]; */  
+
+  dataLength = daqHeaderSize;
+  data = new unsigned char[dataLength];
+
+  for (int i = 0; i < dataLength; i++) {
+    data[i] = 0;
   }
   unsigned short *tmpDAQHeader = header->GetBankHeader();
   int buffer_index = 0; 
   for (int i = 0; i < 4 ;i++) {
-    event_block[buffer_index] = tmpDAQHeader[i]&0xFF;
+    data[buffer_index] = tmpDAQHeader[i]&0xFF;
     buffer_index++;
-    event_block[buffer_index] = (tmpDAQHeader[i]&0xFF00)>>0x08;
+    data[buffer_index] = (tmpDAQHeader[i]&0xFF00)>>0x08;
     buffer_index++;
   }
 }
 
+//----------------------------------------------------------------
 DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int sub_run, 
     unsigned short int trig, unsigned char ledLevel, unsigned char ledGroup, 
     unsigned long long g_gate, unsigned int gate, unsigned long long trig_time, 
@@ -32,7 +37,10 @@ DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int 
 {
   daqevt.setPriority(log4cpp::Priority::DEBUG);
   daqevt.debugStream() << "->Entering DAQHeader::DAQHeader... Building a DAQ Header.";
+
   unsigned int event_info_block[12]; 
+  dataLength = daqHeaderSize;
+  data = new unsigned char[dataLength];
 
   event_info_block[0] = det & 0xFF;
   event_info_block[0] |= 0 <<0x08; //a reserved byte
@@ -59,24 +67,61 @@ DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int 
   int buffer_index = 4; // 4+4=8 bytes for the MINERvA Frame Header.
   for (int i = 0; i < 12; i++) {
     buffer_index += 4;   
-    event_block[buffer_index]   = event_info_block[i] & 0xFF;
-    event_block[buffer_index+1] = (event_info_block[i]>>8) & 0xFF;
-    event_block[buffer_index+2] = (event_info_block[i]>>16) & 0xFF;
-    event_block[buffer_index+3] = (event_info_block[i]>>24) & 0xFF;
+    data[buffer_index]   = event_info_block[i] & 0xFF;
+    data[buffer_index+1] = (event_info_block[i]>>8) & 0xFF;
+    data[buffer_index+2] = (event_info_block[i]>>16) & 0xFF;
+    data[buffer_index+3] = (event_info_block[i]>>24) & 0xFF;
   }
 
   unsigned short *tmpDAQHeader = header->GetBankHeader();
   buffer_index = 0; 
   for (int i = 0; i < 4 ;i++) {
-    event_block[buffer_index] = tmpDAQHeader[i]&0xFF;
+    data[buffer_index] = tmpDAQHeader[i]&0xFF;
     buffer_index++;
-    event_block[buffer_index] = (tmpDAQHeader[i]&0xFF00)>>0x08;
+    data[buffer_index] = (tmpDAQHeader[i]&0xFF00)>>0x08;
     buffer_index++;
   }
   daqevt.debugStream() << " DAQ Header Data...";
   for (int i = 0; i < daqHeaderSize; i++) {
-    daqevt.debugStream() << "   event_block[" << i << "] = " << (int)event_block[i];  
+    daqevt.debugStream() << "   data[" << i << "] = " << (int)data[i];  
   }
+}
+
+//----------------------------------------------------------------
+DAQHeader::~DAQHeader() 
+{ 
+  this->ClearData();
+}
+
+//----------------------------------------------------------------
+unsigned char* DAQHeader::GetData() const 
+{ 
+  return data; 
+}
+
+//----------------------------------------------------------------
+unsigned short DAQHeader::GetDataLength() const 
+{ 
+  return dataLength;
+}
+
+//----------------------------------------------------------------
+void DAQHeader::ClearData() 
+{ 
+  if ( (dataLength > 0) && (NULL != data) ) {
+    delete [] data;
+    data = NULL;
+    dataLength = 0;
+  }
+}
+
+//----------------------------------------------------------------
+unsigned char DAQHeader::GetData(int i) const 
+{
+  if (i < dataLength) { 
+    return data[i]; 
+  }
+  return 0;
 }
 
 #endif
