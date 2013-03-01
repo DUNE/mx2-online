@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rm /work/data/etsys/MinervaDA*
-rm /work/data/rawdata/MinervaDA*dat
-rm /work/data/sam/MinervaDA*py
-rm /work/data/logs/MinervaDA*.txt
+rm /work/data/etsys/testm*
+rm /work/data/rawdata/testm*dat
+rm /work/data/sam/testm*py
+rm /work/data/logs/testm*.txt
