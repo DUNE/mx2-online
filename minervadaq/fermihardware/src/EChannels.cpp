@@ -28,7 +28,7 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
 	 * \param number      :  The channel number (0-3)
    * \param *controller :  Pointer to the VME 2718 Controller servicing this device.
 	 */
-  EChannelLog.setPriority(log4cpp::Priority::DEBUG);  
+  EChannelLog.setPriority(log4cpp::Priority::INFO);  
 
 	channelDirectAddress             = this->address + EChannelOffset * (unsigned int)(channelNumber);
   receiveMemoryAddress             = channelDirectAddress + (unsigned int)ECROCReceiveMemory;
@@ -46,8 +46,6 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
 //----------------------------------------
 EChannels::~EChannels() 
 {
-  for (std::vector<FEB*>::iterator p=FEBsVector.begin(); p!=FEBsVector.end(); p++) delete (*p);
-  FEBsVector.clear();
   for (std::vector<FrontEndBoard*>::iterator p=FrontEndBoardsVector.begin(); p!=FrontEndBoardsVector.end(); p++) delete (*p);
   FrontEndBoardsVector.clear();
 }
@@ -147,27 +145,6 @@ int EChannels::DecodeStatusMessage( const unsigned short& status ) const
 }
 
 //----------------------------------------
-void EChannels::SetupNFEBs( int nFEBs )
-{
-  EChannelLog.debugStream() << "SetupNFEBs for " << nFEBs << " FEBs...";
-  if ( ( nFEBs < 0 ) || (nFEBs > 10) ) {
-    EChannelLog.fatalStream() << "Cannot have less than 0 or more than 10 FEBs on a Channel!";
-    exit(EXIT_CONFIG_ERROR);
-  }
-  for ( int i=1; i<=nFEBs; ++i ) {
-    EChannelLog.debugStream() << "Setting up FEB " << i << " ...";
-    FEB *feb = new FEB( (febAddresses)i );
-    if ( isAvailable( feb ) ) {
-      FEBsVector.push_back( feb );
-    } else {
-      EChannelLog.fatalStream() << "Requested FEB with address " << i << " is not avialable!";
-      exit(EXIT_CONFIG_ERROR);
-    }
-  }
-  this->UpdateConfigurationForVal( (unsigned short)(0xF & nFEBs), (unsigned short)0xFFF0 );
-}
-
-//----------------------------------------
 void EChannels::SetupNFrontEndBoards( int nFEBs )
 {
   EChannelLog.debugStream() << "SetupNFrontEndBoards for " << nFEBs << " FEBs...";
@@ -176,7 +153,7 @@ void EChannels::SetupNFrontEndBoards( int nFEBs )
     exit(EXIT_CONFIG_ERROR);
   }
   for ( int i=1; i<=nFEBs; ++i ) {
-    EChannelLog.debugStream() << "Setting up FEB " << i << " ...";
+    EChannelLog.infoStream() << "Setting up FEB " << i << " ...";
     FrontEndBoard *feb = new FrontEndBoard( (febAddresses)i );
     if ( isAvailable( feb ) ) {
       FrontEndBoardsVector.push_back( feb );
@@ -241,20 +218,6 @@ void EChannels::SetChannelConfiguration( unsigned char* message ) const
   if( error ) exitIfError( error, "Failure writing to Channel Configuration Register!"); 
 }
 
-
-//----------------------------------------
-std::vector<FEB*>* EChannels::GetFEBVector() 
-{
-  return &FEBsVector;
-}
-
-//----------------------------------------
-FEB* EChannels::GetFEBVector( int index /* should always equal FEB address - 1 (vect:0..., addr:1...) */ ) 
-{
-  // TODO: add check for null here? or too slow? (i.e., live fast and dangerouss)
-  return FEBsVector[index];
-}
-
 //----------------------------------------
 std::vector<FrontEndBoard*>* EChannels::GetFrontEndBoardVector() 
 {
@@ -269,25 +232,9 @@ FrontEndBoard* EChannels::GetFrontEndBoardVector( int index /* should always equ
 }
 
 //----------------------------------------
-bool EChannels::isAvailable( FEB* feb ) const
+unsigned int EChannels::GetNumFrontEndBoards() const
 {
-  EChannelLog.debugStream() << "isAvailable FEB with class address = " << feb->GetBoardNumber();
-  bool available = false;
-  this->ClearAndResetStatusRegister();
-
-  unsigned short dataLength = this->ReadFPGAProgrammingRegistersToMemory( feb );
-  unsigned char* dataBuffer = this->ReadMemory( dataLength ); 
-
-  feb->message = dataBuffer;
-  feb->DecodeRegisterValues(dataLength);
-  EChannelLog.debugStream() << "Decoded FEB address = " << (int)feb->GetBoardID();
-  if( (int)feb->GetBoardID() == feb->GetBoardNumber() ) available = true;
-
-  feb->message = 0;
-  delete [] dataBuffer;
-
-  EChannelLog.debugStream() << "FEB " << feb->GetBoardNumber() << " isAvailable = " << available;
-  return available;
+  return FrontEndBoardsVector.size();
 }
 
 //----------------------------------------
@@ -295,7 +242,6 @@ bool EChannels::isAvailable( FrontEndBoard* feb ) const
 {
   EChannelLog.debugStream() << "isAvailable FrontEndBoard with class address = " << feb->GetBoardNumber();
   bool available = false;
-  this->ClearAndResetStatusRegister();
 
   std::tr1::shared_ptr<FPGAFrame> frame = feb->GetFPGAFrame();
   unsigned short dataLength = this->ReadFPGAProgrammingRegistersToMemory( frame );
@@ -462,32 +408,6 @@ void EChannels::WriteFrameRegistersToMemory( std::tr1::shared_ptr<LVDSFrame> fra
 }
 
 //----------------------------------------
-void EChannels::WriteFPGAProgrammingRegistersToMemory( FEB *feb ) const
-{
-  // Note: this function does not send the message! It only writes the message to the CROC memory.
-  feb->MakeMessage(); 
-  this->WriteMessageToMemory( feb->GetOutgoingMessage(), feb->GetOutgoingMessageLength() );
-  feb->DeleteOutgoingMessage(); 
-}
-
-//----------------------------------------
-/* void EChannels::WriteFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const */
-/* { */
-/*   // Note: this function does not send the message! It only writes the message to the CROC memory. */
-/*   frame->MakeMessage(); */ 
-/*   this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() ); */
-/* } */
-
-//----------------------------------------
-void EChannels::WriteFPGAProgrammingRegistersDumpReadToMemory( FEB *feb ) const
-{
-  // Note: this function does not send the message! It only writes the message to the CROC memory.
-  feb->MakeShortMessage();  // Use the "DumpRead" option.
-  this->WriteMessageToMemory( feb->GetOutgoingMessage(), feb->GetOutgoingMessageLength() );
-  feb->DeleteOutgoingMessage(); 
-}
-
-//----------------------------------------
 void EChannels::WriteFPGAProgrammingRegistersDumpReadToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const
 {
   // Note: this function does not send the message! It only writes the message to the CROC memory.
@@ -496,60 +416,10 @@ void EChannels::WriteFPGAProgrammingRegistersDumpReadToMemory( std::tr1::shared_
 }
 
 //----------------------------------------
-void EChannels::WriteFPGAProgrammingRegistersReadFrameToMemory( FEB *feb ) const
-{
-  // Note: this function does not send the message! It only writes the message to the CROC memory.
-  Devices dev     = FPGA;
-  Broadcasts b    = None;
-  Directions d    = MasterToSlave;
-  FPGAFunctions f = Read;
-  feb->MakeDeviceFrameTransmit( dev, b, d, f, (unsigned int)feb->GetBoardNumber() );
-  this->WriteFPGAProgrammingRegistersToMemory( feb );
-}
-
-//----------------------------------------
-void EChannels::WriteTRIPRegistersToMemory( FEB *feb, int tripNumber ) const
-{
-  feb->GetTrip(tripNumber)->MakeMessage();
-  this->WriteMessageToMemory( feb->GetTrip(tripNumber)->GetOutgoingMessage(), 
-      feb->GetTrip(tripNumber)->GetOutgoingMessageLength() );
-  feb->GetTrip(tripNumber)->DeleteOutgoingMessage();
-}
-
-//----------------------------------------
-/* void EChannels::WriteTRIPRegistersToMemory( std::tr1::shared_ptr<TRIPFrame> frame ) const */
-/* { */
-/*   frame->MakeMessage(); */
-/*   this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() ); */
-/* } */
-
-//----------------------------------------
-void EChannels::WriteTRIPRegistersReadFrameToMemory( FEB *feb, int tripNumber ) const
-{
-  feb->GetTrip(tripNumber)->SetRead(true);
-  this->WriteTRIPRegistersToMemory( feb, tripNumber );
-}
-
-//----------------------------------------
 void EChannels::WriteTRIPRegistersReadFrameToMemory( std::tr1::shared_ptr<TRIPFrame> frame ) const
 {
   frame->SetRead(true);
-  /* this->WriteTRIPRegistersToMemory( frame ); */
   this->WriteFrameRegistersToMemory( frame );
-}
-
-//----------------------------------------
-unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( FEB *feb ) const
-{
-  // Note: this function does not retrieve the data from memory! It only loads it and reads the pointer.
-  this->ClearAndResetStatusRegister();
-  /* this->WriteFPGAProgrammingRegistersReadFrameToMemory( feb ); */ // remove this line after adopting FPGAFrame class.
-  this->WriteFPGAProgrammingRegistersDumpReadToMemory( feb );
-  this->SendMessage();
-  this->WaitForMessageReceived();
-  unsigned short dataLength = this->ReadDPMPointer();
-
-  return dataLength;
 }
 
 //----------------------------------------
