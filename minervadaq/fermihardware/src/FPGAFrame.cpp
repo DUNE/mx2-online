@@ -24,7 +24,7 @@ FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrame()
    *       It will need to be adjusted for other firmware versions. ECS & GNP
    */
   febNumber[0] = (unsigned char)a; 
-  FPGAFrameLog.setPriority(log4cpp::Priority::DEBUG);  
+  FPGAFrameLog.setPriority(log4cpp::Priority::INFO);  
 
   Devices dev     = FPGA;          
   Broadcasts b    = None;          
@@ -483,11 +483,7 @@ void FPGAFrame::DecodeRegisterValues()
 void FPGAFrame::SetFPGAFrameDefaultValues() 
 {
   /*! \fn ********************************************************************************
-   * Sets default (pre-defined) values for FPGAFrame information.  These are hard-coded
-   * in this function.  No real reason not to hard-code the default values unless
-   * the situation arises where different FPGAFrame's would indeed need to have different
-   * default values.  Then this would need to be changed.  There are a number of 
-   * readonly registers initialized anyway (not all are marked with comments!).
+   * Sets default values for FPGAFrame information. Not intended for use with hardware.
    *********************************************************************************/
   Timer           = 12;
   GateStart       = 43300; // (65535 - 43300 ticks ) * 9.4 ns/tick ~ 209 us delay before gate open
@@ -538,10 +534,7 @@ void FPGAFrame::SetFPGAFrameDefaultValues()
   TripXCompEnc[0]      = 0;
   for (int i=0; i<4; i++) {DiscrimEnableMask[i]=0xFFFF;} // default to discr. enabled
   GateTimeStamp = 0; // readonly
-#if DEBUG_FPGAFrame&&DEBUG_VERBOSE
   FPGAFrameLog.debugStream() << "Default FPGA register values set.";
-  ShowValues();
-#endif
 }
 
 
