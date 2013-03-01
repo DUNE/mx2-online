@@ -13,6 +13,9 @@
  * Header part of the buffer.
  */
 class FrameHeader {
+
+  friend std::ostream& operator<<(std::ostream&, const FrameHeader&);
+
 	private:
 		unsigned short bank_header[4]; 
 
@@ -20,7 +23,7 @@ class FrameHeader {
 		FrameHeader(int crateID, int crocID, int chanID, 
 			int bank, int feb_number, int firmware, int hit, int length);
 		~FrameHeader() { };
-		unsigned short inline *GetBankHeader() { return bank_header; };
+		const unsigned short inline *GetBankHeader() const { return bank_header; };
 };
 
 

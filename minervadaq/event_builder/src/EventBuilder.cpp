@@ -49,11 +49,11 @@ int main(int argc, char *argv[])
   }
 
   struct timeval hpnow; 
-	gettimeofday(&hpnow,NULL);
+  gettimeofday(&hpnow,NULL);
 
   char log_filename[100]; 
   // TODO: Setup precompiler options for logs on Nearline, other machines, and timestamping.
-	sprintf(log_filename, "/work/data/logs/EventBuilderLog.txt"); 
+  sprintf(log_filename, "/work/data/logs/EventBuilderLog.txt"); 
 
   eventBuilderAppender = new log4cpp::FileAppender("default", log_filename,false);
   eventBuilderAppender->setLayout(new log4cpp::BasicLayout());
@@ -198,7 +198,6 @@ int main(int argc, char *argv[])
 
     if (!waiting_to_quit)
     {
-      eventbuilder.debugStream() << "Not waiting to quit...";
       // case 1: try to get an event but return immediately.
 
       time.tv_sec  = 0;
@@ -216,10 +215,7 @@ int main(int argc, char *argv[])
       // for another event (the 'continue' is below the specific error
       // handling that follows below).  note that the 'time' parameter
       // is ignored in this mode.
-      eventbuilder.debugStream() << "Getting status...";
       status = et_event_get(sys_id, attach, &pe, ET_ASYNC, &time);
-      // TODO print args too
-      eventbuilder.debugStream() << " status = " << status;
     }
     else if (waiting_to_quit && !quit_now)
     {
@@ -286,7 +282,7 @@ int main(int argc, char *argv[])
     status = et_event_put(sys_id, attach, pe); 
     evt_counter++;
     // Now write the event to the binary output file.
-    binary_outputfile.write((char *) evt->eventData, evt->dataLength);  
+    binary_outputfile.write((char *) evt->data, evt->dataLength);  
     binary_outputfile.flush();
   }
 
@@ -339,4 +335,7 @@ void quitsignal_handler(int signum)
     signal (signum, quitsignal_handler);
   }
 }
+
+
+
 #endif

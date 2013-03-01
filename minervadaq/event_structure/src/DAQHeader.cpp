@@ -17,7 +17,7 @@ DAQHeader::DAQHeader(FrameHeader *header)
   for (int i = 0; i < dataLength; i++) {
     data[i] = 0;
   }
-  unsigned short *tmpDAQHeader = header->GetBankHeader();
+  const unsigned short *tmpDAQHeader = header->GetBankHeader();
   int buffer_index = 0; 
   for (int i = 0; i < 4 ;i++) {
     data[buffer_index] = tmpDAQHeader[i]&0xFF;
@@ -73,7 +73,7 @@ DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int 
     data[buffer_index+3] = (event_info_block[i]>>24) & 0xFF;
   }
 
-  unsigned short *tmpDAQHeader = header->GetBankHeader();
+  const unsigned short *tmpDAQHeader = header->GetBankHeader();
   buffer_index = 0; 
   for (int i = 0; i < 4 ;i++) {
     data[buffer_index] = tmpDAQHeader[i]&0xFF;

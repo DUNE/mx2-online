@@ -2,8 +2,15 @@
 #define DAQWorker_h
 
 #include "log4cppHeaders.h"
-#include "EventBuilder.h"
+#include "EventHandler.h"
 #include "ReadoutWorker.h"
+#include "et.h"          // the event transfer stuff
+#include "et_private.h"  // event transfer private data types
+#include "et_data.h"     // data structures 
+
+/* #include <cstddef> */
+/* #include <cstdlib> */
+/* #include <assert.h> */
 
 struct DAQWorkerArgs {
 
@@ -53,6 +60,11 @@ class DAQWorker {
 
     unsigned long long GetGlobalGate();
     bool PutGlobalGate( unsigned long long globalGate );
+
+    // The CROC-E DAQ receives "globs" of data spanning entire chains.
+    template <class X> struct EventHandler * CreateEventHandler( X *dataBlock );
+    void DestroyEventHandler( struct EventHandler * handler );
+
 
   public:
     explicit DAQWorker( const DAQWorkerArgs* theArgs, 
