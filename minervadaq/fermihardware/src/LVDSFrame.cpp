@@ -29,7 +29,7 @@ LVDSFrame::LVDSFrame()
   deviceFunction[0]   = 0;
   broadcastCommand[0] = 0;
   messageDirection[0] = 0;
-  lvdsLog.setPriority(log4cpp::Priority::DEBUG);
+  lvdsLog.setPriority(log4cpp::Priority::INFO);
 }
 
 //-------------------------------------------------------

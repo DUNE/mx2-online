@@ -24,6 +24,7 @@ VMECommunicator::VMECommunicator( unsigned int theAddress,
 	this->dataWidthSwapped    = cvD32_swapped;
 	this->dataWidthReg        = cvD16;  
 	this->dataWidthSwappedReg = cvD16_swapped;
+  commLog.setPriority(log4cpp::Priority::NOTICE);  
 }
 
 //-----------------------------
