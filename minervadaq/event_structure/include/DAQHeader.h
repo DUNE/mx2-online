@@ -10,8 +10,8 @@ static const int daqHeaderSize = 56;
  */
 class DAQHeader {
 	private:
-		unsigned char *data_block; 
-		unsigned char event_block[daqHeaderSize]; 
+		unsigned char* data; 
+    unsigned short dataLength;
 
 	public:
     DAQHeader(FrameHeader *header); // by default we build a Sentinel frame.
@@ -21,10 +21,12 @@ class DAQHeader {
 			unsigned short int error, unsigned int minos, unsigned int read_time, 
 			FrameHeader *header,  unsigned short int nADCFrames, unsigned short int nDiscFrames, 
 			unsigned short int nFPGAFrames);
-		~DAQHeader() { };
-		inline unsigned char* GetDataBlock() const { return data_block; };
-		void DeleteDataBlock() { delete [] data_block; };
-		unsigned char inline GetEventBlock(int i) const { return event_block[i]; };
+		~DAQHeader();
+
+		unsigned char* GetData() const;
+		unsigned char GetData(int i) const;
+		unsigned short GetDataLength() const;
+		void ClearData();
 };
 
 #endif

@@ -14,7 +14,7 @@ SequencerReadoutBlock::SequencerReadoutBlock() :
   data(NULL),
   dataLength(0)
 {
-  SequencerReadoutBlockLog.setPriority(log4cpp::Priority::DEBUG);  
+  SequencerReadoutBlockLog.setPriority(log4cpp::Priority::INFO);  
 }
 
 //-----------------------------------------------------
