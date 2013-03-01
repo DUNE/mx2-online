@@ -223,7 +223,7 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
 {
   std::cout << "Testing Read Discrs...";  
 
-  for (unsigned int nboard = 1; nboard <= 1/*nFEBs*/; nboard++) {
+  for (unsigned int nboard = 1; nboard <= nFEBs; nboard++) {
 
     channel->ClearAndResetStatusRegister();
 
@@ -475,15 +475,6 @@ void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
   logger.debugStream() << "Passed:--------------FEBTRiPWriteReadTest--------------";
   std::cout << "Passed!" << std::endl;
   testCount++;
-}
-
-//---------------------------------------------------
-void FPGAWriteConfiguredFrame( EChannels* channel, FEB* feb )
-{
-  channel->ClearAndResetStatusRegister();
-  channel->WriteFPGAProgrammingRegistersToMemory( feb );
-  channel->SendMessage();
-  channel->WaitForMessageReceived();
 }
 
 //---------------------------------------------------

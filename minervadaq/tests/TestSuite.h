@@ -57,7 +57,6 @@ ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCar
 
 //--------------------------------------------------------------------------------------
 // Helper Functions - not tests per se.
-void FPGAWriteConfiguredFrame( EChannels* channel, FEB* feb );
 void FPGAWriteConfiguredFrame( EChannels* channel, std::tr1::shared_ptr<FPGAFrame> frame );
 void FPGASetupForChargeInjection( EChannels* channel, int boardID );
 void TRIPSetupForChargeInjection( EChannels* channel, int boardID );
