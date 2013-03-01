@@ -107,9 +107,11 @@ int DAQWorker::SetUpET()
   et_system_setdebug(sys_id, ET_DEBUG_INFO);
 
   // Attach to GRANDCENTRAL station since we are producing events.
-  if (et_station_attach(sys_id, ET_GRANDCENTRAL, &attach) < 0) {
+  int etattstat = et_station_attach(sys_id, ET_GRANDCENTRAL, &attach); 
+  if (etattstat < 0) {
     daqLogger.fatalStream() << "et_producer: error in station attach!";
-    return EXIT_UNSPECIFIED_ERROR;
+    daqLogger.fatalStream() << " error code = " << etattstat;
+    return etattstat;
   } 
   daqLogger.infoStream() << "Successfully attached to GRANDCENTRAL Station.";        
 
@@ -206,7 +208,7 @@ void DAQWorker::TakeData()
   daqLogger.infoStream() << "Beginning Data Acquisition...";
   this->Initialize();
 
-  for (int ngates = 0; ngates < args->numberOfGates; ++ngates) {
+  for (int ngates = 1; ngates <= args->numberOfGates; ++ngates) {
     daqLogger.debugStream() << "Continue Running Status = " << (*status);
     if (!(*status)) break;
     if (!(ngates % 10)) daqLogger.infoStream() << "Taking data for gate " << ngates;

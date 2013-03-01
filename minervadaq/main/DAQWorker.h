@@ -36,7 +36,7 @@ class DAQWorker {
 
   private:  
     const DAQWorkerArgs* args;
-    const bool* status;
+    const bool *const status;
 
     std::vector<ReadoutWorker*> readoutWorkerVect;
 
