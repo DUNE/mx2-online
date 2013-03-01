@@ -89,7 +89,8 @@ void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1
   if (address < (1<<ECROCAddressShift)) {
     address = address << ECROCAddressShift;
   }
-  readoutLogger.debugStream() << "Adding ECROC with address = 0x" << std::hex << address << " and FEBs-to-Channel of (" 
+  readoutLogger.infoStream() << "Adding ECROC with address = 0x" 
+    << std::hex << address << " and FEBs-to-Channel of (" 
     << std::dec << nFEBchan0 << ", " << nFEBchan1 << ", " << nFEBchan2 << ", " << nFEBchan3 << ")";
   if (nFEBchan0<0 || nFEBchan0>10) nFEBchan0 = 0;
   if (nFEBchan1<0 || nFEBchan1>10) nFEBchan1 = 0;
@@ -107,6 +108,7 @@ void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1
   readoutLogger.debugStream() << " Setup Channel 2 with " << nFEBchan2 << " FEBS.";
   theECROC->GetChannel( 3 )->SetupNFrontEndBoards( nFEBchan3 );
   readoutLogger.debugStream() << " Setup Channel 3 with " << nFEBchan3 << " FEBS.";
+  theECROC->ClearEmptyChannels();
   ecrocs.push_back( theECROC );
   readoutLogger.debugStream() << "Added ECROC.";
 }
@@ -117,7 +119,7 @@ void ReadoutWorker::AddCRIM( unsigned int address )
   if (address < (1<<CRIMAddressShift)) {
     address = address << CRIMAddressShift;
   }
-  readoutLogger.debugStream() << "Adding CRIM with address = 0x" << std::hex << address; 
+  readoutLogger.infoStream() << "Adding CRIM with address = 0x" << std::hex << address; 
   CRIM* crim = new CRIM( address, this->controller );
   readoutLogger.debugStream() << " CRIM Status = 0x" << std::hex << crim->GetStatus();
   crims.push_back( crim );
