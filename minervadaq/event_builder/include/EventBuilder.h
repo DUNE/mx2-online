@@ -5,6 +5,7 @@
 #include <sstream>
 #include <fstream>
 #include <signal.h>
+#include "EventHandler.h"
 #include "DAQHeader.h" 
 #include "eb_service.h"  // the header files needed to run the service
 #include "et.h"          // the event transfer stuff
@@ -19,13 +20,6 @@
  * simple local socket-based server process that consumes data 
  * for storage and publication to the monitoring framework.  
  */
-
-// The CROC-E DAQ receives "globs" of data spanning entire chains.
-
-struct EventHandler {
-  unsigned short dataLength;
-  unsigned char eventData[ MaxTotalDataPerChain ];
-};
 
 
 #endif

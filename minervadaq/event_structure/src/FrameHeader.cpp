@@ -60,6 +60,16 @@ FrameHeader::FrameHeader(int crateID, int crocID, int chanID,
   frameheader.debug("\t  [3]0x%04X [2]0x%04X",bank_header[3],bank_header[2]);
 }
 
+//-----------------------------
+std::ostream& operator<<(std::ostream& out, const FrameHeader& s)
+{
+  const unsigned short *header = s.GetBankHeader();
+  for (unsigned int i = 0; i < 4; ++i)
+    out << "Word[" << std::dec << i << "] = 0x" << std::hex << header[i] << " ";
+      
+  return out;
+}
+
 
 
 

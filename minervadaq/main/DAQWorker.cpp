@@ -3,6 +3,7 @@
 
 #include <fstream>
 
+#include "EventHandler.h"
 #include "DAQHeader.h"
 #include "DAQWorker.h"
 
@@ -164,7 +165,7 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
         daqLogger.debugStream() << "Finished Processing Event Data:";
         for (int index = 0; index < length; index++) {
           daqLogger.debug("     Data Byte %02d = 0x%02X",
-              index,(unsigned int)handler->eventData[index]);
+              index,(unsigned int)handler->data[index]);
         }
       }
       // TODO : memmove?
@@ -313,8 +314,11 @@ bool DAQWorker::DeclareDAQHeaderToET(int triggerNum, int triggerType,
         args->subRunNumber, triggerType, args->ledGroup, args->ledLevel,
         ggate, triggerNum, triggerTime, error, minos, readoutTime,
         frameHeader,  nADCFrames, nDiscFrames, nFPGAFrames);
-  // ContactEventBuilder
+  struct EventHandler * handler = NULL;
+  handler = CreateEventHandler<DAQHeader>( daqhead );
+  ContactEventBuilder( handler );
 
+  DestroyEventHandler( handler );
   // then, clean up the frame header and DAQ header...
 
   return PutGlobalGate(++ggate);
@@ -327,6 +331,7 @@ bool DAQWorker::SendSentinel()
 
   // TODO: Magic numbers must die = make a file for bank encodings (3==DAQ,5==Sent)
   FrameHeader * frameHeader = new FrameHeader(0,0,0,5,0,0,0,daqHeaderSize);
+  daqLogger.debugStream() << " Minerva Frame Header: " << (*frameHeader);
   // DAQHeader * sentinel = new DAQHeader( frameHeader );
   // ContactEventBuilder
 
@@ -377,5 +382,25 @@ bool DAQWorker::PutGlobalGate(unsigned long long ggate)
   daqLogger.debugStream() << "Put global gate " << ggate;
   return true;
 }
+
+template <class X> struct EventHandler * DAQWorker::CreateEventHandler( X *dataBlock )
+{
+  struct EventHandler * handler = (struct EventHandler *)malloc( sizeof(struct EventHandler) );
+  assert( NULL != handler );
+
+  handler->dataLength = dataBlock->GetDataLength();
+  // If data ever becomes dynamic, we need to new it here.
+  memcpy( handler->data, dataBlock->GetData(), handler->dataLength ); // dest, src, length
+  
+  return handler;
+}
+
+void DAQWorker::DestroyEventHandler( struct EventHandler * handler )
+{
+  assert( NULL != handler );
+  // If data ever becomes dynamic, we need to free it here.
+  free( handler );
+}
+
 
 #endif
