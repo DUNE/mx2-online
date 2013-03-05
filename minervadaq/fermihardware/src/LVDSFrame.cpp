@@ -45,7 +45,8 @@ LVDSFrame::~LVDSFrame()
 }    
 
 //------------------------------------------
-void LVDSFrame::MakeDeviceFrameTransmit( Devices dev, Broadcasts b, Directions d, 
+void LVDSFrame::MakeDeviceFrameTransmit( FrameTypes::Devices dev, 
+    FrameTypes::Broadcasts b, FrameTypes::Directions d, 
     unsigned int deviceFun, unsigned int febNum ) 
 {
   /*! \fn********************************************************************************
@@ -126,6 +127,8 @@ bool LVDSFrame::CheckForErrors()
   /*! \fn bool LVDSFrame::CheckForErrors()
    * Check incoming frame header data for errors.
    */
+  using namespace FrameTypes;
+
   bool error = false; 
 
   // There isn't really a good check we can make on message length here.
@@ -134,15 +137,15 @@ bool LVDSFrame::CheckForErrors()
   lvdsLog.debugStream() << "CheckForErrors Frame Status = 0x" << std::hex << status;
 
   const unsigned int nflags = 8;
-  ResponseWords words[nflags] = { FrameStart, DeviceStatus, DeviceStatus, FrameStatus, 
+  ResponseBytes bytes[nflags] = { FrameStart, DeviceStatus, DeviceStatus, FrameStatus, 
     FrameStatus, FrameStatus, FrameStatus, FrameStatus }; 
   ResponseFlags flags[nflags] = { Direction, DeviceOK, FunctionOK, CRCOK, 
     EndHeader, MaxLen, SecondStart, NAHeader }; 
 
   for (unsigned int i = 0; i < nflags; ++i) {
-    if (!receivedMessage[ words[i] ] & flags[i]) {
+    if (!receivedMessage[ bytes[i] ] & flags[i]) {
       error = true;
-      lvdsLog.errorStream() << "HeaderError for word: " << words[i] 
+      lvdsLog.errorStream() << "HeaderError for byte: " << bytes[i] 
         << "; and flag : " << flags[i]
         << "; for FEB " << this->GetFEBNumber();
     }
@@ -156,11 +159,14 @@ bool LVDSFrame::CheckForErrors()
 //------------------------------------------
 unsigned short LVDSFrame::ReceivedMessageLength() const
 {
+  using namespace FrameTypes;
+
   lvdsLog.debugStream() << "LVDSFrame::ReceivedMessageLength()";
   if (NULL == receivedMessage) {
     lvdsLog.errorStream() << "receivedMessage is NULL!";
     return 0;
   }
+
   lvdsLog.debugStream() << "Message Length = " << ( (receivedMessage[ResponseLength0]<<8) | receivedMessage[ResponseLength1] );
   return ( (receivedMessage[ResponseLength0]<<8) | receivedMessage[ResponseLength1] ); 
 }
@@ -169,7 +175,8 @@ unsigned short LVDSFrame::ReceivedMessageLength() const
 unsigned short LVDSFrame::ReceivedMessageStatus() const
 {
   if (NULL == receivedMessage) return 0;
-  return ( (receivedMessage[FrameStatus0]<<8) | receivedMessage[FrameStatus1] ); 
+  return ( (receivedMessage[FrameTypes::FrameStatus0]<<8) | 
+      receivedMessage[FrameTypes::FrameStatus1] ); 
 }
 
 
@@ -180,20 +187,22 @@ void LVDSFrame::DecodeHeader()
    * extract device information from the FPGA header sent back from
    * the electronics by a read request.
    */
-  lvdsLog.debugStream() << " Entering LVDSFrame::DecodeHeader...";
-  ResponseWords word; // actually a byte
+  using namespace FrameTypes;
 
-  word = FrameStart; 
-  febNumber[0]        = (receivedMessage[word]&0x0F); 
-  broadcastCommand[0] = (receivedMessage[word]&0xF0); 
-  messageDirection[0] = (receivedMessage[word]&0x80); 
-  word = DeviceStatus;
-  deviceFunction[0]   = (receivedMessage[word]&0x0F); 
-  targetDevice[0]     = (receivedMessage[word]&0xF0); 
+  lvdsLog.debugStream() << " Entering LVDSFrame::DecodeHeader...";
+  ResponseBytes byte; 
+
+  byte = FrameStart; 
+  febNumber[0]        = (receivedMessage[byte]&0x0F); 
+  broadcastCommand[0] = (receivedMessage[byte]&0xF0); 
+  messageDirection[0] = (receivedMessage[byte]&0x80); 
+  byte = DeviceStatus;
+  deviceFunction[0]   = (receivedMessage[byte]&0x0F); 
+  targetDevice[0]     = (receivedMessage[byte]&0xF0); 
   lvdsLog.debugStream() << "  FEB Number            : " << (int)febNumber[0];
   lvdsLog.debugStream() << "  Device Function       : " << (int)deviceFunction[0];
-  lvdsLog.debugStream() << "  message at framestart : " << (int)receivedMessage[word];
-  lvdsLog.debugStream() << "  direction             : " << (int)(receivedMessage[word]&0x80);
+  lvdsLog.debugStream() << "  message at framestart : " << (int)receivedMessage[byte];
+  lvdsLog.debugStream() << "  direction             : " << (int)(receivedMessage[byte]&0x80);
 }
 
 //------------------------------------------
@@ -216,6 +225,8 @@ void LVDSFrame::printReceivedMessageToLog()
 //-----------------------------
 std::ostream& operator<<(std::ostream& out, const LVDSFrame& s)
 {
+  using namespace FrameTypes;
+
   std::string device = "Uknown Device";
   switch (s.GetDeviceType()) {
     case (NoDevices) :

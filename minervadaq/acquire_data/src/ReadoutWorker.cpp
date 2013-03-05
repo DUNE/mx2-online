@@ -86,8 +86,8 @@ CRIM* ReadoutWorker::masterCRIM()
 //---------------------------
 void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1, int nFEBchan2, int nFEBchan3 )
 {
-  if (address < (1<<ECROCAddressShift)) {
-    address = address << ECROCAddressShift;
+  if (address < (1<<VMEModuleTypes::ECROCAddressShift)) {
+    address = address << VMEModuleTypes::ECROCAddressShift;
   }
   readoutLogger.infoStream() << "Adding ECROC with address = 0x" 
     << std::hex << address << " and FEBs-to-Channel of (" 
@@ -116,8 +116,8 @@ void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1
 //---------------------------
 void ReadoutWorker::AddCRIM( unsigned int address )
 {
-  if (address < (1<<CRIMAddressShift)) {
-    address = address << CRIMAddressShift;
+  if (address < (1<<VMEModuleTypes::CRIMAddressShift)) {
+    address = address << VMEModuleTypes::CRIMAddressShift;
   }
   readoutLogger.infoStream() << "Adding CRIM with address = 0x" << std::hex << address; 
   CRIM* crim = new CRIM( address, this->controller );

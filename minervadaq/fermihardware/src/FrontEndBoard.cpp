@@ -8,7 +8,7 @@
 log4cpp::Category& FrontEndBoardLog = log4cpp::Category::getInstance(std::string("FrontEndBoard"));
 
 //-----------------------------------------------------
-FrontEndBoard::FrontEndBoard( febAddresses a )
+FrontEndBoard::FrontEndBoard( FrameTypes::febAddresses a )
 {
   /*! \fn********************************************************************************
    * The log-free constructor takes the following arguments:
@@ -33,6 +33,8 @@ std::tr1::shared_ptr<FPGAFrame> FrontEndBoard::GetFPGAFrame()
 //-----------------------------------------------------
 std::tr1::shared_ptr<TRIPFrame> FrontEndBoard::GetTRIPFrame(int tripNumber)
 {
+  using namespace TripTTypes;
+
   TRiPFunctions chipFunction = tNone;
   switch (tripNumber) {   
     case 0:
@@ -64,6 +66,8 @@ std::tr1::shared_ptr<TRIPFrame> FrontEndBoard::GetTRIPFrame(int tripNumber)
 //-----------------------------------------------------
 std::tr1::shared_ptr<ADCFrame> FrontEndBoard::GetADCFrame(int hitBlock)
 {
+  using namespace FrameTypes;
+
   RAMFunctionsHit ramFunction = NoRAM;
   switch (hitBlock) {
     case 0:

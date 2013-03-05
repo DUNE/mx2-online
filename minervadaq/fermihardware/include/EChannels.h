@@ -12,9 +12,9 @@
 
 /* custom header files here */
 #include "FrontEndBoard.h"
-#include "MinervaDAQtypes.h"
 #include "FrameTypes.h"
 #include "VMECommunicator.h"
+#include "VMEModuleTypes.h"
 
 /*********************************************************************************
 * Class for creating CROC-E channel objects for use with the 

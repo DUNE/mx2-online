@@ -23,7 +23,8 @@ static int testCount = 0;
 // 338 == 18 + 40 per hit per TRiP
 // At some point, we expect 3 x 446 bytes for ADC Frames when the Channel reads
 // the "un-timed" hit buffer as well (N+1 readout mode).
-static const int chgInjReadoutBytesPerBoard = FPGAFrameMaxSize + 2*ADCFrameMaxSize + 338;
+static const int chgInjReadoutBytesPerBoard = MinervaDAQSizes::FPGAFrameMaxSize + 
+  2*MinervaDAQSizes::ADCFrameMaxSize + 338;
 
 static const unsigned short genericGateStart = 40938;
 static const unsigned short genericHVTarget = 25000;
@@ -198,8 +199,8 @@ ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCar
 CRIM * GetAndTestCRIM( unsigned int address, Controller * controller )
 {
   std::cout << "Testing Get and Test CRIM...";  
-  if (address < (1<<CRIMAddressShift)) {
-    address = address << CRIMAddressShift;
+  if (address < (1<<VMEModuleTypes::CRIMAddressShift)) {
+    address = address << VMEModuleTypes::CRIMAddressShift;
   }
   CRIM * crim = new CRIM( address, controller );
 
@@ -274,7 +275,7 @@ void ReadADCTest( EChannels* channel, unsigned int nFEBs )
     unsigned short status = channel->WaitForMessageReceived();
     assert( 0x1010 == status );
     unsigned short pointer = channel->ReadDPMPointer();
-    assert( ADCFrameMaxSize == pointer ); 
+    assert( MinervaDAQSizes::ADCFrameMaxSize == pointer ); 
     unsigned char* data = channel->ReadMemory( pointer );
 
     frame->SetReceivedMessage(data);
@@ -385,7 +386,7 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
 
     // ReadFPGAProgrammingRegisters sets up the message and reads the data into the channel memory...
     unsigned short dataLength = channel->ReadFPGAProgrammingRegistersToMemory( frame );
-    assert( dataLength == FPGAFrameMaxSize );
+    assert( MinervaDAQSizes::FPGAFrameMaxSize == dataLength );
     // ...then ReadMemory retrieves the data.
     unsigned char * dataBuffer = channel->ReadMemory( dataLength );
     frame->SetReceivedMessage(dataBuffer);
@@ -394,7 +395,7 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
     logger.debugStream() << "We read fpga's for feb " << (int)frame->GetBoardID();
     frame->ShowValues();
 
-    assert( FPGA == frame->GetDeviceType() ); 
+    assert( FrameTypes::FPGA == frame->GetDeviceType() ); 
     assert( nboard == (unsigned int)frame->GetFEBNumber() );
     assert( genericTimer == frame->GetTimer() );
     assert( genericGateStart == frame->GetGateStart() );
@@ -430,7 +431,7 @@ void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
         frame->SetRead(true);
         frame->MakeMessage();
         unsigned int tmpML = frame->GetOutgoingMessageLength();
-        assert( TRiPProgrammingFrameReadSize == tmpML );
+        assert( MinervaDAQSizes::TRiPProgrammingFrameReadSize == tmpML );
         std::stringstream ss;
         ss << "Trip " << i << std::endl;
         unsigned char *message = frame->GetOutgoingMessage();
@@ -455,7 +456,7 @@ void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
       unsigned short dataLength = channel->ReadDPMPointer();
       logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
         << "; FEBTRiPWriteReadTest dataLength = " << std::dec << dataLength;
-      assert( dataLength == TRiPProgrammingFrameReadResponseSize ); 
+      assert( MinervaDAQSizes::TRiPProgrammingFrameReadResponseSize == dataLength ); 
       unsigned char * dataBuffer = channel->ReadMemory( dataLength );
       frame->SetReceivedMessage(dataBuffer);
       frame->DecodeRegisterValues();
@@ -506,20 +507,20 @@ void TRIPSetupForChargeInjection( EChannels* channel, int boardID )
     // Set up the message...
     frame->SetRead(false);
     {
-      frame->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
-      frame->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
-      frame->SetRegisterValue( 2, DefaultTripRegisterValues.tripRegIFF );
-      frame->SetRegisterValue( 3, DefaultTripRegisterValues.tripRegIBPIFF1REF );
-      frame->SetRegisterValue( 4, DefaultTripRegisterValues.tripRegIBOPAMP );
-      frame->SetRegisterValue( 5, DefaultTripRegisterValues.tripRegIB_T );
-      frame->SetRegisterValue( 6, DefaultTripRegisterValues.tripRegIFFP2 );
-      frame->SetRegisterValue( 7, DefaultTripRegisterValues.tripRegIBCOMP );
-      frame->SetRegisterValue( 8, DefaultTripRegisterValues.tripRegVREF );
-      frame->SetRegisterValue( 9, DefaultTripRegisterValues.tripRegVTH );
-      frame->SetRegisterValue(10, DefaultTripRegisterValues.tripRegPIPEDEL);
-      frame->SetRegisterValue(11, DefaultTripRegisterValues.tripRegGAIN );
-      frame->SetRegisterValue(12, DefaultTripRegisterValues.tripRegIRSEL );
-      frame->SetRegisterValue(13, DefaultTripRegisterValues.tripRegIWSEL );
+      frame->SetRegisterValue( 0, TripTTypes::DefaultTripRegisterValues.tripRegIBP );
+      frame->SetRegisterValue( 1, TripTTypes::DefaultTripRegisterValues.tripRegIBBNFOLL );
+      frame->SetRegisterValue( 2, TripTTypes::DefaultTripRegisterValues.tripRegIFF );
+      frame->SetRegisterValue( 3, TripTTypes::DefaultTripRegisterValues.tripRegIBPIFF1REF );
+      frame->SetRegisterValue( 4, TripTTypes::DefaultTripRegisterValues.tripRegIBOPAMP );
+      frame->SetRegisterValue( 5, TripTTypes::DefaultTripRegisterValues.tripRegIB_T );
+      frame->SetRegisterValue( 6, TripTTypes::DefaultTripRegisterValues.tripRegIFFP2 );
+      frame->SetRegisterValue( 7, TripTTypes::DefaultTripRegisterValues.tripRegIBCOMP );
+      frame->SetRegisterValue( 8, TripTTypes::DefaultTripRegisterValues.tripRegVREF );
+      frame->SetRegisterValue( 9, TripTTypes::DefaultTripRegisterValues.tripRegVTH );
+      frame->SetRegisterValue(10, TripTTypes::DefaultTripRegisterValues.tripRegPIPEDEL);
+      frame->SetRegisterValue(11, TripTTypes::DefaultTripRegisterValues.tripRegGAIN );
+      frame->SetRegisterValue(12, TripTTypes::DefaultTripRegisterValues.tripRegIRSEL );
+      frame->SetRegisterValue(13, TripTTypes::DefaultTripRegisterValues.tripRegIWSEL );
       frame->SetRegisterValue(14, 0x1FE ); //inject, enable first words, 0x1FFFE for two...
       // Injection patterns:
       // ~~~~~~~~~~~~~~~~~~~
@@ -550,7 +551,7 @@ void TRIPSetupForChargeInjection( EChannels* channel, int boardID )
     unsigned short dataLength = channel->ReadDPMPointer();
     logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
       << "; TRIPSetupForChargeInjection dataLength = " << std::dec << dataLength;
-    assert( dataLength == TRiPProgrammingFrameWriteResponseSize ); 
+    assert( MinervaDAQSizes::TRiPProgrammingFrameWriteResponseSize == dataLength ); 
   }
 }
 
@@ -585,10 +586,10 @@ void FPGASetupForChargeInjection( EChannels* channel, int boardID )
     frame->SetInjectDACValue(dacval);
     unsigned char injPhase[] = {0x1};
     frame->SetInjectPhase(injPhase);
-    Devices dev     = FPGA;
-    Broadcasts b    = None;
-    Directions d    = MasterToSlave;
-    FPGAFunctions f = Write;
+    FrameTypes::Devices dev     = FrameTypes::FPGA;
+    FrameTypes::Broadcasts b    = FrameTypes::None;
+    FrameTypes::Directions d    = FrameTypes::MasterToSlave;
+    FrameTypes::FPGAFunctions f = FrameTypes::Write;
     frame->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)frame->GetFEBNumber());
   }
   FPGAWriteConfiguredFrame( channel, frame );
@@ -625,20 +626,20 @@ void TRIPSetupForGeneric( EChannels* channel, int boardID )
     // Set up the message...
     frame->SetRead(false);
     {
-      frame->SetRegisterValue( 0, DefaultTripRegisterValues.tripRegIBP );
-      frame->SetRegisterValue( 1, DefaultTripRegisterValues.tripRegIBBNFOLL );
-      frame->SetRegisterValue( 2, DefaultTripRegisterValues.tripRegIFF );
-      frame->SetRegisterValue( 3, DefaultTripRegisterValues.tripRegIBPIFF1REF );
-      frame->SetRegisterValue( 4, DefaultTripRegisterValues.tripRegIBOPAMP );
-      frame->SetRegisterValue( 5, DefaultTripRegisterValues.tripRegIB_T );
-      frame->SetRegisterValue( 6, DefaultTripRegisterValues.tripRegIFFP2 );
-      frame->SetRegisterValue( 7, DefaultTripRegisterValues.tripRegIBCOMP );
-      frame->SetRegisterValue( 8, DefaultTripRegisterValues.tripRegVREF );
+      frame->SetRegisterValue( 0, TripTTypes::DefaultTripRegisterValues.tripRegIBP );
+      frame->SetRegisterValue( 1, TripTTypes::DefaultTripRegisterValues.tripRegIBBNFOLL );
+      frame->SetRegisterValue( 2, TripTTypes::DefaultTripRegisterValues.tripRegIFF );
+      frame->SetRegisterValue( 3, TripTTypes::DefaultTripRegisterValues.tripRegIBPIFF1REF );
+      frame->SetRegisterValue( 4, TripTTypes::DefaultTripRegisterValues.tripRegIBOPAMP );
+      frame->SetRegisterValue( 5, TripTTypes::DefaultTripRegisterValues.tripRegIB_T );
+      frame->SetRegisterValue( 6, TripTTypes::DefaultTripRegisterValues.tripRegIFFP2 );
+      frame->SetRegisterValue( 7, TripTTypes::DefaultTripRegisterValues.tripRegIBCOMP );
+      frame->SetRegisterValue( 8, TripTTypes::DefaultTripRegisterValues.tripRegVREF );
       frame->SetRegisterValue( 9, 0 ); // we'll turn the TRiPs on before we do chg inj
-      frame->SetRegisterValue(10, DefaultTripRegisterValues.tripRegPIPEDEL);
-      frame->SetRegisterValue(11, DefaultTripRegisterValues.tripRegGAIN );
-      frame->SetRegisterValue(12, DefaultTripRegisterValues.tripRegIRSEL );
-      frame->SetRegisterValue(13, DefaultTripRegisterValues.tripRegIWSEL );
+      frame->SetRegisterValue(10, TripTTypes::DefaultTripRegisterValues.tripRegPIPEDEL);
+      frame->SetRegisterValue(11, TripTTypes::DefaultTripRegisterValues.tripRegGAIN );
+      frame->SetRegisterValue(12, TripTTypes::DefaultTripRegisterValues.tripRegIRSEL );
+      frame->SetRegisterValue(13, TripTTypes::DefaultTripRegisterValues.tripRegIWSEL );
       frame->SetRegisterValue(14, 0x0 ); 
     }
 
@@ -648,7 +649,7 @@ void TRIPSetupForGeneric( EChannels* channel, int boardID )
     unsigned short dataLength = channel->ReadDPMPointer();
     logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
       << "; TRIPSetupForGeneric dataLength = " << std::dec << dataLength;
-    assert( dataLength == TRiPProgrammingFrameWriteResponseSize ); 
+    assert( MinervaDAQSizes::TRiPProgrammingFrameWriteResponseSize == dataLength ); 
   }
   logger.debugStream() << "Passed:--------------TRIPSetupForGeneric--------------";
 }
@@ -684,12 +685,12 @@ void FPGASetupForGeneric( EChannels* channel, int boardID )
     frame->SetInjectDACValue(dacval);
     unsigned char injPhase[] = {0x0};
     frame->SetInjectPhase(injPhase);
-    Devices dev     = FPGA;
-    Broadcasts b    = None;
-    Directions d    = MasterToSlave;
-    FPGAFunctions f = Write;
+    FrameTypes::Devices dev     = FrameTypes::FPGA;
+    FrameTypes::Broadcasts b    = FrameTypes::None;
+    FrameTypes::Directions d    = FrameTypes::MasterToSlave;
+    FrameTypes::FPGAFunctions f = FrameTypes::Write;
     frame->MakeDeviceFrameTransmit(dev,b,d,f, (unsigned int)frame->GetFEBNumber());
-    assert( FPGA == frame->GetDeviceType() ); 
+    assert( FrameTypes::FPGA == frame->GetDeviceType() ); 
     assert( boardID == frame->GetFEBNumber() );
     assert( genericTimer == frame->GetTimer() );
     assert( genericGateStart == frame->GetGateStart() );
@@ -714,9 +715,10 @@ void TestChannel( ECROC* ecroc, unsigned int channelNumber, unsigned int nFEBs )
   assert( channel != NULL );
   assert( channel->GetChannelNumber() == channelNumber );
   assert( channel->GetParentECROCAddress() == ecroc->GetAddress() );
-  assert( channel->GetParentCROCNumber() == (ecroc->GetAddress() >> ECROCAddressShift) );
+  assert( channel->GetParentCROCNumber() == 
+      (ecroc->GetAddress() >> VMEModuleTypes::ECROCAddressShift) );
   assert( channel->GetDirectAddress() == 
-      ecroc->GetAddress() + EChannelOffset * (unsigned int)(channelNumber) );
+      ecroc->GetAddress() + VMEModuleTypes::EChannelOffset * (unsigned int)(channelNumber) );
   channel->SetupNFrontEndBoards( nFEBs );
   assert( channel->GetFrontEndBoardVector()->size() == nFEBs ); 
   channel->ClearAndResetStatusRegister();
@@ -734,8 +736,8 @@ void TestChannel( ECROC* ecroc, unsigned int channelNumber, unsigned int nFEBs )
 ECROC * GetAndTestECROC( unsigned int address, Controller * controller )
 {
   std::cout << "Testing Get and Test ECROC...";  
-  if (address < (1<<ECROCAddressShift)) {
-    address = address << ECROCAddressShift;
+  if (address < (1<<VMEModuleTypes::ECROCAddressShift)) {
+    address = address << VMEModuleTypes::ECROCAddressShift;
   }
   ECROC * ecroc = new ECROC( address, controller );
 

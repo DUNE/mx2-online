@@ -12,7 +12,6 @@
 #include "et_private.h"  // event transfer private data types
 #include "et_data.h"     // data structures 
 
-#include "MinervaDAQtypes.h"
 
 /*! \file
  *

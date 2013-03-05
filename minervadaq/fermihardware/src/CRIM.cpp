@@ -57,7 +57,7 @@ const unsigned long long CRIM::timeOutSec = 3600;   // be careful shortening thi
 // NOTE: The IRQ level must be the same as the configuration register level.  
 // The BIT MASKS for these levels, however are not the same!
 CRIM::CRIM( unsigned int address, const Controller* controller, 
-    CRIMInterrupts line, unsigned short level ) :
+    VMEModuleTypes::CRIMInterrupts line, unsigned short level ) :
   VMECommunicator( address, controller ),
   irqLevel(level),
   irqLine(line)
@@ -69,23 +69,23 @@ CRIM::CRIM( unsigned int address, const Controller* controller,
     << this->address << "; IRQ Line = 0x" << this->irqLine 
     << "; IRQ Level = 0x" << this->irqLevel;
 
-  interruptStatusRegister = this->address + (unsigned int)CRIMInterruptStatus;
-  interruptConfig         = this->address + (unsigned int)CRIMInterruptConfig;
-  interruptsClear         = this->address + (unsigned int)CRIMClearInterrupts;
-  interruptAddress        = this->address + (unsigned int)CRIMInterruptMask;
-  timingRegister          = this->address + (unsigned int)CRIMTimingSetup;
-  SGATEWidthRegister      = this->address + (unsigned int)CRIMSGATEWidth;
-  TCALBDelayRegister      = this->address + (unsigned int)CRIMTCALBDelay;
-  softwareTriggerRegister = this->address + (unsigned int)CRIMSoftwareTrigger;
-  softwareTCALBRegister   = this->address + (unsigned int)CRIMSoftwareTCALB;
-  softwareSGATERegister   = this->address + (unsigned int)CRIMSoftwareSGATE;
-  softwareCNRSTRegister   = this->address + (unsigned int)CRIMSoftwareCNRST;
-  controlRegisterAddress  = this->address + (unsigned int)CRIMControl;
-  statusRegisterAddress   = this->address + (unsigned int)CRIMStatus;
-  clearStatusRegister     = this->address + (unsigned int)CRIMClearStatus;
-  gateTimeWordLowAddress  = this->address + (unsigned int)CRIMGateTimeWordLow;
-  gateTimeWordHighAddress = this->address + (unsigned int)CRIMGateTimeWordHigh;
-  sequencerResetRegister  = this->address + (unsigned int)CRIMSequencerControlLatch;
+  interruptStatusRegister = this->address + (unsigned int)VMEModuleTypes::CRIMInterruptStatus;
+  interruptConfig         = this->address + (unsigned int)VMEModuleTypes::CRIMInterruptConfig;
+  interruptsClear         = this->address + (unsigned int)VMEModuleTypes::CRIMClearInterrupts;
+  interruptAddress        = this->address + (unsigned int)VMEModuleTypes::CRIMInterruptMask;
+  timingRegister          = this->address + (unsigned int)VMEModuleTypes::CRIMTimingSetup;
+  SGATEWidthRegister      = this->address + (unsigned int)VMEModuleTypes::CRIMSGATEWidth;
+  TCALBDelayRegister      = this->address + (unsigned int)VMEModuleTypes::CRIMTCALBDelay;
+  softwareTriggerRegister = this->address + (unsigned int)VMEModuleTypes::CRIMSoftwareTrigger;
+  softwareTCALBRegister   = this->address + (unsigned int)VMEModuleTypes::CRIMSoftwareTCALB;
+  softwareSGATERegister   = this->address + (unsigned int)VMEModuleTypes::CRIMSoftwareSGATE;
+  softwareCNRSTRegister   = this->address + (unsigned int)VMEModuleTypes::CRIMSoftwareCNRST;
+  controlRegisterAddress  = this->address + (unsigned int)VMEModuleTypes::CRIMControl;
+  statusRegisterAddress   = this->address + (unsigned int)VMEModuleTypes::CRIMStatus;
+  clearStatusRegister     = this->address + (unsigned int)VMEModuleTypes::CRIMClearStatus;
+  gateTimeWordLowAddress  = this->address + (unsigned int)VMEModuleTypes::CRIMGateTimeWordLow;
+  gateTimeWordHighAddress = this->address + (unsigned int)VMEModuleTypes::CRIMGateTimeWordHigh;
+  sequencerResetRegister  = this->address + (unsigned int)VMEModuleTypes::CRIMSequencerControlLatch;
 
   // register value for control register (DAQ Mode control)
   // set crc & send to true and retransmit to false	
@@ -104,8 +104,10 @@ void CRIM::Initialize( RunningModes runningMode )
   unsigned short TCALBDelay        = 0x3FF;    // Delay should also be non-zero.
   unsigned short TCALBEnable       = 0x1;      // Enable pulse delay.
   unsigned short SequencerEnable   = 0x1;      // Sequencer control (0 means always send gates, 1 for rearms).
-  CRIMTimingFrequencies Frequency  = ZeroFreq; // Used to set ONE frequency bit!  ZeroFreq ~no Frequency.
-  CRIMTimingModes       TimingMode = MTM;      // Default to MTM.
+  VMEModuleTypes::CRIMTimingFrequencies Frequency = 
+    VMEModuleTypes::ZeroFreq; // Used to set ONE frequency bit!  ZeroFreq ~no Frequency.
+  VMEModuleTypes::CRIMTimingModes TimingMode = 
+    VMEModuleTypes::MTM;      // Default to MTM.
 
   switch (runningMode) {
     case OneShot:
@@ -133,8 +135,8 @@ void CRIM::Initialize( RunningModes runningMode )
     case MTBFBeamMuon:
     case MTBFBeamOnly:
       // Cosmics, Beam-Muon, & Beam-Only use CRIM internal timing with gates send at a set frequency.
-      Frequency     = F2;
-      TimingMode    = crimInternal;
+      Frequency     = VMEModuleTypes::F2;
+      TimingMode    = VMEModuleTypes::CRIMInternal;
       break;
     default:
       CRIMLog.fatalStream() << "Error in acquire_data::InitializeCrim()! No Running Mode defined!";
@@ -186,7 +188,8 @@ void CRIM::logRunningMode( const RunningModes& runningMode ) const
 }
 
 //----------------------------------------
-void CRIM::SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ) const
+void CRIM::SetupTiming( VMEModuleTypes::CRIMTimingModes timingMode, 
+    VMEModuleTypes::CRIMTimingFrequencies frequency ) const
 {
   unsigned short timingSetup = 
     ( timingMode & TimingSetupRegisterModeMask ) | 

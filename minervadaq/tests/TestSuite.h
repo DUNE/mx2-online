@@ -5,7 +5,6 @@
 
 #include "log4cppHeaders.h"
 
-#include "MinervaDAQtypes.h"
 #include "Controller.h"
 #include "ECROC.h"
 #include "CRIM.h"

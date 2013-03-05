@@ -17,13 +17,13 @@ log4cpp::Category& ECROCLog = log4cpp::Category::getInstance(std::string("ECROC"
 ECROC::ECROC(unsigned int address, const Controller* controller) :
   VMECommunicator( address, controller )
 {
-	timingSetupAddress           = this->address + ECROCTimingSetup;
-	resetAndTestPulseMaskAddress = this->address + ECROCResetAndTestPulseMask;
-	channelResetAddress          = this->address + ECROCChannelReset;
-	fastCommandAddress           = this->address + ECROCFastCommand;
-	testPulseAddress             = this->address + ECROCTestPulse;
-	rdfePulseDelayAddress        = this->address + ECROCRdfePulseDelay;
-	rdfePulseCommandAddress      = this->address + ECROCRdfePulseCommand;
+	timingSetupAddress           = this->address + VMEModuleTypes::ECROCTimingSetup;
+	resetAndTestPulseMaskAddress = this->address + VMEModuleTypes::ECROCResetAndTestPulseMask;
+	channelResetAddress          = this->address + VMEModuleTypes::ECROCChannelReset;
+	fastCommandAddress           = this->address + VMEModuleTypes::ECROCFastCommand;
+	testPulseAddress             = this->address + VMEModuleTypes::ECROCTestPulse;
+	rdfePulseDelayAddress        = this->address + VMEModuleTypes::ECROCRdfePulseDelay;
+	rdfePulseCommandAddress      = this->address + VMEModuleTypes::ECROCRdfePulseCommand;
 
   ECROCLog.setPriority(log4cpp::Priority::INFO); 
 
@@ -91,7 +91,7 @@ std::vector<EChannels*>* ECROC::GetChannelsVector()
 }
 
 //----------------------------------------  
-void ECROC::SetupTimingRegister( crocClockModes clockMode, 
+void ECROC::SetupTimingRegister( VMEModuleTypes::ECROCClockModes clockMode, 
     unsigned short testPulseDelayEnabled, 
     unsigned short testPulseDelayValue ) const
 {
@@ -119,7 +119,7 @@ void ECROC::SetupResetAndTestPulseRegister( unsigned short resetEnable, unsigned
 }
 
 //---------------------------------------- 
-void ECROC::InitializeRegisters( crocClockModes clockMode, 
+void ECROC::InitializeRegisters( VMEModuleTypes::ECROCClockModes clockMode, 
     unsigned short testPulseDelayValue,
     unsigned short testPulseDelayEnabled ) const
 {
@@ -185,7 +185,8 @@ void ECROC::Initialize() const
   ECROCLog.infoStream() << "Initializing ECROC 0x" << std::hex << this->address;
   unsigned short testPulseDelayEnabled = 0;  // we do not use the test pulse delay in data-taking
   unsigned short testPulseDelayValue   = 0;
-  this->InitializeRegisters( (crocClockModes)crocExternal, testPulseDelayEnabled, testPulseDelayValue );
+  this->InitializeRegisters( (VMEModuleTypes::ECROCClockModes)VMEModuleTypes::ECROCExternal, 
+      testPulseDelayEnabled, testPulseDelayValue );
 }
 
 #endif

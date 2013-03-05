@@ -14,7 +14,7 @@
 log4cpp::Category& FPGAFrameLog = log4cpp::Category::getInstance(std::string("FPGAFrame"));
 
 //-------------------------------------------------------
-FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrame() 
+FPGAFrame::FPGAFrame( FrameTypes::febAddresses a ) : LVDSFrame() 
 {
   /*! \fn********************************************************************************
    * The log-free constructor takes the following arguments:
@@ -23,6 +23,8 @@ FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrame()
    *       The message body is set up for FPGAFrame Firmware Versions 78+ (54 registers).  
    *       It will need to be adjusted for other firmware versions. ECS & GNP
    */
+  using namespace FrameTypes;
+
   febNumber[0] = (unsigned char)a; 
   FPGAFrameLog.setPriority(log4cpp::Priority::INFO);  
 
@@ -36,7 +38,7 @@ FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrame()
   this->SetFPGAFrameDefaultValues();
 
   FPGAFrameLog.debugStream() << "Created a new FPGAFrame! " << (int)febNumber[0];
-  FPGAFrameLog.debugStream() << "  Max hits    =  "<< ADCFramesMaxNumber;
+  FPGAFrameLog.debugStream() << "  Max hits    =  "<< MinervaDAQSizes::ADCFramesMaxNumber;
 }
 
 
@@ -44,7 +46,7 @@ FPGAFrame::FPGAFrame( febAddresses a ) : LVDSFrame()
 // Careful, the length is shorter for "ShortMessages" (DumpReads).
 unsigned int FPGAFrame::GetOutgoingMessageLength() 
 { 
-  return FrameHeaderLengthOutgoing + FPGANumRegisters;
+  return MinervaDAQSizes::FrameHeaderLengthOutgoing + MinervaDAQSizes::FPGANumRegisters;
 }
 
 //-------------------------------------------------------
@@ -54,6 +56,8 @@ void FPGAFrame::MakeShortMessage()
    * MakeShortMessage uses FPGA Dump Read instead of the regular Read.        |
    ***************************************************************************|
    */
+  using namespace FrameTypes;
+
   Devices dev     = FPGA;          
   Broadcasts b    = None;          
   Directions d    = MasterToSlave; 
@@ -62,8 +66,8 @@ void FPGAFrame::MakeShortMessage()
 
   // For DumpReads, we need only a header-sized message.
   if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
-  outgoingMessage = new unsigned char [FrameHeaderLengthOutgoing];  
-  for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) { 
+  outgoingMessage = new unsigned char [MinervaDAQSizes::FrameHeaderLengthOutgoing];  
+  for (unsigned int i = 0; i < MinervaDAQSizes::FrameHeaderLengthOutgoing; ++i) { 
     outgoingMessage[i] = frameHeader[i];
   }
 }
@@ -82,7 +86,8 @@ void FPGAFrame::MakeMessage()
    ********************************************************************************
    */
   // In principle, the message size could change as we add and drop registers.
-  unsigned char * message = new unsigned char [FPGANumRegisters + (FPGANumRegisters+1)%2]; 
+  unsigned char * message = 
+    new unsigned char [MinervaDAQSizes::FPGANumRegisters + (MinervaDAQSizes::FPGANumRegisters+1)%2]; 
 
   /* message word 0 - 3:  The timer information, 32 bits for the timer */
   message[0] = (Timer & 0xFF); 
@@ -239,10 +244,10 @@ void FPGAFrame::MakeMessage()
   if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
   outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];  
   for (unsigned int i=0; i < this->GetOutgoingMessageLength(); ++i) { 
-    if ( i < FrameHeaderLengthOutgoing ) {
+    if ( i < MinervaDAQSizes::FrameHeaderLengthOutgoing ) {
       outgoingMessage[i] = frameHeader[i];
     } else {
-      outgoingMessage[i] = message[i - FrameHeaderLengthOutgoing];
+      outgoingMessage[i] = message[i - MinervaDAQSizes::FrameHeaderLengthOutgoing];
     }
   }
   
@@ -266,7 +271,7 @@ void FPGAFrame::DecodeRegisterValues()
 
   FPGAFrameLog.debugStream() << "FPGAFrame::DecodeRegisterValues";
 
-  if ( this->ReceivedMessageLength() != FPGAFrameMaxSize ) { 
+  if ( this->ReceivedMessageLength() != MinervaDAQSizes::FPGAFrameMaxSize ) { 
     FPGAFrameLog.fatalStream() << "Incorrect FPGA Frame Length for FEB " << this->GetFEBNumber();
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   } 
@@ -276,7 +281,7 @@ void FPGAFrame::DecodeRegisterValues()
   }
 
   FPGAFrameLog.debugStream() <<  "No frame errors; parsing...";
-  int startByte = 4 + FrameHeaderLengthOutgoing; 
+  int startByte = 4 + MinervaDAQSizes::FrameHeaderLengthOutgoing; 
 
   /* receivedMessage word 0 - 3:  The timer information, 32 bits for the timer */
   Timer = (receivedMessage[startByte] & 0xFF); 

@@ -30,17 +30,17 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
 	 */
   EChannelLog.setPriority(log4cpp::Priority::INFO);  
 
-	channelDirectAddress             = this->address + EChannelOffset * (unsigned int)(channelNumber);
-  receiveMemoryAddress             = channelDirectAddress + (unsigned int)ECROCReceiveMemory;
-  sendMemoryAddress                = channelDirectAddress + (unsigned int)ECROCSendMemory;
-  framePointersMemoryAddress       = channelDirectAddress + (unsigned int)ECROCFramePointersMemory;
-  configurationAddress             = channelDirectAddress + (unsigned int)ECROCConfiguration;
-  commandAddress                   = channelDirectAddress + (unsigned int)ECROCCommand;
-  eventCounterAddress              = channelDirectAddress + (unsigned int)ECROCEventCounter;
-  framesCounterAndLoopDelayAddress = channelDirectAddress + (unsigned int)ECROCFramesCounterAndLoopDelay;
-  frameStatusAddress               = channelDirectAddress + (unsigned int)ECROCFrameStatus;
-  txRxStatusAddress                = channelDirectAddress + (unsigned int)ECROCTxRxStatus;
-  receiveMemoryPointerAddress      = channelDirectAddress + (unsigned int)ECROCReceiveMemoryPointer;
+	channelDirectAddress             = this->address + VMEModuleTypes::EChannelOffset * (unsigned int)(channelNumber);
+  receiveMemoryAddress             = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCReceiveMemory;
+  sendMemoryAddress                = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCSendMemory;
+  framePointersMemoryAddress       = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCFramePointersMemory;
+  configurationAddress             = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCConfiguration;
+  commandAddress                   = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCCommand;
+  eventCounterAddress              = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCEventCounter;
+  framesCounterAndLoopDelayAddress = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCFramesCounterAndLoopDelay;
+  frameStatusAddress               = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCFrameStatus;
+  txRxStatusAddress                = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCTxRxStatus;
+  receiveMemoryPointerAddress      = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCReceiveMemoryPointer;
 }
 
 //----------------------------------------
@@ -71,7 +71,7 @@ unsigned int EChannels::GetParentECROCAddress() const
 //----------------------------------------
 unsigned int EChannels::GetParentCROCNumber() const
 {
-  return ( this->address >> ECROCAddressShift);
+  return ( this->address >> VMEModuleTypes::ECROCAddressShift);
 }
 
 //----------------------------------------
@@ -85,56 +85,56 @@ int EChannels::DecodeStatusMessage( const unsigned short& status ) const
 {
   int frameErrors = 0;
   std::string statusBitsDecoded = "|";
-  if (status & ReceiveMemoryFrameDiscType) {
+  if (status & VMEModuleTypes::ReceiveMemoryFrameDiscType) {
     statusBitsDecoded += "ReceiveMemoryFrameDiscType|";
   }
-  if (status & ReceiveMemoryFrameHeaderError) {
+  if (status & VMEModuleTypes::ReceiveMemoryFrameHeaderError) {
     statusBitsDecoded += "ReceiveMemoryFrameHeaderError|";
     frameErrors++;
   }
-  if (status & ReceiveMemoryCRCError) {
+  if (status & VMEModuleTypes::ReceiveMemoryCRCError) {
     statusBitsDecoded += "ReceiveMemoryCRCError|";
     frameErrors++;
   }
-  if (status & ReceiveMemoryFrameTimeout) {
+  if (status & VMEModuleTypes::ReceiveMemoryFrameTimeout) {
     statusBitsDecoded += "ReceiveMemoryFrameTimeout|";
     frameErrors++;
   }
-  if (status & ReceiveMemoryFrameReceived) {
+  if (status & VMEModuleTypes::ReceiveMemoryFrameReceived) {
     statusBitsDecoded += "ReceiveMemoryFrameReceived|";
   }
-  if (status & ReceiveMemoryFrameCountFull) {
+  if (status & VMEModuleTypes::ReceiveMemoryFrameCountFull) {
     statusBitsDecoded += "ReceiveMemoryFrameCountFull|";
   }
-  if (status & ReceiveMemoryEmpty) {
+  if (status & VMEModuleTypes::ReceiveMemoryEmpty) {
     statusBitsDecoded += "ReceiveMemoryEmpty|";
   }
-  if (status & ReceiveMemoryFull) {
+  if (status & VMEModuleTypes::ReceiveMemoryFull) {
     statusBitsDecoded += "ReceiveMemoryFull|";
     frameErrors++;
   }
-  if (status & SendMemoryUnusedBit0) {
+  if (status & VMEModuleTypes::SendMemoryUnusedBit0) {
     statusBitsDecoded += "SendMemoryUnusedBit0|";
   }
-  if (status & SendMemoryUnusedBit1) {
+  if (status & VMEModuleTypes::SendMemoryUnusedBit1) {
     statusBitsDecoded += "SendMemoryUnusedBit1|";
   }
-  if (status & SendMemoryRDFEDone) {
+  if (status & VMEModuleTypes::SendMemoryRDFEDone) {
     statusBitsDecoded += "SendMemoryRDFEDone|";
   }
-  if (status & SendMemoryRDFEUpdating) {
+  if (status & VMEModuleTypes::SendMemoryRDFEUpdating) {
     statusBitsDecoded += "SendMemoryRDFEUpdating|";
   }
-  if (status & SendMemoryFrameSent) {
+  if (status & VMEModuleTypes::SendMemoryFrameSent) {
     statusBitsDecoded += "SendMemoryFrameSent|";
   }
-  if (status & SendMemoryFrameSending) {
+  if (status & VMEModuleTypes::SendMemoryFrameSending) {
     statusBitsDecoded += "SendMemoryFrameSending|";
   }
-  if (status & SendMemoryEmpty) {
+  if (status & VMEModuleTypes::SendMemoryEmpty) {
     statusBitsDecoded += "SendMemoryEmpty|";
   }
-  if (status & SendMemoryFull) {
+  if (status & VMEModuleTypes::SendMemoryFull) {
     statusBitsDecoded += "SendMemoryFull|";
     frameErrors++;
   }
@@ -154,7 +154,7 @@ void EChannels::SetupNFrontEndBoards( int nFEBs )
   }
   for ( int i=1; i<=nFEBs; ++i ) {
     EChannelLog.infoStream() << "Setting up FEB " << i << " ...";
-    FrontEndBoard *feb = new FrontEndBoard( (febAddresses)i );
+    FrontEndBoard *feb = new FrontEndBoard( (FrameTypes::febAddresses)i );
     if ( isAvailable( feb ) ) {
       FrontEndBoardsVector.push_back( feb );
     } else {
@@ -323,12 +323,12 @@ unsigned short EChannels::WaitForMessageReceived() const
   do {
     status = this->ReadFrameStatusRegister();
   } while ( 
-      !(status & SendMemoryFull)                
-      && !(status & ReceiveMemoryFull)             
-      && !(status & ReceiveMemoryFrameReceived)    
-      && !(status & ReceiveMemoryFrameTimeout)     
-      && !(status & ReceiveMemoryCRCError)         
-      && !(status & ReceiveMemoryFrameHeaderError)
+      !(status & VMEModuleTypes::SendMemoryFull)                
+      && !(status & VMEModuleTypes::ReceiveMemoryFull)             
+      && !(status & VMEModuleTypes::ReceiveMemoryFrameReceived)    
+      && !(status & VMEModuleTypes::ReceiveMemoryFrameTimeout)     
+      && !(status & VMEModuleTypes::ReceiveMemoryCRCError)         
+      && !(status & VMEModuleTypes::ReceiveMemoryFrameHeaderError)
       );
   int error = DecodeStatusMessage(status);
   EChannelLog.debugStream() << " Decoded Status Error Level = " << error;
@@ -343,7 +343,7 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion() const
   unsigned short status = 0;
   do {
     status = this->ReadFrameStatusRegister();
-  } while ( 0 == (status & SendMemoryRDFEDone /*0x0400*/ ) );  
+  } while ( 0 == (status & VMEModuleTypes::SendMemoryRDFEDone /*0x0400*/ ) );  
   return status;
 }
 

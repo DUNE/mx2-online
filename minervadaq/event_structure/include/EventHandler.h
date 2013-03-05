@@ -1,11 +1,11 @@
 #ifndef EventHandler_h
 #define EventHandler_h
 
-#include "MinervaDAQtypes.h"
+#include "MinervaDAQSizes.h"
 
 struct EventHandler {
   unsigned short dataLength;
-  unsigned char data[ MaxTotalDataPerChain ];
+  unsigned char data[ MinervaDAQSizes::MaxTotalDataPerChain ];
 };
 
 #endif

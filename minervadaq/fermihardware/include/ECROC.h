@@ -5,7 +5,7 @@
 #include <fstream>
 #include "CAENVMEtypes.h"
 #include "EChannels.h"
-#include "MinervaDAQtypes.h"
+#include "VMEModuleTypes.h"
 
 /*********************************************************************************
 * Class for creating CROC-E objects for use with the 
@@ -49,12 +49,12 @@ class ECROC : public VMECommunicator {
 		std::vector<EChannels*>* GetChannelsVector(); 
     void ClearEmptyChannels();
 
-		void SetupTimingRegister(crocClockModes clockMode, 
+		void SetupTimingRegister( VMEModuleTypes::ECROCClockModes clockMode, 
         unsigned short testPulseDelayEnabled, 
         unsigned short testPulseDelayValue) const; 
 		void SetupResetAndTestPulseRegister( unsigned short resetEnable, 
         unsigned short testPulseEnable ) const; 
-		void InitializeRegisters( crocClockModes clockMode, 
+		void InitializeRegisters( VMEModuleTypes::ECROCClockModes clockMode, 
 				unsigned short testPulseDelayValue,
 				unsigned short testPulseDelayEnabled ) const; 
 
