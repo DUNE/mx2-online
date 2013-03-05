@@ -22,10 +22,10 @@ class ADCFrame : public LVDSFrame {
 	private:
 
 	public: 
-		ADCFrame(febAddresses a, RAMFunctionsHit f); 
+		ADCFrame(FrameTypes::febAddresses a, FrameTypes::RAMFunctionsHit f); 
 		~ADCFrame() {};
 
-    inline unsigned int GetOutgoingMessageLength() { return (FrameHeaderLengthOutgoing + 2); };/* +2? */ 
+    inline unsigned int GetOutgoingMessageLength() { return (MinervaDAQSizes::FrameHeaderLengthOutgoing + 2); };/* +2? */ 
 		void MakeMessage();
 		void DecodeRegisterValues(); 
 };

@@ -13,7 +13,7 @@
 
 log4cpp::Category& TRIPFrameLog = log4cpp::Category::getInstance(std::string("TRIPFrame"));
 
-TRIPFrame::TRIPFrame(febAddresses a, TRiPFunctions f) : 
+TRIPFrame::TRIPFrame(FrameTypes::febAddresses a, TripTTypes::TRiPFunctions f) : 
   LVDSFrame(),
   trip_function((unsigned char)f)
 {
@@ -23,6 +23,9 @@ TRIPFrame::TRIPFrame(febAddresses a, TRiPFunctions f) :
    * \param f: the Trip function (read or write)
    * \param maxHits: the maximum number of hits that can be serviced
    */
+  using namespace FrameTypes;
+  using namespace TripTTypes;
+
   TRIPFrameLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
 
   TripTChipID[0] = 0x0A;              //the id number for the trip; they're all 10 for MINERvA
@@ -65,24 +68,24 @@ void TRIPFrame::MakeMessage()
   EncodeRegisterValues(); //sets the register values to these defaults
 
   unsigned int bufferSize = packTripData.size(); 
-  unsigned int messageSize = FrameHeaderLengthOutgoing + bufferSize; 
+  unsigned int messageSize = MinervaDAQSizes::FrameHeaderLengthOutgoing + bufferSize; 
   TRIPFrameLog.debugStream() << " messageSize = " << messageSize 
     << "; outgoing size = " << this->GetOutgoingMessageLength();
 
   if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
   outgoingMessage = new unsigned char [messageSize]; //the final outgoing message
-  for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) {
+  for (unsigned int i = 0; i < MinervaDAQSizes::FrameHeaderLengthOutgoing; ++i) {
     outgoingMessage[i] = frameHeader[i];
   }
-  for (unsigned int i = FrameHeaderLengthOutgoing; i < messageSize; ++i) {
-    outgoingMessage[i] = packTripData[i - FrameHeaderLengthOutgoing];
+  for (unsigned int i = MinervaDAQSizes::FrameHeaderLengthOutgoing; i < messageSize; ++i) {
+    outgoingMessage[i] = packTripData[i - MinervaDAQSizes::FrameHeaderLengthOutgoing];
   }
 }
 
 unsigned int TRIPFrame::GetOutgoingMessageLength()
 {
-  if (read) return TRiPProgrammingFrameReadSize;
-  return TRiPProgrammingFrameWriteSize;
+  if (read) return MinervaDAQSizes::TRiPProgrammingFrameReadSize;
+  return MinervaDAQSizes::TRiPProgrammingFrameWriteSize;
 }
 
 void TRIPFrame::EncodeRegisterValues() 
@@ -261,6 +264,8 @@ void TRIPFrame::DecodeRegisterValues()
    *  particular settings on a trip.  It returns a success integer (0 for 
    *  success).
    */
+  using namespace FrameTypes;
+
   if ( this->CheckForErrors() ) {
     TRIPFrameLog.fatalStream() << "TRIP Frame Error for FEB " << this->GetFEBNumber(); 
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
@@ -392,6 +397,8 @@ void TRIPFrame::ParseError(int i)
 //------------------------------------------
 int TRIPFrame::GetTripNumber() const
 {
+  using namespace TripTTypes;
+
   TRiPFunctions chipFunction = (TRiPFunctions)this->trip_function;
   int tripNum = -1;
   switch (chipFunction) {   

@@ -3,7 +3,6 @@
 
 #include "log4cppHeaders.h"
 #include "FrameTypes.h"
-#include "MinervaDAQtypes.h"
 #include "SequencerReadoutBlock.h"
 #include "exit_codes.h"
 
@@ -65,7 +64,8 @@ void SequencerReadoutBlock::ProcessDataIntoFrames()
     unsigned short length = 0;
 
     while (index < dataLength) {
-      length = (data[ResponseLength0 + index]<<8) | data[ResponseLength1 + index];
+      length = (data[FrameTypes::ResponseLength0 + index]<<8) | 
+        data[FrameTypes::ResponseLength1 + index];
       SequencerReadoutBlockLog.debugStream() << "Frame Length = " << length;
 
       unsigned char * frameData = new unsigned char[length];

@@ -10,9 +10,9 @@
 #include "CAENVMEtypes.h"
 
 /* custom headers go here */
-#include "MinervaDAQtypes.h"
 #include "ReadoutTypes.h"
 #include "VMECommunicator.h"
+#include "VMEModuleTypes.h"
 
 
 /*********************************************************************************
@@ -37,7 +37,7 @@ class CRIM : public VMECommunicator {
        DAQ worker classes as the master CRIM. */
 
     unsigned short irqLevel;  /*!<the interrupt priority level */
-    CRIMInterrupts irqLine;   /*!<the interrupt to be monitored */
+    VMEModuleTypes::CRIMInterrupts irqLine;   /*!<the interrupt to be monitored */
 
     unsigned short controlRegister; 
 
@@ -102,7 +102,7 @@ class CRIM : public VMECommunicator {
     // SGATEFall is the correct interrupt for every mode but cosmic. IRQ5 is always(?) correct...
     // For Cosmics (TestBeam) use irqLine = Trigger;  
     explicit CRIM( unsigned int address, const Controller* controller, 
-       CRIMInterrupts line=SGATEFall, unsigned short level=5 ); 
+       VMEModuleTypes::CRIMInterrupts line=VMEModuleTypes::SGATEFall, unsigned short level=5 ); 
     ~CRIM() { }; 
 
     void Initialize( RunningModes runningMode );
@@ -110,7 +110,7 @@ class CRIM : public VMECommunicator {
     virtual unsigned int GetAddress() const;
     unsigned short GetStatus() const;
 
-    void SetupTiming( CRIMTimingModes timingMode, CRIMTimingFrequencies frequency ) const; 
+    void SetupTiming( VMEModuleTypes::CRIMTimingModes timingMode, VMEModuleTypes::CRIMTimingFrequencies frequency ) const; 
     void SetupGateWidth( unsigned short tcalbEnable, unsigned short gateWidth, unsigned short sequencerEnable ) const; 
     void SetupTCALBPulse( unsigned short pulseDelay ) const;
     void IRQEnable() const;
@@ -126,7 +126,7 @@ class CRIM : public VMECommunicator {
     void SetSendEnable(bool a);
     void SetReTransmitEnable(bool a);
     unsigned short inline GetControlRegister() {return controlRegisterAddress;};
-    long_m inline GetStatusRegisterAddress() {return statusRegisterAddress;}; 
+    unsigned long inline GetStatusRegisterAddress() {return statusRegisterAddress;}; 
     unsigned int inline GetClearRegisterAddress() {return clearStatusRegister;};
 };
 

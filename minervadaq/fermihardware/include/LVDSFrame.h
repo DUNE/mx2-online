@@ -6,7 +6,7 @@
 #include <tr1/memory>  // for shared_ptrs
 
 #include "FrameTypes.h"
-#include "MinervaDAQtypes.h"
+#include "MinervaDAQSizes.h"
 #include "TripTTypes.h"
 #include "FlashTypes.h"
 #include "log4cppHeaders.h"
@@ -42,7 +42,8 @@ class LVDSFrame {
     LVDSFrame();
     virtual ~LVDSFrame();
 
-    void MakeDeviceFrameTransmit(Devices, Broadcasts, Directions, unsigned int, unsigned int); 
+    void MakeDeviceFrameTransmit(FrameTypes::Devices, FrameTypes::Broadcasts, 
+        FrameTypes::Directions, unsigned int, unsigned int); 
     void MakeOutgoingHeader();
 
     virtual void MakeMessage();

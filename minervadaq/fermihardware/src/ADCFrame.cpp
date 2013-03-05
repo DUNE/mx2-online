@@ -18,17 +18,19 @@
 
 log4cpp::Category& ADCFrameLog = log4cpp::Category::getInstance(std::string("ADCFrame"));
 
-ADCFrame::ADCFrame(febAddresses a, RAMFunctionsHit b) : LVDSFrame()
+ADCFrame::ADCFrame(FrameTypes::febAddresses a, FrameTypes::RAMFunctionsHit b) : LVDSFrame()
 {
   /*! \fn
    * \param a The address (number) of the feb
    * \param b The "RAM Function" which describes the hit of number to be read off
    */
-  febNumber[0]     = (unsigned char) a; // feb number (address)
+  using namespace FrameTypes;
+
+  febNumber[0]     = (unsigned char) a; 
   Devices dev      = RAM;               // device to be addressed
   Broadcasts broad = None;              // we don't broadcast
   Directions dir   = MasterToSlave;     // ALL outgoing messages are master-to-slave
-  MakeDeviceFrameTransmit(dev, broad, dir,(unsigned int)b, (unsigned int) febNumber[0]); //make the frame
+  MakeDeviceFrameTransmit(dev, broad, dir,(unsigned int)b, (unsigned int) febNumber[0]); 
 
   ADCFrameLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
   ADCFrameLog.debugStream() << "Made ADCFrame " << b << " for FEB " << a; 
@@ -44,10 +46,10 @@ void ADCFrame::MakeMessage()
    */
   if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
   outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];
-  for (unsigned int i = 0; i < FrameHeaderLengthOutgoing; ++i) {
+  for (unsigned int i = 0; i < MinervaDAQSizes::FrameHeaderLengthOutgoing; ++i) {
     outgoingMessage[i]=frameHeader[i];
   }
-  for (unsigned int i = FrameHeaderLengthOutgoing; i < this->GetOutgoingMessageLength(); ++i) {
+  for (unsigned int i = MinervaDAQSizes::FrameHeaderLengthOutgoing; i < this->GetOutgoingMessageLength(); ++i) {
     outgoingMessage[i]=0;
   }
   ADCFrameLog.debugStream() << "Made ADCFrame Message";
@@ -62,20 +64,21 @@ void ADCFrame::DecodeRegisterValues()
    * Decode the input frame data as Hit data type from all Analog BRAMs.
    */
   // Check to see if the frame is right length...
-  unsigned short ml = (receivedMessage[ResponseLength1]) | (receivedMessage[ResponseLength0] << 8);
+  unsigned short ml = (receivedMessage[FrameTypes::ResponseLength1]) | 
+    (receivedMessage[FrameTypes::ResponseLength0] << 8);
   if ( ml == 0 ) {
     ADCFrameLog.fatalStream() << "Can't parse an empty InpFrame!";
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
-  if ( ml != ADCFrameMaxSize) { 
+  if ( ml != MinervaDAQSizes::ADCFrameMaxSize) { 
     ADCFrameLog.fatalStream() << "ADCFrame length mismatch!";
     ADCFrameLog.fatalStream() << "  Message Length = " << ml;
-    ADCFrameLog.fatalStream() << "  Expected       = " << ADCFrameMaxSize;
+    ADCFrameLog.fatalStream() << "  Expected       = " << MinervaDAQSizes::ADCFrameMaxSize;
     this->printReceivedMessageToLog(); 
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
   // Check that the dummy byte is zero...
-  if ( receivedMessage[Data] != 0 ) {
+  if ( receivedMessage[FrameTypes::Data] != 0 ) {
     ADCFrameLog.fatalStream() << "Dummy byte is non-zero!";
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
@@ -102,7 +105,7 @@ void ADCFrame::DecodeRegisterValues()
   int TimeVal     = 0;
   int ChIndx      = 0;
   int TripIndx    = 0;
-  int NTimeAmplCh = nChannelsPerTrip; 
+  int NTimeAmplCh = MinervaDAQSizes::nChannelsPerTrip; 
   int nrows       = 215; //really 216, but starting just past row 1...
   int max_show    = 15 + bytes_per_row * nrows; 
   for (int i = 15; i <= max_show; i += 4) {
@@ -124,23 +127,23 @@ void ADCFrame::DecodeRegisterValues()
     11,3,12,4,13,5,14,6,15,7,16,8,17,9,18,10,
     26,34,25,33,24,32,23,31,22,30,21,29,20,28,19,27};
 
-  for (int pixel = 0; pixel < nPixelsPerFEB; pixel++) {
+  for (unsigned int pixel = 0; pixel < MinervaDAQSizes::nPixelsPerFEB; pixel++) {
     // locate the pixel
     int headerLength = 12; // number of bytes
-    int side = pixel / (nPixelsPerSide);
-    int hiMedEvenOdd = (pixel / (nPixelsPerSide / 2)) % 2;
+    int side = pixel / (MinervaDAQSizes::nPixelsPerSide);
+    int hiMedEvenOdd = (pixel / (MinervaDAQSizes::nPixelsPerSide / 2)) % 2;
     int hiMedTrip = 2 * side + hiMedEvenOdd;  // 0...3
-    int loTrip = nHiMedTripsPerFEB + side;    // 4...5
-    int hiChannel = nSkipChannelsPerTrip + (pixel % nPixelsPerTrip);
-    int medChannel = hiChannel + nPixelsPerTrip;
+    int loTrip = MinervaDAQSizes::nHiMedTripsPerFEB + side;    // 4...5
+    int hiChannel = MinervaDAQSizes::nSkipChannelsPerTrip + (pixel % MinervaDAQSizes::nPixelsPerTrip);
+    int medChannel = hiChannel + MinervaDAQSizes::nPixelsPerTrip;
     int loChannel = lowMap[pixel];
     ADCFrameLog.debug("Pixel = %d, HiMedTrip = %d, hiChannel = %d, medChannel = %d, loTrip = %d, lowChannel = %d",
         pixel, hiMedTrip, hiChannel, medChannel, loTrip, loChannel);
     // Calculate the offsets (in bytes_per_row increments).
     // The header offset is an additional 12 bytes... 
-    int hiOffset = hiMedTrip * nChannelsPerTrip + hiChannel;
-    int medOffset = hiMedTrip * nChannelsPerTrip + medChannel;
-    int loOffset = loTrip * nChannelsPerTrip + loChannel;
+    int hiOffset = hiMedTrip * MinervaDAQSizes::nChannelsPerTrip + hiChannel;
+    int medOffset = hiMedTrip * MinervaDAQSizes::nChannelsPerTrip + medChannel;
+    int loOffset = loTrip * MinervaDAQSizes::nChannelsPerTrip + loChannel;
     ADCFrameLog.debug("hiOffset = %d, medOffset = %d, loOffset = %d", hiOffset, medOffset, loOffset);
     unsigned short int dataMask = 0x3FFC;
     ADCFrameLog.debug("Qhi = %d, Qmed = %d, Qlo = %d", 

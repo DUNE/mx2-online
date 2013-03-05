@@ -22,18 +22,19 @@
 log4cpp::Category& DiscrFrameLog = log4cpp::Category::getInstance(std::string("DiscrFrame"));
 
 //-----------------------------------------------------------
-DiscrFrame::DiscrFrame(febAddresses a) : LVDSFrame()
+DiscrFrame::DiscrFrame(FrameTypes::febAddresses a) : LVDSFrame()
 {
   /*! \fn
    * \param a: The address (number) of the feb
    * \param b: The "RAM Function" which describes the hit of number to be read off
    * Discriminators *always* read the same function.
    */
-  febNumber[0] = (unsigned char) a; //feb number (address)
+  using namespace FrameTypes;
+  febNumber[0] = (unsigned char) a;
   
-  Devices dev      = RAM; //device to be addressed
-  Broadcasts broad = None; //we don't broadcast
-  Directions dir   = MasterToSlave; //ALL outgoing messages are master-to-slave
+  Devices dev      = RAM;            // device to be addressed
+  Broadcasts broad = None;           // we don't broadcast
+  Directions dir   = MasterToSlave;  // ALL outgoing messages are master-to-slave
   unsigned int b   = (unsigned int)ReadHitDiscr;
   MakeDeviceFrameTransmit(dev, broad, dir, (unsigned int)b, (unsigned int)febNumber[0]); 
 
@@ -57,7 +58,7 @@ void DiscrFrame::MakeMessage()
 //-----------------------------------------------------------
 unsigned int DiscrFrame::GetOutgoingMessageLength() 
 { 
-  return FrameHeaderLengthOutgoing; 
+  return MinervaDAQSizes::FrameHeaderLengthOutgoing; 
 }
 
 //-----------------------------------------------------------
@@ -66,6 +67,8 @@ void DiscrFrame::DecodeRegisterValues()
   /*! \fn 
    *  Decode a discriminator frame.  
    */
+  using namespace FrameTypes;
+
   // Check to see if the frame is more than zero length...
   unsigned short ml = (receivedMessage[ResponseLength1]) | (receivedMessage[ResponseLength0] << 8);
   if ( ml == 0 ) {
@@ -124,7 +127,7 @@ void DiscrFrame::DecodeRegisterValues()
       //     17 (bits): 1000 0000 1000 1100
       //                -------------------
       //encodes (int) : 2101 1110 3111 2300 => Quarter ticks range from 0->3.
-      for (unsigned int iCh = 0; iCh < NDiscrChPerTrip; iCh++) {
+      for (unsigned int iCh = 0; iCh < MinervaDAQSizes::nDiscrChPerTrip; iCh++) {
         TempDiscQuaterTicks = 2 * GetBitFromWord(TempHitArray[17], iCh) +
           GetBitFromWord(TempHitArray[16], iCh);
 #if SHOWQUARTERTICKS
@@ -156,7 +159,7 @@ void DiscrFrame::DecodeRegisterValues()
       DiscrFrameLog.debug("Update Disc Delay Ticks:");
 #endif
       unsigned int TempDiscDelTicks = 0;
-      for (unsigned int iCh = 0; iCh < NDiscrChPerTrip; iCh++) {
+      for (unsigned int iCh = 0; iCh < MinervaDAQSizes::nDiscrChPerTrip; iCh++) {
         TempDiscDelTicks = 0;
         for (unsigned int iSRL = 0; iSRL < SRLDepth; iSRL++)
           TempDiscDelTicks = TempDiscDelTicks + GetBitFromWord(TempHitArray[iSRL], iCh);
@@ -174,10 +177,13 @@ void DiscrFrame::DecodeRegisterValues()
 //-----------------------------------------------------
 unsigned int DiscrFrame::GetNHitsOnTRiP(const unsigned int& tripNumber) const // 0 <= tripNumber <= 3
 {
+  using namespace FrameTypes;
+
   if (NULL == receivedMessage) {
     DiscrFrameLog.fatalStream() << "Null message buffer in GetNHitsOnTRiP!";
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
+
   switch (tripNumber) {
     case 0:
       return (0x0F & receivedMessage[discrNumHits01]);
