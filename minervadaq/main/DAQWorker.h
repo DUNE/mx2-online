@@ -2,8 +2,10 @@
 #define DAQWorker_h
 
 #include "log4cppHeaders.h"
+#include "DAQWorkerArgs.h"
 #include "EventHandler.h"
 #include "ReadoutWorker.h"
+#include "ReadoutStateRecorder.h"
 #include "et.h"          // the event transfer stuff
 #include "et_private.h"  // event transfer private data types
 #include "et_data.h"     // data structures 
@@ -11,30 +13,6 @@
 /* #include <cstddef> */
 /* #include <cstdlib> */
 /* #include <assert.h> */
-
-struct DAQWorkerArgs {
-
-  int runNumber;
-  int subRunNumber;
-  int numberOfGates;
-  RunningModes runMode;
-  DetectorTypes detector;
-  int detectorConfigCode;
-  unsigned char ledLevel;
-  unsigned char ledGroup;
-  int hardwareInitLevel;
-  int networkPort;
-  std::string etFileName;
-  std::string logFileName;
-  std::string samFileName;
-  std::string dataFileName;
-  std::string hardwareConfigFileName;
-  std::string hostName;
-  std::string lastTriggerFileName;
-  std::string globalGateLogFileName;
-
-};
-
 
 class DAQWorker {
 
@@ -45,6 +23,7 @@ class DAQWorker {
     const DAQWorkerArgs* args;
     const bool *const status;
 
+    ReadoutStateRecorder* stateRecorder;
     std::vector<ReadoutWorker*> readoutWorkerVect;
 
     et_att_id      attach; 
@@ -52,14 +31,7 @@ class DAQWorker {
     bool ContactEventBuilder(EventHandler *handler);
 
     void Initialize();  
-    bool WriteToSAMFile();
-    bool WriteLastTrigger();
-    bool WriteLastTrigger(int triggerNum, int triggerType, unsigned long long triggerTime);
-    bool DeclareDAQHeaderToET(int triggerNum, int triggerType, 
-        unsigned long long triggerTime);
-
-    unsigned long long GetGlobalGate();
-    bool PutGlobalGate( unsigned long long globalGate );
+    void DeclareDAQHeaderToET( HeaderData::BankType bankType = HeaderData::DAQBank );
 
     // The CROC-E DAQ receives "globs" of data spanning entire chains.
     template <class X> struct EventHandler * CreateEventHandler( X *dataBlock );
@@ -74,7 +46,7 @@ class DAQWorker {
     int SetUpET();  
     void TakeData();
     bool CloseDownET();
-    bool SendSentinel();
+    void SendSentinel();
 
 };
 
