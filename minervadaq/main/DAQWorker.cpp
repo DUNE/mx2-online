@@ -43,6 +43,8 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs,
   ReadoutWorker* readoutWorker = 
     new ReadoutWorker( 0, priority, (bool)args->hardwareInitLevel );
   readoutWorkerVect.push_back( readoutWorker );
+
+  stateRecorder = new ReadoutStateRecorder( args, priority );
 }
 
 //---------------------------------------------------------
@@ -54,6 +56,7 @@ DAQWorker::~DAQWorker()
     delete *p;
   }
   readoutWorkerVect.clear();
+  delete stateRecorder;
 }
 
 //---------------------------------------------------------
@@ -209,10 +212,9 @@ void DAQWorker::TakeData()
   daqLogger.infoStream() << "Beginning Data Acquisition...";
   this->Initialize();
 
-  for (int ngates = 1; ngates <= args->numberOfGates; ++ngates) {
+  while (stateRecorder->BeginNextGate()) {
     daqLogger.debugStream() << "Continue Running Status = " << (*status);
     if (!(*status)) break;
-    if (!(ngates % 10)) daqLogger.infoStream() << "Taking data for gate " << ngates;
 
     unsigned long long triggerTime = 0;
 
@@ -240,148 +242,33 @@ void DAQWorker::TakeData()
       } while ( worker->MoveToNextChannel() );
     }
 
-    if (!WriteToSAMFile()) break;
-    if (!WriteLastTrigger(ngates, 0/*trigtype*/, triggerTime)) break;
-    if (!DeclareDAQHeaderToET(ngates, 0/*trigtype*/, triggerTime)) break;
+    stateRecorder->FinishGate();
+    DeclareDAQHeaderToET();
   }
 
   daqLogger.infoStream() << "Finished Data Acquisition...";
 }
 
-//---------------------------------------------------------
-bool DAQWorker::WriteToSAMFile()
-{
-  daqLogger.debugStream() << "Writing SAM File...";
-  unsigned long long ggate = this->GetGlobalGate();
-  if (0 == ggate) return false;
-  return true;
-}
 
 //---------------------------------------------------------
-bool DAQWorker::WriteLastTrigger(int triggerNum, int triggerType, 
-    unsigned long long triggerTime)
+void DAQWorker::DeclareDAQHeaderToET( HeaderData::BankType bankType )
 {
-  daqLogger.debugStream() << "Writing last trigger data to " 
-    << args->lastTriggerFileName;
+  daqLogger.debugStream() << "Declaring Header to ET for bank type " << bankType;
 
-  FILE *file;
-
-  if ( NULL == (file=fopen((args->lastTriggerFileName).c_str(),"w")) ) {
-    daqLogger.errorStream() << "Error opening last trigger file for writing!";
-    return false;
-  }
-  else {
-    if (!(triggerNum%10)) {
-      daqLogger.infoStream() << "Writing info for trigger " << triggerNum 
-        << " to file " << args->lastTriggerFileName;
-    } else {
-      daqLogger.debugStream() << "Writing info for trigger " << triggerNum 
-        << " to file " << args->lastTriggerFileName;
-    }
-  }
-
-  fprintf(file, "run=%d\n",      args->runNumber);
-  fprintf(file, "subrun=%d\n",   args->subRunNumber);
-  fprintf(file, "number=%d\n",   triggerNum);
-  fprintf(file, "type=%d\n",     triggerType);
-  fprintf(file, "time=%llu\n",   triggerTime);
-
-  fclose(file);
-  return true;
-}
-
-//---------------------------------------------------------
-bool DAQWorker::DeclareDAQHeaderToET(int triggerNum, int triggerType,
-    unsigned long long triggerTime)
-{
-  daqLogger.debugStream() << "Declaring DAQ Header to ET...";
-
-  unsigned short int error = 0;
-  unsigned int minos = 0;  // TODO - MINOS Time from CRIM
-  unsigned int readoutTime = 0;  // TODO fix this
-  unsigned short nADCFrames  = 0;
-  unsigned short nDiscFrames = 0;
-  unsigned short nFPGAFrames = 0;
-
-  // TODO - don't like asking for ggate twice (also in SAM()) - fix this.
-  unsigned long long ggate = this->GetGlobalGate();
-  if (0 == ggate) return false;
-
-  // TODO: Magic numbers must die = make a file for bank encodings (3==DAQ,5==Sent)
-  FrameHeader * frameHeader = new FrameHeader(0,0,0,3,0,0,0,daqHeaderSize);
-  DAQHeader * daqhead = new 
-    DAQHeader(args->detector, args->detectorConfigCode, args->runNumber, 
-        args->subRunNumber, triggerType, args->ledGroup, args->ledLevel,
-        ggate, triggerNum, triggerTime, error, minos, readoutTime,
-        frameHeader,  nADCFrames, nDiscFrames, nFPGAFrames);
   struct EventHandler * handler = NULL;
-  handler = CreateEventHandler<DAQHeader>( daqhead );
+  std::tr1::shared_ptr<DAQHeader> daqhead = stateRecorder->GetDAQHeader( bankType );
+  handler = CreateEventHandler<DAQHeader>( daqhead.get() );
   ContactEventBuilder( handler );
-
   DestroyEventHandler( handler );
-  // then, clean up the frame header and DAQ header...
-
-  return PutGlobalGate(++ggate);
 }
 
 //---------------------------------------------------------
-bool DAQWorker::SendSentinel()
+void DAQWorker::SendSentinel()
 {
   daqLogger.debugStream() << "Sending Sentinel Frame...";
-
-  // TODO: Magic numbers must die = make a file for bank encodings (3==DAQ,5==Sent)
-  FrameHeader * frameHeader = new FrameHeader(0,0,0,5,0,0,0,daqHeaderSize);
-  daqLogger.debugStream() << " Minerva Frame Header: " << (*frameHeader);
-  // DAQHeader * sentinel = new DAQHeader( frameHeader );
-  // ContactEventBuilder
-
-  // then, clean up the frame header and DAQ header...
-
-  return true;
+  this->DeclareDAQHeaderToET( HeaderData::SentinelBank );
 }
 
-
-//---------------------------------------------------------
-unsigned long long DAQWorker::GetGlobalGate()
-{
-  /*! \fn unsigned long long GetGlobalGate()
-   *
-   * This function gets the value of the global gate from the data file used for tracking.  
-   */
-  unsigned long long ggate = 0;
-  std::fstream global_gate((args->globalGateLogFileName).c_str());
-  try {
-    if (!global_gate) throw (!global_gate);
-    global_gate >> ggate;
-  } 
-  catch (bool e) {
-    daqLogger.errorStream() << "Error opening global gate data!";
-  }
-  global_gate.close();
-  daqLogger.debugStream() << "Got global gate " << ggate;
-  return ggate;
-}
-
-//---------------------------------------------------------
-bool DAQWorker::PutGlobalGate(unsigned long long ggate)
-{
-  /*! \fn bool PutGlobalGate(unsigned long long ggate)
-   *
-   * This funciton writes a new value into the global gate data log.
-   */
-  std::fstream global_gate((args->globalGateLogFileName).c_str());
-  try {
-    if (!global_gate) throw (!global_gate);
-    global_gate << ggate;
-  } 
-  catch (bool e) {
-    daqLogger.errorStream() << "Error opening global gate data!";
-    return false;
-  }
-  global_gate.close();
-  daqLogger.debugStream() << "Put global gate " << ggate;
-  return true;
-}
 
 template <class X> struct EventHandler * DAQWorker::CreateEventHandler( X *dataBlock )
 {

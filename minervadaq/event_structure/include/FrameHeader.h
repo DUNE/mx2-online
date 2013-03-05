@@ -12,6 +12,20 @@
  * DAQHeaders, we will use this class to fill the Minerva Frame
  * Header part of the buffer.
  */
+
+namespace HeaderData {
+
+  typedef enum {
+    ADCBank,   
+    DiscrBank,
+    FPGABank,
+    DAQBank,    
+    TRIPBank,     
+    SentinelBank 
+  } BankType;
+
+}
+
 class FrameHeader {
 
   friend std::ostream& operator<<(std::ostream&, const FrameHeader&);
