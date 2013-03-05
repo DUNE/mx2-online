@@ -1,4 +1,5 @@
-CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
+CPPFLAGS  = -g -fno-inline -O0 -Wall -DLINUX -fPIC
+CPPFLAGS += -Werror
 
 #--CRIM ACCESS FLAGS--
 COMPILE_OPTIONS += -DPOLL_INTERRUPT
@@ -26,7 +27,7 @@ OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
 TARGET=libminerva_acquire.so
 
-LDLIBS += -L$(DAQROOT)/lib -lhardware -L$(ET_LIBROOT)/lib -let
+LDLIBS += -L$(DAQROOT)/lib -lhardware -levent_structure -L$(ET_LIBROOT)/lib -let
 include $(DAQROOT)/Make.include
 include $(DAQROOT)/Make.options
 

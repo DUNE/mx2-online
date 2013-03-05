@@ -1,5 +1,6 @@
-CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
-LDFLAGS += -shared -Wl,-soname
+CPPFLAGS  = -g -fno-inline -O0 -Wall -DLINUX -fPIC
+CPPFLAGS += -Werror
+LDFLAGS  += -shared -Wl,-soname
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))

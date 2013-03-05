@@ -63,30 +63,30 @@ tests-clean: FORCE
 
 all: FORCE
 	gmake hardware-lib;
-	gmake acquire_data-lib;
 	gmake event_structure-lib;
+	gmake acquire_data-lib;
 	gmake event_builder;
 	gmake main;
 	gmake tests;
 
 clean: FORCE
 	gmake hardware-clean;
-	gmake acquire_data-clean;
 	gmake event_structure-clean;
+	gmake acquire_data-clean;
 	gmake event_builder-clean;
 	gmake main-clean;
 	gmake tests-clean;
 
 relink: FORCE
 	gmake hardware-clean;
-	gmake acquire_data-clean;
 	gmake event_structure-clean;
+	gmake acquire_data-clean;
 	gmake event_builder-clean;
 	gmake main-clean;
 	gmake tests-clean;
 	gmake hardware-lib;
-	gmake acquire_data-lib;
 	gmake event_structure-lib;
+	gmake acquire_data-lib;
 	gmake event_builder;
 	gmake main;
 	gmake tests;
