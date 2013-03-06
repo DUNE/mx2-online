@@ -348,12 +348,14 @@ unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, unsi
 //---------------------------------------------------
 void SetupGenericFEBSettings( EChannels* channel, unsigned int nFEBs )
 {
+  logger.debugStream() << "SetupGenericFEBSettings";
   // This is not exactly a test, per se. If the setup is 
   // done incorrectly, it will show in *later* tests.
   for (unsigned int nboard = 1; nboard <= nFEBs; nboard++) {
     FPGASetupForGeneric( channel, nboard );
     TRIPSetupForGeneric( channel, nboard );
   }
+  logger.debugStream() << "Finished SetupGenericFEBSettings";
 }
 
 //---------------------------------------------------
@@ -481,6 +483,7 @@ void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
 //---------------------------------------------------
 void FPGAWriteConfiguredFrame( EChannels* channel, std::tr1::shared_ptr<FPGAFrame> frame )
 {
+  logger.debugStream() << "FPGAWriteConfiguredFrame";
   channel->ClearAndResetStatusRegister();
   channel->WriteFrameRegistersToMemory( frame );
   channel->SendMessage();

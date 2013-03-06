@@ -22,6 +22,7 @@ ReadoutStateRecorder::ReadoutStateRecorder( const DAQWorkerArgs* theArgs,
   args(theArgs)
 {
   stateRecorderLogger.setPriority(priority);
+  stateRecorderLogger.debugStream() << "Created new ReadoutStateRecorder: " << *this;
 }
 
 //---------------------------
@@ -33,10 +34,10 @@ ReadoutStateRecorder::~ReadoutStateRecorder()
 //---------------------------
 bool ReadoutStateRecorder::BeginNextGate()
 {
-  this->GetGlobalGateFromFile();
   gate++;
   this->GetGlobalGateFromFile();
   this->IncrememntGlobalGate();
+  stateRecorderLogger.debugStream() << (*this);
   if (!(gate % 10)) 
     stateRecorderLogger.infoStream() << "Taking data for gate " << gate;
 

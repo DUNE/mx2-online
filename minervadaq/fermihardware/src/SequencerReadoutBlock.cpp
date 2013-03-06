@@ -14,6 +14,7 @@ SequencerReadoutBlock::SequencerReadoutBlock() :
   dataLength(0)
 {
   SequencerReadoutBlockLog.setPriority(log4cpp::Priority::INFO);  
+  SequencerReadoutBlockLog.debugStream() << "Created new SequencerReadoutBlock";
 }
 
 //-----------------------------------------------------
@@ -24,6 +25,7 @@ SequencerReadoutBlock::~SequencerReadoutBlock()
   }
   frames.clear();
   this->ClearData();
+  SequencerReadoutBlockLog.debugStream() << "Destroyed SequencerReadoutBlock";
 }
 
 //-----------------------------------------------------

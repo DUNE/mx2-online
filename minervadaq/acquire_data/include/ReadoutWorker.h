@@ -31,6 +31,9 @@
  *  from the main routine.
  */
 class ReadoutWorker {
+
+  friend std::ostream& operator<<(std::ostream&, const ReadoutWorker&);
+
 	private: 
 		Controller *controller;
     std::vector<ECROC*> ecrocs;
@@ -41,6 +44,7 @@ class ReadoutWorker {
 
     int crateID;  // == crate ID/Address for Controller
 		bool vmeInit;    
+    RunningModes runningMode;
 
     CRIM* masterCRIM();
 
@@ -61,22 +65,6 @@ class ReadoutWorker {
     const EChannels * CurrentChannel() const;
     unsigned short GetNextDataBlockSize() const;
     std::tr1::shared_ptr<SequencerReadoutBlock> GetNextDataBlock( unsigned short blockSize ) const;
-
-    /*
-       int TriggerDAQ(unsigned short int triggerBit, int crimID); // Note, be careful about the master CRIM.
-       int WaitOnIRQ(sig_atomic_t const & continueFlag);
-       int AcknowledgeIRQ();
-       unsigned int GetMINOSSGATE();
-       */
-
-    /*! Function which fills an event structure for further data handling by the event builder; templated */
-    /*
-       template <class X> void FillEventStructure(event_handler *evt, int bank, X *frame, 
-       channels *channelTrial);
-       bool ContactEventBuilder(event_handler *evt, int thread, et_att_id attach, et_sys_id sys_id);
-       void FillEventStructure(event_handler *evt, int bank, channels *theChannel);
-       */
-
 };
 
 #endif

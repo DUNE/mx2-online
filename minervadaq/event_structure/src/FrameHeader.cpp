@@ -28,7 +28,7 @@ FrameHeader::FrameHeader(int crateID, int crocID, int chanID,
    * \param int hit hit number
    * \param int length message length
    */
-  frameheader.setPriority(log4cpp::Priority::DEBUG);
+  frameheader.setPriority(log4cpp::Priority::INFO);
 
   unsigned short source_id = 0;
   source_id |= (crateID & 0x03) << 14; // 2 bits for the crate id number

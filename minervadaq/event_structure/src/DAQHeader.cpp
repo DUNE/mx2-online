@@ -8,7 +8,7 @@ log4cpp::Category& daqevt = log4cpp::Category::getInstance(std::string("daqevt")
 //----------------------------------------------------------------
 DAQHeader::DAQHeader(FrameHeader *header)
 {
-  daqevt.setPriority(log4cpp::Priority::DEBUG);
+  daqevt.setPriority(log4cpp::Priority::INFO);
   daqevt.debugStream() << "->Entering DAQHeader::DAQHeader... Building a Sentinel Frame.";
 
   dataLength = daqHeaderSize;
@@ -35,7 +35,7 @@ DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int 
     unsigned short int nADCFrames, unsigned short int nDiscFrames,
     unsigned short int nFPGAFrames)
 {
-  daqevt.setPriority(log4cpp::Priority::DEBUG);
+  daqevt.setPriority(log4cpp::Priority::INFO);
   daqevt.debugStream() << "->Entering DAQHeader::DAQHeader... Building a DAQ Header.";
 
   unsigned int event_info_block[12]; 
