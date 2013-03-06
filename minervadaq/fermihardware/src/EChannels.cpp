@@ -22,15 +22,15 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
   VMECommunicator( vmeAddress, controller ),
   channelNumber(number)
 {
-	/*! \fn 
-	 * constructor takes the following arguments:
-	 * \param vmeAddress  :  The channel base address (already bit-shifted)
-	 * \param number      :  The channel number (0-3)
+  /*! \fn 
+   * constructor takes the following arguments:
+   * \param vmeAddress  :  The channel base address (already bit-shifted)
+   * \param number      :  The channel number (0-3)
    * \param *controller :  Pointer to the VME 2718 Controller servicing this device.
-	 */
+   */
   EChannelLog.setPriority(log4cpp::Priority::DEBUG);  
 
-	channelDirectAddress             = this->address + VMEModuleTypes::EChannelOffset * (unsigned int)(channelNumber);
+  channelDirectAddress             = this->address + VMEModuleTypes::EChannelOffset * (unsigned int)(channelNumber);
   receiveMemoryAddress             = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCReceiveMemory;
   sendMemoryAddress                = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCSendMemory;
   framePointersMemoryAddress       = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCFramePointersMemory;
@@ -406,7 +406,6 @@ void EChannels::WriteFrameRegistersToMemory( std::tr1::shared_ptr<LVDSFrame> fra
 {
   EChannelLog.debugStream() << "WriteFrameRegistersToMemory";
   frame->MakeMessage();
-    frame->GetOutgoingMessageLength();
   this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() );
 }
 

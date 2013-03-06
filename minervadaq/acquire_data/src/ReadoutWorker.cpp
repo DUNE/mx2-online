@@ -105,6 +105,7 @@ void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1
 
   ECROC *theECROC = new ECROC( address, this->controller );
   theECROC->ClearAndResetStatusRegisters();
+  theECROC->DisableSequencerReadout(); // make sure this is disabled for init
   readoutLogger.debugStream() << " Adding FEBs to Channels...";
   theECROC->GetChannel( 0 )->SetupNFrontEndBoards( nFEBchan0 );
   readoutLogger.debugStream() << " Setup Channel 0 with " << nFEBchan0 << " FEBS.";
@@ -148,6 +149,7 @@ unsigned long long ReadoutWorker::Trigger()
     (*p)->EnableSequencerReadout();
     (*p)->SendSoftwareRDFE();
     (*p)->WaitForSequencerReadoutCompletion();
+    (*p)->DisableSequencerReadout();
   }
 
   // TODO: Run sleepy? Will we step on digitization?
