@@ -31,7 +31,7 @@ class LVDSFrame {
 
   protected:
     unsigned char FrameID[2];        
-    unsigned char frameHeader[9];    
+    unsigned char frameHeader[ MinervaDAQSizes::FrameHeaderLengthOutgoing ];    
     unsigned char *outgoingMessage;  
     unsigned char *receivedMessage;  
     unsigned char febNumber[1], targetDevice[1], deviceFunction[1], 

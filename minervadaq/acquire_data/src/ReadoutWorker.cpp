@@ -18,7 +18,8 @@ log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("r
 //---------------------------
 ReadoutWorker::ReadoutWorker( int theCrateID, log4cpp::Priority::Value priority, bool VMEInit ) :
   crateID(theCrateID),
-  vmeInit(VMEInit)
+  vmeInit(VMEInit),
+  runningMode((RunningModes)0)
 {
   readoutLogger.setPriority(priority);
 
@@ -55,19 +56,24 @@ const Controller* ReadoutWorker::GetController() const
 }
 
 //---------------------------
-void ReadoutWorker::InitializeCrate( RunningModes runningMode )
+void ReadoutWorker::InitializeCrate( RunningModes theRunningMode )
 {
-  readoutLogger.debugStream() << "Initialize Crate " << crateID << " for Running Mode: " << (RunningModes)runningMode;
+  runningMode = theRunningMode;
+  readoutLogger.debugStream() << "Initialize " << (*this);
 
+  readoutLogger.debugStream() << "Initializing " << crims.size() << " CRIMs...";
   for( std::vector<CRIM*>::iterator p=crims.begin(); p!=crims.end(); ++p ) {
     (*p)->Initialize( runningMode );
   }
+  readoutLogger.debugStream() << "Initializing " << ecrocs.size() << " CROC-Es...";
   for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
     (*p)->Initialize();
     std::vector<EChannels*>* channels = (*p)->GetChannelsVector();
     readoutChannels.insert(readoutChannels.end(),channels->begin(),channels->end());
   }
+  readoutLogger.debugStream() << "Enabling IRQ for master CRIM.";
   this->masterCRIM()->IRQEnable();
+  readoutLogger.debugStream() << "Finished Crate Initialization for " << (*this);
 }
 
 //---------------------------
@@ -191,9 +197,18 @@ std::tr1::shared_ptr<SequencerReadoutBlock> ReadoutWorker::GetNextDataBlock( uns
     readoutLogger.fatalStream() << "Attempting to read data from a NULL Channel!";
     exit( EXIT_CROC_UNSPECIFIED_ERROR );
   }
+  readoutLogger.debugStream() << "Getting Data Block for " << (**currentChannel);
   std::tr1::shared_ptr<SequencerReadoutBlock> block(new SequencerReadoutBlock());
   block->SetData( (*currentChannel)->ReadMemory( blockSize ), blockSize );
   return block;
+}
+
+//-----------------------------
+std::ostream& operator<<(std::ostream& out, const ReadoutWorker& s)
+{
+  out << "Crate = " << s.crateID << "; ";
+  out << "Running Mode = " << s.runningMode << "; ";
+  return out;
 }
 
 #endif

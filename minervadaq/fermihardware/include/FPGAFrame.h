@@ -13,6 +13,8 @@
 class FPGAFrame : public LVDSFrame {
 	private:
 
+    bool outgoingMessageIsShort;
+
 		unsigned int Timer, TestPulseCount, GateTimeStamp;
 		unsigned short GateStart, GateLength, InjectDACValue, HVTarget, 
 			HVActual, DCM2PhaseTotal, HVPeriodAuto, HVPeriodManual, Temperature,
@@ -30,7 +32,7 @@ class FPGAFrame : public LVDSFrame {
 
 	public:
 		FPGAFrame( FrameTypes::febAddresses theAddress ); 
-		~FPGAFrame(){};
+		~FPGAFrame();
 
 
 		void SetFPGAFrameDefaultValues();

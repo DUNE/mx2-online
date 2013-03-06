@@ -14,7 +14,9 @@
 log4cpp::Category& FPGAFrameLog = log4cpp::Category::getInstance(std::string("FPGAFrame"));
 
 //-------------------------------------------------------
-FPGAFrame::FPGAFrame( FrameTypes::febAddresses a ) : LVDSFrame() 
+FPGAFrame::FPGAFrame( FrameTypes::febAddresses a ) : 
+  LVDSFrame(),
+  outgoingMessageIsShort(false)
 {
   /*! \fn********************************************************************************
    * The log-free constructor takes the following arguments:
@@ -26,7 +28,7 @@ FPGAFrame::FPGAFrame( FrameTypes::febAddresses a ) : LVDSFrame()
   using namespace FrameTypes;
 
   febNumber[0] = (unsigned char)a; 
-  FPGAFrameLog.setPriority(log4cpp::Priority::INFO);  
+  FPGAFrameLog.setPriority(log4cpp::Priority::DEBUG);  
 
   Devices dev     = FPGA;          
   Broadcasts b    = None;          
@@ -37,15 +39,21 @@ FPGAFrame::FPGAFrame( FrameTypes::febAddresses a ) : LVDSFrame()
   // Set default frame values (DOES NOT WRITE TO HARDWARE OR WRITE A MESSAGE, just configure properties).
   this->SetFPGAFrameDefaultValues();
 
-  FPGAFrameLog.debugStream() << "Created a new FPGAFrame! " << (int)febNumber[0];
-  FPGAFrameLog.debugStream() << "  Max hits    =  "<< MinervaDAQSizes::ADCFramesMaxNumber;
+  FPGAFrameLog.debugStream() << "Created a new FPGAFrame for FEB " << (int)febNumber[0];
 }
 
+//-------------------------------------------------------
+FPGAFrame::~FPGAFrame() 
+{
+  FPGAFrameLog.debugStream() << "Destroyed FPGA Frame for FEB " << (int)febNumber[0];
+}
 
 //-------------------------------------------------------
-// Careful, the length is shorter for "ShortMessages" (DumpReads).
 unsigned int FPGAFrame::GetOutgoingMessageLength() 
 { 
+  if (outgoingMessageIsShort) {
+    return MinervaDAQSizes::FrameHeaderLengthOutgoing;
+  }
   return MinervaDAQSizes::FrameHeaderLengthOutgoing + MinervaDAQSizes::FPGANumRegisters;
 }
 
@@ -57,7 +65,9 @@ void FPGAFrame::MakeShortMessage()
    ***************************************************************************|
    */
   using namespace FrameTypes;
+  outgoingMessageIsShort = true;
 
+  FPGAFrameLog.debugStream() << "MakeShortMessage...";
   Devices dev     = FPGA;          
   Broadcasts b    = None;          
   Directions d    = MasterToSlave; 
@@ -85,6 +95,8 @@ void FPGAFrame::MakeMessage()
    * Note that we must clean up the outgoingMessages in the functions that call MakeMessage!
    ********************************************************************************
    */
+  FPGAFrameLog.debugStream() << "MakeMessage for FPGA";
+  outgoingMessageIsShort = false;
   // In principle, the message size could change as we add and drop registers.
   unsigned char * message = 
     new unsigned char [MinervaDAQSizes::FPGANumRegisters + (MinervaDAQSizes::FPGANumRegisters+1)%2]; 
@@ -242,8 +254,9 @@ void FPGAFrame::MakeMessage()
 
   // Make a new out-going message buffer of suitable size.
   if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
-  outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];  
-  for (unsigned int i=0; i < this->GetOutgoingMessageLength(); ++i) { 
+  unsigned int length = this->GetOutgoingMessageLength();
+  outgoingMessage = new unsigned char [length];  
+  for (unsigned int i=0; i < length; ++i) { 
     if ( i < MinervaDAQSizes::FrameHeaderLengthOutgoing ) {
       outgoingMessage[i] = frameHeader[i];
     } else {

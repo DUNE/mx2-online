@@ -9,8 +9,8 @@
 
 #include "exit_codes.h"
 
-log4cpp::Category& daqLogger = 
-log4cpp::Category::getInstance(std::string("daqLogger"));
+log4cpp::Category& daqWorker = 
+log4cpp::Category::getInstance(std::string("daqWorker"));
 
 //---------------------------------------------------------
 DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs, 
@@ -19,26 +19,26 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs,
   args(theArgs),
   status(theStatus)
 {
-  daqLogger.setPriority(priority);
+  daqWorker.setPriority(priority);
 
-  daqLogger.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
-  daqLogger.infoStream() << "Arguments to MINERvA DAQ Worker: ";
-  daqLogger.infoStream() << "  Run Number             = " << args->runNumber;
-  daqLogger.infoStream() << "  Subrun Number          = " << args->subRunNumber;
-  daqLogger.infoStream() << "  Total Gates            = " << args->numberOfGates;
-  daqLogger.infoStream() << "  Running Mode (encoded) = " << args->runMode;
-  daqLogger.infoStream() << "  Detector (encoded)     = " << args->detector;
-  daqLogger.infoStream() << "  DetectorConfiguration  = " << args->detectorConfigCode;
-  daqLogger.infoStream() << "  LED Level (encoded)    = " << (int)args->ledLevel;
-  daqLogger.infoStream() << "  LED Group (encoded)    = " << (int)args->ledGroup;
-  daqLogger.infoStream() << "  ET Filename            = " << args->etFileName;
-  daqLogger.infoStream() << "  SAM Filename           = " << args->samFileName;
-  daqLogger.infoStream() << "  LOG Filename           = " << args->logFileName;
-  daqLogger.infoStream() << "  Configuration File     = " << args->hardwareConfigFileName;
-  daqLogger.infoStream() << "  VME Card Init. Level   = " << args->hardwareInitLevel;	
-  daqLogger.infoStream() << "  ET System Port         = " << args->networkPort;	
-  daqLogger.infoStream() << "See Event/MinervaEvent/xml/DAQHeader.xml for codes.";
-  daqLogger.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+  daqWorker.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+  daqWorker.infoStream() << "Arguments to MINERvA DAQ Worker: ";
+  daqWorker.infoStream() << "  Run Number             = " << args->runNumber;
+  daqWorker.infoStream() << "  Subrun Number          = " << args->subRunNumber;
+  daqWorker.infoStream() << "  Total Gates            = " << args->numberOfGates;
+  daqWorker.infoStream() << "  Running Mode (encoded) = " << args->runMode;
+  daqWorker.infoStream() << "  Detector (encoded)     = " << args->detector;
+  daqWorker.infoStream() << "  DetectorConfiguration  = " << args->detectorConfigCode;
+  daqWorker.infoStream() << "  LED Level (encoded)    = " << (int)args->ledLevel;
+  daqWorker.infoStream() << "  LED Group (encoded)    = " << (int)args->ledGroup;
+  daqWorker.infoStream() << "  ET Filename            = " << args->etFileName;
+  daqWorker.infoStream() << "  SAM Filename           = " << args->samFileName;
+  daqWorker.infoStream() << "  LOG Filename           = " << args->logFileName;
+  daqWorker.infoStream() << "  Configuration File     = " << args->hardwareConfigFileName;
+  daqWorker.infoStream() << "  VME Card Init. Level   = " << args->hardwareInitLevel;	
+  daqWorker.infoStream() << "  ET System Port         = " << args->networkPort;	
+  daqWorker.infoStream() << "See Event/MinervaEvent/xml/DAQHeader.xml for codes.";
+  daqWorker.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
   ReadoutWorker* readoutWorker = 
     new ReadoutWorker( 0, priority, (bool)args->hardwareInitLevel );
@@ -62,7 +62,7 @@ DAQWorker::~DAQWorker()
 //---------------------------------------------------------
 void DAQWorker::Initialize()
 {
-  daqLogger.infoStream() << "Initializing DAQWorker...";
+  daqWorker.infoStream() << "Initializing DAQWorker...";
 
   // Read in hardware config here. For now, hard code...
 
@@ -74,7 +74,7 @@ void DAQWorker::Initialize()
 //---------------------------------------------------------
 int DAQWorker::SetUpET()  
 {
-  daqLogger.infoStream() << "Setting up ET...";
+  daqWorker.infoStream() << "Setting up ET...";
 
   et_openconfig  openconfig;
 
@@ -87,22 +87,22 @@ int DAQWorker::SetUpET()
 
   // Set to the host machine name. 
   et_open_config_sethost(openconfig, (args->hostName).c_str());
-  daqLogger.infoStream() << "Setting ET host to " << args->hostName;
+  daqWorker.infoStream() << "Setting ET host to " << args->hostName;
 
   // Set direct connection.
   et_open_config_setcast(openconfig, ET_DIRECT);  // Remote mode only.
 
   // Set the server port.
   et_open_config_setserverport(openconfig, args->networkPort); // Remote mode only.
-  daqLogger.infoStream() << "Set ET server port to " << args->networkPort; 
+  daqWorker.infoStream() << "Set ET server port to " << args->networkPort; 
 
   // Open it.
-  daqLogger.infoStream() << "Trying to open ET system...";   
+  daqWorker.infoStream() << "Trying to open ET system...";   
   if (et_open(&sys_id, (args->etFileName).c_str(), openconfig) != ET_OK) {
-    daqLogger.fatalStream() << "et_producer: et_open problems!";
+    daqWorker.fatalStream() << "et_producer: et_open problems!";
     return EXIT_UNSPECIFIED_ERROR;
   }
-  daqLogger.infoStream() << "...Opened ET system!";  
+  daqWorker.infoStream() << "...Opened ET system!";  
 
   // Clean up.
   et_open_config_destroy(openconfig);
@@ -113,11 +113,11 @@ int DAQWorker::SetUpET()
   // Attach to GRANDCENTRAL station since we are producing events.
   int etattstat = et_station_attach(sys_id, ET_GRANDCENTRAL, &attach); 
   if (etattstat < 0) {
-    daqLogger.fatalStream() << "et_producer: error in station attach!";
-    daqLogger.fatalStream() << " error code = " << etattstat;
+    daqWorker.fatalStream() << "et_producer: error in station attach!";
+    daqWorker.fatalStream() << " error code = " << etattstat;
     return etattstat;
   } 
-  daqLogger.infoStream() << "Successfully attached to GRANDCENTRAL Station.";        
+  daqWorker.infoStream() << "Successfully attached to GRANDCENTRAL Station.";        
 
   return 0;
 }
@@ -125,49 +125,48 @@ int DAQWorker::SetUpET()
 //---------------------------------------------------------
 bool DAQWorker::ContactEventBuilder( EventHandler *handler )
 {
-  daqLogger.infoStream() << "Contacting Event Builder...";
+  daqWorker.infoStream() << "Contacting Event Builder...";
 
   unsigned short length = handler->dataLength;
 
   while (et_alive(sys_id)) {
-    daqLogger.debugStream() << "  ->ET is Alive!";
+    daqWorker.debugStream() << "  ->ET is Alive!";
     et_event *pe;         // The event.
     EventHandler *pdata;  // The data for the event.
     int status = et_event_new(sys_id, attach, &pe, ET_SLEEP, NULL,
         sizeof(struct EventHandler)); // Get an event.
     if (status == ET_ERROR_DEAD) {
-      daqLogger.crit("ET system is dead in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("ET system is dead in acquire_data::ContactEventBuilder!");
       break;
     } else if (status == ET_ERROR_TIMEOUT) {
-      daqLogger.crit("Got an ET timeout in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("Got an ET timeout in acquire_data::ContactEventBuilder!");
       break;
     } else if (status == ET_ERROR_EMPTY) {
-      daqLogger.crit("No ET events in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("No ET events in acquire_data::ContactEventBuilder!");
       break;
     } else if (status == ET_ERROR_BUSY) {
-      daqLogger.crit("ET Grandcentral is busy in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("ET Grandcentral is busy in acquire_data::ContactEventBuilder!");
       break;
     } else if (status == ET_ERROR_WAKEUP) {
-      daqLogger.crit("ET wakeup error in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("ET wakeup error in acquire_data::ContactEventBuilder!");
       break;
     } else if ((status == ET_ERROR_WRITE) || (status == ET_ERROR_READ)) {
-      daqLogger.crit("ET socket communication error in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("ET socket communication error in acquire_data::ContactEventBuilder!");
       break;
     } if (status != ET_OK) {
-      daqLogger.fatal("ET et_producer: error in et_event_new in acquire_data::ContactEventBuilder!");
+      daqWorker.fatal("ET et_producer: error in et_event_new in acquire_data::ContactEventBuilder!");
       return false;
     }
     // Put data into the event.
     if (status == ET_OK) {
-      daqLogger.debugStream() << "Putting Event into ET System...";
+      daqWorker.debugStream() << "Putting Event into ET System...";
       et_event_getdata(pe, (void **)&pdata); // Get the event ready.
       { 
-        daqLogger.debugStream() << "-----------------------------------------------";
-        daqLogger.debugStream() << "EventHandler_size: " << sizeof(struct EventHandler);
-        daqLogger.debugStream() << "evt_size:          " << sizeof(handler);
-        daqLogger.debugStream() << "Finished Processing Event Data:";
+        daqWorker.debugStream() << "-----------------------------------------------";
+        daqWorker.debugStream() << "EventHandler_size: " << sizeof(struct EventHandler);
+        daqWorker.debugStream() << "Finished Processing Event Data:";
         for (int index = 0; index < length; index++) {
-          daqLogger.debug("     Data Byte %02d = 0x%02X",
+          daqWorker.debug("     Data Byte %02d = 0x%02X",
               index,(unsigned int)handler->data[index]);
         }
       }
@@ -180,7 +179,7 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
     // Put the event back into the ET system.
     status = et_event_put(sys_id, attach, pe); // Put the event away.
     if (status != ET_OK) {
-      daqLogger.fatal("et_producer: put error in acquire_data::ContactEventBuilder!");
+      daqWorker.fatal("et_producer: put error in acquire_data::ContactEventBuilder!");
       return false;
     }
     if (!et_alive(sys_id)) {
@@ -189,17 +188,17 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
     break; // Done processing the event. 
   } // while alive 
 
-  daqLogger.debugStream() << "  Exiting acquire_data::ContactEventBuilder...";
+  daqWorker.debugStream() << "  Exiting acquire_data::ContactEventBuilder...";
   return true;
 }
 
 //---------------------------------------------------------
 bool DAQWorker::CloseDownET()
 {
-  daqLogger.infoStream() << "Closing down ET...";
+  daqWorker.infoStream() << "Closing down ET...";
 
   if (et_station_detach(sys_id, attach) < 0) {
-    daqLogger.fatal("et_producer: error in station detach\n");
+    daqWorker.fatal("et_producer: error in station detach\n");
     return false;
   }     
 
@@ -209,11 +208,11 @@ bool DAQWorker::CloseDownET()
 //---------------------------------------------------------
 void DAQWorker::TakeData()
 {
-  daqLogger.infoStream() << "Beginning Data Acquisition...";
+  daqWorker.infoStream() << "Beginning Data Acquisition...";
   this->Initialize();
 
   while (stateRecorder->BeginNextGate()) {
-    daqLogger.debugStream() << "Continue Running Status = " << (*status);
+    daqWorker.debugStream() << "Continue Running Status = " << (*status);
     if (!(*status)) break;
 
     unsigned long long triggerTime = 0;
@@ -228,14 +227,16 @@ void DAQWorker::TakeData()
       triggerTime = worker->Trigger();
       do {
         unsigned short blockSize = worker->GetNextDataBlockSize();
+        daqWorker.debugStream() << "Next data block size is: " << blockSize;
         std::tr1::shared_ptr<SequencerReadoutBlock> block = worker->GetNextDataBlock( blockSize );
         // declare block to ET here
         // temp : turn the data into Frames just to look at in the log file:
+        daqWorker.debugStream() << "Got data, processing into frames...";
         block->ProcessDataIntoFrames();
-        daqLogger.debugStream() << "TakeData : Inspecting Frames for channel " << (*worker->CurrentChannel());
+        daqWorker.debugStream() << "TakeData : Inspecting Frames for channel " << (*worker->CurrentChannel());
         while (block->FrameCount()) {
           LVDSFrame * frame = block->PopOffFrame();
-          daqLogger.debugStream() << (*frame);
+          daqWorker.debugStream() << (*frame);
           frame->printReceivedMessageToLog();
           delete frame;
         }
@@ -246,14 +247,14 @@ void DAQWorker::TakeData()
     DeclareDAQHeaderToET();
   }
 
-  daqLogger.infoStream() << "Finished Data Acquisition...";
+  daqWorker.infoStream() << "Finished Data Acquisition...";
 }
 
 
 //---------------------------------------------------------
 void DAQWorker::DeclareDAQHeaderToET( HeaderData::BankType bankType )
 {
-  daqLogger.debugStream() << "Declaring Header to ET for bank type " << bankType;
+  daqWorker.debugStream() << "Declaring Header to ET for bank type " << bankType;
 
   struct EventHandler * handler = NULL;
   std::tr1::shared_ptr<DAQHeader> daqhead = stateRecorder->GetDAQHeader( bankType );
@@ -263,10 +264,11 @@ void DAQWorker::DeclareDAQHeaderToET( HeaderData::BankType bankType )
 }
 
 //---------------------------------------------------------
-void DAQWorker::SendSentinel()
+bool DAQWorker::SendSentinel()
 {
-  daqLogger.debugStream() << "Sending Sentinel Frame...";
+  daqWorker.debugStream() << "Sending Sentinel Frame...";
   this->DeclareDAQHeaderToET( HeaderData::SentinelBank );
+  return true;
 }
 
 

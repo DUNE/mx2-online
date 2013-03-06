@@ -28,7 +28,7 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
 	 * \param number      :  The channel number (0-3)
    * \param *controller :  Pointer to the VME 2718 Controller servicing this device.
 	 */
-  EChannelLog.setPriority(log4cpp::Priority::INFO);  
+  EChannelLog.setPriority(log4cpp::Priority::DEBUG);  
 
 	channelDirectAddress             = this->address + VMEModuleTypes::EChannelOffset * (unsigned int)(channelNumber);
   receiveMemoryAddress             = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCReceiveMemory;
@@ -245,14 +245,15 @@ bool EChannels::isAvailable( FrontEndBoard* feb ) const
 
   std::tr1::shared_ptr<FPGAFrame> frame = feb->GetFPGAFrame();
   unsigned short dataLength = this->ReadFPGAProgrammingRegistersToMemory( frame );
+  EChannelLog.debugStream() << "isAvailable read data length = " << dataLength;
   unsigned char* dataBuffer = this->ReadMemory( dataLength ); 
+  EChannelLog.debugStream() << "isAvailable read dataBuffer.";
 
   frame->SetReceivedMessage(dataBuffer);
+  EChannelLog.debugStream() << "isAvailable set frame received message.";
   frame->DecodeRegisterValues();
   EChannelLog.debugStream() << "Decoded FrontEndBoard address = " << (int)feb->GetBoardNumber();
   if( (int)feb->GetBoardNumber() == frame->GetFEBNumber() ) available = true;
-
-  /* delete [] dataBuffer; */
 
   EChannelLog.debugStream() << "FrontEndBoard " << feb->GetBoardNumber() << " isAvailable = " << available;
   return available;
@@ -396,6 +397,8 @@ void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength 
 {
   EChannelLog.debugStream() << "Send Memory Address   = 0x" << std::hex << sendMemoryAddress;
   EChannelLog.debugStream() << "Message Length        = " << messageLength;
+  for (int i = 0; i < messageLength; ++i) 
+    EChannelLog.debugStream() << " Message Byte " << i << " = 0x" << std::hex << (int)(message[i]);
   int error = WriteCycle( messageLength, message, sendMemoryAddress, addressModifier, dataWidthSwappedReg );
   if( error ) exitIfError( error, "Failure writing to CROC FIFO!"); 
 }
@@ -403,7 +406,9 @@ void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength 
 //----------------------------------------
 void EChannels::WriteFrameRegistersToMemory( std::tr1::shared_ptr<LVDSFrame> frame ) const
 {
+  EChannelLog.debugStream() << "WriteFrameRegistersToMemory";
   frame->MakeMessage();
+    frame->GetOutgoingMessageLength();
   this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() );
 }
 

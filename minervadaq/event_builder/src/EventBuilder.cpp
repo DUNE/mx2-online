@@ -261,9 +261,10 @@ int main(int argc, char *argv[])
       continueRunning = false;
     }
 
-    // if we didn't successfully get an "event", go round and try again.
-    if (status != ET_OK)
+    if (status != ET_OK) {
+      /* eventbuilder.debugStream() << "Didn't successfully get an \"event\", go round and try again."; */
       continue;
+    }
 
     EventHandler *evt;
     int pri;
@@ -278,10 +279,10 @@ int main(int argc, char *argv[])
     void *pdata;
     et_event_getdata(pe, &pdata); //get the event ready ? what does this do?
 
-    // Put the event back into the ET system.
+    eventbuilder.debugStream() << "Put the event back into the ET system...";
     status = et_event_put(sys_id, attach, pe); 
     evt_counter++;
-    // Now write the event to the binary output file.
+    eventbuilder.debugStream() << "Now write the event to the binary output file...";
     binary_outputfile.write((char *) evt->data, evt->dataLength);  
     binary_outputfile.flush();
   }
