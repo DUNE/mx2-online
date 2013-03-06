@@ -11,6 +11,8 @@
 #include "SequencerReadoutBlock.h"
 
 #include "ReadoutWorker.h"
+#include "DAQWorker.h"
+#include "DAQArgs.h"
 
 // The tests cannot be run in any order - there is a specific order.
 
