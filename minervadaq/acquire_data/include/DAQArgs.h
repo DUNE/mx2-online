@@ -31,6 +31,8 @@ class DAQArgs {
       args->hostName = "localhost";
       args->lastTriggerFileName = "/work/conditions/last_trigger.dat"; 
       args->globalGateLogFileName = "/work/conditions/global_gate.dat";
+
+      return args;
     };
 
     static struct DAQWorkerArgs * ParseArgs( const int& argc, char * argv[], const std::string& controllerID )

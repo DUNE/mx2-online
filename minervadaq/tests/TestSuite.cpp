@@ -95,7 +95,10 @@ int main( int argc, char * argv[] )
   if (channel == 3) nch3 = nFEBs;
 
   std::string logName = "/work/data/logs/" + thisScript + ".txt";
-  appender = new log4cpp::FileAppender( "default", logName, false ); //  cryptic false = do not append
+  struct DAQWorkerArgs * args = DAQArgs::DefaultArgs();
+  args->logFileName = logName;
+
+  appender = new log4cpp::FileAppender( "default", args->logFileName, false ); //  cryptic false = do not append
   appender->setLayout(new log4cpp::BasicLayout());
   root.addAppender(appender);
   root.setPriority(log4cpp::Priority::ERROR);
@@ -139,6 +142,8 @@ int main( int argc, char * argv[] )
   // Get & initialize a CRIM.
   CRIM * crim = GetAndTestCRIM( crimCardAddress, controller );
 
+
+  delete args;
   delete crim;
   delete ecroc;
   delete controller;
