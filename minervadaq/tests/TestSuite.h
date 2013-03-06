@@ -56,6 +56,9 @@ CRIM * GetAndTestCRIM( unsigned int address, Controller * controller );
 ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCardAddress, 
     unsigned int crimCardAddress, int nch0, int nch1, int nch2, int nch3);
 
+// This test should be called thirteenth.
+void TestDAQWorker( DAQWorker * worker );
+
 //--------------------------------------------------------------------------------------
 // Helper Functions - not tests per se.
 void FPGAWriteConfiguredFrame( EChannels* channel, std::tr1::shared_ptr<FPGAFrame> frame );

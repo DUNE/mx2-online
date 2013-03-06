@@ -397,8 +397,6 @@ void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength 
 {
   EChannelLog.debugStream() << "Send Memory Address   = 0x" << std::hex << sendMemoryAddress;
   EChannelLog.debugStream() << "Message Length        = " << messageLength;
-  for (int i = 0; i < messageLength; ++i) 
-    EChannelLog.debugStream() << " Message Byte " << i << " = 0x" << std::hex << (int)(message[i]);
   int error = WriteCycle( messageLength, message, sendMemoryAddress, addressModifier, dataWidthSwappedReg );
   if( error ) exitIfError( error, "Failure writing to CROC FIFO!"); 
 }
