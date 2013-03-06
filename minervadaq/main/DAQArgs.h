@@ -33,10 +33,11 @@ class DAQArgs {
       args->globalGateLogFileName = "/work/conditions/global_gate.dat";
     };
 
-    static struct DAQWorkerArgs * parseArgs( const int& argc, char * argv[], const std::string& controllerID )
+    static struct DAQWorkerArgs * ParseArgs( const int& argc, char * argv[], const std::string& controllerID )
     {
       struct DAQWorkerArgs * args = DAQArgs::DefaultArgs();
 
+      std::string fileRoot = "/work/data/";
       int optind = 1;
       while ((optind < argc) && (argv[optind][0]=='-')) {
         std::string sw = argv[optind];

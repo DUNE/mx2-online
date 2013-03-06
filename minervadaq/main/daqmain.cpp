@@ -23,7 +23,7 @@ log4cpp::Category& daqmain = log4cpp::Category::getInstance(std::string("daqmain
 //---------------------------------------------------------------
 int main( int argc, char * argv[] ) 
 {
-  struct DAQWorkerArgs * args = DAQArgs::parseArgs( argc, argv, "0" );
+  struct DAQWorkerArgs * args = DAQArgs::ParseArgs( argc, argv, "0" );
 
   baseAppender = new log4cpp::FileAppender("default", args->logFileName, false);
   baseAppender->setLayout(new log4cpp::BasicLayout());
