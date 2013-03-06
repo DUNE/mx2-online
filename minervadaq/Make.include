@@ -39,9 +39,6 @@ INCLUDE += -I$(DAQROOT)/fermihardware/include
 #Data Acquire functions (control acquire loop)
 INCLUDE += -I$(DAQROOT)/acquire_data/include 
 
-#Run Information functions
-INCLUDE += -I$(DAQROOT)/daq_run/include
-
 #Event Structure Information
 INCLUDE += -I$(DAQROOT)/event_structure/include
 

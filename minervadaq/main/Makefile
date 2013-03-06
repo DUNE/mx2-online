@@ -1,7 +1,4 @@
-CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
-
-COMPILE_OPTIONS = -DTAKE_DATA 
-#COMPILE_OPTIONS += -DASSERT_INTERRUPT
+CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC -Werror
 
 #--RUNNING FLAGS--
 COMPILE_OPTIONS += -DRUN_SLEEPY # This flag is required to for FEB digitization.  2009.Dec.16
@@ -27,4 +24,5 @@ $(OBJS): %.o: %.cpp
 
 clean:
 	rm *.o; 
+	cd $(DAQROOT)/bin; rm $(TARGET)
 

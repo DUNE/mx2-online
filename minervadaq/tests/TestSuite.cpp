@@ -50,7 +50,6 @@ int main( int argc, char * argv[] )
   unsigned int crimCardAddress  = 224;
   unsigned int channel          = 0;
   unsigned int nFEBs            = 5; // USE SEQUENTIAL ADDRESSING!!!
-  int controllerID              = 0;
   int nch0 = 0, nch1 = 0, nch2 = 0, nch3 = 0;
 
   // Process the command line argument set. opt index == 0 is the executable.
@@ -105,6 +104,8 @@ int main( int argc, char * argv[] )
   logger.setPriority(log4cpp::Priority::DEBUG);
   logger.infoStream() << "--Starting " << thisScript << " Script.--";
 
+  int controllerID = 0;
+
   // Get & initialize a Controller object.
   Controller * controller = GetAndTestController( 0x00, controllerID );
 
@@ -141,8 +142,6 @@ int main( int argc, char * argv[] )
 
   // Get & initialize a CRIM.
   CRIM * crim = GetAndTestCRIM( crimCardAddress, controller );
-
-  
 
   delete crim;
   delete ecroc;

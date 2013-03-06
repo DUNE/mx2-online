@@ -5,11 +5,11 @@
 #include "exit_codes.h"
 
 /*********************************************************************************
-* Class for creating CROC-E objects for use with the MINERvA data acquisition 
-* system and associated software projects.
-*
-* Gabriel Perdue, The University of Rochester
-**********************************************************************************/
+ * Class for creating CROC-E objects for use with the MINERvA data acquisition 
+ * system and associated software projects.
+ *
+ * Gabriel Perdue, The University of Rochester
+ **********************************************************************************/
 
 log4cpp::Category& ECROCLog = log4cpp::Category::getInstance(std::string("ECROC"));
 
@@ -17,50 +17,50 @@ log4cpp::Category& ECROCLog = log4cpp::Category::getInstance(std::string("ECROC"
 ECROC::ECROC(unsigned int address, const Controller* controller) :
   VMECommunicator( address, controller )
 {
-	timingSetupAddress           = this->address + VMEModuleTypes::ECROCTimingSetup;
-	resetAndTestPulseMaskAddress = this->address + VMEModuleTypes::ECROCResetAndTestPulseMask;
-	channelResetAddress          = this->address + VMEModuleTypes::ECROCChannelReset;
-	fastCommandAddress           = this->address + VMEModuleTypes::ECROCFastCommand;
-	testPulseAddress             = this->address + VMEModuleTypes::ECROCTestPulse;
-	rdfePulseDelayAddress        = this->address + VMEModuleTypes::ECROCRdfePulseDelay;
-	rdfePulseCommandAddress      = this->address + VMEModuleTypes::ECROCRdfePulseCommand;
+  timingSetupAddress           = this->address + VMEModuleTypes::ECROCTimingSetup;
+  resetAndTestPulseMaskAddress = this->address + VMEModuleTypes::ECROCResetAndTestPulseMask;
+  channelResetAddress          = this->address + VMEModuleTypes::ECROCChannelReset;
+  fastCommandAddress           = this->address + VMEModuleTypes::ECROCFastCommand;
+  testPulseAddress             = this->address + VMEModuleTypes::ECROCTestPulse;
+  rdfePulseDelayAddress        = this->address + VMEModuleTypes::ECROCRdfePulseDelay;
+  rdfePulseCommandAddress      = this->address + VMEModuleTypes::ECROCRdfePulseCommand;
 
   ECROCLog.setPriority(log4cpp::Priority::INFO); 
 
-	MakeChannels(); 
+  MakeChannels(); 
 }
 
 //----------------------------------------
 ECROC::~ECROC() 
 { 
-	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
-			p!=ECROCChannels.end();
-			p++) 
-		delete (*p);
-	ECROCChannels.clear();
+  for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
+      p!=ECROCChannels.end();
+      p++) 
+    delete (*p);
+  ECROCChannels.clear();
 }
 
 //----------------------------------------
 unsigned int ECROC::GetAddress() const
 {
-	return this->address;
+  return this->address;
 }
 
 //----------------------------------------
 void ECROC::MakeChannels() 
 {
-	for ( unsigned int i=0; i<4; ++i ) { 
-		EChannels *tmp = new EChannels( this->address, i, this->GetController() );
-		ECROCChannels.push_back( tmp ); 
-	}
+  for ( unsigned int i=0; i<4; ++i ) { 
+    EChannels *tmp = new EChannels( this->address, i, this->GetController() );
+    ECROCChannels.push_back( tmp ); 
+  }
 }
 
 //----------------------------------------
 void ECROC::ClearEmptyChannels()
 {
   std::vector<EChannels*> tempChannels; 
-	for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
-			p!=ECROCChannels.end();
+  for (std::vector<EChannels*>::iterator p=ECROCChannels.begin();
+      p!=ECROCChannels.end();
       p++) {
     if ( (*p)->GetNumFrontEndBoards() > 0 ) {
       tempChannels.push_back(*p);
@@ -69,9 +69,9 @@ void ECROC::ClearEmptyChannels()
       delete (*p);
     }
   }
-	ECROCChannels.clear();
-	for (std::vector<EChannels*>::iterator p=tempChannels.begin();
-			p!=tempChannels.end();
+  ECROCChannels.clear();
+  for (std::vector<EChannels*>::iterator p=tempChannels.begin();
+      p!=tempChannels.end();
       p++) {
     ECROCChannels.push_back( *p );
   }

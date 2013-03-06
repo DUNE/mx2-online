@@ -15,17 +15,17 @@
 
 class FrontEndBoard {
 
-	private:
+  private:
     FrameTypes::febAddresses boardNumber; 
-		TRIPFrame  * tripFrame;    
-		ADCFrame   * adcFrame;      
-		DiscrFrame * discrFrame;   
+    TRIPFrame  * tripFrame;    
+    ADCFrame   * adcFrame;      
+    DiscrFrame * discrFrame;   
     FPGAFrame  * fgpaFrame;
 
-		
-	public:
-		FrontEndBoard( FrameTypes::febAddresses theAddress ); 
-		~FrontEndBoard() { };    
+
+  public:
+    FrontEndBoard( FrameTypes::febAddresses theAddress ); 
+    ~FrontEndBoard() { };    
 
     FrameTypes::febAddresses inline GetBoardNumber() { return boardNumber; };
 
