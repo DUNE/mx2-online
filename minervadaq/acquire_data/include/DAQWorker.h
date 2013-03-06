@@ -22,6 +22,7 @@ class DAQWorker {
   private:  
     const DAQWorkerArgs* args;
     const bool *const status;
+    bool declareEventsToET;
 
     ReadoutStateRecorder* stateRecorder;
     std::vector<ReadoutWorker*> readoutWorkerVect;
@@ -30,7 +31,6 @@ class DAQWorker {
     et_sys_id      sys_id; 
     bool ContactEventBuilder(EventHandler *handler);
 
-    void Initialize();  
     void DeclareDAQHeaderToET( HeaderData::BankType bankType = HeaderData::DAQBank );
 
     // The CROC-E DAQ receives "globs" of data spanning entire chains.
@@ -44,6 +44,7 @@ class DAQWorker {
     ~DAQWorker();
 
     int SetUpET();  
+    void InitializeHardware();  
     void TakeData();
     bool CloseDownET();
     bool SendSentinel();

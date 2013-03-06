@@ -17,7 +17,8 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs,
     log4cpp::Priority::Value priority,
     bool *theStatus ) :
   args(theArgs),
-  status(theStatus)
+  status(theStatus),
+  declareEventsToET(false)
 {
   daqWorker.setPriority(priority);
 
@@ -60,9 +61,9 @@ DAQWorker::~DAQWorker()
 }
 
 //---------------------------------------------------------
-void DAQWorker::Initialize()
+void DAQWorker::InitializeHardware()
 {
-  daqWorker.infoStream() << "Initializing DAQWorker...";
+  daqWorker.infoStream() << "Initializing Hardware for DAQWorker...";
 
   // Read in hardware config here. For now, hard code...
 
@@ -75,6 +76,7 @@ void DAQWorker::Initialize()
 int DAQWorker::SetUpET()  
 {
   daqWorker.infoStream() << "Setting up ET...";
+  declareEventsToET = true;
 
   et_openconfig  openconfig;
 
@@ -126,6 +128,7 @@ int DAQWorker::SetUpET()
 bool DAQWorker::ContactEventBuilder( EventHandler *handler )
 {
   daqWorker.infoStream() << "Contacting Event Builder...";
+  if (!declareEventsToET) return true;
 
   unsigned short length = handler->dataLength;
 
@@ -196,6 +199,7 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
 bool DAQWorker::CloseDownET()
 {
   daqWorker.infoStream() << "Closing down ET...";
+  if (!declareEventsToET) return true;
 
   if (et_station_detach(sys_id, attach) < 0) {
     daqWorker.fatal("et_producer: error in station detach\n");
@@ -209,7 +213,6 @@ bool DAQWorker::CloseDownET()
 void DAQWorker::TakeData()
 {
   daqWorker.infoStream() << "Beginning Data Acquisition...";
-  this->Initialize();
 
   while (stateRecorder->BeginNextGate()) {
     daqWorker.debugStream() << "Continue Running Status = " << (*status);

@@ -37,6 +37,7 @@ int main( int argc, char * argv[] )
 
   bool sentSentinel = false;
   int error = worker->SetUpET(); 
+  worker->InitializeHardware();
   if (0 == error) {
     worker->TakeData();
     if (worker->CloseDownET())

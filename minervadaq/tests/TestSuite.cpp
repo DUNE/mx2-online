@@ -142,15 +142,22 @@ int main( int argc, char * argv[] )
   // Get & initialize a CRIM.
   CRIM * crim = GetAndTestCRIM( crimCardAddress, controller );
 
+  
 
-  delete args;
   delete crim;
   delete ecroc;
   delete controller;
 
-  ReadoutWorker * worker = GetAndTestReadoutWorker( controllerID, ecrocCardAddress,
+  ReadoutWorker * rworker = GetAndTestReadoutWorker( controllerID, ecrocCardAddress,
       crimCardAddress, nch0, nch1, nch2, nch3 );
-  delete worker;
+  delete rworker;
+
+  bool continueRunning = true;
+  DAQWorker * dworker = new DAQWorker( args, log4cpp::Priority::DEBUG, &continueRunning );
+  TestDAQWorker( dworker );
+
+  delete dworker;
+  delete args;
 
   log4cpp::Category::shutdown();
   std::cout << "Passed all tests! Executed " << testCount << " tests." << std::endl;
@@ -158,9 +165,23 @@ int main( int argc, char * argv[] )
 }
 
 //---------------------------------------------------
+void TestDAQWorker( DAQWorker * worker )
+{
+  std::cout << "Testing DAQWorker...";  
+  logger.debugStream() << "Testing:--------------DAQWorker--------------";
+
+  worker->InitializeHardware();  
+  worker->TakeData();
+
+  logger.debugStream() << "Passed:--------------DAQWorker--------------";
+  std::cout << "Passed!" << std::endl;
+  testCount++;
+}
+
+//---------------------------------------------------
 void SequencerReadoutBlockTest( unsigned char * data, unsigned short dataLength )
 {
-  std::cout << "Testing Get and Test ReadoutWorker...";  
+  std::cout << "Testing SequencerReadoutBlockTest...";  
   logger.debugStream() << "Testing:--------------SequencerReadoutBlockTest--------------";
   SequencerReadoutBlock * block = new SequencerReadoutBlock();
   block->SetData( data, dataLength );
