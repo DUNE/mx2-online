@@ -191,7 +191,7 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
     break; // Done processing the event. 
   } // while alive 
 
-  daqWorker.debugStream() << "  Exiting acquire_data::ContactEventBuilder...";
+  daqWorker.debugStream() << "  Exiting ContactEventBuilder...";
   return true;
 }
 

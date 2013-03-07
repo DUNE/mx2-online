@@ -283,6 +283,7 @@ int main(int argc, char *argv[])
     status = et_event_put(sys_id, attach, pe); 
     evt_counter++;
     eventbuilder.debugStream() << "Now write the event to the binary output file...";
+    eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
     binary_outputfile.write((char *) evt->data, evt->dataLength);  
     binary_outputfile.flush();
   }

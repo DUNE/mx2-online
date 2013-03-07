@@ -344,8 +344,6 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion() const
   unsigned short status = 0;
   do {
     status = this->ReadFrameStatusRegister();
-    EChannelLog.infoStream() << "SequencerReadoutComplettion Status  = 0x" << 
-      std::hex << status;
   } while ( 0 == (status & VMEModuleTypes::SendMemoryRDFEDone /*0x0400*/ ) );  
   return status;
 }
