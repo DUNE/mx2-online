@@ -48,6 +48,10 @@ class ReadoutWorker {
 
     CRIM* masterCRIM();
 
+    void ClearAndResetAllChannels();
+    void OpenGateFastCommand();
+    bool microSecondSleep(int us);
+
 	public:
 
     explicit ReadoutWorker( int theCrateID, log4cpp::Priority::Value priority, bool VMEInit=false); 
@@ -59,7 +63,7 @@ class ReadoutWorker {
     void AddCRIM( unsigned int address );
     void InitializeCrate( RunningModes runningMode );
 
-    void Reset();
+    void ResetCurrentChannel();
     unsigned long long Trigger();
     bool MoveToNextChannel();
     const EChannels * CurrentChannel() const;

@@ -28,7 +28,7 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
    * \param number      :  The channel number (0-3)
    * \param *controller :  Pointer to the VME 2718 Controller servicing this device.
    */
-  EChannelLog.setPriority(log4cpp::Priority::DEBUG);  
+  EChannelLog.setPriority(log4cpp::Priority::INFO);  
 
   channelDirectAddress             = this->address + VMEModuleTypes::EChannelOffset * (unsigned int)(channelNumber);
   receiveMemoryAddress             = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCReceiveMemory;
@@ -344,6 +344,8 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion() const
   unsigned short status = 0;
   do {
     status = this->ReadFrameStatusRegister();
+    EChannelLog.infoStream() << "SequencerReadoutComplettion Status  = 0x" << 
+      std::hex << status;
   } while ( 0 == (status & VMEModuleTypes::SendMemoryRDFEDone /*0x0400*/ ) );  
   return status;
 }

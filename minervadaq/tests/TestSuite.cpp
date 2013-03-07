@@ -104,6 +104,11 @@ int main( int argc, char * argv[] )
   logger.setPriority(log4cpp::Priority::DEBUG);
   logger.infoStream() << "--Starting " << thisScript << " Script.--";
 
+  struct timeval run;
+  gettimeofday(&run, NULL);
+  unsigned long long start = (unsigned long long)(run.tv_sec*1000000)
+    + (unsigned long long)(run.tv_usec);
+
   int controllerID = 0;
 
   // Get & initialize a Controller object.
@@ -160,6 +165,11 @@ int main( int argc, char * argv[] )
 
   log4cpp::Category::shutdown();
   std::cout << "Passed all tests! Executed " << testCount << " tests." << std::endl;
+
+  gettimeofday(&run, NULL);
+  unsigned long long stop = (unsigned long long)(run.tv_sec*1000000)
+    + (unsigned long long)(run.tv_usec);
+  std::cout << "Run Time = " << (stop - start) << " microsec." << std::endl;
   return 0;
 }
 

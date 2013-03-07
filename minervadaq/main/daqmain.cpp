@@ -35,10 +35,10 @@ int main( int argc, char * argv[] )
   continueRunning = true;
   DAQWorker * worker = new DAQWorker( args, log4cpp::Priority::DEBUG, &continueRunning );
 
-  bool sentSentinel = false;
   int error = 0;
-  /* error = worker->SetUpET(); */ 
+  error = worker->SetUpET(); 
   worker->InitializeHardware();
+  bool sentSentinel = false;
   if (0 == error) {
     worker->TakeData();
     if (worker->CloseDownET())
