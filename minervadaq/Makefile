@@ -6,16 +6,46 @@
 #include Make.include
 SHELL=/bin/bash
 
+all: FORCE
+	gmake hardware-lib;
+	gmake event_structure-lib;
+	gmake acquire_data-lib;
+	gmake event_builder;
+	gmake main;
+	gmake tests;
+
+clean: FORCE
+	gmake hardware-clean;
+	gmake event_structure-clean;
+	gmake acquire_data-clean;
+	gmake event_builder-clean;
+	gmake main-clean;
+	gmake tests-clean;
+
+relink: FORCE
+	gmake hardware-clean;
+	gmake event_structure-clean;
+	gmake acquire_data-clean;
+	gmake event_builder-clean;
+	gmake main-clean;
+	gmake tests-clean;
+	gmake hardware-lib;
+	gmake event_structure-lib;
+	gmake acquire_data-lib;
+	gmake event_builder;
+	gmake main;
+	gmake tests;
+
 hardware-lib: FORCE
 	cd fermihardware/src; make;\
 	cd ../;
 
-acquire_data-lib: FORCE
-	cd acquire_data/src; make;\
-	cd ../;
-
 event_structure-lib: FORCE
 	cd event_structure/src; make;\
+	cd ../;
+
+acquire_data-lib: FORCE
+	cd acquire_data/src; make;\
 	cd ../;
 
 event_builder: FORCE
@@ -60,36 +90,6 @@ event_structure-clean: FORCE
 tests-clean: FORCE
 	cd tests; gmake clean;
 	cd ../;
-
-all: FORCE
-	gmake hardware-lib;
-	gmake event_structure-lib;
-	gmake acquire_data-lib;
-	gmake event_builder;
-	gmake main;
-	gmake tests;
-
-clean: FORCE
-	gmake hardware-clean;
-	gmake event_structure-clean;
-	gmake acquire_data-clean;
-	gmake event_builder-clean;
-	gmake main-clean;
-	gmake tests-clean;
-
-relink: FORCE
-	gmake hardware-clean;
-	gmake event_structure-clean;
-	gmake acquire_data-clean;
-	gmake event_builder-clean;
-	gmake main-clean;
-	gmake tests-clean;
-	gmake hardware-lib;
-	gmake event_structure-lib;
-	gmake acquire_data-lib;
-	gmake event_builder;
-	gmake main;
-	gmake tests;
 
 FORCE:
 	if test -d lib; then echo LibOk; else mkdir -p lib; fi
