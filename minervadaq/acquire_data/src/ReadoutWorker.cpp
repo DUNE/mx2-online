@@ -10,6 +10,7 @@
 
 #include "ReadoutWorker.h"
 #include "exit_codes.h"
+#include <time.h>
 //#include <sys/time.h>
 //#include <signal.h>   // for sig_atomic_t
 
@@ -137,28 +138,57 @@ void ReadoutWorker::AddCRIM( unsigned int address )
 unsigned long long ReadoutWorker::Trigger()
 {
   readoutLogger.debugStream() << "ReadoutWorker::Trigger...";
+  this->ClearAndResetAllChannels();
 
-  struct timeval run;
-  gettimeofday(&run, NULL);
-  unsigned long long start = (unsigned long long)(run.tv_sec*1000000)
-    + (unsigned long long)(run.tv_usec);
+  // Basically, "OneShot"
+  this->OpenGateFastCommand();
 
-  // Use a dummy trigger for now...
+  // Run Sleepy - the FEBs need >= 400 microseconds for 8 hits to digitize.
+  // nanosleep runs about 3x slower than the stated time (so 100 us -> 300 us)
+  if (!microSecondSleep(100)) return 0;
   for (std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) {
-    (*p)->FastCommandOpenGate();
     (*p)->EnableSequencerReadout();
     (*p)->SendSoftwareRDFE();
     (*p)->WaitForSequencerReadoutCompletion();
     (*p)->DisableSequencerReadout();
   }
 
-  // TODO: Run sleepy? Will we step on digitization?
+  struct timeval run;
+  gettimeofday(&run, NULL);
+  unsigned long long start = (unsigned long long)(run.tv_sec*1000000)
+    + (unsigned long long)(run.tv_usec);
 
   return start;
 }
 
 //---------------------------
-void ReadoutWorker::Reset()
+void ReadoutWorker::OpenGateFastCommand()
+{
+  for (std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
+    (*p)->FastCommandOpenGate();
+}
+
+//---------------------------
+void ReadoutWorker::ClearAndResetAllChannels()
+{
+  for (std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
+    (*p)->ClearAndResetStatusRegisters();
+}
+
+//---------------------------
+bool ReadoutWorker::microSecondSleep(int us)
+{
+  timespec tmReq;
+  tmReq.tv_sec = (time_t)(0);
+  tmReq.tv_nsec = us * 1000;
+  // if nanosleep is not available, use: usleep(us);
+  (void)nanosleep(&tmReq, (timespec *)NULL); 
+
+  return true;
+}
+
+//---------------------------
+void ReadoutWorker::ResetCurrentChannel()
 {
   currentChannel=readoutChannels.begin();
 }

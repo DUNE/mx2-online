@@ -226,10 +226,10 @@ void DAQWorker::TakeData()
 
       ReadoutWorker * worker = (*readoutWorker);
 
-      worker->Reset();
+      worker->ResetCurrentChannel();
       triggerTime = worker->Trigger();
       do {
-        unsigned short blockSize = worker->GetNextDataBlockSize();
+        unsigned short blockSize = worker->GetNextDataBlockSize();  
         daqWorker.debugStream() << "Next data block size is: " << blockSize;
         std::tr1::shared_ptr<SequencerReadoutBlock> block = worker->GetNextDataBlock( blockSize );
         // declare block to ET here
