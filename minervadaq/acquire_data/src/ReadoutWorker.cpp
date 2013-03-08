@@ -1,3 +1,5 @@
+#ifndef ReadoutWorker_cxx
+#define ReadoutWorker_cxx
 /*! \file 
  *
  * ReadoutWorker.cpp:  Contains all of the functions needed for the 
@@ -5,8 +7,6 @@
  * Also contains the passing of data frames to the ET for further 
  * processing.
  */
-#ifndef ReadoutWorker_cxx
-#define ReadoutWorker_cxx
 
 #include "ReadoutWorker.h"
 #include "exit_codes.h"
@@ -73,12 +73,12 @@ void ReadoutWorker::InitializeCrate( RunningModes theRunningMode )
     readoutChannels.insert(readoutChannels.end(),channels->begin(),channels->end());
   }
   readoutLogger.debugStream() << "Enabling IRQ for master CRIM.";
-  this->masterCRIM()->IRQEnable();
+  this->MasterCRIM()->IRQEnable();
   readoutLogger.debugStream() << "Finished Crate Initialization for " << (*this);
 }
 
 //---------------------------
-CRIM* ReadoutWorker::masterCRIM()
+CRIM* ReadoutWorker::MasterCRIM() const
 {
   CRIM* crim = NULL;
   if( crims.size() ) { 
@@ -88,6 +88,13 @@ CRIM* ReadoutWorker::masterCRIM()
     exit(EXIT_CRIM_UNSPECIFIED_ERROR);
   }
   return crim;
+}
+
+//---------------------------
+unsigned int ReadoutWorker::GetMINOSSGATE() const
+{
+  // Live dangerous. We should always have a Master CRIM.
+  return this->MasterCRIM()->MINOSSGATE();
 }
 
 //---------------------------

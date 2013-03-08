@@ -46,7 +46,8 @@ class ReadoutWorker {
 		bool vmeInit;    
     RunningModes runningMode;
 
-    CRIM* masterCRIM();
+    CRIM* MasterCRIM() const;
+    unsigned int GetMINOSSGATE() const;
 
     void ClearAndResetAllChannels();
     void OpenGateFastCommand();
@@ -59,6 +60,7 @@ class ReadoutWorker {
 
     const Controller* GetController() const;
 
+    // Add args for crate?
     void AddECROC( unsigned int address, int nFEBchan0=11, int nFEBchan1=11, int nFEBchan2=11, int nFEBchan3=11 );
     void AddCRIM( unsigned int address );
     void InitializeCrate( RunningModes runningMode );

@@ -119,6 +119,7 @@ class CRIM : public VMECommunicator {
     void ResetGlobalIRQEnable() const;
     void ResetSequencerLatch() const;
     int WaitOnIRQ( sig_atomic_t const & continueFlag ) const;
+		unsigned int MINOSSGATE() const;
 
 };
 

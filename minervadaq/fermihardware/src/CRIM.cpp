@@ -377,75 +377,102 @@ unsigned short CRIM::GetInterruptMask() const
 } 
 
 //----------------------------------------
+unsigned int CRIM::MINOSSGATE() const
+{
+#ifndef GOFAST
+  CRIMLog.debugStream() << "Reading MINOSSGATE for CRIM " << (*this);
+#endif
+	unsigned char lowWord[] = {0x0,0x0}; 
+	unsigned char highWord[] = {0x0,0x0}; 
+	int error = 0;
+
+	error = ReadCycle( lowWord, gateTimeWordLowAddress, addressModifier, dataWidthReg );
+	if( error ) exitIfError( error, "Failure reading the CRIM MINOS Gate Time Low Word!");
+
+	error = ReadCycle( highWord, gateTimeWordHighAddress, addressModifier, dataWidthReg );
+	if( error ) exitIfError( error, "Failure reading the CRIM MINOS Gate Time High Word!");
+
+	unsigned short low = 
+		(unsigned short)( (lowWord[1]<<8 | lowWord[0]) & CRIM::MinosSGATELowerBitsMask ); 
+	unsigned short high = 
+		(unsigned short)( (highWord[1]<<8 | highWord[0]) & CRIM::MinosSGATEUpperBitsMask ); 
+	unsigned int gateTime = (unsigned int)( high<<16 | low );
+#ifndef GOFAST
+  CRIMLog.debugStream() << " MINOS SGATE = " << gateTime;
+#endif
+	return gateTime;
+}
+
+//----------------------------------------
 unsigned short CRIM::GetStatus() const
 {
-  unsigned char dataBuffer[] = {0x0,0x0}; 
-  int error = ReadCycle( dataBuffer, statusRegisterAddress, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure reading the CRIM Status Register!");
-  unsigned short status = dataBuffer[1]<<8 | dataBuffer[0];
-  return status;
+	unsigned char dataBuffer[] = {0x0,0x0}; 
+	int error = ReadCycle( dataBuffer, statusRegisterAddress, addressModifier, dataWidthReg );
+	if( error ) exitIfError( error, "Failure reading the CRIM Status Register!");
+	unsigned short status = dataBuffer[1]<<8 | dataBuffer[0];
+	return status;
 }
 
 //----------------------------------------
 void CRIM::ResetSequencerLatch() const
 {
-  /*! \fn void CRIM::ResetSequencerLatch()
-   *
-   * This function resets the CRIM sequencer latch in cosmic mode to restart the seqeuncer in 
-   * internal timing mode.  This only affects CRIMs with v5 firmware.
-   */
+	/*! \fn void CRIM::ResetSequencerLatch()
+	 *
+	 * This function resets the CRIM sequencer latch in cosmic mode to restart the seqeuncer in 
+	 * internal timing mode.  This only affects CRIMs with v5 firmware.
+	 */
 #ifndef GOFAST
-  CRIMLog.debugStream() << "ResetSequencerLatch for CRIM 0x" << std::hex << this->address;
+	CRIMLog.debugStream() << "ResetSequencerLatch for CRIM 0x" << std::hex << this->address;
 #endif
-  unsigned char message[] = { 0x02, 0x02 };
-  int error = WriteCycle( 2, message, sequencerResetRegister, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Error resetting the sequencer latch!");
+	unsigned char message[] = { 0x02, 0x02 };
+	int error = WriteCycle( 2, message, sequencerResetRegister, addressModifier, dataWidthReg );
+	if( error ) exitIfError( error, "Error resetting the sequencer latch!");
 }
 
 //---------------------------
 int CRIM::WaitOnIRQ( sig_atomic_t const & continueFlag ) const
 {
-  /*! \fn void ReadoutWorker::WaitOnIRQ() 
-   *
-   * A function which waits on the interrupt handler to set an interrupt.  This function 
-   * only checks the "master" CRIM.  The implicit assumption is that a trigger on any 
-   * CRIM is a trigger on all CRIMs (this assumption is true by design). This function 
-   * is "dumb" with respect to interrupts and only polls the interrupt status. See older
-   * versions of the DAQ software for guesses on how to handle asserted interrupts.
-   */
-  int success = 0;
+	/*! \fn void ReadoutWorker::WaitOnIRQ() 
+	 *
+	 * A function which waits on the interrupt handler to set an interrupt.  This function 
+	 * only checks the "master" CRIM.  The implicit assumption is that a trigger on any 
+	 * CRIM is a trigger on all CRIMs (this assumption is true by design). This function 
+	 * is "dumb" with respect to interrupts and only polls the interrupt status. See older
+	 * versions of the DAQ software for guesses on how to handle asserted interrupts.
+	 */
+	int success = 0;
 #ifndef GOFAST
-  CRIMLog.debugStream() << "Entering CRIM::WaitOnIRQ: IRQLevel = " << this->irqLevel;
+	CRIMLog.debugStream() << "Entering CRIM::WaitOnIRQ: IRQLevel = " << this->irqLevel;
 #endif
 
-  // Wait length vars... (don't want to spend forever waiting around).
-  unsigned long long startTime, nowTime;
-  struct timeval waitstart, waitnow;
-  gettimeofday(&waitstart, NULL);
-  startTime = (unsigned long long)(waitstart.tv_sec);
-  // VME manip.
-  unsigned short interruptStatus = 0;
-  unsigned short iline = (unsigned short)this->irqLine;
-  CRIMLog.debugStream() << "  Interrupt line = " << iline;
+	// Wait length vars... (don't want to spend forever waiting around).
+	unsigned long long startTime, nowTime;
+	struct timeval waitstart, waitnow;
+	gettimeofday(&waitstart, NULL);
+	startTime = (unsigned long long)(waitstart.tv_sec);
+	// VME manip.
+	unsigned short interruptStatus = 0;
+	unsigned short iline = (unsigned short)this->irqLine;
+	CRIMLog.debugStream() << "  Interrupt line = " << iline;
 
-  while ( !( interruptStatus & iline ) ) {
-    if ( !continueFlag ) {
-      CRIMLog.debugStream() << "Caught exit signal.  Bailing on CRIM IRQ wait.";
-      return 1;
-    }
-    interruptStatus = this->GetInterruptStatus();
-    gettimeofday(&waitnow, NULL);
-    nowTime = (unsigned long long)(waitnow.tv_sec);
-    if ( (nowTime-startTime) > timeOutSec) { 
-      CRIMLog.debugStream() << "Timing out. No interrupt after " << timeOutSec << " seconds.";
-      success = 1;
-      break; 
-    } 
-  }
-  // Clear the interrupt after acknowledging it.
-  this->ClearPendingInterrupts( interruptStatus );
+	while ( !( interruptStatus & iline ) ) {
+		if ( !continueFlag ) {
+			CRIMLog.debugStream() << "Caught exit signal.  Bailing on CRIM IRQ wait.";
+			return 1;
+		}
+		interruptStatus = this->GetInterruptStatus();
+		gettimeofday(&waitnow, NULL);
+		nowTime = (unsigned long long)(waitnow.tv_sec);
+		if ( (nowTime-startTime) > timeOutSec) { 
+			CRIMLog.debugStream() << "Timing out. No interrupt after " << timeOutSec << " seconds.";
+			success = 1;
+			break; 
+		} 
+	}
+	// Clear the interrupt after acknowledging it.
+	this->ClearPendingInterrupts( interruptStatus );
 
-  return success;
+	return success;
 }
 
 #endif
