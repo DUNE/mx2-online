@@ -32,7 +32,7 @@ ADCFrame::ADCFrame(FrameTypes::febAddresses a, FrameTypes::RAMFunctionsHit b) : 
   Directions dir   = MasterToSlave;     // ALL outgoing messages are master-to-slave
   MakeDeviceFrameTransmit(dev, broad, dir,(unsigned int)b, (unsigned int) febNumber[0]); 
 
-  ADCFrameLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
+  ADCFrameLog.setPriority(log4cpp::Priority::INFO);  
   ADCFrameLog.debugStream() << "Made ADCFrame " << b << " for FEB " << a; 
 }
 
@@ -52,7 +52,9 @@ void ADCFrame::MakeMessage()
   for (unsigned int i = MinervaDAQSizes::FrameHeaderLengthOutgoing; i < this->GetOutgoingMessageLength(); ++i) {
     outgoingMessage[i]=0;
   }
+#ifndef GOFAST
   ADCFrameLog.debugStream() << "Made ADCFrame Message";
+#endif
 }
 
 

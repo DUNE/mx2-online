@@ -195,12 +195,14 @@ void CRIM::SetupTiming( VMEModuleTypes::CRIMTimingModes timingMode,
     ( timingMode & TimingSetupRegisterModeMask ) | 
     ( frequency  & TimingSetupRegisterFrequencyMask );
 
+#ifndef GOFAST
   CRIMLog.debugStream() << "CRIM timingSetup = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << timingSetup;
   CRIMLog.debugStream() << "      timingMode = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << timingMode;
   CRIMLog.debugStream() << "       frequency = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << frequency;
+#endif
 
   unsigned char message[] = {0x0, 0x0};
   message[0] = timingSetup & 0xFF;
@@ -219,12 +221,14 @@ void CRIM::SetupGateWidth( unsigned short tcalbEnable,
     ((sequencerEnable & 0x1)<<10)        | 
     (gateWidth & GateWidthRegisterMask);
 
+#ifndef GOFAST
   CRIMLog.debugStream() << "CRIM gateWidthSetup = 0x"
     << std::setfill('0') << std::setw( 4 ) << std::hex << gateWidthSetup;
   CRIMLog.debugStream() << "       gateWidth = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << gateWidth;
   CRIMLog.debugStream() << " sequencer enable = " << sequencerEnable;
   CRIMLog.debugStream() << "     tcalb enable = " << tcalbEnable;
+#endif
 
   unsigned char message[] = {0x0, 0x0};
   message[0] = gateWidthSetup & 0xFF;
@@ -238,8 +242,10 @@ void CRIM::SetupTCALBPulse( unsigned short pulseDelay ) const
 {
   unsigned short TCALBDelaySetup = pulseDelay & TCALBDelayRegisterMask;
 
+#ifndef GOFAST
   CRIMLog.debugStream() << "CRIM TCALBDelaySetup = 0x"
     << std::setfill('0') << std::setw( 4 ) << std::hex << TCALBDelaySetup;
+#endif
 
   unsigned char message[] = {0x0, 0x0};
   message[0] = TCALBDelaySetup & 0xFF;
@@ -269,9 +275,11 @@ void CRIM::IRQEnable() const
    *
    *  7) Enable the IRQ LINE on the CAEN controller to be the NOT of the IRQ LINE sent to the CRIM.
    */
+#ifndef GOFAST
   CRIMLog.debugStream() << "IRQEnable for CRIM 0x" << std::hex << this->address;
   CRIMLog.debugStream() << " IRQ Line  = " << (int)this->irqLine;
   CRIMLog.debugStream() << " IRQ Level = " << (int)this->irqLevel;
+#endif
 
   this->SetupInterruptMask();
   unsigned short interruptStatus = this->GetInterruptStatus();
@@ -312,30 +320,36 @@ void CRIM::ClearPendingInterrupts( unsigned short interruptStatus ) const
     unsigned char message[] = {0x0,0x0};
     message[0] = resetInterrupts & 0xFF;
     message[1] = (resetInterrupts>>0x08) & 0xFF;
+#ifndef GOFAST
     CRIMLog.debugStream() << " Clearing pending interrupts with message: 0x"
       << std::setfill('0') << std::setw(2) << std::hex << (int)message[1]
       << std::setfill('0') << std::setw(2) << std::hex << (int)message[0];
+#endif
     int error = WriteCycle( 2, message, interruptsClear, addressModifier, dataWidthReg );
     if( error ) exitIfError( error, "Error clearing pending CRIM Interrupts!");
   } else {
+#ifndef GOFAST
     CRIMLog.debugStream() << "No pending interrupts to clear.";
+#endif
   }
 }
 
 //----------------------------------------
 void CRIM::ResetGlobalIRQEnable() const
 {
-  CRIMLog.debugStream() << "ResetGlobalIRQEnable for CRIM 0x" << std::hex << this->address;
-  CRIMLog.debugStream() << " Enable bit = 0x" << std::hex << (1 << 7);
-  CRIMLog.debugStream() << " IRQ Level  = 0x" << std::hex << irqLevel;
   unsigned short interruptMessage = (1 << 7) | irqLevel;  // 1 << 7 sets the enable bit to true.
-  CRIMLog.debugStream() << " interruptMessage = 0x" << std::hex << interruptMessage;
   unsigned char message[] = {0x0,0x0};
   message[0] = (interruptMessage) & 0xFF;
   message[1] = (interruptMessage >> 0x08) & 0xFF;
+#ifndef GOFAST
+  CRIMLog.debugStream() << "ResetGlobalIRQEnable for CRIM 0x" << std::hex << this->address;
+  CRIMLog.debugStream() << " Enable bit = 0x" << std::hex << (1 << 7);
+  CRIMLog.debugStream() << " IRQ Level  = 0x" << std::hex << irqLevel;
+  CRIMLog.debugStream() << " interruptMessage = 0x" << std::hex << interruptMessage;
   CRIMLog.debugStream() << " Resetting Global IRQ Enable with message 0x" 
     << std::setfill('0') << std::setw(2) << std::hex << (int)message[1]
     << std::setfill('0') << std::setw(2) << std::hex << (int)message[0];
+#endif
   int error = WriteCycle( 2, message, interruptConfig, addressModifier, dataWidthReg );
   if( error ) exitIfError( error, "Error setting IRQ Global Enable Bit!");
 }
@@ -343,7 +357,9 @@ void CRIM::ResetGlobalIRQEnable() const
 //----------------------------------------
 void CRIM::CAENVMEIRQEnable() const
 {
+#ifndef GOFAST
   CRIMLog.debugStream() << "CAENVMEIRQEnable for mask 0x" << std::hex << ~this->GetInterruptMask();
+#endif
   int error = CAENVME_IRQEnable(this->GetController()->GetHandle(),~this->GetInterruptMask());
   if( error ) exitIfError( error, "Error writing to CAEN VME IRQ Enable for CRIM!");
 }
@@ -359,54 +375,6 @@ unsigned short CRIM::GetInterruptMask() const
 {
   return ((unsigned short)irqLine & InterruptMaskRegisterMask);
 } 
-
-//----------------------------------------
-void CRIM::SetCRCEnable(bool a) 
-{
-  /*! \fn
-   *
-   * this filps the crc enable bit(s) on the control register value
-   *
-   *  \param a status bit to decide how to set the bit
-   */
-  if (a) {
-    controlRegister |= ControlRegisterCRCMask;
-  } else {
-    controlRegister &= ~ControlRegisterCRCMask;
-  }
-}
-
-//----------------------------------------
-void CRIM::SetSendEnable(bool a) 
-{
-  /*! \fn
-   *
-   * this filps the send enable bit(s) on the control register value
-   *
-   *  \param a status bit to decide how to set the bit
-   */
-  if (a) {
-    controlRegister |= ControlRegisterSendMask;
-  } else {
-    controlRegister &= ~ControlRegisterSendMask;
-  }
-}
-
-//----------------------------------------
-void CRIM::SetReTransmitEnable(bool a) 
-{
-  /*! \fn
-   *
-   * this filps the transmit enable bit(s) on the control register value
-   *
-   *  \param a status bit to decide how to set th bit
-   */
-  if (a) {
-    controlRegister |= ControlRegisterRetransmitMask;
-  } else {
-    controlRegister &= ~ControlRegisterRetransmitMask;
-  }
-}
 
 //----------------------------------------
 unsigned short CRIM::GetStatus() const
@@ -426,7 +394,9 @@ void CRIM::ResetSequencerLatch() const
    * This function resets the CRIM sequencer latch in cosmic mode to restart the seqeuncer in 
    * internal timing mode.  This only affects CRIMs with v5 firmware.
    */
+#ifndef GOFAST
   CRIMLog.debugStream() << "ResetSequencerLatch for CRIM 0x" << std::hex << this->address;
+#endif
   unsigned char message[] = { 0x02, 0x02 };
   int error = WriteCycle( 2, message, sequencerResetRegister, addressModifier, dataWidthReg );
   if( error ) exitIfError( error, "Error resetting the sequencer latch!");
@@ -444,7 +414,9 @@ int CRIM::WaitOnIRQ( sig_atomic_t const & continueFlag ) const
    * versions of the DAQ software for guesses on how to handle asserted interrupts.
    */
   int success = 0;
+#ifndef GOFAST
   CRIMLog.debugStream() << "Entering CRIM::WaitOnIRQ: IRQLevel = " << this->irqLevel;
+#endif
 
   // Wait length vars... (don't want to spend forever waiting around).
   unsigned long long startTime, nowTime;

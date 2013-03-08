@@ -131,7 +131,7 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
   if (!declareEventsToET) return true;
 
   unsigned short length = handler->dataLength;
-  daqWorker.debugStream() << "EventHandler dataLength = " << handler->dataLength; 
+  daqWorker.debugStream() << "EventHandler dataLength = " << length;
 
   while (et_alive(sys_id)) {
     daqWorker.debugStream() << "  ->ET is Alive!";
@@ -165,6 +165,7 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
     if (status == ET_OK) {
       daqWorker.debugStream() << "Putting Event into ET System...";
       et_event_getdata(pe, (void **)&pdata); 
+#ifndef GOFAST
       { 
         daqWorker.debugStream() << "-----------------------------------------------";
         daqWorker.debugStream() << "EventHandler_size: " << sizeof(struct EventHandler);
@@ -174,6 +175,7 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
               index,(unsigned int)handler->data[index]);
         }
       }
+#endif
       // TODO : memmove?
       // Also TODO : statically sized EventHandler is typically far too big. Dynamic?
       memcpy(pdata, handler, sizeof(struct EventHandler));

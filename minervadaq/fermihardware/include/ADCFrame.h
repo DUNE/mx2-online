@@ -25,7 +25,10 @@ class ADCFrame : public LVDSFrame {
 		ADCFrame(FrameTypes::febAddresses a, FrameTypes::RAMFunctionsHit f); 
 		~ADCFrame() {};
 
-    inline unsigned int GetOutgoingMessageLength() { return (MinervaDAQSizes::FrameHeaderLengthOutgoing + 2); };/* +2? */ 
+		// Not entirely sure why we need "+2", but we seem to...
+    inline unsigned int GetOutgoingMessageLength() { 
+			return (MinervaDAQSizes::FrameHeaderLengthOutgoing + 2); 
+		};
 		void MakeMessage();
 		void DecodeRegisterValues(); 
 };

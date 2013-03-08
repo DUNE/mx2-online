@@ -46,7 +46,10 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
 //----------------------------------------
 EChannels::~EChannels() 
 {
-  for (std::vector<FrontEndBoard*>::iterator p=FrontEndBoardsVector.begin(); p!=FrontEndBoardsVector.end(); p++) delete (*p);
+  for (std::vector<FrontEndBoard*>::iterator p=FrontEndBoardsVector.begin(); 
+      p!=FrontEndBoardsVector.end(); 
+      ++p) 
+    delete (*p);
   FrontEndBoardsVector.clear();
 }
 
@@ -84,70 +87,106 @@ unsigned int EChannels::GetDirectAddress() const
 int EChannels::DecodeStatusMessage( const unsigned short& status ) const
 {
   int frameErrors = 0;
+#ifndef GOFAST
   std::string statusBitsDecoded = "|";
+#endif
+#ifndef GOFAST
   if (status & VMEModuleTypes::ReceiveMemoryFrameDiscType) {
     statusBitsDecoded += "ReceiveMemoryFrameDiscType|";
   }
+#endif
   if (status & VMEModuleTypes::ReceiveMemoryFrameHeaderError) {
+#ifndef GOFAST
     statusBitsDecoded += "ReceiveMemoryFrameHeaderError|";
+#endif
     frameErrors++;
   }
   if (status & VMEModuleTypes::ReceiveMemoryCRCError) {
+#ifndef GOFAST
     statusBitsDecoded += "ReceiveMemoryCRCError|";
+#endif
     frameErrors++;
   }
   if (status & VMEModuleTypes::ReceiveMemoryFrameTimeout) {
+#ifndef GOFAST
     statusBitsDecoded += "ReceiveMemoryFrameTimeout|";
+#endif
     frameErrors++;
   }
+#ifndef GOFAST
   if (status & VMEModuleTypes::ReceiveMemoryFrameReceived) {
     statusBitsDecoded += "ReceiveMemoryFrameReceived|";
   }
+#endif
+#ifndef GOFAST
   if (status & VMEModuleTypes::ReceiveMemoryFrameCountFull) {
     statusBitsDecoded += "ReceiveMemoryFrameCountFull|";
   }
+#endif
+#ifndef GOFAST
   if (status & VMEModuleTypes::ReceiveMemoryEmpty) {
     statusBitsDecoded += "ReceiveMemoryEmpty|";
   }
+#endif
   if (status & VMEModuleTypes::ReceiveMemoryFull) {
+#ifndef GOFAST
     statusBitsDecoded += "ReceiveMemoryFull|";
+#endif
     frameErrors++;
   }
+#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryUnusedBit0) {
     statusBitsDecoded += "SendMemoryUnusedBit0|";
   }
+#endif
+#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryUnusedBit1) {
     statusBitsDecoded += "SendMemoryUnusedBit1|";
   }
+#endif
+#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryRDFEDone) {
     statusBitsDecoded += "SendMemoryRDFEDone|";
   }
+#endif
+#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryRDFEUpdating) {
     statusBitsDecoded += "SendMemoryRDFEUpdating|";
   }
+#endif
+#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryFrameSent) {
     statusBitsDecoded += "SendMemoryFrameSent|";
   }
+#endif
+#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryFrameSending) {
     statusBitsDecoded += "SendMemoryFrameSending|";
   }
+#endif
+#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryEmpty) {
     statusBitsDecoded += "SendMemoryEmpty|";
   }
+#endif
   if (status & VMEModuleTypes::SendMemoryFull) {
+#ifndef GOFAST
     statusBitsDecoded += "SendMemoryFull|";
+#endif
     frameErrors++;
   }
+#ifndef GOFAST
   EChannelLog.debugStream() << "FrameStatus 0x" << std::hex << status << 
     " for ECROC " << std::dec << this->GetParentCROCNumber() << "; Channel " << 
     this->channelNumber << "; " << statusBitsDecoded;
+#endif
   return frameErrors;
 }
 
 //----------------------------------------
 void EChannels::SetupNFrontEndBoards( int nFEBs )
 {
-  EChannelLog.debugStream() << "SetupNFrontEndBoards for " << nFEBs << " FEBs...";
+  EChannelLog.infoStream() << "SetupNFrontEndBoards for " << nFEBs << " FEBs...";
   if ( ( nFEBs < 0 ) || (nFEBs > 10) ) {
     EChannelLog.fatalStream() << "Cannot have less than 0 or more than 10 FEBs on a Channel!";
     exit(EXIT_CONFIG_ERROR);
@@ -183,12 +222,16 @@ unsigned short EChannels::GetChannelConfiguration() const
   unsigned short configuration = 0;
   unsigned char receivedMessage[] = {0x0,0x0};
 
+#ifndef GOFAST
   EChannelLog.debugStream() << "Read ReceiveMemoryPointer Address = 0x" << std::hex << configurationAddress;
+#endif
   int error = ReadCycle( receivedMessage, configurationAddress, addressModifier, dataWidthReg); 
   if( error ) exitIfError( error, "Failure reading the Channel Configuration!"); 
   configuration = receivedMessage[1]<<0x08 | receivedMessage[0];
+#ifndef GOFAST
   EChannelLog.debugStream() << "Channel " << channelNumber << " Configuration = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << configuration;
+#endif
 
   return configuration;
 }
@@ -211,9 +254,10 @@ void EChannels::UpdateConfigurationForVal( unsigned short val, unsigned short ma
 //----------------------------------------
 void EChannels::SetChannelConfiguration( unsigned char* message ) const
 {
-  // message length should always be two or there could be problems!
+#ifndef GOFAST
   EChannelLog.debugStream() << "Channel " << channelNumber << " Target Configuration: 0x" 
     << std::setfill('0') << std::setw( 2 ) << std::hex << (int)message[1] << (int)message[0];
+#endif
   int error = WriteCycle( 2, message, configurationAddress, addressModifier, dataWidthReg); 
   if( error ) exitIfError( error, "Failure writing to Channel Configuration Register!"); 
 }
@@ -225,9 +269,10 @@ std::vector<FrontEndBoard*>* EChannels::GetFrontEndBoardVector()
 }
 
 //----------------------------------------
-FrontEndBoard* EChannels::GetFrontEndBoardVector( int index /* should always equal FrontEndBoard address - 1 (vect:0..., addr:1...) */ ) 
+// Index should equal address - 1 (addr's go 1.., index goes 0..)
+FrontEndBoard* EChannels::GetFrontEndBoardVector( int index ) 
 {
-  // TODO: add check for null here? or too slow? (i.e., live fast and dangerouss)
+  // We live fast and dangerous. If we're out of bounds, we crash.
   return FrontEndBoardsVector[index];
 }
 
@@ -240,31 +285,36 @@ unsigned int EChannels::GetNumFrontEndBoards() const
 //----------------------------------------
 bool EChannels::isAvailable( FrontEndBoard* feb ) const
 {
+#ifndef GOFAST
   EChannelLog.debugStream() << "isAvailable FrontEndBoard with class address = " << feb->GetBoardNumber();
+#endif
   bool available = false;
 
   std::tr1::shared_ptr<FPGAFrame> frame = feb->GetFPGAFrame();
   unsigned short dataLength = this->ReadFPGAProgrammingRegistersToMemory( frame );
-  EChannelLog.debugStream() << "isAvailable read data length = " << dataLength;
   unsigned char* dataBuffer = this->ReadMemory( dataLength ); 
-  EChannelLog.debugStream() << "isAvailable read dataBuffer.";
 
   frame->SetReceivedMessage(dataBuffer);
-  EChannelLog.debugStream() << "isAvailable set frame received message.";
   frame->DecodeRegisterValues();
+#ifndef GOFAST
   EChannelLog.debugStream() << "Decoded FrontEndBoard address = " << (int)feb->GetBoardNumber();
+#endif
   if( (int)feb->GetBoardNumber() == frame->GetFEBNumber() ) available = true;
 
+#ifndef GOFAST
   EChannelLog.debugStream() << "FrontEndBoard " << feb->GetBoardNumber() << " isAvailable = " << available;
+#endif
   return available;
 }
 
 //----------------------------------------
 void EChannels::ClearAndResetStatusRegister() const
 {
+#ifndef GOFAST
   EChannelLog.debugStream() << "Clear And Reset Command Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << commandAddress;
+#endif
   int error = WriteCycle( 2,  RegisterWords::channelReset,  commandAddress, addressModifier, dataWidthReg ); 
   if( error ) exitIfError( error, "Failure clearing the status!");
 }
@@ -273,15 +323,19 @@ void EChannels::ClearAndResetStatusRegister() const
 unsigned short EChannels::ReadFrameStatusRegister() const
 {
   unsigned char receivedMessage[] = {0x0,0x0};
+#ifndef GOFAST
   EChannelLog.debugStream() << "Frame Status Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << frameStatusAddress;
+#endif
 
   int error = ReadCycle(receivedMessage, frameStatusAddress, addressModifier, dataWidthReg); 
   if( error ) exitIfError( error, "Failure reading Frame Status!");
 
   unsigned short status = (receivedMessage[1] << 8) | receivedMessage[0];
+#ifndef GOFAST
   EChannelLog.debugStream() << " Status = 0x" << std::hex << status;
+#endif
 
   return status;
 }
@@ -290,15 +344,19 @@ unsigned short EChannels::ReadFrameStatusRegister() const
 unsigned short EChannels::ReadTxRxStatusRegister() const
 {
   unsigned char receivedMessage[] = {0x0,0x0};
+#ifndef GOFAST
   EChannelLog.debugStream() << "Tx/Rx Status Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << txRxStatusAddress;
+#endif
 
   int error = ReadCycle(receivedMessage, txRxStatusAddress, addressModifier, dataWidthReg); 
   if( error ) exitIfError( error, "Failure reading Tx/Rx Status!");
 
   unsigned short status = (receivedMessage[1] << 8) | receivedMessage[0];
+#ifndef GOFAST
   EChannelLog.debugStream() << " Status = 0x" << std::hex << status;
+#endif
 
   return status;
 }
@@ -307,11 +365,11 @@ unsigned short EChannels::ReadTxRxStatusRegister() const
 //----------------------------------------
 void EChannels::SendMessage() const
 {
-  //#ifndef GOFAST
-  //#endif
+#ifndef GOFAST
   EChannelLog.debugStream() << "SendMessage Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex << commandAddress 
     << "; Message = 0x" << std::hex << (int)RegisterWords::sendMessage[1] << (int)RegisterWords::sendMessage[0];
+#endif
   int error = WriteCycle( 2, RegisterWords::sendMessage, commandAddress, addressModifier, dataWidthReg); 
   if( error ) exitIfError( error, "Failure writing to CROC Send Message Register!"); 
 }
@@ -319,7 +377,9 @@ void EChannels::SendMessage() const
 //----------------------------------------
 unsigned short EChannels::WaitForMessageReceived() const
 {
+#ifndef GOFAST
   EChannelLog.debugStream() << "WaitForMessageReceived...";
+#endif
   unsigned short status = 0;
   do {
     status = this->ReadFrameStatusRegister();
@@ -332,9 +392,12 @@ unsigned short EChannels::WaitForMessageReceived() const
       && !(status & VMEModuleTypes::ReceiveMemoryFrameHeaderError)
       );
   int error = DecodeStatusMessage(status);
+  if (0 != error) return 0; // TODO: throw...
+#ifndef GOFAST
   EChannelLog.debugStream() << " Decoded Status Error Level = " << error;
   EChannelLog.debugStream() << "Message was received with status = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << status;
+#endif
   return status;
 }
 
@@ -344,7 +407,7 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion() const
   unsigned short status = 0;
   do {
     status = this->ReadFrameStatusRegister();
-  } while ( 0 == (status & VMEModuleTypes::SendMemoryRDFEDone /*0x0400*/ ) );  
+  } while ( 0 == (status & VMEModuleTypes::SendMemoryRDFEDone) );  
   return status;
 }
 
@@ -354,11 +417,16 @@ unsigned short EChannels::ReadDPMPointer() const
   unsigned short receiveMemoryPointer = 0;
   unsigned char pointer[] = {0x0,0x0};
 
-  EChannelLog.debugStream() << "Read ReceiveMemoryPointer Address = 0x" << std::hex << receiveMemoryPointerAddress;
+#ifndef GOFAST
+  EChannelLog.debugStream() << "Read ReceiveMemoryPointer Address = 0x" 
+    << std::hex << receiveMemoryPointerAddress;
+#endif
   int error = ReadCycle( pointer, receiveMemoryPointerAddress, addressModifier, dataWidthReg ); 
   if( error ) exitIfError( error, "Failure reading the Receive Memory Pointer!"); 
   receiveMemoryPointer = pointer[1]<<0x08 | pointer[0];
+#ifndef GOFAST
   EChannelLog.debugStream() << "Pointer Length = " << receiveMemoryPointer;
+#endif
 
   return receiveMemoryPointer;
 }
@@ -369,11 +437,15 @@ unsigned short EChannels::ReadEventCounter() const
   unsigned short eventCounter = 0;
   unsigned char counter[] = {0x0,0x0};
 
+#ifndef GOFAST
   EChannelLog.debugStream() << "Read EventCounter Address = 0x" << std::hex << eventCounterAddress;
+#endif
   int error = ReadCycle( counter, eventCounterAddress, addressModifier, dataWidthReg ); 
   if( error ) exitIfError( error, "Failure reading the Event Counter!"); 
   eventCounter = counter[1]<<0x08 | counter[0];
+#ifndef GOFAST
   EChannelLog.debugStream() << "Event Counter = " << eventCounter;
+#endif
 
   return eventCounter;
 }
@@ -381,11 +453,10 @@ unsigned short EChannels::ReadEventCounter() const
 //----------------------------------------
 unsigned char* EChannels::ReadMemory( unsigned short dataLength ) const
 {
-  // -> possible shenanigans! -> 
-  /* if (dataLength%2) {dataLength -= 1;} else {dataLength -= 2;} //must be even  //TODO: should this be in ReadDPMPointer? */
+#ifndef GOFAST
   EChannelLog.debugStream() << "ReadMemory for buffer size = " << dataLength;
+#endif
   unsigned char *dataBuffer = new unsigned char [dataLength];
-
   int error = ReadBLT( dataBuffer, dataLength, receiveMemoryAddress, bltAddressModifier, dataWidthSwapped );
   if( error ) exitIfError( error, "Error in BLT ReadCycle!");
 
@@ -395,8 +466,10 @@ unsigned char* EChannels::ReadMemory( unsigned short dataLength ) const
 //----------------------------------------
 void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength ) const
 {
+#ifndef GOFAST
   EChannelLog.debugStream() << "Send Memory Address   = 0x" << std::hex << sendMemoryAddress;
   EChannelLog.debugStream() << "Message Length        = " << messageLength;
+#endif
   int error = WriteCycle( messageLength, message, sendMemoryAddress, addressModifier, dataWidthSwappedReg );
   if( error ) exitIfError( error, "Failure writing to CROC FIFO!"); 
 }
@@ -404,7 +477,9 @@ void EChannels::WriteMessageToMemory( unsigned char* message, int messageLength 
 //----------------------------------------
 void EChannels::WriteFrameRegistersToMemory( std::tr1::shared_ptr<LVDSFrame> frame ) const
 {
+#ifndef GOFAST
   EChannelLog.debugStream() << "WriteFrameRegistersToMemory";
+#endif
   frame->MakeMessage();
   this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() );
 }
@@ -412,8 +487,7 @@ void EChannels::WriteFrameRegistersToMemory( std::tr1::shared_ptr<LVDSFrame> fra
 //----------------------------------------
 void EChannels::WriteFPGAProgrammingRegistersDumpReadToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const
 {
-  // Note: this function does not send the message! It only writes the message to the CROC memory.
-  frame->MakeShortMessage();  // Use the "DumpRead" option.
+  frame->MakeShortMessage();  
   this->WriteMessageToMemory( frame->GetOutgoingMessage(), frame->GetOutgoingMessageLength() );
 }
 
@@ -427,7 +501,6 @@ void EChannels::WriteTRIPRegistersReadFrameToMemory( std::tr1::shared_ptr<TRIPFr
 //----------------------------------------
 unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( std::tr1::shared_ptr<FPGAFrame> frame ) const
 {
-  // Note: this function does not retrieve the data from memory! It only loads it and reads the pointer.
   this->ClearAndResetStatusRegister();
   this->WriteFPGAProgrammingRegistersDumpReadToMemory( frame );
   this->SendMessage();
@@ -441,8 +514,10 @@ unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( std::tr1::shared
 void EChannels::exitIfError( int error, const std::string& msg ) const
 {
   if (error) {
-    EChannelLog.fatalStream() << "Fatal error for Channel with address = 0x" << std::hex << this->channelDirectAddress;
-    EChannelLog.fatalStream() << " CROC Number = " << this->GetParentCROCNumber() << "; Channel Number = " << channelNumber;
+    EChannelLog.fatalStream() << "Fatal error for Channel with address = 0x" 
+      << std::hex << this->channelDirectAddress;
+    EChannelLog.fatalStream() << " CROC Number = " << this->GetParentCROCNumber() 
+      << "; Channel Number = " << channelNumber;
     EChannelLog.fatalStream() << msg;
     this->GetController()->ReportError(error);
     exit(error);

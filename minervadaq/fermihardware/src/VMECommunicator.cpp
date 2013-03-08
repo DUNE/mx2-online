@@ -64,7 +64,7 @@ int VMECommunicator::WriteCycle(int ml, unsigned char *send_message, unsigned in
    *  Returns the error code for the VME cycle.
    */
   unsigned short send_data;
-  int error; 
+  int error(0); 
 
   for (int k=0;k<ml;k+=2) {
     send_data = send_message[k];
@@ -126,8 +126,8 @@ int VMECommunicator::ReadBLT(unsigned char *received_message, int blocks, unsign
    *
    *  Returns the error code for the VME cycle.
    */
-  int count=-1; //counter for number of blocks read off
-  int error; 
+  int count(-1); //counter for number of blocks read off
+  int error(0); 
   error = CAENVME_BLTReadCycle(controllerHandle,address, received_message, blocks, AM, DW, &count);
   return error;
 }
@@ -151,8 +151,8 @@ int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned 
    *
    *  Returns the error code for the VME cycle.
    */
-  int count=-1;
-  int error; //VME error status
+  int count(-1);
+  int error(0); //VME error status
   do {
     error = CAENVME_FIFOBLTWriteCycle(controllerHandle, address, send_message, ml,  
         AM, DW, &count);   
