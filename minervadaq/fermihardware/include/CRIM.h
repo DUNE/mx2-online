@@ -87,7 +87,6 @@ class CRIM : public VMECommunicator {
     static unsigned short const MinosSGATELowerBitsMask;
     static unsigned short const MinosSGATEUpperBitsMask;
 
-    /*! execution values */
     static const unsigned short softTrigger, softTCALB, softSGATEstart, 
                  softSGATEstop, softCNRST, softCNRSTseq;
 
@@ -121,13 +120,6 @@ class CRIM : public VMECommunicator {
     void ResetSequencerLatch() const;
     int WaitOnIRQ( sig_atomic_t const & continueFlag ) const;
 
-    /*! control stuff */
-    void SetCRCEnable(bool a);
-    void SetSendEnable(bool a);
-    void SetReTransmitEnable(bool a);
-    unsigned short inline GetControlRegister() {return controlRegisterAddress;};
-    unsigned long inline GetStatusRegisterAddress() {return statusRegisterAddress;}; 
-    unsigned int inline GetClearRegisterAddress() {return clearStatusRegister;};
 };
 
 #endif
