@@ -262,7 +262,6 @@ int main(int argc, char *argv[])
     }
 
     if (status != ET_OK) {
-      /* eventbuilder.debugStream() << "Didn't successfully get an \"event\", go round and try again."; */
       continue;
     }
 
@@ -277,7 +276,7 @@ int main(int argc, char *argv[])
     et_event_getcontrol(pe, con);
 
     void *pdata;
-    et_event_getdata(pe, &pdata); //get the event ready ? what does this do?
+    et_event_getdata(pe, &pdata); 
 
     eventbuilder.debugStream() << "Put the event back into the ET system...";
     status = et_event_put(sys_id, attach, pe); 
@@ -301,12 +300,12 @@ int main(int argc, char *argv[])
     system("sleep 10s");
     exit(EXIT_ETSTARTUP_ERROR);
   }
+
   binary_outputfile.close(); 
 
   eventbuilder.infoStream() << "Closing the Event Builder!";
-  // Clean up the log4cpp file.
   log4cpp::Category::shutdown();
-  return 0; // Success!
+  return 0; 
 }
 
 //---------------------------------------------------------------------
