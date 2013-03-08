@@ -252,6 +252,16 @@ void DAQWorker::TakeData()
 }
 
 //---------------------------------------------------------
+bool DAQWorker::BeginNextGate()
+{
+  // single worker checks it crates
+  // then stuff like reset channels, trigger time, etc.
+  // pass trigger time to state worker
+
+  return true;
+}
+
+//---------------------------------------------------------
 void DAQWorker::DissolveDataBlock( std::tr1::shared_ptr<SequencerReadoutBlock> block )
 {
   daqWorker.debugStream() << "Got data, destructively processing into frames...";

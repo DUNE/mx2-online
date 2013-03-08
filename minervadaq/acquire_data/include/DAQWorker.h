@@ -40,6 +40,8 @@ class DAQWorker {
     template <class X> struct EventHandler * CreateEventHandler( X *dataBlock );
     void DestroyEventHandler( struct EventHandler * handler );
 
+    bool BeginNextGate();
+
   public:
     explicit DAQWorker( const DAQWorkerArgs* theArgs, 
         log4cpp::Priority::Value priority, bool *status );
