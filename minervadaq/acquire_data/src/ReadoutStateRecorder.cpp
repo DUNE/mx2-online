@@ -125,9 +125,6 @@ void ReadoutStateRecorder::WriteToSAMFile()
 //---------------------------------------------------------
 void ReadoutStateRecorder::WriteLastTriggerDataToFile()
 {
-  stateRecorderLogger.debugStream() << "Writing last trigger data to " 
-    << args->lastTriggerFileName;
-
   FILE *file;
 
   if ( NULL == (file=fopen((args->lastTriggerFileName).c_str(),"w")) ) {
@@ -137,9 +134,6 @@ void ReadoutStateRecorder::WriteLastTriggerDataToFile()
   else {
     if (!(gate%10)) {
       stateRecorderLogger.infoStream() << "Writing info for trigger " << gate 
-        << " to file " << args->lastTriggerFileName;
-    } else {
-      stateRecorderLogger.debugStream() << "Writing info for trigger " << gate 
         << " to file " << args->lastTriggerFileName;
     }
   }
