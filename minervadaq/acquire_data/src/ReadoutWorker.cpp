@@ -1,12 +1,5 @@
 #ifndef ReadoutWorker_cxx
 #define ReadoutWorker_cxx
-/*! \file 
- *
- * ReadoutWorker.cpp:  Contains all of the functions needed for the 
- * initialization of DAQ electronics and execute an FEB acquisition.
- * Also contains the passing of data frames to the ET for further 
- * processing.
- */
 
 #include "ReadoutWorker.h"
 #include "exit_codes.h"
@@ -17,61 +10,54 @@
 log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
 
 //---------------------------
-ReadoutWorker::ReadoutWorker( int theCrateID, log4cpp::Priority::Value priority, bool VMEInit ) :
-  crateID(theCrateID),
+ReadoutWorker::ReadoutWorker( log4cpp::Priority::Value priority, bool VMEInit ) :
   vmeInit(VMEInit),
   runningMode((RunningModes)0)
 {
   readoutLogger.setPriority(priority);
-
-  controller = new Controller(0x00, crateID);
-  int error = controller->Initialize();
-  if ( 0 != error ) {
-    readoutLogger.fatalStream() << "Controller contact error: " << error 
-      << "; for Crate ID = " << crateID; 
-    exit(error);
-  }
-  readoutLogger.debugStream() << "Made new ReadoutWokrer with crate ID = " << crateID 
-    << "; VME Init = " << vmeInit
-    << "; Logging Level = " << priority;
+  readoutLogger.debugStream() << "Made new ReadoutWokrer."; 
 }
 
 //---------------------------
 ReadoutWorker::~ReadoutWorker() {
   readoutChannels.clear();
-  for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
+  for ( std::vector<VMECrate*>::iterator p=crates.begin(); p!=crates.end(); ++p ) {
     delete (*p);
   }
-  ecrocs.clear();
-  for( std::vector<CRIM*>::iterator p=crims.begin(); p!=crims.end(); ++p ) {
-    delete (*p);
-  }
-  crims.clear();
-  delete controller; 
+  crates.clear();
 }
 
 //---------------------------
-const Controller* ReadoutWorker::GetController() const
+void ReadoutWorker::AddCrate( unsigned int crateID )
 {
-  return controller;
+  VMECrate * crate = new VMECrate( crateID, log4cpp::Priority::DEBUG, vmeInit );
+  crates.push_back( crate );
 }
 
 //---------------------------
-void ReadoutWorker::InitializeCrate( RunningModes theRunningMode )
+void ReadoutWorker::InitializeCrates( RunningModes theRunningMode )
 {
   runningMode = theRunningMode;
-  readoutLogger.debugStream() << "Initialize " << (*this);
+  readoutLogger.debugStream() << "InitializeCrates";
 
-  readoutLogger.debugStream() << "Initializing " << crims.size() << " CRIMs...";
-  for( std::vector<CRIM*>::iterator p=crims.begin(); p!=crims.end(); ++p ) {
+  for ( std::vector<VMECrate*>::iterator p=crates.begin(); 
+      p!=crates.end();
+      ++p ) {
     (*p)->Initialize( runningMode );
-  }
-  readoutLogger.debugStream() << "Initializing " << ecrocs.size() << " CROC-Es...";
-  for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
-    (*p)->Initialize();
-    std::vector<EChannels*>* channels = (*p)->GetChannelsVector();
-    readoutChannels.insert(readoutChannels.end(),channels->begin(),channels->end());
-  }
+  } 
+
+  for ( std::vector<VMECrate*>::iterator p=crates.begin(); 
+      p!=crates.end();
+      ++p ) {
+    std::vector<ECROC*>* crocs = (*p)->GetECROCVector();
+    for ( std::vector<ECROC*>::iterator q=crocs->begin();
+        q!=crocs->end();
+        ++q ) {
+      std::vector<EChannels*>* channels = (*q)->GetChannelsVector();
+      readoutChannels.insert(readoutChannels.end(),channels->begin(),channels->end());
+    }
+  } 
+
   readoutLogger.debugStream() << "Enabling IRQ for master CRIM.";
   this->MasterCRIM()->IRQEnable();
   readoutLogger.debugStream() << "Finished Crate Initialization for " << (*this);
@@ -80,11 +66,20 @@ void ReadoutWorker::InitializeCrate( RunningModes theRunningMode )
 //---------------------------
 CRIM* ReadoutWorker::MasterCRIM() const
 {
+  VMECrate* crate = NULL;
   CRIM* crim = NULL;
-  if( crims.size() ) { 
-    crim = crims[0];
-  } else {
-    readoutLogger.fatalStream() << "CRIM vector length is 0! Cannot return a master CRIM!";
+  if ( crates.size() ) { 
+    crate = crates[0];
+    if ( crate->GetCRIMVector()->size() ) {
+      crim = crate->GetCRIMVector(0);
+    } 
+    else {
+      readoutLogger.fatalStream() << "CRIM vector length is 0! Cannot return a master CRIM!";
+      exit(EXIT_CRIM_UNSPECIFIED_ERROR);
+    }
+  } 
+  else {
+    readoutLogger.fatalStream() << "CRATE vector length is 0! Cannot return a master CRIM!";
     exit(EXIT_CRIM_UNSPECIFIED_ERROR);
   }
   return crim;
@@ -93,67 +88,35 @@ CRIM* ReadoutWorker::MasterCRIM() const
 //---------------------------
 unsigned int ReadoutWorker::GetMINOSSGATE() const
 {
-  // Live dangerous. We should always have a Master CRIM.
   return this->MasterCRIM()->MINOSSGATE();
 }
 
 //---------------------------
-void ReadoutWorker::AddECROC( unsigned int address, int nFEBchan0, int nFEBchan1, int nFEBchan2, int nFEBchan3 )
+std::vector<VMECrate*>* ReadoutWorker::GetVMECrateVector()
 {
-  if (address < (1<<VMEModuleTypes::ECROCAddressShift)) {
-    address = address << VMEModuleTypes::ECROCAddressShift;
-  }
-  readoutLogger.infoStream() << "Adding ECROC with address = 0x" 
-    << std::hex << address << " and FEBs-to-Channel of (" 
-    << std::dec << nFEBchan0 << ", " << nFEBchan1 << ", " << nFEBchan2 << ", " << nFEBchan3 << ")";
-  if (nFEBchan0<0 || nFEBchan0>10) nFEBchan0 = 0;
-  if (nFEBchan1<0 || nFEBchan1>10) nFEBchan1 = 0;
-  if (nFEBchan2<0 || nFEBchan2>10) nFEBchan2 = 0;
-  if (nFEBchan3<0 || nFEBchan3>10) nFEBchan3 = 0;
-
-  ECROC *theECROC = new ECROC( address, this->controller );
-  theECROC->ClearAndResetStatusRegisters();
-  theECROC->DisableSequencerReadout(); // make sure this is disabled for init
-  readoutLogger.debugStream() << " Adding FEBs to Channels...";
-  theECROC->GetChannel( 0 )->SetupNFrontEndBoards( nFEBchan0 );
-  readoutLogger.debugStream() << " Setup Channel 0 with " << nFEBchan0 << " FEBS.";
-  theECROC->GetChannel( 1 )->SetupNFrontEndBoards( nFEBchan1 );
-  readoutLogger.debugStream() << " Setup Channel 1 with " << nFEBchan1 << " FEBS.";
-  theECROC->GetChannel( 2 )->SetupNFrontEndBoards( nFEBchan2 );
-  readoutLogger.debugStream() << " Setup Channel 2 with " << nFEBchan2 << " FEBS.";
-  theECROC->GetChannel( 3 )->SetupNFrontEndBoards( nFEBchan3 );
-  readoutLogger.debugStream() << " Setup Channel 3 with " << nFEBchan3 << " FEBS.";
-  theECROC->ClearEmptyChannels();
-  ecrocs.push_back( theECROC );
-  readoutLogger.debugStream() << "Added ECROC.";
+	return &crates;
 }
 
 //---------------------------
-void ReadoutWorker::AddCRIM( unsigned int address )
+VMECrate* ReadoutWorker::GetVMECrateVector( int index )
 {
-  if (address < (1<<VMEModuleTypes::CRIMAddressShift)) {
-    address = address << VMEModuleTypes::CRIMAddressShift;
-  }
-  readoutLogger.infoStream() << "Adding CRIM with address = 0x" << std::hex << address; 
-  CRIM* crim = new CRIM( address, this->controller );
-  readoutLogger.debugStream() << " CRIM Status = 0x" << std::hex << crim->GetStatus();
-  crims.push_back( crim );
-  readoutLogger.debugStream() << "Added CRIM.";
+	return crates[index];
 }
 
 //---------------------------
 unsigned long long ReadoutWorker::Trigger()
 {
   readoutLogger.debugStream() << "ReadoutWorker::Trigger...";
-  this->ClearAndResetAllChannels();
+  this->ClearAndResetStatusRegisters();
 
   // Basically, "OneShot"
   this->OpenGateFastCommand();
-
   // Run Sleepy - the FEBs need >= 400 microseconds for 8 hits to digitize.
   // nanosleep runs about 3x slower than the stated time (so 100 us -> 300 us)
-  if (!microSecondSleep(100)) return 0;
-  for (std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) {
+  if (!MicroSecondSleep(100)) return 0;
+
+  // This sequence is mode dependent...
+  for (std::vector<VMECrate*>::iterator p=crates.begin(); p!=crates.end(); ++p) {
     (*p)->EnableSequencerReadout();
     (*p)->SendSoftwareRDFE();
     (*p)->WaitForSequencerReadoutCompletion();
@@ -171,19 +134,19 @@ unsigned long long ReadoutWorker::Trigger()
 //---------------------------
 void ReadoutWorker::OpenGateFastCommand()
 {
-  for (std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
-    (*p)->FastCommandOpenGate();
+  for (std::vector<VMECrate*>::iterator p=crates.begin(); p!=crates.end(); ++p) 
+    (*p)->OpenGateFastCommand();
 }
 
 //---------------------------
-void ReadoutWorker::ClearAndResetAllChannels()
+void ReadoutWorker::ClearAndResetStatusRegisters()
 {
-  for (std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
+  for (std::vector<VMECrate*>::iterator p=crates.begin(); p!=crates.end(); ++p) 
     (*p)->ClearAndResetStatusRegisters();
 }
 
 //---------------------------
-bool ReadoutWorker::microSecondSleep(int us)
+bool ReadoutWorker::MicroSecondSleep(int us)
 {
   timespec tmReq;
   tmReq.tv_sec = (time_t)(0);
@@ -197,7 +160,7 @@ bool ReadoutWorker::microSecondSleep(int us)
 //---------------------------
 void ReadoutWorker::ResetCurrentChannel()
 {
-  currentChannel=readoutChannels.begin();
+  currentChannel = readoutChannels.begin();
 }
 
 
@@ -245,8 +208,9 @@ std::tr1::shared_ptr<SequencerReadoutBlock> ReadoutWorker::GetNextDataBlock( uns
 //-----------------------------
 std::ostream& operator<<(std::ostream& out, const ReadoutWorker& s)
 {
-  out << "Crate = " << s.crateID << "; ";
-  out << "Running Mode = " << s.runningMode << "; ";
+  for (std::vector<VMECrate*>::const_iterator p=s.crates.begin(); p!=s.crates.end(); ++p) {
+    out << "Crate = " << (*p) << "; ";
+  }
   return out;
 }
 

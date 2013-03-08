@@ -25,7 +25,7 @@ class DAQWorker {
     bool declareEventsToET;
 
     ReadoutStateRecorder* stateRecorder;
-    std::vector<ReadoutWorker*> readoutWorkerVect;
+    ReadoutWorker* readoutWorker;
 
     void DissolveDataBlock( std::tr1::shared_ptr<SequencerReadoutBlock> block );
 

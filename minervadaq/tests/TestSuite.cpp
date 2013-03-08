@@ -216,13 +216,14 @@ ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCar
 {
   std::cout << "Testing Get and Test ReadoutWorker...";  
   ReadoutWorker *worker = NULL;
-  worker = new ReadoutWorker( controllerID, log4cpp::Priority::DEBUG, true );
+  worker = new ReadoutWorker( log4cpp::Priority::DEBUG, true );
   assert( NULL != worker );
   logger.infoStream() << "Got the ReadoutWorker.";
 
-  worker->AddECROC( ecrocCardAddress, nch0, nch1, nch2, nch3 );
-  worker->AddCRIM( crimCardAddress );
-  worker->InitializeCrate( runningMode );
+  worker->AddCrate(0);
+  worker->GetVMECrateVector(0)->AddECROC( 2, 0, 5, 0, 0 );
+  worker->GetVMECrateVector(0)->AddCRIM( 224 );
+  worker->InitializeCrates( runningMode );
 
   std::cout << "Passed!" << std::endl;
   testCount++;
