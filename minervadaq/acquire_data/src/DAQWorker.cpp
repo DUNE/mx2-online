@@ -131,39 +131,40 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
   if (!declareEventsToET) return true;
 
   unsigned short length = handler->dataLength;
+  daqWorker.debugStream() << "EventHandler dataLength = " << handler->dataLength; 
 
   while (et_alive(sys_id)) {
     daqWorker.debugStream() << "  ->ET is Alive!";
-    et_event *pe;         // The event.
-    EventHandler *pdata;  // The data for the event.
+    et_event *pe;         
+    EventHandler *pdata;  
     int status = et_event_new(sys_id, attach, &pe, ET_SLEEP, NULL,
-        sizeof(struct EventHandler)); // Get an event.
+        sizeof(struct EventHandler)); 
     if (status == ET_ERROR_DEAD) {
-      daqWorker.crit("ET system is dead in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("ET system is dead in ContactEventBuilder!");
       break;
     } else if (status == ET_ERROR_TIMEOUT) {
-      daqWorker.crit("Got an ET timeout in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("Got an ET timeout in ContactEventBuilder!");
       break;
     } else if (status == ET_ERROR_EMPTY) {
-      daqWorker.crit("No ET events in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("No ET events in ContactEventBuilder!");
       break;
     } else if (status == ET_ERROR_BUSY) {
-      daqWorker.crit("ET Grandcentral is busy in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("ET Grandcentral is busy in ContactEventBuilder!");
       break;
     } else if (status == ET_ERROR_WAKEUP) {
-      daqWorker.crit("ET wakeup error in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("ET wakeup error in ContactEventBuilder!");
       break;
     } else if ((status == ET_ERROR_WRITE) || (status == ET_ERROR_READ)) {
-      daqWorker.crit("ET socket communication error in acquire_data::ContactEventBuilder!");
+      daqWorker.crit("ET socket communication error in ContactEventBuilder!");
       break;
     } if (status != ET_OK) {
-      daqWorker.fatal("ET et_producer: error in et_event_new in acquire_data::ContactEventBuilder!");
+      daqWorker.fatal("ET et_producer: error in et_event_new in ContactEventBuilder!");
       return false;
     }
     // Put data into the event.
     if (status == ET_OK) {
       daqWorker.debugStream() << "Putting Event into ET System...";
-      et_event_getdata(pe, (void **)&pdata); // Get the event ready.
+      et_event_getdata(pe, (void **)&pdata); 
       { 
         daqWorker.debugStream() << "-----------------------------------------------";
         daqWorker.debugStream() << "EventHandler_size: " << sizeof(struct EventHandler);
@@ -179,10 +180,10 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
       et_event_setlength(pe, sizeof(struct EventHandler));
     } 
 
-    // Put the event back into the ET system.
-    status = et_event_put(sys_id, attach, pe); // Put the event away.
+    // Put the event into the ET system.
+    status = et_event_put(sys_id, attach, pe); 
     if (status != ET_OK) {
-      daqWorker.fatal("et_producer: put error in acquire_data::ContactEventBuilder!");
+      daqWorker.fatal("et_producer: put error in ContactEventBuilder!");
       return false;
     }
     if (!et_alive(sys_id)) {
@@ -232,16 +233,11 @@ void DAQWorker::TakeData()
         unsigned short blockSize = worker->GetNextDataBlockSize();  
         daqWorker.debugStream() << "Next data block size is: " << blockSize;
         std::tr1::shared_ptr<SequencerReadoutBlock> block = worker->GetNextDataBlock( blockSize );
-        // declare block to ET here
-        // temp : turn the data into Frames just to look at in the log file:
-        daqWorker.debugStream() << "Got data, processing into frames...";
-        block->ProcessDataIntoFrames();
-        daqWorker.debugStream() << "TakeData : Inspecting Frames for channel " << (*worker->CurrentChannel());
-        while (block->FrameCount()) {
-          LVDSFrame * frame = block->PopOffFrame();
-          daqWorker.debugStream() << (*frame);
-          frame->printReceivedMessageToLog();
-          delete frame;
+        if (declareEventsToET) {
+          DeclareDataBlock<SequencerReadoutBlock>( block.get() );
+        }
+        else {
+          DissolveDataBlock( block );
         }
       } while ( worker->MoveToNextChannel() );
     }
@@ -253,28 +249,45 @@ void DAQWorker::TakeData()
   daqWorker.infoStream() << "Finished Data Acquisition...";
 }
 
+//---------------------------------------------------------
+void DAQWorker::DissolveDataBlock( std::tr1::shared_ptr<SequencerReadoutBlock> block )
+{
+  daqWorker.debugStream() << "Got data, destructively processing into frames...";
+  block->ProcessDataIntoFrames();
+  while (block->FrameCount()) {
+    LVDSFrame * frame = block->PopOffFrame();
+    daqWorker.debugStream() << (*frame);
+    frame->printReceivedMessageToLog();
+    delete frame;
+  }
+}
 
 //---------------------------------------------------------
 void DAQWorker::DeclareDAQHeaderToET( HeaderData::BankType bankType )
 {
   daqWorker.debugStream() << "Declaring Header to ET for bank type " << bankType;
-
-  struct EventHandler * handler = NULL;
   std::tr1::shared_ptr<DAQHeader> daqhead = stateRecorder->GetDAQHeader( bankType );
-  handler = CreateEventHandler<DAQHeader>( daqhead.get() );
-  ContactEventBuilder( handler );
-  DestroyEventHandler( handler );
+  DeclareDataBlock<DAQHeader>( daqhead.get() );
 }
 
 //---------------------------------------------------------
 bool DAQWorker::SendSentinel()
 {
   daqWorker.debugStream() << "Sending Sentinel Frame...";
-  this->DeclareDAQHeaderToET( HeaderData::SentinelBank );
+  DeclareDAQHeaderToET( HeaderData::SentinelBank );
   return true;
 }
 
+//---------------------------------------------------------
+template <class X> void DAQWorker::DeclareDataBlock( X *dataBlock )
+{
+  struct EventHandler * handler = NULL;
+  handler = CreateEventHandler<X>( dataBlock );
+  ContactEventBuilder( handler );
+  DestroyEventHandler( handler );
+}
 
+//---------------------------------------------------------
 template <class X> struct EventHandler * DAQWorker::CreateEventHandler( X *dataBlock )
 {
   struct EventHandler * handler = (struct EventHandler *)malloc( sizeof(struct EventHandler) );
@@ -283,10 +296,11 @@ template <class X> struct EventHandler * DAQWorker::CreateEventHandler( X *dataB
   handler->dataLength = dataBlock->GetDataLength();
   // If data ever becomes dynamic, we need to new it here.
   memcpy( handler->data, dataBlock->GetData(), handler->dataLength ); // dest, src, length
-  
+
   return handler;
 }
 
+//---------------------------------------------------------
 void DAQWorker::DestroyEventHandler( struct EventHandler * handler )
 {
   assert( NULL != handler );
