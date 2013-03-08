@@ -7,7 +7,6 @@
 #include "Controller.h" 
 #include "ECROC.h"
 #include "CRIM.h"
-#include "SequencerReadoutBlock.h"
 
 #include "ReadoutTypes.h"
 

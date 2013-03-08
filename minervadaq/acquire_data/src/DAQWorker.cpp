@@ -41,22 +41,14 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs,
   daqWorker.infoStream() << "See Event/MinervaEvent/xml/DAQHeader.xml for codes.";
   daqWorker.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
-  ReadoutWorker* readoutWorker = 
-    new ReadoutWorker( 0, priority, (bool)args->hardwareInitLevel );
-  readoutWorkerVect.push_back( readoutWorker );
-
+  readoutWorker = new ReadoutWorker( priority, (bool)args->hardwareInitLevel );
   stateRecorder = new ReadoutStateRecorder( args, priority );
 }
 
 //---------------------------------------------------------
 DAQWorker::~DAQWorker()
 {
-  for (std::vector<ReadoutWorker*>::iterator p = readoutWorkerVect.begin();
-      p != readoutWorkerVect.end();
-      ++p ) {
-    delete *p;
-  }
-  readoutWorkerVect.clear();
+  delete readoutWorker;
   delete stateRecorder;
 }
 
@@ -67,9 +59,10 @@ void DAQWorker::InitializeHardware()
 
   // Read in hardware config here. For now, hard code...
 
-  readoutWorkerVect[0]->AddECROC( 2, 0, 5, 0, 0 );
-  readoutWorkerVect[0]->AddCRIM( 224 );
-  readoutWorkerVect[0]->InitializeCrate( args->runMode );
+  readoutWorker->AddCrate(0);
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 2, 0, 5, 0, 0 );
+  readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
+  readoutWorker->InitializeCrates( args->runMode );
 }
 
 //---------------------------------------------------------
@@ -223,26 +216,20 @@ void DAQWorker::TakeData()
 
     unsigned long long triggerTime = 0;
 
-    for (ReadoutWorkerIt readoutWorker=readoutWorkerVect.begin(); 
-        readoutWorker!=readoutWorkerVect.end();
-        ++readoutWorker) {
-
-      ReadoutWorker * worker = (*readoutWorker);
-
-      worker->ResetCurrentChannel();
-      triggerTime = worker->Trigger();
-      do {
-        unsigned short blockSize = worker->GetNextDataBlockSize();  
-        daqWorker.debugStream() << "Next data block size is: " << blockSize;
-        std::tr1::shared_ptr<SequencerReadoutBlock> block = worker->GetNextDataBlock( blockSize );
-        if (declareEventsToET) {
-          DeclareDataBlock<SequencerReadoutBlock>( block.get() );
-        }
-        else {
-          DissolveDataBlock( block );
-        }
-      } while ( worker->MoveToNextChannel() );
-    }
+    readoutWorker->ResetCurrentChannel();
+    triggerTime = readoutWorker->Trigger();
+    do {
+      unsigned short blockSize = readoutWorker->GetNextDataBlockSize();  
+      daqWorker.debugStream() << "Next data block size is: " << blockSize;
+      std::tr1::shared_ptr<SequencerReadoutBlock> block = 
+        readoutWorker->GetNextDataBlock( blockSize );
+      if (declareEventsToET) {
+        DeclareDataBlock<SequencerReadoutBlock>( block.get() );
+      }
+      else {
+        DissolveDataBlock( block );
+      }
+    } while ( readoutWorker->MoveToNextChannel() );
 
     stateRecorder->FinishGate();
     DeclareDAQHeaderToET();
