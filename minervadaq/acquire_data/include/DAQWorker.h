@@ -27,16 +27,18 @@ class DAQWorker {
     ReadoutStateRecorder* stateRecorder;
     std::vector<ReadoutWorker*> readoutWorkerVect;
 
+    void DissolveDataBlock( std::tr1::shared_ptr<SequencerReadoutBlock> block );
+
     et_att_id      attach; 
     et_sys_id      sys_id; 
-    bool ContactEventBuilder(EventHandler *handler);
-
+    bool ContactEventBuilder( EventHandler *handler );
+    /* void DeclareDataBlock( std::tr1::shared_ptr<SequencerReadoutBlock> block ); */
     void DeclareDAQHeaderToET( HeaderData::BankType bankType = HeaderData::DAQBank );
 
     // The CROC-E DAQ receives "globs" of data spanning entire chains.
+    template <class X> void DeclareDataBlock( X *dataBlock );
     template <class X> struct EventHandler * CreateEventHandler( X *dataBlock );
     void DestroyEventHandler( struct EventHandler * handler );
-
 
   public:
     explicit DAQWorker( const DAQWorkerArgs* theArgs, 
