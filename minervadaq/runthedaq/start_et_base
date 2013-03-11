@@ -22,7 +22,7 @@ fi
 . ${DAQROOT}/runthedaq/daq_opts
 
 FILEROOT=testme
-NFEBS=4    # We also use this to fill the detector configuration field.
+NFEBS=5    # We also use this to fill the detector configuration field.
 NGATES=10
 RUNMODE=0
 RUN=1337
@@ -83,7 +83,7 @@ done
 ETSYS=/work/data/etsys/${FILEROOT}_RawData
 OUTFL=/work/data/rawdata/${FILEROOT}_RawData.dat
 
-xterm ${DEBUG} -geometry 80x30+380+1 -sl 1000 -e ./start_et_system $ETSYS $NFEBS $NGATES $PORT &
+xterm ${DEBUG} -geometry 80x30+380+1 -sl 1000 -e ./start_et_system $ETSYS $NGATES $PORT &
 export ET_SYST_TERM_PID=$!
 echo ET System Terminal PID = $ET_SYST_TERM_PID
 echo $ET_SYST_TERM_PID > $ETSYSTERMPIDFILE 

@@ -142,5 +142,9 @@ echo LEDLEVEL   = $LEDLEVEL
 echo LEDGROUP   = $LEDGROUP
 echo INITLEVEL  = $INITLEVEL
 echo PORT       = $PORT
-${DAQROOT}/bin/minervadaq -et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT
+EXE=${DAQROOT}/bin/minervadaq
+ARGS="-et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT"
+echo "$EXE $ARGS"
+${EXE} ${ARGS}
+# ${DAQROOT}/bin/minervadaq -et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT
 
