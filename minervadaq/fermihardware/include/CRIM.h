@@ -117,6 +117,7 @@ class CRIM : public VMECommunicator {
     unsigned short GetInterruptStatus() const;
     void ClearPendingInterrupts( unsigned short interruptStatus ) const;
     void ResetGlobalIRQEnable() const;
+    void ResetCosmicLatch() const;
     void ResetSequencerLatch() const;
     int WaitOnIRQ( sig_atomic_t const & continueFlag ) const;
 		unsigned int MINOSSGATE() const;

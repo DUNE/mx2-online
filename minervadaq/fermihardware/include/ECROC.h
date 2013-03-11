@@ -64,6 +64,11 @@ class ECROC : public VMECommunicator {
     void DisableSequencerReadout() const;
     void SendSoftwareRDFE() const; // manually start sequencer readout
     void WaitForSequencerReadoutCompletion() const;
+
+/* Need to set these up to get things working with CRIM in MTM.
+    void SequencerDelayEnable() const;
+    void SequencerDelayValue( unsigned short delay ) const; // 9 lowest bits
+*/
 };
 
 #endif

@@ -414,17 +414,32 @@ unsigned short CRIM::GetStatus() const
 }
 
 //----------------------------------------
-void CRIM::ResetSequencerLatch() const
+void CRIM::ResetCosmicLatch() const
 {
-	/*! \fn void CRIM::ResetSequencerLatch()
+	/*! \fn void CRIM::ResetCosmicLatch()
 	 *
 	 * This function resets the CRIM sequencer latch in cosmic mode to restart the seqeuncer in 
 	 * internal timing mode.  This only affects CRIMs with v5 firmware.
 	 */
 #ifndef GOFAST
-	CRIMLog.debugStream() << "ResetSequencerLatch for CRIM 0x" << std::hex << this->address;
+	CRIMLog.debugStream() << "ResetCosmicLatch for CRIM 0x" << std::hex << this->address;
 #endif
 	unsigned char message[] = { 0x02, 0x02 };
+	int error = WriteCycle( 2, message, sequencerResetRegister, addressModifier, dataWidthReg );
+	if( error ) exitIfError( error, "Error resetting the sequencer latch!");
+}
+
+//----------------------------------------
+void CRIM::ResetSequencerLatch() const
+{
+	/*! \fn void CRIM::ResetSequencerLatch()
+	 *
+	 * This resets the CRIM sequencer latch in MTM mode. This only affects CRIMs with v9 firmware.
+	 */
+#ifndef GOFAST
+	CRIMLog.debugStream() << "ResetSequencerLatch for CRIM 0x" << std::hex << this->address;
+#endif
+	unsigned char message[] = { 0x04, 0x04 };
 	int error = WriteCycle( 2, message, sequencerResetRegister, addressModifier, dataWidthReg );
 	if( error ) exitIfError( error, "Error resetting the sequencer latch!");
 }
