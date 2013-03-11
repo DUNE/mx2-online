@@ -22,9 +22,11 @@ class ReadoutStateRecorder {
 
     int gate;
     int triggerType;
+    unsigned long long firstGate;
     unsigned long long globalGate;
     unsigned long long gateStartTime;
     unsigned long long gateFinishTime;
+    unsigned int MINOSSGATE;
 
     const DAQWorkerArgs* args;
 
@@ -43,6 +45,10 @@ class ReadoutStateRecorder {
 
     bool BeginNextGate();
     bool FinishGate();
+
+    void SetMINOSSGATE( unsigned int gateTime );
+    void SetGateStartTime( unsigned long long theStartTime );
+    void SetGateFinishTime( unsigned long long theFinishTime );
 
     std::tr1::shared_ptr<DAQHeader> GetDAQHeader( HeaderData::BankType bankType );
 
