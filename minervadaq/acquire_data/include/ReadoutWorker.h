@@ -28,7 +28,6 @@ class ReadoutWorker {
     RunningModes runningMode;
 
     CRIM* MasterCRIM() const;
-    unsigned int GetMINOSSGATE() const;
 
     void ClearAndResetStatusRegisters();
     void OpenGateFastCommand();
@@ -44,8 +43,10 @@ class ReadoutWorker {
     std::vector<VMECrate*>* GetVMECrateVector();
     VMECrate* GetVMECrateVector( int index );
 
-    void ResetCurrentChannel();
+    unsigned int GetMINOSSGATE() const;
+    unsigned long long GetNowInMicrosec() const;
     unsigned long long Trigger();
+    void ResetCurrentChannel();
     bool MoveToNextChannel();
     const EChannels * CurrentChannel() const;
     unsigned short GetNextDataBlockSize() const;

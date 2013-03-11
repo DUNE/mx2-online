@@ -41,6 +41,7 @@ class DAQWorker {
     void DestroyEventHandler( struct EventHandler * handler );
 
     bool BeginNextGate();
+    bool FinishGate();
 
   public:
     explicit DAQWorker( const DAQWorkerArgs* theArgs, 

@@ -104,6 +104,14 @@ VMECrate* ReadoutWorker::GetVMECrateVector( int index )
 }
 
 //---------------------------
+unsigned long long ReadoutWorker::GetNowInMicrosec() const
+{
+  struct timeval run;
+  gettimeofday(&run, NULL);
+  return (unsigned long long)(run.tv_sec*1000000) + (unsigned long long)(run.tv_usec);
+}
+
+//---------------------------
 unsigned long long ReadoutWorker::Trigger()
 {
   readoutLogger.debugStream() << "ReadoutWorker::Trigger...";
@@ -123,12 +131,7 @@ unsigned long long ReadoutWorker::Trigger()
     (*p)->DisableSequencerReadout();
   }
 
-  struct timeval run;
-  gettimeofday(&run, NULL);
-  unsigned long long start = (unsigned long long)(run.tv_sec*1000000)
-    + (unsigned long long)(run.tv_usec);
-
-  return start;
+  return this->GetNowInMicrosec();
 }
 
 //---------------------------

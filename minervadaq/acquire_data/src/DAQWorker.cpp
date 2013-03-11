@@ -210,14 +210,8 @@ void DAQWorker::TakeData()
 {
   daqWorker.infoStream() << "Beginning Data Acquisition...";
 
-  while (stateRecorder->BeginNextGate()) {
-    daqWorker.debugStream() << "Continue Running Status = " << (*status);
-    if (!(*status)) break;
+  while ( BeginNextGate() ) {
 
-    unsigned long long triggerTime = 0;
-
-    readoutWorker->ResetCurrentChannel();
-    triggerTime = readoutWorker->Trigger();
     do {
       unsigned short blockSize = readoutWorker->GetNextDataBlockSize();  
       daqWorker.debugStream() << "Next data block size is: " << blockSize;
@@ -231,7 +225,7 @@ void DAQWorker::TakeData()
       }
     } while ( readoutWorker->MoveToNextChannel() );
 
-    stateRecorder->FinishGate();
+    FinishGate();
     DeclareDAQHeaderToET();
   }
 
@@ -241,11 +235,26 @@ void DAQWorker::TakeData()
 //---------------------------------------------------------
 bool DAQWorker::BeginNextGate()
 {
-  // single worker checks it crates
-  // then stuff like reset channels, trigger time, etc.
-  // pass trigger time to state worker
+  daqWorker.debugStream() << "DAQWorker::BeginNextGate...";
+  daqWorker.debugStream() << "Continue Running Status = " << (*status);
+  if (!(*status)) return false;
 
-  return true;
+  unsigned long long triggerTime = 0;
+  readoutWorker->ResetCurrentChannel();
+  triggerTime = readoutWorker->Trigger();
+  stateRecorder->SetGateStartTime( triggerTime );
+
+  return stateRecorder->BeginNextGate();
+}
+
+//---------------------------------------------------------
+bool DAQWorker::FinishGate()
+{
+  daqWorker.debugStream() << "DAQWorker::FinishGate...";
+  stateRecorder->SetGateFinishTime( readoutWorker->GetNowInMicrosec() );
+  stateRecorder->SetMINOSSGATE( readoutWorker->GetMINOSSGATE() );
+
+  return stateRecorder->FinishGate();
 }
 
 //---------------------------------------------------------
