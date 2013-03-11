@@ -145,7 +145,9 @@ echo PORT       = $PORT
 EXE=${DAQROOT}/bin/minervadaq
 ARGS="-et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT"
 echo "$EXE $ARGS"
+
 VALLOG="grindtest1.txt"
+LEAKSM="leaksum.txt"
 
 if test -e ${VALLOG}; then
   rm ${VALLOG}
@@ -153,11 +155,9 @@ fi
 valgrind --num-callers=50 --leak-check=full --verbose --show-reachable=yes --suppressions=${DAQROOT}/tests/suppressions02.supp --log-file-exactly=${VALLOG} ${EXE} ${ARGS}
 # valgrind --num-callers=50 --leak-check=full --verbose --show-reachable=yes --gen-suppressions=all --log-file-exactly=${VALLOG} ${EXE} ${ARGS}
 
-cp $VALLOG leaksum.txt
-perl -i -e 'while(<>) { chomp; if (/definitely/) { print $_; } }' leaksum.txt
-cat leaksum.txt
+cp $VALLOG $LEAKSM
+perl -i -e 'while(<>) { chomp; if (/definitely/) { print $_; } }' $LEAKSM
+cat $LEAKSM
 echo 
 
-
-${EXE} ${ARGS}
 
