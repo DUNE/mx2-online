@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Argument List:
+#  $1 == et_system file name
+#  $2 == output file name
+#  $3 == port (1201-1250)
+if [ $# -ne 3 ]; then
+  echo "Please supply et_system file name, output file name, and port (1201-1250)."
+  exit 1
+fi
+
+ETSYS=$1
+OUTFL=$2
+PORT=$3
+
+if [ "$LOCALE" == "" ]
+then
+  echo No LOCALE defined!  It is impossible to configure the MINERvA DAQ Environment!
+  exit 1
+fi
+
+if [ "$DAQROOT" == "" ]
+then
+  echo No DAQROOT defined!  Please configure your environment!
+  exit 1
+fi
+
+# We pass both the system name and output file - must contain the full path! 
+echo EBSERV ETSYS = $ETSYS
+echo EBSERV OUTFL = $OUTFL
+echo EBSERV PORT  = $PORT
+EXE=${DAQROOT}/bin/event_builder
+ARGS="$ETSYS $OUTFL $PORT"
+
+VALLOG="grindtest2.txt"
+LEAKSM="leaksum_eb.txt"
+
+if test -e ${VALLOG}; then
+  rm ${VALLOG}
+fi
+valgrind --num-callers=50 --leak-check=full --verbose --show-reachable=yes --suppressions=${DAQROOT}/tests/suppressions02.supp --log-file-exactly=${VALLOG} ${EXE} ${ARGS}
+# valgrind --num-callers=50 --leak-check=full --verbose --show-reachable=yes --gen-suppressions=all --log-file-exactly=${VALLOG} ${EXE} ${ARGS}
+
+cp $VALLOG $LEAKSM
+perl -i -e 'while(<>) { chomp; if (/definitely/) { print $_; } }' $LEAKSM
+cat $LEAKSM
+echo 
+
+
+# nice ${DAQROOT}/bin/event_builder $ETSYS $OUTFL $PORT
+#valgrind -v --log-file-exactly=val_event_builder.txt ${DAQROOT}/bin/event_builder $ETSYS $OUTFL $PORT
+#valgrind -v --log-file-exactly=val_event_builder.txt --leak-check=full ${DAQROOT}/bin/event_builder $ETSYS $OUTFL $PORT
+

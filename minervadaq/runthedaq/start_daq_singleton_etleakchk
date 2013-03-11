@@ -113,20 +113,21 @@ while [ "$ETMONPID" == "" ]; do
 done
 sleep 1s
 
-xterm ${DEBUG} -geometry 80x28+380+421 -sl 10000 -e ./start_eb_service $ETSYS $OUTFL $PORT &
+xterm ${DEBUG} -geometry 80x28+380+421 -sl 10000 -e ./start_eb_service_leakchk $ETSYS $OUTFL $PORT &
 export EB_SERV_TERM_PID=$!
 echo EB_SERV_TERM_PID=${EB_SERV_TERM_PID}
 echo $EB_SERV_TERM_PID > $EBSRVTERMPIDFILE 
-export EBSRVPID=`pgrep -n event_builder`
-echo EB Service PID = $EBSRVPID
-echo $EBSRVPID > $EBSRVPIDFILE
-while [ "$EBSRVPID" == "" ]; do
-	sleep 1s
-	export EBSRVPID=`pgrep -n event_builder`
-	echo EB Service PID = $EBSRVPID
-	echo $EBSRVPID > $EBSRVPIDFILE
-done
-sleep 15s
+# pgrep can't find valgrind (or event_builder if it is being grinded).
+# export EBSRVPID=`pgrep -n event_builder`
+# echo EB Service PID = $EBSRVPID
+# echo $EBSRVPID > $EBSRVPIDFILE
+# while [ "$EBSRVPID" == "" ]; do
+# 	sleep 1s
+# 	export EBSRVPID=`pgrep -n event_builder`
+# 	echo EB Service PID = $EBSRVPID
+# 	echo $EBSRVPID > $EBSRVPIDFILE
+# done
+sleep 25s
 
 # Note we do not pass the full path of the ET system to the daq.
 # That information is attached within the process itself.
@@ -145,5 +146,23 @@ echo PORT       = $PORT
 EXE=${DAQROOT}/bin/minervadaq
 ARGS="-et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT"
 echo "$EXE $ARGS"
+
 ${EXE} ${ARGS}
+
+# Can't run minervadaq and event_builder through instances of valgrind at the same time.
+
+# VALLOG="grindtest1.txt"
+# LEAKSM="leaksum.txt"
+
+# if test -e ${VALLOG}; then
+#   rm ${VALLOG}
+# fi
+# valgrind --num-callers=50 --leak-check=full --verbose --show-reachable=yes --suppressions=${DAQROOT}/tests/suppressions02.supp --log-file-exactly=${VALLOG} ${EXE} ${ARGS}
+# # valgrind --num-callers=50 --leak-check=full --verbose --show-reachable=yes --gen-suppressions=all --log-file-exactly=${VALLOG} ${EXE} ${ARGS}
+
+# cp $VALLOG $LEAKSM
+# perl -i -e 'while(<>) { chomp; if (/definitely/) { print $_; } }' $LEAKSM
+# cat $LEAKSM
+# echo 
+
 
