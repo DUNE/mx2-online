@@ -29,7 +29,7 @@ ECROC::ECROC(unsigned int address, const Controller* controller) :
   rdfePulseDelayAddress        = this->address + VMEModuleTypes::ECROCRdfePulseDelay;
   rdfePulseCommandAddress      = this->address + VMEModuleTypes::ECROCRdfePulseCommand;
 
-  ECROCLog.setPriority(log4cpp::Priority::INFO); 
+  ECROCLog.setPriority(log4cpp::Priority::DEBUG); 
 
   MakeChannels(); 
 }
@@ -237,7 +237,7 @@ void ECROC::SequencerDelayEnableDisable( unsigned short bit ) const
   configuration = configuration | (bit << RDFEDelayRegisterEnableBit);
 #ifndef GOFAST
   ECROCLog.debugStream() << "SequencerDelayEnableDisable for " << (*this) 
-    << " targey value = 0x" << std::hex << configuration;
+    << " target value = 0x" << std::hex << configuration;
 #endif
   this->SetSequencerDelayeRegister( configuration );
 }
@@ -255,14 +255,14 @@ void ECROC::SequencerDelayEnable() const
 }
 
 //----------------------------------------
-void ECROC::SequencerDelayValue( unsigned short delay ) const
+void ECROC::SetSequencerDelayValue( unsigned short delay ) const
 {
   unsigned short configuration = this->ReadSequencerPulseDelayRegister();
   configuration = configuration & RDFEDelayRegisterEnableMask;
   configuration = configuration | ( delay & RDFEDelayRegisterDelayMask );
 #ifndef GOFAST
   ECROCLog.debugStream() << "SequencerDelayValue for " << (*this) 
-    << " targey value = 0x" << std::hex << configuration;
+    << " target value = 0x" << std::hex << configuration;
 #endif
   this->SetSequencerDelayeRegister( configuration );
 }

@@ -42,7 +42,6 @@ class ECROC : public VMECommunicator {
     static const unsigned short RDFEDelayRegisterEnableMask;
     static const unsigned short RDFEDelayRegisterEnableBit;
 
-    unsigned short ReadSequencerPulseDelayRegister() const;
     void SetSequencerDelayeRegister( unsigned short registerConfig ) const;
     void SequencerDelayEnableDisable( unsigned short bit ) const;
 
@@ -73,9 +72,10 @@ class ECROC : public VMECommunicator {
     void SendSoftwareRDFE() const; // manually start sequencer readout
     void WaitForSequencerReadoutCompletion() const;
 
+    unsigned short ReadSequencerPulseDelayRegister() const;
     void SequencerDelayDisable() const;
     void SequencerDelayEnable() const;
-    void SequencerDelayValue( unsigned short delay ) const; // 9 lowest bits
+    void SetSequencerDelayValue( unsigned short delay ) const; // 9 lowest bits
 };
 
 #endif
