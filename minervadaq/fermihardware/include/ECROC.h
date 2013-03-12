@@ -38,6 +38,14 @@ class ECROC : public VMECommunicator {
 
 		void MakeChannels(); 
 
+    static const unsigned short RDFEDelayRegisterDelayMask;
+    static const unsigned short RDFEDelayRegisterEnableMask;
+    static const unsigned short RDFEDelayRegisterEnableBit;
+
+    unsigned short ReadSequencerPulseDelayRegister() const;
+    void SetSequencerDelayeRegister( unsigned short registerConfig ) const;
+    void SequencerDelayEnableDisable( unsigned short bit ) const;
+
 	public:
 		explicit ECROC( unsigned int address, const Controller* controller); 
 		~ECROC(); 
@@ -65,10 +73,9 @@ class ECROC : public VMECommunicator {
     void SendSoftwareRDFE() const; // manually start sequencer readout
     void WaitForSequencerReadoutCompletion() const;
 
-/* Need to set these up to get things working with CRIM in MTM.
+    void SequencerDelayDisable() const;
     void SequencerDelayEnable() const;
     void SequencerDelayValue( unsigned short delay ) const; // 9 lowest bits
-*/
 };
 
 #endif

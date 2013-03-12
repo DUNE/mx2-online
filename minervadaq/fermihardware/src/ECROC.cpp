@@ -13,6 +13,10 @@
 
 log4cpp::Category& ECROCLog = log4cpp::Category::getInstance(std::string("ECROC"));
 
+const unsigned short ECROC::RDFEDelayRegisterDelayMask = 0x01FF;
+const unsigned short ECROC::RDFEDelayRegisterEnableMask = 0x8000;
+const unsigned short ECROC::RDFEDelayRegisterEnableBit = 15;
+
 //----------------------------------------
 ECROC::ECROC(unsigned int address, const Controller* controller) :
   VMECommunicator( address, controller )
@@ -188,5 +192,80 @@ void ECROC::Initialize() const
   this->InitializeRegisters( (VMEModuleTypes::ECROCClockModes)VMEModuleTypes::ECROCExternal, 
       testPulseDelayEnabled, testPulseDelayValue );
 }
+
+//----------------------------------------
+unsigned short ECROC::ReadSequencerPulseDelayRegister() const
+{
+  unsigned short configuration = 0;
+  unsigned char receivedMessage[] = {0x0,0x0};
+
+#ifndef GOFAST
+  ECROCLog.debugStream() << "Read ReadSequencerPulseDelayRegister Address = " << 
+    std::hex << rdfePulseDelayAddress;
+#endif
+  int error = ReadCycle( receivedMessage, rdfePulseDelayAddress, addressModifier, dataWidthReg); 
+  if( error ) exitIfError( error, "Failure reading the RDFE Configuration!"); 
+  configuration = receivedMessage[1]<<0x08 | receivedMessage[0];
+#ifndef GOFAST
+  ECROCLog.debugStream() << " Sequencer Delay Configuration = 0x" << 
+    std::hex << configuration;
+#endif
+
+  return configuration;
+
+}
+
+//----------------------------------------
+void ECROC::SetSequencerDelayeRegister( unsigned short configuration ) const
+{
+#ifndef GOFAST
+  ECROCLog.debugStream() << "SetSequencerDelayeRegister for " << (*this) 
+    << " value = 0x" << std::hex << configuration;
+#endif
+  unsigned char config[] = {0x0,0x0};
+  config[0] = configuration & 0xFF;
+  config[1] = (configuration & 0xFF00)>>8;
+  int error = WriteCycle( 2, config, rdfePulseDelayAddress, addressModifier, dataWidthReg); 
+  if( error ) exitIfError( error, "Failure writing to RDFE Pulse Delay register!"); 
+}
+
+//----------------------------------------
+void ECROC::SequencerDelayEnableDisable( unsigned short bit ) const
+{
+  unsigned short configuration = this->ReadSequencerPulseDelayRegister();
+  configuration = configuration & RDFEDelayRegisterDelayMask;
+  configuration = configuration | (bit << RDFEDelayRegisterEnableBit);
+#ifndef GOFAST
+  ECROCLog.debugStream() << "SequencerDelayEnableDisable for " << (*this) 
+    << " targey value = 0x" << std::hex << configuration;
+#endif
+  this->SetSequencerDelayeRegister( configuration );
+}
+
+//----------------------------------------
+void ECROC::SequencerDelayDisable() const
+{
+  this->SequencerDelayEnableDisable( (unsigned short)0 );
+}
+
+//----------------------------------------
+void ECROC::SequencerDelayEnable() const
+{
+  this->SequencerDelayEnableDisable( (unsigned short)1 );
+}
+
+//----------------------------------------
+void ECROC::SequencerDelayValue( unsigned short delay ) const
+{
+  unsigned short configuration = this->ReadSequencerPulseDelayRegister();
+  configuration = configuration & RDFEDelayRegisterEnableMask;
+  configuration = configuration | ( delay & RDFEDelayRegisterDelayMask );
+#ifndef GOFAST
+  ECROCLog.debugStream() << "SequencerDelayValue for " << (*this) 
+    << " targey value = 0x" << std::hex << configuration;
+#endif
+  this->SetSequencerDelayeRegister( configuration );
+}
+
 
 #endif
