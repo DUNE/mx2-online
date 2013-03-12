@@ -53,9 +53,6 @@ void VMECrate::Initialize( RunningModes theRunningMode )
     (*p)->Initialize();
   }
 	// IRQ Enable will happen in the ReadoutWorker, which holds the proper MasterCRIM*
-  /* vmeCrate.debugStream() << "Enabling IRQ for master CRIM."; */
-  /* this->MasterCRIM()->IRQEnable(); */
-  /* vmeCrate.debugStream() << "Finished Crate Initialization for " << (*this); */
 }
 
 //---------------------------
@@ -145,35 +142,56 @@ void VMECrate::OpenGateFastCommand() const
 }
 
 //---------------------------
+void VMECrate::SequencerDelayDisable() const
+{
+  for (std::vector<ECROC*>::const_iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
+    (*p)->SequencerDelayDisable();
+}
+
+//---------------------------
+void VMECrate::SequencerDelayEnable() const
+{
+  for (std::vector<ECROC*>::const_iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
+    (*p)->SequencerDelayEnable();
+}
+
+//---------------------------
+void VMECrate::SetSequencerDelayValue( unsigned short delay ) const
+{
+  for (std::vector<ECROC*>::const_iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
+    (*p)->SetSequencerDelayValue( delay );
+}
+
+//---------------------------
 std::vector<ECROC*>* VMECrate::GetECROCVector()
 {
-	return &ecrocs;
+  return &ecrocs;
 }
 
 //---------------------------
 ECROC* VMECrate::GetECROCVector( int index )
 {
-	return ecrocs[index];
+  return ecrocs[index];
 }
 
 //---------------------------
 std::vector<CRIM*>* VMECrate::GetCRIMVector()
 {
-	return &crims;
+  return &crims;
 }
 
 //---------------------------
 CRIM* VMECrate::GetCRIMVector( int index )
 {
-	return crims[index];
+  return crims[index];
 }
 
 //-----------------------------
 std::ostream& operator<<(std::ostream& out, const VMECrate& s)
 {
-	out << "Crate = " << s.crateID << "; ";
-	out << "Running Mode = " << s.runningMode << "; ";
-	return out;
+  out << "Crate = " << s.crateID << "; ";
+  out << "Running Mode = " << s.runningMode << "; ";
+  return out;
 }
 
 #endif

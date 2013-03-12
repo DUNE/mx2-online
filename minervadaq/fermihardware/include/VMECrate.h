@@ -37,6 +37,9 @@ class VMECrate {
 		void DisableSequencerReadout() const;  
     void ClearAndResetStatusRegisters() const;
     void OpenGateFastCommand() const;
+    void SequencerDelayDisable() const;
+    void SequencerDelayEnable() const;
+    void SetSequencerDelayValue( unsigned short delay ) const; // 9 lowest bits
 
     std::vector<ECROC*>* GetECROCVector();
     ECROC* GetECROCVector( int index );
