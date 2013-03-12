@@ -118,6 +118,25 @@ unsigned long long ReadoutWorker::Trigger( TriggerType triggerType )
     << triggerType;
   this->ClearAndResetStatusRegisters();
 
+  switch (triggerType) {
+    case Pedestal:
+      break;
+    case LightInjection:
+      break;
+    case ChargeInjection:
+      break;
+    case Cosmic:
+      break;
+    case NuMI:
+      break;
+    case MTBFMuon:
+      break;
+    case MTBFBeam:
+      break;
+    default:
+      readoutLogger.errorStream() << "Impossible Trigger Type!";
+  }
+
   // enable IRQ
 
   // "trigger"
@@ -221,7 +240,7 @@ std::tr1::shared_ptr<SequencerReadoutBlock> ReadoutWorker::GetNextDataBlock( uns
 std::ostream& operator<<(std::ostream& out, const ReadoutWorker& s)
 {
   for (std::vector<VMECrate*>::const_iterator p=s.crates.begin(); p!=s.crates.end(); ++p) {
-    out << "Crate = " << (*p) << "; ";
+    out << "Crate = " << (**p) << "; ";
   }
   return out;
 }
