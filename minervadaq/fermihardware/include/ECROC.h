@@ -63,7 +63,8 @@ class ECROC : public VMECommunicator {
         unsigned short testPulseEnable ) const; 
 		void InitializeRegisters( VMEModuleTypes::ECROCClockModes clockMode, 
 				unsigned short testPulseDelayValue,
-				unsigned short testPulseDelayEnabled ) const; 
+				unsigned short testPulseDelayEnabled, 
+        unsigned short sequencerDelayValue ) const; 
 
     void FastCommandOpenGate() const;
     void ClearAndResetStatusRegisters() const;
