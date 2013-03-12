@@ -775,6 +775,7 @@ void TestChannel( ECROC* ecroc, unsigned int channelNumber, unsigned int nFEBs )
 ECROC * GetAndTestECROC( unsigned int address, Controller * controller )
 {
   std::cout << "Testing Get and Test ECROC...";  
+  logger.debugStream() << "Testing:--------------GetAndTestECROC--------------";
   if (address < (1<<VMEModuleTypes::ECROCAddressShift)) {
     address = address << VMEModuleTypes::ECROCAddressShift;
   }
@@ -788,7 +789,21 @@ ECROC * GetAndTestECROC( unsigned int address, Controller * controller )
   ecroc->EnableSequencerReadout();
   ecroc->DisableSequencerReadout();
 
+  unsigned short seqdelay = 0;
+  ecroc->SetSequencerDelayValue( 0x1FF );
+  ecroc->SequencerDelayEnable();
+  seqdelay = ecroc->ReadSequencerPulseDelayRegister();
+  assert( seqdelay == 0x81FF );
+  ecroc->SetSequencerDelayValue( 0x1A3 );
+  ecroc->SequencerDelayDisable();
+  seqdelay = ecroc->ReadSequencerPulseDelayRegister();
+  assert( seqdelay == 0x01A3 );
+  ecroc->SetSequencerDelayValue( 0x0 );
+  seqdelay = ecroc->ReadSequencerPulseDelayRegister();
+  assert( seqdelay == 0x0 );
+
   logger.infoStream() << "ECROC " << (*ecroc) << " passed all tests!";
+  logger.debugStream() << "Passed:--------------GetAndTestECROC--------------";
   std::cout << "Passed!" << std::endl;
   testCount++;
   return ecroc;
