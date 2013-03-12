@@ -15,7 +15,7 @@ log4cpp::Category& stateRecorderLogger = log4cpp::Category::getInstance(std::str
 ReadoutStateRecorder::ReadoutStateRecorder( const DAQWorkerArgs* theArgs, 
     log4cpp::Priority::Value priority ) :
   gate(0),
-  triggerType(0),
+  triggerType(UnknownTrigger),
   firstGate(0),
   globalGate(0),
   gateStartTime(0),
@@ -77,6 +77,53 @@ bool ReadoutStateRecorder::FinishGate()
   this->WriteToSAMFile();
   this->WriteLastTriggerDataToFile();
   return true;
+}
+
+//---------------------------
+TriggerType ReadoutStateRecorder::GetNextTriggerType()
+{
+  stateRecorderLogger.debugStream() << "GetNextTriggerType";
+  triggerType = UnknownTrigger;
+  switch (args->runMode) {
+    case OneShot:
+      triggerType = Pedestal;
+      stateRecorderLogger.debugStream() << " Running Mode is OneShot.";
+      break;
+    case NuMIBeam:
+      triggerType = NuMI;
+      stateRecorderLogger.debugStream() << " Running Mode is NuMI Beam.";
+      break;
+    case PureLightInjection:
+      triggerType = LightInjection;
+      stateRecorderLogger.debugStream() << " Running Mode is PureLightInjection.";
+      break;
+    case MixedBeamPedestal:
+      triggerType = NuMI;
+      if (1 == gate % 2 ) triggerType = Pedestal;
+      stateRecorderLogger.debugStream() << " Running Mode is MixedBeamPedestal.";
+      break;
+    case MixedBeamLightInjection:
+      triggerType = NuMI;
+      if (1 == gate % 2 ) triggerType = LightInjection;
+      stateRecorderLogger.debugStream() << " Running Mode is MixedBeamLightInjection.";
+      break;
+    case Cosmics:
+      triggerType = Cosmic;
+      stateRecorderLogger.debugStream() << " Running Mode is Cosmic.";
+      break;
+    case MTBFBeamMuon:
+      triggerType = MTBFMuon;
+      stateRecorderLogger.debugStream() << " Running Mode is MTBFBeamMuon.";
+      break;
+    case MTBFBeamOnly:
+      triggerType = MTBFBeam;
+      stateRecorderLogger.debugStream() << " Running Mode is MTBFBeamOnly.";
+      break;
+    default:
+      stateRecorderLogger.critStream() << "Error in ReadoutWorker::logRunningMode()! Undefined Running Mode!";
+  }
+  stateRecorderLogger.debugStream() << (*this);
+  return triggerType;
 }
 
 //---------------------------

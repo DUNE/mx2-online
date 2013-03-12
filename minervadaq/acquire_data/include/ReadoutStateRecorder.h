@@ -21,7 +21,7 @@ class ReadoutStateRecorder {
 	private: 
 
     int gate;
-    int triggerType;
+    TriggerType triggerType;
     unsigned long long firstGate;
     unsigned long long globalGate;
     unsigned long long gateStartTime;
@@ -45,6 +45,8 @@ class ReadoutStateRecorder {
 
     bool BeginNextGate();
     bool FinishGate();
+
+    TriggerType GetNextTriggerType();
 
     void SetMINOSSGATE( unsigned int gateTime );
     void SetGateStartTime( unsigned long long theStartTime );

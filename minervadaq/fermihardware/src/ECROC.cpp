@@ -125,10 +125,13 @@ void ECROC::SetupResetAndTestPulseRegister( unsigned short resetEnable, unsigned
 //---------------------------------------- 
 void ECROC::InitializeRegisters( VMEModuleTypes::ECROCClockModes clockMode, 
     unsigned short testPulseDelayValue,
-    unsigned short testPulseDelayEnabled ) const
+    unsigned short testPulseDelayEnabled,
+    unsigned short sequencerDelayValue ) const
 {
   SetupTimingRegister( clockMode, testPulseDelayEnabled, testPulseDelayValue );
   SetupResetAndTestPulseRegister( 0, 0 );
+  SequencerDelayEnable();
+  SetSequencerDelayValue( (sequencerDelayValue&0x01FF) ); // steps of 2.411 microseconds
 }
 
 //----------------------------------------
@@ -189,8 +192,9 @@ void ECROC::Initialize() const
   ECROCLog.infoStream() << "Initializing ECROC 0x" << std::hex << this->address;
   unsigned short testPulseDelayEnabled = 0;  // we do not use the test pulse delay in data-taking
   unsigned short testPulseDelayValue   = 0;
+  unsigned short sequencerDelayValue   = 100;   // x 2.4e-6 s
   this->InitializeRegisters( (VMEModuleTypes::ECROCClockModes)VMEModuleTypes::ECROCExternal, 
-      testPulseDelayEnabled, testPulseDelayValue );
+      testPulseDelayEnabled, testPulseDelayValue, sequencerDelayValue );
 }
 
 //----------------------------------------

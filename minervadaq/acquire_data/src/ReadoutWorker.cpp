@@ -112,10 +112,19 @@ unsigned long long ReadoutWorker::GetNowInMicrosec() const
 }
 
 //---------------------------
-unsigned long long ReadoutWorker::Trigger()
+unsigned long long ReadoutWorker::Trigger( TriggerType triggerType )
 {
-  readoutLogger.debugStream() << "ReadoutWorker::Trigger...";
+  readoutLogger.debugStream() << "ReadoutWorker::Trigger for type = " 
+    << triggerType;
   this->ClearAndResetStatusRegisters();
+
+  // enable IRQ
+
+  // "trigger"
+
+  // wait for IRQ
+
+  // acknowledge IRQ
 
   // Basically, "OneShot"
   this->OpenGateFastCommand();
