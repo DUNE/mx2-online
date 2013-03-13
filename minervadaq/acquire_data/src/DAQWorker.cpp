@@ -41,7 +41,7 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs,
   daqWorker.infoStream() << "See Event/MinervaEvent/xml/DAQHeader.xml for codes.";
   daqWorker.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
-  readoutWorker = new ReadoutWorker( priority, (bool)args->hardwareInitLevel );
+  readoutWorker = new ReadoutWorker( priority, theStatus, (bool)args->hardwareInitLevel );
   stateRecorder = new ReadoutStateRecorder( args, priority );
 }
 
