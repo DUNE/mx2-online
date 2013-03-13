@@ -56,8 +56,8 @@ class CRIM : public VMECommunicator {
     unsigned int gateTimeWordLowAddress;
     unsigned int gateTimeWordHighAddress;
 
-    /*! cosmic mode control registers. */
-    unsigned int sequencerResetRegister;
+    /*! mode control registers. */
+    unsigned int cosmicResetRegister;
 
     /*!  these are the various masks that are used to set up  running conditions */
     static unsigned short const TimingSetupRegisterModeMask;
@@ -101,7 +101,7 @@ class CRIM : public VMECommunicator {
     // SGATEFall is the correct interrupt for every mode but cosmic. IRQ5 is always(?) correct...
     // For Cosmics (TestBeam) use irqLine = Trigger;  
     explicit CRIM( unsigned int address, const Controller* controller, 
-       VMEModuleTypes::CRIMInterrupts line=VMEModuleTypes::SGATEFall, unsigned short level=5 ); 
+        VMEModuleTypes::CRIMInterrupts line=VMEModuleTypes::SGATEFall, unsigned short level=5 ); 
     ~CRIM() { }; 
 
     void Initialize( RunningModes runningMode );
@@ -119,8 +119,10 @@ class CRIM : public VMECommunicator {
     void ResetGlobalIRQEnable() const;
     void ResetCosmicLatch() const;
     void ResetSequencerLatch() const;
-    int WaitOnIRQ( sig_atomic_t const & continueFlag ) const;
-		unsigned int MINOSSGATE() const;
+    void SendSoftwareGate() const;
+    int WaitForIRQ( /*sig_atomic_t const & continueFlag*/ const bool *status ) const;
+    void AcknowledgeIRQ() const;
+    unsigned int MINOSSGATE() const;
 
 };
 
