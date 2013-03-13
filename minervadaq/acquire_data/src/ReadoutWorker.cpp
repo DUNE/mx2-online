@@ -10,7 +10,9 @@
 log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
 
 //---------------------------
-ReadoutWorker::ReadoutWorker( log4cpp::Priority::Value priority, bool VMEInit ) :
+ReadoutWorker::ReadoutWorker( log4cpp::Priority::Value priority, 
+    bool *theStatus, bool VMEInit ) :
+  status(theStatus),
   vmeInit(VMEInit),
   runningMode((RunningModes)0)
 {
@@ -22,6 +24,7 @@ ReadoutWorker::ReadoutWorker( log4cpp::Priority::Value priority, bool VMEInit ) 
 ReadoutWorker::~ReadoutWorker() {
   readoutChannels.clear();
   for ( std::vector<VMECrate*>::iterator p=crates.begin(); p!=crates.end(); ++p ) {
+    (*p)->DisableSequencerReadout();
     delete (*p);
   }
   crates.clear();
@@ -57,9 +60,7 @@ void ReadoutWorker::InitializeCrates( RunningModes theRunningMode )
       readoutChannels.insert(readoutChannels.end(),channels->begin(),channels->end());
     }
   } 
-
-  readoutLogger.debugStream() << "Enabling IRQ for master CRIM.";
-  this->MasterCRIM()->IRQEnable();
+  EnableIRQ();
   readoutLogger.debugStream() << "Finished Crate Initialization for " << (*this);
 }
 
@@ -83,6 +84,29 @@ CRIM* ReadoutWorker::MasterCRIM() const
     exit(EXIT_CRIM_UNSPECIFIED_ERROR);
   }
   return crim;
+}
+
+//---------------------------
+void ReadoutWorker::EnableIRQ() const
+{
+  readoutLogger.debugStream() << "Enabling IRQ for master CRIM.";
+  this->MasterCRIM()->IRQEnable();
+}
+
+//---------------------------
+bool ReadoutWorker::WaitForIRQ() const
+{
+  readoutLogger.debugStream() << "Wait for IRQ for master CRIM.";
+  int success = this->MasterCRIM()->WaitForIRQ( status );
+  if (0 == success) return true;
+  return false;
+}
+
+//---------------------------
+void ReadoutWorker::AcknowledgeIRQ() const
+{
+  readoutLogger.debugStream() << "Acknowledge IRQ for master CRIM.";
+  this->MasterCRIM()->AcknowledgeIRQ();
 }
 
 //---------------------------
@@ -118,66 +142,68 @@ unsigned long long ReadoutWorker::Trigger( TriggerType triggerType )
     << triggerType;
   this->ClearAndResetStatusRegisters();
 
+  // reset sequencer latch
+
+  EnableIRQ();
+
   switch (triggerType) {
-    case Pedestal:
+    case Pedestal:        // In pedestal-type modes, we trigger all CRIMs
+    case ChargeInjection: // using software.
+      SendSoftwareGate();
       break;
-    case LightInjection:
-      break;
-    case ChargeInjection:
-      break;
-    case Cosmic:
-      break;
-    case NuMI:
-      break;
-    case MTBFMuon:
-      break;
-    case MTBFBeam:
+    case LightInjection: // Only trigger master w/software in LI.
+      this->MasterCRIM()->SendSoftwareGate(); 
+      break;             // In LI and all beam modes, we rely on LEMO connection
+    case Cosmic:         // between the CRIMs because all gates must open 
+    case NuMI:           // simultaneously. We need take no direct action and 
+    case MTBFMuon:       // may just watch the interrupt (which we poll, and 
+    case MTBFBeam:       // don't really use as an interrupt).
       break;
     default:
       readoutLogger.errorStream() << "Impossible Trigger Type!";
   }
 
-  // enable IRQ
-
-  // "trigger"
-
-  // wait for IRQ
+  if (!WaitForIRQ()) return 0;
 
   // acknowledge IRQ
 
-  // Basically, "OneShot"
-  this->OpenGateFastCommand();
   // Run Sleepy - the FEBs need >= 400 microseconds for 8 hits to digitize.
   // nanosleep runs about 3x slower than the stated time (so 100 us -> 300 us)
   if (!MicroSecondSleep(100)) return 0;
-
-  // This sequence is mode dependent...
-  for (std::vector<VMECrate*>::iterator p=crates.begin(); p!=crates.end(); ++p) {
-    (*p)->EnableSequencerReadout();
-    (*p)->SendSoftwareRDFE();
-    (*p)->WaitForSequencerReadoutCompletion();
-    (*p)->DisableSequencerReadout();
-  }
 
   return this->GetNowInMicrosec();
 }
 
 //---------------------------
-void ReadoutWorker::OpenGateFastCommand()
+void ReadoutWorker::ResetSequencerLatch() const
 {
-  for (std::vector<VMECrate*>::iterator p=crates.begin(); p!=crates.end(); ++p) 
+  for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) 
+    (*p)->ResetSequencerLatch();
+}
+
+//---------------------------
+void ReadoutWorker::SendSoftwareGate() const
+{
+  for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) 
+    (*p)->SendSoftwareGate();
+}
+
+//---------------------------
+void ReadoutWorker::OpenGateFastCommand() const
+{
+  for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) 
     (*p)->OpenGateFastCommand();
 }
 
 //---------------------------
-void ReadoutWorker::ClearAndResetStatusRegisters()
+void ReadoutWorker::ClearAndResetStatusRegisters() const
 {
-  for (std::vector<VMECrate*>::iterator p=crates.begin(); p!=crates.end(); ++p) 
+  for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) 
     (*p)->ClearAndResetStatusRegisters();
 }
 
 //---------------------------
-bool ReadoutWorker::MicroSecondSleep(int us)
+bool ReadoutWorker::MicroSecondSleep(int us) const
 {
   timespec tmReq;
   tmReq.tv_sec = (time_t)(0);
