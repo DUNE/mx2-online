@@ -53,10 +53,13 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs );
 CRIM * GetAndTestCRIM( unsigned int address, Controller * controller );
 
 // This test should be called twelfth.
+void TestVMECrate( int crateNumber );  
+
+// This test should be called thirteenth.
 ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCardAddress, 
     unsigned int crimCardAddress, int nch0, int nch1, int nch2, int nch3);
 
-// This test should be called thirteenth.
+// This test should be called fourteenth.
 void TestDAQWorker( DAQWorker * worker );
 
 //--------------------------------------------------------------------------------------

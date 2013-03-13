@@ -24,13 +24,16 @@ class VMECrate {
     RunningModes runningMode;
 
 	public:
-		explicit VMECrate( int theCrateID, log4cpp::Priority::Value priority, bool VMEInit=false );
+		explicit VMECrate( int theCrateID, 
+        log4cpp::Priority::Value priority, bool VMEInit=false );
 		~VMECrate();
 
-    void AddECROC( unsigned int address, int nFEBchan0=11, int nFEBchan1=11, int nFEBchan2=11, int nFEBchan3=11 );
+    void AddECROC( unsigned int address, 
+        int nFEBchan0=11, int nFEBchan1=11, int nFEBchan2=11, int nFEBchan3=11 );
     void AddCRIM( unsigned int address );
     void Initialize( RunningModes runningMode );
 
+    // ECROC methods
 		void SendSoftwareRDFE() const;
 		void WaitForSequencerReadoutCompletion() const;
 		void EnableSequencerReadout() const; 
@@ -43,6 +46,10 @@ class VMECrate {
 
     std::vector<ECROC*>* GetECROCVector();
     ECROC* GetECROCVector( int index );
+
+    // CRIM methods
+		void SendSoftwareGate() const;
+    void ResetSequencerLatch() const;
 
     std::vector<CRIM*>* GetCRIMVector();
     CRIM* GetCRIMVector( int index );

@@ -142,6 +142,9 @@ int main( int argc, char * argv[] )
   // Read the ADC and parse them.
   ReadADCTest( echannel, nFEBs );
 
+  // Test the VME Crate
+  TestVMECrate( controllerID );
+
   // Read the Discriminators and parse them.
   ReadDiscrTest( echannel, nFEBs );
 
@@ -171,6 +174,26 @@ int main( int argc, char * argv[] )
     + (unsigned long long)(run.tv_usec);
   std::cout << "Run Time = " << (stop - start) << " microsec." << std::endl;
   return 0;
+}
+
+//---------------------------------------------------
+void TestVMECrate( int crateNumber )
+{
+  std::cout << "Testing VMECrate...";  
+  logger.debugStream() << "Testing:--------------VMECrate--------------";
+
+  // Test "by-hand" gate generation with the RDFE sequencer.
+  /* for (std::vector<VMECrate*>::iterator p=crates.begin(); p!=crates.end(); ++p) { */
+  /*   (*p)->EnableSequencerReadout(); */
+  /*   (*p)->SendSoftwareRDFE(); */
+  /*   (*p)->WaitForSequencerReadoutCompletion(); */
+  /*   (*p)->DisableSequencerReadout(); */
+  /* } */
+
+
+  logger.debugStream() << "Passed:--------------VMECrate--------------";
+  std::cout << "Passed!" << std::endl;
+  testCount++;
 }
 
 //---------------------------------------------------
@@ -216,7 +239,8 @@ ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCar
 {
   std::cout << "Testing Get and Test ReadoutWorker...";  
   ReadoutWorker *worker = NULL;
-  worker = new ReadoutWorker( log4cpp::Priority::DEBUG, true );
+  bool status = true;
+  worker = new ReadoutWorker( log4cpp::Priority::DEBUG, &status, true );
   assert( NULL != worker );
   logger.infoStream() << "Got the ReadoutWorker.";
 

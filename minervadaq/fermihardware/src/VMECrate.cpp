@@ -175,6 +175,20 @@ ECROC* VMECrate::GetECROCVector( int index )
 }
 
 //---------------------------
+void VMECrate::SendSoftwareGate() const
+{
+  for (std::vector<CRIM*>::const_iterator p=crims.begin(); p!=crims.end(); ++p) 
+    (*p)->SendSoftwareGate();
+}
+
+//---------------------------
+void VMECrate::ResetSequencerLatch() const
+{
+  for (std::vector<CRIM*>::const_iterator p=crims.begin(); p!=crims.end(); ++p) 
+    (*p)->ResetSequencerLatch();
+}
+
+//---------------------------
 std::vector<CRIM*>* VMECrate::GetCRIMVector()
 {
   return &crims;
