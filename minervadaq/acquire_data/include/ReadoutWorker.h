@@ -20,22 +20,30 @@ class ReadoutWorker {
   friend std::ostream& operator<<(std::ostream&, const ReadoutWorker&);
 
 	private: 
+
     std::vector<VMECrate*> crates;
     std::vector<const EChannels*> readoutChannels;
     std::vector<const EChannels*>::iterator currentChannel;
 
+    const bool *const status;
 		bool vmeInit;    
     RunningModes runningMode;
 
     CRIM* MasterCRIM() const;
 
-    void ClearAndResetStatusRegisters();
-    void OpenGateFastCommand();
-    bool MicroSecondSleep(int us);
+    void EnableIRQ() const;
+    bool WaitForIRQ() const;
+    void AcknowledgeIRQ() const;
+    void SendSoftwareGate() const;
+    void ResetSequencerLatch() const;
+    void ClearAndResetStatusRegisters() const;
+    void OpenGateFastCommand() const;
+    bool MicroSecondSleep(int us) const;
 
 	public:
 
-    explicit ReadoutWorker( log4cpp::Priority::Value priority, bool VMEInit=false); 
+    explicit ReadoutWorker( log4cpp::Priority::Value priority, 
+        bool *status, bool VMEInit=false); 
     ~ReadoutWorker();
 
     void AddCrate( unsigned int crateID );
