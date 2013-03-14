@@ -1,12 +1,12 @@
 # Use one of these two lines, but not both
-CPPFLAGS  = -g -fno-inline -O0  # debugging & no optimization
-# CPPFLAGS  = -O3                 # all optimizations, combine with GOFAST
+#CPPFLAGS  = -g -fno-inline -O0  # debugging & no optimization
+CPPFLAGS  = -O3                 # all optimizations, combine with GOFAST
+#--DEBUG FLAGS--
+COMPILE_OPTIONS += -DGOFAST  # comment this OUT to get full logging back
 
 CPPFLAGS += -Werror -Wall -DLINUX -fPIC
-LDFLAGS  += -shared -Wl,-soname
 
-#--DEBUG FLAGS--
-# COMPILE_OPTIONS += -DGOFAST  # comment this out to get full logging back
+LDFLAGS  += -shared -Wl,-soname
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))

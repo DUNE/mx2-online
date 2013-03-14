@@ -9,6 +9,8 @@
 
 log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
 
+const unsigned int ReadoutWorker::microSecondSleepDuration = 550;
+
 //---------------------------
 ReadoutWorker::ReadoutWorker( log4cpp::Priority::Value priority, 
     bool *theStatus, bool VMEInit ) :
@@ -33,7 +35,7 @@ ReadoutWorker::~ReadoutWorker() {
 //---------------------------
 void ReadoutWorker::AddCrate( unsigned int crateID )
 {
-  VMECrate * crate = new VMECrate( crateID, log4cpp::Priority::DEBUG, vmeInit );
+  VMECrate * crate = new VMECrate( crateID, log4cpp::Priority::INFO, vmeInit );
   crates.push_back( crate );
 }
 
@@ -166,8 +168,7 @@ unsigned long long ReadoutWorker::Trigger( Triggers::TriggerType triggerType )
   if (!WaitForIRQ()) return 0;
 
   // Run Sleepy - the FEBs need >= 400 microseconds for 8 hits to digitize.
-  // nanosleep runs about 3x slower than the stated time (so 100 us -> 300 us)
-  if (!MicroSecondSleep(100)) return 0;
+  if (!MicroSecondSleep(microSecondSleepDuration)) return 0;
 
   return GetNowInMicrosec();
 }

@@ -1,14 +1,13 @@
-CPPFLAGS  = -g -fno-inline -O0 -Wall -DLINUX -fPIC
-CPPFLAGS += -Werror
-
+# Use one of these two lines, but not both
+#CPPFLAGS  = -g -fno-inline -O0  # debugging & no optimization
+CPPFLAGS  = -O1                 # all warning-free optimizations, combine with GOFAST
 #--DEBUG FLAGS--
-COMPILE_OPTIONS += -DGOFAST  # comment this out to get full logging back
+COMPILE_OPTIONS += -DGOFAST  # comment this OUT to get full logging back
 
-#--CRIM ACCESS FLAGS--
-COMPILE_OPTIONS += -DPOLL_INTERRUPT
-#COMPILE_OPTIONS += -DASSERT_INTERRUPT
+CPPFLAGS += -Werror -Wall -DLINUX -fPIC
 
 LDFLAGS += -shared -Wl,-soname
+
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
