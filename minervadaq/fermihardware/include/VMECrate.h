@@ -21,7 +21,7 @@ class VMECrate {
 
     int crateID;  // == crate ID/Address for Controller
 		bool vmeInit;    
-    RunningModes runningMode;
+		Modes::RunningModes runningMode;
 
 	public:
 		explicit VMECrate( int theCrateID, 
@@ -31,7 +31,7 @@ class VMECrate {
     void AddECROC( unsigned int address, 
         int nFEBchan0=11, int nFEBchan1=11, int nFEBchan2=11, int nFEBchan3=11 );
     void AddCRIM( unsigned int address );
-    void Initialize( RunningModes runningMode );
+    void Initialize( Modes::RunningModes runningMode );
 
     // ECROC methods
 		void SendSoftwareRDFE() const;

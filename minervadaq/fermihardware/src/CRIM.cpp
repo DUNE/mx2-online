@@ -64,7 +64,7 @@ CRIM::CRIM( unsigned int address, const Controller* controller,
 {
   this->addressModifier = cvA24_U_DATA; 
 
-  CRIMLog.setPriority(log4cpp::Priority::INFO); 
+  CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
   CRIMLog.debugStream() << "Creating CRIM with address = 0x" << std::hex 
     << this->address << "; IRQ Line = 0x" << this->irqLine 
     << "; IRQ Level = 0x" << this->irqLevel;
@@ -94,8 +94,9 @@ CRIM::CRIM( unsigned int address, const Controller* controller,
 }
 
 //----------------------------------------
-void CRIM::Initialize( RunningModes runningMode )
+void CRIM::Initialize( Modes::RunningModes runningMode )
 {
+  using namespace Modes;
   CRIMLog.infoStream() << "Initializing CRIM 0x" << std::hex << this->address;
   this->logRunningMode( runningMode );
 
@@ -155,8 +156,9 @@ void CRIM::Initialize( RunningModes runningMode )
 }
 
 //----------------------------------------
-void CRIM::logRunningMode( const RunningModes& runningMode ) const
+void CRIM::logRunningMode( const Modes::RunningModes& runningMode ) const
 {
+  using namespace Modes;
   switch (runningMode) {
     case OneShot:
       CRIMLog.infoStream() << " Running Mode is OneShot.";
@@ -255,9 +257,9 @@ void CRIM::SetupTCALBPulse( unsigned short pulseDelay ) const
 } 
 
 //----------------------------------------
-void CRIM::IRQEnable() const
+void CRIM::EnableIRQ() const
 {
-  /*!\fn void CRIM::IRQEnable() const
+  /*!\fn void CRIM::EnableIRQ() const
    *
    * These are the steps to setting the IRQ:
    *  1) Select an IRQ LINE on which the system will wait for an assert.  
@@ -276,7 +278,7 @@ void CRIM::IRQEnable() const
    *  7) Enable the IRQ LINE on the CAEN controller to be the NOT of the IRQ LINE sent to the CRIM.
    */
 #ifndef GOFAST
-  CRIMLog.debugStream() << "IRQEnable for CRIM 0x" << std::hex << this->address;
+  CRIMLog.debugStream() << "EnableIRQ for CRIM 0x" << std::hex << this->address;
   CRIMLog.debugStream() << " IRQ Line  = " << (int)this->irqLine;
   CRIMLog.debugStream() << " IRQ Level = " << (int)this->irqLevel;
 #endif
@@ -284,8 +286,8 @@ void CRIM::IRQEnable() const
   this->SetupInterruptMask();
   unsigned short interruptStatus = this->GetInterruptStatus();
   this->ClearPendingInterrupts( interruptStatus );
-  this->ResetGlobalIRQEnable();
-  this->CAENVMEIRQEnable();
+  this->ResetGlobalEnableIRQ();
+  this->CAENVMEEnableIRQ();
 }
 
 //----------------------------------------
@@ -335,14 +337,14 @@ void CRIM::ClearPendingInterrupts( unsigned short interruptStatus ) const
 }
 
 //----------------------------------------
-void CRIM::ResetGlobalIRQEnable() const
+void CRIM::ResetGlobalEnableIRQ() const
 {
   unsigned short interruptMessage = (1 << 7) | irqLevel;  // 1 << 7 sets the enable bit to true.
   unsigned char message[] = {0x0,0x0};
   message[0] = (interruptMessage) & 0xFF;
   message[1] = (interruptMessage >> 0x08) & 0xFF;
 #ifndef GOFAST
-  CRIMLog.debugStream() << "ResetGlobalIRQEnable for CRIM 0x" << std::hex << this->address;
+  CRIMLog.debugStream() << "ResetGlobalEnableIRQ for CRIM 0x" << std::hex << this->address;
   CRIMLog.debugStream() << " Enable bit = 0x" << std::hex << (1 << 7);
   CRIMLog.debugStream() << " IRQ Level  = 0x" << std::hex << irqLevel;
   CRIMLog.debugStream() << " interruptMessage = 0x" << std::hex << interruptMessage;
@@ -355,10 +357,10 @@ void CRIM::ResetGlobalIRQEnable() const
 }
 
 //----------------------------------------
-void CRIM::CAENVMEIRQEnable() const
+void CRIM::CAENVMEEnableIRQ() const
 {
 #ifndef GOFAST
-  CRIMLog.debugStream() << "CAENVMEIRQEnable for mask 0x" << std::hex << ~this->GetInterruptMask();
+  CRIMLog.debugStream() << "CAENVMEEnableIRQ for mask 0x" << std::hex << ~this->GetInterruptMask();
 #endif
   int error = CAENVME_IRQEnable(this->GetController()->GetHandle(),~this->GetInterruptMask());
   if( error ) exitIfError( error, "Error writing to CAEN VME IRQ Enable for CRIM!");
@@ -448,7 +450,7 @@ void CRIM::ResetSequencerLatch() const
 void CRIM::SendSoftwareGate() const
 {
 #ifndef GOFAST
-  CRIMLog.debugStream() << "ResetSequencerLatch for CRIM 0x" << std::hex << this->address;
+  CRIMLog.debugStream() << "SendSoftwareGate for CRIM 0x" << std::hex << this->address;
 #endif
   unsigned char message[] = { 0x08, 0x08 };
   int error = WriteCycle( 2, message, softwareCNRSTRegister, addressModifier, dataWidthReg );
@@ -504,7 +506,38 @@ int CRIM::WaitForIRQ( /*sig_atomic_t const & continueFlag*/ const bool *status )
 //---------------------------
 void CRIM::AcknowledgeIRQ() const
 {
+  // This function is only useful if we are ASSERTing interrupts.  The current running mode 
+  // is simply to poll the interrupt status register. This function is therefore unexercised
+  // and untested and should be regarded with high suspicion!
+  CRIMLog.debugStream() << "AcknowledgeIRQ...";
+  int error(0);
+  try {
+    unsigned short vec(0);
+    error = CAENVME_IACKCycle(this->GetController()->GetHandle(), (CVIRQLevels)this->irqLevel,
+        &vec, this->GetController()->GetDataWidth());
+    CRIMLog.debugStream() << " IRQ LEVEL: " << this->irqLevel << " VEC: " << vec;
+    unsigned short interruptStatus = this->GetInterruptStatus();
 
+    while (interruptStatus) {
+      try {
+        this->ClearPendingInterrupts( interruptStatus );
+        interruptStatus = this->GetInterruptStatus();
+      } catch (int e) {
+        this->GetController()->ReportError(e);
+        CRIMLog.fatalStream() << "Error in CRIM AcknowledgeIRQ for " << (*this);
+        exit(EXIT_CRIM_INTERRUPT_ERROR);
+      }
+    }
+    try {
+      if (vec!=0x0A) throw (int)vec; //for SGATEFall
+    } catch (int e) {
+      CRIMLog.critStream() << "IRQ LEVEL returned did not match IRQ LINE Vector!";
+    }
+  } catch (int e) {
+    this->GetController()->ReportError(e);
+    CRIMLog.fatalStream() << "The IRQ Wait probably timed-out in AcknowledgeIRQ!";
+    exit(EXIT_CRIM_IRQTIMEOUT_ERROR);
+  }
 }
 
 #endif

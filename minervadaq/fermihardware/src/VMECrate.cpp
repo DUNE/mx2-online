@@ -9,7 +9,7 @@ log4cpp::Category& vmeCrate = log4cpp::Category::getInstance(std::string("vmeCra
 VMECrate::VMECrate( int theCrateID, log4cpp::Priority::Value priority, bool VMEInit ) :
   crateID(theCrateID),
   vmeInit(VMEInit),
-  runningMode((RunningModes)0)
+  runningMode((Modes::RunningModes)0)
 {
   vmeCrate.setPriority(priority);
 
@@ -39,7 +39,7 @@ VMECrate::~VMECrate() {
 }
 
 //---------------------------
-void VMECrate::Initialize( RunningModes theRunningMode )
+void VMECrate::Initialize( Modes::RunningModes theRunningMode )
 {
   runningMode = theRunningMode;
   vmeCrate.debugStream() << "Initialize " << (*this);

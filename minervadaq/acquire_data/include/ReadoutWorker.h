@@ -27,7 +27,7 @@ class ReadoutWorker {
 
     const bool *const status;
 		bool vmeInit;    
-    RunningModes runningMode;
+    Modes::RunningModes runningMode;
 
     CRIM* MasterCRIM() const;
 
@@ -47,13 +47,13 @@ class ReadoutWorker {
     ~ReadoutWorker();
 
     void AddCrate( unsigned int crateID );
-    void InitializeCrates( RunningModes theRunningMode );
+    void InitializeCrates( Modes::RunningModes theRunningMode );
     std::vector<VMECrate*>* GetVMECrateVector();
     VMECrate* GetVMECrateVector( int index );
 
     unsigned int GetMINOSSGATE() const;
     unsigned long long GetNowInMicrosec() const;
-    unsigned long long Trigger( TriggerType triggerType );
+    unsigned long long Trigger( Triggers::TriggerType triggerType );
     void ResetCurrentChannel();
     bool MoveToNextChannel();
     const EChannels * CurrentChannel() const;
