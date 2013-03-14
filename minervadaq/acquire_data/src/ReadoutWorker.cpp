@@ -14,7 +14,7 @@ ReadoutWorker::ReadoutWorker( log4cpp::Priority::Value priority,
     bool *theStatus, bool VMEInit ) :
   status(theStatus),
   vmeInit(VMEInit),
-  runningMode((RunningModes)0)
+  runningMode((Modes::RunningModes)0)
 {
   readoutLogger.setPriority(priority);
   readoutLogger.debugStream() << "Made new ReadoutWokrer."; 
@@ -38,7 +38,7 @@ void ReadoutWorker::AddCrate( unsigned int crateID )
 }
 
 //---------------------------
-void ReadoutWorker::InitializeCrates( RunningModes theRunningMode )
+void ReadoutWorker::InitializeCrates( Modes::RunningModes theRunningMode )
 {
   runningMode = theRunningMode;
   readoutLogger.debugStream() << "InitializeCrates";
@@ -90,7 +90,7 @@ CRIM* ReadoutWorker::MasterCRIM() const
 void ReadoutWorker::EnableIRQ() const
 {
   readoutLogger.debugStream() << "Enabling IRQ for master CRIM.";
-  this->MasterCRIM()->IRQEnable();
+  this->MasterCRIM()->EnableIRQ();
 }
 
 //---------------------------
@@ -136,14 +136,14 @@ unsigned long long ReadoutWorker::GetNowInMicrosec() const
 }
 
 //---------------------------
-unsigned long long ReadoutWorker::Trigger( TriggerType triggerType )
+unsigned long long ReadoutWorker::Trigger( Triggers::TriggerType triggerType )
 {
   readoutLogger.debugStream() << "ReadoutWorker::Trigger for type = " 
     << triggerType;
-  this->ClearAndResetStatusRegisters();
 
-  // reset sequencer latch
-
+  using namespace Triggers;
+  ClearAndResetStatusRegisters();
+  ResetSequencerLatch();
   EnableIRQ();
 
   switch (triggerType) {
@@ -165,13 +165,11 @@ unsigned long long ReadoutWorker::Trigger( TriggerType triggerType )
 
   if (!WaitForIRQ()) return 0;
 
-  // acknowledge IRQ
-
   // Run Sleepy - the FEBs need >= 400 microseconds for 8 hits to digitize.
   // nanosleep runs about 3x slower than the stated time (so 100 us -> 300 us)
   if (!MicroSecondSleep(100)) return 0;
 
-  return this->GetNowInMicrosec();
+  return GetNowInMicrosec();
 }
 
 //---------------------------

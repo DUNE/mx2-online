@@ -16,8 +16,8 @@ class DAQArgs {
       args->runNumber = 1;
       args->subRunNumber = 0;
       args->numberOfGates = 100;
-      args->runMode = OneShot;  
-      args->detector = UnknownDetector;
+      args->runMode = Modes::OneShot;  
+      args->detector = Detectors::UnknownDetector;
       args->detectorConfigCode = 0;  // number of FEBs
       args->ledLevel = 0;
       args->ledGroup = 0;
@@ -57,11 +57,11 @@ class DAQArgs {
         }
         else if (sw=="-m") {
           optind++;
-          args->runMode = (RunningModes)atoi(argv[optind]);
+          args->runMode = (Modes::RunningModes)atoi(argv[optind]);
         }
         else if (sw=="-d") {
           optind++;
-          args->detector = (DetectorTypes)atoi(argv[optind]);
+          args->detector = (Detectors::DetectorTypes)atoi(argv[optind]);
         }
         else if (sw=="-et") {
           optind++;

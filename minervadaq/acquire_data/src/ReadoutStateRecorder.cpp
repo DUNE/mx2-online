@@ -15,7 +15,7 @@ log4cpp::Category& stateRecorderLogger = log4cpp::Category::getInstance(std::str
 ReadoutStateRecorder::ReadoutStateRecorder( const DAQWorkerArgs* theArgs, 
     log4cpp::Priority::Value priority ) :
   gate(0),
-  triggerType(UnknownTrigger),
+  triggerType(Triggers::UnknownTrigger),
   firstGate(0),
   globalGate(0),
   gateStartTime(0),
@@ -80,8 +80,10 @@ bool ReadoutStateRecorder::FinishGate()
 }
 
 //---------------------------
-TriggerType ReadoutStateRecorder::GetNextTriggerType()
+Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
 {
+	using namespace Triggers;
+	using namespace Modes;
   stateRecorderLogger.debugStream() << "GetNextTriggerType";
   triggerType = UnknownTrigger;
   switch (args->runMode) {

@@ -8,8 +8,8 @@ struct DAQWorkerArgs {
   int runNumber;
   int subRunNumber;
   int numberOfGates;
-  RunningModes runMode;
-  DetectorTypes detector;
+	Modes::RunningModes runMode;
+	Detectors::DetectorTypes detector;
   int detectorConfigCode;
   unsigned char ledLevel;
   unsigned char ledGroup;

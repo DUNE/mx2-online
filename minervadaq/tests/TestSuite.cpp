@@ -33,7 +33,7 @@ static const unsigned short genericHVPeriodManual = 35000;
 static const unsigned short genericDiscEnableMask = 0xFFFF;
 static const unsigned int   genericTimer = 12;
 
-static const RunningModes runningMode = OneShot;
+static const Modes::RunningModes runningMode = Modes::OneShot;
 
 int main( int argc, char * argv[] ) 
 {
