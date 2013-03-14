@@ -1,11 +1,12 @@
-CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
+# Use one of these two lines, but not both
+# CPPFLAGS  = -g -fno-inline -O0  # debugging & no optimization
+CPPFLAGS  = -O3                 # all optimizations, combine with GOFAST
+
+CPPFLAGS  = -Wall -Werror -DLINUX -fPIC
 
 #--DEBUG FLAGS--
-#COMPILE_OPTIONS += -DDEBUG_EBTIMING 
-#COMPILE_OPTIONS += -DDEBUG_DECODEBUFFER # CAREFUL!  This dumps a lot into the logs.
-#COMPILE_OPTIONS += -DDEBUG_BUFFERS
-#COMPILE_OPTIONS += -DDEBUG_BANKHEADER
-#COMPILE_OPTIONS += -DDEBUG_REPORT_EVENT
+COMPILE_OPTIONS += -DGOFAST  # comment this out to get full logging back
+
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))

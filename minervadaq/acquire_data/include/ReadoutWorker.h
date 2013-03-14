@@ -40,6 +40,8 @@ class ReadoutWorker {
     void OpenGateFastCommand() const;
     bool MicroSecondSleep(int us) const;
 
+    static const unsigned int microSecondSleepDuration;
+
 	public:
 
     explicit ReadoutWorker( log4cpp::Priority::Value priority, 

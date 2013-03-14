@@ -45,6 +45,8 @@ INCLUDE += -I$(DAQROOT)/event_structure/include
 #Event Builder
 INCLUDE += -I$(DAQROOT)/event_builder/include
 
-#Event Transver
+#Event Transfer
 INCLUDE += -I$(DAQROOT)/et_9.0/src/libsrc
+
+
 
