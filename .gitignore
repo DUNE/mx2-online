@@ -12,6 +12,9 @@ minervadaq/doc/CROCE-ReadoutSequence.log
 minervadaq/doc/*.out
 minervadaq/doc/*.pdf
 
+# Doxygen hoo-ha
+doxy/
+
 # Buid Stuff
 minervadaq/bin/tests
 minervadaq/bin/daq_master
