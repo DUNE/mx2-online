@@ -1,5 +1,7 @@
 #ifndef daqmain_cxx
 #define daqmain_cxx
+/*! \file daqmain.cpp
+*/
 
 #include <fstream>
 #include <iostream>
