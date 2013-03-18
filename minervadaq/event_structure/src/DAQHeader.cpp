@@ -3,6 +3,7 @@
 /*! \file DAQHeader.cpp
 */
 
+#include "log4cppHeaders.h"
 #include "DAQHeader.h"
 
 log4cpp::Category& daqevt = log4cpp::Category::getInstance(std::string("daqevt"));
