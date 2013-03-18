@@ -3,7 +3,6 @@
 /*! \file EChannels.h
 */
 
-/* system header files here */
 #include <list>
 #include <fstream>
 #include <string>
@@ -18,48 +17,41 @@
 #include "VMECommunicator.h"
 #include "VMEModuleTypes.h"
 
-/*********************************************************************************
-* Class for creating CROC-E channel objects for use with the 
-* MINERvA data acquisition system and associated software projects.
-* 
-* Gabriel Perdue, The University of Rochester
-***********************************************************************************/
+/*! 
+  \class EChannels
+  \brief This class holds data associated with a CROC-E channel.
+  \author Gabriel Perdue
 
-/*! \class EChannels
- *
- *  \brief This class holds data associated with a CROC-E channel.
- *
- * This class holds the data which belongs to a CROC-E channel, including the list
- * of FEB's which are on the channel.  
- *
- */
+  This class holds the data which belongs to a CROC-E channel, including the list
+  of FEB's which are on the channel.  
+*/
 
 class EChannels : public VMECommunicator {
-	private:
-		unsigned int channelNumber;             /*!< the channel identifying index, used for retrieval, currently indexed 0-3 */  
-		unsigned int channelDirectAddress;	    /*!< base + offset */
+  private:
+    unsigned int channelNumber;             /*!< the channel identifying index, used for retrieval, currently indexed 0-3 */  
+    unsigned int channelDirectAddress;	    /*!< base + offset - this is the true VME address */
 
-		unsigned int receiveMemoryAddress;
-		unsigned int sendMemoryAddress;
-		unsigned int framePointersMemoryAddress;
-		unsigned int configurationAddress;
-		unsigned int commandAddress;
-		unsigned int eventCounterAddress;
-		unsigned int framesCounterAndLoopDelayAddress;
-		unsigned int frameStatusAddress;
-		unsigned int txRxStatusAddress;
-		unsigned int receiveMemoryPointerAddress;
+    unsigned int receiveMemoryAddress;
+    unsigned int sendMemoryAddress;
+    unsigned int framePointersMemoryAddress;
+    unsigned int configurationAddress;
+    unsigned int commandAddress;
+    unsigned int eventCounterAddress;
+    unsigned int framesCounterAndLoopDelayAddress;
+    unsigned int frameStatusAddress;
+    unsigned int txRxStatusAddress;
+    unsigned int receiveMemoryPointerAddress;
 
-		std::vector<FrontEndBoard*> FrontEndBoardsVector;     
+    std::vector<FrontEndBoard*> FrontEndBoardsVector;     
 
     bool isAvailable( FrontEndBoard* feb ) const;
     void UpdateConfigurationForVal( unsigned short val, unsigned short mask ) const;
     void SetChannelConfiguration( unsigned char* message ) const;
 
-	public:
-		explicit EChannels( unsigned int baseVMEAddress, unsigned int channelNumber, 
+  public:
+    explicit EChannels( unsigned int vmeAddress, unsigned int channelNumber, 
         const Controller* controller );
-		~EChannels();
+    ~EChannels();
 
     virtual void exitIfError( int error, const std::string& msg ) const;
 

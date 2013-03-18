@@ -21,14 +21,14 @@ FrameHeader::FrameHeader(int crateID, int crocID, int chanID,
    *
    * The constructor which makes the FrameHeader for a data block
    *
-   * \param int crateID crate from which data came
-   * \param int crocID CROC from which data came
-   * \param int chanID channel from which data came
-   * \param int bank data banke type
-   * \param int feb_no FEB number
-   * \param int firmware FEB firmware
-   * \param int hit hit number
-   * \param int length message length
+   * \param crateID  crate from which data came
+   * \param crocID   CROC from which data came
+   * \param chanID   channel from which data came
+   * \param bank     data banke type
+   * \param feb_no   FEB number
+   * \param firmware FEB firmware
+   * \param hit      hit number
+   * \param length   message length
    */
   frameheader.setPriority(log4cpp::Priority::INFO);
 

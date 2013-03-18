@@ -1,25 +1,23 @@
 #ifndef FrameTypes_h
 #define FrameTypes_h
-/*********************************************************************************
- * FPGA frame general types 
- * These enumerated lists are used to make remembering the
- * bit masks for various device settings easier.
- *
- * It also has the bitmasks for the various functions needed to
- * make up the FPGA frames 
- * 
- * Elaine Schulte, Rutgers University
- * Gabriel Perdue, The University of Rochester
- ********************************************************************************/
 
-/*! \file FrameTypes
- *
- * \brief A header file containing useful enumertions
- *
- *  The first byte of an outgoing frame contains:
- *  Bits 0-3:  Front-end address (1-15; 0 = all)
- *  Bits 4-6:  Broadcast command (0 = not a broadcast)
- *  Bit    7:  Bit indicating direction (0 for outgoing, 1 for response)
+/*! \file FrameTypes.h
+  */
+
+/*!
+ \brief Useful enumerations for LVDSFrames.
+
+ The first byte of an outgoing frame contains:
+ Bits 0-3:  Front-end address (1-15; 0 = all)
+ Bits 4-6:  Broadcast command (0 = not a broadcast)
+ Bit    7:  Bit indicating direction (0 for outgoing, 1 for response)
+
+ The second byte of an outgoing message indicates the device (on the FEB) and function:
+ Bits 0-3:  Function
+ Bits 4-7:  Device
+
+ \author Gabriel Perdue
+ \author Elaine Schulte
  */
 
 namespace FrameTypes {
@@ -43,13 +41,6 @@ namespace FrameTypes {
     OpenGate    = 0x30,
     SoftReset   = 0x40
   };
-
-
-  /*!
-   * The second byte of an outgoing message indicates the device (on the FEB) and function:
-   * Bits 0-3:  Function
-   * Bits 4-7:  Device
-   */
 
 
   /*! \enum Devices
@@ -78,9 +69,7 @@ namespace FrameTypes {
 
 
   /*! \enum RAMFunctionsHit
-   *
    * \brief Which hit to read off of the ADC's 
-   *
    */
   typedef enum RAMFunctionsHit { //typecast to unsigned char
     NoRAM        = 0x00,
@@ -97,9 +86,7 @@ namespace FrameTypes {
 
 
   /*! \enum RAMFunctionsChip
-   *
    * \brief  Depricated - DO NOT USE!
-   *
    */
   typedef enum RAMFunctionsChip { //typecast to unsigned char
     NoChip       = 0x00,
@@ -115,9 +102,7 @@ namespace FrameTypes {
 
 
   /*! \enum FlashFunctions
-   *
    * \brief For writing firmware to flash memory 
-   *
    */
   typedef enum FlashFunctions { //typecast to unsigned char
     NoFlash  = 0x00,
@@ -126,10 +111,8 @@ namespace FrameTypes {
   };
 
 
-  /*! \enum ResponseWords  // TODO: Rename ResponseBytes
-   *
+  /*! \enum ResponseBytes
    * \brief Useful for decoding returning frame headers 
-   *
    */
   typedef enum ResponseBytes { //typecast to unsigned char
     ResponseLength0 = 0,
@@ -150,9 +133,7 @@ namespace FrameTypes {
 
 
   /*! \enum HeaderWords
-   *
-   * \brief Useful for decoding FPGA frame headers
-   *
+   * \brief Useful for decoding LVDSFrame headers.
    */
   typedef enum HeaderWords { //typecast to unsigned char
     hwFrameStart     = 0,
@@ -168,9 +149,7 @@ namespace FrameTypes {
 
 
   /*! \enum ResponseFlags
-   *
    * \brief Bitmasks for decoding the status of a returned message
-   *
    */
   typedef enum ResponseFlags { //typecast to unsigned char
     // in Frame Start
@@ -189,10 +168,8 @@ namespace FrameTypes {
 
 
   /*! \enum febAddress
-   *
    * \brief  FPGA addresses 
-   *
-   * */
+   */
   typedef enum febAddresses {
     febAll = 0,
     FE1    = 1,

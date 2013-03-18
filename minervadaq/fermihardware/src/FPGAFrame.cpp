@@ -1,30 +1,21 @@
 #ifndef FPGAFrame_cpp
 #define FPGAFrame_cpp
+/*! \file FPGAFrame.cpp
+*/
 
 #include "FPGAFrame.h"
 #include "exit_codes.h"
-/*********************************************************************************
- * Class for creating Front-End Board (FPGAFrame) objects for use with the 
- * MINERvA data acquisition system and associated software projects.
- *
- * Elaine Schulte, Rutgers University
- * Gabriel Perdue, The University of Rochester
- **********************************************************************************/
 
 log4cpp::Category& FPGAFrameLog = log4cpp::Category::getInstance(std::string("FPGAFrame"));
 
 //-------------------------------------------------------
+/*!
+  \param a The address (number) of the FPGAFrame
+  */
 FPGAFrame::FPGAFrame( FrameTypes::febAddresses a ) : 
   LVDSFrame(),
   outgoingMessageIsShort(false)
 {
-  /*! \fn********************************************************************************
-   * The log-free constructor takes the following arguments:
-   * \param a: The address (number) of the FPGAFrame
-   * \param reg:  The number of one byte registers in the FPGAFrame message body
-   *       The message body is set up for FPGAFrame Firmware Versions 78+ (54 registers).  
-   *       It will need to be adjusted for other firmware versions. ECS & GNP
-   */
   using namespace FrameTypes;
 
   febNumber[0] = (unsigned char)a; 
@@ -36,7 +27,7 @@ FPGAFrame::FPGAFrame( FrameTypes::febAddresses a ) :
   FPGAFunctions f = Read;          
   MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
 
-  // Set default frame values (DOES NOT WRITE TO HARDWARE OR WRITE A MESSAGE, just configure properties).
+  // Set default values (DOES NOT WRITE TO HARDWARE OR WRITE A MESSAGE, just configure properties).
   this->SetFPGAFrameDefaultValues();
 
   FPGAFrameLog.debugStream() << "Created a new FPGAFrame for FEB " << (int)febNumber[0];
@@ -58,12 +49,9 @@ unsigned int FPGAFrame::GetOutgoingMessageLength()
 }
 
 //-------------------------------------------------------
+//!MakeShortMessage uses FPGA Dump Read instead of the regular Read.
 void FPGAFrame::MakeShortMessage()
 {
-  /*! \fn ********************************************************************|
-   * MakeShortMessage uses FPGA Dump Read instead of the regular Read.        |
-   ***************************************************************************|
-   */
   using namespace FrameTypes;
   outgoingMessageIsShort = true;
 
@@ -83,21 +71,12 @@ void FPGAFrame::MakeShortMessage()
 }
 
 //-------------------------------------------------------
+//! See docdb 4311 for a description of the bit-by-bit packing.
 void FPGAFrame::MakeMessage() 
 {
-  /*! \fn ********************************************************************************
-   * MakeMessage is the local implimentation of a virtual function of the same
-   * name inherited from Frames.  This function bit-packs the data into an OUTGOING
-   * message from values set using the get/set functions assigned to this class (see FPGAFrame.h).
-   *
-   * The packing for v90 firmware is described below. Header takes up First 11 bytes.  
-   * Registers start at indx==11.  See docdb 4311 for a description of the bit-by-bit packing.
-   * Note that we must clean up the outgoingMessages in the functions that call MakeMessage!
-   ********************************************************************************
-   */
   FPGAFrameLog.debugStream() << "MakeMessage for FPGA";
   outgoingMessageIsShort = false;
-  // In principle, the message size could change as we add and drop registers.
+
   unsigned char * message = 
     new unsigned char [MinervaDAQSizes::FPGANumRegisters + (MinervaDAQSizes::FPGANumRegisters+1)%2]; 
 
@@ -263,25 +242,16 @@ void FPGAFrame::MakeMessage()
       outgoingMessage[i] = message[i - MinervaDAQSizes::FrameHeaderLengthOutgoing];
     }
   }
-  
+
   // Clean up memory.
   delete [] message; 
 }
 
 
 //-------------------------------------------------------
+//! Parse a FPGAFrame and optionally (by build configuration) write to a log file.
 void FPGAFrame::DecodeRegisterValues() 
 {
-  /*! \fn********************************************************************************
-   *  DecodeMessage takes the incoming message and unpacks the bits into the
-   *  variables which hold the data.
-   * The packing is described below.
-   * inputs:
-   *
-   * \param buffersize:  the size of the total message, extracted from the dpm pointer 
-   * register on the croc
-   *********************************************************************************/
-
   FPGAFrameLog.debugStream() << "FPGAFrame::DecodeRegisterValues";
 
   if ( this->ReceivedMessageLength() != MinervaDAQSizes::FPGAFrameMaxSize ) { 
@@ -498,11 +468,9 @@ void FPGAFrame::DecodeRegisterValues()
 
 
 //-------------------------------------------------------
+//! Sets default values for FPGAFrame information. Safe, but not correct, to write to hardware.
 void FPGAFrame::SetFPGAFrameDefaultValues() 
 {
-  /*! \fn ********************************************************************************
-   * Sets default values for FPGAFrame information. Not intended for use with hardware.
-   *********************************************************************************/
   Timer           = 12;
   GateStart       = 43300; // (65535 - 43300 ticks ) * 9.4 ns/tick ~ 209 us delay before gate open
   GateLength      = 1702;  // 1702 clock ticks * ~9.4 ns/tick ~ 15.999 us
@@ -559,9 +527,6 @@ void FPGAFrame::SetFPGAFrameDefaultValues()
 //-------------------------------------------------------
 void FPGAFrame::ShowValues() 
 {
-  /*! \fn **************************************************************************
-   * Show the current values for the data members of an FPGAFrame.  
-   *********************************************************************************/
   FPGAFrameLog.debugStream()<<"************** FPGAFrame Current Values *******************"; 
   FPGAFrameLog.debugStream()<<"Timer           : "<<Timer; 
   FPGAFrameLog.debugStream()<<"GateStart       : "<<GateStart;

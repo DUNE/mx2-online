@@ -22,7 +22,6 @@ log4cpp::Category& rootCat = log4cpp::Category::getRoot();
 log4cpp::Category& daqmain = log4cpp::Category::getInstance(std::string("daqmain"));
 
 //---------------------------------------------------------------
-//---------------------------------------------------------------
 int main( int argc, char * argv[] ) 
 {
   struct DAQWorkerArgs * args = DAQArgs::ParseArgs( argc, argv, "0" );
@@ -61,10 +60,9 @@ int main( int argc, char * argv[] )
 }
 
 //---------------------------------------------------------------
+//! Set up the signal handler so we can always exit cleanly.
 void SetUpSigAction()
 {
-  // Set up the signal handler so we can always exit cleanly 
-
   struct sigaction quit_action;
   quit_action.sa_handler = quitsignal_handler;
   sigemptyset (&quit_action.sa_mask);
@@ -76,11 +74,8 @@ void SetUpSigAction()
 }
 
 //---------------------------------------------------------------
+//! Handle the SIGINT & SIGNUM signals (both of which should exit the process).
 void quitsignal_handler(int signum)
-  /*! \fn void quitsignal_handler(int signum)
-   *
-   * Handles the SIGINT & SIGNUM signals (both of which should exit the process).
-   */
 {
   continueRunning = false;
 }
