@@ -8,6 +8,7 @@
 log4cpp::Category& daqevt = log4cpp::Category::getInstance(std::string("daqevt"));
 
 //----------------------------------------------------------------
+//! The default ctor constructs a Sentinel frame.
 DAQHeader::DAQHeader(FrameHeader *header)
 {
   daqevt.setPriority(log4cpp::Priority::INFO);

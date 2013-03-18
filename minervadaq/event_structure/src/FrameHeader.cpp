@@ -3,6 +3,7 @@
 /*! \file FrameHeader.cpp
 */
 
+#include "log4cppHeaders.h"
 #include "FrameHeader.h"
 
 // Minerva Frame Header (Channel Status replaces the Magic Pattern)
