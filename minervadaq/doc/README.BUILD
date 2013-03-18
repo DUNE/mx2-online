@@ -30,8 +30,7 @@ lib/:
 total 1.2M
 drwxr-xr-x 2 tbonline e938 4.0K Apr 23 16:52 CVS/
 -rwxr-xr-x 1 tbonline e938 715K Jun  1 18:13 libhardware.so*
--rwxr-xr-x 1 tbonline e938  52K Jun  1 18:13 libcaeninterface.so*
--rwxr-xr-x 1 tbonline e938 326K Jun  1 18:13 libminerva_acquire.so*
+-rwxr-xr-x 1 tbonline e938 326K Jun  1 18:13 libminerva_workers.so*
 -rwxr-xr-x 1 tbonline e938  48K Jun  1 18:13 libevent_structure.so*bin/:
 total 532K
 -rwxr-xr-x 1 tbonline e938   97 Nov 29  2009 cleaner.sh*
@@ -129,10 +128,9 @@ It is a good idea to configure your firewall such that these ports are kept open
 	event_builder
 	minervadaq
 And check ${DAQROOT}/lib/ for 
-	libcaeninterface.so
 	libevent_structure.so
 	libhardware.so
-	libminerva_acquire.so
+	libminerva_workers.so
 
 8) If you are missing any of these, read the Makefile and try building each package one at a time and check 
 for errors.  Most likely, an environment variable has been incorrectly set.

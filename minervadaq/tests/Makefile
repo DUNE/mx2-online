@@ -5,7 +5,7 @@ OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
 TARGET=tests
 
-LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_acquire
+LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_workers
 include $(DAQROOT)/Make.include
 include $(DAQROOT)/Make.options
 
