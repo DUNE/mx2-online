@@ -3,8 +3,6 @@
 /*! \file FrameHeader.h
 */
 
-#include "log4cppHeaders.h"
-
 /*! 
   \class FrameHeader
   \brief Class for the Minerva Frame Header.
@@ -16,8 +14,13 @@
   Header part of the buffer.
   */
 
+//! Encode the bank types used in the offline software framework.
 namespace HeaderData {
 
+  /*! 
+    \enum BankType
+    \brief The offline software bank type used for unpacking raw data. 
+    */
   typedef enum {
     ADCBank,   
     DiscrBank,

@@ -167,8 +167,8 @@ namespace FrameTypes {
   };
 
 
-  /*! \enum febAddress
-   * \brief  FPGA addresses 
+  /*! \enum febAddresses
+   * \brief  FEB electronics addresses. 
    */
   typedef enum febAddresses {
     febAll = 0,

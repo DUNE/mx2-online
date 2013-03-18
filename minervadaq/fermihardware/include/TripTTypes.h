@@ -1,15 +1,19 @@
 #ifndef TripTTypes_h
 #define TripTTypes_h
+/*! \file TripTTypes.h
+*/
 
-/* tripT types */
+/*!
+  \brief TRiP-T defaults.
+  \author Gabriel Perdue
+  \author Elaine Schulte
+  */
 
-/*! \enum TriPFunctions
- *
- * \brief "Address" of the TRiP-T which is to be read from or written to 
- *
- */
 namespace TripTTypes {
 
+  /*! \enum TriPFunctions
+   * \brief "Address" of the TRiP-T which is to be read from or written to.
+   */
   typedef enum TRiPFunctions { //typecast to unsigned char
     tNone = 0x00,
     tAll  = 0x01,
