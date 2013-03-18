@@ -21,16 +21,7 @@ else
 	LDLIBS += -L/usr/local/lib -llog4cpp -L/usr/lib64 -lpthread 
 endif
 
-#BOOST libraries for the threading
-ifeq ($(LOCALE),RUTGERS)
-#Rutgers
-	LDLIBS += -L/usr/lib64 -lboost_thread-mt
-else
-#FNAL & Nearline
-	LDLIBS += -L/usr/lib64 -lboost_thread
-endif
-
-INCLUDE += -I/usr/include/boost/thread -I/usr/include/boost
+LDLIBS += -L/usr/lib64 
 
 #MINERvA DAQ Libraries
 #Electronics drive code
