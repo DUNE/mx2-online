@@ -1,6 +1,9 @@
 #ifndef EventBuilder_cxx
 #define EventBuilder_cxx
+/*! \file EventBuilder.cpp
+*/
 
+#include "log4cppHeaders.h"
 #include "EventBuilder.h"
 #include "exit_codes.h"
 #include <ctime>
@@ -26,6 +29,12 @@ log4cpp::Appender* eventBuilderAppender;
 log4cpp::Category& rootCategory = log4cpp::Category::getRoot();
 log4cpp::Category& eventbuilder = log4cpp::Category::getInstance(std::string("eventbuilder"));
 
+/*!
+  \brief Run an ET station that logs events to disk and passes them on to monitoring nodes.
+  \author Gabriel Perdue
+  \author Elaine Schulte
+  \author Jeremy Wolcott
+  */
 int main(int argc, char *argv[]) 
 {
   if (argc < 3) {
