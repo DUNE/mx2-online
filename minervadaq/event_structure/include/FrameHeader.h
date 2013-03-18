@@ -1,5 +1,7 @@
 #ifndef FrameHeader_h
 #define FrameHeader_h
+/*! \file FrameHeader.h
+*/
 
 #include "log4cppHeaders.h"
 

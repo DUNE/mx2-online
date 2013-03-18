@@ -1,5 +1,7 @@
 #ifndef DiscrFrame_h
 #define DiscrFrame_h
+/*! \file DiscrFrame.h
+*/
 
 #include "LVDSFrame.h"
 

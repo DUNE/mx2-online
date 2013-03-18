@@ -1,5 +1,7 @@
 #ifndef DiscrFrame_cpp
 #define DiscrFrame_cpp
+/*! \file DiscrFrame.cpp
+*/
 
 #include <iomanip>
 #include "DiscrFrame.h"
@@ -24,7 +26,7 @@ log4cpp::Category& DiscrFrameLog = log4cpp::Category::getInstance(std::string("D
 //-----------------------------------------------------------
 DiscrFrame::DiscrFrame(FrameTypes::febAddresses a) : LVDSFrame()
 {
-  /*! \fn
+  /*! \fn DiscrFrame
    * \param a: The address (number) of the feb
    * \param b: The "RAM Function" which describes the hit of number to be read off
    * Discriminators *always* read the same function.
@@ -45,7 +47,7 @@ DiscrFrame::DiscrFrame(FrameTypes::febAddresses a) : LVDSFrame()
 //-----------------------------------------------------------
 void DiscrFrame::MakeMessage() 
 {
-  /*! \fn
+  /*! \fn MakeMessage
    * Makes the outgoing message 
    */
   if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
@@ -64,8 +66,8 @@ unsigned int DiscrFrame::GetOutgoingMessageLength()
 //-----------------------------------------------------------
 void DiscrFrame::DecodeRegisterValues() 
 {
-  /*! \fn 
-   *  Decode a discriminator frame.  
+  /*! \fn DecodeRegisterValues
+   *  Decode a discriminator frame and write the unpacked bits to log.  
    */
   using namespace FrameTypes;
 

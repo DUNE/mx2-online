@@ -1,5 +1,7 @@
 #ifndef FrameHeader_cxx
 #define FrameHeader_cxx
+/*! \file FrameHeader.cpp
+*/
 
 #include "FrameHeader.h"
 
@@ -15,7 +17,7 @@ log4cpp::Category& frameheader = log4cpp::Category::getInstance(std::string("fra
 FrameHeader::FrameHeader(int crateID, int crocID, int chanID, 
     int bank, int feb_no, int firmware, int hit, int length) 
 {
-  /*! \fn 
+  /*! \fn FrameHeader
    *
    * The constructor which makes the FrameHeader for a data block
    *

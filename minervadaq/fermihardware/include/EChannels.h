@@ -1,5 +1,7 @@
 #ifndef EChannels_h
 #define EChannels_h
+/*! \file EChannels.h
+*/
 
 /* system header files here */
 #include <list>
