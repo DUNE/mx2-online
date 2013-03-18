@@ -1,5 +1,7 @@
 #ifndef LVDSFrame_cpp
 #define LVDSFrame_cpp
+/*! \file LVDSFrame.cpp
+*/
 
 #include <iomanip>
 #include "LVDSFrame.h"
@@ -12,8 +14,6 @@
  * Elaine Schulte, Rutgers University
  * Gabriel Perdue, The University of Rochester
  **********************************************************************************/
-
-/* const int LVDSFrame::MinHeaderLength=9; // renamed: FrameHeaderLengthOutgoing */
 
 log4cpp::Category& lvdsLog = log4cpp::Category::getInstance(std::string("frames"));
 
@@ -45,24 +45,19 @@ LVDSFrame::~LVDSFrame()
 }    
 
 //------------------------------------------
+//! Configure the ivars for building an outgoing header and build one.
+/*!
+  \param dev  The device to which the message is destined
+  \param b whether or not this is a broadcast request
+  \param d the direction of the message:  either master-to-slave (true for transmit) or
+  slave-to-master (receive)
+  \param f the device function.  This is specific to the device (dev) receiving the message
+  \param feb the number of the FEB to which this frame is destined
+  */
 void LVDSFrame::MakeDeviceFrameTransmit( FrameTypes::Devices dev, 
     FrameTypes::Broadcasts b, FrameTypes::Directions d, 
     unsigned int deviceFun, unsigned int febNum ) 
 {
-  /*! \fn********************************************************************************
-   * a function which makes up an FPGA frame for transmitting information from
-   * the data acquisition routines to the FPGA on the front end board (FEB) and
-   * on to the requested device.
-   *
-   * Inputs:
-   *
-   * \param dev:  The device to which the message is destined
-   * \param b: whether or not this is a broadcast request
-   * \param d: the direction of the message:  either master-to-slave (true for transmit) or
-   *    slave-to-master (receive)
-   * \param f: the device function.  This is specific to the device (dev) receiving the message
-   * \param feb: the number of the FEB to which this frame is destined
-   *********************************************************************************/
 
   broadcastCommand[0] = (unsigned char)b;
   messageDirection[0] = (unsigned char)d;
@@ -74,15 +69,12 @@ void LVDSFrame::MakeDeviceFrameTransmit( FrameTypes::Devices dev,
 }
 
 //------------------------------------------
+//! Make the beginning of the outgoing header.
+/*! 
+  The base portion of the outgoing header is common to all frame types.
+  */
 void LVDSFrame::MakeOutgoingHeader() 
 {
-  /*! \fn********************************************************************************
-   * a function which packs outgoing frame header data for transmitting information from
-   * the data acquisition routines to the FPGA on the front end board (FEB) and
-   * on to the requested device.
-   *********************************************************************************/
-
-  /* we've done all the conversion & stuff so we can make up the frame header now! */
   /* word 1: the broadcast direction, command, and feb number */
   frameHeader[0]  = (messageDirection[0] & 0x80 ); // The direction bit is in bit 7 of word 1
   frameHeader[0] |= (broadcastCommand[0] & 0xF0);  // The broadcast command is in bits 4-6
@@ -122,17 +114,15 @@ void LVDSFrame::DecodeRegisterValues()
 }
 
 //------------------------------------------
+//! Check incoming frame header data for errors.
 bool LVDSFrame::CheckForErrors() 
 {
-  /*! \fn bool LVDSFrame::CheckForErrors()
-   * Check incoming frame header data for errors.
-   */
   using namespace FrameTypes;
 
   bool error = false; 
 
   // There isn't really a good check we can make on message length here.
-  
+
   unsigned short status = this->ReceivedMessageStatus();
   lvdsLog.debugStream() << "CheckForErrors Frame Status = 0x" << std::hex << status;
 
@@ -181,12 +171,9 @@ unsigned short LVDSFrame::ReceivedMessageStatus() const
 
 
 //------------------------------------------
+//! Extract device information from the frame header sent back from the electronics.
 void LVDSFrame::DecodeHeader() 
 {
-  /*! \fn 
-   * extract device information from the FPGA header sent back from
-   * the electronics by a read request.
-   */
   using namespace FrameTypes;
 
   lvdsLog.debugStream() << " Entering LVDSFrame::DecodeHeader...";

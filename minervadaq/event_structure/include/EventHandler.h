@@ -1,5 +1,7 @@
 #ifndef EventHandler_h
 #define EventHandler_h
+/*! \file EventHandler.h
+*/
 
 #include "MinervaDAQSizes.h"
 

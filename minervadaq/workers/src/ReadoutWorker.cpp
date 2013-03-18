@@ -1,5 +1,7 @@
 #ifndef ReadoutWorker_cxx
 #define ReadoutWorker_cxx
+/*! \file ReadoutWorker.cpp
+*/
 
 #include "ReadoutWorker.h"
 #include "exit_codes.h"

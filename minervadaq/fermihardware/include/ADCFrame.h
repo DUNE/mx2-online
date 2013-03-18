@@ -1,5 +1,7 @@
 #ifndef ADCFrame_h
 #define ADCFrame_h
+/*! \file ADCFrame.h
+*/
 
 #include "LVDSFrame.h"
 /*********************************************************************************
@@ -12,7 +14,7 @@
 
 /*! \class ADCFrame
  *
- * \brief This class controls the ADC frames.
+ * \brief This class controls the frames that stores hit pulse heights.
  *
  * This class controls the adc frames.  It sets up the outgoing read request
  * frame and provides a buffer if desired for storing the message from

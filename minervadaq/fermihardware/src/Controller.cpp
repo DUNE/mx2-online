@@ -1,5 +1,7 @@
 #ifndef Controller_cpp
 #define Controller_cpp
+/*! \file Controller.cpp
+*/
 
 #include "Controller.h"
 
@@ -99,14 +101,13 @@ void Controller::ReportError(int error) const
 
 int Controller::Initialize() 
 {
-  /*! \fn
+  /*! \fn Initialize
    *
    * This function will try to contact the CAEN v2718 Controller via the internally 
    * mounted a2818 pci card & read the status register of the Controller.
    */
-  int error; // The error returned by the CAEN libraries.
+  int error; 
 
-  // Initialize the Controller.
   try {
     error = CAENVME_Init(controllerType, (unsigned short)boardNumber,
         (unsigned short)pciSlotNumber, &handle); 

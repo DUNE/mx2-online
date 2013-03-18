@@ -1,5 +1,7 @@
 #ifndef DAQHeader_cxx
 #define DAQHeader_cxx
+/*! \file DAQHeader.cpp
+*/
 
 #include "DAQHeader.h"
 

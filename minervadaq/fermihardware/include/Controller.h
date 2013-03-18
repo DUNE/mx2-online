@@ -1,5 +1,7 @@
 #ifndef Controller_h
 #define Controller_h
+/*! \file Controller.h
+*/
 
 #include <iostream>
 #include <cstdlib> 
@@ -20,7 +22,7 @@
 
 /*! \class Controller
  *
- * \brief A class for handling data associated with a CAEN V2718 VME Controller 
+ * \brief A class for handling data associated with a CAEN V2718 VME Controller.
  */
 class Controller {
 	private:

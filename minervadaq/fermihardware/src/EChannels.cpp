@@ -1,5 +1,7 @@
 #ifndef EChannels_cpp
 #define EChannels_cpp
+/*! \file EChannels.cpp
+*/
 
 #include <iomanip>
 
@@ -22,8 +24,9 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
   VMECommunicator( vmeAddress, controller ),
   channelNumber(number)
 {
-  /*! \fn 
-   * constructor takes the following arguments:
+  /*! \fn EChannels
+   *
+   * Constructor takes the following arguments:
    * \param vmeAddress  :  The channel base address (already bit-shifted)
    * \param number      :  The channel number (0-3)
    * \param *controller :  Pointer to the VME 2718 Controller servicing this device.

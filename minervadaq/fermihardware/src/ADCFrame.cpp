@@ -1,5 +1,7 @@
 #ifndef ADCFrame_cpp
 #define ADCFrame_cpp
+/*! \file ADCFrame.cpp
+*/
 
 #include <iomanip>
 #include "ADCFrame.h"
@@ -20,7 +22,7 @@ log4cpp::Category& ADCFrameLog = log4cpp::Category::getInstance(std::string("ADC
 
 ADCFrame::ADCFrame(FrameTypes::febAddresses a, FrameTypes::RAMFunctionsHit b) : LVDSFrame()
 {
-  /*! \fn
+  /*! \fn ADCFrame
    * \param a The address (number) of the feb
    * \param b The "RAM Function" which describes the hit of number to be read off
    */
@@ -39,7 +41,8 @@ ADCFrame::ADCFrame(FrameTypes::febAddresses a, FrameTypes::RAMFunctionsHit b) : 
 
 void ADCFrame::MakeMessage() 
 {
-  /*! \fn
+  /*! \fn MakeMessage
+   *
    * MakeMessage is the local implimentation of a virtual function of the same
    * name inherited from LVDSFrame.  This function bit-packs the data into an OUTGOING
    * message from values set using the get/set functions assigned to this class (see feb.h).
@@ -60,7 +63,7 @@ void ADCFrame::MakeMessage()
 
 void ADCFrame::DecodeRegisterValues()
 {	
-  /*! \fn
+  /*! \fn DecodeRegisterValues
    *
    * Based on C. Gingu's ParseInpFrameAsAnaBRAM function (from the FermiDAQ).
    * Decode the input frame data as Hit data type from all Analog BRAMs.
@@ -84,8 +87,6 @@ void ADCFrame::DecodeRegisterValues()
     ADCFrameLog.fatalStream() << "Dummy byte is non-zero!";
     exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
-
-  // Eventually put all of this into a try-catch block...
 
   // Show header in 16-bit word format...
   int hword = 0;
