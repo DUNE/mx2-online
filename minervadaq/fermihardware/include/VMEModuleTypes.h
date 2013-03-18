@@ -9,7 +9,7 @@
   \brief Enumerations for decoding minerva data - focused on VME modules.
   \author Gabriel Perdue
   \author Elaine Schulte
- */
+  */
 
 namespace VMEModuleTypes {
 
@@ -20,11 +20,10 @@ namespace VMEModuleTypes {
   // CRIM has 24-bit addressing. Addrr = 8 bits << 16 
   static const unsigned int CRIMAddressShift = 16;
 
-  /*! \enum crimTimingModes
-   *
-   * \brief The register values for different timing modes 
-   *
-   */
+  /*! 
+    \enum CRIMTimingModes
+    \brief The register values for different timing modes 
+    */
   typedef enum { //cast this to unsigned short
     DAQ          = 0x1000,
     CRIMExternal = 0x2000,
@@ -33,11 +32,10 @@ namespace VMEModuleTypes {
   } CRIMTimingModes;
 
 
-  /*! \enum crimTimingFrequencies
-   *
-   * \brief The register values for different frequencies. 
-   *
-   */
+  /*! 
+    \enum CRIMTimingFrequencies
+    \brief The register values for different frequencies for gates in internal timing mode. 
+    */
   typedef enum { //cast this to unsigned short
     // For internal timing mode - only one frequency bit may be set at a time!
     ZeroFreq = 0x0000, // Really "no" frequency - correct mode for OneShot, MTM running.
@@ -55,11 +53,10 @@ namespace VMEModuleTypes {
     F11      = 0x0800 // slowest
   } CRIMTimingFrequencies;
 
-  /*! \enum crimRegisters
-   *
-   * \brief The register addresses on the CRIM  
-   *
-   */
+  /*! 
+    \enum CRIMRegisters
+    \brief The register addresses on the CRIM  
+    */
   typedef enum CRIMRegisters { //cast this to unsigned int
     CRIMMemory                 = 0x0000,
     CRIMInput                  = 0x2000,
@@ -91,11 +88,10 @@ namespace VMEModuleTypes {
   };
 
 
-  /*! \enum crimInterrupts
-   *
-   * \brief The interrupt bit masks   
-   *
-   */
+  /*! 
+    \enum CRIMInterrupts
+    \brief The interrupt bit masks   
+    */
   typedef enum  { //typecast to unsigned char
     Trigger   = 0x01,
     SGATERise = 0x02,
