@@ -11,7 +11,7 @@ LDFLAGS += -shared -Wl,-soname
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
-TARGET=libminerva_acquire.so
+TARGET=libminerva_workers.so
 
 LDLIBS += -L$(DAQROOT)/lib -lhardware -levent_structure -L$(ET_LIBROOT)/lib -let
 include $(DAQROOT)/Make.include
@@ -29,5 +29,5 @@ $(OBJS): %.o: %.cpp
 
 clean:
 	rm *.o; 
-	rm ../../lib/libminerva_acquire.so;
+	rm ../../lib/libminerva_workers.so;
 

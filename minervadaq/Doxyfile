@@ -459,7 +459,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = main acquire_data/include acquire_data/src  \
+INPUT                  = main workers/include workers/src  \
                           event_builder/include event_builder/src \
                           event_structure/include event_structure/src \
                           fermihardware/include fermihardware/src \

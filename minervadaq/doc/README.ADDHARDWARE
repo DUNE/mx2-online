@@ -2,7 +2,7 @@ This file is current as of 2010.July.14 - GNP
 
 How to update the hardware configuration for Minerva DAQ.
 ---------------------------------------------------------
-The Minerva DAQ does not perform dynamic hardware lookup, nor does it load configurations from user editable text files.  Instead, the hardware is coded into the DAQ and selected via pre-compiler commands.  The configuration is kept in the DAQ's acquire_data library.
+The Minerva DAQ does not perform dynamic hardware lookup, nor does it load configurations from user editable text files.  Instead, the hardware is coded into the DAQ and selected via pre-compiler commands.  The configuration is kept in the DAQ's workers library.
 
 To update the configuration, take the following steps:
 
@@ -22,9 +22,9 @@ mnvtbonline0.fnal.gov> cd $DAQROOT
 mnvtbonline0.fnal.gov> pwd
 /work/software/mnvsingle/mnvdaq
 
-4) The file we need to edit is in the acquire_data package.  Open $DAQROOT/acquire_data/src/acquire_data.cpp.
+4) The file we need to edit is in the workers package.  Open $DAQROOT/workers/src/ReadoutWorker.cpp.
 
-5) The hardware definitions are in the acquire_data::InitializeDaq function.  Find the function.
+5) The hardware definitions are in the ReadoutWorker::SOMETHING function.  Find the function.
 
 Example:
 #if PMTTEST
@@ -108,7 +108,7 @@ total 1.2M
 drwxr-xr-x 2 tbonline e938 4.0K Apr 23 16:52 CVS/
 -rwxr-xr-x 1 tbonline e938 715K Jun  1 18:13 libhardware.so*
 -rwxr-xr-x 1 tbonline e938  52K Jun  1 18:13 libcaeninterface.so*
--rwxr-xr-x 1 tbonline e938 326K Jun  1 18:13 libminerva_acquire.so*
+-rwxr-xr-x 1 tbonline e938 326K Jun  1 18:13 libminerva_workers.so*
 -rwxr-xr-x 1 tbonline e938  48K Jun  1 18:13 libevent_structure.so*
 
 bin/:

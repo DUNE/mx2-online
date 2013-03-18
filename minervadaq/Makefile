@@ -9,7 +9,7 @@ SHELL=/bin/bash
 all: FORCE
 	gmake hardware-lib;
 	gmake event_structure-lib;
-	gmake acquire_data-lib;
+	gmake workers-lib;
 	gmake event_builder;
 	gmake main;
 	gmake tests;
@@ -17,7 +17,7 @@ all: FORCE
 clean: FORCE
 	gmake hardware-clean;
 	gmake event_structure-clean;
-	gmake acquire_data-clean;
+	gmake workers-clean;
 	gmake event_builder-clean;
 	gmake main-clean;
 	gmake tests-clean;
@@ -25,13 +25,13 @@ clean: FORCE
 relink: FORCE
 	gmake hardware-clean;
 	gmake event_structure-clean;
-	gmake acquire_data-clean;
+	gmake workers-clean;
 	gmake event_builder-clean;
 	gmake main-clean;
 	gmake tests-clean;
 	gmake hardware-lib;
 	gmake event_structure-lib;
-	gmake acquire_data-lib;
+	gmake workers-lib;
 	gmake event_builder;
 	gmake main;
 	gmake tests;
@@ -44,8 +44,8 @@ event_structure-lib: FORCE
 	cd event_structure/src; make;\
 	cd ../;
 
-acquire_data-lib: FORCE
-	cd acquire_data/src; make;\
+workers-lib: FORCE
+	cd workers/src; make;\
 	cd ../;
 
 event_builder: FORCE
@@ -81,8 +81,8 @@ main-clean: FORCE
 hardware-clean: FORCE
 	cd fermihardware/src; make clean;
 
-acquire_data-clean: FORCE
-	cd acquire_data/src; make clean;
+workers-clean: FORCE
+	cd workers/src; make clean;
 
 event_structure-clean: FORCE
 	cd event_structure/src; make clean;

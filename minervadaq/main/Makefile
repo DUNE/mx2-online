@@ -8,7 +8,7 @@ OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
 TARGET=minervadaq
 
-LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_acquire -levent_structure
+LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_workers -levent_structure
 include $(DAQROOT)/Make.include
 include $(DAQROOT)/Make.options
 

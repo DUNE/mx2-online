@@ -64,7 +64,7 @@ CRIM::CRIM( unsigned int address, const Controller* controller,
 {
   this->addressModifier = cvA24_U_DATA; 
 
-  CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
+  CRIMLog.setPriority(log4cpp::Priority::INFO); 
   CRIMLog.debugStream() << "Creating CRIM with address = 0x" << std::hex 
     << this->address << "; IRQ Line = 0x" << this->irqLine 
     << "; IRQ Level = 0x" << this->irqLevel;
@@ -140,7 +140,7 @@ void CRIM::Initialize( Modes::RunningModes runningMode )
       TimingMode    = VMEModuleTypes::CRIMInternal;
       break;
     default:
-      CRIMLog.fatalStream() << "Error in acquire_data::InitializeCrim()! No Running Mode defined!";
+      CRIMLog.fatalStream() << "Error in CRIM::InitializeCrim()! No Running Mode defined!";
       exit(EXIT_CONFIG_ERROR);
   }
   CRIMLog.debugStream() << " GateWidth       = 0x" << std::hex << GateWidth;
@@ -310,7 +310,9 @@ unsigned short CRIM::GetInterruptStatus() const
   int error = ReadCycle( message, interruptStatusRegister, addressModifier, dataWidthReg );
   if( error ) exitIfError( error, "Error reading CRIM Interrupt Status Register!");
   unsigned short status = (message[1]<<8) | message[0];
+#ifndef GOFAST
   CRIMLog.debugStream() << "Interrupt Status = 0x" << std::hex << status;
+#endif
   return status;
 }
 

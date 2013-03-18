@@ -28,7 +28,7 @@ LDLIBS += -L/usr/lib64
 INCLUDE += -I$(DAQROOT)/fermihardware/include 
 
 #Data Acquire functions (control acquire loop)
-INCLUDE += -I$(DAQROOT)/acquire_data/include 
+INCLUDE += -I$(DAQROOT)/workers/include 
 
 #Event Structure Information
 INCLUDE += -I$(DAQROOT)/event_structure/include
