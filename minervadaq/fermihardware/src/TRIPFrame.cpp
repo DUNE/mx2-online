@@ -1,28 +1,23 @@
 #ifndef TRIPFrame_cpp
 #define TRIPFrame_cpp
+/*! \file TRIPFrame.cpp
+*/
 
 #include "TRIPFrame.h"
 #include "exit_codes.h"
-/*********************************************************************************
- * Class for creating Trip-t objects for use with the 
- * MINERvA data acquisition system and associated software projects.
- *
- * Elaine Schulte, Rutgers University
- * Gabriel Perdue, The University of Rochester
- **********************************************************************************/
 
 log4cpp::Category& TRIPFrameLog = log4cpp::Category::getInstance(std::string("TRIPFrame"));
 
+//------------------------------------------
+/*! 
+  \param a the FEB address to which this trip belongs
+  \param f the Trip function (read or write)
+  \param maxHits the maximum number of hits that can be serviced
+  */
 TRIPFrame::TRIPFrame(FrameTypes::febAddresses a, TripTTypes::TRiPFunctions f) : 
   LVDSFrame(),
   trip_function((unsigned char)f)
 {
-  /*! \fn
-   * constructor takes the following arguments:
-   * \param a: the FEB address to which this trip belongs
-   * \param f: the Trip function (read or write)
-   * \param maxHits: the maximum number of hits that can be serviced
-   */
   using namespace FrameTypes;
   using namespace TripTTypes;
 
@@ -56,16 +51,16 @@ TRIPFrame::TRIPFrame(FrameTypes::febAddresses a, TripTTypes::TRiPFunctions f) :
   trip_values[14] = (long_m)0; 
 }
 
+//------------------------------------------
+/*! 
+  MakeMessage is the local implimentation of a virtual function of the same
+  name inherited from Frames.  This function bit-packs the data into an OUTGOING
+  message.
+  */
 void TRIPFrame::MakeMessage() 
 {
-  /*! \fn
-   * MakeMessage is the local implimentation of a virtual function of the same
-   * name inherited from Frames.  This function bit-packs the data into an OUTGOING
-   * message.
-   */
-  // We have to be very careful since message size is dependent on whether the 
-  // user is reading or writing. Perhaps force one frame per purpose?
-  EncodeRegisterValues(); //sets the register values to these defaults
+  // Be careful - message size dependends on whether we are reading or writing. 
+  EncodeRegisterValues(); 
 
   unsigned int bufferSize = packTripData.size(); 
   unsigned int messageSize = MinervaDAQSizes::FrameHeaderLengthOutgoing + bufferSize; 
@@ -73,7 +68,7 @@ void TRIPFrame::MakeMessage()
     << "; outgoing size = " << this->GetOutgoingMessageLength();
 
   if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
-  outgoingMessage = new unsigned char [messageSize]; //the final outgoing message
+  outgoingMessage = new unsigned char [messageSize]; 
   for (unsigned int i = 0; i < MinervaDAQSizes::FrameHeaderLengthOutgoing; ++i) {
     outgoingMessage[i] = frameHeader[i];
   }
@@ -82,57 +77,49 @@ void TRIPFrame::MakeMessage()
   }
 }
 
+//------------------------------------------
 unsigned int TRIPFrame::GetOutgoingMessageLength()
 {
   if (read) return MinervaDAQSizes::TRiPProgrammingFrameReadSize;
   return MinervaDAQSizes::TRiPProgrammingFrameWriteSize;
 }
 
+//------------------------------------------
+/*! 
+  In order to provide the trip-t's with information,
+  we need to pack the bits of data into 4-bit chunks in 
+  8-bit bytes (the smallest available unit).  This leads to 
+  a lot of words... Anyway, the 4-bits for each chunk of data 
+  contain the following information: 
+  bit 0:  Control bit  
+  bit 1:  Clock bit 
+  bit 2:  Data Bit 
+  bit 3:  Reset 
+
+  Each piece of honest-to-goodness data seems to have two words attached
+  per bit, one with the clock bit "true" and the other with the clock 
+  bit "false".
+
+  Also, the register values seem to be packed from least significant bit 
+  to most significant bit, while the register address is packed
+  most significant bit to least significant bit. All information is packed 
+  up this way.
+
+  This is what we will do:
+  0)  Make a temporary STL vector to build up the array 
+  1)  Build a function to put those 4 bits into a byte (PackBits) 
+  2)  Make a function to sort & set data bits (SortNSet) 
+  3)  Copy the vector to the buffer array. 
+  */
 void TRIPFrame::EncodeRegisterValues() 
 {
-  /*! \fn 
-   *
-   * OK, this is a little tricky.  It would seem that 
-   * in order to provide the trip-t's with information,
-   * we need to pack the bits of data into 4-bit chunks in 
-   * 8-bit bytes (the smallest available unit).  This leads to 
-   * a lot of words...Anyway, the 4-bits for each chunk of data 
-   * contain the following information: \n
-   *   bit 0:  Control bit  \n
-   *   bit 1:  Clock bit \n
-   *   bit 2:  Data Bit \n
-   *   bit 3:  Reset \n
-   *
-   * Each piece of honest-to-goodness data seems to have two words attached
-   * per bit, one with the clock bit "true" and the other with the clock 
-   * bit "false".
-   *
-   * Also, the register values seem to be packed from least significant bit 
-   * to most significant bit, while the register address is packed
-   * most significant bit to least significant bit.
-   *
-   * I'm so confused.
-   *
-   * All information is packed up this way.  This is a little tedious,
-   * but such is life, what can you do.
-   *
-   * That said here's what we're gonna do... 
-   *   0)  Make a temporary STL vector to build up the array 
-   *   1)  Build a function to put those 4 bits into a byte (PackBits) 
-   *   2)  Make a function to sort & set data bits (SortNSet) 
-   *   3)  Copy the vector to the buffer array. 
-   *       (this may be redundant, but I think being a little  
-   *        parochial might not be too bad for this one) 
-   */
 
   packTripData.clear();  
-  /* now we're ready to loop over the values & pack them into the register value array
-   * this step is necessary because some of the registers hold multiple values. */
-  long_m mask = 0xFF; //mask of 8 bits
+  long_m mask = 0xFF; 
 
-  if (read) { //we don't need to fill the registers with anything if we're going to read out the data.
+  if (read) { // don't need to fill the registers if we're only reading
     for (int i=0;i<14;i++) {
-      trip_registers[i]=0; //initialize the registers
+      trip_registers[i]=0; 
     }
   } else { //bit-back the values set by people into trip-usable form
     for (int i=0; i<14;i++) {
@@ -206,6 +193,7 @@ void TRIPFrame::EncodeRegisterValues()
 }
 
 
+//------------------------------------------
 void TRIPFrame::PackBits(bool control, bool clock, bool data, bool reset, std::vector<unsigned char> &l) 
 {
   /*! \fn 
@@ -227,6 +215,7 @@ void TRIPFrame::PackBits(bool control, bool clock, bool data, bool reset, std::v
 }
 
 
+//------------------------------------------
 void TRIPFrame::SortNSet(bool reset, long_m data, int bits, bool control, bool lowToHigh, 
     std::vector<unsigned char> &l) 
 {
@@ -257,6 +246,7 @@ void TRIPFrame::SortNSet(bool reset, long_m data, int bits, bool control, bool l
 }
 
 
+//------------------------------------------
 void TRIPFrame::DecodeRegisterValues() 
 {
   /*! \fn 
@@ -321,6 +311,7 @@ void TRIPFrame::DecodeRegisterValues()
 }
 
 
+//------------------------------------------
 void TRIPFrame::GetRegisterValue(int j, int &index, int bits) {
   /*! \fn
    *  This function extracts a given register value and puts it into the appropriate
@@ -366,6 +357,7 @@ void TRIPFrame::GetRegisterValue(int j, int &index, int bits) {
 }
 
 
+//------------------------------------------
 void TRIPFrame::ParseError(int i, int j) 
 {
   /*! \fn ********************************************************************************
@@ -381,6 +373,7 @@ void TRIPFrame::ParseError(int i, int j)
 }
 
 
+//------------------------------------------
 void TRIPFrame::ParseError(int i) 
 {
   /*! \fn

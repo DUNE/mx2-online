@@ -1,5 +1,7 @@
 #ifndef TRIPFrame_h
 #define TRIPFrame_h
+/*! \file TRIPFrame.h
+*/
 
 #include <vector>
 #include <iostream>
@@ -7,19 +9,12 @@
 #include "LVDSFrame.h"
 #include "TripTTypes.h"
 
-/*********************************************************************************
- * Class for creating Trip-t objects for use with the 
- * MINERvA data acquisition system and associated software projects.
- *
- * Elaine Schulte, Rutgers University
- * Gabriel Perdue, The University of Rochester
- **********************************************************************************/
-
-/*! \class TRIPFrame
- *
- * \brief This class holds all data associated with a TRiP-T on an FEB.
- *
- */
+/*! 
+  \class TRIPFrame
+  \brief This class holds all data associated with a TRiP-T on an FEB.
+  \author Gabriel Perdue
+  \author Elaine Schulte
+  */
 class TRIPFrame : public LVDSFrame {
   private:
 
