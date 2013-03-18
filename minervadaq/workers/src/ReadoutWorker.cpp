@@ -9,7 +9,7 @@
 
 log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
 
-const unsigned int ReadoutWorker::microSecondSleepDuration = 550;
+const unsigned int ReadoutWorker::microSecondSleepDuration = 600;
 
 //---------------------------
 ReadoutWorker::ReadoutWorker( log4cpp::Priority::Value priority, 
