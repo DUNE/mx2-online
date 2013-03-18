@@ -1,5 +1,7 @@
 #ifndef DAQWorker_h
 #define DAQWorker_h
+/*! \file DAQWorker.h
+*/
 
 #include "log4cppHeaders.h"
 #include "DAQWorkerArgs.h"
@@ -13,6 +15,13 @@
 /* #include <cstddef> */
 /* #include <cstdlib> */
 /* #include <assert.h> */
+
+/*! 
+  \class DAQWorker
+  \brief Orchestrate data acquisition by being the central hub for other
+  worker classes.
+  \author Gabriel Perdue
+  */
 
 class DAQWorker {
 

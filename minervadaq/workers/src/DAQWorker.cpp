@@ -1,5 +1,7 @@
 #ifndef DAQWorker_cxx
 #define DAQWorker_cxx
+/*! \file DAQWorker.cpp
+*/
 
 #include <fstream>
 
@@ -118,6 +120,7 @@ int DAQWorker::SetUpET()
 }
 
 //---------------------------------------------------------
+//! Declare the data contents of an EventHandler to ET.
 bool DAQWorker::ContactEventBuilder( EventHandler *handler )
 {
   daqWorker.infoStream() << "Contacting Event Builder...";
@@ -206,6 +209,7 @@ bool DAQWorker::CloseDownET()
 }
 
 //---------------------------------------------------------
+//! While the next gate condition is valid, read all EChannels.
 void DAQWorker::TakeData()
 {
   daqWorker.infoStream() << "Beginning Data Acquisition...";
