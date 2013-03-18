@@ -1,21 +1,14 @@
-#ifndef MinervaDAQtypes_h
-#define MinervaDAQtypes_h
-
-/*********************************************************************************
- * General types 
- * These enumerated lists are used to make remembering the
- * bit masks for various status & register settings easier.
- *
- * Elaine Schulte, Rutgers University
- * Gabriel Perdue, The University of Rochester
- ********************************************************************************/
+#ifndef VMEModuleTypes_h
+#define VMEModuleTypes_h
+/*! \file VMEModuleTypes.h
+*/
 
 #include <cmath>
 
-/*! \file MinervaDAQTypes.h
- *
- * \brief More enumerations for decoding minerva data
- *
+/*!
+  \brief Enumerations for decoding minerva data - focused on VME modules.
+  \author Gabriel Perdue
+  \author Elaine Schulte
  */
 
 namespace VMEModuleTypes {

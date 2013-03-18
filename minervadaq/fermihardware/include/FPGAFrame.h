@@ -1,14 +1,17 @@
 #ifndef FPGAFrame_h
 #define FPGAFrame_h
+/*! \file FPGAFrame.h
+*/
 
 #include "FrameTypes.h"
 #include "LVDSFrame.h"
 
-/*! \class FPGAFrame
- *
- * \brief The class which holds all of the information associated with an FPGAFrame.
- *
- */
+/*! 
+  \class FPGAFrame
+  \brief This class controls the frames that configure the FEB FPGA chip (high voltage, etc.).
+  \author Gabriel Perdue
+  \author Elaine Schulte
+  */
 
 class FPGAFrame : public LVDSFrame {
 	private:

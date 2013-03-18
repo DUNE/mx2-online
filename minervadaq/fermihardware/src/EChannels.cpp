@@ -9,28 +9,20 @@
 #include "EChannels.h"
 #include "exit_codes.h"
 
-/*********************************************************************************
- * Class for creating CROC-E channel objects for use with the 
- * MINERvA data acquisition system and associated software projects.
- *
- * Gabriel Perdue, The University of Rochester
- **********************************************************************************/
 
 log4cpp::Category& EChannelLog = log4cpp::Category::getInstance(std::string("EChannel"));
 
 //----------------------------------------
+/*!
+  \param vmeAddress   The channel base address (already bit-shifted)
+  \param number       The channel number (0-3)
+  \param controller   Pointer to the VME 2718 Controller servicing this device.
+  */
 EChannels::EChannels( unsigned int vmeAddress, unsigned int number, 
     const Controller* controller ) : 
   VMECommunicator( vmeAddress, controller ),
   channelNumber(number)
 {
-  /*! \fn EChannels
-   *
-   * Constructor takes the following arguments:
-   * \param vmeAddress  :  The channel base address (already bit-shifted)
-   * \param number      :  The channel number (0-3)
-   * \param *controller :  Pointer to the VME 2718 Controller servicing this device.
-   */
   EChannelLog.setPriority(log4cpp::Priority::INFO);  
 
   channelDirectAddress             = this->address + VMEModuleTypes::EChannelOffset * (unsigned int)(channelNumber);
@@ -57,7 +49,15 @@ EChannels::~EChannels()
 }
 
 //-----------------------------
+//! Return the base address plus the channel offset. Identical to GetDirectAddress, but here for convenience.
 unsigned int EChannels::GetAddress() const
+{
+  return this->channelDirectAddress;
+}
+
+//----------------------------------------
+//! Return the base address plus the channel offset.
+unsigned int EChannels::GetDirectAddress() const
 {
   return this->channelDirectAddress;
 }
@@ -69,6 +69,7 @@ unsigned int EChannels::GetChannelNumber() const
 }
 
 //----------------------------------------
+//! Return the base address.
 unsigned int EChannels::GetParentECROCAddress() const
 {
   return this->address;
@@ -78,12 +79,6 @@ unsigned int EChannels::GetParentECROCAddress() const
 unsigned int EChannels::GetParentCROCNumber() const
 {
   return ( this->address >> VMEModuleTypes::ECROCAddressShift);
-}
-
-//----------------------------------------
-unsigned int EChannels::GetDirectAddress() const
-{
-  return this->channelDirectAddress;
 }
 
 //----------------------------------------
@@ -187,6 +182,7 @@ int EChannels::DecodeStatusMessage( const unsigned short& status ) const
 }
 
 //----------------------------------------
+//! We do not do FEB configuration here. We only check to see if the FEB exists.
 void EChannels::SetupNFrontEndBoards( int nFEBs )
 {
   EChannelLog.infoStream() << "SetupNFrontEndBoards for " << nFEBs << " FEBs...";
@@ -208,12 +204,14 @@ void EChannels::SetupNFrontEndBoards( int nFEBs )
 }
 
 //----------------------------------------
+//! Only update the enable bit.
 void EChannels::EnableSequencerReadout() const
 {
   this->UpdateConfigurationForVal( (unsigned short)(0x8000), (unsigned short)(0x7FFF) );
 }
 
 //----------------------------------------
+//! Only update the enable bit.
 void EChannels::DisableSequencerReadout() const
 {
   this->UpdateConfigurationForVal( (unsigned short)(0x0000), (unsigned short)(0x7FFF) );
@@ -240,6 +238,7 @@ unsigned short EChannels::GetChannelConfiguration() const
 }
 
 //----------------------------------------
+//! Only update the enable bit.
 void EChannels::UpdateConfigurationForVal( unsigned short val, unsigned short mask ) const
 {
   // maintain state - we only want to update the val
@@ -272,7 +271,7 @@ std::vector<FrontEndBoard*>* EChannels::GetFrontEndBoardVector()
 }
 
 //----------------------------------------
-// Index should equal address - 1 (addr's go 1.., index goes 0..)
+//! Index should equal address - 1 (addr's go 1.., index goes 0..)
 FrontEndBoard* EChannels::GetFrontEndBoardVector( int index ) 
 {
   // We live fast and dangerous. If we're out of bounds, we crash.

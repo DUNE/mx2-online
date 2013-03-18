@@ -194,20 +194,19 @@ void TRIPFrame::EncodeRegisterValues()
 
 
 //------------------------------------------
+/*! 
+  Note that we're setting one bit of a string of data bits into four bits of 
+  an 8 bit bit string to encode the entire bit string of the piece of data.  
+  */
 void TRIPFrame::PackBits(bool control, bool clock, bool data, bool reset, std::vector<unsigned char> &l) 
 {
-  /*! \fn 
-   * note we're setting one bit of a string of data bits into a for bits of an 8 bit bit string to 
-   *  encode the entire bit string of the piece of data.  
-   */
+  unsigned char bitmask = 0x01; 
+  unsigned char packMe = 0; 
 
-  unsigned char bitmask = 0x01; //mask off one bit
-  unsigned char packMe = 0; //we need a temp to hold the bits
-
-  packMe = ((unsigned char) control) & bitmask; //control goes in bit 0
-  packMe |= (((unsigned char) clock) & bitmask) << 1; //clock goes in bit 1
-  packMe |= (((unsigned char) data) & bitmask) << 2; //data bit goes in bit 2
-  packMe |= (((unsigned char) reset) & bitmask) << 3; //reset goes in bit 3
+  packMe  =  ((unsigned char) control) & bitmask;       
+  packMe |= (((unsigned char) clock)   & bitmask) << 1;
+  packMe |= (((unsigned char) data)    & bitmask) << 2; 
+  packMe |= (((unsigned char) reset)   & bitmask) << 3; 
 
   l.push_back(packMe);
 
@@ -216,13 +215,10 @@ void TRIPFrame::PackBits(bool control, bool clock, bool data, bool reset, std::v
 
 
 //------------------------------------------
+//! Sort a multi-bit number into its bits, then pack them. 
 void TRIPFrame::SortNSet(bool reset, long_m data, int bits, bool control, bool lowToHigh, 
     std::vector<unsigned char> &l) 
 {
-  /*! \fn
-   * this sorts a multi-bit number into its bits, then packs them. 
-   */
-
   if (lowToHigh) { 
     long_m bitmask = 0x01; //mask off first bit
     /* for the values of the register (not the address) we pack the bits from low to high */
@@ -247,13 +243,9 @@ void TRIPFrame::SortNSet(bool reset, long_m data, int bits, bool control, bool l
 
 
 //------------------------------------------
+//! Decode a TRIPFrame and optionally write it to a log file.
 void TRIPFrame::DecodeRegisterValues() 
 {
-  /*! \fn 
-   *  This function decodes an incoming message into the values of the
-   *  particular settings on a trip.  It returns a success integer (0 for 
-   *  success).
-   */
   using namespace FrameTypes;
 
   if ( this->CheckForErrors() ) {
@@ -312,16 +304,14 @@ void TRIPFrame::DecodeRegisterValues()
 
 
 //------------------------------------------
-void TRIPFrame::GetRegisterValue(int j, int &index, int bits) {
-  /*! \fn
-   *  This function extracts a given register value and puts it into the appropriate
-   *  data member for this trip
-   *
-   *  Input:
-   *  \param j:   the register being worked on (reasigned to registerIndex)
-   *  \param index: a pointer to the array index in the message
-   *  \param bits: the number of bits that need to be decoded/extracted
+//! Extract a given register value and put it into the appropriate data member for this trip.
+  /*!
+     \param j     the register being worked on (reasigned to registerIndex)
+     \param index a pointer to the array index in the message
+     \param bits  the number of bits that need to be decoded/extracted
    */
+void TRIPFrame::GetRegisterValue(int j, int &index, int bits) 
+{
   int registerIndex = j; //the register being extracted
   long_m value = 0; //a temp to "build up" the register's value
   unsigned char dataMask[1] = {0x01 << trip_function}; //the data mask bit for this trip function
@@ -358,31 +348,25 @@ void TRIPFrame::GetRegisterValue(int j, int &index, int bits) {
 
 
 //------------------------------------------
+//! Raise an error if the message being processed contains bad data.
+/*!
+  \param i register being worked on
+  \param j message array index
+  */
 void TRIPFrame::ParseError(int i, int j) 
 {
-  /*! \fn ********************************************************************************
-   *  This function raises an error if the message being processed contains
-   *  "bad" data.
-   * 
-   *  Inputs:
-   *  \param i: register being worked on
-   *  \param j: message array index
-   */
   TRIPFrameLog.fatalStream() << "Parse Error for register: " << i << " at index: " << j;
   exit(EXIT_FEB_UNSPECIFIED_ERROR);
 }
 
 
 //------------------------------------------
+//! Raise an error if the message being processed contains bad data.
+/*!
+  \param i message array index
+  */
 void TRIPFrame::ParseError(int i) 
 {
-  /*! \fn
-   *  This function raises an error if the message being processed contains
-   *  "bad" data.
-   *
-   *  Inputs:
-   *  \param i: message array index
-   */
   TRIPFrameLog.fatalStream() << "Parse Error at index: " << i << " while getting register value.";
   exit(EXIT_FEB_UNSPECIFIED_ERROR);
 }

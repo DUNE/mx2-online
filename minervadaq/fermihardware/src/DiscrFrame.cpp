@@ -24,32 +24,27 @@
 log4cpp::Category& DiscrFrameLog = log4cpp::Category::getInstance(std::string("DiscrFrame"));
 
 //-----------------------------------------------------------
+/*! 
+  \param a The address (number) of the feb
+  */
 DiscrFrame::DiscrFrame(FrameTypes::febAddresses a) : LVDSFrame()
 {
-  /*! \fn DiscrFrame
-   * \param a: The address (number) of the feb
-   * \param b: The "RAM Function" which describes the hit of number to be read off
-   * Discriminators *always* read the same function.
-   */
   using namespace FrameTypes;
   febNumber[0] = (unsigned char) a;
-  
+
   Devices dev      = RAM;            // device to be addressed
   Broadcasts broad = None;           // we don't broadcast
   Directions dir   = MasterToSlave;  // ALL outgoing messages are master-to-slave
   unsigned int b   = (unsigned int)ReadHitDiscr;
   MakeDeviceFrameTransmit(dev, broad, dir, (unsigned int)b, (unsigned int)febNumber[0]); 
 
-  DiscrFrameLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
+  DiscrFrameLog.setPriority(log4cpp::Priority::INFO);  
   DiscrFrameLog.debugStream() << "Made DiscrFrame for FEB " << a; 
 }
 
 //-----------------------------------------------------------
 void DiscrFrame::MakeMessage() 
 {
-  /*! \fn MakeMessage
-   * Makes the outgoing message 
-   */
   if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
   outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];
   for (unsigned int i = 0; i < this->GetOutgoingMessageLength(); ++i) {
@@ -64,11 +59,11 @@ unsigned int DiscrFrame::GetOutgoingMessageLength()
 }
 
 //-----------------------------------------------------------
+/*! 
+  Decode a discriminator frame and write the unpacked bits to log.  
+  */
 void DiscrFrame::DecodeRegisterValues() 
 {
-  /*! \fn DecodeRegisterValues
-   *  Decode a discriminator frame and write the unpacked bits to log.  
-   */
   using namespace FrameTypes;
 
   // Check to see if the frame is more than zero length...
@@ -136,9 +131,7 @@ void DiscrFrame::DecodeRegisterValues()
         DiscrFrameLog.debug("  iCh = %d, iHit-1 = %d, DQ Ticks = %d", iCh, iHit - 1, TempDiscQuaterTicks);
 #endif
       }
-      /*! \note {update the DiscDelTicks (Discriminator's Delay Tick is an integer between 0 and 
-       *   SRLDepth(16) inclusive.
-       *   it counts the number of zeros (if any) before the SRL starts to be filled with ones - see VHDL code... 
+      /*! \note 
        *   We pick a bit from each 16-bit row as a function of channel and sum them.  The true delay tick value is 
        *   16 minus this sum.  So, for example:
        *   row(TempHitArray)    ch0 ch1 ch2 ch3 ch4 ... ch15
@@ -160,6 +153,7 @@ void DiscrFrame::DecodeRegisterValues()
 #if SHOWDELAYTICKS
       DiscrFrameLog.debug("Update Disc Delay Ticks:");
 #endif
+      // update the DiscDelTicks (Discriminator's Delay Tick is an integer between 0 and SRLDepth(16) inclusive.
       unsigned int TempDiscDelTicks = 0;
       for (unsigned int iCh = 0; iCh < MinervaDAQSizes::nDiscrChPerTrip; iCh++) {
         TempDiscDelTicks = 0;
@@ -169,15 +163,18 @@ void DiscrFrame::DecodeRegisterValues()
         DiscrFrameLog.debug("  iCh = %d, iHit-1 = %d, Del Ticks = %d", iCh, iHit - 1, SRLDepth - TempDiscDelTicks);
 #endif
       }
-    } // end loop over hits per trip
-  } // end loop over trips
+  } // end loop over hits per trip
+} // end loop over trips
 
-  delete [] TripXNHits;
-  delete [] TempHitArray;
+delete [] TripXNHits;
+delete [] TempHitArray;
 }
 
 //-----------------------------------------------------
-unsigned int DiscrFrame::GetNHitsOnTRiP(const unsigned int& tripNumber) const // 0 <= tripNumber <= 3
+/*! 
+  \param tripNumber 0 <= tripNumber <= 3
+  */
+unsigned int DiscrFrame::GetNHitsOnTRiP(const unsigned int& tripNumber) const 
 {
   using namespace FrameTypes;
 
