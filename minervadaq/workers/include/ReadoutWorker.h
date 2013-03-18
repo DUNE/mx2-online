@@ -15,8 +15,11 @@
 #include <sstream>
 
 
-/*! \class ReadoutWorker
- */
+/*! 
+  \class ReadoutWorker
+  \brief Manage communication with the VME modules.
+  \author Gabriel Perdue
+  */
 class ReadoutWorker {
 
   friend std::ostream& operator<<(std::ostream&, const ReadoutWorker&);

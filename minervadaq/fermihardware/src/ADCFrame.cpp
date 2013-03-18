@@ -10,22 +10,16 @@
 #define SHOWSEQ 1 /*!< \define show unpacked block ram (adc) in internal sequential order...*/
 #define SHOWPIX 1 /*!< \define show unpacked block ram (adc) keyed by pixel...*/
 
-/*********************************************************************************
- * Class for creating RAM request frame objects for use with the 
- * MINERvA data acquisition system and associated software projects.
- *
- * Elaine Schulte, Rutgers University
- * Gabriel Perdue, The University of Rochester
- **********************************************************************************/
 
 log4cpp::Category& ADCFrameLog = log4cpp::Category::getInstance(std::string("ADCFrame"));
 
+//----------------------------------------------------
+/*! 
+  \param a The address (number) of the feb
+  \param b The "RAM Function" which describes the hit of number to be read off
+  */
 ADCFrame::ADCFrame(FrameTypes::febAddresses a, FrameTypes::RAMFunctionsHit b) : LVDSFrame()
 {
-  /*! \fn ADCFrame
-   * \param a The address (number) of the feb
-   * \param b The "RAM Function" which describes the hit of number to be read off
-   */
   using namespace FrameTypes;
 
   febNumber[0]     = (unsigned char) a; 
@@ -39,6 +33,7 @@ ADCFrame::ADCFrame(FrameTypes::febAddresses a, FrameTypes::RAMFunctionsHit b) : 
 }
 
 
+//----------------------------------------------------
 void ADCFrame::MakeMessage() 
 {
   /*! \fn MakeMessage
@@ -60,7 +55,7 @@ void ADCFrame::MakeMessage()
 #endif
 }
 
-
+//----------------------------------------------------
 void ADCFrame::DecodeRegisterValues()
 {	
   /*! \fn DecodeRegisterValues

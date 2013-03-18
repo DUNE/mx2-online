@@ -1,10 +1,7 @@
 #ifndef ReadoutStateRecorder_cxx
 #define ReadoutStateRecorder_cxx
-
-/*! \file 
- *
- * ReadoutStateRecorder.cpp:  
- */
+/*! \file ReadoutStateRecorder.cpp:  
+*/
 
 #include "ReadoutStateRecorder.h"
 #include "exit_codes.h"
@@ -53,6 +50,7 @@ void ReadoutStateRecorder::SetMINOSSGATE( unsigned int gateTime )
 }
 
 //---------------------------
+//! Incremement the gate counters and check the gate is in bounds for the run.
 bool ReadoutStateRecorder::BeginNextGate()
 {
   stateRecorderLogger.debugStream() << "ReadoutStateRecorder::BeginNextGate...";
@@ -70,6 +68,11 @@ bool ReadoutStateRecorder::BeginNextGate()
 }
 
 //---------------------------
+//! Log the global gate, write the SAM metadata, and write the last trigger.
+/*!
+  The last trigger data is used by the Run Control to display information 
+  about the last recorded gate to the shifter.
+  */
 bool ReadoutStateRecorder::FinishGate()
 {
   stateRecorderLogger.debugStream() << "ReadoutStateRecorder::FinishGate...";
@@ -80,10 +83,11 @@ bool ReadoutStateRecorder::FinishGate()
 }
 
 //---------------------------
+//! Calculate the next Triggers::TriggerType based on the gate and mode.
 Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
 {
-	using namespace Triggers;
-	using namespace Modes;
+  using namespace Triggers;
+  using namespace Modes;
   stateRecorderLogger.debugStream() << "GetNextTriggerType";
   triggerType = UnknownTrigger;
   switch (args->runMode) {
@@ -166,17 +170,18 @@ void ReadoutStateRecorder::WriteGlobalGateToFile()
 }
 
 //-----------------------------
+//! Allocate and return a DAQHeader using member variable data.
 std::tr1::shared_ptr<DAQHeader> ReadoutStateRecorder::GetDAQHeader( HeaderData::BankType bankType )
 {
   stateRecorderLogger.debugStream() << "GetDAQHeader...";
   unsigned int minos = MINOSSGATE; 
   unsigned long long readoutTimeLong = gateFinishTime - gateStartTime;
   unsigned int readoutTime = (unsigned int)readoutTimeLong;
-/* #ifndef GOFAST */
+  /* #ifndef GOFAST */
   stateRecorderLogger.debugStream() << " readoutTimeLong = " << readoutTimeLong;
   stateRecorderLogger.debugStream() << " readoutTime     = " << readoutTime;
   stateRecorderLogger.debugStream() << " MINOSSGATE      = " << MINOSSGATE;
-/* #endif */
+  /* #endif */
 
   // sadly, these are probably not useful anymore.
   unsigned short int error = 0;
@@ -307,6 +312,7 @@ void ReadoutStateRecorder::WriteToSAMFile()
 }
 
 //---------------------------------------------------------
+//! Log basic information about the last successful readout gate.
 void ReadoutStateRecorder::WriteLastTriggerDataToFile()
 {
   FILE *file;

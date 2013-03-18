@@ -1,5 +1,7 @@
 #ifndef ReadoutStateRecorder_h
 #define ReadoutStateRecorder_h
+/*! \file ReadoutStateRecorder.h
+*/
 
 #include "log4cppHeaders.h"
 
@@ -12,8 +14,12 @@
 #include <sstream>
 #include <tr1/memory>  // for shared_ptrs
 
-/*! \class ReadoutStateRecorder
- */
+/*! 
+  \class ReadoutStateRecorder
+  \brief Track gate info, calculate trigger types, and write gate logs 
+  (SAM files, etc.).
+  \author Gabriel Perdue
+  */
 class ReadoutStateRecorder {
 
   friend std::ostream& operator<<(std::ostream&, const ReadoutStateRecorder&);

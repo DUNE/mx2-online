@@ -69,6 +69,13 @@ void ReadoutWorker::InitializeCrates( Modes::RunningModes theRunningMode )
 }
 
 //---------------------------
+//! Get a pointer to the only Master CRIM between all readout crates.
+/*!
+  The master CRIM is responsible for issuing the only open gate sequence 
+  in running modes where identical trigger times are required but cannot
+  be supplied externally. In this case, we daisy-chain the CRIMs for 
+  signal relay.
+  */
 CRIM* ReadoutWorker::MasterCRIM() const
 {
   VMECrate* crate = NULL;
@@ -176,6 +183,11 @@ unsigned long long ReadoutWorker::Trigger( Triggers::TriggerType triggerType )
 }
 
 //---------------------------
+//! We need to reset the sequencer latch for all CRIMs to allow new gates.
+/*!
+  The required latch reset is a feature of v9+ firmware CRIMs. Its purpose 
+  is to only allow new gates to open when we have completed readout.
+  */
 void ReadoutWorker::ResetSequencerLatch() const
 {
   for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) 
