@@ -25,9 +25,6 @@
 
 class DAQWorker {
 
-  typedef std::vector<ReadoutWorker*> ReadoutWorkerVect;
-  typedef std::vector<ReadoutWorker*>::iterator ReadoutWorkerIt;
-
   private:  
     const DAQWorkerArgs* args;
     const bool *const status;

@@ -237,6 +237,7 @@ void DAQWorker::TakeData()
 }
 
 //---------------------------------------------------------
+//! Reset EChannels pointer; get trigger from ReadoutStateRecorder; trigger the ReadoutWorker.
 bool DAQWorker::BeginNextGate()
 {
   daqWorker.debugStream() << "DAQWorker::BeginNextGate...";
@@ -253,6 +254,7 @@ bool DAQWorker::BeginNextGate()
 }
 
 //---------------------------------------------------------
+//! Set the finish time; Get the MINOSSGATE; Call the ReadoutStateRecorder.
 bool DAQWorker::FinishGate()
 {
   daqWorker.debugStream() << "DAQWorker::FinishGate...";
@@ -263,6 +265,7 @@ bool DAQWorker::FinishGate()
 }
 
 //---------------------------------------------------------
+//! Destroy a SequencerReadoutBlock to look at the frames. For debugging only!
 void DAQWorker::DissolveDataBlock( std::tr1::shared_ptr<SequencerReadoutBlock> block )
 {
   daqWorker.debugStream() << "Got data, destructively processing into frames...";
