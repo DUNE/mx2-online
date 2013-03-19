@@ -8,6 +8,7 @@
 /*! 
   \class ADCFrame
   \brief This class controls the frames that stores hit pulse heights.
+  \author Cristian Gingu
   \author Gabriel Perdue
   \author Elaine Schulte
   */
