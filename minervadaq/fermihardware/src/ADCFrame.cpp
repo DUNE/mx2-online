@@ -7,8 +7,8 @@
 #include "ADCFrame.h"
 #include "exit_codes.h"
 
-#define SHOWSEQ 1 /*!< \define show unpacked block ram (adc) in internal sequential order...*/
-#define SHOWPIX 1 /*!< \define show unpacked block ram (adc) keyed by pixel...*/
+#define SHOWSEQ 1 /*!< Show unpacked block ram (adc) in internal sequential order. */
+#define SHOWPIX 1 /*!< Show unpacked block ram (adc) keyed by pixel. */
 
 
 log4cpp::Category& ADCFrameLog = log4cpp::Category::getInstance(std::string("ADCFrame"));

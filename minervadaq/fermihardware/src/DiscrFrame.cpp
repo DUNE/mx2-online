@@ -7,10 +7,10 @@
 #include "DiscrFrame.h"
 #include "exit_codes.h"
 
-#define SHOWNHITS 1 /*!< \define show number of hits when doing discr. parse*/
-#define SHOWBRAM 1 /*!< \define show raw (parsed) discr frame data; Also show SYSTICKS*/
-#define SHOWDELAYTICKS 1 /*!< \define show delay tick information*/
-#define SHOWQUARTERTICKS 1 /*!< define show quarter tick information*/
+#define SHOWNHITS 1        /*!< show number of hits when doing discr. parse */
+#define SHOWBRAM 1         /*!< show raw (parsed) discr frame data; Also show SYSTICKS */
+#define SHOWDELAYTICKS 1   /*!< show delay tick information */
+#define SHOWQUARTERTICKS 1 /*!< show quarter tick information */
 
 /*********************************************************************************
  * Class for creating RAM request frame objects for use with the 

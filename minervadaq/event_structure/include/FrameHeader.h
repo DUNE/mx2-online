@@ -41,7 +41,7 @@ class FrameHeader {
 
   public:
   FrameHeader(int crateID, int crocID, int chanID, 
-      int bank, int feb_number, int firmware, int hit, int length);
+      int bank, int feb_no, int firmware, int hit, int length);
   ~FrameHeader() { };
   const unsigned short inline *GetBankHeader() const { return bank_header; };
 };
