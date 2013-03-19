@@ -8,12 +8,12 @@
 log4cpp::Category& FrontEndBoardLog = log4cpp::Category::getInstance(std::string("FrontEndBoard"));
 
 //-----------------------------------------------------
-FrontEndBoard::FrontEndBoard( FrameTypes::febAddresses a ) : 
-  boardNumber(a)
+FrontEndBoard::FrontEndBoard( FrameTypes::febAddresses theAddress ) : 
+  boardNumber(theAddress)
 {
   /*! \fn********************************************************************************
    * The log-free constructor takes the following arguments:
-   * \param a: The address (number) of the FrontEndBoard
+   * \param theAddress The address (number) of the FrontEndBoard
    */
   FrontEndBoardLog.setPriority(log4cpp::Priority::DEBUG);  
 

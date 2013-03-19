@@ -47,12 +47,12 @@ LVDSFrame::~LVDSFrame()
 //------------------------------------------
 //! Configure the ivars for building an outgoing header and build one.
 /*!
-  \param dev  The device to which the message is destined
-  \param b whether or not this is a broadcast request
-  \param d the direction of the message:  either master-to-slave (true for transmit) or
+  \param dev       The device to which the message is destined
+  \param b         whether or not this is a broadcast request
+  \param d         the direction of the message:  either master-to-slave (true for transmit) or
   slave-to-master (receive)
-  \param f the device function.  This is specific to the device (dev) receiving the message
-  \param feb the number of the FEB to which this frame is destined
+  \param deviceFun the device function.  This is specific to the device (dev) receiving the message
+  \param febNum    the number of the FEB to which this frame is destined
   */
 void LVDSFrame::MakeDeviceFrameTransmit( FrameTypes::Devices dev, 
     FrameTypes::Broadcasts b, FrameTypes::Directions d, 
