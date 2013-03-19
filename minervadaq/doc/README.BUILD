@@ -1,4 +1,4 @@
-This file is current as of 2010.July.14 - GNP
+This file is current as of 2013.March.19 - GNP
 
 How to Build the MINERvA DAQ.
 -----------------------------
@@ -25,20 +25,18 @@ mnvtbonline0.fnal.gov> ./compiler.sh
 
 5) If the build succeeded, you should see the following in the $DAQROOT/lib and $DAQROOT/bin directories:
         
-mnvtbonline0.fnal.gov> llt lib/ bin/
-lib/:   
-total 1.2M
-drwxr-xr-x 2 tbonline e938 4.0K Apr 23 16:52 CVS/
--rwxr-xr-x 1 tbonline e938 715K Jun  1 18:13 libhardware.so*
--rwxr-xr-x 1 tbonline e938 326K Jun  1 18:13 libminerva_workers.so*
--rwxr-xr-x 1 tbonline e938  48K Jun  1 18:13 libevent_structure.so*bin/:
-total 532K
--rwxr-xr-x 1 tbonline e938   97 Nov 29  2009 cleaner.sh*
-drwxr-xr-x 2 tbonline e938 4.0K Apr 29 09:59 CVS/
--rwxr-xr-x 1 tbonline e938  84K Jun  1 18:13 event_builder*
--rwxr-xr-x 1 tbonline e938 243K Jun  1 18:13 minervadaq*
--rwxr-xr-x 1 tbonline e938  77K Jun  1 18:13 daq_master*
--rwxr-xr-x 1 tbonline e938  98K Jun  1 18:13 daq_slave_service*
+perdue@minervatest04> ll lib/ bin/
+bin/:
+total 392K
+-rwxrwxr-x 1 perdue e938  33K Mar 19 16:52 event_builder*
+-rwxrwxr-x 1 perdue e938 105K Mar 19 16:52 minervadaq*
+-rwxrwxr-x 1 perdue e938 237K Mar 19 16:52 tests*
+
+lib/:
+total 304K
+-rwxrwxr-x 1 perdue e938  25K Mar 19 16:52 libevent_structure.so*
+-rwxrwxr-x 1 perdue e938 181K Mar 19 16:52 libhardware.so*
+-rwxrwxr-x 1 perdue e938  84K Mar 19 16:52 libminerva_workers.so*
 
 
 Complete Directions (no software installed):
@@ -68,40 +66,21 @@ Makefiles in order to get the DAQ to build.
 
 Once the CAEN libraries are installed, go to $WORKROOT and create a mnvonline/ directory to hold the DAQ 
 and (eventually) SlowControl code.  Within mnvonline/ run a CVS checkout on the package mnvdaq.  Make sure 
-you have the following environment variables set and a valid kerberos ticket to access the MINERvA CVS 
+you have the following environment variables set and a valid kerberos ticket to access the MINERvA Git 
 repository:
-	CVSROOT=minervacvs@cdcvs.fnal.gov:/cvs/minervasw
-	CVS_RSH=ssh
+  git clone ssh://p-minervadaq@cdcvs.fnal.gov/cvs/projects/minervadaq
 
 Inside the mnvdaq/ directory you will find a setup script.  It is a good idea to read this script 
 carefully before proceeding.  The "location" is set by a $LOCALE environment variable.  Set your own $LOCALE 
 variable or mimic the directory structure of another $LOCALE and use that value for your own $LOCALE.  
 
-As of 2010.July14, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
+As of 2010.July.14, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
 operation on Fermilab machines, set by hostnames in the options/ directory set of Make.options files.  
 For set-up in a different environment, the default scripts will need to be edited carefully.
 
-Before you build the DAQ, it is important to understand the possible architectures.  The DAQ can be run 
-either on a single PC or on a network of PC's.  Currently, we support the following options:
-1) Single PC
-2) Multi-PC with one Head Node, one Soldier (Chief) Readout Client, and one Worker Readout Client.
-The distinguishing feature between the Readout Clients is that one and only one is responsible for attaching 
-the end-of-event DAQ Header bank (the Soldier).
-
-In principle, the DAQ can be extended to support an arbitrary number of Worker Clients, but this feature is 
-not currently supported (and would require some significant re-engineering of the networking).  Having three
-"tiers" of machines can make the jargon confusing, so partly for fun, we will use the following short-hand:
-- Queen : Server node (also the Single PC mode).
-- Soldier : Chief Readout Client (attaches the DAQ Header bank at the end of the gate).
-- Worker : Worker Readout Client.
-
-By default the DAQ will build in Single PC mode.  If you want to build in multi-PC mode, configure the 
-options in the Make.options as follows:
-	Queen  : COMPILE_OPTIONS += -DMULTIPC -DMASTER 
-	Soldier: COMPILE_OPTIONS += -DMULTIPC -DMASTER 
-	Worker : COMPILE_OPTIONS += -DMULTIPC  
-The Queen actually is ambivalent about the MASTER flag - we only run the event_builder task on the Queen, not 
-any of the acquisition tasks.
+As of 2013.March.19, the different configuration options files are out of date. Basically we only build the 
+DAQ one way right now, with updates to the build options required to get things working on the nearline 
+monitoring stations. 
 
 Once you have configured your setup scripts, build the DAQ with the following steps:
 
@@ -123,10 +102,9 @@ It is a good idea to configure your firewall such that these ports are kept open
 6) Return to $DAQROOT and type "gmake all"
 
 7) Check ${DAQROOT}/bin/ for 
-	daq_master
-	daq_slave_service
 	event_builder
 	minervadaq
+  tests
 And check ${DAQROOT}/lib/ for 
 	libevent_structure.so
 	libhardware.so
@@ -134,6 +112,9 @@ And check ${DAQROOT}/lib/ for
 
 8) If you are missing any of these, read the Makefile and try building each package one at a time and check 
 for errors.  Most likely, an environment variable has been incorrectly set.
+
+9) Finally, build the doxygen documentation:
+  doxygen Doxyfile
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Note about data sizes!  If you run the DAQ on an OS besides 64-bit SLF5.3, be sure to check the data sizes 
