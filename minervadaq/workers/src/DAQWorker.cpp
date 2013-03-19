@@ -172,9 +172,8 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
         }
       }
 #endif
-      // TODO : memmove?
-      // Also TODO : statically sized EventHandler is typically far too big. Dynamic?
-      memcpy(pdata, handler, sizeof(struct EventHandler));
+      // TODO : statically sized EventHandler is typically far too big. Dynamic?
+      memmove(pdata, handler, sizeof(struct EventHandler));
       et_event_setlength(pe, sizeof(struct EventHandler));
     } 
 
