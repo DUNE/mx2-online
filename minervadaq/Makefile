@@ -55,10 +55,6 @@ event_builder: FORCE
 main: FORCE
 	cd main; make;
 	cd ../;
-	cd daq_master; gmake
-	cd ../;
-	cd daq_server; gmake
-	cd ../;
 
 tests: FORCE
 	cd tests; make;
@@ -71,18 +67,12 @@ event_builder-clean: FORCE
 main-clean: FORCE
 	cd main; gmake clean;
 	cd ../;
-	cd daq_master; gmake clean;
-	cd ../;
-	cd daq_server; gmake clean;
-	cd ../;
-	cd bin; rm minervadaq; rm daq_master; rm daq_slave_service; rm event_builder;
-	cd ../;
 
 hardware-clean: FORCE
-	cd fermihardware/src; make clean;
+	cd fermihardware/src; gmake clean;
 
 workers-clean: FORCE
-	cd workers/src; make clean;
+	cd workers/src; gmake clean;
 
 event_structure-clean: FORCE
 	cd event_structure/src; make clean;
@@ -93,3 +83,4 @@ tests-clean: FORCE
 
 FORCE:
 	if test -d lib; then echo LibOk; else mkdir -p lib; fi
+	if test -d bin; then echo BinOk; else mkdir -p bin; fi
