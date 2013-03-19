@@ -8,7 +8,7 @@
   \author Elaine Schulte
   */
 
-namespace Flash {
+namespace FlashTypes {
 
   //typecast to unsigned char
   typedef enum OpCodes { 
