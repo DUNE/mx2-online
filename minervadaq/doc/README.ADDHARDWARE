@@ -1,14 +1,26 @@
-This file is current as of 2010.July.14 - GNP
+This file is current as of 2013.March.19 - GNP
 
 How to update the hardware configuration for Minerva DAQ.
 ---------------------------------------------------------
-The Minerva DAQ does not perform dynamic hardware lookup, nor does it load configurations from user editable text files.  Instead, the hardware is coded into the DAQ and selected via pre-compiler commands.  The configuration is kept in the DAQ's workers library.
+The Minerva DAQ does not perform dynamic hardware lookup, nor does it load 
+configurations from user editable text files.  Instead, the hardware is coded 
+into the DAQ and selected via pre-compiler commands.  The configuration is 
+kept in the DAQ's workers library.
 
 To update the configuration, take the following steps:
 
-1) Log on to the DAQ machine you want to update as the "mnvonline" user.  On T977 machines, use the "tbonline" account instead.  In the $HOME are there will be a set of scripts for launching the Run and Slow Controls, configuring the environment, etc.  These scripts will vary from machine to machine, but they are hopefully titled in a useful way.  The primary distinction to be aware of is between single and mulit-machine DAQ builds.  For most production machines, that choice is hidden, but the user should pay attention to the setup scripts just in case.
+1) Log on to the DAQ machine you want to update as the "mnvonline" user.  On 
+T977 machines, use the "tbonline" account instead.  In the $HOME are there 
+will be a set of scripts for launching the Run and Slow Controls, configuring 
+the environment, etc.  These scripts will vary from machine to machine, but 
+they are hopefully titled in a useful way.  The primary distinction to be 
+aware of is between single and mulit-machine DAQ builds.  For most production 
+machines, that choice is hidden, but the user should pay attention to the 
+setup scripts just in case.
 
-2) Source the setup script to set the DAQ environment variables.  On E938 machines, the script is likely named "setupdaqenv.sh."  On T977 machines, it will likely be named "singledaqenv.sh."
+2) Source the setup script to set the DAQ environment variables.  On E938 
+machines, the script is likely named "setupdaqenv.sh."  On T977 machines, 
+it will likely be named "singledaqenv.sh."
 
 Example:
 ~> ssh tbonline@mnvtbonline0.fnal.gov
@@ -22,104 +34,51 @@ mnvtbonline0.fnal.gov> cd $DAQROOT
 mnvtbonline0.fnal.gov> pwd
 /work/software/mnvsingle/mnvdaq
 
-4) The file we need to edit is in the workers package.  Open $DAQROOT/workers/src/ReadoutWorker.cpp.
+4) The file we need to edit is in the workers package.  Open 
+  $DAQROOT/workers/src/DAQWorker.cpp.
 
-5) The hardware definitions are in the ReadoutWorker::SOMETHING function.  Find the function.
-
-Example:
-#if PMTTEST
-        detectorString        = "LabF PMT X-talk Stand.";
-        std::cout            << "Initializing hardware for the " << detectorString << std::endl;
-        acqData.infoStream() << "Initializing hardware for the " << detectorString;
-        InitializeCrim(0xE00000, 1, runningMode);
-        InitializeCroc(0x030000, 1, 4, 0, 0, 0);
-#endif
-#if MTEST
-        detectorString        = "MTest.";
-        std::cout            << "Initializing hardware for " << detectorString << std::endl;
-        acqData.infoStream() << "Initializing hardware for " << detectorString;
-        InitializeCrim(0xE00000, 1, runningMode);
-        InitializeCroc(0x010000, 1, 4, 4, 0, 0);
-        InitializeCroc(0x020000, 2, 4, 4, 0, 0);
-#endif
-
-Note that the detector is selected via a precompiler flag (#if MTEST, etc.).  That flag is set in $DAQROOT/Make.options.  The user should not need to edit the Make.options file.  There is a script, $DAQROOT/compiler.sh that correctly loads the Make.options file for the DAQ machine in question and does the build.
-
-6) Edit the section for the detector in question.  The relevant functions are InitializeCrim and InitializeCroc.  Their arguments are:
-	InitializeCrim(Address, Index, Running Mode);
-	InitializeCroc(Address, Index, # of FEB's on Chain 0, # of FEB's on Chain 1, # of FEB's on Chain 2, # of FEB's on Chain 3);
+5) The hardware definitions are in the DAQWorker::InitializeHardware() function.  
+Find the function.
 
 Example:
+  daqWorker.infoStream() << "Initializing Hardware for DAQWorker...";
 
-Add another CRIM to MTest:
-#if MTEST
-        detectorString        = "MTest.";
-        std::cout            << "Initializing hardware for " << detectorString << std::endl;
-        acqData.infoStream() << "Initializing hardware for " << detectorString;
-        InitializeCrim(0xE00000, 1, runningMode);
-        InitializeCrim(0xF00000, 2, runningMode);
-        InitializeCroc(0x010000, 1, 4, 4, 0, 0);
-        InitializeCroc(0x020000, 2, 4, 4, 0, 0);
-#endif
+  // Read in hardware config here. For now, hard code...
 
-Note that the Address is an unsigned int expressed in hex for convenience.  There are 8 dip switches on the VME cards (CROC's and CRIM's) that can be used to set an address from 1 to 255 (or 0x01 to 0xFF).  However, the address that should be given to the initialization function is that address shifted 16 bits to the left.  So, setting the switches like 1111 0000 = 0xF0 means we should give 0xF00000 to the function.
+  readoutWorker->AddCrate(0);
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 2, 0, 5, 0, 0 );
+  readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
+  readoutWorker->InitializeCrates( args->runMode );
 
-The index argument is just for internal bookkeeping convenience.  It should simply be incremented for each new card.
+6) Edit the section.  The relevant functions are AddECROC and AddCRIM.
+	AddCRIM(Address);
+	AddECROC(Address, # of FEB's on Chain 0, # of FEB's on Chain 1, 
+    # of FEB's on Chain 2, # of FEB's on Chain 3);
 
-For CRIM's, the third argument should always be "runningMode."
+There are 8 dip switches on the VME cards (CROC's and CRIM's) that can be used 
+to set an address from 1 to 255 (or 0x01 to 0xFF).  
 
-Example, add a CROC to MTest:
-#if MTEST
-        detectorString        = "MTest.";
-        std::cout            << "Initializing hardware for " << detectorString << std::endl;
-        acqData.infoStream() << "Initializing hardware for " << detectorString;
-        InitializeCrim(0xE00000, 1, runningMode);
-        InitializeCroc(0x010000, 1, 4, 4, 0, 0);
-        InitializeCroc(0x020000, 2, 4, 4, 0, 0);
-        InitializeCroc(0x030000, 3, 4, 4, 0, 0);
-#endif
-
-This is a new card with VME address 3 (and index 3, it so happens) with 4 FEB's on Chain 0 and 4 FEB's on Chain 1.  
-
-Example, add another FEB to one of the Chains:
-#if MTEST
-        detectorString        = "MTest.";
-        std::cout            << "Initializing hardware for " << detectorString << std::endl;
-        acqData.infoStream() << "Initializing hardware for " << detectorString;
-        InitializeCrim(0xE00000, 1, runningMode);
-        InitializeCroc(0x010000, 1, 4, 4, 0, 0);
-        InitializeCroc(0x020000, 2, 4, 4, 0, 0);
-        InitializeCroc(0x030000, 3, 4, 5, 0, 0);
-#endif
-
-Here we added an FEB to Chain 1 on CROC 3.  Note, the DAQ expects FEB's to be addressed sequentially!
-
-7) Once the file is set, go to the $DAQROOT directory and run the compiler script.
+7) Once the file is set, go to the $DAQROOT directory and build.
 
 Example:
 mnvtbonline0.fnal.gov> cd $DAQROOT 
-mnvtbonline0.fnal.gov> ./compiler.sh 
+mnvtbonline0.fnal.gov> gmake relink
 
-8) If the build succeeded, you should see the following in the $DAQROOT/lib and $DAQROOT/bin directories:
+8) If the build succeeded, you should see the following in the $DAQROOT/lib 
+and $DAQROOT/bin directories:
 
-mnvtbonline0.fnal.gov> llt lib/ bin/
-lib/:
-total 1.2M
-drwxr-xr-x 2 tbonline e938 4.0K Apr 23 16:52 CVS/
--rwxr-xr-x 1 tbonline e938 715K Jun  1 18:13 libhardware.so*
--rwxr-xr-x 1 tbonline e938  52K Jun  1 18:13 libcaeninterface.so*
--rwxr-xr-x 1 tbonline e938 326K Jun  1 18:13 libminerva_workers.so*
--rwxr-xr-x 1 tbonline e938  48K Jun  1 18:13 libevent_structure.so*
-
+perdue@minervatest04> ll lib/ bin/
 bin/:
-total 532K
--rwxr-xr-x 1 tbonline e938   97 Nov 29  2009 cleaner.sh*
-drwxr-xr-x 2 tbonline e938 4.0K Apr 29 09:59 CVS/
--rwxr-xr-x 1 tbonline e938  84K Jun  1 18:13 event_builder*
--rwxr-xr-x 1 tbonline e938 243K Jun  1 18:13 minervadaq*
--rwxr-xr-x 1 tbonline e938  77K Jun  1 18:13 daq_master*
--rwxr-xr-x 1 tbonline e938  98K Jun  1 18:13 daq_slave_service*
+total 392K
+-rwxrwxr-x 1 perdue e938  33K Mar 19 16:52 event_builder*
+-rwxrwxr-x 1 perdue e938 105K Mar 19 16:52 minervadaq*
+-rwxrwxr-x 1 perdue e938 237K Mar 19 16:52 tests*
 
+lib/:
+total 304K
+-rwxrwxr-x 1 perdue e938  25K Mar 19 16:52 libevent_structure.so*
+-rwxrwxr-x 1 perdue e938 181K Mar 19 16:52 libhardware.so*
+-rwxrwxr-x 1 perdue e938  84K Mar 19 16:52 libminerva_workers.so*
 
 
 
