@@ -1,17 +1,18 @@
 #ifndef FrontEndBoard_h
 #define FrontEndBoard_h
+/*! \file FrontEndBoard.h
+*/
 
 #include "TRIPFrame.h"
 #include "ADCFrame.h"
 #include "DiscrFrame.h"
 #include "FPGAFrame.h"
 
-
-/*! \class FrontEndBoard
- *
- * \brief The class which holds all of the information associated with an FrontEndBoard.
- *
- */
+/*! 
+  \class FrontEndBoard
+  \brief The class which holds all of the information associated with a Front End Board (FEB).
+  \author Gabriel Perdue
+  */
 
 class FrontEndBoard {
 
@@ -21,7 +22,6 @@ class FrontEndBoard {
     ADCFrame   * adcFrame;      
     DiscrFrame * discrFrame;   
     FPGAFrame  * fgpaFrame;
-
 
   public:
     FrontEndBoard( FrameTypes::febAddresses theAddress ); 

@@ -1,24 +1,23 @@
 #ifndef FrameTypes_h
 #define FrameTypes_h
-
 /*! \file FrameTypes.h
-  */
+*/
 
 /*!
- \brief Useful enumerations for LVDSFrames.
+  \brief Useful enumerations for LVDSFrames.
 
- The first byte of an outgoing frame contains:
- Bits 0-3:  Front-end address (1-15; 0 = all)
- Bits 4-6:  Broadcast command (0 = not a broadcast)
- Bit    7:  Bit indicating direction (0 for outgoing, 1 for response)
+  The first byte of an outgoing frame contains:
+  Bits 0-3:  Front-end address (1-15; 0 = all)
+  Bits 4-6:  Broadcast command (0 = not a broadcast)
+  Bit    7:  Bit indicating direction (0 for outgoing, 1 for response)
 
- The second byte of an outgoing message indicates the device (on the FEB) and function:
- Bits 0-3:  Function
- Bits 4-7:  Device
+  The second byte of an outgoing message indicates the device (on the FEB) and function:
+  Bits 0-3:  Function
+  Bits 4-7:  Device
 
- \author Gabriel Perdue
- \author Elaine Schulte
- */
+  \author Gabriel Perdue
+  \author Elaine Schulte
+  */
 
 namespace FrameTypes {
 

@@ -10,8 +10,8 @@
 
 namespace RegisterWords {
 
-  unsigned char channelReset[] = {0x00,0x80};  /*!< Send to a CROC-E Channel */
-  unsigned char sendMessage[]  = {0x00,0x40};  /*!< Send to a CROC-E Channel */
+  unsigned char channelReset[] = {0x00,0x80};  /*!< Send to a ECROC EChannels */
+  unsigned char sendMessage[]  = {0x00,0x40};  /*!< Send to a ECROC EChannels */
 
 };
 

@@ -1,5 +1,7 @@
 #ifndef VMECommunicator_cpp
 #define VMECommunicator_cpp
+/*! \file VMECommunicator.cpp
+*/
 
 #include "VMECommunicator.h"
 #include "exit_codes.h"
@@ -46,23 +48,17 @@ const Controller* VMECommunicator::GetController() const
 }
 
 //-----------------------------
+//! Performs a single write cycle of 2 bytes per write to the VME.
+/*!
+  \param ml           the message length
+  \param send_message pointer of unsigned chars to the data to be sent over the VME
+  \param address      the VME address 
+  \param AM           the address length for each message
+  \param DW           the number of bits sent per write
+  */
 int VMECommunicator::WriteCycle(int ml, unsigned char *send_message, unsigned int address, 
     CVAddressModifier AM, CVDataWidth DW) const
 {
-  /*!
-   * \fn int VMECommunicator::WriteCycle(int ml, unsigned char *send_message,  unsigned int address,
-   *                          CVAddressModifier AM, CVDataWidth DW)
-   *
-   *  Performs a single write cycle of 2 bytes per write to the VME.
-   *
-   *  \param ml an integer; the message length
-   *  \param *send_message a pointer of unsigned chars with the data to be sent over the VME
-   *  \param address unsigned int, the VME address 
-   *  \param AM CVAddressModifier, the address length for each message
-   *  \param DW CVDataWidth, the number of bits sent per write
-   *
-   *  Returns the error code for the VME cycle.
-   */
   unsigned short send_data;
   int error(0); 
 
@@ -86,47 +82,35 @@ int VMECommunicator::WriteCycle(int ml, unsigned char *send_message, unsigned in
 
 
 //-----------------------------
+//! Performs a single read cycle from the VME.
+/*!
+  \param received_message a pointer of unsigned chars to the data to be sent over the VME
+  \param address          the VME address 
+  \param AM               the address length for each message
+  \param DW               the number of bits sent per read
+  */
 int VMECommunicator::ReadCycle(unsigned char *received_message, unsigned int address, 
     CVAddressModifier AM, CVDataWidth DW) const
 {
-  /*!
-   * \fn int VMECommunicator::ReadCycle(unsigned char *received_message,  
-   *                            unsigned int address, CVAddressModifier AM, CVDataWidth DW)
-   *
-   *  Performs a single read cycle from the VME.
-   *
-   *  \param *receive_message a pointer of unsigned chars with the data to be sent over the VME
-   *  \param address unsigned int, the VME address 
-   *  \param AM CVAddressModifier, the address length for each message
-   *  \param DW CVDataWidth, the number of bits sent per read
-   *
-   *  Returns the error code for the VME cycle.
-   */
-  int error; //VME error status
-  error = CAENVME_ReadCycle(controllerHandle, address, received_message, AM,DW);
+  int error; 
+  error = CAENVME_ReadCycle(controllerHandle, address, received_message, AM, DW);
   return error;
 }
 
 
 //-----------------------------
+//! Performs a block read cycle from the VME.
+/*!
+  \param received_message a pointer of unsigned chars to the data to be sent over the VME
+  \param blocks           the length of the incoming message
+  \param address          the VME address 
+  \param AM               the address length for each message
+  \param DW               the number of bits sent per read
+  */
 int VMECommunicator::ReadBLT(unsigned char *received_message, int blocks, unsigned int address, 
     CVAddressModifier AM, CVDataWidth DW) const 
 {
-  /*!
-   * \fn int VMECommunicator::ReadBLT(unsigned char *received_message,  
-   *                            unsigned int address, CVAddressModifier AM, CVDataWidth DW)
-   *
-   *  Performs a block read cycle from the VME.
-   *
-   *  \param *receive_message a pointer of unsigned chars with the data to be sent over the VME
-   *  \param blocks the length of the incoming message
-   *  \param address unsigned int, the VME address 
-   *  \param AM CVAddressModifier, the address length for each message
-   *  \param DW CVDataWidth, the number of bits sent per read
-   *
-   *  Returns the error code for the VME cycle.
-   */
-  int count(-1); //counter for number of blocks read off
+  int count(-1); 
   int error(0); 
   error = CAENVME_BLTReadCycle(controllerHandle,address, received_message, blocks, AM, DW, &count);
   return error;
@@ -134,23 +118,17 @@ int VMECommunicator::ReadBLT(unsigned char *received_message, int blocks, unsign
 
 
 //-----------------------------
+//! Performs a FIFO block write cycle to the VME.
+/*!
+  \param ml           the message length
+  \param send_message a pointer of unsigned chars to the data to be sent over the VME
+  \param address      the VME address 
+  \param AM           the address length for each message
+  \param DW           the number of bits sent per write
+  */
 int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned int address, 
     CVAddressModifier AM, CVDataWidth DW) const
 {
-  /*!
-   * \fn int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message,  unsigned int address,
-   *                          CVAddressModifier AM, CVDataWidth DW)
-   *
-   *  Performs a FIFO block write cycle to the VME.
-   *
-   *  \param ml an integer; the message length
-   *  \param *send_message a pointer of unsigned chars with the data to be sent over the VME
-   *  \param address unsigned int, the VME address 
-   *  \param AM CVAddressModifier, the address length for each message
-   *  \param DW CVDataWidth, the number of bits sent per write
-   *
-   *  Returns the error code for the VME cycle.
-   */
   int count(-1);
   int error(0); //VME error status
   do {

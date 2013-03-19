@@ -12,7 +12,6 @@ log4cpp::Category& TRIPFrameLog = log4cpp::Category::getInstance(std::string("TR
 /*! 
   \param a the FEB address to which this trip belongs
   \param f the Trip function (read or write)
-  \param maxHits the maximum number of hits that can be serviced
   */
 TRIPFrame::TRIPFrame(FrameTypes::febAddresses a, TripTTypes::TRiPFunctions f) : 
   LVDSFrame(),

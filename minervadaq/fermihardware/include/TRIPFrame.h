@@ -12,6 +12,7 @@
 /*! 
   \class TRIPFrame
   \brief This class holds all data associated with a TRiP-T on an FEB.
+  \author Cristian Gingu
   \author Gabriel Perdue
   \author Elaine Schulte
   */

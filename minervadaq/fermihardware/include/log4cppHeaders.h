@@ -1,5 +1,7 @@
 #ifndef log4cppHeaders_h
 #define log4cppHeaders_h
+/*! \file log4cppHeaders.h
+*/
 
 // log4cpp Headers
 #include "log4cpp/Portability.hh"
@@ -13,6 +15,4 @@
 #include "log4cpp/Priority.hh"
 #include "log4cpp/NDC.hh"
 
-//log4cpp::Category& root = log4cpp::Category::getRoot();
-
-#endif //ifndef-define
+#endif 

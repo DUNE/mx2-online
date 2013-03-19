@@ -13,16 +13,10 @@
 
 #include "log4cppHeaders.h"
 
-/*********************************************************************************
-* Class for creating CAEN VME V2718 Controller objects for use with the 
-* MINERvA data acquisition system and associated software projects.
-*
-* Gabriel Perdue, The University of Rochester
-**********************************************************************************/
-
-/*! \class Controller
- *
- * \brief A class for handling data associated with a CAEN V2718 VME Controller.
+/*! 
+  \class Controller
+  \brief A class for handling data associated with a CAEN V2718 VME Controller.
+  \author Gabriel N Perdue
  */
 class Controller {
 	private:
@@ -34,7 +28,7 @@ class Controller {
 
 		char firmware[1];
 		int crateNumber;
-		int handle; /*!<a device handle returned by the initialization function*/
+		int handle;                  /*!<a device handle returned by the initialization function*/
 		unsigned short *shortBuffer; /*!<a short buffer for messaging*/
 
 		/*! these are the controller registers for the VME controller - basically unused, will implement someday? */

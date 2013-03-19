@@ -1,14 +1,15 @@
 #ifndef SequencerReadoutBlock_h
 #define SequencerReadoutBlock_h
+/*! \file SequencerReadoutBlock.h
+*/
 
 #include "LVDSFrame.h"
 #include <list>
 
-
-/*! \class SequencerReadoutBlock
- *
- * \brief The class which holds all of the information associated with an SequencerReadoutBlock.
- *
+/*! 
+  \class SequencerReadoutBlock
+  \brief Holds blocks of data read from EChannels in sequencer (RDFE) mode.
+  \author Gabriel Perdue
  */
 
 class SequencerReadoutBlock {

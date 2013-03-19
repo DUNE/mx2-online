@@ -1,5 +1,7 @@
 #ifndef CRIM_h
 #define CRIM_h
+/*! \file CRIM.h
+*/
 
 /* system specific headers go here */
 #include <fstream>
@@ -14,21 +16,11 @@
 #include "VMECommunicator.h"
 #include "VMEModuleTypes.h"
 
-
-/*********************************************************************************
- * Class for creating Chain Read-Out Controller Interfact Module objects for 
- * use with the MINERvA data acquisition system and associated software projects.
- *
- * Gabriel Perdue, The University of Rochester
- **********************************************************************************/
-
-/*! \class CRIM
- *
- * \brief The class for CRIM objects.
- *
- * This class contains all of the data associated with a CRIM object.  This includes
- * the register addresses and interrupt information .
- */
+/*! 
+  \class CRIM
+  \brief The class for Chain Read-Out Controller Interfact Module objects.
+  \author Gabriel Perdue
+  */
 
 class CRIM : public VMECommunicator {
 
@@ -36,8 +28,8 @@ class CRIM : public VMECommunicator {
     /* We will always use the first CRIM in the vector of CRIMs held by the 
        DAQ worker classes as the master CRIM. */
 
-    unsigned short irqLevel;  /*!<the interrupt priority level */
-    VMEModuleTypes::CRIMInterrupts irqLine;   /*!<the interrupt to be monitored */
+    unsigned short irqLevel;                 /*!<the interrupt priority level */
+    VMEModuleTypes::CRIMInterrupts irqLine;  /*!<the interrupt to be monitored */
 
     unsigned short controlRegister; 
 

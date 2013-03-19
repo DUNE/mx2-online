@@ -5,10 +5,10 @@
 
 #include "LVDSFrame.h"
 
-
 /*! 
   \class DiscrFrame
   \brief This class controls the discriminator frames.
+  \author Cristian Gingu
   \author Gabriel Perdue
   \author Elaine Schulte
  */
