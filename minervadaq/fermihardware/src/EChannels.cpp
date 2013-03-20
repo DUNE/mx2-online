@@ -9,7 +9,6 @@
 #include "EChannels.h"
 #include "exit_codes.h"
 
-
 log4cpp::Category& EChannelLog = log4cpp::Category::getInstance(std::string("EChannel"));
 
 //----------------------------------------

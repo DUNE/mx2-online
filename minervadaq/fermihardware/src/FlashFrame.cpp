@@ -1,12 +1,10 @@
 #ifndef FlashFrame_cpp
 #define FlashFrame_cpp
+/*! \file FlashFrame.cpp
+*/
 
 #include "FlashFrame.h"
 #include "exit_codes.h"
-
-// ********************************************************************************
-//  Class for creating Flash Frame objects for reprogramming the FEB FPGA chips.
-// ********************************************************************************
 
 const int FlashFrame::Spartan_3E_Npages = 1075;
 const int FlashFrame::Spartan_3E_PageSize = 264;
@@ -24,7 +22,7 @@ FlashFrame::FlashFrame(FrameTypes::FEBAddresses a) : LVDSFrame()
   FlashFunctions f = NoFlash; 
 
   MakeDeviceFrameTransmit(dev, b, d, f, (unsigned int)febNumber[0]);  
-  flashLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
+  flashLog.setPriority(log4cpp::Priority::DEBUG); 
 }
 
 #endif

@@ -3,7 +3,7 @@
 /*! 
   \file EventHandler.h
   \brief Define the EventHandler struct.
-*/
+  */
 
 #include "MinervaDAQSizes.h"
 

@@ -15,22 +15,20 @@
 
 log4cpp::Category& frameheader = log4cpp::Category::getInstance(std::string("frameheader"));
 
+//! Default ctor.
+/*!
+  \param crateID  crate from which data came
+  \param crocID   CROC from which data came
+  \param chanID   channel from which data came
+  \param bank     data banke type
+  \param feb_no   FEB number
+  \param firmware FEB firmware
+  \param hit      hit number
+  \param length   message length
+  */
 FrameHeader::FrameHeader(int crateID, int crocID, int chanID, 
     int bank, int feb_no, int firmware, int hit, int length) 
 {
-  /*! \fn FrameHeader
-   *
-   * The constructor which makes the FrameHeader for a data block
-   *
-   * \param crateID  crate from which data came
-   * \param crocID   CROC from which data came
-   * \param chanID   channel from which data came
-   * \param bank     data banke type
-   * \param feb_no   FEB number
-   * \param firmware FEB firmware
-   * \param hit      hit number
-   * \param length   message length
-   */
   frameheader.setPriority(log4cpp::Priority::INFO);
 
   unsigned short source_id = 0;
@@ -69,7 +67,7 @@ std::ostream& operator<<(std::ostream& out, const FrameHeader& s)
   const unsigned short *header = s.GetBankHeader();
   for (unsigned int i = 0; i < 4; ++i)
     out << "Word[" << std::dec << i << "] = 0x" << std::hex << header[i] << " ";
-      
+
   return out;
 }
 

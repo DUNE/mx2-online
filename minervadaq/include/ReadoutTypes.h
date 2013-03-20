@@ -1,18 +1,22 @@
 #ifndef ReadoutTypes_h
 #define ReadoutTypes_h
-/*! \file ReadoutTypes.h
+/*! 
+  \file ReadoutTypes.h
+  \brief Define the Modes, Triggers, and Detectors namespaces and enums.
+  \author Gabriel Perdue
 */
 
-//! RunningMode defines the subrun type. It is not equivalent to trigger type.
-/*!
-  The RunningMode defines the sort of data being collected during a run and is not synonymous with 
-  trigger type.  For example, the MixedBeamLightInjection RunningMode will alternate between beam 
-  gates and LI gates.  The RunningMode defines the CRIM timing mode and sets the behavior of the LI 
-  box and governs the switch between trigger types.  These are equivalent to OperatingMode in the 
-  old Windows DAQ system.  This value is not stored in the data stream but *is* stored in the 
-  SAM metadata.
-  */
+//! Keep RunningModes out of the global namespace.
 namespace Modes {
+  //! RunningMode defines the subrun type. It is not equivalent to trigger type.
+  /*!
+    The RunningMode defines the sort of data being collected during a run and is not synonymous with 
+    trigger type.  For example, the MixedBeamLightInjection RunningMode will alternate between beam 
+    gates and LI gates.  The RunningMode defines the CRIM timing mode and sets the behavior of the LI 
+    box and governs the switch between trigger types.  These are equivalent to OperatingMode in the 
+    old Windows DAQ system.  This value is not stored in the data stream but *is* stored in the 
+    SAM metadata.
+    */
   typedef enum RunningModes {
     OneShot                 = 0, /*!< "OneShot" - Internal CRIM Timing, No Frequency. */
     NuMIBeam                = 1, /*!< "MTM" - MTM CRIM Timing, (No Frequency). */
@@ -25,13 +29,14 @@ namespace Modes {
   };
 }
 
-//! The TriggerType defines whether we issue a software gate or accept a passive signal.
-/*! 
-  The TriggerType dictates whether or not the DAQ issues a software gate command to the CRIM and 
-  additionally is written into the DAQ Header to identify the data type for the GATE.  The value 
-  assignments here must match those defined in the DAQHeader class in the MINERvA Software framework.
-  */
+//! Keep TriggerType out of the global namespace.
 namespace Triggers {
+  //! The TriggerType defines whether we issue a software gate or accept a passive signal.
+  /*! 
+    The TriggerType dictates whether or not the DAQ issues a software gate command to the CRIM and 
+    additionally is written into the DAQ Header to identify the data type for the GATE.  The value 
+    assignments here must match those defined in the DAQHeader class in the MINERvA Software framework.
+    */
   typedef enum TriggerType {
     UnknownTrigger  = 0x0000,
     Pedestal        = 0x0001,
@@ -46,8 +51,9 @@ namespace Triggers {
   };
 }
 
-//! Encode the location and physical hardware used to collect data.
+//! Keep DetectorTypes out of the global namespace.
 namespace Detectors {
+  //! Encode the location and physical hardware used to collect data.
   typedef enum DetectorTypes {
     UnknownDetector        = 0x00,
     PMTTestStand           = 0x01,

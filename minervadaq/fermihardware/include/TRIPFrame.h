@@ -99,7 +99,6 @@ class TRIPFrame : public LVDSFrame {
 
     /*! Function to filp the read/write message bit */
     void inline SetRead(bool a) {read = a;};
-
 };
 
 #endif

@@ -1,5 +1,10 @@
 #ifndef TestSuite_cxx
 #define TestSuite_cxx
+/*! 
+  \file TestSuite.cpp
+  \brief Implementation file for the unit tests.
+  \author Gabriel Perdue
+*/
 
 #include <fstream>
 #include <iostream>

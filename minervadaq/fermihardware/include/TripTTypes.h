@@ -26,6 +26,10 @@ namespace TripTTypes {
     tTR5  = 0x07
   };
 
+  /*! 
+    \struct TripRegisterValues
+    \brief Organize all the register settings for a TRiP-T.
+    */
   typedef struct TripRegisterValues {
     int tripRegIBP;
     int tripRegIBBNFOLL;
@@ -43,6 +47,7 @@ namespace TripTTypes {
     int tripRegIWSEL;
   };
 
+  //! Organize all the default register settings for a TRiP-T.
   static const TripRegisterValues DefaultTripRegisterValues = {
     60  , /* tripRegIBP */
     120 , /* tripRegIBBNFOLL */

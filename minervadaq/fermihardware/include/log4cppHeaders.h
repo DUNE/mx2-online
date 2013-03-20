@@ -1,6 +1,9 @@
 #ifndef log4cppHeaders_h
 #define log4cppHeaders_h
-/*! \file log4cppHeaders.h
+/*! 
+  \file log4cppHeaders.h
+  \brief Convenience header file for lg4cpp.
+  \author Gabriel Perdue
 */
 
 // log4cpp Headers

@@ -2,7 +2,7 @@
 #define ReadoutWorker_h
 /*! 
   \file ReadoutWorker.h
-*/
+  */
 
 #include "log4cppHeaders.h"
 
@@ -15,7 +15,6 @@
 #include <string>
 #include <sstream>
 
-
 /*! 
   \class ReadoutWorker
   \brief Manage communication with the VME modules.
@@ -25,48 +24,48 @@ class ReadoutWorker {
 
   friend std::ostream& operator<<(std::ostream&, const ReadoutWorker&);
 
-	private: 
+  private: 
 
-    std::vector<VMECrate*> crates;
-    std::vector<const EChannels*> readoutChannels;
-    std::vector<const EChannels*>::iterator currentChannel;
+  std::vector<VMECrate*> crates;
+  std::vector<const EChannels*> readoutChannels;
+  std::vector<const EChannels*>::iterator currentChannel;
 
-    const bool *const status;
-		bool vmeInit;    
-    Modes::RunningModes runningMode;
+  const bool *const status;
+  bool vmeInit;    
+  Modes::RunningModes runningMode;
 
-    CRIM* MasterCRIM() const;
+  CRIM* MasterCRIM() const;
 
-    void EnableIRQ() const;
-    bool WaitForIRQ() const;
-    void AcknowledgeIRQ() const;
-    void SendSoftwareGate() const;
-    void ResetSequencerLatch() const;
-    void ClearAndResetStatusRegisters() const;
-    void OpenGateFastCommand() const;
-    bool MicroSecondSleep(int us) const;
+  void EnableIRQ() const;
+  bool WaitForIRQ() const;
+  void AcknowledgeIRQ() const;
+  void SendSoftwareGate() const;
+  void ResetSequencerLatch() const;
+  void ClearAndResetStatusRegisters() const;
+  void OpenGateFastCommand() const;
+  bool MicroSecondSleep(int us) const;
 
-    static const unsigned int microSecondSleepDuration;
+  static const unsigned int microSecondSleepDuration;
 
-	public:
+  public:
 
-    explicit ReadoutWorker( log4cpp::Priority::Value priority, 
-        bool *status, bool VMEInit=false); 
-    ~ReadoutWorker();
+  explicit ReadoutWorker( log4cpp::Priority::Value priority, 
+      bool *status, bool VMEInit=false); 
+  ~ReadoutWorker();
 
-    void AddCrate( unsigned int crateID );
-    void InitializeCrates( Modes::RunningModes theRunningMode );
-    std::vector<VMECrate*>* GetVMECrateVector();
-    VMECrate* GetVMECrateVector( int index );
+  void AddCrate( unsigned int crateID );
+  void InitializeCrates( Modes::RunningModes theRunningMode );
+  std::vector<VMECrate*>* GetVMECrateVector();
+  VMECrate* GetVMECrateVector( int index );
 
-    unsigned int GetMINOSSGATE() const;
-    unsigned long long GetNowInMicrosec() const;
-    unsigned long long Trigger( Triggers::TriggerType triggerType );
-    void ResetCurrentChannel();
-    bool MoveToNextChannel();
-    const EChannels * CurrentChannel() const;
-    unsigned short GetNextDataBlockSize() const;
-    std::tr1::shared_ptr<SequencerReadoutBlock> GetNextDataBlock( unsigned short blockSize ) const;
+  unsigned int GetMINOSSGATE() const;
+  unsigned long long GetNowInMicrosec() const;
+  unsigned long long Trigger( Triggers::TriggerType triggerType );
+  void ResetCurrentChannel();
+  bool MoveToNextChannel();
+  const EChannels * CurrentChannel() const;
+  unsigned short GetNextDataBlockSize() const;
+  std::tr1::shared_ptr<SequencerReadoutBlock> GetNextDataBlock( unsigned short blockSize ) const;
 };
 
 #endif

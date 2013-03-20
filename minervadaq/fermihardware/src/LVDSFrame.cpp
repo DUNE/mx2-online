@@ -7,14 +7,6 @@
 #include "LVDSFrame.h"
 #include "exit_codes.h"
 
-/*********************************************************************************
- * Class for creating FPGA Frame header objects for use with the 
- * MINERvA data acquisition system and associated software projects.
- *
- * Elaine Schulte, Rutgers University
- * Gabriel Perdue, The University of Rochester
- **********************************************************************************/
-
 log4cpp::Category& lvdsLog = log4cpp::Category::getInstance(std::string("frames"));
 
 //------------------------------------------
@@ -35,7 +27,9 @@ LVDSFrame::LVDSFrame()
 //-------------------------------------------------------
 LVDSFrame::~LVDSFrame() 
 { 
+#ifndef GOFAST
   lvdsLog.debugStream() << "LVDSFrame::~LVDSFrame()... LVDSFrame Destructor";
+#endif
   if (receivedMessage) {
     delete [] receivedMessage;
   } 
@@ -58,7 +52,6 @@ void LVDSFrame::MakeDeviceFrameTransmit( FrameTypes::Devices dev,
     FrameTypes::Broadcasts b, FrameTypes::Directions d, 
     unsigned int deviceFun, unsigned int febNum ) 
 {
-
   broadcastCommand[0] = (unsigned char)b;
   messageDirection[0] = (unsigned char)d;
   targetDevice[0]     = (unsigned char)dev; 
@@ -98,19 +91,20 @@ void LVDSFrame::MakeOutgoingHeader()
 //------------------------------------------
 void LVDSFrame::MakeMessage() 
 { 
-  lvdsLog.debugStream() << "Please override LVDSFrame::MakeMessage()!"; 
+  lvdsLog.errorStream() << "Please override LVDSFrame::MakeMessage()!"; 
 }
 
 //------------------------------------------
 unsigned int LVDSFrame::GetOutgoingMessageLength() 
 { 
+  lvdsLog.errorStream() << "Please override LVDSFrame::GetOutgoingMessageLength()!"; 
   return 0; 
 }
 
 //------------------------------------------
 void LVDSFrame::DecodeRegisterValues() 
 { 
-  lvdsLog.debugStream() << "Please override LVDSFrame::DecodeRegisterValues()!"; 
+  lvdsLog.errorStream() << "Please override LVDSFrame::DecodeRegisterValues()!"; 
 }
 
 //------------------------------------------
@@ -124,7 +118,9 @@ bool LVDSFrame::CheckForErrors()
   // There isn't really a good check we can make on message length here.
 
   unsigned short status = this->ReceivedMessageStatus();
+#ifndef GOFAST
   lvdsLog.debugStream() << "CheckForErrors Frame Status = 0x" << std::hex << status;
+#endif
 
   const unsigned int nflags = 8;
   ResponseBytes bytes[nflags] = { FrameStart, DeviceStatus, DeviceStatus, FrameStatus, 
@@ -141,7 +137,9 @@ bool LVDSFrame::CheckForErrors()
     }
   }
 
+#ifndef GOFAST
   lvdsLog.debugStream() << "Error Status = " << error;
+#endif
   return error; 
 }
 
@@ -151,13 +149,17 @@ unsigned short LVDSFrame::ReceivedMessageLength() const
 {
   using namespace FrameTypes;
 
+#ifndef GOFAST
   lvdsLog.debugStream() << "LVDSFrame::ReceivedMessageLength()";
+#endif
   if (NULL == receivedMessage) {
     lvdsLog.errorStream() << "receivedMessage is NULL!";
     return 0;
   }
 
+#ifndef GOFAST
   lvdsLog.debugStream() << "Message Length = " << ( (receivedMessage[ResponseLength0]<<8) | receivedMessage[ResponseLength1] );
+#endif
   return ( (receivedMessage[ResponseLength0]<<8) | receivedMessage[ResponseLength1] ); 
 }
 
@@ -176,7 +178,9 @@ void LVDSFrame::DecodeHeader()
 {
   using namespace FrameTypes;
 
+#ifndef GOFAST
   lvdsLog.debugStream() << " Entering LVDSFrame::DecodeHeader...";
+#endif
   ResponseBytes byte; 
 
   byte = FrameStart; 
@@ -186,10 +190,12 @@ void LVDSFrame::DecodeHeader()
   byte = DeviceStatus;
   deviceFunction[0]   = (receivedMessage[byte]&0x0F); 
   targetDevice[0]     = (receivedMessage[byte]&0xF0); 
+#ifndef GOFAST
   lvdsLog.debugStream() << "  FEB Number            : " << (int)febNumber[0];
   lvdsLog.debugStream() << "  Device Function       : " << (int)deviceFunction[0];
   lvdsLog.debugStream() << "  message at framestart : " << (int)receivedMessage[byte];
   lvdsLog.debugStream() << "  direction             : " << (int)(receivedMessage[byte]&0x80);
+#endif
 }
 
 //------------------------------------------
