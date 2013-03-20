@@ -8,10 +8,8 @@
 #include <string>
 #include <sstream>
 
-/* CAEN VME header files here */
 #include "CAENVMEtypes.h"
 
-/* custom header files here */
 #include "FrontEndBoard.h"
 #include "FrameTypes.h"
 #include "VMECommunicator.h"

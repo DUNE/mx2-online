@@ -23,7 +23,7 @@ namespace FrameTypes {
 
   /*! \enum Directions 
    * \brief The message handling direction.
-   * */
+   */
   typedef enum Directions { //typecast to unsigned char
     MasterToSlave = 0x00,
     SlaveToMaster = 0x80
@@ -44,7 +44,6 @@ namespace FrameTypes {
 
   /*! \enum Devices
    * \brief Which device is being addressed 
-   *
    */
   typedef enum Devices { //typecast to unsigned char
     NoDevices  = 0x00,
@@ -53,7 +52,6 @@ namespace FrameTypes {
     RAM        = 0x30,
     Flash      = 0x40
   };
-
 
   /*! \enum FPGAFunctions 
    * \brief A read or write frame 
@@ -65,7 +63,6 @@ namespace FrameTypes {
     Read     = 0x02,
     DumpRead = 0x03
   };
-
 
   /*! \enum RAMFunctionsHit
    * \brief Which hit to read off of the ADC's 
@@ -83,7 +80,6 @@ namespace FrameTypes {
     ReadHit7     = 0x0F
   };
 
-
   /*! \enum RAMFunctionsChip
    * \brief  Depricated - DO NOT USE!
    */
@@ -99,7 +95,6 @@ namespace FrameTypes {
     ReadDigital1 = 0x0F
   };
 
-
   /*! \enum FlashFunctions
    * \brief For writing firmware to flash memory 
    */
@@ -108,7 +103,6 @@ namespace FrameTypes {
     Command  = 0x01,
     SetReset = 0x02
   };
-
 
   /*! \enum ResponseBytes
    * \brief Useful for decoding returning frame headers 
@@ -130,7 +124,6 @@ namespace FrameTypes {
     Data            = 13
   };
 
-
   /*! \enum HeaderWords
    * \brief Useful for decoding LVDSFrame headers.
    */
@@ -145,7 +138,6 @@ namespace FrameTypes {
     hWord7           = 7,
     hWord8           = 8
   };
-
 
   /*! \enum ResponseFlags
    * \brief Bitmasks for decoding the status of a returned message
@@ -166,10 +158,10 @@ namespace FrameTypes {
   };
 
 
-  /*! \enum febAddresses
+  /*! \enum FEBAddresses
    * \brief  FEB electronics addresses. 
    */
-  typedef enum febAddresses {
+  typedef enum FEBAddresses {
     febAll = 0,
     FE1    = 1,
     FE2    = 2,
@@ -188,7 +180,7 @@ namespace FrameTypes {
     FE15   =15
   };
 
-  typedef enum discrHeaderWords {
+  typedef enum DiscrHeaderWords {
     discrNumHits01 = 14,  // CROCE-era values
     discrNumHits23 = 15
   };
