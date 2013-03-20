@@ -22,7 +22,6 @@
   worker classes.
   \author Gabriel Perdue
   */
-
 class DAQWorker {
 
   private:  
@@ -57,8 +56,6 @@ class DAQWorker {
     void TakeData();
     bool CloseDownET();
     bool SendSentinel();
-
 };
-
 
 #endif

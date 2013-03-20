@@ -11,7 +11,6 @@
   \brief Holds blocks of data read from EChannels in sequencer (RDFE) mode.
   \author Gabriel Perdue
  */
-
 class SequencerReadoutBlock {
 
 	private:
@@ -30,7 +29,7 @@ class SequencerReadoutBlock {
     unsigned short GetDataLength() const;
 
     void ProcessDataIntoFrames();
-    LVDSFrame * PopOffFrame();
+    LVDSFrame * PopOffFrame(); /*!< Responsibility is transferred to the caller! */
     inline unsigned int FrameCount() const { return frames.size(); };
 
 };

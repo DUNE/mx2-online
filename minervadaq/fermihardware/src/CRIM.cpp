@@ -1,22 +1,15 @@
 #ifndef CRIM_cpp
 #define CRIM_cpp
+/*! \file CRIM.cpp
+*/
 
 #include <iostream>
 #include <iomanip>
 #include "CRIM.h"
 #include "exit_codes.h"
 
-/*********************************************************************************
- * Class for creating Chain Read-Out Controller Interfact Module objects for 
- * use with the MINERvA data acquisition system and associated software projects.
- *
- * Elaine Schulte, Rutgers University
- * Gabriel Perdue, The University of Rochester
- **********************************************************************************/
-
 log4cpp::Category& CRIMLog = log4cpp::Category::getInstance(std::string("CRIM"));
 
-/*! mask constants for the CRIM */
 unsigned short const CRIM::TimingSetupRegisterModeMask      = 0xF000;
 unsigned short const CRIM::TimingSetupRegisterFrequencyMask = 0x0FFF;
 unsigned short const CRIM::GateWidthRegisterMask            = 0x007F;
@@ -54,8 +47,10 @@ const unsigned short CRIM::softCNRSTseq   = 0x0808;
 const unsigned long long CRIM::timeOutSec = 3600;   // be careful shortening this w.r.t. multi-PC sync issues
 
 //----------------------------------------
-// NOTE: The IRQ level must be the same as the configuration register level.  
-// The BIT MASKS for these levels, however are not the same!
+/*!
+  NOTE: The IRQ level must be the same as the configuration register level.  
+  The BIT MASKS for these levels, however are not the same!
+  */
 CRIM::CRIM( unsigned int address, const Controller* controller, 
     VMEModuleTypes::CRIMInterrupts line, unsigned short level ) :
   VMECommunicator( address, controller ),
@@ -257,26 +252,25 @@ void CRIM::SetupTCALBPulse( unsigned short pulseDelay ) const
 } 
 
 //----------------------------------------
+/*!
+  These are the steps to setting the IRQ:
+  1) Select an IRQ LINE on which the system will wait for an assert.  
+
+  2) Set the Interrupt mask on the crim.
+
+  3) Check the interrupt status & clear any pending interrupts.  
+
+  4) Set the IRQ LEVEl which is asserted on the LINE.  We have set this to IRQ5, or 5 in the register
+  when the CRIM is created.  (This also happens to be the power on default.)
+
+  5) Set the Global IRQ Enable bit.
+
+  6) Send this bitmask to the CRIM.
+
+  7) Enable the IRQ LINE on the CAEN controller to be the NOT of the IRQ LINE sent to the CRIM.
+  */
 void CRIM::EnableIRQ() const
 {
-  /*!\fn void CRIM::EnableIRQ() const
-   *
-   * These are the steps to setting the IRQ:
-   *  1) Select an IRQ LINE on which the system will wait for an assert.  
-   *
-   *  2) Set the Interrupt mask on the crim.
-   *
-   *  3) Check the interrupt status & clear any pending interrupts.  
-   *
-   *  4) Set the IRQ LEVEl which is asserted on the LINE.  We have set this to IRQ5, or 5 in the register
-   *  when the CRIM is created.  (This also happens to be the power on default.)
-   *
-   *  5) Set the Global IRQ Enable bit.
-   *
-   *  6) Send this bitmask to the CRIM.
-   *
-   *  7) Enable the IRQ LINE on the CAEN controller to be the NOT of the IRQ LINE sent to the CRIM.
-   */
 #ifndef GOFAST
   CRIMLog.debugStream() << "EnableIRQ for CRIM 0x" << std::hex << this->address;
   CRIMLog.debugStream() << " IRQ Line  = " << (int)this->irqLine;
@@ -460,16 +454,15 @@ void CRIM::SendSoftwareGate() const
 }
 
 //---------------------------
+/*!
+  A function which waits on the interrupt handler to set an interrupt.  This function 
+  only checks the "master" CRIM.  The implicit assumption is that a trigger on any 
+  CRIM is a trigger on all CRIMs (this assumption is true by design). This function 
+  is "dumb" with respect to interrupts and only polls the interrupt status. See older
+  versions of the DAQ software for guesses on how to handle asserted interrupts.
+  */
 int CRIM::WaitForIRQ( /*sig_atomic_t const & continueFlag*/ const bool *status ) const
 {
-  /*! \fn void ReadoutWorker::WaitForIRQ() 
-   *
-   * A function which waits on the interrupt handler to set an interrupt.  This function 
-   * only checks the "master" CRIM.  The implicit assumption is that a trigger on any 
-   * CRIM is a trigger on all CRIMs (this assumption is true by design). This function 
-   * is "dumb" with respect to interrupts and only polls the interrupt status. See older
-   * versions of the DAQ software for guesses on how to handle asserted interrupts.
-   */
   int success = 0;
 #ifndef GOFAST
   CRIMLog.debugStream() << "Entering CRIM::WaitForIRQ: IRQLevel = " << this->irqLevel;

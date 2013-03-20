@@ -180,6 +180,9 @@ namespace FrameTypes {
     FE15   =15
   };
 
+  /*! \enum DiscrHeaderWords
+   * \brief  Useful bytes in the discriminator header.
+   */
   typedef enum DiscrHeaderWords {
     discrNumHits01 = 14,  // CROCE-era values
     discrNumHits23 = 15

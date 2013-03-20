@@ -1,5 +1,7 @@
 #ifndef FrontEndBoard_cpp
 #define FrontEndBoard_cpp
+/*! \file FrontEndBoard.cpp
+*/
 
 #include "log4cppHeaders.h"
 #include "FrontEndBoard.h"
@@ -11,12 +13,7 @@ log4cpp::Category& FrontEndBoardLog = log4cpp::Category::getInstance(std::string
 FrontEndBoard::FrontEndBoard( FrameTypes::FEBAddresses theAddress ) : 
   boardNumber(theAddress)
 {
-  /*! \fn********************************************************************************
-   * The log-free constructor takes the following arguments:
-   * \param theAddress The address (number) of the FrontEndBoard
-   */
   FrontEndBoardLog.setPriority(log4cpp::Priority::DEBUG);  
-
 }
 
 //-----------------------------------------------------
@@ -25,7 +22,6 @@ std::tr1::shared_ptr<FPGAFrame> FrontEndBoard::GetFPGAFrame()
   std::tr1::shared_ptr<FPGAFrame> frame( new FPGAFrame( this->boardNumber ) );
   return frame;
 }
-
 
 //-----------------------------------------------------
 std::tr1::shared_ptr<TRIPFrame> FrontEndBoard::GetTRIPFrame(int tripNumber)

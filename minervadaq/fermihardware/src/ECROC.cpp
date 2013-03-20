@@ -1,15 +1,10 @@
 #ifndef ECROC_cpp
 #define ECROC_cpp
+/*! \file ECROC.cpp
+*/
 
 #include "ECROC.h"
 #include "exit_codes.h"
-
-/*********************************************************************************
- * Class for creating CROC-E objects for use with the MINERvA data acquisition 
- * system and associated software projects.
- *
- * Gabriel Perdue, The University of Rochester
- **********************************************************************************/
 
 log4cpp::Category& ECROCLog = log4cpp::Category::getInstance(std::string("ECROC"));
 
@@ -51,6 +46,7 @@ unsigned int ECROC::GetAddress() const
 }
 
 //----------------------------------------
+//! Make, but do not initialize, the EChannels.
 void ECROC::MakeChannels() 
 {
   for ( unsigned int i=0; i<4; ++i ) { 
@@ -60,6 +56,7 @@ void ECROC::MakeChannels()
 }
 
 //----------------------------------------
+//! Remove EChannels with no FEBs from the container vector.
 void ECROC::ClearEmptyChannels()
 {
   std::vector<EChannels*> tempChannels; 
@@ -103,9 +100,13 @@ void ECROC::SetupTimingRegister( VMEModuleTypes::ECROCClockModes clockMode,
   timingRegisterMessage |= (testPulseDelayEnabled & 0x1)<<12; // test pulse delay enable bit (bit 12)
   timingRegisterMessage |= testPulseDelayValue & 0x3FF;       // test pules delay values (in 18.9 ns units) bits 0-9
   timingRegisterMessage &= 0xFFFF;
+#ifndef GOFAST
   ECROCLog.debugStream() << " Timing Register Message = 0x" << std::hex << timingRegisterMessage; 
+#endif
   unsigned char command[] = { timingRegisterMessage & 0xFF, (timingRegisterMessage & 0xFF00)>>8 }; 
+#ifndef GOFAST
   ECROCLog.debugStream() << " Timing Register Bytes   = 0x" << std::hex << (int)command[0] << ", 0x" << (int)command[1]; 
+#endif
   int error = WriteCycle(2, command, timingSetupAddress, addressModifier, dataWidthReg );
   if( error ) exitIfError( error, "Failure writing to CROC Timing Register!");
 }
@@ -115,9 +116,13 @@ void ECROC::SetupResetAndTestPulseRegister( unsigned short resetEnable, unsigned
 {
   unsigned short resetAndTestPulseMaskRegisterMessage = (resetEnable & 0x1)<<8;  //the reset enable bit is 8
   resetAndTestPulseMaskRegisterMessage |= (testPulseEnable & 0x1);               //the test pulse enable bit is 0
+#ifndef GOFAST
   ECROCLog.debugStream() << " Reset and Test Pulse Register Message = 0x" << std::hex << resetAndTestPulseMaskRegisterMessage; 
+#endif
   unsigned char command[] = { resetAndTestPulseMaskRegisterMessage & 0xFF, (resetAndTestPulseMaskRegisterMessage & 0xFF00)>>8 }; 
+#ifndef GOFAST
   ECROCLog.debugStream() << " Reset and Test Pulse Register Bytes   = 0x" << std::hex << (int)command[0] << ", 0x" << (int)command[1]; 
+#endif
   int error = WriteCycle(2, command, resetAndTestPulseMaskAddress, addressModifier, dataWidthReg );
   if( error ) exitIfError( error, "Failure writing to CROC Reset and Test Pulse Register!");
 }

@@ -403,6 +403,5 @@ int TRIPFrame::GetTripNumber() const
   return tripNum;
 }
 
-
 #endif
 

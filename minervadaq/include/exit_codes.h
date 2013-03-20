@@ -1,7 +1,10 @@
 #ifndef EXIT_CODES_H
 #define EXIT_CODES_H 1
-
-/* Exit codes used by the DAQ software. */
+/*! 
+  \file exit_codes.h
+  \brief Preprocessor definition of different exit codes.
+  \author Jeremy Wolcott
+*/
 
 /* general exit codes: 0-9 */
 #define EXIT_CLEAN             0  /*!< Clean exit. */

@@ -7,7 +7,6 @@
   \brief Constants used for specific messages to the VME modules.
   \author Gabriel Perdue
   */
-
 namespace RegisterWords {
 
   unsigned char channelReset[] = {0x00,0x80};  /*!< Send to a ECROC EChannels */

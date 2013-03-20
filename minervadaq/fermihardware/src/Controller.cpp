@@ -5,72 +5,80 @@
 
 #include "Controller.h"
 
-/*********************************************************************************
- * Class for creating CAEN VME V2718 Controller objects for use with the 
- * MINERvA data acquisition system and associated software projects.
- *
- * Gabriel Perdue, The University of Rochester
- **********************************************************************************/
-
 log4cpp::Category& ctrlLog = log4cpp::Category::getInstance(std::string("ctrl"));
 
+//-------------------------------
+/*! 
+  \param addr     We set an address on the module.
+  \param crateNum This should be the order of the controller in a chain (if there is >1).
+  */
 Controller::Controller(int addr, int crateNum) {
   address         = addr;
   addressModifier = cvA24_U_DATA; // default address modifier
   dataWidth       = cvD16;    // default data width
   controllerType  = cvV2718;  // this is the only controller board we have
   bridgeType      = cvA2818;  // this is the only PCI card we have
-  slotNumber      = 0; // by construction 
-  pciSlotNumber   = 0; // link - probably always 0.
-  boardNumber     = 0; // we basically use controller_id for this...
+  slotNumber      = 0; // by construction ????
+  pciSlotNumber   = 0; // link - probably always 0. Changes if we add more PCI cards.
+  crateNumber     = crateNum;   // TODO: cleanup
+  boardNumber     = crateNumber; 
   handle          = -1;
   firmware[0]     = 0;
-  crateNumber     = crateNum; //an internal ID used for sorting data
   ctrlLog.setPriority(log4cpp::Priority::DEBUG);
 }
 
+//-------------------------------
+//! Release the Controller when finished so other hardware can access it.
 Controller::~Controller()
 {
   int error = CAENVME_End(handle);
   if (error) ReportError(error);
 }
 
+//-------------------------------
 unsigned int Controller::GetAddress() const
 {
   return address;
 }
 
+//-------------------------------
 CVAddressModifier Controller::GetAddressModifier() const
 {
   return addressModifier;
 }
 
+//-------------------------------
 CVDataWidth Controller::GetDataWidth() const
 {
   return dataWidth;
 }
 
+//-------------------------------
 CVBoardTypes Controller::GetControllerType() const
 {
   return controllerType;
 }
 
+//-------------------------------
 CVBoardTypes Controller::GetBridgeType() const
 {
   return bridgeType;
 }
 
+//-------------------------------
 int Controller::GetHandle() const
 {
   return handle;
 }
 
+//-------------------------------
 int Controller::GetCrateNumber() const
 {
   return crateNumber;
 }
 
 
+//-------------------------------
 void Controller::ReportError(int error) const
 {
   switch(error) {
@@ -98,14 +106,13 @@ void Controller::ReportError(int error) const
   }
 }
 
-
+//-------------------------------
+/*!
+  This function will try to contact the CAEN v2718 Controller via the internally 
+  mounted a2818 pci card & read the status register of the Controller.
+  */
 int Controller::Initialize() 
 {
-  /*! \fn Initialize
-   *
-   * This function will try to contact the CAEN v2718 Controller via the internally 
-   * mounted a2818 pci card & read the status register of the Controller.
-   */
   int error; 
 
   try {

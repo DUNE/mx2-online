@@ -1,6 +1,9 @@
 #ifndef daqmain_cxx
 #define daqmain_cxx
-/*! \file daqmain.cpp
+/*! 
+  \file daqmain.cpp
+  \brief Implementation file for the Minerva DAQ entry point.
+  \author Gabriel Perdue
 */
 
 #include <fstream>

@@ -12,15 +12,6 @@
 #define SHOWDELAYTICKS 1   /*!< show delay tick information */
 #define SHOWQUARTERTICKS 1 /*!< show quarter tick information */
 
-/*********************************************************************************
- * Class for creating RAM request frame objects for use with the 
- * MINERvA data acquisition system and associated software projects.
- *
- * Elaine Schulte, Rutgers University
- * Gabriel Perdue, The University of Rochester
- *
- **********************************************************************************/
-
 log4cpp::Category& DiscrFrameLog = log4cpp::Category::getInstance(std::string("DiscrFrame"));
 
 //-----------------------------------------------------------
@@ -59,9 +50,7 @@ unsigned int DiscrFrame::GetOutgoingMessageLength()
 }
 
 //-----------------------------------------------------------
-/*! 
-  Decode a discriminator frame and write the unpacked bits to log.  
-  */
+//! Decode a discriminator frame and write the unpacked bits to log.  
 void DiscrFrame::DecodeRegisterValues() 
 {
   using namespace FrameTypes;

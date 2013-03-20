@@ -1,28 +1,37 @@
 #ifndef DAQWorkerArgs_h
 #define DAQWorkerArgs_h
+/*! 
+  \file DAQWorkerArgs.h
+  \brief Define the DAQWorkerArgs struct - used to organzie command line flags.
+  */
 
 #include "ReadoutTypes.h"
 
+/*! 
+  \struct DAQWorkerArgs
+  \brief Hold all the command line flags.
+  \author Gabriel Perdue
+  */
 struct DAQWorkerArgs {
 
-  int runNumber;
-  int subRunNumber;
-  int numberOfGates;
-	Modes::RunningModes runMode;
-	Detectors::DetectorTypes detector;
-  int detectorConfigCode;
-  unsigned char ledLevel;
-  unsigned char ledGroup;
-  int hardwareInitLevel;
-  int networkPort;
-  std::string etFileName;
-  std::string logFileName;
-  std::string samFileName;
-  std::string dataFileName;
-  std::string hardwareConfigFileName;
-  std::string hostName;
-  std::string lastTriggerFileName;
-  std::string globalGateLogFileName;
+  int runNumber;      /*!< MINERvA Run Number */
+  int subRunNumber;   /*!< MINERvA Subrun Number */
+  int numberOfGates;  /*!< Target number of gates in the subrun. */
+	Modes::RunningModes runMode;       /*!< Subrun strategy. */
+	Detectors::DetectorTypes detector; /*!< Detector used to record data. */
+  int detectorConfigCode;  /*!< The number of FEBs. */
+  unsigned char ledLevel;  /*!< Zero, One, or Max PE */
+  unsigned char ledGroup;  /*!< Which LED group is being used. */
+  int hardwareInitLevel;   /*!< Should the DAQ configure VME module timing registers? */
+  int networkPort;         /*!< Network port for communication with ET, DAQ nodes (just ET right now). */
+  std::string etFileName;   /*!< ET system file name (memory mapped file) */
+  std::string logFileName;  /*!< The DAQ log file. */
+  std::string samFileName;  /*!< The SAM metadata file. */
+  std::string dataFileName; /*!< The RawData file. */
+  std::string hardwareConfigFileName; /*!< Which configuration did the RunControl load? */
+  std::string hostName;               /*!< What machine is the DAQ running on? */
+  std::string lastTriggerFileName;    /*!< Log file for status communication with the RunControl. */
+  std::string globalGateLogFileName;  /*!< Where are we tracking the global gate number? */
 
 };
 

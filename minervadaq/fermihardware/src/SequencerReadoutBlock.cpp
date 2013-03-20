@@ -1,5 +1,7 @@
 #ifndef SequencerReadoutBlock_cpp
 #define SequencerReadoutBlock_cpp
+/*! \file SequencerReadoutBlock.cpp
+*/
 
 #include "log4cppHeaders.h"
 #include "FrameTypes.h"
@@ -14,7 +16,9 @@ SequencerReadoutBlock::SequencerReadoutBlock() :
   dataLength(0)
 {
   SequencerReadoutBlockLog.setPriority(log4cpp::Priority::INFO);  
+#ifndef GOFAST
   SequencerReadoutBlockLog.debugStream() << "Created new SequencerReadoutBlock";
+#endif
 }
 
 //-----------------------------------------------------
@@ -25,7 +29,9 @@ SequencerReadoutBlock::~SequencerReadoutBlock()
   }
   frames.clear();
   this->ClearData();
+#ifndef GOFAST
   SequencerReadoutBlockLog.debugStream() << "Destroyed SequencerReadoutBlock";
+#endif
 }
 
 //-----------------------------------------------------
@@ -68,7 +74,9 @@ void SequencerReadoutBlock::ProcessDataIntoFrames()
     while (index < dataLength) {
       length = (data[FrameTypes::ResponseLength0 + index]<<8) | 
         data[FrameTypes::ResponseLength1 + index];
+#ifndef GOFAST
       SequencerReadoutBlockLog.debugStream() << "Frame Length = " << length;
+#endif
 
       unsigned char * frameData = new unsigned char[length];
       memmove(frameData, data+index, length); 

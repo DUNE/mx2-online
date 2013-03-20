@@ -1,5 +1,7 @@
-#ifndef VMECrate_cxx
-#define VMECrate_cxx
+#ifndef VMECrate_cpp
+#define VMECrate_cpp
+/*! \file VMECrate.cpp
+*/
 
 #include "VMECrate.h"
 
@@ -42,13 +44,13 @@ VMECrate::~VMECrate() {
 void VMECrate::Initialize( Modes::RunningModes theRunningMode )
 {
   runningMode = theRunningMode;
-  vmeCrate.debugStream() << "Initialize " << (*this);
+  vmeCrate.infoStream() << "Initialize " << (*this);
 
-  vmeCrate.debugStream() << "Initializing " << crims.size() << " CRIMs...";
+  vmeCrate.infoStream() << "Initializing " << crims.size() << " CRIMs...";
   for( std::vector<CRIM*>::iterator p=crims.begin(); p!=crims.end(); ++p ) {
     (*p)->Initialize( runningMode );
   }
-  vmeCrate.debugStream() << "Initializing " << ecrocs.size() << " CROC-Es...";
+  vmeCrate.infoStream() << "Initializing " << ecrocs.size() << " CROC-Es...";
   for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
     (*p)->Initialize();
   }

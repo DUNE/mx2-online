@@ -1,9 +1,17 @@
 #ifndef DAQArgs_h
 #define DAQArgs_h
+/*! 
+  \file DAQArgs.h
+*/
 
 #include "DAQWorkerArgs.h"
 #include "exit_codes.h"
 
+/*! 
+  \class DAQArgs
+  \brief Return default and parsed DAQWorkerArgs.
+  \author Gabriel Perdue
+  */
 class DAQArgs {
 
   public:

@@ -34,14 +34,13 @@ ADCFrame::ADCFrame(FrameTypes::FEBAddresses a, FrameTypes::RAMFunctionsHit b) : 
 
 
 //----------------------------------------------------
+/*!
+  MakeMessage is the local implimentation of a virtual function of the same
+  name inherited from LVDSFrame.  This function bit-packs the data into an OUTGOING
+  message from values set using the get/set functions assigned to this class.
+  */
 void ADCFrame::MakeMessage() 
 {
-  /*! \fn MakeMessage
-   *
-   * MakeMessage is the local implimentation of a virtual function of the same
-   * name inherited from LVDSFrame.  This function bit-packs the data into an OUTGOING
-   * message from values set using the get/set functions assigned to this class (see feb.h).
-   */
   if (NULL != outgoingMessage) this->DeleteOutgoingMessage();
   outgoingMessage = new unsigned char [this->GetOutgoingMessageLength()];
   for (unsigned int i = 0; i < MinervaDAQSizes::FrameHeaderLengthOutgoing; ++i) {
@@ -56,13 +55,12 @@ void ADCFrame::MakeMessage()
 }
 
 //----------------------------------------------------
+/*! 
+  Based on C. Gingu's ParseInpFrameAsAnaBRAM function (from the FermiDAQ).
+  Decode the input frame data as Hit data type from all Analog BRAMs.
+  */
 void ADCFrame::DecodeRegisterValues()
 {	
-  /*! \fn DecodeRegisterValues
-   *
-   * Based on C. Gingu's ParseInpFrameAsAnaBRAM function (from the FermiDAQ).
-   * Decode the input frame data as Hit data type from all Analog BRAMs.
-   */
   // Check to see if the frame is right length...
   unsigned short ml = (receivedMessage[FrameTypes::ResponseLength1]) | 
     (receivedMessage[FrameTypes::ResponseLength0] << 8);
@@ -155,8 +153,6 @@ void ADCFrame::DecodeRegisterValues()
   }                
 #endif
 }
-
-
 
 #endif
 

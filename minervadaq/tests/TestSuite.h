@@ -1,5 +1,12 @@
 #ifndef TestSuite_h
 #define TestSuite_h
+/*! 
+  \file TestSuite.h
+  \brief Header file for the unit tests sequence.
+  \author Gabriel Perdue
+
+  The tests cannot be run in any order - there is a specific order.
+  */
 
 #include <tr1/memory> 
 
@@ -13,8 +20,6 @@
 #include "ReadoutWorker.h"
 #include "DAQWorker.h"
 #include "DAQArgs.h"
-
-// The tests cannot be run in any order - there is a specific order.
 
 // This test should be called first.
 Controller * GetAndTestController( int address, int crateNumber );
