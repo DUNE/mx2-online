@@ -17,17 +17,17 @@
 class FrontEndBoard {
 
   private:
-    FrameTypes::febAddresses boardNumber; 
+    FrameTypes::FEBAddresses boardNumber; 
     TRIPFrame  * tripFrame;    
     ADCFrame   * adcFrame;      
     DiscrFrame * discrFrame;   
     FPGAFrame  * fgpaFrame;
 
   public:
-    FrontEndBoard( FrameTypes::febAddresses theAddress ); 
+    FrontEndBoard( FrameTypes::FEBAddresses theAddress ); 
     ~FrontEndBoard() { };    
 
-    FrameTypes::febAddresses inline GetBoardNumber() { return boardNumber; };
+    FrameTypes::FEBAddresses inline GetBoardNumber() { return boardNumber; };
 
     std::tr1::shared_ptr<FPGAFrame> GetFPGAFrame();
     std::tr1::shared_ptr<TRIPFrame> GetTRIPFrame(int tripNumber); 

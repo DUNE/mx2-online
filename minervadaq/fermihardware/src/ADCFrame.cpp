@@ -18,7 +18,7 @@ log4cpp::Category& ADCFrameLog = log4cpp::Category::getInstance(std::string("ADC
   \param a The address (number) of the feb
   \param b The "RAM Function" which describes the hit of number to be read off
   */
-ADCFrame::ADCFrame(FrameTypes::febAddresses a, FrameTypes::RAMFunctionsHit b) : LVDSFrame()
+ADCFrame::ADCFrame(FrameTypes::FEBAddresses a, FrameTypes::RAMFunctionsHit b) : LVDSFrame()
 {
   using namespace FrameTypes;
 

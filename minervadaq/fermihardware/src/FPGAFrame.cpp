@@ -12,7 +12,7 @@ log4cpp::Category& FPGAFrameLog = log4cpp::Category::getInstance(std::string("FP
 /*!
   \param a The address (number) of the FPGAFrame
   */
-FPGAFrame::FPGAFrame( FrameTypes::febAddresses a ) : 
+FPGAFrame::FPGAFrame( FrameTypes::FEBAddresses a ) : 
   LVDSFrame(),
   outgoingMessageIsShort(false)
 {

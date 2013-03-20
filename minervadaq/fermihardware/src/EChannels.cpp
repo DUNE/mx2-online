@@ -192,7 +192,7 @@ void EChannels::SetupNFrontEndBoards( int nFEBs )
   }
   for ( int i=1; i<=nFEBs; ++i ) {
     EChannelLog.infoStream() << "Setting up FEB " << i << " ...";
-    FrontEndBoard *feb = new FrontEndBoard( (FrameTypes::febAddresses)i );
+    FrontEndBoard *feb = new FrontEndBoard( (FrameTypes::FEBAddresses)i );
     if ( isAvailable( feb ) ) {
       FrontEndBoardsVector.push_back( feb );
     } else {

@@ -27,7 +27,7 @@ log4cpp::Category& DiscrFrameLog = log4cpp::Category::getInstance(std::string("D
 /*! 
   \param a The address (number) of the feb
   */
-DiscrFrame::DiscrFrame(FrameTypes::febAddresses a) : LVDSFrame()
+DiscrFrame::DiscrFrame(FrameTypes::FEBAddresses a) : LVDSFrame()
 {
   using namespace FrameTypes;
   febNumber[0] = (unsigned char) a;
