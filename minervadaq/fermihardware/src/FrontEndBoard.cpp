@@ -8,7 +8,7 @@
 log4cpp::Category& FrontEndBoardLog = log4cpp::Category::getInstance(std::string("FrontEndBoard"));
 
 //-----------------------------------------------------
-FrontEndBoard::FrontEndBoard( FrameTypes::febAddresses theAddress ) : 
+FrontEndBoard::FrontEndBoard( FrameTypes::FEBAddresses theAddress ) : 
   boardNumber(theAddress)
 {
   /*! \fn********************************************************************************

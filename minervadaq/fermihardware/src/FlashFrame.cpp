@@ -13,7 +13,7 @@ const int FlashFrame::Spartan_3E_PageSize = 264;
 
 log4cpp::Category& flashLog = log4cpp::Category::getInstance(std::string("flash"));
 
-FlashFrame::FlashFrame(FrameTypes::febAddresses a) : LVDSFrame() 
+FlashFrame::FlashFrame(FrameTypes::FEBAddresses a) : LVDSFrame() 
 { 
   using namespace FrameTypes;
 

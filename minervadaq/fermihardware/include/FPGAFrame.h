@@ -34,7 +34,7 @@ class FPGAFrame : public LVDSFrame {
 			PreviewEnable[1], firmwareVersion[1];
 
 	public:
-		FPGAFrame( FrameTypes::febAddresses theAddress ); 
+		FPGAFrame( FrameTypes::FEBAddresses theAddress ); 
 		~FPGAFrame();
 
 

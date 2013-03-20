@@ -13,7 +13,7 @@ log4cpp::Category& TRIPFrameLog = log4cpp::Category::getInstance(std::string("TR
   \param a the FEB address to which this trip belongs
   \param f the Trip function (read or write)
   */
-TRIPFrame::TRIPFrame(FrameTypes::febAddresses a, TripTTypes::TRiPFunctions f) : 
+TRIPFrame::TRIPFrame(FrameTypes::FEBAddresses a, TripTTypes::TRiPFunctions f) : 
   LVDSFrame(),
   trip_function((unsigned char)f)
 {

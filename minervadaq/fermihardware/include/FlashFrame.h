@@ -20,7 +20,7 @@ class FlashFrame : public LVDSFrame {
     static const int Spartan_3E_PageSize;
 
   public:
-    FlashFrame(FrameTypes::febAddresses theAddress);
+    FlashFrame(FrameTypes::FEBAddresses theAddress);
     virtual ~FlashFrame() { };
 
 };

@@ -16,7 +16,7 @@ class ADCFrame : public LVDSFrame {
   private:
 
   public: 
-    ADCFrame(FrameTypes::febAddresses a, FrameTypes::RAMFunctionsHit f); 
+    ADCFrame(FrameTypes::FEBAddresses a, FrameTypes::RAMFunctionsHit f); 
     ~ADCFrame() {};
 
     // Not entirely sure why we need "+2", but we seem to...

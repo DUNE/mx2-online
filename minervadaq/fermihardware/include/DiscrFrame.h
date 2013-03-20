@@ -45,7 +45,7 @@ class DiscrFrame : public LVDSFrame {
 
 	public: 
 
-		DiscrFrame(FrameTypes::febAddresses a); 
+		DiscrFrame(FrameTypes::FEBAddresses a); 
 		~DiscrFrame() {};
 
 		void MakeMessage();  
