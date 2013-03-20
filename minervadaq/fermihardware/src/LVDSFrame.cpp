@@ -117,8 +117,8 @@ bool LVDSFrame::CheckForErrors()
 
   // There isn't really a good check we can make on message length here.
 
-  unsigned short status = this->ReceivedMessageStatus();
 #ifndef GOFAST
+  unsigned short status = this->ReceivedMessageStatus();
   lvdsLog.debugStream() << "CheckForErrors Frame Status = 0x" << std::hex << status;
 #endif
 
