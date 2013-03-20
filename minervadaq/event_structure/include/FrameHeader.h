@@ -1,6 +1,8 @@
 #ifndef FrameHeader_h
 #define FrameHeader_h
-/*! \file FrameHeader.h
+/*! 
+  \file FrameHeader.h
+  \brief Define the HeaderData namespace and declare the FrameHeader class.
 */
 
 /*! 

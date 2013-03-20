@@ -1,6 +1,7 @@
 #ifndef ReadoutWorker_h
 #define ReadoutWorker_h
-/*! \file ReadoutWorker.h
+/*! 
+  \file ReadoutWorker.h
 */
 
 #include "log4cppHeaders.h"

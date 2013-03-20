@@ -1,5 +1,11 @@
 #ifndef EBService_h
 #define EBService_h
+/*! 
+  \file eb_service.h
+  \author Elaine Schulte
+  \brief This is just a convenience collection of headers for the EventBuilder.
+*/
+
 
 #include <cstddef>
 #include <cerrno>

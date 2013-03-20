@@ -17,6 +17,9 @@
   \class LVDSFrame
   \brief The base class for all LVDS data exchange frames.
   \author Gabriel Perdue
+
+  LVDSFrame is the base class for advanced frame types. It is not abstract 
+  and is occasionally instantiated (e.g., when reading a SequencerReadoutBlock).
   */
 
 class LVDSFrame {

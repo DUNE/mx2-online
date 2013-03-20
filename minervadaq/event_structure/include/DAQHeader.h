@@ -1,6 +1,7 @@
 #ifndef DAQHeader_h
 #define DAQHeader_h
-/*! \file DAQHeader.h
+/*! 
+  \file DAQHeader.h
 */
 
 static const int daqHeaderSize = 56;

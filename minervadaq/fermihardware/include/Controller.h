@@ -29,7 +29,7 @@ class Controller {
 		char firmware[1];
 		int crateNumber;
 		int handle;                  /*!<a device handle returned by the initialization function*/
-		unsigned short *shortBuffer; /*!<a short buffer for messaging*/
+		unsigned short *shortBuffer; 
 
 		/*! these are the controller registers for the VME controller - basically unused, will implement someday? */
 		unsigned short status, control, irq, irqMask, input, output,

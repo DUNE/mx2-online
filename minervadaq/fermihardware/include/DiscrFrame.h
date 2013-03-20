@@ -16,18 +16,18 @@
  *   We pick a bit from each 16-bit row as a function of channel and sum them.  The true delay tick value is 
  *   16 minus this sum.  So, for example:
  *
- *   row(TempHitArray)    ch0 ch1 ch2 ch3 ch4 ... ch15\n
- *     0                   0   0   0   0   0   ... \n
- *     1                   1   0   0   0   0   ... \n
- *     2                   1   1   0   0   0   ... \n
- *     3                   1   1   1   0   0   ... \n
- *     4                   1   1   1   0   0   ... \n
- *     5                   1   1   1   0   0   ... \n
- *     ...     \n
- *    15                   1   1   1   0   0   ...\n
- *    ----------------------------------------\n
- *     Sum                15  14  13   0   0   ...\n
- *     Delay Ticks         1   2   3   0   0   ... \n
+ *   row(TempHitArray)    ch0 ch1 ch2 ch3 ch4 ... ch15
+ *     0                   0   0   0   0   0   ... 
+ *     1                   1   0   0   0   0   ... 
+ *     2                   1   1   0   0   0   ... 
+ *     3                   1   1   1   0   0   ... 
+ *     4                   1   1   1   0   0   ... 
+ *     5                   1   1   1   0   0   ... 
+ *     ...     
+ *    15                   1   1   1   0   0   ...
+ *    ----------------------------------------
+ *     Sum                15  14  13   0   0   ...
+ *     Delay Ticks         1   2   3   0   0   ... 
  *
  * \note 
  * Note: once a delay tick is formed, all subsequent entries for the channel must also be one, so there 
@@ -37,12 +37,11 @@
 class DiscrFrame : public LVDSFrame {
 	private:
 		int MaxHits;
-		unsigned char *buffer; /*!<A buffer for holding discriminator raw data */ 
-
-		/*! Helper functions to decode */
-		int GetBitFromWord(unsigned short int word, int index);
-		int GetBitFromWord(unsigned int word, int index);
-		int GetBitFromWord(long_m word, int index);
+		unsigned char *buffer; 
+		
+		int GetBitFromWord(unsigned short int word, int index); /*!< Helper function to decode */
+		int GetBitFromWord(unsigned int word, int index);       /*!< Helper function to decode */
+		int GetBitFromWord(long_m word, int index);             /*!< Helper function to decode */
 
 	public: 
 

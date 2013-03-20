@@ -1,6 +1,6 @@
 #ifndef ECROC_h
 #define ECROC_h
-/*! \file DiscrFrame.h
+/*! \file ECROC.h
 */
 
 #include <list>
