@@ -38,6 +38,7 @@ class VMECommunicator {
   CVDataWidth        dataWidthSwappedReg; /*!< use a different data width for talking to registers (as opposed to data) */
 
   virtual void exitIfError( int error, const std::string& msg ) const;
+  virtual void VMEThrow( std::string msg ) const;
 
   public:
 

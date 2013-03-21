@@ -3,6 +3,7 @@
 /*! \file VMECommunicator.cpp
 */
 
+#include "FHWException.h"
 #include "VMECommunicator.h"
 #include "exit_codes.h"
 
@@ -153,6 +154,16 @@ VMEModuleTypes::VMECommunicatorType VMECommunicator::GetCommType() const
 int VMECommunicator::GetCrateNumber() const
 {
   return this->GetController()->GetCrateNumber();
+}
+
+//-----------------------------
+void VMECommunicator::VMEThrow( std::string msg ) const
+{
+  throw FHWException( 
+      this->GetCrateNumber(), 
+      this->GetCommType(), 
+      this->GetAddress(),
+      msg );
 }
 
 //-----------------------------

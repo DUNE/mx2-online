@@ -83,95 +83,62 @@ unsigned int EChannels::GetParentCROCNumber() const
 }
 
 //----------------------------------------
-int EChannels::DecodeStatusMessage( const unsigned short& status ) const
+std::pair<int,std::string> EChannels::DecodeStatusMessage( const unsigned short& status ) const
 {
   int frameErrors = 0;
-#ifndef GOFAST
   std::string statusBitsDecoded = "|";
-#endif
-#ifndef GOFAST
+
   if (status & VMEModuleTypes::ReceiveMemoryFrameDiscType) {
     statusBitsDecoded += "ReceiveMemoryFrameDiscType|";
   }
-#endif
   if (status & VMEModuleTypes::ReceiveMemoryFrameHeaderError) {
-#ifndef GOFAST
     statusBitsDecoded += "ReceiveMemoryFrameHeaderError|";
-#endif
     frameErrors++;
   }
   if (status & VMEModuleTypes::ReceiveMemoryCRCError) {
-#ifndef GOFAST
     statusBitsDecoded += "ReceiveMemoryCRCError|";
-#endif
     frameErrors++;
   }
   if (status & VMEModuleTypes::ReceiveMemoryFrameTimeout) {
-#ifndef GOFAST
     statusBitsDecoded += "ReceiveMemoryFrameTimeout|";
-#endif
     frameErrors++;
   }
-#ifndef GOFAST
   if (status & VMEModuleTypes::ReceiveMemoryFrameReceived) {
     statusBitsDecoded += "ReceiveMemoryFrameReceived|";
   }
-#endif
-#ifndef GOFAST
   if (status & VMEModuleTypes::ReceiveMemoryFrameCountFull) {
     statusBitsDecoded += "ReceiveMemoryFrameCountFull|";
   }
-#endif
-#ifndef GOFAST
   if (status & VMEModuleTypes::ReceiveMemoryEmpty) {
     statusBitsDecoded += "ReceiveMemoryEmpty|";
   }
-#endif
   if (status & VMEModuleTypes::ReceiveMemoryFull) {
-#ifndef GOFAST
     statusBitsDecoded += "ReceiveMemoryFull|";
-#endif
     frameErrors++;
   }
-#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryUnusedBit0) {
     statusBitsDecoded += "SendMemoryUnusedBit0|";
   }
-#endif
-#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryUnusedBit1) {
     statusBitsDecoded += "SendMemoryUnusedBit1|";
   }
-#endif
-#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryRDFEDone) {
     statusBitsDecoded += "SendMemoryRDFEDone|";
   }
-#endif
-#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryRDFEUpdating) {
     statusBitsDecoded += "SendMemoryRDFEUpdating|";
   }
-#endif
-#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryFrameSent) {
     statusBitsDecoded += "SendMemoryFrameSent|";
   }
-#endif
-#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryFrameSending) {
     statusBitsDecoded += "SendMemoryFrameSending|";
   }
-#endif
-#ifndef GOFAST
   if (status & VMEModuleTypes::SendMemoryEmpty) {
     statusBitsDecoded += "SendMemoryEmpty|";
   }
-#endif
   if (status & VMEModuleTypes::SendMemoryFull) {
-#ifndef GOFAST
     statusBitsDecoded += "SendMemoryFull|";
-#endif
     frameErrors++;
   }
 #ifndef GOFAST
@@ -179,7 +146,8 @@ int EChannels::DecodeStatusMessage( const unsigned short& status ) const
     " for ECROC " << std::dec << this->GetParentCROCNumber() << "; Channel " << 
     this->channelNumber << "; " << statusBitsDecoded;
 #endif
-  return frameErrors;
+  std::pair<int,std::string> retval( frameErrors, statusBitsDecoded );
+  return retval;
 }
 
 //----------------------------------------
@@ -395,8 +363,10 @@ unsigned short EChannels::WaitForMessageReceived() const
       && !(status & VMEModuleTypes::ReceiveMemoryCRCError)         
       && !(status & VMEModuleTypes::ReceiveMemoryFrameHeaderError)
       );
-  int error = DecodeStatusMessage(status);
-  if (0 != error) return 0; // TODO: throw...
+  std::pair<int,std::string> error = DecodeStatusMessage(status);
+  if (0 != error.first) {
+    VMEThrow( error.second );
+  }
 #ifndef GOFAST
   EChannelLog.debugStream() << " Decoded Status Error Level = " << error;
   EChannelLog.debugStream() << "Message was received with status = 0x" 

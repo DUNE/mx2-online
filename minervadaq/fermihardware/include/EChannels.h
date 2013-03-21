@@ -86,7 +86,7 @@ class EChannels : public VMECommunicator {
     unsigned int GetDirectAddress() const;
     virtual unsigned int GetAddress() const;
 
-    int DecodeStatusMessage( const unsigned short& status ) const;
+    std::pair<int,std::string> DecodeStatusMessage( const unsigned short& status ) const;
 
     void EnableSequencerReadout() const;
     void DisableSequencerReadout() const;
