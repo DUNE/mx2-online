@@ -11,11 +11,16 @@ const int FlashFrame::Spartan_3E_PageSize = 264;
 
 log4cpp::Category& flashLog = log4cpp::Category::getInstance(std::string("flash"));
 
-FlashFrame::FlashFrame(FrameTypes::FEBAddresses a) : LVDSFrame() 
+FlashFrame::FlashFrame(
+    FrameTypes::FEBAddresses a,
+    unsigned int theChannelAddress,
+    int theCrateNumber) : LVDSFrame() 
 { 
   using namespace FrameTypes;
 
   febNumber[0] = (unsigned char) a; 
+  channelAddress = theChannelAddress;
+  crateNumber = theCrateNumber;
   Devices dev = Flash; 
   Broadcasts b = None; 
   Directions d = MasterToSlave; 

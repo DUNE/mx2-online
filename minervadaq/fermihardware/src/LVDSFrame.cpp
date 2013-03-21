@@ -10,17 +10,18 @@
 log4cpp::Category& lvdsLog = log4cpp::Category::getInstance(std::string("frames"));
 
 //------------------------------------------
-LVDSFrame::LVDSFrame() 
+LVDSFrame::LVDSFrame() : 
+  FrameID(),
+  outgoingMessage(NULL),
+  receivedMessage(NULL),
+  febNumber(),
+  targetDevice(),
+  deviceFunction(),
+  broadcastCommand(),
+  messageDirection(),
+  channelAddress(0),
+  crateNumber(-1)
 { 
-  FrameID[0] = 0x00; 
-  FrameID[1] = 0x00; 
-  outgoingMessage = NULL;
-  receivedMessage = NULL;
-  febNumber[0]        = 0;
-  targetDevice[0]     = 0;
-  deviceFunction[0]   = 0;
-  broadcastCommand[0] = 0;
-  messageDirection[0] = 0;
   lvdsLog.setPriority(log4cpp::Priority::INFO);
 }
 

@@ -13,6 +13,21 @@
 
 namespace VMEModuleTypes {
 
+  /*! 
+    \enum VMECommunicators
+    \brief The different modules and devices we address by VME.
+
+    CROC and Channels do not appear as classes in this version of the DAQ.
+    */
+  typedef enum {
+    UnknownCommunicator,
+    CRIM,
+    CROC,
+    Channels,
+    ECROC,
+    EChannels
+  } VMECommunicatorType;
+
   //---------------
   /* crim types */
   //---------------

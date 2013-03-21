@@ -12,6 +12,7 @@ log4cpp::Category& commLog = log4cpp::Category::getInstance(std::string("comm"))
 VMECommunicator::VMECommunicator( unsigned int theAddress, 
     const Controller* theController ) : 
   controller(theController),
+  commType(VMEModuleTypes::UnknownCommunicator),
   address(theAddress)
 {
   if( NULL == this->controller ) {
@@ -140,6 +141,18 @@ int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned 
   //if the message wasn't sent but the error was not a bus error (-1) or a parameter error (-4)
   //keep trying until it's successful.  It either timed out, or had an unspecified error
   return error;
+}
+
+//-----------------------------
+VMEModuleTypes::VMECommunicatorType VMECommunicator::GetCommType() const
+{
+  return this->commType;
+}
+
+//-----------------------------
+int VMECommunicator::GetCrateNumber() const
+{
+  return this->GetController()->GetCrateNumber();
 }
 
 //-----------------------------

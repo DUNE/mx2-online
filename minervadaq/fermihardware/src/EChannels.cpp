@@ -24,6 +24,7 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
 {
   EChannelLog.setPriority(log4cpp::Priority::INFO);  
 
+  this->commType = VMEModuleTypes::EChannels;
   channelDirectAddress             = this->address + VMEModuleTypes::EChannelOffset * (unsigned int)(channelNumber);
   receiveMemoryAddress             = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCReceiveMemory;
   sendMemoryAddress                = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCSendMemory;
@@ -191,7 +192,8 @@ void EChannels::SetupNFrontEndBoards( int nFEBs )
   }
   for ( int i=1; i<=nFEBs; ++i ) {
     EChannelLog.infoStream() << "Setting up FEB " << i << " ...";
-    FrontEndBoard *feb = new FrontEndBoard( (FrameTypes::FEBAddresses)i );
+    FrontEndBoard *feb = 
+      new FrontEndBoard( (FrameTypes::FEBAddresses)i, this->GetAddress(), this->GetCrateNumber() );
     if ( isAvailable( feb ) ) {
       FrontEndBoardsVector.push_back( feb );
     } else {

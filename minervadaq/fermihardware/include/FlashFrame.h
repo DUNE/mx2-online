@@ -20,7 +20,10 @@ class FlashFrame : public LVDSFrame {
     static const int Spartan_3E_PageSize;
 
   public:
-    FlashFrame(FrameTypes::FEBAddresses theAddress);
+    FlashFrame(
+        FrameTypes::FEBAddresses theAddress,
+        unsigned int theChannelAddress,
+        int theCrateNumber );
     virtual ~FlashFrame() { };
 
 };

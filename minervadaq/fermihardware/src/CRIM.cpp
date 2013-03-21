@@ -58,6 +58,7 @@ CRIM::CRIM( unsigned int address, const Controller* controller,
   irqLine(line)
 {
   this->addressModifier = cvA24_U_DATA; 
+  this->commType = VMEModuleTypes::CRIM;
 
   CRIMLog.setPriority(log4cpp::Priority::INFO); 
   CRIMLog.debugStream() << "Creating CRIM with address = 0x" << std::hex 
