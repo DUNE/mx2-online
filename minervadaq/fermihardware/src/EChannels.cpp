@@ -5,8 +5,9 @@
 
 #include <iomanip>
 
-#include "RegisterWords.h"
 #include "EChannels.h"
+#include "FrontEndBoard.h"
+#include "RegisterWords.h"
 #include "exit_codes.h"
 
 log4cpp::Category& EChannelLog = log4cpp::Category::getInstance(std::string("EChannel"));

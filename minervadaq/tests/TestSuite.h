@@ -15,6 +15,7 @@
 #include "Controller.h"
 #include "ECROC.h"
 #include "CRIM.h"
+#include "FrontEndBoard.h"
 #include "SequencerReadoutBlock.h"
 
 #include "ReadoutWorker.h"
