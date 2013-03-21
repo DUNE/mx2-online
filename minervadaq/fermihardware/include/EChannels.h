@@ -7,13 +7,18 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <tr1/memory>  // for shared_ptrs
 
 #include "CAENVMEtypes.h"
 
-#include "FrontEndBoard.h"
 #include "FrameTypes.h"
 #include "VMECommunicator.h"
 #include "VMEModuleTypes.h"
+
+class LVDSFrame;
+class FPGAFrame;
+class TRIPFrame;
+class FrontEndBoard;
 
 /*! 
   \class EChannels
