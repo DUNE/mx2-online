@@ -33,7 +33,7 @@ FHWException::FHWException(
   message(theMessage)
 {
   constructorHelper();
-  excpLog.infoStream() << "FHWException for crate " << crateNumber << 
+  excpLog.errorStream() << "FHWException for crate " << crateNumber << 
     "; FEB Address = " << febAddress << "; channel Address = 0x" << std::hex <<
     channelAddress;
 }
@@ -47,7 +47,7 @@ FHWException::FHWException(
   message(theMessage)
 {
   constructorHelper();
-  excpLog.infoStream() << "FHWException for crate " << crateNumber << 
+  excpLog.errorStream() << "FHWException for crate " << crateNumber << 
     "; VME Module Type = " << vmeType << "; VME Address = 0x" << std::hex <<
     vmeAddress;
 }
@@ -56,7 +56,7 @@ FHWException::FHWException(
 void FHWException::constructorHelper()
 {
   excpLog.setPriority(log4cpp::Priority::INFO);  
-  excpLog.infoStream() << "Exception Message: " << message;
+  excpLog.errorStream() << "Exception Message: " << message;
 }
 
 //-----------------------------
