@@ -17,8 +17,8 @@ struct DAQWorkerArgs {
   int runNumber;      /*!< MINERvA Run Number */
   int subRunNumber;   /*!< MINERvA Subrun Number */
   int numberOfGates;  /*!< Target number of gates in the subrun. */
-	Modes::RunningModes runMode;       /*!< Subrun strategy. */
-	Detectors::DetectorTypes detector; /*!< Detector used to record data. */
+  Modes::RunningModes runMode;       /*!< Subrun strategy. */
+  Detectors::DetectorTypes detector; /*!< Detector used to record data. */
   int detectorConfigCode;  /*!< The number of FEBs. */
   unsigned char ledLevel;  /*!< Zero, One, or Max PE */
   unsigned char ledGroup;  /*!< Which LED group is being used. */
