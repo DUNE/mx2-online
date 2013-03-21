@@ -10,8 +10,13 @@
 log4cpp::Category& FrontEndBoardLog = log4cpp::Category::getInstance(std::string("FrontEndBoard"));
 
 //-----------------------------------------------------
-FrontEndBoard::FrontEndBoard( FrameTypes::FEBAddresses theAddress ) : 
-  boardNumber(theAddress)
+FrontEndBoard::FrontEndBoard( 
+    FrameTypes::FEBAddresses theAddress, 
+    unsigned int theChannelAddress,
+    int theCrateNumber ) : 
+  boardNumber(theAddress),
+  channelAddress(theChannelAddress),
+  crateNumber(theCrateNumber)
 {
   FrontEndBoardLog.setPriority(log4cpp::Priority::DEBUG);  
 }
@@ -19,7 +24,8 @@ FrontEndBoard::FrontEndBoard( FrameTypes::FEBAddresses theAddress ) :
 //-----------------------------------------------------
 std::tr1::shared_ptr<FPGAFrame> FrontEndBoard::GetFPGAFrame()
 {
-  std::tr1::shared_ptr<FPGAFrame> frame( new FPGAFrame( this->boardNumber ) );
+  std::tr1::shared_ptr<FPGAFrame> frame( 
+      new FPGAFrame( this->boardNumber, this->channelAddress, this->crateNumber ) );
   return frame;
 }
 
@@ -52,7 +58,8 @@ std::tr1::shared_ptr<TRIPFrame> FrontEndBoard::GetTRIPFrame(int tripNumber)
       FrontEndBoardLog.fatalStream() << "Invalid TriP ChipID at instantiation!";
       exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
-  std::tr1::shared_ptr<TRIPFrame> frame( new TRIPFrame( this->boardNumber, chipFunction ) );
+  std::tr1::shared_ptr<TRIPFrame> frame( 
+      new TRIPFrame( this->boardNumber, this->channelAddress, this->crateNumber, chipFunction ) );
   return frame;
 }
 
@@ -92,14 +99,16 @@ std::tr1::shared_ptr<ADCFrame> FrontEndBoard::GetADCFrame(int hitBlock)
       exit(EXIT_FEB_UNSPECIFIED_ERROR);
   }
 
-  std::tr1::shared_ptr<ADCFrame> frame( new ADCFrame( this->boardNumber, ramFunction ) );
+  std::tr1::shared_ptr<ADCFrame> frame( 
+      new ADCFrame( this->boardNumber, this->channelAddress, this->crateNumber, ramFunction ) );
   return frame;
 }
 
 //-----------------------------------------------------
 std::tr1::shared_ptr<DiscrFrame> FrontEndBoard::GetDiscrFrame() 
 {
-  std::tr1::shared_ptr<DiscrFrame> frame( new DiscrFrame( this->boardNumber ) );
+  std::tr1::shared_ptr<DiscrFrame> frame( 
+      new DiscrFrame( this->boardNumber, this->channelAddress, this->crateNumber ) );
   return frame;
 }
 

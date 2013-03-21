@@ -15,21 +15,29 @@ log4cpp::Category& ADCFrameLog = log4cpp::Category::getInstance(std::string("ADC
 
 //----------------------------------------------------
 /*! 
-  \param a The address (number) of the feb
-  \param b The "RAM Function" which describes the hit of number to be read off
+  \param a The address (number) of the FEB.
+  \param theChannelAddress The VME address of the handling VMECommunicator.
+  \param theCrateNumber The VME crate ID.
+  \param f The "RAM Function" which describes the hit of number to be read off
   */
-ADCFrame::ADCFrame(FrameTypes::FEBAddresses a, FrameTypes::RAMFunctionsHit b) : LVDSFrame()
+ADCFrame::ADCFrame(
+        FrameTypes::FEBAddresses a,
+        unsigned int theChannelAddress, 
+        int theCrateNumber,
+        FrameTypes::RAMFunctionsHit f) : LVDSFrame()
 {
   using namespace FrameTypes;
 
-  febNumber[0]     = (unsigned char) a; 
+  febNumber[0]     = (unsigned char)a; 
+  channelAddress   = theChannelAddress;
+  crateNumber      = theCrateNumber;
   Devices dev      = RAM;               // device to be addressed
   Broadcasts broad = None;              // we don't broadcast
   Directions dir   = MasterToSlave;     // ALL outgoing messages are master-to-slave
-  MakeDeviceFrameTransmit(dev, broad, dir,(unsigned int)b, (unsigned int) febNumber[0]); 
+  MakeDeviceFrameTransmit(dev, broad, dir, (unsigned int)f, (unsigned int)febNumber[0]); 
 
   ADCFrameLog.setPriority(log4cpp::Priority::INFO);  
-  ADCFrameLog.debugStream() << "Made ADCFrame " << b << " for FEB " << a; 
+  ADCFrameLog.debugStream() << "Made ADCFrame " << f << " for FEB " << a; 
 }
 
 

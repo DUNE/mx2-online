@@ -6,8 +6,9 @@
 #include "CAENVMEtypes.h"
 #include "CAENVMElib.h"
 
-#include "Controller.h"
 #include "log4cppHeaders.h"
+#include "Controller.h"
+#include "VMEModuleTypes.h"
 
 /*! 
   \class VMECommunicator
@@ -22,10 +23,12 @@ class VMECommunicator {
   friend std::ostream& operator<<(std::ostream&, const VMECommunicator&);
 
   private:
-  const Controller*  controller;
-  int                controllerHandle;
+  const Controller* controller;
+  int               controllerHandle;
 
   protected:
+  VMEModuleTypes::VMECommunicatorType commType;
+
   unsigned int       address;             /*!< The most basic address, bit shifted. For channels, it will be the CROC address. */
   CVAddressModifier  addressModifier;
   CVAddressModifier  bltAddressModifier;  /*!< block transfers use a different address modifier */
@@ -45,6 +48,9 @@ class VMECommunicator {
   virtual unsigned int GetAddress() const;
 
   const Controller* GetController() const;
+
+  VMEModuleTypes::VMECommunicatorType GetCommType() const;
+  int GetCrateNumber() const;
 
   int WriteCycle(int messageLength, unsigned char *send_message,  unsigned int address, 
       CVAddressModifier AM, CVDataWidth DW) const; 

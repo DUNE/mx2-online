@@ -5,7 +5,9 @@
 
 #include <exception>
 #include <string>
-#include <sstream>
+
+#include "FrameTypes.h"
+#include "VMEModuleTypes.h"
 
 /*! 
   \class FHWException
@@ -18,12 +20,24 @@ class FHWException : public std::exception
   public:
     FHWException();
     FHWException( std::string theMessage );
+    FHWException( 
+        int crateNumber, 
+        FrameTypes::FEBAddresses febAddress, 
+        unsigned int channelAddress, 
+        std::string theMessage );
 
-    ~FHWException() throw() {};
+    FHWException( 
+        int crateNumber, 
+        VMEModuleTypes::VMECommunicatorType vmeType,
+        unsigned int vmeAddress, 
+        std::string theMessage );
+
+    virtual ~FHWException() throw() {};
 
     const char * what();
 
   private:
+    void constructorHelper();
     std::string message;
 };
 

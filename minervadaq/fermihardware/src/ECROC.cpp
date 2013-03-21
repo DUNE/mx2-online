@@ -16,6 +16,7 @@ const unsigned short ECROC::RDFEDelayRegisterEnableBit = 15;
 ECROC::ECROC(unsigned int address, const Controller* controller) :
   VMECommunicator( address, controller )
 {
+  this->commType = VMEModuleTypes::ECROC;
   timingSetupAddress           = this->address + VMEModuleTypes::ECROCTimingSetup;
   resetAndTestPulseMaskAddress = this->address + VMEModuleTypes::ECROCResetAndTestPulseMask;
   channelResetAddress          = this->address + VMEModuleTypes::ECROCChannelReset;

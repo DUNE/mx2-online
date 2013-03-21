@@ -45,11 +45,14 @@ class DiscrFrame : public LVDSFrame {
 
 	public: 
 
-		DiscrFrame(FrameTypes::FEBAddresses a); 
-		~DiscrFrame() {};
+    DiscrFrame( 
+        FrameTypes::FEBAddresses a,
+        unsigned int theChannelAddresss,
+        int theCrateAddress ); 
+    ~DiscrFrame() {};
 
-		void MakeMessage();  
-		void DecodeRegisterValues(); 
+    void MakeMessage();  
+    void DecodeRegisterValues(); 
     unsigned int GetOutgoingMessageLength();
 
     unsigned int GetNHitsOnTRiP(const unsigned int& tripNumber) const; /*!< 0 <= tripNumber <= 3 */

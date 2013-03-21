@@ -10,15 +10,23 @@ log4cpp::Category& FPGAFrameLog = log4cpp::Category::getInstance(std::string("FP
 
 //-------------------------------------------------------
 /*!
-  \param a The address (number) of the FPGAFrame
+  \param theAddress The address (number) of the parent FEB.
+  \param theChannelAddress The VME address of the handling VMECommunicator.
+  \param theCrateNumber The VME crate ID.
   */
-FPGAFrame::FPGAFrame( FrameTypes::FEBAddresses a ) : 
+FPGAFrame::FPGAFrame( 
+    FrameTypes::FEBAddresses theAddress, 
+    unsigned int theChannelAddress,
+    int theCrateNumber ) : 
   LVDSFrame(),
   outgoingMessageIsShort(false)
 {
   using namespace FrameTypes;
 
-  febNumber[0] = (unsigned char)a; 
+  febNumber[0] = (unsigned char)theAddress; 
+  channelAddress = theChannelAddress;
+  crateNumber = theCrateNumber;
+
   FPGAFrameLog.setPriority(log4cpp::Priority::DEBUG);  
 
   Devices dev     = FPGA;          

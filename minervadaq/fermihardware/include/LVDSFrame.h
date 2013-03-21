@@ -33,6 +33,8 @@ class LVDSFrame {
   unsigned char *receivedMessage;  
   unsigned char febNumber[1], targetDevice[1], deviceFunction[1], 
                 broadcastCommand[1], messageDirection[1];
+  unsigned int  channelAddress;
+  int           crateNumber;
   inline void DeleteOutgoingMessage() { delete [] outgoingMessage; outgoingMessage = NULL; };
 
   public:

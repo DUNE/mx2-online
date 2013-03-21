@@ -81,7 +81,11 @@ class TRIPFrame : public LVDSFrame {
     std::vector<unsigned char> packTripData;  
 
   public:
-    TRIPFrame( FrameTypes::FEBAddresses a, TripTTypes::TRiPFunctions f );
+    TRIPFrame( 
+        FrameTypes::FEBAddresses a, 
+        unsigned int theChannelAddress,
+        int theCrateNumner,
+        TripTTypes::TRiPFunctions f );
     ~TRIPFrame() { };
 
     void MakeMessage();

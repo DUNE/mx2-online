@@ -11,16 +11,24 @@ log4cpp::Category& TRIPFrameLog = log4cpp::Category::getInstance(std::string("TR
 //------------------------------------------
 /*! 
   \param a the FEB address to which this trip belongs
+  \param theChannelAddress VME address of the handler.
+  \param theCrateNumber Crate ID for the handler.
   \param f the Trip function (read or write)
   */
-TRIPFrame::TRIPFrame(FrameTypes::FEBAddresses a, TripTTypes::TRiPFunctions f) : 
+TRIPFrame::TRIPFrame(
+    FrameTypes::FEBAddresses a, 
+    unsigned int theChannelAddress,
+    int theCrateNumber,
+    TripTTypes::TRiPFunctions f) : 
   LVDSFrame(),
   trip_function((unsigned char)f)
 {
   using namespace FrameTypes;
   using namespace TripTTypes;
 
-  TRIPFrameLog.setPriority(log4cpp::Priority::DEBUG);  // ERROR?
+  channelAddress = theChannelAddress;
+  crateNumber = theCrateNumber;
+  TRIPFrameLog.setPriority(log4cpp::Priority::INFO);  
 
   TripTChipID[0] = 0x0A;              //the id number for the trip; they're all 10 for MINERvA
   TripTRead[0]   = 0x04;              //the read bit (1) is set
