@@ -24,10 +24,11 @@ struct DAQWorkerArgs {
   unsigned char ledGroup;  /*!< Which LED group is being used. */
   int hardwareInitLevel;   /*!< Should the DAQ configure VME module timing registers? */
   int networkPort;         /*!< Network port for communication with ET, DAQ nodes (just ET right now). */
-  std::string etFileName;   /*!< ET system file name (memory mapped file) */
-  std::string logFileName;  /*!< The DAQ log file. */
-  std::string samFileName;  /*!< The SAM metadata file. */
-  std::string dataFileName; /*!< The RawData file. */
+  std::string etFileName;       /*!< ET system file name (memory mapped file) */
+  std::string logFileName;      /*!< The DAQ log file. */
+  std::string samPyFileName;    /*!< The SAM.py metadata file. */
+  std::string samJSONFileName;  /*!< The SAM.JSON metadata file. */
+  std::string dataFileName;     /*!< The RawData file. */
   std::string hardwareConfigFileName; /*!< Which configuration did the RunControl load? */
   std::string hostName;               /*!< What machine is the DAQ running on? */
   std::string lastTriggerFileName;    /*!< Log file for status communication with the RunControl. */

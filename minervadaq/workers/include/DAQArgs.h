@@ -21,8 +21,8 @@ class DAQArgs {
       assert( args != NULL );
 
       std::string fileRoot = "/work/data/";
-      args->runNumber = 1;
-      args->subRunNumber = 0;
+      args->runNumber = 42;
+      args->subRunNumber = 42;
       args->numberOfGates = 100;
       args->runMode = Modes::OneShot;  
       args->detector = Detectors::UnknownDetector;
@@ -33,7 +33,8 @@ class DAQArgs {
       args->networkPort = 65535;
       args->etFileName = fileRoot + "etsys/MinervaDAQ_RawData";
       args->logFileName = fileRoot + "logs/MinervaDAQ_Log.txt";
-      args->samFileName = fileRoot + "sam/MinervaDAQ_SAM.py";
+      args->samPyFileName = fileRoot + "sam/MinervaDAQ_SAM.py";
+      args->samJSONFileName = fileRoot + "sam/MinervaDAQ_SAM.JSON";
       args->dataFileName = fileRoot + "rawdata/MinervaDAQ_RawData.dat";
       args->hardwareConfigFileName = "unknown"; 
       args->hostName = "localhost";
@@ -77,7 +78,8 @@ class DAQArgs {
           args->etFileName   = fileRoot + "etsys/" + fileBaseName + "_RawData";
           args->logFileName  = fileRoot + "logs/" + fileBaseName + "_Controller" + 
             controllerID + "Log.txt";
-          args->samFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.py";
+          args->samPyFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.py";
+          args->samJSONFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.JSON";
           args->dataFileName = fileRoot + "rawdata/" + fileBaseName + "_RawData.dat";
         }
         else if (sw=="-cf") {

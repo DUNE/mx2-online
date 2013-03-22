@@ -19,6 +19,7 @@
 #include "SequencerReadoutBlock.h"
 
 #include "ReadoutWorker.h"
+#include "ReadoutStateRecorder.h"
 #include "DAQWorker.h"
 #include "DAQArgs.h"
 
@@ -67,6 +68,9 @@ ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCar
 
 // This test should be called fourteenth.
 void TestDAQWorker( DAQWorker * worker );
+
+// This test should be called fifteenth.
+void TestReadoutStateRecorder();
 
 //--------------------------------------------------------------------------------------
 // Helper Functions - not tests per se.

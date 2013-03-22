@@ -35,7 +35,8 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs,
   daqWorker.infoStream() << "  LED Level (encoded)    = " << (int)args->ledLevel;
   daqWorker.infoStream() << "  LED Group (encoded)    = " << (int)args->ledGroup;
   daqWorker.infoStream() << "  ET Filename            = " << args->etFileName;
-  daqWorker.infoStream() << "  SAM Filename           = " << args->samFileName;
+  daqWorker.infoStream() << "  SAM Py Filename        = " << args->samPyFileName;
+  daqWorker.infoStream() << "  SAM JSON Filename      = " << args->samJSONFileName;
   daqWorker.infoStream() << "  LOG Filename           = " << args->logFileName;
   daqWorker.infoStream() << "  Configuration File     = " << args->hardwareConfigFileName;
   daqWorker.infoStream() << "  VME Card Init. Level   = " << args->hardwareInitLevel;	
