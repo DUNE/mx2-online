@@ -168,6 +168,8 @@ int main( int argc, char * argv[] )
   DAQWorker * dworker = new DAQWorker( args, log4cpp::Priority::DEBUG, &continueRunning );
   TestDAQWorker( dworker );
 
+  TestReadoutStateRecorder();
+
   delete dworker;
   delete args;
 
@@ -179,6 +181,35 @@ int main( int argc, char * argv[] )
     + (unsigned long long)(run.tv_usec);
   std::cout << "Run Time = " << (stop - start) << " microsec." << std::endl;
   return 0;
+}
+
+//---------------------------------------------------
+void TestReadoutStateRecorder()
+{
+  std::cout << "Testing ReadoutStateRecorder...";  
+  logger.debugStream() << "Testing:--------------ReadoutStateRecorder--------------";
+
+  struct DAQWorkerArgs * args = DAQArgs::DefaultArgs();
+
+  ReadoutStateRecorder *stateRecorder = new ReadoutStateRecorder( args, log4cpp::Priority::DEBUG );
+
+  stateRecorder->BeginNextGate();
+  stateRecorder->FinishGate();
+
+  Triggers::TriggerType trigType = stateRecorder->GetNextTriggerType();
+  logger.debugStream() << "Trigger Type = " << trigType;
+  assert( 1 == trigType ); // Default mode is OneShot, so Trigger Type is Pedestal
+  std::tr1::shared_ptr<DAQHeader> daqHdr = stateRecorder->GetDAQHeader( HeaderData::SentinelBank );
+  assert( 56 == daqHdr->GetDataLength() );
+  logger.debugStream() << "Sentinel Bank Length = " << daqHdr->GetDataLength();
+
+  delete stateRecorder;
+  delete args;
+
+  logger.debugStream() << "Passed:--------------ReadoutStateRecorder--------------";
+  std::cout << "Passed!" << std::endl;
+  testCount++;
+
 }
 
 //---------------------------------------------------

@@ -77,7 +77,8 @@ bool ReadoutStateRecorder::FinishGate()
 {
   stateRecorderLogger.debugStream() << "ReadoutStateRecorder::FinishGate...";
   this->WriteGlobalGateToFile();
-  this->WriteToSAMFile();
+  this->WriteToSAMPYFile();
+  this->WriteToSAMJSONFile();
   this->WriteLastTriggerDataToFile();
   return true;
 }
@@ -203,13 +204,13 @@ std::tr1::shared_ptr<DAQHeader> ReadoutStateRecorder::GetDAQHeader( HeaderData::
 }
 
 //---------------------------------------------------------
-void ReadoutStateRecorder::WriteToSAMFile()
+void ReadoutStateRecorder::WriteToSAMPYFile()
 {
-  stateRecorderLogger.debugStream() << "Writing SAM File...";
+  stateRecorderLogger.debugStream() << "Writing SAM Py File...";
 
   FILE *file;
 
-  if ( (file=fopen((args->samFileName).c_str(), "w")) == NULL ) {
+  if ( (file=fopen((args->samPyFileName).c_str(), "w")) == NULL ) {
     stateRecorderLogger.errorStream() << "Error opening SAM file for writing!";
     return;
   }
@@ -233,7 +234,7 @@ void ReadoutStateRecorder::WriteToSAMFile()
   fprintf(file,"dataTier='binary-raw',\n");
 #endif
   fprintf(file,"runNumber=%d%04d,\n", args->runNumber, args->subRunNumber);
-  fprintf(file,"applicationFamily=ApplicationFamily('online','v09','v08-01-01'),\n"); //online, DAQ Heder, CVSTag
+  fprintf(file,"applicationFamily=ApplicationFamily('online','v09','%s'),\n", GIT_VERSION); //online, DAQ Heder, CVSTag
   fprintf(file,"fileSize=SamSize('0B'),\n");
   fprintf(file,"filePartition=1L,\n");
   switch (args->detector) { // Enumerations set by the DAQHeader class.
@@ -307,6 +308,106 @@ void ReadoutStateRecorder::WriteToSAMFile()
   fprintf(file,"lastEvent=%llu,\n", globalGate);
   fprintf(file,"lumBlockRangeList=LumBlockRangeList([LumBlockRange(%llu,%llu)])\n", firstGate, globalGate);
   fprintf(file,")\n");
+
+  fclose(file);
+}
+
+//---------------------------------------------------------
+void ReadoutStateRecorder::WriteToSAMJSONFile()
+{
+  stateRecorderLogger.debugStream() << "Writing SAM JSON File...";
+
+  FILE *file;
+
+  if ( (file=fopen((args->samJSONFileName).c_str(), "w")) == NULL ) {
+    stateRecorderLogger.errorStream() << "Error opening SAM file for writing!";
+    return;
+  }
+
+  fprintf(file,"File Name: \"%s\"\n", (args->dataFileName).c_str());
+  fprintf(file,"File Type: \"importedDetector\"\n");
+  fprintf(file,"File Format: \"binary\"\n");
+  fprintf(file,"Crc : [666L, \"(adler 32 crc type)\"]\n");
+  fprintf(file,"Group: \"minerva\"\n");
+#if MTEST
+  fprintf(file,"Data Tier: \"binary-raw-test\"\n");
+#else 
+  fprintf(file,"Data Tier: \"binary-raw\"\n");
+#endif
+  char runType[50];
+  switch (args->detector) { // Enumerations set by the DAQHeader class.
+    case 0:
+      sprintf(runType, "unknowndetector");
+      break;
+    case 1: 
+      sprintf(runType, "pmtteststand");
+      break;
+    case 2:
+      sprintf(runType, "trackingprototype");
+      break;
+    case 4:
+      sprintf(runType, "testbeam");
+      break;
+    case 8:
+      sprintf(runType, "frozendetector");
+      break;
+    case 16:
+      sprintf(runType, "upstreamdetector");
+      break;
+    case 32:
+      sprintf(runType, "minerva");
+      break;
+    default:
+      sprintf(runType, "errordetector");
+  }
+  fprintf(file,"Runs: [%d.%04d, \"(%s)\"]\n", args->runNumber, args->subRunNumber, runType);
+  fprintf(file,"Application: [\"online\", \"v09\", \"%s\"]\n", GIT_VERSION); //online, DAQ Heder, CVSTag
+  fprintf(file,"File Size: 0\n");
+  fprintf(file,"File Partition: 1\n");
+  fprintf(file,"Online.triggerconfig: \"%s\"\n", (args->hardwareConfigFileName).c_str() );
+  switch ((int)args->runMode) {
+    case 0: //OneShot:
+      fprintf(file,"Online.triggertype: \"oneshot\"\n");
+      fprintf(file,"Data Stream: \"pdstl\"\n");
+      break;
+    case 1: //NuMIBeam:
+      fprintf(file,"Online.triggertype: \"numibeam\"\n");
+      fprintf(file,"Data Stream: \"numib\" \n");
+      break;
+    case 2: //Cosmics:
+      fprintf(file,"Online.triggertype: \"cosmics\"\n");
+      fprintf(file,"Data Stream: \"cosmc\"\n");
+      break;
+    case 3: //PureLightInjection:
+      fprintf(file,"Online.triggertype: \"purelightinjection\"\n");
+      fprintf(file,"Data Stream: \"linjc\"\n");
+      break;
+    case 4: //MixedBeamPedestal:
+      fprintf(file,"Online.triggertype: \"mixedbeampedestal\"\n");
+      fprintf(file,"Data Stream: \"numip\"\n");
+      break;
+    case 5: //MixedBeamLightInjection:
+      fprintf(file,"Online.triggertype: \"mixedbeamlightinjection\"\n");
+      fprintf(file,"Data Stream: \"numil\"\n");
+      break;
+    case 6: //MTBFBeamMuon:
+      fprintf(file,"Online.triggertype: \"mtbfbeammuon\"\n");
+      fprintf(file,"Data Stream: \"bmuon\"\n");
+      break;
+    case 7: //MTBFBeamOnly:
+      fprintf(file,"Online.triggertype: \"mtbfbeamonly\"\n");
+      fprintf(file,"Data Stream: \"bonly\"\n");
+      break;
+    default:
+      fprintf(file,"Online.triggertype: \"errortype\"\n");
+      fprintf(file,"Data Stream: \"errorstream\"\n");
+  }
+  fprintf(file,"Start Time: %llu\n", gateStartTime);
+  fprintf(file,"End Time: %llu\n", gateFinishTime);
+  fprintf(file,"Event Count: %d\n", gate);
+  fprintf(file,"First Event: %llu\n", firstGate);
+  fprintf(file,"Last Event: %llu\n", globalGate);
+  fprintf(file,"Lum Block Ranges: [%llu, %llu]\n", firstGate, globalGate);
 
   fclose(file);
 }
