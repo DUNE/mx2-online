@@ -43,11 +43,17 @@ int main( int argc, char * argv[] )
   error = worker->SetUpET(); 
   bool sentSentinel = false;
   if (0 == error) {
-    worker->InitializeHardware();
-    worker->TakeData();
-    sentSentinel = worker->SendSentinel();
-    if (worker->CloseDownET())
-      daqmain.infoStream() << "Detached from ET station..."; 
+    try {
+      worker->InitializeHardware();
+      worker->TakeData();
+      sentSentinel = worker->SendSentinel();
+      if (worker->CloseDownET()) {
+        daqmain.infoStream() << "Detached from ET station..."; 
+      }
+    }
+    catch (std::exception &e) {
+      daqmain.errorStream() << "Exception! " << e.what();
+    }
   }
   else {
     daqmain.fatalStream() << "Failed to establish ET connection!";
