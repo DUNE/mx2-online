@@ -46,6 +46,7 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs,
 
   readoutWorker = new ReadoutWorker( priority, theStatus, (bool)args->hardwareInitLevel );
   stateRecorder = new ReadoutStateRecorder( args, priority );
+  dbWorker = new DBWorker( args, priority );
 }
 
 //---------------------------------------------------------

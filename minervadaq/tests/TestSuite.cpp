@@ -13,6 +13,7 @@
 
 #include <assert.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 
 #include "ReadoutTypes.h"
 #include "TestSuite.h"
@@ -173,7 +174,7 @@ int main( int argc, char * argv[] )
 
   TestReadoutStateRecorder();
   TestSQLiteTemp();
-
+  TestSQLite();
 
   log4cpp::Category::shutdown();
   std::cout << "Passed all tests! Executed " << testCount << " tests." << std::endl;
@@ -186,10 +187,48 @@ int main( int argc, char * argv[] )
 }
 
 //---------------------------------------------------
-void TestSQLiteTemp()
+void TestSQLite()
 {
   std::cout << "Testing TestSQLite...";  
   logger.debugStream() << "Testing:--------------TestSQLite--------------";
+
+  int rc(0);
+  DAQWorkerArgs * defArgs = DAQArgs::DefaultArgs();
+
+  std::string dbname = "/work/conditions/test.db";
+  defArgs->errDBFileName = dbname;
+  DBWorker * dbWorker = new DBWorker( defArgs, log4cpp::Priority::DEBUG );
+
+  struct stat sb;
+  assert( 0 == stat( dbname.c_str(), &sb ) );
+  logger.debug("DB File exists? File size: %lld bytes", (long long) sb.st_size);
+  if (0 == sb.st_size) {
+    rc = dbWorker->CreateStandardTable();
+    assert( SQLITE_OK == rc );
+  }
+
+  int crate = 0;
+  VMEModuleTypes::VMECommunicatorType type = VMEModuleTypes::EChannels;
+  unsigned int address = (0xEE << VMEModuleTypes::ECROCAddressShift);
+  std::string message = "test message";
+  FHWException * ex = new FHWException(crate,type,address,message);
+
+  rc = dbWorker->AddErrorToDB( *ex );
+  assert( SQLITE_OK == rc );
+
+  delete ex;
+  delete dbWorker;
+
+  logger.debugStream() << "Passed:--------------TestSQLite--------------";
+  std::cout << "Passed!" << std::endl;
+  testCount++;
+}
+
+//---------------------------------------------------
+void TestSQLiteTemp()
+{
+  std::cout << "Testing TestSQLiteTemp...";  
+  logger.debugStream() << "Testing:--------------TestSQLiteTemp--------------";
 
   char *tmpfile = ""; // default to temp db
   sqlite3 *db = NULL;
@@ -210,7 +249,7 @@ void TestSQLiteTemp()
   sqlite3_close( db ); 
   sqlite3_shutdown();
 
-  logger.debugStream() << "Passed:--------------TestSQLite--------------";
+  logger.debugStream() << "Passed:--------------TestSQLiteTemp--------------";
   std::cout << "Passed!" << std::endl;
   testCount++;
 }

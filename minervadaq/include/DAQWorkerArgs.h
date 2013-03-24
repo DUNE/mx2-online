@@ -5,6 +5,7 @@
   \brief Define the DAQWorkerArgs struct - used to organzie command line flags.
   */
 
+#include <string>
 #include "ReadoutTypes.h"
 
 /*! 
@@ -33,6 +34,7 @@ struct DAQWorkerArgs {
   std::string hostName;               /*!< What machine is the DAQ running on? */
   std::string lastTriggerFileName;    /*!< Log file for status communication with the RunControl. */
   std::string globalGateLogFileName;  /*!< Where are we tracking the global gate number? */
+  std::string errDBFileName;          /*!< Name of the database the DAQ is using for error logging. */
 
 };
 
