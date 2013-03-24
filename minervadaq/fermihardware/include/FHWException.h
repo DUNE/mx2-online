@@ -21,14 +21,14 @@ class FHWException : public std::exception
     FHWException();
     FHWException( std::string theMessage );
     FHWException( 
-        int crateNumber, 
-        FrameTypes::FEBAddresses febAddress, 
+        int theCrateNumber, 
+        FrameTypes::FEBAddresses theFebAddress, 
         unsigned int channelAddress, 
         std::string theMessage );
 
     FHWException( 
-        int crateNumber, 
-        VMEModuleTypes::VMECommunicatorType vmeType,
+        int theCrateNumber, 
+        VMEModuleTypes::VMECommunicatorType theVmeType,
         unsigned int vmeAddress, 
         std::string theMessage );
 
@@ -36,9 +36,18 @@ class FHWException : public std::exception
 
     const char * what();
 
+    int getCrate() const;
+    FrameTypes::FEBAddresses getFEBAddress() const;
+    VMEModuleTypes::VMECommunicatorType getVMECommunicatorType() const;
+    unsigned int getVMEAddress() const;
+
   private:
     void constructorHelper();
     std::string message;
+    int crateNumber;
+    FrameTypes::FEBAddresses febAddress;
+    VMEModuleTypes::VMECommunicatorType vmeType;
+    unsigned int address;
 };
 
 #endif
