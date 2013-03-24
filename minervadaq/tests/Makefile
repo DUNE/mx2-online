@@ -9,6 +9,8 @@ LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_workers
 include $(DAQROOT)/Make.include
 include $(DAQROOT)/Make.options
 
+# LDFLAGS = -Wl,--rpath -Wl,$(DAQROOT)/sqlite/lib
+
 $(TARGET): $(OBJS)
 	@echo $(OBJS)
 	@echo $(LDLIBS)
