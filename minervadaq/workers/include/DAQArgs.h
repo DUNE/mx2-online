@@ -4,6 +4,8 @@
   \file DAQArgs.h
 */
 
+#include <assert.h>
+#include <iostream>
 #include "DAQWorkerArgs.h"
 #include "exit_codes.h"
 
@@ -14,13 +16,15 @@
   */
 class DAQArgs {
 
+  static const std::string fileRoot;
+  static const std::string conditionsRoot;
+
   public:
     static struct DAQWorkerArgs * DefaultArgs()
     {
       struct DAQWorkerArgs * args = new DAQWorkerArgs;
       assert( args != NULL );
 
-      std::string fileRoot = "/work/data/";
       args->runNumber = 42;
       args->subRunNumber = 42;
       args->numberOfGates = 100;
@@ -33,13 +37,14 @@ class DAQArgs {
       args->networkPort = 65535;
       args->etFileName = fileRoot + "etsys/MinervaDAQ_RawData";
       args->logFileName = fileRoot + "logs/MinervaDAQ_Log.txt";
-      args->samPyFileName = fileRoot + "sam/MinervaDAQ_SAM.py";
-      args->samJSONFileName = fileRoot + "sam/MinervaDAQ_SAM.JSON";
+      args->samPyFileName = fileRoot + "sam/MinervaDAQ_SAM.py.metadata";
+      args->samJSONFileName = fileRoot + "sam/MinervaDAQ_SAM.JSON.metadata";
       args->dataFileName = fileRoot + "rawdata/MinervaDAQ_RawData.dat";
       args->hardwareConfigFileName = "unknown"; 
       args->hostName = "localhost";
-      args->lastTriggerFileName = "/work/conditions/last_trigger.dat"; 
-      args->globalGateLogFileName = "/work/conditions/global_gate.dat";
+      args->lastTriggerFileName = conditionsRoot + "last_trigger.dat"; 
+      args->globalGateLogFileName = conditionsRoot + "global_gate.dat";
+      args->errDBFileName = conditionsRoot + "hardwareErrors.db";    
 
       return args;
     };
@@ -48,7 +53,6 @@ class DAQArgs {
     {
       struct DAQWorkerArgs * args = DAQArgs::DefaultArgs();
 
-      std::string fileRoot = "/work/data/";
       int optind = 1;
       while ((optind < argc) && (argv[optind][0]=='-')) {
         std::string sw = argv[optind];
@@ -78,8 +82,8 @@ class DAQArgs {
           args->etFileName   = fileRoot + "etsys/" + fileBaseName + "_RawData";
           args->logFileName  = fileRoot + "logs/" + fileBaseName + "_Controller" + 
             controllerID + "Log.txt";
-          args->samPyFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.py";
-          args->samJSONFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.JSON";
+          args->samPyFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.py.metadata";
+          args->samJSONFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.JSON.metadata";
           args->dataFileName = fileRoot + "rawdata/" + fileBaseName + "_RawData.dat";
         }
         else if (sw=="-cf") {
@@ -112,11 +116,15 @@ class DAQArgs {
         }
         else if (sw=="-lt") {
           optind++;
-          args->lastTriggerFileName = argv[optind];
+          args->lastTriggerFileName = conditionsRoot + argv[optind];
         }
         else if (sw=="-gg") {
           optind++;
-          args->globalGateLogFileName = argv[optind];
+          args->globalGateLogFileName = conditionsRoot + argv[optind];
+        }
+        else if (sw=="-db") {
+          optind++;
+          args->errDBFileName = conditionsRoot + argv[optind];
         }
         optind++;
       }

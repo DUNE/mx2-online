@@ -27,6 +27,7 @@ then
   export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
   # Add local SQLite
   export LD_LIBRARY_PATH=$DAQROOT/sqlite/lib:$LD_LIBRARY_PATH
+  export PATH=$DAQROOT/sqlite/bin:$PATH
   # Add /usr/local/lib for log4cpp support.
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
 elif [ $LOCALE == 'NEARLINE' ]

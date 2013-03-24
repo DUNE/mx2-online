@@ -6,6 +6,7 @@
 #include "log4cppHeaders.h"
 #include "DAQWorkerArgs.h"
 #include "EventHandler.h"
+#include "DBWorker.h"
 #include "ReadoutWorker.h"
 #include "ReadoutStateRecorder.h"
 #include "et.h"          // the event transfer stuff
@@ -31,6 +32,7 @@ class DAQWorker {
 
     ReadoutStateRecorder* stateRecorder;
     ReadoutWorker* readoutWorker;
+    DBWorker* dbWorker;
 
     void DissolveDataBlock( std::tr1::shared_ptr<SequencerReadoutBlock> block );
 

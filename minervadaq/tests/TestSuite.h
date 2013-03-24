@@ -77,6 +77,9 @@ void TestReadoutStateRecorder();
 // This test should be called 16th.
 void TestSQLiteTemp();
 
+// This test should be called 16th.
+void TestSQLite();
+
 //--------------------------------------------------------------------------------------
 // Helper Functions - not tests per se.
 void FPGAWriteConfiguredFrame( EChannels* channel, std::tr1::shared_ptr<FPGAFrame> frame );
