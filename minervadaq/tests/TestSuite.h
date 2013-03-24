@@ -23,6 +23,8 @@
 #include "DAQWorker.h"
 #include "DAQArgs.h"
 
+#include <sqlite3.h>
+
 // This test should be called first.
 Controller * GetAndTestController( int address, int crateNumber );
 
@@ -71,6 +73,9 @@ void TestDAQWorker( DAQWorker * worker );
 
 // This test should be called fifteenth.
 void TestReadoutStateRecorder();
+
+// This test should be called 16th.
+void TestSQLiteTemp();
 
 //--------------------------------------------------------------------------------------
 // Helper Functions - not tests per se.

@@ -3,6 +3,9 @@
 #	CAEN_DIR
 # environment variables.
 
+#SQLite
+INCLUDE += -I$(DAQROOT)/sqlite/include/
+LDLIBS += -L$(DAQROOT)/sqlite/lib/ -lsqlite3
 
 LDLIBS += -L/usr/lib64 -ldl
 
@@ -39,6 +42,7 @@ INCLUDE += -I$(DAQROOT)/event_builder/include
 
 #Event Transfer
 INCLUDE += -I$(DAQROOT)/et_9.0/src/libsrc
+
 
 
 
