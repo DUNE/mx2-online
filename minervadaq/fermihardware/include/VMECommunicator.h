@@ -2,6 +2,7 @@
 #define VMECommunicator_h
 /*! \file VMECommunicator.h 
 */
+#include <ostream>
 
 #include "CAENVMEtypes.h"
 #include "CAENVMElib.h"
@@ -26,6 +27,7 @@ class VMECommunicator {
   const Controller* controller;
   int               controllerHandle;
 
+
   protected:
   VMEModuleTypes::VMECommunicatorType commType;
 
@@ -37,7 +39,7 @@ class VMECommunicator {
   CVDataWidth        dataWidthReg;        /*!< use a different data width for talking to registers (as opposed to data) */
   CVDataWidth        dataWidthSwappedReg; /*!< use a different data width for talking to registers (as opposed to data) */
 
-  virtual void exitIfError( int error, const std::string& msg ) const;
+  virtual void throwIfError( int error, const std::string& msg ) const;
   virtual void VMEThrow( std::string msg ) const;
 
   public:

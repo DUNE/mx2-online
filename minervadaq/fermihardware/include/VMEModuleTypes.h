@@ -28,6 +28,7 @@ namespace VMEModuleTypes {
     EChannels
   } VMECommunicatorType;
 
+
   //---------------
   /* crim types */
   //---------------

@@ -157,6 +157,9 @@ int main( int argc, char * argv[] )
   // Get & initialize a CRIM.
   CRIM * crim = GetAndTestCRIM( crimCardAddress, controller );
 
+  TestSQLiteTemp();
+  TestSQLite( echannel );
+
   delete crim;
   delete ecroc;
   delete controller;
@@ -173,8 +176,6 @@ int main( int argc, char * argv[] )
   delete args;
 
   TestReadoutStateRecorder();
-  TestSQLiteTemp();
-  TestSQLite();
 
   log4cpp::Category::shutdown();
   std::cout << "Passed all tests! Executed " << testCount << " tests." << std::endl;
@@ -187,7 +188,7 @@ int main( int argc, char * argv[] )
 }
 
 //---------------------------------------------------
-void TestSQLite()
+void TestSQLite( EChannels* channel )
 {
   std::cout << "Testing TestSQLite...";  
   logger.debugStream() << "Testing:--------------TestSQLite--------------";
@@ -215,6 +216,16 @@ void TestSQLite()
 
   rc = dbWorker->AddErrorToDB( *ex );
   assert( SQLITE_OK == rc );
+
+  // We have to sleep to keep timestamps unique in the db
+  sleep(1);
+  try {
+    channel->throwIfError( 1, "test error" );
+  }
+  catch (FHWException &ex) {
+    rc = dbWorker->AddErrorToDB( ex );
+    assert( SQLITE_OK == rc );
+  }
 
   delete defArgs;
   delete ex;

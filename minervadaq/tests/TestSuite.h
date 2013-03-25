@@ -61,24 +61,25 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs );
 // This test should be called eleventh.
 CRIM * GetAndTestCRIM( unsigned int address, Controller * controller );
 
-// This test should be called twelfth.
+// This test should be called 12th.
+void TestSQLiteTemp();
+
+// This test should be called 13th.
+void TestSQLite( EChannels *channel );
+
+// This test should be called 14th
 void TestVMECrate( int crateNumber );  
 
-// This test should be called thirteenth.
+// This test should be called 15th.
 ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCardAddress, 
     unsigned int crimCardAddress, int nch0, int nch1, int nch2, int nch3);
 
-// This test should be called fourteenth.
+// This test should be called 16th.
 void TestDAQWorker( DAQWorker * worker );
 
-// This test should be called fifteenth.
+// This test should be called 17th.
 void TestReadoutStateRecorder();
 
-// This test should be called 16th.
-void TestSQLiteTemp();
-
-// This test should be called 16th.
-void TestSQLite();
 
 //--------------------------------------------------------------------------------------
 // Helper Functions - not tests per se.

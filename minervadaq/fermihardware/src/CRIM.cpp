@@ -206,7 +206,7 @@ void CRIM::SetupTiming( VMEModuleTypes::CRIMTimingModes timingMode,
   message[0] = timingSetup & 0xFF;
   message[1] = (timingSetup>>8) & 0xFF;
   int error = WriteCycle( 2, message, timingRegister, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure writing to CRIM Timing Register!");
+  if( error ) throwIfError( error, "Failure writing to CRIM Timing Register!");
 } 
 
 //----------------------------------------
@@ -232,7 +232,7 @@ void CRIM::SetupGateWidth( unsigned short tcalbEnable,
   message[0] = gateWidthSetup & 0xFF;
   message[1] = (gateWidthSetup>>8) & 0xFF;
   int error = WriteCycle( 2, message, SGATEWidthRegister, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure writing to CRIM Gate Width Register!");
+  if( error ) throwIfError( error, "Failure writing to CRIM Gate Width Register!");
 }
 
 //----------------------------------------
@@ -249,7 +249,7 @@ void CRIM::SetupTCALBPulse( unsigned short pulseDelay ) const
   message[0] = TCALBDelaySetup & 0xFF;
   message[1] = (TCALBDelaySetup>>8) & 0xFF;
   int error = WriteCycle( 2, message, TCALBDelayRegister, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure writing to CRIM TCALB Pulse Delay Register!");
+  if( error ) throwIfError( error, "Failure writing to CRIM TCALB Pulse Delay Register!");
 } 
 
 //----------------------------------------
@@ -295,7 +295,7 @@ void CRIM::SetupInterruptMask() const
   message[0] = mask & 0xFF;
   message[1] = (mask>>0x08) & 0xFF;
   int error = WriteCycle( 2, message, interruptAddress, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Error setting CRIM IRQ mask!");
+  if( error ) throwIfError( error, "Error setting CRIM IRQ mask!");
 }
 
 //----------------------------------------
@@ -303,7 +303,7 @@ unsigned short CRIM::GetInterruptStatus() const
 {
   unsigned char message[] = {0x0,0x0};
   int error = ReadCycle( message, interruptStatusRegister, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Error reading CRIM Interrupt Status Register!");
+  if( error ) throwIfError( error, "Error reading CRIM Interrupt Status Register!");
   unsigned short status = (message[1]<<8) | message[0];
 #ifndef GOFAST
   CRIMLog.debugStream() << "Interrupt Status = 0x" << std::hex << status;
@@ -325,7 +325,7 @@ void CRIM::ClearPendingInterrupts( unsigned short interruptStatus ) const
       << std::setfill('0') << std::setw(2) << std::hex << (int)message[0];
 #endif
     int error = WriteCycle( 2, message, interruptsClear, addressModifier, dataWidthReg );
-    if( error ) exitIfError( error, "Error clearing pending CRIM Interrupts!");
+    if( error ) throwIfError( error, "Error clearing pending CRIM Interrupts!");
   } else {
 #ifndef GOFAST
     CRIMLog.debugStream() << "No pending interrupts to clear.";
@@ -350,7 +350,7 @@ void CRIM::ResetGlobalEnableIRQ() const
     << std::setfill('0') << std::setw(2) << std::hex << (int)message[0];
 #endif
   int error = WriteCycle( 2, message, interruptConfig, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Error setting IRQ Global Enable Bit!");
+  if( error ) throwIfError( error, "Error setting IRQ Global Enable Bit!");
 }
 
 //----------------------------------------
@@ -360,7 +360,7 @@ void CRIM::CAENVMEEnableIRQ() const
   CRIMLog.debugStream() << "CAENVMEEnableIRQ for mask 0x" << std::hex << ~this->GetInterruptMask();
 #endif
   int error = CAENVME_IRQEnable(this->GetController()->GetHandle(),~this->GetInterruptMask());
-  if( error ) exitIfError( error, "Error writing to CAEN VME IRQ Enable for CRIM!");
+  if( error ) throwIfError( error, "Error writing to CAEN VME IRQ Enable for CRIM!");
 }
 
 //----------------------------------------
@@ -386,10 +386,10 @@ unsigned int CRIM::MINOSSGATE() const
   int error = 0;
 
   error = ReadCycle( lowWord, gateTimeWordLowAddress, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure reading the CRIM MINOS Gate Time Low Word!");
+  if( error ) throwIfError( error, "Failure reading the CRIM MINOS Gate Time Low Word!");
 
   error = ReadCycle( highWord, gateTimeWordHighAddress, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure reading the CRIM MINOS Gate Time High Word!");
+  if( error ) throwIfError( error, "Failure reading the CRIM MINOS Gate Time High Word!");
 
   unsigned short low = 
     (unsigned short)( (lowWord[1]<<8 | lowWord[0]) & CRIM::MinosSGATELowerBitsMask ); 
@@ -407,7 +407,7 @@ unsigned short CRIM::GetStatus() const
 {
   unsigned char dataBuffer[] = {0x0,0x0}; 
   int error = ReadCycle( dataBuffer, statusRegisterAddress, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure reading the CRIM Status Register!");
+  if( error ) throwIfError( error, "Failure reading the CRIM Status Register!");
   unsigned short status = dataBuffer[1]<<8 | dataBuffer[0];
   return status;
 }
@@ -425,7 +425,7 @@ void CRIM::ResetCosmicLatch() const
 #endif
   unsigned char message[] = { 0x02, 0x02 };
   int error = WriteCycle( 2, message, cosmicResetRegister, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Error resetting the sequencer latch!");
+  if( error ) throwIfError( error, "Error resetting the sequencer latch!");
 }
 
 //----------------------------------------
@@ -440,7 +440,7 @@ void CRIM::ResetSequencerLatch() const
 #endif
   unsigned char message[] = { 0x04, 0x04 };
   int error = WriteCycle( 2, message, softwareCNRSTRegister, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Error resetting the sequencer latch!");
+  if( error ) throwIfError( error, "Error resetting the sequencer latch!");
 }
 
 //---------------------------
@@ -451,7 +451,7 @@ void CRIM::SendSoftwareGate() const
 #endif
   unsigned char message[] = { 0x08, 0x08 };
   int error = WriteCycle( 2, message, softwareCNRSTRegister, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Error sending software gate!");
+  if( error ) throwIfError( error, "Error sending software gate!");
 }
 
 //---------------------------

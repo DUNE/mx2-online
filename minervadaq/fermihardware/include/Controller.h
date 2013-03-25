@@ -50,7 +50,7 @@ class Controller {
 		int GetHandle() const;
 		int GetCrateNumber() const;
 
-		void ReportError(int error) const;
+    std::string ReportError(int error) const;
 
 
 };
