@@ -123,54 +123,54 @@ int main( int argc, char * argv[] )
   // Get & initialize a CROC-E.
   ECROC * ecroc = GetAndTestECROC( ecrocCardAddress, controller );
 
-  /* // Test that the specified number of FEBs are available & set up the channel. */
-  /* TestChannel( ecroc, channel, nFEBs ); */
+  // Test that the specified number of FEBs are available & set up the channel.
+  TestChannel( ecroc, channel, nFEBs );
 
-  /* // Grab a pointer to our configured channel for later use. */
-  /* EChannels * echannel = ecroc->GetChannel( channel ); */ 
+  // Grab a pointer to our configured channel for later use.
+  EChannels * echannel = ecroc->GetChannel( channel ); 
 
-  /* // Write some generic values to the FEB that are different than what we use */ 
-  /* // for charge injection and different from the power on defaults. Then read them */ 
-  /* // back over the course of the next two tests. */
-  /* SetupGenericFEBSettings( echannel, nFEBs ); */
-  /* FEBFPGAWriteReadTest( echannel, nFEBs ); */
-  /* FEBTRiPWriteReadTest( echannel, nFEBs ); */
+  // Write some generic values to the FEB that are different than what we use 
+  // for charge injection and different from the power on defaults. Then read them 
+  // back over the course of the next two tests.
+  SetupGenericFEBSettings( echannel, nFEBs );
+  FEBFPGAWriteReadTest( echannel, nFEBs );
+  FEBTRiPWriteReadTest( echannel, nFEBs );
 
-  /* // Set up charge injection and read the data. We test for data sizes equal */ 
-  /* // to what we expect. Get a copy of the buffer and its size for parsing. */
-  /* SetupChargeInjection( echannel, nFEBs ); */
-  /* unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); */ 
-  /* unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); */ 
+  // Set up charge injection and read the data. We test for data sizes equal 
+  // to what we expect. Get a copy of the buffer and its size for parsing.
+  SetupChargeInjection( echannel, nFEBs );
+  unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); 
+  unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); 
 
-  /* // Process the data from the sequencer. */
-  /* SequencerReadoutBlockTest( dataBuffer, pointer ); */
+  // Process the data from the sequencer.
+  SequencerReadoutBlockTest( dataBuffer, pointer );
 
-  /* // Read the ADC and parse them. */
-  /* ReadADCTest( echannel, nFEBs ); */
+  // Read the ADC and parse them.
+  ReadADCTest( echannel, nFEBs );
 
-  /* // Test the VME Crate */
-  /* TestVMECrate( controllerID ); */
+  // Test the VME Crate
+  TestVMECrate( controllerID );
 
-  /* // Read the Discriminators and parse them. */
-  /* ReadDiscrTest( echannel, nFEBs ); */
+  // Read the Discriminators and parse them.
+  ReadDiscrTest( echannel, nFEBs );
 
-  /* // Get & initialize a CRIM. */
-  /* CRIM * crim = GetAndTestCRIM( crimCardAddress, controller ); */
+  // Get & initialize a CRIM.
+  CRIM * crim = GetAndTestCRIM( crimCardAddress, controller );
 
-  /* delete crim; */
+  delete crim;
   delete ecroc;
-  /* delete controller; */
+  delete controller;
 
-  /* ReadoutWorker * rworker = GetAndTestReadoutWorker( controllerID, ecrocCardAddress, */
-  /*     crimCardAddress, nch0, nch1, nch2, nch3 ); */
-  /* delete rworker; */
+  ReadoutWorker * rworker = GetAndTestReadoutWorker( controllerID, ecrocCardAddress,
+      crimCardAddress, nch0, nch1, nch2, nch3 );
+  delete rworker;
 
-  /* bool continueRunning = true; */
-  /* DAQWorker * dworker = new DAQWorker( args, log4cpp::Priority::DEBUG, &continueRunning ); */
-  /* TestDAQWorker( dworker ); */
+  bool continueRunning = true;
+  DAQWorker * dworker = new DAQWorker( args, log4cpp::Priority::DEBUG, &continueRunning );
+  TestDAQWorker( dworker );
 
-/*   delete dworker; */
-/*   delete args; */
+  delete dworker;
+  delete args;
 
   TestReadoutStateRecorder();
   TestSQLiteTemp();
@@ -216,6 +216,7 @@ void TestSQLite()
   rc = dbWorker->AddErrorToDB( *ex );
   assert( SQLITE_OK == rc );
 
+  delete defArgs;
   delete ex;
   delete dbWorker;
 

@@ -54,6 +54,7 @@ DAQWorker::~DAQWorker()
 {
   delete readoutWorker;
   delete stateRecorder;
+  delete dbWorker;
 }
 
 //---------------------------------------------------------
