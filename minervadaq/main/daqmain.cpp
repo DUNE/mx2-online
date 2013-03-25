@@ -51,6 +51,10 @@ int main( int argc, char * argv[] )
         daqmain.infoStream() << "Detached from ET station..."; 
       }
     }
+    catch (FHWException &e) {
+      worker->WriteExceptionToDB(e);
+      daqmain.errorStream() << "Exception! " << e.what();
+    }
     catch (std::exception &e) {
       daqmain.errorStream() << "Exception! " << e.what();
     }
@@ -61,9 +65,9 @@ int main( int argc, char * argv[] )
 
   daqmain.infoStream() << "Finished MinervaDAQ...";
 
-  log4cpp::Category::shutdown();
   delete worker;
   delete args;
+  log4cpp::Category::shutdown();
 
   return (sentSentinel) ? EXIT_CLEAN_SENTINEL : EXIT_CLEAN_NOSENTINEL;
 }

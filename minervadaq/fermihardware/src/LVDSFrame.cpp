@@ -4,6 +4,7 @@
 */
 
 #include <iomanip>
+#include "FHWException.h"
 #include "LVDSFrame.h"
 #include "exit_codes.h"
 
@@ -217,6 +218,16 @@ void LVDSFrame::printReceivedMessageToLog()
 }
 
 //-----------------------------
+void LVDSFrame::FrameThrow( std::string msg ) const
+{
+  throw FHWException( 
+      this->crateNumber,
+      (FrameTypes::FEBAddresses)this->febNumber[0],
+      this->channelAddress,
+      msg );
+}
+
+//-----------------------------
 std::ostream& operator<<(std::ostream& out, const LVDSFrame& s)
 {
   using namespace FrameTypes;
@@ -247,5 +258,6 @@ std::ostream& operator<<(std::ostream& out, const LVDSFrame& s)
     << "; Channel Status = 0x" << std::hex << s.ReceivedMessageStatus();
   return out;
 }
+
 
 #endif

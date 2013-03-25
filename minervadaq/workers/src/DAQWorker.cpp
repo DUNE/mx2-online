@@ -52,9 +52,11 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs,
 //---------------------------------------------------------
 DAQWorker::~DAQWorker()
 {
+  daqWorker.debugStream() << "dtor...";
   delete readoutWorker;
   delete stateRecorder;
   delete dbWorker;
+  daqWorker.debugStream() << "dtor finished.";
 }
 
 //---------------------------------------------------------
@@ -326,5 +328,10 @@ void DAQWorker::DestroyEventHandler( struct EventHandler * handler )
   free( handler );
 }
 
+//---------------------------------------------------------
+int DAQWorker::WriteExceptionToDB( const FHWException & ex )
+{
+  return dbWorker->AddErrorToDB( ex );
+}
 
 #endif

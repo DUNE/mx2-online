@@ -75,9 +75,9 @@ int VMECommunicator::WriteCycle(int ml, unsigned char *send_message, unsigned in
       error = CAENVME_WriteCycle(controllerHandle, address, &send_data, AM, DW); 
     } while (
         (error<0) && ((error!=-1)||(error!=-4))
-        ); //check to make sure the message was sent.
-    //if the message wasn't sent but the error was not a bus error (-1) or a parameter error (-4)
-    //keep trying until it's successful.  It either timed out, or had an unspecified error
+        ); 
+    // If the message wasn't sent but the error was not a bus error (-1) or a parameter error (-4)
+    // keep trying until it's successful.  It either timed out, or had an unspecified error
   }
   return error;
 }
@@ -138,9 +138,9 @@ int VMECommunicator::WriteFIFOBLT(int ml, unsigned char *send_message, unsigned 
         AM, DW, &count);   
   } while (
       (error<0) && ((error!=-1)||(error!=-4))
-      ); //check to make sure the message was sent.
-  //if the message wasn't sent but the error was not a bus error (-1) or a parameter error (-4)
-  //keep trying until it's successful.  It either timed out, or had an unspecified error
+      ); 
+  // If the message wasn't sent but the error was not a bus error (-1) or a parameter error (-4)
+  // keep trying until it's successful.  It either timed out, or had an unspecified error.
   return error;
 }
 
