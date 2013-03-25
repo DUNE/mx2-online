@@ -36,6 +36,7 @@ class LVDSFrame {
   unsigned int  channelAddress;
   int           crateNumber;
   inline void DeleteOutgoingMessage() { delete [] outgoingMessage; outgoingMessage = NULL; };
+  virtual void FrameThrow( std::string msg ) const;
 
   public:
   LVDSFrame();

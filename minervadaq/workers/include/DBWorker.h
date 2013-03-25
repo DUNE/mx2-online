@@ -22,12 +22,15 @@ class DBWorker {
     sqlite3 *dataBase;
     bool dbIsAvailable;
 
+    int AcquireResources();
+    int ReleaseResources();
+
   public:
     explicit DBWorker( const DAQWorkerArgs* theArgs, log4cpp::Priority::Value priority );
     ~DBWorker();
 
     int CreateStandardTable() const;
-    int AddErrorToDB( FHWException & ex ) const;
+    int AddErrorToDB( const FHWException & ex ) const;
 };
 
 #endif

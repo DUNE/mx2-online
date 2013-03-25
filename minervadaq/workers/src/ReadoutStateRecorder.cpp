@@ -164,7 +164,7 @@ void ReadoutStateRecorder::WriteGlobalGateToFile()
   } 
   catch (bool e) {
     stateRecorderLogger.errorStream() << "Error opening global gate data!";
-    return; // throw? 
+    return; 
   }
   globalGateFile.close();
   stateRecorderLogger.debugStream() << "Put global gate " << globalGate;
@@ -178,11 +178,11 @@ std::tr1::shared_ptr<DAQHeader> ReadoutStateRecorder::GetDAQHeader( HeaderData::
   unsigned int minos = MINOSSGATE; 
   unsigned long long readoutTimeLong = gateFinishTime - gateStartTime;
   unsigned int readoutTime = (unsigned int)readoutTimeLong;
-  /* #ifndef GOFAST */
+#ifndef GOFAST
+#endif
   stateRecorderLogger.debugStream() << " readoutTimeLong = " << readoutTimeLong;
   stateRecorderLogger.debugStream() << " readoutTime     = " << readoutTime;
   stateRecorderLogger.debugStream() << " MINOSSGATE      = " << MINOSSGATE;
-  /* #endif */
 
   // sadly, these are probably not useful anymore.
   unsigned short int error = 0;
@@ -420,7 +420,7 @@ void ReadoutStateRecorder::WriteLastTriggerDataToFile()
 
   if ( NULL == (file=fopen((args->lastTriggerFileName).c_str(),"w")) ) {
     stateRecorderLogger.errorStream() << "Error opening last trigger file for writing!";
-    return; // throw
+    return; 
   }
   else {
     if (!(gate%10)) {

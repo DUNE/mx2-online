@@ -263,12 +263,14 @@ void FPGAFrame::DecodeRegisterValues()
   FPGAFrameLog.debugStream() << "FPGAFrame::DecodeRegisterValues";
 
   if ( this->ReceivedMessageLength() != MinervaDAQSizes::FPGAFrameMaxSize ) { 
-    FPGAFrameLog.fatalStream() << "Incorrect FPGA Frame Length for FEB " << this->GetFEBNumber();
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+    std::string errstring = "Incorrect FPGA Frame Length";
+    FPGAFrameLog.fatalStream() << errstring;
+    FrameThrow( errstring ); 
   } 
   if ( this->CheckForErrors() ) {
-    FPGAFrameLog.fatalStream() << "FPGA Frame Error for FEB " << this->GetFEBNumber(); 
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+    std::string errstring = "FPGA Frame Header Error";
+    FPGAFrameLog.fatalStream() << errstring; 
+    FrameThrow( errstring );
   }
 
   FPGAFrameLog.debugStream() <<  "No frame errors; parsing...";
@@ -471,7 +473,6 @@ void FPGAFrame::DecodeRegisterValues()
   GateTimeStamp |= (receivedMessage[startByte] & 0xFF) << 0x10;                        
   startByte++;
   GateTimeStamp |= (receivedMessage[startByte] & 0xFF) << 0x18;                        
-
 }
 
 

@@ -4,6 +4,7 @@
 */
 
 #include <fstream>
+#include <sys/stat.h>
 
 #include "DBWorker.h"
 
@@ -18,7 +19,21 @@ DBWorker::DBWorker( const DAQWorkerArgs* theArgs,
   dbIsAvailable(false)
 {
   dbWorker.setPriority(priority);
+  int rc = this->AcquireResources();
+  dbWorker.debugStream() << "ctor status: " << rc;
+}
 
+//---------------------------------------------------------
+DBWorker::~DBWorker()
+{
+  int rc = this->ReleaseResources();
+  dbWorker.debugStream() << "dtor Status: " << rc;
+}
+
+//---------------------------------------------------------
+int DBWorker::AcquireResources() 
+{
+  dbWorker.debugStream() << "AcquireResources...";
   const char * dbFileName = args->errDBFileName.c_str(); 
   char * vfsName = NULL;  
   int rc = 0;
@@ -26,20 +41,39 @@ DBWorker::DBWorker( const DAQWorkerArgs* theArgs,
 
   sqlite3_initialize();
   rc = sqlite3_open_v2( dbFileName, &dataBase, flags, vfsName ); 
-
   if (SQLITE_OK != rc) {
     sqlite3_close( dataBase );
   }
-  else {
+  if (SQLITE_OK == rc) {
     dbIsAvailable = true;
   }
+  dbWorker.debugStream() << " Open status = " << rc;
+
+  struct stat sb;
+  stat( dbFileName, &sb );
+  dbWorker.debug("DB File exists? File size: %lld bytes", (long long) sb.st_size);
+  if (0 == sb.st_size) {
+    rc = this->CreateStandardTable();
+  }
+  if (SQLITE_OK != rc) {
+    dbIsAvailable = false;
+  }
+  dbWorker.debugStream() << " Table status = " << rc;
+
+  return rc;
 }
 
 //---------------------------------------------------------
-DBWorker::~DBWorker()
+int DBWorker::ReleaseResources()
 {
-  sqlite3_close( dataBase ); 
-  sqlite3_shutdown();
+  dbWorker.debugStream() << "ReleaseResources...";
+  int rc = sqlite3_close( dataBase ); 
+  dbWorker.debugStream() << "SQLite Close: " << rc;
+  rc = sqlite3_shutdown();
+  dbWorker.debugStream() << "SQLite Shutdown: " << rc;
+  dbIsAvailable = false;
+
+  return rc;
 }
 
 //---------------------------------------------------------
@@ -49,13 +83,13 @@ int DBWorker::CreateStandardTable() const
 
   sqlite3_stmt *stmt = NULL;
 
-  const char * sqlstr = "CREATE TABLE HWERRORS (        \
-                         ETIMESTAMP   TIMESTAMP,        \
+  const char * sqlstr = "CREATE TABLE HWERRORS ( \
+                         ETIMESTAMP   TIMESTAMP, \
                          CRATE        INTEGER NOT NULL, \
                          FEB          INTEGER NOT NULL, \
                          VMETYPE      INTEGER NOT NULL, \
                          ADDRESS      UNSIGNED BIG INT NOT NULL, \
-                         MESSAGE      TEXT,             \
+                         MESSAGE      TEXT, \
                          PRIMARY KEY (ETIMESTAMP));";
 
   int rc = sqlite3_prepare_v2(
@@ -80,7 +114,7 @@ int DBWorker::CreateStandardTable() const
 }
 
 //---------------------------------------------------------
-int DBWorker::AddErrorToDB( FHWException & ex ) const
+int DBWorker::AddErrorToDB( const FHWException & ex ) const
 {
   if (!dbIsAvailable) return SQLITE_ERROR;
 
@@ -88,7 +122,7 @@ int DBWorker::AddErrorToDB( FHWException & ex ) const
   int feb = (int)ex.getFEBAddress();
   int vme = (int)ex.getVMECommunicatorType();
   sqlite3_int64 address = (sqlite3_int64)ex.getVMEAddress();
-  const char * msg = ex.what();
+  const char * msg = const_cast<FHWException *>(&ex)->what(); // sadly, what() is non-const
 #ifndef GOFAST
 #endif
   dbWorker.debugStream() << "AddErrorToDB: Crate = " << crateNumber << "; FEB = " << feb << 
