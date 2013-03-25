@@ -79,31 +79,34 @@ int Controller::GetCrateNumber() const
 
 
 //-------------------------------
-void Controller::ReportError(int error) const
+std::string Controller::ReportError(int error) const
 {
+  std::string retval;
   switch(error) {
     case cvSuccess:
-      ctrlLog.critStream() << "VME Error: Success!?";  
+      retval = "VME Error: Success!?";  
       break;					
     case cvBusError: 
-      ctrlLog.critStream() << "VME Error: Bus Error!";  
+      retval = "VME Error: Bus Error!";  
       break;	
     case cvCommError: 
-      ctrlLog.critStream() << "VME Error: Comm Error!";  
+      retval = "VME Error: Comm Error!";  
       break;	
     case cvGenericError: 
-      ctrlLog.critStream() << "VME Error: Generic Error!";  
+      retval = "VME Error: Generic Error!";  
       break;	
     case cvInvalidParam: 
-      ctrlLog.critStream() << "VME Error: Invalid Parameter!";  
+      retval = "VME Error: Invalid Parameter!";  
       break;	
     case cvTimeoutError: 
-      ctrlLog.critStream() << "VME Error: Timeout Error!";  
+      retval = "VME Error: Timeout Error!";  
       break;	
     default:
-      ctrlLog.critStream() << "VME Error: Unknown Error!";  
+      retval = "VME Error: Unknown Error!";  
       break;			
   }
+  ctrlLog.critStream() << retval;
+  return retval;
 }
 
 //-------------------------------

@@ -109,7 +109,7 @@ void ECROC::SetupTimingRegister( VMEModuleTypes::ECROCClockModes clockMode,
   ECROCLog.debugStream() << " Timing Register Bytes   = 0x" << std::hex << (int)command[0] << ", 0x" << (int)command[1]; 
 #endif
   int error = WriteCycle(2, command, timingSetupAddress, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure writing to CROC Timing Register!");
+  if( error ) throwIfError( error, "Failure writing to CROC Timing Register!");
 }
 
 //---------------------------------------- 
@@ -125,7 +125,7 @@ void ECROC::SetupResetAndTestPulseRegister( unsigned short resetEnable, unsigned
   ECROCLog.debugStream() << " Reset and Test Pulse Register Bytes   = 0x" << std::hex << (int)command[0] << ", 0x" << (int)command[1]; 
 #endif
   int error = WriteCycle(2, command, resetAndTestPulseMaskAddress, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure writing to CROC Reset and Test Pulse Register!");
+  if( error ) throwIfError( error, "Failure writing to CROC Reset and Test Pulse Register!");
 }
 
 //---------------------------------------- 
@@ -145,7 +145,7 @@ void ECROC::FastCommandOpenGate() const
 {
   unsigned char command[] = {0xB1};
   int error = WriteCycle(1, command, fastCommandAddress, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure writing to CROC FastCommand Register!");
+  if( error ) throwIfError( error, "Failure writing to CROC FastCommand Register!");
 }
 
 //----------------------------------------
@@ -180,7 +180,7 @@ void ECROC::SendSoftwareRDFE() const
 {
   unsigned char command[] = {0x1F};
   int error = WriteCycle(1, command, rdfePulseCommandAddress, addressModifier, dataWidthReg );
-  if( error ) exitIfError( error, "Failure writing to CROC Software RDFE Register!");
+  if( error ) throwIfError( error, "Failure writing to CROC Software RDFE Register!");
 }
 
 //----------------------------------------
@@ -215,7 +215,7 @@ unsigned short ECROC::ReadSequencerPulseDelayRegister() const
     std::hex << rdfePulseDelayAddress;
 #endif
   int error = ReadCycle( receivedMessage, rdfePulseDelayAddress, addressModifier, dataWidthReg); 
-  if( error ) exitIfError( error, "Failure reading the RDFE Configuration!"); 
+  if( error ) throwIfError( error, "Failure reading the RDFE Configuration!"); 
   configuration = receivedMessage[1]<<0x08 | receivedMessage[0];
 #ifndef GOFAST
   ECROCLog.debugStream() << " Sequencer Delay Configuration = 0x" << 
@@ -237,7 +237,7 @@ void ECROC::SetSequencerDelayeRegister( unsigned short configuration ) const
   config[0] = configuration & 0xFF;
   config[1] = (configuration & 0xFF00)>>8;
   int error = WriteCycle( 2, config, rdfePulseDelayAddress, addressModifier, dataWidthReg); 
-  if( error ) exitIfError( error, "Failure writing to RDFE Pulse Delay register!"); 
+  if( error ) throwIfError( error, "Failure writing to RDFE Pulse Delay register!"); 
 }
 
 //----------------------------------------

@@ -56,7 +56,7 @@ class EChannels : public VMECommunicator {
         const Controller* controller );
     ~EChannels();
 
-    virtual void exitIfError( int error, const std::string& msg ) const;
+    virtual void throwIfError( int error, const std::string& msg ) const;
 
     void ClearAndResetStatusRegister() const;  
     unsigned short ReadFrameStatusRegister() const;

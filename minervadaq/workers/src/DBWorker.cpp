@@ -148,19 +148,39 @@ int DBWorker::AddErrorToDB( const FHWException & ex ) const
   }
 
   idx = sqlite3_bind_parameter_index( stmt, ":crate" );
-  sqlite3_bind_int( stmt, idx, crateNumber );
+  rc = sqlite3_bind_int( stmt, idx, crateNumber );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    return rc;
+  }
 
   idx = sqlite3_bind_parameter_index( stmt, ":feb" );
-  sqlite3_bind_int( stmt, idx, feb );
+  rc = sqlite3_bind_int( stmt, idx, feb );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    return rc;
+  }
 
   idx = sqlite3_bind_parameter_index( stmt, ":vmetype" );
-  sqlite3_bind_int( stmt, idx, vme );
+  rc = sqlite3_bind_int( stmt, idx, vme );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    return rc;
+  }
 
   idx = sqlite3_bind_parameter_index( stmt, ":address" );
-  sqlite3_bind_int64( stmt, idx, address );
+  rc = sqlite3_bind_int64( stmt, idx, address );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    return rc;
+  }
 
   idx = sqlite3_bind_parameter_index( stmt, ":message" );
-  sqlite3_bind_text( stmt, idx, msg, -1, SQLITE_STATIC );
+  rc = sqlite3_bind_text( stmt, idx, msg, -1, SQLITE_STATIC );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    return rc;
+  }
 
   /* SQLITE_API int sqlite3_bind_int64(sqlite3_stmt*, int, sqlite3_int64); */
 
@@ -170,7 +190,12 @@ int DBWorker::AddErrorToDB( const FHWException & ex ) const
     return rc;
   }
 
+  /* reset the statement so it can be used again */
+  sqlite3_reset( stmt );
+  sqlite3_clear_bindings( stmt );  /* optional */
+
   sqlite3_finalize( stmt );
+  stmt = NULL;
 
   return SQLITE_OK;
 }

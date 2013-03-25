@@ -167,22 +167,39 @@ void VMECommunicator::VMEThrow( std::string msg ) const
 }
 
 //-----------------------------
-void VMECommunicator::exitIfError( int error, const std::string& msg ) const
+void VMECommunicator::throwIfError( int error, const std::string& msg ) const
 {
   if (error) {
-    commLog.fatalStream() << "Fatal error for device " << this;
-    commLog.fatalStream() << msg;
-    this->GetController()->ReportError(error);
-    exit(error);
+    std::stringstream ss;
+    ss << "Fatal error for device " << this;
+    ss << "; ";
+    ss << msg;
+    ss << this->GetController()->ReportError(error);
+    commLog.fatalStream() << ss; 
+    VMEThrow( ss.str() );
+  }
+}
+
+//-----------------------------
+std::ostream& operator<<(std::ostream & s, VMEModuleTypes::VMECommunicatorType t) {
+  switch (t) {
+    case VMEModuleTypes::UnknownCommunicator : return s << "UnknownCommunicator";
+    case VMEModuleTypes::CRIM                : return s << "CRIM";
+    case VMEModuleTypes::CROC                : return s << "CROC";
+    case VMEModuleTypes::Channels            : return s << "Channels";
+    case VMEModuleTypes::ECROC               : return s << "ECROC";
+    case VMEModuleTypes::EChannels           : return s << "EChannels";
+    default : return s << "ERROR Invalid VMECommunicatorType : " << int(t);
   }
 }
 
 //-----------------------------
 std::ostream& operator<<(std::ostream& out, const VMECommunicator& s)
 {
-  out << "Address = 0x" << std::hex << s.GetAddress();
+  out << s.commType << "; Address = 0x" << std::hex << s.GetAddress();
   return out;
 }
+
 
 
 #endif
