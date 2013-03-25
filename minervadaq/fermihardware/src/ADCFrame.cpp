@@ -5,7 +5,6 @@
 
 #include <iomanip>
 #include "ADCFrame.h"
-#include "exit_codes.h"
 
 #define SHOWSEQ 1 /*!< Show unpacked block ram (adc) in internal sequential order. */
 #define SHOWPIX 1 /*!< Show unpacked block ram (adc) keyed by pixel. */
@@ -73,20 +72,23 @@ void ADCFrame::DecodeRegisterValues()
   unsigned short ml = (receivedMessage[FrameTypes::ResponseLength1]) | 
     (receivedMessage[FrameTypes::ResponseLength0] << 8);
   if ( ml == 0 ) {
-    ADCFrameLog.fatalStream() << "Can't parse an empty InpFrame!";
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+    std::string errstring = "Can't parse an empty InpFrame in ADCFrame";
+    ADCFrameLog.fatalStream() << errstring;
+    FrameThrow( errstring ); 
   }
   if ( ml != MinervaDAQSizes::ADCFrameMaxSize) { 
-    ADCFrameLog.fatalStream() << "ADCFrame length mismatch!";
+    std::string errstring = "ADCFrame length mismatch";
+    ADCFrameLog.fatalStream() << errstring;
     ADCFrameLog.fatalStream() << "  Message Length = " << ml;
     ADCFrameLog.fatalStream() << "  Expected       = " << MinervaDAQSizes::ADCFrameMaxSize;
     this->printReceivedMessageToLog(); 
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+    FrameThrow( errstring ); 
   }
   // Check that the dummy byte is zero...
   if ( receivedMessage[FrameTypes::Data] != 0 ) {
-    ADCFrameLog.fatalStream() << "Dummy byte is non-zero!";
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+    std::string errstring = "Dummy byte is non-zero in ADCFrame";
+    ADCFrameLog.fatalStream() << errstring;
+    FrameThrow( errstring ); 
   }
 
   // Show header in 16-bit word format...

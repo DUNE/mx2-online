@@ -4,7 +4,6 @@
 */
 
 #include "FPGAFrame.h"
-#include "exit_codes.h"
 
 log4cpp::Category& FPGAFrameLog = log4cpp::Category::getInstance(std::string("FPGAFrame"));
 

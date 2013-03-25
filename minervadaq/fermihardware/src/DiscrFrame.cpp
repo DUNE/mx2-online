@@ -3,9 +3,9 @@
 /*! \file DiscrFrame.cpp
 */
 
+#include <string>
 #include <iomanip>
 #include "DiscrFrame.h"
-#include "exit_codes.h"
 
 #define SHOWNHITS 1        /*!< show number of hits when doing discr. parse */
 #define SHOWBRAM 1         /*!< show raw (parsed) discr frame data; Also show SYSTICKS */
@@ -65,13 +65,15 @@ void DiscrFrame::DecodeRegisterValues()
   // Check to see if the frame is more than zero length...
   unsigned short ml = (receivedMessage[ResponseLength1]) | (receivedMessage[ResponseLength0] << 8);
   if ( ml == 0 ) {
-    DiscrFrameLog.fatalStream() << "Can't parse an empty InpFrame!";
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+    std::string errstring = "Can't parse an empty InpFrame in DiscrFrame";
+    DiscrFrameLog.fatalStream() << errstring;
+    FrameThrow( errstring ); 
   }
   // Check that the dummy byte is zero...
   if ( receivedMessage[Data] != 0 ) {
-    DiscrFrameLog.fatalStream() << "Dummy byte is non-zero!";
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+    std::string errstring = "Dummy byte is non-zero in DiscrFrame";
+    DiscrFrameLog.fatalStream() << errstring;
+    FrameThrow( errstring ); 
   }
 
   int *TripXNHits = new int [4];
@@ -175,8 +177,9 @@ unsigned int DiscrFrame::GetNHitsOnTRiP(const unsigned int& tripNumber) const
   using namespace FrameTypes;
 
   if (NULL == receivedMessage) {
-    DiscrFrameLog.fatalStream() << "Null message buffer in GetNHitsOnTRiP!";
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+    std::string errstring = "Null message buffer in GetNHitsOnTRiP!";
+    DiscrFrameLog.fatalStream() << errstring;
+    FrameThrow( errstring );
   }
 
   switch (tripNumber) {
@@ -193,8 +196,9 @@ unsigned int DiscrFrame::GetNHitsOnTRiP(const unsigned int& tripNumber) const
       return (0xF0 & receivedMessage[discrNumHits23]) >> 4;
       break;
     default:
-      DiscrFrameLog.fatalStream() << "Only TRiPs 0-3 are valid for GetNHitsOnTRiP.";
-      exit(EXIT_FEB_UNSPECIFIED_ERROR);
+      std::string errstring = "Only TRiPs 0-3 are valid for GetNHitsOnTRiP.";
+      DiscrFrameLog.fatalStream() << errstring;
+      FrameThrow( errstring );
   }
   return 0;
 }
