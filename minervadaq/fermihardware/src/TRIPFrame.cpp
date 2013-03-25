@@ -3,8 +3,8 @@
 /*! \file TRIPFrame.cpp
 */
 
+#include <sstream>
 #include "TRIPFrame.h"
-#include "exit_codes.h"
 
 log4cpp::Category& TRIPFrameLog = log4cpp::Category::getInstance(std::string("TRIPFrame"));
 
@@ -256,8 +256,9 @@ void TRIPFrame::DecodeRegisterValues()
   using namespace FrameTypes;
 
   if ( this->CheckForErrors() ) {
-    TRIPFrameLog.fatalStream() << "TRIP Frame Error for FEB " << this->GetFEBNumber(); 
-    exit(EXIT_FEB_UNSPECIFIED_ERROR);
+    std::string errstring = "TRIP Frame Header Error";
+    TRIPFrameLog.fatalStream() << errstring;
+    FrameThrow( errstring );
   }
   int startByte = Data; // header... right size? from MinervaDAQtypes.h : ResponseWords
   int index = startByte;
@@ -362,8 +363,10 @@ void TRIPFrame::GetRegisterValue(int j, int &index, int bits)
   */
 void TRIPFrame::ParseError(int i, int j) 
 {
-  TRIPFrameLog.fatalStream() << "Parse Error for register: " << i << " at index: " << j;
-  exit(EXIT_FEB_UNSPECIFIED_ERROR);
+  std::stringstream ss;
+  ss << "TRIPFrame Parse Error for register: " << i << " at index: " << j;
+  TRIPFrameLog.fatalStream() << ss;
+  FrameThrow( ss.str() );
 }
 
 
@@ -374,8 +377,10 @@ void TRIPFrame::ParseError(int i, int j)
   */
 void TRIPFrame::ParseError(int i) 
 {
-  TRIPFrameLog.fatalStream() << "Parse Error at index: " << i << " while getting register value.";
-  exit(EXIT_FEB_UNSPECIFIED_ERROR);
+  std::stringstream ss;
+  ss << "TRIPFrame Parse Error at index: " << i << " while getting register value.";
+  TRIPFrameLog.fatalStream() << ss;
+  FrameThrow( ss.str() );
 }
 
 //------------------------------------------
@@ -405,8 +410,9 @@ int TRIPFrame::GetTripNumber() const
       tripNum = 5;
       break;
     default:
-      TRIPFrameLog.fatalStream() << "Invalid TriP ChipID in TRIPFrame::GetTripNumber()!";
-      exit(EXIT_FEB_UNSPECIFIED_ERROR);
+      std::string errstring = "Invalid TriP ChipID in TRIPFrame::GetTripNumber()!";
+      TRIPFrameLog.fatalStream() << errstring;
+      FrameThrow( errstring );
   }
   return tripNum;
 }
