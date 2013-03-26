@@ -1,0 +1,138 @@
+\input{preamble}
+
+\begin{document}
+
+\linenumbers
+
+\title{The \minerva DAQ for Developers}
+
+\author[1]{G.~N.~Perdue}
+\affil[1]{\Rochester}
+
+\maketitle
+
+\abstract{We describe the basic layout of the \minerva DAQ.}
+
+\section{Introduction}
+\label{sec:introduction}
+
+First, we need to checkout the code and inspect the repository.
+\begin{enumerate}
+\item Log in to a test stand machine (e.g., minervatest04.fnal.gov). 
+\item In your home area, make a directory to store the DAQ code (e.g., ``software'').
+\item cd \$HOME/software
+\item git clone ssh://p-minervadaq@cdcvs.fnal.gov/cvs/projects/minervadaq
+\item cd \$HOME/software/minervadaq/minervadaq
+\end{enumerate}
+
+At this point, we can list the contents:
+
+\begin{itemize}
+
+\item bin/ - Binaries directory. Not present until first build.
+\item compiler.sh* - This script copies the correct (machine-dependent) Make.options file from the options/ directory. The differences are based on how the DAQ and EventBuilder are built. Currently not used. When we start building on the nearline cluster and in the detector hall, we will revive this (or remove it).
+\item doc/ - Documentation. LaTeX, Readme, etc. This is also where the doxygen builds.
+\item Doxyfile - Doxygen instructions.
+\item et\_9.0/ - JLAB ET code.
+\item event\_builder/ - \minerva DAQ Event Builder.
+\item event\_structure/ - \minerva DAQ header classes.
+\item fermihardware/ - \minerva DAQ hardware classes.
+\item include/ - Top-level includes.
+\item lib/ - Libraries directory. Not present until first build.
+\item main/ - Main entry file.
+\item Makefile - Primary Makefile.
+\item Make.include 
+\item Make.options
+\item misc/ - Support package tar balls.
+\item options/ - Different files are created based on how the DAQ and EventBuilder are built. Currently not used. When we start building on the nearline cluster and in the detector hall, we will revive this (or remove it).
+\item runthedaq/ - Scripts to run the DAQ independent of the RunControl.
+\item setupdaqenv.sh - Environment configuration. It is LOCALE dependent (see setup script below).
+\item sqlite/ - Source code an build for SQLite.
+\item tests/ - Test suite and scripts to run the tests.
+\item workers/ - \minerva DAQ worker classes.
+
+\end{itemize}
+
+\section{Building}
+
+It is useful to keep a setup script.
+
+\begin{verbatim}
+#!/bin/sh
+
+# DAQ environment stuff
+export LOCALE=FNAL
+
+DAQROOT=${HOME}/software/minervadaq/minervadaq
+DAQSCRIPT=${DAQROOT}/setupdaqenv.sh
+source $DAQSCRIPT $DAQROOT
+\end{verbatim}
+
+Source the setup script and first build the Doxygen:
+
+\begin{enumerate}
+\item cd \$HOME
+\item . setup.sh
+\item cd \$DAQROOT
+\item doxygen Doxyfile
+\item firefox doc/doxy/html/index.html \&
+\end{enumerate}
+
+To build the DAQ itself on a machine that is properly configured with the VME libraries, simply type ``gmake all'' (or just gmake). If the CAEN libraries, log4cpp, or SQLite are not properly installed, consult doc/README.BUILD.
+
+\section{Running the Tests}
+
+With the DAQ built and the environment configured, it is simple to run the test suites:
+
+\begin{itemize}
+\item \$DAQROOT/tests/runTheTests.sh
+\item \$DAQROOT/tests/testMemory.sh
+\end{itemize}
+
+The first script simply runs the tests binary, but the second runs it through valgrind (with some suppressions in place for warnings from the VME library).
+
+Note that if the tests fail when run right after a checkout, this most likely means the hardware configuration is incorrect. You can examine the hardware dynamically with the SlowControl.
+
+\section{Running the SlowControl}
+
+First, we need to checkout the code:
+\begin{enumerate}
+\item cd \$HOME/software
+\item git clone ssh://p-mnv-configurator@cdcvs.fnal.gov/cvs/projects/mnv-configurator
+\item cd \$HOME/software/mnv-configurator/SlowControlE/
+\item python26 SC\_MainApp.py \&
+\end{enumerate}
+
+A full discussion of the SlowControl GUI is beyond the scope of this guide, but the controls do a dynamic hardware lookup, so just launching the program should show the currently installed hardware.
+
+\section{Running the DAQ}
+
+The simplest option involves running a shell script from the runthedaq/ directory:
+
+\begin{itemize}
+\item cleanup.sh* - Remove files from default run script (used for rapid testing). You cannot use an existing file for the ET system file.
+\item daq\_opts - Some shell variables for running the DAQ and ET.
+\item proc\_scrub* - Kill and clean up ET processes.
+\item start\_daq\_singleton* - Run the DAQ.
+\item start\_daq\_singleton\_etleakchk* - Run the DAQ. Run the Event Builder through valgrind. 
+\item start\_daq\_singleton\_leakchk* - Run the DAQ. Run the DAQ through valgrind.  
+\item start\_eb\_service* - Start the Event Builder. We generally do not call this script directly.
+\item start\_eb\_service\_leakchk* - Start the Event Builder under valgrind. We generally do not call this script directly.
+\item start\_et\_base* - Start all the ET process and the Event Builder. Typically, we use this script in conjunction with running the DAQ ``by-hand'' under cgdb (gdb).
+\item start\_et\_monitor* - Start the ET system monitor. We generally do not call this script directly.
+\item start\_et\_system* - Open the ET system file. We generally do not call this script directly.
+\end{itemize}
+
+Examples:
+\begin{itemize}
+\item ./start\_daq\_singleton -p 1201 -m 0   \# Ports 1201 - 1250 are available. Mode 0 is pedestal.
+\item ./start\_daq\_singleton -p 1205 -m 1   \# Mode 1 is ``beam mode.''
+\item ./start\_et\_base -p 1201; cgdb ../bin/minervadaq  \# r -et testme -g 10 -m 0 -r 1337 -s 391 -d 0 -cf unknown -dc 5 -ll 0 -lg 8 -hw 1 -p 1201
+\end{itemize}
+
+
+
+\bibliographystyle{plain}
+\bibliography{DAQElectronics}
+
+\end{document}
