@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 
 #include "DBWorker.h"
+#include "VMEAddressTranslator.h"
 
 log4cpp::Category& dbWorker = 
 log4cpp::Category::getInstance(std::string("dbWorker"));
@@ -89,6 +90,9 @@ int DBWorker::CreateStandardTable() const
                          FEB          INTEGER NOT NULL, \
                          VMETYPE      INTEGER NOT NULL, \
                          ADDRESS      UNSIGNED BIG INT NOT NULL, \
+                         CRIM         INTEGER NOT NULL, \
+                         CROC         INTEGER NOT NULL, \
+                         CHANNEL      INTEGER NOT NULL, \
                          MESSAGE      TEXT, \
                          PRIMARY KEY (ETIMESTAMP));";
 
@@ -123,17 +127,23 @@ int DBWorker::AddErrorToDB( const FHWException & ex ) const
   int vme = (int)ex.getVMECommunicatorType();
   sqlite3_int64 address = (sqlite3_int64)ex.getVMEAddress();
   const char * msg = const_cast<FHWException *>(&ex)->what(); // sadly, what() is non-const
+  int crim = (int)VMEAddressTranslator::GetCRIMNumber( address );
+  int croc = (int)VMEAddressTranslator::GetECROCNumber( address );
+  int chnl = (int)VMEAddressTranslator::GetEChannelsNumber( address );
 #ifndef GOFAST
 #endif
   dbWorker.debugStream() << "AddErrorToDB: Crate = " << crateNumber << "; FEB = " << feb << 
     "; VME Type = " << vme << "; Address = " << address;
+  dbWorker.debugStream() << " Parsed Address CRIM  Number = " << crim; 
+  dbWorker.debugStream() << " Parsed Address ECROC Number = " << croc;
+  dbWorker.debugStream() << " Parsed Address EChnl Number = " << chnl;
   dbWorker.debugStream() << " Message: " << msg;
 
   sqlite3_stmt *stmt = NULL;
   int idx = -1;
   const char * sqlstr = 
     "INSERT INTO HWERRORS VALUES ( \
-    CURRENT_TIMESTAMP, :crate, :feb, :vmetype, :address, :message );"; 
+    CURRENT_TIMESTAMP, :crate, :feb, :vmetype, :address, :crim, :croc, :channel, :message );"; 
 
     int rc = sqlite3_prepare_v2( 
         dataBase,
@@ -170,6 +180,27 @@ int DBWorker::AddErrorToDB( const FHWException & ex ) const
 
   idx = sqlite3_bind_parameter_index( stmt, ":address" );
   rc = sqlite3_bind_int64( stmt, idx, address );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    return rc;
+  }
+
+  idx = sqlite3_bind_parameter_index( stmt, ":crim" );
+  rc = sqlite3_bind_int( stmt, idx, crim );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    return rc;
+  }
+
+  idx = sqlite3_bind_parameter_index( stmt, ":croc" );
+  rc = sqlite3_bind_int( stmt, idx, croc );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    return rc;
+  }
+
+  idx = sqlite3_bind_parameter_index( stmt, ":channel" );
+  rc = sqlite3_bind_int( stmt, idx, chnl );
   if (SQLITE_OK != rc) {
     dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
     return rc;
