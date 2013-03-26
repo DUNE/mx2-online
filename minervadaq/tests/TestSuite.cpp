@@ -210,7 +210,7 @@ void TestSQLite( EChannels* channel )
 
   int crate = 0;
   VMEModuleTypes::VMECommunicatorType type = VMEModuleTypes::EChannels;
-  unsigned int address = (0xEE << VMEModuleTypes::ECROCAddressShift);
+  unsigned int address = 0xFFFFFFFF;
   std::string message = "test message";
   FHWException * ex = new FHWException(crate,type,address,message);
 

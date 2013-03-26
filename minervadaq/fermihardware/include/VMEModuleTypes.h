@@ -28,6 +28,12 @@ namespace VMEModuleTypes {
     EChannels
   } VMECommunicatorType;
 
+  //---------------
+  /* croc types */
+  //---------------
+
+  // CROC has 24-bit addressing. Addrr = 8 bits << 16 
+  static const unsigned int CROCAddressShift = 16;
 
   //---------------
   /* crim types */
@@ -160,6 +166,7 @@ namespace VMEModuleTypes {
   //---------------
 
   static const unsigned int ECROCAddressShift = 24;
+  /* static const unsigned int EChannelsAddressShift = 16; */
   static const unsigned int EChannelOffset    = 0x40000;
 
   // These values are good for the ecroc as well.
