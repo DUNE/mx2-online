@@ -213,17 +213,14 @@ int DBWorker::AddErrorToDB( const FHWException & ex ) const
     return rc;
   }
 
-  /* SQLITE_API int sqlite3_bind_int64(sqlite3_stmt*, int, sqlite3_int64); */
-
   rc = sqlite3_step( stmt );
   if (( SQLITE_DONE != rc ) && ( SQLITE_ROW != rc )) {
     dbWorker.errorStream() << "sqlite3_step failed with rc = " << rc;
     return rc;
   }
 
-  /* reset the statement so it can be used again */
-  sqlite3_reset( stmt );
-  sqlite3_clear_bindings( stmt );  /* optional */
+  sqlite3_reset( stmt ); // reset probably unnecessary since we done anyway
+  sqlite3_clear_bindings( stmt );  
 
   sqlite3_finalize( stmt );
   stmt = NULL;
