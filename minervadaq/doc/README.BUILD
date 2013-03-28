@@ -5,6 +5,8 @@ How to Build the MINERvA DAQ.
 
 Quick Directions (software already installed):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Note: This assumes the local SQLite is built as well.
+
 1) Log on to the DAQ machine you want to update as the "mnvonline" user.  On T977 machines, use the "tbonline" 
 account instead.  In the $HOME are there will be a set of scripts for launching the Run and Slow Controls, 
 configuring the environment, etc.  These scripts will vary from machine to machine, but they are hopefully 
@@ -99,9 +101,17 @@ It is a good idea to configure your firewall such that these ports are kept open
 
 5) Check ${ET_LIBROOT}/lib and make sure you have libet.a, libet_remote.so, and libet.so.
 
-6) Return to $DAQROOT and type "gmake all"
+6) Go to sqlite/sqlite-autoconf-3071600/
+  ./configure --prefix=${DAQROOT}/sqlite
+  make
+  make install
 
-7) Check ${DAQROOT}/bin/ for 
+7) Be sure that version of sqlite is what is in your $PATH and $LD_LIBRARY_PATH.
+  (setupdaqenv.sh does this) 
+
+8) Return to $DAQROOT and type "gmake all"
+
+9) Check ${DAQROOT}/bin/ for 
 	event_builder
 	minervadaq
   tests
@@ -110,10 +120,10 @@ And check ${DAQROOT}/lib/ for
 	libhardware.so
 	libminerva_workers.so
 
-8) If you are missing any of these, read the Makefile and try building each package one at a time and check 
+10) If you are missing any of these, read the Makefile and try building each package one at a time and check 
 for errors.  Most likely, an environment variable has been incorrectly set.
 
-9) Finally, build the doxygen documentation:
+11) Finally, build the doxygen documentation:
   doxygen Doxyfile
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
