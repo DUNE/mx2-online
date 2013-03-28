@@ -23,7 +23,7 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
   VMECommunicator( vmeAddress, controller ),
   channelNumber(number)
 {
-  EChannelLog.setPriority(log4cpp::Priority::INFO);  
+  EChannelLog.setPriority(log4cpp::Priority::DEBUG);  
 
   this->commType = VMEModuleTypes::EChannels;
   channelDirectAddress             = this->address + VMEModuleTypes::EChannelOffset * (unsigned int)(channelNumber);
@@ -170,21 +170,24 @@ void EChannels::SetupNFrontEndBoards( int nFEBs )
       exit(EXIT_CONFIG_ERROR);
     }
   }
-  this->UpdateConfigurationForVal( (unsigned short)(0xF & nFEBs), (unsigned short)0xFFF0 );
+  this->UpdateConfigurationForVal( (unsigned short)(0xF & nFEBs), 
+      static_cast<unsigned short>(~VMEModuleTypes::ConfigurationNFEBsMask) );
 }
 
 //----------------------------------------
 //! Only update the enable bit.
 void EChannels::EnableSequencerReadout() const
 {
-  this->UpdateConfigurationForVal( (unsigned short)(0x8000), (unsigned short)(0x7FFF) );
+  this->UpdateConfigurationForVal( VMEModuleTypes::ConfigurationSequencerReadoutMask, 
+      static_cast<unsigned short>(~VMEModuleTypes::ConfigurationSequencerReadoutMask) );
 }
 
 //----------------------------------------
 //! Only update the enable bit.
 void EChannels::DisableSequencerReadout() const
 {
-  this->UpdateConfigurationForVal( (unsigned short)(0x0000), (unsigned short)(0x7FFF) );
+  this->UpdateConfigurationForVal( (unsigned short)(0x0000), 
+      static_cast<unsigned short>(~VMEModuleTypes::ConfigurationSequencerReadoutMask) );
 }
 
 //----------------------------------------
@@ -212,6 +215,9 @@ unsigned short EChannels::GetChannelConfiguration() const
 void EChannels::UpdateConfigurationForVal( unsigned short val, unsigned short mask ) const
 {
   // maintain state - we only want to update the val
+#ifndef GOFAST
+  EChannelLog.debugStream() << "UpdateConfigurationForVal : val = " << val << "; mask = " << mask;
+#endif
   unsigned short configuration = this->GetChannelConfiguration();  
   configuration &= mask; 
   configuration |= val; 
@@ -220,7 +226,9 @@ void EChannels::UpdateConfigurationForVal( unsigned short val, unsigned short ma
   config[1] = (configuration & 0xFF00)>>8;
   this->SetChannelConfiguration( config );
   unsigned short configurationCheck = this->GetChannelConfiguration();
-  if( configuration != configurationCheck ) exit(EXIT_CONFIG_ERROR);
+  if( configuration != configurationCheck ) {
+    VMEThrow( "Failure to consistently update the Channel configuration!" );
+  }
 }
 
 //----------------------------------------
@@ -368,7 +376,7 @@ unsigned short EChannels::WaitForMessageReceived() const
     VMEThrow( error.second );
   }
 #ifndef GOFAST
-  EChannelLog.debugStream() << " Decoded Status Error Level = " << error;
+  EChannelLog.debugStream() << " Decoded Status Error Level = " << error.first;
   EChannelLog.debugStream() << "Message was received with status = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << status;
 #endif
