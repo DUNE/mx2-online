@@ -60,19 +60,19 @@ namespace VMEModuleTypes {
     */
   typedef enum { //cast this to unsigned short
     // For internal timing mode - only one frequency bit may be set at a time!
-    ZeroFreq = 0x0000, // Really "no" frequency - correct mode for OneShot, MTM running.
-    F0       = 0x0001, // fastest, too fast for our FEB's
+    ZeroFreq = 0x0000, /*!< Really "no" frequency - correct mode for OneShot, MTM running. */
+    F0       = 0x0001, /*!< fastest, too fast for our FEB's */
     F1       = 0x0002,
     F2       = 0x0004,
     F3       = 0x0008,
-    F4       = 0x0010, // fastest our FEB's ran with in Wideband
+    F4       = 0x0010, /*!< fastest our FEB's ran with in Wideband in 2008 */
     F5       = 0x0020,
     F6       = 0x0040,
     F7       = 0x0080,
     F8       = 0x0100,
     F9       = 0x0200,
     F10      = 0x0400,
-    F11      = 0x0800 // slowest
+    F11      = 0x0800 /*!< slowest */
   } CRIMTimingFrequencies;
 
   /*! 
@@ -96,19 +96,18 @@ namespace VMEModuleTypes {
     CRIMSoftwareTrigger        = 0xC040,
     CRIMSoftwareTCALB          = 0xC050,
     CRIMSoftwareSGATE          = 0xC060,
-    CRIMSequencerControlLatch  = 0xC070, // Register for external trigger modes (cosmic - v5 firmware only) 
+    CRIMSequencerControlLatch  = 0xC070, /*!< Register for external trigger modes (cosmic - v5 firmware only) */
     CRIMSoftwareCNRST          = 0xC080,
-    CRIMTimingOverlapViolation = 0xC090, // Readonly check for timing signal overlaps (obsolete)
-    CRIMTestRegister           = 0xC0A0, // CG, Synch Test facility?
-    CRIMGateTimeWordLow        = 0xC0B0, // MINOS SGATE least significant bits
-    CRIMGateTimeWordHigh       = 0xC0C0, // MINOS SGATE most significant bits (total 28 meaningful bits)
+    CRIMTimingOverlapViolation = 0xC090, /*!< OBSOLETE in CRIM v9: Readonly check for timing signal overlaps. */
+    CRIMTestRegister           = 0xC0A0, /*!< CG, Synch Test facility? */
+    CRIMGateTimeWordLow        = 0xC0B0, /*!< MINOS SGATE least significant bits */
+    CRIMGateTimeWordHigh       = 0xC0C0, /*!< MINOS SGATE most significant bits (total 28 meaningful bits) */
     CRIMInterruptMask          = 0xF000,
     CRIMInterruptStatus        = 0xF010,
     CRIMClearInterrupts        = 0xF020,
     CRIMInterruptConfig        = 0xF040,
     CRIMInterruptVectors       = 0xF800  // 16 bytes
   };
-
 
   /*! 
     \enum CRIMInterrupts
@@ -121,7 +120,6 @@ namespace VMEModuleTypes {
     CNRST     = 0x08,
     TCALB     = 0x10
   } CRIMInterrupts;
-
 
   //---------------
   /* status bits for croc & crim */
@@ -166,7 +164,6 @@ namespace VMEModuleTypes {
   //---------------
 
   static const unsigned int ECROCAddressShift = 24;
-  /* static const unsigned int EChannelsAddressShift = 16; */
   static const unsigned int EChannelOffset    = 0x40000;
 
   // These values are good for the ecroc as well.
@@ -223,6 +220,37 @@ namespace VMEModuleTypes {
     SendMemoryEmpty               = 0x4000,  
     SendMemoryFull                = 0x8000   
   };
+
+  typedef enum ECROCChannelConfigurationBits { // typecast to unsigned short
+    ConfigurationNFEBs0                 = 0x0001,
+    ConfigurationNFEBs1                 = 0x0002,
+    ConfigurationNFEBs2                 = 0x0004,
+    ConfigurationNFEBs3                 = 0x0008,
+    ConfigurationEnableChannelReset     = 0x0010,
+    ConfigurationEnableChannelTestPulse = 0x0020,
+    ConfigurationFPGAFirmware0          = 0x0040,
+    ConfigurationFPGAFirmware1          = 0x0080,
+    ConfigurationFPGAFirmware2          = 0x0100,
+    ConfigurationFPGAFirmware3          = 0x0200,
+    ConfigurationUnused0                = 0x0400,
+    ConfigurationUnused1                = 0x0800,
+    ConfigurationHitEncoding            = 0x1000, /*!< 0: 4 bits for hit encoding, 1: 5 bits */
+    ConfigurationHitMode                = 0x2000, /*!< 0: all hits, 1: deepest pipeline only */
+    ConfigurationSendMemoryType         = 0x4000, /*!< 0: FIFO, 1: RAM */
+    ConfigurationSequencerReadout       = 0x8000  /*!< 0: Disable, 1: Enable */
+  };
+  static const int ConfigurationNFEBsMask                  = 0x000F;
+  static const int ConfigurationEnableChannelResetMask     = ConfigurationEnableChannelReset;
+  static const int ConfigurationEnableChannelTestPulseMask = ConfigurationEnableChannelTestPulse;
+  static const int ConfigurationFPGAFirmwareMask           = 0x03C0;
+  static const int ConfigurationHitEncodingMask            = ConfigurationHitEncoding;
+  static const int ConfigurationHitModeMask                = ConfigurationHitMode;
+  static const int ConfigurationSendMemoryTypeMask         = ConfigurationSendMemoryType;
+  static const int ConfigurationSequencerReadoutMask       = ConfigurationSequencerReadout;
+
+  static const int EventCounterEventMask         = 0x3FFF;
+  static const int EventCounterLoopDelayMask     = 0x4000; /*!< 8th bit of the Loop Delay value. */
+  static const int EventCounterReceiveMemoryMask = 0x8000; /*!< 17th bit of the Receive Memory pointer. */
 
 }
 
