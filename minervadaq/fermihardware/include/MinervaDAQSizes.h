@@ -26,9 +26,9 @@ namespace MinervaDAQSizes {
   static const unsigned int FrameHeaderLengthIncoming = 15; /*!< size (in bytes) of an incoming LVDS header for ANY device */
 
   static const unsigned int FPGANumRegisters    =   54;  /*!< Firmware Dependent! */
-  static const unsigned int FPGAFrameMaxSize    =   74/*68*/;  /*!< bytes, Firmware Dependent! */
-  static const unsigned int ADCFrameMaxSize     =  452/*446*/;  /*!< bytes */
-  static const unsigned int DiscrFrameMaxSize   = 1144/*1138*/;  /*!< bytes, == 18 + 40 * 4 * 7 (40 bytes / trip / hit) */
+  static const unsigned int FPGAFrameMaxSize    =   74;  /*!< bytes, Firmware Dependent! */
+  static const unsigned int ADCFrameMaxSize     =  452;  /*!< bytes */
+  static const unsigned int DiscrFrameMaxSize   = 1144;  /*!< bytes, == 24 + 40 * 4 * 7 (40 bytes / trip / hit) */
   static const unsigned int FEBTotalDataMaxSize = FPGAFrameMaxSize + 
     ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize; /*!< bytes */
 
@@ -41,7 +41,7 @@ namespace MinervaDAQSizes {
 
   static const unsigned int MaxTotalDataPerChain = MaxFEBsPerChain * FEBTotalDataMaxSize;
 
-  static const unsigned int nDiscrChPerTrip = 16; /*!< == number of channels */
+  static const unsigned int nDiscrChPerTrip       = 16; /*!< == number of channels */
   static const unsigned int nPixelsPerFEB         = 64;
   static const unsigned int nHiMedTripsPerFEB     = 4;
   static const unsigned int nSides                = 2;
