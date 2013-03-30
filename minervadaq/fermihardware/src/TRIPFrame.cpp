@@ -256,6 +256,7 @@ void TRIPFrame::DecodeRegisterValues()
   using namespace FrameTypes;
 
   if ( this->CheckForErrors() ) {
+    this->printReceivedMessageToLog();
     std::string errstring = "TRIP Frame Header Error";
     TRIPFrameLog.fatalStream() << errstring;
     FrameThrow( errstring );
@@ -365,8 +366,9 @@ void TRIPFrame::ParseError(int i, int j)
 {
   std::stringstream ss;
   ss << "TRIPFrame Parse Error for register: " << i << " at index: " << j;
-  TRIPFrameLog.fatalStream() << ss;
-  FrameThrow( ss.str() );
+  std::string errstring = ss.str();
+  TRIPFrameLog.fatalStream() << errstring;
+  FrameThrow( errstring );
 }
 
 
@@ -379,8 +381,9 @@ void TRIPFrame::ParseError(int i)
 {
   std::stringstream ss;
   ss << "TRIPFrame Parse Error at index: " << i << " while getting register value.";
-  TRIPFrameLog.fatalStream() << ss;
-  FrameThrow( ss.str() );
+  std::string errstring = ss.str();
+  TRIPFrameLog.fatalStream() << errstring;
+  FrameThrow( errstring );
 }
 
 //------------------------------------------

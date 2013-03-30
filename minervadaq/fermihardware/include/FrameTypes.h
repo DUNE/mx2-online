@@ -43,7 +43,7 @@ namespace FrameTypes {
 
 
   /*! \enum Devices
-   * \brief Which device is being addressed 
+   * \brief Which device is being addressed. LS Nibble of DevFun byte. 
    */
   typedef enum Devices { //typecast to unsigned char
     NoDevices  = 0x00,
@@ -54,7 +54,7 @@ namespace FrameTypes {
   };
 
   /*! \enum FPGAFunctions 
-   * \brief A read or write frame 
+   * \brief A read or write frame. MS Nibble of DevFun byte. 
    *
    */
   typedef enum FPGAFunctions { //typecast to unsigned char
@@ -105,23 +105,32 @@ namespace FrameTypes {
   };
 
   /*! \enum ResponseBytes
-   * \brief Useful for decoding returning frame headers 
+   * \brief Useful for decoding returning frame headers.
+
+   Yes, FrameLength == ResponseLength. We originally planned on removing the 
+   bytes before the second appearance of the length.
    */
   typedef enum ResponseBytes { //typecast to unsigned char
-    ResponseLength0 = 0,
-    ResponseLength1 = 1,
+    ResponseLength0 = 0, /*!< FrameLength == ResponseLength */ 
+    ResponseLength1 = 1, /*!< FrameLength == ResponseLength */ 
     FrameStatus0    = 2,  
     FrameStatus1	  = 3,  
-    FrameStart      = 4,
-    DeviceStatus    = 5,
-    FrameStatus     = 6,
-    FrameID0        = 7,
-    FrameID1        = 8,
-    Timestamp0      = 9,
-    Timestamp1      = 10,
-    Timestamp2      = 11,
-    Timestamp3      = 12,
-    Data            = 13
+    FEBFirmware     = 4,
+    DeviceFunction  = 5,
+    SourceID0       = 6,
+    SourceID1       = 7,
+    FrameLength0    = 8, /*!< FrameLength == ResponseLength */ 
+    FrameLength1    = 9, /*!< FrameLength == ResponseLength */ 
+    FrameStart      = 10,
+    DeviceStatus    = 11,
+    FrameStatus     = 12,
+    FrameID0        = 13,
+    FrameID1        = 14,
+    Timestamp0      = 15,
+    Timestamp1      = 16,
+    Timestamp2      = 17,
+    Timestamp3      = 18,
+    Data            = 19  /*!< First data byte. */
   };
 
   /*! \enum HeaderWords
@@ -184,8 +193,9 @@ namespace FrameTypes {
    * \brief  Useful bytes in the discriminator header.
    */
   typedef enum DiscrHeaderWords {
-    discrNumHits01 = 14,  // CROCE-era values
-    discrNumHits23 = 15
+    discrNumHits01 = 20,  // Production CROCE-era values
+    discrNumHits23 = 21,
+    discrBRAM      = 22
   };
 
 }

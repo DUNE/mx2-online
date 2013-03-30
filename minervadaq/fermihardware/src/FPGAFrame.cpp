@@ -262,27 +262,29 @@ void FPGAFrame::DecodeRegisterValues()
   FPGAFrameLog.debugStream() << "FPGAFrame::DecodeRegisterValues";
 
   if ( this->ReceivedMessageLength() != MinervaDAQSizes::FPGAFrameMaxSize ) { 
+    this->printReceivedMessageToLog();
     std::string errstring = "Incorrect FPGA Frame Length";
     FPGAFrameLog.fatalStream() << errstring;
     FrameThrow( errstring ); 
   } 
   if ( this->CheckForErrors() ) {
+    this->printReceivedMessageToLog();
     std::string errstring = "FPGA Frame Header Error";
     FPGAFrameLog.fatalStream() << errstring; 
     FrameThrow( errstring );
   }
 
   FPGAFrameLog.debugStream() <<  "No frame errors; parsing...";
-  int startByte = 4 + MinervaDAQSizes::FrameHeaderLengthOutgoing; 
+  int startByte = FrameTypes::Data; 
 
   /* receivedMessage word 0 - 3:  The timer information, 32 bits for the timer */
   Timer = (receivedMessage[startByte] & 0xFF); 
   startByte++;
-  Timer |= (receivedMessage[startByte] & 0xFF) << 0x08; 
+  Timer |= (receivedMessage[startByte] & 0xFF) << 8; 
   startByte++;
-  Timer |= (receivedMessage[startByte] & 0xFF) << 0x10; 
+  Timer |= (receivedMessage[startByte] & 0xFF) << 16; 
   startByte++;
-  Timer |= (receivedMessage[startByte] & 0xFF) << 0x18; 
+  Timer |= (receivedMessage[startByte] & 0xFF) << 24; 
   startByte++;
 
   /* receivedMessage word 4 - 5:  The gate start value, 16 bits */

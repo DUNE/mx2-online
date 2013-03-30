@@ -30,7 +30,7 @@ static int testCount = 0;
 // At some point, we expect 3 x 446 bytes for ADC Frames when the Channel reads
 // the "un-timed" hit buffer as well (N+1 readout mode).
 static const int chgInjReadoutBytesPerBoard = MinervaDAQSizes::FPGAFrameMaxSize + 
-  2*MinervaDAQSizes::ADCFrameMaxSize + 338;
+  3*MinervaDAQSizes::ADCFrameMaxSize + 344;
 
 static const unsigned short genericGateStart = 40938;
 static const unsigned short genericHVTarget = 25000;
@@ -101,6 +101,7 @@ int main( int argc, char * argv[] )
 
   std::string logName = "/work/data/logs/" + thisScript + ".txt";
   struct DAQWorkerArgs * args = DAQArgs::DefaultArgs();
+  args->numberOfGates = 2;
   args->logFileName = logName;
 
   appender = new log4cpp::FileAppender( "default", args->logFileName, false ); //  cryptic false = do not append
@@ -363,8 +364,8 @@ ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCar
   logger.infoStream() << "Got the ReadoutWorker.";
 
   worker->AddCrate(0);
-  worker->GetVMECrateVector(0)->AddECROC( 2, 0, 5, 0, 0 );
-  worker->GetVMECrateVector(0)->AddCRIM( 224 );
+  worker->GetVMECrateVector(0)->AddECROC( ecrocCardAddress, nch0, nch1, nch2, nch3 );
+  worker->GetVMECrateVector(0)->AddCRIM( crimCardAddress );
   worker->InitializeCrates( runningMode );
 
   std::cout << "Passed!" << std::endl;
@@ -416,15 +417,15 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
     unsigned short status = channel->WaitForMessageReceived();
     assert( 0x1010 == status );
     unsigned short pointer = channel->ReadDPMPointer();
-    assert( 18 + 2/*hits/trip*/ * 4/*trips*/ * 40 /*bytes/hit*/ == pointer ); // 338 assumes 2 hits per trip
+    assert( 24 + 2/*hits/trip*/ * 4/*trips*/ * 40 /*bytes/hit*/ == pointer ); // 338 assumes 2 hits per trip
     unsigned char* data = channel->ReadMemory( pointer );
 
     frame->SetReceivedMessage(data);
+    frame->printReceivedMessageToLog();
     assert( !frame->CheckForErrors() );
     frame->DecodeRegisterValues(); 
     for (unsigned int i = 0; i < 4; ++i) 
       assert( 2 == frame->GetNHitsOnTRiP(i) );
-    frame->printReceivedMessageToLog();
   }
 
   std::cout << "Passed!" << std::endl;
@@ -514,6 +515,8 @@ unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, unsi
   echannel->WaitForSequencerReadoutCompletion();
   pointer = echannel->ReadDPMPointer();
   logger.infoStream() << " After open gate, pointer = " << pointer;
+  logger.infoStream() << "  Expect to find = " << chgInjReadoutBytesPerBoard << " * " <<
+    nFEBs << " = " << chgInjReadoutBytesPerBoard * nFEBs;
   assert( chgInjReadoutBytesPerBoard * nFEBs == pointer );
 
   std::cout << "Passed!" << std::endl;
@@ -639,8 +642,8 @@ void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
       assert( MinervaDAQSizes::TRiPProgrammingFrameReadResponseSize == dataLength ); 
       unsigned char * dataBuffer = channel->ReadMemory( dataLength );
       frame->SetReceivedMessage(dataBuffer);
-      frame->DecodeRegisterValues();
       frame->printReceivedMessageToLog();
+      frame->DecodeRegisterValues();
       logger.debugStream() << "We read trip's for feb " << (int)frame->GetFEBNumber() << " trip " << frame->GetTripNumber();
       // frame->ShowValues(); // TODO add this as a virtual function to LVDSFrame  
 

@@ -23,7 +23,11 @@ LVDSFrame::LVDSFrame() :
   channelAddress(0),
   crateNumber(-1)
 { 
+#ifndef GOFAST
+  lvdsLog.setPriority(log4cpp::Priority::DEBUG);
+#else
   lvdsLog.setPriority(log4cpp::Priority::INFO);
+#endif
 }
 
 //-------------------------------------------------------
@@ -195,8 +199,8 @@ void LVDSFrame::DecodeHeader()
 #ifndef GOFAST
   lvdsLog.debugStream() << "  FEB Number            : " << (int)febNumber[0];
   lvdsLog.debugStream() << "  Device Function       : " << (int)deviceFunction[0];
-  lvdsLog.debugStream() << "  message at framestart : " << (int)receivedMessage[byte];
-  lvdsLog.debugStream() << "  direction             : " << (int)(receivedMessage[byte]&0x80);
+  lvdsLog.debugStream() << "  Direction             : " << (int)(receivedMessage[byte]&0x80);
+  lvdsLog.debugStream() << "  Message at framestart : 0x" << std::hex << (int)receivedMessage[byte];
 #endif
 }
 
@@ -204,10 +208,10 @@ void LVDSFrame::DecodeHeader()
 void LVDSFrame::printReceivedMessageToLog()
 {
   unsigned short buffersize = this->ReceivedMessageLength();
-  lvdsLog.debugStream() << "Printing message buffer of size = " << buffersize;
+  lvdsLog.noticeStream() << "Printing message buffer of size = " << buffersize;
   for (unsigned short i = 0; i < buffersize; i+=2 ) {
     int j = i + 1;
-    lvdsLog.debugStream() 
+    lvdsLog.noticeStream() 
       << std::setfill('0') << std::setw( 2 ) << std::hex << (int)receivedMessage[i] << " " 
       << std::setfill('0') << std::setw( 2 ) << std::hex << (int)receivedMessage[j] << " " 
       << "\t" 
