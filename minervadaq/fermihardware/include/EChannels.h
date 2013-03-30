@@ -91,6 +91,8 @@ class EChannels : public VMECommunicator {
     void EnableSequencerReadout() const;
     void DisableSequencerReadout() const;
 
+    void SetupHeaderData( int crateNumber, int crocID, int febFirmware ) const;
+
     void SetupNFrontEndBoards( int nFEBs );
     unsigned int GetNumFrontEndBoards() const;
     std::vector<FrontEndBoard*>* GetFrontEndBoardVector();

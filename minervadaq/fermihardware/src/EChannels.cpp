@@ -493,6 +493,26 @@ unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( std::tr1::shared
 }
 
 //----------------------------------------
+void EChannels::SetupHeaderData( int crateNumber, int crocID, int febFirmware ) const
+{
+#ifndef GOFAST
+  EChannelLog.debugStream() << "SetupHeaderData for crate " << crateNumber << 
+    "; ECROC ID " << crocID << "; FEB firmware version " << febFirmware;
+#endif
+  int message = (crateNumber & VMEModuleTypes::HeaderDataVMECrateIDMask) |
+    (crocID & VMEModuleTypes::HeaderDataCROCEIDMask) |
+    (febFirmware & VMEModuleTypes::HeaderDataFEBFirmwareMask);
+  unsigned short msg = static_cast<unsigned short>( message & 0xFFFF );
+  unsigned char hdr[] = {0x0,0x0};
+  hdr[0] = msg & 0xFF;
+  hdr[1] = (msg & 0xFF00)>>8;
+#ifndef GOFAST
+  EChannelLog.debugStream() << " Message = 0x" << std::hex << (int)hdr[0] << (int)hdr[1];
+#endif
+  // TODO: Write message to hardware.
+}
+
+//----------------------------------------
 void EChannels::throwIfError( int error, const std::string& msg ) const
 {
   if (error) {
