@@ -189,7 +189,8 @@ namespace VMEModuleTypes {
     ECROCFramesCounterAndLoopDelay = 0x28010,
     ECROCFrameStatus               = 0x28020,
     ECROCTxRxStatus                = 0x28040,
-    ECROCReceiveMemoryPointer      = 0x28080
+    ECROCReceiveMemoryPointer      = 0x28080,
+    ECROCHeaderData                = 0x28100
   };
 
   typedef enum ECROCRegisters { //typecast to unsigned int
@@ -251,6 +252,13 @@ namespace VMEModuleTypes {
   static const int EventCounterEventMask         = 0x3FFF;
   static const int EventCounterLoopDelayMask     = 0x4000; /*!< 8th bit of the Loop Delay value. */
   static const int EventCounterReceiveMemoryMask = 0x8000; /*!< 17th bit of the Receive Memory pointer. */
+
+  static const int FramesCounterMask = 0x01FF;
+  static const int LoopDelayMask     = 0xFE00; /*!< Lower seven bits of the loop delay. 8th bit is in Event Counter Register. */
+
+  static const int HeaderDataFEBFirmwareMask = 0x00FF; /*!< We need to write in the FEB firmware version for the Source ID. */
+  static const int HeaderDataCROCEIDMask     = 0x0F00; /*!< We need to write in the CROC ID to build the Source ID. */
+  static const int HeaderDataVMECrateIDMask  = 0x1000; /*!< We need to write in the VME crate number (0 or 1) for the Source ID. */
 
 }
 
