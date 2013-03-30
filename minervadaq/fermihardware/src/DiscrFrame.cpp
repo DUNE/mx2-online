@@ -7,11 +7,6 @@
 #include <iomanip>
 #include "DiscrFrame.h"
 
-#define SHOWNHITS 1        /*!< show number of hits when doing discr. parse */
-#define SHOWBRAM 1         /*!< show raw (parsed) discr frame data; Also show SYSTICKS */
-#define SHOWDELAYTICKS 1   /*!< show delay tick information */
-#define SHOWQUARTERTICKS 1 /*!< show quarter tick information */
-
 log4cpp::Category& DiscrFrameLog = log4cpp::Category::getInstance(std::string("DiscrFrame"));
 
 //-----------------------------------------------------------
@@ -36,7 +31,11 @@ DiscrFrame::DiscrFrame(
   unsigned int b   = (unsigned int)ReadHitDiscr;
   MakeDeviceFrameTransmit(dev, broad, dir, (unsigned int)b, (unsigned int)febNumber[0]); 
 
+#ifndef GOFAST
+  DiscrFrameLog.setPriority(log4cpp::Priority::DEBUG);  
+#else
   DiscrFrameLog.setPriority(log4cpp::Priority::INFO);  
+#endif  
   DiscrFrameLog.debugStream() << "Made DiscrFrame for FEB " << a; 
 }
 
@@ -58,6 +57,22 @@ unsigned int DiscrFrame::GetOutgoingMessageLength()
 
 //-----------------------------------------------------------
 //! Decode a discriminator frame and write the unpacked bits to log.  
+/*! \note 
+ *   We pick a bit from each 16-bit row as a function of channel and sum them.  The true delay tick value is 
+ *   16 minus this sum.  So, for example:
+ *   row(TempHitArray)    ch0 ch1 ch2 ch3 ch4 ... ch15
+ *     0               0   0   0   0   0   ... 
+ *     1               1   0   0   0   0   ... 
+ *     2               1   1   0   0   0   ... 
+ *     3               1   1   1   0   0   ... 
+ *     4               1   1   1   0   0   ... 
+ *     5               1   1   1   0   0   ... 
+ *     ...     
+ *    15               1   1   1   0   0   ...
+ *    ----------------------------------------
+ *     Sum            15  14  13   0   0   ...
+ *     Delay Ticks     1   2   3   0   0   ... }
+ */
 void DiscrFrame::DecodeRegisterValues() 
 {
   using namespace FrameTypes;
@@ -79,12 +94,10 @@ void DiscrFrame::DecodeRegisterValues()
   int *TripXNHits = new int [4];
   for (unsigned int i = 0; i < 4; ++i)
     TripXNHits[i] = GetNHitsOnTRiP(i);
-#if SHOWNHITS
   DiscrFrameLog.debug("Trip Nhits: %d,%d,%d,%d", TripXNHits[0], TripXNHits[1], TripXNHits[2], TripXNHits[3]);
-#endif
 
   //Retrieve the acual disciminators' timing info.
-  int indx = 14;      //Start index for Discrim BRAMs information
+  int indx = discrBRAM;      //Start index for Discrim BRAMs information
   unsigned int SRLDepth = 16;  //SRL length - see VHDL code...
   unsigned short int *TempHitArray = new unsigned short int [20]; //16(SRL) + 2(QuaterTicks) +2(TimeStamp) = 20 words of 2 bytes
   unsigned int TempDiscQuaterTicks = 0;                
@@ -98,24 +111,18 @@ void DiscrFrame::DecodeRegisterValues()
       for (int i = 0; i < 20; i++) {
         TempHitArray[i] = (unsigned short int)(receivedMessage[indx] + (receivedMessage[indx + 1] << 8));
         indx += 2;
-#if SHOWBRAM
         DiscrFrameLog.debug("response[%d] = %d, response[%d] << 8 = %d", indx, receivedMessage[indx], 
             indx + 1, receivedMessage[indx + 1] << 8);
         DiscrFrameLog.debug("  BRAMWord[%d] = %u", i, TempHitArray[i]);
-#endif                            
       } // end loop over temp hit array
       //update the DiscTSTicks (Time Stamp Ticks is a 32 bit long number)
       //Here we shift the last 16 bit word 16 bits to the left to make it the most significant word.
       unsigned int TempDiscTicks = ((TempHitArray[19] << 16) + TempHitArray[18]);
-#if SHOWBRAM
       DiscrFrameLog.debug("BRAMWord[19] << 16 = %u, BRAMWord[18] = %u", (TempHitArray[19] << 16), TempHitArray[18]);
       DiscrFrameLog.debug("  Time Stamp Ticks: = %u", TempDiscTicks);
-#endif
       //update the DiscQuaterTicks (Discriminator's Quater Tick is a two bit number = 0, 1, 2 or 3)
-#if SHOWQUARTERTICKS
       DiscrFrameLog.debug("Update Disc Quarter Ticks:");
       DiscrFrameLog.debug(" TempHitArray[17] = %d, TempHitArray[16] = %d", TempHitArray[17], TempHitArray[16]);
-#endif
       //Here we pull a single bit from a sixteen bit word, mapping channel to bit number.
       //The "second" word (TempHitArray[17] encodes the true second bit, and hence adds 0 or 2.
       //e.g. 16 (bits): 0101 1110 1111 0100
@@ -125,47 +132,25 @@ void DiscrFrame::DecodeRegisterValues()
       for (unsigned int iCh = 0; iCh < MinervaDAQSizes::nDiscrChPerTrip; iCh++) {
         TempDiscQuaterTicks = 2 * GetBitFromWord(TempHitArray[17], iCh) +
           GetBitFromWord(TempHitArray[16], iCh);
-#if SHOWQUARTERTICKS
         DiscrFrameLog.debug("  iCh = %d, iHit-1 = %d, DQ Ticks = %d", iCh, iHit - 1, TempDiscQuaterTicks);
-#endif
       }
-      /*! \note 
-       *   We pick a bit from each 16-bit row as a function of channel and sum them.  The true delay tick value is 
-       *   16 minus this sum.  So, for example:
-       *   row(TempHitArray)    ch0 ch1 ch2 ch3 ch4 ... ch15
-       *     0               0   0   0   0   0   ... 
-       *     1               1   0   0   0   0   ... 
-       *     2               1   1   0   0   0   ... 
-       *     3               1   1   1   0   0   ... 
-       *     4               1   1   1   0   0   ... 
-       *     5               1   1   1   0   0   ... 
-       *     ...     
-       *    15               1   1   1   0   0   ...
-       *    ----------------------------------------
-       *     Sum            15  14  13   0   0   ...
-       *     Delay Ticks     1   2   3   0   0   ... }
-       */
       //Note: once a delay tick is formed, all subsequent entries for the channel must also be one, so there 
       //are several valid algorithms that could pick this information out.  Also note: this example should not 
       //be interpreted to imply the delay tick number should or will always climb with channel number.
-#if SHOWDELAYTICKS
       DiscrFrameLog.debug("Update Disc Delay Ticks:");
-#endif
       // update the DiscDelTicks (Discriminator's Delay Tick is an integer between 0 and SRLDepth(16) inclusive.
       unsigned int TempDiscDelTicks = 0;
       for (unsigned int iCh = 0; iCh < MinervaDAQSizes::nDiscrChPerTrip; iCh++) {
         TempDiscDelTicks = 0;
         for (unsigned int iSRL = 0; iSRL < SRLDepth; iSRL++)
           TempDiscDelTicks = TempDiscDelTicks + GetBitFromWord(TempHitArray[iSRL], iCh);
-#if SHOWDELAYTICKS
         DiscrFrameLog.debug("  iCh = %d, iHit-1 = %d, Del Ticks = %d", iCh, iHit - 1, SRLDepth - TempDiscDelTicks);
-#endif
       }
-  } // end loop over hits per trip
-} // end loop over trips
+    } // end loop over hits per trip
+  } // end loop over trips
 
-delete [] TripXNHits;
-delete [] TempHitArray;
+  delete [] TripXNHits;
+  delete [] TempHitArray;
 }
 
 //-----------------------------------------------------

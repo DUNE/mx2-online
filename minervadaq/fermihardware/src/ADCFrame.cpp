@@ -6,10 +6,6 @@
 #include <iomanip>
 #include "ADCFrame.h"
 
-#define SHOWSEQ 1 /*!< Show unpacked block ram (adc) in internal sequential order. */
-#define SHOWPIX 1 /*!< Show unpacked block ram (adc) keyed by pixel. */
-
-
 log4cpp::Category& ADCFrameLog = log4cpp::Category::getInstance(std::string("ADCFrame"));
 
 //----------------------------------------------------
@@ -35,7 +31,11 @@ ADCFrame::ADCFrame(
   Directions dir   = MasterToSlave;     // ALL outgoing messages are master-to-slave
   MakeDeviceFrameTransmit(dev, broad, dir, (unsigned int)f, (unsigned int)febNumber[0]); 
 
+#ifndef GOFAST
+  ADCFrameLog.setPriority(log4cpp::Priority::DEBUG);  
+#else
   ADCFrameLog.setPriority(log4cpp::Priority::INFO);  
+#endif
   ADCFrameLog.debugStream() << "Made ADCFrame " << f << " for FEB " << a; 
 }
 
@@ -93,9 +93,9 @@ void ADCFrame::DecodeRegisterValues()
 
   // Show header in 16-bit word format...
   int hword = 0;
-  for (int i=0; i<12; i+=2) {
-    unsigned short int val = (receivedMessage[i+1] << 8) | receivedMessage[i];
-    ADCFrameLog.debug("Header Word %d = %d (%04X)",hword,val,val);
+  for (int i=0; i<(int)FrameTypes::Data; i+=2) {
+    unsigned short int val = receivedMessage[i+1] | (receivedMessage[i]<< 8) ;
+    ADCFrameLog.debug("Header Word %08d = %08d (%04X)", hword, val, val);
     hword++;
   }
 
@@ -106,7 +106,6 @@ void ADCFrame::DecodeRegisterValues()
 
   // First, show the adc in simple sequential order...
   // Note that the "TimeVal" will disappear in newer firmware!
-#if SHOWSEQ
   int AmplVal     = 0;
   int TimeVal     = 0;
   int ChIndx      = 0;
@@ -124,10 +123,8 @@ void ADCFrame::DecodeRegisterValues()
     ChIndx++;
     if (ChIndx == NTimeAmplCh) { TripIndx++; ChIndx = 0; }
   } //end for - show frame sequential
-#endif
 
   // Show the adc keyed by pixel value...
-#if SHOWPIX 
   int lowMap[] = {26,34,25,33,24,32,23,31,22,30,21,29,20,28,19,27,
     11,3,12,4,13,5,14,6,15,7,16,8,17,9,18,10,
     11,3,12,4,13,5,14,6,15,7,16,8,17,9,18,10,
@@ -161,7 +158,6 @@ void ADCFrame::DecodeRegisterValues()
             & dataMask ) >> 2)
         );
   }                
-#endif
 }
 
 #endif

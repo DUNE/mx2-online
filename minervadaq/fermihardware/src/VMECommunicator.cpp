@@ -108,12 +108,18 @@ int VMECommunicator::ReadCycle(unsigned char *received_message, unsigned int add
   \param address          the VME address 
   \param AM               the address length for each message
   \param DW               the number of bits sent per read
+
+  The data width must be 32. Therfore, we must read a number of bytes such that n%4=0.
   */
 int VMECommunicator::ReadBLT(unsigned char *received_message, int blocks, unsigned int address, 
     CVAddressModifier AM, CVDataWidth DW) const 
 {
   int count(-1); 
   int error(0); 
+  int offset = (blocks % 4);
+  if (0 != offset) {
+    blocks += (4 - offset);
+  }
   error = CAENVME_BLTReadCycle(controllerHandle,address, received_message, blocks, AM, DW, &count);
   return error;
 }

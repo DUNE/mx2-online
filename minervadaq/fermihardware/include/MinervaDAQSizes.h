@@ -23,19 +23,19 @@ namespace MinervaDAQSizes {
 
   static const unsigned int ADCFramesMaxNumber        = 7 + 1; /*!< timed + 1 untimed */
   static const unsigned int FrameHeaderLengthOutgoing = 9; /*!< size (in bytes) of an outgoing LVDS header for ANY device */
-  static const unsigned int FrameHeaderLengthIncoming = 9; /*!< 12? size (in bytes) of an incoming LVDS header for ANY device */
+  static const unsigned int FrameHeaderLengthIncoming = 15; /*!< size (in bytes) of an incoming LVDS header for ANY device */
 
   static const unsigned int FPGANumRegisters    =   54;  /*!< Firmware Dependent! */
-  static const unsigned int FPGAFrameMaxSize    =   68;  /*!< bytes, Firmware Dependent! */
-  static const unsigned int ADCFrameMaxSize     =  446;  /*!< bytes */
-  static const unsigned int DiscrFrameMaxSize   = 1138;  /*!< bytes, == 18 + 40 * 4 * 7 (40 bytes / trip / hit) */
+  static const unsigned int FPGAFrameMaxSize    =   74/*68*/;  /*!< bytes, Firmware Dependent! */
+  static const unsigned int ADCFrameMaxSize     =  452/*446*/;  /*!< bytes */
+  static const unsigned int DiscrFrameMaxSize   = 1144/*1138*/;  /*!< bytes, == 18 + 40 * 4 * 7 (40 bytes / trip / hit) */
   static const unsigned int FEBTotalDataMaxSize = FPGAFrameMaxSize + 
     ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize; /*!< bytes */
 
   static const unsigned int TRiPProgrammingFrameReadSize = 652; /*!< bytes; THIS IS THE compose SIZE! */
   static const unsigned int TRiPProgrammingFrameWriteSize = 758; /*!< bytes; THIS IS THE compose SIZE! */
-  static const unsigned int TRiPProgrammingFrameReadResponseSize = 656; /*!< bytes; THIS IS THE RESPONSE SIZE! */
-  static const unsigned int TRiPProgrammingFrameWriteResponseSize = 762; /*!< bytes; THIS IS THE RESPONSE SIZE! */
+  static const unsigned int TRiPProgrammingFrameReadResponseSize = 662; /*!< bytes; THIS IS THE RESPONSE SIZE! */
+  static const unsigned int TRiPProgrammingFrameWriteResponseSize = 768; /*!< bytes; THIS IS THE RESPONSE SIZE! */
 
   static const unsigned int MaxFEBsPerChain = 10;
 
