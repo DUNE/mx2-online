@@ -44,8 +44,11 @@ class VMECrate {
   // ECROC methods
   void SendSoftwareRDFE() const;
   void WaitForSequencerReadoutCompletion() const;
+  void ResetEventCounter() const; 
   void EnableSequencerReadout() const; 
   void DisableSequencerReadout() const;  
+  void ConfigureForStandardDataTaking() const;
+  void UseSinglePipelineReadout() const;
   void ClearAndResetStatusRegisters() const;
   void OpenGateFastCommand() const;
   void SequencerDelayDisable() const;

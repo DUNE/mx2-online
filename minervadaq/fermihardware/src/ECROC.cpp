@@ -158,6 +158,15 @@ void ECROC::ClearAndResetStatusRegisters() const
 }
 
 //----------------------------------------
+void ECROC::ResetEventCounter() const
+{
+  for (std::vector<EChannels*>::const_iterator p=ECROCChannels.begin();
+      p!=ECROCChannels.end();
+      p++) 
+    (*p)->ResetEventCounter();
+}
+
+//----------------------------------------
 void ECROC::EnableSequencerReadout() const
 {
   for (std::vector<EChannels*>::const_iterator p=ECROCChannels.begin();
@@ -173,6 +182,24 @@ void ECROC::DisableSequencerReadout() const
       p!=ECROCChannels.end();
       p++) 
     (*p)->DisableSequencerReadout();
+}
+
+//----------------------------------------
+void ECROC::ConfigureForStandardDataTaking() const
+{
+  for (std::vector<EChannels*>::const_iterator p=ECROCChannels.begin();
+      p!=ECROCChannels.end();
+      p++) 
+    (*p)->ConfigureForStandardDataTaking();
+}
+
+//----------------------------------------
+void ECROC::UseSinglePipelineReadout() const
+{
+  for (std::vector<EChannels*>::const_iterator p=ECROCChannels.begin();
+      p!=ECROCChannels.end();
+      p++) 
+    (*p)->UseSinglePipelineReadout();
 }
 
 //----------------------------------------

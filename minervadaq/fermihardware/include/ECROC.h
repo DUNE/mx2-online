@@ -63,10 +63,14 @@ class ECROC : public VMECommunicator {
 
     void FastCommandOpenGate() const;
     void ClearAndResetStatusRegisters() const;
-    void EnableSequencerReadout() const;
-    void DisableSequencerReadout() const;
     void SendSoftwareRDFE() const; // manually start sequencer readout
     void WaitForSequencerReadoutCompletion() const;
+
+    void ResetEventCounter() const;
+    void EnableSequencerReadout() const;
+    void DisableSequencerReadout() const;
+    void ConfigureForStandardDataTaking() const;
+    void UseSinglePipelineReadout() const;
 
     unsigned short ReadSequencerPulseDelayRegister() const;
     void SequencerDelayDisable() const;

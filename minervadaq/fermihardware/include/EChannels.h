@@ -19,6 +19,7 @@ class LVDSFrame;
 class FPGAFrame;
 class TRIPFrame;
 class FrontEndBoard;
+class EChannelsConfigRegParser;
 
 /*! 
   \class EChannels
@@ -48,8 +49,12 @@ class EChannels : public VMECommunicator {
     std::vector<FrontEndBoard*> FrontEndBoardsVector;     
 
     bool isAvailable( FrontEndBoard* feb ) const;
-    void UpdateConfigurationForVal( unsigned short val, unsigned short mask ) const;
     void SetChannelConfiguration( unsigned char* message ) const;
+
+    static const short int eventCounterMask;  
+    static const short int eventCounterBits;  
+    static const short int receiveMemoryMask; 
+    static const short int receiveMemoryBits; 
 
   public:
     explicit EChannels( unsigned int vmeAddress, unsigned int channelNumber, 
@@ -61,16 +66,19 @@ class EChannels : public VMECommunicator {
     void ClearAndResetStatusRegister() const;  
     unsigned short ReadFrameStatusRegister() const;
     unsigned short ReadTxRxStatusRegister() const;
-    unsigned short GetChannelConfiguration() const;
+
+    std::tr1::shared_ptr<EChannelsConfigRegParser> GetChannelConfiguration() const;
+    void SetChannelConfiguration( std::tr1::shared_ptr<EChannelsConfigRegParser> config ) const;
 
     void WriteMessageToMemory( unsigned char* message, int messageLength ) const;
     void SendMessage() const;
 
+    void ResetEventCounter() const;
     unsigned short ReadEventCounter() const;
     unsigned short WaitForSequencerReadoutCompletion() const;
     unsigned short WaitForMessageReceived() const;
-    unsigned short ReadDPMPointer() const;
-    unsigned char* ReadMemory( unsigned short dataLength ) const; 
+    unsigned int ReadDPMPointer() const;
+    unsigned char* ReadMemory( unsigned int dataLength ) const; 
 
     // write the frames - load them to memory (don't send messages)
     // no WriteFrame is deliberate - too many configs - we just offer preconfigured reads
@@ -90,7 +98,12 @@ class EChannels : public VMECommunicator {
 
     void EnableSequencerReadout() const;
     void DisableSequencerReadout() const;
+    void UseFourBitHitEncoding() const;
+    void UseFiveBitHitEncoding() const;
+    void UseSinglePipelineReadout() const;
+    void UseFullPipelineReadout() const;
 
+    void ConfigureForStandardDataTaking() const;
     void SetupHeaderData( int crateNumber, int crocID, int febFirmware ) const;
 
     void SetupNFrontEndBoards( int nFEBs );

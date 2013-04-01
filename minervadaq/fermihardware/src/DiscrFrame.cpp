@@ -156,7 +156,9 @@ void DiscrFrame::DecodeRegisterValues()
 //-----------------------------------------------------
 /*! 
   \param tripNumber 0 <= tripNumber <= 3
-  */
+
+TODO: This function will need to change when we go to high numbers of hits blocks in the FEB.
+*/
 unsigned int DiscrFrame::GetNHitsOnTRiP(const unsigned int& tripNumber) const 
 {
   using namespace FrameTypes;

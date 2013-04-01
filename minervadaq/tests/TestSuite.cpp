@@ -140,7 +140,7 @@ int main( int argc, char * argv[] )
   // Set up charge injection and read the data. We test for data sizes equal 
   // to what we expect. Get a copy of the buffer and its size for parsing.
   SetupChargeInjection( echannel, nFEBs );
-  unsigned short int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); 
+  unsigned int pointer = ReadDPMTestPointer( ecroc, channel, nFEBs ); 
   unsigned char * dataBuffer = ReadDPMTestData( ecroc, channel, nFEBs, pointer ); 
 
   // Process the data from the sequencer.
@@ -416,7 +416,7 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
     channel->SendMessage();
     unsigned short status = channel->WaitForMessageReceived();
     assert( 0x1010 == status );
-    unsigned short pointer = channel->ReadDPMPointer();
+    unsigned int pointer = channel->ReadDPMPointer();
     assert( 24 + 2/*hits/trip*/ * 4/*trips*/ * 40 /*bytes/hit*/ == pointer ); // 338 assumes 2 hits per trip
     unsigned char* data = channel->ReadMemory( pointer );
 
@@ -453,7 +453,7 @@ void ReadADCTest( EChannels* channel, unsigned int nFEBs )
     channel->SendMessage();
     unsigned short status = channel->WaitForMessageReceived();
     assert( 0x1010 == status );
-    unsigned short pointer = channel->ReadDPMPointer();
+    unsigned int pointer = channel->ReadDPMPointer();
     assert( MinervaDAQSizes::ADCFrameMaxSize == pointer ); 
     unsigned char* data = channel->ReadMemory( pointer );
 
@@ -468,7 +468,8 @@ void ReadADCTest( EChannels* channel, unsigned int nFEBs )
 
 
 //---------------------------------------------------
-unsigned char * ReadDPMTestData( ECROC * ecroc, unsigned int channel, unsigned int nFEBs, unsigned short pointer ) 
+unsigned char * ReadDPMTestData( ECROC * ecroc, unsigned int channel, 
+    unsigned int nFEBs, unsigned int pointer ) 
 {
   std::cout << "Testing ReadDPM Data...";  
 
@@ -505,7 +506,7 @@ unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, unsi
   EChannels * echannel = ecroc->GetChannel( channel );
   assert( nFEBs == echannel->GetFrontEndBoardVector()->size() );
 
-  unsigned short pointer = echannel->ReadDPMPointer();
+  unsigned int pointer = echannel->ReadDPMPointer();
   logger.infoStream() << " After reset, pointer = " << pointer;
   assert( (0 == pointer) || (1 == pointer) );  // ??? 1 ???
   ecroc->FastCommandOpenGate();
@@ -568,7 +569,7 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
     frame->SetFPGAFrameDefaultValues();
 
     // ReadFPGAProgrammingRegisters sets up the message and reads the data into the channel memory...
-    unsigned short dataLength = channel->ReadFPGAProgrammingRegistersToMemory( frame );
+    unsigned int dataLength = channel->ReadFPGAProgrammingRegistersToMemory( frame );
     assert( MinervaDAQSizes::FPGAFrameMaxSize == dataLength );
     // ...then ReadMemory retrieves the data.
     unsigned char * dataBuffer = channel->ReadMemory( dataLength );
@@ -636,7 +637,7 @@ void FEBTRiPWriteReadTest( EChannels* channel, unsigned int nFEBs )
       channel->WriteTRIPRegistersReadFrameToMemory( frame );
       channel->SendMessage();
       unsigned short status = channel->WaitForMessageReceived();
-      unsigned short dataLength = channel->ReadDPMPointer();
+      unsigned int dataLength = channel->ReadDPMPointer();
       logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
         << "; FEBTRiPWriteReadTest dataLength = " << std::dec << dataLength;
       assert( MinervaDAQSizes::TRiPProgrammingFrameReadResponseSize == dataLength ); 
@@ -732,7 +733,7 @@ void TRIPSetupForChargeInjection( EChannels* channel, int boardID )
     channel->WriteFrameRegistersToMemory( frame );
     channel->SendMessage();
     unsigned short status = channel->WaitForMessageReceived();
-    unsigned short dataLength = channel->ReadDPMPointer();
+    unsigned int dataLength = channel->ReadDPMPointer();
     logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
       << "; TRIPSetupForChargeInjection dataLength = " << std::dec << dataLength;
     assert( MinervaDAQSizes::TRiPProgrammingFrameWriteResponseSize == dataLength ); 
@@ -830,7 +831,7 @@ void TRIPSetupForGeneric( EChannels* channel, int boardID )
     channel->WriteFrameRegistersToMemory( frame );
     channel->SendMessage();
     unsigned short status = channel->WaitForMessageReceived();
-    unsigned short dataLength = channel->ReadDPMPointer();
+    unsigned int dataLength = channel->ReadDPMPointer();
     logger.debugStream() << "FEB " << boardID << "; Status = 0x" << std::hex << status 
       << "; TRIPSetupForGeneric dataLength = " << std::dec << dataLength;
     assert( MinervaDAQSizes::TRiPProgrammingFrameWriteResponseSize == dataLength ); 
@@ -909,6 +910,9 @@ void TestChannel( ECROC* ecroc, unsigned int channelNumber, unsigned int nFEBs )
   unsigned short status = channel->ReadFrameStatusRegister();
   assert( /* (status == 0x1010) || */ (status == 0x4040) );
   assert( channel->ReadTxRxStatusRegister() == 0x2410 );
+
+  std::tr1::shared_ptr<EChannelsConfigRegParser> config = channel->GetChannelConfiguration();
+  logger.infoStream() << "Channel Configuration = " << config->Description();
 
   logger.infoStream() << "EChannel " << (*channel) << " passed all tests!";
   logger.debugStream() << "Passed:--------------TestChannel--------------";

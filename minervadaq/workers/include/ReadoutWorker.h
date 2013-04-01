@@ -64,8 +64,8 @@ class ReadoutWorker {
   void ResetCurrentChannel();
   bool MoveToNextChannel();
   const EChannels * CurrentChannel() const;
-  unsigned short GetNextDataBlockSize() const;
-  std::tr1::shared_ptr<SequencerReadoutBlock> GetNextDataBlock( unsigned short blockSize ) const;
+  unsigned int GetNextDataBlockSize() const;
+  std::tr1::shared_ptr<SequencerReadoutBlock> GetNextDataBlock( unsigned int blockSize ) const;
 };
 
 #endif

@@ -54,6 +54,8 @@ void VMECrate::Initialize( Modes::RunningModes theRunningMode )
   for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
     (*p)->Initialize();
   }
+  ConfigureForStandardDataTaking();
+  ResetEventCounter();
 	// IRQ Enable will happen in the ReadoutWorker, which holds the proper MasterCRIM*
 }
 
@@ -116,6 +118,13 @@ void VMECrate::WaitForSequencerReadoutCompletion() const
 }
 
 //---------------------------
+void VMECrate::ResetEventCounter() const
+{
+  for (std::vector<ECROC*>::const_iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
+    (*p)->ResetEventCounter();
+}
+
+//---------------------------
 void VMECrate::EnableSequencerReadout() const
 {
   for (std::vector<ECROC*>::const_iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
@@ -127,6 +136,20 @@ void VMECrate::DisableSequencerReadout() const
 {
   for (std::vector<ECROC*>::const_iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
     (*p)->DisableSequencerReadout();
+}
+
+//---------------------------
+void VMECrate::ConfigureForStandardDataTaking() const
+{
+  for (std::vector<ECROC*>::const_iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
+    (*p)->ConfigureForStandardDataTaking();
+}
+
+//---------------------------
+void VMECrate::UseSinglePipelineReadout() const
+{
+  for (std::vector<ECROC*>::const_iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p) 
+    (*p)->UseSinglePipelineReadout();
 }
 
 //---------------------------
