@@ -254,7 +254,7 @@ const EChannels * ReadoutWorker::CurrentChannel() const
 }
 
 //---------------------------
-unsigned short ReadoutWorker::GetNextDataBlockSize() const
+unsigned int ReadoutWorker::GetNextDataBlockSize() const
 {
   if (currentChannel != readoutChannels.end()) {
     return (*currentChannel)->ReadDPMPointer();
@@ -263,7 +263,7 @@ unsigned short ReadoutWorker::GetNextDataBlockSize() const
 }
 
 //---------------------------
-std::tr1::shared_ptr<SequencerReadoutBlock> ReadoutWorker::GetNextDataBlock( unsigned short blockSize ) const
+std::tr1::shared_ptr<SequencerReadoutBlock> ReadoutWorker::GetNextDataBlock( unsigned int blockSize ) const
 {
   if (currentChannel == readoutChannels.end()) {
     readoutLogger.fatalStream() << "Attempting to read data from a NULL Channel!";

@@ -13,6 +13,7 @@
 #include "log4cppHeaders.h"
 
 #include "Controller.h"
+#include "EChannelsConfigRegParser.h"
 #include "ECROC.h"
 #include "CRIM.h"
 #include "FrontEndBoard.h"
@@ -45,7 +46,7 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs );
 // They should be called as a set as the sixth & seventh tests.
 void SetupChargeInjection( EChannels* channel, unsigned int nFEBs );
 unsigned char * ReadDPMTestData( ECROC * ecroc, unsigned int channel, 
-    unsigned int nFEBs, unsigned short pointer );
+    unsigned int nFEBs, unsigned int pointer );
 unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, 
     unsigned int nFEBs );
 

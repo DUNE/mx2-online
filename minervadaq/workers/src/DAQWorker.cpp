@@ -221,7 +221,7 @@ void DAQWorker::TakeData()
   while ( BeginNextGate() ) {
 
     do {
-      unsigned short blockSize = readoutWorker->GetNextDataBlockSize();  
+      unsigned int blockSize = readoutWorker->GetNextDataBlockSize();  
       daqWorker.debugStream() << "Next data block size is: " << blockSize;
       std::tr1::shared_ptr<SequencerReadoutBlock> block = 
         readoutWorker->GetNextDataBlock( blockSize );

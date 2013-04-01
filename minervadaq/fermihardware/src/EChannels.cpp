@@ -6,11 +6,17 @@
 #include <iomanip>
 
 #include "EChannels.h"
+#include "EChannelsConfigRegParser.h"
 #include "FrontEndBoard.h"
 #include "RegisterWords.h"
 #include "exit_codes.h"
 
 log4cpp::Category& EChannelLog = log4cpp::Category::getInstance(std::string("EChannel"));
+
+const short int EChannels::eventCounterMask  = 0x3FFF;
+const short int EChannels::eventCounterBits  = 0;  
+const short int EChannels::receiveMemoryMask = 0x8000; 
+const short int EChannels::receiveMemoryBits = 15; 
 
 //----------------------------------------
 /*!
@@ -159,6 +165,9 @@ void EChannels::SetupNFrontEndBoards( int nFEBs )
     EChannelLog.fatalStream() << "Cannot have less than 0 or more than 10 FEBs on a Channel!";
     exit(EXIT_CONFIG_ERROR);
   }
+  std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
+  EChannelLog.infoStream() << "Channel " << this->channelNumber << " runs firmware ver " << 
+    config->ChannelFirmware();
   for ( int i=1; i<=nFEBs; ++i ) {
     EChannelLog.infoStream() << "Setting up FEB " << i << " ...";
     FrontEndBoard *feb = 
@@ -170,28 +179,79 @@ void EChannels::SetupNFrontEndBoards( int nFEBs )
       exit(EXIT_CONFIG_ERROR);
     }
   }
-  this->UpdateConfigurationForVal( (unsigned short)(0xF & nFEBs), 
-      static_cast<unsigned short>(~VMEModuleTypes::ConfigurationNFEBsMask) );
+  config->SetNFEBs( static_cast<unsigned short>(nFEBs) );
+  this->SetChannelConfiguration( config );
+}
+
+//----------------------------------------
+//! Check carefully whenever we update FEB or Channel firmware.
+void EChannels::ConfigureForStandardDataTaking() const
+{
+  std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
+  config->EnableSequencerReadout();
+  config->SetFourBitHitEncoding();
+  config->SetFullPipelineReadout();
+  config->DisableChannelTestPulse();
+  config->DisableChannelReset();
+  this->SetChannelConfiguration( config );
 }
 
 //----------------------------------------
 //! Only update the enable bit.
 void EChannels::EnableSequencerReadout() const
 {
-  this->UpdateConfigurationForVal( VMEModuleTypes::ConfigurationSequencerReadoutMask, 
-      static_cast<unsigned short>(~VMEModuleTypes::ConfigurationSequencerReadoutMask) );
+  std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
+  config->EnableSequencerReadout();
+  this->SetChannelConfiguration( config );
 }
 
 //----------------------------------------
 //! Only update the enable bit.
 void EChannels::DisableSequencerReadout() const
 {
-  this->UpdateConfigurationForVal( (unsigned short)(0x0000), 
-      static_cast<unsigned short>(~VMEModuleTypes::ConfigurationSequencerReadoutMask) );
+  std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
+  config->DisableSequencerReadout();
+  this->SetChannelConfiguration( config );
 }
 
 //----------------------------------------
-unsigned short EChannels::GetChannelConfiguration() const
+//! Only update the hit bit. Use four bits for FEB max hits less than 15.
+void EChannels::UseFourBitHitEncoding() const
+{
+  std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
+  config->SetFourBitHitEncoding();
+  this->SetChannelConfiguration( config );
+}
+
+//----------------------------------------
+//! Only update the hit bit. Use five bits for FEB max hits less than 31.
+void EChannels::UseFiveBitHitEncoding() const
+{
+  std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
+  config->SetFiveBitHitEncoding();
+  this->SetChannelConfiguration( config );
+}
+
+//----------------------------------------
+//! Only update the hit bit. Single pipe readout might be appropriate for LI.
+void EChannels::UseSinglePipelineReadout() const
+{
+  std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
+  config->SetSinglePipelineReadout();
+  this->SetChannelConfiguration( config );
+}
+
+//----------------------------------------
+//! Only update the hit bit. Read all timed hits and the untimed hit.
+void EChannels::UseFullPipelineReadout() const
+{
+  std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
+  config->SetFullPipelineReadout();
+  this->SetChannelConfiguration( config );
+}
+
+//----------------------------------------
+std::tr1::shared_ptr<EChannelsConfigRegParser> EChannels::GetChannelConfiguration() const
 {
   unsigned short configuration = 0;
   unsigned char receivedMessage[] = {0x0,0x0};
@@ -206,29 +266,20 @@ unsigned short EChannels::GetChannelConfiguration() const
   EChannelLog.debugStream() << "Channel " << channelNumber << " Configuration = 0x" 
     << std::setfill('0') << std::setw( 4 ) << std::hex << configuration;
 #endif
+  std::tr1::shared_ptr<EChannelsConfigRegParser> config(
+      new EChannelsConfigRegParser(configuration));
 
-  return configuration;
+  return config;
 }
 
 //----------------------------------------
-//! Only update the enable bit.
-void EChannels::UpdateConfigurationForVal( unsigned short val, unsigned short mask ) const
+void EChannels::SetChannelConfiguration( std::tr1::shared_ptr<EChannelsConfigRegParser> config ) const
 {
-  // maintain state - we only want to update the val
-#ifndef GOFAST
-  EChannelLog.debugStream() << "UpdateConfigurationForVal : val = " << val << "; mask = " << mask;
-#endif
-  unsigned short configuration = this->GetChannelConfiguration();  
-  configuration &= mask; 
-  configuration |= val; 
-  unsigned char config[] = {0x0,0x0};
-  config[0] = configuration & 0xFF;
-  config[1] = (configuration & 0xFF00)>>8;
-  this->SetChannelConfiguration( config );
-  unsigned short configurationCheck = this->GetChannelConfiguration();
-  if( configuration != configurationCheck ) {
-    VMEThrow( "Failure to consistently update the Channel configuration!" );
-  }
+  unsigned short int configuration = config.get()->RawValue();
+  unsigned char msg[] = {0x0,0x0};
+  msg[0] = configuration & 0xFF;
+  msg[1] = (configuration & 0xFF00)>>8;
+  this->SetChannelConfiguration( msg );
 }
 
 //----------------------------------------
@@ -271,7 +322,7 @@ bool EChannels::isAvailable( FrontEndBoard* feb ) const
   bool available = false;
 
   std::tr1::shared_ptr<FPGAFrame> frame = feb->GetFPGAFrame();
-  unsigned short dataLength = this->ReadFPGAProgrammingRegistersToMemory( frame );
+  unsigned int dataLength = this->ReadFPGAProgrammingRegistersToMemory( frame );
   unsigned char* dataBuffer = this->ReadMemory( dataLength ); 
 
   frame->SetReceivedMessage(dataBuffer);
@@ -343,15 +394,31 @@ unsigned short EChannels::ReadTxRxStatusRegister() const
 
 
 //----------------------------------------
+void EChannels::ResetEventCounter() const
+{
+#ifndef GOFAST
+  EChannelLog.debugStream() << "Command Address = 0x" 
+    << std::setfill('0') << std::setw( 8 ) << std::hex << commandAddress 
+    << "; Message = 0x" << std::hex << (int)RegisterWords::clearEventCounter[1] 
+    << (int)RegisterWords::clearEventCounter[0];
+#endif
+  int error = WriteCycle( 2, RegisterWords::clearEventCounter, commandAddress, 
+      addressModifier, dataWidthReg); 
+  if( error ) throwIfError( error, "Failure Clearing Event Counter!"); 
+
+}
+
+//----------------------------------------
 void EChannels::SendMessage() const
 {
 #ifndef GOFAST
   EChannelLog.debugStream() << "SendMessage Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex << commandAddress 
-    << "; Message = 0x" << std::hex << (int)RegisterWords::sendMessage[1] << (int)RegisterWords::sendMessage[0];
+    << "; Message = 0x" << std::hex << (int)RegisterWords::sendMessage[1] 
+    << (int)RegisterWords::sendMessage[0];
 #endif
   int error = WriteCycle( 2, RegisterWords::sendMessage, commandAddress, addressModifier, dataWidthReg); 
-  if( error ) throwIfError( error, "Failure writing to CROC Send Message Register!"); 
+  if( error ) throwIfError( error, "Failure writing to EChannel Send Message Register!"); 
 }
 
 //----------------------------------------
@@ -394,7 +461,9 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion() const
 }
 
 //----------------------------------------
-unsigned short EChannels::ReadDPMPointer() const
+//! The v2 CROCE uses a 128 kB memory. This is not fully addressable with a single 16-bit 
+//! register. Therefore, the upper-most bit lives inside the EventCounter register.
+unsigned int EChannels::ReadDPMPointer() const
 {
   unsigned short receiveMemoryPointer = 0;
   unsigned char pointer[] = {0x0,0x0};
@@ -407,10 +476,29 @@ unsigned short EChannels::ReadDPMPointer() const
   if( error ) throwIfError( error, "Failure reading the Receive Memory Pointer!"); 
   receiveMemoryPointer = pointer[1]<<0x08 | pointer[0];
 #ifndef GOFAST
-  EChannelLog.debugStream() << "Pointer Length = " << receiveMemoryPointer;
+  EChannelLog.debugStream() << "16 bit Pointer Length = " << receiveMemoryPointer;
 #endif
 
-  return receiveMemoryPointer;
+  unsigned short eventCounter = 0;
+  unsigned char counter[] = {0x0,0x0};
+
+#ifndef GOFAST
+  EChannelLog.debugStream() << "Read EventCounter Address = 0x" << std::hex << eventCounterAddress;
+#endif
+  error = ReadCycle( counter, eventCounterAddress, addressModifier, dataWidthReg ); 
+  if( error ) throwIfError( error, "Failure reading the Event Counter!"); 
+  eventCounter = ( (counter[1]<<0x08 | counter[0]) & receiveMemoryMask ) >> receiveMemoryBits;
+#ifndef GOFAST
+  EChannelLog.debugStream() << "17th Pointer Bit = " << eventCounter;
+#endif
+
+  unsigned int finalPointer = static_cast<unsigned int>(receiveMemoryPointer);
+  finalPointer |= (eventCounter << 16);
+
+#ifndef GOFAST
+  EChannelLog.debugStream() << "17 bit Pointer Length = " << finalPointer;
+#endif
+  return finalPointer;
 }
 
 //----------------------------------------
@@ -429,17 +517,19 @@ unsigned short EChannels::ReadEventCounter() const
   EChannelLog.debugStream() << "Event Counter = " << eventCounter;
 #endif
 
-  return eventCounter;
+  return (eventCounter & eventCounterMask);
 }
 
 //----------------------------------------
-unsigned char* EChannels::ReadMemory( unsigned short dataLength ) const
+unsigned char* EChannels::ReadMemory( unsigned int dataLength ) const
 {
 #ifndef GOFAST
   EChannelLog.debugStream() << "ReadMemory for buffer size = " << dataLength;
 #endif
   unsigned char *dataBuffer = new unsigned char [dataLength];
-  int error = ReadBLT( dataBuffer, dataLength, receiveMemoryAddress, bltAddressModifier, dataWidthSwapped );
+  // dataLength should be no more than 17 bits, so it is safe to cast
+  int error = ReadBLT( dataBuffer, (int)dataLength, receiveMemoryAddress, 
+      bltAddressModifier, dataWidthSwapped );
   if( error ) throwIfError( error, "Error in BLT ReadCycle!");
 
   return dataBuffer;
@@ -487,7 +577,7 @@ unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( std::tr1::shared
   this->WriteFPGAProgrammingRegistersDumpReadToMemory( frame );
   this->SendMessage();
   this->WaitForMessageReceived();
-  unsigned short dataLength = this->ReadDPMPointer();
+  unsigned int dataLength = this->ReadDPMPointer();
 
   return dataLength;
 }
