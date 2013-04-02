@@ -402,6 +402,7 @@ CRIM * GetAndTestCRIM( unsigned int address, Controller * controller )
 void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
 {
   std::cout << "Testing Read Discrs...";  
+  logger.debugStream() << "Testing:--------------ReadDiscrTest--------------";
 
   for (unsigned int nboard = 1; nboard <= nFEBs; nboard++) {
 
@@ -428,6 +429,7 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
       assert( 2 == frame->GetNHitsOnTRiP(i) );
   }
 
+  logger.debugStream() << "Passed:--------------ReadDiscrTest--------------";
   std::cout << "Passed!" << std::endl;
   testCount++;
 }
@@ -437,6 +439,7 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
 void ReadADCTest( EChannels* channel, unsigned int nFEBs )
 {
   std::cout << "Testing Read ADCs...";  
+  logger.debugStream() << "Testing:--------------ReadADCTest--------------";
 
   int iHit = 1; // 0 - 1 should be charge injected
 
@@ -459,9 +462,11 @@ void ReadADCTest( EChannels* channel, unsigned int nFEBs )
 
     frame->SetReceivedMessage(data);
     assert( !frame->CheckForErrors() );
+    frame->printReceivedMessageToLog();
     frame->DecodeRegisterValues(); 
   }
 
+  logger.debugStream() << "Passed:--------------ReadADCTest--------------";
   std::cout << "Passed!" << std::endl;
   testCount++;
 }
@@ -555,7 +560,7 @@ void SetupChargeInjection( EChannels* channel, unsigned int nFEBs )
 void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
 {
   std::cout << "Testing FEB FPGA Read back...";  
-  logger.debugStream() << "FEBFPGAWriteReadTest";
+  logger.debugStream() << "Testing:--------------FEBFPGAWriteReadTest--------------";
   logger.debugStream() << " EChannels Direct Address = " << std::hex << channel->GetDirectAddress();
 
   for (unsigned int nboard = 1; nboard <= nFEBs; nboard++) {
@@ -591,6 +596,7 @@ void FEBFPGAWriteReadTest( EChannels* channel, unsigned int nFEBs )
     assert( genericDiscEnableMask == frame->GetDiscEnMask2() );
     assert( genericDiscEnableMask == frame->GetDiscEnMask3() );
   }
+  logger.debugStream() << "Passed:--------------FEBFPGAWriteReadTest--------------";
   std::cout << "Passed!" << std::endl;
   testCount++;
 }
