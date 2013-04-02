@@ -163,24 +163,37 @@ void EChannels::SetupNFrontEndBoards( int nFEBs )
   EChannelLog.infoStream() << "SetupNFrontEndBoards for " << nFEBs << " FEBs...";
   if ( ( nFEBs < 0 ) || (nFEBs > 10) ) {
     EChannelLog.fatalStream() << "Cannot have less than 0 or more than 10 FEBs on a Channel!";
-    exit(EXIT_CONFIG_ERROR);
+    VMEThrow("Impossible number of FEBs requested for setup!");
   }
+  if ( 0 == nFEBs ) return;
   std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
   EChannelLog.infoStream() << "Channel " << this->channelNumber << " runs firmware ver " << 
     config->ChannelFirmware();
+  unsigned char febFirmware = 0;
   for ( int i=1; i<=nFEBs; ++i ) {
     EChannelLog.infoStream() << "Setting up FEB " << i << " ...";
     FrontEndBoard *feb = 
       new FrontEndBoard( (FrameTypes::FEBAddresses)i, this->GetAddress(), this->GetCrateNumber() );
-    if ( isAvailable( feb ) ) {
+    if ( 1 == i ) {
+      febFirmware = isAvailable( feb );
+    }
+    else {
+      if ( febFirmware != isAvailable( feb ) ) {
+        VMEThrow("FEB firwmare mismatch!");
+      }
+    }
+    if ( 0 < febFirmware ) {
       FrontEndBoardsVector.push_back( feb );
     } else {
       EChannelLog.fatalStream() << "Requested FrontEndBoard with address " << i << " is not avialable!";
-      exit(EXIT_CONFIG_ERROR);
+      VMEThrow("FEB not available!");
     }
   }
   config->SetNFEBs( static_cast<unsigned short>(nFEBs) );
   this->SetChannelConfiguration( config );
+  this->SetupHeaderData( this->GetController()->GetCrateNumber(), 
+      this->GetParentCROCNumber(),
+      febFirmware );
 }
 
 //----------------------------------------
@@ -314,12 +327,12 @@ unsigned int EChannels::GetNumFrontEndBoards() const
 }
 
 //----------------------------------------
-bool EChannels::isAvailable( FrontEndBoard* feb ) const
+unsigned char EChannels::isAvailable( FrontEndBoard* feb ) const
 {
 #ifndef GOFAST
   EChannelLog.debugStream() << "isAvailable FrontEndBoard with class address = " << feb->GetBoardNumber();
 #endif
-  bool available = false;
+  unsigned char firmware = 0;
 
   std::tr1::shared_ptr<FPGAFrame> frame = feb->GetFPGAFrame();
   unsigned int dataLength = this->ReadFPGAProgrammingRegistersToMemory( frame );
@@ -330,12 +343,12 @@ bool EChannels::isAvailable( FrontEndBoard* feb ) const
 #ifndef GOFAST
   EChannelLog.debugStream() << "Decoded FrontEndBoard address = " << (int)feb->GetBoardNumber();
 #endif
-  if( (int)feb->GetBoardNumber() == frame->GetFEBNumber() ) available = true;
+  if( (int)feb->GetBoardNumber() == frame->GetFEBNumber() ) 
+    firmware = frame->GetFirmwareVersion();
 
-#ifndef GOFAST
-  EChannelLog.debugStream() << "FrontEndBoard " << feb->GetBoardNumber() << " isAvailable = " << available;
-#endif
-  return available;
+  EChannelLog.infoStream() << "FrontEndBoard " << feb->GetBoardNumber() 
+    << " isAvailable with firmware = " << (int)firmware;
+  return firmware;
 }
 
 //----------------------------------------

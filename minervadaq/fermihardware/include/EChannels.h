@@ -48,7 +48,7 @@ class EChannels : public VMECommunicator {
 
     std::vector<FrontEndBoard*> FrontEndBoardsVector;     
 
-    bool isAvailable( FrontEndBoard* feb ) const;
+    unsigned char isAvailable( FrontEndBoard* feb ) const;
     void SetChannelConfiguration( unsigned char* message ) const;
 
     static const short int eventCounterMask;  

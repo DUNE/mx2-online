@@ -47,6 +47,12 @@ unsigned int ECROC::GetAddress() const
 }
 
 //----------------------------------------
+unsigned int ECROC::GetCROCNumber() const
+{
+  return ( (this->address)>>VMEModuleTypes::ECROCAddressShift );
+}
+
+//----------------------------------------
 //! Make, but do not initialize, the EChannels.
 void ECROC::MakeChannels() 
 {
