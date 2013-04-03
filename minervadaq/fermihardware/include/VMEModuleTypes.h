@@ -257,8 +257,11 @@ namespace VMEModuleTypes {
   static const int LoopDelayMask     = 0xFE00; /*!< Lower seven bits of the loop delay. 8th bit is in Event Counter Register. */
 
   static const int HeaderDataFEBFirmwareMask = 0x00FF; /*!< We need to write in the FEB firmware version for the Source ID. */
+  static const int HeaderDataFEBFirmwareBits = 0;
   static const int HeaderDataCROCEIDMask     = 0x0F00; /*!< We need to write in the CROC ID to build the Source ID. */
+  static const int HeaderDataCROCEIDBits     = 8;
   static const int HeaderDataVMECrateIDMask  = 0x1000; /*!< We need to write in the VME crate number (0 or 1) for the Source ID. */
+  static const int HeaderDataVMECrateIDBits  = 12;
 
 }
 

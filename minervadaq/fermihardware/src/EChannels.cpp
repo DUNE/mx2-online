@@ -29,7 +29,11 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
   VMECommunicator( vmeAddress, controller ),
   channelNumber(number)
 {
-  EChannelLog.setPriority(log4cpp::Priority::DEBUG);  
+#ifndef GOFAST
+  EChannelLog.setPriority(log4cpp::Priority::DEBUG);
+#else
+  EChannelLog.setPriority(log4cpp::Priority::INFO);
+#endif
 
   this->commType = VMEModuleTypes::EChannels;
   channelDirectAddress             = this->address + VMEModuleTypes::EChannelOffset * (unsigned int)(channelNumber);
@@ -43,6 +47,7 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
   frameStatusAddress               = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCFrameStatus;
   txRxStatusAddress                = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCTxRxStatus;
   receiveMemoryPointerAddress      = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCReceiveMemoryPointer;
+  headerDataAddress                = channelDirectAddress + (unsigned int)VMEModuleTypes::ECROCHeaderData;
 }
 
 //----------------------------------------
@@ -194,6 +199,10 @@ void EChannels::SetupNFrontEndBoards( int nFEBs )
   this->SetupHeaderData( this->GetController()->GetCrateNumber(), 
       this->GetParentCROCNumber(),
       febFirmware );
+#ifndef GOFAST
+  unsigned short header = this->GetHeaderData();
+  EChannelLog.debugStream() << " Read-back header data: 0x" << std::hex << header;
+#endif
 }
 
 //----------------------------------------
@@ -598,21 +607,41 @@ unsigned short EChannels::ReadFPGAProgrammingRegistersToMemory( std::tr1::shared
 //----------------------------------------
 void EChannels::SetupHeaderData( int crateNumber, int crocID, int febFirmware ) const
 {
+  using namespace VMEModuleTypes;
 #ifndef GOFAST
   EChannelLog.debugStream() << "SetupHeaderData for crate " << crateNumber << 
     "; ECROC ID " << crocID << "; FEB firmware version " << febFirmware;
 #endif
-  int message = (crateNumber & VMEModuleTypes::HeaderDataVMECrateIDMask) |
-    (crocID & VMEModuleTypes::HeaderDataCROCEIDMask) |
-    (febFirmware & VMEModuleTypes::HeaderDataFEBFirmwareMask);
+  int message = 
+    ( (crateNumber<<HeaderDataVMECrateIDBits)  & HeaderDataVMECrateIDMask) |
+    ( (crocID<<HeaderDataCROCEIDBits)          & HeaderDataCROCEIDMask)    |
+    ( (febFirmware<<HeaderDataFEBFirmwareBits) & HeaderDataFEBFirmwareMask) ;
   unsigned short msg = static_cast<unsigned short>( message & 0xFFFF );
   unsigned char hdr[] = {0x0,0x0};
-  hdr[0] = msg & 0xFF;
-  hdr[1] = (msg & 0xFF00)>>8;
+  hdr[0] = (msg & 0xFF00)>>8;
+  hdr[1] = msg & 0xFF;
 #ifndef GOFAST
   EChannelLog.debugStream() << " Message = 0x" << std::hex << (int)hdr[0] << (int)hdr[1];
 #endif
-  // TODO: Write message to hardware.
+  int error = WriteCycle( 2, hdr, headerDataAddress, addressModifier, dataWidthSwappedReg );
+  if( error ) throwIfError( error, "Failure writing to EChannel Header Data Register!"); 
+}
+
+//----------------------------------------
+unsigned short EChannels::GetHeaderData() const
+{
+  unsigned char receivedMessage[] = {0x0,0x0};
+
+  int error = ReadCycle(receivedMessage, headerDataAddress, addressModifier, dataWidthReg); 
+  if( error ) throwIfError( error, "Failure reading Tx/Rx Status!");
+
+  unsigned short header = (receivedMessage[1] << 8) | receivedMessage[0];
+#ifndef GOFAST
+  EChannelLog.debugStream() << "Get Header Data = 0x" 
+    << std::setfill('0') << std::setw( 4 ) << std::hex 
+    << header;
+#endif
+  return header;
 }
 
 //----------------------------------------
