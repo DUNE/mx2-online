@@ -37,9 +37,6 @@ EChannelsConfigRegParser::EChannelsConfigRegParser( unsigned short int theRegist
 //----------------------------------------
 EChannelsConfigRegParser::~EChannelsConfigRegParser() 
 {
-#ifndef GOFAST
-  EChConfLog.debugStream() << "EChannelsConfigRegParser dtor";
-#endif
 }
 
 //----------------------------------------

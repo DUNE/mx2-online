@@ -177,7 +177,15 @@ unsigned long long ReadoutWorker::Trigger( Triggers::TriggerType triggerType )
   if (!WaitForIRQ()) return 0;
 
   // Run Sleepy - the FEBs need >= 400 microseconds for 8 hits to digitize.
+  // As the number of hits goes up we may need to extend the sleep period.
+  // It may also be "automatically" handled by the sequencer readout?
   if (!MicroSecondSleep(microSecondSleepDuration)) return 0;
+
+  // There is a stratgy decision to be made here - we can either sleep long enough 
+  // to guarantee the sequencer readout has finished or we can read all the status
+  // registers to be sure they're finished. We should "time" both approaches and 
+  // see what is fastest.
+  this->WaitForSequencerReadoutCompletion();
 
   return GetNowInMicrosec();
 }
@@ -213,6 +221,13 @@ void ReadoutWorker::ClearAndResetStatusRegisters() const
 {
   for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) 
     (*p)->ClearAndResetStatusRegisters();
+}
+
+//---------------------------
+void ReadoutWorker::WaitForSequencerReadoutCompletion() const
+{
+  for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) 
+    (*p)->WaitForSequencerReadoutCompletion();
 }
 
 //---------------------------

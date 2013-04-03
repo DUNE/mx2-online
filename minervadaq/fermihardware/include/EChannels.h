@@ -45,6 +45,7 @@ class EChannels : public VMECommunicator {
     unsigned int frameStatusAddress;
     unsigned int txRxStatusAddress;
     unsigned int receiveMemoryPointerAddress;
+    unsigned int headerDataAddress;
 
     std::vector<FrontEndBoard*> FrontEndBoardsVector;     
 
@@ -105,6 +106,7 @@ class EChannels : public VMECommunicator {
 
     void ConfigureForStandardDataTaking() const;
     void SetupHeaderData( int crateNumber, int crocID, int febFirmware ) const;
+    unsigned short GetHeaderData() const;
 
     void SetupNFrontEndBoards( int nFEBs );
     unsigned int GetNumFrontEndBoards() const;

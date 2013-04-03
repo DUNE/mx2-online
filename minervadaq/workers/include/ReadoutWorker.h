@@ -44,6 +44,7 @@ class ReadoutWorker {
   void ClearAndResetStatusRegisters() const;
   void OpenGateFastCommand() const;
   bool MicroSecondSleep(int us) const;
+  void WaitForSequencerReadoutCompletion() const;
 
   static const unsigned int microSecondSleepDuration;
 
