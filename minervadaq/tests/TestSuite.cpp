@@ -515,6 +515,7 @@ unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, unsi
   logger.infoStream() << " After reset, pointer = " << pointer;
   assert( (0 == pointer) || (1 == pointer) );  // ??? 1 ???
   ecroc->FastCommandOpenGate();
+  usleep(300);
   ecroc->EnableSequencerReadout();
   ecroc->SendSoftwareRDFE();
 
