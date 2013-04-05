@@ -191,16 +191,26 @@ void LVDSFrame::DecodeHeader()
 
   byte = FrameStart; 
   febNumber[0]        = (receivedMessage[byte]&0x0F); 
-  broadcastCommand[0] = (receivedMessage[byte]&0xF0); 
-  messageDirection[0] = (receivedMessage[byte]&0x80); 
+  broadcastCommand[0] = ( (receivedMessage[byte]&0xF0) >> 4); 
+  messageDirection[0] = ( (receivedMessage[byte]&0x80) >> 7); 
   byte = DeviceStatus;
-  deviceFunction[0]   = (receivedMessage[byte]&0x0F); 
-  targetDevice[0]     = (receivedMessage[byte]&0xF0); 
+  unsigned char  OK   = (receivedMessage[byte]&0x03); 
+  deviceFunction[0]   = ( (receivedMessage[byte]&0xF0) >> 4); 
+  unsigned short eventCount = 0;
+  unsigned char  channel    = 0xFF;
+  byte = FrameID0;
+  eventCount          = ( (receivedMessage[byte]&0xFC)<<8 );
+  channel             = (receivedMessage[byte]&0x03);
+  byte = FrameID1;
+  eventCount          = eventCount | (receivedMessage[byte]&0xFF);
+
 #ifndef GOFAST
   lvdsLog.debugStream() << "  FEB Number            : " << (int)febNumber[0];
   lvdsLog.debugStream() << "  Device Function       : " << (int)deviceFunction[0];
-  lvdsLog.debugStream() << "  Direction             : " << (int)(receivedMessage[byte]&0x80);
-  lvdsLog.debugStream() << "  Message at framestart : 0x" << std::hex << (int)receivedMessage[byte];
+  lvdsLog.debugStream() << "  OK                    : " << (int)OK;
+  lvdsLog.debugStream() << "  Direction             : " << (int)messageDirection[0];
+  lvdsLog.debugStream() << "  Event Count           : " << eventCount;
+  lvdsLog.debugStream() << "  Channel               : " << (int)channel;
 #endif
 }
 

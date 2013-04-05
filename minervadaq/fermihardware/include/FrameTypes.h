@@ -111,21 +111,21 @@ namespace FrameTypes {
    bytes before the second appearance of the length.
    */
   typedef enum ResponseBytes { //typecast to unsigned char
-    ResponseLength0 = 0, /*!< FrameLength == ResponseLength */ 
-    ResponseLength1 = 1, /*!< FrameLength == ResponseLength */ 
+    ResponseLength0 = 0,  /*!< FrameLength == ResponseLength */ 
+    ResponseLength1 = 1,  /*!< FrameLength == ResponseLength */ 
     FrameStatus0    = 2,  
     FrameStatus1	  = 3,  
     FEBFirmware     = 4,
     DeviceFunction  = 5,
     SourceID0       = 6,
     SourceID1       = 7,
-    FrameLength0    = 8, /*!< FrameLength == ResponseLength */ 
-    FrameLength1    = 9, /*!< FrameLength == ResponseLength */ 
-    FrameStart      = 10,
-    DeviceStatus    = 11,
-    FrameStatus     = 12,
-    FrameID0        = 13,
-    FrameID1        = 14,
+    FrameLength0    = 8,  /*!< FrameLength == ResponseLength */ 
+    FrameLength1    = 9,  /*!< FrameLength == ResponseLength */ 
+    FrameStart      = 10, /*!< FEB Number is least four significant bits. */
+    DeviceStatus    = 11, /*!< Device is upper nibble, OK is lower nibble. */
+    FrameStatus     = 12, /*!< Lower 5 bits for NAHeader,Secstart,MaxLength,EndHeader,ValidCRC */
+    FrameID0        = 13, /*!< Event count (upper 6 bits), Channel (lower 2 bits) */
+    FrameID1        = 14, /*!< Event count (lower 8 bits) */
     Timestamp0      = 15,
     Timestamp1      = 16,
     Timestamp2      = 17,
