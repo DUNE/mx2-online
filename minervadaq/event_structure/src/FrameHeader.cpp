@@ -29,7 +29,11 @@ log4cpp::Category& frameheader = log4cpp::Category::getInstance(std::string("fra
 FrameHeader::FrameHeader(int crateID, int crocID, int chanID, 
     int bank, int feb_no, int firmware, int hit, int length) 
 {
+#ifndef GOFAST
+  frameheader.setPriority(log4cpp::Priority::DEBUG);
+#else
   frameheader.setPriority(log4cpp::Priority::INFO);
+#endif
 
   unsigned short source_id = 0;
   source_id |= (crateID & 0x03) << 14; // 2 bits for the crate id number
@@ -39,6 +43,7 @@ FrameHeader::FrameHeader(int crateID, int crocID, int chanID,
   source_id |= (feb_no  & 0x0F) <<  3; // 4 bits for the feb id number
   source_id |= (hit     & 0x07);       // 3 bits for the hit number
 
+#ifndef GOFAST
   frameheader.debugStream() << "->Entering FrameHeader::FrameHeader for a Data Header...";
   frameheader.debugStream() << " crateID:    " << crateID;
   frameheader.debugStream() << " crocID:     " << crocID;
@@ -49,26 +54,37 @@ FrameHeader::FrameHeader(int crateID, int crocID, int chanID,
   frameheader.debugStream() << " firmware:   " << firmware;
   frameheader.debugStream() << " hit:        " << hit;
   frameheader.debugStream() << " length:     " << length;
+#endif
 
   // in addition to the channel status, CBCB will also be accepted
   unsigned short magic_pattern = 0xCBCB; 
-  bank_header[0] = length; 
+  bank_header[0] = byteSwap( length ); 
   bank_header[1] = magic_pattern; 
-  bank_header[2] = ((firmware) << 0x08) | (bank&0xFF); 
-  bank_header[3] = source_id; 
+  bank_header[2] = ((bank&0xFF)<<8) | (firmware&0xFF); 
+  bank_header[3] = byteSwap( source_id ); 
+#ifndef GOFAST
   frameheader.debug("\tHeader Words (32-bit format, [MSW][LSW]:");
   frameheader.debug("\t  [1]0x%04X [0]0x%04X",bank_header[1],bank_header[0]);
   frameheader.debug("\t  [3]0x%04X [2]0x%04X",bank_header[3],bank_header[2]);
+#endif
+}
+
+//-----------------------------
+unsigned short FrameHeader::byteSwap( unsigned short data ) const
+{
+	unsigned char b0 = data & 0xFF;
+	unsigned char b1 = (data >> 8) & 0xFF;
+	return ( (b0 << 8) | b1 );
 }
 
 //-----------------------------
 std::ostream& operator<<(std::ostream& out, const FrameHeader& s)
 {
-  const unsigned short *header = s.GetBankHeader();
-  for (unsigned int i = 0; i < 4; ++i)
-    out << "Word[" << std::dec << i << "] = 0x" << std::hex << header[i] << " ";
+	const unsigned short *header = s.GetBankHeader();
+	for (unsigned int i = 0; i < 4; ++i)
+		out << "Word[" << std::dec << i << "] = 0x" << std::hex << header[i] << " ";
 
-  return out;
+	return out;
 }
 
 

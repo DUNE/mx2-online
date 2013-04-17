@@ -40,6 +40,7 @@ class FrameHeader {
 
   private:
   unsigned short bank_header[4]; 
+	unsigned short byteSwap( unsigned short data ) const;
 
   public:
   FrameHeader(int crateID, int crocID, int chanID, 
