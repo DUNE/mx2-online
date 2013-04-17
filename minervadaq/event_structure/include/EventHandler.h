@@ -15,6 +15,7 @@
 struct EventHandler {
   unsigned short dataLength;
   unsigned char data[ MinervaDAQSizes::MaxTotalDataPerChain ];
+  const char* dataAsCString() const;
 };
 
 #endif
