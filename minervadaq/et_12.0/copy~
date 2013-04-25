@@ -1,0 +1,5 @@
+
+cp ./src/libsrc/.Linux-x86_64/libet_remote.so ./Linux-x86_64/Linux-x86_64/lib/.
+cp ./src/libsrc/.Linux-x86_64/libet.so ./Linux-x86_64/Linux-x86_64/lib/.
+
+cp ./src/examples/.Linux-x86_64/libet.so ./Linux-x86_64/Linux-x86_64/lib/.
