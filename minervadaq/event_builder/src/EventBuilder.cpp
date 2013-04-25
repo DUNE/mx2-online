@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 
   char log_filename[100]; 
   // TODO: Setup precompiler options for logs on Nearline, other machines, and timestamping.
-  sprintf(log_filename, "/work/data/logs/EventBuilderLog.txt"); 
+  sprintf(log_filename, "/work/data/logs/bbEventBuilderLog.txt"); 
 
   eventBuilderAppender = new log4cpp::FileAppender("default", log_filename,false);
   eventBuilderAppender->setLayout(new log4cpp::BasicLayout());
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
       // case 1: try to get an event but return immediately.
 
       time.tv_sec  = 0;
-      time.tv_nsec = 1000; // wait 1 microsecond
+      time.tv_nsec = 1000000;
 
       // sleep to avoid a busy-wait.
       // commenting this sleep out for now - this will keep the CPU engaged 
@@ -224,7 +224,9 @@ int main(int argc, char *argv[])
       // for another event (the 'continue' is below the specific error
       // handling that follows below).  note that the 'time' parameter
       // is ignored in this mode.
-      status = et_event_get(sys_id, attach, &pe, ET_ASYNC, &time);
+      // 2013.04.25 Change to ET_TIMED mode, so now another option is 
+      // ET_ERROR_TIMEOUT, which can be ignored except if we are quitting.  (w.badgett)
+      status = et_event_get(sys_id, attach, &pe, ET_TIMED, &time);
     }
     else if (waiting_to_quit && !quit_now)
     {
@@ -233,7 +235,6 @@ int main(int argc, char *argv[])
       time.tv_sec = SECONDS_BEFORE_TIMEOUT;
       time.tv_nsec = 0;
       status = et_event_get(sys_id, attach, &pe, ET_TIMED, &time);
-
       // if we did indeed time out, it's time to quit.
       if (status == ET_ERROR_TIMEOUT)
         continueRunning = false;
@@ -262,14 +263,18 @@ int main(int argc, char *argv[])
       continueRunning = false;
     }
     else if (status == ET_ERROR_TIMEOUT) {
-      eventbuilder.fatal("EventBuilder::main(): et_client: got timeout\n");
-      continueRunning = false;
+      if ( waiting_to_quit || quit_now )
+      {
+	eventbuilder.fatal("EventBuilder::main(): et_client: got timeout\n");
+	continueRunning = false;
+      }
     }
     else if (status == ET_ERROR_WAKEUP) {
       eventbuilder.fatal("EventBuilder::main(): et_client: someone told me to wake up\n");
       continueRunning = false;
     }
 
+    // If no event returned, skip event processing
     if (status != ET_OK) {
       continue;
     }
