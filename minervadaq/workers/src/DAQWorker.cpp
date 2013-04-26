@@ -8,6 +8,7 @@
 #include "EventHandler.h"
 #include "DAQHeader.h"
 #include "DAQWorker.h"
+#include "ADCFrame.h"
 
 #include "exit_codes.h"
 
@@ -278,6 +279,13 @@ void DAQWorker::DissolveDataBlock( std::tr1::shared_ptr<SequencerReadoutBlock> b
     LVDSFrame * frame = block->PopOffFrame();
     daqWorker.debugStream() << (*frame);
     frame->printReceivedMessageToLog();
+    if (MinervaDAQSizes::ADCFrameMaxSize == frame->ReceivedMessageLength()) {
+      ADCFrame * adc = new ADCFrame((FrameTypes::FEBAddresses)1,0,0,(FrameTypes::RAMFunctionsHit)0);
+      adc->SetReceivedMessage( frame->GetReceivedMessage() );
+      adc->DecodeRegisterValues();
+      adc->SetReceivedMessage(NULL);
+      delete adc;
+    }
     delete frame;
   }
 }
