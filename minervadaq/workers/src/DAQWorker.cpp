@@ -253,6 +253,7 @@ bool DAQWorker::BeginNextGate()
   readoutWorker->ResetCurrentChannel();
   Triggers::TriggerType triggerType = stateRecorder->GetNextTriggerType();
   triggerTime = readoutWorker->Trigger( triggerType );
+  /* triggerTime = readoutWorker->ManualTrigger( triggerType ); */
   stateRecorder->SetGateStartTime( triggerTime );
 
   return stateRecorder->BeginNextGate();

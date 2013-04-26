@@ -62,6 +62,7 @@ class ReadoutWorker {
   unsigned int GetMINOSSGATE() const;
   unsigned long long GetNowInMicrosec() const;
   unsigned long long Trigger( Triggers::TriggerType triggerType );
+  unsigned long long ManualTrigger( Triggers::TriggerType triggerType );
   void ResetCurrentChannel();
   bool MoveToNextChannel();
   const EChannels * CurrentChannel() const;

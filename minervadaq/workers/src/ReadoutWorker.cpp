@@ -9,6 +9,11 @@
 //#include <sys/time.h>
 //#include <signal.h>   // for sig_atomic_t
 
+#include "FrontEndBoard.h"
+#include "ADCFrame.h"
+#include "DiscrFrame.h"
+#include "FPGAFrame.h"
+
 log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
 
 const unsigned int ReadoutWorker::microSecondSleepDuration = 600;
@@ -154,7 +159,6 @@ unsigned long long ReadoutWorker::Trigger( Triggers::TriggerType triggerType )
 
   using namespace Triggers;
   ClearAndResetStatusRegisters();
-// /*  
   ResetSequencerLatch();
   EnableIRQ();
 
@@ -187,22 +191,86 @@ unsigned long long ReadoutWorker::Trigger( Triggers::TriggerType triggerType )
   // registers to be sure they're finished. We should "time" both approaches and 
   // see what is fastest.
   this->WaitForSequencerReadoutCompletion();
-// */
-/*
+
+  return GetNowInMicrosec();
+}
+
+//---------------------------
+unsigned long long ReadoutWorker::ManualTrigger( Triggers::TriggerType triggerType )
+{
+  readoutLogger.debugStream() << "ReadoutWorker::Trigger for type = " 
+    << triggerType;
+
+  for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) {
+    (*p)->DisableSequencerReadout();
+  }
+
+  using namespace Triggers;
+  ClearAndResetStatusRegisters();
+
   // Basically, "OneShot"
   this->OpenGateFastCommand();
   // Run Sleepy - the FEBs need >= 400 microseconds for 8 hits to digitize.
   // nanosleep runs about 3x slower than the stated time (so 100 us -> 300 us)
   if (!MicroSecondSleep(3000)) return 0;
+
+  unsigned short status = 0;
+  VMECrate * crate = crates[0];
+  ECROC * croc = (*(crate->GetECROCVector()))[0];
+  EChannels * channel = (*(croc->GetChannelsVector()))[0];
+  FrontEndBoard * feb = (*(channel->GetFrontEndBoardVector()))[0];
+
+  {
+    std::tr1::shared_ptr<DiscrFrame> discrFrame = feb->GetDiscrFrame();
+    channel->WriteFrameRegistersToMemory( discrFrame );
+    channel->SendMessage();
+    status = channel->WaitForMessageReceived();
+    channel->ResetSendMemoryPointer();
+  }
+  {
+    std::tr1::shared_ptr<FPGAFrame> fpgaFrame = feb->GetFPGAFrame();
+    channel->WriteFrameRegistersToMemory( fpgaFrame );
+    channel->SendMessage();
+    status = channel->WaitForMessageReceived();
+    channel->ResetSendMemoryPointer();
+  }
+  {
+    std::tr1::shared_ptr<ADCFrame> adcFrame = feb->GetADCFrame(0);
+    channel->WriteFrameRegistersToMemory( adcFrame );
+    channel->SendMessage();
+    status = channel->WaitForMessageReceived();
+    channel->ResetSendMemoryPointer();
+  }
+  {
+    std::tr1::shared_ptr<ADCFrame> adcFrame = feb->GetADCFrame(1);
+    channel->WriteFrameRegistersToMemory( adcFrame );
+    channel->SendMessage();
+    status = channel->WaitForMessageReceived();
+    channel->ResetSendMemoryPointer();
+  }
+  {
+    std::tr1::shared_ptr<ADCFrame> adcFrame = feb->GetADCFrame(2);
+    channel->WriteFrameRegistersToMemory( adcFrame );
+    channel->SendMessage();
+    status = channel->WaitForMessageReceived();
+    channel->ResetSendMemoryPointer();
+  }
+  /*
+     for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) {
+     (*p)->EnableSequencerReadout();
+     (*p)->SendSoftwareRDFE();
+     (*p)->WaitForSequencerReadoutCompletion();
+     (*p)->DisableSequencerReadout();
+     }
+     */
+
   for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) {
     (*p)->EnableSequencerReadout();
-    (*p)->SendSoftwareRDFE();
-    (*p)->WaitForSequencerReadoutCompletion();
-    (*p)->DisableSequencerReadout();
   }
-*/
+
   return GetNowInMicrosec();
 }
+
 
 //---------------------------
 //! We need to reset the sequencer latch for all CRIMs to allow new gates.
