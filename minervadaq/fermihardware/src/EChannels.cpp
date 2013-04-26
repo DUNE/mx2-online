@@ -361,6 +361,32 @@ unsigned char EChannels::isAvailable( FrontEndBoard* feb ) const
 }
 
 //----------------------------------------
+void EChannels::ResetSendMemoryPointer() const
+{
+#ifndef GOFAST
+  EChannelLog.debugStream() << "Command Address = 0x" 
+    << std::setfill('0') << std::setw( 8 ) << std::hex 
+    << commandAddress;
+#endif
+  int error = WriteCycle( 2,  RegisterWords::resetSendMemory,  
+      commandAddress, addressModifier, dataWidthReg ); 
+  if( error ) throwIfError( error, "Failure reseting the send memory pointer!");
+}
+
+//----------------------------------------
+void EChannels::ResetReceiveMemoryPointer() const
+{
+#ifndef GOFAST
+  EChannelLog.debugStream() << "Command Address = 0x" 
+    << std::setfill('0') << std::setw( 8 ) << std::hex 
+    << commandAddress;
+#endif
+  int error = WriteCycle( 2,  RegisterWords::resetReceiveMemory, 
+      commandAddress, addressModifier, dataWidthReg ); 
+  if( error ) throwIfError( error, "Failure reseting the receive memory pointer!");
+}
+
+//----------------------------------------
 void EChannels::ClearAndResetStatusRegister() const
 {
 #ifndef GOFAST
@@ -368,7 +394,8 @@ void EChannels::ClearAndResetStatusRegister() const
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << commandAddress;
 #endif
-  int error = WriteCycle( 2,  RegisterWords::channelReset,  commandAddress, addressModifier, dataWidthReg ); 
+  int error = WriteCycle( 2,  RegisterWords::channelReset,  
+      commandAddress, addressModifier, dataWidthReg ); 
   if( error ) throwIfError( error, "Failure clearing the status!");
 }
 

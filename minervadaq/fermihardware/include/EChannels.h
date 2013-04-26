@@ -64,6 +64,8 @@ class EChannels : public VMECommunicator {
 
     virtual void throwIfError( int error, const std::string& msg ) const;
 
+    void ResetSendMemoryPointer() const;  
+    void ResetReceiveMemoryPointer() const;  
     void ClearAndResetStatusRegister() const;  
     unsigned short ReadFrameStatusRegister() const;
     unsigned short ReadTxRxStatusRegister() const;
