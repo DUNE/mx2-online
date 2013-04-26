@@ -768,7 +768,8 @@ void FPGASetupForChargeInjection( EChannels* channel, int boardID )
     frame->SetPreviewEnable(previewEnable);
     for (int i=0; i<4; i++) {
       // try to get hits in different windows (need ~35+ ticks) 
-      unsigned char inj[] = { 1 + (unsigned char)i*(40) + 2*((int)boardID) };
+      int tickOffset = 40;
+      unsigned char inj[] = { 1 + (unsigned char)i*(tickOffset) + 2*((int)boardID) };
       unsigned char enable[] = {0x1};
       frame->SetInjectCount(inj,i);
       frame->SetInjectEnable(enable,i);
