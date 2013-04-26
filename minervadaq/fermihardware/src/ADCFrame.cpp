@@ -105,17 +105,15 @@ void ADCFrame::DecodeRegisterValues()
   int bytes_per_row = 2; 
 
   // First, show the adc in simple sequential order...
-  // Note that the "TimeVal" will disappear in newer firmware!
   int AmplVal     = 0;
-  int TimeVal     = 0;
   int ChIndx      = 0;
   int TripIndx    = 0;
   int NTimeAmplCh = MinervaDAQSizes::nChannelsPerTrip; 
   int nrows       = 215; //really 216, but starting just past row 1...
-  int max_show    = 15 + bytes_per_row * nrows; 
-  for (int i = 15; i <= max_show; i += 4) {
-    AmplVal = ((receivedMessage[i - 2] << 8) + receivedMessage[i - 3]);
-    TimeVal = ((receivedMessage[i] << 8) + receivedMessage[i - 1]); //timeval not useful for MINERvA (D0 thing)
+  int start_byte  = 21;  // was 15? - this is an *index*
+  int max_show    = start_byte + bytes_per_row * nrows; 
+  for (int i = start_byte; i <= max_show; i += bytes_per_row/*4*/) {
+    AmplVal = ((receivedMessage[i] << 8) + receivedMessage[i - 1]);
     // Show.  Recall that no *hit index* is shown because each analog bank *is* a "hit" index.
     ADCFrameLog.debug("ChIndx = %d, TripIndx = %d", ChIndx,TripIndx);
     // Apply "data mask" (pick out 12 bit adc) and shift two bits to the right (lower).
@@ -132,7 +130,7 @@ void ADCFrame::DecodeRegisterValues()
 
   for (unsigned int pixel = 0; pixel < MinervaDAQSizes::nPixelsPerFEB; pixel++) {
     // locate the pixel
-    int headerLength = 12; // number of bytes
+    int headerLength = 20; // number of bytes 8 for the Minerva Frame & 10 for the Device & 2 blanks?
     int side = pixel / (MinervaDAQSizes::nPixelsPerSide);
     int hiMedEvenOdd = (pixel / (MinervaDAQSizes::nPixelsPerSide / 2)) % 2;
     int hiMedTrip = 2 * side + hiMedEvenOdd;  // 0...3
@@ -143,7 +141,6 @@ void ADCFrame::DecodeRegisterValues()
     ADCFrameLog.debug("Pixel = %d, HiMedTrip = %d, hiChannel = %d, medChannel = %d, loTrip = %d, lowChannel = %d",
         pixel, hiMedTrip, hiChannel, medChannel, loTrip, loChannel);
     // Calculate the offsets (in bytes_per_row increments).
-    // The header offset is an additional 12 bytes... 
     int hiOffset = hiMedTrip * MinervaDAQSizes::nChannelsPerTrip + hiChannel;
     int medOffset = hiMedTrip * MinervaDAQSizes::nChannelsPerTrip + medChannel;
     int loOffset = loTrip * MinervaDAQSizes::nChannelsPerTrip + loChannel;
