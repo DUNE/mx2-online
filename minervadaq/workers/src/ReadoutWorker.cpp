@@ -154,6 +154,7 @@ unsigned long long ReadoutWorker::Trigger( Triggers::TriggerType triggerType )
 
   using namespace Triggers;
   ClearAndResetStatusRegisters();
+// /*  
   ResetSequencerLatch();
   EnableIRQ();
 
@@ -186,7 +187,20 @@ unsigned long long ReadoutWorker::Trigger( Triggers::TriggerType triggerType )
   // registers to be sure they're finished. We should "time" both approaches and 
   // see what is fastest.
   this->WaitForSequencerReadoutCompletion();
-
+// */
+/*
+  // Basically, "OneShot"
+  this->OpenGateFastCommand();
+  // Run Sleepy - the FEBs need >= 400 microseconds for 8 hits to digitize.
+  // nanosleep runs about 3x slower than the stated time (so 100 us -> 300 us)
+  if (!MicroSecondSleep(3000)) return 0;
+  for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) {
+    (*p)->EnableSequencerReadout();
+    (*p)->SendSoftwareRDFE();
+    (*p)->WaitForSequencerReadoutCompletion();
+    (*p)->DisableSequencerReadout();
+  }
+*/
   return GetNowInMicrosec();
 }
 
