@@ -231,7 +231,7 @@ void ECROC::Initialize() const
   ECROCLog.infoStream() << "Initializing ECROC 0x" << std::hex << this->address;
   unsigned short testPulseDelayEnabled = 0;  // we do not use the test pulse delay in data-taking
   unsigned short testPulseDelayValue   = 0;
-  unsigned short sequencerDelayValue   = 100;   // x 2.4e-6 s
+  unsigned short sequencerDelayValue   = 511;   // x 2.4e-6 s
   this->EnableSequencerReadout();
   this->InitializeRegisters( (VMEModuleTypes::ECROCClockModes)VMEModuleTypes::ECROCExternal, 
       testPulseDelayEnabled, testPulseDelayValue, sequencerDelayValue );
