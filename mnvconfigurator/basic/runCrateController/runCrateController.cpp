@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 	int error;		
 	int controllerID = 0;
 
-	myAppender = new log4cpp::FileAppender("default", "/work/data/logs/carrie_config.txt");
+	myAppender = new log4cpp::FileAppender("default", "/work/data/logs/crate0_controller_log.txt");
 	myAppender->setLayout(new log4cpp::BasicLayout());
 	root.addAppender(myAppender);
 	root.setPriority(log4cpp::Priority::ERROR);
