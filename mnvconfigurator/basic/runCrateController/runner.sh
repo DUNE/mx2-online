@@ -1,12 +1,12 @@
 #!/bin/sh
 
-#if [ $# -eq 1 ]
-#then
-#	VWINDOW=$1
-#fi
+#./euler10 &
+#MYPID=echo $!
+#echo $MYPID
 
-#want to run every second or something...
-./runCrateController 
-#./runCrateController -c $CROC -h 2 -f 10 
+MYPID=$1
 
-exit 0
+while [ -e /proc/$MYPID ] ; do
+  sleep 60
+done
+echo "Process done" | mail -s " crate0 finished" mcgivern@fnal.gov
