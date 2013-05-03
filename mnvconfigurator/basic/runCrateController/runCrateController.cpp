@@ -93,7 +93,8 @@ int main(int argc, char *argv[])
 	controller *myController = new controller(0x00, controllerID, myAppender);	
 	acquire *myAcquire = new acquire(); 
 					
-	if ((error=myController->ContactController())!=0) { 
+	error=myController->ContactController();				
+	if (error!=0) { 
 		cout<<"Controller contact error: "<<error<<endl; exit(error); // Exit due to no controller!
 	}
 	
