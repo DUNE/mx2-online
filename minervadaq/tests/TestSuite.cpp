@@ -54,7 +54,7 @@ int main( int argc, char * argv[] )
 
   unsigned int ecrocCardAddress = 1;
   unsigned int crimCardAddress  = 224;
-  unsigned int channel          = 0;
+  unsigned int channel          = 1;
   unsigned int nFEBs            = 5; // USE SEQUENTIAL ADDRESSING!!!
   int nch0 = 0, nch1 = 0, nch2 = 0, nch3 = 0;
 

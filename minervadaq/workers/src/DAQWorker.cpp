@@ -68,7 +68,7 @@ void DAQWorker::InitializeHardware()
   // Read in hardware config here. For now, hard code...
 
   readoutWorker->AddCrate(0);
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 3, 0, 5, 0, 0 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 3, 5, 0, 0, 0 );
   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
   readoutWorker->InitializeCrates( args->runMode );
 }
