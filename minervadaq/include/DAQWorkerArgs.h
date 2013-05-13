@@ -29,7 +29,8 @@ struct DAQWorkerArgs {
   std::string logFileName;      /*!< The DAQ log file. */
   std::string samPyFileName;    /*!< The SAM.py metadata file. */
   std::string samJSONFileName;  /*!< The SAM.JSON metadata file. */
-  std::string dataFileName;     /*!< The RawData file. */
+  std::string dataFileName;     /*!< The RawData file. Full path. */
+  std::string dataFileBaseName; /*!< Just the name of the RawData file (no path). */
   std::string hardwareConfigFileName; /*!< Which configuration did the RunControl load? */
   std::string hostName;               /*!< What machine is the DAQ running on? */
   std::string lastTriggerFileName;    /*!< Log file for status communication with the RunControl. */
