@@ -40,6 +40,7 @@ class DAQArgs {
       args->samPyFileName = fileRoot + "sam/MinervaDAQ_SAM.py.metadata";
       args->samJSONFileName = fileRoot + "sam/MinervaDAQ_SAM.JSON.metadata";
       args->dataFileName = fileRoot + "rawdata/MinervaDAQ_RawData.dat";
+      args->dataFileBaseName = "MinervaDAQ_RawData.dat";
       args->hardwareConfigFileName = "unknown"; 
       args->hostName = "localhost";
       args->lastTriggerFileName = conditionsRoot + "last_trigger.dat"; 
@@ -84,7 +85,8 @@ class DAQArgs {
             controllerID + "Log.txt";
           args->samPyFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.py.metadata";
           args->samJSONFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.JSON.metadata";
-          args->dataFileName = fileRoot + "rawdata/" + fileBaseName + "_RawData.dat";
+          args->dataFileBaseName = fileBaseName + "_RawData.dat";
+          args->dataFileName = fileRoot + "rawdata/" + args->dataFileBaseName;
         }
         else if (sw=="-cf") {
           optind++;
@@ -141,8 +143,7 @@ class DAQArgs {
 
       return args;
     }
-
-
+    
 };
 
 
