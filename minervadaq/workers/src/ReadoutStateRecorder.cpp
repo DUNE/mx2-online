@@ -325,15 +325,15 @@ void ReadoutStateRecorder::WriteToSAMJSONFile()
   }
 
   fprintf(file,"{\n");
-  fprintf(file,"\"file_name\": \"%s\"\n", (args->dataFileBaseName).c_str());
-  fprintf(file,"\"file_type\": \"importedDetector\"\n");
-  fprintf(file,"\"file_format\": \"binary\"\n");
-  fprintf(file,"\"crc\" : {\"crc_value\": 666, \"crc_type\":\"adler 32 crc type\"}\n");
-  fprintf(file,"\"group\": \"minerva\"\n");
+  fprintf(file,"\"file_name\": \"%s\",\n", (args->dataFileBaseName).c_str());
+  fprintf(file,"\"file_type\": \"importedDetector\",\n");
+  fprintf(file,"\"file_format\": \"binary\",\n");
+  fprintf(file,"\"crc\" : {\"crc_value\": 666, \"crc_type\":\"adler 32 crc type\"},\n");
+  fprintf(file,"\"group\": \"minerva\",\n");
 #if MTEST
-  fprintf(file,"\"data_tier\": \"binary-raw-test\"\n");
+  fprintf(file,"\"data_tier\": \"binary-raw-test\",\n");
 #else 
-  fprintf(file,"\"data_tier\": \"binary-raw\"\n");
+  fprintf(file,"\"data_tier\": \"binary-raw\",\n");
 #endif
   char runType[50];
   switch (args->detector) { // Enumerations set by the DAQHeader class.
@@ -361,54 +361,54 @@ void ReadoutStateRecorder::WriteToSAMJSONFile()
     default:
       sprintf(runType, "errordetector");
   }
-  fprintf(file,"\"runs\": [ [%d, %d, \"%s\"] ]\n", args->runNumber, args->subRunNumber, runType);
-  fprintf(file,"\"application\": [\"online\", \"v09\", \"%s\"]\n", GIT_VERSION); //online, DAQ Heder, CVSTag
-  fprintf(file,"\"file_size\": 1\n");
-  fprintf(file,"\"file_partition\": 1\n");
-  fprintf(file,"\"online.triggerconfig\": \"%s\"\n", (args->hardwareConfigFileName).c_str() );
+  fprintf(file,"\"runs\": [ [%d, %d, \"%s\"] ],\n", args->runNumber, args->subRunNumber, runType);
+  fprintf(file,"\"application\": [\"online\", \"v09\", \"%s\"],\n", GIT_VERSION); //online, DAQ Heder, CVSTag
+  fprintf(file,"\"file_size\": 1,\n");
+  fprintf(file,"\"file_partition\": 1,\n");
+  fprintf(file,"\"online.triggerconfig\": \"%s\",\n", (args->hardwareConfigFileName).c_str() );
   switch ((int)args->runMode) {
     case 0: //OneShot:
-      fprintf(file,"\"online.triggertype\": \"oneshot\"\n");
-      fprintf(file,"\"data_stream\": \"pdstl\"\n");
+      fprintf(file,"\"online.triggertype\": \"oneshot\",\n");
+      fprintf(file,"\"data_stream\": \"pdstl\",\n");
       break;
     case 1: //NuMIBeam:
-      fprintf(file,"\"online.triggertype\": \"numibeam\"\n");
-      fprintf(file,"\"data_stream\": \"numib\" \n");
+      fprintf(file,"\"online.triggertype\": \"numibeam\",\n");
+      fprintf(file,"\"data_stream\": \"numib\" ,\n");
       break;
     case 2: //Cosmics:
-      fprintf(file,"\"online.triggertype\": \"cosmics\"\n");
-      fprintf(file,"\"data_stream\": \"cosmc\"\n");
+      fprintf(file,"\"online.triggertype\": \"cosmics\",\n");
+      fprintf(file,"\"data_stream\": \"cosmc\",\n");
       break;
     case 3: //PureLightInjection:
-      fprintf(file,"\"online.triggertype\": \"purelightinjection\"\n");
-      fprintf(file,"\"data_stream\": \"linjc\"\n");
+      fprintf(file,"\"online.triggertype\": \"purelightinjection\",\n");
+      fprintf(file,"\"data_stream\": \"linjc\",\n");
       break;
     case 4: //MixedBeamPedestal:
-      fprintf(file,"\"online.triggertype\": \"mixedbeampedestal\"\n");
-      fprintf(file,"\"data_stream\": \"numip\"\n");
+      fprintf(file,"\"online.triggertype\": \"mixedbeampedestal\",\n");
+      fprintf(file,"\"data_stream\": \"numip\",\n");
       break;
     case 5: //MixedBeamLightInjection:
-      fprintf(file,"\"online.triggertype\": \"mixedbeamlightinjection\"\n");
-      fprintf(file,"\"data_stream\": \"numil\"\n");
+      fprintf(file,"\"online.triggertype\": \"mixedbeamlightinjection\",\n");
+      fprintf(file,"\"data_stream\": \"numil\",\n");
       break;
     case 6: //MTBFBeamMuon:
-      fprintf(file,"\"online.triggertype\": \"mtbfbeammuon\"\n");
-      fprintf(file,"\"data_stream\": \"bmuon\"\n");
+      fprintf(file,"\"online.triggertype\": \"mtbfbeammuon\",\n");
+      fprintf(file,"\"data_stream\": \"bmuon\",\n");
       break;
     case 7: //MTBFBeamOnly:
-      fprintf(file,"\"online.triggertype\": \"mtbfbeamonly\"\n");
-      fprintf(file,"\"data_stream\": \"bonly\"\n");
+      fprintf(file,"\"online.triggertype\": \"mtbfbeamonly\",\n");
+      fprintf(file,"\"data_stream\": \"bonly\",\n");
       break;
     default:
-      fprintf(file,"\"online.triggertype\": \"errortype\"\n");
-      fprintf(file,"\"data_stream\": \"errorstream\"\n");
+      fprintf(file,"\"online.triggertype\": \"errortype\",\n");
+      fprintf(file,"\"data_stream\": \"errorstream\",\n");
   }
-  fprintf(file,"\"start_time\": %llu\n", (gateStartTime/1000000L));
-  fprintf(file,"\"end_time\": %llu\n", (gateFinishTime/1000000L));
-  fprintf(file,"\"event_count\": %d\n", gate);
-  fprintf(file,"\"first_event\": %llu\n", firstGate);
-  fprintf(file,"\"last_event\": %llu\n", globalGate);
-  fprintf(file,"\"lum_block_ranges\": [%llu, %llu]\n", firstGate, globalGate);
+  fprintf(file,"\"start_time\": %llu,\n", (gateStartTime/1000000L));
+  fprintf(file,"\"end_time\": %llu,\n", (gateFinishTime/1000000L));
+  fprintf(file,"\"event_count\": %d,\n", gate);
+  fprintf(file,"\"first_event\": %llu,\n", firstGate);
+  fprintf(file,"\"last_event\": %llu,\n", globalGate);
+  fprintf(file,"\"lum_block_ranges\": [[%llu, %llu]]\n", firstGate, globalGate);
   fprintf(file,"}\n");
 
   fclose(file);
