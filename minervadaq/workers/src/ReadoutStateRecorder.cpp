@@ -8,6 +8,8 @@
 
 log4cpp::Category& stateRecorderLogger = log4cpp::Category::getInstance(std::string("stateRecorderLogger"));
 
+const int ReadoutStateRecorder::DAQHeaderVersion = 9;
+
 //---------------------------
 ReadoutStateRecorder::ReadoutStateRecorder( const DAQWorkerArgs* theArgs, 
     log4cpp::Priority::Value priority ) :
@@ -190,7 +192,7 @@ std::tr1::shared_ptr<DAQHeader> ReadoutStateRecorder::GetDAQHeader( HeaderData::
   unsigned short nDiscFrames = 0;
   unsigned short nFPGAFrames = 0;
 
-  FrameHeader * frameHeader = new FrameHeader(0,0,0,bankType,0,0,0,daqHeaderSize);
+  FrameHeader * frameHeader = new FrameHeader(0,0,0,bankType,0,DAQHeaderVersion,0,daqHeaderSize);
 
   std::tr1::shared_ptr<DAQHeader> daqHeader( 
       new DAQHeader(args->detector, args->detectorConfigCode, args->runNumber, 

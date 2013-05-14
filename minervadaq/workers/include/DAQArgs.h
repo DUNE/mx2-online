@@ -37,7 +37,7 @@ class DAQArgs {
       args->networkPort = 65535;
       args->etFileName = fileRoot + "etsys/MinervaDAQ_RawData";
       args->logFileName = fileRoot + "logs/MinervaDAQ_Log.txt";
-      args->samPyFileName = fileRoot + "sam/MinervaDAQ_SAM.py.metadata";
+      args->samPyFileName = fileRoot + "sam/MinervaDAQ_SAM.metadata.py";
       args->samJSONFileName = fileRoot + "sam/MinervaDAQ_SAM.JSON.metadata";
       args->dataFileName = fileRoot + "rawdata/MinervaDAQ_RawData.dat";
       args->dataFileBaseName = "MinervaDAQ_RawData.dat";
@@ -83,7 +83,7 @@ class DAQArgs {
           args->etFileName   = fileRoot + "etsys/" + fileBaseName + "_RawData";
           args->logFileName  = fileRoot + "logs/" + fileBaseName + "_Controller" + 
             controllerID + "Log.txt";
-          args->samPyFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.py.metadata";
+          args->samPyFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.metadata.py";
           args->samJSONFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.JSON.metadata";
           args->dataFileBaseName = fileBaseName + "_RawData.dat";
           args->dataFileName = fileRoot + "rawdata/" + args->dataFileBaseName;

@@ -43,6 +43,8 @@ class ReadoutStateRecorder {
   void WriteToSAMJSONFile();
   void WriteLastTriggerDataToFile();
 
+  static const int DAQHeaderVersion;
+
   public:
 
   explicit ReadoutStateRecorder( const DAQWorkerArgs* theArgs, 
