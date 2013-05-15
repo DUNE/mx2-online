@@ -330,7 +330,7 @@ void ReadoutStateRecorder::WriteToSAMJSONFile()
   fprintf(file,"\"file_name\": \"%s\",\n", (args->dataFileBaseName).c_str());
   fprintf(file,"\"file_type\": \"importedDetector\",\n");
   fprintf(file,"\"file_format\": \"binary\",\n");
-  fprintf(file,"\"crc\" : {\"crc_value\": 666, \"crc_type\":\"adler 32 crc type\"},\n");
+  fprintf(file,"\"crc\": {\"crc_value\": 666, \"crc_type\":\"adler 32 crc type\"},\n");
   fprintf(file,"\"group\": \"minerva\",\n");
 #if MTEST
   fprintf(file,"\"data_tier\": \"binary-raw-test\",\n");
