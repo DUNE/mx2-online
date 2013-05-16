@@ -306,11 +306,11 @@ int main(int argc, char *argv[])
     evt_counter++;
     eventbuilder.debugStream() << "Now write the event to the binary output file...";
     eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
-    // Trying to log these messages fails for long messages (over ~ 1kB).
-    /* eventbuilder.debug( evt->dataAsCString() ); */
-    /* eventbuilder.debugStream() << " Successfully wrote " << evt->dataLength << " bytes..."; */
     binary_outputfile.write((char *) evt->data, evt->dataLength);  
     binary_outputfile.flush();
+
+		if (HeaderData::SentinelBank == (HeaderData::BankType)evt->leadBankType())
+			continueRunning = false;
   }
 
   // Detach from the station.
