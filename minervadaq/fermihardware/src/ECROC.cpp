@@ -232,6 +232,7 @@ void ECROC::Initialize() const
   unsigned short testPulseDelayEnabled = 0;  // we do not use the test pulse delay in data-taking
   unsigned short testPulseDelayValue   = 0;
   unsigned short sequencerDelayValue   = 511;   // x 2.4e-6 s
+  this->ClearAndResetStatusRegisters();
   this->EnableSequencerReadout();
   this->InitializeRegisters( (VMEModuleTypes::ECROCClockModes)VMEModuleTypes::ECROCExternal, 
       testPulseDelayEnabled, testPulseDelayValue, sequencerDelayValue );
