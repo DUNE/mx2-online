@@ -14,6 +14,8 @@
 #include "DiscrFrame.h"
 #include "FPGAFrame.h"
 
+#define GINGU_RECOMMENDATION 1
+
 log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
 
 const unsigned int ReadoutWorker::microSecondSleepDuration = 600;
@@ -158,7 +160,11 @@ unsigned long long ReadoutWorker::Trigger( Triggers::TriggerType triggerType )
     << triggerType;
 
   using namespace Triggers;
+#ifndef GINGU_RECOMMENDATION
+  // C. Gingu: There is no need to clear & reset status when reading out via the Sequencer.
+  readoutLogger.debugStream() << "Clearing & Resetting...";
   ClearAndResetStatusRegisters();
+#endif
   ResetSequencerLatch();
   EnableIRQ();
 

@@ -194,8 +194,12 @@ void LVDSFrame::DecodeHeader()
   broadcastCommand[0] = ( (receivedMessage[byte]&0xF0) >> 4); 
   messageDirection[0] = ( (receivedMessage[byte]&0x80) >> 7); 
   byte = DeviceStatus;
-  unsigned char  OK   = (receivedMessage[byte]&0x03); 
   deviceFunction[0]   = ( (receivedMessage[byte]&0xF0) >> 4); 
+
+#ifndef GOFAST
+	// This block of vars is only used for logfile-debugging and checking.
+  byte = DeviceStatus;
+  unsigned char  OK   = (receivedMessage[byte]&0x03); 
   unsigned short eventCount = 0;
   unsigned char  channel    = 0xFF;
   byte = FrameID0;
@@ -204,7 +208,6 @@ void LVDSFrame::DecodeHeader()
   byte = FrameID1;
   eventCount          = eventCount | (receivedMessage[byte]&0xFF);
 
-#ifndef GOFAST
   lvdsLog.debugStream() << "  FEB Number            : " << (int)febNumber[0];
   lvdsLog.debugStream() << "  Device Function       : " << (int)deviceFunction[0];
   lvdsLog.debugStream() << "  OK                    : " << (int)OK;
