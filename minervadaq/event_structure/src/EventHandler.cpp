@@ -9,6 +9,15 @@
 
 #include "EventHandler.h"
 
+unsigned char EventHandler::leadBankType() const
+{
+	// Return the bank type of the first frame in the data blob.
+	// Note: there is no array bounds checking here. If this 
+	// method is called on an empty EventHandler, gibberish is 
+	// the best case scenario.
+	return data[5];
+}
+
 const char* EventHandler::dataAsCString() const
 {
   std::stringstream ss;
