@@ -21,7 +21,9 @@ const int SECONDS_BEFORE_TIMEOUT = 60;
 DAQHeader *daqHeader;
 
 sig_atomic_t waiting_to_quit;  
-sig_atomic_t quit_now;        
+sig_atomic_t quit_now;       
+sig_atomic_t newSubRun; 
+unsigned int subRun;
 void quitsignal_handler(int signum);
 
 // log4cpp Variables - Needed throughout the EventBuilder functions.
@@ -37,15 +39,20 @@ log4cpp::Category& eventbuilder = log4cpp::Category::getInstance(std::string("ev
   */
 int main(int argc, char *argv[]) 
 {
+  waiting_to_quit = false;
+  quit_now = false;
+  newSubRun = true;
+  subRun = 0;
+  char fileName [1024];
+  std::ofstream * binary_outputfile;
+
   if (argc < 3) {
     printf("Usage: EventBuilder <et_filename> <rawdata_filename> <network port (default 1201)> <callback PID (default: no PID)>\n");
     printf("  Please supply the full path!\n");
     exit(EXIT_CONFIG_ERROR);
   }
   std::cout << "ET Filesystem          = " << argv[1] << std::endl;
-  string output_filename(argv[2]);
-  // Open the file for binary output.
-  ofstream binary_outputfile(output_filename.c_str(),ios::out|ios::app|ios::binary); 
+
   int networkPort = 1201;
   if (argc > 3) networkPort = atoi(argv[3]);
   std::cout << "ET Network Port        = " << networkPort << std::endl;
@@ -73,7 +80,7 @@ int main(int argc, char *argv[])
   eventbuilder.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
   eventbuilder.infoStream() << "Arguments to the Event Builder: ";
   eventbuilder.infoStream() << "  ET System              = " << argv[1];
-  eventbuilder.infoStream() << "  Output Filename        = " << output_filename;
+  eventbuilder.infoStream() << "  Output Filename        = " << fileName;
   eventbuilder.infoStream() << "  ET System Port         = " << networkPort;
   eventbuilder.infoStream() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 
@@ -92,6 +99,8 @@ int main(int argc, char *argv[])
   // We will use custom singnal handlers to interact with the Run Control.
   sigaction(SIGINT,  &quit_action, NULL);
   sigaction(SIGTERM, &quit_action, NULL);
+  sigaction(SIGUSR1, &quit_action, NULL);
+  sigaction(SIGUSR2, &quit_action, NULL);
 
   int            status;
   et_openconfig  openconfig;
@@ -146,7 +155,8 @@ int main(int argc, char *argv[])
       newheartbeat = id->sys->heartbeat;
     }
     counter++;  
-  } while ((newheartbeat==oldheartbeat)&&(counter!=60));
+    std::cout << counter << "  New = " << newheartbeat << "  old=" << oldheartbeat << std::endl;
+  } while ((newheartbeat!=oldheartbeat)&&(counter!=60));
   if (counter==60) {
     eventbuilder.fatalStream() << "Error in EventBuilder::main()!";
     eventbuilder.fatalStream() << "ET System did not start properly!  Exiting...";
@@ -191,6 +201,33 @@ int main(int argc, char *argv[])
   while ((et_alive(sys_id)) && continueRunning) {
     struct timespec time;
 
+    if ( newSubRun )
+    {
+      newSubRun = false;
+      if ( subRun > 0 ) 
+      { 
+	binary_outputfile->close(); 
+	delete(binary_outputfile);
+	eventbuilder.infoStream() << "Closed file " << fileName << " after " << 
+	  evt_counter << " events";
+	std::cout << "Closed file " << fileName << " after " << 
+	  evt_counter << " events" << std::endl;
+
+      }
+      subRun++;
+      evt_counter = 0;
+
+      sprintf(fileName, argv[2], subRun);
+      eventbuilder.infoStream() << "Opening file " << fileName;
+      std::cout << "Opening file " << fileName << std::endl;
+
+      // Open the file for binary output for the new subRun
+      binary_outputfile = new ofstream(fileName,ios::out|ios::app|ios::binary); 
+
+      // Notify parent we are done turning over the subrun
+      if ( callback_pid ) { kill(callback_pid, SIGUSR2);}
+    }
+
     // there are two different circumstances under which we will acquire events.
     //
     // the first is normal operation: minervadaq is running smoothly; we just
@@ -210,7 +247,7 @@ int main(int argc, char *argv[])
       // case 1: try to get an event but return immediately.
 
       time.tv_sec  = 0;
-      time.tv_nsec = 1000000;
+      time.tv_nsec = 100000000;
 
       // sleep to avoid a busy-wait.
       // commenting this sleep out for now - this will keep the CPU engaged 
@@ -295,13 +332,11 @@ int main(int argc, char *argv[])
     eventbuilder.debugStream() << "Put the event back into the ET system...";
     status = et_event_put(sys_id, attach, pe); 
     evt_counter++;
+    std::cout << "Event " << evt_counter << std::endl;
     eventbuilder.debugStream() << "Now write the event to the binary output file...";
     eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
-    binary_outputfile.write((char *) evt->data, evt->dataLength);  
-    binary_outputfile.flush();
-
-		if (HeaderData::SentinelBank == (HeaderData::BankType)evt->leadBankType())
-			continueRunning = false;
+    binary_outputfile->write((char *) evt->data, evt->dataLength);  
+    binary_outputfile->flush();
   }
 
   // Detach from the station.
@@ -318,7 +353,14 @@ int main(int argc, char *argv[])
     exit(EXIT_ETSTARTUP_ERROR);
   }
 
-  binary_outputfile.close(); 
+  if (( subRun > 0 ) && ( binary_outputfile != NULL ))
+  {
+    binary_outputfile->close(); 
+    delete(binary_outputfile);
+  }
+
+  // Notify parent we are shutting down
+  if ( callback_pid ) { kill(callback_pid, SIGUSR2);}
 
   eventbuilder.infoStream() << "Closing the Event Builder!";
   log4cpp::Category::shutdown();
@@ -332,25 +374,37 @@ void quitsignal_handler(int signum)
   // this message into the middle of stuff in the STDERR buffer.  the worst that
   // can happen is that another message is broken in half with our message in the middle:
   // hence the flushes and the extra line breaks for readability.
-  if (waiting_to_quit)
-  {
-    fflush(stderr);
-    fprintf(stderr, "\n\nShutdown request acknowledged.  Will close down as soon as possible.\n\n");
-    fflush(stderr);
 
-    quit_now = true;
+  if ( signum == SIGUSR2 )
+  {
+    fflush(stdout);
+    printf("Received SIGUSR2 signal for new subRun\n");
+    fflush(stdout);
+    newSubRun = true;
+    signal (signum, quitsignal_handler);
   }
   else
   {
-    fflush(stderr);
-    fprintf(stderr, "\n\nInstructed to close.\nNote that any events remaining in the buffer will first be cleared, and then we will wait 60 seconds to be sure there are no more.\nIf you really MUST close down NOW, issue the signal again (ctrl-C or 'kill <this process's PID>').\n\n");
-    fflush(stderr);
+    if (waiting_to_quit)
+    {
+      fflush(stderr);
+      fprintf(stderr, "\n\nShutdown request acknowledged.  Will close down as soon as possible.\n\n");
+      fflush(stderr);
 
-    waiting_to_quit = true;
+      quit_now = true;
+    }
+    else
+    {
+      fflush(stderr);
+      fprintf(stderr, "\n\nInstructed to close.\nNote that any events remaining in the buffer will first be cleared, and then we will wait 60 seconds to be sure there are no more.\nIf you really MUST close down NOW, issue the signal again (ctrl-C or 'kill <this process's PID>').\n\n");
+      fflush(stderr);
 
-    // be sure to re-enable the signal!
-    // (it's blocked by default when the handler is called)
-    signal (signum, quitsignal_handler);
+      waiting_to_quit = true;
+
+      // be sure to re-enable the signal!
+      // (it's blocked by default when the handler is called)
+      signal (signum, quitsignal_handler);
+    }
   }
 }
 
