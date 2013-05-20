@@ -1,0 +1,27 @@
+
+Changes from the downloaded ET version 12 files:
+
+1. SConstruct file: remove "/linux" from java path:
+
+#env.AppendUnique(CPPPATH = [javaIncPath, javaIncPath + "/linux" ])
+env.AppendUnique(CPPPATH = [javaIncPath, javaIncPath ])
+
+2. src/libsrc/SConscript file: remove et_jni.c from compile list
+
+#jniFileList = ['et_jni.c']
+jniFileList = []
+
+3. Add link: Linux-x86_64-64/Linux-x86_64-64 that points 
+   to Linux-x86_64
+
+To compile:
+
+scons install
+scons examples install
+
+To clean up a build:
+scons -c examples install
+scons -c install
+
+W.Badgett 2013.04.25
+
