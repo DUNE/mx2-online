@@ -25,6 +25,8 @@ else
 	LDLIBS += -L/usr/local/lib -llog4cpp -L/usr/lib64 -lpthread 
 endif
 
+CFLAGS += -g
+
 LDLIBS += -L/usr/lib64 
 
 #MINERvA DAQ Libraries
