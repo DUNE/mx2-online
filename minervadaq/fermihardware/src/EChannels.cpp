@@ -130,8 +130,8 @@ std::pair<int,std::string> EChannels::DecodeStatusMessage( const unsigned short&
   if (status & VMEModuleTypes::SendMemoryUnusedBit0) {
     statusBitsDecoded += "SendMemoryUnusedBit0|";
   }
-  if (status & VMEModuleTypes::SendMemoryUnusedBit1) {
-    statusBitsDecoded += "SendMemoryUnusedBit1|";
+  if (status & VMEModuleTypes::SequencerError) {
+    statusBitsDecoded += "SequencerError|";
   }
   if (status & VMEModuleTypes::SendMemoryRDFEDone) {
     statusBitsDecoded += "SendMemoryRDFEDone|";

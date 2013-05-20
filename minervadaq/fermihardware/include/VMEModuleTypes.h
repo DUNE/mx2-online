@@ -213,7 +213,7 @@ namespace VMEModuleTypes {
     ReceiveMemoryEmpty            = 0x0040,
     ReceiveMemoryFull             = 0x0080,  
     SendMemoryUnusedBit0          = 0x0100,
-    SendMemoryUnusedBit1          = 0x0200,
+    SequencerError                = 0x0200, /*!< Set if the number of hits exceeds the hit encoding mode in the Configuration Register. */
     SendMemoryRDFEDone            = 0x0400,
     SendMemoryRDFEUpdating        = 0x0800,  
     SendMemoryFrameSent           = 0x1000,
