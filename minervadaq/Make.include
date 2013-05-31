@@ -43,7 +43,7 @@ INCLUDE += -I$(DAQROOT)/event_structure/include
 INCLUDE += -I$(DAQROOT)/event_builder/include
 
 #Event Transfer
-INCLUDE += -I$(DAQROOT)/et_9.0/src/libsrc
+INCLUDE += -I$(CODA_HOME)/src/libsrc
 
 
 
