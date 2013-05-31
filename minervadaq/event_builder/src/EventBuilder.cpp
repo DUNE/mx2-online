@@ -337,6 +337,9 @@ int main(int argc, char *argv[])
     eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
     binary_outputfile->write((char *) evt->data, evt->dataLength);  
     binary_outputfile->flush();
+
+		if (HeaderData::SentinelBank == (HeaderData::BankType)evt->leadBankType())
+			continueRunning = false;
   }
 
   // Detach from the station.
