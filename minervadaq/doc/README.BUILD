@@ -88,9 +88,12 @@ Once you have configured your setup scripts, build the DAQ with the following st
 
 1) Go to $DAQROOT/
 
-2) source setupdaqenv.sh
+2) source setupdaqenv.sh. You will likely want to source the included setup.sh first if you want to 
+  use the more modern version of ET.
 
 3) Now build ET.  Go to the et_9.0 directory and type "gmake install".
+  The more modern version is to use et_12.0 instead. Go to the et_12 directory 
+  and read the included README.MINERVA.
 
 4) MINERvA DAQ uses the following set of ports:
 	1090 : Queen-Soldier port (on Soldier)
