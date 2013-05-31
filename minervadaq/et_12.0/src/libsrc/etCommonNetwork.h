@@ -157,7 +157,7 @@ struct ifi_info {
     struct ifi_info  *ifi_next;   /* next of these structures */
 };
 /*****************************************************************************
-
+*/
 
 /* *****************************************************************
  *      items to handle multiple network addresses or names        *
