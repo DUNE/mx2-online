@@ -335,8 +335,8 @@ int main(int argc, char *argv[])
     std::cout << "Event " << evt_counter << std::endl;
     eventbuilder.debugStream() << "Now write the event to the binary output file...";
     eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
-    binary_outputfile.write((char *) evt->data, evt->dataLength);  
-    binary_outputfile.flush();
+    binary_outputfile->write((char *) evt->data, evt->dataLength);  
+    binary_outputfile->flush();
 
 		if (HeaderData::SentinelBank == (HeaderData::BankType)evt->leadBankType())
 			continueRunning = false;
