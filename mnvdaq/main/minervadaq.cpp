@@ -1642,6 +1642,9 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 	// Now "Trigger"
 	switch (runningMode) {
 		case OneShot:
+/* Fall through here for now - use only the master CRIM to trigger. This will not work without an 
+   MTM and it will also not work if there are "disconnected" CRIMS (CRIMS must have cables connecting
+   them to transmit trigger signals.
 			for (crim = crim_vector->begin(); crim != crim_vector->end(); crim++) {
 				id = (*crim)->GetCrimID();
 				try {
@@ -1662,6 +1665,7 @@ int TriggerDAQ(acquire_data *daq, unsigned short int triggerType, RunningModes r
 				return e;
 			}
 			break;
+*/
 		case NuMIBeam:
 		case Cosmics:
 		case PureLightInjection:
@@ -1871,7 +1875,7 @@ int WriteSAM(const char samfilename[],
 	fprintf(sam_file,"dataTier='binary-raw',\n");
 #endif
 	fprintf(sam_file,"runNumber=%d%04d,\n",runNum,subNum);
-	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-11-02'),\n"); //online, DAQ Heder, CVSTag
+	fprintf(sam_file,"applicationFamily=ApplicationFamily('online','v09','v07-12-00'),\n"); //online, DAQ Heder, CVSTag
 	fprintf(sam_file,"fileSize=SamSize('0B'),\n");
 	fprintf(sam_file,"filePartition=1L,\n");
 	switch (detector) { // Enumerations set by the DAQHeader class.

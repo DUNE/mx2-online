@@ -10,9 +10,9 @@ COMPILE_OPTIONS += -DWH14T # 14sxo top crate
 #COMPILE_OPTIONS += -DNEARLINE # Nearline station 
 
 #--MULTI PC SETUP--
-#COMPILE_OPTIONS += -DSINGLEPC # Comment this out for multi-pc running.
-COMPILE_OPTIONS += -DMULTIPC # Comment this out for single-pc running. 
-COMPILE_OPTIONS += -DMASTER # Comment this out for single-pc running & on the worker node.
+COMPILE_OPTIONS += -DSINGLEPC # Comment this out for multi-pc running.
+#COMPILE_OPTIONS += -DMULTIPC # Comment this out for single-pc running. 
+#COMPILE_OPTIONS += -DMASTER # Comment this out for single-pc running & on the worker node.
 
 #--BACKUP NODES?--
 #COMPILE_OPTIONS += -DBACKUPNODE
@@ -39,7 +39,7 @@ COMPILE_OPTIONS += -DV91FIRMWARE
 COMPILE_OPTIONS += -DV9CRIM
 
 #--FIRMWARE SPECIFIC IMPLEMENTATIONS--
-#COMPILE_OPTIONS += -DPREVIEWHIT
+COMPILE_OPTIONS += -DPREVIEWHIT
 
 #--READOUT FLAGS--
 COMPILE_OPTIONS += -DZEROSUPPRESSION  # Don't read the end of gate hit.
@@ -49,5 +49,4 @@ COMPILE_OPTIONS += -DZEROSUPPRESSION  # Don't read the end of gate hit.
 
 #--IS AN MTM INSTALLED IN THE CRATE? IF NOT, NEED THIS!--
 #COMPILE_OPTIONS += -DNOMTMPEDESTAL
-
 
