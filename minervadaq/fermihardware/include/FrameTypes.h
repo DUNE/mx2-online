@@ -27,7 +27,7 @@ namespace FrameTypes {
   typedef enum Directions { //typecast to unsigned char
     MasterToSlave = 0x00,
     SlaveToMaster = 0x80
-  };
+  } Directions;
 
 
   /*! \enum Broadcasts 
@@ -39,7 +39,7 @@ namespace FrameTypes {
     ResetTimer  = 0x20,
     OpenGate    = 0x30,
     SoftReset   = 0x40
-  };
+  } Broadcasts;
 
 
   /*! \enum Devices
@@ -51,7 +51,7 @@ namespace FrameTypes {
     FPGA       = 0x20,
     RAM        = 0x30,
     Flash      = 0x40
-  };
+  } Devices;
 
   /*! \enum FPGAFunctions 
    * \brief A read or write frame. MS Nibble of DevFun byte. 
@@ -62,7 +62,7 @@ namespace FrameTypes {
     Write    = 0x01,
     Read     = 0x02,
     DumpRead = 0x03
-  };
+  } FPGAFunctions;
 
   /*! \enum RAMFunctionsHit
    * \brief Which hit to read off of the ADC's 
@@ -78,7 +78,7 @@ namespace FrameTypes {
     ReadHitDiscr = 0x07,
     ReadHit6     = 0x0E,
     ReadHit7     = 0x0F
-  };
+  } RAMFunctionsHit;
 
   /*! \enum RAMFunctionsChip
    * \brief  Depricated - DO NOT USE!
@@ -93,7 +93,7 @@ namespace FrameTypes {
     ReadChip5    = 0x0D,
     ReadDigital0 = 0x0E,
     ReadDigital1 = 0x0F
-  };
+  } RAMFunctionsChip;
 
   /*! \enum FlashFunctions
    * \brief For writing firmware to flash memory 
@@ -102,7 +102,7 @@ namespace FrameTypes {
     NoFlash  = 0x00,
     Command  = 0x01,
     SetReset = 0x02
-  };
+  } FlashFunctions;
 
   /*! \enum ResponseBytes
    * \brief Useful for decoding returning frame headers.
@@ -131,7 +131,7 @@ namespace FrameTypes {
     Timestamp2      = 17,
     Timestamp3      = 18,
     Data            = 19  /*!< First data byte. */
-  };
+  } ResponseBytes;
 
   /*! \enum HeaderWords
    * \brief Useful for decoding LVDSFrame headers.
@@ -146,7 +146,7 @@ namespace FrameTypes {
     hWord6           = 6,
     hWord7           = 7,
     hWord8           = 8
-  };
+  } HeaderWords;
 
   /*! \enum ResponseFlags
    * \brief Bitmasks for decoding the status of a returned message
@@ -164,7 +164,7 @@ namespace FrameTypes {
     MaxLen      = 0x04,
     SecondStart = 0x08,
     NAHeader    = 0x10
-  };
+  } ResponseFlags;
 
 
   /*! \enum FEBAddresses
@@ -187,7 +187,7 @@ namespace FrameTypes {
     FE13   =13,
     FE14   =14,
     FE15   =15
-  };
+  } FEBAddresses;
 
   /*! \enum DiscrHeaderBytes
    * \brief  Useful bytes in the discriminator header.
@@ -196,7 +196,7 @@ namespace FrameTypes {
     discrNumHits01 = 20,  // Production CROCE-era values
     discrNumHits23 = 21,
     discrBRAM      = 22
-  };
+  } DiscrHeaderBytes;
 
 }
 

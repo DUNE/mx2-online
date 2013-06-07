@@ -26,7 +26,7 @@ namespace Modes {
     MixedBeamLightInjection = 5, /*!< MTM CRIM Timing, (No Frequency), MTM && software gates, LI Box alive */
     MTBFBeamMuon            = 6, /*!< MTBF=="Cosmic" - Intneral CRIM Timing, w/ Frequency Set! */
     MTBFBeamOnly            = 7  /*!< MTBF=="Cosmic" - Intneral CRIM Timing, w/ Frequency Set! */
-  };
+  } RunningModes;
 }
 
 //! Keep TriggerType out of the global namespace.
@@ -48,7 +48,7 @@ namespace Triggers {
     MTBFBeam        = 0x0040,
     MonteCarlo      = 0x0080,  /*!< Obviously, the DAQ should not write this type, ever! */
     DataMCOverlay   = 0x0081   /*!< Obviously, the DAQ should not write this type, ever! */
-  };
+  } TriggerType;
 }
 
 //! Keep DetectorTypes out of the global namespace.
@@ -64,7 +64,7 @@ namespace Detectors {
     FullMinerva            = 0x20,
     DTReserved7            = 0x40,
     DTReserved8            = 0x80
-  };
+  } DetectorTypes;
 }
 
 #endif

@@ -7,6 +7,7 @@
 #include "FrameTypes.h"
 #include "SequencerReadoutBlock.h"
 #include "exit_codes.h"
+#include <string.h>
 
 log4cpp::Category& SequencerReadoutBlockLog = log4cpp::Category::getInstance(std::string("SequencerReadoutBlock"));
 

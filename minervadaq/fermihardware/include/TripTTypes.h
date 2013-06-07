@@ -24,7 +24,7 @@ namespace TripTTypes {
     tTR3  = 0x05,
     tTR4  = 0x06,
     tTR5  = 0x07
-  };
+  } TRiPFunctions;
 
   /*! 
     \struct TripRegisterValues
@@ -45,7 +45,7 @@ namespace TripTTypes {
     int tripRegGAIN;
     int tripRegIRSEL;
     int tripRegIWSEL;
-  };
+  } TripRegisterValues;
 
   //! Organize all the default register settings for a TRiP-T.
   static const TripRegisterValues DefaultTripRegisterValues = {

@@ -85,7 +85,7 @@ CRIM::CRIM( unsigned int address, const Controller* controller,
 
   // register value for control register (DAQ Mode control)
   // set crc & send to true and retransmit to false	
-  controlRegister = ControlRegisterCRCMask | ControlRegisterSendMask 
+  controlRegister = (ControlRegisterCRCMask | ControlRegisterSendMask) 
     & ~ControlRegisterRetransmitMask; 
 }
 

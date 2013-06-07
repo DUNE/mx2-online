@@ -8,6 +8,7 @@
 #include <iostream>
 #include "DAQWorkerArgs.h"
 #include "exit_codes.h"
+#include <stdlib.h>
 
 /*! 
   \class DAQArgs
