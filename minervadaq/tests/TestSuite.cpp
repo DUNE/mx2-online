@@ -243,7 +243,7 @@ void TestSQLiteTemp()
   std::cout << "Testing TestSQLiteTemp...";  
   logger.debugStream() << "Testing:--------------TestSQLiteTemp--------------";
 
-  char *tmpfile = ""; // default to temp db
+  const char *tmpfile = ""; // default to temp db
   sqlite3 *db = NULL;
   char *vfsName = NULL;  
   int rc = 0;

@@ -116,7 +116,8 @@ std::string Controller::ReportError(int error) const
   */
 int Controller::Initialize() 
 {
-  int error; 
+  int error;
+  unsigned int registerBuffer;
 
   try {
     error = CAENVME_Init(controllerType, (unsigned short)boardNumber,
@@ -147,18 +148,13 @@ int Controller::Initialize()
   // Get the status of the controller.
   CVRegisters registerAddress = cvStatusReg; 
   try {
-    shortBuffer = new unsigned short;
-    error = CAENVME_ReadRegister(handle, registerAddress, shortBuffer); //check controller status
+    error = CAENVME_ReadRegister(handle, registerAddress, &registerBuffer); //check controller status
     if (error) throw error;
   } catch (int e) {
     ReportError(e);
     ctrlLog.critStream() << "Unable to read the status register!";
-    delete shortBuffer;
     return e;
   } 
-
-  // Clean up memory.
-  delete shortBuffer;
 
   return 0;
 } 

@@ -107,7 +107,7 @@ namespace VMEModuleTypes {
     CRIMClearInterrupts        = 0xF020,
     CRIMInterruptConfig        = 0xF040,
     CRIMInterruptVectors       = 0xF800  // 16 bytes
-  };
+  } CRIMRegisters;
 
   /*! 
     \enum CRIMInterrupts
@@ -141,7 +141,7 @@ namespace VMEModuleTypes {
     TestPulseReceived      = 0x2000,  // CRIM only  // CG for CROC it is PLL1lock
     ResetReceived          = 0x4000,  // CRIM only
     EncodedCommandReceived = 0x8000   // CRIM only
-  };
+  } StatusBits;
 
   //-----------------
   /* Fast Commands */
@@ -156,7 +156,7 @@ namespace VMEModuleTypes {
     fcLoadTimer    = 0xC9,
     fcTriggerFound = 0x89,
     fcTriggerRearm = 0x85
-  };	
+  } FastCommands;	
 
 
   //---------------
@@ -170,13 +170,13 @@ namespace VMEModuleTypes {
   typedef enum ECROCClockModes { //typecast to unsigned int
     ECROCInternal = 0x0000,
     ECROCExternal = 0x8000
-  };
+  } ECROCClockModes;
 
   typedef enum ECROCTestPulseDelay { //typecast to unsigned int
     Disabled = 0x0000,
     Enabled  = 0x1000,
     Mask     = 0x01FF  // 1FF is mask for ecroc. ocroc was 3FF
-  };
+  } ECROCTestPulseDelay;
 
   // All CROC-E channel registers may have a n * 0x400000 modifier, where n is the channel number (0-3).
   typedef enum ECROCChannelRegisters { //typecast to unsigned int
@@ -191,7 +191,7 @@ namespace VMEModuleTypes {
     ECROCTxRxStatus                = 0x28040,
     ECROCReceiveMemoryPointer      = 0x28080,
     ECROCHeaderData                = 0x28100
-  };
+  } ECROCChannelRegisters;
 
   typedef enum ECROCRegisters { //typecast to unsigned int
     ECROCTimingSetup               = 0xFF000,
@@ -201,7 +201,7 @@ namespace VMEModuleTypes {
     ECROCTestPulse                 = 0xFF040,
     ECROCRdfePulseDelay            = 0xFF050,
     ECROCRdfePulseCommand          = 0xFF060
-  };
+  } ECROCRegisters;
 
   typedef enum ECCROCChannelFrameStatusBits { //typecast to unsigned short
     ReceiveMemoryFrameDiscType    = 0x0001,
@@ -220,7 +220,7 @@ namespace VMEModuleTypes {
     SendMemoryFrameSending        = 0x2000,  
     SendMemoryEmpty               = 0x4000,  
     SendMemoryFull                = 0x8000   
-  };
+  } ECCROCChannelFrameStatusBits;
 
   typedef enum ECROCChannelConfigurationBits { // typecast to unsigned short
     ConfigurationNFEBs0                 = 0x0001,
@@ -239,7 +239,8 @@ namespace VMEModuleTypes {
     ConfigurationHitMode                = 0x2000, /*!< 0: all hits, 1: deepest pipeline only */
     ConfigurationSendMemoryType         = 0x4000, /*!< 0: FIFO, 1: RAM */
     ConfigurationSequencerReadout       = 0x8000  /*!< 0: Disable, 1: Enable */
-  };
+  } ECROCChannelConfigurationBits;
+  
   static const int ConfigurationNFEBsMask                  = 0x000F;
   static const int ConfigurationEnableChannelResetMask     = ConfigurationEnableChannelReset;
   static const int ConfigurationEnableChannelTestPulseMask = ConfigurationEnableChannelTestPulse;

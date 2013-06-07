@@ -6,6 +6,7 @@
 #include "log4cppHeaders.h"
 #include "FrontEndBoard.h"
 #include "exit_codes.h"
+#include <stdlib.h>
 
 log4cpp::Category& FrontEndBoardLog = log4cpp::Category::getInstance(std::string("FrontEndBoard"));
 

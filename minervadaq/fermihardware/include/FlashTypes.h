@@ -16,7 +16,7 @@ namespace FlashTypes {
     opcMainMemoryProgramPageThroughBuffer2 = 0x85,
     opcMainMemoryPageRead = 0xD2,
     opcStatusRegisterRead = 0xD7
-  };
+  } OpCodes;
 
 
   //typecast to unsigned char
@@ -25,7 +25,7 @@ namespace FlashTypes {
     opcbMainMemoryProgramPageThroughBuffer1 = 4,
     opcbMainMemoryProgramPageThroughBuffer2 = 4,
     opcbStatusRegisterRead = 1
-  };
+  } OpCodeByteCounts;
 
 }
 
