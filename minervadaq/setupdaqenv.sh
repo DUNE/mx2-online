@@ -43,6 +43,17 @@ then
   export ET_HOME=$DAQROOT/et_9.0/Linux-x86_64-64
   export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
+  export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x64/:$LD_LIBRARY_PATH
+  # Add log4cpp support.
+  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
+elif [ $LOCALE == "D0TESTSTAND" ]
+then
+  #export DAQROOT=/work/mnvdaq
+  setup caenvme
+  export CAEN_DIR=$CAENVME_DIR
+  export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64
+  export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
+  # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
   export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
   # Add log4cpp support.
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
