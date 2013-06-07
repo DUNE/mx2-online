@@ -117,11 +117,7 @@ std::string Controller::ReportError(int error) const
 int Controller::Initialize() 
 {
   int error;
-#if CAEN_2_7
-  unsigned short registerBuffer;
-#else
   unsigned int registerBuffer;
-#endif
 
   try {
     error = CAENVME_Init(controllerType, (unsigned short)pciSlotNumber, 
