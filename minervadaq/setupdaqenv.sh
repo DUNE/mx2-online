@@ -21,6 +21,7 @@ then
     export DAQROOT=/work/software/mnvonline/mnvdaq
   fi
   export CAEN_DIR=/work/software/CAENVMElib
+  export CAEN_VERSION=CAEN_2_7
   export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64
   export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
@@ -34,6 +35,7 @@ elif [ $LOCALE == 'NEARLINE' ]
 then
   export DAQROOT=/scratch/nearonline/mirror/mnvdaq
   export CAEN_DIR=/scratch/nearonline/mirror/CAENVMElib
+  export CAEN_VERSION=CAEN_2_7
   export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64
   export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
@@ -44,6 +46,7 @@ elif [ $LOCALE == "NEARLINEDEV" ]
 then
   export DAQROOT=/work/mnvdaq
   export CAEN_DIR=/work/CAENVMElib
+  export CAEN_VERSION=CAEN_2_7
   export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64
   export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
@@ -55,6 +58,7 @@ then
   #export DAQROOT=/work/mnvdaq
   setup caenvme
   export CAEN_DIR=$CAENVME_DIR
+  export CAEN_VERSION=CAEN_2_30
   export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64
   export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
