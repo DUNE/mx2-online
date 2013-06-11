@@ -17,8 +17,8 @@ if [ $LOCALE == 'FNAL' ]
 then
   export DAQROOT=/work/software/croce/minervadaq/minervadaq
   export CAEN_DIR=/work/software/CAENVMElib
+  export ET_HOME=$DAQROOT/et_9.0/Linux-x86_64-64
   export CAEN_VERSION=CAEN_2_7
-  export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64
   export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
   export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
@@ -31,8 +31,8 @@ elif [ $LOCALE == 'NEARLINE' ]
 then
   export DAQROOT=/scratch/nearonline/mirror/minervadaq-croce/minervadaq
   export CAEN_DIR=/scratch/nearonline/mirror/CAENVMElib
+  export ET_HOME=$DAQROOT/et_9.0/Linux-x86_64-64
   export CAEN_VERSION=CAEN_2_7
-  export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64
   export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
   export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
@@ -42,8 +42,8 @@ elif [ $LOCALE == "NEARLINEDEV" ]
 then
   export DAQROOT=/work/mnvdaq
   export CAEN_DIR=/work/CAENVMElib
+  export ET_HOME=$DAQROOT/et_9.0/Linux-x86_64-64
   export CAEN_VERSION=CAEN_2_7
-  export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64
   export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
   export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x64/:$LD_LIBRARY_PATH
@@ -58,17 +58,6 @@ then
   export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64
   export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
-  export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x64/:$LD_LIBRARY_PATH
-  # Add log4cpp support.
-  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
-elif [ $LOCALE == "D0TESTSTAND" ]
-then
-  #export DAQROOT=/work/mnvdaq
-  setup caenvme
-  export CAEN_DIR=$CAENVME_DIR
-  export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64
-  export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
-  # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
   export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
   # Add log4cpp support.
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
@@ -77,6 +66,7 @@ else
   exit 1
 fi
 
+export BMS_HOME=${DAQROOT}/et_9.0/BMS
 export INSTALL_DIR=$ET_HOME
 export ET_USE64BITS=1
 
