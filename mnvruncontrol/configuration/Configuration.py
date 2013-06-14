@@ -54,9 +54,8 @@ configuration = {
 	"frnt_triggerWarningInterval" : ( Defaults.FRONTEND_WARNING_TRIGGER_INTERVAL,    "Interval between triggers before warning color (s)",  float ),
 
 	# hardware
-	"hw_eventFrames"              : ( Defaults.FRAMES,                               "Number of frames in an event",                        int   ),
-	"hw_frameSize"                : ( Defaults.EVENT_SIZE,                           "Size of one frame (bytes)",                           int   ),
-	"hw_numFEBs"                  : ( Defaults.NUM_FEBS,                             "Number of FEBs being read out",                       int   ),
+	"hw_etEventSize"              : ( Defaults.ET_EVENT_SIZE,                        "Size of one readout glob (bytes)",                    int   ),
+	"hw_numCROCs"                 : ( Defaults.NUM_CROCS,                            "Number of CROC channels being read out",              int   ),
 	"hw_LIBoxEnabled"             : ( Defaults.ENABLE_LI,                            "LI box is enabled",                                   bool  ),
 	"hw_LIBoxWaitForResponse"     : ( Defaults.LI_WAIT_FOR_RESPONSE,                 "Wait for response from LI box",                       bool  ),
 

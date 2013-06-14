@@ -1520,14 +1520,21 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		self.logger.info("  starting the ET system (using ET filename: '%s_RawData')...", self.configuration.et_filename)
 		
-		events = self.configuration.num_gates * Configuration.params["hw_eventFrames"] * Configuration.params["hw_numFEBs"]
+		# note that ET "events" are NOT spills.
+		# one ET "event" is a readout "glob" from the CROC...
+		n_et_events = self.configuration.num_gates * Configuration.params["hw_numCROCs"]
 
-		etsys_command = "%s/Linux-x86_64-64/bin/et_start -v -f %s/%s -n %d -s %d -c %d -p %d" % ( os.environ["ET_HOME"],
-		                                                                                          Configuration.params["mstr_etSystemFileLocation"],
-		                                                                                          self.configuration.et_filename + "_RawData",
-		                                                                                          events, Configuration.params["hw_frameSize"],
-		                                                                                          os.getpid(),
-		                                                                                          self.configuration.et_port )
+		args = {
+			"et_home": os.environ["ET_HOME"],
+			"et_file_location": Configuration.params["mstr_etSystemFileLocation"],
+			"et_file_name": self.configuration.et_filename + "_RawData",
+			"n_et_events": n_et_events,
+			"et_event_size": Configuration.params["hw_etEventSize"],
+			"master_process_pid": os.getpid(),
+			"et_port": self.configuration.et_port,
+          }
+		etsys_command = "%(et_home)s/Linux-x86_64-64/bin/et_start -v -f %(et_file_location)s/%(et_file_name)s -n %(n_et_events)d -s %(et_event_size)d -c %(master_process_pid)d -p %(et_port)d"
+		etsys_command %= args
 
 		self.DAQ_threads["et system"] = Threads.DAQthread(process_info=etsys_command, process_identity="ET system", postoffice=self.postoffice, env=os.environ, is_essential_service=True)
 

@@ -20,9 +20,8 @@ CONFIG_DB_LOCATION = "/work/conditions"
 LOGFILE_GATE_COUNT_INTERVAL = 50	# the master log file will get a notice every this many gates
 
 # Data acquisition properties.
-EVENT_SIZE                = 2048 
-FRAMES                    = 4
-NUM_FEBS                  = 509				# full detector
+ET_EVENT_SIZE             = 49152
+NUM_CROCS                 = 60				# full detector
 DAQ_HEADER_VERSION_STRING = "v09"
 
 # LI settings

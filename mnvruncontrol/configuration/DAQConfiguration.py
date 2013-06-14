@@ -24,7 +24,7 @@ from mnvruncontrol.configuration import MetaData
 # what's in the Configuration.
 _exceptions = { "detector" : MetaData.DetectorTypes[Configuration.params["mstr_detectorType"]],
                 "hw_init"  : MetaData.HardwareInitLevels[Configuration.params["mstr_hwInitLevel"]],
-                "num_febs" : Configuration.params["hw_numFEBs"] }
+                "num_crocs" : Configuration.params["hw_numCROCs"] }
 
 class DAQConfiguration:
 	""" Wraps the run-time detector configuration. """
@@ -39,7 +39,7 @@ class DAQConfiguration:
 	                   "detector"                 : MetaData.DetectorTypes.MINERVA,
 	                   "is_single_run"            : True,
 	                   "num_gates"                : 25,
-	                   "num_febs"                 : Defaults.NUM_FEBS,
+	                   "num_crocs"                : Defaults.NUM_CROCS,
 	                   "run_mode"                 : MetaData.RunningModes.ONE_SHOT,
 	                   "hw_config"                : MetaData.HardwareConfigurations.NOFILE,
 	                   "force_hw_reload"          : False,

@@ -200,7 +200,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		       + "      Number of gates: %d\n" \
 		       + "      Run mode: %s\n" \
 		       + "      Detector: %s\n" \
-		       + "      Number of FEBs: %d\n" \
+		       + "      Number of CROCs: %d\n" \
 		       + "      LI level: %s\n" \
 		       + "      LED group: %s\n" \
 		       + "      HW init level: %s\n" \
@@ -208,7 +208,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		       + "      ET port: %d\n" 
 		self.logger.info(logmsg, configuration.run, configuration.subrun, \
 		                 configuration.num_gates, configuration.run_mode.description, \
-		                 configuration.detector.description, configuration.num_febs, \
+		                 configuration.detector.description, configuration.num_crocs, \
 		                 configuration.li_level.description, configuration.led_groups.description, \
 		                 configuration.hw_init.description, configuration.et_filename, configuration.et_port)
 	
@@ -230,9 +230,9 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 				          "-g",  str(configuration.num_gates),
 				          "-m",  str(configuration.run_mode.hash),
 				          "-r",  str(configuration.run),
-					      "-s",  str(configuration.subrun),
+					     "-s",  str(configuration.subrun),
 				          "-d",  str(configuration.detector.hash),
-				          "-dc", str(configuration.num_febs),
+				          "-dc", str(configuration.num_crocs),
 				          "-ll", str(configuration.li_level.hash),
 				          "-lg", str(configuration.led_groups.hash),
 				          "-hw", str(configuration.hw_init.hash),
