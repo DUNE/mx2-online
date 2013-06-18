@@ -1,6 +1,7 @@
 .DS_Store
 *.o
 .*.swp
+*~
 
 # LaTeX detritus.
 minervadaq/doc/*.aux
