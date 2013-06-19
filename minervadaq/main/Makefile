@@ -23,6 +23,6 @@ $(OBJS): %.o: %.cpp
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(COMPILE_OPTIONS) -c $< -o $@
 
 clean:
-	rm *.o; 
-	cd $(DAQROOT)/bin; rm $(TARGET)
+	rm -f *.o; 
+	cd $(DAQROOT)/bin; rm -f $(TARGET)
 
