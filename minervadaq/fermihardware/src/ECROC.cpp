@@ -25,7 +25,7 @@ ECROC::ECROC(unsigned int address, const Controller* controller) :
   rdfePulseDelayAddress        = this->address + VMEModuleTypes::ECROCRdfePulseDelay;
   rdfePulseCommandAddress      = this->address + VMEModuleTypes::ECROCRdfePulseCommand;
 
-  ECROCLog.setPriority(log4cpp::Priority::DEBUG); 
+  ECROCLog.setPriority(log4cpp::Priority::INFO); 
 
   MakeChannels(); 
 }

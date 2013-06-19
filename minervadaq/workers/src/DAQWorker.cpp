@@ -68,8 +68,26 @@ void DAQWorker::InitializeHardware()
   // Read in hardware config here. For now, hard code...
 
   readoutWorker->AddCrate(0);
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 3, 0, 5, 0, 0 );
+  readoutWorker->AddCrate(1);
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 1, 10, 10, 10,  6 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 2, 10, 10,  9,  5 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 3, 10, 10, 10, 10 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 4,  9,  9,  9,  9 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 5, 10, 10, 10, 10 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 6,  9,  9,  9,  9 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 7, 10, 10, 10, 10 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 8,  9,  9,  9,  9 );
+  readoutWorker->GetVMECrateVector(1)->AddECROC( 1, 10, 10, 10, 10 );
+  readoutWorker->GetVMECrateVector(1)->AddECROC( 2,  9,  9,  9,  9 );
+  readoutWorker->GetVMECrateVector(1)->AddECROC( 3, 10, 10,  6,  6 );
+  readoutWorker->GetVMECrateVector(1)->AddECROC( 4,  9,  9,  5,  5 );
+  readoutWorker->GetVMECrateVector(1)->AddECROC( 5,  6,  6,  6,  2 );
+  readoutWorker->GetVMECrateVector(1)->AddECROC( 6,  5,  5,  5,  0 );
+  readoutWorker->GetVMECrateVector(1)->AddECROC( 7, 10, 10, 10, 10 );
   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
+  readoutWorker->GetVMECrateVector(0)->AddCRIM( 240 );
+  readoutWorker->GetVMECrateVector(1)->AddCRIM( 224 );
+  readoutWorker->GetVMECrateVector(1)->AddCRIM( 240 );
   readoutWorker->InitializeCrates( args->runMode );
 }
 
