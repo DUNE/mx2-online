@@ -29,7 +29,7 @@ then
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
 elif [ $LOCALE == 'NEARLINE' ]
 then
-  export DAQROOT=/scratch/nearonline/mirror/mnvdaq
+  export DAQROOT=/scratch/nearonline/mirror/minervadaq-croce/minervadaq
   export CAEN_DIR=/scratch/nearonline/mirror/CAENVMElib
   export CAEN_VERSION=CAEN_2_7
   export ET_HOME=$DAQROOT/et_12.0/Linux-x86_64-64

@@ -54,24 +54,20 @@
 #   fi
 # fi
 
-## nearline builds (always multi node)
-# if [ $HOSTNAME == "mnvnearline0.fnal.gov" ]; then 
-#   cp ${DAQROOT}/options/mnvnearline0.opts $DAQROOT/Make.options
-# elif [ "$HOSTNAME" == "mnvnearline1.fnal.gov" ]; then
-#   cp ${DAQROOT}/options/mnvnearline1.opts $DAQROOT/Make.options
-# elif [ "$HOSTNAME" == "mnvonlinebck2.fnal.gov" ]; then
-#   cp ${DAQROOT}/options/mnvonlinebck2.opts $DAQROOT/Make.options
-# fi
+# nearline builds (always multi node)
+if [ "$HOSTNAME" == "mnvnearlinelogger.fnal.gov" ]; then
+  cp ${DAQROOT}/options/mnvnearlinelogger.opts $DAQROOT/Make.options
+fi
 
-# pushd ${DAQROOT}/et_9.0/
-# gmake install
-# popd
+ pushd ${DAQROOT}/et_9.0/
+ gmake install
+ popd
 
-# if [ $# -gt 0 ]; then
-#   gmake all
-# else
-#   gmake relink
-# fi
+ if [ $# -gt 0 ]; then
+   gmake all
+ else
+   gmake relink
+ fi
 
 # if [ $HOSTNAME == "mnvonline2.fnal.gov" ]; then 
 #   echo " --- PLEASE NOTE! ---- "
