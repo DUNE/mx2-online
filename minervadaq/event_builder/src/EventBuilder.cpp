@@ -62,8 +62,12 @@ int main(int argc, char *argv[])
 
   char log_filename[100]; 
   // TODO: Setup precompiler options for logs on Nearline, other machines, and timestamping.
+  #ifdef NEARLINE
+  sprintf(log_filename, "/scratch/nearonline/var/logs/EventBuilderLog.txt"); 
+  #else
   sprintf(log_filename, "/work/data/logs/EventBuilderLog.txt"); 
-
+  #endif
+  
   eventBuilderAppender = new log4cpp::FileAppender("default", log_filename,false);
   eventBuilderAppender->setLayout(new log4cpp::BasicLayout());
   rootCategory.addAppender(eventBuilderAppender);
@@ -79,7 +83,11 @@ int main(int argc, char *argv[])
 
   char hostName[100];
   // TODO: Setup precompiler options for hostnames on multi-PC and various other locations.
+  #ifdef NEARLINE
+  sprintf(hostName, "mnvonline0.fnal.gov");
+  #else  
   sprintf(hostName, "localhost");
+  #endif
   eventbuilder.infoStream() << "Configured for a Single-PC Build..."; 
   eventbuilder.infoStream() << "ET system host machine = " << hostName;
 
