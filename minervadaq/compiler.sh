@@ -55,8 +55,8 @@
 # fi
 
 # nearline builds (always multi node)
-if [ "$HOSTNAME" == "mnvnearlinelogger.fnal.gov" ]; then
-  cp ${DAQROOT}/options/mnvnearlinelogger.opts $DAQROOT/Make.options
+if [ "$HOSTNAME" == "mnvonlinelogger.fnal.gov" ]; then
+  cp ${DAQROOT}/options/mnvonlinelogger.opts $DAQROOT/Make.options
 fi
 
  pushd ${DAQROOT}/et_9.0/
