@@ -160,6 +160,9 @@ int main(int argc, char *argv[])
     eventbuilder.fatalStream() << "ET System did not start properly!  Exiting...";
     exit(EXIT_ETSTARTUP_ERROR);
   } 
+#else
+  // prevents compiler warnings.
+  id = NULL;
 #endif
 
   // Set the level of debug output that we want (everything).
