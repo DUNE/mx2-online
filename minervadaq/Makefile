@@ -37,50 +37,41 @@ relink: FORCE
 	gmake tests;
 
 hardware-lib: FORCE
-	cd fermihardware/src; make;\
-	cd ../;
+	make -C fermihardware/src
 
 event_structure-lib: FORCE
-	cd event_structure/src; make;\
-	cd ../;
+	make -C event_structure/src
 
 workers-lib: FORCE
-	cd workers/src; make;\
-	cd ../;
+	make -C workers/src
 
 event_builder: FORCE
-	cd event_builder/src; make;\
-	cd ../;
+	make -C event_builder/src
 
 main: FORCE
-	cd main; make;
-	cd ../;
+	make -C main
 
 tests: FORCE
-	cd tests; make;
-	cd ../;
+	make -C tests
 
 event_builder-clean: FORCE
-	cd event_builder/src; gmake clean;
-	cd ../;
+	make -C event_builder/src clean
 
 main-clean: FORCE
-	cd main; gmake clean;
-	cd ../;
+	make -C main clean
 
 hardware-clean: FORCE
-	cd fermihardware/src; gmake clean;
+	make -C fermihardware/src clean
 
 workers-clean: FORCE
-	cd workers/src; gmake clean;
+	make -C workers/src clean
 
 event_structure-clean: FORCE
-	cd event_structure/src; make clean;
+	make -C event_structure/src clean
 
 tests-clean: FORCE
-	cd tests; gmake clean;
-	cd ../;
+	make -C tests clean
 
 FORCE:
-	if test -d lib; then echo LibOk; else mkdir -p lib; fi
-	if test -d bin; then echo BinOk; else mkdir -p bin; fi
+	@if test -d lib; then echo LibOk; else mkdir -p lib; fi
+	@if test -d bin; then echo BinOk; else mkdir -p bin; fi
