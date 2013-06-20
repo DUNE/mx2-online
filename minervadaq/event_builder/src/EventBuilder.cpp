@@ -169,12 +169,9 @@ int main(int argc, char *argv[])
   et_system_setdebug(sys_id, ET_DEBUG_INFO);
 
   // Create & attach to a new station for making the final output file.
-#if NEARLINEPRO||NEARLINEBCK
+#if NEARLINE
   et_station_create(sys_id,&cu_station,"RIODEJANEIRO",sconfig);
   eventbuilder.infoStream() << "Creating new station RIODEJANEIRO for output...";
-#elif NEARLINEDEV
-  et_station_create(sys_id,&cu_station,"ROCHESTER",sconfig);
-  eventbuilder.infoStream() << "Creating new station ROCHESTER for output...";
 #else
   et_station_create(sys_id,&cu_station,"CHICAGO_UNION",sconfig);
   eventbuilder.infoStream() << "Creating new station CHICAGO_UNION for output...";
@@ -228,7 +225,9 @@ int main(int argc, char *argv[])
       // more or less full time, but keeps the event builder running in time 
       // with the main acquisition sequence and avoids any possibility of pile
       // up.  still, keep an eye on this...
-      //nanosleep( &time, NULL );
+      #ifdef NEARLINE
+      nanosleep( &time, NULL );
+      #endif
 
       // if no events are available, this will return ET_ERROR_EMTPY.
       // since it's not ET_OK, it will force us to go around and ask
@@ -280,8 +279,12 @@ int main(int argc, char *argv[])
       eventbuilder.fatal("EventBuilder::main(): et_client: someone told me to wake up\n");
       continueRunning = false;
     }
+    else if (status == ET_ERROR_EMPTY) {
+      continue;  // continue silently here.  (see note on et_event_get() call above.)
+    }
 
     if (status != ET_OK) {
+      eventbuilder.warnStream() << "Got status " << status << " when I asked for an ET event!";
       continue;
     }
 
