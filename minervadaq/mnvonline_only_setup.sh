@@ -5,6 +5,7 @@ echo Your LOCALE is $LOCALE
 echo ---------------------------------------------------------------------------
 
 export DAQROOT=/work/software/croce/minervadaq/minervadaq
+export CAEN_VERSION=CAEN_2_7
 export CAEN_DIR=/work/software/CAENVMElib
 export ET_HOME=$DAQROOT/et_9.0/Linux-x86_64-64
 export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
