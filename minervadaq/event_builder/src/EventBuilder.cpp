@@ -230,6 +230,9 @@ int main(int argc, char *argv[])
       #endif
 
       // if no events are available, this will return ET_ERROR_EMTPY.
+      // also, if somebody else is using the next event
+      // (e.g., the online monitoring station, which usually attaches first)
+      // then we'll get ET_ERROR_BUSY.
       // since it's not ET_OK, it will force us to go around and ask
       // for another event (the 'continue' is below the specific error
       // handling that follows below).  note that the 'time' parameter
@@ -279,7 +282,7 @@ int main(int argc, char *argv[])
       eventbuilder.fatal("EventBuilder::main(): et_client: someone told me to wake up\n");
       continueRunning = false;
     }
-    else if (status == ET_ERROR_EMPTY) {
+    else if (status == ET_ERROR_EMPTY || status == ET_ERROR_BUSY) {
       continue;  // continue silently here.  (see note on et_event_get() call above.)
     }
 
@@ -301,8 +304,10 @@ int main(int argc, char *argv[])
     void *pdata;
     et_event_getdata(pe, &pdata); 
 
-    eventbuilder.debugStream() << "Put the event back into the ET system...";
-    status = et_event_put(sys_id, attach, pe); 
+   // ET documentation seems to indicate that in remote mode, a "put" is done
+   // automatically unless ET_MODIFY was ORed into ET_ASYNC, ET_TIMED, etc.
+//    eventbuilder.debugStream() << "Put the event back into the ET system...";
+//    status = et_event_put(sys_id, attach, pe); 
     evt_counter++;
     eventbuilder.debugStream() << "Now write the event to the binary output file...";
     eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
