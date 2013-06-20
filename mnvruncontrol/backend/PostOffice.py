@@ -865,7 +865,7 @@ class PostOffice(MessageTerminus):
 					msg = msg[len(MESSAGE_MAGIC)+CHECKSUM_BYTES:]
 					try:
 						message =  cPickle.loads(msg)
-					except cPickle.UnpicklingError:
+					except cPickle.UnpicklingError, TypeError:
 						logger().info("Garbage message from %s containing the appropriate message magic and checksum.  Message:\n%s", client_address, msg)
 			 			logger().warning("  ==> Ignoring.")
 			 			sock.close()
@@ -2021,7 +2021,8 @@ class DeliveryThread(threading.Thread):
 						
 
 			finally:
-				self.postoffice.delivery_locks[subscription].release()
+				if subscription in self.postoffice.delivery_locks:
+					self.postoffice.delivery_locks[subscription].release()
 				logger().log(5, "Released lock for subscription id %s (delivery): %s", subscription._id, subscription)		
 
 			self.busy = False
