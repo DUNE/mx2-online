@@ -1,11 +1,19 @@
 #!/bin/sh
 
-hostname=${HOSTNAME/.fnal.gov/}
-if [ -e "${DAQROOT}/options/$hostname.opts" ]; then
-  cp "${DAQROOT}/options/$hostname.opts" "${DAQROOT}/Make.options"
-else
-  echo "Warning: I don't see a customized .options file in options/ for your hostname: $HOSTNAME.  You'll get the defaults in Make.options!" 1>&2;
-  echo "If you don't want them, add the file: ${DAQROOT}/options/${hostname}.opts with the right Makefile macros."
+# Default to NuMI Setup
+cp ${DAQROOT}/options/numidaq.opts $DAQROOT/Make.options
+
+if   [ $LOCALE == "WH14TESTSTAND" ]; then
+  echo "Setting up Wilson Hall 14 SXO Test stand..."
+  cp ${DAQROOT}/options/wh14teststand.opts $DAQROOT/Make.options
+elif [ $LOCALE == "D0TESTSTAND" ]; then
+  echo "Setting up Wilson Hall 14 SXO Test stand..."
+  cp ${DAQROOT}/options/d0teststand.opts $DAQROOT/Make.options
+fi
+
+# nearline builds 
+if [ "$HOSTNAME" == "mnvonlinelogger.fnal.gov" ]; then
+  cp ${DAQROOT}/options/mnvonlinelogger.opts $DAQROOT/Make.options
 fi
 
  pushd ${DAQROOT}/et_9.0/
@@ -17,3 +25,7 @@ fi
  else
    gmake relink
  fi
+
+
+
+
