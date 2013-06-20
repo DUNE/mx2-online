@@ -69,6 +69,12 @@ void DAQWorker::InitializeHardware()
 
   readoutWorker->AddCrate(0);
   readoutWorker->AddCrate(1);
+#if WH14
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  0,  2,  2,  0 );
+  readoutWorker->GetVMECrateVector(1)->AddECROC( 3,  5,  0,  0,  0 );
+  readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
+#endif
+#if NUMI
   readoutWorker->GetVMECrateVector(0)->AddECROC( 1, 10, 10, 10,  6 );
   readoutWorker->GetVMECrateVector(0)->AddECROC( 2, 10, 10,  9,  5 );
   readoutWorker->GetVMECrateVector(0)->AddECROC( 3, 10, 10, 10, 10 );
@@ -88,6 +94,7 @@ void DAQWorker::InitializeHardware()
   readoutWorker->GetVMECrateVector(0)->AddCRIM( 240 );
   readoutWorker->GetVMECrateVector(1)->AddCRIM( 224 );
   readoutWorker->GetVMECrateVector(1)->AddCRIM( 240 );
+#endif
   readoutWorker->InitializeCrates( args->runMode );
 }
 
