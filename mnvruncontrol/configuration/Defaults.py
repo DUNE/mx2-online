@@ -111,6 +111,7 @@ OM_MAX_CONDOR_BACKLOG  = 2		# max number of jobs that can be backlogged in the C
 OM_USE_CONDOR          = False
 
 # readout nodes
+SLOWCONTROL_NUM_CRATES_ATTACHED      = 2
 SLOWCONTROL_NUM_WRITE_ATTEMPTS       = 3
 SLOWCONTROL_BEAM_FILE                = "beam.hwcfg"
 SLOWCONTROL_LI_FILE                  = "li.hwcfg"
