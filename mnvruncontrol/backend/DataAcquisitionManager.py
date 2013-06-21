@@ -776,7 +776,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		""" Starts the data acquisition process.
 		    Called only for the first subrun in a series. """
 		    
-		assert len(self.errors) == 0
+		if len(self.errors) > 0:
+			self.NewAlert(notice="There are outstanding errors.  Acknowledge them before starting a run.", severity=Alert.NOTICE)
+			return False
+
 		assert configuration.Validate()
 
 		# if the run number is changing, we should
@@ -1535,6 +1538,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
           }
 		etsys_command = "%(et_home)s/Linux-x86_64-64/bin/et_start -v -f %(et_file_location)s/%(et_file_name)s -n %(n_et_events)d -s %(et_event_size)d -c %(master_process_pid)d -p %(et_port)d"
 		etsys_command %= args
+		self.logger.debug("   et_start command: '%s'", etsys_command)
 
 		self.DAQ_threads["et system"] = Threads.DAQthread(process_info=etsys_command, process_identity="ET system", postoffice=self.postoffice, env=os.environ, is_essential_service=True)
 
