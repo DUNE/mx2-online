@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
       eventbuilder.fatal("EventBuilder::main(): et_client: someone told me to wake up\n");
       continueRunning = false;
     }
-    else if (status == ET_ERROR_EMPTY) {
+    else if (status == ET_ERROR_EMPTY || status == ET_ERROR_BUSY) {
       continue;  // continue silently here.  (see note on et_event_get() call above.)
     }
 
@@ -301,8 +301,21 @@ int main(int argc, char *argv[])
     void *pdata;
     et_event_getdata(pe, &pdata); 
 
+    #ifndef NEARLINE
+    // for whatever reason, the nearline event builder gets
+    // super confused if the nearline station is et_event_put()ing
+    // the events back into the stream.  (it always et_event_get()s
+    // events of exactly 1 null byte regardless of what the
+    // DAQ's Grand Central station is putting into the stream.)
+    // this doesn't solve the root cause, which I couldn't find,
+    // but it appears to at least manage the symptoms.
+    // make sure that the other event builder, the "Chicago Union" station,
+    // DOES et_event_put() however (so don't delete this code -- just leave
+    // it in the preprocessor exclusions), or the events will back up
+    // and none of them will ever make to the "Rio de Janeiro" station.
     eventbuilder.debugStream() << "Put the event back into the ET system...";
     status = et_event_put(sys_id, attach, pe); 
+    #endif
     evt_counter++;
     eventbuilder.debugStream() << "Now write the event to the binary output file...";
     eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
