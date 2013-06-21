@@ -316,10 +316,10 @@ class MonitorDispatcher(Dispatcher):
 				if thread.is_alive():
 					self.logger.info("   ==> Attempting to stop the event builder thread with PID: %d", thread.pid)
 					try:
-						self.thread.process.kill()
-						self.thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
+						thread.process.kill()
+						thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
 					except Exception, excpt:
-						self.logger.error("    ... event builder process couldn't be stopped!")
+						self.logger.error("    ... an event builder process couldn't be stopped!")
 						self.logger.exception("       ==> Error message:")
 						errors = True
 
