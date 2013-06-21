@@ -26,6 +26,7 @@ import sys
 import re
 import os
 import os.path
+import itertools
 import logging
 import logging.handlers
 
@@ -39,7 +40,7 @@ from mnvruncontrol.backend import Dispatcher
 from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import LIBox
 
-from mnvconfigurator.SlowControl.SC_MainMethods import SC as SlowControl
+from mnvconfigurator.SlowControlE2cr2.SC_MainMethods import SC as SlowControl
 
 #################################################
 #  these are the return codes used by the DAQ
@@ -68,7 +69,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		# which means that during daemonization the
 		# hardware link would get broken.
 		# it will be initialized when used.
-		self.slow_control = None
+		self.slow_controls = []
 		
 		# the LI box object.
 		# this one does all communication with the LI box
@@ -344,7 +345,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 			self.logger.exception("Hardware error while initializing:")
 			return e
 		
-		SCHWSetupThread(self, self.slow_control, fullpath, identity_to_report=identity_to_report)
+		SCHWSetupThread(self, self.slow_controls, fullpath, identity_to_report=identity_to_report)
 		
 		self.current_HW_file = hwfile
 
@@ -353,7 +354,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 	def sc_readboards(self):
 		""" Uses the slow control library to read a few parameters
 		    from the front-end boards:
-		     (1) the target - actual high voltages (in ADC counts).
+		     (1) the (target - actual) high voltages (in ADC counts).
 		     (2) the HV period (in seconds)
 
 		    On success, returns a list of dictionaries with the following
@@ -364,32 +365,48 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		self.logger.info("Manager wants high voltage details of front-end boards.")
 		try:
 			self.sc_init()
-			feblist = self.slow_control.HVReadAll(0)		# we want ALL boards, that is, those that deviate from target HV by at least 0...
+
+			formatted_feblist = []
+			for sc in self.slow_controls:
+				croc_feblist, croce_feblist = sc.HVReadAll(0)		# we want ALL boards, that is, those that deviate from target HV by at least 0...
+		
+				reformat = [
+					{
+						"crate"       : sc.boardNum,
+						"croc"        : (febdetails["FPGA"]["CROCE"] if "CROCE" in febdetails['FPGA'] else febdetails["FPGA"]["CROC"]),
+						"chain"       : febdetails["FPGA"]["Channel"],		# NOT a typo.  these are CHAINS -- they go from 0!
+						"board"       : febdetails["FPGA"]["FEB"],
+						"hv_deviation": febdetails["A-T"],
+						"period"      : (febdetails["PeriodMan"] if febdetails["Mode"] == "Manual" else febdetails["PeriodAuto"]),
+					} for febdetails in itertools.chain(croc_feblist, croce_feblist)
+				]
+				formatted_feblist += reformat
+
 		except Exception, e:
 			self.logger.exception("Error trying to read the voltages:")
 			self.logger.warning("No read performed.")
 			return e
 
-	
-		formatted_feblist = [ { "croc"        : febdetails['FPGA']["CROC"],
-		                        "chain"       : febdetails["FPGA"]["Channel"],		# NOT a typo.  these are CHAINS -- they go from 0!
-		                        "board"       : febdetails["FPGA"]["FEB"],
-		                        "hv_deviation": febdetails["A-T"],
-		                        "period"      : (febdetails["PeriodMan"] if febdetails["Mode"] == "Manual" else febdetails["PeriodAuto"]) } \
-		                          for febdetails in feblist ]
 		return formatted_feblist
 		
 	def sc_init(self):
-		if self.slow_control is None:
-			self.slow_control = SlowControl()
+		if len(self.slow_controls) == 0:
+			for i in range(Configuration.params["read_SCNumCrates"]):
+				sc = SlowControl(linkNum=0, boardNum=i)
+				if not sc:
+					continue
 
-		# find the appropriate VME devices: CRIMs, CROCs, DIGitizers....
-		self.slow_control.FindCRIMs()
-		self.slow_control.FindCROCs()
-		self.slow_control.FindDIGs()
+				# find the appropriate VME devices: CRIMs, CROCs, DIGitizers....
+				sc.FindCRIMs()
+				sc.FindCROCs()
+				sc.FindCROCEs()
+				sc.FindDIGs()
 		
-		# then load the FEBs into their various CROCs
-		self.slow_control.FindFEBs(self.slow_control.vmeCROCs)
+				# then load the FEBs into their various CROCs
+				sc.FindFEBs(sc.vmeCROCs)
+				
+				self.slow_controls.append(sc)
+
 
 #########################
 # DAQThread             #
@@ -528,11 +545,11 @@ class DAQThread(threading.Thread):
 class SCHWSetupThread(threading.Thread):
 	""" Thread to take care of the initialization of the slow control.
 	    Sends a message to the master node when it's done. """
-	def __init__(self, dispatcher, slowcontrol, filename, identity_to_report=None):
+	def __init__(self, dispatcher, slowcontrols, filename, identity_to_report=None):
 		threading.Thread.__init__(self)
 		
 		self.dispatcher = dispatcher
-		self.slow_control = slowcontrol
+		self.slow_controls = slowcontrols
 		self.filename = filename
 		self.identity = identity_to_report
 		
@@ -540,9 +557,10 @@ class SCHWSetupThread(threading.Thread):
 	
 	def run(self):
 		try:
-			self.slow_control.HWcfgFileLoad(self.filename)
+			for sc in self.slow_controls:
+				sc.HWcfgFileLoad(self.filename)
 		except Exception, e:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
-			self.dispatcher.logger.exception("Error trying to load the hardware config file")
+			self.dispatcher.logger.exception("Error trying to load the hardware config file for the crate %d slow control" % sc.boardNum)
 			self.dispatcher.logger.warning("Hardware was not configured...")
 			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=e, state="hw_error"))
 		else:
