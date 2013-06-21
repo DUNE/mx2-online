@@ -104,6 +104,15 @@ class DAQthread(threading.Thread):
 				self.postoffice.Send(PostOffice.Message(subject="frontend_info", update="process_data", data=newdata))
 
 		self.output_history += newdata
+		identity = self.process_identity.lower().replace(" ", "")
+		fname = os.path.join(Configuration.params["mstr_logfileLocation"], "%s.log" % identity)
+		print "Writing log for process '%s' to file: %s" % (self.process_identity, fname)
+		try:
+			with open(fname, "w") as outf:
+				outf.write(self.output_history)
+		except Exception as e:
+			print e
+			
 		self.output_history = self.output_history[-2000:]	# trim to 2000 characters
 
 		# if this an essential service and it's not being terminated
