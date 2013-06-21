@@ -350,7 +350,7 @@ class MonitorDispatcher(Dispatcher):
 		# clean up any old event builders that have finished
 		threads_to_keep = []
 		for thread in self.om_eb_threads:
-			if thread.process.returncode is None:
+			if thread.process is not None and thread.process.returncode is None:
 				threads_to_keep.append(thread)
 		self.om_eb_threads = threads_to_keep
 		self.om_eb_threads.append(OMThread(self, executable, "eventbuilder", et_config=et_config))
