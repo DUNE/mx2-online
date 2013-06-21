@@ -230,9 +230,6 @@ int main(int argc, char *argv[])
       #endif
 
       // if no events are available, this will return ET_ERROR_EMTPY.
-      // also, if somebody else is using the next event
-      // (e.g., the online monitoring station, which usually attaches first)
-      // then we'll get ET_ERROR_BUSY.
       // since it's not ET_OK, it will force us to go around and ask
       // for another event (the 'continue' is below the specific error
       // handling that follows below).  note that the 'time' parameter
@@ -304,10 +301,21 @@ int main(int argc, char *argv[])
     void *pdata;
     et_event_getdata(pe, &pdata); 
 
-   // ET documentation seems to indicate that in remote mode, a "put" is done
-   // automatically unless ET_MODIFY was ORed into ET_ASYNC, ET_TIMED, etc.
-//    eventbuilder.debugStream() << "Put the event back into the ET system...";
-//    status = et_event_put(sys_id, attach, pe); 
+    #ifndef NEARLINE
+    // for whatever reason, the nearline event builder gets
+    // super confused if the nearline station is et_event_put()ing
+    // the events back into the stream.  (it always et_event_get()s
+    // events of exactly 1 null byte regardless of what the
+    // DAQ's Grand Central station is putting into the stream.)
+    // this doesn't solve the root cause, which I couldn't find,
+    // but it appears to at least manage the symptoms.
+    // make sure that the other event builder, the "Chicago Union" station,
+    // DOES et_event_put() however (so don't delete this code -- just leave
+    // it in the preprocessor exclusions), or the events will back up
+    // and none of them will ever make to the "Rio de Janeiro" station.
+    eventbuilder.debugStream() << "Put the event back into the ET system...";
+    status = et_event_put(sys_id, attach, pe); 
+    #endif
     evt_counter++;
     eventbuilder.debugStream() << "Now write the event to the binary output file...";
     eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
