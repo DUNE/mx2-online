@@ -81,7 +81,7 @@ do
 done
 
 ETSYS=/work/data/etsys/${FILEROOT}_RawData
-OUTFL=/work/data/rawdata/${FILEROOT}_%4.4d_RawData.dat
+OUTFL=/work/data/rawdata/${FILEROOT}_RawData.dat
 
 xterm ${DEBUG} -geometry 80x30+380+1 -sl 1000 -e ./start_et_system $ETSYS $NGATES $PORT &
 export ET_SYST_TERM_PID=$!
@@ -113,7 +113,7 @@ while [ "$ETMONPID" == "" ]; do
 done
 sleep 1s
 
-xterm ${DEBUG} -geometry 80x28+380+421 -sl 10000 -e ./start_eb_service $ETSYS "$OUTFL" $PORT &
+xterm ${DEBUG} -geometry 80x28+380+421 -sl 10000 -e ./start_eb_service $ETSYS $OUTFL $PORT &
 export EB_SERV_TERM_PID=$!
 echo EB_SERV_TERM_PID=${EB_SERV_TERM_PID}
 echo $EB_SERV_TERM_PID > $EBSRVTERMPIDFILE 
@@ -145,6 +145,5 @@ echo PORT       = $PORT
 EXE=${DAQROOT}/bin/minervadaq
 ARGS="-et $FILEROOT -g $NGATES -m $RUNMODE -r $RUN -s $SUB -d $DETECTOR -cf $CONFIGFILE -dc $NFEBS -ll $LEDLEVEL -lg $LEDGROUP -hw $INITLEVEL -p $PORT"
 echo "$EXE $ARGS"
-echo ${EXE} ${ARGS}
 ${EXE} ${ARGS}
 

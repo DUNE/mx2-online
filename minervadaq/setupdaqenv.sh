@@ -75,7 +75,7 @@ elif [ $LOCALE == "D0TESTSTAND" ]; then
   export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
   # Add log4cpp support.
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
-elif [ $LOCAL == "WH14TESTSTAND" ]; then
+elif [ $LOCALE == "WH14TESTSTAND" ]; then
   SETUP_DIR=`dirname ${BASH_SOURCE[0]}`
   export DAQROOT=`readlink -f ${SETUP_DIR}`
   export CODA_VERSION=et_9.0
@@ -95,7 +95,6 @@ elif [ $LOCAL == "WH14TESTSTAND" ]; then
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
 else
   echo Unsupported LOCALE!
-  exit 1
 fi
 
 export INSTALL_DIR=$ET_HOME
