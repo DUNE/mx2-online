@@ -25,5 +25,5 @@ $(OBJS): %.o: %.cpp
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(COMPILE_OPTIONS) -c $< -o $@
 
 clean:
-	rm *.o; 
-	cd $(DAQROOT)/lib; rm $(TARGET)
+	rm -f *.o; 
+	cd $(DAQROOT)/lib; rm -f $(TARGET)

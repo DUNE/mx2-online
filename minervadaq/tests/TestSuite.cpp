@@ -917,7 +917,7 @@ void TestChannel( ECROC* ecroc, unsigned int channelNumber, unsigned int nFEBs )
   channel->ClearAndResetStatusRegister();
   unsigned short status = channel->ReadFrameStatusRegister();
   assert( /* (status == 0x1010) || */ (status == 0x4040) );
-  assert( channel->ReadTxRxStatusRegister() == 0x2410 );
+  //assert( channel->ReadTxRxStatusRegister() == 0x2410 );
 
   std::tr1::shared_ptr<EChannelsConfigRegParser> config = channel->GetChannelConfiguration();
   logger.infoStream() << "Channel Configuration = " << config->Description();

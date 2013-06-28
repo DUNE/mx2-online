@@ -30,6 +30,6 @@ $(OBJS): %.o: %.cpp
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(COMPILE_OPTIONS) -c $< -o $@
 
 clean:
-	rm *.o; 
-	rm ../../lib/libminerva_workers.so;
+	rm -f *.o; 
+	rm -f ../../lib/libminerva_workers.so;
 
