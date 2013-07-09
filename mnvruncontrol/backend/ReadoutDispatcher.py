@@ -393,7 +393,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		if len(self.slow_controls) == 0:
 			for i in range(Configuration.params["read_SCNumCrates"]):
 				sc = SlowControl(linkNum=0, boardNum=i)
-				if not sc:
+				if not sc or not sc.controller:
 					continue
 
 				# find the appropriate VME devices: CRIMs, CROCs, DIGitizers....
@@ -404,7 +404,8 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		
 				# then load the FEBs into their various CROCs
 				sc.FindFEBs(sc.vmeCROCs)
-				
+				sc.FindCROCEFEBs(sc.vmeCROCEs)				
+
 				self.slow_controls.append(sc)
 
 
