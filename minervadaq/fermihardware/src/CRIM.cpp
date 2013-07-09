@@ -462,7 +462,7 @@ void CRIM::SendSoftwareGate() const
   is "dumb" with respect to interrupts and only polls the interrupt status. See older
   versions of the DAQ software for guesses on how to handle asserted interrupts.
   */
-int CRIM::WaitForIRQ( /*sig_atomic_t const & continueFlag*/ const bool *status ) const
+int CRIM::WaitForIRQ( const sig_atomic_t * status ) const
 {
   int success = 0;
 #ifndef GOFAST

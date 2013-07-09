@@ -169,7 +169,7 @@ int main( int argc, char * argv[] )
       crimCardAddress, nch0, nch1, nch2, nch3 );
   delete rworker;
 
-  bool continueRunning = true;
+  sig_atomic_t continueRunning = true;
   DAQWorker * dworker = new DAQWorker( args, log4cpp::Priority::DEBUG, &continueRunning );
   TestDAQWorker( dworker );
 
@@ -358,7 +358,7 @@ ReadoutWorker * GetAndTestReadoutWorker( int controllerID, unsigned int ecrocCar
 {
   std::cout << "Testing Get and Test ReadoutWorker...";  
   ReadoutWorker *worker = NULL;
-  bool status = true;
+  sig_atomic_t status = true;
   worker = new ReadoutWorker( log4cpp::Priority::DEBUG, &status, true );
   assert( NULL != worker );
   logger.infoStream() << "Got the ReadoutWorker.";

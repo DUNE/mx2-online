@@ -30,7 +30,7 @@ class ReadoutWorker {
   std::vector<const EChannels*> readoutChannels;
   std::vector<const EChannels*>::iterator currentChannel;
 
-  const bool *const status;
+  const sig_atomic_t *const status;
   bool vmeInit;    
   Modes::RunningModes runningMode;
 
@@ -51,7 +51,7 @@ class ReadoutWorker {
   public:
 
   explicit ReadoutWorker( log4cpp::Priority::Value priority, 
-      bool *status, bool VMEInit=false); 
+      sig_atomic_t *status, bool VMEInit=false); 
   ~ReadoutWorker();
 
   void AddCrate( unsigned int crateID );

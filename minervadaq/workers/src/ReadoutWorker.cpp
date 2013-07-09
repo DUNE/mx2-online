@@ -22,7 +22,7 @@ const unsigned int ReadoutWorker::microSecondSleepDuration = 600;
 
 //---------------------------
 ReadoutWorker::ReadoutWorker( log4cpp::Priority::Value priority, 
-    bool *theStatus, bool VMEInit ) :
+    sig_atomic_t *theStatus, bool VMEInit ) :
   status(theStatus),
   vmeInit(VMEInit),
   runningMode((Modes::RunningModes)0)

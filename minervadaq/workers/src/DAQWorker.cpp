@@ -18,7 +18,7 @@ log4cpp::Category::getInstance(std::string("daqWorker"));
 //---------------------------------------------------------
 DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs, 
     log4cpp::Priority::Value priority,
-    bool *theStatus ) :
+    sig_atomic_t *theStatus ) :
   args(theArgs),
   status(theStatus),
   declareEventsToET(false)
