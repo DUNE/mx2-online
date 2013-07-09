@@ -112,7 +112,7 @@ class CRIM : public VMECommunicator {
     void ResetCosmicLatch() const;
     void ResetSequencerLatch() const;
     void SendSoftwareGate() const;
-    int WaitForIRQ( /*sig_atomic_t const & continueFlag*/ const bool *status ) const;
+    int WaitForIRQ( const sig_atomic_t * status ) const;
     void AcknowledgeIRQ() const;
     unsigned int MINOSSGATE() const;
 

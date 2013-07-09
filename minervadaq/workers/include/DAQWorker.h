@@ -27,7 +27,7 @@ class DAQWorker {
 
   private:  
     const DAQWorkerArgs* args;
-    const bool *const status;
+    const sig_atomic_t *const status;
     bool declareEventsToET;
 
     ReadoutStateRecorder* stateRecorder;
@@ -50,7 +50,7 @@ class DAQWorker {
 
   public:
     explicit DAQWorker( const DAQWorkerArgs* theArgs, 
-        log4cpp::Priority::Value priority, bool *status );
+        log4cpp::Priority::Value priority, sig_atomic_t *status );
     ~DAQWorker();
 
     int SetUpET();  

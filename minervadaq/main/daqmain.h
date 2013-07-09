@@ -9,6 +9,6 @@
 void SetUpSigAction();
 void quitsignal_handler(int signum);
 
-bool continueRunning; /*!< Global status var to capture SIGINT, etc. signals from the RunControl. */
+sig_atomic_t continueRunning; /*!< Global status var to capture SIGINT, etc. signals from the RunControl. */
 
 #endif
