@@ -1145,11 +1145,14 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		self.waiting = False
 		
+		unstopped_nodes = []
 		for node_name in self.remote_nodes:
 			node = self.remote_nodes[node_name]
 			if node.type in (RemoteNode.READOUT, RemoteNode.MTEST) and not node.completed:
-				self.NewAlert(notice="Not all nodes were stopped.  The next subrun could be problematic...", severity=Alert.WARNING)
-				break
+				unstopped_nodes.append(node_name)
+
+		if len(unstopped_nodes) > 0:
+			self.NewAlert(notice="The following nodes could not be stopped: %s.  The next subrun could be problematic..." % unstopped_nodes, severity=Alert.WARNING)
 		
 		for threadname in self.DAQ_threads:		
 			self.current_state = "Subrun finishing:\nSignalling ET threads..."
@@ -1165,7 +1168,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			# we also cut off its display feed and silence
 			# any warnings about it closing down.
 			if threadname == "et system":
-				os.kill(thread.process.pid, signal.SIGHUP)
+				try:
+					os.kill(thread.process.pid, signal.SIGHUP)
+				# if the reason we're stopping is that
+				# the ET system process has died,
+				# we shouldn't crash.
+				except OSError:
+					pass
 				thread.relay_output = False
 				thread.is_essential_service = False
 
