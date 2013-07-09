@@ -15,7 +15,8 @@ echo
 echo Your LOCALE is $LOCALE
 echo ---------------------------------------------------------------------------
 
-if [ $LOCALE == 'FNAL' ]; then
+if [ $LOCALE == "FNAL" ]; then
+  echo "Setting up FNAL..."
   export DAQROOT=/work/software/croce/minervadaq/minervadaq
   export CODA_VERSION=et_9.0
   export CODA_HOME=${DAQROOT}/${CODA_VERSION}
@@ -32,7 +33,7 @@ if [ $LOCALE == 'FNAL' ]; then
   export PATH=$DAQROOT/sqlite/bin:$PATH
   # Add /usr/local/lib for log4cpp support.
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
-elif [ $LOCALE == 'NEARLINE' ]; then
+elif [ $LOCALE == "NEARLINE" ]; then
   export DAQROOT=/scratch/nearonline/mirror/minervadaq-croce/minervadaq
   export CAEN_DIR=/scratch/nearonline/mirror/CAENVMElib
   export CAEN_VERSION=CAEN_2_7
