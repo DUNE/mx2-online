@@ -99,6 +99,12 @@ void DAQWorker::InitializeHardware()
 }
 
 //---------------------------------------------------------
+void DAQWorker::CleanupHardware()
+{
+  readoutWorker->CleanupHardware();
+}
+
+//---------------------------------------------------------
 int DAQWorker::SetUpET()  
 {
   daqWorker.infoStream() << "Setting up ET...";
@@ -164,32 +170,32 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
     daqWorker.debugStream() << "  ->ET is Alive!";
     et_event *pe;         
     EventHandler *pdata;  
-    int status = et_event_new(sys_id, attach, &pe, ET_SLEEP, NULL,
+    int etstatus = et_event_new(sys_id, attach, &pe, ET_SLEEP, NULL,
         sizeof(struct EventHandler)); 
-    if (status == ET_ERROR_DEAD) {
+    if (etstatus == ET_ERROR_DEAD) {
       daqWorker.crit("ET system is dead in ContactEventBuilder!");
       break;
-    } else if (status == ET_ERROR_TIMEOUT) {
+    } else if (etstatus == ET_ERROR_TIMEOUT) {
       daqWorker.crit("Got an ET timeout in ContactEventBuilder!");
       break;
-    } else if (status == ET_ERROR_EMPTY) {
+    } else if (etstatus == ET_ERROR_EMPTY) {
       daqWorker.crit("No ET events in ContactEventBuilder!");
       break;
-    } else if (status == ET_ERROR_BUSY) {
+    } else if (etstatus == ET_ERROR_BUSY) {
       daqWorker.crit("ET Grandcentral is busy in ContactEventBuilder!");
       break;
-    } else if (status == ET_ERROR_WAKEUP) {
+    } else if (etstatus == ET_ERROR_WAKEUP) {
       daqWorker.crit("ET wakeup error in ContactEventBuilder!");
       break;
-    } else if ((status == ET_ERROR_WRITE) || (status == ET_ERROR_READ)) {
+    } else if ((etstatus == ET_ERROR_WRITE) || (etstatus == ET_ERROR_READ)) {
       daqWorker.crit("ET socket communication error in ContactEventBuilder!");
       break;
-    } if (status != ET_OK) {
+    } if (etstatus != ET_OK) {
       daqWorker.fatal("ET et_producer: error in et_event_new in ContactEventBuilder!");
       return false;
     }
     // Put data into the event.
-    if (status == ET_OK) {
+    if (etstatus == ET_OK) {
       daqWorker.debugStream() << "Putting Event into ET System...";
       et_event_getdata(pe, (void **)&pdata); 
 #ifndef GOFAST
@@ -209,8 +215,8 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
     } 
 
     // Put the event into the ET system.
-    status = et_event_put(sys_id, attach, pe); 
-    if (status != ET_OK) {
+    etstatus = et_event_put(sys_id, attach, pe); 
+    if (etstatus != ET_OK) {
       daqWorker.fatal("et_producer: put error in ContactEventBuilder!");
       return false;
     }
@@ -278,7 +284,7 @@ bool DAQWorker::BeginNextGate()
   readoutWorker->ResetCurrentChannel();
   Triggers::TriggerType triggerType = stateRecorder->GetNextTriggerType();
   triggerTime = readoutWorker->Trigger( triggerType );
-  /* triggerTime = readoutWorker->ManualTrigger( triggerType ); */
+  if (0 == triggerTime) return false; // We were interrupted during the CRIM wait.
   stateRecorder->SetGateStartTime( triggerTime );
 
   return stateRecorder->BeginNextGate();

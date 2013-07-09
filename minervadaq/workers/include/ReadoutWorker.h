@@ -58,11 +58,11 @@ class ReadoutWorker {
   void InitializeCrates( Modes::RunningModes theRunningMode );
   std::vector<VMECrate*>* GetVMECrateVector();
   VMECrate* GetVMECrateVector( int index );
+  void CleanupHardware();  
 
   unsigned int GetMINOSSGATE() const;
   unsigned long long GetNowInMicrosec() const;
   unsigned long long Trigger( Triggers::TriggerType triggerType );
-  unsigned long long ManualTrigger( Triggers::TriggerType triggerType );
   void ResetCurrentChannel();
   bool MoveToNextChannel();
   const EChannels * CurrentChannel() const;
