@@ -489,11 +489,12 @@ class OMThread(threading.Thread):
 				except IOError:
 					i += 1
 					continue
-				
-				# if we successfully locked the file, we need to start at its beginning.
-				fileobj.truncate(0)
-				
+
 				try:
+				
+					# if we successfully locked the file, we need to start at its beginning.
+					fileobj.truncate(0)
+				
 					starttime = time.time()
 
 					# note that shlex.split doesn't understand Unicode...
