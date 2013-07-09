@@ -55,6 +55,7 @@ class DAQWorker {
 
     int SetUpET();  
     void InitializeHardware();  
+    void CleanupHardware();  
     void TakeData();
     bool CloseDownET();
     bool SendSentinel();
