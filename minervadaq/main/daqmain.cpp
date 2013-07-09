@@ -36,6 +36,9 @@ int main( int argc, char * argv[] )
   daqmain.setPriority(log4cpp::Priority::DEBUG);
   daqmain.infoStream() << "Starting MinervaDAQ...";
 
+  // set the signal handlers
+  SetUpSigAction();
+
   continueRunning = true;
   DAQWorker * worker = new DAQWorker( args, log4cpp::Priority::DEBUG, &continueRunning );
 
@@ -69,6 +72,7 @@ int main( int argc, char * argv[] )
   delete args;
   log4cpp::Category::shutdown();
 
+  //std::cout << "Sent sentinel: " << sentSentinel << std::endl;
   return (sentSentinel) ? EXIT_CLEAN_SENTINEL : EXIT_CLEAN_NOSENTINEL;
 }
 
