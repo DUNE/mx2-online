@@ -53,6 +53,7 @@ int main( int argc, char * argv[] )
       if (worker->CloseDownET()) {
         daqmain.infoStream() << "Detached from ET station..."; 
       }
+      worker->CleanupHardware();
     }
     catch (FHWException &e) {
       worker->WriteExceptionToDB(e);
