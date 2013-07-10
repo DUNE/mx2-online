@@ -369,9 +369,22 @@ void DAQWorker::DestroyEventHandler( struct EventHandler * handler )
 }
 
 //---------------------------------------------------------
-int DAQWorker::WriteExceptionToDB( const FHWException & ex )
+int DAQWorker::WriteExceptionToDB( const FHWException & ex ) const
 {
   return dbWorker->AddErrorToDB( ex, stateRecorder->GetGlobalGate() );
+}
+
+//---------------------------------------------------------
+int DAQWorker::WriteRunDataToDB() const
+{
+  daqWorker.debugStream() << "Adding run data to db...";
+  return dbWorker->AddRunDataToDB( 
+      stateRecorder->GetFirstGate(),
+      stateRecorder->GetGlobalGate(),
+      args->runNumber,
+      args->subRunNumber,
+      (int)args->runMode
+      );
 }
 
 #endif

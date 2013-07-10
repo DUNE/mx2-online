@@ -68,6 +68,7 @@ int main( int argc, char * argv[] )
   }
 
   daqmain.infoStream() << "Finished MinervaDAQ...";
+  worker->WriteRunDataToDB();
 
   delete worker;
   delete args;

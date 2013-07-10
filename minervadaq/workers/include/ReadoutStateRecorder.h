@@ -56,7 +56,8 @@ class ReadoutStateRecorder {
   bool BeginNextGate();
   bool FinishGate();
 
-  Triggers::TriggerType GetNextTriggerType();
+  Triggers::TriggerType GetNextTriggerType(); // Get and set...
+  Modes::RunningModes GetRunMode() const;
 
   void SetMINOSSGATE( unsigned int gateTime );
   void SetGateStartTime( unsigned long long theStartTime );

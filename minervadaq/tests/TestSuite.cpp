@@ -205,7 +205,7 @@ void TestSQLite( EChannels* channel )
   assert( 0 == stat( dbname.c_str(), &sb ) );
   logger.debug("DB File exists? File size: %lld bytes", (long long) sb.st_size);
   if (0 == sb.st_size) {
-    rc = dbWorker->CreateStandardTable();
+    rc = dbWorker->CreateStandardHWErrorsTable();
     assert( SQLITE_OK == rc );
   }
 
@@ -215,16 +215,23 @@ void TestSQLite( EChannels* channel )
   std::string message = "test message";
   FHWException * ex = new FHWException(crate,type,address,message);
 
-  rc = dbWorker->AddErrorToDB( *ex, 938L );
+  struct timeval t;
+  unsigned long long start = 0L;
+  gettimeofday(&t, NULL);
+  start = (unsigned long long)(t.tv_sec);
+
+  rc = dbWorker->AddErrorToDB( *ex, start );
   assert( SQLITE_OK == rc );
 
-  // We have to sleep to keep timestamps unique in the db
+  // sleep to keep timestamps unique in the db - lame, but simple
   sleep(1);
   try {
     channel->throwIfError( 1, "test error" );
   }
   catch (FHWException &ex) {
-    rc = dbWorker->AddErrorToDB( ex, 391L );
+    gettimeofday(&t, NULL);
+    start = (unsigned long long)(t.tv_sec);
+    rc = dbWorker->AddErrorToDB( ex, start );
     assert( SQLITE_OK == rc );
   }
 

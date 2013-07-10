@@ -86,8 +86,14 @@ bool ReadoutStateRecorder::FinishGate()
 }
 
 //---------------------------
+Modes::RunningModes ReadoutStateRecorder::GetRunMode() const
+{
+  return args->runMode;
+}
+
+//---------------------------
 //! Calculate the next Triggers::TriggerType based on the gate and mode.
-Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
+Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType() 
 {
   using namespace Triggers;
   using namespace Modes;
