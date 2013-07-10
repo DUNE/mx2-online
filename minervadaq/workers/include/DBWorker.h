@@ -30,7 +30,8 @@ class DBWorker {
     ~DBWorker();
 
     int CreateStandardTable() const;
-    int AddErrorToDB( const FHWException & ex ) const;
+    int AddErrorToDB( const FHWException & ex,
+        unsigned long long globalGate ) const;
 };
 
 #endif
