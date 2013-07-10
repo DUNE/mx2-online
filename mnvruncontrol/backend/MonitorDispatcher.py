@@ -54,8 +54,7 @@ gaudi_processes = {
 # to submit jobs manually.
 def CondorCommand(fmt):
 	executable =  "$HOME/scripts/mnvnearline_jobsub -l \"notify_user = %(notify)s\""
-	executable += " -r %(release)s -i %(siteroot)s -t %(daqrecvroot)s"
-	executable += " -e ETPATTERN -L %(etpattern)s_LogFile.joblog"
+	executable += " -e User_release_area -e ETPATTERN -L %(etpattern)s.joblog"
 	executable += " -f %(rawdatafile)s -f /scratch/nearonline/var/job_dump/pedestal_table.dat -f /scratch/nearonline/var/job_dump/current_gain_table.dat"
 	executable += " -q"
 	executable += " %(executable)s"
