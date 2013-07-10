@@ -85,16 +85,17 @@ int DBWorker::CreateStandardTable() const
   sqlite3_stmt *stmt = NULL;
 
   const char * sqlstr = "CREATE TABLE HWERRORS ( \
-                         ETIMESTAMP   TIMESTAMP, \
-                         CRATE        INTEGER NOT NULL, \
-                         FEB          INTEGER NOT NULL, \
-                         VMETYPE      INTEGER NOT NULL, \
-                         ADDRESS      UNSIGNED BIG INT NOT NULL, \
-                         CRIM         INTEGER NOT NULL, \
-                         CROC         INTEGER NOT NULL, \
-                         CHANNEL      INTEGER NOT NULL, \
-                         MESSAGE      TEXT, \
-                         PRIMARY KEY (ETIMESTAMP));";
+    GLOBALGATE UNSIGNED BIG INT NOT NULL, \
+    ETIMESTAMP TIMESTAMP, \
+    CRATE INTEGER NOT NULL, \
+    FEB INTEGER NOT NULL, \
+    VMETYPE INTEGER NOT NULL, \
+    ADDRESS UNSIGNED BIG INT NOT NULL, \
+    CRIM INTEGER NOT NULL, \
+    CROC INTEGER NOT NULL, \
+    CHANNEL INTEGER NOT NULL, \
+    MESSAGE TEXT, \
+    PRIMARY KEY (GLOBALGATE));";
 
   int rc = sqlite3_prepare_v2(
       dataBase,
@@ -118,7 +119,8 @@ int DBWorker::CreateStandardTable() const
 }
 
 //---------------------------------------------------------
-int DBWorker::AddErrorToDB( const FHWException & ex ) const
+int DBWorker::AddErrorToDB( const FHWException & ex, 
+    unsigned long long globalGate ) const
 {
   if (!dbIsAvailable) return SQLITE_ERROR;
 
@@ -137,13 +139,14 @@ int DBWorker::AddErrorToDB( const FHWException & ex ) const
   dbWorker.debugStream() << " Parsed Address CRIM  Number = " << crim; 
   dbWorker.debugStream() << " Parsed Address ECROC Number = " << croc;
   dbWorker.debugStream() << " Parsed Address EChnl Number = " << chnl;
+  dbWorker.debugStream() << " Global Gate: " << globalGate;
   dbWorker.debugStream() << " Message: " << msg;
 
   sqlite3_stmt *stmt = NULL;
   int idx = -1;
   const char * sqlstr = 
     "INSERT INTO HWERRORS VALUES ( \
-    CURRENT_TIMESTAMP, :crate, :feb, :vmetype, :address, :crim, :croc, :channel, :message );"; 
+    :globalGate, CURRENT_TIMESTAMP, :crate, :feb, :vmetype, :address, :crim, :croc, :channel, :message );"; 
 
     int rc = sqlite3_prepare_v2( 
         dataBase,
@@ -154,6 +157,13 @@ int DBWorker::AddErrorToDB( const FHWException & ex ) const
 
   if (SQLITE_OK != rc) {
     dbWorker.errorStream() << "sqlite3_prepare failed with rc = " << rc;
+    return rc;
+  }
+
+  idx = sqlite3_bind_parameter_index( stmt, ":globalGate" );
+  rc = sqlite3_bind_int( stmt, idx, globalGate );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
     return rc;
   }
 
