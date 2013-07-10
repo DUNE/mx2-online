@@ -51,6 +51,8 @@ class ReadoutStateRecorder {
       log4cpp::Priority::Value priority ); 
   ~ReadoutStateRecorder();
 
+  unsigned long long GetFirstGate() const;
+  unsigned long long GetGlobalGate() const;
   bool BeginNextGate();
   bool FinishGate();
 
