@@ -134,6 +134,18 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
 }
 
 //---------------------------
+unsigned long long ReadoutStateRecorder::GetFirstGate() const
+{
+  return firstGate;
+}
+
+//---------------------------
+unsigned long long ReadoutStateRecorder::GetGlobalGate() const
+{
+  return globalGate;
+}
+
+//---------------------------
 void ReadoutStateRecorder::GetGlobalGateFromFile()
 {
   std::fstream globalGateFile((args->globalGateLogFileName).c_str());
