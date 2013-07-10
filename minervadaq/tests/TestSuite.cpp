@@ -215,7 +215,7 @@ void TestSQLite( EChannels* channel )
   std::string message = "test message";
   FHWException * ex = new FHWException(crate,type,address,message);
 
-  rc = dbWorker->AddErrorToDB( *ex );
+  rc = dbWorker->AddErrorToDB( *ex, 938L );
   assert( SQLITE_OK == rc );
 
   // We have to sleep to keep timestamps unique in the db
@@ -224,7 +224,7 @@ void TestSQLite( EChannels* channel )
     channel->throwIfError( 1, "test error" );
   }
   catch (FHWException &ex) {
-    rc = dbWorker->AddErrorToDB( ex );
+    rc = dbWorker->AddErrorToDB( ex, 391L );
     assert( SQLITE_OK == rc );
   }
 
