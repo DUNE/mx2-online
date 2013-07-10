@@ -59,7 +59,8 @@ class DAQWorker {
     void TakeData();
     bool CloseDownET();
     bool SendSentinel();
-    int WriteExceptionToDB( const FHWException & ex );
+    int WriteExceptionToDB( const FHWException & ex ) const;
+    int WriteRunDataToDB() const;
 };
 
 #endif
