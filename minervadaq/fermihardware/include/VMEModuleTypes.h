@@ -222,6 +222,25 @@ namespace VMEModuleTypes {
     SendMemoryFull                = 0x8000   
   } ECCROCChannelFrameStatusBits;
 
+  typedef enum ECCROCChannelTxRxStatusBits { //typecast to unsigned short
+    TXUnused            = 0x0001,
+    TXRstTpInCmdFound   = 0x0002,
+    TXRstTpInCmdTimeout = 0x0004,
+    RXRstTpOutCmdSent   = 0x0008,
+    RXEncInRFOK         = 0x0010,
+    RXEncInCmdMatch     = 0x0020,
+    RXEncInCmdFound     = 0x0040,
+    RXEncInCmdTimeout   = 0x0080,  
+    TXEncOutCmdSent     = 0x0100,
+    TXSync2             = 0x0200, 
+    TXLockStable        = 0x0400,
+    TXLockError         = 0x0800,  
+    TXSync1             = 0x1000,
+    RXLockStable        = 0x2000,  
+    RXLockError         = 0x4000,  
+    RXLockMSB           = 0x8000   
+  } ECCROCChannelTxRxStatusBits;
+
   typedef enum ECROCChannelConfigurationBits { // typecast to unsigned short
     ConfigurationNFEBs0                 = 0x0001,
     ConfigurationNFEBs1                 = 0x0002,
