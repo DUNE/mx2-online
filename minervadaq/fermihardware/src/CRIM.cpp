@@ -60,7 +60,11 @@ CRIM::CRIM( unsigned int address, const Controller* controller,
   this->addressModifier = cvA24_U_DATA; 
   this->commType = VMEModuleTypes::CRIM;
 
+#ifndef GOFAST
   CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
+#else
+  CRIMLog.setPriority(log4cpp::Priority::INFO); 
+#endif
   CRIMLog.debugStream() << "Creating CRIM with address = 0x" << std::hex 
     << this->address << "; IRQ Line = 0x" << this->irqLine 
     << "; IRQ Level = 0x" << this->irqLevel;

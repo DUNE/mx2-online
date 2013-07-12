@@ -160,7 +160,7 @@ int DAQWorker::SetUpET()
 //! Declare the data contents of an EventHandler to ET.
 bool DAQWorker::ContactEventBuilder( EventHandler *handler )
 {
-  daqWorker.infoStream() << "Contacting Event Builder...";
+  daqWorker.debugStream() << "Contacting Event Builder...";
   if (!declareEventsToET) return true;
 
   unsigned short length = handler->dataLength;

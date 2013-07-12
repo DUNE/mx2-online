@@ -26,7 +26,11 @@ FPGAFrame::FPGAFrame(
   channelAddress = theChannelAddress;
   crateNumber = theCrateNumber;
 
+#ifndef GOFAST
   FPGAFrameLog.setPriority(log4cpp::Priority::DEBUG);  
+#else
+  FPGAFrameLog.setPriority(log4cpp::Priority::INFO);  
+#endif
 
   Devices dev     = FPGA;          
   Broadcasts b    = None;          
