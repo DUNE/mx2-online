@@ -51,10 +51,13 @@ class ReadoutStateRecorder {
       log4cpp::Priority::Value priority ); 
   ~ReadoutStateRecorder();
 
+  unsigned long long GetFirstGate() const;
+  unsigned long long GetGlobalGate() const;
   bool BeginNextGate();
   bool FinishGate();
 
-  Triggers::TriggerType GetNextTriggerType();
+  Triggers::TriggerType GetNextTriggerType(); // Get and set...
+  Modes::RunningModes GetRunMode() const;
 
   void SetMINOSSGATE( unsigned int gateTime );
   void SetGateStartTime( unsigned long long theStartTime );

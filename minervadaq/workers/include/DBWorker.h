@@ -24,13 +24,20 @@ class DBWorker {
 
     int AcquireResources();
     int ReleaseResources();
+    int CreateTable(const char * sqlstr) const;
 
   public:
     explicit DBWorker( const DAQWorkerArgs* theArgs, log4cpp::Priority::Value priority );
     ~DBWorker();
 
-    int CreateStandardTable() const;
-    int AddErrorToDB( const FHWException & ex ) const;
+    int CreateStandardRunsTable() const;
+    int CreateStandardHWErrorsTable() const;
+    int AddErrorToDB( const FHWException & ex,
+        unsigned long long globalGate ) const;
+    int AddRunDataToDB( unsigned long long firstGate,
+        unsigned long long globalGate,
+        int run, int subrun, int runmode ) const;
+
 };
 
 #endif

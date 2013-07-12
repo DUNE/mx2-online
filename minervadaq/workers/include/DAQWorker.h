@@ -55,10 +55,12 @@ class DAQWorker {
 
     int SetUpET();  
     void InitializeHardware();  
+    void CleanupHardware();  
     void TakeData();
     bool CloseDownET();
     bool SendSentinel();
-    int WriteExceptionToDB( const FHWException & ex );
+    int WriteExceptionToDB( const FHWException & ex ) const;
+    int WriteRunDataToDB() const;
 };
 
 #endif

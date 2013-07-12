@@ -46,7 +46,7 @@ class DAQArgs {
       args->hostName = "localhost";
       args->lastTriggerFileName = conditionsRoot + "last_trigger.dat"; 
       args->globalGateLogFileName = conditionsRoot + "global_gate.dat";
-      args->errDBFileName = conditionsRoot + "hardwareErrors.db";    
+      args->errDBFileName = conditionsRoot + "daqSQLiteDB.db";    
 
       return args;
     };
