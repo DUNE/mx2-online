@@ -160,6 +160,70 @@ std::pair<int,std::string> EChannels::DecodeStatusMessage( const unsigned short&
   std::pair<int,std::string> retval( frameErrors, statusBitsDecoded );
   return retval;
 }
+//----------------------------------------
+std::pair<int,std::string> EChannels::DecodeTxRxMessage( const unsigned short& status ) const
+{
+  int frameErrors = 0;
+  std::string statusBitsDecoded = "|";
+
+  if (status & VMEModuleTypes::TXUnused) {
+    statusBitsDecoded += "TXUnused|";
+  }
+  if (status & VMEModuleTypes::TXRstTpInCmdFound) {
+    statusBitsDecoded += "TXRstTpInCmdFound|";
+  }
+  if (status & VMEModuleTypes::TXRstTpInCmdTimeout) {
+    statusBitsDecoded += "TXRstTpInCmdTimeout|";
+  }
+  if (status & VMEModuleTypes::RXRstTpOutCmdSent) {
+    statusBitsDecoded += "RXRstTpOutCmdSent|";
+  }
+  if (status & VMEModuleTypes::RXEncInRFOK) {
+    statusBitsDecoded += "RXEncInRFOK|";
+  }
+  if (status & VMEModuleTypes::RXEncInCmdMatch) {
+    statusBitsDecoded += "RXEncInCmdMatch|";
+  }
+  if (status & VMEModuleTypes::RXEncInCmdFound) {
+    statusBitsDecoded += "RXEncInCmdFound|";
+  }
+  if (status & VMEModuleTypes::RXEncInCmdTimeout) {
+    statusBitsDecoded += "RXEncInCmdTimeout|";
+  }
+  if (status & VMEModuleTypes::TXEncOutCmdSent) {
+    statusBitsDecoded += "TXEncOutCmdSent|";
+  }
+  if (status & VMEModuleTypes::TXSync2) {
+    statusBitsDecoded += "TXSync2|";
+  }
+  if (status & VMEModuleTypes::TXLockStable) {
+    statusBitsDecoded += "TXLockStable|";
+  }
+  if (status & VMEModuleTypes::TXLockError) {
+    statusBitsDecoded += "TXLockError|";
+    frameErrors++;
+  }
+  if (status & VMEModuleTypes::TXSync1) {
+    statusBitsDecoded += "TXSync1|";
+  }
+  if (status & VMEModuleTypes::RXLockStable) {
+    statusBitsDecoded += "RXLockStable|";
+  }
+  if (status & VMEModuleTypes::RXLockError) {
+    statusBitsDecoded += "RXLockError|";
+    frameErrors++;
+  }
+  if (status & VMEModuleTypes::RXLockMSB) {
+    statusBitsDecoded += "RXLockMSB|";
+  }
+#ifndef GOFAST
+  EChannelLog.debugStream() << "TxRxStatus 0x" << std::hex << status << 
+    " for ECROC " << std::dec << this->GetParentCROCNumber() << "; Channel " << 
+    this->channelNumber << "; " << statusBitsDecoded;
+#endif
+  std::pair<int,std::string> retval( frameErrors, statusBitsDecoded );
+  return retval;
+}
 
 //----------------------------------------
 //! We do not do FEB configuration here. We only check to see if the FEB exists.
@@ -503,8 +567,21 @@ unsigned short EChannels::WaitForMessageReceived() const
 unsigned short EChannels::WaitForSequencerReadoutCompletion() const
 {
   unsigned short status = 0;
+  unsigned short txrx = 0;
+  unsigned int counter = 0;
   do {
     status = this->ReadFrameStatusRegister();
+    counter++;
+    if (0 == counter % 100) {
+      EChannelLog.infoStream() << "Waiting for message for channel " << (*this) 
+        << "; count at " << std::dec << counter;
+      txrx = this->ReadTxRxStatusRegister();
+      EChannelLog.infoStream() << "   TxRx: 0x" << std::hex << txrx;
+      std::pair<int,std::string> error = DecodeTxRxMessage( status );
+      if (0 != error.first) {
+        VMEThrow( error.second );
+      }
+    } 
   } while ( 0 == (status & VMEModuleTypes::SendMemoryRDFEDone) );  
   return status;
 }
