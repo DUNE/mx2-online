@@ -464,6 +464,29 @@ void EChannels::ClearAndResetStatusRegister() const
 }
 
 //----------------------------------------
+unsigned short EChannels::ReadFrameCounterRegister() const
+{
+  unsigned char receivedMessage[] = {0x0,0x0};
+#ifndef GOFAST
+  EChannelLog.debugStream() << "Frame Counter Address = 0x" 
+    << std::setfill('0') << std::setw( 8 ) << std::hex 
+    << framesCounterAndLoopDelayAddress; 
+#endif
+
+  int error = ReadCycle(receivedMessage, framesCounterAndLoopDelayAddress, addressModifier, dataWidthReg); 
+  if( error ) throwIfError( error, "Failure reading Frame Status!");
+
+  unsigned short frameCount = ( (receivedMessage[1] << 8) | receivedMessage[0] ) & 0x1FF;
+#ifndef GOFAST
+  EChannelLog.debugStream() << " Raw Register = 0x" << std::hex << 
+    ( (receivedMessage[1] << 8) | receivedMessage[0] );
+  EChannelLog.debugStream() << " Frame Count  = " << std::dec << frameCount;
+#endif
+
+  return frameCount;
+}
+
+//----------------------------------------
 unsigned short EChannels::ReadFrameStatusRegister() const
 {
   unsigned char receivedMessage[] = {0x0,0x0};
@@ -577,12 +600,14 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion() const
         << "; count at " << std::dec << counter;
       txrx = this->ReadTxRxStatusRegister();
       EChannelLog.infoStream() << "   TxRx: 0x" << std::hex << txrx;
+      EChannelLog.infoStream() << "   Frame Count = " << std::dec << this->ReadFrameCounterRegister();
       std::pair<int,std::string> error = DecodeTxRxMessage( status );
       if (0 != error.first) {
         VMEThrow( error.second );
       }
     } 
   } while ( 0 == (status & VMEModuleTypes::SendMemoryRDFEDone) );  
+  EChannelLog.infoStream() << "   Frame Count = " << std::dec << this->ReadFrameCounterRegister();
   return status;
 }
 

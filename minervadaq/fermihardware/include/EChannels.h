@@ -67,6 +67,7 @@ class EChannels : public VMECommunicator {
     void ResetSendMemoryPointer() const;  
     void ResetReceiveMemoryPointer() const;  
     void ClearAndResetStatusRegister() const;  
+    unsigned short ReadFrameCounterRegister() const;
     unsigned short ReadFrameStatusRegister() const;
     unsigned short ReadTxRxStatusRegister() const;
 
