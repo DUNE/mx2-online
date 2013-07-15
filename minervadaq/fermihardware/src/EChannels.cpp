@@ -476,7 +476,7 @@ unsigned short EChannels::ReadFrameCounterRegister() const
   int error = ReadCycle(receivedMessage, framesCounterAndLoopDelayAddress, addressModifier, dataWidthReg); 
   if( error ) throwIfError( error, "Failure reading Frame Status!");
 
-  unsigned short frameCount = ( (receivedMessage[1] << 8) | receivedMessage[0] ) & 0x1FF;
+  unsigned short frameCount = ( (receivedMessage[1] << 8) | receivedMessage[0] ) & VMEModuleTypes::FramesCounterMask;
 #ifndef GOFAST
   EChannelLog.debugStream() << " Raw Register = 0x" << std::hex << 
     ( (receivedMessage[1] << 8) | receivedMessage[0] );
@@ -607,7 +607,6 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion() const
       }
     } 
   } while ( 0 == (status & VMEModuleTypes::SendMemoryRDFEDone) );  
-  EChannelLog.infoStream() << "   Frame Count = " << std::dec << this->ReadFrameCounterRegister();
   return status;
 }
 
