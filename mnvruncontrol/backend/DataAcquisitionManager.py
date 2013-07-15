@@ -1763,6 +1763,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.StopDataAcquisition(auto_start_ok=False)
 				return []
 
+			# 'None' is what is sent back if the HW is disabled on that node
+			if response.sc_board_list is None:
+				nodes_checked += 1
+				continue
+			
 			if len(response.sc_board_list) == 0:
 				self.NewAlert(notice="The '%s' node is reporting that it has no FEBs attached.  Your data will appear suspiciously empty..." % response.sender, severity=Alert.WARNING)
 			

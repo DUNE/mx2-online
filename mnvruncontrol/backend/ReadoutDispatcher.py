@@ -212,6 +212,12 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		                 configuration.detector.description, configuration.num_crocs, \
 		                 configuration.li_level.description, configuration.led_groups.description, \
 		                 configuration.hw_init.description, configuration.et_filename, configuration.et_port)
+
+		if Configuration.params["hw_disabled"]:
+			self.logger.info("  ... but the hardware is disabled, so just sending the 'subrun end' message.")
+			self.postoffice.Send(PostOffice.Message(subject="daq_status", state="finished", sentinel=False, sender=identity,
+			                                        run=configuration.run, subrun=configuration.subrun))
+			return True
 	
 		if self.daq_thread and self.daq_thread.is_alive() is True:
 			self.logger.info("   ==> There is already a DAQ process running.")
@@ -330,6 +336,14 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		""" Uses the slow control library to load a hardware configuration
 		    file.  Returns True on success, False if there is no such file,
 		    and the exception itself if one is raised during loading. """
+
+		# if the hardware is not being used,
+		# we need to forge the slow control
+		# response before returning...
+		if Configuration.params["hw_disabled"]:
+			self.postoffice.Send(PostOffice.Message(subject="daq_status", sender=identity_to_report, error=None, state="hw_ready"))
+			return True
+		    
 		hwfile = Configuration.params[hw_config.code] 
 		fullpath = "%s/%s" % (Configuration.params["read_SCfileLocation"], hwfile)
 	
@@ -363,6 +377,11 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		    If an exception occurs during the read, that exception is returned."""
 
 		self.logger.info("Manager wants high voltage details of front-end boards.")
+
+		if Configuration.params["hw_disabled"]:
+			self.logger.info("  This node's hardware is disabled, so returning an empty status report.")
+			return None
+
 		try:
 			self.sc_init()
 
