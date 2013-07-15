@@ -33,7 +33,8 @@ class DBWorker {
     int CreateStandardRunsTable() const;
     int CreateStandardHWErrorsTable() const;
     int AddErrorToDB( const FHWException & ex,
-        unsigned long long globalGate ) const;
+        unsigned long long globalGate,
+        int run, int subrun ) const;
     int AddRunDataToDB( unsigned long long firstGate,
         unsigned long long globalGate,
         int run, int subrun, int runmode ) const;

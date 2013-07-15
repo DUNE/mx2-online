@@ -371,7 +371,11 @@ void DAQWorker::DestroyEventHandler( struct EventHandler * handler )
 //---------------------------------------------------------
 int DAQWorker::WriteExceptionToDB( const FHWException & ex ) const
 {
-  return dbWorker->AddErrorToDB( ex, stateRecorder->GetGlobalGate() );
+  daqWorker.debugStream() << "Adding error to db...";
+  return dbWorker->AddErrorToDB( ex, stateRecorder->GetGlobalGate(),
+      args->runNumber,
+      args->subRunNumber
+      );
 }
 
 //---------------------------------------------------------
