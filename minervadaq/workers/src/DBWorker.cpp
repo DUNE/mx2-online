@@ -115,12 +115,11 @@ int DBWorker::CreateStandardRunsTable() const
   dbWorker.debugStream() << "Creating Standard Runs table...";
 
   const char * sqlstr = "CREATE TABLE RUNSUBRUN ( \
+    RUNSUBRUN INTEGER NOT NULL, \
     FIRSTGATE UNSIGNED BIG INT NOT NULL, \
     LASTGATE UNSIGNED BIG INT NOT NULL, \
-    RUN INTEGER NOT NULL, \
-    SUBRUN INTEGER NOT NULL, \
     RUNMODE INTEGER NOT NULL, \
-    PRIMARY KEY (FIRSTGATE));";
+    PRIMARY KEY (RUNSUBRUN));";
 
   int sqlstatus = CreateTable( sqlstr );
   return sqlstatus;
@@ -162,7 +161,7 @@ int DBWorker::AddRunDataToDB( unsigned long long firstGate,
   int idx = -1;
   const char * sqlstr = 
     "INSERT INTO RUNSUBRUN VALUES ( \
-    :firstGate, :lastGate, :run, :subrun, :runmode );"; 
+    :runsubrun, :firstGate, :lastGate, :runmode );"; 
 
     int rc = sqlite3_prepare_v2( 
         dataBase,
@@ -176,38 +175,31 @@ int DBWorker::AddRunDataToDB( unsigned long long firstGate,
     return rc;
   }
 
+  idx = sqlite3_bind_parameter_index( stmt, ":runsubrun" );
+  rc = sqlite3_bind_int( stmt, idx, (run*10000 + subrun) );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind for runsubrun failed with rc = " << rc;
+    return rc;
+  }
+
   idx = sqlite3_bind_parameter_index( stmt, ":firstGate" );
   rc = sqlite3_bind_int( stmt, idx, firstGate );
   if (SQLITE_OK != rc) {
-    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    dbWorker.errorStream() << "sqlite3_bind for firstGate failed with rc = " << rc;
     return rc;
   }
 
   idx = sqlite3_bind_parameter_index( stmt, ":lastGate" );
   rc = sqlite3_bind_int( stmt, idx, lastGate );
   if (SQLITE_OK != rc) {
-    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
-    return rc;
-  }
-
-  idx = sqlite3_bind_parameter_index( stmt, ":run" );
-  rc = sqlite3_bind_int( stmt, idx, run );
-  if (SQLITE_OK != rc) {
-    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
-    return rc;
-  }
-
-  idx = sqlite3_bind_parameter_index( stmt, ":subrun" );
-  rc = sqlite3_bind_int( stmt, idx, subrun );
-  if (SQLITE_OK != rc) {
-    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    dbWorker.errorStream() << "sqlite3_bind for lastGate failed with rc = " << rc;
     return rc;
   }
 
   idx = sqlite3_bind_parameter_index( stmt, ":runmode" );
   rc = sqlite3_bind_int( stmt, idx, runmode );
   if (SQLITE_OK != rc) {
-    dbWorker.errorStream() << "sqlite3_bind failed with rc = " << rc;
+    dbWorker.errorStream() << "sqlite3_bind for runmode failed with rc = " << rc;
     return rc;
   }
 
