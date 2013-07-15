@@ -54,6 +54,7 @@ configuration = {
 	"frnt_triggerWarningInterval" : ( Defaults.FRONTEND_WARNING_TRIGGER_INTERVAL,    "Interval between triggers before warning color (s)",  float ),
 
 	# hardware
+	"hw_disabled"                 : ( Defaults.HW_DISABLED,                          "Is HW disabled?  (If, e.g., not connected to VME.)",  bool  ),
 	"hw_etEventSize"              : ( Defaults.ET_EVENT_SIZE,                        "Size of one readout glob (bytes)",                    int   ),
 	"hw_numCROCs"                 : ( Defaults.NUM_CROCS,                            "Number of CROC channels being read out",              int   ),
 	"hw_LIBoxEnabled"             : ( Defaults.ENABLE_LI,                            "LI box is enabled",                                   bool  ),
