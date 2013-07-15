@@ -220,7 +220,7 @@ void TestSQLite( EChannels* channel )
   gettimeofday(&t, NULL);
   start = (unsigned long long)(t.tv_sec);
 
-  rc = dbWorker->AddErrorToDB( *ex, start );
+  rc = dbWorker->AddErrorToDB( *ex, start, start/10000L, (start%10000L) );
   assert( SQLITE_OK == rc );
 
   // sleep to keep timestamps unique in the db - lame, but simple
@@ -231,7 +231,7 @@ void TestSQLite( EChannels* channel )
   catch (FHWException &ex) {
     gettimeofday(&t, NULL);
     start = (unsigned long long)(t.tv_sec);
-    rc = dbWorker->AddErrorToDB( ex, start );
+    rc = dbWorker->AddErrorToDB( ex, start, start/10000L, (start%10000L) );
     assert( SQLITE_OK == rc );
   }
 

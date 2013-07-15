@@ -131,6 +131,7 @@ int DBWorker::CreateStandardHWErrorsTable() const
   dbWorker.debugStream() << "Creating Standard HW Errors table...";
 
   const char * sqlstr = "CREATE TABLE HWERRORS ( \
+    RUNSUBRUN INTEGER NOT NULL, \
     GLOBALGATE UNSIGNED BIG INT NOT NULL, \
     ETIMESTAMP TIMESTAMP, \
     CRATE INTEGER NOT NULL, \
@@ -141,7 +142,7 @@ int DBWorker::CreateStandardHWErrorsTable() const
     CROC INTEGER NOT NULL, \
     CHANNEL INTEGER NOT NULL, \
     MESSAGE TEXT, \
-    PRIMARY KEY (GLOBALGATE));";
+    PRIMARY KEY (RUNSUBRUN));";
 
   int sqlstatus = CreateTable( sqlstr );
   return sqlstatus;
@@ -221,7 +222,7 @@ int DBWorker::AddRunDataToDB( unsigned long long firstGate,
 
 //---------------------------------------------------------
 int DBWorker::AddErrorToDB( const FHWException & ex, 
-    unsigned long long globalGate ) const
+    unsigned long long globalGate, int run, int subrun ) const
 {
   if (!dbIsAvailable) return SQLITE_ERROR;
 
@@ -247,7 +248,7 @@ int DBWorker::AddErrorToDB( const FHWException & ex,
   int idx = -1;
   const char * sqlstr = 
     "INSERT INTO HWERRORS VALUES ( \
-    :globalGate, CURRENT_TIMESTAMP, :crate, :feb, :vmetype, :address, :crim, :croc, :channel, :message );"; 
+    :runsubrun, :globalGate, CURRENT_TIMESTAMP, :crate, :feb, :vmetype, :address, :crim, :croc, :channel, :message );"; 
 
     int rc = sqlite3_prepare_v2( 
         dataBase,
@@ -258,6 +259,13 @@ int DBWorker::AddErrorToDB( const FHWException & ex,
 
   if (SQLITE_OK != rc) {
     dbWorker.errorStream() << "sqlite3_prepare failed with rc = " << rc;
+    return rc;
+  }
+
+  idx = sqlite3_bind_parameter_index( stmt, ":runsubrun" );
+  rc = sqlite3_bind_int( stmt, idx, (run*10000 + subrun) );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind for runsubrun failed with rc = " << rc;
     return rc;
   }
 
