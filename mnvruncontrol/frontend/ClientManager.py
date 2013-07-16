@@ -218,7 +218,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		self.cfg = wx.Config('client_manager')
 		
-		remote_host  = self.cfg.Read("remote_host", "mnvonlinemaster.fnal.gov")
+		remote_host  = self.cfg.Read("remote_host", "mnvonline0.fnal.gov")
 		remote_port  = self.cfg.ReadInt("remote_port", 1090)
 		use_ssh      = self.cfg.ReadBool("use_ssh", True)
 		ssh_user     = self.cfg.Read("ssh_user", "mnvonline")
@@ -399,7 +399,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	#   wx.PostEvent().)
 	######################################################
 	
-	def ConnectDAQ(self, use_ssh=True, ssh_user="mnvonline", remote_host="mnvonlinemaster.fnal.gov", remote_port=3000):
+	def ConnectDAQ(self, use_ssh=True, ssh_user="mnvonline", remote_host="mnvonline0.fnal.gov", remote_port=3000):
 		""" Does the actual work of connecting to the DAQ manager. """
 
 		if self.daq is not False:
