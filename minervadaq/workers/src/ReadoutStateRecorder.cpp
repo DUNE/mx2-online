@@ -102,6 +102,7 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
   switch (args->runMode) {
     case OneShot:
       triggerType = Pedestal;
+      sleep(1);
       stateRecorderLogger.debugStream() << " Running Mode is OneShot.";
       break;
     case NuMIBeam:
@@ -110,6 +111,7 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
       break;
     case PureLightInjection:
       triggerType = LightInjection;
+      sleep(1);
       stateRecorderLogger.debugStream() << " Running Mode is PureLightInjection.";
       break;
     case MixedBeamPedestal:
