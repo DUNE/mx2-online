@@ -576,16 +576,19 @@ class SCHWSetupThread(threading.Thread):
 		self.start()
 	
 	def run(self):
-		try:
-			for sc in self.slow_controls:
-				sc.HWcfgFileLoad(self.filename)
-		except Exception, e:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
-			self.dispatcher.logger.exception("Error trying to load the hardware config file for the crate %d slow control" % sc.boardNum)
-			self.dispatcher.logger.warning("Hardware was not configured...")
-			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=e, state="hw_error"))
-		else:
-			self.dispatcher.logger.info("HW file %s was loaded.  Informing manager." % self.filename)
-			self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=None, state="hw_ready"))
+		with open(self.filename) as hwfile:
+			try:
+				for sc in self.slow_controls:
+					sc.HWcfgFileLoad(hwfile, scsNumbers=len(self.slow_controls))
+					hwfile.seek(0)  # the file will be used again for the next slow control...
+				
+			except Exception, e:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
+				self.dispatcher.logger.exception("Error trying to load the hardware config file for the crate %d slow control" % sc.boardNum)
+				self.dispatcher.logger.warning("Hardware was not configured...")
+				self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=e, state="hw_error"))
+			else:
+				self.dispatcher.logger.info("HW file %s was loaded.  Informing manager." % self.filename)
+				self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=None, state="hw_ready"))
 		
 
 
