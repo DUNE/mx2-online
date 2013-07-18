@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <signal.h>
 #include <errno.h>
+#include <libgen.h>
 
 using namespace std;
 
@@ -63,11 +64,13 @@ int main(int argc, char *argv[])
   char log_filename[300]; 
   // TODO: Setup precompiler options for logs on Nearline, other machines, and timestamping.
   #ifdef NEARLINE
-  sprintf(log_filename, "/scratch/nearonline/var/logs/EventBuilderLog_%s.txt", argv[1]); 
+  sprintf(log_filename, "/scratch/nearonline/var/logs/EventBuilderLog_%s.txt", basename(argv[1])); 
   #else
   sprintf(log_filename, "/work/data/logs/EventBuilderLog.txt"); 
   #endif
-  
+ 
+  std::cout << "Writing log file to: " << log_filename << std::endl;
+ 
   eventBuilderAppender = new log4cpp::FileAppender("default", log_filename,false);
   eventBuilderAppender->setLayout(new log4cpp::BasicLayout());
   rootCategory.addAppender(eventBuilderAppender);
