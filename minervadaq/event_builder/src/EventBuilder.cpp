@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <signal.h>
 #include <errno.h>
+#include <libgen.h>
 
 using namespace std;
 
@@ -60,14 +61,16 @@ int main(int argc, char *argv[])
   struct timeval hpnow; 
   gettimeofday(&hpnow,NULL);
 
-  char log_filename[100]; 
+  char log_filename[300]; 
   // TODO: Setup precompiler options for logs on Nearline, other machines, and timestamping.
   #ifdef NEARLINE
-  sprintf(log_filename, "/scratch/nearonline/var/logs/EventBuilderLog.txt"); 
+  sprintf(log_filename, "/scratch/nearonline/var/logs/EventBuilderLog_%s.txt", basename(argv[1])); 
   #else
   sprintf(log_filename, "/work/data/logs/EventBuilderLog.txt"); 
   #endif
-  
+ 
+  std::cout << "Writing log file to: " << log_filename << std::endl;
+ 
   eventBuilderAppender = new log4cpp::FileAppender("default", log_filename,false);
   eventBuilderAppender->setLayout(new log4cpp::BasicLayout());
   rootCategory.addAppender(eventBuilderAppender);
@@ -225,9 +228,9 @@ int main(int argc, char *argv[])
       // more or less full time, but keeps the event builder running in time 
       // with the main acquisition sequence and avoids any possibility of pile
       // up.  still, keep an eye on this...
-      #ifdef NEARLINE
-      nanosleep( &time, NULL );
-      #endif
+//      #ifdef NEARLINE
+//      nanosleep( &time, NULL );
+//      #endif
 
       // if no events are available, this will return ET_ERROR_EMTPY.
       // since it's not ET_OK, it will force us to go around and ask
