@@ -92,7 +92,7 @@ Once you have configured your setup scripts, build the DAQ with the following st
   use the more modern version of ET.
 
 3) Now build ET.  Go to the et_9.0 directory and type "gmake install".
-  The more modern version is to use et_12.0 instead. Go to the et_12 directory 
+  Someday we will use et_12 (but not yet!). When we do, go to the et_12 directory 
   and read the included README.MINERVA.
 
 4) MINERvA DAQ uses the following set of ports:
@@ -112,7 +112,8 @@ It is a good idea to configure your firewall such that these ports are kept open
 7) Be sure that version of sqlite is what is in your $PATH and $LD_LIBRARY_PATH.
   (setupdaqenv.sh does this) 
 
-8) Return to $DAQROOT and type "gmake all"
+8) Return to $DAQROOT and run the compiler.sh script. (Make sure you have the right 
+  files in the options directory.)
 
 9) Check ${DAQROOT}/bin/ for 
 	event_builder
