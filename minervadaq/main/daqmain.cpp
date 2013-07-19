@@ -58,11 +58,20 @@ int main( int argc, char * argv[] )
     catch (FHWException &e) {
       worker->WriteExceptionToDB(e);
       daqmain.errorStream() << "Exception! " << e.what();
+
+      // we always want to send this if we can
+      if (!sentSentinel)
+        sentSentinel = worker->SendSentinel();
+
     }
     catch (std::exception &e) {
       daqmain.errorStream() << "Exception! " << e.what();
+
+      // we always want to send this if we can
+      if (!sentSentinel)
+        sentSentinel = worker->SendSentinel();
     }
-  }
+ }
   else {
     daqmain.fatalStream() << "Failed to establish ET connection!";
   }
