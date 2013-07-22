@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
   char hostName[100];
   // TODO: Setup precompiler options for hostnames on multi-PC and various other locations.
   #ifdef NEARLINE
-  sprintf(hostName, "mnvonline0.fnal.gov");
+  sprintf(hostName, "mnvonline1.fnal.gov");
   #else  
   sprintf(hostName, "localhost");
   #endif
