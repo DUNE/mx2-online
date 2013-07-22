@@ -64,7 +64,7 @@ if [ $RC_DISPATCHER ]; then
 	ps -leaf | grep ReadoutDispatcher | grep -v grep
 fi
 
-if [ $DAQ_MANAGER ]; then
+if [ $DAQ_MGR ]; then
 	echo "Starting the data acquisition manager..."
 
 	# Check to see if the acquisition manager is running.  If it is, stop/kill it.
