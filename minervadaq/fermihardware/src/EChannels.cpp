@@ -591,21 +591,21 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion() const
 {
   unsigned short status = 0;
   unsigned short txrx = 0;
-  unsigned int counter = 0;
   do {
     status = this->ReadFrameStatusRegister();
-    counter++;
-    if (0 == counter % 100) {
-      EChannelLog.infoStream() << "Waiting for message for channel " << (*this) 
-        << "; count at " << std::dec << counter;
-      txrx = this->ReadTxRxStatusRegister();
-      EChannelLog.infoStream() << "   TxRx: 0x" << std::hex << txrx;
-      EChannelLog.infoStream() << "   Frame Count = " << std::dec << this->ReadFrameCounterRegister();
-      std::pair<int,std::string> error = DecodeTxRxMessage( status );
-      if (0 != error.first) {
-        VMEThrow( error.second );
-      }
-    } 
+    std::pair<int,std::string> stat_error = DecodeStatusMessage( status );
+    if (0 != stat_error.first) {
+      EChannelLog.errorStream() << "   TxRx: 0x" << std::hex << txrx;
+      EChannelLog.errorStream() << "   Frame Count = " << std::dec << this->ReadFrameCounterRegister();
+      VMEThrow( stat_error.second );
+    }
+    txrx = this->ReadTxRxStatusRegister();
+    std::pair<int,std::string> txrx_error = DecodeTxRxMessage( txrx );
+    if (0 != txrx_error.first) {
+      EChannelLog.errorStream() << "   TxRx: 0x" << std::hex << txrx;
+      EChannelLog.errorStream() << "   Frame Count = " << std::dec << this->ReadFrameCounterRegister();
+      VMEThrow( txrx_error.second );
+    }
   } while ( 0 == (status & VMEModuleTypes::SendMemoryRDFEDone) );  
   return status;
 }
