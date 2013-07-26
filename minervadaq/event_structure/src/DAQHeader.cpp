@@ -12,8 +12,12 @@ log4cpp::Category& daqevt = log4cpp::Category::getInstance(std::string("daqevt")
 //! The default ctor constructs a Sentinel frame.
 DAQHeader::DAQHeader(FrameHeader *header)
 {
-  daqevt.setPriority(log4cpp::Priority::INFO);
+#ifndef GOFAST
+  daqevt.setPriority(log4cpp::Priority::DEBUG);
   daqevt.debugStream() << "->Entering DAQHeader::DAQHeader... Building a Sentinel Frame.";
+#else
+  daqevt.setPriority(log4cpp::Priority::INFO);
+#endif
 
   dataLength = daqHeaderSize;
   data = new unsigned char[dataLength];
@@ -39,21 +43,40 @@ DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int 
     unsigned short int nADCFrames, unsigned short int nDiscFrames,
     unsigned short int nFPGAFrames)
 {
-  daqevt.setPriority(log4cpp::Priority::INFO);
+#ifndef GOFAST
+  daqevt.setPriority(log4cpp::Priority::DEBUG);
   daqevt.debugStream() << "->Entering DAQHeader::DAQHeader... Building a DAQ Header.";
+#else
+  daqevt.setPriority(log4cpp::Priority::INFO);
+#endif
 
   unsigned int event_info_block[12]; 
   dataLength = daqHeaderSize;
   data = new unsigned char[dataLength];
 
+#ifndef GOFAST
+  daqevt.debugStream() << " det       = " << (int)det;
+  daqevt.debugStream() << " config    = " << config;
+  daqevt.debugStream() << " run       = " << run;
+  daqevt.debugStream() << " sub_run   = " << sub_run;
+  daqevt.debugStream() << " trig      = " << trig;
+  daqevt.debugStream() << " ledLevel  = " << (int)ledLevel;
+  daqevt.debugStream() << " ledGroup  = " << (int)ledGroup;
+  daqevt.debugStream() << " g_gate    = " << g_gate;
+  daqevt.debugStream() << " gate      = " << gate;
+  daqevt.debugStream() << " trig_time = " << trig_time;
+  daqevt.debugStream() << " error     = " << error;
+  daqevt.debugStream() << " minos     = " << minos;
+  daqevt.debugStream() << " read_time = " << read_time;
+#endif
   event_info_block[0] = det & 0xFF;
   event_info_block[0] |= 0 <<0x08; //a reserved byte
   event_info_block[0] |= (config & 0xFFFF)<<0x10;
   event_info_block[1] = run & 0xFFFFFFFF;
   event_info_block[2] = sub_run & 0xFFFFFFFF;
   event_info_block[3] = trig & 0xFF;
-  event_info_block[3] |= ( (ledLevel & 0x3) << 8 );
-  event_info_block[3] |= ( (ledGroup & 0xF8) << 8 );
+  event_info_block[3] |= ( ((int)ledLevel & 0x3) << 8 );
+  event_info_block[3] |= ( ((int)ledGroup & 0xF8) << 8 );
   event_info_block[3] |= ( (nFPGAFrames & 0xFFFF) << 16 );
   event_info_block[4] = g_gate & 0xFFFFFFFF;            // the "global gate" least sig int 
   event_info_block[5] = (g_gate>>32) & 0xFFFFFFFF;      // the "global gate" most sig int
@@ -64,9 +87,11 @@ DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int 
   event_info_block[10] = ( (error & 0x7) << 4 ) & 0xFF; // the error bits 4-7
   event_info_block[10] |= ( (read_time & 0xFFFFFF) << 8 ) & 0xFFFFFF00;  
   event_info_block[11] = minos & 0x3FFFFFFF;           // the minos gate (only 28 bits of data)
+#ifndef GOFAST
   for (int i = 0; i < 12; i++) {
     daqevt.debugStream() << "   DAQHeader Data Int [" << i << "] = " << event_info_block[i];
   }
+#endif
   // We need to allow room for the Minerva Frame Header we haven't added yet.
   int buffer_index = 4; // 4+4=8 bytes for the MINERvA Frame Header.
   for (int i = 0; i < 12; i++) {
@@ -85,10 +110,12 @@ DAQHeader::DAQHeader(unsigned char det, unsigned short int config, int run, int 
     data[buffer_index] = (tmpDAQHeader[i]&0xFF00)>>0x08;
     buffer_index++;
   }
+#ifndef GOFAST
   daqevt.debugStream() << " DAQ Header Data...";
   for (int i = 0; i < daqHeaderSize; i++) {
     daqevt.debugStream() << "   data[" << i << "] = " << (int)data[i];  
   }
+#endif
 }
 
 //----------------------------------------------------------------
