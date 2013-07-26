@@ -214,7 +214,7 @@ std::tr1::shared_ptr<DAQHeader> ReadoutStateRecorder::GetDAQHeader( HeaderData::
 
   std::tr1::shared_ptr<DAQHeader> daqHeader( 
       new DAQHeader(args->detector, args->detectorConfigCode, args->runNumber, 
-        args->subRunNumber, triggerType, args->ledGroup, args->ledLevel,
+        args->subRunNumber, triggerType, args->ledLevel, args->ledGroup,
         globalGate, gate, gateStartTime, error, minos, readoutTime,
         frameHeader,  nADCFrames, nDiscFrames, nFPGAFrames)
       );
