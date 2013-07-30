@@ -17,6 +17,7 @@ minervadaq/doc/*.pdf
 doxy/
 
 # Buid Stuff
+minervadaq/Make.options
 minervadaq/bin/tests
 minervadaq/bin/event_builder
 minervadaq/bin/minervadaq
