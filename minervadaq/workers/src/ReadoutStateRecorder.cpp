@@ -322,8 +322,8 @@ void ReadoutStateRecorder::WriteToSAMPYFile()
       fprintf(file,"'triggertype':'errortype',})}),\n");
       fprintf(file,"datastream='errorstream',\n");
   }
-  fprintf(file,"startTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", gateStartTime);
-  fprintf(file,"endTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", gateFinishTime);
+  fprintf(file,"startTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", (gateStartTime/1000000L));
+  fprintf(file,"endTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", (gateFinishTime/1000000L));
   fprintf(file,"eventCount=%d,\n", gate);
   fprintf(file,"firstEvent=%llu,\n", firstGate);
   fprintf(file,"lastEvent=%llu,\n", globalGate);
