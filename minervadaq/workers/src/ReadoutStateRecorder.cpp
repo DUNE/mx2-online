@@ -244,7 +244,7 @@ void ReadoutStateRecorder::WriteToSAMPYFile()
   fprintf(file,"from SamFile.SamDataFile import SamSize\n\n");
   fprintf(file,"import SAM\n\n");
   fprintf(file,"metadata = SamDataFile(\n");
-  fprintf(file,"fileName = '%s',\n", (args->dataFileName).c_str());
+  fprintf(file,"fileName = '%s',\n", (args->dataFileBaseName).c_str());
   fprintf(file,"fileType = SAM.DataFileType_ImportedDetector,\n");
   fprintf(file,"fileFormat = 'binary',\n");
   fprintf(file,"crc=CRC(666L,SAM.CRC_Adler32Type),\n");
