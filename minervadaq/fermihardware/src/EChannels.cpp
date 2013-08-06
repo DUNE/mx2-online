@@ -593,16 +593,18 @@ unsigned short EChannels::WaitForSequencerReadoutCompletion() const
   unsigned short txrx = 0;
   do {
     status = this->ReadFrameStatusRegister();
+    txrx = this->ReadTxRxStatusRegister();
     std::pair<int,std::string> stat_error = DecodeStatusMessage( status );
+    std::pair<int,std::string> txrx_error = DecodeTxRxMessage( txrx );
     if (0 != stat_error.first) {
       EChannelLog.errorStream() << "   Status: 0x" << std::hex << status;
+      EChannelLog.errorStream() << "   TxRx:   0x" << std::hex << txrx;
       EChannelLog.errorStream() << "   Frame Count = " << std::dec << this->ReadFrameCounterRegister();
       VMEThrow( stat_error.second );
     }
-    txrx = this->ReadTxRxStatusRegister();
-    std::pair<int,std::string> txrx_error = DecodeTxRxMessage( txrx );
     if (0 != txrx_error.first) {
-      EChannelLog.errorStream() << "   TxRx: 0x" << std::hex << txrx;
+      EChannelLog.errorStream() << "   Status: 0x" << std::hex << status;
+      EChannelLog.errorStream() << "   TxRx:   0x" << std::hex << txrx;
       EChannelLog.errorStream() << "   Frame Count = " << std::dec << this->ReadFrameCounterRegister();
       VMEThrow( txrx_error.second );
     }
