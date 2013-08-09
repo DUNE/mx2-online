@@ -929,6 +929,31 @@ void TestChannel( ECROC* ecroc, unsigned int channelNumber, unsigned int nFEBs )
   std::tr1::shared_ptr<EChannelsConfigRegParser> config = channel->GetChannelConfiguration();
   logger.infoStream() << "Channel Configuration = " << config->Description();
 
+  bool clockMonIsFalling = config->ClockMonPhaseBitIsFalling();
+
+  config->SetClockMonPhaseSelFalling();
+  channel->SetChannelConfiguration( config );
+  std::tr1::shared_ptr<EChannelsConfigRegParser> fconfig = channel->GetChannelConfiguration();
+  logger.infoStream() << "Channel Configuration After Set Falling = " << fconfig->Description();
+  assert( fconfig->ClockMonPhaseBitIsFalling() == true );
+  assert( fconfig->ClockMonPhaseBitIsLeading() == false );
+
+  config->SetClockMonPhaseSelLeading();
+  channel->SetChannelConfiguration( config );
+  std::tr1::shared_ptr<EChannelsConfigRegParser> lconfig = channel->GetChannelConfiguration();
+  logger.infoStream() << "Channel Configuration After Set Leading = " << lconfig->Description();
+  assert( lconfig->ClockMonPhaseBitIsFalling() == false );
+  assert( lconfig->ClockMonPhaseBitIsLeading() == true );
+
+  if (clockMonIsFalling) {
+    config->SetClockMonPhaseSelFalling();
+  } else {
+    config->SetClockMonPhaseSelLeading();
+  }
+  channel->SetChannelConfiguration( config );
+  logger.infoStream() << "Channel Configuration = " << config->Description();
+
+
   logger.infoStream() << "EChannel " << (*channel) << " passed all tests!";
   logger.debugStream() << "Passed:--------------TestChannel--------------";
   std::cout << "Passed!" << std::endl;
