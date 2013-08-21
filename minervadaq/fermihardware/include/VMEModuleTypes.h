@@ -253,7 +253,7 @@ namespace VMEModuleTypes {
     ConfigurationFPGAFirmware2          = 0x0100,
     ConfigurationFPGAFirmware3          = 0x0200,
     ConfigurationUnused0                = 0x0400,
-    ConfigurationUnused1                = 0x0800,
+    ConfigurationClockMonPhaseSel       = 0x0800, /*!< For noisy TxRx phase problem (Enc Command Found but not sent) */
     ConfigurationHitEncoding            = 0x1000, /*!< 0: 4 bits for hit encoding, 1: 5 bits */
     ConfigurationHitMode                = 0x2000, /*!< 0: all hits, 1: deepest pipeline only */
     ConfigurationSendMemoryType         = 0x4000, /*!< 0: FIFO, 1: RAM */

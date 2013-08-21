@@ -24,6 +24,8 @@ class EChannelsConfigRegParser {
     static const short int hitModeBits;
     static const short int numberOfHitsMask;
     static const short int numberOfHitsBits;
+    static const short int clockMonPhaseSelMask;
+    static const short int clockMonPhaseSelBits;
     static const short int channelFirmwareMask;
     static const short int channelFirmwareBits;
     static const short int enableTestPulseMask;
@@ -43,6 +45,8 @@ class EChannelsConfigRegParser {
     void SetMemoryTypeRAM();
     void SetFourBitHitEncoding();
     void SetFiveBitHitEncoding();
+    void SetClockMonPhaseSelLeading();
+    void SetClockMonPhaseSelFalling();
     void SetSinglePipelineReadout();
     void SetFullPipelineReadout();
     void EnableChannelTestPulse();
@@ -60,6 +64,8 @@ class EChannelsConfigRegParser {
     bool FullPipelineReadout() const;
     bool ChannelTestPulseEnabled() const;
     bool ChannelResetEnabled() const;
+    bool ClockMonPhaseBitIsLeading() const;
+    bool ClockMonPhaseBitIsFalling() const;
     unsigned short int NFEBs() const;
     unsigned short int ChannelFirmware() const;
     unsigned short int RawValue() const;

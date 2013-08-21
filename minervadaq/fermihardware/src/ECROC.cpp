@@ -8,7 +8,7 @@
 
 log4cpp::Category& ECROCLog = log4cpp::Category::getInstance(std::string("ECROC"));
 
-const unsigned short ECROC::RDFEDelayRegisterDelayMask = 0x01FF;
+const unsigned short ECROC::RDFEDelayRegisterDelayMask = 0x03FF;
 const unsigned short ECROC::RDFEDelayRegisterEnableMask = 0x8000;
 const unsigned short ECROC::RDFEDelayRegisterEnableBit = 15;
 

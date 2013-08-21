@@ -4,6 +4,7 @@
 */
 
 #include <sstream>
+#include <iomanip>
 
 #include "EChannelsConfigRegParser.h"
 #include "log4cppHeaders.h"
@@ -18,6 +19,8 @@ const short int EChannelsConfigRegParser::hitModeMask            = 0x2000;
 const short int EChannelsConfigRegParser::hitModeBits            = 13;
 const short int EChannelsConfigRegParser::numberOfHitsMask       = 0x1000;
 const short int EChannelsConfigRegParser::numberOfHitsBits       = 12;
+const short int EChannelsConfigRegParser::clockMonPhaseSelMask   = 0x0800;
+const short int EChannelsConfigRegParser::clockMonPhaseSelBits   = 11;
 const short int EChannelsConfigRegParser::channelFirmwareMask    = 0x03C0;
 const short int EChannelsConfigRegParser::channelFirmwareBits    = 6;
 const short int EChannelsConfigRegParser::enableTestPulseMask    = 0x0020;
@@ -73,6 +76,18 @@ void EChannelsConfigRegParser::SetFourBitHitEncoding()
 void EChannelsConfigRegParser::SetFiveBitHitEncoding()
 {
   registerValue |= (1<<numberOfHitsBits);
+}
+
+//----------------------------------------
+void EChannelsConfigRegParser::SetClockMonPhaseSelLeading()
+{
+  registerValue &= ~clockMonPhaseSelMask;
+}
+
+//----------------------------------------
+void EChannelsConfigRegParser::SetClockMonPhaseSelFalling()
+{
+  registerValue |= (1<<clockMonPhaseSelBits); 
 }
 
 //----------------------------------------
@@ -176,6 +191,18 @@ bool EChannelsConfigRegParser::ChannelResetEnabled() const
 }
 
 //----------------------------------------
+bool EChannelsConfigRegParser::ClockMonPhaseBitIsLeading() const
+{
+  return !ClockMonPhaseBitIsFalling();
+}
+
+//----------------------------------------
+bool EChannelsConfigRegParser::ClockMonPhaseBitIsFalling() const
+{
+  return (registerValue & clockMonPhaseSelMask);
+}
+
+//----------------------------------------
 unsigned short int EChannelsConfigRegParser::NFEBs() const
 {
   // shift is zero, so drop it
@@ -198,12 +225,15 @@ unsigned short int EChannelsConfigRegParser::RawValue() const
 std::string EChannelsConfigRegParser::Description() const 
 {
   std::stringstream ss;
-  ss << "Configuration Value = 0x" << std::hex << registerValue << std::dec
+  ss << "Configuration Value = 0x" << std::setfill('0') << std::setw( 4 ) 
+    << std::hex << registerValue << std::dec
     << "\n\t" << "; Sequencer Readout = " << SequencerReadoutEnabled() 
     << "\n\t" << "; Send Memory FIFO = " << SendMemoryFIFO() 
     << "\n\t" << "; Send Memory RAM = " << SendMemoryRAM() 
     << "\n\t" << "; Four Bit Hit Encoding = " << FourBitHitEncoding() 
     << "\n\t" << "; Five Bit Hit Encoding = " << FiveBitHitEncoding() 
+    << "\n\t" << "; Clock Mon Phase Sel Falling = " << ClockMonPhaseBitIsFalling() 
+    << "\n\t" << "; Clock Mon Phase Sel Leading = " << ClockMonPhaseBitIsLeading() 
     << "\n\t" << "; Single Pipeline Readout = " << SinglePipelineReadout() 
     << "\n\t" << "; Full Pipeline Readout = " << FullPipelineReadout() 
     << "\n\t" << "; Test Pulse Enabled = " << ChannelTestPulseEnabled() 
