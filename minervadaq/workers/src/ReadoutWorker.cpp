@@ -178,8 +178,8 @@ unsigned long long ReadoutWorker::Trigger( Triggers::TriggerType triggerType )
   switch (triggerType) {
     case Pedestal:        // In pedestal-type modes, we trigger all CRIMs
     case ChargeInjection: // using software.
-      SendSoftwareGate();
-      break;
+      //SendSoftwareGate();
+      //break;
     case LightInjection: // Only trigger master w/software in LI.
       this->MasterCRIM()->SendSoftwareGate(); 
       break;             // In LI and all beam modes, we rely on LEMO connection
