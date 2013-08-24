@@ -197,7 +197,14 @@ void TestSQLite( EChannels* channel )
   int rc(0);
   DAQWorkerArgs * defArgs = DAQArgs::DefaultArgs();
 
-  std::string dbname = "/work/conditions/test.db";
+  struct timeval t;
+  unsigned long long start = 0L;
+  gettimeofday(&t, NULL);
+  start = (unsigned long long)(t.tv_sec);
+
+  std::stringstream ss;
+  ss << start;
+  std::string dbname = "/work/conditions/test" + ss.str() + ".db";
   defArgs->errDBFileName = dbname;
   DBWorker * dbWorker = new DBWorker( defArgs, log4cpp::Priority::DEBUG );
 
@@ -215,10 +222,6 @@ void TestSQLite( EChannels* channel )
   std::string message = "test message";
   FHWException * ex = new FHWException(crate,type,address,message);
 
-  struct timeval t;
-  unsigned long long start = 0L;
-  gettimeofday(&t, NULL);
-  start = (unsigned long long)(t.tv_sec);
 
   rc = dbWorker->AddErrorToDB( *ex, start, start/10000L, (start%10000L) );
   assert( SQLITE_OK == rc );
