@@ -8,6 +8,8 @@
 
 log4cpp::Category& stateRecorderLogger = log4cpp::Category::getInstance(std::string("stateRecorderLogger"));
 
+const int ReadoutStateRecorder::DAQHeaderVersion = 9;
+
 //---------------------------
 ReadoutStateRecorder::ReadoutStateRecorder( const DAQWorkerArgs* theArgs, 
     log4cpp::Priority::Value priority ) :
@@ -17,18 +19,23 @@ ReadoutStateRecorder::ReadoutStateRecorder( const DAQWorkerArgs* theArgs,
   globalGate(0),
   gateStartTime(0),
   gateFinishTime(0),
+  subRunStartTime(0),
+  subRunFinishTime(0),
   MINOSSGATE(0),
   args(theArgs)
 {
   stateRecorderLogger.setPriority(priority);
   this->GetGlobalGateFromFile();
   firstGate = globalGate + 1;
+  daqUtils = new DAQWorkerUtils( args );
+  subRunStartTime = daqUtils->GetTimeInMicrosec();
   stateRecorderLogger.debugStream() << "Created new ReadoutStateRecorder: " << *this;
 }
 
 //---------------------------
 ReadoutStateRecorder::~ReadoutStateRecorder() 
 {
+  delete daqUtils;
 }
 
 //---------------------------
@@ -76,6 +83,7 @@ bool ReadoutStateRecorder::BeginNextGate()
 bool ReadoutStateRecorder::FinishGate()
 {
   stateRecorderLogger.debugStream() << "ReadoutStateRecorder::FinishGate...";
+  subRunFinishTime = daqUtils->GetTimeInMicrosec();
   this->WriteGlobalGateToFile();
   this->WriteToSAMPYFile();
   this->WriteToSAMJSONFile();
@@ -210,8 +218,7 @@ std::tr1::shared_ptr<DAQHeader> ReadoutStateRecorder::GetDAQHeader( HeaderData::
   unsigned short nDiscFrames = 0;
   unsigned short nFPGAFrames = 0;
 
-  FrameHeader * frameHeader = new FrameHeader(0,0,0,bankType,0,9,0,daqHeaderSize);
-
+  FrameHeader * frameHeader = new FrameHeader(0,0,0,bankType,0,DAQHeaderVersion,0,daqHeaderSize);
   std::tr1::shared_ptr<DAQHeader> daqHeader( 
       new DAQHeader(args->detector, args->detectorConfigCode, args->runNumber, 
         args->subRunNumber, triggerType, args->ledLevel, args->ledGroup,
@@ -323,6 +330,8 @@ void ReadoutStateRecorder::WriteToSAMPYFile()
   }
   fprintf(file,"startTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", (gateStartTime/1000000L));
   fprintf(file,"endTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", (gateFinishTime/1000000L));
+  fprintf(file,"startSubRunTime=('%llu',SAM.SamTimeFormat_UTCFormat),\n", (subRunStartTime/1000000L));
+  fprintf(file,"endSubRunTime=('%llu',SAM.SamTimeFormat_UTCFormat),\n", (subRunFinishTime/1000000L));
   fprintf(file,"eventCount=%d,\n", gate);
   fprintf(file,"firstEvent=%llu,\n", firstGate);
   fprintf(file,"lastEvent=%llu,\n", globalGate);
@@ -344,15 +353,16 @@ void ReadoutStateRecorder::WriteToSAMJSONFile()
     return;
   }
 
-  fprintf(file,"File Name: \"%s\"\n", (args->dataFileName).c_str());
-  fprintf(file,"File Type: \"importedDetector\"\n");
-  fprintf(file,"File Format: \"binary\"\n");
-  fprintf(file,"Crc : [666L, \"(adler 32 crc type)\"]\n");
-  fprintf(file,"Group: \"minerva\"\n");
+  fprintf(file,"{\n");
+  fprintf(file,"\"file_name\": \"%s\",\n", (args->dataFileBaseName).c_str());
+  fprintf(file,"\"file_type\": \"importedDetector\",\n");
+  fprintf(file,"\"file_format\": \"binary\",\n");
+  fprintf(file,"\"crc\": {\"crc_value\": 666, \"crc_type\":\"adler 32 crc type\"},\n");
+  fprintf(file,"\"group\": \"minerva\",\n");
 #if MTEST
-  fprintf(file,"Data Tier: \"binary-raw-test\"\n");
+  fprintf(file,"\"data_tier\": \"binary-raw-test\",\n");
 #else 
-  fprintf(file,"Data Tier: \"binary-raw\"\n");
+  fprintf(file,"\"data_tier\": \"binary-raw\",\n");
 #endif
   char runType[50];
   switch (args->detector) { // Enumerations set by the DAQHeader class.
@@ -380,54 +390,57 @@ void ReadoutStateRecorder::WriteToSAMJSONFile()
     default:
       sprintf(runType, "errordetector");
   }
-  fprintf(file,"Runs: [%d.%04d, \"(%s)\"]\n", args->runNumber, args->subRunNumber, runType);
-  fprintf(file,"Application: [\"online\", \"v09\", \"%s\"]\n", GIT_VERSION); //online, DAQ Heder, CVSTag
-  fprintf(file,"File Size: 0\n");
-  fprintf(file,"File Partition: 1\n");
-  fprintf(file,"Online.triggerconfig: \"%s\"\n", (args->hardwareConfigFileName).c_str() );
+  fprintf(file,"\"runs\": [ [%d, %d, \"%s\"] ],\n", args->runNumber, args->subRunNumber, runType);
+  fprintf(file,"\"application\": [\"online\", \"v09\", \"%s\"],\n", GIT_VERSION); //online, DAQ Heder, CVSTag
+  fprintf(file,"\"file_size\": 1,\n");
+  fprintf(file,"\"file_partition\": 1,\n");
+  fprintf(file,"\"online.triggerconfig\": \"%s\",\n", (args->hardwareConfigFileName).c_str() );
   switch ((int)args->runMode) {
     case 0: //OneShot:
-      fprintf(file,"Online.triggertype: \"oneshot\"\n");
-      fprintf(file,"Data Stream: \"pdstl\"\n");
+      fprintf(file,"\"online.triggertype\": \"oneshot\",\n");
+      fprintf(file,"\"data_stream\": \"pdstl\",\n");
       break;
     case 1: //NuMIBeam:
-      fprintf(file,"Online.triggertype: \"numibeam\"\n");
-      fprintf(file,"Data Stream: \"numib\" \n");
+      fprintf(file,"\"online.triggertype\": \"numibeam\",\n");
+      fprintf(file,"\"data_stream\": \"numib\" ,\n");
       break;
     case 2: //Cosmics:
-      fprintf(file,"Online.triggertype: \"cosmics\"\n");
-      fprintf(file,"Data Stream: \"cosmc\"\n");
+      fprintf(file,"\"online.triggertype\": \"cosmics\",\n");
+      fprintf(file,"\"data_stream\": \"cosmc\",\n");
       break;
     case 3: //PureLightInjection:
-      fprintf(file,"Online.triggertype: \"purelightinjection\"\n");
-      fprintf(file,"Data Stream: \"linjc\"\n");
+      fprintf(file,"\"online.triggertype\": \"purelightinjection\",\n");
+      fprintf(file,"\"data_stream\": \"linjc\",\n");
       break;
     case 4: //MixedBeamPedestal:
-      fprintf(file,"Online.triggertype: \"mixedbeampedestal\"\n");
-      fprintf(file,"Data Stream: \"numip\"\n");
+      fprintf(file,"\"online.triggertype\": \"mixedbeampedestal\",\n");
+      fprintf(file,"\"data_stream\": \"numip\",\n");
       break;
     case 5: //MixedBeamLightInjection:
-      fprintf(file,"Online.triggertype: \"mixedbeamlightinjection\"\n");
-      fprintf(file,"Data Stream: \"numil\"\n");
+      fprintf(file,"\"online.triggertype\": \"mixedbeamlightinjection\",\n");
+      fprintf(file,"\"data_stream\": \"numil\",\n");
       break;
     case 6: //MTBFBeamMuon:
-      fprintf(file,"Online.triggertype: \"mtbfbeammuon\"\n");
-      fprintf(file,"Data Stream: \"bmuon\"\n");
+      fprintf(file,"\"online.triggertype\": \"mtbfbeammuon\",\n");
+      fprintf(file,"\"data_stream\": \"bmuon\",\n");
       break;
     case 7: //MTBFBeamOnly:
-      fprintf(file,"Online.triggertype: \"mtbfbeamonly\"\n");
-      fprintf(file,"Data Stream: \"bonly\"\n");
+      fprintf(file,"\"online.triggertype\": \"mtbfbeamonly\",\n");
+      fprintf(file,"\"data_stream\": \"bonly\",\n");
       break;
     default:
-      fprintf(file,"Online.triggertype: \"errortype\"\n");
-      fprintf(file,"Data Stream: \"errorstream\"\n");
+      fprintf(file,"\"online.triggertype\": \"errortype\",\n");
+      fprintf(file,"\"data_stream\": \"errorstream\",\n");
   }
-  fprintf(file,"Start Time: %llu\n", gateStartTime);
-  fprintf(file,"End Time: %llu\n", gateFinishTime);
-  fprintf(file,"Event Count: %d\n", gate);
-  fprintf(file,"First Event: %llu\n", firstGate);
-  fprintf(file,"Last Event: %llu\n", globalGate);
-  fprintf(file,"Lum Block Ranges: [%llu, %llu]\n", firstGate, globalGate);
+  fprintf(file,"\"start_time\": %llu,\n", (gateStartTime/1000000L));
+  fprintf(file,"\"end_time\": %llu,\n", (gateFinishTime/1000000L));
+  fprintf(file,"\"start_subrun_time\": %llu,\n", (subRunStartTime/1000000L));
+  fprintf(file,"\"end_subrun_time\": %llu,\n", (subRunFinishTime/1000000L));
+  fprintf(file,"\"event_count\": %d,\n", gate);
+  fprintf(file,"\"first_event\": %llu,\n", firstGate);
+  fprintf(file,"\"last_event\": %llu,\n", globalGate);
+  fprintf(file,"\"lum_block_ranges\": [[%llu, %llu]]\n", firstGate, globalGate);
+  fprintf(file,"}\n");
 
   fclose(file);
 }
