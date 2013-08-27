@@ -6,6 +6,7 @@
 #include "log4cppHeaders.h"
 
 #include "DAQWorkerArgs.h"
+#include "DAQWorkerUtils.h"
 #include "DAQHeader.h"
 
 #include <fstream>
@@ -31,10 +32,13 @@ class ReadoutStateRecorder {
   unsigned long long globalGate;
   unsigned long long gateStartTime;
   unsigned long long gateFinishTime;
+  unsigned long long subRunStartTime;
+  unsigned long long subRunFinishTime;
   unsigned int MINOSSGATE;
 
   const DAQWorkerArgs* args;
-
+  DAQWorkerUtils* daqUtils;
+ 
   void GetGlobalGateFromFile();
   void IncrememntGlobalGate();
   void WriteGlobalGateToFile();

@@ -19,18 +19,23 @@ ReadoutStateRecorder::ReadoutStateRecorder( const DAQWorkerArgs* theArgs,
   globalGate(0),
   gateStartTime(0),
   gateFinishTime(0),
+  subRunStartTime(0),
+  subRunFinishTime(0),
   MINOSSGATE(0),
   args(theArgs)
 {
   stateRecorderLogger.setPriority(priority);
   this->GetGlobalGateFromFile();
   firstGate = globalGate + 1;
+  daqUtils = new DAQWorkerUtils( args );
+  subRunStartTime = daqUtils->GetTimeInMicrosec();
   stateRecorderLogger.debugStream() << "Created new ReadoutStateRecorder: " << *this;
 }
 
 //---------------------------
 ReadoutStateRecorder::~ReadoutStateRecorder() 
 {
+  delete daqUtils;
 }
 
 //---------------------------
@@ -78,6 +83,7 @@ bool ReadoutStateRecorder::BeginNextGate()
 bool ReadoutStateRecorder::FinishGate()
 {
   stateRecorderLogger.debugStream() << "ReadoutStateRecorder::FinishGate...";
+  subRunFinishTime = daqUtils->GetTimeInMicrosec();
   this->WriteGlobalGateToFile();
   this->WriteToSAMPYFile();
   this->WriteToSAMJSONFile();
@@ -324,6 +330,8 @@ void ReadoutStateRecorder::WriteToSAMPYFile()
   }
   fprintf(file,"startTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", (gateStartTime/1000000L));
   fprintf(file,"endTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", (gateFinishTime/1000000L));
+  fprintf(file,"startSubRunTime=('%llu',SAM.SamTimeFormat_UTCFormat),\n", (subRunStartTime/1000000L));
+  fprintf(file,"endSubRunTime=('%llu',SAM.SamTimeFormat_UTCFormat),\n", (subRunFinishTime/1000000L));
   fprintf(file,"eventCount=%d,\n", gate);
   fprintf(file,"firstEvent=%llu,\n", firstGate);
   fprintf(file,"lastEvent=%llu,\n", globalGate);
@@ -426,6 +434,8 @@ void ReadoutStateRecorder::WriteToSAMJSONFile()
   }
   fprintf(file,"\"start_time\": %llu,\n", (gateStartTime/1000000L));
   fprintf(file,"\"end_time\": %llu,\n", (gateFinishTime/1000000L));
+  fprintf(file,"\"start_subrun_time\": %llu,\n", (subRunStartTime/1000000L));
+  fprintf(file,"\"end_subrun_time\": %llu,\n", (subRunFinishTime/1000000L));
   fprintf(file,"\"event_count\": %d,\n", gate);
   fprintf(file,"\"first_event\": %llu,\n", firstGate);
   fprintf(file,"\"last_event\": %llu,\n", globalGate);
