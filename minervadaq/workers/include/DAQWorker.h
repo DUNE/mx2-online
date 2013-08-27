@@ -26,6 +26,8 @@
 class DAQWorker {
 
   private:  
+    DAQWorker(const DAQWorker&);             // Prevent copy construction.
+    DAQWorker& operator=(const DAQWorker&);  // Prevent copy assignment.
     const DAQWorkerArgs* args;
     const sig_atomic_t *const status;
     bool declareEventsToET;
