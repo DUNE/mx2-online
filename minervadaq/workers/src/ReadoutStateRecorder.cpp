@@ -330,8 +330,8 @@ void ReadoutStateRecorder::WriteToSAMPYFile()
   }
   fprintf(file,"startTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", (gateStartTime/1000000L));
   fprintf(file,"endTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", (gateFinishTime/1000000L));
-  fprintf(file,"startSubRunTime=('%llu',SAM.SamTimeFormat_UTCFormat),\n", (subRunStartTime/1000000L));
-  fprintf(file,"endSubRunTime=('%llu',SAM.SamTimeFormat_UTCFormat),\n", (subRunFinishTime/1000000L));
+  fprintf(file,"startSubRunTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", (subRunStartTime/1000000L));
+  fprintf(file,"endSubRunTime=SamTime('%llu',SAM.SamTimeFormat_UTCFormat),\n", (subRunFinishTime/1000000L));
   fprintf(file,"eventCount=%d,\n", gate);
   fprintf(file,"firstEvent=%llu,\n", firstGate);
   fprintf(file,"lastEvent=%llu,\n", globalGate);
