@@ -6,17 +6,16 @@
 # which is linked to from the runcontrol.sh script. 
 
 echo "This script is only for experts working from home!! "
-echo "Are you an expert working from home? yes/no:"
+#echo "Are you an expert working from home? yes/no:"
 
-read answer 
+#read answer 
 
-if( "$answer"=="yes" ); then 
-    echo "Excellent! Go solve problems!" 
-fi
-if( "$answer"=="no" ); then
-    echo "Please use the normal start_MinervaRC.sh script" 
-exit 1
-fi
+#if["$answer"=="yes"]; then 
+#    echo "Excellent! Go solve problems!" 
+#else
+#    echo "Please use the normal start_MinervaRC.sh script" 
+#    exit 1
+#fi
 
 . $HOME/mnvdaqrunscripts/defs_crpaths
 
@@ -24,7 +23,7 @@ fi
 . $HOME/mnvdaqrunscripts/Kerberize
 
 # First, clear any old RC clients...
-#$HOME/mnvdaqrunscripts/proc_kill_RunCo.pl
+$HOME/mnvdaqrunscripts/proc_kill_RunCo.pl
 
 #Now clear any leftover tunnels that might be left open. 
 #$HOME/mnvdaqrunscripts/proc_kill_tunnels.pl
