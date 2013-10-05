@@ -162,6 +162,18 @@ unsigned long long ReadoutStateRecorder::GetGlobalGate() const
 }
 
 //---------------------------
+unsigned long long ReadoutStateRecorder::GetSubRunStartTime() const
+{
+  return (subRunStartTime/1000000L);
+}
+
+//---------------------------
+unsigned long long ReadoutStateRecorder::GetSubRunFinishTime() const
+{
+  return (subRunFinishTime/1000000L);
+}
+
+//---------------------------
 void ReadoutStateRecorder::GetGlobalGateFromFile()
 {
   std::fstream globalGateFile((args->globalGateLogFileName).c_str());

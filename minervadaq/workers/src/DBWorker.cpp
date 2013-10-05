@@ -95,13 +95,13 @@ int DBWorker::CreateTable(const char * sqlstr) const
       &stmt,
       NULL);
   if (SQLITE_OK != rc) {
-    dbWorker.errorStream() << "sqlite3_prepare failed with rc = " << rc;
+    dbWorker.errorStream() << "sqlite3_prepare CreateTable failed with rc = " << rc;
     return rc;
   }
 
   rc = sqlite3_step( stmt );
   if (SQLITE_DONE != rc) {
-    dbWorker.errorStream() << "sqlite3_step failed with rc = " << rc;
+    dbWorker.errorStream() << "sqlite3_step CreateTable failed with rc = " << rc;
     return rc;
   }
 
@@ -114,12 +114,15 @@ int DBWorker::CreateStandardRunsTable() const
 {
   dbWorker.debugStream() << "Creating Standard Runs table...";
 
-  const char * sqlstr = "CREATE TABLE RUNSUBRUN ( \
+  const char * sqlstr = "CREATE TABLE RUNSUBRUN (	\
     RUNSUBRUN INTEGER NOT NULL, \
+    SUBRUNSTARTTIME UNSIGNED BIG INT NOT NULL, \
+    SUBRUNFINISHTIME UNSIGNED BIG INT NOT NULL, \
     FIRSTGATE UNSIGNED BIG INT NOT NULL, \
     LASTGATE UNSIGNED BIG INT NOT NULL, \
     RUNMODE INTEGER NOT NULL, \
-    PRIMARY KEY (RUNSUBRUN));";
+    LOGFILENAME CHAR(100) NOT NULL, \
+    PRIMARY KEY (RUNSUBRUN));"; 
 
   int sqlstatus = CreateTable( sqlstr );
   return sqlstatus;
@@ -151,18 +154,22 @@ int DBWorker::CreateStandardHWErrorsTable() const
 //---------------------------------------------------------
 int DBWorker::AddRunDataToDB( unsigned long long firstGate,
     unsigned long long lastGate,
-    int run, int subrun, int runmode ) const
+    int run, int subrun, unsigned long long subRunStartTime, 
+    unsigned long long subRunFinishTime, int runmode, std::string logFileName ) const
 {
   if (!dbIsAvailable) return SQLITE_ERROR;
 
   dbWorker.debugStream() << "AddRunDataToDB: Run = " << run << "; Subrun = " << subrun << 
-    "; First Gate = " << firstGate << "; Last Gate = " << lastGate << "; Mode = " << runmode;
+    "; Subrun Start Time = " << subRunStartTime << "; SubRun Finish Time = " << subRunFinishTime << 
+    "; First Gate = " << firstGate << "; Last Gate = " << lastGate << "; Mode = " << runmode << 
+    "; Log File Name " << logFileName;
 
   sqlite3_stmt *stmt = NULL;
   int idx = -1;
   const char * sqlstr = 
     "INSERT INTO RUNSUBRUN VALUES ( \
-    :runsubrun, :firstGate, :lastGate, :runmode );"; 
+    :runsubrun, :subRunStartTime, :subRunFinishTime, :firstGate, :lastGate, :runmode, :logFileName );"; 
+ 
 
     int rc = sqlite3_prepare_v2( 
         dataBase,
@@ -171,8 +178,9 @@ int DBWorker::AddRunDataToDB( unsigned long long firstGate,
         &stmt, 
         NULL );
 
+ 
   if (SQLITE_OK != rc) {
-    dbWorker.errorStream() << "sqlite3_prepare failed with rc = " << rc;
+    dbWorker.errorStream() << "sqlite3_prepare AddRunDataToDB failed with rc = " << rc;
     return rc;
   }
 
@@ -180,6 +188,20 @@ int DBWorker::AddRunDataToDB( unsigned long long firstGate,
   rc = sqlite3_bind_int( stmt, idx, (run*10000 + subrun) );
   if (SQLITE_OK != rc) {
     dbWorker.errorStream() << "sqlite3_bind for runsubrun failed with rc = " << rc;
+    return rc;
+  }
+
+  idx = sqlite3_bind_parameter_index( stmt, ":subRunStartTime" );
+  rc = sqlite3_bind_int( stmt, idx, subRunStartTime );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind for subRunStartTime failed with rc = " << rc;
+    return rc;
+  }
+
+  idx = sqlite3_bind_parameter_index( stmt, ":subRunFinishTime" );
+  rc = sqlite3_bind_int( stmt, idx, subRunFinishTime );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind for subRunFinishTime failed with rc = " << rc;
     return rc;
   }
 
@@ -204,9 +226,17 @@ int DBWorker::AddRunDataToDB( unsigned long long firstGate,
     return rc;
   }
 
+  char *logfilename = (char*)logFileName.c_str();
+  idx = sqlite3_bind_parameter_index( stmt, ":logFileName" );
+  rc = sqlite3_bind_text( stmt, idx, logfilename, -1, SQLITE_STATIC );
+  if (SQLITE_OK != rc) {
+    dbWorker.errorStream() << "sqlite3_bind for logFileName failed with rc = " << rc;
+    return rc;
+  }
+
   rc = sqlite3_step( stmt );
   if (( SQLITE_DONE != rc ) && ( SQLITE_ROW != rc )) {
-    dbWorker.errorStream() << "sqlite3_step failed with rc = " << rc;
+    dbWorker.errorStream() << "sqlite3_step AddRunDataToDB failed with rc = " << rc;
     return rc;
   }
 
@@ -258,7 +288,7 @@ int DBWorker::AddErrorToDB( const FHWException & ex,
         NULL );
 
   if (SQLITE_OK != rc) {
-    dbWorker.errorStream() << "sqlite3_prepare failed with rc = " << rc;
+    dbWorker.errorStream() << "sqlite3_prepare AddErrotToDB failed with rc = " << rc;
     return rc;
   }
 
@@ -334,7 +364,7 @@ int DBWorker::AddErrorToDB( const FHWException & ex,
 
   rc = sqlite3_step( stmt );
   if (( SQLITE_DONE != rc ) && ( SQLITE_ROW != rc )) {
-    dbWorker.errorStream() << "sqlite3_step failed with rc = " << rc;
+    dbWorker.errorStream() << "sqlite3_step AddErrorToDB failed with rc = " << rc;
     return rc;
   }
 

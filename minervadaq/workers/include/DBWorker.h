@@ -37,7 +37,8 @@ class DBWorker {
         int run, int subrun ) const;
     int AddRunDataToDB( unsigned long long firstGate,
         unsigned long long globalGate,
-        int run, int subrun, int runmode ) const;
+	int run, int subrun, unsigned long long subRunStartTime,
+	unsigned long long subRunFinishTime, int runmode, std::string logFileName ) const;
 
 };
 

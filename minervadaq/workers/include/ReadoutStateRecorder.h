@@ -57,6 +57,9 @@ class ReadoutStateRecorder {
 
   unsigned long long GetFirstGate() const;
   unsigned long long GetGlobalGate() const;
+  unsigned long long GetSubRunStartTime() const;
+  unsigned long long GetSubRunFinishTime() const;
+
   bool BeginNextGate();
   bool FinishGate();
 
