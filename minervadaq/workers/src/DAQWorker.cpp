@@ -69,7 +69,8 @@ void DAQWorker::InitializeHardware()
 
 #if WH14
   readoutWorker->AddCrate(0);
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  1,  0,  0,  0 );
+  //  readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  1,  0,  0,  0 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  2,  0,  0,  0 );
   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
 #endif
 #if NUMI
@@ -387,7 +388,10 @@ int DAQWorker::WriteRunDataToDB() const
       stateRecorder->GetGlobalGate(),
       args->runNumber,
       args->subRunNumber,
-      (int)args->runMode
+      stateRecorder->GetSubRunStartTime(),
+      stateRecorder->GetSubRunFinishTime(),
+      (int)args->runMode,
+      args->logFileName
       );
 }
 
