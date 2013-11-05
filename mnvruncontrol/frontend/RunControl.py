@@ -170,7 +170,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.frame.Bind(wx.EVT_BUTTON, self.OnConnectClick, id=xrc.XRCID("control_connection_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnControlClick, id=xrc.XRCID("control_connection_owner_button"))
 		self.frame.Bind(wx.EVT_BUTTON, self.OnHVDismissClick, id=xrc.XRCID("pmt_check_dismiss_button"))
-		self.frame.Bind(wx.EVT_BUTTON, self.OnHVRefreshClick, id=xrc.XRCID("pmt_check_refresh_button"))
 		
 		self.frame.Bind(wx.EVT_RADIOBUTTON, self.OnSeriesClick, id=xrc.XRCID("config_global_singlerun_button"))
 		self.frame.Bind(wx.EVT_RADIOBUTTON, self.OnSeriesClick, id=xrc.XRCID("config_global_runseries_button"))
