@@ -22,9 +22,6 @@ echo "Restarting processes on ${MNVDAQ}..."
 `ssh  ${REMDAQACCT}@${MNVDAQ} source ${SCRIPTSDIR}/run_runcontrol_servers.sh`
 echo "Wait for it....."
 sleep 5 
-echo "Killing and Restarting processes on mnvonlinelogger also..."
-`sh dispatcher_nearline.sh`
-sleep 5
 
 # Restart the RC...
 echo "Restarting runcontrol..."

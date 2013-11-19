@@ -10,14 +10,19 @@ OM_NODE="mnvonlinelogger.fnal.gov"
 
 . $HOME/mnvdaqrunscripts/defs_standardpaths
 
+# Need to kerberize first. 
+. $HOME/mnvdaqrunscripts/Kerberize
+
 DAQ_MGR=false
 RC_DISPATCHER=false
+OM_DISPATCHER=false
 
 # determine which servers to run
 case "$HOSTNAME" in
 	${MASTER_NODE})
 		DAQ_MGR=true
 		RC_DISPATCHER=true
+		OM_DISPATCHER=true
 		;;
 	
 	${LI_NODE})
@@ -46,8 +51,15 @@ fi
 which python2.6 >& /tmp/pytest.txt
 PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
 
+if [ $OM_DISPATCHER ]; then
+    echo "Killing and Restarting processes on mnvonlinelogger first..."
+    ssh nearonline@mnvonlinelogger.fnal.gov sh /home/nearonline/dispatcher_nearline.sh
+fi
+
 if [ $RC_DISPATCHER ]; then
 	echo "Starting the run control's ReadoutDispatcher..."
+        echo "PYV =" $PYV "RCROOT =" $RCROOT
+        echo "PYTHONPATH =" $PYTHONPATH
 
 	# Check to see if the dispatcher is running.  If it is, stop/kill it.
 	pushd ${RCROOT}/backend >& /dev/null
