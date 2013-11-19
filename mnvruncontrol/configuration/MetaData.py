@@ -293,8 +293,9 @@ RunSeriesTypes          = MetaData(( ("BEAM",           "Beam",                0
 				                 ("PEDESTAL",       "Pedestal",            1, "pedestal_series.db"),
 				                 ("LI_MAX_PE",      "LI Max PE",           2, "li_max_pe_series.db"),
 				                 ("LI_ONE_PE",      "LI One PE",           3, "li_one_pe_series.db"),
-				                 ("MIXED_BEAM_PED", "Mixed Beam-Pedestal", 4, "mix_beam_ped_series.db"),
-				                 ("MIXED_BEAM_LI",  "Mixed Beam-LI",       5, "mix_beam_li_series.db"),
+# the following two are obsolete...
+#				                 ("MIXED_BEAM_PED", "Mixed Beam-Pedestal", 4, "mix_beam_ped_series.db"),
+#				                 ("MIXED_BEAM_LI",  "Mixed Beam-LI",       5, "mix_beam_li_series.db"),
 				                 ("CUSTOM",         "Custom Series",       6, "custom_series.db") ))
 				                 
 TriggerTypes       = MetaData(( ("UNKNOWN",   "Unknown",          0,   None),
