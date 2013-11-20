@@ -1,5 +1,5 @@
-SINGLEDAQ=/scratch/nearonline/mirror/mnvdaq
-MULTIDAQ=/scratch/nearonline/mirror/mnvdaq
+SINGLEDAQ=/scratch/nearonline/mirror/minervadaq-croce
+MULTIDAQ=/scratch/nearonline/mirror/minervadaq-croce
 RCROOT=/scratch/nearonline/mirror/mnvruncontrol
 OMLOGSROOT=/scratch/nearonline/var/logs
 SCRIPTSDIR=/scratch/nearonline/mirror/mnvdaqrunscripts
