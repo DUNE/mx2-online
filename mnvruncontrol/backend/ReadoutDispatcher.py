@@ -16,6 +16,7 @@
                    second version, Aug. 2010
                     
   Address all complaints to the management.
+
 """
 import subprocess
 import threading
@@ -409,23 +410,31 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		return formatted_feblist
 		
 	def sc_init(self):
-		if len(self.slow_controls) == 0:
-			for i in range(Configuration.params["read_SCNumCrates"]):
-				sc = SlowControl(linkNum=0, boardNum=i)
-				if not sc or not sc.controller:
-					continue
+		self.logger.info("sc_init:start")
+		try:
+			if len(self.slow_controls) == 0:
+				for i in range(Configuration.params["read_SCNumCrates"]):
+					sc = SlowControl(linkNum=0, boardNum=i)
+					if not sc or not sc.controller:
+						continue
 
-				# find the appropriate VME devices: CRIMs, CROCs, DIGitizers....
-				sc.FindCRIMs()
-				sc.FindCROCs()
-				sc.FindCROCEs()
-				sc.FindDIGs()
+					# find the appropriate VME devices: CRIMs, CROCs, DIGitizers....
+					sc.FindCRIMs()
+					sc.FindCROCs()
+					sc.FindCROCEs()
+					sc.ConfigCROCEsREFE(0)
+					sc.FindDIGs()
 		
-				# then load the FEBs into their various CROCs
-				sc.FindFEBs(sc.vmeCROCs)
-				sc.FindCROCEFEBs(sc.vmeCROCEs)				
+					# then load the FEBs into their various CROCs
+					sc.FindFEBs(sc.vmeCROCs)
+					sc.FindCROCEFEBs(sc.vmeCROCEs, useChRst=False, verbose=False)
 
-				self.slow_controls.append(sc)
+					self.slow_controls.append(sc)
+		except Exception, e:
+			self.logger.exception("Error trying to initialize the slow controls:")
+			self.logger.warning("Couldn't initialize.")
+
+		self.logger.info("sc_init:end")
 
 
 #########################

@@ -1822,7 +1822,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		    actually within the node list.  It can also optionally
 		    verify that a response was received from each node
 		    of a certain type (or every node in the list). """
-		    
+
+		timeout=30
+		self.logger.info('Sending message = %s, timeout = %i'% (message,timeout))		    
 		responses = self.postoffice.SendAndWaitForResponse( message, timeout=timeout, with_exception=with_exception )
 
 		out_responses = []
