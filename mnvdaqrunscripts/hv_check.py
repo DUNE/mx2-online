@@ -26,13 +26,25 @@ print options.file2
 for line1, line2 in izip(open(options.file1),open(options.file2)):
    if re.match(r'FPGA(.*)',line1) and re.match(r'FPGA(.*)',line2):
       #print(line1 + line2)
+      FPGA_num = line1.split(':')
       file1_test=line1.split(',')
       file2_test=line2.split(',')
       for item in to_check:
          if file1_test[item]!=file2_test[item]:
             tmp1=file1_test[3].split(":")
             tmp2=file2_test[3].split(":")
-            print (str(item) + file1_test[item] + "  "+ file1_test[0] + file1_test[1] +   file1_test[2]  + " old file  " + file1_test[item]+ " new file " + file2_test[item] )
-            
-            
+           # print (str(item) + file1_test[item] + "  "+ file1_test[0] + file1_test[1] +   file1_test[2]  + " old file  " + file1_test[item]+ " new file " + file2_test[item] )
+            print (str(item) +" "+ FPGA_num[1] + " old file  " + file1_test[item]+ " new file " + file2_test[item] )
+            # check to find the differences between the target voltages. 
+            if item==25 :
+               hex1_part1 = file1_test[item+1].replace("'","")
+               hex1_part2 = file1_test[item].replace("'","")
+               hex1 = hex1_part1+hex1_part2
+               hex1_new = hex1.replace(" ","")
 
+               hex2_part1 = file2_test[item+1].replace("'","")
+               hex2_part2 = file2_test[item].replace("'","")
+               hex2 =  hex2_part1+hex2_part2
+               hex2_new = hex2.replace(" ","")
+               print (FPGA_num[1] +"  "+str((int(hex2_new,16)-int(hex1_new,16))*0.0170213))
+                     
