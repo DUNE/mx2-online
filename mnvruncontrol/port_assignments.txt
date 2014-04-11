@@ -13,18 +13,20 @@
   Changelog:  
     01/14/11, J. Wolcott: first version
     01/21/11, J. Wolcott: add mnvonlinemaster
+    04/11/14, O. Altinok: add Deborah Harris UROC
 ================================================================================
 
-Port     Assignee machine address       Assignee description
-------------------------------------------------------------------
-3001     minerva-rc.fnal.gov            WH12 control room
-3002     mnvonlinemaster.fnal.gov       Online master node (fallback)
-3005     jwolcott.pas.rochester.edu     Jeremy Wolcott (Rochester)
-3010     minerva-cart.phyast.pitt.edu   Pittsburgh UROC
-3011     ksmcf-cart.pas.rochester.edu   Rochester UROC
-3012     uroc.phy.tufts.edu             Tufts UROC
-3013     uroc.fis.utfsm.cl              USM (Chile) UROC
-3014     uroc.hep.utexas.edu            U. Texas-Austin UROC
-3015     uroc.wm.edu                    William & Mary UROC
-3016     uroc.d.umn.edu                 U. Minnesota-Duluth UROC
-3017     uroc02.phy.tufts.edu           Tufts UROC #2
+Port        Assignee machine address                        Assignee description
+-----------------------------------------------------------------------------------------
+3001        minerva-rc.fnal.gov                             WH12 control room
+3002        mnvonlinemaster.fnal.gov                        Online master node (fallback)
+3005        jwolcott.pas.rochester.edu                      Jeremy Wolcott (Rochester)
+3010        minerva-cart.phyast.pitt.edu                    Pittsburgh UROC
+3011        ksmcf-cart.pas.rochester.edu                    Rochester UROC
+3012        uroc.phy.tufts.edu                              Tufts UROC
+3013        uroc.fis.utfsm.cl                               USM (Chile) UROC
+3014        uroc.hep.utexas.edu                             U. Texas-Austin UROC
+3015        uroc.wm.edu                                     William & Mary UROC
+3016        uroc.d.umn.edu                                  U. Minnesota-Duluth UROC
+3017        uroc02.phy.tufts.edu                            Tufts UROC #2
+3018        23-25-1-49-static.hfc.comcastbusiness.net       Deborah Harris UROC
