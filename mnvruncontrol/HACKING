@@ -1,8 +1,8 @@
 mnvruncontrol -- the MINERvA run control
 ==================================================================
   Original author:               J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:                 v5r7p2  (November 2013)
-  Last update to this document:  October 26, 2010
+  Last revision:                 v6r1  (May 2014)
+  Last update to this document:  May 5, 2014
 ==================================================================
 
 This document contains a few notes on the internal operations of the run control
@@ -205,7 +205,7 @@ subrun_ |              |---------------|           |--------------|
    
 
 (2) THE POSTOFFICE MESSAGE MANAGEMENT SYSTEM.
-  The PostOffice (backend/PostOffice.py) is intended to be a self-contained,
+  The PostOffice (backend/PostOffice) module is intended to be a self-contained,
   flexible communication system allowing for message delivery based on a
   "publish-subscribe" model.  It can be used both to send messages across a
   network and to deliver messages locally (like the event dispatch system one
@@ -232,7 +232,7 @@ subrun_ |              |---------------|           |--------------|
   go there too...]  So, exercise care in your mental depiction of what's
   going on: envision this as a "broadcast" system with repeaters, not like an
   e-mail system where you specify each recipient individually.  Read the caution
-  at the top of backend/PostOffice.py for more details.
+  at the top of backend/PostOffice/__init__.py for more details.
   
   Thanks to the beauty of Python's 'pickle' module, a message can contain any
   data of nearly any type -- including instances of user-defined classes.  (The
@@ -240,9 +240,9 @@ subrun_ |              |---------------|           |--------------|
   obligatory attribute you must provide is the message "subject", which is used
   to match messages to subscriptions; you are free to attach or not attach
   anything else to the object by simple assignment or in the constructor, e.g.,
-     msg = PostOffice.Message( subject="first message", my_param1=37.3,
-                               my_param2="param",
-                               my_param3=[37.3, "param", False] )
+     msg = PostOffice.Envelope.Message( subject="first message", my_param1=37.3,
+                                        my_param2="param",
+                                        my_param3=[37.3, "param", False] )
      msg.my_param4 = { "key1": 37.3, "key2": False }
   The only stipulation should you choose to use an instance of a class you have
   written is that the PostOffice on the receiving end have access to the module
@@ -252,7 +252,7 @@ subrun_ |              |---------------|           |--------------|
   To use the system, you need at minimum two persistent objects: an instance
   of the PostOffice class (handles message routing) and an instance of the
   MessageTerminus class (which receives messages).  You create Subscription
-  objects (see the class docstring in PostOffice.py) and register them with
+  objects (see the class docstring in Envelope.py) and register them with
   the PostOffice object using AddSubscription, telling the PO where to deliver
   or forward them, and with the MessageTerminus object, telling it which of its
   methods to use to react to message delivery.  Any of the Dispatcher objects
@@ -266,7 +266,7 @@ subrun_ |              |---------------|           |--------------|
 (3) SECURITY AND THE RUN CONTROL.
   The PostOffice is inherently susceptible to packet forgery because the
   'pickle' module it uses is not intended to be secure against it.  (See the
-  dire warnings on the subject at the top of PostOffice.py.)  Moreover, Fermilab
+  dire warnings on the subject at the top of __init__.py.)  Moreover, Fermilab
   security policy requires that all authentication to a machine from outside the
   lab be done centrally.
   
