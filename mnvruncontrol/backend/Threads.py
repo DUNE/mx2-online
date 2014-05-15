@@ -40,8 +40,9 @@ except ImportError:
 
 from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration import Logging
-from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import Alert
+
+from mnvruncontrol.backend.PostOffice.Envelope import Message 
 
 #########################################################
 #   DAQthread
@@ -91,7 +92,7 @@ class DAQthread(threading.Thread):
 
 			# push any data to the frontend if it wants it
 			if len(newdata) > 0 and self.relay_output:
-				 self.postoffice.Send(PostOffice.Message(subject="frontend_info", update="process_data", data=newdata))
+				 self.postoffice.Publish(Message(subject="frontend_info", update="process_data", data=newdata))
 				 
 			self.output_history += newdata
 			self.output_history = self.output_history[-2000:]	# trim to 2000 characters
@@ -101,7 +102,7 @@ class DAQthread(threading.Thread):
 		newdata = self.read()
 		if self.relay_output:
 			if len(newdata) > 0:
-				self.postoffice.Send(PostOffice.Message(subject="frontend_info", update="process_data", data=newdata))
+				self.postoffice.Publish(Message(subject="frontend_info", update="process_data", data=newdata))
 
 		self.output_history += newdata
 		identity = self.process_identity.lower().replace(" ", "")
@@ -122,7 +123,7 @@ class DAQthread(threading.Thread):
 		# this is only expected to really be a problem if it exits with a
 		# non-zero return value, however.
 		if self.is_essential_service and not self.time_to_quit and self.process.returncode != 0:
-			self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="series_end", early_abort=True, lost_process=self.process_identity, output_history=self.output_history) )
+			self.postoffice.Publish( Message(subject="mgr_internal", event="series_end", early_abort=True, lost_process=self.process_identity, output_history=self.output_history) )
 #		else:
 #			print "Process '%s' ended.\n"
 			
@@ -417,7 +418,7 @@ class AlertThread(threading.Thread):
 				
 		if alert is not None and alert.is_manager_alert and send_acknowledgment:
 			self._logger.debug("Sending manager acknowledgement.")
-			self._parent_app.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="alert_acknowledge", alert_id=alert.id, client_id=self._parent_app.id) )
+			self._parent_app.postoffice.Publish( Message(subject="mgr_directive", directive="alert_acknowledge", alert_id=alert.id, client_id=self._parent_app.id) )
 	
 	def DropManagerAlerts(self):
 		""" When a client disconnects from the DAQ,

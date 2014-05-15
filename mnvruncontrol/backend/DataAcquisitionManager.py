@@ -22,21 +22,22 @@
   Address all complaints to the management.
 """
 
-import os
-import sys
-import signal
-import datetime
-import time
-import uuid
+import anydbm
 import copy
+import datetime
+import hashlib
+import logging
+import os
 import pprint
 import shelve
+import signal
 import socket
-import anydbm
-import hashlib
-from functools import wraps
+import sys
 import threading
-import logging
+import time
+import uuid
+
+from functools import wraps
 
 # run control-specific modules.
 # note that the folder 'mnvruncontrol' must be in the PYTHONPATH!
@@ -46,7 +47,6 @@ from mnvruncontrol.configuration import Defaults
 from mnvruncontrol.configuration import MetaData
 from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration.DAQConfiguration import DAQConfiguration
-from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import Dispatcher
 from mnvruncontrol.backend import RunSeries
 from mnvruncontrol.backend import RemoteNode
@@ -55,6 +55,7 @@ from mnvruncontrol.backend import Threads
 from mnvruncontrol.backend import DAQErrors
 from mnvruncontrol.backend import MailTools
 
+from mnvruncontrol.backend.PostOffice.Envelope import Message, Subscription
 
 ### a decorator for scrubbing old tokens out of the authorization list ###
 def cleanup_tokens(f):
@@ -215,7 +216,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				                RemoteNode.MTEST:      "beamdaq_status",
 				                RemoteNode.PERIPHERAL: "device_status" }
 
-				subscr = PostOffice.Subscription(subject=subject_map[node.type], action=PostOffice.Subscription.FORWARD, delivery_address=(None, self.socket_port))
+				subscr = Subscription(subject=subject_map[node.type], action=Subscription.FORWARD, delivery_address=(None, self.socket_port))
 				self.postoffice.ForwardRequest( node.address, [subscr,] )
 				self.logger.info("   ... done.")
 
@@ -242,8 +243,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		                          "mgr_directive":   self.MgrDirectiveHandler }
 	
 		for subject in subscription_handlers:
-			subscr = PostOffice.Subscription(subject=subject,
-		                                      action=PostOffice.Subscription.DELIVER,
+			subscr = Subscription(subject=subject,
+		                                      action=Subscription.DELIVER,
 		                                      delivery_address=self)
 			self.postoffice.AddSubscription(subscr)
 			self.AddHandler(subscr, subscription_handlers[subject])
@@ -252,7 +253,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		""" Any clean-up actions that need to be taken before shutdown.  """
 		    
 		self.logger.info("Informing nodes I'm going down...")
-		self.postoffice.Send( PostOffice.Message(subject="mgr_status", status="offline", mgr_id=self.id) )
+		self.postoffice.Publish( Message(subject="mgr_status", status="offline", mgr_id=self.id) )
 		
 		self.logger.info("Stopping worker thread...")
 		self.worker_thread.queue.put(Threads.StopWorkingException())
@@ -324,8 +325,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 						if self.control_info is not None and message.client["client_id"] == self.control_info["client_id"]:
 							self.logger.info("Admin revoked control from client %s.", message.client["client_id"])
 							self.control_info = None
-							notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
-							self.postoffice.Send(notify_msg)
+							notify_msg = Message( subject="frontend_info", info="control_update", control_info=self.control_info )
+							self.postoffice.Publish(notify_msg)
 							self.worker_thread.queue.put( { "method": self.SendClientInfo } )
 						else:
 							response.success = False
@@ -334,7 +335,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					response.success = False
 					response.error_msg = "Credentials were invalid or another authorization error occurred.  Try again."
 		
-		self.postoffice.Send(response)
+		self.postoffice.Publish(response)
 
 	def ClientAllowed(self, client_id):
 		""" Overridden from Dispatcher -- checks if a client is
@@ -405,7 +406,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					response_msg.success = None
 					
 					# send out message soliciting objections if there are any
-					self.postoffice.Send( PostOffice.Message(subject="frontend_info",
+					self.postoffice.Publish( Message(subject="frontend_info",
 					                                         info="control_transfer_proposal",
 					                                         who={"identity": message.requester_name, 
 					                                              "ip": message.requester_ip,
@@ -428,14 +429,14 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					response_msg.success = True
 					
 
-		self.postoffice.Send(response_msg)
+		self.postoffice.Publish(response_msg)
 		
 		# if the 'success' paramter is None,
 		# nothing has changed yet.  don't send
 		# an update until it does.
 		if response_msg.success is not None:
-			notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
-			self.postoffice.Send(notify_msg)
+			notify_msg = Message( subject="frontend_info", info="control_update", control_info=self.control_info )
+			self.postoffice.Publish(notify_msg)
 			
 			# if control changed, we should also update
 			# any admins out there who are watching
@@ -458,8 +459,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.logger.info("Control transferred to new client: %s", self.control_info["client_id"])
 
 		self.control_pending = None
-		notify_msg = PostOffice.Message( subject="frontend_info", info="control_update", control_info=self.control_info )
-		self.postoffice.Send(notify_msg)
+		notify_msg = Message( subject="frontend_info", info="control_update", control_info=self.control_info )
+		self.postoffice.Publish(notify_msg)
 		self.worker_thread.queue.put( { "method": self.SendClientInfo } )
 	
 	def DAQStatusHandler(self, message):
@@ -524,7 +525,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				message = "The DAQ on the '%s' node exited with an error (code: %d) during run %d, subrun %d.  Will skip to the next subrun..." % (message.sender, message.code, self.configuration.run, self.configuration.subrun)
 				self.NewAlert(notice=message, severity=Alert.WARNING)
 				# skip to the next subrun and try again.
-				self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end") )
+				self.postoffice.Publish( Message(subject="mgr_internal", event="subrun_end") )
 		
 		elif message.state == "hw_error":
 			self.NewAlert(notice="A hardware error was reported on the '%s' node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
@@ -532,13 +533,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.StopDataAcquisition(auto_start_ok=False)
 			self.last_HW_config = None
 
-			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+			self.postoffice.Publish( self.StatusReport(items=["remote_nodes"]) )
 		
 		elif message.state == "hw_ready":
 			self.remote_nodes[message.sender].status = RemoteNode.OK
 			self.logger.debug("    ==> '%s' node reports it's finished loading hardware.", message.sender)
 
-			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+			self.postoffice.Publish( self.StatusReport(items=["remote_nodes"]) )
 			
 			# are they all ready yet?
 			for node in self.remote_nodes:
@@ -571,13 +572,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.current_gate["type"]   = message.last_trigger_type
 				self.current_gate["time"]   = message.last_trigger_time
 				
-				self.postoffice.Send( self.StatusReport( items=["current_gate", "waiting"], do_log=False ) )
+				self.postoffice.Publish( self.StatusReport( items=["current_gate", "waiting"], do_log=False ) )
 			
 		elif message.state == "finished":
 			self.remote_nodes[message.sender].completed = True
 			self.remote_nodes[message.sender].sent_sentinel = message.sentinel
 			self.remote_nodes[message.sender].status = RemoteNode.IDLE
-			self.postoffice.Send( self.StatusReport(items=["remote_nodes",]) )
+			self.postoffice.Publish( self.StatusReport(items=["remote_nodes",]) )
 			self.logger.debug("    ==> '%s' node reports it's done taking data and %s send a sentinel.", message.sender, "DID" if message.sentinel else "DID NOT")
 			
 			# loop and check if they're all finished
@@ -691,7 +692,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					
 				elif message.directive == "skip":
 					self.logger.info("Frontend client '%s' requests skip to next subrun.", message.client_id)
-					self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end") )
+					self.postoffice.Publish( Message(subject="mgr_internal", event="subrun_end") )
 					status = True
 				
 				elif message.directive == "alert_acknowledge":
@@ -705,7 +706,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 					# clear out the PMT list (otherwise non-control clients will always be stuck on it)
 					self.problem_pmt_list = None
-					self.postoffice.Send( self.StatusReport(items=["problem_pmt_list",]) )
+					self.postoffice.Publish( self.StatusReport(items=["problem_pmt_list",]) )
 					status = True
 					
 				elif message.directive == "control_transfer_allow":
@@ -721,7 +722,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				else:
 					response.subject = "request_response"
 					response.success = status
-		self.postoffice.Send(response)
+		self.postoffice.Publish(response)
 	
 	def MgrInternalHandler(self, message):
 		""" Handles messages that are passed around internally
@@ -802,7 +803,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.debug("   locking remote nodes...")
 		# lock each of the remote nodes that's currently taking orders from this manager.
 		try:
-			responses = self.NodeSendWithResponse(PostOffice.Message(subject="lock_request", request="get", requester_id=self.id), timeout=10)
+			responses = self.NodeSendWithResponse(Message(subject="lock_request", request="get", requester_id=self.id), timeout=10)
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			return False
@@ -834,7 +835,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					node.status = RemoteNode.OK
 				self.logger.info("     got lock confirmation from node '%s'...", node.name)
 		
-		self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )		
+		self.postoffice.Publish( self.StatusReport(items=["remote_nodes"]) )		
 		
 		if not ok:
 			return False
@@ -862,8 +863,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.auto_start = self.configuration.auto_start_series
 
 		# want to return so that client knows we started ok
-		self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_auto_start") )
-		self.postoffice.Send( self.StatusReport( items=["running", "run_series", "first_subrun"]) )
+		self.postoffice.Publish( Message(subject="mgr_internal", event="subrun_auto_start") )
+		self.postoffice.Publish( self.StatusReport( items=["running", "run_series", "first_subrun"]) )
 		return True
 		
 	def StopDataAcquisition(self, auto_start_ok=None):
@@ -876,7 +877,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		if self.running:
 			self.running = False
 			self.logger.info("Stopping data acquisition sequence...")
-			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="subrun_end"))
+			self.postoffice.Publish(Message(subject="mgr_internal", event="subrun_end"))
 			return
 		else:
 			self.logger.debug("Not running, so we don't need to stop the DAQ.")
@@ -884,7 +885,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.info("Unlocking remote nodes...")
 		# release locks from the remote nodes
 		try:
-			responses = self.NodeSendWithResponse(PostOffice.Message(subject="lock_request", request="release", requester_id=self.id), timeout=10)
+			responses = self.NodeSendWithResponse(Message(subject="lock_request", request="release", requester_id=self.id), timeout=10)
 		except DAQErrors.NodeError:
 			pass
 
@@ -919,18 +920,18 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 #		self.subrun = 0
 		
 #		self.logger.info("Informing frontend that run series is over.")
-#		self.postoffice.Send( PostOffice.Message(subject="frontend_info", info="series_end") )
+#		self.postoffice.Publish( Message(subject="frontend_info", info="series_end") )
 #		print "self.auto_start is: ", self.auto_start
 		
 		if not self.configuration.is_single_run and self.auto_start:
 			self.logger.info("Auto-starting next run series...")
-			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="series_auto_start"))
+			self.postoffice.Publish(Message(subject="mgr_internal", event="series_auto_start"))
 		else:
 			self.logger.info("Running ended.")
 			self.current_state = "Idle."
 			self.current_progress = (0, 1)
 			# inform the frontend clients where we now stand.
-			self.postoffice.Send( self.StatusReport() )
+			self.postoffice.Publish( self.StatusReport() )
 
 
 	##########################################
@@ -971,7 +972,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				# notify the main window which step we're on so that the user has some feedback.
 				self.current_state = "Setting up run:\n" + task["message"]
 				self.current_progress = (self.startup_step, self.num_startup_steps)
-				self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress"] ) )
+				self.postoffice.Publish( self.StatusReport( items=["current_state", "current_progress"] ) )
 				
 				# then run the appropriate method.
 				try:
@@ -1009,7 +1010,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				do_update = self.waiting != (status is None)
 				self.waiting = (status is None)
 				if do_update:
-					self.postoffice.Send( self.StatusReport(items=["waiting"]) )
+					self.postoffice.Publish( self.StatusReport(items=["waiting"]) )
 
 				if status is None:
 					return
@@ -1024,7 +1025,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# if running needs to end, there's some cleanup we need to do first.
 		if quitting:
 			self.logger.warning("Subrun %d aborted.", self.configuration.subrun)
-			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="series_end", early_abort=True))
+			self.postoffice.Publish(Message(subject="mgr_internal", event="series_end", early_abort=True))
 			return
 
 		# all the startup tasks were successful.
@@ -1096,14 +1097,14 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			if node.type not in (RemoteNode.READOUT, RemoteNode.MTEST):
 				node.status = RemoteNode.IDLE
 		
-		self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+		self.postoffice.Publish( self.StatusReport(items=["remote_nodes"]) )
 		responses = []
 
 		try:
 			if stop_readout:
-				responses += self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+				responses += self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
 			if stop_mtest:
-				responses += self.NodeSendWithResponse( PostOffice.Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=10 )
+				responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="Couldn't contact all the nodes to stop them.  The next subrun could be problematic...", severity=Alert.ERROR)
 
@@ -1118,7 +1119,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					self.logger.info("   => '%s' node was not in data acquisition...", response.sender)
 					self.remote_nodes[response.sender].completed = True
 					self.remote_nodes[response.sender].status = RemoteNode.IDLE
-					self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+					self.postoffice.Publish( self.StatusReport(items=["remote_nodes"]) )
 			else:
 				self.logger.info("   Bogus message from '%s' node:\n%s", response.sender, response)
 				
@@ -1157,7 +1158,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		for threadname in self.DAQ_threads:		
 			self.current_state = "Subrun finishing:\nSignalling ET threads..."
 			self.current_progress = (step, numsteps)
-			self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress", "waiting"] )  )
+			self.postoffice.Publish( self.StatusReport( items=["current_state", "current_progress", "waiting"] )  )
 
 			thread = self.DAQ_threads[threadname]
 			
@@ -1211,11 +1212,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# it might already be unset, etc.  we'll
 		# panic on the startup end if need be.
 		self.logger.info("Resetting the light injection box(es)...")
-		message = PostOffice.Message(subject="readout_directive", mgr_id=self.id,
+		message = Message(subject="readout_directive", mgr_id=self.id,
 		                             directive="li_configure",
 		                             li_level=MetaData.LILevels.ZERO_PE,
 		                             led_groups=MetaData.LEDGroups.ABCD)
-		responses = self.postoffice.Send(message)
+		responses = self.postoffice.Publish(message)
 		step += 1
 		
 		self.logger.info("Subrun %d finished.", self.configuration.subrun)
@@ -1237,13 +1238,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		self.current_state = "Subrun completed."
 		self.current_progress = (numsteps, numsteps)
-		self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress"] ) )
+		self.postoffice.Publish( self.StatusReport( items=["current_state", "current_progress"] ) )
 		
 		if self.running and (self.configuration.subrun - self.first_subrun) < len(self.run_series.Runs):
-			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="subrun_auto_start"))
+			self.postoffice.Publish(Message(subject="mgr_internal", event="subrun_auto_start"))
 		else:
 			self.running = False
-			self.postoffice.Send(PostOffice.Message(subject="mgr_internal", event="series_end", early_abort=False))		
+			self.postoffice.Publish(Message(subject="mgr_internal", event="series_end", early_abort=False))		
 
 	##########################################
 	# Helper methods used by StartNextSubrun()
@@ -1296,7 +1297,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		self.logger.info("  ... will use port %d as this subrun's ET port.", self.configuration.et_port)
 
-		self.postoffice.Send( self.StatusReport( items=["running", "configuration"]) )
+		self.postoffice.Publish( self.StatusReport( items=["running", "configuration"]) )
 		
 		# ok to proceed to next step
 		return True
@@ -1334,7 +1335,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 			try:
 				self.logger.info("Instructing readout nodes to initialize hardware...")
-				responses = self.NodeSendWithResponse(PostOffice.Message(subject="readout_directive", directive="hw_config", hw_config=self.configuration.hw_config, mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10)
+				responses = self.NodeSendWithResponse(Message(subject="readout_directive", directive="hw_config", hw_config=self.configuration.hw_config, mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10)
 			except DAQErrors.NodeError:
 				self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 				return False
@@ -1384,7 +1385,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					node.hw_init = True
 					node.status = RemoteNode.OK
 
-			self.postoffice.Send( self.StatusReport(items=["remote_nodes",]) )
+			self.postoffice.Publish( self.StatusReport(items=["remote_nodes",]) )
 			self.last_HW_config = self.configuration.hw_config
 
 			if self.configuration.hw_config == MetaData.HardwareConfigurations.NOFILE:
@@ -1408,7 +1409,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			li_level   = MetaData.LILevels.ZERO_PE
 			led_groups = MetaData.LEDGroups.ABCD
 		
-		message = PostOffice.Message(subject="readout_directive", mgr_id=self.id, directive="li_configure",
+		message = Message(subject="readout_directive", mgr_id=self.id, directive="li_configure",
 		                             li_level=li_level, led_groups=led_groups)
 		
 		skip = False
@@ -1432,7 +1433,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			# for now, if the LI configuration didn't work,
 			# we just go on to the next subrun.  we'll make that
 			# happen manually here.
-			self.postoffice.Send( PostOffice.Message(subject="mgr_internal", event="subrun_end") )
+			self.postoffice.Publish( Message(subject="mgr_internal", event="subrun_end") )
 			
 			# return None so that the subrun doesn't try to continue,
 			# but also doesn't abort the run series altogether.
@@ -1485,7 +1486,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			# if so, send out a notice.
 			if notify:
 				  self.logger.info("  ... warning user about errant PMT high voltages.")
-				  self.postoffice.Send(PostOffice.Message(subject="frontend_info", info="HV_warning", pmt_info=problem_boards))
+				  self.postoffice.Publish(Message(subject="frontend_info", info="HV_warning", pmt_info=problem_boards))
 				  self.problem_pmt_list = problem_boards
 			else:
 				self.logger.info("  ... PMT voltages are ok.")
@@ -1511,7 +1512,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		if self.current_DAQ_thread < len(self.DAQStartTasks):
 			self.current_state = "Setting up run:\n" + self.DAQStartTasks[self.current_DAQ_thread]["message"]
 			self.current_progress = (self.startup_step+1, self.num_startup_steps)
-			self.postoffice.Send( self.StatusReport( items=["current_state", "current_progress"] ) )
+			self.postoffice.Publish( self.StatusReport( items=["current_state", "current_progress"] ) )
 			
 			# do the increments first to prevent race conditions
 			# (i.e., some subsidiary task spawned by a DAQStartTask
@@ -1606,7 +1607,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# the ET system is all set up, so the online monitoring nodes
 		# can be told to connect.
 		self.logger.info("  initializing any online monitoring nodes...")
-		message = PostOffice.Message(subject="om_directive",
+		message = Message(subject="om_directive",
 			directive="start",
 			mgr_id=self.id,
 			et_pattern=self.configuration.et_filename,
@@ -1668,7 +1669,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.info("  clearing the DAQ to make sure it's ready...")
 		
 		try:
-			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+			responses = self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(auto_start_ok=False)
@@ -1691,7 +1692,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				node.completed = False
 
 		try:
-			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
+			responses = self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(auto_start_ok=False)
@@ -1723,7 +1724,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 			# we're waiting now for the 'done' signal from the DAQ
 			self.waiting = True
-			self.postoffice.Send( self.StatusReport(items=["current_state", "waiting"]) )
+			self.postoffice.Publish( self.StatusReport(items=["current_state", "waiting"]) )
 			
 			self.logger.info("  All DAQ services started.  Data acquisition for subrun %d underway." % (self.configuration.subrun) )
 		
@@ -1739,7 +1740,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				notice_collection.remove(alert)
 		
 		# make sure ALL clients know that this alert was cleared
-		self.postoffice.Send( PostOffice.Message(subject="client_alert", action="clear", alert=alert, mgr_id=self.id) )
+		self.postoffice.Publish( Message(subject="client_alert", action="clear", alert=alert, mgr_id=self.id) )
 	
 	def GetProblemPMTs(self, send_results=False):
 		""" Requests PMT high voltage and period information
@@ -1750,7 +1751,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		responses = []
 		try:		
-			responses = self.NodeSendWithResponse( PostOffice.Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+			responses = self.NodeSendWithResponse( Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(auto_start_ok=False)
@@ -1812,7 +1813,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 							board["range"] = i
 
 		if send_results:
-			self.postoffice.Send( PostOffice.Message(subject="frontend_info", info="pmt_update", pmt_info=problem_boards) )
+			self.postoffice.Publish( Message(subject="frontend_info", info="pmt_update", pmt_info=problem_boards) )
 		else:
 			return problem_boards
 
@@ -1872,7 +1873,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.errors += [alert,]
 #			self.running = False
 		
-		self.postoffice.Send( PostOffice.Message(subject="client_alert", mgr_id=self.id, alert=alert, action="new") )
+		self.postoffice.Publish( Message(subject="client_alert", mgr_id=self.id, alert=alert, action="new") )
 
 	def OMStatusHandler(self, message):
 		""" Handles updates from an online monitoring node
@@ -1887,11 +1888,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.remote_nodes[message.sender].status = RemoteNode.ERROR
 			self.StopDataAcquisition()
 
-			self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+			self.postoffice.Publish( self.StatusReport(items=["remote_nodes"]) )
 		elif message.state == "om_ready":
 			with self.om_startup_lock:
 				self.remote_nodes[message.sender].status = RemoteNode.OK
-				self.postoffice.Send( self.StatusReport(items=["remote_nodes"]) )
+				self.postoffice.Publish( self.StatusReport(items=["remote_nodes"]) )
 
 				self.logger.info("    ... '%s' node startup is complete.", message.sender)
 		
@@ -1938,7 +1939,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		self.logger.info("Generating client list.")
 		
-		msg = PostOffice.Message(subject="frontend_info", mgr_id=self.id, info="roll_call")
+		msg = Message(subject="frontend_info", mgr_id=self.id, info="roll_call")
 		responses = self.postoffice.SendAndWaitForResponse(msg, timeout=10)
 		
 		client_info = []
@@ -1951,15 +1952,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		self.logger.debug("Connected clients:\n%s", pprint.pformat(client_info))
 			
-		msg = PostOffice.Message(subject="client_info", mgr_id=self.id, client_info=client_info)
-		self.postoffice.Send(msg)
+		msg = Message(subject="client_info", mgr_id=self.id, client_info=client_info)
+		self.postoffice.Publish(msg)
 
 	def SeriesInfo(self, series):
 		""" Answers inquiries from clients asking about
 		    the details of particular run series. """
 		
 		self.logger.info("Client wants info about run series '%s'.", series.description)
-		message = PostOffice.Message(subject="frontend_info", info="series_update", series=series)
+		message = Message(subject="frontend_info", info="series_update", series=series)
 		
 		try:
 			dblocation = "%s/%s" % (Configuration.params["mstr_runSeriesLocation"], series.code)
@@ -1971,7 +1972,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.logger.warning("Couldn't open file for run series '%s' (tried: '%s')!  Returning a blank series...", series.description, dblocation)
 			message.series_details = RunSeries.RunSeries()
 		
-		self.postoffice.Send(message)
+		self.postoffice.Publish(message)
 	
 	def StatusReport(self, message=None, items=[], do_log=True):
 		""" Fills a message with a bunch of status information.
@@ -1989,7 +1990,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 		# some defaults
 		if message is None:
-			message = PostOffice.Message( subject="frontend_info", info="status_update" )
+			message = Message( subject="frontend_info", info="status_update" )
 		if len(items) == 0:
 			items = ( "configuration", "current_state", "current_progress", "current_gate", "first_subrun",
 			          "errors", "warnings", "problem_pmt_list", "remote_nodes", "running", "run_series",

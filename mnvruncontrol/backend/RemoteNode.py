@@ -10,14 +10,10 @@
    Address all complaints to the management.
 """
 
-import re
-import time
-import fcntl		# needed for file-locking operations
-import shelve
-import logging
-
 from mnvruncontrol.configuration import Configuration
-from mnvruncontrol.backend import PostOffice
+
+from mnvruncontrol.backend.PostOffice.Envelope import Message
+from mnvruncontrol.backend.PostOffice.Errors import TimeoutError
 
 # first, an enumeration of "types" of remote node
 ANY        = 0
@@ -57,7 +53,6 @@ class RemoteNode:
 		self.locked = locked
 		return
 		
-		   
 #		# TODO: would be nice to have some file locking (for the session file) here.
 #		# unfortunately it's difficult to implement using the shelve db.
 #		    
@@ -98,11 +93,11 @@ class RemoteNode:
 		""" Sends the initial "daq_mgr" status="online" message
 		    to this node (which performs initial configuration). """
 		
-		message = PostOffice.Message(subject="mgr_status", status="online", mgr_id=mgr_id, node_identity=self.name)
+		message = Message(subject="mgr_status", status="online", mgr_id=mgr_id, node_identity=self.name)
 		
 		try:
 			deliveries = postoffice.SendTo(message=message, recipient_list=[self.address,], timeout=Configuration.params["sock_messageTimeout"])
-		except PostOffice.TimeoutError:
+		except TimeoutError:
 			deliveries = []
 		
 		if len(deliveries) == 0:

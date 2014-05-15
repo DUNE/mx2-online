@@ -16,16 +16,16 @@
   Address all complaints to the management.
 """
 
+import copy
 import os
+import logging
+import pprint
+import shlex
+import socket
+import subprocess
 import sys
 import time
-import copy
-import shlex
-import logging
-import socket
-import pprint
 import urllib2
-import subprocess
 import wx
 from wx import xrc
 
@@ -33,11 +33,15 @@ from mnvruncontrol.configuration import Logging
 from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration import MetaData
 
-from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import Threads
 from mnvruncontrol.backend import Events
 from mnvruncontrol.backend import Alert
 from mnvruncontrol.backend import RemoteNode		# needed for 'status' enumeration
+
+from mnvruncontrol.backend.PostOffice.Envelope import Message, Subscription 
+from mnvruncontrol.backend.PostOffice.Errors import TimeoutError 
+from mnvruncontrol.backend.PostOffice.NetworkTypes import IPv4Address
+from mnvruncontrol.backend.PostOffice.Routing import MessageTerminus, PostOffice
 
 ver = "$Name:  $".split("Name: ")[1]
 VERSION = ver.replace("$", "").rstrip(" ")
@@ -46,7 +50,7 @@ VERSION = ver.replace("$", "").rstrip(" ")
 #   MainApp
 #########################################################
 
-class MainApp(wx.App, PostOffice.MessageTerminus):
+class MainApp(wx.App, MessageTerminus):
 
 	### Notice: this class is pretty large and has a lot
 	### of methods, so I have grouped them by category.
@@ -63,7 +67,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		sys.stdout.write("Setting up.  Please wait a moment... ")
 		sys.stdout.flush()
 		
-		PostOffice.MessageTerminus.__init__(self)
+		MessageTerminus.__init__(self)
 
 		# prepare the logging		
 		self.logger = logging.getLogger("Frontend")
@@ -82,7 +86,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		# prepare the post office and threads
 		try:
-			self.postoffice = PostOffice.PostOffice(listen_port=Configuration.params["frnt_listenPort"])
+			self.postoffice = PostOffice(listen_port=Configuration.params["frnt_listenPort"])
 		except socket.error:
 			self.logger.exception("Socket error trying to start up the post office:")
 			self.logger.fatal("Can't get a socket.  Quitting.")
@@ -215,7 +219,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			
 		# also take care of the list controls, while we're at it
 		controls = (xrc.XRCCTRL(self.frame, "status_daq_series_list"), xrc.XRCCTRL(self.frame, "config_runseries_details"))
-		big_col = (3, 2)
 		for series_ctrl in controls:
 			if series_ctrl == xrc.XRCCTRL(self.frame, "status_daq_series_list"):
 				series_ctrl.InsertColumn(0, u"\u00a0", width=30)		# which subrun is currently being executed
@@ -241,10 +244,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def SetupHandlers(self):
 		""" Set up the handlers for PostOffice messages. """
 		
-		subscriptions = [ PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="client_alert", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="frontend_internal", action=PostOffice.Subscription.DELIVER, delivery_address=self),
-		                  PostOffice.Subscription(subject="frontend_info", action=PostOffice.Subscription.DELIVER, delivery_address=self) ]
+		subscriptions = [ Subscription(subject="mgr_status", action=Subscription.DELIVER, delivery_address=self),
+		                  Subscription(subject="client_alert", action=Subscription.DELIVER, delivery_address=self),
+		                  Subscription(subject="frontend_internal", action=Subscription.DELIVER, delivery_address=self),
+		                  Subscription(subject="frontend_info", action=Subscription.DELIVER, delivery_address=self) ]
 		handlers = [ self.DAQMgrStatusHandler,
 		             self.ClientAlertHandler,
 		             self.FrontendInternalHandler,
@@ -292,7 +295,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    request we made. 
 		    
 		    This method handles those messages. """
-		    
+
 		if not hasattr(message, "info"):
 			self.logger.warning("DAQMgr's 'frontend_info' message is poorly formed.  Ignoring...   Message:\n%s", message)
 			return
@@ -314,7 +317,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			response.my_info = { "client_id": self.id,
 			                     "client_ip":  self.ip_addr,
 			                     "client_identity":  self.identity }
-			self.postoffice.Send(response)
+			self.postoffice.Publish(response)
 
 		elif message.info == "status_update" and hasattr(message, "status"):
 #			self.logger.debug("Got status report.")
@@ -381,7 +384,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		             xrc.XRCCTRL(self.frame, "config_singlerun_gates_entry"),
 		             
 		             xrc.XRCCTRL(self.frame, "config_runseries_type_entry") ]
-		             
+
 		for control in controls:
 			control.Enable(enabled)
 
@@ -394,7 +397,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		                xrc.XRCCTRL(self.frame, "config_singlerun_ledgroups_C_entry"),
 		                xrc.XRCCTRL(self.frame, "config_singlerun_ledgroups_D_entry"),
 		                xrc.XRCCTRL(self.frame, "config_singlerun_lilevel_entry") ]
-		                
+
 		for control in li_controls:
 			control.Enable(li_enabled)
 			
@@ -625,7 +628,6 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 				wx.PostEvent(self, Events.ControlStatusEvent())
 			work = { "method": self.DisconnectDAQ, "kwargs": self.ssh_details }
 			
-		control_page = xrc.XRCCTRL(self.frame, "control_page")
 		self.Redraw()
 
 		self.worker_thread.queue.put(work)
@@ -669,10 +671,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def OnControlStateChange(self, evt):
 		""" Adjust the appropriate GUI elements when control
 		    of the DAQ changes hands. """
-		    
+
 		if self.ctl_xfer_dlg.IsShown():
 			self.ctl_xfer_dlg.EndModal(0)	# 0 is the return value.  no button was clicked!
-		    
+
 		button = xrc.XRCCTRL(self.frame, "control_connection_owner_button")
 		notice = xrc.XRCCTRL(self.frame, "control_connection_notice")
 		entry = xrc.XRCCTRL(self.frame, "control_connection_owner_entry")
@@ -753,7 +755,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 			else:
 				return
 			
-			self.postoffice.Send( PostOffice.Message(subject="mgr_directive",
+			self.postoffice.Publish( Message(subject="mgr_directive",
 			                                         directive=directive,
 			                                         client_id=self.id) )
 
@@ -771,7 +773,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		self.RestorePanelState()
 		self.problem_pmt_list = None
 		
-		self.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="pmt_dismiss", client_id=self.id) )
+		self.postoffice.Publish( Message(subject="mgr_directive", directive="pmt_dismiss", client_id=self.id) )
 		
 	def OnHVUpdate(self, evt):
 		""" Presents the user with a list of PMT voltages
@@ -843,7 +845,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def OnHVRefreshClick(self, evt):
 		""" Asks the DAQ mgr to send a new list of PMT high voltages. """
 
-		self.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="pmt_hv_list", client_id=self.id) )
+		self.postoffice.Publish( Message(subject="mgr_directive", directive="pmt_hv_list", client_id=self.id) )
 	
 	def OnProgressUpdate(self, evt):
 		""" Updates the progress gauge text label and value.
@@ -854,7 +856,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    If you want the gauge in 'indeterminate' mode,
 		    set 'progress' to (0,0); otherwise, 'progress'
 		    should be (current, total). """
-		    
+
 		progress_label = xrc.XRCCTRL(self.frame, "status_progress_label")
 		progress_gauge = xrc.XRCCTRL(self.frame, "status_progress_gauge")
 		if hasattr(evt, "text") and evt.text is not None:
@@ -888,10 +890,10 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		""" Ensures that the run number can't be lowered
 		    past the current run number, and sets the 
 		    subrun number accordingly. """
-		    
+
 		run_entry = xrc.XRCCTRL(self.frame, "config_global_run_entry")
 		subrun_entry = xrc.XRCCTRL(self.frame, "config_global_subrun_entry")
-		    
+
 		if run_entry.GetValue() < run_entry.GetMin():
 			run_entry.SetValue(run_entry.GetMin())
 		
@@ -933,13 +935,13 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		    run series from the DAQ Mgr. """
 
 		series = MetaData.RunSeriesTypes.item(xrc.XRCCTRL(self.frame, "config_runseries_type_entry").GetSelection())
-		    
+
 		series_ctrl = xrc.XRCCTRL(self.frame, "config_runseries_details")
 		series_ctrl.DeleteAllItems()
 		series_ctrl.InsertStringItem(sys.maxint, "Please wait while the '%s' series description is downloaded..." % series.description)
 		series_ctrl.SetColumnWidth(0, series_ctrl.GetClientSize().width)
 		
-		self.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="series_info", client_id=self.id, series=series) )
+		self.postoffice.Publish( Message(subject="mgr_directive", directive="series_info", client_id=self.id, series=series) )
 	
 	def OnSeriesUpdate(self, evt):
 		""" Fills in the series list on the config page
@@ -981,7 +983,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# that comes with the beginning-of-subrun status update.
 		xrc.XRCCTRL(self.frame, "control_skip_button").Disable()
 		
-		self.postoffice.Send( PostOffice.Message(subject="mgr_directive", directive="skip", client_id=self.id) )
+		self.postoffice.Publish( Message(subject="mgr_directive", directive="skip", client_id=self.id) )
 		
 	
 	def OnSSHTunnelClick(self, evt):
@@ -1323,7 +1325,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 					shown = panel_id == panel_to_show
 					self.logger.debug("Restoring panel %s to shown state: %s", panel_id, shown)
 					panel.Show(shown)
-				do_redraw = True
+#				do_redraw = True
 
 		self.logger.debug("Panel stack state: %s", pprint.pformat(self.panel_stack))
 		#self.Redraw()
@@ -1374,7 +1376,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		# when the "restore" comes after the alert, it'll be shown then.
 		if (collection == "main" and xrc.XRCCTRL(self.frame, "alert_panel").IsShown()):
 #		  or (collection == "status" and xrc.XRCCTRL(self.frame, "summary_alert_panel").IsShown()):
-		  	self.logger.debug("Alert is up... won't hide it.")
+			self.logger.debug("Alert is up... won't hide it.")
 			self.panel_stack[collection].append(panel.GetId())
 #			self.logger.debug("Panel stack state: %s", pprint.pformat(self.panel_stack))
 			return
@@ -1420,11 +1422,11 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		host = "localhost" if use_ssh else remote_host
 				
 		# set up forwarding subscriptions
-		self.postoffice.AddSubscription( PostOffice.Subscription(subject="control_request", action=PostOffice.Subscription.FORWARD, delivery_address=(host, remote_port)) )
-		self.postoffice.AddSubscription( PostOffice.Subscription(subject="mgr_directive", action=PostOffice.Subscription.FORWARD, delivery_address=(host, remote_port)) )
+		self.postoffice.AddSubscription( Subscription(subject="control_request", action=Subscription.FORWARD, delivery_address=(host, remote_port)) )
+		self.postoffice.AddSubscription( Subscription(subject="mgr_directive", action=Subscription.FORWARD, delivery_address=(host, remote_port)) )
 		
 		# get the current status of the DAQ and draw it
-		response = self.DAQSendWithResponse( PostOffice.Message(subject="mgr_directive", directive="status_report", client_id=self.id), timeout=Configuration.params["sock_messageTimeout"] )
+		response = self.DAQSendWithResponse( Message(subject="mgr_directive", directive="status_report", client_id=self.id), timeout=Configuration.params["sock_messageTimeout"] )
 		
 		if response is None:
 			self.DisconnectDAQ(use_ssh, remote_host, remote_port)
@@ -1434,8 +1436,8 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		subscriptions = []
 		for subscription in self.handlers:
 			newsub = copy.copy(subscription)
-			newsub.action = PostOffice.Subscription.FORWARD
-			newsub.delivery_address = PostOffice.IPv4Address(None, self.postoffice.listen_port)
+			newsub.action = Subscription.FORWARD
+			newsub.delivery_address = IPv4Address(None, self.postoffice.listen_port)
 			subscriptions.append(newsub)
 		self.postoffice.ForwardRequest( host=(host, remote_port), subscriptions=subscriptions )
 				
@@ -1481,14 +1483,14 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 
 		host = "localhost" if use_ssh else remote_host
 
-		self.postoffice.DropSubscription( PostOffice.Subscription(subject="mgr_directive", action=PostOffice.Subscription.FORWARD, delivery_address=(host, remote_port)) )
-		self.postoffice.DropSubscription( PostOffice.Subscription(subject="control_request", action=PostOffice.Subscription.FORWARD, delivery_address=(host, remote_port)) )
+		self.postoffice.DropSubscription( Subscription(subject="mgr_directive", action=Subscription.FORWARD, delivery_address=(host, remote_port)) )
+		self.postoffice.DropSubscription( Subscription(subject="control_request", action=Subscription.FORWARD, delivery_address=(host, remote_port)) )
 
 		subscriptions = []
 		for subscription in self.handlers:
 			newsub = copy.copy(subscription)
-			newsub.action = PostOffice.Subscription.FORWARD
-			newsub.delivery_address = PostOffice.IPv4Address(None, self.postoffice.listen_port)
+			newsub.action = Subscription.FORWARD
+			newsub.delivery_address = IPv4Address(None, self.postoffice.listen_port)
 
 			subscriptions.append(newsub)
 		self.postoffice.ForwardCancel( host=(host, remote_port), subscriptions=subscriptions, with_confirmation=True )
@@ -1504,7 +1506,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def GetControl(self, my_id, my_name, my_ip, my_location, my_phone):
 		""" Requests control of the DAQ from the DAQ manager. """
 		
-		response = self.DAQSendWithResponse( PostOffice.Message(subject="control_request", request="get", requester_id=my_id, requester_name=my_name, requester_ip=my_ip, requester_location=my_location, requester_phone=my_phone), timeout=Configuration.params["sock_messageTimeout"] )
+		response = self.DAQSendWithResponse( Message(subject="control_request", request="get", requester_id=my_id, requester_name=my_name, requester_ip=my_ip, requester_location=my_location, requester_phone=my_phone), timeout=Configuration.params["sock_messageTimeout"] )
 		
 		if response is None:
 			self.alert_thread.NewAlert( Alert.Alert(notice="The DAQ manager didn't respond to the control request!", severity=Alert.ERROR) )
@@ -1578,7 +1580,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		starttime = time.time()
 		outgoing_connection = False
 		incoming_connection = False
-		test_msg = PostOffice.Message(subject="ping")
+		test_msg = Message(subject="ping")
 		recipients = [("localhost", remote_port), ]
 		while time.time() - starttime < 60:
 			time.sleep(0.25)
@@ -1612,16 +1614,16 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 					s.shutdown(socket.SHUT_RDWR)
 					s.close()
 					outgoing_connection = True
-				except socket.error as e:
+				except socket.error: # as e
 					pass
 			else:
 				wx.PostEvent( self, Events.UpdateProgressEvent(progress=(0,0), text="Waiting for confirmation from DAQ...") )
 				try:
-					deliveries = None
-					deliveries = self.postoffice.SendTo(message=test_msg, recipient_list=recipients, timeout=3.0, with_exception=True)
+#					deliveries = None
+					self.postoffice.SendTo(message=test_msg, recipient_list=recipients, timeout=3.0, with_exception=True)
 					incoming_connection = True
 					break
-				except PostOffice.TimeoutError:
+				except TimeoutError:
 					pass
 					
 		return outgoing_connection and incoming_connection
@@ -1648,7 +1650,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def RelinquishControl(self, my_id):
 		""" Relinquishes control of the DAQ. """
 		
-		response = self.DAQSendWithResponse( PostOffice.Message(subject="control_request", request="release", requester_id=my_id), timeout=Configuration.params["sock_messageTimeout"], panic_if_no_connection=False )
+		response = self.DAQSendWithResponse( Message(subject="control_request", request="release", requester_id=my_id), timeout=Configuration.params["sock_messageTimeout"], panic_if_no_connection=False )
 		
 		if response is not None:
 			self.in_control = False
@@ -1675,7 +1677,7 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 		""" Communicate with the DAQMgr to start a run. """
 		
 		success = True
-		response = self.DAQSendWithResponse( PostOffice.Message(subject="mgr_directive",
+		response = self.DAQSendWithResponse( Message(subject="mgr_directive",
 		                                                        directive="start",
 		                                                        client_id=self.id,
 		                                                        configuration=self.status["configuration"]),
@@ -1711,15 +1713,15 @@ class MainApp(wx.App, PostOffice.MessageTerminus):
 	def StopRunning(self):
 		""" Communicate with the DAQMgr to stop a run. """
 		
-		success = True
-		response = self.DAQSendWithResponse( PostOffice.Message(subject="mgr_directive",
+#		success = True
+		response = self.DAQSendWithResponse( Message(subject="mgr_directive",
 		                                                        directive="stop",
 		                                                        client_id=self.id),
 		                                     timeout=Configuration.params["sock_messageTimeout"]  )
 		
-		if response is None:
-			success = False
-		else:
+#		if response is None:
+#			success = False
+		if response is not None:
 			if response.subject == "not_allowed":
 				self.alert_thread.NewAlert( Alert.Alert(notice="DAQ Manager rejected the 'stop' directive because you are not currently in control of the DAQ.  Gain control using the 'request control' button and try again.", severity=Alert.WARNING) )
 			elif response.success != True:

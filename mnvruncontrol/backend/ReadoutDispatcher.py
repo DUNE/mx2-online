@@ -18,18 +18,14 @@
   Address all complaints to the management.
 
 """
-import subprocess
-import threading
-import shlex
-import time
-import copy
-import sys
-import re
-import os
-import os.path
 import itertools
 import logging
-import logging.handlers
+import os.path
+import re
+import subprocess
+import sys
+import threading
+import time
 
 import mnvruncontrol.configuration.Logging
 
@@ -38,10 +34,11 @@ from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration import Defaults
 
 from mnvruncontrol.backend import Dispatcher
-from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import LIBox
 
-from mnvconfigurator.SlowControlE2cr2.SC_MainMethods import SC as SlowControl
+from mnvruncontrol.backend.PostOffice.Envelope import Message, Subscription
+
+from mnvconfigurator.SlowControlE2cr2CRC.SC_MainMethods import SC as SlowControl
 
 #################################################
 #  these are the return codes used by the DAQ
@@ -94,8 +91,8 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		
 		# we need to know when the DAQ manager goes up or down,
 		# as well as when the DAQ on this node is supposed to start or stop
-		handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.DAQMgrStatusHandler,
-			        PostOffice.Subscription(subject="readout_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.ReadoutDirectiveHandler }
+		handlers = { Subscription(subject="mgr_status", action=Subscription.DELIVER, delivery_address=self) : self.DAQMgrStatusHandler,
+			        Subscription(subject="readout_directive", action=Subscription.DELIVER, delivery_address=self) : self.ReadoutDirectiveHandler }
 	
 		for subscription in handlers:
 			self.postoffice.AddSubscription(subscription)
@@ -161,7 +158,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 					response.success = status
 					
 #		self.logger.debug("response message:\n%s", response)
-		self.postoffice.Send(response)
+		self.postoffice.Publish(response)
 
 	def daq_status(self):
 		""" Returns 1 if there is a DAQ subprocess running; 0 otherwise. """
@@ -194,7 +191,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		    to make sure it's not already running.  Returns True on success,
 		    False if there is already a DAQ process running, and if an
 		    exception is raised, the exception is returned. """
-		    
+
 		logmsg = "Manager wants to start the DAQ process.\n" \
 			  + "   Configuration:\n" \
 		       + "      Run number: %d\n" \
@@ -216,7 +213,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 
 		if Configuration.params["hw_disabled"]:
 			self.logger.info("  ... but the hardware is disabled, so just sending the 'subrun end' message.")
-			self.postoffice.Send(PostOffice.Message(subject="daq_status", state="finished", sentinel=False, sender=identity,
+			self.postoffice.Publish(Message(subject="daq_status", state="finished", sentinel=False, sender=identity,
 			                                        run=configuration.run, subrun=configuration.subrun))
 			return True
 	
@@ -262,7 +259,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		    is in fact such a service running.  Returns True on success,
 		    returns the exception if one is raised during the DAQ startup,
 		    and False if there is no DAQ process currently running. """
-		    
+
 		self.logger.info("Manager wants to stop the DAQ process.")
 		
 		if self.daq_thread and self.daq_thread.is_alive():
@@ -316,7 +313,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 
 		self.logger.info("Client wants the light injection system configured as follows:\n  LI level: %s\n  LED groups enabled: %s", li_level, led_groups)
 		if self.li_box.disable:
-		    self.logger.warning("The LI box is currently disabled!  No configuration will actually be done...")
+			self.logger.warning("The LI box is currently disabled!  No configuration will actually be done...")
 
 		self.li_box.LED_groups = led_groups.description
 
@@ -342,9 +339,9 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		# we need to forge the slow control
 		# response before returning...
 		if Configuration.params["hw_disabled"]:
-			self.postoffice.Send(PostOffice.Message(subject="daq_status", sender=identity_to_report, error=None, state="hw_ready"))
+			self.postoffice.Publish(Message(subject="daq_status", sender=identity_to_report, error=None, state="hw_ready"))
 			return True
-		    
+
 		hwfile = Configuration.params[hw_config.code] 
 		fullpath = "%s/%s" % (Configuration.params["read_SCfileLocation"], hwfile)
 	
@@ -365,7 +362,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		self.current_HW_file = hwfile
 
 		return True
-		    
+
 	def sc_readboards(self):
 		""" Uses the slow control library to read a few parameters
 		    from the front-end boards:
@@ -430,7 +427,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 					sc.FindCROCEFEBs(sc.vmeCROCEs, useChRst=False, verbose=False)
 
 					self.slow_controls.append(sc)
-		except Exception, e:
+		except Exception:
 			self.logger.exception("Error trying to initialize the slow controls:")
 			self.logger.warning("Couldn't initialize.")
 
@@ -526,10 +523,10 @@ class DAQThread(threading.Thread):
 		if self.returncode in (DAQ_EXIT_CODES.SENTINEL, DAQ_EXIT_CODES.NO_SENTINEL):
 			sentinel = self.returncode == DAQ_EXIT_CODES.SENTINEL
 		
-			self.owner_process.postoffice.Send(PostOffice.Message(subject="daq_status", state="finished", sentinel=sentinel, sender=self.identity,
+			self.owner_process.postoffice.Publish(Message(subject="daq_status", state="finished", sentinel=sentinel, sender=self.identity,
 			                                                      run=self.runinfo["run"], subrun=self.runinfo["subrun"]))
 		else:
-			self.owner_process.postoffice.Send(PostOffice.Message(subject="daq_status", state="exit_error", sender=self.identity,
+			self.owner_process.postoffice.Publish(Message(subject="daq_status", state="exit_error", sender=self.identity,
 			                                                      run=self.runinfo["run"], subrun=self.runinfo["subrun"], code=self.returncode ))
 		
 	def ReportNewGate(self, file_mod_time):
@@ -552,7 +549,7 @@ class DAQThread(threading.Thread):
 				# the gate count in the file (maybe it's still being written),
 				# we'll wind up trying again on the next time around.
 				if matches is not None:
-					self.owner_process.postoffice.Send( PostOffice.Message( subject="daq_status", \
+					self.owner_process.postoffice.Publish( Message( subject="daq_status", \
 					                                                        state="running", \
 					                                                        gate_count=int(matches.group("trig_num")), \
 					                                                        run_num=int(matches.group("run")), \
@@ -594,15 +591,12 @@ class SCHWSetupThread(threading.Thread):
 			except Exception, e:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
 				self.dispatcher.logger.exception("Error trying to load the hardware config file for the crate %d slow control" % sc.boardNum)
 				self.dispatcher.logger.warning("Hardware was not configured...")
-				self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=e, state="hw_error"))
+				self.dispatcher.postoffice.Publish(Message(subject="daq_status", sender=self.identity, error=e, state="hw_error"))
 			else:
 				self.dispatcher.logger.info("HW file %s was loaded.  Informing manager." % self.filename)
-				self.dispatcher.postoffice.Send(PostOffice.Message(subject="daq_status", sender=self.identity, error=None, state="hw_ready"))
+				self.dispatcher.postoffice.Publish(Message(subject="daq_status", sender=self.identity, error=None, state="hw_ready"))
 		
 
-
-
-                       
 ####################################################################
 ####################################################################
 """
