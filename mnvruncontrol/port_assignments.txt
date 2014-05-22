@@ -30,4 +30,4 @@ Port        Assignee machine address                        Assignee description
 3016        uroc.d.umn.edu                                  U. Minnesota-Duluth UROC
 3017        uroc02.phy.tufts.edu                            Tufts UROC #2
 3018        23-25-1-49-static.hfc.comcastbusiness.net       Deborah Harris UROC
-3019        minerva-roc/minerva/photon.otterbein.edu        Otterbein University
+3019        photon.otterbein.edu                            Otterbein University
