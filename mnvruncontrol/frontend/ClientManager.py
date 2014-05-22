@@ -21,25 +21,21 @@
 # implementations of most of the methods, so don't bother trying to
 # abstract them into some superclass.  you'll just give yourself a headache.
 
-import copy
-import hashlib
-import shlex
-import socket
-import subprocess
-import sys
-import time
 import wx
 import wx.lib.newevent
 from wx import xrc
+import sys
+import time
+import copy
+import shlex
+import socket
+import hashlib
+import subprocess
 
 from mnvruncontrol.configuration import Configuration
 
+from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import Threads
-
-from mnvruncontrol.backend.PostOffice.Envelope import Message, Subscription
-from mnvruncontrol.backend.PostOffice.Errors import TimeoutError
-from mnvruncontrol.backend.PostOffice.NetworkTypes import IPv4Address
-from mnvruncontrol.backend.PostOffice.Routing import MessageTerminus, PostOffice
 
 #########################################################
 #   Custom events used herein
@@ -53,9 +49,9 @@ ConnectionEvent, EVT_CONNECTION  = wx.lib.newevent.NewEvent()
 #   MainApp
 #########################################################
 
-class MainApp(wx.App, MessageTerminus):
+class MainApp(wx.App, PostOffice.MessageTerminus):
 	def OnInit(self):
-		MessageTerminus.__init__(self)
+		PostOffice.MessageTerminus.__init__(self)
 
 		# load and show the graphics
 		self.res = xrc.XmlResource('%s/clientmanager.xrc' % Configuration.params["frnt_resourceLocation"])
@@ -68,7 +64,7 @@ class MainApp(wx.App, MessageTerminus):
 
 		# prepare the post office and threads
 		try:
-			self.postoffice = PostOffice(listen_port=2900)
+			self.postoffice = PostOffice.PostOffice(listen_port=2900)
 		except socket.error:
 			self.logger.exception("Socket error trying to start up the post office:")
 			self.logger.fatal("Can't get a socket.  Quitting.")
@@ -125,8 +121,8 @@ class MainApp(wx.App, MessageTerminus):
 	def SetupHandlers(self):
 		""" Set up the handlers for PostOffice messages. """
 		
-		subscriptions = [ Subscription(subject="mgr_status", action=Subscription.DELIVER, delivery_address=self),
-		                  Subscription(subject="client_info", action=Subscription.DELIVER, delivery_address=self) ]
+		subscriptions = [ PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self),
+		                  PostOffice.Subscription(subject="client_info", action=PostOffice.Subscription.DELIVER, delivery_address=self) ]
 		handlers = [ self.DAQMgrStatusHandler,
 		             self.ClientInfoHandler ]
 	
@@ -196,7 +192,7 @@ class MainApp(wx.App, MessageTerminus):
 		
 		# finally, put together the details so
 		# the password hasher can do its thing and send
-		msg = Message( subject="client_admin",
+		msg = PostOffice.Message( subject="client_admin",
 		                          action=action,
 		                          client=self.client_list[client_index] )
 		work = { "method": self.SendWithPasswordHash,
@@ -376,7 +372,7 @@ class MainApp(wx.App, MessageTerminus):
 		for button in buttons:
 			button.Disable()
 	
-		self.postoffice.Publish(Message(subject="client_admin", action="list_request"))
+		self.postoffice.Send(PostOffice.Message(subject="client_admin", action="list_request"))
 	
 	def OnRevokeControlClick(self, evt):
 		self.ClientAction("revoke_control")
@@ -423,10 +419,10 @@ class MainApp(wx.App, MessageTerminus):
 		host = "localhost" if use_ssh else remote_host
 				
 		# set up forwarding subscriptions
-		self.postoffice.AddSubscription( Subscription(subject="client_admin", action=Subscription.FORWARD, delivery_address=(host, remote_port)) )
+		self.postoffice.AddSubscription( PostOffice.Subscription(subject="client_admin", action=PostOffice.Subscription.FORWARD, delivery_address=(host, remote_port)) )
 		
 #		# get the current status of the DAQ and draw it
-#		response = self.DAQSendWithResponse( Message(subject="mgr_directive", directive="status_report", client_id=self.id), timeout=Configuration.params["sock_messageTimeout"] )
+#		response = self.DAQSendWithResponse( PostOffice.Message(subject="mgr_directive", directive="status_report", client_id=self.id), timeout=Configuration.params["sock_messageTimeout"] )
 #		
 #		if response is None:
 #			wx.PostEvent(self, ErrorEvent(message="Couldn't connect to DAQ manager!", caption="Connection failed"))
@@ -437,14 +433,14 @@ class MainApp(wx.App, MessageTerminus):
 		subscriptions = []
 		for subscription in self.handlers:
 			newsub = copy.copy(subscription)
-			newsub.action = Subscription.FORWARD
-			newsub.delivery_address = IPv4Address(None, self.postoffice.listen_port)
+			newsub.action = PostOffice.Subscription.FORWARD
+			newsub.delivery_address = PostOffice.IPv4Address(None, self.postoffice.listen_port)
 			subscriptions.append(newsub)
 		self.postoffice.ForwardRequest( host=(host, remote_port), subscriptions=subscriptions )
 				
 		self.daq = True
 
-		self.postoffice.Publish(Message(subject="client_admin", action="list_request"))
+		self.postoffice.Send(PostOffice.Message(subject="client_admin", action="list_request"))
 
 		wx.PostEvent(self, ConnectionEvent(connected=True))
 
@@ -476,13 +472,13 @@ class MainApp(wx.App, MessageTerminus):
 			
 		host = "localhost" if use_ssh else remote_host
 
-		self.postoffice.DropSubscription( Subscription(subject="client_admin", action=Subscription.FORWARD, delivery_address=(host, remote_port)) )
+		self.postoffice.DropSubscription( PostOffice.Subscription(subject="client_admin", action=PostOffice.Subscription.FORWARD, delivery_address=(host, remote_port)) )
 
 		subscriptions = []
 		for subscription in self.handlers:
 			newsub = copy.copy(subscription)
-			newsub.action = Subscription.FORWARD
-			newsub.delivery_address = IPv4Address(None, self.postoffice.listen_port)
+			newsub.action = PostOffice.Subscription.FORWARD
+			newsub.delivery_address = PostOffice.IPv4Address(None, self.postoffice.listen_port)
 
 			subscriptions.append(newsub)
 		self.postoffice.ForwardCancel( host=(host, remote_port), subscriptions=subscriptions )
@@ -543,7 +539,7 @@ class MainApp(wx.App, MessageTerminus):
 		starttime = time.time()
 		outgoing_connection = False
 		incoming_connection = False
-		test_msg = Message(subject="ping")
+		test_msg = PostOffice.Message(subject="ping")
 		recipients = [("localhost", remote_port), ]
 		while time.time() - starttime < 60:
 			time.sleep(0.25)
@@ -576,14 +572,15 @@ class MainApp(wx.App, MessageTerminus):
 					s.shutdown(socket.SHUT_RDWR)
 					s.close()
 					outgoing_connection = True
-				except socket.error:
+				except socket.error as e:
 					pass
 			else:
 				try:
-					self.postoffice.SendTo(message=test_msg, recipient_list=recipients, timeout=3.0, with_exception=True)
+					deliveries = None
+					deliveries = self.postoffice.SendTo(message=test_msg, recipient_list=recipients, timeout=3.0, with_exception=True)
 					incoming_connection = True
 					break
-				except TimeoutError:
+				except PostOffice.TimeoutError:
 					pass
 					
 		return outgoing_connection and incoming_connection
@@ -599,7 +596,7 @@ class MainApp(wx.App, MessageTerminus):
 		    message handler or you'll get a deadlock."""
 		
 		# first, we need a token.
-		token_request = Message(subject="client_admin", action="get_token")
+		token_request = PostOffice.Message(subject="client_admin", action="get_token")
 		response = self.DAQSendWithResponse(token_request, timeout=10)
 		
 		# broken connection or some such

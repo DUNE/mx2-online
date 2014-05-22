@@ -84,7 +84,7 @@ class MTestBeamDispatcher(Dispatcher):
 			else:
 				response.subject = "request_response"
 				response.success = status
-		self.postoffice.Publish(response)
+		self.postoffice.Send(response)
 			
 
 	def beamdaq_start(self, message):

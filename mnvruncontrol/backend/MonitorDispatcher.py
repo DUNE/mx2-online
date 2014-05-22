@@ -11,25 +11,26 @@
    Address all complaints to the management.
 """
 
-import fcntl
-import logging
-import os
-import shlex
-import signal
-import socket
 import subprocess
-import sys
 import threading
+import signal
+import shutil
+import shlex
+import fcntl
 import time
+import sys
+import os
+import os.path
+import socket
+import logging
 
 import mnvruncontrol.configuration.Logging
 
 from mnvruncontrol.configuration import Configuration
 
 from mnvruncontrol.backend.Dispatcher import Dispatcher
+from mnvruncontrol.backend import PostOffice
 from mnvruncontrol.backend import MailTools
-
-from mnvruncontrol.backend.PostOffice.Envelope import Message, Subscription
 
 # configuration for the Gaudi-based jobs
 gaudi_processes = {
@@ -74,9 +75,9 @@ class MonitorDispatcher(Dispatcher):
 
 		# need to shut down the subprocesses...
 		self.cleanup_methods += [self.om_stop]
-
+		                        
 		self.pidfilename = Configuration.params["mon_PIDfile"]
-
+		                   
 		self.om_eb_threads = []
 		self.om_Gaudi_thread = None
 		
@@ -106,9 +107,9 @@ class MonitorDispatcher(Dispatcher):
 		# we need to know when the DAQ manager goes up or down,
 		# as well as when the OM system on this node is supposed
 		# to start or stop
-		handlers = { Subscription(subject="mgr_status", action=Subscription.DELIVER, delivery_address=self) : self.DAQMgrStatusHandler,
-			        Subscription(subject="om_directive", action=Subscription.DELIVER, delivery_address=self) : self.OMDirectiveHandler,
-			        Subscription(subject="om_internal", action=Subscription.DELIVER, delivery_address=self) : self.OMInternalHandler }
+		handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.DAQMgrStatusHandler,
+			        PostOffice.Subscription(subject="om_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.OMDirectiveHandler,
+			        PostOffice.Subscription(subject="om_internal", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.OMInternalHandler }
 	
 		for subscription in handlers:
 			self.postoffice.AddSubscription(subscription)
@@ -210,7 +211,7 @@ class MonitorDispatcher(Dispatcher):
 			self.logger.info("Sending mail to notification addresses: %s", Configuration.params["gen_notifyAddresses"])
 			try:
 				MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
-			except Exception:
+			except Exception as e:
 				self.logger.exception("Can't send mail!")
 
 		self.use_condor = use_condor
@@ -225,8 +226,8 @@ class MonitorDispatcher(Dispatcher):
 		""" Lets the DAQ manager know that the event builder is done setting up. """
 
 		self.logger.info(" got message that event builder is ready.  Signalling main DAQ.")
-		message = Message(subject="om_status", state="om_ready", sender=self.identities[self.lock_id])
-		self.postoffice.Publish(message)
+		message = PostOffice.Message(subject="om_status", state="om_ready", sender=self.identities[self.lock_id])
+		self.postoffice.Send(message)
 		
 		self.signalled_ready = True
 		
@@ -262,7 +263,7 @@ class MonitorDispatcher(Dispatcher):
 			else:
 				response.subject = "request_response"
 				response.success = status
-		self.postoffice.Publish(response)
+		self.postoffice.Send(response)
 
 	def OMInternalHandler(self, message):
 		""" Handles internal messages within the online monitoring dispatcher. """
@@ -283,7 +284,7 @@ class MonitorDispatcher(Dispatcher):
 	def om_start(self, etpattern, et_sys_location, etport):
 		""" Starts the online monitoring services as subprocesses.  First checks
 		    to make sure it's not already running, and if it is, does nothing. """
-
+		    
 		self.logger.info("Manager wants to start the OM processes.")
 		
 		self.signalled_ready = False
@@ -295,7 +296,7 @@ class MonitorDispatcher(Dispatcher):
 		}
 		try:
 			self.StartEventBuilder(self.last_et_config) 
-		except Exception:
+		except Exception as excpt:
 			self.logger.exception("   ==> The event builder process can't be started!")
 			return False
 		
@@ -305,7 +306,7 @@ class MonitorDispatcher(Dispatcher):
 		""" Stops the online monitor processes.  Only really needed
 		    if the dispatcher is going to be stopped since the om_start()
 		    method closes any open threads before proceeding. """
-
+		    
 		self.logger.info("Client wants to stop the OM processes.")
 		
 		errors = False
@@ -316,7 +317,7 @@ class MonitorDispatcher(Dispatcher):
 					try:
 						thread.process.kill()
 						thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
-					except Exception:
+					except Exception, excpt:
 						self.logger.error("    ... an event builder process couldn't be stopped!")
 						self.logger.exception("       ==> Error message:")
 						errors = True
@@ -326,7 +327,7 @@ class MonitorDispatcher(Dispatcher):
 			try:
 				self.om_Gaudi_thread.process.terminate()
 				self.om_Gaudi_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
-			except Exception:
+			except Exception, excpt:
 				self.logger.error("   ==> Gaudi process couldn't be stopped!")
 				self.logger.exception("   ==> Error message:")
 				errors = True
@@ -434,7 +435,7 @@ class MonitorDispatcher(Dispatcher):
 					messagebody += "The command was:\n%s" % executable 
 					try:			
 						MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"], subject=subject, text=messagebody)
-					except Exception:
+					except Exception as e:
 						self.logger.exception("Can't send mail!")
 
 				else:
@@ -540,19 +541,19 @@ class OMThread(threading.Thread):
 			
 			# inform the DAQ manager if necessary.
 			if not self.parent.signalled_ready:
-				msg = Message(subject="om_status", state="om_error", sender=self.parent.identities[self.parent.lock_id], error="Process '%s' quit early." % self.processname)
-				self.parent.postoffice.Publish(msg)
+				msg = PostOffice.Message(subject="om_status", state="om_error", sender=self.parent.identities[self.parent.lock_id], error="Process '%s' quit early." % self.processname)
+				self.parent.postoffice.Send(msg)
 				
 		# if the event builder finished normally,
 		# tell the dispatcher so.
 		if self.processname == "eventbuilder":
-			self.parent.postoffice.Publish(Message(subject="om_internal",
+			self.parent.postoffice.Send(PostOffice.Message(subject="om_internal",
 				event="eb_finished",
 				eb_ok=True,
 				et_config=self.et_config
 			))
 		
-
+                        
 ####################################################################
 ####################################################################
 """

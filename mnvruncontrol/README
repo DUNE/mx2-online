@@ -1,7 +1,7 @@
 mnvruncontrol -- the MINERvA run control
 ==================================================================
   Original author:               J. Wolcott  (jwolcott@fnal.gov)
-  Last revision:                 v6r1  (May 2014)
+  Last revision:                 v5r7p2  (November 2013)
   Last update to this document:  April 2, 2012
 ==================================================================
 
@@ -48,8 +48,6 @@ Contents:
     mnvconfigurator/SlowControl should be installed (as well as the __init__.py
     that lives in the mnvconfigurator root).  Its installation location must
     be included in the $PYTHONPATH environment variable (on the readout nodes).
-    Be sure that the version of the slow control you use is compatible with
-    the version the backend/ReadoutDispatcher.py module tries to import.
     
   Once you have all of these you should be able to install the mnvruncontrol
   folder anywhere you like (but see the first bullet under section 2 below).

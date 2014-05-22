@@ -26,10 +26,9 @@ from Queue import Queue
 import mnvruncontrol.configuration.Logging
 
 from mnvruncontrol.configuration import Configuration
-from mnvruncontrol.backend.PostOffice.Routing import PostOffice, MessageTerminus
-from mnvruncontrol.backend.PostOffice.Envelope import Subscription
+from mnvruncontrol.backend import PostOffice
 
-class Dispatcher(MessageTerminus):
+class Dispatcher(PostOffice.MessageTerminus):
 	"""
 	This guy is the one who listens for requests and handles them.
 	There should NEVER be more than one instance running at a time!
@@ -153,8 +152,8 @@ class Dispatcher(MessageTerminus):
 		# actually doing the calling.  doing things this way
 		# ensures that the threads are created after the fork
 		# and thus are not dropped.
-		MessageTerminus.__init__(self)
-		self.postoffice = PostOffice(use_logging=True, listen_socket=self.server_socket)
+		PostOffice.MessageTerminus.__init__(self)
+		self.postoffice = PostOffice.PostOffice(use_logging=True, listen_socket=self.server_socket)
 		
 		# set up any subscriptions the derived class wants
 		self.BookSubscriptions()
@@ -164,7 +163,7 @@ class Dispatcher(MessageTerminus):
 			method()
 
 		# make sure we receive correspondence regarding our lock status
-		lock_subscr = Subscription(subject="lock_request", action=Subscription.DELIVER, delivery_address=self)
+		lock_subscr = PostOffice.Subscription(subject="lock_request", action=PostOffice.Subscription.DELIVER, delivery_address=self)
 		self.postoffice.AddSubscription(lock_subscr)
 		self.AddHandler(lock_subscr, self._LockHandler)
 		
@@ -375,7 +374,7 @@ class Dispatcher(MessageTerminus):
 			# notice that we insist that messages to be forwarded
 			# must come from the DAQ manager itself (max_forward_hops=0)
 			for subject in ["mgr_status", "lock_request"] + additional_notification_requests:
-				subscr_list.append( Subscription(subject=subject, action=Subscription.FORWARD, delivery_address=[None, self.socket_port], max_forward_hops=0) )
+				subscr_list.append( PostOffice.Subscription(subject=subject, action=PostOffice.Subscription.FORWARD, delivery_address=[None, self.socket_port], max_forward_hops=0) )
 			
 			self.postoffice.ForwardRequest(message.return_path[0], subscr_list)
 			
@@ -469,7 +468,7 @@ class Dispatcher(MessageTerminus):
 				response_msg.by_whom = self.lock_id
 				response_msg.success = True
 
-		self.postoffice.Publish(response_msg)
+		self.postoffice.Send(response_msg)
 	
 	def ClientAllowed(self, client_id):
 		""" Checks if a client is allowed to issue commands
