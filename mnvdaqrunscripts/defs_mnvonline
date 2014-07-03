@@ -4,4 +4,6 @@ SOLDERMACH=mnvonline0.fnal.gov
 WORKERMACH=mnvonline1.fnal.gov
 REMDAQACCT=mnvonline
 SCRIPTSDIR=/home/mnvonline/mnvdaqrunscripts
-
+HOMEDIR=/home/mnvonline/
+#MNVDAQ=mnvonline1.fnal.gov
+MNVDAQ=mnvonline0.fnal.gov
