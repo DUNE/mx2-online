@@ -4,8 +4,10 @@
 # on the mnvonline or # minervatest cluster when running "locally" 
 # (either at the terminal or via ssh'ed x-forwarding).
 
-MASTER_NODE="mnvonline1.fnal.gov"
-LI_NODE="mnvonline0.fnal.gov"
+MASTER_NODE="mnvonline0.fnal.gov"
+#MASTER_NODE="mnvonline1.fnal.gov"
+LI_NODE="mnvonline1.fnal.gov"
+#LI_NODE="mnvonline0.fnal.gov"
 OM_NODE="mnvonlinelogger.fnal.gov"
 
 . $HOME/mnvdaqrunscripts/defs_standardpaths
@@ -25,9 +27,9 @@ case "$HOSTNAME" in
 		OM_DISPATCHER=true
 		;;
 	
-	${LI_NODE})
-		RC_DISPATCHER=true
-		;;
+#	${LI_NODE})
+#		RC_DISPATCHER=true
+#		;;
 
 	${OM_NODE})
 		echo "Please use the '~/dispatcher_nearline.sh' script to start the run control elements on this node instead of this one.  Thank you!"
@@ -57,6 +59,10 @@ if [ $OM_DISPATCHER ]; then
 fi
 
 if [ $RC_DISPATCHER ]; then
+        echo "Starting ReadoutDipatcher on LI-Node mnvonline1 ..."
+	ssh mnvonline@mnvonline1.fnal.gov sh /home/mnvonline/mnvdaqrunscripts/run_forLIdispatcher.sh
+        sleep 10
+
 	echo "Starting the run control's ReadoutDispatcher..."
         echo "PYV =" $PYV "RCROOT =" $RCROOT
         echo "PYTHONPATH =" $PYTHONPATH
