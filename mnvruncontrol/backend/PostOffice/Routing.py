@@ -243,7 +243,7 @@ class _PostOfficeSocketManager(object):
 	
 		sessions_to_remove = []
 		now = time.time()
-		for session in self.open_inbound_sessions:
+		for session in self.open_inbound_sessions + self.open_outbound_sessions:
 			if now - session.last_read_time > Configuration.STALE_SOCKET_TTL:
 				sessions_to_remove.append(session)
 			
