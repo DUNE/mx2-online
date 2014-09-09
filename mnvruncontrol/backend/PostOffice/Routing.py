@@ -241,15 +241,16 @@ class _PostOfficeSocketManager(object):
 		    A session is 'stale' if its last incoming data was read
 		    more than Configuration.STALE_SOCKET_TTL seconds ago.  """
 	
-		sessions_to_remove = []
 		now = time.time()
-		for session in self.open_inbound_sessions + self.open_outbound_sessions:
-			if now - session.last_read_time > Configuration.STALE_SOCKET_TTL:
-				sessions_to_remove.append(session)
+		for collection in [self.open_inbound_sessions, self.open_outbound_sessions]:
+			sessions_to_remove = []
+			for session in collection:
+				if session.last_read_time > 0 and now - session.last_read_time > Configuration.STALE_SOCKET_TTL:
+					sessions_to_remove.append(session)
 			
-		for session in sessions_to_remove:
-			logger().debug("Removing stale session: %s", session)
-			self.open_inbound_sessions.remove(session)
+			for session in sessions_to_remove:
+				logger().debug("Removing stale session (last activity = %d; now = %d): %s", (session.last_read_time, now, session))
+				collection.remove(session)
 		
 		self._last_garbage_collection = time.time()
 	
