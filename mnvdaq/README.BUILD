@@ -1,49 +1,5 @@
-This file is current as of 2010.July.14 - GNP
+This file is current as of 2009.December.30 - GNP
 
-How to Build the MINERvA DAQ.
------------------------------
-
-Quick Directions (software already installed):
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-1) Log on to the DAQ machine you want to update as the "mnvonline" user.  On T977 machines, use the "tbonline" 
-account instead.  In the $HOME are there will be a set of scripts for launching the Run and Slow Controls, 
-configuring the environment, etc.  These scripts will vary from machine to machine, but they are hopefully 
-titled in a useful way.  The primary distinction to be aware of is between single and mulit-machine DAQ builds.  
-For most production machines, that choice is hidden, but the user should pay attention to the setup scripts just 
-in case.
-
-2) Source the setup script to set the DAQ environment variables.  On E938 machines, the script is likely named 
-"setupdaqenv.sh."  On T977 machines, it will likely be named "singledaqenv.sh."
-
-3) Change directories to the $DAQROOT.
-
-4) Run the compiler script.
-
-Example:
-mnvtbonline0.fnal.gov> cd $DAQROOT
-mnvtbonline0.fnal.gov> ./compiler.sh
-
-5) If the build succeeded, you should see the following in the $DAQROOT/lib and $DAQROOT/bin directories:
-        
-mnvtbonline0.fnal.gov> llt lib/ bin/
-lib/:   
-total 1.2M
-drwxr-xr-x 2 tbonline e938 4.0K Apr 23 16:52 CVS/
--rwxr-xr-x 1 tbonline e938 715K Jun  1 18:13 libhardware.so*
--rwxr-xr-x 1 tbonline e938  52K Jun  1 18:13 libcaeninterface.so*
--rwxr-xr-x 1 tbonline e938 326K Jun  1 18:13 libminerva_acquire.so*
--rwxr-xr-x 1 tbonline e938  48K Jun  1 18:13 libevent_structure.so*bin/:
-total 532K
--rwxr-xr-x 1 tbonline e938   97 Nov 29  2009 cleaner.sh*
-drwxr-xr-x 2 tbonline e938 4.0K Apr 29 09:59 CVS/
--rwxr-xr-x 1 tbonline e938  84K Jun  1 18:13 event_builder*
--rwxr-xr-x 1 tbonline e938 243K Jun  1 18:13 minervadaq*
--rwxr-xr-x 1 tbonline e938  77K Jun  1 18:13 daq_master*
--rwxr-xr-x 1 tbonline e938  98K Jun  1 18:13 daq_slave_service*
-
-
-Complete Directions (no software installed):
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To build the MINERvA Production DAQ (mnvdaq) you need to first install and build CAEN driver libraries 
 to interface with the CAEN v2718 VME Controller and a2818 PCI Interface Card.  These drivers are available
 on the CAEN website (http://www.caen.it/nuclear/index.php) and specific drivers for SLF4.6 and SLF5.3 have 
@@ -78,16 +34,17 @@ Inside the mnvdaq/ directory you will find a setup script.  It is a good idea to
 carefully before proceeding.  The "location" is set by a $LOCALE environment variable.  Set your own $LOCALE 
 variable or mimic the directory structure of another $LOCALE and use that value for your own $LOCALE.  
 
-As of 2010.July14, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
-operation on Fermilab machines, set by hostnames in the options/ directory set of Make.options files.  
-For set-up in a different environment, the default scripts will need to be edited carefully.
+As of 2010.March.12, the set-up scripts and run scripts are tuned in a fairly inflexible way for 
+operation on the mnvonline machines.  For set-up in a different environment, the default scripts will 
+need to be edited carefully.
 
 Before you build the DAQ, it is important to understand the possible architectures.  The DAQ can be run 
 either on a single PC or on a network of PC's.  Currently, we support the following options:
 1) Single PC
-2) Multi-PC with one Head Node, one Soldier (Chief) Readout Client, and one Worker Readout Client.
+2) Multi-PC with one Head Node and one Chief Readout Client.
+3) Multi-PC with one Head Node, one Chief Readout Client, and one Worker Readout Client.
 The distinguishing feature between the Readout Clients is that one and only one is responsible for attaching 
-the end-of-event DAQ Header bank (the Soldier).
+the end-of-event DAQ Header bank.
 
 In principle, the DAQ can be extended to support an arbitrary number of Worker Clients, but this feature is 
 not currently supported (and would require some significant re-engineering of the networking).  Having three
@@ -101,8 +58,7 @@ options in the Make.options as follows:
 	Queen  : COMPILE_OPTIONS += -DMULTIPC -DMASTER 
 	Soldier: COMPILE_OPTIONS += -DMULTIPC -DMASTER 
 	Worker : COMPILE_OPTIONS += -DMULTIPC  
-The Queen actually is ambivalent about the MASTER flag - we only run the event_builder task on the Queen, not 
-any of the acquisition tasks.
+(The Queen options are actually irrelevant.  The master node does not run an acquisition task.)
 
 Once you have configured your setup scripts, build the DAQ with the following steps:
 
@@ -114,9 +70,8 @@ Once you have configured your setup scripts, build the DAQ with the following st
 
 4) MINERvA DAQ uses the following set of ports:
 	1090 : Queen-Soldier port (on Soldier)
-	1098 : Run Control
-	1110-1113, 1120-1123: Worker-Solider synchronization ports.
-	1201-1250 : et port (on Queen)
+	1091 : et port (on Queen)
+	1095 : Soldier-Worker communication port
 It is a good idea to configure your firewall such that these ports are kept open. 
 
 5) Check ${ET_LIBROOT}/lib and make sure you have libet.a, libet_remote.so, and libet.so.

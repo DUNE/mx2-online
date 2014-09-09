@@ -61,7 +61,7 @@ crim::crim(unsigned int ca, int crimid, CVAddressModifier a, CVDataWidth w)
 	crimAddress     = ca; // the crim address
 	addressModifier = a;  // the VME Address Modifier
 	dataWidth       = w;  // the VME Data Witdth
-	irqLine = SGATEFall;  // default, but configurable
+	irqLine = SGATEFall; // TODO - add irqLine configuration options.
 	// NOTE: The IRQ level must be the same as the configuration register level.  
 	// The BIT MASKS for these levels, however are not the same!
 	irqLevel             = cvIRQ5; // interrupt level 5 for the CAEN interrupt handler
@@ -111,7 +111,6 @@ crim::crim(unsigned int ca, int crimid, CVAddressModifier a, CVDataWidth w)
 	//
 	statusRegister         = crimStatus;
 	statusRegisterAddress  = crimAddress + (unsigned int)statusRegister;
-
 	//
 	statusRegister         = crimClearStatus;
 	clearStatusRegister    = crimAddress + (unsigned int)statusRegister;
@@ -121,10 +120,6 @@ crim::crim(unsigned int ca, int crimid, CVAddressModifier a, CVDataWidth w)
 	gateTimeWordLowAddress  = crimAddress + (unsigned int)statusRegister;
 	statusRegister          = crimGateTimeWordHigh;
 	gateTimeWordHighAddress = crimAddress + (unsigned int)statusRegister;
-
-	// Cosmic mode control (only meaningful for v5 CRIM firmware)
-	statusRegister		= crimSequencerControlLatch;
-	sequencerResetRegister  = crimAddress + (unsigned int)statusRegister;
 
 	//register value for control register (DAQ Mode control)
 	controlRegister = ControlRegisterCRCMask | ControlRegisterSendMask 
@@ -180,5 +175,16 @@ void crim::SetReTransmitEnable(bool a)
 }
 
 
+// TODO - This function is now basically obsolete?... Should probably remove it.
+void crim::SetupOneShot() 
+{
+/*! \fn
+ * Set the register values (but does not send them) for one-shot trigger mode
+ */
+	SetInterruptMask();     //set the interupt mask using that value
+	SetupTiming(crimInternal, ZeroFreq);
+	SetupGateWidth(0x0001, 0x007F); // enable tcalb, set gate width  127
+	SetupTCALBPulse(0x03FF);  //set the tcalb pulse delay 1023
+}
 
 #endif

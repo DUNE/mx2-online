@@ -17,14 +17,8 @@ const int Frames::MaxSendLength=2046; //maximum send message length
 const int Frames::MaxReceiveLength=6124; //maximum receive message length
 const int Frames::MinHeaderLength=9; //size (in bytes) of an outgoing FPGA header for ANY device
 const int Frames::MinBroadcastLength=2; //I'm not sure this is ever used in our setup
-const int Frames::NDiscrChPerTrip=16;
-
-#if V81FIRMWARE||V83FIRMWARE||V85FIRMWARE
 const int Frames::ADCFrameLength=875; //bytes of course (dpm pointer should be this +2)
-#endif
-#if (V90FIRMWARE)||(V91FIRMWARE)
-const int Frames::ADCFrameLength=443; //bytes of course (dpm pointer should be this +2)
-#endif
+const int Frames::NDiscrChPerTrip=16;
 
 // log4cpp category hierarchy.
 log4cpp::Category& framesLog = log4cpp::Category::getInstance(std::string("frames"));
@@ -116,9 +110,9 @@ void Frames::MakeMessage() { std::cout << "Hi Elaine!" << std::endl;}
 
 bool Frames::CheckForErrors() 
 {
-/*! \fn bool Frames::CheckForErrors()
- * Check incoming frame header data for errors.
- */
+/*! \fn********************************************************************************
+ * a function which checks incoming FPGA frame header data for errors.
+ *********************************************************************************/
 	bool errors[10], error;
 	error = false; //initialize error 
 	for (int i=0;i<10;i++) {
@@ -263,5 +257,14 @@ void Frames::DecodeHeader()
 	deviceFunction[0] = (message[word]&0x0F); // extract the device function executed 
 	targetDevice[0]   = (message[word]&0xF0); // extract the device which responded
 }
+
+
+int Frames::DecodeRegisterValues(int a) 
+{
+	std::cout << "Must Make One of these in each frame-inheriting class!!!" << std::endl;
+	exit(-2);
+	return -1;
+}
+
 
 #endif

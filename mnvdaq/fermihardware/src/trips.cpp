@@ -2,7 +2,6 @@
 #define trips_cpp
 
 #include "trips.h"
-#include "exit_codes.h"
 /*********************************************************************************
 * Class for creating Trip-t objects for use with the 
 * MINERvA data acquisition system and associated software projects.
@@ -362,7 +361,7 @@ void trips::ParseError(int i, int j)
  *  \param j: message array index
  */
 	std::cout << "Parse Error for register: " << i << " at index: " << j << std::endl;
-	exit(EXIT_FEB_UNSPECIFIED_ERROR);
+	exit(1);
 }
 
 
@@ -376,7 +375,7 @@ void trips::ParseError(int i)
  *  \param i: message array index
  */
 	std::cout << "Parse Error at index: " << i << " while getting register value." << std::endl;
-	exit(EXIT_FEB_UNSPECIFIED_ERROR);
+	exit(1);
 }
 
 

@@ -2,7 +2,6 @@
 #define channels_cpp
 
 #include "channels.h"
-#include "exit_codes.h"
 
 /*********************************************************************************
 * Class for creating Chain Read-Out Controller channel objects for use with the 
@@ -12,8 +11,6 @@
 * Gabriel Perdue, The University of Rochester
 *
 **********************************************************************************/
-
-// TODO - Be careful about all the "54's" showing up for the number of registers in an FPGA frame.
 
 channels::channels(unsigned int a, int b) 
 {
@@ -43,8 +40,8 @@ channels::channels(unsigned int a, int b)
 
 	bltAddressModifier = cvA24_U_BLT; //the Block Transfer Reads (BLT's) require a special address modifier
 
-	channelStatus = 0;     // the channel starts out with no status information kept
-	has_febs      = false; // and no feb's loaded
+	channelStatus = 0; //the channel starts out with no status information kept
+	has_febs=false; //and no feb's loaded
 }
 
 
@@ -124,7 +121,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tCRC Error!" << std::endl;
-		exit(EXIT_CROC_CRC_ERROR); 
+		exit(-105); 
 	}
 	
 	checkValue = TimeoutError;
@@ -136,7 +133,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tTimeout Error!" << std::endl;
-		exit(EXIT_CROC_TIMEOUT_ERROR); 
+		exit(-106); 
 	}
 	
 	checkValue = FIFONotEmpty;
@@ -148,7 +145,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tFIFO Not Empty!" << std::endl;
-		exit(EXIT_CROC_FIFOEMPTY_ERROR); 
+		exit(-107); 
 	}
 
 	checkValue = FIFOFull;
@@ -160,7 +157,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tFIFO Full!" << std::endl;
-		exit(EXIT_CROC_FIFOFULL_ERROR); 
+		exit(-108); 
 	}
 
 	checkValue = DPMFull;
@@ -172,7 +169,7 @@ int channels::DecodeStatusMessage()
 		if (!error) throw error;
 	} catch (bool e) {
 		std::cout << "\tDPM Full!" << std::endl;
-		exit(EXIT_CROC_DPMFULL_ERROR); 
+		exit(-109); 
 	}
 	
 	// PLL?, etc.?
@@ -181,8 +178,7 @@ int channels::DecodeStatusMessage()
 }
 
 
-void channels::SetBuffer(unsigned char *b) 
-{
+void channels::SetBuffer(unsigned char *b) {
 /*! \fn 
  * Puts data into the data buffer assigned to this channel.
  * \param b the data buffer
@@ -203,178 +199,5 @@ void channels::SetBuffer(unsigned char *b)
 #endif
 	return; 
 }
-
-
-void channels::VectorizeFEBList() 
-{
-/*! \fn
- * Takes list of febs created during initialization and turns them into a vector.
- * TODO - Think about sorting, etc. to be sure indexing is right first (it is, but this is still "sloppy").
- * Also TODO - Think about a copy instead of pushing a pointer to an existing object.
- */
-	if (has_febs) {
-		std::list<feb*>::iterator fp;
-		for (fp = febs.begin(); fp != febs.end(); fp++) {
-			febsVector.push_back(*fp);
-		}
-	}
-
-}
-
-
-unsigned short channels::GetPreviewHV(int febid)
-{
-/*! \fn Parse the preview hit data to get the HV on FEB febid. 
- */
-#if DEBUG_CHPREVIEW
-	std::cout << "GetPreviewHV: febid = " << febid << std::endl;
-#endif
-	int ml    = sizeof(buffer)/sizeof(unsigned char);
-#if DEBUG_CHPREVIEW
-	std::cout << "  preview hit ml = " << ml << std::endl;
-#endif
-	if (ml <= 0) return 0; 
-#if DEBUG_CHPREVIEW
-	for (int i=0; i<ml; i++) { printf("%02X ",buffer[i]); }
-	std::cout << std::endl;
-#endif
-	int nfebs = ml/6;
-#if DEBUG_CHPREVIEW
-	std::cout << "  preview hit nfebs = " << nfebs << std::endl;
-#endif
-	if (nfebs == 0) return 0;
-	for (int i=0; i<nfebs; i++) {
-		int index   = i * 6;
-#if DEBUG_CHPREVIEW
-		std::cout << "  index = " << index << std::endl;
-#endif
-		int febaddr = buffer[index + 2] & 0x0F;
-#if DEBUG_CHPREVIEW
-		printf("    %02X\n",buffer[index+2]);
-		printf("    %02X\n",buffer[index+3]);
-		std::cout << "  febaddr = " << febaddr << std::endl;
-#endif
-		if (febaddr == febid) {
-#if DEBUG_CHPREVIEW
-			std::cout << "    HV = " << 
-				(unsigned short)( buffer[index+4] + buffer[index+5]<<8 ) << std::endl;
-#endif
-			return (unsigned short)( buffer[index+4] + buffer[index+5]<<8 ); 
-		}
-	}
-	return (unsigned short)0;
-}
-
-
-int channels::GetPreviewHits(int febid)
-{
-/*! \fn Parse the preview hit data to get the max hits on FEB febid. 
- */
-#if DEBUG_CHPREVIEW
-	std::cout << "GetPreviewHits: febid = " << febid << std::endl;
-#endif
-	//int ml    = dpmPointer-2; // dangerous to rely on this being set for some reason? 
-	int ml    = sizeof(buffer)/sizeof(unsigned char) - 2;
-#if DEBUG_CHPREVIEW
-	std::cout << "  preview hit ml = " << ml << std::endl;
-#endif
-	if (ml <= 0) return -1;
-#if DEBUG_CHPREVIEW
-	for (int i=0; i<ml; i++) { printf("%02X ",buffer[i]); }
-	std::cout << std::endl;
-#endif
-	int nfebs = ml/6;
-#if DEBUG_CHPREVIEW
-	std::cout << "  preview hit nfebs = " << nfebs << std::endl;
-#endif
-	if (nfebs == 0) return -1;
-	for (int i=0; i<nfebs; i++) {
-		int index   = i * 6;
-#if DEBUG_CHPREVIEW
-		std::cout << "  index = " << index << std::endl;
-#endif
-		int febaddr = buffer[index + 2] & 0x0F;
-#if DEBUG_CHPREVIEW
-		printf("    %02X\n",buffer[index+2]);
-		printf("    %02X\n",buffer[index+3]);
-		std::cout << "  febaddr = " << febaddr << std::endl;
-#endif
-		if (febaddr == febid) {
-			unsigned char hit01 = buffer[index + 3] & 0x0F;
-#if DEBUG_CHPREVIEW
-			std::cout << "    preview hit01 = " << (int)hit01 << std::endl;
-#endif
-			unsigned char hit23 = (buffer[index + 3] & 0xF0)>>4;
-#if DEBUG_CHPREVIEW
-			std::cout << "    preview hit23 = " << (int)hit23 << std::endl;
-#endif
-			return (int)( hit01>=hit23 ? hit01 : hit23 );	
-		}
-	}
-	return -1;
-}
-
-
-int channels::CheckHeaderErrors(int dataLength)
-{                  
-/*! \fn channels::CheckHeaderErrors(int dataLength)
- *
- * Check incoming message header data for errors by checking the raw data buffer in the channel.
- * This function assumes the buffer begins with index 0 (there is only one frame of data in the 
- * buffer).
- *
- * \param int dataLength, the length of the buffer in memory (from the DPM Pointer value)
- */
-	int buffLen = ((buffer[ResponseLength1]<<8)|buffer[ResponseLength0]) + 2;
-	if (buffLen%2) buffLen++;
-	if ( dataLength != buffLen ) {
-		std::cout << "\tInvalid Message Length!" << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( !(buffer[FrameStart] & Direction) ) {
-		std::cout << "\tCheckForErrors: Direction: " << !(buffer[FrameStart] & Direction) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( !(buffer[DeviceStatus] & DeviceOK) ) {
-		std::cout << "\tCheckForErrors: DeviceOK: " << !(buffer[DeviceStatus] & DeviceOK) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( !(buffer[DeviceStatus] & FunctionOK) ) {
-		std::cout << "\tCheckForErrors: FunctionOK: " << !(buffer[DeviceStatus] & FunctionOK) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( !(buffer[FrameStatus] & CRCOK) ) {
-		std::cout << "\tCheckForErrors: CRCOK: " << !(buffer[FrameStatus] & CRCOK) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( !(buffer[FrameStatus] & EndHeader) ) {
-		std::cout << "\tCheckForErrors: EndHeader: " << !(buffer[FrameStatus] & EndHeader) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( (buffer[FrameStatus] & MaxLen) ) {
-		std::cout << "\tCheckForErrors: MaxLen: " << (buffer[FrameStatus] & MaxLen) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( (buffer[FrameStatus] & SecondStart) ) {
-		std::cout << "\tCheckForErrors: SecondStart: " << (buffer[FrameStatus] & SecondStart) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	if ( (buffer[FrameStatus] & NAHeader) ) {
-		std::cout << "\tCheckForErrors: NAHeader: " << (buffer[FrameStatus] & NAHeader) << std::endl;
-		std::cout << "\t\tCROC = " << (channelBaseAddress>>16) << ", Chain = " << chainNumber << std::endl;
-		return 1;
-	}
-	return 0; // no errros
-}
-
-
 
 #endif
