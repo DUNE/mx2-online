@@ -28,8 +28,10 @@ namespace HeaderData {
     DiscrBank,
     FPGABank,
     DAQBank,    
-    TRIPBank,     
-    SentinelBank 
+    TRIPBank,
+    //RunBank,    // should be type 5 here
+    SentinelBank, // should be type 5 always!
+    RunBank       // should be type 6 here
   } BankType;
 
 }
@@ -38,8 +40,14 @@ class FrameHeader {
 
   friend std::ostream& operator<<(std::ostream&, const FrameHeader&);
 
+ public:
+  enum
+  {
+    FRAME_HEADER_SIZE = 4
+  };
+
   private:
-  unsigned short bank_header[4]; 
+  unsigned short bank_header[FRAME_HEADER_SIZE]; 
 	unsigned short byteSwap( unsigned short data ) const;
 
   public:
