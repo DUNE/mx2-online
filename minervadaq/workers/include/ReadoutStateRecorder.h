@@ -71,6 +71,7 @@ class ReadoutStateRecorder {
   void SetGateFinishTime( unsigned long long theFinishTime );
 
   std::tr1::shared_ptr<DAQHeader> GetDAQHeader( HeaderData::BankType bankType );
+
 };
 
 #endif

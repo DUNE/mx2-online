@@ -40,6 +40,7 @@ class VMECrate {
       int nFEBchan0=11, int nFEBchan1=11, int nFEBchan2=11, int nFEBchan3=11 );
   void AddCRIM( unsigned int address );
   void Initialize( Modes::RunningModes runningMode );
+  int GetCrateID() { return(crateID);}
 
   // ECROC methods
   void SendSoftwareRDFE() const;

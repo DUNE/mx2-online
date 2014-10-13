@@ -26,16 +26,16 @@ namespace MinervaDAQSizes {
   static const unsigned int FrameHeaderLengthIncoming = 15; /*!< size (in bytes) of an incoming LVDS header for ANY device */
 
   static const unsigned int FPGANumRegisters    =   54;  /*!< Firmware Dependent! */
-  static const unsigned int FPGAFrameMaxSize    =   74;  /*!< bytes, Firmware Dependent! */
-  static const unsigned int ADCFrameMaxSize     =  452;  /*!< bytes */
-  static const unsigned int DiscrFrameMaxSize   = 1144;  /*!< bytes, == 24 + 40 * 4 * 7 (40 bytes / trip / hit) */
+  static const unsigned int FPGAFrameMaxSize    =   76;//74;  /*!< bytes, Firmware Dependent! */
+  static const unsigned int ADCFrameMaxSize     =  453;//452;  /*!< bytes */
+  static const unsigned int DiscrFrameMaxSize   = 1145;//1144;  /*!< bytes, == 1 + 24 + 40 * 4 * 7 (40 bytes / trip / hit) */
   static const unsigned int FEBTotalDataMaxSize = FPGAFrameMaxSize + 
     ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize; /*!< bytes */
 
   static const unsigned int TRiPProgrammingFrameReadSize = 652; /*!< bytes; THIS IS THE compose SIZE! */
   static const unsigned int TRiPProgrammingFrameWriteSize = 758; /*!< bytes; THIS IS THE compose SIZE! */
-  static const unsigned int TRiPProgrammingFrameReadResponseSize = 662; /*!< bytes; THIS IS THE RESPONSE SIZE! */
-  static const unsigned int TRiPProgrammingFrameWriteResponseSize = 768; /*!< bytes; THIS IS THE RESPONSE SIZE! */
+  static const unsigned int TRiPProgrammingFrameReadResponseSize = 664;//662; /*!< bytes; THIS IS THE RESPONSE SIZE! */
+  static const unsigned int TRiPProgrammingFrameWriteResponseSize = 770;//768; /*!< bytes; THIS IS THE RESPONSE SIZE! */
 
   static const unsigned int MaxFEBsPerChain = 10;
 

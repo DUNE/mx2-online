@@ -10,6 +10,7 @@
 #include "SequencerReadoutBlock.h"
 
 #include "DAQHeader.h"
+#include "RunHeader.h"
 
 #include <fstream>
 #include <string>
@@ -23,6 +24,8 @@
 class ReadoutWorker {
 
   friend std::ostream& operator<<(std::ostream&, const ReadoutWorker&);
+
+  static const int RunHeaderVersion;
 
   private: 
 
@@ -68,6 +71,7 @@ class ReadoutWorker {
   const EChannels * CurrentChannel() const;
   unsigned int GetNextDataBlockSize() const;
   std::tr1::shared_ptr<SequencerReadoutBlock> GetNextDataBlock( unsigned int blockSize ) const;
+  std::tr1::shared_ptr<RunHeader> GetRunHeader( HeaderData::BankType bankType );
 };
 
 #endif

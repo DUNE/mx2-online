@@ -7,6 +7,7 @@
 
 #include "EventHandler.h"
 #include "DAQHeader.h"
+#include "RunHeader.h"
 #include "DAQWorker.h"
 #include "ADCFrame.h"
 
@@ -69,8 +70,12 @@ void DAQWorker::InitializeHardware()
 
 #if WH14
   readoutWorker->AddCrate(0);
-  //  readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  1,  0,  0,  0 );
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  2,  0,  0,  0 );
+  //  readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  1,  0,  0,  0 );//this is in use for v95 tests
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 10,  0,  2,  2,  0 ); // reading 1 FEBs in Channel 1 and 2 FEBs in Channel 2
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 13,  0,  0,  0,  1 ); // reading 1 FEBs in Channel 1 and 2 FEBs in Channel 2
+  //readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  0,  2,  2,  0 ); // reading 2 FEBs in Channel 1 and 2
+  //readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  0,  0,  2,  0 ); // reading 2 FEBs in Channel 2
+  //readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  0,  2,  0,  0 ); // reading 2 FEBs in Channel 1
   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
 #endif
 #if NUMI
@@ -251,6 +256,7 @@ void DAQWorker::TakeData()
 {
   daqWorker.infoStream() << "Beginning Data Acquisition...";
 
+  DeclareRunHeaderToET();
   while ( BeginNextGate() ) {
 
     do {
@@ -321,6 +327,14 @@ void DAQWorker::DissolveDataBlock( std::tr1::shared_ptr<SequencerReadoutBlock> b
     }
     delete frame;
   }
+}
+
+//---------------------------------------------------------
+void DAQWorker::DeclareRunHeaderToET( HeaderData::BankType bankType )
+{
+  daqWorker.debugStream() << "Declaring RunHeader to ET for bank type " << bankType;
+  std::tr1::shared_ptr<RunHeader> runHead = readoutWorker->GetRunHeader( bankType );
+  DeclareDataBlock<RunHeader>( runHead.get() );
 }
 
 //---------------------------------------------------------
