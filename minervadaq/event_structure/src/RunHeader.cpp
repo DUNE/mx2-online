@@ -3,6 +3,7 @@
 /*! \file RunHeader.cpp
 */
 
+#include <strings.h>
 #include "log4cppHeaders.h"
 #include "RunHeader.h"
 
