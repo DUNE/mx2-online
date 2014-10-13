@@ -4,6 +4,9 @@
 */
 
 #include "ReadoutWorker.h"
+#include "FrameHeader.h"
+#include "RunHeader.h"
+#include "EChannelsConfigRegParser.h"
 #include "exit_codes.h"
 #include <time.h>
 //#include <sys/time.h>
@@ -13,6 +16,8 @@
 #include "ADCFrame.h"
 #include "DiscrFrame.h"
 #include "FPGAFrame.h"
+
+const int ReadoutWorker::RunHeaderVersion = 1;
 
 #define GINGU_RECOMMENDATION 1
 
@@ -314,6 +319,52 @@ std::ostream& operator<<(std::ostream& out, const ReadoutWorker& s)
     out << "Crate = " << (**p) << "; ";
   }
   return out;
+}
+
+//-----------------------------
+//! Allocate and return a RunHeader using member variable data.
+std::tr1::shared_ptr<RunHeader> ReadoutWorker::GetRunHeader( HeaderData::BankType bankType )
+{
+  std::vector<unsigned short> configurations;
+  FrameHeader * frameHeader = new FrameHeader(0,0,0,bankType,0,RunHeaderVersion,
+					      0,runHeaderSize);
+
+  for ( std::vector<VMECrate*>::iterator p=crates.begin(); p != crates.end(); ++p ) 
+  {
+    std::vector<ECROC*>* crocs = (*p)->GetECROCVector();
+    for ( std::vector<ECROC*>::iterator q=crocs->begin(); q!=crocs->end(); ++q ) 
+    {
+      std::vector<EChannels*>* channels = (*q)->GetChannelsVector();
+      for ( std::vector<EChannels*>::iterator c=channels->begin(); 
+	    c!=channels->end(); ++c)
+      {
+	std::tr1::shared_ptr<EChannelsConfigRegParser> config = 
+	  (*c)->GetChannelConfiguration();
+
+	unsigned short source_id = 0;
+	source_id |= ( (*p)->GetCrateID()       & 0x01) << 14; 
+	source_id |= ( (*q)->GetCROCNumber()    & 0x0F) <<  9;
+	source_id |= ( (*c)->GetChannelNumber() & 0x03) <<  7;
+	printf( "\n  source_id = 0x%4.4X ", source_id );
+	
+	int crateID       =  ( source_id >> 14) & 0x01;
+	int crocNumber    =  ( source_id >> 9) & 0x0F ;
+	int channelNumber =  ( source_id >> 7) & 0x03  ;
+	printf( "\n  crateID       = %d ", crateID );
+	printf( "\n  crocNumber    = %d ", crocNumber );
+	printf( "\n  channelNumber = %d ", channelNumber );
+	
+ 	//printf( " configurations[%d] = 0x%4.4X", (*c), config.get()->RawValue());
+	configurations.push_back(source_id);
+	configurations.push_back(config.get()->RawValue());
+      }
+    }
+  } 
+
+  std::tr1::shared_ptr<RunHeader> runHeader( new RunHeader(frameHeader,configurations) );
+
+  delete(frameHeader);
+  return(runHeader);
 }
 
 #endif

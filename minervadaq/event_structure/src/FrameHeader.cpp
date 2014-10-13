@@ -36,7 +36,8 @@ FrameHeader::FrameHeader(int crateID, int crocID, int chanID,
 #endif
 
   unsigned short source_id = 0;
-  source_id |= (crateID & 0x03) << 14; // 2 bits for the crate id number
+  source_id |= (hit     & 0x10) << 15; // 1 bit  for the crate id number
+  source_id |= (crateID & 0x01) << 14; // 1 bit  for the crate id number
   source_id |= (hit     & 0x08) << 13; // 1 bits for the hit number
   source_id |= (crocID  & 0x0F) <<  9; // 4 bits for the croc id number
   source_id |= (chanID  & 0x03) <<  7; // 2 bits for the channel id number

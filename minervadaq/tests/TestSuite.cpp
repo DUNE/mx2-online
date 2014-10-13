@@ -30,7 +30,7 @@ static int testCount = 0;
 // At some point, we expect 3 x 446 bytes for ADC Frames when the Channel reads
 // the "un-timed" hit buffer as well (N+1 readout mode).
 static const int chgInjReadoutBytesPerBoard = MinervaDAQSizes::FPGAFrameMaxSize + 
-  3*MinervaDAQSizes::ADCFrameMaxSize + 344;
+  3*MinervaDAQSizes::ADCFrameMaxSize + 344 + 1;//344;
 
 static const unsigned short genericGateStart = 40938;
 static const unsigned short genericHVTarget = 25000;
@@ -124,18 +124,28 @@ int main( int argc, char * argv[] )
   // Get & initialize a CROC-E.
   ECROC * ecroc = GetAndTestECROC( ecrocCardAddress, controller );
 
+  std::cout << "== After GetAndTestECROC. " << std::endl;  
+
   // Test that the specified number of FEBs are available & set up the channel.
   TestChannel( ecroc, channel, nFEBs );
-
+  std::cout << "== After TestChannel " << std::endl; 
+   
   // Grab a pointer to our configured channel for later use.
   EChannels * echannel = ecroc->GetChannel( channel ); 
+  std::cout << "== After GetChannel" << std::endl;  
 
   // Write some generic values to the FEB that are different than what we use 
   // for charge injection and different from the power on defaults. Then read them 
   // back over the course of the next two tests.
   SetupGenericFEBSettings( echannel, nFEBs );
+  std::cout << "== After SetupGenericFEBSettings " << std::endl;  
+
   FEBFPGAWriteReadTest( echannel, nFEBs );
+  std::cout << "== After FEBFPGAWriteReadTest " << std::endl;  
+
   FEBTRiPWriteReadTest( echannel, nFEBs );
+  std::cout << "== After FEBTRiPWriteReadTest " << std::endl;  
+
 
   // Set up charge injection and read the data. We test for data sizes equal 
   // to what we expect. Get a copy of the buffer and its size for parsing.
@@ -168,14 +178,21 @@ int main( int argc, char * argv[] )
   ReadoutWorker * rworker = GetAndTestReadoutWorker( controllerID, ecrocCardAddress,
       crimCardAddress, nch0, nch1, nch2, nch3 );
   delete rworker;
+  
+  std::cout << "== After GetAndTestReadutWorker. Before calling DAQWorker " << std::endl;  
+
 
   sig_atomic_t continueRunning = true;
   DAQWorker * dworker = new DAQWorker( args, log4cpp::Priority::DEBUG, &continueRunning );
+  std::cout << "== After DAQWorker and before calling TestDAQWorker..." << std::endl;  
+  
   TestDAQWorker( dworker );
+  std::cout << "== After TestDAQWorker " << std::endl;  
 
   delete dworker;
   delete args;
 
+  std::cout << "== After TestDAQWorker. Before calling TestReadoutStateRecorder..." << std::endl;  
   TestReadoutStateRecorder();
 
   log4cpp::Category::shutdown();
@@ -331,8 +348,11 @@ void TestDAQWorker( DAQWorker * worker )
   std::cout << "Testing DAQWorker...";  
   logger.debugStream() << "Testing:--------------DAQWorker--------------";
 
-  worker->InitializeHardware();  
+  std::cout << "Initialize Hardware ";
+  worker->InitializeHardware(); 
+  std::cout << "  Initialized Hardware. Calling TakeData "; 
   worker->TakeData();
+  std::cout << " After TakeData ";
 
   logger.debugStream() << "Passed:--------------DAQWorker--------------";
   std::cout << "Passed!" << std::endl;
@@ -428,7 +448,7 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
     unsigned short status = channel->WaitForMessageReceived();
     assert( 0x1010 == status );
     unsigned int pointer = channel->ReadDPMPointer();
-    assert( 24 + 2/*hits/trip*/ * 4/*trips*/ * 40 /*bytes/hit*/ == pointer ); // 338 assumes 2 hits per trip
+    assert( 25 + 2/*hits/trip*/ * 4/*trips*/ * 40 /*bytes/hit*/ == pointer ); // 338 assumes 2 hits per trip
     unsigned char* data = channel->ReadMemory( pointer );
 
     frame->SetReceivedMessage(data);
@@ -467,6 +487,7 @@ void ReadADCTest( EChannels* channel, unsigned int nFEBs )
     unsigned short status = channel->WaitForMessageReceived();
     assert( 0x1010 == status );
     unsigned int pointer = channel->ReadDPMPointer();
+    //std::cout << "adc pointer " << pointer << std::endl;
     assert( MinervaDAQSizes::ADCFrameMaxSize == pointer ); 
     unsigned char* data = channel->ReadMemory( pointer );
 
@@ -535,7 +556,7 @@ unsigned short int ReadDPMTestPointer( ECROC * ecroc, unsigned int channel, unsi
   logger.infoStream() << "  Expect to find = " << chgInjReadoutBytesPerBoard << " * " <<
     nFEBs << " = " << chgInjReadoutBytesPerBoard * nFEBs;
   assert( chgInjReadoutBytesPerBoard * nFEBs == pointer );
-
+  
   std::cout << "Passed!" << std::endl;
   testCount++;
   return pointer;
@@ -778,14 +799,15 @@ void FPGASetupForChargeInjection( EChannels* channel, int boardID )
     frame->SetPreviewEnable(previewEnable);
     for (int i=0; i<4; i++) {
       // try to get hits in different windows (need ~35+ ticks) 
-      int tickOffset = 40;
+      int tickOffset = 40;//40;
+      //std::cout << "boardID = " << boardID << std::endl;
       unsigned char inj[] = { 1 + (unsigned char)i*(tickOffset) + 2*((int)boardID) };
       unsigned char enable[] = {0x1};
       frame->SetInjectCount(inj,i);
       frame->SetInjectEnable(enable,i);
       frame->SetDiscrimEnableMask(0xFFFF,i);
     }
-    unsigned short int dacval = 4000;
+    unsigned short int dacval = 3000;//4000;
     frame->SetInjectDACValue(dacval);
     unsigned char injPhase[] = {0x1};
     frame->SetInjectPhase(injPhase);

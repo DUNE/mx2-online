@@ -42,6 +42,7 @@ class DAQWorker {
     et_sys_id      sys_id; 
     bool ContactEventBuilder( EventHandler *handler );
     void DeclareDAQHeaderToET( HeaderData::BankType bankType = HeaderData::DAQBank );
+    void DeclareRunHeaderToET( HeaderData::BankType bankType = HeaderData::RunBank );
 
     template <class X> void DeclareDataBlock( X *dataBlock );
     template <class X> struct EventHandler * CreateEventHandler( X *dataBlock );
