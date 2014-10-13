@@ -61,6 +61,20 @@ elif [ $LOCALE == "NEARLINEDEV" ]; then
   export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x64/:$LD_LIBRARY_PATH
   # Add log4cpp support.
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
+elif [ $LOCALE == "FNAL2" ]; then
+  export DAQROOT=/work/software/croce_v3/minervadaq/minervadaq
+  export CAEN_DIR=/work/software/CAENVMElib
+  export CAEN_VERSION=CAEN_2_30
+  export CODA_VERSION=et_9.0
+  export CODA_HOME=${DAQROOT}/${CODA_VERSION}
+  export BMS_HOME=${CODA_HOME}/BMS
+  export ET_HOME=${CODA_HOME}/Linux-x86_64-64
+  export ET_LIBROOT=$ET_HOME/Linux-x86_64-64
+  export INSTALL_DIR=$ET_HOME
+  # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
+  export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
+  # Add log4cpp support.
+  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
 elif [ $LOCALE == "D0TESTSTAND" ]; then
   #export DAQROOT=/work/mnvdaq
   setup caenvme
