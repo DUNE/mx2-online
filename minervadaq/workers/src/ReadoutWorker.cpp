@@ -345,14 +345,14 @@ std::tr1::shared_ptr<RunHeader> ReadoutWorker::GetRunHeader( HeaderData::BankTyp
 	source_id |= ( (*p)->GetCrateID()       & 0x01) << 14; 
 	source_id |= ( (*q)->GetCROCNumber()    & 0x0F) <<  9;
 	source_id |= ( (*c)->GetChannelNumber() & 0x03) <<  7;
-	printf( "\n  source_id = 0x%4.4X ", source_id );
+	//printf( "\n  source_id = 0x%4.4X ", source_id );
 	
-	int crateID       =  ( source_id >> 14) & 0x01;
-	int crocNumber    =  ( source_id >> 9) & 0x0F ;
-	int channelNumber =  ( source_id >> 7) & 0x03  ;
-	printf( "\n  crateID       = %d ", crateID );
-	printf( "\n  crocNumber    = %d ", crocNumber );
-	printf( "\n  channelNumber = %d ", channelNumber );
+	//int crateID       =  ( source_id >> 14) & 0x01;
+	//int crocNumber    =  ( source_id >> 9) & 0x0F ;
+	//int channelNumber =  ( source_id >> 7) & 0x03  ;
+	//printf( "\n  crateID       = %d ", crateID );
+	//printf( "\n  crocNumber    = %d ", crocNumber );
+	//printf( "\n  channelNumber = %d ", channelNumber );
 	
  	//printf( " configurations[%d] = 0x%4.4X", (*c), config.get()->RawValue());
 	configurations.push_back(source_id);
@@ -360,7 +360,6 @@ std::tr1::shared_ptr<RunHeader> ReadoutWorker::GetRunHeader( HeaderData::BankTyp
       }
     }
   } 
-
   std::tr1::shared_ptr<RunHeader> runHeader( new RunHeader(frameHeader,configurations) );
 
   delete(frameHeader);
