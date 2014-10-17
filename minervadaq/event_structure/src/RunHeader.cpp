@@ -22,12 +22,12 @@ RunHeader::RunHeader(FrameHeader *header,
 
   dataLength = runHeaderSize;
   runevt.debugStream() << " dataLength. = " << dataLength ;
-  printf("\n  dataLength = %d ", dataLength ) ;
+  //printf("\n  dataLength = %d ", dataLength ) ;
   data = new unsigned char[dataLength];
   bzero(data,dataLength);
 
   int nChannels = configurations.size();
-  printf("\n  nChannels = %d", nChannels);
+  //printf("\n  nChannels = %d", nChannels);
 
 #ifndef GOFAST
   runevt.debugStream() << " nChannels = " << nChannels ;
@@ -40,7 +40,6 @@ RunHeader::RunHeader(FrameHeader *header,
 
   int ptr = 0;
   // Fill in frame header 
-  printf("\n  before headerData ");
   const unsigned short * headerData = header->GetBankHeader();
   for ( int i=0; i<FrameHeader::FRAME_HEADER_SIZE; i++)
   {
@@ -52,27 +51,26 @@ RunHeader::RunHeader(FrameHeader *header,
    runevt.debug ( " headerData[%d]= 0x%4.4X\n ",  i , (int)(headerData[i]) ) ;
    }
 #endif    
-   printf("\n  before (&data[ptr]) = nChannels");
 
   *(int *)(&data[ptr]) = nChannels;
   ptr += sizeof(nChannels);
-
- printf("\n  before filling data with configurations");
-//for ( int i=0; i<nChannels*2; i++)
+  //printf("\n  sizeof(nChannels) = %lu",sizeof(nChannels));
+  //printf("\n  prt = %d",ptr);
+ 
+ //for ( int i=0; i<nChannels*2; i++)
  for ( int i=0; i<nChannels; i++)
-  {   
-    *(unsigned short *)(&data[ptr]) = configurations.at(i);
-    printf ("\n data[%d] = 0x%4.4X", i, data[i]);
-    ptr += sizeof(unsigned short);
-  }
+   {   
+     *(unsigned short *)(&data[ptr]) = configurations.at(i);
+     //printf ("\n data[%d] = 0x%4.4X", i, data[i]);
+     ptr += sizeof(unsigned short);
+   }
     
-  
- #ifndef GOFAST  
+#ifndef GOFAST  
    for ( int i=0; i<dataLength; i++) {
    runevt.debug ( " data[%d]= 0x%4.4X\n ",  i , (int)(data[i]) ) ;
    }
-#endif    
- 
+#endif
+   
   
 }
 
