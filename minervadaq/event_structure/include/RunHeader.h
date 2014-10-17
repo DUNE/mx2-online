@@ -35,6 +35,6 @@ class RunHeader
 };
 
 
-static const int runHeaderSize = 2 * RunHeader::MAX_CROC * sizeof(unsigned short) + sizeof(int) + FrameHeader::FRAME_HEADER_SIZE * sizeof(short);
+static const int runHeaderSize = 4 * RunHeader::MAX_CROC * sizeof(unsigned short) * RunHeader::CHANNELS_PER_CROC + sizeof(int) + FrameHeader::FRAME_HEADER_SIZE * sizeof(short);
 
 #endif
