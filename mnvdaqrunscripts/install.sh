@@ -119,6 +119,7 @@ fi
 # minerva-cr-01 - MINERvA Control Room PC 01 in ROC-WEST
 # minerva-cr-02 - MINERvA Control Room PC 02 in ROC-WEST
 # minerva-rc - Main MINERvA Control Room PC in WH12.
+# uroc.fisica.pucp.edu.pe - UROC at Pontificia Peru
 # photon.otterbein.edu - UROC at Otterbein University
 # 23-25-1-49-static.hfc.comcastbusiness.net - UROC at Deborah Harris' Home
 # ksmcf-cart.pas.rochester.edu - UROC at Rochester
@@ -128,7 +129,7 @@ fi
 # uroc.wm.edu - UROC at William & Mary
 # uroc.d.umn.edu - UROC at Minnesota
 
-if [ "$HOSTNAME" == "minerva-cr-01.fnal.gov" -o "$HOSTNAME" == "minerva-cr-02.fnal.gov" -o "$HOSTNAME" == "minerva-rc.fnal.gov" -o "$HOSTNAME" == "photon.otterbein.edu" -o "$HOSTNAME" == "23-25-1-49-static.hfc.comcastbusiness.net" -o "$HOSTNAME" == "ksmcf-cart.pas.rochester.edu" -o "$HOSTNAME" == "uroc.phy.tufts.edu" -o "$HOSTNAME" == "uroc02.phy.tufts.edu" -o "$HOSTNAME" == "uroc.fis.utfsm.cl" -o "$HOSTNAME" == "uroc.wm.edu" -o "$HOSTNAME" == "uroc.d.umn.edu" -o "$HOSTNAME" == "minerva-cart.phyast.pitt.edu" ]; then
+if [ "$HOSTNAME" == "minerva-cr-01.fnal.gov" -o "$HOSTNAME" == "minerva-cr-02.fnal.gov" -o "$HOSTNAME" == "minerva-rc.fnal.gov" -o "$HOSTNAME" == "uroc.fisica.pucp.edu.pe" -o "$HOSTNAME" == "photon.otterbein.edu" -o "$HOSTNAME" == "23-25-1-49-static.hfc.comcastbusiness.net" -o "$HOSTNAME" == "ksmcf-cart.pas.rochester.edu" -o "$HOSTNAME" == "uroc.phy.tufts.edu" -o "$HOSTNAME" == "uroc02.phy.tufts.edu" -o "$HOSTNAME" == "uroc.fis.utfsm.cl" -o "$HOSTNAME" == "uroc.wm.edu" -o "$HOSTNAME" == "uroc.d.umn.edu" -o "$HOSTNAME" == "minerva-cart.phyast.pitt.edu" ]; then
 	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
 	ln -sf $script_dir/check_daq_rc.sh $HOME/check_daq_rc.sh
 	ln -sf $script_dir/whcr_configure_runcontrol.sh $HOME/configure_runcontrol.sh
