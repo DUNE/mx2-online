@@ -13,12 +13,12 @@
   Changelog:  
     01/14/11, J. Wolcott: first version
     01/21/11, J. Wolcott: add mnvonlinemaster
-    05/22/14, O. Altinok: add Otterbein University
+    10/20/14, O. Altinok: add Pontificia UROC
 ================================================================================
 
 Port        Assignee machine address                        Assignee description
 -----------------------------------------------------------------------------------------
-3001        minerva-rc.fnal.gov                             WH12 control room
+3001        minerva-cr-01.fnal.gov                          ROC-WEST control room
 3002        mnvonlinemaster.fnal.gov                        Online master node (fallback)
 3005        jwolcott.pas.rochester.edu                      Jeremy Wolcott (Rochester)
 3010        minerva-cart.phyast.pitt.edu                    Pittsburgh UROC
@@ -31,3 +31,4 @@ Port        Assignee machine address                        Assignee description
 3017        uroc02.phy.tufts.edu                            Tufts UROC #2
 3018        23-25-1-49-static.hfc.comcastbusiness.net       Deborah Harris UROC
 3019        photon.otterbein.edu                            Otterbein University
+3020	    uroc.fisica.pucp.edu.pe			    Pontificia Universidad Catolica del Peru	
