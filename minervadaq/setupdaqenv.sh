@@ -1,6 +1,23 @@
+#
+# Filename: setupminervadaq.sh
+#
+# Specify the versions of software packages and their locations.
+#
 # Note, to compile the DAQ, after you pull the package down from CVS, you need to untar the ET code first!
 # Set your LOCALE.  One Valid choice right now: "FNAL" for Fermilab.  Currently on the FNAL mnvonline
 # machines, the LOCALE is set in the mnvonline user .bash_profile.
+#
+# Usage: source setupminervadaq.sh (set LOCALE environment variable first)
+#
+# Recognized LOCALE values:
+# 1. FNAL - SLF5 underground DAQ computers, runs daq and event builder
+# 2. NEARLINE - SLF5 underground computer that needs to run the event builder
+# 3. NEARLINEDEV - SLF5 nearline development computer
+# 4. FNAL2 - SLF6 underground and test beam DAQ computers
+# 5. D0TESTSTAND - SLF6 DAQ development
+# 6. WHTESTSTAND - SLF5 DAQ and electronics development 
+#
+
 if [ $# -eq 1 ]; then
   export LOCALE=$1
 fi
@@ -62,6 +79,7 @@ elif [ $LOCALE == "NEARLINEDEV" ]; then
   # Add log4cpp support.
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
 elif [ $LOCALE == "FNAL2" ]; then
+  #export LOCALE=MTEST
   export DAQROOT=/work/software/croce_v3/minervadaq/minervadaq
   export CAEN_DIR=/work/software/CAENVMElib
   export CAEN_VERSION=CAEN_2_30
@@ -109,7 +127,7 @@ elif [ $LOCALE == "WH14TESTSTAND" ]; then
   # Add /usr/local/lib for log4cpp support.
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
 else
-  echo Unsupported LOCALE!
+  echo Unsupported LOCALE!$  LOCALE is not recognized in this script. 
 fi
 
 export INSTALL_DIR=$ET_HOME

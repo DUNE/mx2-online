@@ -65,8 +65,18 @@ DAQWorker::~DAQWorker()
 void DAQWorker::InitializeHardware()
 {
   daqWorker.infoStream() << "Initializing Hardware for DAQWorker...";
+  //printf("\nIn DAQWorker : Initializing Hardware for DAQWorker... \n");
 
   // Read in hardware config here. For now, hard code...
+
+#if MTEST 
+  readoutWorker->AddCrate(0);
+  // readoutWorker->GetVMECrateVector(<Crate address>)->AddECROC( <Croce address>,  <number of FEBs in chain 0>,  < '' in chain 1>,  < '' in chain 2>,  < '' in chain 3> );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  4,  5,  4,  4 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  0,  0,  0,  0 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  0,  0,  0,  0 );
+  readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
+#endif
 
 #if WH14
   readoutWorker->AddCrate(0);
@@ -101,6 +111,7 @@ void DAQWorker::InitializeHardware()
   readoutWorker->GetVMECrateVector(1)->AddCRIM( 224 );
   readoutWorker->GetVMECrateVector(1)->AddCRIM( 240 );
 #endif
+  //printf("\n in DAQWorker :calling InitializeCrates \n");
   readoutWorker->InitializeCrates( args->runMode );
 }
 

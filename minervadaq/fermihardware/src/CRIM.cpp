@@ -1,6 +1,10 @@
 #ifndef CRIM_cpp
 #define CRIM_cpp
 /*! \file CRIM.cpp
+11/01/2014 Geoff Savage
+Add diagnostic messages when running CRIM in internal trigger mode.
+Correct the namespace of the internal trigger mode variable when
+MTEST is defined.
 */
 
 #include <iostream>
@@ -117,7 +121,7 @@ void CRIM::Initialize( Modes::RunningModes runningMode )
       // removes the need to switch clock modes for pure pedestal. We keep the name
       // "OneShot" for historical reasons no matter the clock mode.
 #if NOMTMPEDESTAL 
-      TimingMode   = crimInternal;
+      TimingMode   = VMEModuleTypes::CRIMInternal;
 #endif
       break;
     case NuMIBeam:
@@ -125,8 +129,8 @@ void CRIM::Initialize( Modes::RunningModes runningMode )
     case PureLightInjection:
 #if MTEST
       // Because no MTM is available at MTest, LI will use internal timing.
-      TimingMode   = CRIMInternal;
-      CRIMLog.infoStream() << "->Using MTest timing (CRIM Internal).";
+      TimingMode   = VMEModuleTypes::CRIMInternal;
+      CRIMLog.infoStream() << "->Using CRIM internal timing.";
 #endif
       break;
     case MixedBeamPedestal:
@@ -138,6 +142,7 @@ void CRIM::Initialize( Modes::RunningModes runningMode )
       // Cosmics, Beam-Muon, & Beam-Only use CRIM internal timing with gates send at a set frequency.
       Frequency     = VMEModuleTypes::F2;
       TimingMode    = VMEModuleTypes::CRIMInternal;
+      CRIMLog.infoStream() << "->Using CRIM internal timing.";
       break;
     default:
       CRIMLog.fatalStream() << "Error in CRIM::InitializeCrim()! No Running Mode defined!";
