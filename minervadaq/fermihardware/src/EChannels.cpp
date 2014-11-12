@@ -282,7 +282,10 @@ void EChannels::ConfigureForStandardDataTaking() const
 {
   std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
   config->EnableSequencerReadout();
-  config->SetFourBitHitEncoding();
+  //if using FEB v91
+  //config->SetFourBitHitEncoding();
+  //if using FEB v95
+  config->SetFiveBitHitEncoding();
   config->SetFullPipelineReadout();
   config->DisableChannelTestPulse();
   config->DisableChannelReset();
