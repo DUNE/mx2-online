@@ -2,6 +2,12 @@
 #define EChannels_cpp
 /*! \file EChannels.cpp
 */
+/*
+11/19/2014 Geoff Savage
+
+Modified EChannels::DecodeStatusMessage() so the SequencerError bit (0x0200)
+in the frame status word now triggers an error.
+*/
 
 #include <iomanip>
 
@@ -132,6 +138,7 @@ std::pair<int,std::string> EChannels::DecodeStatusMessage( const unsigned short&
   }
   if (status & VMEModuleTypes::SequencerError) {
     statusBitsDecoded += "SequencerError|";
+    frameErrors++;
   }
   if (status & VMEModuleTypes::SendMemoryRDFEDone) {
     statusBitsDecoded += "SendMemoryRDFEDone|";
