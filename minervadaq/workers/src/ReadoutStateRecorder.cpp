@@ -2,7 +2,12 @@
 #define ReadoutStateRecorder_cxx
 /*! \file ReadoutStateRecorder.cpp:  
 */
-
+/*
+11/21/2014 Geoff Savage
+Remove the 1 second sleeps when trigger for OneShot and
+PureLightInjection at MTEST.  We had been modifying this file
+each time we created a new DAQ version.
+*/
 #include "ReadoutStateRecorder.h"
 #include "exit_codes.h"
 
@@ -108,7 +113,9 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
   switch (args->runMode) {
     case OneShot:
       triggerType = Pedestal;
+#ifndef MTEST
       sleep(1);
+#endif
       stateRecorderLogger.debugStream() << " Running Mode is OneShot.";
       break;
     case NuMIBeam:
@@ -117,7 +124,9 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
       break;
     case PureLightInjection:
       triggerType = LightInjection;
+#ifndef MTEST
       sleep(1);
+#endif
       stateRecorderLogger.debugStream() << " Running Mode is PureLightInjection.";
       break;
     case MixedBeamPedestal:
