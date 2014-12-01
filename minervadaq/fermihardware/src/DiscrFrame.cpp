@@ -171,16 +171,16 @@ unsigned int DiscrFrame::GetNHitsOnTRiP(const unsigned int& tripNumber) const
 
   switch (tripNumber) {
     case 0:
-      return (0x0F & receivedMessage[discrNumHits01]);
+      return (receivedMessage[discrNumHits01]);
       break;
     case 1:
-      return (0xF0 & receivedMessage[discrNumHits01]) >> 4;
+      return (receivedMessage[discrNumHits01]);
       break;
     case 2:
-      return (0x0F & receivedMessage[discrNumHits23]);
+      return (receivedMessage[discrNumHits23]);
       break;
     case 3:
-      return (0xF0 & receivedMessage[discrNumHits23]) >> 4;
+      return (receivedMessage[discrNumHits23]);
       break;
     default:
       std::string errstring = "Only TRiPs 0-3 are valid for GetNHitsOnTRiP.";
