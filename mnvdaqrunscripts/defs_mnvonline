@@ -2,8 +2,9 @@
 MASTERMACH=mnvonlinemaster.fnal.gov
 SOLDERMACH=mnvonline0.fnal.gov
 WORKERMACH=mnvonline1.fnal.gov
-REMDAQACCT=mnvonline
-SCRIPTSDIR=/home/mnvonline/mnvdaqrunscripts
-HOMEDIR=/home/mnvonline/
-#MNVDAQ=mnvonline1.fnal.gov
-MNVDAQ=mnvonline0.fnal.gov
+
+#For mnvonline03 DAQ running
+REMDAQACCT=minerva
+SCRIPTSDIR=/home/minerva/mnvdaqrunscripts
+HOMEDIR=/home/minerva/
+MNVDAQ=mnvonline03.fnal.gov
