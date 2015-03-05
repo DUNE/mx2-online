@@ -13,8 +13,8 @@
   Changelog:  
     01/14/11, J. Wolcott: first version
     01/21/11, J. Wolcott: add mnvonlinemaster
-    10/20/14, O. Altinok: add Pontificia UROC
-================================================================================
+    03/05/15, O. Altinok: add Oregon State UROC
+==============================================================================
 
 Port        Assignee machine address                        Assignee description
 -----------------------------------------------------------------------------------------
@@ -32,3 +32,4 @@ Port        Assignee machine address                        Assignee description
 3018        23-25-1-49-static.hfc.comcastbusiness.net       Deborah Harris UROC
 3019        photon.otterbein.edu                            Otterbein University
 3020	    uroc.fisica.pucp.edu.pe			    Pontificia Universidad Catolica del Peru	
+3021	    uroc.physics.oregonstate.edu		    Oregon State
