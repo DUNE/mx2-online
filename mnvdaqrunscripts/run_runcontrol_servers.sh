@@ -4,10 +4,11 @@
 # on the mnvonline or # minervatest cluster when running "locally" 
 # (either at the terminal or via ssh'ed x-forwarding).
 
-MASTER_NODE="mnvonline0.fnal.gov"
-#MASTER_NODE="mnvonline1.fnal.gov"
-LI_NODE="mnvonline1.fnal.gov"
-#LI_NODE="mnvonline0.fnal.gov"
+MASTER_NODE="mnvonline03.fnal.gov"
+
+LI_NODE0="mnvonline0.fnal.gov"
+LI_NODE1="mnvonline1.fnal.gov"
+
 OM_NODE="mnvonlinelogger.fnal.gov"
 
 . $HOME/mnvdaqrunscripts/defs_standardpaths
@@ -27,9 +28,9 @@ case "$HOSTNAME" in
 		OM_DISPATCHER=true
 		;;
 	
-#	${LI_NODE})
-#		RC_DISPATCHER=true
-#		;;
+	${LI_NODE})
+		RC_DISPATCHER=true
+		;;
 
 	${OM_NODE})
 		echo "Please use the '~/dispatcher_nearline.sh' script to start the run control elements on this node instead of this one.  Thank you!"
@@ -46,12 +47,14 @@ esac
 if [ -z "$DAQROOT" -a $RC_DISPATCHER ]
 then
         echo "No DAQROOT defined.  Sourcing the setup script..."
-	source $HOME/croce_daqenv.sh
+	source $HOME/setupdaqenv.sh
 fi
 
 # Get Python version.
-which python2.6 >& /tmp/pytest.txt
-PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+#which python2.6 >& /tmp/pytest.txt
+#which python >& /tmp/pytest.txt
+#PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+PYV=python
 
 if [ $OM_DISPATCHER ]; then
     echo "Killing and Restarting processes on mnvonlinelogger first..."
@@ -59,12 +62,19 @@ if [ $OM_DISPATCHER ]; then
 fi
 
 if [ $RC_DISPATCHER ]; then
+        echo "Starting ReadoutDipatcher on LI-Node mnvonline0 ..."
+	ssh mnvonline@mnvonline0.fnal.gov sh /home/mnvonline/mnvdaqrunscripts/run_forLIdispatcher.sh
+        sleep 10
+
         echo "Starting ReadoutDipatcher on LI-Node mnvonline1 ..."
 	ssh mnvonline@mnvonline1.fnal.gov sh /home/mnvonline/mnvdaqrunscripts/run_forLIdispatcher.sh
         sleep 10
 
 	echo "Starting the run control's ReadoutDispatcher..."
         echo "PYV =" $PYV "RCROOT =" $RCROOT
+	export LOCALE=FNAL2
+	export PYTHONPATH=/work/software
+	echo "LOCALE = " $LOCALE
         echo "PYTHONPATH =" $PYTHONPATH
 
 	# Check to see if the dispatcher is running.  If it is, stop/kill it.
