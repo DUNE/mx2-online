@@ -10,3 +10,4 @@ pushd ${RCROOT}/backend >& /dev/null
 $PYV DataAcquisitionManager.py start 
 popd >& /dev/null
 
+ps -leaf | grep DataAcquisitionManager | grep -v grep

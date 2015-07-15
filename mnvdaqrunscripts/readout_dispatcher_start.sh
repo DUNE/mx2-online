@@ -10,3 +10,4 @@ pushd ${RCROOT}/backend >& /dev/null
 $PYV ReadoutDispatcher.py start 
 popd >& /dev/null
 
+ps -leaf | grep ReadoutDispatcher | grep -v grep
