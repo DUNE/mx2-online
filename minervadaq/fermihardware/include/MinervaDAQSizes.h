@@ -27,7 +27,7 @@ namespace MinervaDAQSizes {
 
   static const unsigned int FPGANumRegisters    =   54;  /*!< Firmware Dependent! */
   static const unsigned int FPGAFrameMaxSize    =   76;//74;  /*!< bytes, Firmware Dependent! */
-  static const unsigned int ADCFrameMaxSize     =  455;//453;//452;  /*!< bytes FEB v95 == 455 */
+  static const unsigned int ADCFrameMaxSize     =  453;//452;  /*!< bytes FEB v95 == 455 */
   static const unsigned int DiscrFrameMaxSize   = 1145;//1144;  /*!< bytes, == 1 + 24 + 40 * 4 * 7 (40 bytes / trip / hit) */
   static const unsigned int FEBTotalDataMaxSize = FPGAFrameMaxSize + 
     ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize; /*!< bytes */

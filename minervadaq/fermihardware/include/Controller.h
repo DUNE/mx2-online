@@ -26,7 +26,7 @@ class Controller {
 		CVAddressModifier addressModifier;
 		CVDataWidth       dataWidth;
 
-		char firmware[1];
+		char firmware[10];
 		int crateNumber;
 		int handle;                  /*!<a device handle returned by the initialization function*/
 		unsigned short *shortBuffer; 

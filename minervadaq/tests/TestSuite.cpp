@@ -455,8 +455,10 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
     frame->printReceivedMessageToLog();
     assert( !frame->CheckForErrors() );
     frame->DecodeRegisterValues(); 
-    for (unsigned int i = 0; i < 4; ++i) 
+    for (unsigned int i = 0; i < 4; ++i) {
+      //std::cout << "why did I stop working??" << std::endl;
       assert( 2 == frame->GetNHitsOnTRiP(i) );
+    }
   }
 
   logger.debugStream() << "Passed:--------------ReadDiscrTest--------------";
