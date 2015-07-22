@@ -16,7 +16,7 @@ minervadaq/doc/*.pdf
 # Doxygen hoo-ha
 doxy/
 
-# Buid Stuff
+# Build Stuff
 minervadaq/Make.options
 minervadaq/bin/tests
 minervadaq/bin/event_builder
