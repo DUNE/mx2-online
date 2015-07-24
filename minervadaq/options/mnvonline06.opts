@@ -1,0 +1,8 @@
+# Build for mnvonline06.
+#--DETECTOR FLAGS--
+#COMPILE_OPTIONS += -DNUMI
+#COMPILE_OPTIONS += -DDZERO
+COMPILE_OPTIONS += -DMTEST # test beam
+#COMPILE_OPTIONS += -DNEARLINE # Nearline station 
+
+
