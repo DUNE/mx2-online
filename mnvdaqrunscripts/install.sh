@@ -7,6 +7,17 @@ fi
 
 script_dir="$( cd "$( dirname "$0" )" && pwd )"
 
+if [ $HOSTNAME == "mnvonline03.fnal.gov" -o $HOSTNAME == "mnvonline04.fnal.gov" -o $HOSTNAME == "mnvonline05.fnal.gov" -o $HOSTNAME == "mnvonline06.fnal.gov" ]; then
+	echo "Setting up generic scripts (with hardware) on ${HOSTNAME}..."
+	#ln -sf $script_dir/check_daq_rc.sh $HOME/check_daq_rc.sh
+	ln -sf $script_dir/configure_runcontrol.sh $HOME/configure_runcontrol.sh
+	ln -sf $script_dir/configure_runseries.sh $HOME/configure_runseries.sh
+	ln -sf $script_dir/slowcontrol.sh $HOME/slowcontrol.sh
+	ln -sf $script_dir/run_runcontrol_servers.sh $HOME/run_runcontrol_servers.sh
+	ln -sf $script_dir/setupdaqenv.sh $HOME/setupdaqenv.sh
+	
+fi
+
 # mnvtbonline0 - Single node DAQ with hardware.  MTest DAQ.
 #  (We still need some scripting for the test beam DAQ PC.)
 # mnvtbonline1 - Single node DAQ with hardware.  Lab F PMT X-Talk DAQ; MTest Backup DAQ.

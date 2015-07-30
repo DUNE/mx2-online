@@ -4,7 +4,7 @@
 # on the mnvonline or # minervatest cluster when running "locally" 
 # (either at the terminal or via ssh'ed x-forwarding).
 
-MASTER_NODE="mnvonline03.fnal.gov"
+MASTER_NODE="mnvonline05.fnal.gov"
 
 LI_NODE0="mnvonline0.fnal.gov"
 LI_NODE1="mnvonline1.fnal.gov"
