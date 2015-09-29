@@ -1884,11 +1884,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			return
 		
 		if message.state == "om_error":
-			self.NewAlert(notice="An error was reported on the '%s' monitoring node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
+			self.NewAlert(notice="An error was reported on the '%s' monitoring node. The DAQ may need restarting. Contact the Expert Shifter. I'll try to take data in the mean time. Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
 			self.remote_nodes[message.sender].status = RemoteNode.ERROR
-			self.StopDataAcquisition()
 
 			self.postoffice.Publish( self.StatusReport(items=["remote_nodes"]) )
+			self.logger.warning("    ... '%s' node startup is failed. Continuing in startup sequence while ES is contacted.", message.sender)
 		elif message.state == "om_ready":
 			with self.om_startup_lock:
 				self.remote_nodes[message.sender].status = RemoteNode.OK
@@ -1896,15 +1896,16 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 				self.logger.info("    ... '%s' node startup is complete.", message.sender)
 		
-				all_ready = True
-				for node_name in self.remote_nodes:
-					if self.remote_nodes[node_name].type != RemoteNode.MONITORING:
-						continue
-					all_ready = all_ready and self.remote_nodes[node_name].status == RemoteNode.OK
+		with self.om_startup_lock:
+			all_ready = True
+			for node_name in self.remote_nodes:
+				if self.remote_nodes[node_name].type != RemoteNode.MONITORING:
+					continue
+				all_ready = all_ready and self.remote_nodes[node_name].status != RemoteNode.IDLE
 			
-			if all_ready:
-				self.logger.info("  ... all monitoring nodes are ready.  Continuing in startup sequence.")
-				os.kill(os.getpid(), signal.SIGUSR1)
+		if all_ready:
+			self.logger.info("  ... all monitoring nodes are ready.  Continuing in startup sequence.")
+			os.kill(os.getpid(), signal.SIGUSR1)
 				
 	def PrepareRunSeries(self):
 		""" Prepares a run series based on the values
