@@ -18,17 +18,17 @@ import datetime
 #  out warning to experts
 #
 #  Require beam event $A9 how recently?  in seconds
-recentBeamLimit = 2.0
+recentBeamLimit = 300.0
 
 # How recently should triggers have been present?  in seconds
-recentTriggerLimit = 1.9
+recentTriggerLimit = 60.0
 
 #  How many times must DAQ fail to have taken data before alarm?
 alarmFailures = 5
 failCounter=0
 
 #  Frequency of checking status, in seconds
-checkFrequency = 2.0
+checkFrequency = 300.0
 
 # Where to look for trigger file
 lastTriggerFileName="/work/conditions/last_trigger.dat"
