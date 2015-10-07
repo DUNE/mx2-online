@@ -25,7 +25,8 @@ ECROC::ECROC(unsigned int address, const Controller* controller) :
   rdfePulseDelayAddress        = this->address + VMEModuleTypes::ECROCRdfePulseDelay;
   rdfePulseCommandAddress      = this->address + VMEModuleTypes::ECROCRdfePulseCommand;
 
-  ECROCLog.setPriority(log4cpp::Priority::INFO); 
+  //ECROCLog.setPriority(log4cpp::Priority::INFO); 
+  ECROCLog.setPriority(log4cpp::Priority::DEBUG); 
 
   MakeChannels(); 
 }
@@ -143,7 +144,7 @@ void ECROC::InitializeRegisters( VMEModuleTypes::ECROCClockModes clockMode,
   SetupTimingRegister( clockMode, testPulseDelayEnabled, testPulseDelayValue );
   SetupResetAndTestPulseRegister( 0, 0 );
   SequencerDelayEnable();
-  SetSequencerDelayValue( (sequencerDelayValue&0x01FF) ); // steps of 2.411 microseconds
+  SetSequencerDelayValue( (sequencerDelayValue&0x03FF) ); // steps of 2.411 microseconds
 }
 
 //----------------------------------------
@@ -231,7 +232,7 @@ void ECROC::Initialize() const
   ECROCLog.infoStream() << "Initializing ECROC 0x" << std::hex << this->address;
   unsigned short testPulseDelayEnabled = 0;  // we do not use the test pulse delay in data-taking
   unsigned short testPulseDelayValue   = 0;
-  unsigned short sequencerDelayValue   = 511;   // x 2.4e-6 s
+  unsigned short sequencerDelayValue   = 1023;   // x 2.4e-6 s
   this->ClearAndResetStatusRegisters();
   this->EnableSequencerReadout();
   this->InitializeRegisters( (VMEModuleTypes::ECROCClockModes)VMEModuleTypes::ECROCExternal, 

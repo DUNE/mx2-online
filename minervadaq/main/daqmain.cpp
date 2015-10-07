@@ -40,7 +40,8 @@ int main( int argc, char * argv[] )
   SetUpSigAction();
 
   continueRunning = true;
-  DAQWorker * worker = new DAQWorker( args, log4cpp::Priority::INFO, &continueRunning );
+//  DAQWorker * worker = new DAQWorker( args, log4cpp::Priority::DEBUG, &continueRunning );
+  DAQWorker * worker = new DAQWorker( args, log4cpp::Priority::INFO, &continueRunning ); 
 
   int error = 0;
   error = worker->SetUpET(); 
