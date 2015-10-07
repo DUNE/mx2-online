@@ -14,6 +14,7 @@
     01/14/11, J. Wolcott: first version
     01/21/11, J. Wolcott: add mnvonlinemaster
     03/05/15, O. Altinok: add Oregon State UROC
+    10/07/15, R. Fine: add minerva-cr-03
 ==============================================================================
 
 Port        Assignee machine address                        Assignee description
@@ -21,6 +22,7 @@ Port        Assignee machine address                        Assignee description
 3001        minerva-cr-01.fnal.gov                          ROC-WEST control room (primary)
 3002        mnvonlinemaster.fnal.gov                        Online master node (fallback)
 3003        minerva-cr-02.fnal.gov                          ROC-WEST control room (secondary)
+3004        minerva-cr-03.fnal.gov                          ROC-WEST control room (tertiary)
 3005        jwolcott.pas.rochester.edu                      Jeremy Wolcott (Rochester)
 3010        minerva-cart.phyast.pitt.edu                    Pittsburgh UROC
 3011        ksmcf-cart.pas.rochester.edu                    Rochester UROC
