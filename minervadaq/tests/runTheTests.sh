@@ -1,7 +1,7 @@
 #!/bin/sh
 
 EXE=${DAQROOT}/bin/tests
-ARGS="-c 3 -h 2 -f 2"
+ARGS="-c 2 -h 3 -f 5"
 VALLOG="grindtest1.txt"
 
 ${EXE} ${ARGS}

@@ -24,6 +24,7 @@ const int ReadoutWorker::RunHeaderVersion = 1;
 log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
 
 const unsigned int ReadoutWorker::microSecondSleepDuration = 4000;
+//const unsigned int ReadoutWorker::microSecondSleepDuration = 40000; // Increasing the delay to if there is any effect on data for v95 ADC problem 
 
 //---------------------------
 ReadoutWorker::ReadoutWorker( log4cpp::Priority::Value priority, 
@@ -100,6 +101,7 @@ CRIM* ReadoutWorker::MasterCRIM() const
   VMECrate* crate = NULL;
   CRIM* crim = NULL;
   if ( crates.size() ) { 
+    // crate = crates[1]; // Set the master CRIM in crate 1
     crate = crates[0];
     if ( crate->GetCRIMVector()->size() ) {
       crim = crate->GetCRIMVector(0);

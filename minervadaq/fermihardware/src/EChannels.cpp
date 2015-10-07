@@ -283,9 +283,9 @@ void EChannels::ConfigureForStandardDataTaking() const
   std::tr1::shared_ptr<EChannelsConfigRegParser> config = this->GetChannelConfiguration();
   config->EnableSequencerReadout();
   //if using FEB v91
-  config->SetFourBitHitEncoding();
+  //config->SetFourBitHitEncoding();
   //if using FEB v95
-  //config->SetFiveBitHitEncoding();
+  config->SetFiveBitHitEncoding();
   config->SetFullPipelineReadout();
   config->DisableChannelTestPulse();
   config->DisableChannelReset();
@@ -478,7 +478,7 @@ unsigned short EChannels::ReadFrameCounterRegister() const
 {
   unsigned char receivedMessage[] = {0x0,0x0};
 #ifndef GOFAST
-  EChannelLog.debugStream() << "Frame Counter Address = 0x" 
+  EChannelLog.debugStream() << "ReadFrameCounterRegister: Frame Counter Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << framesCounterAndLoopDelayAddress; 
 #endif
@@ -631,7 +631,7 @@ unsigned int EChannels::ReadDPMPointer() const
   unsigned char pointer[] = {0x0,0x0};
 
 #ifndef GOFAST
-  EChannelLog.debugStream() << "Read ReceiveMemoryPointer Address = 0x" 
+  EChannelLog.debugStream() << "ReadDPMPointer: Read ReceiveMemoryPointer Address = 0x" 
     << std::hex << receiveMemoryPointerAddress;
 #endif
   int error = ReadCycle( pointer, receiveMemoryPointerAddress, addressModifier, dataWidthReg ); 
@@ -641,6 +641,8 @@ unsigned int EChannels::ReadDPMPointer() const
   EChannelLog.debugStream() << "16 bit Pointer Length = " << receiveMemoryPointer;
 #endif
 
+//  unsigned short rdfeCount=0;
+//  unsigned short rdfeIncrement=0;
   unsigned short eventCounter = 0;
   unsigned char counter[] = {0x0,0x0};
 
@@ -650,6 +652,7 @@ unsigned int EChannels::ReadDPMPointer() const
   error = ReadCycle( counter, eventCounterAddress, addressModifier, dataWidthReg ); 
   if( error ) throwIfError( error, "Failure reading the Event Counter!"); 
   eventCounter = ( (counter[1]<<0x08 | counter[0]) & receiveMemoryMask ) >> receiveMemoryBits;
+//  rdfeCount = (counter[1]<<0x08 | counter[0]) & 0x3FFF;
 #ifndef GOFAST
   EChannelLog.debugStream() << "17th Pointer Bit = " << eventCounter;
 #endif
@@ -659,6 +662,13 @@ unsigned int EChannels::ReadDPMPointer() const
 
 #ifndef GOFAST
   EChannelLog.debugStream() << "17 bit Pointer Length = " << finalPointer;
+//  EChannelLog.debugStream() << "RDFE Count = " << rdfeCount;
+//  rdfeIncrement=rdfeCount-previousRdfeCount;
+//  if (rdfeIncrement !=1) {
+//    EChannelLog.errorStream() << "RDFE increment = " << rdfeIncrement << " now = " << rdfeCount << " previous = " << previousRdfeCount;
+//  }
+//  previousRdfeCount = rdfeCount;
+  // <<" (0x"<<std::hex"+0x"<<" )";
 #endif
   return finalPointer;
 }
