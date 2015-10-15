@@ -14,7 +14,9 @@ import sys
 
 # configuration for the serial port.
 # these probably will never need to be changed.
-LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS0"
+LIBOX_SERIAL_PORT_DEVICE_0         = "/dev/ttyS0" # this port is connected to LI Box 0
+LIBOX_SERIAL_PORT_DEVICE_1         = "/dev/ttyS3" # this port is connected to LI Box 1
+# LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS3"
 LIBOX_SERIAL_PORT_BAUD           = 9600
 LIBOX_SERIAL_PORT_PARITY         = serial.PARITY_NONE
 LIBOX_SERIAL_PORT_SW_FLOWCONTROL = False
@@ -40,6 +42,7 @@ class LIBox:
 		self.initialized = False
 		
 		self.command_log = []
+		self.ports = []
 		
 		# the following are the commands that are ok (in regular expression form).
 		# this is probably not strictly necessary since 
@@ -51,7 +54,7 @@ class LIBox:
 		# that's ok -- it needs to be fixed in that case!
 		# (the 'timeout' parameter is how long the process will wait for a read, in seconds.)
 		if not self.disable:
-			self.port = serial.Serial( port     = LIBOX_SERIAL_PORT_DEVICE,
+			self.port0 = serial.Serial( port     = LIBOX_SERIAL_PORT_DEVICE_0,
 				                      baudrate = LIBOX_SERIAL_PORT_BAUD,
 				                      bytesize = LIBOX_SERIAL_PORT_DATA_BITS,
 				                      parity   = LIBOX_SERIAL_PORT_PARITY,
@@ -60,7 +63,19 @@ class LIBox:
 				                      rtscts   = LIBOX_SERIAL_PORT_HW_FLOWCONTROL,
 				                      timeout  = 1.0 )
 
-			self.port.writeTimeout = 0.1
+			self.port0.writeTimeout = 0.1
+			self.ports.append(self.port0)
+			self.port1 = serial.Serial( port     = LIBOX_SERIAL_PORT_DEVICE_1,
+				                      baudrate = LIBOX_SERIAL_PORT_BAUD,
+				                      bytesize = LIBOX_SERIAL_PORT_DATA_BITS,
+				                      parity   = LIBOX_SERIAL_PORT_PARITY,
+				                      stopbits = LIBOX_SERIAL_PORT_STOP_BITS,
+				                      xonxoff  = LIBOX_SERIAL_PORT_SW_FLOWCONTROL,
+				                      rtscts   = LIBOX_SERIAL_PORT_HW_FLOWCONTROL,
+				                      timeout  = 1.0 )
+
+			self.port1.writeTimeout = 0.1
+			self.ports.append(self.port1)
 		else:
 			print "Warning: LI box communication is disabled..."
 		
@@ -80,15 +95,16 @@ class LIBox:
 		
 		for command in self.command_stack:
 			if not self.disable:
+			    for p in self.ports:
 				try:
 					if self.echocmds:
 						print "Sending command:   '" + command + "'"
-					self.port.write(command + "\n")
+					p.write(command + "\n")
 				except serial.SerialTimeoutException:
 					raise Error("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
 
 				if self.wait_response and command != "_X":		# box won't respond after reset command.
-					char = self.port.read(1)
+					char = p.read(1)
 					if self.echocmds:
 						print "Received from box: '" + char + "'"
 		

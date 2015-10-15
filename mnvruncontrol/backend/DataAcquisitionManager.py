@@ -1579,6 +1579,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		                                                          Configuration.params["mstr_rawdataLocation"],
 		                                                          self.raw_data_filename,
 		                                                          self.configuration.et_port, os.getpid())
+		self.logger.debug("   event builder start command: '%s'", eb_command)
 
 		self.DAQ_threads["event builder"] = Threads.DAQthread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, is_essential_service=True)
 		self.started_et = True
