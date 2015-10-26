@@ -10,8 +10,8 @@ echo $pid
 
 if [ -z $pid ]; then
   echo "Restarting minerva-check.py"
-  echo "`date` `hostname` restarting minerva-check.py" | mail -n -s "`date` `hostname` restarting minerva-check.py" minerva-run-sms@fnal.gov
-  python $checkScript >& /work/conditions/minerva-check.log < /dev/null &
+  echo "`date` `hostname` restarting minerva-check.py" | mail -n -s "`date` `hostname` restarting minerva-check.py" badgett@fnal.gov
+  python $checkScript >& /work/logs/minerva-check.log < /dev/null &
 else
   echo "found it!"
 fi
