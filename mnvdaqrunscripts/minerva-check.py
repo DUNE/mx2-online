@@ -81,8 +81,8 @@ def checkMinerva():
     deviceText = name+" status "+str(status)+" last A9 "+str(data)+" seconds ago "
 
     # Now check for recent Minerva trigger
-   # try:
-    with open(lastTriggerFileName,'r') as triggerFile:
+    try:
+      with open(lastTriggerFileName,'r') as triggerFile:
 
         for line in triggerFile:
 
@@ -115,10 +115,10 @@ Minerva DAQ not running """+time.strftime("%Y.%m.%d %H:%M:%S",time.localtime())+
               print "Status OK"
               failCounter = 0
 
-    triggerFile.close()
-    #except:
+      triggerFile.close()
+    except:
       # Race condition with the DAQ sometime, so skip check this time
-     # print "Problem opening file "+lastTriggerFileName +" skip check for now"
+      print "Problem opening file "+lastTriggerFileName +" skip check for now"
   else:
     print name+" status "+str(status)+" last A9 "+str(data)+" skip check"
 
