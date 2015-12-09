@@ -18,13 +18,13 @@ import datetime
 #  out warning to experts
 #
 #  Require beam event $A9 how recently?  in seconds
-recentBeamLimit = 300.0
+recentBeamLimit = 120.0
 
 # How recently should triggers have been present?  in seconds
 recentTriggerLimit = 60.0
 
 #  How many times must DAQ fail to have taken data before alarm?
-alarmFailures = 5
+alarmFailures = 3
 failCounter=0
 
 #  Frequency of checking status, in seconds
