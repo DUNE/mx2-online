@@ -4,12 +4,12 @@
 # on the mnvonline or # minervatest cluster when running "locally" 
 # (either at the terminal or via ssh'ed x-forwarding).
 
-MASTER_NODE="mnvonline05.fnal.gov"
+MASTER_NODE="mnvonline06.fnal.gov"
 
 LI_NODE0="mnvonline0.fnal.gov"
 LI_NODE1="mnvonline1.fnal.gov"
 
-OM_NODE="mnvonlinelogger.fnal.gov"
+OM_NODE="mnvonlinelogger4fnal.gov"
 
 . $HOME/mnvdaqrunscripts/defs_standardpaths
 
@@ -58,7 +58,8 @@ PYV=python
 
 if [ $OM_DISPATCHER ]; then
     echo "Killing and Restarting processes on mnvonlinelogger first..."
-    ssh nearonline@mnvonlinelogger.fnal.gov sh /home/nearonline/dispatcher_nearline.sh
+#    ssh nearonline@mnvonlinelogger.fnal.gov sh /home/nearonline/dispatcher_nearline.sh
+    ssh nearonline@mnvonlinelogger4.fnal.gov sh /home/nearonline/dispatcher_nearline.sh
 fi
 
 if [ $RC_DISPATCHER ]; then

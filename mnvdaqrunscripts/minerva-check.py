@@ -74,7 +74,7 @@ def checkMinerva():
   status  = int(reading['status'])
   units   = reading['units']
   print "%s %s %f %s %d"%(str(datetime.datetime.now()),name,data,units,status)
-  data = 1.5
+
   # Perform check only if we have reasonable data
   if status == 0 and data > 0.0 and data < recentBeamLimit :
 
@@ -89,7 +89,6 @@ def checkMinerva():
           if line.find('time') >= 0:
             line = line.strip('\n')
             zeit = float(line.split('=')[1]) / 1E6
-            zeit = time.time() - 2 
             deltaT = time.time() - zeit
             print time.strftime("%Y.%m.%d %H:%M:%S")+" Last Trigger %f seconds ago" % deltaT
 
