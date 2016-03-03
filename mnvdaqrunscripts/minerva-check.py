@@ -117,7 +117,22 @@ Minerva DAQ not running """+time.strftime("%Y.%m.%d %H:%M:%S",time.localtime())+
       triggerFile.close()
     except:
       # Race condition with the DAQ sometime, so skip check this time
-      print "Problem opening file "+lastTriggerFileName +" skip check for now"
+      print "Problem opening file "+lastTriggerFileName+" incrementing failCounter"
+      failCounter = failCounter + 1
+      if failCounter == alarmFailures:
+         message = """MIME-Version: 1.0
+Content-type: text/html
+Subject: Minerva Error """+deviceText+"""
+Minerva DAQ not running """+time.strftime("%Y.%m.%d %H:%M:%S",time.localtime())+"""<BR>"""+deviceText+"""
+<BR>Run status file """+lastTriggerFileName+""" not found"""
+         print message
+         try:
+           smtp = smtplib.SMTP()
+           smtp.connect();
+           smtp.sendmail(sender,receivers,message)
+         except:
+           print time.strftime("%Y.%m.%d %H:%M:%S",time.localtime())+"Failed to sendmail "
+
   else:
     print name+" status "+str(status)+" last A9 "+str(data)+" skip check"
 
