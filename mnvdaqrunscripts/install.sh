@@ -119,7 +119,7 @@ if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal
 fi
 
 # mnvonlinelogger  - Near-online (production) head node.  No DAQ hardware attached.
-if [ "$HOSTNAME" == "mnvonlinelogger.fnal.gov" ]; then
+if [ "$HOSTNAME" == "mnvonlinelogger6.fnal.gov" ]; then
 	echo "Setting up nearline scripts on ${HOSTNAME}..."
 	ln -sf $script_dir/check_nearline_procs.sh $HOME/check_nearline_procs.sh
 	ln -sf $script_dir/check_om_log.sh $HOME/check_om_log.sh
