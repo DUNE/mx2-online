@@ -26,9 +26,10 @@ recentTriggerLimit = 60.0
 #  How many times must DAQ fail to have taken data before alarm?
 alarmFailures = 3
 failCounter=0
+prev_gateNumber = -1
 
 #  Frequency of checking status, in seconds
-checkFrequency = 300.0
+checkFrequency = 150.0
 
 # Where to look for trigger file
 lastTriggerFileName="/work/conditions/last_trigger.dat"
@@ -54,6 +55,7 @@ def getError(stat):
 def checkMinerva():
 
   global failCounter
+  global prev_gateNumber
 
   # First check to see if $A9 is OK
   serverProxy = ServerProxy(url)
@@ -92,29 +94,13 @@ def checkMinerva():
             deltaT = time.time() - zeit
             print time.strftime("%Y.%m.%d %H:%M:%S")+" Last Trigger %f seconds ago" % deltaT
 
-            if deltaT > recentTriggerLimit:
- 
-              failCounter = failCounter + 1
-              print time.strftime("%Y.%m.%d %H:%M:%S")+" " + str(failCounter) + " failures so far"
-              if failCounter == alarmFailures:
-
-                message = """MIME-Version: 1.0
-Content-type: text/html
-Subject: Minerva Error """+deviceText+"""
-Minerva DAQ not running """+time.strftime("%Y.%m.%d %H:%M:%S",time.localtime())+"""<BR>"""+deviceText+"""
-<BR>Last trigger """+str(deltaT)+""" seconds ago<BR>"""
-                print message
-                try:
-                  smtp = smtplib.SMTP()
-                  smtp.connect();
-                  smtp.sendmail(sender,receivers,message)
-                except:
-                  print time.strftime("%Y.%m.%d %H:%M:%S",time.localtime())+"Failed to sendmail "
-            else:
-              print "Status OK"
-              failCounter = 0
+          if line.find('number') >= 0:
+            line = line.strip('\n')
+            current_gateNumber = int(line.split('=')[1])
+            print "gate number %s" % current_gateNumber
 
       triggerFile.close()
+
     except:
       # Race condition with the DAQ sometime, so skip check this time
       print "Problem opening file "+lastTriggerFileName+" incrementing failCounter"
@@ -132,6 +118,31 @@ Minerva DAQ not running """+time.strftime("%Y.%m.%d %H:%M:%S",time.localtime())+
            smtp.sendmail(sender,receivers,message)
          except:
            print time.strftime("%Y.%m.%d %H:%M:%S",time.localtime())+"Failed to sendmail "
+
+
+    if (deltaT > recentTriggerLimit or current_gateNumber == prev_gateNumber):
+#    if deltaT > recentTriggerLimit:
+
+      failCounter = failCounter + 1
+      print time.strftime("%Y.%m.%d %H:%M:%S")+" " + str(failCounter) + " failures so far"
+      if failCounter == alarmFailures:
+
+        message = """MIME-Version: 1.0
+ent-type: text/html
+ect: Minerva Error """+deviceText+"""
+rva DAQ not running """+time.strftime("%Y.%m.%d %H:%M:%S",time.localtime())+"""<BR>"""+deviceText+"""
+Last trigger """+str(deltaT)+""" seconds ago<BR>"""
+        print message
+        try:
+          smtp = smtplib.SMTP()
+          smtp.connect();
+          smtp.sendmail(sender,receivers,message)
+        except:
+          print time.strftime("%Y.%m.%d %H:%M:%S",time.localtime())+"Failed to sendmail "
+    else:
+      print "Status OK"
+      failCounter = 0
+      prev_gateNumber = current_gateNumber
 
   else:
     print name+" status "+str(status)+" last A9 "+str(data)+" skip check"
