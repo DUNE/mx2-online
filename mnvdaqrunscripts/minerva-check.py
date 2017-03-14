@@ -7,6 +7,7 @@ import os
 import time
 import smtplib
 import datetime
+import socket
 
 #
 #  minerva-check.py   (W.Badgett)
