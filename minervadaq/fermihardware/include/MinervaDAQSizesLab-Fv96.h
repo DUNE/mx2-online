@@ -21,15 +21,14 @@ typedef unsigned long long_m;
   */
 namespace MinervaDAQSizes {
 
-  /* static const unsigned int ADCFramesMaxNumber        = 7 + 1; /\*!< timed + 1 untimed *\/ */
-  static const unsigned int ADCFramesMaxNumber        = 21 + 1; /*!< timed + 1 untimed */
+  static const unsigned int ADCFramesMaxNumber        = 7 + 1; /*!< timed + 1 untimed */
   static const unsigned int FrameHeaderLengthOutgoing = 9; /*!< size (in bytes) of an outgoing LVDS header for ANY device */
   static const unsigned int FrameHeaderLengthIncoming = 15; /*!< size (in bytes) of an incoming LVDS header for ANY device */
 
   static const unsigned int FPGANumRegisters    =   54;  /*!< Firmware Dependent! */
-  static const unsigned int FPGAFrameMaxSize    =   80;//74;  /*!< bytes, Firmware Dependent! v95=76,v97=80*/
+  static const unsigned int FPGAFrameMaxSize    =   80;//74;  /*!< bytes, Firmware Dependent! */
   static const unsigned int ADCFrameMaxSize     =  455;//453;//452;  /*!< bytes FEB v95 == 455 */
-  static const unsigned int DiscrFrameMaxSize   = 1147;//1144;  /*!< bytes, == 1 + 24 + 40 * 4 * 7 (40 bytes / trip / hit) v95=1145,v97=1147*/
+  static const unsigned int DiscrFrameMaxSize   = 1147;//1144;  /*!< bytes, == 1 + 24 + 40 * 4 * 7 (40 bytes / trip / hit) */
   static const unsigned int FEBTotalDataMaxSize = FPGAFrameMaxSize + 
     ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize; /*!< bytes */
 

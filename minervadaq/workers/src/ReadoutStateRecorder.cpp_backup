@@ -116,7 +116,6 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
 //Sleep for 1 s.
 #ifndef MTEST
       sleep(1); 
-//      sleep(0.5); 
 #endif
       stateRecorderLogger.debugStream() << " Running Mode is OneShot.";
       break;
@@ -129,7 +128,6 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
 //Sleep for 1 s.
 #ifndef MTEST
       sleep(1);
-//      sleep(0.5); 
 #endif
       stateRecorderLogger.debugStream() << " Running Mode is PureLightInjection.";
       break;
