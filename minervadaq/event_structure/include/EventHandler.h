@@ -15,7 +15,7 @@
 struct EventHandler {
   unsigned short dataLength;
   unsigned char data[ MinervaDAQSizes::MaxTotalDataPerChain ];
-  unsigned char leadBankType() const; 
+	unsigned char leadBankType() const; 
   const char* dataAsCString() const;
 };
 
