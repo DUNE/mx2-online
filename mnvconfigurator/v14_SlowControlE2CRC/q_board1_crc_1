@@ -1,0 +1,189 @@
+
+********************************
+* CROCE BOARD TEST RUN RESULTS *
+********************************
+Start: Thu Aug 22 12:19:47 2013
+TRY#4, TEST#7.3d TestWSRfrms, CROCE:1:CHE:1: Error RcvMemWPointer=130308, should be 130560
+TRY#4, TEST#7.3f TestWSRfrms, CROCE:1:CHE:1: Error FrameNumber=43, rcvfrmDataLengthBytes=766, should be 1018
+TRY#4.0, TEST#7.4 TestWSRfrms, CROCE:1:CHE:1: HeaderError FrameNumber=43, word0==RcvFrameLengthBytes=766, should be 1018
+TRY#4.0, TEST#7.5 TestWSRfrms, CROCE:1:CHE:1: HeaderError FrameNumber=43, word1==RcvFrameStatus=0x2010, should be 0x1010
+TRY#4.0, TEST#7.8 TestWSRfrms, CROCE:1:CHE:1: HeaderError FrameNumber=43, word4==RcvFrameLengthBytes=766, should be 1018
+TRY#4.0, TEST#7.10 TestWSRfrms, CROCE:1:CHE:1: Error FrameNumber=43, 
+SndFrameData=['9731', 'e505', '0236', '309d', 'fd30', 'c64b', 'dc5d', '3458', '597a', '3b58', 'b48c', 'cd1a', 'c410', 'dd6e', 'f3a4', 'b612', '4329', 'a5ac', '0e29', '9e9e', '4a9a', 'a177', '077c', '2ebe', '1c9b', '024f', 'fa14', 'cb01', 'db0a', '0949', '0005', 'd682', '7daa', '5922', '2dc6', 'd4a2', '07c4', '6b6c', 'ce01', 'a9ac', '1e0f', '7d50', '910f', '421f', '7068', 'e130', '56ab', 'efbc', '4552', '19fb', 'd8db', 'e721', '625f', 'b16b', '94f7', '2c5a', '5c03', 'd776', '0d7b', '7493', '7449', '8a0f', '5c4c', 'c000', '5e8f', '8903', '7f37', '7207', '6f4c', '075a', 'e311', '0f7b', '026f', '8bc1', '8da9', '2b33', '3b22', 'f9bf', 'bb75', 'bccb', '6db5', '907f', '10a3', 'a5d9', '92d1', 'b738', '87ea', '0c13', '3d86', 'a94d', '98c5', '0de3', '7ef0', '871a', '166d', 'a2d2', '7951', 'd9c7', '53ce', 'edb8', '4ef4', '3a47', '882d', 'ef5f', 'ab2f', '8411', 'e052', '43a2', 'c591', 'aa5d', '90c6', '290e', '028b', 'b2c3', '9cdb', 'd6cc', 'd8f7', '6d7c', 'a12e', '4a0f', '68ce', '9c61', '3f98', '1eec', '1575', '4cbd', '89a9', 'c895', 'e5cf', '4be3', '982a', '6bde', 'f307', '3631', 'a58c', '5280', '00e8', '9757', '684f', '8214', 'ad0f', 'd7d6', '1ba6', '8251', 'e3a1', '6c83', 'fe34', 'ce34', 'e9c7', 'b557', 'f08d', '04ea', '6917', 'a1c9', 'ab4e', '50c5', '9744', '0599', '2024', '9fa1', '340a', '2a97', '3a18', 'bf60', '5545', 'e277', '4b76', '42bf', 'b343', '885c', 'dc54', '2039', '9d28', 'b2cf', 'ee7b', '13d9', 'f463', 'fe59', '1079', '1752', '9ba2', '4418', '8739', '0307', 'b862', 'e1a7', 'e7bc', '4de2', '6b80', '2848', '7c84', 'd8f6', '5a06', '93f3', '8403', '459b', '5110', '7307', '6b76', '7afb', 'c26f', '632b', 'f0f6', '21a7', '13bb', '9397', '1ed2', '6e98', '9e48', '36e0', '1a83', '2786', '04d1', '5542', '52f0', '3864', 'e6bd', 'b0df', 'ca3b', 'a7ab', '5a58', '1f29', '6acb', '7169', '7f40', '6325', '282f', 'b243', '45bb', '7439', '5d55', '1207', 'dac2', 'fee5', 'f3d1', 'e1e5', '3093', 'a085', 'be54', '46cc', '7339', '3c43', 'bc6d', '3f9b', '8f73', '5429', '35d4', '71bb', '7c86', '2c34', 'cae9', '9805', '59c7', 'cbf0', '8cca', '4597', '2f0e', 'f847', 'db9e', '5588', '6b0e', '1eee', 'b16a', 'f6c1', '49d5', 'e83b', '700e', '4f39', '8b21', 'fbb5', '9e3f', 'de7a', '1fa9', '8f75', '31d7', '6df7', '937e', '0782', 'a7e9', '62d0', '0698', 'ed21', '75e5', 'd508', 'ced2', 'b1f3', 'c9fe', 'a91c', 'fb89', '23d7', '765b', '9203', '08f7', '11aa', '070f', '2a9a', 'a91b', '2686', '4211', '3bad', '1389', '2742', 'aac9', 'afc7', '17e8', '8883', 'f9f3', 'dee9', 'ca6e', '6472', '9167', '9645', '4f76', 'ff00', 'bb39', 'fbaf', '4f0c', 'cc63', '45e4', '5f09', '6d25', 'a071', 'a89c', 'f6a7', 'f506', '26a8', 'aa10', '8bb3', '6633', '05ea', '31ce', '5fcf', '6e26', '3b1c', '0771', '0bf6', '54a7', '6d7d', 'ffcd', '90f1', '7108', '8b95', '208a', 'dd43', 'f622', '2e0b', 'f9f7', 'b1cc', 'f42e', '4483', 'db9b', 'efce', '5ef0', '5aa8', '664b', '28f4', '3ba1', '1608', '892d', 'e839', '8e67', 'fd35', '11d5', '1d51', '87be', '314b', '9e32', 'ce8c', 'e7f0', '3a3a', '7295', '3945', 'b048', '0074', 'fa71', 'b9cf', 'b47e', 'e694', 'a5c4', 'bf83', '5ff8', '48e5', 'fd42', '1ad4', 'dfba', '14c4', 'a1fb', '2cdb', 'bcc3', 'd2c7', 'dd9d', '1eb5', '4165', 'f6a6', '5729', '284e', 'da5d', 'd75e', 'c7f9', '4531', '03dc', 'b277', '7310', 'b6ba', '1097', '4f09', '8649', '0dbf', '9db5', '253f', 'f692', '8ebd', 'ebd8', '7cce', 'ba94', 'c26b', '87c5', '0e88', '663b', '59ea', '4aff', '27b9', 'baee', '5a27', '080a', 'e608', '0409', '8a76', '2ba7', '4b0d', 'd58f', '77fa', 'd1fe', '6977', '93c9', '8c69', 'b3c1', '3646', '1a1a', '8930', '37c1', 'c873', '3d1b', '17eb', '2abf', '64ff', '36cf', '08a5', 'ee3d', '69c4', '96f7', '32a0', '2a68', 'b093', '9f10', 'f634', 'f32d', '4744', 'a6f9', '21eb', 'cabc', '27a7', '9433', 'a967', '6373', 'b221', 'a1f9', '23c4', '1aa8', 'dc46', '2b5e', '88bb', '1f02', 'cd96', 'd75d', 'd71e', 'e958', '40ee', '14e5', 'b552', '2e53', '4510', 'e046', '8642', '0a93', '33ce', '5688', '0373', '5bb4', '2c9e', '33b4', '3710', 'ef04', '1f40', '0f7c', '532c', '62e5', 'ab66', '1b0d', 'f427', 'fc9a', 'fe74', '4089', '42b8'], 
+RcvFrameData=['9731', 'e505', '0236', '309d', 'fd30', 'c64b', 'dc5d', '3458', '597a', '3b58', 'b48c', 'cd1a', 'c410', 'dd6e', 'f3a4', 'b612', '4329', 'a5ac', '0e29', '9e9e', '4a9a', 'a177', '077c', '2ebe', '1c9b', '024f', 'fa14', 'cb01', 'db0a', '0949', '0005', 'd682', '7daa', '5922', '2dc6', 'd4a2', '07c4', '6b6c', 'ce01', 'a9ac', '1e0f', '7d50', '910f', 'ffff', '7068', 'e130', '56ab', 'efbc', '4552', '19fb', 'd8db', 'e721', '625f', 'b16b', '94f7', '2c5a', '5c03', 'd776', '0d7b', '7493', '7449', '8a0f', '5c4c', 'c000', '5e8f', '8903', '7f37', '7207', '6f4c', '075a', 'e311', '0f7b', '026f', '8bc1', '8da9', '2b33', '3b22', 'f9bf', 'bb75', 'bccb', '6db5', '907f', '10a3', 'a5d9', '92d1', 'b738', '87ea', '0c13', '3d86', 'a94d', '98c5', '0de3', '7ef0', '871a', '166d', 'a2d2', '7951', 'd9c7', '53ce', 'edb8', '4ef4', '3a47', '882d', 'ef5f', 'ab2f', '8411', 'e052', '43a2', 'c591', 'aa5d', '90c6', '290e', '028b', 'b2c3', '9cdb', 'd6cc', 'd8f7', '6d7c', 'a12e', '4a0f', '68ce', '9c61', '3f98', '1eec', '1575', '4cbd', '89a9', 'c895', 'e5cf', '4be3', '982a', '6bde', 'f307', '3631', 'a58c', '5280', '00e8', '9757', '684f', '8214', 'ad0f', 'd7d6', '1ba6', '8251', 'e3a1', '6c83', 'fe34', 'ce34', 'e9c7', 'b557', 'f08d', '04ea', '6917', 'a1c9', 'ab4e', '50c5', '9744', '0599', '2024', '9fa1', '340a', '2a97', '3a18', 'bf60', '5545', 'e277', '4b76', '42bf', 'b343', '885c', 'dc54', '2039', '9d28', 'b2cf', 'ee7b', '13d9', 'f463', 'fe59', '1079', '1752', '9ba2', '4418', '8739', '0307', 'b862', 'e1a7', 'e7bc', '4de2', '6b80', '2848', '7c84', 'd8f6', '5a06', '93f3', '8403', '459b', '5110', '7307', '6b76', '7afb', 'c26f', '632b', 'f0f6', '21a7', '13bb', '9397', '1ed2', '6e98', '9e48', '36e0', '1a83', '2786', '04d1', '5542', '52f0', '3864', 'e6bd', 'b0df', 'ca3b', 'a7ab', '5a58', '1f29', '6acb', '7169', '7f40', '6325', '282f', 'b243', '45bb', '7439', '5d55', '1207', 'dac2', 'fee5', 'f3d1', 'e1e5', '3093', 'a085', 'be54', '46cc', '7339', '3c43', 'bc6d', '3f9b', '8f73', '5429', '35d4', '71bb', '7c86', '2c34', 'cae9', '9805', '59c7', 'cbf0', '8cca', '4597', '2f0e', 'f847', 'db9e', '5588', '6b0e', '1eee', 'b16a', 'f6c1', '49d5', 'e83b', '700e', '4f39', '8b21', 'fbb5', '9e3f', 'de7a', '1fa9', '8f75', '31d7', '6df7', '937e', '0782', 'a7e9', '62d0', '0698', 'ed21', '75e5', 'd508', 'ced2', 'b1f3', 'c9fe', 'a91c', 'fb89', '23d7', '765b', '9203', '08f7', '11aa', '070f', '2a9a', 'a91b', '2686', '4211', '3bad', '1389', '2742', 'aac9', 'afc7', '17e8', '8883', 'f9f3', 'dee9', 'ca6e', '6472', '9167', '9645', '4f76', 'ff00', 'bb39', 'fbaf', '4f0c', 'cc63', '45e4', '5f09', '6d25', 'a071', 'a89c', 'f6a7', 'f506', '26a8', 'aa10', '8bb3', '6633', '05ea', '31ce', '5fcf', '6e26', '3b1c', '0771', '0bf6', '54a7', '6d7d', 'ffcd', '90f1', '7108', '8b95', '208a', 'dd43', 'f622', '2e0b', 'f9f7', 'b1cc', 'f42e', '4483', 'db9b', 'efce', '5ef0', '5aa8', '664b', '28f4', '3ba1', '1608', '892d', 'e839', '8e67', 'fd35', '11d5', '1d51', '87be', '314b', '9e32', 'ce8c', 'e7f0', '3a3a', '7295', '3945', 'b048', '0074', 'fa71', 'b9cf', 'b47e', 'e694'], 
+             ['0000', '0001', '0002', '0003', '0004', '0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0030', '0031', '0032', '0033', '0034', '0035', '0036', '0037', '0038', '0039', '0040', '0041', '0042', '0043', '0044', '0045', '0046', '0047', '0048', '0049', '0050', '0051', '0052', '0053', '0054', '0055', '0056', '0057', '0058', '0059', '0060', '0061', '0062', '0063', '0064', '0065', '0066', '0067', '0068', '0069', '0070', '0071', '0072', '0073', '0074', '0075', '0076', '0077', '0078', '0079', '0080', '0081', '0082', '0083', '0084', '0085', '0086', '0087', '0088', '0089', '0090', '0091', '0092', '0093', '0094', '0095', '0096', '0097', '0098', '0099', '0100', '0101', '0102', '0103', '0104', '0105', '0106', '0107', '0108', '0109', '0110', '0111', '0112', '0113', '0114', '0115', '0116', '0117', '0118', '0119', '0120', '0121', '0122', '0123', '0124', '0125', '0126', '0127', '0128', '0129', '0130', '0131', '0132', '0133', '0134', '0135', '0136', '0137', '0138', '0139', '0140', '0141', '0142', '0143', '0144', '0145', '0146', '0147', '0148', '0149', '0150', '0151', '0152', '0153', '0154', '0155', '0156', '0157', '0158', '0159', '0160', '0161', '0162', '0163', '0164', '0165', '0166', '0167', '0168', '0169', '0170', '0171', '0172', '0173', '0174', '0175', '0176', '0177', '0178', '0179', '0180', '0181', '0182', '0183', '0184', '0185', '0186', '0187', '0188', '0189', '0190', '0191', '0192', '0193', '0194', '0195', '0196', '0197', '0198', '0199', '0200', '0201', '0202', '0203', '0204', '0205', '0206', '0207', '0208', '0209', '0210', '0211', '0212', '0213', '0214', '0215', '0216', '0217', '0218', '0219', '0220', '0221', '0222', '0223', '0224', '0225', '0226', '0227', '0228', '0229', '0230', '0231', '0232', '0233', '0234', '0235', '0236', '0237', '0238', '0239', '0240', '0241', '0242', '0243', '0244', '0245', '0246', '0247', '0248', '0249', '0250', '0251', '0252', '0253', '0254', '0255', '0256', '0257', '0258', '0259', '0260', '0261', '0262', '0263', '0264', '0265', '0266', '0267', '0268', '0269', '0270', '0271', '0272', '0273', '0274', '0275', '0276', '0277', '0278', '0279', '0280', '0281', '0282', '0283', '0284', '0285', '0286', '0287', '0288', '0289', '0290', '0291', '0292', '0293', '0294', '0295', '0296', '0297', '0298', '0299', '0300', '0301', '0302', '0303', '0304', '0305', '0306', '0307', '0308', '0309', '0310', '0311', '0312', '0313', '0314', '0315', '0316', '0317', '0318', '0319', '0320', '0321', '0322', '0323', '0324', '0325', '0326', '0327', '0328', '0329', '0330', '0331', '0332', '0333', '0334', '0335', '0336', '0337', '0338', '0339', '0340', '0341', '0342', '0343', '0344', '0345', '0346', '0347', '0348', '0349', '0350', '0351', '0352', '0353', '0354', '0355', '0356', '0357', '0358', '0359', '0360', '0361', '0362', '0363', '0364', '0365', '0366', '0367', '0368', '0369', '0370', '0371', '0372', '0373', '0374', '0375', '0376', '0377', '0378', '0379', '0380', '0381', '0382', '0383', '0384', '0385', '0386', '0387', '0388', '0389', '0390', '0391', '0392', '0393', '0394', '0395', '0396', '0397', '0398', '0399', '0400', '0401', '0402', '0403', '0404', '0405', '0406', '0407', '0408', '0409', '0410', '0411', '0412', '0413', '0414', '0415', '0416', '0417', '0418', '0419', '0420', '0421', '0422', '0423', '0424', '0425', '0426', '0427', '0428', '0429', '0430', '0431', '0432', '0433', '0434', '0435', '0436', '0437', '0438', '0439', '0440', '0441', '0442', '0443', '0444', '0445', '0446', '0447', '0448', '0449', '0450', '0451', '0452', '0453', '0454', '0455', '0456', '0457', '0458', '0459', '0460', '0461', '0462', '0463', '0464', '0465', '0466', '0467', '0468', '0469', '0470', '0471', '0472', '0473', '0474', '0475', '0476', '0477', '0478', '0479', '0480', '0481', '0482', '0483', '0484', '0485', '0486', '0487', '0488', '0489', '0490', '0491', '0492', '0493', '0494', '0495', '0496', '0497', '0498', '0499', '0500', '0501', '0502', '0503']
+TRY#4.0, TEST#7.11 TestWSRfrms, CROCE:1:CHE:1: Error FrameNumber=43, CRC Error, read=['00a3'], expected=['8ba3']
+	index=44, FramePointersMemoryData=0xae54, expected=0xaf50
+	index=45, FramePointersMemoryData=0xb250, expected=0xb34c
+	index=46, FramePointersMemoryData=0xb64c, expected=0xb748
+	index=47, FramePointersMemoryData=0xba48, expected=0xbb44
+	index=48, FramePointersMemoryData=0xbe44, expected=0xbf40
+	index=49, FramePointersMemoryData=0xc240, expected=0xc33c
+	index=50, FramePointersMemoryData=0xc63c, expected=0xc738
+	index=51, FramePointersMemoryData=0xca38, expected=0xcb34
+	index=52, FramePointersMemoryData=0xce34, expected=0xcf30
+	index=53, FramePointersMemoryData=0xd230, expected=0xd32c
+	index=54, FramePointersMemoryData=0xd62c, expected=0xd728
+	index=55, FramePointersMemoryData=0xda28, expected=0xdb24
+	index=56, FramePointersMemoryData=0xde24, expected=0xdf20
+	index=57, FramePointersMemoryData=0xe220, expected=0xe31c
+	index=58, FramePointersMemoryData=0xe61c, expected=0xe718
+	index=59, FramePointersMemoryData=0xea18, expected=0xeb14
+	index=60, FramePointersMemoryData=0xee14, expected=0xef10
+	index=61, FramePointersMemoryData=0xf210, expected=0xf30c
+	index=62, FramePointersMemoryData=0xf60c, expected=0xf708
+	index=63, FramePointersMemoryData=0xfa08, expected=0xfb04
+	index=64, FramePointersMemoryData=0xfe04, expected=0xff00
+	index=65, FramePointersMemoryData=0x200, expected=0x102fc
+	index=66, FramePointersMemoryData=0x5fc, expected=0x106f8
+	index=67, FramePointersMemoryData=0x9f8, expected=0x10af4
+	index=68, FramePointersMemoryData=0xdf4, expected=0x10ef0
+	index=69, FramePointersMemoryData=0x11f0, expected=0x112ec
+	index=70, FramePointersMemoryData=0x15ec, expected=0x116e8
+	index=71, FramePointersMemoryData=0x19e8, expected=0x11ae4
+	index=72, FramePointersMemoryData=0x1de4, expected=0x11ee0
+	index=73, FramePointersMemoryData=0x21e0, expected=0x122dc
+	index=74, FramePointersMemoryData=0x25dc, expected=0x126d8
+	index=75, FramePointersMemoryData=0x29d8, expected=0x12ad4
+	index=76, FramePointersMemoryData=0x2dd4, expected=0x12ed0
+	index=77, FramePointersMemoryData=0x31d0, expected=0x132cc
+	index=78, FramePointersMemoryData=0x35cc, expected=0x136c8
+	index=79, FramePointersMemoryData=0x39c8, expected=0x13ac4
+	index=80, FramePointersMemoryData=0x3dc4, expected=0x13ec0
+	index=81, FramePointersMemoryData=0x41c0, expected=0x142bc
+	index=82, FramePointersMemoryData=0x45bc, expected=0x146b8
+	index=83, FramePointersMemoryData=0x49b8, expected=0x14ab4
+	index=84, FramePointersMemoryData=0x4db4, expected=0x14eb0
+	index=85, FramePointersMemoryData=0x51b0, expected=0x152ac
+	index=86, FramePointersMemoryData=0x55ac, expected=0x156a8
+	index=87, FramePointersMemoryData=0x59a8, expected=0x15aa4
+	index=88, FramePointersMemoryData=0x5da4, expected=0x15ea0
+	index=89, FramePointersMemoryData=0x61a0, expected=0x1629c
+	index=90, FramePointersMemoryData=0x659c, expected=0x16698
+	index=91, FramePointersMemoryData=0x6998, expected=0x16a94
+	index=92, FramePointersMemoryData=0x6d94, expected=0x16e90
+	index=93, FramePointersMemoryData=0x7190, expected=0x1728c
+	index=94, FramePointersMemoryData=0x758c, expected=0x17688
+	index=95, FramePointersMemoryData=0x7988, expected=0x17a84
+	index=96, FramePointersMemoryData=0x7d84, expected=0x17e80
+	index=97, FramePointersMemoryData=0x8180, expected=0x1827c
+	index=98, FramePointersMemoryData=0x857c, expected=0x18678
+	index=99, FramePointersMemoryData=0x8978, expected=0x18a74
+	index=100, FramePointersMemoryData=0x8d74, expected=0x18e70
+	index=101, FramePointersMemoryData=0x9170, expected=0x1926c
+	index=102, FramePointersMemoryData=0x956c, expected=0x19668
+	index=103, FramePointersMemoryData=0x9968, expected=0x19a64
+	index=104, FramePointersMemoryData=0x9d64, expected=0x19e60
+	index=105, FramePointersMemoryData=0xa160, expected=0x1a25c
+	index=106, FramePointersMemoryData=0xa55c, expected=0x1a658
+	index=107, FramePointersMemoryData=0xa958, expected=0x1aa54
+	index=108, FramePointersMemoryData=0xad54, expected=0x1ae50
+	index=109, FramePointersMemoryData=0xb150, expected=0x1b24c
+	index=110, FramePointersMemoryData=0xb54c, expected=0x1b648
+	index=111, FramePointersMemoryData=0xb948, expected=0x1ba44
+	index=112, FramePointersMemoryData=0xbd44, expected=0x1be40
+	index=113, FramePointersMemoryData=0xc140, expected=0x1c23c
+	index=114, FramePointersMemoryData=0xc53c, expected=0x1c638
+	index=115, FramePointersMemoryData=0xc938, expected=0x1ca34
+	index=116, FramePointersMemoryData=0xcd34, expected=0x1ce30
+	index=117, FramePointersMemoryData=0xd130, expected=0x1d22c
+	index=118, FramePointersMemoryData=0xd52c, expected=0x1d628
+	index=119, FramePointersMemoryData=0xd928, expected=0x1da24
+	index=120, FramePointersMemoryData=0xdd24, expected=0x1de20
+	index=121, FramePointersMemoryData=0xe120, expected=0x1e21c
+	index=122, FramePointersMemoryData=0xe51c, expected=0x1e618
+	index=123, FramePointersMemoryData=0xe918, expected=0x1ea14
+	index=124, FramePointersMemoryData=0xed14, expected=0x1ee10
+	index=125, FramePointersMemoryData=0xf110, expected=0x1f20c
+	index=126, FramePointersMemoryData=0xf50c, expected=0x1f608
+	index=127, FramePointersMemoryData=0xf908, expected=0x1fa04
+TRY#81, TEST#7.3d TestWSRfrms, CROCE:1:CHE:1: Error RcvMemWPointer=129552, should be 130560
+TRY#81, TEST#7.3f TestWSRfrms, CROCE:1:CHE:1: Error FrameNumber=55, rcvfrmDataLengthBytes=10, should be 1018
+TRY#81.0, TEST#7.4 TestWSRfrms, CROCE:1:CHE:1: HeaderError FrameNumber=55, word0==RcvFrameLengthBytes=10, should be 1018
+TRY#81.0, TEST#7.5 TestWSRfrms, CROCE:1:CHE:1: HeaderError FrameNumber=55, word1==RcvFrameStatus=0x2010, should be 0x1010
+TRY#81.0, TEST#7.8 TestWSRfrms, CROCE:1:CHE:1: HeaderError FrameNumber=55, word4==RcvFrameLengthBytes=10, should be 1018
+TRY#81.0, TEST#7.10 TestWSRfrms, CROCE:1:CHE:1: Error FrameNumber=55, 
+SndFrameData=['7bf6', 'a9d6', 'fa49', 'db1d', '4672', 'bcd9', '7d63', '83a8', '1775', '444b', '4911', 'a789', '26c3', 'cc86', '6c3e', 'fb26', 'd459', '0d1a', '0953', 'aa62', 'fdbc', 'b285', 'fcdc', 'b32d', '76eb', '439d', '39fa', '87db', '8222', '4efd', '87cf', '6529', 'eeba', '2cfd', '4ed3', 'dd36', 'f3e4', 'abc8', 'a929', '861e', '115b', '3d47', '0e9f', 'f263', '667d', '39ec', '3c96', '1dc6', '200b', '42ed', 'cfbb', 'f063', '3d99', 'c301', 'd040', '7ded', 'ff15', '6086', '4350', 'd4f3', '1505', 'f9ac', '7199', 'ef2f', 'ec54', '6747', 'dd40', 'f817', 'd45a', '3b52', 'a604', '025b', '1467', '9c4c', 'cbb8', '6542', '13e1', '98a5', 'c376', '3693', 'de70', '39da', '6b64', '2784', 'a47a', '7f08', '89dc', '0b6e', '13a6', '24a2', '66ea', '0927', 'e7db', 'cd63', 'd2d1', '2d76', 'd7c5', '9620', '5f97', 'fd1e', 'af35', 'bd39', 'cad0', '577b', '3890', '2756', '5742', '1881', 'e5a9', '6eb5', 'cc02', '1934', 'e9e0', '70f3', '33b3', '86a7', '09fc', 'df58', '9a67', '57fa', '2740', '05ba', '3d82', 'e487', '0d52', 'bcf1', '707a', '687b', 'f990', '27a3', 'f883', '0428', '9f54', '1a27', 'c3b8', '7b61', 'f5bb', 'f720', 'a7bd', '3b3c', '3cf5', '189d', '7ece', '3375', '8937', '6d89', '2a48', '14e1', 'f292', '77d2', '4459', '06a7', '52dc', '6243', 'd22a', 'ec91', '55b3', 'c73a', '8241', '72b7', 'd229', '41c4', '2fb1', 'dbcc', '15ce', '4098', '8488', '40fa', '478d', 'a883', '4138', '60ac', '4ab0', 'c155', '79ff', 'b36a', '1e6e', '1bb7', 'ebea', 'f827', 'e69f', '42b0', '1094', 'd70a', 'fe30', 'ad4a', 'd7f2', '729b', '8a1e', 'a558', 'df51', '2dfa', 'f948', 'a027', '5088', '2693', 'fbae', 'b62d', '7084', '6c3a', '716f', 'b63a', '6e61', '3018', '8fba', '897c', '9087', 'bad8', '539e', 'cfbd', '0ce9', '0f45', '2bb6', 'd24b', '010d', '9699', '268b', '0f11', 'a5f1', 'b4b9', 'c448', '8851', 'd494', '3cae', '52ff', 'ee62', 'f9b0', '1368', '9fbc', '5e89', '3961', '2dc5', 'd6b2', '27f6', '8064', '9a86', 'c03f', '0507', 'ef9e', '8fb6', '6f6e', 'd6e0', 'fb6a', '33cb', 'e0d9', '2439', '901f', '8f4b', 'f87f', 'bc49', '10c0', 'b80a', 'bf01', '84f6', 'edcc', 'c116', '22c8', '7f7b', 'b53b', '59c6', 'dcf8', '371a', 'ec66', '6e6a', '2fcc', '8790', '3e4e', 'c5e8', 'e69b', '9b80', '8069', '5dbf', '89ad', 'ea36', '456f', 'be2f', 'bb03', '87fd', 'c443', 'a176', '2db0', '0957', 'b2f3', '8201', '4ffe', 'd060', 'adaf', '972a', 'da91', '136c', '7fac', 'f57d', '9267', 'a914', '216e', 'e7d1', 'e601', '23bf', '42bf', 'd4d4', 'a214', '62e1', 'a5a6', 'b82b', '336a', 'b107', '3d1c', 'c127', '423b', '0db8', 'e6d1', 'a1c4', 'c7f8', '527b', 'efaa', 'bffa', '5848', '327a', 'b844', 'ac60', '5db0', '07c2', 'fe44', '3b3d', 'd9ee', 'ca26', '63f3', '85ae', '54c3', 'cedc', '8813', '2a00', '4562', '367f', '7269', '922c', '7f98', '6fd0', '763c', '588c', '28d0', '1d85', 'cdd3', '8a42', 'c616', 'b024', '0c38', '0696', '6cb8', '5795', '6fe7', '38e6', 'c860', '9ed3', '7409', '7afd', '4aa9', '12b9', '549a', '9659', '0756', '17ce', 'f5c3', '7408', 'a990', '0a61', '346a', '6bed', '5ad6', '74f7', '4b32', 'd97c', '1315', 'eb0b', 'c0df', '1afc', '132b', 'ebd6', '4f83', 'f1f7', '5502', '1da3', '09c9', '5896', '1d5e', '617a', 'a24d', '288e', '6ad9', 'c11b', '591f', 'e034', '5294', 'c659', 'd0b3', '7aab', '136e', 'ddee', '7e82', '4a40', '1c3f', '90cc', '86bb', 'd799', 'b0af', '7905', '6f20', 'ab1b', 'abbb', 'c19d', '2810', '89fa', 'd734', '3756', '6d5e', 'ad8f', '5b63', '60f5', '673a', '66fc', '2aff', 'd3c2', '2b28', '6056', '5936', 'e968', '55ba', '7b91', '4899', 'b068', '03e2', 'a177', 'cde5', '80dc', '0545', '72ab', 'c881', 'e574', '3689', '4d13', '0507', '97cc', 'a2c1', 'e819', 'cb01', '28a0', '1105', 'ec5b', '4bbe', 'c193', '3146', 'a25c', '5985', '0052', '077f', 'ac14', 'ce63', 'bbb2', 'c491', 'ec4f', 'de09', '9514', '5399', '129d', '3c33', '4fcd', '1e32', '6191', '3a94', '267d', '5d36', '737d', '72ee', '52db', '9e0f', '2f5e', 'e4aa', '11cc', '3562', '6a38', '267e', '589c', '9277', 'eec8', '48fa', 'f643', 'e58d', '85a6', 'b71a', '2d02', 'feb7', '6b27', '2c4b', '7ba0', '452c', '22e5', '8fca', '8724', '2572', 'fef3', '9d5f', '2915', 'da6d', 'e998'], 
+RcvFrameData=[], 
+             ['0000', '0001', '0002', '0003', '0004', '0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0030', '0031', '0032', '0033', '0034', '0035', '0036', '0037', '0038', '0039', '0040', '0041', '0042', '0043', '0044', '0045', '0046', '0047', '0048', '0049', '0050', '0051', '0052', '0053', '0054', '0055', '0056', '0057', '0058', '0059', '0060', '0061', '0062', '0063', '0064', '0065', '0066', '0067', '0068', '0069', '0070', '0071', '0072', '0073', '0074', '0075', '0076', '0077', '0078', '0079', '0080', '0081', '0082', '0083', '0084', '0085', '0086', '0087', '0088', '0089', '0090', '0091', '0092', '0093', '0094', '0095', '0096', '0097', '0098', '0099', '0100', '0101', '0102', '0103', '0104', '0105', '0106', '0107', '0108', '0109', '0110', '0111', '0112', '0113', '0114', '0115', '0116', '0117', '0118', '0119', '0120', '0121', '0122', '0123', '0124', '0125', '0126', '0127', '0128', '0129', '0130', '0131', '0132', '0133', '0134', '0135', '0136', '0137', '0138', '0139', '0140', '0141', '0142', '0143', '0144', '0145', '0146', '0147', '0148', '0149', '0150', '0151', '0152', '0153', '0154', '0155', '0156', '0157', '0158', '0159', '0160', '0161', '0162', '0163', '0164', '0165', '0166', '0167', '0168', '0169', '0170', '0171', '0172', '0173', '0174', '0175', '0176', '0177', '0178', '0179', '0180', '0181', '0182', '0183', '0184', '0185', '0186', '0187', '0188', '0189', '0190', '0191', '0192', '0193', '0194', '0195', '0196', '0197', '0198', '0199', '0200', '0201', '0202', '0203', '0204', '0205', '0206', '0207', '0208', '0209', '0210', '0211', '0212', '0213', '0214', '0215', '0216', '0217', '0218', '0219', '0220', '0221', '0222', '0223', '0224', '0225', '0226', '0227', '0228', '0229', '0230', '0231', '0232', '0233', '0234', '0235', '0236', '0237', '0238', '0239', '0240', '0241', '0242', '0243', '0244', '0245', '0246', '0247', '0248', '0249', '0250', '0251', '0252', '0253', '0254', '0255', '0256', '0257', '0258', '0259', '0260', '0261', '0262', '0263', '0264', '0265', '0266', '0267', '0268', '0269', '0270', '0271', '0272', '0273', '0274', '0275', '0276', '0277', '0278', '0279', '0280', '0281', '0282', '0283', '0284', '0285', '0286', '0287', '0288', '0289', '0290', '0291', '0292', '0293', '0294', '0295', '0296', '0297', '0298', '0299', '0300', '0301', '0302', '0303', '0304', '0305', '0306', '0307', '0308', '0309', '0310', '0311', '0312', '0313', '0314', '0315', '0316', '0317', '0318', '0319', '0320', '0321', '0322', '0323', '0324', '0325', '0326', '0327', '0328', '0329', '0330', '0331', '0332', '0333', '0334', '0335', '0336', '0337', '0338', '0339', '0340', '0341', '0342', '0343', '0344', '0345', '0346', '0347', '0348', '0349', '0350', '0351', '0352', '0353', '0354', '0355', '0356', '0357', '0358', '0359', '0360', '0361', '0362', '0363', '0364', '0365', '0366', '0367', '0368', '0369', '0370', '0371', '0372', '0373', '0374', '0375', '0376', '0377', '0378', '0379', '0380', '0381', '0382', '0383', '0384', '0385', '0386', '0387', '0388', '0389', '0390', '0391', '0392', '0393', '0394', '0395', '0396', '0397', '0398', '0399', '0400', '0401', '0402', '0403', '0404', '0405', '0406', '0407', '0408', '0409', '0410', '0411', '0412', '0413', '0414', '0415', '0416', '0417', '0418', '0419', '0420', '0421', '0422', '0423', '0424', '0425', '0426', '0427', '0428', '0429', '0430', '0431', '0432', '0433', '0434', '0435', '0436', '0437', '0438', '0439', '0440', '0441', '0442', '0443', '0444', '0445', '0446', '0447', '0448', '0449', '0450', '0451', '0452', '0453', '0454', '0455', '0456', '0457', '0458', '0459', '0460', '0461', '0462', '0463', '0464', '0465', '0466', '0467', '0468', '0469', '0470', '0471', '0472', '0473', '0474', '0475', '0476', '0477', '0478', '0479', '0480', '0481', '0482', '0483', '0484', '0485', '0486', '0487', '0488', '0489', '0490', '0491', '0492', '0493', '0494', '0495', '0496', '0497', '0498', '0499', '0500', '0501', '0502', '0503']
+TRY#81.0, TEST#7.11 TestWSRfrms, CROCE:1:CHE:1: Error FrameNumber=55, CRC Error, read=['00a9'], expected=['ffa9']
+	index=56, FramePointersMemoryData=0xdb30, expected=0xdf20
+	index=57, FramePointersMemoryData=0xdf2c, expected=0xe31c
+	index=58, FramePointersMemoryData=0xe328, expected=0xe718
+	index=59, FramePointersMemoryData=0xe724, expected=0xeb14
+	index=60, FramePointersMemoryData=0xeb20, expected=0xef10
+	index=61, FramePointersMemoryData=0xef1c, expected=0xf30c
+	index=62, FramePointersMemoryData=0xf318, expected=0xf708
+	index=63, FramePointersMemoryData=0xf714, expected=0xfb04
+	index=64, FramePointersMemoryData=0xfb10, expected=0xff00
+	index=65, FramePointersMemoryData=0xff0c, expected=0x102fc
+	index=66, FramePointersMemoryData=0x308, expected=0x106f8
+	index=67, FramePointersMemoryData=0x704, expected=0x10af4
+	index=68, FramePointersMemoryData=0xb00, expected=0x10ef0
+	index=69, FramePointersMemoryData=0xefc, expected=0x112ec
+	index=70, FramePointersMemoryData=0x12f8, expected=0x116e8
+	index=71, FramePointersMemoryData=0x16f4, expected=0x11ae4
+	index=72, FramePointersMemoryData=0x1af0, expected=0x11ee0
+	index=73, FramePointersMemoryData=0x1eec, expected=0x122dc
+	index=74, FramePointersMemoryData=0x22e8, expected=0x126d8
+	index=75, FramePointersMemoryData=0x26e4, expected=0x12ad4
+	index=76, FramePointersMemoryData=0x2ae0, expected=0x12ed0
+	index=77, FramePointersMemoryData=0x2edc, expected=0x132cc
+	index=78, FramePointersMemoryData=0x32d8, expected=0x136c8
+	index=79, FramePointersMemoryData=0x36d4, expected=0x13ac4
+	index=80, FramePointersMemoryData=0x3ad0, expected=0x13ec0
+	index=81, FramePointersMemoryData=0x3ecc, expected=0x142bc
+	index=82, FramePointersMemoryData=0x42c8, expected=0x146b8
+	index=83, FramePointersMemoryData=0x46c4, expected=0x14ab4
+	index=84, FramePointersMemoryData=0x4ac0, expected=0x14eb0
+	index=85, FramePointersMemoryData=0x4ebc, expected=0x152ac
+	index=86, FramePointersMemoryData=0x52b8, expected=0x156a8
+	index=87, FramePointersMemoryData=0x56b4, expected=0x15aa4
+	index=88, FramePointersMemoryData=0x5ab0, expected=0x15ea0
+	index=89, FramePointersMemoryData=0x5eac, expected=0x1629c
+	index=90, FramePointersMemoryData=0x62a8, expected=0x16698
+	index=91, FramePointersMemoryData=0x66a4, expected=0x16a94
+	index=92, FramePointersMemoryData=0x6aa0, expected=0x16e90
+	index=93, FramePointersMemoryData=0x6e9c, expected=0x1728c
+	index=94, FramePointersMemoryData=0x7298, expected=0x17688
+	index=95, FramePointersMemoryData=0x7694, expected=0x17a84
+	index=96, FramePointersMemoryData=0x7a90, expected=0x17e80
+	index=97, FramePointersMemoryData=0x7e8c, expected=0x1827c
+	index=98, FramePointersMemoryData=0x8288, expected=0x18678
+	index=99, FramePointersMemoryData=0x8684, expected=0x18a74
+	index=100, FramePointersMemoryData=0x8a80, expected=0x18e70
+	index=101, FramePointersMemoryData=0x8e7c, expected=0x1926c
+	index=102, FramePointersMemoryData=0x9278, expected=0x19668
+	index=103, FramePointersMemoryData=0x9674, expected=0x19a64
+	index=104, FramePointersMemoryData=0x9a70, expected=0x19e60
+	index=105, FramePointersMemoryData=0x9e6c, expected=0x1a25c
+	index=106, FramePointersMemoryData=0xa268, expected=0x1a658
+	index=107, FramePointersMemoryData=0xa664, expected=0x1aa54
+	index=108, FramePointersMemoryData=0xaa60, expected=0x1ae50
+	index=109, FramePointersMemoryData=0xae5c, expected=0x1b24c
+	index=110, FramePointersMemoryData=0xb258, expected=0x1b648
+	index=111, FramePointersMemoryData=0xb654, expected=0x1ba44
+	index=112, FramePointersMemoryData=0xba50, expected=0x1be40
+	index=113, FramePointersMemoryData=0xbe4c, expected=0x1c23c
+	index=114, FramePointersMemoryData=0xc248, expected=0x1c638
+	index=115, FramePointersMemoryData=0xc644, expected=0x1ca34
+	index=116, FramePointersMemoryData=0xca40, expected=0x1ce30
+	index=117, FramePointersMemoryData=0xce3c, expected=0x1d22c
+	index=118, FramePointersMemoryData=0xd238, expected=0x1d628
+	index=119, FramePointersMemoryData=0xd634, expected=0x1da24
+	index=120, FramePointersMemoryData=0xda30, expected=0x1de20
+	index=121, FramePointersMemoryData=0xde2c, expected=0x1e21c
+	index=122, FramePointersMemoryData=0xe228, expected=0x1e618
+	index=123, FramePointersMemoryData=0xe624, expected=0x1ea14
+	index=124, FramePointersMemoryData=0xea20, expected=0x1ee10
+	index=125, FramePointersMemoryData=0xee1c, expected=0x1f20c
+	index=126, FramePointersMemoryData=0xf218, expected=0x1f608
+	index=127, FramePointersMemoryData=0xf614, expected=0x1fa04
+CROCE:1: TEST#7 FAIL 168 times in 100 runs
+BitErrorFrequencyTest7 CH0=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+BitErrorFrequencyTest7 CH1=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+BitErrorFrequencyTest7 CH2=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+BitErrorFrequencyTest7 CH3=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+CROCE:1: TOTAL FAILS 168 times in 100 runs
+End  : Thu Aug 22 12:26:07 2013
+********************************

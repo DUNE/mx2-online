@@ -1,0 +1,190 @@
+
+********************************
+* CROCE BOARD TEST RUN RESULTS *
+********************************
+Start: Mon Apr  1 14:30:25 2013
+TRY#2, TEST#9.5: Sequencer, CROCE:6:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:6:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:6:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:6:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:6:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:6:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:6:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:6:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:6:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:6:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:6:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:6:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:6:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:6:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:6:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:6:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:6:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:6:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:6:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:6:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+CROCE:6: TEST#9 FAIL 20 times in 10 runs
+CROCE:6: TOTAL FAILS 20 times in 10 runs
+TRY#0, TEST#9.5: Sequencer, CROCE:9:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:9:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:9:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:9:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:9:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:9:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:9:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:9:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:9:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:9:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:9:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:9:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:9:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:9:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:9:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:9:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+CROCE:9: TEST#9 FAIL 16 times in 10 runs
+CROCE:9: TOTAL FAILS 16 times in 10 runs
+TRY#2, TEST#9.5: Sequencer, CROCE:10:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:10:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:10:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:10:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:10:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:10:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:10:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:10:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:10:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:10:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:10:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:10:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:10:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:10:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:10:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:10:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:10:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:10:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+CROCE:10: TEST#9 FAIL 24 times in 10 runs
+CROCE:10: TOTAL FAILS 24 times in 10 runs
+TRY#0, TEST#9.5: Sequencer, CROCE:11:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:11:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:11:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:11:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:11:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:11:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:11:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:11:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:11:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:11:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:11:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:11:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:11:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:11:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:11:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#8, TEST#9.5: Sequencer, CROCE:11:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+CROCE:11: TEST#9 FAIL 16 times in 10 runs
+CROCE:11: TOTAL FAILS 16 times in 10 runs
+TRY#1, TEST#9.5: Sequencer, CROCE:12:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:12:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:12:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:12:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:12:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:12:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:12:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:12:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:12:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:12:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:12:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:12:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+CROCE:12: TEST#9 FAIL 12 times in 10 runs
+CROCE:12: TOTAL FAILS 12 times in 10 runs
+TRY#0, TEST#9.5: Sequencer, CROCE:13:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:13:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:13:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:13:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:13:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:13:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:13:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:13:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:13:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:13:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:13:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:13:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:13:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:13:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:13:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:13:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+CROCE:13: TEST#9 FAIL 16 times in 10 runs
+CROCE:13: TOTAL FAILS 16 times in 10 runs
+*** CROCE:16: PASS ALL TESTS (10 runs) ***
+TRY#1, TEST#9.5: Sequencer, CROCE:18:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:18:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:18:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:18:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:18:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:18:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:18:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#2, TEST#9.5: Sequencer, CROCE:18:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:18:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:18:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:18:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:18:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:18:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:18:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:18:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:18:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:18:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:18:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:18:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:18:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+CROCE:18: TEST#9 FAIL 20 times in 10 runs
+CROCE:18: TOTAL FAILS 20 times in 10 runs
+TRY#0, TEST#9.5: Sequencer, CROCE:21:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:21:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:21:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:21:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:21:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:21:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:21:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#3, TEST#9.5: Sequencer, CROCE:21:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#4, TEST#9.5: Sequencer, CROCE:21:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#4, TEST#9.5: Sequencer, CROCE:21:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#4, TEST#9.5: Sequencer, CROCE:21:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#4, TEST#9.5: Sequencer, CROCE:21:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:21:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:21:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:21:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#7, TEST#9.5: Sequencer, CROCE:21:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+CROCE:21: TEST#9 FAIL 16 times in 10 runs
+CROCE:21: TOTAL FAILS 16 times in 10 runs
+TRY#0, TEST#9.5: Sequencer, CROCE:22:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:22:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:22:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#0, TEST#9.5: Sequencer, CROCE:22:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:22:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:22:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:22:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#1, TEST#9.5: Sequencer, CROCE:22:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#4, TEST#9.5: Sequencer, CROCE:22:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#4, TEST#9.5: Sequencer, CROCE:22:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#4, TEST#9.5: Sequencer, CROCE:22:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#4, TEST#9.5: Sequencer, CROCE:22:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:22:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:22:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:22:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#5, TEST#9.5: Sequencer, CROCE:22:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:22:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:22:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:22:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#6, TEST#9.5: Sequencer, CROCE:22:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:22:CHE:0: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:22:CHE:1: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:22:CHE:2: ERROR StatusTXRX=0x2410, should be 0x2570
+TRY#9, TEST#9.5: Sequencer, CROCE:22:CHE:3: ERROR StatusTXRX=0x2410, should be 0x2570
+CROCE:22: TEST#9 FAIL 24 times in 10 runs
+CROCE:22: TOTAL FAILS 24 times in 10 runs
+End  : Mon Apr  1 15:00:33 2013
+********************************

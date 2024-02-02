@@ -1,0 +1,143 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE		ispXCF	SYSTEM	"IspXCF.dtd" >
+<ispXCF version="18.1 Linux">
+	<Comment></Comment>
+	<Chain>
+		<Comm>JTAG</Comm>
+		<Device>
+			<Pos>1</Pos>
+			<Vendor>Lattice</Vendor>
+			<Family>LatticeECP2M</Family>
+			<Name>LFE2M35E</Name>
+			<IDCode>0x0127a043</IDCode>
+			<Package>All</Package>
+			<PON>LFE2M35E</PON>
+			<Bypass>
+				<InstrLen>8</InstrLen>
+				<InstrVal>11111111</InstrVal>
+				<BScanLen>1</BScanLen>
+				<BScanVal>0</BScanVal>
+			</Bypass>
+			<File>/home/gingu/software/mnv-configurator/SlowControlE2CRC/ISPVMfiles/Channel/v2_5a_genflash_seq4_ch1.bit</File>
+			<MaskFile>/work/software/mnvconfigurator/isptools/ispvmsystem/Database/xpga/ecp2/ecp2m-35.msk</MaskFile>
+			<FileTime>9/9/2013 13:51:45</FileTime>
+			<Operation>Fast Program</Operation>
+			<Option>
+				<SVFVendor>JTAG STANDARD</SVFVendor>
+				<IOState>HighZ</IOState>
+				<PreloadLength>936</PreloadLength>
+				<IOVectorData>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</IOVectorData>
+				<OverideUES value="TRUE"/>
+				<TCKFrequency>1.000000 MHz</TCKFrequency>
+				<SVFProcessor>ispVM</SVFProcessor>
+				<Usercode>0x00000000</Usercode>
+				<AccessMode>JTAG</AccessMode>
+			</Option>
+		</Device>
+		<Device>
+			<Pos>2</Pos>
+			<Vendor>Lattice</Vendor>
+			<Family>LatticeECP2M</Family>
+			<Name>LFE2M35E</Name>
+			<IDCode>0x0127a043</IDCode>
+			<Package>All</Package>
+			<PON>LFE2M35E</PON>
+			<Bypass>
+				<InstrLen>8</InstrLen>
+				<InstrVal>11111111</InstrVal>
+				<BScanLen>1</BScanLen>
+				<BScanVal>0</BScanVal>
+			</Bypass>
+			<File>/home/gingu/software/mnv-configurator/SlowControlE2CRC/ISPVMfiles/Channel/v2_5a_noflash_seq4_ch23.bit</File>
+			<MaskFile>/work/software/mnvconfigurator/isptools/ispvmsystem/Database/xpga/ecp2/ecp2m-35.msk</MaskFile>
+			<FileTime>9/9/2013 13:19:57</FileTime>
+			<Operation>Fast Program</Operation>
+			<Option>
+				<SVFVendor>JTAG STANDARD</SVFVendor>
+				<IOState>HighZ</IOState>
+				<PreloadLength>936</PreloadLength>
+				<IOVectorData>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</IOVectorData>
+				<OverideUES value="TRUE"/>
+				<TCKFrequency>1.000000 MHz</TCKFrequency>
+				<SVFProcessor>ispVM</SVFProcessor>
+				<Usercode>0x00000000</Usercode>
+				<AccessMode>JTAG</AccessMode>
+			</Option>
+		</Device>
+		<Device>
+			<Pos>3</Pos>
+			<Vendor>Lattice</Vendor>
+			<Family>LatticeECP2M</Family>
+			<Name>LFE2M35E</Name>
+			<IDCode>0x0127a043</IDCode>
+			<Package>All</Package>
+			<PON>LFE2M35E</PON>
+			<Bypass>
+				<InstrLen>8</InstrLen>
+				<InstrVal>11111111</InstrVal>
+				<BScanLen>1</BScanLen>
+				<BScanVal>0</BScanVal>
+			</Bypass>
+			<File>/home/gingu/software/mnv-configurator/SlowControlE2CRC/ISPVMfiles/Channel/v2_5a_noflash_seq4_ch23.bit</File>
+			<MaskFile>/work/software/mnvconfigurator/isptools/ispvmsystem/Database/xpga/ecp2/ecp2m-35.msk</MaskFile>
+			<FileTime>9/9/2013 13:19:57</FileTime>
+			<Operation>Fast Program</Operation>
+			<Option>
+				<SVFVendor>JTAG STANDARD</SVFVendor>
+				<IOState>HighZ</IOState>
+				<PreloadLength>936</PreloadLength>
+				<IOVectorData>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</IOVectorData>
+				<OverideUES value="TRUE"/>
+				<TCKFrequency>1.000000 MHz</TCKFrequency>
+				<SVFProcessor>ispVM</SVFProcessor>
+				<Usercode>0x00000000</Usercode>
+				<AccessMode>JTAG</AccessMode>
+			</Option>
+		</Device>
+		<Device>
+			<Pos>4</Pos>
+			<Vendor>Lattice</Vendor>
+			<Family>LatticeECP2M</Family>
+			<Name>LFE2M35E</Name>
+			<IDCode>0x0127a043</IDCode>
+			<Package>All</Package>
+			<PON>LFE2M35E</PON>
+			<Bypass>
+				<InstrLen>8</InstrLen>
+				<InstrVal>11111111</InstrVal>
+				<BScanLen>1</BScanLen>
+				<BScanVal>0</BScanVal>
+			</Bypass>
+			<File>/home/gingu/software/mnv-configurator/SlowControlE2CRC/ISPVMfiles/Channel/v2_5a_noflash_seq21_ch4.bit</File>
+			<MaskFile>/work/software/mnvconfigurator/isptools/ispvmsystem/Database/xpga/ecp2/ecp2m-35.msk</MaskFile>
+			<FileTime>9/9/2013 13:29:26</FileTime>
+			<Operation>Fast Program</Operation>
+			<Option>
+				<SVFVendor>JTAG STANDARD</SVFVendor>
+				<IOState>HighZ</IOState>
+				<PreloadLength>936</PreloadLength>
+				<IOVectorData>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</IOVectorData>
+				<OverideUES value="TRUE"/>
+				<TCKFrequency>1.000000 MHz</TCKFrequency>
+				<SVFProcessor>ispVM</SVFProcessor>
+				<Usercode>0x00000000</Usercode>
+				<AccessMode>JTAG</AccessMode>
+			</Option>
+		</Device>
+	</Chain>
+	<ProjectOptions>
+		<Program>SEQUENTIAL</Program>
+		<Process>ENTIRED CHAIN</Process>
+		<OperationOverride>No Override</OperationOverride>
+		<StartTAP>TLR</StartTAP>
+		<EndTAP>TLR</EndTAP>
+		<DeGlitch value="TRUE"/>
+		<VerifyUsercode value="TRUE"/>
+		<PinSetting>
+			TMS	LOW;
+			TCK	LOW;
+			TDI	LOW;
+			TDO	LOW;
+		</PinSetting>
+	</ProjectOptions>
+</ispXCF>

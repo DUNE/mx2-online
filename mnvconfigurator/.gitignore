@@ -1,0 +1,10 @@
+# ISPVM files are only for special work by Cristian.
+SlowControlE/ISPVMfiles/
+
+# Try to avoid compiled binaries.
+ElectronicsScripts/OCROCisCROC/hvCheck
+*.pyc
+*.o
+
+# Ignore files being vim'ed.
+.*.swp

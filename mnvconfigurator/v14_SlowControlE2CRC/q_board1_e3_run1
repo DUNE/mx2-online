@@ -1,0 +1,368 @@
+
+********************************
+* CROCE BOARD TEST RUN RESULTS *
+********************************
+Start: Fri Sep 18 17:03:46 2015
+TRY#507, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=59, StatusFrame=0x1012, should be 0x1010
+TRY#843, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=9, StatusFrame=0x1012, should be 0x1010
+TRY#947, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=96, StatusFrame=0x1012, should be 0x1010
+TRY#1099, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=122, StatusFrame=0x1012, should be 0x1010
+TRY#1131, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#1199, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=88, StatusFrame=0x1012, should be 0x1010
+TRY#1267, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=115, StatusFrame=0x1012, should be 0x1010
+TRY#1275, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=99, StatusFrame=0x1012, should be 0x1010
+TRY#1295, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=124, StatusFrame=0x1012, should be 0x1010
+TRY#1477, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=126, StatusFrame=0x1012, should be 0x1010
+TRY#1661, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=124, StatusFrame=0x1012, should be 0x1010
+TRY#1705, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#1725, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=28, StatusFrame=0x1012, should be 0x1010
+TRY#1733, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=17, StatusFrame=0x1012, should be 0x1010
+TRY#1835, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=74, StatusFrame=0x1012, should be 0x1010
+TRY#1843, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=18, StatusFrame=0x1012, should be 0x1010
+TRY#1909, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=16, StatusFrame=0x1012, should be 0x1010
+TRY#1915, TEST#1.2 Fast Commands=TriggerFound, CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1927, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=100, StatusFrame=0x1012, should be 0x1010
+TRY#2021, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=94, StatusFrame=0x1012, should be 0x1010
+TRY#2061, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=94, StatusFrame=0x1012, should be 0x1010
+TRY#2071, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=95, StatusFrame=0x1012, should be 0x1010
+TRY#2073, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=5, StatusFrame=0x1012, should be 0x1010
+TRY#2105, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=93, StatusFrame=0x1012, should be 0x1010
+TRY#2189, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=74, StatusFrame=0x1012, should be 0x1010
+TRY#2227, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=75, StatusFrame=0x1012, should be 0x1010
+TRY#2243, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=107, StatusFrame=0x1012, should be 0x1010
+TRY#2245, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=78, StatusFrame=0x1012, should be 0x1010
+TRY#2249, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=105, StatusFrame=0x1012, should be 0x1010
+TRY#2299, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=43, StatusFrame=0x1012, should be 0x1010
+TRY#2343, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=78, StatusFrame=0x1012, should be 0x1010
+TRY#2409, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=91, StatusFrame=0x1012, should be 0x1010
+TRY#2411, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=80, StatusFrame=0x1012, should be 0x1010
+TRY#2437, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=47, StatusFrame=0x1012, should be 0x1010
+TRY#2467, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=53, StatusFrame=0x1012, should be 0x1010
+TRY#2523, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=96, StatusFrame=0x1012, should be 0x1010
+TRY#2535, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#2685, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=15, StatusFrame=0x1012, should be 0x1010
+TRY#2783, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=43, StatusFrame=0x1012, should be 0x1010
+TRY#2995, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=62, StatusFrame=0x1012, should be 0x1010
+TRY#3011, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=65, StatusFrame=0x1012, should be 0x1010
+TRY#3113, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=66, StatusFrame=0x1012, should be 0x1010
+TRY#3199, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=7, StatusFrame=0x1012, should be 0x1010
+TRY#3215, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=19, StatusFrame=0x1012, should be 0x1010
+TRY#3315, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=126, StatusFrame=0x1012, should be 0x1010
+TRY#3419, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=80, StatusFrame=0x1012, should be 0x1010
+TRY#3535, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=17, StatusFrame=0x1012, should be 0x1010
+TRY#3561, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=40, StatusFrame=0x1012, should be 0x1010
+TRY#3563, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=124, StatusFrame=0x1012, should be 0x1010
+TRY#3667, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=95, StatusFrame=0x1012, should be 0x1010
+TRY#3739, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=17, StatusFrame=0x1012, should be 0x1010
+TRY#3749, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=64, StatusFrame=0x1012, should be 0x1010
+TRY#3759, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=50, StatusFrame=0x1012, should be 0x1010
+TRY#3829, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=69, StatusFrame=0x1012, should be 0x1010
+TRY#3847, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=99, StatusFrame=0x1012, should be 0x1010
+TRY#3855, TEST#1.2 Fast Commands=ResetTimer  , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3885, TEST#1.2 Fast Commands=TriggerFound, CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3893, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=84, StatusFrame=0x1012, should be 0x1010
+TRY#3901, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=42, StatusFrame=0x1012, should be 0x1010
+TRY#3903, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#3929, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=109, StatusFrame=0x1012, should be 0x1010
+TRY#3947, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=96, StatusFrame=0x1012, should be 0x1010
+TRY#3949, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#3957, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=86, StatusFrame=0x1012, should be 0x1010
+TRY#3959, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=111, StatusFrame=0x1012, should be 0x1010
+TRY#3981, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=126, StatusFrame=0x1012, should be 0x1010
+TRY#3997, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=108, StatusFrame=0x1012, should be 0x1010
+TRY#3999, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=122, StatusFrame=0x1012, should be 0x1010
+TRY#4021, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=68, StatusFrame=0x1012, should be 0x1010
+TRY#4027, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=55, StatusFrame=0x1012, should be 0x1010
+TRY#4125, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=24, StatusFrame=0x1012, should be 0x1010
+TRY#4151, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=126, StatusFrame=0x1012, should be 0x1010
+TRY#4165, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=89, StatusFrame=0x1012, should be 0x1010
+TRY#4171, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=1, StatusFrame=0x1012, should be 0x1010
+TRY#4187, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=13, StatusFrame=0x1012, should be 0x1010
+TRY#4199, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=99, StatusFrame=0x1012, should be 0x1010
+TRY#4215, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=91, StatusFrame=0x1012, should be 0x1010
+TRY#4217, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#4221, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=33, StatusFrame=0x1012, should be 0x1010
+TRY#4243, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#4283, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=82, StatusFrame=0x1012, should be 0x1010
+TRY#4311, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=36, StatusFrame=0x1012, should be 0x1010
+TRY#4325, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=4, StatusFrame=0x1012, should be 0x1010
+TRY#4363, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=48, StatusFrame=0x1012, should be 0x1010
+TRY#4377, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=17, StatusFrame=0x1012, should be 0x1010
+TRY#4435, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=117, StatusFrame=0x1012, should be 0x1010
+TRY#4441, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=36, StatusFrame=0x1012, should be 0x1010
+TRY#4458, TEST#1.2 Fast Commands=TriggerFound, CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4475, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=47, StatusFrame=0x1012, should be 0x1010
+TRY#4487, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=102, StatusFrame=0x1012, should be 0x1010
+TRY#4507, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=38, StatusFrame=0x1012, should be 0x1010
+TRY#4517, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=57, StatusFrame=0x1012, should be 0x1010
+TRY#4521, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=21, StatusFrame=0x1012, should be 0x1010
+TRY#4525, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=42, StatusFrame=0x1012, should be 0x1010
+TRY#4533, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=36, StatusFrame=0x1012, should be 0x1010
+TRY#4537, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#4551, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#4559, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=101, StatusFrame=0x1012, should be 0x1010
+TRY#4575, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=115, StatusFrame=0x1012, should be 0x1010
+TRY#4615, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=79, StatusFrame=0x1012, should be 0x1010
+TRY#4619, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=95, StatusFrame=0x1012, should be 0x1010
+TRY#4635, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=40, StatusFrame=0x1012, should be 0x1010
+TRY#4696, TEST#1.2 Fast Commands=ResetTimer  , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4725, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4739, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=91, StatusFrame=0x1012, should be 0x1010
+TRY#4751, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=1, StatusFrame=0x1012, should be 0x1010
+TRY#4783, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=86, StatusFrame=0x1012, should be 0x1010
+TRY#4847, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=44, StatusFrame=0x1012, should be 0x1010
+TRY#4889, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=0, StatusFrame=0x1012, should be 0x1010
+TRY#4899, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4927, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=42, StatusFrame=0x1012, should be 0x1010
+TRY#5019, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=103, StatusFrame=0x1012, should be 0x1010
+TRY#5051, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=30, StatusFrame=0x1012, should be 0x1010
+TRY#5085, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=70, StatusFrame=0x1012, should be 0x1010
+TRY#5091, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=102, StatusFrame=0x1012, should be 0x1010
+TRY#5159, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#5199, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=13, StatusFrame=0x1012, should be 0x1010
+TRY#5213, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=12, StatusFrame=0x1012, should be 0x1010
+TRY#5219, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=29, StatusFrame=0x1012, should be 0x1010
+TRY#5231, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=51, StatusFrame=0x1012, should be 0x1010
+TRY#5253, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=8, StatusFrame=0x1012, should be 0x1010
+TRY#5273, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=78, StatusFrame=0x1012, should be 0x1010
+TRY#5341, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=49, StatusFrame=0x1012, should be 0x1010
+TRY#5380, TEST#1.2 Fast Commands=TriggerFound, CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#5397, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=112, StatusFrame=0x1012, should be 0x1010
+TRY#5403, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=101, StatusFrame=0x1012, should be 0x1010
+TRY#5482, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#5509, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=89, StatusFrame=0x1012, should be 0x1010
+TRY#5557, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=121, StatusFrame=0x1012, should be 0x1010
+TRY#5611, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=102, StatusFrame=0x1012, should be 0x1010
+TRY#5619, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=55, StatusFrame=0x1012, should be 0x1010
+TRY#5693, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=24, StatusFrame=0x1012, should be 0x1010
+TRY#5701, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=44, StatusFrame=0x1012, should be 0x1010
+TRY#5715, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=37, StatusFrame=0x1012, should be 0x1010
+TRY#5763, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=20, StatusFrame=0x1012, should be 0x1010
+TRY#5789, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=27, StatusFrame=0x1012, should be 0x1010
+TRY#5839, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=65, StatusFrame=0x1012, should be 0x1010
+TRY#5849, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=22, StatusFrame=0x1012, should be 0x1010
+TRY#5881, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=73, StatusFrame=0x1012, should be 0x1010
+TRY#5883, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=47, StatusFrame=0x1012, should be 0x1010
+TRY#5909, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=27, StatusFrame=0x1012, should be 0x1010
+TRY#5933, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=61, StatusFrame=0x1012, should be 0x1010
+TRY#5945, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=18, StatusFrame=0x1012, should be 0x1010
+TRY#6009, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=11, StatusFrame=0x1012, should be 0x1010
+TRY#6031, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=4, StatusFrame=0x1012, should be 0x1010
+TRY#6051, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=43, StatusFrame=0x1012, should be 0x1010
+TRY#6057, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=109, StatusFrame=0x1012, should be 0x1010
+TRY#6071, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=15, StatusFrame=0x1012, should be 0x1010
+TRY#6089, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=85, StatusFrame=0x1012, should be 0x1010
+TRY#6095, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=71, StatusFrame=0x1012, should be 0x1010
+TRY#6101, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=73, StatusFrame=0x1012, should be 0x1010
+TRY#6117, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#6125, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=45, StatusFrame=0x1012, should be 0x1010
+TRY#6151, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=82, StatusFrame=0x1012, should be 0x1010
+TRY#6153, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=35, StatusFrame=0x1012, should be 0x1010
+TRY#6211, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=82, StatusFrame=0x1012, should be 0x1010
+TRY#6221, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=74, StatusFrame=0x1012, should be 0x1010
+TRY#6233, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#6235, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=28, StatusFrame=0x1012, should be 0x1010
+TRY#6247, TEST#1.2 Fast Commands=ResetTimer  , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#6255, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=44, StatusFrame=0x1012, should be 0x1010
+TRY#6283, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=23, StatusFrame=0x1012, should be 0x1010
+TRY#6291, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=97, StatusFrame=0x1012, should be 0x1010
+TRY#6317, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=86, StatusFrame=0x1012, should be 0x1010
+TRY#6395, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=16, StatusFrame=0x1012, should be 0x1010
+TRY#6439, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=68, StatusFrame=0x1012, should be 0x1010
+TRY#6481, TEST#1.2 Fast Commands=ResetTimer  , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#6485, TEST#1.2 Fast Commands=TriggerFound, CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#6541, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=49, StatusFrame=0x1012, should be 0x1010
+TRY#6575, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=119, StatusFrame=0x1012, should be 0x1010
+TRY#6675, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=44, StatusFrame=0x1012, should be 0x1010
+TRY#6697, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=112, StatusFrame=0x1012, should be 0x1010
+TRY#6699, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=21, StatusFrame=0x1012, should be 0x1010
+TRY#6711, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=76, StatusFrame=0x1012, should be 0x1010
+TRY#6739, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=115, StatusFrame=0x1012, should be 0x1010
+TRY#6763, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=44, StatusFrame=0x1012, should be 0x1010
+TRY#6767, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=21, StatusFrame=0x1012, should be 0x1010
+TRY#6773, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=82, StatusFrame=0x1012, should be 0x1010
+TRY#6839, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=9, StatusFrame=0x1012, should be 0x1010
+TRY#6867, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=24, StatusFrame=0x1012, should be 0x1010
+TRY#6873, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=10, StatusFrame=0x1012, should be 0x1010
+TRY#6889, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=115, StatusFrame=0x1012, should be 0x1010
+TRY#6943, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=106, StatusFrame=0x1012, should be 0x1010
+TRY#6971, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=27, StatusFrame=0x1012, should be 0x1010
+TRY#7007, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=58, StatusFrame=0x1012, should be 0x1010
+TRY#7019, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=34, StatusFrame=0x1012, should be 0x1010
+TRY#7035, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=86, StatusFrame=0x1012, should be 0x1010
+TRY#7135, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=50, StatusFrame=0x1012, should be 0x1010
+TRY#7161, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=11, StatusFrame=0x1012, should be 0x1010
+TRY#7229, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=73, StatusFrame=0x1012, should be 0x1010
+TRY#7237, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=73, StatusFrame=0x1012, should be 0x1010
+TRY#7339, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=7, StatusFrame=0x1012, should be 0x1010
+TRY#7383, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=12, StatusFrame=0x1012, should be 0x1010
+TRY#7415, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=96, StatusFrame=0x1012, should be 0x1010
+TRY#7433, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#7583, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=66, StatusFrame=0x1012, should be 0x1010
+TRY#7629, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=50, StatusFrame=0x1012, should be 0x1010
+TRY#7701, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=113, StatusFrame=0x1012, should be 0x1010
+TRY#7785, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=5, StatusFrame=0x1012, should be 0x1010
+TRY#7789, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=114, StatusFrame=0x1012, should be 0x1010
+TRY#7829, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=96, StatusFrame=0x1012, should be 0x1010
+TRY#7909, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=52, StatusFrame=0x1012, should be 0x1010
+TRY#7911, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=11, StatusFrame=0x1012, should be 0x1010
+TRY#7931, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=51, StatusFrame=0x1012, should be 0x1010
+TRY#7983, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=40, StatusFrame=0x1012, should be 0x1010
+TRY#8059, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=8, StatusFrame=0x1012, should be 0x1010
+TRY#8083, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=108, StatusFrame=0x1012, should be 0x1010
+TRY#8115, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=106, StatusFrame=0x1012, should be 0x1010
+TRY#8137, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=123, StatusFrame=0x1012, should be 0x1010
+TRY#8151, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=35, StatusFrame=0x1012, should be 0x1010
+TRY#8155, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=116, StatusFrame=0x1012, should be 0x1010
+TRY#8175, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=60, StatusFrame=0x1012, should be 0x1010
+TRY#8195, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=49, StatusFrame=0x1012, should be 0x1010
+TRY#8217, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=104, StatusFrame=0x1012, should be 0x1010
+TRY#8219, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=14, StatusFrame=0x1012, should be 0x1010
+TRY#8235, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=73, StatusFrame=0x1012, should be 0x1010
+TRY#8243, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=17, StatusFrame=0x1012, should be 0x1010
+TRY#8249, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=114, StatusFrame=0x1012, should be 0x1010
+TRY#8261, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=110, StatusFrame=0x1012, should be 0x1010
+TRY#8311, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=104, StatusFrame=0x1012, should be 0x1010
+TRY#8317, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=121, StatusFrame=0x1012, should be 0x1010
+TRY#8329, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=89, StatusFrame=0x1012, should be 0x1010
+TRY#8377, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=14, StatusFrame=0x1012, should be 0x1010
+TRY#8381, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=45, StatusFrame=0x1012, should be 0x1010
+TRY#8387, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=14, StatusFrame=0x1012, should be 0x1010
+TRY#8389, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=9, StatusFrame=0x1012, should be 0x1010
+TRY#8391, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=11, StatusFrame=0x1012, should be 0x1010
+TRY#8399, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=64, StatusFrame=0x1012, should be 0x1010
+TRY#8403, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=90, StatusFrame=0x1012, should be 0x1010
+TRY#8411, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=28, StatusFrame=0x1012, should be 0x1010
+TRY#8412, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#8419, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=9, StatusFrame=0x1012, should be 0x1010
+TRY#8425, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=79, StatusFrame=0x1012, should be 0x1010
+TRY#8429, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#8437, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=127, StatusFrame=0x1012, should be 0x1010
+TRY#8459, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=52, StatusFrame=0x1012, should be 0x1010
+TRY#8477, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=10, StatusFrame=0x1012, should be 0x1010
+TRY#8485, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=97, StatusFrame=0x1012, should be 0x1010
+TRY#8491, TEST#1.2 Fast Commands=TriggerFound, CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#8493, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=22, StatusFrame=0x1012, should be 0x1010
+TRY#8499, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=43, StatusFrame=0x1012, should be 0x1010
+TRY#8509, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=112, StatusFrame=0x1012, should be 0x1010
+TRY#8553, TEST#1.2 Fast Commands=TriggerFound, CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#8557, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=29, StatusFrame=0x1012, should be 0x1010
+TRY#8559, TEST#1.2 Fast Commands=ResetTimer  , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#8573, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=50, StatusFrame=0x1012, should be 0x1010
+TRY#8583, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=74, StatusFrame=0x1012, should be 0x1010
+TRY#8585, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=102, StatusFrame=0x1012, should be 0x1010
+TRY#8591, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=53, StatusFrame=0x1012, should be 0x1010
+TRY#8595, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=3, StatusFrame=0x1012, should be 0x1010
+TRY#8599, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=33, StatusFrame=0x1012, should be 0x1010
+TRY#8617, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=101, StatusFrame=0x1012, should be 0x1010
+TRY#8663, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=6, StatusFrame=0x1012, should be 0x1010
+TRY#8667, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=8, StatusFrame=0x1012, should be 0x1010
+TRY#8669, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=124, StatusFrame=0x1012, should be 0x1010
+TRY#8677, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=39, StatusFrame=0x1012, should be 0x1010
+TRY#8681, TEST#1.2 Fast Commands=OpenGate    , CROCE:7:CHE:1: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#8683, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=103, StatusFrame=0x1012, should be 0x1010
+TRY#8697, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=19, StatusFrame=0x1012, should be 0x1010
+TRY#8709, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=4, StatusFrame=0x1012, should be 0x1010
+TRY#8711, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=111, StatusFrame=0x1012, should be 0x1010
+TRY#8715, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=54, StatusFrame=0x1012, should be 0x1010
+TRY#8719, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=86, StatusFrame=0x1012, should be 0x1010
+TRY#8723, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=101, StatusFrame=0x1012, should be 0x1010
+TRY#8725, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=67, StatusFrame=0x1012, should be 0x1010
+TRY#8749, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=18, StatusFrame=0x1012, should be 0x1010
+TRY#8765, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=114, StatusFrame=0x1012, should be 0x1010
+TRY#8771, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=64, StatusFrame=0x1012, should be 0x1010
+TRY#8773, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=103, StatusFrame=0x1012, should be 0x1010
+TRY#8777, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=2, StatusFrame=0x1012, should be 0x1010
+TRY#8787, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=81, StatusFrame=0x1012, should be 0x1010
+TRY#8791, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=60, StatusFrame=0x1012, should be 0x1010
+TRY#8795, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#8805, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=73, StatusFrame=0x1012, should be 0x1010
+TRY#8807, TEST#1.2 Fast Commands=TriggerFound, CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#8809, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=75, StatusFrame=0x1012, should be 0x1010
+TRY#8815, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=69, StatusFrame=0x1012, should be 0x1010
+TRY#8821, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=115, StatusFrame=0x1012, should be 0x1010
+TRY#8839, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=57, StatusFrame=0x1012, should be 0x1010
+TRY#8841, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=93, StatusFrame=0x1012, should be 0x1010
+TRY#8847, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=119, StatusFrame=0x1012, should be 0x1010
+TRY#8859, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=18, StatusFrame=0x1012, should be 0x1010
+TRY#8869, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=120, StatusFrame=0x1012, should be 0x1010
+TRY#8877, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=63, StatusFrame=0x1012, should be 0x1010
+TRY#8915, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=35, StatusFrame=0x1012, should be 0x1010
+TRY#8921, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=78, StatusFrame=0x1012, should be 0x1010
+TRY#8939, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=54, StatusFrame=0x1012, should be 0x1010
+TRY#8955, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=7, StatusFrame=0x1012, should be 0x1010
+TRY#8957, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=33, StatusFrame=0x1012, should be 0x1010
+TRY#8963, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#8965, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=26, StatusFrame=0x1012, should be 0x1010
+TRY#8975, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=105, StatusFrame=0x1012, should be 0x1010
+TRY#8984, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#8991, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=9, StatusFrame=0x1012, should be 0x1010
+TRY#9003, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=44, StatusFrame=0x1012, should be 0x1010
+TRY#9033, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=34, StatusFrame=0x1012, should be 0x1010
+TRY#9035, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=54, StatusFrame=0x1012, should be 0x1010
+TRY#9043, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=14, StatusFrame=0x1012, should be 0x1010
+TRY#9047, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=2, StatusFrame=0x1012, should be 0x1010
+TRY#9048, TEST#1.2 Fast Commands=ResetTimer  , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#9049, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=79, StatusFrame=0x1012, should be 0x1010
+TRY#9053, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=115, StatusFrame=0x1012, should be 0x1010
+TRY#9057, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#9067, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=77, StatusFrame=0x1012, should be 0x1010
+TRY#9069, TEST#1.2 Fast Commands=ResetTimer  , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#9071, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=31, StatusFrame=0x1012, should be 0x1010
+TRY#9079, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=65, StatusFrame=0x1012, should be 0x1010
+TRY#9081, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=47, StatusFrame=0x1012, should be 0x1010
+TRY#9101, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=7, StatusFrame=0x1012, should be 0x1010
+TRY#9107, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=69, StatusFrame=0x1012, should be 0x1010
+TRY#9117, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=36, StatusFrame=0x1012, should be 0x1010
+TRY#9147, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=29, StatusFrame=0x1012, should be 0x1010
+TRY#9173, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=11, StatusFrame=0x1012, should be 0x1010
+TRY#9205, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=41, StatusFrame=0x1012, should be 0x1010
+TRY#9253, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=65, StatusFrame=0x1012, should be 0x1010
+TRY#9255, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=117, StatusFrame=0x1012, should be 0x1010
+TRY#9279, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=36, StatusFrame=0x1012, should be 0x1010
+TRY#9299, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=24, StatusFrame=0x1012, should be 0x1010
+TRY#9311, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=73, StatusFrame=0x1012, should be 0x1010
+TRY#9323, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=99, StatusFrame=0x1012, should be 0x1010
+TRY#9325, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=57, StatusFrame=0x1012, should be 0x1010
+TRY#9373, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=15, StatusFrame=0x1012, should be 0x1010
+TRY#9383, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#9395, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=115, StatusFrame=0x1012, should be 0x1010
+TRY#9413, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=4, StatusFrame=0x1012, should be 0x1010
+TRY#9449, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=15, StatusFrame=0x1012, should be 0x1010
+TRY#9455, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=41, StatusFrame=0x1012, should be 0x1010
+TRY#9461, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=22, StatusFrame=0x1012, should be 0x1010
+TRY#9495, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=100, StatusFrame=0x1012, should be 0x1010
+TRY#9563, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=40, StatusFrame=0x1012, should be 0x1010
+TRY#9565, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=65, StatusFrame=0x1012, should be 0x1010
+TRY#9609, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=83, StatusFrame=0x1012, should be 0x1010
+TRY#9629, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=77, StatusFrame=0x1012, should be 0x1010
+TRY#9647, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=12, StatusFrame=0x1012, should be 0x1010
+TRY#9673, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=102, StatusFrame=0x1012, should be 0x1010
+TRY#9731, TEST#4.3a TestWSRfrms, CROCE:7:CHE:2: Error FrameNumber=1, StatusFrame=0x1012, should be 0x1010
+TRY#9738, TEST#1.2 Fast Commands=ResetTimer  , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#9753, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=116, StatusFrame=0x1012, should be 0x1010
+TRY#9795, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=42, StatusFrame=0x1012, should be 0x1010
+TRY#9807, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=18, StatusFrame=0x1012, should be 0x1010
+TRY#9818, TEST#1.2 Fast Commands=ResetTimer  , CROCE:7:CHE:2: Error TXRSStatus=['0x0140', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#9831, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=52, StatusFrame=0x1012, should be 0x1010
+TRY#9859, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#9877, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=33, StatusFrame=0x1012, should be 0x1010
+TRY#9881, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=14, StatusFrame=0x1012, should be 0x1010
+TRY#9903, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=122, StatusFrame=0x1012, should be 0x1010
+TRY#9913, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=79, StatusFrame=0x1012, should be 0x1010
+TRY#9917, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=76, StatusFrame=0x1012, should be 0x1010
+TRY#9925, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=41, StatusFrame=0x1012, should be 0x1010
+TRY#9929, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=32, StatusFrame=0x1012, should be 0x1010
+TRY#9951, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=74, StatusFrame=0x1012, should be 0x1010
+TRY#9983, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=15, StatusFrame=0x1012, should be 0x1010
+TRY#9989, TEST#4.3a TestWSRfrms, CROCE:7:CHE:3: Error FrameNumber=57, StatusFrame=0x1012, should be 0x1010
+CROCE:7: TEST#1 FAIL 27 times in 10000 runs
+CROCE:7: TEST#2 PASS 10000 times in 10000 runs
+CROCE:7: TEST#4 FAIL 326 times in 10000 runs
+CROCE:7: TEST#5 PASS 10000 times in 10000 runs
+CROCE:7: TEST#7 PASS 10000 times in 10000 runs
+CROCE:7: TEST#8 PASS 10000 times in 10000 runs
+CROCE:7: TEST#9 PASS 10000 times in 10000 runs
+	CROCE:7: TOTAL FAILS 353 times in 10000 runs
+End  : Sun Sep 20 23:38:49 2015
+******************************

@@ -1,0 +1,45 @@
+The API for Electronic Collaboration Logbook service.
+
+There are two classes provided.
+
+
+
+1. Class ECLEntry provides the way to define a logbook entry and fill it in.
+
+    Constructor ECLEntry(category,      # Category name to put entry in
+                        tags,           # Optional list of tag names for entry
+                        formname,       # Optional formname. If not present 'default' form will be used
+                        text,           # Optional free form text for the entry. Will be shown outside the form.
+                        preformatted)   # Optional True/False flag to say if the entry is preformatted and should not
+                                        # be processed with textile
+
+    Method setAuthor(username)          # Optional. Sets author attribute for the entry.
+
+    Method setValue(name, value)        # Sets field 'name' in the form to 'value'
+
+    Method addAttachment(name,          # Sets internal name for the attachment
+                        filename,       # Filename
+                        data)           # Optional data. If not present the file 'filename' will be open and used as data.
+
+    Method addImage(name,               # Sets internal name for the attachment
+                    filename,           # Image filename
+                    image)              # Optional image data. If not present the file 'filename' will be open and used as image.
+
+
+    Method xshow()                      # Outputs the XML representation for the entry.
+
+
+
+2. Class ECLConnection provides the way to communicate with the service
+
+    Constructor ECLConnection(URL,      # The service URL
+                            username,   # Username. Special account with "raw password"
+                            password)   # Password. Should be kept in protected file.
+
+    Method post(entry)                  # Posts the entry object
+
+    Method close()                      # Housekeeping
+
+
+The working example can be found in e-xpost.py.
+

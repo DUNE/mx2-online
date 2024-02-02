@@ -1,0 +1,65 @@
+
+********************************
+* CROCE BOARD TEST RUN RESULTS *
+********************************
+Start: Fri Oct 10 09:49:36 2014
+CROCE:3: TEST#1 PASS 5000 times in 5000 runs
+CROCE:3: TEST#2 PASS 5000 times in 5000 runs
+CROCE:3: TEST#4 PASS 5000 times in 5000 runs
+CROCE:3: TEST#5 PASS 5000 times in 5000 runs
+CROCE:3: TEST#7 PASS 5000 times in 5000 runs
+CROCE:3: TEST#8 PASS 5000 times in 5000 runs
+CROCE:3: TEST#9 PASS 5000 times in 5000 runs
+	CROCE:3: PASS ALL TESTS (5000 runs) ***
+CROCE:4: TEST#1 PASS 5000 times in 5000 runs
+CROCE:4: TEST#2 PASS 5000 times in 5000 runs
+CROCE:4: TEST#4 PASS 5000 times in 5000 runs
+CROCE:4: TEST#5 PASS 5000 times in 5000 runs
+CROCE:4: TEST#7 PASS 5000 times in 5000 runs
+CROCE:4: TEST#8 PASS 5000 times in 5000 runs
+CROCE:4: TEST#9 PASS 5000 times in 5000 runs
+	CROCE:4: PASS ALL TESTS (5000 runs) ***
+CROCE:6: TEST#1 PASS 5000 times in 5000 runs
+CROCE:6: TEST#2 PASS 5000 times in 5000 runs
+CROCE:6: TEST#4 PASS 5000 times in 5000 runs
+CROCE:6: TEST#5 PASS 5000 times in 5000 runs
+CROCE:6: TEST#7 PASS 5000 times in 5000 runs
+CROCE:6: TEST#8 PASS 5000 times in 5000 runs
+CROCE:6: TEST#9 PASS 5000 times in 5000 runs
+	CROCE:6: PASS ALL TESTS (5000 runs) ***
+CROCE:10: TEST#1 PASS 5000 times in 5000 runs
+CROCE:10: TEST#2 PASS 5000 times in 5000 runs
+CROCE:10: TEST#4 PASS 5000 times in 5000 runs
+CROCE:10: TEST#5 PASS 5000 times in 5000 runs
+CROCE:10: TEST#7 PASS 5000 times in 5000 runs
+CROCE:10: TEST#8 PASS 5000 times in 5000 runs
+CROCE:10: TEST#9 PASS 5000 times in 5000 runs
+	CROCE:10: PASS ALL TESTS (5000 runs) ***
+TRY#809, TEST#9.5: Sequencer, CROCE:11:CHE:1: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1521, TEST#1.2 Fast Commands=ResetTimer  , CROCE:11:CHE:1: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4242, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:11:CHE:1: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4530, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:11:CHE:1: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+CROCE:11: TEST#1 FAIL 3 times in 5000 runs
+CROCE:11: TEST#2 PASS 5000 times in 5000 runs
+CROCE:11: TEST#4 PASS 5000 times in 5000 runs
+CROCE:11: TEST#5 PASS 5000 times in 5000 runs
+CROCE:11: TEST#7 PASS 5000 times in 5000 runs
+CROCE:11: TEST#8 PASS 5000 times in 5000 runs
+CROCE:11: TEST#9 FAIL 1 times in 5000 runs
+	CROCE:11: TOTAL FAILS 4 times in 5000 runs
+CROCE:12: TEST#1 PASS 5000 times in 5000 runs
+CROCE:12: TEST#2 PASS 5000 times in 5000 runs
+CROCE:12: TEST#4 PASS 5000 times in 5000 runs
+CROCE:12: TEST#5 PASS 5000 times in 5000 runs
+CROCE:12: TEST#7 PASS 5000 times in 5000 runs
+CROCE:12: TEST#8 PASS 5000 times in 5000 runs
+CROCE:12: TEST#9 PASS 5000 times in 5000 runs
+	CROCE:12: PASS ALL TESTS (5000 runs) ***
+CROCE:16: TEST#1 PASS 5000 times in 5000 runs
+CROCE:16: TEST#2 PASS 5000 times in 5000 runs
+CROCE:16: TEST#4 PASS 5000 times in 5000 runs
+CROCE:16: TEST#5 PASS 5000 times in 5000 runs
+CROCE:16: TEST#7 PASS 5000 times in 5000 runs
+CROCE:16: TEST#8 PASS 5000 times in 5000 runs
+CROCE:16: TEST#9 PASS 5000 times in 5000 runs
+	CROCE:16: PASS ALL TESTS (5000 runs) ***

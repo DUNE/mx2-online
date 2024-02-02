@@ -1,0 +1,260 @@
+
+********************************
+* CROCE BOARD TEST RUN RESULTS *
+********************************
+Start: Wed Oct  8 18:02:52 2014
+TRY#117, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=42, StatusFrame=0x1012, should be 0x1010
+TRY#267, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=8, StatusFrame=0x1012, should be 0x1010
+TRY#301, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=44, StatusFrame=0x1012, should be 0x1010
+TRY#409, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#601, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=77, StatusFrame=0x1012, should be 0x1010
+TRY#727, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=50, StatusFrame=0x1012, should be 0x1010
+TRY#751, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=105, StatusFrame=0x1012, should be 0x1010
+TRY#793, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=101, StatusFrame=0x1012, should be 0x1010
+TRY#823, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=6, StatusFrame=0x1012, should be 0x1010
+TRY#873, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=74, StatusFrame=0x1012, should be 0x1010
+TRY#907, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=46, StatusFrame=0x1012, should be 0x1010
+TRY#983, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=118, StatusFrame=0x1012, should be 0x1010
+TRY#1033, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=35, StatusFrame=0x1012, should be 0x1010
+TRY#1039, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=126, StatusFrame=0x1012, should be 0x1010
+TRY#1049, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=58, StatusFrame=0x1012, should be 0x1010
+TRY#1075, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=4, StatusFrame=0x1012, should be 0x1010
+TRY#1175, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=76, StatusFrame=0x1012, should be 0x1010
+TRY#1253, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=46, StatusFrame=0x1012, should be 0x1010
+TRY#1353, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=123, StatusFrame=0x1012, should be 0x1010
+TRY#1359, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=102, StatusFrame=0x1012, should be 0x1010
+TRY#1369, TEST#4.3d TestWSRfrms, CROCE:1:CHE:2: Error RcvMemWPointer=129788, should be 130560
+TRY#1383, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=52, StatusFrame=0x1012, should be 0x1010
+TRY#1391, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=38, StatusFrame=0x1012, should be 0x1010
+TRY#1461, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=127, StatusFrame=0x1012, should be 0x1010
+TRY#1493, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=19, StatusFrame=0x1012, should be 0x1010
+TRY#1515, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=5, StatusFrame=0x1012, should be 0x1010
+TRY#1531, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=28, StatusFrame=0x1012, should be 0x1010
+TRY#1539, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=51, StatusFrame=0x1012, should be 0x1010
+TRY#1545, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=96, StatusFrame=0x1012, should be 0x1010
+TRY#1565, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=113, StatusFrame=0x1012, should be 0x1010
+TRY#1589, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=64, StatusFrame=0x1012, should be 0x1010
+TRY#1605, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=74, StatusFrame=0x1012, should be 0x1010
+TRY#1615, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=100, StatusFrame=0x1012, should be 0x1010
+TRY#1635, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=92, StatusFrame=0x1012, should be 0x1010
+TRY#1655, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=48, StatusFrame=0x1012, should be 0x1010
+TRY#1687, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=88, StatusFrame=0x1012, should be 0x1010
+TRY#1691, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=0, StatusFrame=0x1012, should be 0x1010
+TRY#1699, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=36, StatusFrame=0x1012, should be 0x1010
+TRY#1703, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=1, StatusFrame=0x1012, should be 0x1010
+TRY#1747, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=81, StatusFrame=0x1012, should be 0x1010
+TRY#1753, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=30, StatusFrame=0x1012, should be 0x1010
+TRY#1757, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=127, StatusFrame=0x1012, should be 0x1010
+TRY#1791, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#1799, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=3, StatusFrame=0x1012, should be 0x1010
+TRY#1803, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=117, StatusFrame=0x1012, should be 0x1010
+TRY#1813, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=92, StatusFrame=0x1012, should be 0x1010
+TRY#1819, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=122, StatusFrame=0x1012, should be 0x1010
+TRY#1829, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=35, StatusFrame=0x1012, should be 0x1010
+TRY#1831, TEST#4.3d TestWSRfrms, CROCE:1:CHE:2: Error RcvMemWPointer=130556, should be 130560
+TRY#1833, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=37, StatusFrame=0x1012, should be 0x1010
+TRY#1853, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=40, StatusFrame=0x1012, should be 0x1010
+TRY#1877, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=53, StatusFrame=0x1012, should be 0x1010
+TRY#1912, TEST#7.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=16, StatusFrame=0x1012, should be 0x1010
+TRY#1923, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=5, StatusFrame=0x1012, should be 0x1010
+TRY#1939, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=80, StatusFrame=0x1012, should be 0x1010
+TRY#1943, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=69, StatusFrame=0x1012, should be 0x1010
+TRY#1955, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=47, StatusFrame=0x1012, should be 0x1010
+TRY#1961, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=76, StatusFrame=0x1012, should be 0x1010
+TRY#1971, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=14, StatusFrame=0x1012, should be 0x1010
+TRY#1997, TEST#5.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=26, StatusFrame=0x1012, should be 0x1010
+TRY#2027, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=9, StatusFrame=0x1012, should be 0x1010
+TRY#2043, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=75, StatusFrame=0x1012, should be 0x1010
+TRY#2045, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=90, StatusFrame=0x1012, should be 0x1010
+TRY#2047, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=19, StatusFrame=0x1012, should be 0x1010
+TRY#2063, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=84, StatusFrame=0x1012, should be 0x1010
+TRY#2075, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=19, StatusFrame=0x1012, should be 0x1010
+TRY#2079, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=108, StatusFrame=0x1012, should be 0x1010
+TRY#2091, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=89, StatusFrame=0x1012, should be 0x1010
+TRY#2159, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=7, StatusFrame=0x1012, should be 0x1010
+TRY#2167, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=19, StatusFrame=0x1012, should be 0x1010
+TRY#2169, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=33, StatusFrame=0x1012, should be 0x1010
+TRY#2215, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=109, StatusFrame=0x1012, should be 0x1010
+TRY#2227, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=20, StatusFrame=0x1012, should be 0x1010
+TRY#2243, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=44, StatusFrame=0x1012, should be 0x1010
+TRY#2255, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=34, StatusFrame=0x1012, should be 0x1010
+TRY#2267, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=16, StatusFrame=0x1012, should be 0x1010
+TRY#2279, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=102, StatusFrame=0x1012, should be 0x1010
+TRY#2287, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=123, StatusFrame=0x1012, should be 0x1010
+TRY#2325, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=71, StatusFrame=0x1012, should be 0x1010
+TRY#2373, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=33, StatusFrame=0x1012, should be 0x1010
+TRY#2375, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=116, StatusFrame=0x1012, should be 0x1010
+TRY#2381, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=91, StatusFrame=0x1012, should be 0x1010
+TRY#2387, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=64, StatusFrame=0x1012, should be 0x1010
+TRY#2417, TEST#7.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=96, StatusFrame=0x1012, should be 0x1010
+TRY#2421, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=36, StatusFrame=0x1012, should be 0x1010
+TRY#2495, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=32, StatusFrame=0x1012, should be 0x1010
+TRY#2495, TEST#5.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=62, StatusFrame=0x1012, should be 0x1010
+TRY#2525, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=104, StatusFrame=0x1012, should be 0x1010
+TRY#2617, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=124, StatusFrame=0x1012, should be 0x1010
+TRY#2629, TEST#4.3d TestWSRfrms, CROCE:1:CHE:2: Error RcvMemWPointer=129784, should be 130560
+TRY#2633, TEST#7.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=91, StatusFrame=0x1012, should be 0x1010
+TRY#2639, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#2659, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=83, StatusFrame=0x1012, should be 0x1010
+TRY#2664, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=33, StatusFrame=0x1012, should be 0x1010
+TRY#2671, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=122, StatusFrame=0x1012, should be 0x1010
+TRY#2675, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=51, StatusFrame=0x1012, should be 0x1010
+TRY#2685, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=105, StatusFrame=0x1012, should be 0x1010
+TRY#2691, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=55, StatusFrame=0x1012, should be 0x1010
+TRY#2693, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=68, StatusFrame=0x1012, should be 0x1010
+TRY#2695, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=107, StatusFrame=0x1012, should be 0x1010
+TRY#2697, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=38, StatusFrame=0x1012, should be 0x1010
+TRY#2731, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=24, StatusFrame=0x1012, should be 0x1010
+TRY#2749, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=94, StatusFrame=0x1012, should be 0x1010
+TRY#2797, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=88, StatusFrame=0x1012, should be 0x1010
+TRY#2803, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=14, StatusFrame=0x1012, should be 0x1010
+TRY#2821, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=69, StatusFrame=0x1012, should be 0x1010
+TRY#2823, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=27, StatusFrame=0x1012, should be 0x1010
+TRY#2851, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=39, StatusFrame=0x1012, should be 0x1010
+TRY#2867, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=32, StatusFrame=0x1012, should be 0x1010
+TRY#2871, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=13, StatusFrame=0x1012, should be 0x1010
+TRY#2873, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=114, StatusFrame=0x1012, should be 0x1010
+TRY#2879, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=46, StatusFrame=0x1012, should be 0x1010
+TRY#2907, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=1, StatusFrame=0x1012, should be 0x1010
+TRY#2947, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=13, StatusFrame=0x1012, should be 0x1010
+TRY#2949, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=123, StatusFrame=0x1012, should be 0x1010
+TRY#2951, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=53, StatusFrame=0x1012, should be 0x1010
+TRY#2953, TEST#4.3d TestWSRfrms, CROCE:1:CHE:2: Error RcvMemWPointer=130556, should be 130560
+TRY#2985, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=15, StatusFrame=0x1012, should be 0x1010
+TRY#2999, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=99, StatusFrame=0x1012, should be 0x1010
+TRY#3007, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=83, StatusFrame=0x1012, should be 0x1010
+TRY#3083, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=109, StatusFrame=0x1012, should be 0x1010
+TRY#3099, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#3104, TEST#7.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=5, StatusFrame=0x1012, should be 0x1010
+TRY#3104, TEST#9.4: Sequencer, CROCE:1:CHE:2: ERROR StatusFrame=0x1452, should be 0x4440/0x5450/0x5410 / 0x0440/0x1450/0x1410
+TRY#3115, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=111, StatusFrame=0x1012, should be 0x1010
+TRY#3122, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=104, StatusFrame=0x1012, should be 0x1010
+TRY#3155, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=70, StatusFrame=0x1012, should be 0x1010
+TRY#3163, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=84, StatusFrame=0x1012, should be 0x1010
+TRY#3197, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=34, StatusFrame=0x1012, should be 0x1010
+TRY#3203, TEST#7.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=26, StatusFrame=0x1012, should be 0x1010
+TRY#3207, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=35, StatusFrame=0x1012, should be 0x1010
+TRY#3237, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=26, StatusFrame=0x1012, should be 0x1010
+TRY#3245, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=33, StatusFrame=0x1012, should be 0x1010
+TRY#3275, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=47, StatusFrame=0x1012, should be 0x1010
+TRY#3287, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=117, StatusFrame=0x1012, should be 0x1010
+TRY#3288, TEST#5.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=61, StatusFrame=0x1012, should be 0x1010
+TRY#3321, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=85, StatusFrame=0x1012, should be 0x1010
+TRY#3334, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=7, StatusFrame=0x1012, should be 0x1010
+TRY#3343, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=35, StatusFrame=0x1012, should be 0x1010
+TRY#3391, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=42, StatusFrame=0x1012, should be 0x1010
+TRY#3395, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=19, StatusFrame=0x1012, should be 0x1010
+TRY#3408, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=104, StatusFrame=0x1012, should be 0x1010
+TRY#3423, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=103, StatusFrame=0x1012, should be 0x1010
+TRY#3439, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=47, StatusFrame=0x1012, should be 0x1010
+TRY#3443, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=53, StatusFrame=0x1012, should be 0x1010
+TRY#3447, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=43, StatusFrame=0x1012, should be 0x1010
+TRY#3459, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=100, StatusFrame=0x1012, should be 0x1010
+TRY#3459, TEST#7.3d TestWSRfrms, CROCE:1:CHE:2: Error RcvMemWPointer=130319, should be 130560
+TRY#3461, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=2, StatusFrame=0x1012, should be 0x1010
+TRY#3487, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=102, StatusFrame=0x1012, should be 0x1010
+TRY#3501, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=10, StatusFrame=0x1012, should be 0x1010
+TRY#3543, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=60, StatusFrame=0x1012, should be 0x1010
+TRY#3559, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=103, StatusFrame=0x1012, should be 0x1010
+TRY#3565, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=78, StatusFrame=0x1012, should be 0x1010
+TRY#3575, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=8, StatusFrame=0x1012, should be 0x1010
+TRY#3583, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=117, StatusFrame=0x1012, should be 0x1010
+TRY#3603, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=96, StatusFrame=0x1012, should be 0x1010
+TRY#3609, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=106, StatusFrame=0x1012, should be 0x1010
+TRY#3669, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=51, StatusFrame=0x1012, should be 0x1010
+TRY#3691, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=123, StatusFrame=0x1012, should be 0x1010
+TRY#3693, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=104, StatusFrame=0x1012, should be 0x1010
+TRY#3741, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=123, StatusFrame=0x1012, should be 0x1010
+TRY#3807, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=29, StatusFrame=0x1012, should be 0x1010
+TRY#3811, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=75, StatusFrame=0x1012, should be 0x1010
+TRY#3813, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=112, StatusFrame=0x1012, should be 0x1010
+TRY#3828, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=86, StatusFrame=0x1012, should be 0x1010
+TRY#3845, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=58, StatusFrame=0x1012, should be 0x1010
+TRY#3851, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=111, StatusFrame=0x1012, should be 0x1010
+TRY#3853, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=20, StatusFrame=0x1012, should be 0x1010
+TRY#3867, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=98, StatusFrame=0x1012, should be 0x1010
+TRY#3869, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=92, StatusFrame=0x1012, should be 0x1010
+TRY#3895, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=10, StatusFrame=0x1012, should be 0x1010
+TRY#3909, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=42, StatusFrame=0x1012, should be 0x1010
+TRY#3933, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=28, StatusFrame=0x1012, should be 0x1010
+TRY#3938, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=62, StatusFrame=0x1012, should be 0x1010
+TRY#3949, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=82, StatusFrame=0x1012, should be 0x1010
+TRY#3962, TEST#5.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=43, StatusFrame=0x1012, should be 0x1010
+TRY#3979, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=70, StatusFrame=0x1012, should be 0x1010
+TRY#3993, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=51, StatusFrame=0x1012, should be 0x1010
+TRY#3993, TEST#7.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=28, StatusFrame=0x1012, should be 0x1010
+TRY#3997, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=99, StatusFrame=0x1012, should be 0x1010
+TRY#4015, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=69, StatusFrame=0x1012, should be 0x1010
+TRY#4039, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=60, StatusFrame=0x1012, should be 0x1010
+TRY#4057, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=20, StatusFrame=0x1012, should be 0x1010
+TRY#4063, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=59, StatusFrame=0x1012, should be 0x1010
+TRY#4091, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=95, StatusFrame=0x1012, should be 0x1010
+TRY#4093, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=61, StatusFrame=0x1012, should be 0x1010
+TRY#4133, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=124, StatusFrame=0x1012, should be 0x1010
+TRY#4135, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=107, StatusFrame=0x1012, should be 0x1010
+TRY#4147, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=37, StatusFrame=0x1012, should be 0x1010
+TRY#4153, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=66, StatusFrame=0x1012, should be 0x1010
+TRY#4159, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=54, StatusFrame=0x1012, should be 0x1010
+TRY#4171, TEST#4.3d TestWSRfrms, CROCE:1:CHE:2: Error RcvMemWPointer=130321, should be 130560
+TRY#4175, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=99, StatusFrame=0x1012, should be 0x1010
+TRY#4179, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=2, StatusFrame=0x1012, should be 0x1010
+TRY#4233, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=109, StatusFrame=0x1012, should be 0x1010
+TRY#4239, TEST#4.3d TestWSRfrms, CROCE:1:CHE:2: Error RcvMemWPointer=130556, should be 130560
+TRY#4271, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=44, StatusFrame=0x1012, should be 0x1010
+TRY#4295, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=11, StatusFrame=0x1012, should be 0x1010
+TRY#4299, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=8, StatusFrame=0x1012, should be 0x1010
+TRY#4301, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=11, StatusFrame=0x1012, should be 0x1010
+TRY#4319, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=90, StatusFrame=0x1012, should be 0x1010
+TRY#4331, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=123, StatusFrame=0x1012, should be 0x1010
+TRY#4341, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=50, StatusFrame=0x1012, should be 0x1010
+TRY#4351, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=126, StatusFrame=0x1012, should be 0x1010
+TRY#4357, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=65, StatusFrame=0x1012, should be 0x1010
+TRY#4361, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=47, StatusFrame=0x1012, should be 0x1010
+TRY#4377, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=18, StatusFrame=0x1012, should be 0x1010
+TRY#4379, TEST#4.3d TestWSRfrms, CROCE:1:CHE:2: Error RcvMemWPointer=130556, should be 130560
+TRY#4407, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=94, StatusFrame=0x1012, should be 0x1010
+TRY#4409, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=38, StatusFrame=0x1012, should be 0x1010
+TRY#4425, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=87, StatusFrame=0x1012, should be 0x1010
+TRY#4455, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=85, StatusFrame=0x1012, should be 0x1010
+TRY#4461, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=47, StatusFrame=0x1012, should be 0x1010
+TRY#4483, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=23, StatusFrame=0x1012, should be 0x1010
+TRY#4501, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=109, StatusFrame=0x1012, should be 0x1010
+TRY#4507, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=55, StatusFrame=0x1012, should be 0x1010
+TRY#4525, TEST#4.3d TestWSRfrms, CROCE:1:CHE:2: Error RcvMemWPointer=130325, should be 130560
+TRY#4533, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=87, StatusFrame=0x1012, should be 0x1010
+TRY#4619, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=4, StatusFrame=0x1012, should be 0x1010
+TRY#4651, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=116, StatusFrame=0x1012, should be 0x1010
+TRY#4679, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=3, StatusFrame=0x1012, should be 0x1010
+TRY#4685, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=19, StatusFrame=0x1012, should be 0x1010
+TRY#4707, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=121, StatusFrame=0x1012, should be 0x1010
+TRY#4709, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=117, StatusFrame=0x1012, should be 0x1010
+TRY#4745, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=10, StatusFrame=0x1012, should be 0x1010
+TRY#4763, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=44, StatusFrame=0x1012, should be 0x1010
+TRY#4779, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=108, StatusFrame=0x1012, should be 0x1010
+TRY#4789, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=41, StatusFrame=0x1012, should be 0x1010
+TRY#4793, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=50, StatusFrame=0x1012, should be 0x1010
+TRY#4805, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=93, StatusFrame=0x1012, should be 0x1010
+TRY#4815, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=51, StatusFrame=0x1012, should be 0x1010
+TRY#4823, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=72, StatusFrame=0x1012, should be 0x1010
+TRY#4829, TEST#4.3d TestWSRfrms, CROCE:1:CHE:2: Error RcvMemWPointer=130556, should be 130560
+TRY#4845, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=64, StatusFrame=0x1012, should be 0x1010
+TRY#4855, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=71, StatusFrame=0x1012, should be 0x1010
+TRY#4873, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=82, StatusFrame=0x1012, should be 0x1010
+TRY#4903, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=53, StatusFrame=0x1012, should be 0x1010
+TRY#4909, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=17, StatusFrame=0x1012, should be 0x1010
+TRY#4921, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=91, StatusFrame=0x1012, should be 0x1010
+TRY#4925, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=116, StatusFrame=0x1012, should be 0x1010
+TRY#4927, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=76, StatusFrame=0x1012, should be 0x1010
+TRY#4949, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=57, StatusFrame=0x1012, should be 0x1010
+TRY#4990, TEST#7.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=42, StatusFrame=0x1012, should be 0x1010
+TRY#4995, TEST#4.3a TestWSRfrms, CROCE:1:CHE:2: Error FrameNumber=11, StatusFrame=0x1012, should be 0x1010
+CROCE:1: TEST#1 PASS 5000 times in 5000 runs
+CROCE:1: TEST#2 PASS 5000 times in 5000 runs
+CROCE:1: TEST#4 FAIL 232 times in 5000 runs
+CROCE:1: TEST#5 FAIL 4 times in 5000 runs
+CROCE:1: TEST#7 FAIL 8 times in 5000 runs
+CROCE:1: TEST#8 PASS 5000 times in 5000 runs
+CROCE:1: TEST#9 FAIL 1 times in 5000 runs
+	CROCE:1: TOTAL FAILS 245 times in 5000 runs
+End  : Thu Oct  9 06:41:26 2014
+******************************

@@ -1,0 +1,8 @@
+
+********************************
+* CROCE BOARD TEST RUN RESULTS *
+********************************
+Start: Fri Jan  9 11:38:39 2015
+TRY#5, TEST#4.3a TestWSRfrms, CROCE:1:CHE:3: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#7, TEST#4.3a TestWSRfrms, CROCE:1:CHE:3: Error FrameNumber=15, StatusFrame=0x1012, should be 0x1010
+TRY#25, TEST#4.3a TestWSRfrms, CROCE:1:CHE:3: Error FrameNumber=18, StatusFrame=0x1012, should be 0x1010

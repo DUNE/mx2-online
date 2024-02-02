@@ -1,0 +1,244 @@
+
+********************************
+* CROCE BOARD TEST RUN RESULTS *
+********************************
+Start: Fri Jul 25 15:11:41 2014
+CROCE:1: TEST#1 PASS 5000 times in 5000 runs
+CROCE:1: TEST#2 PASS 5000 times in 5000 runs
+CROCE:1: TEST#4 PASS 5000 times in 5000 runs
+CROCE:1: TEST#5 PASS 5000 times in 5000 runs
+CROCE:1: TEST#7 PASS 5000 times in 5000 runs
+CROCE:1: TEST#8 PASS 5000 times in 5000 runs
+CROCE:1: TEST#9 PASS 5000 times in 5000 runs
+	CROCE:1: PASS ALL TESTS (5000 runs) ***
+TRY#11, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=115, StatusFrame=0x1012, should be 0x1010
+TRY#13, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=121, StatusFrame=0x1012, should be 0x1010
+TRY#19, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#31, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=27, StatusFrame=0x1012, should be 0x1010
+TRY#53, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=118, StatusFrame=0x1012, should be 0x1010
+TRY#55, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=38, StatusFrame=0x1012, should be 0x1010
+TRY#109, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=6, StatusFrame=0x1012, should be 0x1010
+TRY#127, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=54, StatusFrame=0x1012, should be 0x1010
+TRY#163, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=8, StatusFrame=0x1012, should be 0x1010
+TRY#199, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=77, StatusFrame=0x1012, should be 0x1010
+TRY#203, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=111, StatusFrame=0x1012, should be 0x1010
+TRY#222, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#227, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=103, StatusFrame=0x1012, should be 0x1010
+TRY#265, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#281, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=14, StatusFrame=0x1012, should be 0x1010
+TRY#298, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#311, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=118, StatusFrame=0x1012, should be 0x1010
+TRY#319, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=39, StatusFrame=0x1012, should be 0x1010
+TRY#349, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=34, StatusFrame=0x1012, should be 0x1010
+TRY#364, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#423, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=89, StatusFrame=0x1012, should be 0x1010
+TRY#439, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=63, StatusFrame=0x1012, should be 0x1010
+TRY#515, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=84, StatusFrame=0x1012, should be 0x1010
+TRY#601, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=92, StatusFrame=0x1012, should be 0x1010
+TRY#607, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=36, StatusFrame=0x1012, should be 0x1010
+TRY#665, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#665, TEST#4.3d TestWSRfrms, CROCE:10:CHE:3: Error RcvMemWPointer=130556, should be 130560
+TRY#667, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=23, StatusFrame=0x1012, should be 0x1010
+TRY#712, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#723, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=91, StatusFrame=0x1012, should be 0x1010
+TRY#749, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=111, StatusFrame=0x1012, should be 0x1010
+TRY#767, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#795, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#796, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#797, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=29, StatusFrame=0x1012, should be 0x1010
+TRY#801, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#808, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#813, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=102, StatusFrame=0x1012, should be 0x1010
+TRY#837, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#921, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#931, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=0, StatusFrame=0x1012, should be 0x1010
+TRY#933, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=78, StatusFrame=0x1012, should be 0x1010
+TRY#938, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#947, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=108, StatusFrame=0x1012, should be 0x1010
+TRY#963, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=12, StatusFrame=0x1012, should be 0x1010
+TRY#981, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=121, StatusFrame=0x1012, should be 0x1010
+TRY#989, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=93, StatusFrame=0x1012, should be 0x1010
+TRY#1001, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=75, StatusFrame=0x1012, should be 0x1010
+TRY#1039, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=35, StatusFrame=0x1012, should be 0x1010
+TRY#1048, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1077, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=47, StatusFrame=0x1012, should be 0x1010
+TRY#1120, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1209, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=121, StatusFrame=0x1012, should be 0x1010
+TRY#1263, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=31, StatusFrame=0x1012, should be 0x1010
+TRY#1279, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=23, StatusFrame=0x1012, should be 0x1010
+TRY#1299, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=98, StatusFrame=0x1012, should be 0x1010
+TRY#1315, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=23, StatusFrame=0x1012, should be 0x1010
+TRY#1319, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=37, StatusFrame=0x1012, should be 0x1010
+TRY#1371, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=31, StatusFrame=0x1012, should be 0x1010
+TRY#1417, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1508, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1513, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1517, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=94, StatusFrame=0x1012, should be 0x1010
+TRY#1593, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=74, StatusFrame=0x1012, should be 0x1010
+TRY#1639, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=94, StatusFrame=0x1012, should be 0x1010
+TRY#1817, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1903, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=43, StatusFrame=0x1012, should be 0x1010
+TRY#1952, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1955, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=35, StatusFrame=0x1012, should be 0x1010
+TRY#2021, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=110, StatusFrame=0x1012, should be 0x1010
+TRY#2031, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=119, StatusFrame=0x1012, should be 0x1010
+TRY#2067, TEST#4.3d TestWSRfrms, CROCE:10:CHE:3: Error RcvMemWPointer=130556, should be 130560
+TRY#2083, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=57, StatusFrame=0x1012, should be 0x1010
+TRY#2108, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#2132, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2139, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=89, StatusFrame=0x1012, should be 0x1010
+TRY#2201, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=118, StatusFrame=0x1012, should be 0x1010
+TRY#2243, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=112, StatusFrame=0x1012, should be 0x1010
+TRY#2247, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=23, StatusFrame=0x1012, should be 0x1010
+TRY#2264, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2287, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2375, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=58, StatusFrame=0x1012, should be 0x1010
+TRY#2390, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2412, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2455, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=31, StatusFrame=0x1012, should be 0x1010
+TRY#2509, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=3, StatusFrame=0x1012, should be 0x1010
+TRY#2543, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=116, StatusFrame=0x1012, should be 0x1010
+TRY#2629, TEST#4.3d TestWSRfrms, CROCE:10:CHE:3: Error RcvMemWPointer=130556, should be 130560
+TRY#2823, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=68, StatusFrame=0x1012, should be 0x1010
+TRY#2877, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=122, StatusFrame=0x1012, should be 0x1010
+TRY#2883, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=109, StatusFrame=0x1012, should be 0x1010
+TRY#2927, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=70, StatusFrame=0x1012, should be 0x1010
+TRY#2937, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=22, StatusFrame=0x1012, should be 0x1010
+TRY#3005, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=18, StatusFrame=0x1012, should be 0x1010
+TRY#3033, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=89, StatusFrame=0x1012, should be 0x1010
+TRY#3059, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=33, StatusFrame=0x1012, should be 0x1010
+TRY#3115, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=56, StatusFrame=0x1012, should be 0x1010
+TRY#3133, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=104, StatusFrame=0x1012, should be 0x1010
+TRY#3145, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3181, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=92, StatusFrame=0x1012, should be 0x1010
+TRY#3248, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#3289, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=3, StatusFrame=0x1012, should be 0x1010
+TRY#3337, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=122, StatusFrame=0x1012, should be 0x1010
+TRY#3347, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=96, StatusFrame=0x1012, should be 0x1010
+TRY#3373, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3435, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=64, StatusFrame=0x1012, should be 0x1010
+TRY#3445, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=71, StatusFrame=0x1012, should be 0x1010
+TRY#3449, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=123, StatusFrame=0x1012, should be 0x1010
+TRY#3459, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=77, StatusFrame=0x1012, should be 0x1010
+TRY#3468, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3500, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3503, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=11, StatusFrame=0x1012, should be 0x1010
+TRY#3504, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3510, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3511, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=83, StatusFrame=0x1012, should be 0x1010
+TRY#3523, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=56, StatusFrame=0x1012, should be 0x1010
+TRY#3529, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3529, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=7, StatusFrame=0x1012, should be 0x1010
+TRY#3531, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=64, StatusFrame=0x1012, should be 0x1010
+TRY#3532, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3539, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=90, StatusFrame=0x1012, should be 0x1010
+TRY#3568, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3605, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=15, StatusFrame=0x1012, should be 0x1010
+TRY#3623, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=120, StatusFrame=0x1012, should be 0x1010
+TRY#3649, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3661, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=117, StatusFrame=0x1012, should be 0x1010
+TRY#3687, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=25, StatusFrame=0x1012, should be 0x1010
+TRY#3691, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3691, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=26, StatusFrame=0x1012, should be 0x1010
+TRY#3700, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3711, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=5, StatusFrame=0x1012, should be 0x1010
+TRY#3723, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=22, StatusFrame=0x1012, should be 0x1010
+TRY#3731, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#3733, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=36, StatusFrame=0x1012, should be 0x1010
+TRY#3735, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=29, StatusFrame=0x1012, should be 0x1010
+TRY#3737, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=82, StatusFrame=0x1012, should be 0x1010
+TRY#3740, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3770, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3779, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#3789, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#3797, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=23, StatusFrame=0x1012, should be 0x1010
+TRY#3817, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=117, StatusFrame=0x1012, should be 0x1010
+TRY#3849, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=98, StatusFrame=0x1012, should be 0x1010
+TRY#3872, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#3877, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=92, StatusFrame=0x1012, should be 0x1010
+TRY#3882, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#3933, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=119, StatusFrame=0x1012, should be 0x1010
+TRY#3961, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=121, StatusFrame=0x1012, should be 0x1010
+TRY#3963, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=83, StatusFrame=0x1012, should be 0x1010
+TRY#3987, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=122, StatusFrame=0x1012, should be 0x1010
+TRY#4021, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=104, StatusFrame=0x1012, should be 0x1010
+TRY#4069, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=21, StatusFrame=0x1012, should be 0x1010
+TRY#4078, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4079, TEST#4.3d TestWSRfrms, CROCE:10:CHE:3: Error RcvMemWPointer=130325, should be 130560
+TRY#4086, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#4087, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=48, StatusFrame=0x1012, should be 0x1010
+TRY#4095, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=9, StatusFrame=0x1012, should be 0x1010
+TRY#4107, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=49, StatusFrame=0x1012, should be 0x1010
+TRY#4111, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=105, StatusFrame=0x1012, should be 0x1010
+TRY#4126, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4135, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4141, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=34, StatusFrame=0x1012, should be 0x1010
+TRY#4146, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#4157, TEST#4.3d TestWSRfrms, CROCE:10:CHE:3: Error RcvMemWPointer=130556, should be 130560
+TRY#4167, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=60, StatusFrame=0x1012, should be 0x1010
+TRY#4169, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=76, StatusFrame=0x1012, should be 0x1010
+TRY#4174, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4185, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=12, StatusFrame=0x1012, should be 0x1010
+TRY#4249, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=123, StatusFrame=0x1012, should be 0x1010
+TRY#4283, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=89, StatusFrame=0x1012, should be 0x1010
+TRY#4291, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4307, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=1, StatusFrame=0x1012, should be 0x1010
+TRY#4313, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=41, StatusFrame=0x1012, should be 0x1010
+TRY#4315, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=70, StatusFrame=0x1012, should be 0x1010
+TRY#4321, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4344, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4359, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=109, StatusFrame=0x1012, should be 0x1010
+TRY#4365, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=14, StatusFrame=0x1012, should be 0x1010
+TRY#4375, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=84, StatusFrame=0x1012, should be 0x1010
+TRY#4379, TEST#4.3d TestWSRfrms, CROCE:10:CHE:3: Error RcvMemWPointer=129793, should be 130560
+TRY#4407, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+TRY#4411, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4425, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=107, StatusFrame=0x1012, should be 0x1010
+TRY#4463, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=51, StatusFrame=0x1012, should be 0x1010
+TRY#4477, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=77, StatusFrame=0x1012, should be 0x1010
+TRY#4511, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=65, StatusFrame=0x1012, should be 0x1010
+TRY#4514, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4536, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4578, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4579, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=27, StatusFrame=0x1012, should be 0x1010
+TRY#4581, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=104, StatusFrame=0x1012, should be 0x1010
+TRY#4582, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4583, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=40, StatusFrame=0x1012, should be 0x1010
+TRY#4597, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=69, StatusFrame=0x1012, should be 0x1010
+TRY#4607, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=34, StatusFrame=0x1012, should be 0x1010
+TRY#4621, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=27, StatusFrame=0x1012, should be 0x1010
+TRY#4635, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=0, StatusFrame=0x1012, should be 0x1010
+TRY#4636, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#4639, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=21, StatusFrame=0x1012, should be 0x1010
+TRY#4642, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#4645, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=31, StatusFrame=0x1012, should be 0x1010
+TRY#4649, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=101, StatusFrame=0x1012, should be 0x1010
+TRY#4653, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=34, StatusFrame=0x1012, should be 0x1010
+TRY#4661, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=5, StatusFrame=0x1012, should be 0x1010
+TRY#4663, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=30, StatusFrame=0x1012, should be 0x1010
+TRY#4667, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=48, StatusFrame=0x1012, should be 0x1010
+TRY#4671, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=16, StatusFrame=0x1012, should be 0x1010
+TRY#4677, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=59, StatusFrame=0x1012, should be 0x1010
+TRY#4683, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4683, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=10, StatusFrame=0x1012, should be 0x1010
+TRY#4693, TEST#4.3d TestWSRfrms, CROCE:10:CHE:3: Error RcvMemWPointer=130556, should be 130560
+TRY#4717, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=108, StatusFrame=0x1012, should be 0x1010
+TRY#4723, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4771, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=16, StatusFrame=0x1012, should be 0x1010
+TRY#4777, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=96, StatusFrame=0x1012, should be 0x1010
+TRY#4781, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=66, StatusFrame=0x1012, should be 0x1010
+TRY#4834, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4834, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4917, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=79, StatusFrame=0x1012, should be 0x1010
+TRY#4925, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=10, StatusFrame=0x1012, should be 0x1010
+TRY#4935, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=125, StatusFrame=0x1012, should be 0x1010
+CROCE:10: TEST#1 FAIL 54 times in 5000 runs
+CROCE:10: TEST#2 PASS 5000 times in 5000 runs
+CROCE:10: TEST#4 FAIL 154 times in 5000 runs
+CROCE:10: TEST#5 PASS 5000 times in 5000 runs
+CROCE:10: TEST#7 PASS 5000 times in 5000 runs
+CROCE:10: TEST#8 PASS 5000 times in 5000 runs
+CROCE:10: TEST#9 FAIL 13 times in 5000 runs
+	CROCE:10: TOTAL FAILS 221 times in 5000 runs
+End  : Sat Jul 26 16:37:22 2014
+******************************

@@ -1,0 +1,83 @@
+
+********************************
+* CROCE BOARD TEST RUN RESULTS *
+********************************
+Start: Tue Oct 14 14:42:06 2014
+CROCE:8: TEST#1 PASS 1000 times in 1000 runs
+CROCE:8: TEST#2 PASS 1000 times in 1000 runs
+CROCE:8: TEST#4 PASS 1000 times in 1000 runs
+CROCE:8: TEST#5 PASS 1000 times in 1000 runs
+CROCE:8: TEST#7 PASS 1000 times in 1000 runs
+CROCE:8: TEST#8 PASS 1000 times in 1000 runs
+CROCE:8: TEST#9 PASS 1000 times in 1000 runs
+	CROCE:8: PASS ALL TESTS (1000 runs) ***
+CROCE:9: TEST#1 PASS 1000 times in 1000 runs
+CROCE:9: TEST#2 PASS 1000 times in 1000 runs
+CROCE:9: TEST#4 PASS 1000 times in 1000 runs
+CROCE:9: TEST#5 PASS 1000 times in 1000 runs
+CROCE:9: TEST#7 PASS 1000 times in 1000 runs
+CROCE:9: TEST#8 PASS 1000 times in 1000 runs
+CROCE:9: TEST#9 PASS 1000 times in 1000 runs
+	CROCE:9: PASS ALL TESTS (1000 runs) ***
+TRY#3, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=35, StatusFrame=0x1012, should be 0x1010
+TRY#29, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=98, StatusFrame=0x1012, should be 0x1010
+TRY#261, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=26, StatusFrame=0x1012, should be 0x1010
+TRY#381, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=36, StatusFrame=0x1012, should be 0x1010
+TRY#407, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=76, StatusFrame=0x1012, should be 0x1010
+TRY#443, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=67, StatusFrame=0x1012, should be 0x1010
+TRY#541, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=17, StatusFrame=0x1012, should be 0x1010
+TRY#635, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=121, StatusFrame=0x1012, should be 0x1010
+TRY#637, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=3, StatusFrame=0x1012, should be 0x1010
+TRY#699, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=70, StatusFrame=0x1012, should be 0x1010
+TRY#855, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=101, StatusFrame=0x1012, should be 0x1010
+TRY#981, TEST#4.3a TestWSRfrms, CROCE:15:CHE:1: Error FrameNumber=7, StatusFrame=0x1012, should be 0x1010
+CROCE:15: TEST#1 PASS 1000 times in 1000 runs
+CROCE:15: TEST#2 PASS 1000 times in 1000 runs
+CROCE:15: TEST#4 FAIL 12 times in 1000 runs
+CROCE:15: TEST#5 PASS 1000 times in 1000 runs
+CROCE:15: TEST#7 PASS 1000 times in 1000 runs
+CROCE:15: TEST#8 PASS 1000 times in 1000 runs
+CROCE:15: TEST#9 PASS 1000 times in 1000 runs
+	CROCE:15: TOTAL FAILS 12 times in 1000 runs
+CROCE:19: TEST#1 PASS 1000 times in 1000 runs
+CROCE:19: TEST#2 PASS 1000 times in 1000 runs
+CROCE:19: TEST#4 PASS 1000 times in 1000 runs
+CROCE:19: TEST#5 PASS 1000 times in 1000 runs
+CROCE:19: TEST#7 PASS 1000 times in 1000 runs
+CROCE:19: TEST#8 PASS 1000 times in 1000 runs
+CROCE:19: TEST#9 PASS 1000 times in 1000 runs
+	CROCE:19: PASS ALL TESTS (1000 runs) ***
+CROCE:20: TEST#1 PASS 1000 times in 1000 runs
+CROCE:20: TEST#2 PASS 1000 times in 1000 runs
+CROCE:20: TEST#4 PASS 1000 times in 1000 runs
+CROCE:20: TEST#5 PASS 1000 times in 1000 runs
+CROCE:20: TEST#7 PASS 1000 times in 1000 runs
+CROCE:20: TEST#8 PASS 1000 times in 1000 runs
+CROCE:20: TEST#9 PASS 1000 times in 1000 runs
+	CROCE:20: PASS ALL TESTS (1000 runs) ***
+CROCE:21: TEST#1 PASS 1000 times in 1000 runs
+CROCE:21: TEST#2 PASS 1000 times in 1000 runs
+CROCE:21: TEST#4 PASS 1000 times in 1000 runs
+CROCE:21: TEST#5 PASS 1000 times in 1000 runs
+CROCE:21: TEST#7 PASS 1000 times in 1000 runs
+CROCE:21: TEST#8 PASS 1000 times in 1000 runs
+CROCE:21: TEST#9 PASS 1000 times in 1000 runs
+	CROCE:21: PASS ALL TESTS (1000 runs) ***
+CROCE:22: TEST#1 PASS 1000 times in 1000 runs
+CROCE:22: TEST#2 PASS 1000 times in 1000 runs
+CROCE:22: TEST#4 PASS 1000 times in 1000 runs
+CROCE:22: TEST#5 PASS 1000 times in 1000 runs
+CROCE:22: TEST#7 PASS 1000 times in 1000 runs
+CROCE:22: TEST#8 PASS 1000 times in 1000 runs
+CROCE:22: TEST#9 PASS 1000 times in 1000 runs
+	CROCE:22: PASS ALL TESTS (1000 runs) ***
+CROCE:24: TEST#1 PASS 1000 times in 1000 runs
+CROCE:24: TEST#2 PASS 1000 times in 1000 runs
+CROCE:24: TEST#4 PASS 1000 times in 1000 runs
+CROCE:24: TEST#5 PASS 1000 times in 1000 runs
+CROCE:24: TEST#7 PASS 1000 times in 1000 runs
+CROCE:24: TEST#8 PASS 1000 times in 1000 runs
+CROCE:24: TEST#9 PASS 1000 times in 1000 runs
+	CROCE:24: PASS ALL TESTS (1000 runs) ***
+End  : Wed Oct 15 10:56:37 2014
+******************************

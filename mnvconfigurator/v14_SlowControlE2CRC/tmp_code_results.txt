@@ -1,0 +1,318 @@
+GetRcvMessageHeaderAndDataCROCE:CHE:0 RcvMemWPointerRegister=76
+GetRcvMessageHeaderAndDataCROCE:CHE:0 StatusFrameRegister   =0x1010
+GetRcvMessageHeaderAndDataCROCE:CHE:0 dw=D16, includeCRC=True, NumberOfReadBytes=76
+GetRcvMessageHeaderAndDataCROCE:CHE:0 rcvMessage      =004c101000220008004c8123030000d1cdf6060c000000c6f9e903007101c92ed1085d0000000000000098b7096200000010015b80bbffff1ec00fff3ffffffffffffffffff6da000000a828, 76
+GetRcvMessageHeaderAndDataCROCE:CHE:0 rcvMessageMFH   =004c101000220008004c, 10
+GetRcvMessageHeaderAndDataCROCE:CHE:0 rcvMessageHeader=8123030000d1cdf606, 9
+GetRcvMessageHeaderAndDataCROCE:CHE:0 rcvMessageData  =0c000000c6f9e903007101c92ed1085d0000000000000098b7096200000010015b80bbffff1ec00fff3ffffffffffffffffff6da000000, 55
+GetRcvMessageHeaderAndDataCROCE:CHE:0 rcvMessageCRCs  =a828, 2
+GetRcvMessageHeaderAndDataCROCE:CHE:1 RcvMemWPointerRegister=74
+GetRcvMessageHeaderAndDataCROCE:CHE:1 StatusFrameRegister   =0x1010
+GetRcvMessageHeaderAndDataCROCE:CHE:1 dw=D16, includeCRC=False, NumberOfReadBytes=74
+GetRcvMessageHeaderAndDataCROCE:CHE:1 rcvMessage      =004a101000220088004a8123030000f9c3fb0d0c000000c6f9eb0300f101c9c23fb7690000000000000098b7466200000010015b80bbffff1e800fff3fffffffffffffffff4e70010000, 74
+GetRcvMessageHeaderAndDataCROCE:CHE:1 rcvMessageMFH   =004a101000220088004a, 10
+GetRcvMessageHeaderAndDataCROCE:CHE:1 rcvMessageHeader=8123030000f9c3fb0d, 9
+GetRcvMessageHeaderAndDataCROCE:CHE:1 rcvMessageData  =0c000000c6f9eb0300f101c9c23fb7690000000000000098b7466200000010015b80bbffff1e800fff3fffffffffffffffff4e70010000, 55
+GetRcvMessageHeaderAndDataCROCE:CHE:1 rcvMessageCRCs  =, 0
+
+GetRcvMessageHeaderAndDataCROCE:CHE:0 RcvMemWPointerRegister=76
+GetRcvMessageHeaderAndDataCROCE:CHE:0 StatusFrameRegister   =0x1010
+GetRcvMessageHeaderAndDataCROCE:CHE:0 dw=D32, includeCRC=True, NumberOfReadBytes=76
+GetRcvMessageHeaderAndDataCROCE:CHE:0 rcvMessage      =004c101000220008004c8123030000e3511e1d0c000000c6f9e903007101c92ed1085d0000000000000098b7076200000010015b80bbffff1eb80fff3fffffffffffffffff62e2000000c4a3, 76
+GetRcvMessageHeaderAndDataCROCE:CHE:0 rcvMessageMFH   =004c101000220008004c, 10
+GetRcvMessageHeaderAndDataCROCE:CHE:0 rcvMessageHeader=8123030000e3511e1d, 9
+GetRcvMessageHeaderAndDataCROCE:CHE:0 rcvMessageData  =0c000000c6f9e903007101c92ed1085d0000000000000098b7076200000010015b80bbffff1eb80fff3fffffffffffffffff62e2000000, 55
+GetRcvMessageHeaderAndDataCROCE:CHE:0 rcvMessageCRCs  =c4a3, 2
+GetRcvMessageHeaderAndDataCROCE:CHE:1 RcvMemWPointerRegister=74
+GetRcvMessageHeaderAndDataCROCE:CHE:1 StatusFrameRegister   =0x1010
+GetRcvMessageHeaderAndDataCROCE:CHE:1 dw=D32, includeCRC=False, NumberOfReadBytes=76
+GetRcvMessageHeaderAndDataCROCE:CHE:1 rcvMessage      =004a101000220088004a81230300007fd230290c000000c6f9eb0300f101c9c23fb7690000000000000098b7466200000010015b80bbffff1e880fff3fffffffffffffffffe2e40000000103, 76
+GetRcvMessageHeaderAndDataCROCE:CHE:1 rcvMessageMFH   =004a101000220088004a, 10
+GetRcvMessageHeaderAndDataCROCE:CHE:1 rcvMessageHeader=81230300007fd23029, 9
+GetRcvMessageHeaderAndDataCROCE:CHE:1 rcvMessageData  =0c000000c6f9eb0300f101c9c23fb7690000000000000098b7466200000010015b80bbffff1e880fff3fffffffffffffffffe2e4000000, 55
+GetRcvMessageHeaderAndDataCROCE:CHE:1 rcvMessageCRCs  =, 0
+
+
+
+def WriteSendReceive(sentMessage, rcvMessageLength, theFEBAddress, theFEBDevice, theCROCChannel,
+        appendData=0, dw='D16', useBLT32=False, theDescription=''):
+    ClearAndCheckStatusRegister(theCROCChannel, theDescription=theDescription)
+    ResetAndCheckDPMPointer(theCROCChannel, theDescription=theDescription)
+    WriteFIFOAndCheckStatus(sentMessage, theCROCChannel, appendData, theDescription=theDescription) 
+    SendFIFOAndCheckStatus(theCROCChannel)
+    if useBLT32: rcvMessageHeader, rcvMessageData = GetRcvMessageHeaderAndDataBLT(theCROCChannel)
+    else: rcvMessageHeader, rcvMessageData = GetRcvMessageHeaderAndData(theCROCChannel)
+    ###print [hex(x) for x in sentMessage], len(sentMessage)
+    ###print [hex(x) for x in rcvMessageHeader], len(rcvMessageHeader)
+    ###print [hex(x) for x in rcvMessageData], len(rcvMessageData)
+    rcvHeaderErr=Frame().GetReceivedHeaderErrors(rcvMessageHeader,
+        Frame.DirectionS2M, Frame.BroadcastNone, theFEBAddress, theFEBDevice)
+    if len(rcvHeaderErr)!=0: raise Exception(rcvHeaderErr)
+    if rcvMessageLength!=0 and len(rcvMessageData)!=rcvMessageLength: raise Exception(
+        'Error rcvDataLength expected=%s, rcv=%s'%(rcvMessageLength, len(rcvMessageData)))
+    return rcvMessageData,[]
+def WriteSendReceiveCROCE(sentMessage, rcvMessageLength, theFEBAddress, theFEBDevice, theCROCEChannelE,
+        appendData=0, dw='D16', useBLT32=False, includeCRC=False, theDescription=''):
+    ClearAndCheckStatusRegisterCROCE(theCROCEChannelE, theDescription=theDescription)
+    WriteFIFOAndCheckStatusCROCE(sentMessage, theCROCEChannelE, appendData, theDescription=theDescription)
+    SendFIFOAndCheckStatusCROCE(theCROCEChannelE, theDescription=theDescription)
+    if useBLT32:
+        rcvMFH_10bytes,rcvMessageHeader,rcvMessageData,rcvMessageCRCs=\
+            GetRcvMessageHeaderAndDataBLTCROCE(theCROCEChannelE,dw,includeCRC)
+    else:
+        rcvMFH_10bytes,rcvMessageHeader,rcvMessageData,rcvMessageCRCs=\
+            GetRcvMessageHeaderAndDataCROCE(theCROCEChannelE,dw,includeCRC)
+##    print 'WriteSendReceiveCROCE: length=%s, sentMessage     =%s'%\
+##        (str(len(sentMessage)).rjust(3,'0'),''.join([hex(x)[2:].rjust(2,'0') for x in sentMessage]))
+##    print 'WriteSendReceiveCROCE: length=%s, rcvMFH_10bytes  =%s'%\
+##        (str(len(rcvMFH_10bytes)).rjust(3,'0'),''.join([hex(x)[2:].rjust(2,'0') for x in rcvMFH_10bytes]))
+##    print 'WriteSendReceiveCROCE: length=%s, rcvMessageHeader=%s'%\
+##        (str(len(rcvMessageHeader)).rjust(3,'0'),''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageHeader]))
+##    print 'WriteSendReceiveCROCE: length=%s, rcvMessageData  =%s'%\
+##        (str(len(rcvMessageData)).rjust(3,'0'),''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageData]))
+##    print 'WriteSendReceiveCROCE: length=%s, rcvMessageCRCs  =%s'%\
+##        (str(len(rcvMessageCRCs)).rjust(3,'0'),''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageCRCs]))
+    rcvHeaderErr=Frame().GetReceivedHeaderErrors(rcvMessageHeader,
+        Frame.DirectionS2M, Frame.BroadcastNone, theFEBAddress, theFEBDevice)
+    if len(rcvHeaderErr)!=0: raise Exception(rcvHeaderErr)
+    if rcvMessageLength!=0 and len(rcvMessageData)!=rcvMessageLength: raise Exception(
+        'WriteSendReceiveCROCE Error rcvDataLength expected=%s, rcv=%s'%(rcvMessageLength, len(rcvMessageData)))
+    return rcvMessageData,rcvMFH_10bytes
+
+
+
+
+
+
+def ClearAndCheckStatusRegister(theCROCChannel, chk=True, theDescription=''):
+    theCROCChannel.ClearStatus()
+    if chk:
+        status=theCROCChannel.ReadStatus()
+        if (status!=0x3700): raise Exception(
+            "Error after clear STATUS register for channel " + hex(theCROCChannel.chBaseAddr) + theDescription + " status=" + hex(status))
+def ClearAndCheckStatusRegisterCROCE(theCROCEChannelE, chk=True, theDescription=''):
+    config=theCROCEChannelE.ReadConfiguration()
+    if (config&0xF400!=0x0000): theCROCEChannelE.WriteConfiguration(config&0x083F)
+    theCROCEChannelE.WriteCommands(SC_Util.CHECmds['ClearStatus'])
+    if chk:
+        #data=[WRConfig,RRDFECounter,RRcvMemFramesCounter,RStatusFrame,RStatusTXRX,RRcvMemWPointer,WRHeaderData]
+        data=theCROCEChannelE.ReadAllRegisters() # check FramesCounter,StatusFrame,StatusTXRX,RcvMemWPointer
+        if data[2:6]!=[0x0000,0x4040,0x2410,0x0000]: raise Exception(
+            '%s %s ClearAndCheckStatusRegisterCROCE Error ReadAllRegisters=%s, should be [0xXXXX,0xXXXX,0x0000,0x4040,0x2410,0x0000,0xXXXX]'\
+            %(theCROCEChannelE.Description(),theDescription,['0x'+hex(d)[2:].rjust(4,'0') for d in data]))
+def ResetAndCheckDPMPointer(theCROCChannel, chk=True, theDescription=''):
+    theCROCChannel.DPMPointerReset()
+    if chk:
+        dpmPointer=theCROCChannel.DPMPointerRead()
+        if (dpmPointer!=0x02): raise Exception(
+            "Error after DPMPointerReset() for channel " + hex(theCROCChannel.chBaseAddr) + theDescription + " DPMPointer=" + hex(dpmPointer))
+def WriteFIFOAndCheckStatus(theMessage, theCROCChannel, appendData=0, chk=True, theDescription=''):
+    if len(theMessage)%2==1: theMessage.append(appendData)
+    for i in range(0,len(theMessage),2):
+        data = (theMessage[i]<<8) + theMessage[i+1]
+        theCROCChannel.WriteFIFO(data)
+    if chk:
+        status=theCROCChannel.ReadStatus()
+        if (status!=0x3710): raise Exception(
+            "Error after fill FIFO for channel " + hex(theCROCChannel.chBaseAddr) + theDescription + " status=" + hex(status))
+def WriteFIFOAndCheckStatusCROCE(theMessage, theCROCEChannelE, appendData=0, chk=True, theDescription=''):
+    if len(theMessage)%2==1: theMessage.append(appendData)
+    for i in range(0,len(theMessage),2):
+        data = (theMessage[i]<<8) + theMessage[i+1]
+        theCROCEChannelE.WriteSendMemory(data)
+    if chk:
+        #data=[WRConfig,RRDFECounter,RRcvMemFramesCounter,RStatusFrame,RStatusTXRX,RRcvMemWPointer,WRHeaderData]
+        data=theCROCEChannelE.ReadAllRegisters() # check FramesCounter,StatusFrame,StatusTXRX,RcvMemWPointer
+        if data[2:6]!=[0x0000,0x0040,0x2410,0x0000]: raise Exception(
+            '%s %s WriteFIFOAndCheckStatusCROCE Error ReadAllRegisters=%s, should be [0xXXXX,0xXXXX,0x0000,0x0040,0x2410,0x0000,0xXXXX]'\
+            %(theCROCEChannelE.Description(),theDescription,['0x'+hex(d)[2:].rjust(4,'0') for d in data]))
+def SendFIFOAndCheckStatus(theCROCChannel, chk=True, theDescription=''):
+    theCROCChannel.SendMessage()
+    for i in range(100):
+        status=theCROCChannel.ReadStatus()
+        if (status==0x3703): break
+    if (status!=0x3703): raise Exception(
+        "Error after send message for channel " + hex(theCROCChannel.chBaseAddr) + theDescription + " status=" + hex(status))
+def SendFIFOAndCheckStatusCROCE(theCROCEChannelE, chk=True, theDescription=''):
+    theCROCEChannelE.WriteCommands(SC_Util.CHECmds['SendMessage'])
+    for i in range(100):
+        #data=[WRConfig,RRDFECounter,RRcvMemFramesCounter,RStatusFrame,RStatusTXRX,RRcvMemWPointer,WRHeaderData]
+        data=theCROCEChannelE.ReadAllRegisters()
+        if data[2:5]==[0x0001,0x1010,0x2410]: break # check FramesCounter,StatusFrame,StatusTXRX
+    if (data[2:5]!=[0x0001,0x1010,0x2410]): raise Exception(
+        '%s %s SendFIFOAndCheckStatusCROCE Error ReadAllRegisters=%s, should be [0x00XX,0xXXXX,0x0001,0x1010,0x2410,0xXXXX,0xXXXX]'\
+        %(theCROCEChannelE.Description(),theDescription,['0x'+hex(d)[2:].rjust(4,'0') for d in data]))
+def GetRcvMessageHeaderAndData(theCROCChannel):
+    dpmPointer=theCROCChannel.DPMPointerRead()
+    rcvMessage=[]
+    rcvMessageHeader=[]
+    rcvMessageData=[]
+    for i in range(0, dpmPointer, 2):
+        data=theCROCChannel.ReadDPM(i)
+        rcvMessage.append((data&0xFF00)>>8)
+        rcvMessage.append(data&0x00FF)
+    rcvLength=rcvMessage[0]+(rcvMessage[1]<<8)
+    #print 'inside SC_MainObjects: GetRcvMessageHeaderAndData     : dpmPointer=%s, rcvLength=%s'%(dpmPointer,rcvLength)
+    #print 'CROC     : rcvMessage      =%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessage]),len(rcvMessage))
+    if rcvLength!=(dpmPointer-2): raise Exception(
+        'Error for channel ' + hex(theCROCChannel.chBaseAddr) +
+        ' DPMPointer=' + dpmPointer +' <> RcvMessageLength+2=' + rcvLength)
+    if rcvLength<(2+Frame.MessageHeaderLength): raise Exception(
+        'Error for channel ' + hex(theCROCChannel.chBaseAddr) +
+        ' RcvMessageHeaderLength=' + str(rcvLength) +' (too short)')
+    rcvMessageHeader=rcvMessage[2:11]
+    if rcvLength>11: rcvMessageData=rcvMessage[11:rcvLength]
+    #print 'CROC     : rcvMessageHeader=%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageHeader]),len(rcvMessageHeader))
+    #print 'CROC     : rcvMessageData  =%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageData]),len(rcvMessageData))
+    return (rcvMessageHeader, rcvMessageData)
+def GetRcvMessageHeaderAndDataCROCE(theCROCEChannelE,dw='D16',includeCRC=False):
+    rcvMessage=[]
+    rcvMessageMFH=[]
+    rcvMessageHeader=[]
+    rcvMessageData=[]
+    rcvMessageCRCs=[]
+    RcvMemWPointerRegister=theCROCEChannelE.ReadRcvMemWPointer()+((0x8000&theCROCEChannelE.ReadRDFECounter())<<1)
+    StatusFrameRegister=theCROCEChannelE.ReadStatusFrame()
+    readNbytes=0
+    if dw=='D16':
+        #adjust the number of bytes to read
+        if RcvMemWPointerRegister%2==0:
+            readNbytes=RcvMemWPointerRegister
+        else:
+            readNbytes=RcvMemWPointerRegister + 1
+        #read
+        for i in range(0, readNbytes, 2):
+            data=theCROCEChannelE.ReadReceiveMemory(i,dw)
+            rcvMessage.append((data&0xFF00)>>8)
+            rcvMessage.append(data&0x00FF)
+    if dw=='D32':
+        #adjust the number of bytes to read
+        if RcvMemWPointerRegister%4==0:
+            readNbytes=RcvMemWPointerRegister
+        else:
+            readNbytes=RcvMemWPointerRegister + (4-RcvMemWPointerRegister%4)
+        #read
+        for i in range(0, readNbytes, 4):
+            data=theCROCEChannelE.ReadReceiveMemory(i,dw)
+            rcvMessage.append((data&0xFF000000)>>24)
+            rcvMessage.append((data&0x00FF0000)>>16)
+            rcvMessage.append((data&0x0000FF00)>>8)
+            rcvMessage.append((data&0x000000FF))
+    print 'GetRcvMessageHeaderAndDataCROCE:%s RcvMemWPointerRegister=%s'%(theCROCEChannelE.Description(),RcvMemWPointerRegister)
+    print 'GetRcvMessageHeaderAndDataCROCE:%s StatusFrameRegister   =%s'%(theCROCEChannelE.Description(),hex(StatusFrameRegister))
+    print 'GetRcvMessageHeaderAndDataCROCE:%s dw=%s, includeCRC=%s, NumberOfReadBytes=%s'%(theCROCEChannelE.Description(),dw,includeCRC,readNbytes)
+    #get the MinervaFrameHeader (10bytes) and check some of these bytes 
+    rcvMessageMFH=rcvMessage[0:10]
+    rcvMessageMFHLength1=(rcvMessageMFH[0]<<8)+rcvMessageMFH[1]
+    rcvMessageMFHStatus =(rcvMessageMFH[2]<<8)+rcvMessageMFH[3]
+    rcvMessageMFHLength2=(rcvMessageMFH[8]<<8)+rcvMessageMFH[9]
+    if rcvMessageMFHLength1!=rcvMessageMFHLength2: raise Exception(
+        '%s: GetRcvMessageHeaderAndDataCROCE Error rcvMessageMFHLength1=%s <> rcvMessageMFHLength2=%s'\
+        %(theCROCEChannelE.Description(),'0x'+hex(rcvMessageMFHLength1)[2:].rjust(4,'0'),'0x'+hex(rcvMessageMFHLength2)[2:].rjust(4,'0')))
+    if rcvMessageMFHLength1!=RcvMemWPointerRegister: raise Exception(
+        '%s: GetRcvMessageHeaderAndDataCROCE Error RcvMemWPointerRegister=%s <> rcvMessageMFHLength1=%s'\
+        %(theCROCEChannelE.Description(),'0x'+hex(RcvMemWPointerRegister)[2:].rjust(4,'0'),'0x'+hex(rcvMessageMFHLength1)[2:].rjust(4,'0')))
+    if rcvMessageMFHStatus!=StatusFrameRegister: raise Exception(
+        '%s: GetRcvMessageHeaderAndDataCROCE Error StatusFrameRegister=%s <> rcvMessageMFHStatus=%s'\
+        %(theCROCEChannelE.Description(),'0x'+hex(StatusFrameRegister)[2:].rjust(4,'0'),'0x'+hex(rcvMessageMFHStatus)[2:].rjust(4,'0')))
+    #get the frame message header 
+    if RcvMemWPointerRegister<(10+Frame.MessageHeaderLength): raise Exception(
+        '%s: GetRcvMessageHeaderAndDataCROCE Error RcvMemWPointerRegister=%s < 10 + %s (message too short)'\
+        %(theCROCEChannelE.Description(),RcvMemWPointerRegister,Frame.MessageHeaderLength))
+    rcvMessageHeader=rcvMessage[10:10+Frame.MessageHeaderLength]
+    #get the frame message data
+    if includeCRC==False:
+        rcvMessageData=rcvMessage[10+Frame.MessageHeaderLength:RcvMemWPointerRegister]
+        rcvMessageCRCs=[]
+    else:
+        if RcvMemWPointerRegister<(10+Frame.MessageHeaderLength+2): raise Exception(
+            '%s: GetRcvMessageHeaderAndDataCROCE Error RcvMemWPointerRegister=%s < 10 + %s + 2 (message too short)'\
+            %(theCROCEChannelE.Description(),RcvMemWPointerRegister,Frame.MessageHeaderLength))
+        rcvMessageData=rcvMessage[10+Frame.MessageHeaderLength:RcvMemWPointerRegister-2]
+        rcvMessageCRCs=rcvMessage[RcvMemWPointerRegister-2:]
+    print 'GetRcvMessageHeaderAndDataCROCE:%s rcvMessage      =%s, %s'%(theCROCEChannelE.Description(),''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessage]),len(rcvMessage))
+    print 'GetRcvMessageHeaderAndDataCROCE:%s rcvMessageMFH   =%s, %s'%(theCROCEChannelE.Description(),''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageMFH]),len(rcvMessageMFH))
+    print 'GetRcvMessageHeaderAndDataCROCE:%s rcvMessageHeader=%s, %s'%(theCROCEChannelE.Description(),''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageHeader]),len(rcvMessageHeader))
+    print 'GetRcvMessageHeaderAndDataCROCE:%s rcvMessageData  =%s, %s'%(theCROCEChannelE.Description(),''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageData]),len(rcvMessageData))
+    print 'GetRcvMessageHeaderAndDataCROCE:%s rcvMessageCRCs  =%s, %s'%(theCROCEChannelE.Description(),''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageCRCs]),len(rcvMessageCRCs))
+    return (rcvMessageMFH,rcvMessageHeader, rcvMessageData, rcvMessageCRCs)
+def GetRcvMessageHeaderAndDataBLT(theCROCChannel):
+    #print 'inside SC_MainObjects: GetRcvMessageHeaderAndDataBLT'
+    dpmPointer=theCROCChannel.DPMPointerRead()
+    rcvLength=theCROCChannel.ReadDPM(0)
+    rcvLength=((rcvLength&0xFF00)>>8) + ((rcvLength&0x00FF)<<8)
+    #print 'inside SC_MainObjects: GetRcvMessageHeaderAndDataBLT: dpmPointer=%s, rcvLength=%s'%(dpmPointer,rcvLength)
+    if rcvLength!=(dpmPointer-2): raise Exception(
+        'Error for channel ' + hex(theCROCChannel.chBaseAddr) +
+        ' DPMPointer=' + str(dpmPointer) +' <> RcvMessageLength+2=' + str(rcvLength))
+    if rcvLength<(2+Frame.MessageHeaderLength): raise Exception(
+        'Error for channel ' + hex(theCROCChannel.chBaseAddr) +
+        ' RcvMessageLength=' + str(rcvLength) +' (too short)')
+    rcvMessageHeader=[]
+    rcvMessageData=[]
+    addr=theCROCChannel.RegRMemory
+    if rcvLength%4==0: size=rcvLength #make size compatible with D32 BLT reading
+    if rcvLength%4==1: size=rcvLength+3
+    if rcvLength%4==2: size=rcvLength+2
+    if rcvLength%4==3: size=rcvLength+1
+    rcvMessage = theCROCChannel.controller.ReadCycleBLT(addr, size)
+    rcvMessageHeader=rcvMessage[2:11]
+    if rcvLength>11: rcvMessageData=rcvMessage[11:rcvLength]
+    #print 'CROC BLT : rcvMessageHeader=%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageHeader]),len(rcvMessageHeader))
+    #print 'CROC BLT : rcvMessageData  =%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageData]),len(rcvMessageData))
+    return (rcvMessageHeader, rcvMessageData)
+def GetRcvMessageHeaderAndDataBLTCROCE(theCROCEChannelE,dw='D32',includeCRC=False):
+    #print 'inside SC_MainObjects: GetRcvMessageHeaderAndDataBLTCROCE'
+    if dw=='D16':
+        raise Exception('%s: Error BLT D16 mode not supported by CROCE'%theCROCEChannelE.Description())
+    RcvMemWPointerRegister=theCROCEChannelE.ReadRcvMemWPointer()+((0x8000&theCROCEChannelE.ReadRDFECounter())<<1)
+    StatusFrameRegister=theCROCEChannelE.ReadStatusFrame()
+    rcvMessage=[]
+    rcvMessageLength=0
+    rcvMessageStatus=0
+    rcvMessageHeader=[]
+    rcvMessageData=[]
+    rcvMessageCRCs=[]
+    addr=theCROCEChannelE.RRcvMemory
+    if RcvMemWPointerRegister%4==0: size=RcvMemWPointerRegister #make size compatible with D32 BLT reading
+    if RcvMemWPointerRegister%4==1: size=RcvMemWPointerRegister+3
+    if RcvMemWPointerRegister%4==2: size=RcvMemWPointerRegister+2
+    if RcvMemWPointerRegister%4==3: size=RcvMemWPointerRegister+1
+    rcvMessage = theCROCEChannelE.controller.ReadCycleBLT(addr, size, am='A32_U_BLT')
+    rcvMessageLength=(rcvMessage[0]<<8)+rcvMessage[1]
+    rcvMessageStatus=(rcvMessage[2]<<8)+rcvMessage[3]
+    #print 'inside SC_MainObjects: GetRcvMessageHeaderAndDataBLTCROCE: RcvMemWPointerRegister=%s, rcvMessageLength=%s, rcvMessageStatus=%s'% \
+    #    (RcvMemWPointerRegister,rcvMessageLength,hex(rcvMessageStatus))
+    #print 'CROCE BLT: rcvMessage      =%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessage]),len(rcvMessage))
+##    if includeCRC==False:
+##        if rcvMessageLength!=RcvMemWPointerRegister: raise Exception(
+##            '%s: GetRcvMessageHeaderAndDataBLTCROCE Error RcvMemWPointerRegister=%s <> RcvMemMessageLength=%s'\
+##            %(theCROCEChannelE.Description(),'0x'+hex(RcvMemWPointerRegister)[2:].rjust(4,'0'),'0x'+hex(rcvMessageLength)[2:].rjust(4,'0')))
+##    else:
+##        if rcvMessageLength!=RcvMemWPointerRegister-2: raise Exception(
+##            '%s: GetRcvMessageHeaderAndDataBLTCROCE Error RcvMemWPointerRegister-2=%s <> RcvMemMessageLength=%s'\
+##            %(theCROCEChannelE.Description(),'0x'+hex(RcvMemWPointerRegister-2)[2:].rjust(4,'0'),'0x'+hex(rcvMessageLength)[2:].rjust(4,'0')))
+    if rcvMessageLength<(10+Frame.MessageHeaderLength): raise Exception(
+        '%s: GetRcvMessageHeaderAndDataBLTCROCE Error RcvMemMessageLength=%s < 10 + %s (message too short)'\
+        %(theCROCEChannelE.Description(),rcvMessageLength,Frame.MessageHeaderLength))
+    if rcvMessageStatus!=StatusFrameRegister: raise Exception(
+        '%s: GetRcvMessageHeaderAndDataBLTCROCE Error RcvMemFrameStatusRegister=%s <> RcvMemMessageStatus=%s'\
+        %(theCROCEChannelE.Description(),'0x'+hex(StatusFrameRegister)[2:].rjust(4,'0'),'0x'+hex(rcvMessageStatus)[2:].rjust(4,'0')))
+    rcvMFH_10bytes=rcvMessage[0:10]
+    rcvMessageHeader=rcvMessage[10:19]
+    if rcvMessageLength>19:
+        rcvMessageData=rcvMessage[19:rcvMessageLength]
+        #rcvMessageData=rcvMessage[19:RcvMemWPointerRegister-2]
+    #if includeCRC==True and rcvMessageLength>21:
+    #    rcvMessageCRCs=rcvMessage[rcvMessageLength:rcvMessageLength+2]
+    #    rcvMessageCRCs=rcvMessage[-2:]
+    #if rcvMessageLength>21:
+    rcvMessageCRCs=rcvMessage[rcvMessageLength:]
+    print 'CROCE BLT: rcvMessage      =%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessage]),len(rcvMessage))
+    print 'CROCE BLT: rcvMFH_10bytes  =%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMFH_10bytes]),len(rcvMFH_10bytes))
+    print 'CROCE BLT: rcvMessageHeader=%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageHeader]),len(rcvMessageHeader))
+    print 'CROCE BLT: rcvMessageData  =%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageData]),len(rcvMessageData))
+    print 'CROCE BLT: rcvMessageCRCs  =%s, %s'%(''.join([hex(x)[2:].rjust(2,'0') for x in rcvMessageCRCs]),len(rcvMessageCRCs))
+    return (rcvMFH_10bytes,rcvMessageHeader,rcvMessageData,rcvMessageCRCs)
+
+

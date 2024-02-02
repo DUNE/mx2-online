@@ -1,0 +1,143 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE		ispXCF	SYSTEM	"IspXCF.dtd" >
+<ispXCF version="18.1 Linux">
+	<Comment></Comment>
+	<Chain>
+		<Comm>JTAG</Comm>
+		<Device>
+			<Pos>1</Pos>
+			<Vendor>Lattice</Vendor>
+			<Family>LatticeECP2M</Family>
+			<Name>LFE2M20E</Name>
+			<IDCode>0x01279043</IDCode>
+			<Package>All</Package>
+			<PON>LFE2M20E</PON>
+			<Bypass>
+				<InstrLen>8</InstrLen>
+				<InstrVal>11111111</InstrVal>
+				<BScanLen>1</BScanLen>
+				<BScanVal>0</BScanVal>
+			</Bypass>
+			<File>/work/software/mnvconfigurator/SlowControlE/ISPVMfiles/Channel/v1_RFOK_ch1.bit</File>
+			<MaskFile>/work/software/mnvconfigurator/isptools/ispvmsystem/Database/xpga/ecp2/ecp2m-20.msk</MaskFile>
+			<FileTime>11/12/2012 13:56:8</FileTime>
+			<Operation>Fast Program</Operation>
+			<Option>
+				<SVFVendor>JTAG STANDARD</SVFVendor>
+				<IOState>HighZ</IOState>
+				<PreloadLength>680</PreloadLength>
+				<IOVectorData>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</IOVectorData>
+				<OverideUES value="TRUE"/>
+				<TCKFrequency>1.000000 MHz</TCKFrequency>
+				<SVFProcessor>ispVM</SVFProcessor>
+				<Usercode>0x00000000</Usercode>
+				<AccessMode>JTAG</AccessMode>
+			</Option>
+		</Device>
+		<Device>
+			<Pos>2</Pos>
+			<Vendor>Lattice</Vendor>
+			<Family>LatticeECP2M</Family>
+			<Name>LFE2M20E</Name>
+			<IDCode>0x01279043</IDCode>
+			<Package>All</Package>
+			<PON>LFE2M20E</PON>
+			<Bypass>
+				<InstrLen>8</InstrLen>
+				<InstrVal>11111111</InstrVal>
+				<BScanLen>1</BScanLen>
+				<BScanVal>0</BScanVal>
+			</Bypass>
+			<File>/work/software/mnvconfigurator/SlowControlE/ISPVMfiles/Channel/v1_RFOK_ch23.bit</File>
+			<MaskFile>/work/software/mnvconfigurator/isptools/ispvmsystem/Database/xpga/ecp2/ecp2m-20.msk</MaskFile>
+			<FileTime>11/12/2012 13:56:16</FileTime>
+			<Operation>Fast Program</Operation>
+			<Option>
+				<SVFVendor>JTAG STANDARD</SVFVendor>
+				<IOState>HighZ</IOState>
+				<PreloadLength>680</PreloadLength>
+				<IOVectorData>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</IOVectorData>
+				<OverideUES value="TRUE"/>
+				<TCKFrequency>1.000000 MHz</TCKFrequency>
+				<SVFProcessor>ispVM</SVFProcessor>
+				<Usercode>0x00000000</Usercode>
+				<AccessMode>JTAG</AccessMode>
+			</Option>
+		</Device>
+		<Device>
+			<Pos>3</Pos>
+			<Vendor>Lattice</Vendor>
+			<Family>LatticeECP2M</Family>
+			<Name>LFE2M20E</Name>
+			<IDCode>0x01279043</IDCode>
+			<Package>All</Package>
+			<PON>LFE2M20E</PON>
+			<Bypass>
+				<InstrLen>8</InstrLen>
+				<InstrVal>11111111</InstrVal>
+				<BScanLen>1</BScanLen>
+				<BScanVal>0</BScanVal>
+			</Bypass>
+			<File>/work/software/mnvconfigurator/SlowControlE/ISPVMfiles/Channel/v1_RFOK_ch23.bit</File>
+			<MaskFile>/work/software/mnvconfigurator/isptools/ispvmsystem/Database/xpga/ecp2/ecp2m-20.msk</MaskFile>
+			<FileTime>11/12/2012 13:56:16</FileTime>
+			<Operation>Fast Program</Operation>
+			<Option>
+				<SVFVendor>JTAG STANDARD</SVFVendor>
+				<IOState>HighZ</IOState>
+				<PreloadLength>680</PreloadLength>
+				<IOVectorData>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</IOVectorData>
+				<OverideUES value="TRUE"/>
+				<TCKFrequency>1.000000 MHz</TCKFrequency>
+				<SVFProcessor>ispVM</SVFProcessor>
+				<Usercode>0x00000000</Usercode>
+				<AccessMode>JTAG</AccessMode>
+			</Option>
+		</Device>
+		<Device>
+			<Pos>4</Pos>
+			<Vendor>Lattice</Vendor>
+			<Family>LatticeECP2M</Family>
+			<Name>LFE2M20E</Name>
+			<IDCode>0x01279043</IDCode>
+			<Package>All</Package>
+			<PON>LFE2M20E</PON>
+			<Bypass>
+				<InstrLen>8</InstrLen>
+				<InstrVal>11111111</InstrVal>
+				<BScanLen>1</BScanLen>
+				<BScanVal>0</BScanVal>
+			</Bypass>
+			<File>/work/software/mnvconfigurator/SlowControlE/ISPVMfiles/Channel/v1_RFOK_ch4.bit</File>
+			<MaskFile>/work/software/mnvconfigurator/isptools/ispvmsystem/Database/xpga/ecp2/ecp2m-20.msk</MaskFile>
+			<FileTime>11/12/2012 13:56:0</FileTime>
+			<Operation>Fast Program</Operation>
+			<Option>
+				<SVFVendor>JTAG STANDARD</SVFVendor>
+				<IOState>HighZ</IOState>
+				<PreloadLength>680</PreloadLength>
+				<IOVectorData>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</IOVectorData>
+				<OverideUES value="TRUE"/>
+				<TCKFrequency>1.000000 MHz</TCKFrequency>
+				<SVFProcessor>ispVM</SVFProcessor>
+				<Usercode>0x00000000</Usercode>
+				<AccessMode>JTAG</AccessMode>
+			</Option>
+		</Device>
+	</Chain>
+	<ProjectOptions>
+		<Program>SEQUENTIAL</Program>
+		<Process>ENTIRED CHAIN</Process>
+		<OperationOverride>No Override</OperationOverride>
+		<StartTAP>TLR</StartTAP>
+		<EndTAP>TLR</EndTAP>
+		<DeGlitch value="TRUE"/>
+		<VerifyUsercode value="TRUE"/>
+		<PinSetting>
+			TMS	LOW;
+			TCK	LOW;
+			TDI	LOW;
+			TDO	LOW;
+		</PinSetting>
+	</ProjectOptions>
+</ispXCF>

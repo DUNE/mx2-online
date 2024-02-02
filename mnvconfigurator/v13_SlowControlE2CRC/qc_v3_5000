@@ -1,0 +1,194 @@
+
+********************************
+* CROCE BOARD TEST RUN RESULTS *
+********************************
+Start: Wed Aug  6 11:00:38 2014
+CROCE:1: TEST#1 PASS 5000 times in 5000 runs
+CROCE:1: TEST#2 PASS 5000 times in 5000 runs
+CROCE:1: TEST#4 PASS 5000 times in 5000 runs
+CROCE:1: TEST#5 PASS 5000 times in 5000 runs
+CROCE:1: TEST#7 PASS 5000 times in 5000 runs
+CROCE:1: TEST#8 PASS 5000 times in 5000 runs
+CROCE:1: TEST#9 PASS 5000 times in 5000 runs
+	CROCE:1: PASS ALL TESTS (5000 runs) ***
+TRY#5, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#13, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#15, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#19, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#20, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#53, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#67, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#71, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#126, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#145, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#178, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#262, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#291, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#298, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#313, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#330, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#332, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#335, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#347, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#364, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#365, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#384, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#408, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#414, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#435, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#440, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#453, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#459, TEST#4.3a TestWSRfrms, CROCE:10:CHE:3: Error FrameNumber=67, StatusFrame=0x1012, should be 0x1010
+TRY#470, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#487, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#523, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#527, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#533, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#548, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#552, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#566, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#568, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#578, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#585, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#590, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#625, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#653, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#672, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#705, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#709, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#762, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#802, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#804, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#841, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#843, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#858, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#891, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#901, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#908, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#927, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#936, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#946, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#958, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#972, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#979, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#984, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#986, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1037, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1068, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1073, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1101, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1115, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1120, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1127, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1127, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1129, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1129, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1177, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1179, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1195, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1201, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1209, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1231, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1247, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1290, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1310, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1343, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1348, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1352, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1363, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1367, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1394, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1398, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1400, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1418, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1430, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1434, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1455, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1460, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1488, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1500, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1518, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1540, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1544, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1563, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1572, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1581, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1597, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1604, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1625, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1630, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1634, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1638, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1677, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1688, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1689, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1690, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1700, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1717, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1729, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1736, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1738, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1751, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1758, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#1788, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1820, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1837, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1842, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1844, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1861, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1869, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1869, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1887, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1888, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1890, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1920, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1974, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1994, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#1996, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2005, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2016, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2033, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2072, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#2077, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2080, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2100, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2102, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2113, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2117, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2137, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2155, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2156, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#2162, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2188, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2194, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2197, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2200, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2211, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2232, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2262, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2268, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2284, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2320, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2336, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2342, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2427, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2498, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2543, TEST#1.2 Fast Commands=ResetFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2547, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+TRY#2639, TEST#1.2 Fast Commands=TriggerFound, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2746, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2802, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2824, TEST#1.2 Fast Commands=OpenGate    , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2837, TEST#1.2 Fast Commands=TriggerRearm, CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#2909, TEST#1.2 Fast Commands=QueryFPGA   , CROCE:10:CHE:3: Error TXRSStatus=['0x00c0', '0x0000', '0x0000', '0x4040', '0x2410', '0x0000', '0x0000'], should be 0x2570
+TRY#4289, TEST#9.5: Sequencer, CROCE:10:CHE:3: ERROR StatusTXRX=0x2550, should be 0x2570
+CROCE:10: TEST#1 FAIL 144 times in 5000 runs
+CROCE:10: TEST#2 PASS 5000 times in 5000 runs
+CROCE:10: TEST#4 FAIL 1 times in 5000 runs
+CROCE:10: TEST#5 PASS 5000 times in 5000 runs
+CROCE:10: TEST#7 PASS 5000 times in 5000 runs
+CROCE:10: TEST#8 PASS 5000 times in 5000 runs
+CROCE:10: TEST#9 FAIL 26 times in 5000 runs
+	CROCE:10: TOTAL FAILS 171 times in 5000 runs
+End  : Thu Aug  7 12:01:52 2014
+******************************

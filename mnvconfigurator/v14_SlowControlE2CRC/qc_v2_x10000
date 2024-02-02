@@ -1,0 +1,23 @@
+
+********************************
+* CROCE BOARD TEST RUN RESULTS *
+********************************
+Start: Fri Jun 27 14:04:50 2014
+CROCE:1: TEST#1 PASS 10000 times in 10000 runs
+CROCE:1: TEST#2 PASS 10000 times in 10000 runs
+CROCE:1: TEST#4 PASS 10000 times in 10000 runs
+CROCE:1: TEST#5 PASS 10000 times in 10000 runs
+CROCE:1: TEST#7 PASS 10000 times in 10000 runs
+CROCE:1: TEST#8 PASS 10000 times in 10000 runs
+CROCE:1: TEST#9 PASS 10000 times in 10000 runs
+	CROCE:1: PASS ALL TESTS (10000 runs) ***
+CROCE:10: TEST#1 PASS 10000 times in 10000 runs
+CROCE:10: TEST#2 PASS 10000 times in 10000 runs
+CROCE:10: TEST#4 PASS 10000 times in 10000 runs
+CROCE:10: TEST#5 PASS 10000 times in 10000 runs
+CROCE:10: TEST#7 PASS 10000 times in 10000 runs
+CROCE:10: TEST#8 PASS 10000 times in 10000 runs
+CROCE:10: TEST#9 PASS 10000 times in 10000 runs
+	CROCE:10: PASS ALL TESTS (10000 runs) ***
+End  : Sun Jun 29 17:18:13 2014
+******************************

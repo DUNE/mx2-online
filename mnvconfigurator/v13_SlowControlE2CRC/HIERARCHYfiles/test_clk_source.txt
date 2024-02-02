@@ -1,0 +1,443 @@
+***************************************************************************************************
+CROCE TIMING_SETUP=INTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after FastCommand found 472 errors (1.573 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 1] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x08c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 3172 errors (10.573 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '017.00000', '010.00000', '010.50940']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.92200']
+
+***************************************************************************************************
+CROCE TIMING_SETUP=EXTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after FastCommand found 500 errors (1.667 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 1] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x08c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 450 errors (1.500 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '017.00000', '010.00000', '010.50480']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.91420']
+
+
+***************************************************************************************************
+***************************************************************************************************
+POWER OFF / ON BOTH CRATES
+***************************************************************************************************
+***************************************************************************************************
+
+
+***************************************************************************************************
+CROCE TIMING_SETUP=INTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after FastCommand found 418 errors (1.393 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 1] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x08c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 555 errors (1.850 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '017.00000', '010.00000', '010.48900']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.91360']
+
+***************************************************************************************************
+CROCE TIMING_SETUP=EXTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after FastCommand found 483 errors (1.610 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 1] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x08c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 8 errors (0.027 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+
+***************************************************************************************************
+CROCE TIMING_SETUP=INTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after FastCommand found 499 errors (1.663 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 1] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x08c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 790 errors (2.633 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '017.00000', '010.00000', '010.50020']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.92100']
+
+***************************************************************************************************
+CROCE TIMING_SETUP=EXTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after FastCommand found 556 errors (1.853 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 1] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x08c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 7 errors (0.023 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '017.00000', '010.00000', '010.50660']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.91960']
+
+
+***************************************************************************************************
+***************************************************************************************************
+POWER OFF / ON BOTH CRATES
+***************************************************************************************************
+***************************************************************************************************
+
+***************************************************************************************************
+CROCE TIMING_SETUP=INTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after FastCommand found 300 errors (1.000 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 1] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x08c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 2063 errors (6.877 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '017.00000', '010.00000', '010.49980']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.91040']
+
+***************************************************************************************************
+CROCE TIMING_SETUP=EXTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after FastCommand found 478 errors (1.593 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 1] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x08c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 140 errors (0.467 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '017.00000', '010.00000', '010.50320']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.91600']
+
+***************************************************************************************************
+CROCE TIMING_SETUP=INTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after FastCommand found 374 errors (1.247 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 1] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x08c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 2432 errors (8.107 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '017.00000', '010.00000', '010.49500']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.90020']
+
+***************************************************************************************************
+CROCE TIMING_SETUP=EXTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:3: after FastCommand found 513 errors (1.710 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 1] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x08c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 185 errors (0.617 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '017.00000', '010.00000', '010.48860']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.90260']
+
+
+
+december 17th 2014
+
+1.power up -> correct encclk phase on scope
+
+***************************************************************************************************
+CROCE TIMING_SETUP=INTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:0: after FastCommand found 49 errors (0.163 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after FastCommand found 9 errors (0.030 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 18609 errors (62.030 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 1] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0900 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:0:CROCE:3 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '015.27580', '010.00000', '010.60960']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.98880']
+
+***************************************************************************************************
+CROCE TIMING_SETUP=EXTERNAL_CLK
+
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after FastCommand found 2 errors (0.007 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 16968 errors (56.560 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 1] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0900 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00040', '010.00000', '010.00000', '010.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '015.26060', '010.00000', '010.57980']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.98620']
+
+
+2.power up -> correct encclk phase (on scope) for crate 0 croce 1 chain 3
+
+***************************************************************************************************
+CROCE TIMING_SETUP=INTERNAL_CLK
+
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after FastCommand found 2 errors (0.007 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 4205 errors (14.017 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 1] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0900 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '015.13080', '010.00000', '010.50200']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.99480']
+
+***************************************************************************************************
+CROCE TIMING_SETUP=EXTERNAL_CLK
+
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after FastCommand found 2 errors (0.007 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 3410 errors (11.367 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 1] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0900 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00040', '010.00000', '010.00000', '010.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '015.21140', '010.00000', '010.50640']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.99400']
+
+
+3.power up -> correct encclk phase (on scope) for crate 0 croce 1 chain 3
+
+***************************************************************************************************
+CROCE TIMING_SETUP=INTERNAL_CLK
+
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:0:CROCE:3:CHE:0: after FastCommand found 1 errors (0.003 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after FastCommand found 10 errors (0.033 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 4935 errors (16.450 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 1] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0900 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:0:CROCE:3 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00020', '010.00000', '010.00000', '010.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '015.12760', '010.00000', '010.51160']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.99500']
+
+***************************************************************************************************
+CROCE TIMING_SETUP=EXTERNAL_CLK
+
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after FastCommand found 7 errors (0.023 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 3384 errors (11.280 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 1] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0900 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '015.21500', '010.00000', '010.51340']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.99200']
+
+
+4.power up -> correct encclk phase (on scope) for crate 0 croce 1 chain 3
+
+***************************************************************************************************
+CROCE TIMING_SETUP=INTERNAL_CLK
+
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '015.21500', '010.00000', '010.51340']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.99200']
+
+
+4.power up -> correct encclk phase (on scope) for crate 0 croce 1 chain 3
+
+***************************************************************************************************
+CROCE TIMING_SETUP=INTERNAL_CLK
+
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after FastCommand found 16 errors (0.053 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 6387 errors (21.290 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 1] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0900 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '010.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '015.18920', '010.00000', '010.49360']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.98480']
+
+***************************************************************************************************
+CROCE TIMING_SETUP=EXTERNAL_CLK
+
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:0:CROCE:1: DONE: [0, 0, 0, 0] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0100 *********
+********* ConfigCROCEsREFE V2718:0:CROCE:3: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:2:CHE:3: after FastCommand found 27 errors (0.090 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after ClearStatus found 0 errors (0.000 percent)
+ConfigCROCEsREFE=0x0000 V2718:1:CROCE:11:CHE:0: after FastCommand found 3759 errors (12.530 percent)
+----------------------------------------------------------------------------------------------------
+********* ConfigCROCEsREFE V2718:1:CROCE:2: DONE: [0, 0, 0, 1] CH0=0x0100, CH1=0x0100, CH2=0x0100, CH3=0x0900 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:11: DONE: [1, 0, 0, 0] CH0=0x08c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+********* ConfigCROCEsREFE V2718:1:CROCE:15: DONE: [0, 0, 0, 0] CH0=0x00c0, CH1=0x00c0, CH2=0x00c0, CH3=0x00c0 *********
+----------------------------------------------------------------------------------------------------
+V2718:0:CROCE:1 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '010.00000', '010.00000', '031.00000']
+V2718:0:CROCE:3 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00040', '010.00000', '010.00000', '010.00000']
+V2718:1:CROCE:2 ConfigREFE=[0, 0, 0, 1]  Loop Delays=['010.00000', '016.00000', '010.00000', '010.00000']
+V2718:1:CROCE:11 ConfigREFE=[1, 0, 0, 0]  Loop Delays=['010.00000', '015.18920', '010.00000', '010.49440']
+V2718:1:CROCE:15 ConfigREFE=[0, 0, 0, 0]  Loop Delays=['010.00000', '000.00000', '015.00000', '010.98440']
+
+
+
+
+
+
+
