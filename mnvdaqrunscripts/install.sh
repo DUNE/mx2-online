@@ -7,17 +7,6 @@ fi
 
 script_dir="$( cd "$( dirname "$0" )" && pwd )"
 
-if [ $HOSTNAME == "mnvonline03.fnal.gov" -o $HOSTNAME == "mnvonline04.fnal.gov" -o $HOSTNAME == "mnvonline05.fnal.gov" -o $HOSTNAME == "mnvonline06.fnal.gov" ]; then
-	echo "Setting up generic scripts (with hardware) on ${HOSTNAME}..."
-	#ln -sf $script_dir/check_daq_rc.sh $HOME/check_daq_rc.sh
-	ln -sf $script_dir/configure_runcontrol.sh $HOME/configure_runcontrol.sh
-	ln -sf $script_dir/configure_runseries.sh $HOME/configure_runseries.sh
-	ln -sf $script_dir/slowcontrol.sh $HOME/slowcontrol.sh
-	ln -sf $script_dir/run_runcontrol_servers.sh $HOME/run_runcontrol_servers.sh
-	ln -sf $script_dir/setupdaqenv.sh $HOME/setupdaqenv.sh
-	
-fi
-
 # mnvtbonline0 - Single node DAQ with hardware.  MTest DAQ.
 #  (We still need some scripting for the test beam DAQ PC.)
 # mnvtbonline1 - Single node DAQ with hardware.  Lab F PMT X-Talk DAQ; MTest Backup DAQ.
@@ -119,7 +108,7 @@ if [ $HOSTNAME == "mnvonlinemaster.fnal.gov" -o $HOSTNAME == "mnvonlinebck1.fnal
 fi
 
 # mnvonlinelogger  - Near-online (production) head node.  No DAQ hardware attached.
-if [ "$HOSTNAME" == "mnvonlinelogger6.fnal.gov" ]; then
+if [ "$HOSTNAME" == "mnvonlinelogger.fnal.gov" ]; then
 	echo "Setting up nearline scripts on ${HOSTNAME}..."
 	ln -sf $script_dir/check_nearline_procs.sh $HOME/check_nearline_procs.sh
 	ln -sf $script_dir/check_om_log.sh $HOME/check_om_log.sh
@@ -130,7 +119,6 @@ fi
 # minerva-cr-01 - MINERvA Control Room PC 01 in ROC-WEST
 # minerva-cr-02 - MINERvA Control Room PC 02 in ROC-WEST
 # minerva-rc - Main MINERvA Control Room PC in WH12.
-# uroc.fisica.pucp.edu.pe - UROC at Pontificia Peru
 # photon.otterbein.edu - UROC at Otterbein University
 # 23-25-1-49-static.hfc.comcastbusiness.net - UROC at Deborah Harris' Home
 # ksmcf-cart.pas.rochester.edu - UROC at Rochester
@@ -140,7 +128,7 @@ fi
 # uroc.wm.edu - UROC at William & Mary
 # uroc.d.umn.edu - UROC at Minnesota
 
-if [ "$HOSTNAME" == "minerva-cr-01.fnal.gov" -o "$HOSTNAME" == "minerva-cr-02.fnal.gov" -o "$HOSTNAME" == "minerva-cr-03.fnal.gov" -o "$HOSTNAME" == "minerva-rc.fnal.gov" -o "$HOSTNAME" == "uroc.physics.oregonstate.edu" -o "$HOSTNAME" == "uroc.fisica.pucp.edu.pe" -o "$HOSTNAME" == "photon.otterbein.edu" -o "$HOSTNAME" == "23-25-1-49-static.hfc.comcastbusiness.net" -o "$HOSTNAME" == "ksmcf-cart.pas.rochester.edu" -o "$HOSTNAME" == "uroc.phy.tufts.edu" -o "$HOSTNAME" == "uroc02.phy.tufts.edu" -o "$HOSTNAME" == "uroc.fis.utfsm.cl" -o "$HOSTNAME" == "uroc.wm.edu" -o "$HOSTNAME" == "uroc.d.umn.edu" -o "$HOSTNAME" == "minerva-cart.phyast.pitt.edu" ]; then
+if [ "$HOSTNAME" == "minerva-cr-01.fnal.gov" -o "$HOSTNAME" == "minerva-cr-02.fnal.gov" -o "$HOSTNAME" == "minerva-rc.fnal.gov" -o "$HOSTNAME" == "photon.otterbein.edu" -o "$HOSTNAME" == "23-25-1-49-static.hfc.comcastbusiness.net" -o "$HOSTNAME" == "ksmcf-cart.pas.rochester.edu" -o "$HOSTNAME" == "uroc.phy.tufts.edu" -o "$HOSTNAME" == "uroc02.phy.tufts.edu" -o "$HOSTNAME" == "uroc.fis.utfsm.cl" -o "$HOSTNAME" == "uroc.wm.edu" -o "$HOSTNAME" == "uroc.d.umn.edu" -o "$HOSTNAME" == "minerva-cart.phyast.pitt.edu" ]; then
 	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
 	ln -sf $script_dir/check_daq_rc.sh $HOME/check_daq_rc.sh
 	ln -sf $script_dir/whcr_configure_runcontrol.sh $HOME/configure_runcontrol.sh
@@ -151,3 +139,25 @@ if [ "$HOSTNAME" == "minerva-cr-01.fnal.gov" -o "$HOSTNAME" == "minerva-cr-02.fn
 	ln -sf $script_dir/uroc_runcontrol.sh $HOME/runcontrol.sh
 fi
 
+# Test Beam 2014
+# 10/10/2014  Geoff Savage
+# Minerva home area is nfs mounted for control room and daq so only setup from one computer.
+if [ $HOSTNAME == "mnvtb03.fnal.gov" ]; then
+	echo "Setting up single node scripts (with hardware) on ${HOSTNAME}..."
+	ln -sf $script_dir/configure_runcontrol.sh $HOME/configure_runcontrol.sh
+	ln -sf $script_dir/runcontrol_single.sh $HOME/runcontrol.sh
+	ln -sf $script_dir/slowcontrol.sh $HOME/slowcontrol.sh
+	ln -sf $script_dir/singledaqenv.sh $HOME/singledaqenv.sh
+	ln -sf $script_dir/acquisitionmanager_single.sh $HOME/acquisitionmanager.sh
+	ln -sf $script_dir/dispatcher_single.sh $HOME/dispatcher.sh
+	ln -sf $script_dir/check_daq_rc.sh $HOME/check_daq_rc.sh
+	ln -sf $script_dir/proc_kill_ALLDAQRC.sh $HOME/kill_all_daqrc.sh
+	echo "Setting up scripts for primary Run Control on ${HOSTNAME}..."
+	ln -sf $script_dir/check_daq_rc.sh $HOME/check_daq_rc.sh
+	ln -sf $script_dir/whcr_configure_runcontrol.sh $HOME/configure_runcontrol.sh
+	ln -sf $script_dir/uroc_restart_all_mnvonline.sh $HOME/hard_restart_all.sh
+	ln -sf $script_dir/uroc_restart_daq_rc_mnvonline.sh $HOME/hard_restart_daq_rc.sh
+	ln -sf $script_dir/whcr_dispatcher_mnvonline.sh $HOME/hard_restart_dispatchers.sh
+	ln -sf $script_dir/whcr_restart_nearline.sh $HOME/hard_restart_monitoring.sh
+	ln -sf $script_dir/uroc_runcontrol.sh $HOME/runcontrol.sh
+fi

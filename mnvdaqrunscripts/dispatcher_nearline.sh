@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # sets up all the various pieces of software 
-source $HOME/scripts/setup_nearline_software.sh 
+source $HOME/setup_nearline_software.sh 
 
 #  The following lines kill any old dispatchers, 
 #  clear any leftover subprocesses, and start a new dispatcher.
@@ -11,9 +11,11 @@ if [ -e "/tmp/om_dispatcher.pid" ]; then
 	dispatcher_pid=$(cat /tmp/om_dispatcher.pid)
 fi
 
+PYV=/usr/bin/python
+
 # stop the dispatcher if it's still going
-pushd /scratch/nearonline/mirror/mnvruncontrol/backend
-python ./MonitorDispatcher.py stop
+pushd /home/nfs/minerva/mnvruncontrol/backend
+$PYV ./MonitorDispatcher.py stop
 
 # check -- did it REALLY stop?
 # if not, force the issue.
@@ -22,5 +24,5 @@ if `kill -0 $dispatcher_pid`; then
 fi
 
 # now start a fresh dispatcher.
-python ./MonitorDispatcher.py start
+$PYV ./MonitorDispatcher.py start
 popd

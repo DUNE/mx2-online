@@ -10,12 +10,13 @@
 if test -z "$DAQROOT"
 then
 	echo "No DAQROOT defined.  Sourcing the setup script..."
-	source $HOME/mnvdaqrunscripts/setupdaqenv.sh $SINGLEDAQ
+	source $HOME/setupdaqenv.sh
 fi
 
 # Get Python version.
 which python2.6 >& /tmp/pytest.txt
-PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+#PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+PYV=/usr/bin/python
 
 # Check to see if the acquisition manager is running.  If it is, stop/kill it.
 pushd ${RCROOT}/backend >& /dev/null

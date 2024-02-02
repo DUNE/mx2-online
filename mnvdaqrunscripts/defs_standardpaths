@@ -1,3 +1,6 @@
 SINGLEDAQ=/work/software/mnvsingle/mnvdaq
 MULTIDAQ=/work/software/mnvonline/mnvdaq
-RCROOT=/work/software/mnvruncontrol
+#RCROOT=/work/software/mnvruncontrol
+RCROOT=/home/nfs/minerva/mnvruncontrol
+PYTHONPATH=/home/nfs/minerva:/work/software:
+

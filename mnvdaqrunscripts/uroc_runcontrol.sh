@@ -1,5 +1,7 @@
 #!/bin/sh
 
+echo "PYTHONPATH =" $PYTHONPATH
+
 # Use this script to restart the RunControl GUI on a UROC.
 
 . $HOME/mnvdaqrunscripts/defs_crpaths
@@ -12,6 +14,8 @@ $HOME/mnvdaqrunscripts/proc_kill_RunCo.pl
 
 # Now, start the RC
 pushd ${RCROOT}/frontend
+echo "PYTHONPATH =" $PYTHONPATH
+which python
 python RunControl.py &
 popd
 echo "If you get a socket binding error, just close the RC and wait a minute and then try again."

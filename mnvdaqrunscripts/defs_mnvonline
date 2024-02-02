@@ -1,10 +1,9 @@
 # mnvonline cluster defs
-MASTERMACH=mnvonlinemaster.fnal.gov
-SOLDERMACH=mnvonline0.fnal.gov
-WORKERMACH=mnvonline1.fnal.gov
-
-#For mnvonline06 DAQ running
+MASTERMACH=mnvtb04.fnal.gov
+SOLDERMACH=mnvtb03.fnal.gov
+WORKERMACH=mnvtb04.fnal.gov
 REMDAQACCT=minerva
-SCRIPTSDIR=/home/minerva/mnvdaqrunscripts
-HOMEDIR=/home/minerva/
-MNVDAQ=mnvonline06.fnal.gov
+SCRIPTSDIR=/home/nfs/minerva/mnvdaqrunscripts
+HOMEDIR=/home/nfs/minerva
+#MNVDAQ=mnvonline1.fnal.gov
+MNVDAQ=mnvtb04.fnal.gov

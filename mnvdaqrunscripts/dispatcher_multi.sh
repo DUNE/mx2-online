@@ -6,8 +6,9 @@
 
 . $HOME/mnvdaqrunscripts/defs_standardpaths
 
-which python2.6 >& /tmp/pytest.txt
-PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+#which python2.6 >& /tmp/pytest.txt
+#PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+PYV=/usr/bin/python
 
 # Setup environment for LinDAQ.
 if test -z "$DAQROOT"
@@ -15,6 +16,8 @@ then
         echo "No DAQROOT defined.  Sourcing the setup script..."
         source $HOME/mnvdaqrunscripts/setupdaqenv.sh $MULTIDAQ
 fi
+
+echo "PYTHONPATH="${PYTHONPATH}
 
 # Check to see if the dispatcher is running.  If it is, kill it.
 pushd ${RCROOT}/backend >& /dev/null

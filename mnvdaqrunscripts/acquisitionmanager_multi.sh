@@ -6,8 +6,9 @@
 
 . $HOME/mnvdaqrunscripts/defs_standardpaths
 
-which python2.6 >& /tmp/pytest.txt
-PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+#which python2.6 >& /tmp/pytest.txt
+#PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+PYV=/usr/bin/python
 
 # Setup environment for LinDAQ.
 if test -z "$DAQROOT"
