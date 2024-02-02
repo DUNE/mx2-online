@@ -1,0 +1,586 @@
+? temp.txt
+? backend/MTestBeamDispatcher.py.20150303
+? backend/MTestBeamDispatcher.py_15-1-21
+? backend/ReadoutDispatcher.py.20150306
+? backend/SimpleMTestDispatcherScript.py
+? backend/kill_camac.sh
+? backend/kill_mwpc.sh
+? configuration/run_control_config.db
+? frontend/RunControl.py.20141020
+Index: backend/DataAcquisitionManager.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/backend/DataAcquisitionManager.py,v
+retrieving revision 1.131
+diff -r1.131 DataAcquisitionManager.py
+76c76,99
+< ##########################################################################		
+---
+> ##########################################################################
+> 
+> 	
+> class SpecialThread(Threads.DAQthread):
+> 	def __init__(self, process_info, process_identity, postoffice, env, et_sys_location, etpattern, etport, is_essential_service=False):
+> 		self.et_config = {
+> 			"sys_location": et_sys_location,
+> 			"pattern": etpattern,
+> 			"port": etport
+> 		}
+>                 self.et_config["evbfile"] = "%s/%s_RawData.dat" % ( Configuration.params["mon_rawdataLocation"], self.et_config["pattern"] )
+>                 self.et_config["etfile"] = "%s/%s_RawData" % (self.et_config["sys_location"], self.et_config["pattern"])
+> 		
+> 		Threads.DAQthread.__init__(self, process_info, process_identity, postoffice, env, is_essential_service)
+> 
+> 	def run(self):
+> 		Threads.DAQthread.run(self)
+> 		# This is a kludge. Since we're already running an event builder, we just need to inform the monitoring that the building is done.
+> 		# Then the full DSTs will be made.
+> 		self.postoffice.Publish(Message(subject="om_internal",
+>                         event="eb_finished",
+>                         eb_ok=True,
+>                         et_config=self.et_config
+>                 ))
+110,119c133,150
+< 		self.SubrunStartTasks = [ { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
+< 		                          { "method": self.LIBoxSetup,                "message": "Initializing light injection..." },
+< 		                          { "method": self.ReadoutNodeHWConfig,       "message": "Loading hardware..." },
+< 		                          { "method": self.ReadoutNodeHVCheck,        "message": "Checking hardware..." } ]
+< 		self.DAQStartTasks = [ { "method": self.StartETSys,          "message": "Starting ET system..." },
+< 		                       { "method": self.StartEBSvc,          "message": "Starting event builder..." },
+< 		                       { "method": self.StartOM,             "message": "Starting online monitoring..." },
+< #		                       { "method": self.StartETMon,          "message": "Starting ET monitor..." },
+< 		                       { "method": self.StartRemoteServices, "message": "Starting remote services..."},
+< 		                      ]
+---
+> 		if Configuration.params["hw_disabled"]:
+> 			# if one selects "is hw disabled" in the hardware tab of configure_runcontrol.sh then we don't want to start ET/EB. Just mtest dispatcher
+> 			self.SubrunStartTasks = [ { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" } ]
+> 			self.DAQStartTasks = [ { "method": self.StartOM,             "message": "Starting online monitoring..." },
+> #		                     	   { "method": self.StartETMon,          "message": "Starting ET monitor..." },
+> 				                   { "method": self.StartRemoteServices, "message": "Starting remote services..."},
+> 				                  ]
+> 		else:
+> 			self.SubrunStartTasks = [ { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
+> 				                      { "method": self.LIBoxSetup,                "message": "Initializing light injection..." },
+> 				                      { "method": self.ReadoutNodeHWConfig,       "message": "Loading hardware..." },
+> 				                      { "method": self.ReadoutNodeHVCheck,        "message": "Checking hardware..." } ]
+> 			self.DAQStartTasks = [ { "method": self.StartETSys,          "message": "Starting ET system..." },
+> 				                   { "method": self.StartEBSvc,          "message": "Starting event builder..." },
+> 				                   { "method": self.StartOM,             "message": "Starting online monitoring..." },
+> #		                     	   { "method": self.StartETMon,          "message": "Starting ET monitor..." },
+> 				                   { "method": self.StartRemoteServices, "message": "Starting remote services..."},
+> 				                  ]
+201a233
+> 			#node.name = '127.0.0.1'
+293c325,330
+< 		pass	
+---
+> 		if not hasattr(message, "state"):
+> 			self.logger.info("OM status message from '%s' node is badly formed.  Ignoring.  Message:\n%s", message.sender, message)
+> 			return
+> 		
+> 		if message.state == "mtst_error":
+> 			self.NewAlert(notice="An error was reported on the '%s' monitoring node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.WARNING)
+1091,1092c1128
+< 			
+< 			if node.type == RemoteNode.MTEST and node.completed == False:
+---
+> 			if node.type == RemoteNode.MTEST:
+1099d1134
+< 		
+1105a1141,1144
+> 		except DAQErrors.NodeError as e:
+> 			self.logger.warning("EndSubrun got DAQErrors.NodeError: \n%s" % e)
+> 			self.NewAlert(notice="Couldn't contact all the nodes to stop them.  The next subrun could be problematic...", severity=Alert.ERROR)
+> 		try:
+1108c1147,1148
+< 		except DAQErrors.NodeError:
+---
+> 		except DAQErrors.NodeError as e:
+> 			self.logger.warning("EndSubrun got DAQErrors.NodeError: \n%s" % e)
+1139a1180,1185
+>                         if not hasattr(node, "completed"):
+>                                 self.logger.warning("EndSubrun: skipping the following node because it lacks the completed attribute: \n%s" % node)
+>                                 continue
+>                         if node.type != RemoteNode.READOUT:
+>                                 self.logger.warning("EndSubrun: skipping a node because it's not a readout node")
+>                                 continue
+1147a1194
+>                 self.logger.info("Oh see how far we've come")
+1152c1199
+< 			if node.type in (RemoteNode.READOUT, RemoteNode.MTEST) and not node.completed:
+---
+> 			if node.type in (RemoteNode.READOUT, ) and not node.completed: #removed RemoteNode.MTEST bc it doesn't have completed attribute
+1583c1630,1634
+< 		self.DAQ_threads["event builder"] = Threads.DAQthread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, is_essential_service=True)
+---
+> 		self.DAQ_threads["event builder"] = SpecialThread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, 
+> 			etpattern=self.configuration.et_filename,
+> 			et_sys_location=Configuration.params["mstr_etSystemFileLocation"],
+> 			etport=self.configuration.et_port, is_essential_service=True)
+> 		#self.DAQ_threads["event builder"] = Threads.DAQthread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, is_essential_service=True)
+1585a1637
+> 
+1676a1729,1733
+> 		try: 
+> 			responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=10 )
+> 			pass
+> 		except DAQErrors.NodeError:
+> 			self.NewAlert(notice="The MTest dispatcher is unresponsive. It may not be working", severity=Alert.WARNING)
+1693c1750,1757
+< 
+---
+> 		responses = []
+> 		try: 
+> 			responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_start", mgr_id=self.id, 
+> 				et_filename=self.configuration.et_filename, num_gates=self.configuration.num_gates, run_mode=self.configuration.run_mode.code), 
+> 				node_type=RemoteNode.MTEST, timeout=10 )
+> 			pass
+> 		except DAQErrors.NodeError:
+> 			self.NewAlert(notice="The MTest dispatcher is unresponsive. It may not be working", severity=Alert.WARNING)
+1695c1759
+< 			responses = self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
+---
+> 			responses += self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
+1840a1905
+> 			response.success = True
+Index: backend/LIBox.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/backend/LIBox.py,v
+retrieving revision 1.13
+diff -r1.13 LIBox.py
+17c17,19
+< LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS0"
+---
+> #LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS0"
+> # Geoff Savage 10/23/2014 update for mnvtb04
+> LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS1"   # mnvtb04
+Index: backend/MTestBeamDispatcher.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/backend/MTestBeamDispatcher.py,v
+retrieving revision 1.14
+diff -r1.14 MTestBeamDispatcher.py
+9a10,46
+>    
+>    How to use:
+>    The MTestDispatcher is for all the stuff you want to start that isn't on the main detector.
+>    There are two types of processes to start.
+>    1) A process at the start of a subrun that runs before a subrun starts. Call it type 1
+>    2) A process that runs during a subrun and ends when the subrun ends. Call it type 2
+>    
+>    Type 1 processes can run before or after starting type 2 processes. Put the relevant code in either  
+>    initialize_subrun or initialize_subrun_after_daq_threads to start before or after respectively. 
+>    You can put any python code in there or run a subprocess. The simplest code to run a subprocess is,
+>    	subprocess.call(shlex.split("<INSERT COMMAND HERE; DO NOT SOURCE; ONLY EXECUTE>"))
+>    
+>    Type 2 processes run continuously during a run. Type 2 processes need to be added to the 
+>    MTestBeamDispatcher.daq_threads and MTestBeamDispatcher.daq_starters dictionaries in
+>    the initalize function. As the dictionary key, you need the name of your thread.
+>    The daq_starters needs a function to run that accepts a message. See,
+>    	MTestBeamDispatcher.start_example(self, message)
+>    	
+>    The daq_starter function needs to return a DAQThread object. Use the
+>    MTestBeamDispatcher.startDAQThread(command, thread_name) 
+>    to get a DAQThread and automatically enter info into the log file.
+>    The command is any command you'd like to run.
+>    The thread name is going to be the name of a log file,
+>    	/work/logs/mtestdist_<name>_thread.log
+>    (The MTestDispatcher log file is on mnvtb03,
+>       /work/logs/mtest_dispatcher.log)
+>    The thread's log file will contain all the output of your thread
+>    and works with subprocess.Popen. It's configured to catch all the output,
+>    so if your output ends suddenly then it's because you didn't output past that point.
+>    	
+>    When a subrun finishes, the MTestDispatcher sends a SIGTERM signal to tell
+>    the type 2 process to finish. It should be configured to stop when it gets this signal.
+>    Some processes make child processes and its difficult to get the signal to 
+>    the child. To get around this, we've added a section in the 
+>    DAQThread.terminate_and_join function. Just check that the processname is
+>    the right one, and then run your special code (again: do not source when
+>    using the subprocess function).
+19a57,59
+> import time
+> import select
+> import errno
+26a67,69
+> from mnvruncontrol.backend.PostOffice.Routing import PostOffice, MessageTerminus
+> from mnvruncontrol.backend.PostOffice.Envelope import Subscription, Message
+> 
+40c83,84
+< 		self.pidfilename = Configuration.params["mtest_PIDfileLocation"]
+---
+> 		#self.pidfilename = Configuration.params["mtest_PIDfileLocation"]
+> 		self.pidfilename = Configuration.params["mtst_PIDfile"]
+42c86,93
+< 		self.daq_threads =  { "wire chamber": None, "tof": None}
+---
+> 		self.daq_threads =  { "example" : None,
+> 				      "mwpc" : None, 
+> 				      "camac" : None } 
+> 		#self.daq_threads =  { "example" : None,
+> 		#		      "mwpc" : None} 
+> 		#self.daq_threads =  { "example" : None,
+> 		#		      "camac" : None} 
+> 		#self.daq_threads =  { "example" : None,}
+44c95,103
+< 		                      "tof":          self.start_tof           }
+---
+> 		                      "tof":          self.start_tof,
+> 		                      "example" : self.start_example,
+> 		                      "mwpc" : self.start_mwpc,
+> 				      "camac" : self.start_camac }
+> 		self.logger.info('MTestBeamDispatcher started: mwpc and camac')
+> 
+> 	def BookSubscriptions(self):
+> 		
+> 		# *** self.postoffice is None until after _Start so this needed moving from __init__ ***
+48,49c107,109
+< 		handlers = { PostOffice.Subscription(subject="mgr_status", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.daq_mgr_status_handler,
+< 		             PostOffice.Subscription(subject="mtest_directive", action=PostOffice.Subscription.DELIVER, delivery_address=self) : self.mtest_directive_handler }
+---
+> 		handlers = { Subscription(subject="mgr_status", action=Subscription.DELIVER, delivery_address=self) : self.daq_mgr_status_handler,
+> 		             Subscription(subject="mtest_directive", action=Subscription.DELIVER, delivery_address=self) : self.mtest_directive_handler }
+>                 #             Subscription(subject="lock_request", action=Subscription.DELIVER, delivery_address=self) : self._LockHandler} # TODO delete line
+57a118,135
+>                 #self.logger.info("Testing if _daq_mgr_status_update exists")
+>                 #assert hasattr(self, "_daq_mgr_status_update")
+> 		#self._daq_mgr_status_update(self, message, ["mtest_directive",])		    
+>                 self.logger.info("Testing: starting daq_mgr_status_handler function")
+>                 if not hasattr(self, "DAQMgrStatusUpdate"):
+>                         self.logger.warning("Whoa, I'm missing self.DAQMgrStatusUpdate for some reason")
+>                 else: self.logger.info("I guess I'm not missing it")
+>                 if not ( hasattr(message, "status") and hasattr(message, "mgr_id") ):
+>                         self.logger.warning("I'm missing attributes: \n%s" % message)
+>                 try:
+>                         self.logger.info("Running self.DAQMgrStatusUpdate")
+>                         self.DAQMgrStatusUpdate(message, ["mtest_directive",])
+>                 except Exception as e:
+>                         self.logger.warning("I got the following error: \n%s" % e)
+>                         raise
+>                 self.logger.info("Testing: finished daq_mgr_status_handler function")
+> 
+> 
+59,60d136
+< 		self._daq_mgr_status_update(self, message, ["mtest_directive",])		    
+< 	
+62a139
+>                 self.logger.info("mtest_directive_handler got the following message \n%s" % message)
+73c150
+< 		if not self.client_allowed(message.mgr_id):
+---
+> 		if not self.ClientAllowed(message.mgr_id):
+76,77c153,154
+< 			if message.directive == "start":
+< 				status = om_start(message)
+---
+> 			if message.directive == "start" or message.directive == "beamdaq_start" or message.directive == "daq_start":
+> 				status = self.beamdaq_start(message)
+79,80c156,161
+< 			elif message.directive == "stop":
+< 				status = om_stop()
+---
+> 			elif message.directive == "stop" or message.directive == "beamdaq_stop" or message.directive == "daq_stop" :
+> 				status = self.beamdaq_stop()
+> 				'''if status == False:
+> 					status = True # returns false if it finished
+> 				elif status == True:
+> 					status = False'''
+86a168
+>                 self.logger.info("mtest_directive_handler is sending the following response \n%s" % response)
+96,98c178
+< 		must_haves = [ "branch", "crate", "type", "mem_slot", "wc_rst_gate_slot", \
+< 		               "num_events", "filepattern", "run", "subrun", "runmode", \
+< 		               "tdc_slot", "adc_slot", "tof_rst_gate_slot" ]
+---
+> 		must_haves = ["et_filename", "num_gates", "run_mode"] # any items that must be in the message  
+101a182
+> 				self.logger.info("Missing %s from 'must_haves' so I'm ignoring this message\n%s" % (item, message))
+113,114c194,195
+< 		self.crate_initialize(message)		# first, crate initialization
+< 		self.gate_inhibit(message, True)		# then a gate inhibit (don't let it trigger gates while we're configuring...)
+---
+> 		self.initialize_subrun(message)
+> 		
+128c209
+< 		self.logger.info(" Will release gate inhibit in 3 seconds.")
+---
+> 		'''self.logger.info(" Will release gate inhibit in 3 seconds.")
+130c211,212
+< 		timer.start()
+---
+> 		timer.start()'''
+> 		self.initialize_subrun_after_daq_threads(message)
+132a215,222
+> 		
+> 	def initialize_subrun(self, message):
+> 		self.logger.info("Initializing stuff for the subrun.")
+> 		self.example_start_of_subrun(message)
+> 		
+> 	def initialize_subrun_after_daq_threads(self, message):
+> 		self.logger.info("Initializing stuff for the subrun after starting daq threads.")
+> 		
+136c226
+< 		subprocess.call("%s/camac/example/cz %s %s %s" % (Configuration.params["mtest_installLocation"], message.branch, message.crate, message.type), shell=True)
+---
+> 		#subprocess.call("%s/camac/example/cz %s %s %s" % (Configuration.params["mtst_installLocation"], message.branch, message.crate, message.type), shell=True)
+141c231
+< 		subprocess.call("%s/misc/gateinhibit/gate_inhibit %s %s %s %s %d" % (Configuration.params["mtest_installLocation"], message.branch, message.crate, message.type, message.gate_slot, inhibit_status), shell=True)
+---
+> 		#subprocess.call("%s/misc/gateinhibit/gate_inhibit %s %s %s %s %d" % (Configuration.params["mtst_installLocation"], message.branch, message.crate, message.type, message.gate_slot, inhibit_status), shell=True)
+148,150c238,239
+< 		command = "%s/PCOS/PCOS_readout_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["mtest_installLocation"], message.branch, message.crate, message.mem_slot, message.type, message.wc_rst_gate_slot, message.num_events, message.filepattern, message.run, message.subrun, message.runmode)
+< 		self.logger.info("  ==> Using command: '%s'" % command)
+< 		return DAQThread(command, "wire chamber")
+---
+> 		command = "%s/PCOS/PCOS_readout_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["mtst_installLocation"], message.branch, message.crate, message.mem_slot, message.type, message.wc_rst_gate_slot, message.num_events, message.filepattern, message.run, message.subrun, message.runmode)
+> 		return self.startDAQThread(command, "wire chamber")
+157c246,276
+< 		command = "%s/tof/src/run_rik_t977_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["mtest_installLocation"], message.branch, message.crate, message.tdc_slot, message.adc_slot, message.tof_rst_gate_slot, message.num_events, message.filepattern, message.run, message.subrun, message.runmode)
+---
+> 		command = "%s/tof/src/run_rik_t977_sync %s %s %s %s %s %s %s %s %s %s" % (Configuration.params["mtst_installLocation"], message.branch, message.crate, message.tdc_slot, message.adc_slot, message.tof_rst_gate_slot, message.num_events, message.filepattern, message.run, message.subrun, message.runmode)
+> 		return self.startDAQThread(command, "tof")
+> 		
+> 	def example_start_of_subrun(self, message):
+> 		''' This code only gets run at the start of a subrun and doesn't run concurrently. See below for an example of a command that keeps running. '''
+> 		self.logger.info("Running example initialize code")
+> 		subprocess.call("ls -al", shell=True)
+> 		
+> 	def start_example(self, message):
+> 		""" Starts my example script which will run until the subrun ends.
+> 			It keeps going until it gets a sigterm. """
+> 	    
+> 		command = "python /home/nfs/minerva/mnvruncontrol/backend/SimpleMTestDispatcherScript.py %s" % (Configuration.params["mtst_installLocation"])
+> 		return self.startDAQThread(command, "example")
+> 		
+> 		
+> 	def start_mwpc(self, message):
+> 		""" Starts MwpcMinerva """
+> 		if message.run_mode not in ("cosmc", ):
+> 			self.logger.info("Not starting mwpc because %s is the wrong run mode." % message.run_mode)
+> 			return None # must return a DAQThread object or none
+> 		command = "/home/nfs/minerva/daq/runMwpcMinerva.sh %s %s" % (message.et_filename, message.num_gates)
+> 		return self.startDAQThread(command, "mwpc")
+> 
+> 	def start_camac(self, message):
+> 		""" Starts CAMACMinerva """
+> 		command = "/home/nfs/minerva/daq/runCAMACMinerva.sh %s %s" % (message.et_filename, message.num_gates)
+> 		return self.startDAQThread(command, "camac")
+> 		
+> 	def startDAQThread(self, command, name):
+> 		""" This makes sure every daq thread is started similarly with a log file entry. """
+159c278
+< 		return DAQThread(command, "tof")
+---
+> 		return DAQThread(command, name, self)
+170,171c289
+< 					self.daq_threads[thread].process.terminate()
+< 					self.daq_threads[thread].join()		# 'merges' this thread with the other one so that we wait until it's done.
+---
+> 					self.daq_threads[thread].terminate_and_join()
+188c306
+< 	def __init__(self, command, processname):
+---
+> 	def __init__(self, command, processname, parent):
+194a313,314
+> 		self.parent = parent
+> 		
+202c322
+< 		filename = "%s/%s.log" % (Configuration.params["mtest_logfileLocation"], self.processname)
+---
+> 		filename = "%s/mtestdisp_%s_thread.log" % (Configuration.params["mtst_logfileLocation"], self.processname)
+204,216c324,387
+< 			# start the process
+< 			# note that shlex.split doesn't understand Unicode...
+< 			self.process = subprocess.Popen(shlex.split(str(self.command)),
+< 				close_fds=True,
+< 				shell=False,
+< 				stdout=subprocess.PIPE,
+< 				stderr=subprocess.STDOUT)
+< 			self.pid = self.process.pid		# less typing.
+< 
+< 			# now wait until the process finishes
+< 			# and write its output to the log file
+< 			output, discarded = self.process.communicate()
+< 			fileobj.write(output)
+---
+> 			try:
+> 				fileobj.write("Will run the following command:\n%s\n" % self.command)
+> 				# start the process
+> 				# note that shlex.split doesn't understand Unicode...
+> 				self.process = subprocess.Popen(shlex.split(str(self.command)),
+> 					close_fds=True,
+> 					shell=False,
+> 					stdout=subprocess.PIPE,
+> 					stderr=subprocess.STDOUT)
+> 				self.pid = self.process.pid		# less typing.
+> 			
+> 				done = False
+> 				while not done:
+> 					done = self.process.poll() is not None
+> 					ready = False
+> 					data = None
+> 					try:
+> 						ready = select.select([self.process.stdout], [], [], 0)
+> 					except select.error, (errnum, msg):
+> 						if errnum == errno.EINTR: continue
+> 						else: raise
+> 					if ready:
+> 						try:
+> 							data = os.read(self.process.stdout.fileno(), 1024)
+> 						except OSError: continue
+> 					#output, discarded = self.process.stdout.read()
+> 					if data is not None: 
+> 						fileobj.write(data)
+> 						fileobj.flush()
+> 						os.fsync(fileobj.fileno())
+> 
+> 					if not done: time.sleep(0.1)
+> 
+> 				# now wait until the process finishes
+> 				# and write its output to the log file
+> 				#output, discarded = self.process.communicate()
+> 				#fileobj.write(output)
+> 			except Exception as e:
+> 				fileobj.write("\nCaught exception in MTestDispatcher.py in the '%s' thread:\n" % self.processname)
+> 				import traceback
+> 				tb = sys.exc_info()[2]
+> 				textlist = traceback.format_exception(e.__class__, e, tb)
+> 				text = "".join(textlist)
+> 				fileobj.write(text)
+> 				fileobj.write("\nEnd exception in MTestDispatcher.py\n")
+> 				
+> 				error_text = "Process '%s' quit early.\n%s" % (self.processname, text)
+> 				message = Message(subject="beamdaq_status", state="mtst_error", sender=self.parent.identities[self.parent.lock_id], error=error_text)
+> 				self.parent.postoffice.Publish(msg)
+> 				fileobj.write("\nFinished publishing the message about this exception to the post office\n")
+> 			
+> 	def terminate_and_join(self):
+> 		if self.processname == "mwpc":
+> 			# could put special code here if needed.
+> 			code = subprocess.call(shlex.split( "/home/nfs/minerva/mnvruncontrol/backend/kill_mwpc.sh"), shell=True)
+> 			if code != 0:
+> 				raise Exception("Return code was %s" % code)
+> 		if self.processname == "camac":
+> 			# could put special code here if needed.
+> 			code = subprocess.call(shlex.split( "/home/nfs/minerva/mnvruncontrol/backend/kill_camac.sh"), shell=True)
+> 			if code != 0:
+> 				raise Exception("Return code was %s" % code)
+> 		self.process.terminate()
+> 		self.join()		# 'merges' this thread with the other one so that we wait until it's done.
+234c405
+< 	dispatcher.bootstrap()
+---
+> 	dispatcher.Bootstrap()
+Index: backend/MonitorDispatcher.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/backend/MonitorDispatcher.py,v
+retrieving revision 1.63
+diff -r1.63 MonitorDispatcher.py
+71a72,73
+>                 # The other dispatcher is already running on 1098 and we're only allowed one binding per socket
+>                 self.socket_port = 1095 # TODO add to config file
+269c271
+< 		
+---
+>         	self.logger.info("Got OMInternalHandler message\n%s", message)	
+275,276c277,278
+< 		# internal messages better actually be internal! ...
+< 		if len(message.return_path) > 0:
+---
+> 		# internal messages better actually be internal! ... but the eb is happening in the main now so we'll allow it.
+> 		if len(message.return_path) > 0 and message.event != "eb_finished":
+279c281
+< 		
+---
+>                 self.logger.info("Got OMInternalHandler message\n%s", message)	
+341a344,352
+> 		
+> 		# event builder is already active on this comput so we don't need another, so we'll skip all this
+> 		# but one thing needs to happen, we need to get the SIGUSR1 signal. That's what causes NotifyDAQ to run
+> 		# and for the RC to continue with setup as far as I understand.
+> 		os.kill(os.getpid(), signal.SIGUSR1)
+> 		return 
+> 
+> 		# all this never runs
+> 		assert(False) # just to make sure
+Index: backend/ReadoutDispatcher.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/backend/ReadoutDispatcher.py,v
+retrieving revision 1.48
+diff -r1.48 ReadoutDispatcher.py
+230a231
+> 		        time.sleep(10) # mtest only, give the camac daq time to set the veto
+Index: backend/RemoteNode.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/backend/RemoteNode.py,v
+retrieving revision 1.16
+diff -r1.16 RemoteNode.py
+38c38,39
+< 		self.address = (address, Configuration.params["sock_dispatcherPort"])
+---
+>                 # TODO fix it so that OM dispatcher and readout dispatcher don't occupy the same socket
+> 		self.address = (address, 1095 if name == "om_node" else Configuration.params["sock_dispatcherPort"])
+Index: configuration/Configuration.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/configuration/Configuration.py,v
+retrieving revision 1.49
+diff -r1.49 Configuration.py
+54c54
+< 	"frnt_triggerWarningInterval" : ( Defaults.FRONTEND_WARNING_TRIGGER_INTERVAL,    "Interval between triggers before warning color (s)",  float ),
+---
+> 	"frnt_triggerWarningInterval" : ( 65,    "Interval between triggers before warning color (s)",  float ),
+122c122
+< 	"mon_rawdataLocation"         : ( Defaults.OM_RAWDATA_LOCATION_DEFAULT,          "OM raw data location",                                str   ),
+---
+> 	"mon_rawdataLocation"         : ( "/work/data/nearline/raw",          "OM raw data location",                                str   ),
+248a249,250
+>                 print 'config db locations =', locations_to_try
+>                 print 'config db =', location
+Index: configuration/DAQConfiguration.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/configuration/DAQConfiguration.py,v
+retrieving revision 1.11
+diff -r1.11 DAQConfiguration.py
+133c133
+< 		
+---
+> 	
+140a141
+> 	
+151c152,153
+< 			
+---
+> 		#	print 'load: key=',key
+> 		#	print 'run_info_file =', run_info_file
+Index: configuration/Defaults.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/configuration/Defaults.py,v
+retrieving revision 1.63
+diff -r1.63 Defaults.py
+15c15
+< NOTIFY_ADDRESSES = ["jwolcott@fnal.gov", "oaltinok@fnal.gov", "emaher@fnal.gov", "betan009@fnal.gov", "norrick@fnal.gov"]
+---
+> NOTIFY_ADDRESSES = ["savage@fnal.gov",]
+Index: configuration/MetaData.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/configuration/MetaData.py,v
+retrieving revision 1.16
+diff -r1.16 MetaData.py
+299c299,300
+< 				                 ("CUSTOM",         "Custom Series",       6, "custom_series.db") ))
+---
+> 				                 ("CUSTOM",         "Custom Series",       6, "custom_series.db"),
+> 				                 ("COSMICS",         "Cosmics",       7, "cosmics_series.db") ))
+Index: frontend/RunControl.py
+===================================================================
+RCS file: /cvs/mnvsoft/Online/mnvruncontrol/frontend/RunControl.py,v
+retrieving revision 1.103
+diff -r1.103 RunControl.py
+31a32,34
+> print sys.path
+> 
+> import mnvruncontrol
+76a80
+> 		print 'resource location =', Configuration.params["frnt_resourceLocation"]
+1775,1776d1778
+< 	app = None
+< 	
