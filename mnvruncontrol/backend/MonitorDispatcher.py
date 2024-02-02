@@ -69,6 +69,8 @@ class MonitorDispatcher(Dispatcher):
 	"""
 	def __init__(self):
 		Dispatcher.__init__(self)
+                # The other dispatcher is already running on 1098 and we're only allowed one binding per socket
+                self.socket_port = 1095 # TODO add to config file
 	
 		self.logger = logging.getLogger("Dispatcher.OM")
 
@@ -266,17 +268,17 @@ class MonitorDispatcher(Dispatcher):
 
 	def OMInternalHandler(self, message):
 		""" Handles internal messages within the online monitoring dispatcher. """
-		
+        	self.logger.info("Got OMInternalHandler message\n%s", message)	
 		# ignore ill-formed messages
 		if not hasattr(message, "event"):
 			self.logger.warning("Internal message is badly formed!  Message:\n%s", message)
 			return
 		
-		# internal messages better actually be internal! ...
-		if len(message.return_path) > 0:
+		# internal messages better actually be internal! ... but the eb is happening in the main now so we'll allow it.
+		if len(message.return_path) > 0 and message.event != "eb_finished":
 			self.logger.info("Got 'OM internal' message over the network.  Ignoring.  Message:\n%s", message)
 			return
-		
+                self.logger.info("Got OMInternalHandler message\n%s", message)	
 		if message.event == "eb_finished" and message.eb_ok:
 			self.StartGaudiJob("dst", message.et_config)
 
@@ -339,6 +341,15 @@ class MonitorDispatcher(Dispatcher):
 	def StartEventBuilder(self, et_config):
 		""" Start the event builder process. """
 
+		
+		# event builder is already active on this comput so we don't need another, so we'll skip all this
+		# but one thing needs to happen, we need to get the SIGUSR1 signal. That's what causes NotifyDAQ to run
+		# and for the RC to continue with setup as far as I understand.
+		os.kill(os.getpid(), signal.SIGUSR1)
+		return 
+
+		# all this never runs
+		assert(False) # just to make sure
 		et_config["evbfile"] = "%s/%s_RawData.dat" % ( Configuration.params["mon_rawdataLocation"], et_config["pattern"] )
 		et_config["etfile"] = "%s/%s_RawData" % (et_config["sys_location"], et_config["pattern"])
 		

@@ -228,6 +228,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 			pass
 		
 		try:
+		        time.sleep(10) # mtest only, give the camac daq time to set the veto
 			executable = ( 
 			environment["DAQROOT"] + "/bin/minervadaq", 
 				          "-et", str(configuration.et_filename),

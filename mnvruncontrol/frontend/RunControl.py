@@ -27,8 +27,12 @@ import sys
 import time
 import urllib2
 import wx
+from requests import get
 from wx import xrc
 
+print sys.path
+
+import mnvruncontrol
 from mnvruncontrol.configuration import Logging
 from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration import MetaData
@@ -74,6 +78,7 @@ class MainApp(wx.App, MessageTerminus):
 		self.logger.info("Starting up.")
 		
 		# load and show the graphics
+		print 'resource location =', Configuration.params["frnt_resourceLocation"]
 		self.res = xrc.XmlResource('%s/frontend.xrc' % Configuration.params["frnt_resourceLocation"])
 		self.frame = self.res.LoadFrame(None, 'main_frame')
 		self.frame.SetDimensions(0, 0, 1000, 1000)
@@ -1772,8 +1777,6 @@ def EndSession():
 
 
 if __name__ == '__main__':		# make sure that this file isn't being included somewhere else
-	app = None
-	
 	# try to make sure that an organized cleanup happens no matter what
 	try:
 		if BeginSession():

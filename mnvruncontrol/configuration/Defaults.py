@@ -12,7 +12,7 @@
 from mnvruncontrol.configuration import MetaData
 
 # general stuff
-NOTIFY_ADDRESSES = ["jwolcott@fnal.gov", "oaltinok@fnal.gov", "emaher@fnal.gov", "betan009@fnal.gov", "norrick@fnal.gov"]
+NOTIFY_ADDRESSES = ["savage@fnal.gov",]
 
 CONFIG_DB_NAME = "run_control_config.db"
 CONFIG_DB_LOCATION = "/work/conditions"

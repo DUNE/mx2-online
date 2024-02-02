@@ -319,6 +319,7 @@ class _PostOfficeSocketManager(object):
 
 				msg_text = session.message_data.pop(0)
 				message = self._ReconstructMessage(msg_text, session)
+				logger().warning("Recieved message from %s.  Text received:\n%s", session.conn_info, msg_text)
 
 				if message is None:
 					logger().info("Ignoring garbage message with appropriate magic from %s.  Text received:\n%s", session.conn_info, msg_text)

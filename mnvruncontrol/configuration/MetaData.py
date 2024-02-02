@@ -234,13 +234,14 @@ class MetaDatum:
 #
 ########################################################################################################
 		
-DetectorTypes		= MetaData(( ("UNKNOWN",        "Unknown",            0,  "UN"),
+DetectorTypes		= MetaData((         ("UNKNOWN",        "Unknown",            0,  "UN"),
 				             ("PMT_TEST_STAND", "PMT test stand",     1,  "FT"),
 				             ("TP",             "Tracking prototype", 2,  "TP"),
 				             ("TEST_BEAM",      "Test beam",          4,  "TB"),
 				             ("FROZEN",         "Frozen",             8,  "MN"),
 				             ("UPSTREAM",       "Upstream",           16, "US"),
-				             ("MINERVA",        "Full MINERvA",       32, "MV") ))
+				             ("MINERVA",        "Full MINERvA",       32, "MV"),
+                                             ("LABF_TEST1",     "Lab F large scale test stand", 64, "TS1") ))
 
 HardwareConfigurations = MetaData(( ("NOFILE",     "Current state",          0, "[no HW file -- current configuration]"),
                                     ("BEAM",       "Beam settings",          1, "read_SCBeamFile"),
@@ -296,7 +297,8 @@ RunSeriesTypes          = MetaData(( ("BEAM",           "Beam",                0
 # the following two are obsolete...
 #				                 ("MIXED_BEAM_PED", "Mixed Beam-Pedestal", 4, "mix_beam_ped_series.db"),
 #				                 ("MIXED_BEAM_LI",  "Mixed Beam-LI",       5, "mix_beam_li_series.db"),
-				                 ("CUSTOM",         "Custom Series",       6, "custom_series.db") ))
+				                 ("CUSTOM",         "Custom Series",       6, "custom_series.db"),
+				                 ("COSMICS",         "Cosmics",       7, "cosmics_series.db") ))
 				                 
 TriggerTypes       = MetaData(( ("UNKNOWN",   "Unknown",          0,   None),
                                 ("PEDESTAL",  "Pedestal",         1,   None),

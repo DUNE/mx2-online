@@ -35,7 +35,8 @@ class RemoteNode:
 	def __init__(self, nodetype, name, address):
 		self.type = nodetype	
 		self.name = name
-		self.address = (address, Configuration.params["sock_dispatcherPort"])
+                # TODO fix it so that OM dispatcher and readout dispatcher don't occupy the same socket
+		self.address = (address, 1095 if name == "om_node" else Configuration.params["sock_dispatcherPort"])
 		
 		self.connection_made = False
 		self.status = IDLE

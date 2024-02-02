@@ -73,7 +73,30 @@ def cleanup_tokens(f):
 		return f(self, *args, **kwargs)
 	
 	return callf
-##########################################################################		
+##########################################################################
+
+	
+class SpecialThread(Threads.DAQthread):
+	def __init__(self, process_info, process_identity, postoffice, env, et_sys_location, etpattern, etport, is_essential_service=False):
+		self.et_config = {
+			"sys_location": et_sys_location,
+			"pattern": etpattern,
+			"port": etport
+		}
+                self.et_config["evbfile"] = "%s/%s_RawData.dat" % ( Configuration.params["mon_rawdataLocation"], self.et_config["pattern"] )
+                self.et_config["etfile"] = "%s/%s_RawData" % (self.et_config["sys_location"], self.et_config["pattern"])
+		
+		Threads.DAQthread.__init__(self, process_info, process_identity, postoffice, env, is_essential_service)
+
+	def run(self):
+		Threads.DAQthread.run(self)
+		# This is a kludge. Since we're already running an event builder, we just need to inform the monitoring that the building is done.
+		# Then the full DSTs will be made.
+		self.postoffice.Publish(Message(subject="om_internal",
+                        event="eb_finished",
+                        eb_ok=True,
+                        et_config=self.et_config
+                ))
 
 class DataAcquisitionManager(Dispatcher.Dispatcher):
 	""" Object that does the actual coordination of data acquisition.
@@ -199,6 +222,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			assert node_config["type"] in RemoteNode.NODE_TYPES
 		
 			node = RemoteNode.RemoteNode(node_config["type"], node_config["name"], node_config["address"])
+			#node.name = '127.0.0.1'
 			self.logger.info("  ... contacting node '%s' at address %s ...", node.name, node.address)
 			try:
 				node.InitialContact(postoffice=self.postoffice, mgr_id=self.id)
@@ -290,7 +314,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		""" Handles updates from the MTest beam DAQ
 		    about changes in its state. """
 		
-		pass	
+		if not hasattr(message, "state"):
+			self.logger.info("OM status message from '%s' node is badly formed.  Ignoring.  Message:\n%s", message.sender, message)
+			return
+		
+		if message.state == "mtst_error":
+			self.NewAlert(notice="An error was reported on the '%s' monitoring node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.WARNING)
 		
 	def ClientAdminHandler(self, message):
 		""" Handles messages from the client manager
@@ -1088,24 +1117,28 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			node = self.remote_nodes[node_name]
 			if node.type == RemoteNode.READOUT and node.completed == False:
 				stop_readout = True
-			
-			if node.type == RemoteNode.MTEST and node.completed == False:
+			#try: #Smedley 12/9/23, I think this try statement was a relic from the mnvruncontrol_new edits, removed to match older file
+			if node.type == RemoteNode.MTEST:
 				stop_mtest = True
 
 			# other node types don't need to be forcibly 'stopped'
 			# so they are 'idle' as of now
 			if node.type not in (RemoteNode.READOUT, RemoteNode.MTEST):
 				node.status = RemoteNode.IDLE
-		
 		self.postoffice.Publish( self.StatusReport(items=["remote_nodes"]) )
 		responses = []
 
 		try:
 			if stop_readout:
 				responses += self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+		except DAQErrors.NodeError as e:
+			self.logger.warning("EndSubrun got DAQErrors.NodeError: \n%s" % e)
+			self.NewAlert(notice="Couldn't contact all the nodes to stop them.  The next subrun could be problematic...", severity=Alert.ERROR)
+		try:
 			if stop_mtest:
 				responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=10 )
-		except DAQErrors.NodeError:
+		except DAQErrors.NodeError as e:
+			self.logger.warning("EndSubrun got DAQErrors.NodeError: \n%s" % e)
 			self.NewAlert(notice="Couldn't contact all the nodes to stop them.  The next subrun could be problematic...", severity=Alert.ERROR)
 
 		wait_for_DAQ = False
@@ -1137,6 +1170,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		all_completed = True
 		for node_name in self.remote_nodes:
 			node = self.remote_nodes[node_name]
+                        if not hasattr(node, "completed"):
+                                self.logger.warning("EndSubrun: skipping the following node because it lacks the completed attribute: \n%s" % node)
+                                continue
+                        if node.type != RemoteNode.READOUT:
+                                self.logger.warning("EndSubrun: skipping a node because it's not a readout node")
+                                continue
 			all_completed = all_completed and (node.type == RemoteNode.READOUT and node.completed)
 			
 		if wait_for_DAQ and not all_completed:
@@ -1145,11 +1184,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			return
 		
 		self.waiting = False
+                self.logger.info("Oh see how far we've come")
 		
 		unstopped_nodes = []
 		for node_name in self.remote_nodes:
 			node = self.remote_nodes[node_name]
-			if node.type in (RemoteNode.READOUT, RemoteNode.MTEST) and not node.completed:
+			if node.type in (RemoteNode.READOUT, ) and not node.completed: #removed RemoteNode.MTEST bc it doesn't have completed attribute
 				unstopped_nodes.append(node_name)
 
 		if len(unstopped_nodes) > 0:
@@ -1579,10 +1619,14 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		                                                          Configuration.params["mstr_rawdataLocation"],
 		                                                          self.raw_data_filename,
 		                                                          self.configuration.et_port, os.getpid())
-		self.logger.debug("   event builder start command: '%s'", eb_command)
 
-		self.DAQ_threads["event builder"] = Threads.DAQthread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, is_essential_service=True)
+		self.DAQ_threads["event builder"] = SpecialThread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, 
+			etpattern=self.configuration.et_filename,
+			et_sys_location=Configuration.params["mstr_etSystemFileLocation"],
+			etport=self.configuration.et_port, is_essential_service=True)
+		#self.DAQ_threads["event builder"] = Threads.DAQthread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, is_essential_service=True)
 		self.started_et = True
+
 
 	def StartOM(self):
 		""" Start the online monitoring services on the OM node.
@@ -1675,6 +1719,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(auto_start_ok=False)
 			return
+		try: 
+			responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=10 )
+			pass
+		except DAQErrors.NodeError:
+			self.NewAlert(notice="The MTest dispatcher is unresponsive. It may not be working", severity=Alert.WARNING)
 
 		for response in responses:
 			if isinstance(response.success, Exception):
@@ -1691,9 +1740,16 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			if node.type == RemoteNode.READOUT:
 				node.running = True
 				node.completed = False
-
+		responses = []
+		try: 
+			responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_start", mgr_id=self.id, 
+				et_filename=self.configuration.et_filename, num_gates=self.configuration.num_gates, run_mode=self.configuration.run_mode.code), 
+				node_type=RemoteNode.MTEST, timeout=10 )
+			pass
+		except DAQErrors.NodeError:
+			self.NewAlert(notice="The MTest dispatcher is unresponsive. It may not be working", severity=Alert.WARNING)
 		try:
-			responses = self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
+			responses += self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(auto_start_ok=False)
@@ -1839,6 +1895,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.logger.warning("Got response from a node I don't have in my list.  Who are you?? (name: %s, address: %s)", response.sender, response.return_path[0])
 				continue
 			
+			response.success = True
 			responses_received[response.sender] = True
 			out_responses.append(response)
 
@@ -1885,11 +1942,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			return
 		
 		if message.state == "om_error":
-			self.NewAlert(notice="An error was reported on the '%s' monitoring node. The DAQ may need restarting. Contact the Expert Shifter. I'll try to take data in the mean time. Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
+			self.NewAlert(notice="An error was reported on the '%s' monitoring node.  Error text:\n%s" % (message.sender, message.error), severity=Alert.ERROR)
 			self.remote_nodes[message.sender].status = RemoteNode.ERROR
+			self.StopDataAcquisition()
 
 			self.postoffice.Publish( self.StatusReport(items=["remote_nodes"]) )
-			self.logger.warning("    ... '%s' node startup is failed. Continuing in startup sequence while ES is contacted.", message.sender)
 		elif message.state == "om_ready":
 			with self.om_startup_lock:
 				self.remote_nodes[message.sender].status = RemoteNode.OK
@@ -1897,16 +1954,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 				self.logger.info("    ... '%s' node startup is complete.", message.sender)
 		
-		with self.om_startup_lock:
-			all_ready = True
-			for node_name in self.remote_nodes:
-				if self.remote_nodes[node_name].type != RemoteNode.MONITORING:
-					continue
-				all_ready = all_ready and self.remote_nodes[node_name].status != RemoteNode.IDLE
+				all_ready = True
+				for node_name in self.remote_nodes:
+					if self.remote_nodes[node_name].type != RemoteNode.MONITORING:
+						continue
+					all_ready = all_ready and self.remote_nodes[node_name].status == RemoteNode.OK
 			
-		if all_ready:
-			self.logger.info("  ... all monitoring nodes are ready.  Continuing in startup sequence.")
-			os.kill(os.getpid(), signal.SIGUSR1)
+			if all_ready:
+				self.logger.info("  ... all monitoring nodes are ready.  Continuing in startup sequence.")
+				os.kill(os.getpid(), signal.SIGUSR1)
 				
 	def PrepareRunSeries(self):
 		""" Prepares a run series based on the values

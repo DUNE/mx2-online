@@ -362,7 +362,7 @@ class Dispatcher(MessageTerminus):
 		    Not all dispatchers will want this behavior,
 		    so this function must be called explicitly
 		    by derived class handlers.  """
-		    
+		self.logger.info("Dispatcher recieved messagec %s" , additional_notification_requests)
 		# if it's not properly formatted, ignore it!
 		if not ( hasattr(message, "status") and hasattr(message, "mgr_id") ):
 			self.logger.info("DAQ manager status message is improperly formatted.  Ignoring...")

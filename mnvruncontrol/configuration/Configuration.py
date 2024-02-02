@@ -51,7 +51,7 @@ configuration = {
 	"frnt_maxTriggerInterval"     : ( Defaults.FRONTEND_MAX_TRIGGER_INTERVAL,        "Max interval between triggers before full-screen warning (m)",    float ),
 	"frnt_bellInterval"           : ( Defaults.BELL_INTERVAL,                        "Interval between alert bells (s)",                    float ),
 	"frnt_blinkInterval"          : ( Defaults.BLINK_INTERVAL,                       "Interval between alert blinks (s)",                   float ),
-	"frnt_triggerWarningInterval" : ( Defaults.FRONTEND_WARNING_TRIGGER_INTERVAL,    "Interval between triggers before warning color (s)",  float ),
+	"frnt_triggerWarningInterval" : ( 65,    "Interval between triggers before warning color (s)",  float ),
 
 	# hardware
 	"hw_disabled"                 : ( Defaults.HW_DISABLED,                          "Is HW disabled?  (If, e.g., not connected to VME.)",  bool  ),
@@ -119,7 +119,7 @@ configuration = {
 	"mon_DSTminJobTime"           : ( Defaults.OM_DST_MIN_JOB_TIME,                  "Minimum time DST job must be alive (s)",              float ),
 	"mon_useCondor"               : ( Defaults.OM_USE_CONDOR,                        "Use a Condor queue?",                                 bool  ),
 	"mon_maxCondorBacklog"        : ( Defaults.OM_MAX_CONDOR_BACKLOG,                "Max number of jobs backlogged in Condor queue",       int   ),
-	"mon_rawdataLocation"         : ( Defaults.OM_RAWDATA_LOCATION_DEFAULT,          "OM raw data location",                                str   ),
+	"mon_rawdataLocation"         : ( "/work/data/nearline/raw",          "OM raw data location",                                str   ),
 	"mon_swapArea"                : ( Defaults.OM_SWAP_AREA_DEFAULT,                 "Swap area for OM input/output files",                 str   ),
 
 	# mtest beam nodes
@@ -246,6 +246,8 @@ for location in locations_to_try:
 			break
 	else:
 #		print "using location: ", location
+                print 'config db locations =', locations_to_try
+                print 'config db =', location
 		config_file_location = location
 		config_file_inaccessible = False
 		break
