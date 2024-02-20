@@ -35,10 +35,10 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
   VMECommunicator( vmeAddress, controller ),
   channelNumber(number)
 {
-#ifndef GOFAST
-  EChannelLog.setPriority(log4cpp::Priority::DEBUG);
-#else
+#ifdef GOFAST
   EChannelLog.setPriority(log4cpp::Priority::INFO);
+#else
+  EChannelLog.setPriority(log4cpp::Priority::DEBUG);
 #endif
 
   this->commType = VMEModuleTypes::EChannels;
@@ -478,7 +478,7 @@ unsigned short EChannels::ReadFrameCounterRegister() const
 {
   unsigned char receivedMessage[] = {0x0,0x0};
 #ifndef GOFAST
-  EChannelLog.debugStream() << "ReadFrameCounterRegister: Frame Counter Address = 0x" 
+  EChannelLog.debugStream() << "Frame Counter Address = 0x" 
     << std::setfill('0') << std::setw( 8 ) << std::hex 
     << framesCounterAndLoopDelayAddress; 
 #endif
@@ -631,7 +631,7 @@ unsigned int EChannels::ReadDPMPointer() const
   unsigned char pointer[] = {0x0,0x0};
 
 #ifndef GOFAST
-  EChannelLog.debugStream() << "ReadDPMPointer: Read ReceiveMemoryPointer Address = 0x" 
+  EChannelLog.debugStream() << "Read ReceiveMemoryPointer Address = 0x" 
     << std::hex << receiveMemoryPointerAddress;
 #endif
   int error = ReadCycle( pointer, receiveMemoryPointerAddress, addressModifier, dataWidthReg ); 
@@ -641,8 +641,6 @@ unsigned int EChannels::ReadDPMPointer() const
   EChannelLog.debugStream() << "16 bit Pointer Length = " << receiveMemoryPointer;
 #endif
 
-//  unsigned short rdfeCount=0;
-//  unsigned short rdfeIncrement=0;
   unsigned short eventCounter = 0;
   unsigned char counter[] = {0x0,0x0};
 
@@ -652,7 +650,6 @@ unsigned int EChannels::ReadDPMPointer() const
   error = ReadCycle( counter, eventCounterAddress, addressModifier, dataWidthReg ); 
   if( error ) throwIfError( error, "Failure reading the Event Counter!"); 
   eventCounter = ( (counter[1]<<0x08 | counter[0]) & receiveMemoryMask ) >> receiveMemoryBits;
-//  rdfeCount = (counter[1]<<0x08 | counter[0]) & 0x3FFF;
 #ifndef GOFAST
   EChannelLog.debugStream() << "17th Pointer Bit = " << eventCounter;
 #endif
@@ -662,13 +659,6 @@ unsigned int EChannels::ReadDPMPointer() const
 
 #ifndef GOFAST
   EChannelLog.debugStream() << "17 bit Pointer Length = " << finalPointer;
-//  EChannelLog.debugStream() << "RDFE Count = " << rdfeCount;
-//  rdfeIncrement=rdfeCount-previousRdfeCount;
-//  if (rdfeIncrement !=1) {
-//    EChannelLog.errorStream() << "RDFE increment = " << rdfeIncrement << " now = " << rdfeCount << " previous = " << previousRdfeCount;
-//  }
-//  previousRdfeCount = rdfeCount;
-  // <<" (0x"<<std::hex"+0x"<<" )";
 #endif
   return finalPointer;
 }

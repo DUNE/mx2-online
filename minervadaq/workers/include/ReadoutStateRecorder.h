@@ -46,6 +46,7 @@ class ReadoutStateRecorder {
   void WriteToSAMPYFile();
   void WriteToSAMJSONFile();
   void WriteLastTriggerDataToFile();
+  void WriteLastTriggerDataToFileMTest();
 
   static const int DAQHeaderVersion;
 
@@ -62,6 +63,7 @@ class ReadoutStateRecorder {
 
   bool BeginNextGate();
   bool FinishGate();
+  bool MoreGates();
 
   Triggers::TriggerType GetNextTriggerType(); // Get and set...
   Modes::RunningModes GetRunMode() const;

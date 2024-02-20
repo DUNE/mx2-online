@@ -79,6 +79,17 @@ bool ReadoutStateRecorder::BeginNextGate()
   return false;
 }
 
+bool ReadoutStateRecorder::MoreGates()
+{
+  int nextGate=0;
+  nextGate = gate+1;
+
+  if (nextGate <= args->numberOfGates) 
+    return true;
+
+  return false;
+}
+
 //---------------------------
 //! Log the global gate, write the SAM metadata, and write the last trigger.
 /*!
@@ -93,6 +104,7 @@ bool ReadoutStateRecorder::FinishGate()
   this->WriteToSAMPYFile();
   this->WriteToSAMJSONFile();
   this->WriteLastTriggerDataToFile();
+  this->WriteLastTriggerDataToFileMTest();
   return true;
 }
 
@@ -113,10 +125,12 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
   switch (args->runMode) {
     case OneShot:
       triggerType = Pedestal;
-//Sleep for 1 s.
+      //     usleep(50000); //0.05 second sleep 
+      //sleep(1);
+      //usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017
 #ifndef MTEST
-      sleep(1); 
-//      sleep(0.5); 
+      //sleep(1);
+      //usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017      
 #endif
       stateRecorderLogger.debugStream() << " Running Mode is OneShot.";
       break;
@@ -126,10 +140,9 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
       break;
     case PureLightInjection:
       triggerType = LightInjection;
-//Sleep for 1 s.
 #ifndef MTEST
-      sleep(1);
-//      sleep(0.5); 
+      //sleep(1);
+      usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017
 #endif
       stateRecorderLogger.debugStream() << " Running Mode is PureLightInjection.";
       break;
@@ -311,6 +324,9 @@ void ReadoutStateRecorder::WriteToSAMPYFile()
     case 32:
       fprintf(file,"runType='minerva',\n");
       break;
+    case 64:
+      fprintf(file,"runType='teststand',\n");
+      break;
     default:
       fprintf(file,"runType='errordetector',\n");
   }
@@ -410,6 +426,9 @@ void ReadoutStateRecorder::WriteToSAMJSONFile()
     case 32:
       sprintf(runType, "minerva");
       break;
+    case 64:
+      sprintf(runType, "teststand");
+      break;
     default:
       sprintf(runType, "errordetector");
   }
@@ -478,8 +497,7 @@ void ReadoutStateRecorder::WriteLastTriggerDataToFile()
   }
   else {
     if (!(gate%10)) {
-      stateRecorderLogger.infoStream() << "Writing info for trigger " << gate 
-        << " to file " << args->lastTriggerFileName;
+      stateRecorderLogger.infoStream() << "Writing info for trigger " << gate << " to file " << args->lastTriggerFileName;
     }
   }
 
@@ -490,7 +508,36 @@ void ReadoutStateRecorder::WriteLastTriggerDataToFile()
   fprintf(file, "time=%llu\n",   gateStartTime);
 
   fclose(file);
-}
+} // WriteLastTriggerDataToFile()
+
+//---------------------------------------------------------
+//! Log basic information about the last successful readout gate.
+void ReadoutStateRecorder::WriteLastTriggerDataToFileMTest()
+{
+  FILE *file;
+
+  std::string filename = "/home/nfs/minerva/daq/last_trigger.dat";
+
+  if ( NULL == (file=fopen(filename.c_str(),"w")) ) {
+    stateRecorderLogger.errorStream() << "Error opening " << filename << "for writing!";
+    return; 
+  }
+  else {
+    if (!(gate%10)) {
+      stateRecorderLogger.infoStream() << "Writing info for trigger " << gate 
+        << " to file " << filename;
+    }
+  }
+
+  stateRecorderLogger.infoStream() << "MTest: write trigger info to last_trigger.dat - " << gate << " (gate)";
+  fprintf(file, "run=%d\n",      args->runNumber);
+  fprintf(file, "subrun=%d\n",   args->subRunNumber);
+  fprintf(file, "number=%d\n",   gate);
+  fprintf(file, "type=%d\n",     triggerType);
+  fprintf(file, "time=%llu\n",   gateStartTime);
+
+  fclose(file);
+} // end WriteLastTriggerDataToFileMTest()
 
 //-----------------------------
 std::ostream& operator<<(std::ostream& out, const ReadoutStateRecorder& s)

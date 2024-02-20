@@ -304,7 +304,17 @@ int main(int argc, char *argv[])
     void *pdata;
     et_event_getdata(pe, &pdata); 
 
+    evt_counter++;
+    eventbuilder.debugStream() << "Now write the event to the binary output file...";
+    eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
+    binary_outputfile.write((char *) evt->data, evt->dataLength);  
+    binary_outputfile.flush();
+
+    if (HeaderData::SentinelBank == (HeaderData::BankType)evt->leadBankType())
+        continueRunning = false;
+
     #ifndef NEARLINE
+    // Geoff Savage 14Dec21 - No more access to evt after event is put back.
     // for whatever reason, the nearline event builder gets
     // super confused if the nearline station is et_event_put()ing
     // the events back into the stream.  (it always et_event_get()s
@@ -319,14 +329,6 @@ int main(int argc, char *argv[])
     eventbuilder.debugStream() << "Put the event back into the ET system...";
     status = et_event_put(sys_id, attach, pe); 
     #endif
-    evt_counter++;
-    eventbuilder.debugStream() << "Now write the event to the binary output file...";
-    eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
-    binary_outputfile.write((char *) evt->data, evt->dataLength);  
-    binary_outputfile.flush();
-
-		if (HeaderData::SentinelBank == (HeaderData::BankType)evt->leadBankType())
-			continueRunning = false;
   }
 
   // Detach from the station.

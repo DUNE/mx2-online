@@ -1,0 +1,28 @@
+#
+# vxWorks PPC (BMS_OS-BMS_ARCH) makefile
+#
+
+CC       = ccppc
+CXX      = g++ppc
+LD       = ldppc -r
+AR       = arppc
+RANLIB   = ranlibppc
+
+CFLAGS   += -I/site/vxworks/5.5/ppc/target/h
+CFLAGS   += -Wall -fno-for-scope -fno-builtin -fvolatile -fstrength-reduce -mlongcall
+CFLAGS   += -mcpu=604 -DCPU=PPC604 -DVXWORKS -D_GNU_TOOL -DVXWORKSPPC
+
+CXXFLAGS += -I/site/vxworks/5.5/ppc/target/h
+CXXFLAGS += -Wall -fno-for-scope -fno-builtin -fvolatile -fstrength-reduce -mlongcall
+CXXFLAGS += -mcpu=604 -DCPU=PPC604 -DVXWORKS -D_GNU_TOOL -DVXWORKSPPC
+
+# older version of GNU (vx 5.5) does NOT have -MT option,
+DCC  = $(CC)  -MM
+DCXX = $(CXX) -MM
+
+# older version of GNU (vx 5.5) does NOT have -MT option,
+# but -MT $file.o is default anyway
+%.d : %.cc
+	@$(DCXX) $(CFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+%.d : %.c
+	@$(DCC)  $(CFLAGS) $< > $(DEP_DIR)/$(basename $@).d

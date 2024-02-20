@@ -265,8 +265,16 @@ void FPGAFrame::DecodeRegisterValues()
 {
   FPGAFrameLog.debugStream() << "FPGAFrame::DecodeRegisterValues";
 
+//  std::string errstring1 = "Received Frame Length "+this->ReceivedMessageLength();
+//  std::string errstring2 = "DAQ Size test "+MinervaDAQSizes::FPGAFrameMaxSize;
+
+  FPGAFrameLog.debugStream() <<  "!!!!!!!!!!Received Frame Length "<<(int)this->ReceivedMessageLength();
+  FPGAFrameLog.debugStream() <<  "!!!!!!!!!!DAQ Size test "<<(int)MinervaDAQSizes::FPGAFrameMaxSize;
+
+
+
   if ( this->ReceivedMessageLength() != MinervaDAQSizes::FPGAFrameMaxSize ) { 
-    this->printReceivedMessageToLog();
+    this->printReceivedMessageToLog();     
     std::string errstring = "Incorrect FPGA Frame Length";
     FPGAFrameLog.fatalStream() << errstring;
     FrameThrow( errstring ); 

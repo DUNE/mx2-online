@@ -21,8 +21,7 @@ typedef unsigned long long_m;
   */
 namespace MinervaDAQSizes {
 
-  /* static const unsigned int ADCFramesMaxNumber        = 7 + 1; /\*!< timed + 1 untimed *\/ */
-  static const unsigned int ADCFramesMaxNumber        = 21 + 1; /*!< timed + 1 untimed */
+  static const unsigned int ADCFramesMaxNumber        = 7 + 1; /*!< timed + 1 untimed */
   static const unsigned int FrameHeaderLengthOutgoing = 9; /*!< size (in bytes) of an outgoing LVDS header for ANY device */
   static const unsigned int FrameHeaderLengthIncoming = 15; /*!< size (in bytes) of an incoming LVDS header for ANY device */
 

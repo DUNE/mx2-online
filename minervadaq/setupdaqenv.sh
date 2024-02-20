@@ -18,14 +18,6 @@
 # 6. WHTESTSTAND - SLF5 DAQ and electronics development 
 #
 
-if [ $# -eq 1 ]; then
-  export LOCALE=$1
-fi
-if [ "$LOCALE" == "" ]; then
-  echo No default LOCALE defined!  Assigning your LOCALE to FNAL...
-  export LOCALE=FNAL
-fi
-
 echo ---------------------------------------------------------------------------
 echo Welcome to the MINERvA DAQ Software Environment.
 echo
@@ -79,8 +71,7 @@ elif [ $LOCALE == "NEARLINEDEV" ]; then
   # Add log4cpp support.
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
 elif [ $LOCALE == "FNAL2" ]; then
-  #export LOCALE=MTEST
-  export DAQROOT=/work/software/croce/minervadaq/minervadaq
+  export DAQROOT=/work/software/croce_mtest_labf/minervadaq/minervadaq
   export CAEN_DIR=/work/software/CAENVMElib
   export CAEN_VERSION=CAEN_2_30
   export CODA_VERSION=et_9.0
@@ -92,7 +83,8 @@ elif [ $LOCALE == "FNAL2" ]; then
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
   export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
   # Add log4cpp support.
-  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
+  #export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
+  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib64
 elif [ $LOCALE == "D0TESTSTAND" ]; then
   #export DAQROOT=/work/mnvdaq
   setup caenvme

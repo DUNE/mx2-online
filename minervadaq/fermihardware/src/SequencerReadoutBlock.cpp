@@ -16,7 +16,11 @@ SequencerReadoutBlock::SequencerReadoutBlock() :
   data(NULL),
   dataLength(0)
 {
-  SequencerReadoutBlockLog.setPriority(log4cpp::Priority::INFO);  
+#ifdef GOFAST
+  SequencerReadoutBlockLog.setPriority(log4cpp::Priority::INFO);
+#else  
+  SequencerReadoutBlockLog.setPriority(log4cpp::Priority::DEBUG);  
+#endif
 #ifndef GOFAST
   SequencerReadoutBlockLog.debugStream() << "Created new SequencerReadoutBlock";
 #endif

@@ -1,0 +1,39 @@
+# This defines things which can implement (or not) features
+# in a way compatible with Solaris
+
+# Use solaris compilers on SunOS
+CC   = cc
+CXX  = CC
+
+LD   = $(CXX)
+DCC  = $(CC)  -xM1
+DCXX = $(CXX) -xM1
+
+# The -DSunOS -library=stlport4 flags are needed for stl code in etst6.cc
+# These flags use the newer stl library.
+
+CFLAGS   += -mt -erroff=%all -KPIC -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS -D_GNU_SOURCE
+CXXFLAGS += -mt -erroff=%all -KPIC -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS -D_GNU_SOURCE -DSunOS -library=stlport4
+
+OPTIMIZE_PREFIX = x
+
+MISC_LIBS += -lm -lposix4 -lpthread -lsocket -lz -lnsl -lresolv -ldl
+
+LD_SO_FLAGS = -G
+LDFLAGS += -DSunOS -library=stlport4
+
+ifdef CODA_USE64BITS
+  # if SPARC processor
+  ifeq ($(BMS_ARCH), sun4u)
+    CFLAGS   += -xarch=native64 -xcode=pic32
+    CXXFLAGS += -xarch=native64 -xcode=pic32
+    SHLIB_LD += -L /lib/64
+  # else if AMD processor
+  else
+    # put -fast flag to left of -xarch=amd64 !!!
+    CFLAGS   += -xarch=amd64
+    CXXFLAGS += -xarch=amd64
+    # for some reason we must handle ucb lib explicitly
+    SHLIB_LD += -L /lib/64 -L /usr/ucblib/amd64
+  endif
+endif

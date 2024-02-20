@@ -116,6 +116,14 @@ class CRIM : public VMECommunicator {
     void AcknowledgeIRQ() const;
     unsigned int MINOSSGATE() const;
 
+    /* Handle interrupts in Cosmics mode.  Ignore VME interrupts.
+     */
+    void InterruptInitialize();
+    void InterruptResetToDefault();
+    void InterruptClear() const;
+    void InterruptEnable() const;
+    int InterruptWait( const sig_atomic_t * status ) const;
+    void InterruptShow() const;
 };
 
 #endif

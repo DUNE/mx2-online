@@ -1,0 +1,70 @@
+#
+# Makefile for building a static library only
+#
+
+# Things common to both library and executable builds live in Makefile.common
+include $(BMS_HOME)/Makefile.common
+
+ifndef LIB_NAME
+  LIB_NAME = lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
+endif
+LIBNAME = $(LIB_DIR)/$(LIB_NAME)
+
+VPATH = $(DEP_DIR)
+
+# First target. Make sure directories and dependancy files exist
+all: mkdirs $(DEPS) $(LIBNAME)($(OBJS))
+ifeq ($(BMS_OS),Darwin)
+	$(RANLIB) $(LIBNAME)
+endif
+
+mkdirs:
+	@mkdir -p $(LIB_DIR)
+	@mkdir -p $(DEP_DIR)
+
+install: all
+	@mkdir -p $(INSTALL_DIR)/$(BMS_OSNAME)/lib
+	@mkdir -p $(INSTALL_DIR)/include
+	@echo "Installing $(MODULE_NAME) header files:"
+	@for i in $(notdir $(wildcard *.h *.hh *.hxx)); do \
+	   echo "  $(INSTALL_DIR)/include/$$i"; \
+	   cp -p $$i $(INSTALL_DIR)/include; \
+           done;
+	@echo "Installing $(INSTALL_DIR)/$(BMS_OSNAME)/lib/$(LIB_NAME)"
+	cp -p $(LIBNAME) $(INSTALL_DIR)/$(BMS_OSNAME)/lib
+
+uninstall: 
+	@echo "Uninstalling $(MODULE_NAME) headers by removing:"
+	@for i in $(notdir $(wildcard *.h *.hh *.hxx)); do \
+	   echo "  $(INSTALL_DIR)/include/$$i"; \
+	   rm -f $(INSTALL_DIR)/include/$$i; \
+           done;
+	@echo "Uninstalling  $(INSTALL_DIR)/$(BMS_OSNAME)/lib/$(LIB_NAME)"
+	rm -f $(INSTALL_DIR)/$(BMS_OSNAME)/lib/$(LIB_NAME)
+
+clean:
+	rm -rf $(LIB_DIR) $(DEP_DIR) *.bak *~ core
+
+distClean: clean
+	rm -rf .$(BMS_OSNAME)
+
+execClean:
+	rm -f $(LIBNAME)
+
+here: all
+	cp -p $(LIBNAME) .
+
+hereClean:
+	rm -rf $(LIB_NAME)
+
+
+# Rules to make DEPENDS files from source. Note that these are similar to the
+# rules in Makefile.common, but use the implicit rules for archiving objects.
+%.d : %.cpp
+	@$(DCXX) "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+%.d : %.cc
+	@$(DCXX) "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+%.d : %.cxx
+	@$(DCXX) "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+%.d : %.c
+	@$(DCC) "$(LIBNAME)($(basename $@).o)" $(CFLAGS) $< > $(DEP_DIR)/$@

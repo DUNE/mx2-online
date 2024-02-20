@@ -64,10 +64,10 @@ CRIM::CRIM( unsigned int address, const Controller* controller,
   this->addressModifier = cvA24_U_DATA; 
   this->commType = VMEModuleTypes::CRIM;
 
-#ifndef GOFAST
-  CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
-#else
+#ifdef GOFAST
   CRIMLog.setPriority(log4cpp::Priority::INFO); 
+#else
+  CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
 #endif
   CRIMLog.debugStream() << "Creating CRIM with address = 0x" << std::hex 
     << this->address << "; IRQ Line = 0x" << this->irqLine 
@@ -111,8 +111,12 @@ void CRIM::Initialize( Modes::RunningModes runningMode )
   unsigned short SequencerEnable   = 0x1;      // Sequencer control (0 means always send gates, 1 for rearms).
   VMEModuleTypes::CRIMTimingFrequencies Frequency = 
     VMEModuleTypes::ZeroFreq; // Used to set ONE frequency bit!  ZeroFreq ~no Frequency.
+#ifdef MTEST
+  VMEModuleTypes::CRIMTimingModes TimingMode = VMEModuleTypes::CRIMInternal;
+#else
   VMEModuleTypes::CRIMTimingModes TimingMode = 
     VMEModuleTypes::MTM;      // Default to MTM.
+#endif
 
   switch (runningMode) {
     case OneShot:
@@ -122,6 +126,11 @@ void CRIM::Initialize( Modes::RunningModes runningMode )
       // "OneShot" for historical reasons no matter the clock mode.
 #if NOMTMPEDESTAL 
       TimingMode   = VMEModuleTypes::CRIMInternal;
+#endif
+#if MTEST
+      // Because no MTM is available at MTest, LI will use internal timing.
+      TimingMode   = VMEModuleTypes::CRIMInternal;
+      CRIMLog.infoStream() << "->Using CRIM internal timing.";
 #endif
       break;
     case NuMIBeam:
@@ -314,9 +323,13 @@ unsigned short CRIM::GetInterruptStatus() const
   int error = ReadCycle( message, interruptStatusRegister, addressModifier, dataWidthReg );
   if( error ) throwIfError( error, "Error reading CRIM Interrupt Status Register!");
   unsigned short status = (message[1]<<8) | message[0];
+
+/*
 #ifndef GOFAST
   CRIMLog.debugStream() << "Interrupt Status = 0x" << std::hex << status;
 #endif
+*/
+
   return status;
 }
 
@@ -544,5 +557,147 @@ void CRIM::AcknowledgeIRQ() const
     exit(EXIT_CRIM_IRQTIMEOUT_ERROR);
   }
 }
+
+/*
+Handle interrupts in Cosmics mode.  Ignore VME interrupts.
+
+From Timing setup for CRIM firmware v.5 by Boris Baldin
+
+The CRIM sequencer runs only if the GIE is enabled, there are no unmasked pending interrupts, and
+the sequencer control lastch is reset.  The sequencer contro llatch is set by the presence of an
+unmasked pending interrupt (when GIE = 1) and reset by a software command.
+
+Every time when you change GIE from disable to enable you have to reset the sequencer control
+latch.
+
+Interrupt mask register             (0xF000) interruptAddress
+Interrupt status register           (0xF010) interruptStatusRegister
+Clear pending interrupts register   (0xF020) interruptsClear
+Interrupt configuration register    (0xF040) interruptConfig
+*/
+
+void CRIM::InterruptInitialize() {
+    CRIMLog.infoStream() << "InterruptInitialize: Set interrupts for Cosmics mode.";
+    irqLine  = VMEModuleTypes::Trigger;  // Input 0 = External trigger from input connector "T"
+    irqLevel = 7;  // VME interrupt request line - unused for cosmics
+
+    unsigned char message[] = {0,0};
+    int error = WriteCycle( 2, message, interruptConfig, addressModifier, dataWidthReg );
+    if( error ) throwIfError( error, "InterruptInitialize: Error setting interrupt configuration.");
+
+    message[0] = irqLine;
+    message[1] = 0;
+    error = WriteCycle( 2, message, interruptAddress, addressModifier, dataWidthReg );
+    if( error ) throwIfError( error, "InterruptInitialize: Error setting interrupt mask.");
+
+#ifndef GOFAST
+    CRIMLog.infoStream() << "InterruptInitialize: InterruptShow()";
+    InterruptShow();
+#endif
+
+} /* end CRIM::InterruptInitialize() */
+
+
+void CRIM::InterruptResetToDefault() {
+    CRIMLog.infoStream() << "InterruptResetToDefault: Set interrupts for Numi (default) mode.";
+    irqLine  = VMEModuleTypes::SGATEFall;  // Input 0 = External trigger from input connector "T"
+    irqLevel = 5;  // VME interrupt request line - unused for cosmics
+
+    unsigned char message[] = {0,0};
+    message[0] = irqLevel;
+    message[1] = 0;
+    int error = WriteCycle( 2, message, interruptConfig, addressModifier, dataWidthReg );
+    if( error ) throwIfError( error, "InterruptResetToDefault: Error setting interrupt configuration.");
+
+    InterruptClear();
+
+    message[0] = irqLine;
+    message[1] = 0;
+    error = WriteCycle( 2, message, interruptAddress, addressModifier, dataWidthReg );
+    if( error ) throwIfError( error, "InterruptResetToDefault: Error setting interrupt mask.");
+
+#ifndef GOFAST
+    CRIMLog.infoStream() << "InterruptResetToDefault: InterruptShow()";
+    InterruptShow();
+#endif
+
+} /* end CRIM::InterruptResetToDefault() */
+
+void CRIM::InterruptClear() const {
+    unsigned short resetInterrupts = 0x81;  // clear all pending interrupts
+    unsigned char message[] = {0x0,0x0};
+    message[0] = resetInterrupts & 0xFF;
+    message[1] = (resetInterrupts>>0x08) & 0xFF;
+    int error = WriteCycle( 2, message, interruptsClear, addressModifier, dataWidthReg );
+    if( error ) throwIfError( error, "Error clearing pending CRIM Interrupts!");
+
+#ifndef GOFAST
+    CRIMLog.infoStream() << "InterruptClear: InterruptShow()";
+    InterruptShow();
+#endif
+
+} /* end CRIM::InterruptClear() */
+
+
+void CRIM::InterruptEnable() const {
+    unsigned short interruptMessage = 0x80 | irqLevel;  // GIE bit = 0x80
+    unsigned char message[] = {0x0,0x0};
+    message[0] = (interruptMessage) & 0xFF;
+    message[1] = (interruptMessage >> 8) & 0xFF;
+    int error = WriteCycle( 2, message, interruptConfig, addressModifier, dataWidthReg );
+    if( error ) throwIfError( error, "Error setting interrupt configuration.");
+
+#ifndef GOFAST
+    CRIMLog.infoStream() << "InterruptEnable: InterruptShow()";
+    InterruptShow();
+#endif
+
+} /* end CRIM::InterruptEnable() */
+
+
+int CRIM::InterruptWait( const sig_atomic_t * status ) const
+{
+  int success = 0;
+#ifndef GOFAST
+  CRIMLog.debugStream() << "Entering CRIM::InterruptWait: IRQLevel = " << this->irqLevel;
+#endif
+
+  // VME manip.
+  unsigned short interruptStatus = 0;
+  unsigned short iline = (unsigned short)this->irqLine;
+  CRIMLog.debugStream() << "InterruptWait: Interrupt line = " << iline;
+
+  while ( !( interruptStatus & iline ) ) {
+    if ( /* !continueFlag */ !(*status) ) {
+      CRIMLog.debugStream() << "InterrruptWait: Exit signal caught. Bail out.";
+      return 1;
+    }
+    interruptStatus = this->GetInterruptStatus();
+  }
+  return success;
+
+} /* end CRIM::InterruptWait() */
+
+void CRIM::InterruptShow() const {
+    unsigned char message[] = {0x0,0x0};
+    unsigned short status = 0;
+    int error = 0;
+
+    error = ReadCycle( message, interruptAddress, addressModifier, dataWidthReg );
+    if( error ) throwIfError( error, "Error reading interrupt mask register. (0xF000)");
+    status = (message[1]<<8) | message[0];
+    CRIMLog.infoStream() << "Interrupt Mask   = 0x" << std::hex << status<<"(0xF000)";
+
+    error = ReadCycle( message, interruptStatusRegister, addressModifier, dataWidthReg );
+    if( error ) throwIfError( error, "Error reading interrupt status register. (0xF010)");
+    status = (message[1]<<8) | message[0];
+    CRIMLog.infoStream() << "Interrupt Status = 0x" << std::hex << status<<"(0xF010)";
+
+    error = ReadCycle( message, interruptConfig, addressModifier, dataWidthReg );
+    if( error ) throwIfError( error, "Error reading interrupt configuration register. (0xF040)");
+    status = (message[1]<<8) | message[0];
+    CRIMLog.infoStream() << "Interrupt Config = 0x" << std::hex << status<<"(0xF040)";
+
+} /* end CRIM::InterruptShow() */
 
 #endif

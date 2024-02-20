@@ -28,7 +28,13 @@ VMECommunicator::VMECommunicator( unsigned int theAddress,
 	this->dataWidthSwapped    = cvD32_swapped;
 	this->dataWidthReg        = cvD16;  
 	this->dataWidthSwappedReg = cvD16_swapped;
-  commLog.setPriority(log4cpp::Priority::NOTICE);  
+/*  commLog.setPriority(log4cpp::Priority::NOTICE);  */
+#ifdef GOFAST
+  commLog.setPriority(log4cpp::Priority::INFO);
+#else
+  commLog.setPriority(log4cpp::Priority::DEBUG);
+#endif
+
 }
 
 //-----------------------------
@@ -120,7 +126,9 @@ int VMECommunicator::ReadBLT(unsigned char *received_message, int blocks, unsign
   if (0 != offset) {
     blocks += (4 - offset);
   }
+  commLog.debugStream() << "Execute BLT Read: bytes requested = " << blocks;
   error = CAENVME_BLTReadCycle(controllerHandle,address, received_message, blocks, AM, DW, &count);
+  commLog.debugStream() << "bytes received = " << count << ": error status =" << error;
   return error;
 }
 

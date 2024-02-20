@@ -2,10 +2,11 @@
 #CPPFLAGS  = -g -fno-inline -O0  # debugging & no optimization
 CPPFLAGS  = -O3                 # all optimizations, combine with GOFAST
 #--DEBUG FLAGS--
-COMPILE_OPTIONS += -DGOFAST           # comment this OUT to get full logging back
+#COMPILE_OPTIONS += -DGOFAST           # comment this OUT to get full logging back
 COMPILE_OPTIONS += -D$(CAEN_VERSION)  # required to build on older SLF5 machines (safe for SLF6)
 
-CPPFLAGS += -Werror -Wall -DLINUX -fPIC
+#CPPFLAGS += -Werror -Wall -DLINUX -fPIC
+CPPFLAGS += -Wall -DLINUX -fPIC
 
 LDFLAGS  += -shared -Wl,-soname
 

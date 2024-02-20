@@ -72,6 +72,22 @@ class ReadoutWorker {
   unsigned int GetNextDataBlockSize() const;
   std::tr1::shared_ptr<SequencerReadoutBlock> GetNextDataBlock( unsigned int blockSize ) const;
   std::tr1::shared_ptr<RunHeader> GetRunHeader( HeaderData::BankType bankType );
-};
+
+/*
+12/10/2014 Geoff Savage
+Additions for running in "cosmics" mode.
+*/
+    void FastCommandFEBTriggerRearm() const;
+    void SendSoftwareRDFE() const;
+    void ResetCosmicLatch () const;
+
+    void InterruptInitialize();
+    void InterruptResetToDefault();
+    void InterruptClear() const;
+    void InterruptEnable() const;
+    int InterruptWait() const;
+    unsigned long long TriggerCosmics( Triggers::TriggerType triggerType );
+
+}; /* end class ReadoutWorker() */
 
 #endif

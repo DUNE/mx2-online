@@ -2,6 +2,10 @@
 #define ReadoutWorker_cxx
 /*! \file ReadoutWorker.cpp
 */
+/*
+02/13/2015 Geoff Savage
+See the bottom of this file for code added to run in cosmics mode.
+*/
 
 #include "ReadoutWorker.h"
 #include "FrameHeader.h"
@@ -24,7 +28,6 @@ const int ReadoutWorker::RunHeaderVersion = 1;
 log4cpp::Category& readoutLogger = log4cpp::Category::getInstance(std::string("readoutLogger"));
 
 const unsigned int ReadoutWorker::microSecondSleepDuration = 4000;
-//const unsigned int ReadoutWorker::microSecondSleepDuration = 40000; // Increasing the delay to if there is any effect on data for v95 ADC problem 
 
 //---------------------------
 ReadoutWorker::ReadoutWorker( log4cpp::Priority::Value priority, 
@@ -84,9 +87,27 @@ void ReadoutWorker::InitializeCrates( Modes::RunningModes theRunningMode )
       readoutChannels.insert(readoutChannels.end(),channels->begin(),channels->end());
     }
   } 
-  EnableIRQ();
+  switch(runningMode) {
+    case Modes::OneShot:
+    case Modes::NuMIBeam:
+    case Modes::PureLightInjection:
+    case Modes::MixedBeamPedestal:
+    case Modes::MixedBeamLightInjection:
+      EnableIRQ();
+      break;
+    case Modes::Cosmics:
+    case Modes::MTBFBeamMuon:
+    case Modes::MTBFBeamOnly:
+      InterruptInitialize();
+      break;
+    default:
+      readoutLogger.errorStream() << "InitializeCrates: Unknown running mode."<<runningMode;
+
+  } /* end switch(runningMode) */
+    
   readoutLogger.debugStream() << "Finished Crate Initialization for " << (*this);
-}
+} /* end InitializeCrates() */
+
 
 //---------------------------
 //! Get a pointer to the only Master CRIM between all readout crates.
@@ -101,7 +122,6 @@ CRIM* ReadoutWorker::MasterCRIM() const
   VMECrate* crate = NULL;
   CRIM* crim = NULL;
   if ( crates.size() ) { 
-    // crate = crates[1]; // Set the master CRIM in crate 1
     crate = crates[0];
     if ( crate->GetCRIMVector()->size() ) {
       crim = crate->GetCRIMVector(0);
@@ -305,10 +325,11 @@ unsigned int ReadoutWorker::GetNextDataBlockSize() const
 std::tr1::shared_ptr<SequencerReadoutBlock> ReadoutWorker::GetNextDataBlock( unsigned int blockSize ) const
 {
   if (currentChannel == readoutChannels.end()) {
-    readoutLogger.fatalStream() << "Attempting to read data from a NULL Channel!";
+    readoutLogger.fatalStream() << "GetNextDataBlock: Attempting to read data from a NULL Channel!";
     exit( EXIT_CROC_UNSPECIFIED_ERROR );
   }
-  readoutLogger.debugStream() << "Getting Data Block for " << (**currentChannel);
+  /* blockSize = 60000; */
+  readoutLogger.debugStream() << "GetNextDataBlock: Getting Data Block for " << (**currentChannel);
   std::tr1::shared_ptr<SequencerReadoutBlock> block(new SequencerReadoutBlock());
   block->SetData( (*currentChannel)->ReadMemory( blockSize ), blockSize );
   return block;
@@ -367,5 +388,105 @@ std::tr1::shared_ptr<RunHeader> ReadoutWorker::GetRunHeader( HeaderData::BankTyp
   delete(frameHeader);
   return(runHeader);
 }
+
+/*
+12/10/2014 Geoff Savage
+Additions for running in "cosmics" mode.
+*/
+
+//---------------------------
+void ReadoutWorker::FastCommandFEBTriggerRearm() const {
+    for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) 
+        (*p)->FastCommandFEBTriggerRearm();
+}
+
+//---------------------------
+// Reset the sequencer latch for the single v5 CRIM when running cosmics.
+void ReadoutWorker::ResetCosmicLatch() const
+{
+    readoutLogger.debugStream() << "Reset cosmic for master CRIM.";
+        this->MasterCRIM()->ResetCosmicLatch();
+}
+
+//---------------------------
+void ReadoutWorker::SendSoftwareRDFE() const {
+    for (std::vector<VMECrate*>::const_iterator p=crates.begin(); p!=crates.end(); ++p) 
+        (*p)->SendSoftwareRDFE();
+}
+ 
+//---------------------------
+void ReadoutWorker::InterruptInitialize() {
+  return this->MasterCRIM()->InterruptInitialize();
+}
+
+//---------------------------
+void ReadoutWorker::InterruptResetToDefault() {
+  return this->MasterCRIM()->InterruptResetToDefault();
+}
+
+//---------------------------
+void ReadoutWorker::InterruptClear() const {
+  return this->MasterCRIM()->InterruptClear();
+}
+
+//---------------------------
+void ReadoutWorker::InterruptEnable() const {
+  return this->MasterCRIM()->InterruptEnable();
+}
+
+//---------------------------
+/* WaitForIRQ has a timeout.  Triggers from cosmic rays
+might exceed this timeout value.
+The status variable is set to false when a SIGTERM or SIGINT is caught which
+indicates the minervadaq should terminate. 
+*/
+int ReadoutWorker::InterruptWait() const {
+  readoutLogger.debugStream() << "InterruptWait: Wait for IRQ for master CRIM.";
+  int success = this->MasterCRIM()->InterruptWait( status );
+  if (0 == success) return true;
+  return false;
+}
+
+unsigned long long ReadoutWorker::TriggerCosmics( Triggers::TriggerType triggerType )
+{
+  readoutLogger.debugStream() << "TriggerCosmics: trigger type = " << triggerType;
+
+  using namespace Triggers;
+
+#ifndef GOFAST
+  readoutLogger.debugStream() << "TriggerCosmics: RDFE Counter begin = " << (*currentChannel)->ReadEventCounter();
+#endif
+
+  InterruptEnable();
+  InterruptClear();
+  ResetCosmicLatch();  // Start CRIM sequencer
+
+  switch (triggerType) {
+    case Cosmic:
+    case MTBFMuon:
+    case MTBFBeam:
+      break;
+    default:
+      readoutLogger.errorStream() << "TriggerCosmics: Unknown trigger type = " << triggerType;
+  }
+
+  if (!InterruptWait()) return 0;
+
+  if (!MicroSecondSleep(1200)) return 0;
+  
+  SendSoftwareRDFE();
+
+  if (!MicroSecondSleep(microSecondSleepDuration)) return 0;
+
+  this->WaitForSequencerReadoutCompletion();
+
+#ifndef GOFAST
+  readoutLogger.debugStream() << "TriggerCosmics: RDFE Counter end = " << (*currentChannel)->ReadEventCounter();
+#endif
+
+  FastCommandFEBTriggerRearm();
+
+  return GetNowInMicrosec();
+} /* end ReadoutWorker::TriggerCosmics() */
 
 #endif

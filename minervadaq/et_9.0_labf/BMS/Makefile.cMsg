@@ -1,0 +1,12 @@
+#
+# cMsg-specific Makefile options
+#
+
+ifndef CMSG_INSTALL
+  CMSG_INSTALL = $(INSTALL_DIR)
+endif
+
+CFLAGS    += -I$(CMSG_INSTALL)/include
+CXXFLAGS  += -I$(CMSG_INSTALL)/include
+
+MISC_LIBS += -L$(CMSG_INSTALL)/$(BMS_OSNAME)/lib -lcmsgxx$(DEBUG_SUFFIX) -lcmsg$(DEBUG_SUFFIX) -lcmsgRegex$(DEBUG_SUFFIX)

@@ -6,7 +6,8 @@ CPPFLAGS  = -g -fno-inline -O0  # debugging & no optimization
 #--DEBUG FLAGS--
 COMPILE_OPTIONS += -DGOFAST  # comment this OUT to get full logging back
 
-CPPFLAGS += -Werror -Wall -DLINUX -fPIC -DGIT_VERSION=\"$(GIT_VERSION)\"
+#CPPFLAGS += -Werror -Wall -DLINUX -fPIC -DGIT_VERSION=\"$(GIT_VERSION)\"
+CPPFLAGS += -Wall -DLINUX -fPIC -DGIT_VERSION=\"$(GIT_VERSION)\"
 
 LDFLAGS += -shared -Wl,-soname
 

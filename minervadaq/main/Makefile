@@ -1,4 +1,5 @@
-CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC -Werror
+#CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC -Werror
+CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 
 #--RUNNING FLAGS--
 COMPILE_OPTIONS += -DRUN_SLEEPY # This flag is required to for FEB digitization.  2009.Dec.16

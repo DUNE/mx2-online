@@ -2,7 +2,8 @@
 # CPPFLAGS  = -g -fno-inline -O0  # debugging & no optimization
 CPPFLAGS  = -O3                 # all optimizations, combine with GOFAST
 
-CPPFLAGS  = -Wall -Werror -DLINUX -fPIC
+#CPPFLAGS  = -Wall -Werror -DLINUX -fPIC
+CPPFLAGS  = -Wall -DLINUX -fPIC
 
 #--DEBUG FLAGS--
 COMPILE_OPTIONS += -DGOFAST  # comment this out to get full logging back

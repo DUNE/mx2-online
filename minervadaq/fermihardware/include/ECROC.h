@@ -8,6 +8,7 @@
 #include "CAENVMEtypes.h"
 #include "EChannels.h"
 #include "VMEModuleTypes.h"
+#include "ReadoutTypes.h"
 
 /*! 
   \class ECROC
@@ -44,7 +45,7 @@ class ECROC : public VMECommunicator {
     explicit ECROC( unsigned int address, const Controller* controller); 
     ~ECROC(); 
 
-    void Initialize() const;
+    void Initialize(Modes::RunningModes runningMode) const;
     virtual unsigned int GetAddress() const; 
     unsigned int GetCROCNumber() const;
 
@@ -60,7 +61,8 @@ class ECROC : public VMECommunicator {
     void InitializeRegisters( VMEModuleTypes::ECROCClockModes clockMode, 
         unsigned short testPulseDelayValue,
         unsigned short testPulseDelayEnabled, 
-        unsigned short sequencerDelayValue ) const; 
+        unsigned short sequencerDelayValue,
+	Modes::RunningModes runningMode) const; 
 
     void FastCommandOpenGate() const;
     void ClearAndResetStatusRegisters() const;
@@ -77,6 +79,12 @@ class ECROC : public VMECommunicator {
     void SequencerDelayDisable() const;
     void SequencerDelayEnable() const;
     void SetSequencerDelayValue( unsigned short delay ) const; // 9 lowest bits
+
+/*
+12/10/2014 Geoff Savage
+Additions for running in "cosmics" mode.
+*/
+    void FastCommandFEBTriggerRearm() const;
 };
 
 #endif

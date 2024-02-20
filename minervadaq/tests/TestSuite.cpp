@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "ReadoutTypes.h"
 #include "TestSuite.h"
@@ -455,10 +456,8 @@ void ReadDiscrTest( EChannels* channel, unsigned int nFEBs )
     frame->printReceivedMessageToLog();
     assert( !frame->CheckForErrors() );
     frame->DecodeRegisterValues(); 
-    for (unsigned int i = 0; i < 4; ++i) {
-      //std::cout << "why did I stop working??" << std::endl;
+    for (unsigned int i = 0; i < 4; ++i) 
       assert( 2 == frame->GetNHitsOnTRiP(i) );
-    }
   }
 
   logger.debugStream() << "Passed:--------------ReadDiscrTest--------------";
@@ -1000,7 +999,7 @@ ECROC * GetAndTestECROC( unsigned int address, Controller * controller )
   assert( ecroc->GetAddress() == address );
   // These methods are void. Not clear it makes sense to call all 
   // public CROCE methods since they're talking to the hardware.
-  ecroc->Initialize();
+  ecroc->Initialize( runningMode );
   ecroc->ClearAndResetStatusRegisters();
   ecroc->EnableSequencerReadout();
   ecroc->DisableSequencerReadout();

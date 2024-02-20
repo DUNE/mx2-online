@@ -66,5 +66,12 @@ class VMECrate {
   std::vector<CRIM*>* GetCRIMVector();
   CRIM* GetCRIMVector( int index );
 
-};
+/*
+12/10/2014 Geoff Savage
+Additions for running in "cosmics" mode.
+FastCommandFEBTriggerRearm()
+*/
+    void FastCommandFEBTriggerRearm() const;
+}; /* end class VMECrate */
+
 #endif

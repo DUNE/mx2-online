@@ -45,6 +45,7 @@ EChannelsConfigRegParser::~EChannelsConfigRegParser()
 //----------------------------------------
 void EChannelsConfigRegParser::EnableSequencerReadout()
 {
+  EChConfLog.infoStream() << "Enable sequencer readout.";
   registerValue |= (1<<sequencerBits);
 }
 

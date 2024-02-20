@@ -52,7 +52,7 @@ void VMECrate::Initialize( Modes::RunningModes theRunningMode )
   }
   vmeCrate.infoStream() << "Initializing " << ecrocs.size() << " CROC-Es...";
   for( std::vector<ECROC*>::iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p ) {
-    (*p)->Initialize();
+    (*p)->Initialize( runningMode );
   }
   ConfigureForStandardDataTaking();
   ResetEventCounter();
@@ -232,5 +232,16 @@ std::ostream& operator<<(std::ostream& out, const VMECrate& s)
   out << "Running Mode = " << s.runningMode << "; ";
   return out;
 }
+
+/*
+12/10/2014 Geoff Savage
+Additions for running in "cosmics" mode.
+*/
+void VMECrate::FastCommandFEBTriggerRearm() const {
+    for (std::vector<ECROC*>::const_iterator p=ecrocs.begin(); p!=ecrocs.end(); ++p)
+        (*p)->FastCommandFEBTriggerRearm();
+} /* end VMECrate::FastCommandFEBTriggerRearm() */
+
+
 
 #endif

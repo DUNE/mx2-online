@@ -1,11 +1,12 @@
-CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC -Werror
+#CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC -Werror
+CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
 
 CXX = g++
 OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 SRC = $(wildcard *.cpp)
 TARGET=tests
 
-LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_workers
+LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_workers -levent_structure
 include $(DAQROOT)/Make.include
 include $(DAQROOT)/Make.options
 
