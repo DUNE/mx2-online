@@ -42,6 +42,7 @@ void et_logmsg (char *sev, char *fmt, ...)
   vsprintf(temp, fmt, ap);
 
   printf("et %s: %s", sev, temp);
+  fflush(stdout); /* Smedley */
   va_end(ap);
 }
 #endif

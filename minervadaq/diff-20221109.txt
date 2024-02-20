@@ -1,0 +1,822 @@
+diff --git a/minervadaq/event_builder/src/EventBuilder.cpp b/minervadaq/event_builder/src/EventBuilder.cpp
+index 6f9d45b..9b815a3 100644
+--- a/minervadaq/event_builder/src/EventBuilder.cpp
++++ b/minervadaq/event_builder/src/EventBuilder.cpp
+@@ -304,7 +304,17 @@ int main(int argc, char *argv[])
+     void *pdata;
+     et_event_getdata(pe, &pdata); 
+ 
++    evt_counter++;
++    eventbuilder.debugStream() << "Now write the event to the binary output file...";
++    eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
++    binary_outputfile.write((char *) evt->data, evt->dataLength);  
++    binary_outputfile.flush();
++
++    if (HeaderData::SentinelBank == (HeaderData::BankType)evt->leadBankType())
++        continueRunning = false;
++
+     #ifndef NEARLINE
++    // Geoff Savage 14Dec21 - No more access to evt after event is put back.
+     // for whatever reason, the nearline event builder gets
+     // super confused if the nearline station is et_event_put()ing
+     // the events back into the stream.  (it always et_event_get()s
+@@ -319,14 +329,6 @@ int main(int argc, char *argv[])
+     eventbuilder.debugStream() << "Put the event back into the ET system...";
+     status = et_event_put(sys_id, attach, pe); 
+     #endif
+-    evt_counter++;
+-    eventbuilder.debugStream() << "Now write the event to the binary output file...";
+-    eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
+-    binary_outputfile.write((char *) evt->data, evt->dataLength);  
+-    binary_outputfile.flush();
+-
+-		if (HeaderData::SentinelBank == (HeaderData::BankType)evt->leadBankType())
+-			continueRunning = false;
+   }
+ 
+   // Detach from the station.
+diff --git a/minervadaq/event_builder/src/Makefile b/minervadaq/event_builder/src/Makefile
+index 2a513b8..f1a9ce1 100644
+--- a/minervadaq/event_builder/src/Makefile
++++ b/minervadaq/event_builder/src/Makefile
+@@ -2,7 +2,8 @@
+ # CPPFLAGS  = -g -fno-inline -O0  # debugging & no optimization
+ CPPFLAGS  = -O3                 # all optimizations, combine with GOFAST
+ 
+-CPPFLAGS  = -Wall -Werror -DLINUX -fPIC
++#CPPFLAGS  = -Wall -Werror -DLINUX -fPIC
++CPPFLAGS  = -Wall -DLINUX -fPIC
+ 
+ #--DEBUG FLAGS--
+ COMPILE_OPTIONS += -DGOFAST  # comment this out to get full logging back
+diff --git a/minervadaq/event_structure/src/Makefile b/minervadaq/event_structure/src/Makefile
+index 96bf9f1..b0da50f 100644
+--- a/minervadaq/event_structure/src/Makefile
++++ b/minervadaq/event_structure/src/Makefile
+@@ -4,7 +4,8 @@ CPPFLAGS  = -O3                 # all optimizations, combine with GOFAST
+ #--DEBUG FLAGS--
+ COMPILE_OPTIONS += -DGOFAST  # comment this OUT to get full logging back
+ 
+-CPPFLAGS += -Werror -Wall -DLINUX -fPIC
++#CPPFLAGS += -Werror -Wall -DLINUX -fPIC
++CPPFLAGS += -Wall -DLINUX -fPIC
+ 
+ LDFLAGS  += -shared -Wl,-soname
+ 
+diff --git a/minervadaq/fermihardware/include/CRIM.h b/minervadaq/fermihardware/include/CRIM.h
+index f1b1a38..5aef438 100644
+--- a/minervadaq/fermihardware/include/CRIM.h
++++ b/minervadaq/fermihardware/include/CRIM.h
+@@ -119,6 +119,7 @@ class CRIM : public VMECommunicator {
+     /* Handle interrupts in Cosmics mode.  Ignore VME interrupts.
+      */
+     void InterruptInitialize();
++    void InterruptResetToDefault();
+     void InterruptClear() const;
+     void InterruptEnable() const;
+     int InterruptWait( const sig_atomic_t * status ) const;
+diff --git a/minervadaq/fermihardware/include/Controller.h b/minervadaq/fermihardware/include/Controller.h
+index 7a981f1..a3deb51 100644
+--- a/minervadaq/fermihardware/include/Controller.h
++++ b/minervadaq/fermihardware/include/Controller.h
+@@ -26,7 +26,7 @@ class Controller {
+ 		CVAddressModifier addressModifier;
+ 		CVDataWidth       dataWidth;
+ 
+-		char firmware[1];
++		char firmware[10];
+ 		int crateNumber;
+ 		int handle;                  /*!<a device handle returned by the initialization function*/
+ 		unsigned short *shortBuffer; 
+diff --git a/minervadaq/fermihardware/include/MinervaDAQSizes.h b/minervadaq/fermihardware/include/MinervaDAQSizes.h
+old mode 100755
+new mode 100644
+index b62eb4d..6fc75da
+--- a/minervadaq/fermihardware/include/MinervaDAQSizes.h
++++ b/minervadaq/fermihardware/include/MinervaDAQSizes.h
+@@ -21,14 +21,15 @@ typedef unsigned long long_m;
+   */
+ namespace MinervaDAQSizes {
+ 
+-  static const unsigned int ADCFramesMaxNumber        = 7 + 1; /*!< timed + 1 untimed */
++  /* static const unsigned int ADCFramesMaxNumber        = 7 + 1; /\*!< timed + 1 untimed *\/ */
++  static const unsigned int ADCFramesMaxNumber        = 21 + 1; /*!< timed + 1 untimed */
+   static const unsigned int FrameHeaderLengthOutgoing = 9; /*!< size (in bytes) of an outgoing LVDS header for ANY device */
+   static const unsigned int FrameHeaderLengthIncoming = 15; /*!< size (in bytes) of an incoming LVDS header for ANY device */
+ 
+   static const unsigned int FPGANumRegisters    =   54;  /*!< Firmware Dependent! */
+-  static const unsigned int FPGAFrameMaxSize    =   76;//74;  /*!< bytes, Firmware Dependent! */
++  static const unsigned int FPGAFrameMaxSize    =   80;//74;  /*!< bytes, Firmware Dependent! v95=76,v97=80*/
+   static const unsigned int ADCFrameMaxSize     =  455;//453;//452;  /*!< bytes FEB v95 == 455 */
+-  static const unsigned int DiscrFrameMaxSize   = 1145;//1144;  /*!< bytes, == 1 + 24 + 40 * 4 * 7 (40 bytes / trip / hit) */
++  static const unsigned int DiscrFrameMaxSize   = 1147;//1144;  /*!< bytes, == 1 + 24 + 40 * 4 * 7 (40 bytes / trip / hit) v95=1145,v97=1147*/
+   static const unsigned int FEBTotalDataMaxSize = FPGAFrameMaxSize + 
+     ADCFramesMaxNumber*ADCFrameMaxSize + DiscrFrameMaxSize; /*!< bytes */
+ 
+diff --git a/minervadaq/fermihardware/src/CRIM.cpp b/minervadaq/fermihardware/src/CRIM.cpp
+index 1ec81c2..ce529b5 100644
+--- a/minervadaq/fermihardware/src/CRIM.cpp
++++ b/minervadaq/fermihardware/src/CRIM.cpp
+@@ -64,10 +64,10 @@ CRIM::CRIM( unsigned int address, const Controller* controller,
+   this->addressModifier = cvA24_U_DATA; 
+   this->commType = VMEModuleTypes::CRIM;
+ 
+-#ifndef GOFAST
+-  CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
+-#else
++#ifdef GOFAST
+   CRIMLog.setPriority(log4cpp::Priority::INFO); 
++#else
++  CRIMLog.setPriority(log4cpp::Priority::DEBUG); 
+ #endif
+   CRIMLog.debugStream() << "Creating CRIM with address = 0x" << std::hex 
+     << this->address << "; IRQ Line = 0x" << this->irqLine 
+@@ -127,6 +127,11 @@ void CRIM::Initialize( Modes::RunningModes runningMode )
+ #if NOMTMPEDESTAL 
+       TimingMode   = VMEModuleTypes::CRIMInternal;
+ #endif
++#if MTEST
++      // Because no MTM is available at MTest, LI will use internal timing.
++      TimingMode   = VMEModuleTypes::CRIMInternal;
++      CRIMLog.infoStream() << "->Using CRIM internal timing.";
++#endif
+       break;
+     case NuMIBeam:
+       break;
+@@ -578,7 +583,7 @@ void CRIM::InterruptInitialize() {
+ 
+     unsigned char message[] = {0,0};
+     int error = WriteCycle( 2, message, interruptConfig, addressModifier, dataWidthReg );
+-    if( error ) throwIfError( error, "Error setting interrupt configuration.");
++    if( error ) throwIfError( error, "InterruptInitialize: Error setting interrupt configuration.");
+ 
+     message[0] = irqLine;
+     message[1] = 0;
+@@ -593,6 +598,31 @@ void CRIM::InterruptInitialize() {
+ } /* end CRIM::InterruptInitialize() */
+ 
+ 
++void CRIM::InterruptResetToDefault() {
++    CRIMLog.infoStream() << "InterruptResetToDefault: Set interrupts for Numi (default) mode.";
++    irqLine  = VMEModuleTypes::SGATEFall;  // Input 0 = External trigger from input connector "T"
++    irqLevel = 5;  // VME interrupt request line - unused for cosmics
++
++    unsigned char message[] = {0,0};
++    message[0] = irqLevel;
++    message[1] = 0;
++    int error = WriteCycle( 2, message, interruptConfig, addressModifier, dataWidthReg );
++    if( error ) throwIfError( error, "InterruptResetToDefault: Error setting interrupt configuration.");
++
++    InterruptClear();
++
++    message[0] = irqLine;
++    message[1] = 0;
++    error = WriteCycle( 2, message, interruptAddress, addressModifier, dataWidthReg );
++    if( error ) throwIfError( error, "InterruptResetToDefault: Error setting interrupt mask.");
++
++#ifndef GOFAST
++    CRIMLog.infoStream() << "InterruptResetToDefault: InterruptShow()";
++    InterruptShow();
++#endif
++
++} /* end CRIM::InterruptResetToDefault() */
++
+ void CRIM::InterruptClear() const {
+     unsigned short resetInterrupts = 0x81;  // clear all pending interrupts
+     unsigned char message[] = {0x0,0x0};
+@@ -624,6 +654,7 @@ void CRIM::InterruptEnable() const {
+ 
+ } /* end CRIM::InterruptEnable() */
+ 
++
+ int CRIM::InterruptWait( const sig_atomic_t * status ) const
+ {
+   int success = 0;
+diff --git a/minervadaq/fermihardware/src/ECROC.cpp b/minervadaq/fermihardware/src/ECROC.cpp
+index fdf5682..7177e30 100644
+--- a/minervadaq/fermihardware/src/ECROC.cpp
++++ b/minervadaq/fermihardware/src/ECROC.cpp
+@@ -148,6 +148,8 @@ void ECROC::InitializeRegisters( VMEModuleTypes::ECROCClockModes clockMode,
+   // Turn off automatic RDFE for "cosmics" mode.
+   switch (runningMode) {
+     case Cosmics:
++    case MTBFBeamMuon:
++    case MTBFBeamOnly:
+       SequencerDelayDisable();
+       break;
+     case OneShot:
+@@ -155,8 +157,6 @@ void ECROC::InitializeRegisters( VMEModuleTypes::ECROCClockModes clockMode,
+     case PureLightInjection:
+     case MixedBeamPedestal:
+     case MixedBeamLightInjection:
+-    case MTBFBeamMuon:
+-    case MTBFBeamOnly:
+       SequencerDelayEnable();
+       break;
+     default:
+diff --git a/minervadaq/fermihardware/src/EChannels.cpp b/minervadaq/fermihardware/src/EChannels.cpp
+index 70730c3..e542024 100644
+--- a/minervadaq/fermihardware/src/EChannels.cpp
++++ b/minervadaq/fermihardware/src/EChannels.cpp
+@@ -35,10 +35,10 @@ EChannels::EChannels( unsigned int vmeAddress, unsigned int number,
+   VMECommunicator( vmeAddress, controller ),
+   channelNumber(number)
+ {
+-#ifndef GOFAST
+-  EChannelLog.setPriority(log4cpp::Priority::DEBUG);
+-#else
++#ifdef GOFAST
+   EChannelLog.setPriority(log4cpp::Priority::INFO);
++#else
++  EChannelLog.setPriority(log4cpp::Priority::DEBUG);
+ #endif
+ 
+   this->commType = VMEModuleTypes::EChannels;
+diff --git a/minervadaq/fermihardware/src/FPGAFrame.cpp b/minervadaq/fermihardware/src/FPGAFrame.cpp
+index 8c6c49d..2e257c0 100644
+--- a/minervadaq/fermihardware/src/FPGAFrame.cpp
++++ b/minervadaq/fermihardware/src/FPGAFrame.cpp
+@@ -264,9 +264,17 @@ void FPGAFrame::MakeMessage()
+ void FPGAFrame::DecodeRegisterValues() 
+ {
+   FPGAFrameLog.debugStream() << "FPGAFrame::DecodeRegisterValues";
++
++//  std::string errstring1 = "Received Frame Length "+this->ReceivedMessageLength();
++//  std::string errstring2 = "DAQ Size test "+MinervaDAQSizes::FPGAFrameMaxSize;
++
++  FPGAFrameLog.debugStream() <<  "!!!!!!!!!!Received Frame Length "<<(int)this->ReceivedMessageLength();
++  FPGAFrameLog.debugStream() <<  "!!!!!!!!!!DAQ Size test "<<(int)MinervaDAQSizes::FPGAFrameMaxSize;
++
++
+ 
+   if ( this->ReceivedMessageLength() != MinervaDAQSizes::FPGAFrameMaxSize ) { 
+-    this->printReceivedMessageToLog();
++    this->printReceivedMessageToLog();     
+     std::string errstring = "Incorrect FPGA Frame Length";
+     FPGAFrameLog.fatalStream() << errstring;
+     FrameThrow( errstring ); 
+diff --git a/minervadaq/fermihardware/src/Makefile b/minervadaq/fermihardware/src/Makefile
+index 2ae1f54..4bcae64 100644
+--- a/minervadaq/fermihardware/src/Makefile
++++ b/minervadaq/fermihardware/src/Makefile
+@@ -2,10 +2,11 @@
+ #CPPFLAGS  = -g -fno-inline -O0  # debugging & no optimization
+ CPPFLAGS  = -O3                 # all optimizations, combine with GOFAST
+ #--DEBUG FLAGS--
+-COMPILE_OPTIONS += -DGOFAST           # comment this OUT to get full logging back
++#COMPILE_OPTIONS += -DGOFAST           # comment this OUT to get full logging back
+ COMPILE_OPTIONS += -D$(CAEN_VERSION)  # required to build on older SLF5 machines (safe for SLF6)
+ 
+-CPPFLAGS += -Werror -Wall -DLINUX -fPIC
++#CPPFLAGS += -Werror -Wall -DLINUX -fPIC
++CPPFLAGS += -Wall -DLINUX -fPIC
+ 
+ LDFLAGS  += -shared -Wl,-soname
+ 
+diff --git a/minervadaq/fermihardware/src/SequencerReadoutBlock.cpp b/minervadaq/fermihardware/src/SequencerReadoutBlock.cpp
+index 0cc8fb6..7a515a9 100644
+--- a/minervadaq/fermihardware/src/SequencerReadoutBlock.cpp
++++ b/minervadaq/fermihardware/src/SequencerReadoutBlock.cpp
+@@ -16,7 +16,11 @@ SequencerReadoutBlock::SequencerReadoutBlock() :
+   data(NULL),
+   dataLength(0)
+ {
+-  SequencerReadoutBlockLog.setPriority(log4cpp::Priority::INFO);  
++#ifdef GOFAST
++  SequencerReadoutBlockLog.setPriority(log4cpp::Priority::INFO);
++#else  
++  SequencerReadoutBlockLog.setPriority(log4cpp::Priority::DEBUG);  
++#endif
+ #ifndef GOFAST
+   SequencerReadoutBlockLog.debugStream() << "Created new SequencerReadoutBlock";
+ #endif
+diff --git a/minervadaq/fermihardware/src/VMECommunicator.cpp b/minervadaq/fermihardware/src/VMECommunicator.cpp
+index 0ef0503..127e331 100644
+--- a/minervadaq/fermihardware/src/VMECommunicator.cpp
++++ b/minervadaq/fermihardware/src/VMECommunicator.cpp
+@@ -28,7 +28,13 @@ VMECommunicator::VMECommunicator( unsigned int theAddress,
+ 	this->dataWidthSwapped    = cvD32_swapped;
+ 	this->dataWidthReg        = cvD16;  
+ 	this->dataWidthSwappedReg = cvD16_swapped;
+-  commLog.setPriority(log4cpp::Priority::NOTICE);  
++/*  commLog.setPriority(log4cpp::Priority::NOTICE);  */
++#ifdef GOFAST
++  commLog.setPriority(log4cpp::Priority::INFO);
++#else
++  commLog.setPriority(log4cpp::Priority::DEBUG);
++#endif
++
+ }
+ 
+ //-----------------------------
+@@ -120,7 +126,9 @@ int VMECommunicator::ReadBLT(unsigned char *received_message, int blocks, unsign
+   if (0 != offset) {
+     blocks += (4 - offset);
+   }
++  commLog.debugStream() << "Execute BLT Read: bytes requested = " << blocks;
+   error = CAENVME_BLTReadCycle(controllerHandle,address, received_message, blocks, AM, DW, &count);
++  commLog.debugStream() << "bytes received = " << count << ": error status =" << error;
+   return error;
+ }
+ 
+diff --git a/minervadaq/main/Makefile b/minervadaq/main/Makefile
+index 06e18fe..b792368 100644
+--- a/minervadaq/main/Makefile
++++ b/minervadaq/main/Makefile
+@@ -1,4 +1,5 @@
+-CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC -Werror
++#CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC -Werror
++CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
+ 
+ #--RUNNING FLAGS--
+ COMPILE_OPTIONS += -DRUN_SLEEPY # This flag is required to for FEB digitization.  2009.Dec.16
+diff --git a/minervadaq/main/daqmain.cpp b/minervadaq/main/daqmain.cpp
+index ac525b6..cb7eb9e 100644
+--- a/minervadaq/main/daqmain.cpp
++++ b/minervadaq/main/daqmain.cpp
+@@ -105,6 +105,7 @@ void SetUpSigAction()
+ //! Handle the SIGINT & SIGNUM signals (both of which should exit the process).
+ void quitsignal_handler(int signum)
+ {
++//  daqmain.infoStream() << "Quit Signal Received!"; //Jack Smedley November 6, 2022
+   continueRunning = false;
+ }
+ 
+diff --git a/minervadaq/misc/rawdatacheck/Makefile b/minervadaq/misc/rawdatacheck/Makefile
+index cbe852a..81eb89b 100644
+--- a/minervadaq/misc/rawdatacheck/Makefile
++++ b/minervadaq/misc/rawdatacheck/Makefile
+@@ -1,4 +1,5 @@
+-CPPFLAGS  = -O0 -g -Wall -Werror
++#CPPFLAGS  = -O0 -g -Wall -Werror
++CPPFLAGS  = -O0 -g -Wall
+ 
+ CXX = g++
+ 
+diff --git a/minervadaq/setupdaqenv.sh b/minervadaq/setupdaqenv.sh
+index 7275020..55c99a3 100644
+--- a/minervadaq/setupdaqenv.sh
++++ b/minervadaq/setupdaqenv.sh
+@@ -71,7 +71,7 @@ elif [ $LOCALE == "NEARLINEDEV" ]; then
+   # Add log4cpp support.
+   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
+ elif [ $LOCALE == "FNAL2" ]; then
+-  export DAQROOT=/work/software/croce_mtest/minervadaq/minervadaq
++  export DAQROOT=/work/software/croce_mtest_labf/minervadaq/minervadaq
+   export CAEN_DIR=/work/software/CAENVMElib
+   export CAEN_VERSION=CAEN_2_30
+   export CODA_VERSION=et_9.0
+@@ -83,7 +83,8 @@ elif [ $LOCALE == "FNAL2" ]; then
+   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries.
+   export LD_LIBRARY_PATH=$DAQROOT/lib:$ET_LIBROOT/lib:$CAEN_DIR/lib/x86_64/:$LD_LIBRARY_PATH
+   # Add log4cpp support.
+-  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
++  #export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/log4cpp/lib
++  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib64
+ elif [ $LOCALE == "D0TESTSTAND" ]; then
+   #export DAQROOT=/work/mnvdaq
+   setup caenvme
+diff --git a/minervadaq/tests/Makefile b/minervadaq/tests/Makefile
+index 466901f..d1726b0 100644
+--- a/minervadaq/tests/Makefile
++++ b/minervadaq/tests/Makefile
+@@ -1,11 +1,12 @@
+-CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC -Werror
++#CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC -Werror
++CPPFLAGS = -g -fno-inline -O0 -Wall -DLINUX -fPIC
+ 
+ CXX = g++
+ OBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
+ SRC = $(wildcard *.cpp)
+ TARGET=tests
+ 
+-LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_workers
++LDLIBS += -L$(DAQROOT)/lib -lhardware -lminerva_workers -levent_structure
+ include $(DAQROOT)/Make.include
+ include $(DAQROOT)/Make.options
+ 
+diff --git a/minervadaq/tests/TestSuite.cpp b/minervadaq/tests/TestSuite.cpp
+index a838765..ccbc541 100644
+--- a/minervadaq/tests/TestSuite.cpp
++++ b/minervadaq/tests/TestSuite.cpp
+@@ -14,6 +14,7 @@
+ #include <assert.h>
+ #include <sys/time.h>
+ #include <sys/stat.h>
++#include <unistd.h>
+ 
+ #include "ReadoutTypes.h"
+ #include "TestSuite.h"
+diff --git a/minervadaq/workers/include/ReadoutStateRecorder.h b/minervadaq/workers/include/ReadoutStateRecorder.h
+index 07d7a4e..bc60834 100644
+--- a/minervadaq/workers/include/ReadoutStateRecorder.h
++++ b/minervadaq/workers/include/ReadoutStateRecorder.h
+@@ -46,6 +46,7 @@ class ReadoutStateRecorder {
+   void WriteToSAMPYFile();
+   void WriteToSAMJSONFile();
+   void WriteLastTriggerDataToFile();
++  void WriteLastTriggerDataToFileMTest();
+ 
+   static const int DAQHeaderVersion;
+ 
+@@ -62,6 +63,7 @@ class ReadoutStateRecorder {
+ 
+   bool BeginNextGate();
+   bool FinishGate();
++  bool MoreGates();
+ 
+   Triggers::TriggerType GetNextTriggerType(); // Get and set...
+   Modes::RunningModes GetRunMode() const;
+diff --git a/minervadaq/workers/include/ReadoutWorker.h b/minervadaq/workers/include/ReadoutWorker.h
+index 5583664..74fbcd4 100644
+--- a/minervadaq/workers/include/ReadoutWorker.h
++++ b/minervadaq/workers/include/ReadoutWorker.h
+@@ -82,6 +82,7 @@ Additions for running in "cosmics" mode.
+     void ResetCosmicLatch () const;
+ 
+     void InterruptInitialize();
++    void InterruptResetToDefault();
+     void InterruptClear() const;
+     void InterruptEnable() const;
+     int InterruptWait() const;
+diff --git a/minervadaq/workers/src/DAQWorker.cpp b/minervadaq/workers/src/DAQWorker.cpp
+index 9093081..8a45f57 100644
+--- a/minervadaq/workers/src/DAQWorker.cpp
++++ b/minervadaq/workers/src/DAQWorker.cpp
+@@ -70,12 +70,22 @@ void DAQWorker::InitializeHardware()
+   // Read in hardware config here. For now, hard code...
+ 
+ #if MTEST 
+-  readoutWorker->AddCrate(0);
+   // readoutWorker->GetVMECrateVector(<Crate address>)->AddECROC( <Croce address>,  <number of FEBs in chain 0>,  < '' in chain 1>,  < '' in chain 2>,  < '' in chain 3> );
+-  // readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  0,  0,  0,  4 );
+-    readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  5,  5,  0,  4 );
+-    readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  5,  4,  4,  4 );
+-    readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  5,  4,  3,  0 );
++//  readoutWorker->AddCrate(0);
++//  readoutWorker->AddCrate(1);// Added new crate -- Nur 08/26/2016
++//  readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  10,  5,  0,  0 ); // Modified CROCE name -- Nur 08/29/2016
++//  readoutWorker->GetVMECrateVector(1)->AddECROC( 3,  5,  5,  0,  0 ); // Modified CROCE name -- Nur 08/29/2016
++//  readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
++//  readoutWorker->GetVMECrateVector(1)->AddCRIM( 232 );
++//  readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  5,  5,  0,  0 ); // Switching crates -- Nur 09/02/2016
++//  readoutWorker->GetVMECrateVector(1)->AddECROC( 1,  10,  5,  0,  0 ); // Switching crates -- Nur 09/02/2016
++//  readoutWorker->GetVMECrateVector(0)->AddCRIM( 232 );
++//  readoutWorker->GetVMECrateVector(1)->AddCRIM( 224 );
++  readoutWorker->AddCrate(0);
++//  readoutWorker->GetVMECrateVector(0)->AddECROC( 6,  0,  0,  1,  0 ); // Modified CROCE name -- Nur 08/29/2016
++//  readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  10,  5,  0,  0 ); 
++  readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  10,  5,  5,  5 );  // Added more FEBs -- Nur 07/201/2017
++  readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  0,  0,  0,  0 ); 
+   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
+ #endif
+ 
+@@ -90,27 +100,38 @@ void DAQWorker::InitializeHardware()
+   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
+ #endif
+ #if NUMI
++
+   readoutWorker->AddCrate(0);
+-  readoutWorker->AddCrate(1);
+-  readoutWorker->GetVMECrateVector(0)->AddECROC( 1, 10, 10, 10,  6 );
+-  readoutWorker->GetVMECrateVector(0)->AddECROC( 2, 10, 10,  9,  5 );
+-  readoutWorker->GetVMECrateVector(0)->AddECROC( 3, 10, 10, 10, 10 );
+-  readoutWorker->GetVMECrateVector(0)->AddECROC( 4,  9,  9,  9,  9 );
+-  readoutWorker->GetVMECrateVector(0)->AddECROC( 5, 10, 10, 10, 10 );
+-  readoutWorker->GetVMECrateVector(0)->AddECROC( 6,  9,  9,  9,  9 );
+-  readoutWorker->GetVMECrateVector(0)->AddECROC( 7, 10, 10, 10, 10 );
+-  readoutWorker->GetVMECrateVector(0)->AddECROC( 8,  9,  9,  9,  9 );
+-  readoutWorker->GetVMECrateVector(1)->AddECROC( 1, 10, 10, 10, 10 );
+-  readoutWorker->GetVMECrateVector(1)->AddECROC( 2,  9,  9,  9,  9 );
+-  readoutWorker->GetVMECrateVector(1)->AddECROC( 3, 10, 10,  6,  6 );
+-  readoutWorker->GetVMECrateVector(1)->AddECROC( 4,  9,  9,  5,  5 );
+-  readoutWorker->GetVMECrateVector(1)->AddECROC( 5,  6,  6,  6,  2 );
+-  readoutWorker->GetVMECrateVector(1)->AddECROC( 6,  5,  5,  5,  0 );
+-  readoutWorker->GetVMECrateVector(1)->AddECROC( 7, 10, 10, 10, 10 );
++  readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  0,  0, 0,  10 );
++  readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  0,  0, 0,  9 );
++  readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  10,  10, 10,  10 );
++  readoutWorker->GetVMECrateVector(0)->AddECROC( 4,  9,  9, 9,  9 );
++  readoutWorker->GetVMECrateVector(0)->AddECROC( 5,  6,  6, 6,  0 );
++  readoutWorker->GetVMECrateVector(0)->AddECROC( 6,  5,  5, 5,  0 );
+   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
+   readoutWorker->GetVMECrateVector(0)->AddCRIM( 240 );
+-  readoutWorker->GetVMECrateVector(1)->AddCRIM( 224 );
+-  readoutWorker->GetVMECrateVector(1)->AddCRIM( 240 );
++
++//   readoutWorker->AddCrate(0);
++//   readoutWorker->AddCrate(1);
++//   readoutWorker->GetVMECrateVector(0)->AddECROC( 1, 10, 10, 10,  6 );
++//   readoutWorker->GetVMECrateVector(0)->AddECROC( 2, 10, 10,  9,  5 );
++//   readoutWorker->GetVMECrateVector(0)->AddECROC( 3, 10, 10, 10, 10 );
++//   readoutWorker->GetVMECrateVector(0)->AddECROC( 4,  9,  9,  9,  9 );
++//   readoutWorker->GetVMECrateVector(0)->AddECROC( 5, 10, 10, 10, 10 );
++//   readoutWorker->GetVMECrateVector(0)->AddECROC( 6,  9,  9,  9,  9 );
++//   readoutWorker->GetVMECrateVector(0)->AddECROC( 7, 10, 10, 10, 10 );
++//   readoutWorker->GetVMECrateVector(0)->AddECROC( 8,  9,  9,  9,  9 );
++//   readoutWorker->GetVMECrateVector(1)->AddECROC( 1, 10, 10, 10, 10 );
++//   readoutWorker->GetVMECrateVector(1)->AddECROC( 2,  9,  9,  9,  9 );
++//   readoutWorker->GetVMECrateVector(1)->AddECROC( 3, 10, 10,  6,  6 );
++//   readoutWorker->GetVMECrateVector(1)->AddECROC( 4,  9,  9,  5,  5 );
++//   readoutWorker->GetVMECrateVector(1)->AddECROC( 5,  6,  6,  6,  2 );
++//   readoutWorker->GetVMECrateVector(1)->AddECROC( 6,  5,  5,  5,  0 );
++//   readoutWorker->GetVMECrateVector(1)->AddECROC( 7, 10, 10, 10, 10 );
++//   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
++//   readoutWorker->GetVMECrateVector(0)->AddCRIM( 240 );
++//   readoutWorker->GetVMECrateVector(1)->AddCRIM( 224 );
++//   readoutWorker->GetVMECrateVector(1)->AddCRIM( 240 );
+ #endif
+   //printf("\n in DAQWorker :calling InitializeCrates \n");
+   readoutWorker->InitializeCrates( args->runMode );
+@@ -268,17 +289,18 @@ bool DAQWorker::CloseDownET()
+ //! While the next gate condition is valid, read all EChannels.
+ void DAQWorker::TakeData()
+ {
+-  daqWorker.infoStream() << "Beginning Data Acquisition...";
++  daqWorker.infoStream() << "TakeData: Beginning Data Acquisition...";
+ 
+   DeclareRunHeaderToET();
+   while ( BeginNextGate() ) {
+ 
+     do {
+       unsigned int blockSize = readoutWorker->GetNextDataBlockSize();  
+-      daqWorker.debugStream() << "Next data block size is: " << blockSize;
++      daqWorker.debugStream() << "TakeData: Next data block size is: " << blockSize;
+       std::tr1::shared_ptr<SequencerReadoutBlock> block = 
+         readoutWorker->GetNextDataBlock( blockSize );
+       if (declareEventsToET) {
++        daqWorker.debugStream() << "TakeData: DeclareDataBlock";
+         DeclareDataBlock<SequencerReadoutBlock>( block.get() );
+       }
+       else {
+@@ -286,10 +308,11 @@ void DAQWorker::TakeData()
+       }
+     } while ( readoutWorker->MoveToNextChannel() );
+ 
++    daqWorker.debugStream() << "TakeData: FinishGate";
+     FinishGate();
+     DeclareDAQHeaderToET();
+   }
+-
++  readoutWorker->InterruptResetToDefault();
+   daqWorker.infoStream() << "Finished Data Acquisition...";
+ }
+ 
+@@ -299,13 +322,22 @@ bool DAQWorker::BeginNextGate()
+ {
+   daqWorker.debugStream() << "DAQWorker::BeginNextGate...";
+   daqWorker.debugStream() << "Continue Running Status = " << (*status);
+-  if (!(*status)) return false;
++  if (!(*status)) {
++      // readoutWorker->InterruptResetToDefault();
++      return false;
++  }
++
++  if (!stateRecorder->MoreGates()) {
++      return false;
++  }
+ 
+   unsigned long long triggerTime = 0;
+   readoutWorker->ResetCurrentChannel();
+   Triggers::TriggerType triggerType = stateRecorder->GetNextTriggerType();
+   switch(stateRecorder->GetRunMode()) {
+     case Modes::Cosmics:
++    case Modes::MTBFBeamMuon:
++    case Modes::MTBFBeamOnly:
+       triggerTime = readoutWorker->TriggerCosmics( triggerType );
+       break;
+     case Modes::OneShot:
+@@ -313,8 +345,6 @@ bool DAQWorker::BeginNextGate()
+     case Modes::PureLightInjection:
+     case Modes::MixedBeamPedestal:
+     case Modes::MixedBeamLightInjection:
+-    case Modes::MTBFBeamMuon:
+-    case Modes::MTBFBeamOnly:
+       triggerTime = readoutWorker->Trigger( triggerType );
+       break;
+     default:
+@@ -395,6 +425,7 @@ template <class X> void DAQWorker::DeclareDataBlock( X *dataBlock )
+ //---------------------------------------------------------
+ template <class X> struct EventHandler * DAQWorker::CreateEventHandler( X *dataBlock )
+ {
++  daqWorker.debugStream() << "CreateEventHandler: MaxTotalDataPerChain = "<< MinervaDAQSizes::MaxTotalDataPerChain;
+   struct EventHandler * handler = (struct EventHandler *)malloc( sizeof(struct EventHandler) );
+   assert( NULL != handler );
+ 
+diff --git a/minervadaq/workers/src/Makefile b/minervadaq/workers/src/Makefile
+index 9cc7cb6..32ebfb0 100644
+--- a/minervadaq/workers/src/Makefile
++++ b/minervadaq/workers/src/Makefile
+@@ -6,7 +6,8 @@ CPPFLAGS  = -g -fno-inline -O0  # debugging & no optimization
+ #--DEBUG FLAGS--
+ COMPILE_OPTIONS += -DGOFAST  # comment this OUT to get full logging back
+ 
+-CPPFLAGS += -Werror -Wall -DLINUX -fPIC -DGIT_VERSION=\"$(GIT_VERSION)\"
++#CPPFLAGS += -Werror -Wall -DLINUX -fPIC -DGIT_VERSION=\"$(GIT_VERSION)\"
++CPPFLAGS += -Wall -DLINUX -fPIC -DGIT_VERSION=\"$(GIT_VERSION)\"
+ 
+ LDFLAGS += -shared -Wl,-soname
+ 
+diff --git a/minervadaq/workers/src/ReadoutStateRecorder.cpp b/minervadaq/workers/src/ReadoutStateRecorder.cpp
+index 7f7e655..efce235 100644
+--- a/minervadaq/workers/src/ReadoutStateRecorder.cpp
++++ b/minervadaq/workers/src/ReadoutStateRecorder.cpp
+@@ -10,6 +10,7 @@ each time we created a new DAQ version.
+ */
+ #include "ReadoutStateRecorder.h"
+ #include "exit_codes.h"
++#include <unistd.h>
+ 
+ log4cpp::Category& stateRecorderLogger = log4cpp::Category::getInstance(std::string("stateRecorderLogger"));
+ 
+@@ -79,6 +80,17 @@ bool ReadoutStateRecorder::BeginNextGate()
+   return false;
+ }
+ 
++bool ReadoutStateRecorder::MoreGates()
++{
++  int nextGate=0;
++  nextGate = gate+1;
++
++  if (nextGate <= args->numberOfGates) 
++    return true;
++
++  return false;
++}
++
+ //---------------------------
+ //! Log the global gate, write the SAM metadata, and write the last trigger.
+ /*!
+@@ -93,6 +105,7 @@ bool ReadoutStateRecorder::FinishGate()
+   this->WriteToSAMPYFile();
+   this->WriteToSAMJSONFile();
+   this->WriteLastTriggerDataToFile();
++  this->WriteLastTriggerDataToFileMTest();
+   return true;
+ }
+ 
+@@ -114,8 +127,11 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
+     case OneShot:
+       triggerType = Pedestal;
+       //     usleep(50000); //0.05 second sleep 
++      //sleep(1);
++      //usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017
+ #ifndef MTEST
+-      sleep(1);
++      //sleep(1);
++      //usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017      
+ #endif
+       stateRecorderLogger.debugStream() << " Running Mode is OneShot.";
+       break;
+@@ -126,7 +142,9 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
+     case PureLightInjection:
+       triggerType = LightInjection;
+ #ifndef MTEST
+-      sleep(1);
++      //sleep(1);
++      //usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017
++      usleep(2000000); // 2 second sleep Howard, Jack, Geoff 25Aug22
+ #endif
+       stateRecorderLogger.debugStream() << " Running Mode is PureLightInjection.";
+       break;
+@@ -308,6 +326,9 @@ void ReadoutStateRecorder::WriteToSAMPYFile()
+     case 32:
+       fprintf(file,"runType='minerva',\n");
+       break;
++    case 64:
++      fprintf(file,"runType='teststand',\n");
++      break;
+     default:
+       fprintf(file,"runType='errordetector',\n");
+   }
+@@ -407,6 +428,9 @@ void ReadoutStateRecorder::WriteToSAMJSONFile()
+     case 32:
+       sprintf(runType, "minerva");
+       break;
++    case 64:
++      sprintf(runType, "teststand");
++      break;
+     default:
+       sprintf(runType, "errordetector");
+   }
+@@ -475,11 +499,39 @@ void ReadoutStateRecorder::WriteLastTriggerDataToFile()
+   }
+   else {
+     if (!(gate%10)) {
++      stateRecorderLogger.infoStream() << "Writing info for trigger " << gate << " to file " << args->lastTriggerFileName;
++    }
++  }
++
++  fprintf(file, "run=%d\n",      args->runNumber);
++  fprintf(file, "subrun=%d\n",   args->subRunNumber);
++  fprintf(file, "number=%d\n",   gate);
++  fprintf(file, "type=%d\n",     triggerType);
++  fprintf(file, "time=%llu\n",   gateStartTime);
++
++  fclose(file);
++} // WriteLastTriggerDataToFile()
++
++//---------------------------------------------------------
++//! Log basic information about the last successful readout gate.
++void ReadoutStateRecorder::WriteLastTriggerDataToFileMTest()
++{
++  FILE *file;
++
++  std::string filename = "/home/nfs/minerva/daq/last_trigger.dat";
++
++  if ( NULL == (file=fopen(filename.c_str(),"w")) ) {
++    stateRecorderLogger.errorStream() << "Error opening " << filename << "for writing!";
++    return; 
++  }
++  else {
++    if (!(gate%10)) {
+       stateRecorderLogger.infoStream() << "Writing info for trigger " << gate 
+-        << " to file " << args->lastTriggerFileName;
++        << " to file " << filename;
+     }
+   }
+ 
++  stateRecorderLogger.infoStream() << "MTest: write trigger info to last_trigger.dat - " << gate << " (gate)";
+   fprintf(file, "run=%d\n",      args->runNumber);
+   fprintf(file, "subrun=%d\n",   args->subRunNumber);
+   fprintf(file, "number=%d\n",   gate);
+@@ -487,7 +539,7 @@ void ReadoutStateRecorder::WriteLastTriggerDataToFile()
+   fprintf(file, "time=%llu\n",   gateStartTime);
+ 
+   fclose(file);
+-}
++} // end WriteLastTriggerDataToFileMTest()
+ 
+ //-----------------------------
+ std::ostream& operator<<(std::ostream& out, const ReadoutStateRecorder& s)
+diff --git a/minervadaq/workers/src/ReadoutWorker.cpp b/minervadaq/workers/src/ReadoutWorker.cpp
+index 804f77b..f3e8180 100644
+--- a/minervadaq/workers/src/ReadoutWorker.cpp
++++ b/minervadaq/workers/src/ReadoutWorker.cpp
+@@ -90,17 +90,15 @@ void ReadoutWorker::InitializeCrates( Modes::RunningModes theRunningMode )
+   switch(runningMode) {
+     case Modes::OneShot:
+     case Modes::NuMIBeam:
+-      EnableIRQ();
+-      break;
+-    case Modes::Cosmics:
+-      InterruptInitialize();
+-      break;
+     case Modes::PureLightInjection:
+     case Modes::MixedBeamPedestal:
+     case Modes::MixedBeamLightInjection:
++      EnableIRQ();
++      break;
++    case Modes::Cosmics:
+     case Modes::MTBFBeamMuon:
+     case Modes::MTBFBeamOnly:
+-      EnableIRQ();
++      InterruptInitialize();
+       break;
+     default:
+       readoutLogger.errorStream() << "InitializeCrates: Unknown running mode."<<runningMode;
+@@ -327,10 +325,11 @@ unsigned int ReadoutWorker::GetNextDataBlockSize() const
+ std::tr1::shared_ptr<SequencerReadoutBlock> ReadoutWorker::GetNextDataBlock( unsigned int blockSize ) const
+ {
+   if (currentChannel == readoutChannels.end()) {
+-    readoutLogger.fatalStream() << "Attempting to read data from a NULL Channel!";
++    readoutLogger.fatalStream() << "GetNextDataBlock: Attempting to read data from a NULL Channel!";
+     exit( EXIT_CROC_UNSPECIFIED_ERROR );
+   }
+-  readoutLogger.debugStream() << "Getting Data Block for " << (**currentChannel);
++  /* blockSize = 60000; */
++  readoutLogger.debugStream() << "GetNextDataBlock: Getting Data Block for " << (**currentChannel);
+   std::tr1::shared_ptr<SequencerReadoutBlock> block(new SequencerReadoutBlock());
+   block->SetData( (*currentChannel)->ReadMemory( blockSize ), blockSize );
+   return block;
+@@ -421,6 +420,11 @@ void ReadoutWorker::InterruptInitialize() {
+ }
+ 
+ //---------------------------
++void ReadoutWorker::InterruptResetToDefault() {
++  return this->MasterCRIM()->InterruptResetToDefault();
++}
++
++//---------------------------
+ void ReadoutWorker::InterruptClear() const {
+   return this->MasterCRIM()->InterruptClear();
+ }
+@@ -454,17 +458,11 @@ unsigned long long ReadoutWorker::TriggerCosmics( Triggers::TriggerType triggerT
+ #endif
+ 
+   InterruptEnable();
+-  ResetCosmicLatch();  // Start CRIM sequencer
+   InterruptClear();
++  ResetCosmicLatch();  // Start CRIM sequencer
+ 
+   switch (triggerType) {
+-    case Pedestal:
+-    case ChargeInjection:
+-    case LightInjection:
+-      this->MasterCRIM()->SendSoftwareGate(); 
+-      break;
+     case Cosmic:
+-    case NuMI:
+     case MTBFMuon:
+     case MTBFBeam:
+       break;

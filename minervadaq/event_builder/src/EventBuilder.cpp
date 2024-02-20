@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
         continueRunning = false;
 
     #ifndef NEARLINE
-    // Geoff Savage 14Dec21 - No more access to evt after event is put back.
+    // Geoff Savage 14Dec21 - Return event to ET after writing event to file..
     // for whatever reason, the nearline event builder gets
     // super confused if the nearline station is et_event_put()ing
     // the events back into the stream.  (it always et_event_get()s
@@ -331,6 +331,7 @@ int main(int argc, char *argv[])
     #endif
   }
 
+  eventbuilder.infoStream() << "Exited data collection loop, detaching..."; /* Smedley */
   // Detach from the station.
   if (et_station_detach(sys_id, attach) < 0) {
     eventbuilder.fatal("et_producer: error in station detach\n");
@@ -338,6 +339,7 @@ int main(int argc, char *argv[])
     exit(EXIT_ETSTARTUP_ERROR);
   }
 
+  eventbuilder.infoStream() << "Closing ET..."; /* Smedley */
   // Close ET
   if (et_close(sys_id) < 0) {
     eventbuilder.fatal("et_producer: error in ET close\n");
@@ -345,6 +347,7 @@ int main(int argc, char *argv[])
     exit(EXIT_ETSTARTUP_ERROR);
   }
 
+  eventbuilder.infoStream() << "Closing output file..."; /* Smedley */
   binary_outputfile.close(); 
 
   eventbuilder.infoStream() << "Closing the Event Builder!";

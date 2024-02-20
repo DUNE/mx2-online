@@ -876,6 +876,15 @@ int et_station_detach(et_sys_id id, et_att_id att)
   et_station *ps;
   et_stat_id  stat_id;
   
+/* Smedley */
+  et_logmsg("INFO", "et_station_detach, begin station detach\n");
+  if ( etid->share == ET_MUTEX_SHARE ) et_logmsg("INFO", "et_station_detach, etid->share == 1\n");
+  else et_logmsg("INFO", "et_station_detach, etid->share == 0");
+#ifdef MUTEX_INIT
+  et_logmsg("INFO", "et_station_detach, MUTEX_INIT found\n");
+#endif
+/* Smedley */
+
   if ((att < 0) || (att >= ET_ATTACHMENTS_MAX)) {
     if (etid->debug >= ET_DEBUG_ERROR) {
       et_logmsg("ERROR", "et_station_detach, bad attachment id\n");
@@ -898,13 +907,22 @@ int et_station_detach(et_sys_id id, et_att_id att)
     return ET_ERROR_DEAD;
   }
   
+  struct tm *local; /* Smedley */
+  time_t locktime; /* Smedley */
+
   /* don't lock if doing ET system repair/cleanup since already locked */
   if (etid->cleanup != 1) {
+    locktime = time(NULL); /* Smedley */
+    local = localtime(&locktime); /* Smedley */
+    et_logmsg("INFO", "et_station_detach, initiating lock 913 at time: %s\n", asctime(local)); /* Smedley */
     et_station_lock(sys);
+    et_logmsg("INFO", "et_station_detach, locked"); /* Smedley */
   }
   
   /* see which station we're attached to */
+  et_logmsg("INFO", "et_station_detach, see which station we're attached to\n"); /* Smedley */
   if (etid->sys->attach[att].stat < 0) {
+    et_logmsg("INFO", "et_station_detach, opening lock 920\n"); /* Smedley */
     et_station_unlock(sys);
     if (etid->debug >= ET_DEBUG_ERROR) {
       et_logmsg("ERROR", "et_station_detach, not attached any station!\n");
@@ -916,6 +934,9 @@ int et_station_detach(et_sys_id id, et_att_id att)
   
   /* now we have 2 mutexes */
   if (etid->cleanup != 1) {
+    locktime = time(NULL); /* Smedley */
+    local = localtime(&locktime); /* Smedley */
+    et_logmsg("INFO", "et_station_detach, initiating lock 932 at time: %s\n", asctime(local)); /* Smedley */
     et_system_lock(sys);
   }
   
@@ -932,10 +953,12 @@ int et_station_detach(et_sys_id id, et_att_id att)
     /* to change station's status, grab mutexes for event transfer */
     /* this may not be necessary, 1/11/2001 */
     if (etid->cleanup != 1) {
+      et_logmsg("INFO", "et_station_detach, transfering all locks\n"); /* Smedley */
       et_transfer_lock_all(etid);
     }
     ps->data.status = ET_STATION_IDLE;
     if (etid->cleanup != 1) {
+     et_logmsg("INFO", "et_station_detach, unlocking all locks\n"); /* Smedley */
      et_transfer_unlock_all(etid);
     }
     et_flush_events(etid, att, stat_id);
@@ -960,12 +983,14 @@ int et_station_detach(et_sys_id id, et_att_id att)
   
   /* next block is only valid for users or ET server, but NOT ET system cleanup */
   if (etid->cleanup != 1) {
+    et_logmsg("INFO", "et_station_detach, opening lock 979\n"); /* Smedley */
     et_station_unlock(sys);
     /* ET server has no proc data stored */
     if (etid->proc != ET_SYS) {
       sys->proc[etid->proc].nattachments--;
       sys->proc[etid->proc].att[att] = -1;
     }
+    et_logmsg("INFO", "et_station_detach, opening lock 986\n"); /* Smedley */
     et_system_unlock(sys);
   }
   

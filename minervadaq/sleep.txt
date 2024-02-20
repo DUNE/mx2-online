@@ -1,0 +1,71 @@
+Binary file bin/tests matches
+Binary file bin/event_builder matches
+Binary file bin/.nfs000000007324193b00000038 matches
+event_builder/src/EventBuilder.cpp:    // So set this check to use a very short sleep period!
+event_builder/src/EventBuilder.cpp:    system("sleep 5s"); 
+event_builder/src/EventBuilder.cpp:    system("sleep 10s");
+event_builder/src/EventBuilder.cpp:      // sleep to avoid a busy-wait.
+event_builder/src/EventBuilder.cpp:      // commenting this sleep out for now - this will keep the CPU engaged 
+event_builder/src/EventBuilder.cpp://      nanosleep( &time, NULL );
+event_builder/src/EventBuilder.cpp:    system("sleep 10s");
+event_builder/src/EventBuilder.cpp:    system("sleep 10s");
+event_builder/src/EventBuilder.cpp.20211213:    // So set this check to use a very short sleep period!
+event_builder/src/EventBuilder.cpp.20211213:    system("sleep 5s"); 
+event_builder/src/EventBuilder.cpp.20211213:    system("sleep 10s");
+event_builder/src/EventBuilder.cpp.20211213:      // sleep to avoid a busy-wait.
+event_builder/src/EventBuilder.cpp.20211213:      // commenting this sleep out for now - this will keep the CPU engaged 
+event_builder/src/EventBuilder.cpp.20211213://      nanosleep( &time, NULL );
+event_builder/src/EventBuilder.cpp.20211213:    system("sleep 10s");
+event_builder/src/EventBuilder.cpp.20211213:    system("sleep 10s");
+event_builder/src/EventBuilder.cpp.debug:    // So set this check to use a very short sleep period!
+event_builder/src/EventBuilder.cpp.debug:    system("sleep 5s"); 
+event_builder/src/EventBuilder.cpp.debug:    system("sleep 10s");
+event_builder/src/EventBuilder.cpp.debug:      // sleep to avoid a busy-wait.
+event_builder/src/EventBuilder.cpp.debug:      // commenting this sleep out for now - this will keep the CPU engaged 
+event_builder/src/EventBuilder.cpp.debug://      nanosleep( &time, NULL );
+event_builder/src/EventBuilder.cpp.debug:    system("sleep 10s");
+event_builder/src/EventBuilder.cpp.debug:    system("sleep 10s");
+Binary file event_builder/src/EventBuilder.o matches
+Binary file lib/libminerva_workers.so matches
+runthedaq/start_daq_singleton_etleakchk:	sleep 1s
+runthedaq/start_daq_singleton_etleakchk:sleep 10s
+runthedaq/start_daq_singleton_etleakchk:	sleep 1s
+runthedaq/start_daq_singleton_etleakchk:sleep 1s
+runthedaq/start_daq_singleton_etleakchk:# 	sleep 1s
+runthedaq/start_daq_singleton_etleakchk:sleep 25s
+runthedaq/start_daq_singleton_leakchk:	sleep 1s
+runthedaq/start_daq_singleton_leakchk:sleep 10s
+runthedaq/start_daq_singleton_leakchk:	sleep 1s
+runthedaq/start_daq_singleton_leakchk:sleep 1s
+runthedaq/start_daq_singleton_leakchk:	sleep 1s
+runthedaq/start_daq_singleton_leakchk:sleep 15s
+runthedaq/start_et_base:	sleep 1s
+runthedaq/start_et_base:sleep 10s
+runthedaq/start_et_base:	sleep 1s
+runthedaq/start_et_base:sleep 1s
+runthedaq/start_et_base:	sleep 1s
+runthedaq/start_et_base:sleep 15s
+runthedaq/start_daq_singleton:	sleep 1s
+runthedaq/start_daq_singleton:sleep 10s
+runthedaq/start_daq_singleton:	sleep 1s
+runthedaq/start_daq_singleton:sleep 1s
+runthedaq/start_daq_singleton:	sleep 1s
+runthedaq/start_daq_singleton:sleep 15s
+tests/TestSuite.cpp:  // sleep to keep timestamps unique in the db - lame, but simple
+tests/TestSuite.cpp:  sleep(1);
+tests/TestSuite.cpp:  usleep(300);
+Binary file tests/TestSuite.o matches
+workers/src/ReadoutStateRecorder.cpp:Remove the 1 second sleeps when trigger for OneShot and
+workers/src/ReadoutStateRecorder.cpp:      //     usleep(50000); //0.05 second sleep 
+workers/src/ReadoutStateRecorder.cpp:      //sleep(1);
+workers/src/ReadoutStateRecorder.cpp:      //usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017
+workers/src/ReadoutStateRecorder.cpp:      //sleep(1);
+workers/src/ReadoutStateRecorder.cpp:      //usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017      
+workers/src/ReadoutStateRecorder.cpp:      //sleep(1);
+workers/src/ReadoutStateRecorder.cpp:      usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017
+workers/src/ReadoutWorker.cpp:  // As the number of hits goes up we may need to extend the sleep period.
+workers/src/ReadoutWorker.cpp:  // There is a stratgy decision to be made here - we can either sleep long enough 
+workers/src/ReadoutWorker.cpp:  // if nanosleep is not available, use: usleep(us);
+workers/src/ReadoutWorker.cpp:  (void)nanosleep(&tmReq, (timespec *)NULL); 
+Binary file workers/src/ReadoutStateRecorder.o matches
+Binary file workers/src/ReadoutWorker.o matches

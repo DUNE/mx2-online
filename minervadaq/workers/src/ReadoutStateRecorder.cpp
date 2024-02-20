@@ -10,6 +10,7 @@ each time we created a new DAQ version.
 */
 #include "ReadoutStateRecorder.h"
 #include "exit_codes.h"
+#include <unistd.h>
 
 log4cpp::Category& stateRecorderLogger = log4cpp::Category::getInstance(std::string("stateRecorderLogger"));
 
@@ -142,7 +143,8 @@ Triggers::TriggerType ReadoutStateRecorder::GetNextTriggerType()
       triggerType = LightInjection;
 #ifndef MTEST
       //sleep(1);
-      usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017
+      //usleep(500000); //0.5 second sleep // Chnged Sleep -- Nur 07/28/2017
+      usleep(2000000); // 2 second sleep Howard, Jack, Geoff 25Aug22
 #endif
       stateRecorderLogger.debugStream() << " Running Mode is PureLightInjection.";
       break;

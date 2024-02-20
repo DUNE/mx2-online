@@ -1,0 +1,114 @@
+i
+*****************************************
+
+  ET SYSTEM - (/work/data/etsys/TS1_00040006_0020_linjc_v09_2303281845_RawData) (host acd-srv03.fnal.gov) (bits 64)
+              (tcp port 1201) (udp port 11111) (multicast port 11111)
+              (pid 23868) (lang C) (local) (period = 4 sec)
+
+  STATIC INFO - maximum of:
+    events(2200), event size(49152), temps(2200)
+    stations(10), attaches(20), procs(20)
+    network interfaces(2): 131.225.195.73, 192.168.197.22,
+
+  DYNAMIC INFO - currently there are:
+    processes(1), attachments(2), temps(0)
+    stations(2), hearbeat(345)
+
+  STATIONS:
+    "GRAND_CENTRAL" (id = 0)
+      static info
+        status(ACTIVE), flow(SERIAL), blocking(YES), user(MULTI), select(ALL)
+        restore(GC), prescale(1), cue(10), select words(-1,-1,-1,-1,)
+      dynamic info
+        attachments: total#(1),  ids(1,)
+        input  list: cnt =  2200, events in  = 1772
+        output list: cnt =     0, events out = 1772
+
+    "CHICAGO_UNION" (id = 1)
+      static info
+        status(ACTIVE), flow(SERIAL), blocking(YES), user(1), select(ALL)
+        restore(OUT), prescale(1), cue(10), select words(-1,-1,-1,-1,)
+      dynamic info
+        attachments: total#(1),  ids(0,)
+        input  list: cnt =     0, events in  = 1772, events try = 1772
+        output list: cnt =     0, events out = 1772
+
+  LOCAL USERS:
+    process #0, # attachments(1), attach ids(0,), pid(23880), hbeat(344)
+
+  ATTACHMENTS:
+    att #0, is at station(CHICAGO_UNION) on host(acd-srv03.fnal.gov) at pid(23880)
+    proc(0), blocked(NO)
+      events:  make(0), get(1772), put(1772), dump(0)
+    att #1, is at station(GRAND_CENTRAL) on host(acd-srv03.fnal.gov) at pid(23904)
+    proc(-1), blocked(NO)
+      events:  make(1772), get(0), put(1772), dump(0)
+
+  EVENTS OWNED BY:
+    system (2200),  att0 (0),  att1 (0),
+
+  EVENT RATE of GC = 12 events/sec
+
+  CREATING STATIONS:  
+  IDLE STATIONS:      
+  STATION CHAIN:      GRAND_CENTRAL, CHICAGO_UNION, 
+  LOCKED MUTEXES:     CHICAGO_UNION-in, 
+
+*****************************************
+
+
+
+*****************************************
+
+  ET SYSTEM - (/work/data/etsys/TS1_00040006_0020_linjc_v09_2303281845_RawData) (host acd-srv03.fnal.gov) (bits 64)
+              (tcp port 1201) (udp port 11111) (multicast port 11111)
+              (pid 23868) (lang C) (local) (period = 4 sec)
+
+  STATIC INFO - maximum of:
+    events(2200), event size(49152), temps(2200)
+    stations(10), attaches(20), procs(20)
+    network interfaces(2): 131.225.195.73, 192.168.197.22,
+
+  DYNAMIC INFO - currently there are:
+    processes(1), attachments(1), temps(1)
+    stations(2), hearbeat(882)
+
+  STATIONS:
+    "GRAND_CENTRAL" (id = 0)
+      static info
+        status(ACTIVE), flow(SERIAL), blocking(YES), user(MULTI), select(ALL)
+        restore(GC), prescale(1), cue(10), select words(-1,-1,-1,-1,)
+      dynamic info
+        attachments: total#(1),  ids(1,)
+        input  list: cnt =  2199, events in  = 2301
+        output list: cnt =     0, events out = 2302
+
+    "CHICAGO_UNION" (id = 1)
+      static info
+        status(ACTIVE), flow(SERIAL), blocking(YES), user(1), select(ALL)
+        restore(OUT), prescale(1), cue(10), select words(-1,-1,-1,-1,)
+      dynamic info
+        attachments: total#(1),  ids(0,)
+        input  list: cnt =     0, events in  = 2302, events try = 2302
+        output list: cnt =     0, events out = 2302
+
+  LOCAL USERS:
+    process #0, # attachments(1), attach ids(0,), pid(23880), hbeat(881)
+
+  ATTACHMENTS:
+    att #1, is at station(GRAND_CENTRAL) on host(acd-srv03.fnal.gov) at pid(23904)
+    proc(-1), blocked(NO)
+      events:  make(2302), get(0), put(2302), dump(0)
+
+  EVENTS OWNED BY:
+    system (2200),  att1 (0),
+
+  EVENT RATE of GC = 0 events/sec
+
+  CREATING STATIONS:  
+  IDLE STATIONS:      
+  STATION CHAIN:      GRAND_CENTRAL, CHICAGO_UNION, 
+  LOCKED MUTEXES:     system, station, GRAND_CENTRAL, CHICAGO_UNION, 
+
+*****************************************
+

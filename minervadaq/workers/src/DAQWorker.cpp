@@ -100,27 +100,38 @@ void DAQWorker::InitializeHardware()
   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
 #endif
 #if NUMI
+
   readoutWorker->AddCrate(0);
-  readoutWorker->AddCrate(1);
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 1, 10, 10, 10,  6 );
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 2, 10, 10,  9,  5 );
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 3, 10, 10, 10, 10 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  10, 10, 10, 10 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  9,  9,  9,  9 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  10, 10, 10, 10 );
   readoutWorker->GetVMECrateVector(0)->AddECROC( 4,  9,  9,  9,  9 );
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 5, 10, 10, 10, 10 );
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 6,  9,  9,  9,  9 );
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 7, 10, 10, 10, 10 );
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 8,  9,  9,  9,  9 );
-  readoutWorker->GetVMECrateVector(1)->AddECROC( 1, 10, 10, 10, 10 );
-  readoutWorker->GetVMECrateVector(1)->AddECROC( 2,  9,  9,  9,  9 );
-  readoutWorker->GetVMECrateVector(1)->AddECROC( 3, 10, 10,  6,  6 );
-  readoutWorker->GetVMECrateVector(1)->AddECROC( 4,  9,  9,  5,  5 );
-  readoutWorker->GetVMECrateVector(1)->AddECROC( 5,  6,  6,  6,  2 );
-  readoutWorker->GetVMECrateVector(1)->AddECROC( 6,  5,  5,  5,  0 );
-  readoutWorker->GetVMECrateVector(1)->AddECROC( 7, 10, 10, 10, 10 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 5,  6,  6,  6,  0 );
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 6,  5,  5,  5,  0 );
   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
   readoutWorker->GetVMECrateVector(0)->AddCRIM( 240 );
-  readoutWorker->GetVMECrateVector(1)->AddCRIM( 224 );
-  readoutWorker->GetVMECrateVector(1)->AddCRIM( 240 );
+
+//   readoutWorker->AddCrate(0);
+//   readoutWorker->AddCrate(1);
+//   readoutWorker->GetVMECrateVector(0)->AddECROC( 1, 10, 10, 10,  6 );
+//   readoutWorker->GetVMECrateVector(0)->AddECROC( 2, 10, 10,  9,  5 );
+//   readoutWorker->GetVMECrateVector(0)->AddECROC( 3, 10, 10, 10, 10 );
+//   readoutWorker->GetVMECrateVector(0)->AddECROC( 4,  9,  9,  9,  9 );
+//   readoutWorker->GetVMECrateVector(0)->AddECROC( 5, 10, 10, 10, 10 );
+//   readoutWorker->GetVMECrateVector(0)->AddECROC( 6,  9,  9,  9,  9 );
+//   readoutWorker->GetVMECrateVector(0)->AddECROC( 7, 10, 10, 10, 10 );
+//   readoutWorker->GetVMECrateVector(0)->AddECROC( 8,  9,  9,  9,  9 );
+//   readoutWorker->GetVMECrateVector(1)->AddECROC( 1, 10, 10, 10, 10 );
+//   readoutWorker->GetVMECrateVector(1)->AddECROC( 2,  9,  9,  9,  9 );
+//   readoutWorker->GetVMECrateVector(1)->AddECROC( 3, 10, 10,  6,  6 );
+//   readoutWorker->GetVMECrateVector(1)->AddECROC( 4,  9,  9,  5,  5 );
+//   readoutWorker->GetVMECrateVector(1)->AddECROC( 5,  6,  6,  6,  2 );
+//   readoutWorker->GetVMECrateVector(1)->AddECROC( 6,  5,  5,  5,  0 );
+//   readoutWorker->GetVMECrateVector(1)->AddECROC( 7, 10, 10, 10, 10 );
+//   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
+//   readoutWorker->GetVMECrateVector(0)->AddCRIM( 240 );
+//   readoutWorker->GetVMECrateVector(1)->AddCRIM( 224 );
+//   readoutWorker->GetVMECrateVector(1)->AddCRIM( 240 );
 #endif
   //printf("\n in DAQWorker :calling InitializeCrates \n");
   readoutWorker->InitializeCrates( args->runMode );
@@ -129,6 +140,7 @@ void DAQWorker::InitializeHardware()
 //---------------------------------------------------------
 void DAQWorker::CleanupHardware()
 {
+  daqWorker.infoStream() << "Cleaning up hardware..."; //SMEDLEY 3/9/2023
   readoutWorker->CleanupHardware();
 }
 
@@ -180,7 +192,7 @@ int DAQWorker::SetUpET()
     return etattstat;
   } 
   daqWorker.infoStream() << "Successfully attached to GRANDCENTRAL Station.";        
-
+  
   return 0;
 }
 
@@ -195,7 +207,7 @@ bool DAQWorker::ContactEventBuilder( EventHandler *handler )
   daqWorker.debugStream() << "EventHandler dataLength = " << length;
 
   while (et_alive(sys_id)) {
-    daqWorker.debugStream() << "  ->ET is Alive!";
+    daqWorker.debugStream() << "  ContactEventBuilder ->ET is Alive!";
     et_event *pe;         
     EventHandler *pdata;  
     int etstatus = et_event_new(sys_id, attach, &pe, ET_SLEEP, NULL,
@@ -266,6 +278,13 @@ bool DAQWorker::CloseDownET()
   daqWorker.infoStream() << "Closing down ET...";
   if (!declareEventsToET) return true;
 
+  if (et_alive(sys_id)) {
+    daqWorker.debugStream() << "CloseDownET  ->ET is Alive!";
+  } else {
+    daqWorker.debugStream() << "CloseDownET  ->ET is Dead!";
+  }
+
+  daqWorker.infoStream() << "Calling et_station_detach(sys_id, attach)..."; //SMEDLEY 3/9/23 Take 2
   if (et_station_detach(sys_id, attach) < 0) {
     daqWorker.fatal("et_producer: error in station detach\n");
     return false;
