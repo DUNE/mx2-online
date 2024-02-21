@@ -21,7 +21,7 @@ translate = base64.b64decode(converttry)
 
 #unicodelet = codecs.decode(converttry, "utf-8")
 #contentconvert = bytearray.fromhex(unicodelet.decode())
-print translate
+print(translate)
 #databasetemp = open("temptext", "w")
 
 #translate = codecs.decode(contentconvert, "ascii")

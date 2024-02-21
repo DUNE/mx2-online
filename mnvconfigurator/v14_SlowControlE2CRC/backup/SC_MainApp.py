@@ -22,9 +22,9 @@ class SCApp(wx.App):
         try:
             self.controller.Init(CAENVMEwrapper.CAENVMETypes.CVBoardTypes.cvV2718, 0, 0) 
             print('Controller initialized:')
-            print('\thandle = ' + str(self.controller.handle))
-            print('\tCAENVME software = ' + str(self.controller.SWRelease()))
-            print('\tV2718   firmware = ' + str(self.controller.BoardFWRelease()))
+            print(('\thandle = ' + str(self.controller.handle)))
+            print(('\tCAENVME software = ' + str(self.controller.SWRelease())))
+            print(('\tV2718   firmware = ' + str(self.controller.BoardFWRelease())))
         except : ReportException('controller.Init', self.reportErrorChoice)
         
         self.Bind(wx.EVT_CLOSE, self.OnClose, self.frame)
@@ -123,10 +123,10 @@ class SCApp(wx.App):
         if dlg.ShowModal()==wx.ID_OK:
             filename=dlg.GetFilename()
             dirname=dlg.GetDirectory()
-            print 'filename = ' + filename
-            print 'dirname = ' + dirname
+            print('filename = ' + filename)
+            print('dirname = ' + dirname)
             f=open(dirname+'\\'+ filename,'r')
-            print f.read()
+            print(f.read())
             f.close()
         dlg.Destroy()
     def OnMenuSaveFile(self, event):
@@ -161,7 +161,7 @@ class SCApp(wx.App):
         try:
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
             fcmd=self.frame.croc.FastCmd.choiceFastCmd.GetStringSelection()
-            if (SC_Util.FastCmds.has_key(fcmd)):                
+            if (fcmd in SC_Util.FastCmds):                
                 theCROC.SendFastCommand(SC_Util.FastCmds[fcmd])
             else: wx.MessageBox('Please select a Fast Command')
         except: ReportException('OnCROCbtnSendFastCmd', self.reportErrorChoice)
@@ -188,7 +188,7 @@ class SCApp(wx.App):
                 ChXReset=self.frame.croc.ResetAndTestPulse.ChXReset[i].IsChecked()
                 ChXTPulse=self.frame.croc.ResetAndTestPulse.ChXTPulse[i].IsChecked()
                 data = data | (ChXReset<<(i+8)) | (ChXTPulse<<i)
-                print i, ChXReset, ChXTPulse, hex(data)
+                print(i, ChXReset, ChXTPulse, hex(data))
             theCROC.WriteRSTTP(data)
         except: ReportException('OnCROCbtnWriteRSTTP', self.reportErrorChoice)
     def OnCROCbtnReadRSTTP(self, event): 
@@ -211,12 +211,12 @@ class SCApp(wx.App):
         except: ReportException('OnCROCbtnSendTPOnly', self.reportErrorChoice)        
     def OnCROCbtnReportAlignmentsAllChains(self, event):
         try:
-            print self.frame.croc.FEBGateDelays.txtNumberOfMeas.GetValue()
-            print self.frame.croc.FEBGateDelays.txtLoadTimerValue.GetValue()
-            print self.frame.croc.FEBGateDelays.txtGateStartValue.GetValue()
+            print(self.frame.croc.FEBGateDelays.txtNumberOfMeas.GetValue())
+            print(self.frame.croc.FEBGateDelays.txtLoadTimerValue.GetValue())
+            print(self.frame.croc.FEBGateDelays.txtGateStartValue.GetValue())
             theCROC=FindVMEdev(self.vmeCROCs, self.frame.croc.crocNumber<<16)
             addr=theCROC.BaseAddress()
-            print hex(addr)
+            print(hex(addr))
             #the code of the allignment method should pe placed here... 
             wx.MessageBox('not yet implemented')
         except: ReportException('btnReportAlignmentsAllChains', self.reportErrorChoice)        
@@ -268,7 +268,7 @@ def FindVMEdev(vmeDevList, devAddr):
         if (dev.BaseAddress()==devAddr): return dev
 def ReportException(comment, choice):
     msg = comment + ' : ' + str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1])
-    if (choice['display']): print msg
+    if (choice['display']): print(msg)
     if (choice['msgBox']): wx.MessageBox(msg)
 def ParseDataToListLabels(data, ListLabels):
     for i in range(len(ListLabels)):
@@ -307,19 +307,19 @@ class CROCChannel(VMEDevice):
     def Number(self): return self.chNumber
     def NodeList(self): return [self.Description(), self.FEBs]
     def ClearStatus(self):
-        print hex(self.RegWClearStatus), hex(0x0202)
+        print(hex(self.RegWClearStatus), hex(0x0202))
         self.controller.WriteCycle(self.RegWClearStatus, 0x0202)
     def ReadStatus(self):
-        print hex(self.RegRStatus)
+        print(hex(self.RegRStatus))
         return int(self.controller.ReadCycle(self.RegRStatus))
     def ReadLoopDelay(self):
-        print hex(self.RegRLoopDelay)
+        print(hex(self.RegRLoopDelay))
         return int(self.controller.ReadCycle(self.RegRLoopDelay)) 
     def DPMPointerReset(self):
-        print hex(self.RegWClearStatus), hex(0x0808)
+        print(hex(self.RegWClearStatus), hex(0x0808))
         self.controller.WriteCycle(self.RegWClearStatus, 0x0808)
     def DPMPointerRead(self):
-        print hex(self.RegRDPMPointer)
+        print(hex(self.RegRDPMPointer))
         return int(self.controller.ReadCycle(self.RegRDPMPointer)) 
 
 class CROC(VMEDevice):
@@ -342,19 +342,19 @@ class CROC(VMEDevice):
         [self.channels[0].NodeList(), self.channels[1].NodeList(),
         self.channels[2].NodeList(), self.channels[3].NodeList()]]
     def WriteRSTTP(self, data):
-        print hex(self.RegWRResetAndTestMask), hex(data)
+        print(hex(self.RegWRResetAndTestMask), hex(data))
         self.controller.WriteCycle(self.RegWRResetAndTestMask, data)
     def ReadRSTTP(self):
-        print hex(self.RegWRResetAndTestMask)
+        print(hex(self.RegWRResetAndTestMask))
         return int(self.controller.ReadCycle(self.RegWRResetAndTestMask))
     def SendRSTOnly(self):
-        print hex(self.RegWChannelReset), hex(0x0202)
+        print(hex(self.RegWChannelReset), hex(0x0202))
         self.controller.WriteCycle(self.RegWChannelReset, 0x0202)
     def SendTPOnly(self):
-        print hex(self.RegWTestPulse), hex(0x0404)
+        print(hex(self.RegWTestPulse), hex(0x0404))
         self.controller.WriteCycle(self.RegWTestPulse, 0x0404)
     def SendFastCommand(self, data):
-        print hex(self.RegWFastCommand), hex(data)
+        print(hex(self.RegWFastCommand), hex(data))
         self.controller.WriteCycle(self.RegWFastCommand, data)
 
     
@@ -373,7 +373,7 @@ def main():
         app = SCApp()
         app.MainLoop()
     except:
-        print "Unexpected error:", sys.exc_info()[0], sys.exc_info()[1]
+        print("Unexpected error:", sys.exc_info()[0], sys.exc_info()[1])
 
 if __name__ == "__main__":
     main()

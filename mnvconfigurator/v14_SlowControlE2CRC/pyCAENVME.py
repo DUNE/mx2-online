@@ -104,30 +104,30 @@ class Controller(CAENVMETypes):
 if __name__ == '__main__':
     try:
         ctrl = Controller()
-        print('CAENVME Library v.' + ctrl.SWRelease())
+        print(('CAENVME Library v.' + ctrl.SWRelease()))
         
-        print('Controller initialized = ' + (ctrl.Init(CAENVMETypes.CVBoardTypes.cvV2718, 0, 0)))
-        print('Controller handle = ' + str(ctrl.handle))
-        print('V2718 board firmware = ' + str(ctrl.BoardFWRelease()))
+        print(('Controller initialized = ' + (ctrl.Init(CAENVMETypes.CVBoardTypes.cvV2718, 0, 0))))
+        print(('Controller handle = ' + str(ctrl.handle)))
+        print(('V2718 board firmware = ' + str(ctrl.BoardFWRelease())))
         addr = 0x40F000; data = randint(0, 0x1FFFF)
-        print('WriteCycle: ' + ctrl.WriteCycle(addr, data))
-        print('WriteCycle: address = ' + hex(addr) + ', Wdata = ' + str(data))
+        print(('WriteCycle: ' + ctrl.WriteCycle(addr, data)))
+        print(('WriteCycle: address = ' + hex(addr) + ', Wdata = ' + str(data)))
         addr = 0x40F000; data = 0x0
-        print('ReadCycle : address = ' + hex(addr) + ', Rdata = ' + str(ctrl.ReadCycle(addr, data)))
+        print(('ReadCycle : address = ' + hex(addr) + ', Rdata = ' + str(ctrl.ReadCycle(addr, data))))
 
         #print('Controller end = ' + str(ctrl.End()))
         #print('Controller handle = ' + str(ctrl.handle))
 
     except:
         import sys
-        print "Unexpected error:", sys.exc_info()[0]
+        print("Unexpected error:", sys.exc_info()[0])
 
         
     
     
                                   
 def CAEN_SystemReset():
-    handle = c_long(0); print('handle='+str(handle));print(handle.value)
+    handle = c_long(0); print(('handle='+str(handle)));print((handle.value))
     cvRetError = vme.CAENVME_SystemReset(handle)
     if cvRetError==0:
         return cvRetError

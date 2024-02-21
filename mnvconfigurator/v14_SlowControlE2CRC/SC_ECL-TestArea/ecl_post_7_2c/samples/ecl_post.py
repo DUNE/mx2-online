@@ -66,11 +66,11 @@ if __name__ == '__main__':
         response = elconn.post(e)
 
         # Print what we have got back from the server
-        print response
+        print(response)
 
         # Close the connection
         elconn.close()
     else:
         # Just print prepared XML
-        print e.xshow()
+        print(e.xshow())
 

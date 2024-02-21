@@ -35,7 +35,7 @@ def DIGcfgFileLoad(fullpathname):
         words = line.split(' ')
         lines.append(line)
         if words[0]==FileKeyWriteToFile:
-            if int(words[1],10) in WriteToFile.keys():
+            if int(words[1],10) in list(WriteToFile.keys()):
                 if flags[FileKeyWriteToFile]==None: flags[FileKeyWriteToFile]=int(words[1],10); continue
                 else: raise Exception('Error in line #%s: %s\n%s'%(i,line,'item already defined'))
             else: raise Exception('Error in line #%s: %s\n%s'%(i,line,WriteToFile))
@@ -45,7 +45,7 @@ def DIGcfgFileLoad(fullpathname):
 ##                else: raise Exception('Error in line #%s: %s\n%s'%(i,line,'item already defined'))    
 ##            else: raise Exception('Error in line #%s: %s\n%s'%(i,line,AppendMode))
         if words[0]==FileKeyReadoutMode:
-            if int(words[1],10) in ReadoutMode.keys():
+            if int(words[1],10) in list(ReadoutMode.keys()):
                 if flags[FileKeyReadoutMode]==None: flags[FileKeyReadoutMode]=int(words[1],10); continue
                 else: raise Exception('Error in line #%s: %s\n%s'%(i,line,'item already defined'))
             else: raise Exception('Error in line #%s: %s\n%s'%(i,line,ReadoutMode))
@@ -69,7 +69,7 @@ def DIGcfgFileLoad(fullpathname):
         raise Exception('Error in line #%s: %s\n%s'%(i,line,'key not defined'))
     f.close()
     #check there is no NONE value!!!!
-    for (k,v) in flags.items():
+    for (k,v) in list(flags.items()):
         if v==None or v=={}: raise Exception('missing parameter %s=%s'%(k,v))   
     return flags, lines
 
@@ -87,8 +87,8 @@ if __name__=='__main__':
         #code used to debug DIGcfgFileLoad()
         fullpathname=r'/work/software/cristian/mnvconfigurator/SlowControl/v1720config.digcfg'
         flags, lines = DIGcfgFileLoad(fullpathname)
-        print '\n'.join(lines)
-        print
-        print flags
+        print('\n'.join(lines))
+        print()
+        print(flags)
         
-    except: print str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1])
+    except: print(str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1]))

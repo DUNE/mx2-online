@@ -17,7 +17,7 @@ Options are:
 """
 
 if not sys.argv[1:]:
-    print Usage
+    print(Usage)
     sys.exit(1)
 
 URL = "http://dbweb4.fnal.gov:8080/ECL/demo"
@@ -42,4 +42,4 @@ for opt, val in opts:
 conn = ECLConnection(URL, user, password)
 lst = conn.list(category = cat, form=form, limit=limit, tag=tag, after=after)
 for i in lst:
-    print i
+    print(i)

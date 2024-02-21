@@ -36,8 +36,8 @@ class SC():
             self.vmeCROCEs=[]
             self.vmeDIGs=[]
         except:
-            print 'Unable to find V2718 controller with linkNum=%s and boardNum=%s'%(linkNum,boardNum)
-            print str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1])
+            print('Unable to find V2718 controller with linkNum=%s and boardNum=%s'%(linkNum,boardNum))
+            print(str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1]))
             self.controller = None
     def PostToECL(self,theCROCE, theCROCEChannelE):
         #out = "THIS IS A TEST. CHAIN RESET OCCURED. TEST TEST. POSTED BY slowcontrol_mnvtb04" 
@@ -66,7 +66,7 @@ class SC():
         response = elconn.post(e)
 
           # Print what we have got back from the server
-        print response
+        print(response)
 
           # Close the connection
         elconn.close()
@@ -189,12 +189,12 @@ class SC():
                 for iche in range(4):
                     if failsClearStatus[iche]!=0 or failsFastCommand[iche]!=0:
                         #if verbose:
-                        print 'ConfigCROCEsREFE=0x0000 %s:%s:%s: after ClearStatus found %d errors (%.3f percent)'\
+                        print('ConfigCROCEsREFE=0x0000 %s:%s:%s: after ClearStatus found %d errors (%.3f percent)'\
                         %(self.Description(),theCROCE.Description(),theCROCE.Channels()[iche].Description(),\
-                            failsClearStatus[iche],float(failsClearStatus[iche])/(6*ntry1)*100)
-                        print 'ConfigCROCEsREFE=0x0000 %s:%s:%s: after FastCommand found %d errors (%.3f percent)'\
+                            failsClearStatus[iche],float(failsClearStatus[iche])/(6*ntry1)*100))
+                        print('ConfigCROCEsREFE=0x0000 %s:%s:%s: after FastCommand found %d errors (%.3f percent)'\
                         %(self.Description(),theCROCE.Description(),theCROCE.Channels()[iche].Description(),\
-                            failsFastCommand[iche],float(failsFastCommand[iche])/(6*ntry1)*100)
+                            failsFastCommand[iche],float(failsFastCommand[iche])/(6*ntry1)*100))
                         theConfig[iche]=1
                         theCROCE.Channels()[iche].WriteConfiguration(0x0800)
                 theCROCEsConfigREFE.append(theConfig)
@@ -209,32 +209,32 @@ class SC():
                     for iche in range(4):
                         if failsClearStatus[iche]!=0 or failsFastCommand[iche]!=0:
                             #if verbose:
-                            print 'ConfigCROCEsREFE=0x%s %s:%s:%s: after ClearStatus found %d errors (%.3f percent)'\
+                            print('ConfigCROCEsREFE=0x%s %s:%s:%s: after ClearStatus found %d errors (%.3f percent)'\
                             %(hex(theCROCE.Channels()[iche].ReadConfiguration())[2:].rjust(4,'0'),\
                                 self.Description(),theCROCE.Description(),theCROCE.Channels()[iche].Description(),\
-                                failsClearStatus[iche],float(failsClearStatus[iche])/(6*ntry2)*100)
-                            print 'ConfigCROCEsREFE=0x%s %s:%s:%s: after FastCommand found %d errors (%.3f percent)'\
+                                failsClearStatus[iche],float(failsClearStatus[iche])/(6*ntry2)*100))
+                            print('ConfigCROCEsREFE=0x%s %s:%s:%s: after FastCommand found %d errors (%.3f percent)'\
                             %(hex(theCROCE.Channels()[iche].ReadConfiguration())[2:].rjust(4,'0'),\
                                 self.Description(),theCROCE.Description(),theCROCE.Channels()[iche].Description(),\
-                                failsFastCommand[iche],float(failsFastCommand[iche])/(6*ntry2)*100)
-                            print '********* ConfigCROCEsREFE %s:%s:%s: unable to set reliable RE/FE *********'\
-                            %(self.Description(),theCROCE.Description(),theCROCE.Channels()[iche].Description())
+                                failsFastCommand[iche],float(failsFastCommand[iche])/(6*ntry2)*100))
+                            print('********* ConfigCROCEsREFE %s:%s:%s: unable to set reliable RE/FE *********'\
+                            %(self.Description(),theCROCE.Description(),theCROCE.Channels()[iche].Description()))
                             done[iche]=0
                     theCROCEsConfigDone.append(done) #config failed on specific channels
-        print '%s'%(100*'-')
+        print('%s'%(100*'-'))
         for iCROCE in range(len(self.vmeCROCEs)):
-            print '********* ConfigCROCEsREFE %s:%s: DONE: %s CH0=0x%s, CH1=0x%s, CH2=0x%s, CH3=0x%s *********'\
+            print('********* ConfigCROCEsREFE %s:%s: DONE: %s CH0=0x%s, CH1=0x%s, CH2=0x%s, CH3=0x%s *********'\
                 %(self.Description(),self.vmeCROCEs[iCROCE].Description(),theCROCEsConfigREFE[iCROCE],
                 hex(self.vmeCROCEs[iCROCE].Channels()[0].ReadConfiguration())[2:].rjust(4,'0'),
                 hex(self.vmeCROCEs[iCROCE].Channels()[1].ReadConfiguration())[2:].rjust(4,'0'),
                 hex(self.vmeCROCEs[iCROCE].Channels()[2].ReadConfiguration())[2:].rjust(4,'0'),
-                hex(self.vmeCROCEs[iCROCE].Channels()[3].ReadConfiguration())[2:].rjust(4,'0'))
-        print '%s'%(100*'-')
+                hex(self.vmeCROCEs[iCROCE].Channels()[3].ReadConfiguration())[2:].rjust(4,'0')))
+        print('%s'%(100*'-'))
         for iCROCE in range(len(self.vmeCROCEs)):
             for iche in range(4):
                 if theCROCEsConfigDone[iCROCE][iche]==0:
-                    print '********* ConfigCROCEsREFE %s:%s:%s: unable to set reliable RE/FE *********'\
-                        %(self.Description(),self.vmeCROCEs[iCROCE].Description(),self.vmeCROCEs[iCROCE].Channels()[iche].Description())
+                    print('********* ConfigCROCEsREFE %s:%s:%s: unable to set reliable RE/FE *********'\
+                        %(self.Description(),self.vmeCROCEs[iCROCE].Description(),self.vmeCROCEs[iCROCE].Channels()[iche].Description()))
         return
 
     def ConfigTest(self,theCROCE,ntry,verbose,frame=None):
@@ -250,15 +250,15 @@ class SC():
                         theCROCE.Channels()[iche].WriteCommands(SC_Util.CHECmds['ClearStatus'])
                         statusTXRX=theCROCE.Channels()[iche].ReadStatusTXRX()
                         if statusTXRX!=0x2410:
-                            if verbose: print 'TRY#%s, fcmd=%s, ConfigCROCEsREFE %s:%s: Error1 after ClearStatus() statusTXRX=0x%s, should be 0x2410'\
-                                %(itry,fcmd.ljust(12,' '),theCROCE.Description(),theCROCE.Channels()[iche].Description(),hex(statusTXRX)[2:].rjust(4,'0'))
+                            if verbose: print('TRY#%s, fcmd=%s, ConfigCROCEsREFE %s:%s: Error1 after ClearStatus() statusTXRX=0x%s, should be 0x2410'\
+                                %(itry,fcmd.ljust(12,' '),theCROCE.Description(),theCROCE.Channels()[iche].Description(),hex(statusTXRX)[2:].rjust(4,'0')))
                             failsClearStatus[iche]=failsClearStatus[iche]+1
                     theCROCE.SendFastCommand(SC_Util.FastCmds[fcmd])
                     for iche in range(4):
                         statusTXRX=theCROCE.Channels()[iche].ReadStatusTXRX()
                         if statusTXRX!=0x2570:
-                            if verbose: print 'TRY#%s, fcmd=%s, ConfigCROCEsREFE %s:%s: Error2 after SendFastCommand() statusTXRX=0x%s, should be 0x2570'\
-                                %(itry,fcmd.ljust(12,' '),theCROCE.Description(),theCROCE.Channels()[iche].Description(),hex(statusTXRX)[2:].rjust(4,'0'))
+                            if verbose: print('TRY#%s, fcmd=%s, ConfigCROCEsREFE %s:%s: Error2 after SendFastCommand() statusTXRX=0x%s, should be 0x2570'\
+                                %(itry,fcmd.ljust(12,' '),theCROCE.Description(),theCROCE.Channels()[iche].Description(),hex(statusTXRX)[2:].rjust(4,'0')))
                             failsFastCommand[iche]=failsFastCommand[iche]+1
             if (itry+1)%1000==0 and frame!=None:
                 frame.Refresh(); frame.Update()
@@ -344,59 +344,53 @@ class SC():
                             theCROCEChannelE.WriteCommands(SC_Util.CHECmds['ClearStatus'] | SC_Util.CHECmds['ClearRDFECounter'])
                             data=theCROCEChannelE.ReadAllRegisters()
                             if data!=[data[0]&0x0BC0,0x0000,0x0000,0x4040,0x2410,0x0000,theHeader]:
-                                if verbose: print\
-                                    'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error1 ReadAllRegisters=%s, should be [0x%s,0x0000,0x0000,0x4040,0x2410,0x0000,0x%s]'\
+                                if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error1 ReadAllRegisters=%s, should be [0x%s,0x0000,0x0000,0x4040,0x2410,0x0000,0x%s]'\
                                     %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description(), 
                                       ['0x'+hex(d)[2:].rjust(4,'0') for d in data],
-                                      hex(data[0]&0x0DC0)[2:].rjust(4,'0'),hex(theHeader)[2:].rjust(4,'0'))
+                                      hex(data[0]&0x0DC0)[2:].rjust(4,'0'),hex(theHeader)[2:].rjust(4,'0')))
                                 fails=fails+1
                             #write message and check registers
                             sndmsg=[febAddr<<8]
                             theCROCEChannelE.WriteSendMemory(sndmsg[0])
                             data=theCROCEChannelE.ReadAllRegisters()
                             if data!=[data[0]&0x0BC0,0x0000,0x0000,0x0040,0x2410,0x0000,theHeader]:
-                                if verbose: print\
-                                   'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error2 ReadAllRegisters=%s, should be [0x%s,0x0000,0x0000,0x0040,0x2410,0x0006,0x%s]'\
+                                if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error2 ReadAllRegisters=%s, should be [0x%s,0x0000,0x0000,0x0040,0x2410,0x0006,0x%s]'\
                                     %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description(),
                                       ['0x'+hex(d)[2:].rjust(4,'0') for d in data],
-                                      hex(data[0]&0x0DC0)[2:].rjust(4,'0'),hex(theHeader)[2:].rjust(4,'0'))
+                                      hex(data[0]&0x0DC0)[2:].rjust(4,'0'),hex(theHeader)[2:].rjust(4,'0')))
                                 fails=fails+1
                             #send message and check registers
                             theCROCEChannelE.WriteCommands(SC_Util.CHECmds['SendMessage'])
                             data=theCROCEChannelE.ReadAllRegisters()
                             if ((data[:-2]!=[data[0]&0x0BC0,0x0000,0x0001,0x1010,0x2410]) or data[-1]!=theHeader):
-                                if verbose: print\
-                                   'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error3.1 ReadAllRegisters=%s, should be [0x%s,0x0000,0x0001,0x1010,0x2410,0x000C/14,0x%s]'\
+                                if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error3.1 ReadAllRegisters=%s, should be [0x%s,0x0000,0x0001,0x1010,0x2410,0x000C/14,0x%s]'\
                                     %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description(),
                                     ['0x'+hex(d)[2:].rjust(4,'0') for d in data],
-                                    hex(data[0]&0x0DC0)[2:].rjust(4,'0'),hex(theHeader)[2:].rjust(4,'0'))
+                                    hex(data[0]&0x0DC0)[2:].rjust(4,'0'),hex(theHeader)[2:].rjust(4,'0')))
                                 fails=fails+1
                             if data[-2]==theWPointerNoCRC[0] or data[-2]==theWPointerNoCRC[1]:
                                 #this CROCE is does NOT write CRCs
                                 foundCROCENoCRC=True
                                 if foundCROCEWithCRC==True:
                                     foundCROCEWithCRC=False
-                                    if verbose: print\
-                                       'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error3.2 CROCE was with CRC, now is without CRC'\
-                                        %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description())
+                                    if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error3.2 CROCE was with CRC, now is without CRC'\
+                                        %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description()))
                                     fails=fails+1
                             elif data[-2]==theWPointerWithCRC[0] or data[-2]==theWPointerWithCRC[1]:
                                 #this CROCE DOES write CRCs
                                 foundCROCEWithCRC=True
                                 if foundCROCENoCRC==True:
                                     foundCROCENoCRC=False
-                                    if verbose: print\
-                                       'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error3.3 CROCE was without CRC, now is with CRC'\
-                                        %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description())
+                                    if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error3.3 CROCE was without CRC, now is with CRC'\
+                                        %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description()))
                                     fails=fails+1
                             else:
                                 #this is an error, CROCE can't be neither with nor witout CRC
                                 if foundCROCENoCRC==True or foundCROCEWithCRC==True:
                                     foundCROCENoCRC=False
                                     foundCROCEWithCRC=False
-                                    if verbose: print\
-                                       'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error3.4 CROCE was with/without CRC, now is unknown'\
-                                        %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description())
+                                    if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error3.4 CROCE was with/without CRC, now is unknown'\
+                                        %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description()))
                                     fails=fails+1
                             #read received message and check it.
                             #NOTE: v2 header has 10 bytes, March 2013
@@ -408,29 +402,25 @@ class SC():
                             rcvfrmsFrameDataWord01 =theCROCEChannelE.ReadReceiveMemory(10)
                             if foundCROCENoCRC==True:
                                 if rcvfrmsDataLengthBytes!=theWPointerNoCRC[0] and rcvfrmsDataLengthBytes!=theWPointerNoCRC[1]:
-                                    if verbose: print\
-                                       'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error4.1 RcvFrameDataLengthBytes=%s, should be %s'\
+                                    if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error4.1 RcvFrameDataLengthBytes=%s, should be %s'\
                                         %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description(),
-                                          rcvfrmsDataLengthBytes,theWPointerNoCRC)
+                                          rcvfrmsDataLengthBytes,theWPointerNoCRC))
                                     fails=fails+1
                             elif foundCROCEWithCRC==True:
                                 if rcvfrmsDataLengthBytes!=theWPointerWithCRC[0] and rcvfrmsDataLengthBytes!=theWPointerWithCRC[1]:
-                                    if verbose: print\
-                                       'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error4.2 RcvFrameDataLengthBytes=%s, should be %s'\
+                                    if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error4.2 RcvFrameDataLengthBytes=%s, should be %s'\
                                         %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description(),
-                                          rcvfrmsDataLengthBytes,theWPointerWithCRC)
+                                          rcvfrmsDataLengthBytes,theWPointerWithCRC))
                                     fails=fails+1
                             else:
-                                if verbose: print\
-                                   'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error4.3 RcvFrameDataLengthBytes=%s, should be %s or %s'\
+                                if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error4.3 RcvFrameDataLengthBytes=%s, should be %s or %s'\
                                     %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description(),
-                                      rcvfrmsDataLengthBytes,theWPointerNoCRC,theWPointerWithCRC)
+                                      rcvfrmsDataLengthBytes,theWPointerNoCRC,theWPointerWithCRC))
                                 fails=fails+1
                             if rcvfrmsStatus!=0x1010:
-                                if verbose: print\
-                                   'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error5 RcvMemStatus=0x%s, should be 0x1010'\
+                                if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error5 RcvMemStatus=0x%s, should be 0x1010'\
                                     %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description(),
-                                      hex(rcvfrmsStatus)[2:].rjust(4,'0'))
+                                      hex(rcvfrmsStatus)[2:].rjust(4,'0')))
                                 fails=fails+1
                             crateid =(0x1000&theHeader)>>12
                             croceid =(0x0F00&theHeader)>>8
@@ -438,22 +428,19 @@ class SC():
                             devfunc =0
                             sourceid=(crateid<<14)+(croceid<<9)+(theCROCEChannelE.cheNumber<<7)+(febAddr<<3)
                             if rcvfrmsFirmwareDevFunc!=((febvers<<8)+(devfunc)):
-                                if verbose: print\
-                                   'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error6 rcvfrmsFirmwareDevFunc=0x%s, should be 0x%s'\
+                                if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error6 rcvfrmsFirmwareDevFunc=0x%s, should be 0x%s'\
                                     %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description(),
-                                      hex(rcvfrmsFirmwareDevFunc)[2:].rjust(4,'0'),hex((crateid<<14)+(croceid<<9))[2:].rjust(4,'0'))
+                                      hex(rcvfrmsFirmwareDevFunc)[2:].rjust(4,'0'),hex((crateid<<14)+(croceid<<9))[2:].rjust(4,'0')))
                                 fails=fails+1
                             if rcvfrmsSourceID!=sourceid:
-                                if verbose: print\
-                                   'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error7 rcvfrmsSourceID=0x%s, should be 0x%s'\
+                                if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error7 rcvfrmsSourceID=0x%s, should be 0x%s'\
                                     %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description(),
-                                      hex(rcvfrmsSourceID)[2:].rjust(4,'0'),hex(sourceid)[2:].rjust(4,'0'))
+                                      hex(rcvfrmsSourceID)[2:].rjust(4,'0'),hex(sourceid)[2:].rjust(4,'0')))
                                 fails=fails+1
                             if rcvfrmsDataLengthBytes!=rcvfrmsDataLengthBytes2:
-                                if verbose: print\
-                                   'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error8 RcvMemLengthBytes=%s, RcvMemLengthBytes2=%s'\
+                                if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error8 RcvMemLengthBytes=%s, RcvMemLengthBytes2=%s'\
                                     %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description(),
-                                      rcvfrmsDataLengthBytes,rcvfrmsDataLengthBytes2)
+                                      rcvfrmsDataLengthBytes,rcvfrmsDataLengthBytes2))
                                 fails=fails+1
                             #check for FEBs
                             if foundCROCENoCRC==True and foundCROCEWithCRC==False:
@@ -485,9 +472,8 @@ class SC():
                     else:
                         if useChRst==True:
                             #reset theCROCEChannelE and try again to find FEBs
-                            if verbose: print\
-                               'TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error9 NO FEBs, reset this channel and try again'\
-                                %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description())
+                            if verbose: print('TRY1#%s, TRY2#%s, FindCROCEFEBs %s:%s: Error9 NO FEBs, reset this channel and try again'\
+                                %(chtry,itry,theCROCE.Description(),theCROCEChannelE.Description()))
                             theCROCE.WriteRSTTP(0x0100)
                             theCROCEChannelEConfiguration=theCROCEChannelE.ReadConfiguration()
                             theCROCEChannelE.WriteConfiguration(0x0010 | theCROCEChannelEConfiguration)
@@ -507,8 +493,8 @@ class SC():
                     if theCROCEChannelE.FEBs[i]!=i+1:
                         cosecutiveTestResult=False
                 if cosecutiveTestResult==False: 
-                    print '%s:%s Error FEBs address must be consecutive, starting with 1, found FEBs=%s'\
-                        %(theCROCE.Description(),theCROCEChannelE.Description(),theCROCEChannelE.FEBs)
+                    print('%s:%s Error FEBs address must be consecutive, starting with 1, found FEBs=%s'\
+                        %(theCROCE.Description(),theCROCEChannelE.Description(),theCROCEChannelE.FEBs))
             #check CRC found for this CROCE
             if thisCROCENoCRC==[True,True,True,True]:
                 theCROCE.includeCRC=False
@@ -880,14 +866,14 @@ def DAQSplitRcvmemInFrames(rcvmem, theType):
                 k=k+frmMessageLength
     return frms
 def MFH_10bytes_decode(mfh):
-    print '\tFrameLength    =0x%s'%hex((mfh[0]<<8)+mfh[1])[2:].rjust(2,'0')
-    print '\tChannelStatus  =0x%s'%hex((mfh[2]<<8)+mfh[3])[2:].rjust(2,'0')
-    print '\tFirmwareVersion=0x%s'%hex(mfh[4])[2:].rjust(2,'0')
-    print '\tDeviceFunction =0x%s'%hex(mfh[5])[2:].rjust(2,'0')
-    print '\tSourceID       =0x%s,CRATE#=%s,CROCE#=%s,CHANNEL#=%s,FEB#=%s,HIT#=%s'%(
+    print('\tFrameLength    =0x%s'%hex((mfh[0]<<8)+mfh[1])[2:].rjust(2,'0'))
+    print('\tChannelStatus  =0x%s'%hex((mfh[2]<<8)+mfh[3])[2:].rjust(2,'0'))
+    print('\tFirmwareVersion=0x%s'%hex(mfh[4])[2:].rjust(2,'0'))
+    print('\tDeviceFunction =0x%s'%hex(mfh[5])[2:].rjust(2,'0'))
+    print('\tSourceID       =0x%s,CRATE#=%s,CROCE#=%s,CHANNEL#=%s,FEB#=%s,HIT#=%s'%(
         hex((mfh[6]<<8)+mfh[7])[2:].rjust(2,'0'),(mfh[6]&0x40)>>6,(mfh[6]&0x1E)>>1,(((mfh[6]&0x01)<<1)+((mfh[7]&0x80)>>7)),
-        (mfh[7]&0x78)>>3,(((mfh[6]&0x80)>>3)+((mfh[6]&0x20)>>2)+(mfh[7]&0x07)) )
-    print '\tFrameLength    =0x%s'%hex((mfh[8]<<8)+mfh[9])[2:].rjust(2,'0')
+        (mfh[7]&0x78)>>3,(((mfh[6]&0x80)>>3)+((mfh[6]&0x20)>>2)+(mfh[7]&0x07)) ))
+    print('\tFrameLength    =0x%s'%hex((mfh[8]<<8)+mfh[9])[2:].rjust(2,'0'))
 def DAQReadRcvMemory(iEvent, theCROCX, theCROCXChannelX, theType, theCROCXs, theCROCXsAllCRATEs,
     theReadType, theWriteType, theWFile, theFrame, theDataType23Hits):
     #print 'inside SC_MainMethods: DAQReadRcvMemory'
@@ -1182,8 +1168,8 @@ def DAQBRAMReportTrip(iEvent, triphits, theWriteType, theWFile, theFrame):
 def DAQBRAMReadHit(iEvent, theCROCX, theCROCXChannelX, theType, febNumber, hitNumber, theCROCXs, theCROCXsAllCRATEs,
     theReadType, theWriteType, theWFile, theFrame, theDataType23Hits):
     hittrips=[]
-    if theDataType23Hits==False: hitIndexRange=range(len(SC_MainObjects.Frame.FuncBRAMReadHitx))
-    else: hitIndexRange=range(len(SC_MainObjects.Frame.FuncBRAM2ReadHitx))
+    if theDataType23Hits==False: hitIndexRange=list(range(len(SC_MainObjects.Frame.FuncBRAMReadHitx)))
+    else: hitIndexRange=list(range(len(SC_MainObjects.Frame.FuncBRAM2ReadHitx)))
     if theReadType==0:                      # RO one FEB
         theIncludeCRC=theCROCX.includeCRC
         theFEB=SC_MainObjects.FEB(febNumber)
@@ -1345,7 +1331,7 @@ def workerDAQSimple(nEvents, theLock, theStopEvent, theCTRLChannel, theCTRL, the
             if iEvent!=0 and iEvent%10==0: theFrame.SetStatusText('Event=%d done'%(iEvent), 0)
         except:
             msg = 'EXCEPTION: iEvent=%d, %s, %s'%(iEvent, str(sys.exc_info()[0]), str(sys.exc_info()[1]))
-            print msg
+            print(msg)
             theFrame.SetStatusText(msg, 1)
             if theWFile!=None: theWFile.write('\n%s'%(msg))
         iEvent=iEvent+1
@@ -1354,7 +1340,7 @@ def workerDAQSimple(nEvents, theLock, theStopEvent, theCTRLChannel, theCTRL, the
         msg='FORCED to EXIT at iEvent=%d, elapsed time = %f'%(iEvent, tt2-tt1)
     else:
       msg='DONE: nEvents=%d, elapsed time = %f'%(nEvents, tt2-tt1)
-    print msg
+    print(msg)
     theFrame.SetStatusText(msg, 1)
     if theWFile!=None:
         theWFile.write('\n%s'%(msg))

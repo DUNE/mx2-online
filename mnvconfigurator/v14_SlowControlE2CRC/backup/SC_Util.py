@@ -651,7 +651,7 @@ class FPGARegisters():
 class CROCFastCmd():
     def __init__(self, panel, caption=' Fast Commands'):
         CROCFastCommandBox=wx.StaticBox(panel, -1, caption)
-        FCmds=FastCmds.keys(); FCmds.sort()
+        FCmds=list(FastCmds.keys()); FCmds.sort()
         self.choiceFastCmd=wx.Choice(panel, size=(125,20), choices=FCmds)
         self.btnSendFastCmd=CreateButton(panel, 'Send Fast Cmd',
             pos=(0,0), size=(125,20), name='', bckcolor='coral')

@@ -87,7 +87,7 @@ class DIGChannel(VMEDevice):
         dReadAll={}; dReadAll.update(self.RegsWR); dReadAll.update(self.RegsRO)
         prevDataWidth=self.controller.dataWidth
         self.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD32
-        for addr in dReadAll.keys(): dReadAll[addr]['value']=self.controller.ReadCycle(addr)
+        for addr in list(dReadAll.keys()): dReadAll[addr]['value']=self.controller.ReadCycle(addr)
         self.controller.dataWidth=prevDataWidth
         return dReadAll
 
@@ -285,7 +285,7 @@ class DIG(VMEDevice):
         dReadAll={}; dReadAll.update(self.RegsRO); dReadAll.update(self.RegsWR);
         prevDataWidth=self.controller.dataWidth
         self.controller.dataWidth=CAENVMEwrapper.CAENVMETypes.CVDataWidth.cvD32
-        for addr in dReadAll.keys(): dReadAll[addr]['value']=self.controller.ReadCycle(addr)
+        for addr in list(dReadAll.keys()): dReadAll[addr]['value']=self.controller.ReadCycle(addr)
         self.controller.dataWidth=prevDataWidth
         return dReadAll
     def ReadRegister(self, regAddr):
@@ -340,7 +340,7 @@ def DIGDictOfRegsToString(dRegs):
         'RegAddr'.ljust(10,' '),'RegName'.ljust(20,' '),
         'RegValue'.ljust(10,' '), 'RegSections -->'.ljust(20,' ')))
     lines.append(lineHeader)
-    dRegsKeys=dRegs.keys(); dRegsKeys.sort()
+    dRegsKeys=list(dRegs.keys()); dRegsKeys.sort()
     for key in dRegsKeys:
         lineBody = str('%s%s%s'%(
             hex(key)[2:].rjust(6,'0').ljust(10,' ').upper(),
@@ -348,7 +348,7 @@ def DIGDictOfRegsToString(dRegs):
             hex(dRegs[key]['value'])[2:-1].rjust(8,'0').ljust(10,' ').upper()))
         lineSections=''
         if dRegs[key]['sects']!={}:
-            sectsKeys=dRegs[key]['sects'].keys()
+            sectsKeys=list(dRegs[key]['sects'].keys())
             sectsKeys.sort()           
 ##            # USE THIS SECTION FOR MULTIPLE LINE FORMAT
 ##            iSection=0
@@ -1122,7 +1122,7 @@ class FEB():
         theFrame, theType, dw='D16', useBLT=False):
         errPages=''
         msg="%s Writing BEGIN %s ..."%(time.ctime(), theFEB.FLASHDescription('', theCROCXChannelX, theCROCX, theType))
-        print msg; theFrame.SetStatusText(msg, 2)
+        print(msg); theFrame.SetStatusText(msg, 2)
         theIncludeCRC=theCROCX.includeCRC
         for iPage in range(Flash.NPages):
             theFEB.FLASHMainMemPageProgThroughBuffer(theCROCXChannelX, pagesAddrFile[iPage], pagesBytesFile[iPage],
@@ -1135,19 +1135,19 @@ class FEB():
                 theFrame.Refresh(); theFrame.Update()
         theFrame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCXChannelX, theCROCX, theType), 0)
         if errPages:
-            print "Write ERROR %s, page %s"%(theFEB.FLASHDescription('', theCROCXChannelX, theCROCX, theType), errPages)
+            print("Write ERROR %s, page %s"%(theFEB.FLASHDescription('', theCROCXChannelX, theCROCX, theType), errPages))
             theFrame.SetStatusText("Write ERROR on %s"%theFEB.FLASHDescription('', theCROCXChannelX, theCROCX, theType), 2)
         else:
             msg="%s Write    DONE %s"%(time.ctime(), theFEB.FLASHDescription('', theCROCXChannelX, theCROCX, theType))
-            print msg; theFrame.SetStatusText(msg, 2)
+            print(msg); theFrame.SetStatusText(msg, 2)
     def AlignGateDelays(self, theCROCX, theCROCXChannelX, theNumberOfMeas, theLoadTimerValue, theGateStartValue, theType='CROC'):
         if theCROCXChannelX.FEBs==[]: return
         if theType=='CROE':
             theIncludeCRC=theCROCX.includeCRC
         else:
             theIncludeCRC='Unknown'
-        print 'Reporting FEBs TPDelay measurements on %s %s CRATE:%s'%(
-            theCROCXChannelX.Description(),theCROCX.Description(),theCROCX.controller.boardNum)
+        print('Reporting FEBs TPDelay measurements on %s %s CRATE:%s'%(
+            theCROCXChannelX.Description(),theCROCX.Description(),theCROCX.controller.boardNum))
         #Set LoadTimerValue and GateStartValue equal for ALL boards in this Channel
         for febAddress in theCROCXChannelX.FEBs:
             theFEB=FEB(febAddress)
@@ -1206,7 +1206,7 @@ class FEB():
                 TPDelayAvg[iFEB][1]+=TPDelay[iMeas][iFEB][1]
             TPDelayAvg[iFEB][1]/=theNumberOfMeas         
         for feb in TPDelayAvg:
-            print 'FEB:%s, AvgDelay=%s'%(feb[0],feb[1])
+            print('FEB:%s, AvgDelay=%s'%(feb[0],feb[1]))
         #Update new values to FPGA's Timer and GateStart
         for iFEB in TPDelayAvg:
             theFEB=FEB(iFEB[0])
@@ -1913,7 +1913,7 @@ def WriteSendReceiveCROCE(sentMessage, rcvMessageLength, theFEBAddress, theFEBDe
     rcvHeaderErr=Frame().GetReceivedHeaderErrors(rcvMessageHeader,
         Frame.DirectionS2M, Frame.BroadcastNone, theFEBAddress, theFEBDevice) 
     if len(rcvHeaderErr)!=0:
-        print 'FrameHeaderError from %s: %s'%(theDescription, rcvHeaderErr)  #CG 2015.07.27
+        print('FrameHeaderError from %s: %s'%(theDescription, rcvHeaderErr))  #CG 2015.07.27
         raise Exception(rcvHeaderErr)
     if sentMessage[1]==0x21 or sentMessage[1]==0x22 or sentMessage[1]==0x23:
         #special case for FPGA Register frame:

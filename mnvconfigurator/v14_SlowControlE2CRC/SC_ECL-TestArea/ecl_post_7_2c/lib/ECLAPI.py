@@ -1,8 +1,8 @@
 import base64
 import sys
 import os.path
-import urllib2, urllib
-from urllib2 import HTTPError
+import urllib.request, urllib.error, urllib.parse, urllib.request, urllib.parse, urllib.error
+from urllib.error import HTTPError
 try:
     import hashlib
 except ImportError:
@@ -90,7 +90,7 @@ class ECLConnection:
             entry.setAuthor(self._username)
         params = entry.xshow().strip()
         args = "salt=%s" % (self._make_salt(),)
-        req = urllib2.Request(url=self._url + '/E/xml_post' +
+        req = urllib.request.Request(url=self._url + '/E/xml_post' +
             '?' + args, data=params)
         #print 'Signature: '+ self.calculate_signature(self._password + ":" + params, 
         #            self.SignatureMethod)
@@ -99,8 +99,8 @@ class ECLConnection:
             req.add_header("X-Password", self._password)
         self._add_signature(req, args, params)
         try:
-            response = urllib2.urlopen(req)
-        except HTTPError, err:
+            response = urllib.request.urlopen(req)
+        except HTTPError as err:
             return err.code, err.msg, err.fp.read()
             
         data = response.read()
@@ -115,35 +115,35 @@ class ECLConnection:
             limit=None, after=None, substring=None, text=None):
         args = ['o=ids', 'salt=%s' % (self._make_salt(),)]
         if category:
-            args.append('c=%s' % (urllib.quote_plus(category,)))
+            args.append('c=%s' % (urllib.parse.quote_plus(category,)))
         if form:
-            args.append('f=%s' % (urllib.quote_plus(form,)))
+            args.append('f=%s' % (urllib.parse.quote_plus(form,)))
         if after:
             if type(after) != type(''):
                 after = after.strptime('%Y-%m-%d %H:%M:%S')
-            args.append('a=%s' % (urllib.quote_plus(after),))
+            args.append('a=%s' % (urllib.parse.quote_plus(after),))
         if tag:
             args.append('t=%s' % (tag,))
         if limit:
             args.append('l=%s' % (limit,))
         if substring:
-            args.append('st=%s' % (urllib.quote_plus(substring),))
+            args.append('st=%s' % (urllib.parse.quote_plus(substring),))
         if text:
-            args.append('si=%s' % (urllib.quote_plus(text),))
+            args.append('si=%s' % (urllib.parse.quote_plus(text),))
 
         url = self._url + '/E/xml_search'
         args = '&'.join(args)
         
         if args:
             url += '?' + args
-        req =  urllib2.Request(url=url)
+        req =  urllib.request.Request(url=url)
         self._add_signature(req, args, '')
         #print 'Signature: '+ self.calculate_signature(self._password + ":" + params, 
         #            self.SignatureMethod)
         
         try:
-            response = urllib2.urlopen(req)
-        except HTTPError, error:
+            response = urllib.request.urlopen(req)
+        except HTTPError as error:
             raise ECLHTTPError(error.code, error.msg, error.fp.read()) 
         tree = etree.parse(response)
         entries = tree.findall('entry')
@@ -155,9 +155,9 @@ class ECLConnection:
         args = '&'.join(args)
         if args:
             url += '?' + args
-        req =  urllib2.Request(url=url)
+        req =  urllib.request.Request(url=url)
         self._add_signature(req, args, '')
-        response = urllib2.urlopen(req)
+        response = urllib.request.urlopen(req)
         return response.read()        
         
         
@@ -249,5 +249,5 @@ if __name__ == '__main__':
     
     c = ECLConnection(url)
     lst = c.list(text=search_text, substring=search_substring, limit=10)
-    print lst
+    print(lst)
     

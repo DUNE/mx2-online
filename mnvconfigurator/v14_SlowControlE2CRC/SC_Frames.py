@@ -6,8 +6,8 @@ Started October 21 2009
 
 import wx
 import sys
-import SC_Util
-import V1720Config
+from . import SC_Util
+from . import V1720Config
 from wx.py.shell import ShellFrame
 from wx.py.filling import FillingFrame
 
@@ -1014,13 +1014,13 @@ class DIG(wx.Panel):
 ##        szV2.Add(self.lblChoices[0], 0, wx.ALL, 4)
 ##        szV2.Add(self.lblChoices[1], 0, wx.ALL, 4)
 ##        szV2.Add(self.lblChoices[2], 0, wx.ALL, 4)
-        WriteToFileStr=V1720Config.WriteToFile.values(); WriteToFileStr.sort()
+        WriteToFileStr=list(V1720Config.WriteToFile.values()); WriteToFileStr.sort()
         self.choiceWriteToFile=wx.Choice(self, size=(120,20), choices=WriteToFileStr)
         self.choiceWriteToFile.SetFont(SC_Util.myFont(SC_Util.fontSizeChoice))
 ##        AppendModeStr=V1720Config.AppendMode.values(); AppendModeStr.sort()
 ##        self.choiceAppendMode=wx.Choice(self, size=(120,20), choices=AppendModeStr)
 ##        self.choiceAppendMode.SetFont(SC_Util.myFont(SC_Util.fontSizeChoice))
-        ReadoutModeStr=V1720Config.ReadoutMode.values(); ReadoutModeStr.sort()
+        ReadoutModeStr=list(V1720Config.ReadoutMode.values()); ReadoutModeStr.sort()
         self.choiceReadoutMode=wx.Choice(self, size=(120,20), choices=ReadoutModeStr)
         self.choiceReadoutMode.SetFont(SC_Util.myFont(SC_Util.fontSizeChoice))
 ##        self.choicecontrols=[self.choiceWriteToFile, self.choiceAppendMode, self.choiceReadoutMode]

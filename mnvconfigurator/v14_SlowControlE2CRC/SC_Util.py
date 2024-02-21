@@ -7,7 +7,7 @@ Started November 2009
 import wx
 import sys
 import random
-from CAENVMEwrapper import CAENVMETypes
+from .CAENVMEwrapper import CAENVMETypes
 
 colorButton='coral'     #wx.Color(255,0,0)      #'red'
 colorLabel='coral'      #wx.Color(0,255,0)      #'green'
@@ -936,8 +936,8 @@ class VMEReadWrite():
             pos=(0,0), size=(100, 20), name='', bckcolor=colorText)
         self.txtWriteData = CreateTextCtrl(panel, label='data',
             pos=(0,0), size=(100, 20), name='', bckcolor=colorText)
-        AM=CAENVMETypes.cvAMDict.keys(); AM.sort()
-        DW=CAENVMETypes.cvDWDict.keys(); DW.sort()
+        AM=list(CAENVMETypes.cvAMDict.keys()); AM.sort()
+        DW=list(CAENVMETypes.cvDWDict.keys()); DW.sort()
         self.choiceAddressModifier=wx.Choice(panel, size=(100,20), choices=AM)
         self.choiceAddressModifier.SetFont(myFont(fontSizeChoice))
         self.choiceDataWidth=wx.Choice(panel, size=(100,20), choices=DW)
@@ -969,8 +969,8 @@ class CRIMTimingTimingSetupRegister():
         StaticBox=wx.StaticBox(panel, -1, caption)
         StaticBox.SetFont(myFont(fontSizeStaticBox))
         StaticBox.SetForegroundColour(colorForeground)
-        Modes=CRIMTimingModes.keys(); Modes.sort()
-        Frequencies=CRIMTimingFrequencies.keys(); Frequencies.sort()
+        Modes=list(CRIMTimingModes.keys()); Modes.sort()
+        Frequencies=list(CRIMTimingFrequencies.keys()); Frequencies.sort()
         self.choiceMode=wx.Choice(panel, size=(125,20), choices=Modes)
         self.choiceFrequency=wx.Choice(panel, size=(125,20), choices=Frequencies)
         self.choiceMode.SetFont(myFont(fontSizeChoice))
@@ -1220,8 +1220,8 @@ class CRIMTimingTimingSetupRegister():
         StaticBox=wx.StaticBox(panel, -1, caption)
         StaticBox.SetFont(myFont(fontSizeStaticBox))
         StaticBox.SetForegroundColour(colorForeground)
-        Modes=CRIMTimingModes.keys(); Modes.sort()
-        Frequencies=CRIMTimingFrequencies.keys(); Frequencies.sort()
+        Modes=list(CRIMTimingModes.keys()); Modes.sort()
+        Frequencies=list(CRIMTimingFrequencies.keys()); Frequencies.sort()
         self.choiceMode=wx.Choice(panel, size=(125,20), choices=Modes)
         self.choiceFrequency=wx.Choice(panel, size=(125,20), choices=Frequencies)
         self.choiceMode.SetFont(myFont(fontSizeChoice))
@@ -1417,7 +1417,7 @@ class CROCFastCmd():
         StaticBox=wx.StaticBox(panel, -1, caption)
         StaticBox.SetFont(myFont(fontSizeStaticBox))
         StaticBox.SetForegroundColour(colorForeground)
-        FCmds=FastCmds.keys(); FCmds.sort()
+        FCmds=list(FastCmds.keys()); FCmds.sort()
         self.choiceFastCmd=wx.Choice(panel, size=(145,20), choices=FCmds)
         self.choiceFastCmd.SetFont(myFont(fontSizeChoice))
         self.btnSendFastCmd=CreateButton(panel, 'Send Fast Cmd',

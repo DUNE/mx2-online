@@ -17,12 +17,12 @@ import random
 import time
 import threading
 
-import CAENVMEwrapper
-import SC_Frames
-import SC_Util
-from SC_MainObjects import *
-import SC_MainMethods
-import V1720Config
+from . import CAENVMEwrapper
+from . import SC_Frames
+from . import SC_Util
+from .SC_MainObjects import *
+from . import SC_MainMethods
+from . import V1720Config
 
 class SCApp(wx.App):
     """SlowControl application. Subclass of wx.App"""
@@ -294,8 +294,8 @@ class SCApp(wx.App):
             sc=SC_MainMethods.SC(linkNum=0, boardNum=i)
             if sc.controller!=None: self.scs.append(sc)
         if self.scs!=[]:
-            print '\n'.join(['Found '+sc.Description()+'\nSWRelease='+sc.controller.SWRelease()+\
-                '\nBoardFWRelease='+sc.controller.BoardFWRelease()+'\nCAENVME_GetTimeout='+sc.controller.GetTimeout() for sc in self.scs])
+            print('\n'.join(['Found '+sc.Description()+'\nSWRelease='+sc.controller.SWRelease()+\
+                '\nBoardFWRelease='+sc.controller.BoardFWRelease()+'\nCAENVME_GetTimeout='+sc.controller.GetTimeout() for sc in self.scs]))
     def LoadHardware(self, useChRst):
         """#find CRIMs, CROCs, FEBs, CROEs, FEBsCROCEs for each controller object"""
         try:
@@ -309,19 +309,19 @@ class SCApp(wx.App):
                 sc.ConfigCROCEsREFE(self.verbose, ntry=1000, frame=self.frame)
                 sc.FindDIGs()
                 if sc.vmeCRIMs!=[]:
-                    print '\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCRIMs])
+                    print('\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCRIMs]))
                 if sc.vmeCROCs!=[]:
-                    print '\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCROCs])
+                    print('\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCROCs]))
                     FEBs=sc.FindFEBs(sc.vmeCROCs)
                     if FEBs!=[]:
-                        print '\n'.join(['Found '+sc.Description()+' '+feb for feb in FEBs])
+                        print('\n'.join(['Found '+sc.Description()+' '+feb for feb in FEBs]))
                 if sc.vmeCROCEs!=[]:
-                    print '\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCROCEs])
+                    print('\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCROCEs]))
                     FEBs=sc.FindCROCEFEBs(sc.vmeCROCEs, useChRst, self.verbose)
                     if FEBs!=[]:
-                        print '\n'.join(['Found '+sc.Description()+' '+feb for feb in FEBs])
+                        print('\n'.join(['Found '+sc.Description()+' '+feb for feb in FEBs]))
                 if sc.vmeDIGs!=[]:
-                    print '\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeDIGs])
+                    print('\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeDIGs]))
             #3. Update self.frame.tree
             self.ResetTreeObjects()
         except: ReportException('LoadHardware', self.reportErrorChoice)
@@ -383,27 +383,27 @@ class SCApp(wx.App):
                 for sc in self.scs:
                     sc.GetHierFromFile(theFile, len(self.scs))
                     if sc.vmeCRIMs!=[]:
-                        print '\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCRIMs])
+                        print('\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCRIMs]))
                     if sc.vmeCROCs!=[]:
-                        print '\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCROCs])
+                        print('\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCROCs]))
                     for theCROC in sc.vmeCROCs:
                         for theCROCChannel in theCROC.Channels():
-                            print 'Found %s FEB %s %s %s'%(sc.Description(), theCROC.Description(), theCROCChannel.Description(), theCROCChannel.FEBs) 
+                            print('Found %s FEB %s %s %s'%(sc.Description(), theCROC.Description(), theCROCChannel.Description(), theCROCChannel.FEBs)) 
                     if sc.vmeCROCEs!=[]:
-                        print '\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCROCEs])
+                        print('\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeCROCEs]))
                     for theCROCE in sc.vmeCROCEs:
                         for theCROCEChannelE in theCROCE.Channels():
-                            print 'Found %s FEB %s %s %s'%(sc.Description(), theCROCE.Description(), theCROCEChannelE.Description(), theCROCEChannelE.FEBs)
+                            print('Found %s FEB %s %s %s'%(sc.Description(), theCROCE.Description(), theCROCEChannelE.Description(), theCROCEChannelE.FEBs))
                             #special requirement for CROCE in TRiggered/Sequencer mode -> all FEBs address must be consecutive, starting with 1
                             cosecutiveTestResult=True
                             for i in range(len(theCROCEChannelE.FEBs)):
                                 if theCROCEChannelE.FEBs[i]!=i+1:
                                     cosecutiveTestResult=False
                             if cosecutiveTestResult==False: 
-                                print '%s:%s Error FEBs address must be consecutive, starting with 1, found FEBs=%s'\
-                                    %(theCROCE.Description(),theCROCEChannelE.Description(),theCROCEChannelE.FEBs)
+                                print('%s:%s Error FEBs address must be consecutive, starting with 1, found FEBs=%s'\
+                                    %(theCROCE.Description(),theCROCEChannelE.Description(),theCROCEChannelE.FEBs))
                     if sc.vmeDIGs!=[]:
-                        print '\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeDIGs])
+                        print('\n'.join(['Found '+sc.Description()+' '+dev.Description() for dev in sc.vmeDIGs]))
                     theFile.seek(0)
                 theFile.close()
                 #3. Update self.frame.tree
@@ -462,8 +462,8 @@ class SCApp(wx.App):
                     (dictHV['FPGA']['FEB'], dictHV['FPGA']['Channel'], dictHV['FPGA']['CROCE'], dictHV['FPGA']['CRATE'], \
                      dictHV['Actual'], dictHV['Target'], dictHV['A-T'], dictHV['PeriodMan'], \
                      dictHV['PeriodAuto'], dictHV['PulseWidth']) for dictHV in hvsCROCEs]
-                print '\n'.join(hv)
-                print '\n'.join(hvE)
+                print('\n'.join(hv))
+                print('\n'.join(hvE))
             dlg.Destroy()            
         except: ReportException('OnMenuActionsReadVoltages', self.reportErrorChoice)
     def OnMenuActionsSetAllHV(self, event):
@@ -502,8 +502,8 @@ class SCApp(wx.App):
     def OnMonitor(self, event):
         try:
             self.frame.description.text.SetValue('')
-            print self.monitorTitle
-            print time.ctime()
+            print(self.monitorTitle)
+            print(time.ctime())
             hvs=self.monitorFunc(*(self.monitorArgs))
             hvEs=self.monitorFunc(*(self.monitorArgEs))
             hv=['FPGA:%s,%s,%s,%s: Actual=%s, Target=%s, A-T=%s, PeriodAuto=%s'% \
@@ -512,8 +512,8 @@ class SCApp(wx.App):
             hvE=['FPGA:%s,%s,%s,%s: Actual=%s, Target=%s, A-T=%s, PeriodAuto=%s'% \
                 (dictHV['FPGA']['FEB'], dictHV['FPGA']['Channel'], dictHV['FPGA']['CROCE'], dictHV['FPGA']['CRATE'], \
                  dictHV['Actual'], dictHV['Target'], dictHV['A-T'], dictHV['PeriodAuto']) for dictHV in hvEs]
-            print '\n'.join(hv)
-            print '\n'.join(hvE)
+            print('\n'.join(hv))
+            print('\n'.join(hvE))
         except: ReportException('OnMonitor', self.reportErrorChoice)
     def OnMenuActionsSaveDescription(self, event):
         try:
@@ -549,217 +549,217 @@ class SCApp(wx.App):
     def OnMenuActionsAbout(self, event):
         try:
             self.frame.nb.ChangeSelection(0)
-            print '\n********************************************************************************'
-            print '* MINERVA SLOW CONTROL                                                         *'
-            print '* Author  : Cristian Gingu, gingu@fnal.gov, x6817                              *'
-            print '* Version : %s Release Date: September 23 2015                          *'%(self.version)
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.14. Release Date: September 23 2015                       *'
-            print '* Upgrade CROCE Control firmware to v4 (file cvme_04_1.bit). This upgrade is   *'
-            print '* introduced for CROCE Layout Board Version E3 -> requested by Minerva Collab. *'
-            print '* to produce an additional 20 spare CROCE Boards.                              *'
-            print '* 1. Up to now, the Control_Channel_Reset_Register(0x0FF020) was used only to  *'
-            print '*    issue a FLASH firmware reload for all FEBs in all four Channels when      *'
-            print '*    writing 0x0202. In addition, it is now (starting with CROCE Layout Board  *'
-            print '*    Version E3) used to implement a new feature which is FLASH firmware reload*'
-            print '*    for all FPGAs on CROCE board itself (the Control FPGA and the four Channel*'
-            print '*    FPGAs) when 0x0808 is written to Control_Channel_Reset_Register(0x0FF020).*'
-            print '* 2. Upgrade all FLASH WRITE buttons with an operator warning message.         *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.13. Release Date: July 27 2015                            *'
-            print '* 1. Introducing shortcut Action->ClearDescription  CTRL+D                     *'
-            print '* 2. In SC_MainObjects->WriteSendReceiveCROCE introducing:                     *'
-            print '*    if len(rcvHeaderErr)!=0:                                                  *'
-            print '*       print "FrameHeaderError from %s: %s"%(theDescription, rcvHeaderErr)    *'
-            print '*       raise Exception(rcvHeaderErr)                                          *'
-            print '*    such as to provide with more information when exception is thrown.        *'            
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.12. Release Date: May 01 2015                             *'
-            print '* Upgrade for FEB v96 firmware capability -> independent Trip push option.     *'
-            print '* Upgrade CROCE_Channel firmware to v5 (file v5_1a_ch1234_ufw.mcs).            *'
-            print '* No upgrade necessary on CROCE_Control firmware.                              *'
-            print '* 1. The following acquisition modes are now available; set them using         *'
-            print '*    WR TripX ACQ Mode in FE->FPGA tab:                                        *'
-            print '*    b"00"= Minerva detector mode (v95, v96, TripTs ADC digization is done     *'
-            print '*      after each Open Gate.                                                   *'
-            print '*    b"01"= MTBF cosmic mode (v95, v96, TripTs ADC digization is done          *'
-            print '*      after an open gate ONLY if an External Trigger is sent to FEBs.         *'
-            print '*    b"10" = mode b"00" above, only now Trips push independently, new in v96.  *'
-            print '*    b"11" = mode b"01" above, only now Trips push independently, new in v96.  *'
-            print '* 2. FE->FPGA frame: add 4 new registers, 8-bits, read-only. Thus the total    *'
-            print '*    number of regs is increased in v96 from 55 to 59.                         *'
-            print '*    R Trip20HitCnt (16-bits) = reg#56 & reg#55 =                              *'
-            print '*      = ACQ_MODE(1) & NHitsTrip4(4..3) & NHitsTrip2(4..0) &                   *'
-            print '*                      NHitsTrip4(2..0) & NHitsTrip0(4..0)                     *'
-            print '*    R Trip31HitCnt (16-bits) = reg#58 & reg#57 =                              *'
-            print '*      = ACQ_MODE(1) & NHitsTrip5(4..3) & NHitsTrip3(4..0) &                   *'
-            print '*                      NHitsTrip5(2..0) & NHitsTrip1(4..0)                     *'
-            print '*    Note that NHitsTripX is a 5-bit number, to accomodate up to 23 hits/Trip  *'
-            print '*    Also, both NHitsTrip4 and NHitsTrip5 are currently zero, since these Trips*'
-            print '*    are pushing ONLY after the gate closes - zero pushes inside the gate.     *'
-            print '*    Also, the WR Spare 8b is still at the end of frame, which is now reg#59.  *'
-            print '* 3. Discriminator frame. Up to v95 the NHitsTripX was encoded using two bytes *'
-            print '*    at the top of the discriminator frame, data part, second and third byte:  *'
-            print '*    NHitsTripX = "000" & NHitsTrip32 & "000" & NHitsTrip10 where              *'
-            print '*      NHitsTrip32 = NHitsTrip3 = NHitsTrip2 since they push together, and     *'
-            print '*      NHitsTrip10 = NHitsTrip1 = NHitsTrip0 since they push together.         *'
-            print '*    With v96, Trips can push independently. A new 16 bit word was introduced  *'
-            print '*    labeled NHitsTripX2, following the above NHitsTripX. These two extra bytes*'
-            print '*    are present ONLY if ACQ_MODE(1)="1" i.e. independent push mode is selected*'
-            print '*    In any cases, NHitsTripX and NHitsTripX2 encoding is as follows:          *'
-            print '*    NHitsTripX  = R Trip20HitCnt (16-bits) = reg#56 & reg#55 =                *'
-            print '*      = ACQ_MODE(1) & NHitsTrip4(4..3) & NHitsTrip2(4..0) &                   *'
-            print '*                      NHitsTrip4(2..0) & NHitsTrip0(4..0)                     *'
-            print '*    NHitsTripX2 = R Trip31HitCnt (16-bits) = reg#58 & reg#57 =                *'
-            print '*      = ACQ_MODE(1) & NHitsTrip5(4..3) & NHitsTrip3(4..0) &                   *'
-            print '*                      NHitsTrip5(2..0) & NHitsTrip1(4..0)                     *'
-            print '*    It can be seen that for NHitsTrip4=NHitsTrip5="00000" the NHitsTripX has  *'
-            print '*    the same encoding as in v95, where ACQ_MODE(1) bit was not used (0).      *'
-            print '*    If NHitsTripX has the MSB set due to ACQ_MODE(1)="1",then Slow Control and*'
-            print '*    other DAC software will have a hint that the next two bytes (NHitsTripX2) *'
-            print '*    MUST be parsed as Hits Counters too, and then the frame can be decoded as *'
-            print '*    usual. The same info is used by the CROCE_Channel firmware in sequencer   *'
-            print '*    mode; v5 firmware changes are transparent to users, no need to change any *'
-            print '*    related application software.                                             *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.11. Release Date: February 12 2015                        *'
-            print '* 1. Updating procedure OnVMEbtnRunBoardTest, #TEST#9 Test Sequencer such as to*'
-            print '*    check the Minerva Frame Header bytes.                                     *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.10. Release Date: December 18 2014                        *'
-            print '* 1. Removing the call OnMenuLoadHardware() at application startup. Thus the   *'
-            print '*    left pane is empty, no CRIM, CROCE or other modules will show up.         *'
-            print '* 2. Introducing File->ConfigREFE        CTRL+F                                *'
-            print '* 3. Introducing File->UpdateHierToFile  CTRL+U                                *'
-            print '* 4. Introducing File->GetHierFromFile   CTRL+G                                *'
-            print '* 5. The File->FindHardware still calls ConfigCROCEsREFE, with interface modif *'
-            print '*    to include ntry1 for a fixed default of 1000. The new File->ConfigREFE is *'
-            print '*    introduced to keep things independent; here the ntry1 is user defined.    *'
-            print '*    It is suggested to run the later one time, with very large statistic (at  *'
-            print '*    least 5000 meas) for a given hardware setup (i.e. loop cable length) and  *'
-            print '*    then save this info, together with all devices settings, into the .hwcfg. *'
-            print '*    The Status bar indicates the progress.                                    *'
-            print '* 6. The new File->UpdateHierToFile and File->GetHierFromFile use a *.hier file*'
-            print '*    which is quite similar with *.hwcfg except no parameter values are written*'
-            print '*    into modules, either CRIM, CROC, CROCE, FPGA or Trip. It is meant mostly  *'
-            print '*    for fixed system setups like the one underground. The advantage of File-> *'
-            print '*    GetHierFromFile is the Slow Control is "loaded" with a given hierarchy    *'
-            print '*    (in the left pane) without an effective hardware scan.                    *'
-            print '* 7. Introducing two LoopDelaysStatistic buttons in CROCE tab:                 *'
-            print '*    7.1. "Report Delays this CROCE": It does a statistic of Loop Delay        *'
-            print '*    measurements on all 4 ChannelEs over NMeas times. The average values are  *'
-            print '*    displayed in the LoopDelays text boxes above the button, for each channel,*'
-            print '*    and also in the Description tab where, for convenience, the ConfigREFE  is*'
-            print '*    also reported. The Status bar indicates the progress. The units are 6*53= *'
-            print '*    318MHz clock cycles (~3.14ns). For CAT5E cable I measured ~1.5ns/ft.      *'
-            print '*    7.2. "Report Delays All CROCEs": It does a statistic of Loop Delay        *'
-            print '*    measurements on all CROCEs in the system over NMeas times. The average    *'
-            print '*    values are displayed, for each channel and each CROCE,in the Description  *'
-            print '*    tab where, for convenience, the ConfigREFE is also reported. The Status   *'
-            print '*    bar indicates  the progress.                                              *'
-            print '* 8. Add button SendFastCmdAll in CROC tab and CROCE tab. For example use the  *'
-            print '*    ResetFPGA FastCmd to reset all FEBs in the system after power up.         *'
-            print '* 9. After a power up it is also required to send a File->SysyemReset to reset *'
-            print '*    all CROCE and CRIM modules.                                               *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.9. Release Date: December 3 2014                          *'
-            print '* 1. Update CAENVMEwrapper.py with the following:                              *'
-            print '*    1.1. CAENVMETypes.cvErrorsDict with -5:cvTimeoutError                     *'
-            print '*    1.2. CAENVMETypes.cvTimeoutDict = {0:"50us", 1:"400us"}                   *'
-            print '*    1.3. Add class CAENVMETypes.CVVMETimeouts                                 *'
-            print '*    1.4. Add function Controller.GetTimeout()                                 *'
-            print '*    1.5. Add function Controller.SetTimeout(timeouttype)                      *'
-            print '* 2. Introducing time.sleep(0.002) in CROCE and CROCEChannelE FlashRead methods*'
-            print '*    in an attempt to correct errors seen at Minerva Test Beam Facility setup. *'
-            print '* 3. Introducing multiple "ClearStatusOptions" buttons in CHE tab.             *'
-            print '* 4. Introducing the following Menu Shortcuts:                                 *'
-            print '*    4.1.Find Hardware          CTRL+W                                         *'
-            print '*    4.2.Load from File         CTRL+L                                         *'
-            print '*    4.3.Save to File           CTRL+S                                         *'
-            print '*    4.4.System Reset           CTRL+R                                         *'
-            print '*    4.5.Quit                   CTRL+Q                                         *'
-            print '*    4.6.Expand All             CTRL+E                                         *'
-            print '*    4.7.Collapse All           CTRL+O                                         *'
-            print '*    4.8.Read All HVs           CTRL+M                                         *'
-            print '*    4.9.Set All HVs            CTRL+N                                         *'
-            print '*    4.10.START Monitor All HVs CTRL+H                                         *'
-            print '*    4.11.STOP Monitor All HVs  CTRL+K                                         *'
-            print '*    4.12.About                 CTRL+A                                         *'           
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.8. Release Date: October 28 2014                          *'
-            print '* 1. Update GUI for CRIM->TimingModule tab: (i) add Sequencer Register RESET   *'
-            print '*    button (write0x0202 to address 0xC070) and (ii) add MTM Timing Violations *'
-            print '*    Register at address 0xC090 with Clear (write0x1001) and Read buttons.     *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.7. Release Date: August 05 2014                           *'
-            print '* 1. Cosmetic chage in VME->CROCE Board Test tab: adding Ch0,1,2,3 check boxes *'
-            print '*    (default checked) to select channel(s) on which to perform the tests.     *'
-            print '* 2. Control FPGA firmware is revised (using Diamond software)                 *'
-            print '* 3. Introducing online FLASH programming for Control FPGA.                    *'
-            print '*    New Control FPGA componets are:                                           *'
-            print '*    (i)  RW Register "FLASH Control" @ 0x0FF070 and                           *'
-            print '*    (ii) RW FLASH Memory (as in Channel FPGA), 2048KBytes, starting @ 0x0FF800*'
-            print '* 4. Current firmware files are:                                               *'
-            print '*    channel: v3_1b_ch1234_ufw.mcs (same, v3)                                  *'
-            print '*    control: cvme_05c_3.bit       (updated, v3)                               *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.6. Release Date: January 21st 2014                        *'
-            print '* 1. Introducing the QUERY_FPGA command that should be instrumental in online  *'
-            print '*    debug when chain communication is lost.                                   *'
-            print '* 2. All FEBs send a "PREVIEWDATA" frame (5 bytes) when an ecoded QUERY_FPGA   *'
-            print '*    command is sent by the CROCE (simultaneously on all 4 Channels):          *'
-            print '*    byte1 == "1000" & FEB_ID;                                                 *'
-            print '*    byte2 == TRIP_10_HITCNT;                                                  *'
-            print '*    byte3 == TRIP_32_HITCNT;                                                  *'
-            print '*    byte4 == HV_READDATA low byte;                                            *'
-            print '*    byte5 == HV_READDATA high byte;                                           *'
-            print '* 3. The above frame from each FEB in the chain is stored in the CRCE_CHANNEL  *'
-            print '*    Receive Memory (see SlowControl GUI tab CHE->Memories) right after the ten*'
-            print '*    bytes of a dummy (previous) MFH. Also, the values in tab CHE->Registers   *'
-            print '*    will be updated and can be readout. For example RcvMemWPointer=15 and the *'
-            print '*    RcvMemFrmConterif=3 if there are 3 FEBs in the chain.                     *'
-            print '* 4. The PREVIEW DATA encoded frame is constrained by this logic condition:    *'
-            print '*    a. FCMD_QUERY||(EN_PREVIEW_DATA&&TRIPX_ADC_DONE_RE) on FEB v95 and next.  *'
-            print '*    b. FCMD_QUERY&&(EN_PREVIEW_DATA&&TRIPX_ADC_DONE_RE) on FEB v91 and prev.  *'
-            print '*    (see also tab FE->DAQ->DataType->23Hits for compatibility between discrim *'
-            print '*    encoding differences on v95 and v91)                                      *'
-            print '* 5. Current firmware files are:                                               *'
-            print '*    channel: v3_1b_ch1234_ufw.mcs (updated)                                   *'
-            print '*    control: croce_vme_v9a.bit    (same)                                      *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.5. Release Date: December 12th 2013                       *'
-            print '* 1. Introducing two CRC bytes at the end of each received frame.              *'
-            print '*    The frame length in MFH includes 10 bytes header plus the twoCRC bytes.   *'
-            print '* 2. Introducing online FLASH programming for Channels.                        *'
-            print '* 3. Current (updated) firmware files are:                                     *'
-            print '*    channel: v3_1a_ch1234_ufw.mcs                                             *'
-            print '*    control: croce_vme_v9a.bit                                                *'
-            print '* 4. Compatible with previous firmware files:                                  *'
-            print '*    channel: v2_3e2_ch1234_ufw.mcs                                            *'
-            print '*    control: croce_vme_v8n.bit                                                *'
-            print '* 5. Compatible with FEB firmware files:                                       *'
-            print '*    v91 : currently used                                                      *'
-            print '*    v95 : updated version with 23 Hits capability: v95_23anahits.spidata      *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.4. Release Date: August 23rd 2013                         *'
-            print '* 1. New Menu option File-> Find Hardware ChRST.                               *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.3. Release Date: August 14th 2013                         *'
-            print '* 1. Removed fcmd=ResetFPGA in ConfigCROCEsREFE() because an FPGA reset sets   *'
-            print '* GateStart and GateLength regs to defaul values - which is user unconvenient. *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.2. Release Date: August 6th 2013                          *'
-            print '* Upgraded CROCE firmwares: croce_vme_v8n.bit and v2_3e2_ch1234_ufw.mcs        *'
-            print '* New menu items under "Actions":                                              *'
-            print '* 1. "Save Current Description" will save the current text into file.          *'
-            print '* 2. "Write Description to File" will start saving new text into a file or stop*'
-            print '*     saving if "Cancel" is selected in the pop up window.                     *'
-            print '* 3. "Change Font Size" changes "Description" font size.                       *'
-            print '* 4. "About" will print this "About" information.                              *'
-            print '*------------------------------------------------------------------------------*'
-            print '* NOTES: Version 2.0.1.                                                        *'
-            print '* Major version upgrade (2.0.x) for two VME crates and CROCEs modules.         *'
-            print '********************************************************************************'
+            print('\n********************************************************************************')
+            print('* MINERVA SLOW CONTROL                                                         *')
+            print('* Author  : Cristian Gingu, gingu@fnal.gov, x6817                              *')
+            print('* Version : %s Release Date: September 23 2015                          *'%(self.version))
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.14. Release Date: September 23 2015                       *')
+            print('* Upgrade CROCE Control firmware to v4 (file cvme_04_1.bit). This upgrade is   *')
+            print('* introduced for CROCE Layout Board Version E3 -> requested by Minerva Collab. *')
+            print('* to produce an additional 20 spare CROCE Boards.                              *')
+            print('* 1. Up to now, the Control_Channel_Reset_Register(0x0FF020) was used only to  *')
+            print('*    issue a FLASH firmware reload for all FEBs in all four Channels when      *')
+            print('*    writing 0x0202. In addition, it is now (starting with CROCE Layout Board  *')
+            print('*    Version E3) used to implement a new feature which is FLASH firmware reload*')
+            print('*    for all FPGAs on CROCE board itself (the Control FPGA and the four Channel*')
+            print('*    FPGAs) when 0x0808 is written to Control_Channel_Reset_Register(0x0FF020).*')
+            print('* 2. Upgrade all FLASH WRITE buttons with an operator warning message.         *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.13. Release Date: July 27 2015                            *')
+            print('* 1. Introducing shortcut Action->ClearDescription  CTRL+D                     *')
+            print('* 2. In SC_MainObjects->WriteSendReceiveCROCE introducing:                     *')
+            print('*    if len(rcvHeaderErr)!=0:                                                  *')
+            print('*       print "FrameHeaderError from %s: %s"%(theDescription, rcvHeaderErr)    *')
+            print('*       raise Exception(rcvHeaderErr)                                          *')
+            print('*    such as to provide with more information when exception is thrown.        *')            
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.12. Release Date: May 01 2015                             *')
+            print('* Upgrade for FEB v96 firmware capability -> independent Trip push option.     *')
+            print('* Upgrade CROCE_Channel firmware to v5 (file v5_1a_ch1234_ufw.mcs).            *')
+            print('* No upgrade necessary on CROCE_Control firmware.                              *')
+            print('* 1. The following acquisition modes are now available; set them using         *')
+            print('*    WR TripX ACQ Mode in FE->FPGA tab:                                        *')
+            print('*    b"00"= Minerva detector mode (v95, v96, TripTs ADC digization is done     *')
+            print('*      after each Open Gate.                                                   *')
+            print('*    b"01"= MTBF cosmic mode (v95, v96, TripTs ADC digization is done          *')
+            print('*      after an open gate ONLY if an External Trigger is sent to FEBs.         *')
+            print('*    b"10" = mode b"00" above, only now Trips push independently, new in v96.  *')
+            print('*    b"11" = mode b"01" above, only now Trips push independently, new in v96.  *')
+            print('* 2. FE->FPGA frame: add 4 new registers, 8-bits, read-only. Thus the total    *')
+            print('*    number of regs is increased in v96 from 55 to 59.                         *')
+            print('*    R Trip20HitCnt (16-bits) = reg#56 & reg#55 =                              *')
+            print('*      = ACQ_MODE(1) & NHitsTrip4(4..3) & NHitsTrip2(4..0) &                   *')
+            print('*                      NHitsTrip4(2..0) & NHitsTrip0(4..0)                     *')
+            print('*    R Trip31HitCnt (16-bits) = reg#58 & reg#57 =                              *')
+            print('*      = ACQ_MODE(1) & NHitsTrip5(4..3) & NHitsTrip3(4..0) &                   *')
+            print('*                      NHitsTrip5(2..0) & NHitsTrip1(4..0)                     *')
+            print('*    Note that NHitsTripX is a 5-bit number, to accomodate up to 23 hits/Trip  *')
+            print('*    Also, both NHitsTrip4 and NHitsTrip5 are currently zero, since these Trips*')
+            print('*    are pushing ONLY after the gate closes - zero pushes inside the gate.     *')
+            print('*    Also, the WR Spare 8b is still at the end of frame, which is now reg#59.  *')
+            print('* 3. Discriminator frame. Up to v95 the NHitsTripX was encoded using two bytes *')
+            print('*    at the top of the discriminator frame, data part, second and third byte:  *')
+            print('*    NHitsTripX = "000" & NHitsTrip32 & "000" & NHitsTrip10 where              *')
+            print('*      NHitsTrip32 = NHitsTrip3 = NHitsTrip2 since they push together, and     *')
+            print('*      NHitsTrip10 = NHitsTrip1 = NHitsTrip0 since they push together.         *')
+            print('*    With v96, Trips can push independently. A new 16 bit word was introduced  *')
+            print('*    labeled NHitsTripX2, following the above NHitsTripX. These two extra bytes*')
+            print('*    are present ONLY if ACQ_MODE(1)="1" i.e. independent push mode is selected*')
+            print('*    In any cases, NHitsTripX and NHitsTripX2 encoding is as follows:          *')
+            print('*    NHitsTripX  = R Trip20HitCnt (16-bits) = reg#56 & reg#55 =                *')
+            print('*      = ACQ_MODE(1) & NHitsTrip4(4..3) & NHitsTrip2(4..0) &                   *')
+            print('*                      NHitsTrip4(2..0) & NHitsTrip0(4..0)                     *')
+            print('*    NHitsTripX2 = R Trip31HitCnt (16-bits) = reg#58 & reg#57 =                *')
+            print('*      = ACQ_MODE(1) & NHitsTrip5(4..3) & NHitsTrip3(4..0) &                   *')
+            print('*                      NHitsTrip5(2..0) & NHitsTrip1(4..0)                     *')
+            print('*    It can be seen that for NHitsTrip4=NHitsTrip5="00000" the NHitsTripX has  *')
+            print('*    the same encoding as in v95, where ACQ_MODE(1) bit was not used (0).      *')
+            print('*    If NHitsTripX has the MSB set due to ACQ_MODE(1)="1",then Slow Control and*')
+            print('*    other DAC software will have a hint that the next two bytes (NHitsTripX2) *')
+            print('*    MUST be parsed as Hits Counters too, and then the frame can be decoded as *')
+            print('*    usual. The same info is used by the CROCE_Channel firmware in sequencer   *')
+            print('*    mode; v5 firmware changes are transparent to users, no need to change any *')
+            print('*    related application software.                                             *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.11. Release Date: February 12 2015                        *')
+            print('* 1. Updating procedure OnVMEbtnRunBoardTest, #TEST#9 Test Sequencer such as to*')
+            print('*    check the Minerva Frame Header bytes.                                     *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.10. Release Date: December 18 2014                        *')
+            print('* 1. Removing the call OnMenuLoadHardware() at application startup. Thus the   *')
+            print('*    left pane is empty, no CRIM, CROCE or other modules will show up.         *')
+            print('* 2. Introducing File->ConfigREFE        CTRL+F                                *')
+            print('* 3. Introducing File->UpdateHierToFile  CTRL+U                                *')
+            print('* 4. Introducing File->GetHierFromFile   CTRL+G                                *')
+            print('* 5. The File->FindHardware still calls ConfigCROCEsREFE, with interface modif *')
+            print('*    to include ntry1 for a fixed default of 1000. The new File->ConfigREFE is *')
+            print('*    introduced to keep things independent; here the ntry1 is user defined.    *')
+            print('*    It is suggested to run the later one time, with very large statistic (at  *')
+            print('*    least 5000 meas) for a given hardware setup (i.e. loop cable length) and  *')
+            print('*    then save this info, together with all devices settings, into the .hwcfg. *')
+            print('*    The Status bar indicates the progress.                                    *')
+            print('* 6. The new File->UpdateHierToFile and File->GetHierFromFile use a *.hier file*')
+            print('*    which is quite similar with *.hwcfg except no parameter values are written*')
+            print('*    into modules, either CRIM, CROC, CROCE, FPGA or Trip. It is meant mostly  *')
+            print('*    for fixed system setups like the one underground. The advantage of File-> *')
+            print('*    GetHierFromFile is the Slow Control is "loaded" with a given hierarchy    *')
+            print('*    (in the left pane) without an effective hardware scan.                    *')
+            print('* 7. Introducing two LoopDelaysStatistic buttons in CROCE tab:                 *')
+            print('*    7.1. "Report Delays this CROCE": It does a statistic of Loop Delay        *')
+            print('*    measurements on all 4 ChannelEs over NMeas times. The average values are  *')
+            print('*    displayed in the LoopDelays text boxes above the button, for each channel,*')
+            print('*    and also in the Description tab where, for convenience, the ConfigREFE  is*')
+            print('*    also reported. The Status bar indicates the progress. The units are 6*53= *')
+            print('*    318MHz clock cycles (~3.14ns). For CAT5E cable I measured ~1.5ns/ft.      *')
+            print('*    7.2. "Report Delays All CROCEs": It does a statistic of Loop Delay        *')
+            print('*    measurements on all CROCEs in the system over NMeas times. The average    *')
+            print('*    values are displayed, for each channel and each CROCE,in the Description  *')
+            print('*    tab where, for convenience, the ConfigREFE is also reported. The Status   *')
+            print('*    bar indicates  the progress.                                              *')
+            print('* 8. Add button SendFastCmdAll in CROC tab and CROCE tab. For example use the  *')
+            print('*    ResetFPGA FastCmd to reset all FEBs in the system after power up.         *')
+            print('* 9. After a power up it is also required to send a File->SysyemReset to reset *')
+            print('*    all CROCE and CRIM modules.                                               *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.9. Release Date: December 3 2014                          *')
+            print('* 1. Update CAENVMEwrapper.py with the following:                              *')
+            print('*    1.1. CAENVMETypes.cvErrorsDict with -5:cvTimeoutError                     *')
+            print('*    1.2. CAENVMETypes.cvTimeoutDict = {0:"50us", 1:"400us"}                   *')
+            print('*    1.3. Add class CAENVMETypes.CVVMETimeouts                                 *')
+            print('*    1.4. Add function Controller.GetTimeout()                                 *')
+            print('*    1.5. Add function Controller.SetTimeout(timeouttype)                      *')
+            print('* 2. Introducing time.sleep(0.002) in CROCE and CROCEChannelE FlashRead methods*')
+            print('*    in an attempt to correct errors seen at Minerva Test Beam Facility setup. *')
+            print('* 3. Introducing multiple "ClearStatusOptions" buttons in CHE tab.             *')
+            print('* 4. Introducing the following Menu Shortcuts:                                 *')
+            print('*    4.1.Find Hardware          CTRL+W                                         *')
+            print('*    4.2.Load from File         CTRL+L                                         *')
+            print('*    4.3.Save to File           CTRL+S                                         *')
+            print('*    4.4.System Reset           CTRL+R                                         *')
+            print('*    4.5.Quit                   CTRL+Q                                         *')
+            print('*    4.6.Expand All             CTRL+E                                         *')
+            print('*    4.7.Collapse All           CTRL+O                                         *')
+            print('*    4.8.Read All HVs           CTRL+M                                         *')
+            print('*    4.9.Set All HVs            CTRL+N                                         *')
+            print('*    4.10.START Monitor All HVs CTRL+H                                         *')
+            print('*    4.11.STOP Monitor All HVs  CTRL+K                                         *')
+            print('*    4.12.About                 CTRL+A                                         *')           
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.8. Release Date: October 28 2014                          *')
+            print('* 1. Update GUI for CRIM->TimingModule tab: (i) add Sequencer Register RESET   *')
+            print('*    button (write0x0202 to address 0xC070) and (ii) add MTM Timing Violations *')
+            print('*    Register at address 0xC090 with Clear (write0x1001) and Read buttons.     *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.7. Release Date: August 05 2014                           *')
+            print('* 1. Cosmetic chage in VME->CROCE Board Test tab: adding Ch0,1,2,3 check boxes *')
+            print('*    (default checked) to select channel(s) on which to perform the tests.     *')
+            print('* 2. Control FPGA firmware is revised (using Diamond software)                 *')
+            print('* 3. Introducing online FLASH programming for Control FPGA.                    *')
+            print('*    New Control FPGA componets are:                                           *')
+            print('*    (i)  RW Register "FLASH Control" @ 0x0FF070 and                           *')
+            print('*    (ii) RW FLASH Memory (as in Channel FPGA), 2048KBytes, starting @ 0x0FF800*')
+            print('* 4. Current firmware files are:                                               *')
+            print('*    channel: v3_1b_ch1234_ufw.mcs (same, v3)                                  *')
+            print('*    control: cvme_05c_3.bit       (updated, v3)                               *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.6. Release Date: January 21st 2014                        *')
+            print('* 1. Introducing the QUERY_FPGA command that should be instrumental in online  *')
+            print('*    debug when chain communication is lost.                                   *')
+            print('* 2. All FEBs send a "PREVIEWDATA" frame (5 bytes) when an ecoded QUERY_FPGA   *')
+            print('*    command is sent by the CROCE (simultaneously on all 4 Channels):          *')
+            print('*    byte1 == "1000" & FEB_ID;                                                 *')
+            print('*    byte2 == TRIP_10_HITCNT;                                                  *')
+            print('*    byte3 == TRIP_32_HITCNT;                                                  *')
+            print('*    byte4 == HV_READDATA low byte;                                            *')
+            print('*    byte5 == HV_READDATA high byte;                                           *')
+            print('* 3. The above frame from each FEB in the chain is stored in the CRCE_CHANNEL  *')
+            print('*    Receive Memory (see SlowControl GUI tab CHE->Memories) right after the ten*')
+            print('*    bytes of a dummy (previous) MFH. Also, the values in tab CHE->Registers   *')
+            print('*    will be updated and can be readout. For example RcvMemWPointer=15 and the *')
+            print('*    RcvMemFrmConterif=3 if there are 3 FEBs in the chain.                     *')
+            print('* 4. The PREVIEW DATA encoded frame is constrained by this logic condition:    *')
+            print('*    a. FCMD_QUERY||(EN_PREVIEW_DATA&&TRIPX_ADC_DONE_RE) on FEB v95 and next.  *')
+            print('*    b. FCMD_QUERY&&(EN_PREVIEW_DATA&&TRIPX_ADC_DONE_RE) on FEB v91 and prev.  *')
+            print('*    (see also tab FE->DAQ->DataType->23Hits for compatibility between discrim *')
+            print('*    encoding differences on v95 and v91)                                      *')
+            print('* 5. Current firmware files are:                                               *')
+            print('*    channel: v3_1b_ch1234_ufw.mcs (updated)                                   *')
+            print('*    control: croce_vme_v9a.bit    (same)                                      *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.5. Release Date: December 12th 2013                       *')
+            print('* 1. Introducing two CRC bytes at the end of each received frame.              *')
+            print('*    The frame length in MFH includes 10 bytes header plus the twoCRC bytes.   *')
+            print('* 2. Introducing online FLASH programming for Channels.                        *')
+            print('* 3. Current (updated) firmware files are:                                     *')
+            print('*    channel: v3_1a_ch1234_ufw.mcs                                             *')
+            print('*    control: croce_vme_v9a.bit                                                *')
+            print('* 4. Compatible with previous firmware files:                                  *')
+            print('*    channel: v2_3e2_ch1234_ufw.mcs                                            *')
+            print('*    control: croce_vme_v8n.bit                                                *')
+            print('* 5. Compatible with FEB firmware files:                                       *')
+            print('*    v91 : currently used                                                      *')
+            print('*    v95 : updated version with 23 Hits capability: v95_23anahits.spidata      *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.4. Release Date: August 23rd 2013                         *')
+            print('* 1. New Menu option File-> Find Hardware ChRST.                               *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.3. Release Date: August 14th 2013                         *')
+            print('* 1. Removed fcmd=ResetFPGA in ConfigCROCEsREFE() because an FPGA reset sets   *')
+            print('* GateStart and GateLength regs to defaul values - which is user unconvenient. *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.2. Release Date: August 6th 2013                          *')
+            print('* Upgraded CROCE firmwares: croce_vme_v8n.bit and v2_3e2_ch1234_ufw.mcs        *')
+            print('* New menu items under "Actions":                                              *')
+            print('* 1. "Save Current Description" will save the current text into file.          *')
+            print('* 2. "Write Description to File" will start saving new text into a file or stop*')
+            print('*     saving if "Cancel" is selected in the pop up window.                     *')
+            print('* 3. "Change Font Size" changes "Description" font size.                       *')
+            print('* 4. "About" will print this "About" information.                              *')
+            print('*------------------------------------------------------------------------------*')
+            print('* NOTES: Version 2.0.1.                                                        *')
+            print('* Major version upgrade (2.0.x) for two VME crates and CROCEs modules.         *')
+            print('********************************************************************************')
         except: ReportException('OnMenuActionsAbout', self.reportErrorChoice)
 
     # VME pannel events ##########################################################
@@ -785,7 +785,7 @@ class SCApp(wx.App):
             if am=='A32_U_BLT' or am=='A24_U_BLT':
                 data=self.scs[self.frame.vme.crateNumber].controller.ReadCycleBLT(addr, bltsz, am, dw)
                 hexdata=[hex(d)[2:].rjust(2,'0') for d in data]
-                print 'am=%s: data=%s'%(am,''.join(hexdata))
+                print('am=%s: data=%s'%(am,''.join(hexdata)))
                 self.frame.vme.VMEReadWrite.txtReadData.SetValue(''.join(hexdata))
         except: ReportException('OnVMEbtnRead', self.reportErrorChoice)
     def OnVMEbtnRunBoardTest(self, event):
@@ -824,7 +824,7 @@ class SCApp(wx.App):
                     theCheckCh.append(i)
             if theCheckCh==[]:
                 errmsg='At least one channel must be selected tor testing'
-                print errmsg
+                print(errmsg)
                 wx.MessageBox(errmsg)
                 return;
             for theCROCE in self.scs[self.frame.vme.crateNumber].vmeCROCEs:
@@ -834,7 +834,7 @@ class SCApp(wx.App):
                    '\n********************************'+\
                    '\nStart: %s'%time.ctime()
             if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-            else: print errmsg
+            else: print(errmsg)
             for theCROCE in self.scs[self.frame.vme.crateNumber].vmeCROCEs:
                 #---------------------------------------------------------------
                 #BEGIN loop over all theCROCE in self.scs[this crate]
@@ -933,11 +933,11 @@ class SCApp(wx.App):
                     if fails[itest]==0 and tests[itest]==True:
                         errmsg='%s: TEST#%s PASS %s times in %s runs'%(theCROCE.Description(),itest,ntry,ntry)
                         if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-                        else: print errmsg                        
+                        else: print(errmsg)                        
                     if fails[itest]!=0 and tests[itest]==True:
                         errmsg='%s: TEST#%s FAIL %s times in %s runs'%(theCROCE.Description(),itest,fails[itest],ntry)
                         if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-                        else: print errmsg
+                        else: print(errmsg)
                         nfails=nfails+fails[itest]
 ##                        if itest==4:
 ##                            errmsg='BitErrorFrequencyTest4 CH0=%s'%bitErrFreqCHXTest4[0]+\
@@ -977,18 +977,18 @@ class SCApp(wx.App):
                 if nfails==0:
                     errmsg='\t%s: PASS ALL TESTS (%s runs) ***'%(theCROCE.Description(),ntry)
                     if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-                    else: print errmsg
+                    else: print(errmsg)
                     self.frame.SetStatusText('*** %s: PASS ALL TESTS (%s runs) ***'%(theCROCE.Description(),ntry), 1)
                 else:
                     errmsg='\t%s: TOTAL FAILS %s times in %s runs'%(theCROCE.Description(),nfails,ntry)
                     if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-                    else: print errmsg
+                    else: print(errmsg)
                     self.frame.SetStatusText('%s: TOTAL FAILS %s times in %s runs'%(theCROCE.Description(),nfails,ntry), 1)
                 #END loop over all theCROCE in self.scs[this crate]
                 #---------------------------------------------------------------
             errmsg='End  : %s'%time.ctime()+'\n******************************'
             if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-            else: print errmsg
+            else: print(errmsg)
             if self.daqWFile!=None:
                 self.daqWFile.close()
                 self.daqWFile=None
@@ -1006,7 +1006,7 @@ class SCApp(wx.App):
                         %(itry,fcmd.ljust(12),theCROCE.Description(),(theCROCE.Channels()[iche]).Description(),['0x'+hex(d)[2:].rjust(4,'0') for d in data[2:6]])
                     nfails=nfails+1
                     if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                    else: print errmsg                    
+                    else: print(errmsg)                    
             theCROCE.SendFastCommand(SC_Util.FastCmds[fcmd])
             for iche in theCheckCh:
                 if theCROCE.Channels()[iche].ReadStatusTXRX()!=0x2570:
@@ -1014,7 +1014,7 @@ class SCApp(wx.App):
                         %(itry,fcmd.ljust(12),theCROCE.Description(),(theCROCE.Channels()[iche]).Description(),['0x'+hex(d)[2:].rjust(4,'0') for d in data])
                     nfails=nfails+1
                     if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                    else: print errmsg
+                    else: print(errmsg)
         # Leave all register in default state 
         for iche in theCheckCh:
             theCROCE.Channels()[iche].WriteCommands(SC_Util.CHECmds['ClearStatus']+SC_Util.CHECmds['ClearRDFECounter'])
@@ -1034,7 +1034,7 @@ class SCApp(wx.App):
                     %(itry,tn1,tn2,theCROCE.Description(),(theCROCE.Channels()[iche]).Description(),['0x'+hex(d)[2:].rjust(4,'0') for d in data[2:6]])
                 nfails=nfails+1
                 if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                else: print errmsg
+                else: print(errmsg)
         if enCROCE:
             if testTP:  maskcroce=0x0001
             if testRST: maskcroce=0x0100
@@ -1054,7 +1054,7 @@ class SCApp(wx.App):
                 %(itry,tn1,tn2,theCROCE.Description(),'0x'+hex(maskcroce)[2:].rjust(4,'0'),'0x'+hex(data)[2:].rjust(4,'0'))
             nfails=nfails+1
             if daqWFile!=None: daqWFile.write('\n'+errmsg)
-            else: print errmsg            
+            else: print(errmsg)            
         for iche in theCheckCh:
             config=(0xFC0F&theCROCE.Channels()[iche].ReadConfiguration()) | maskche
             theCROCE.Channels()[iche].WriteConfiguration(config)
@@ -1064,7 +1064,7 @@ class SCApp(wx.App):
                     %(itry,tn1,tn2,theCROCE.Description(),(theCROCE.Channels()[iche]).Description(),'0x'+hex(config)[2:].rjust(4,'0'),'0x'+hex(data)[2:].rjust(4,'0'))
                 nfails=nfails+1
                 if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                else: print errmsg                
+                else: print(errmsg)                
             if (data&0x000F)==0 and enCROCE==True and enCHE==True: txrxdata[iche]=0x241A
         if testTP:
             theCROCE.SendTPOnly()
@@ -1079,7 +1079,7 @@ class SCApp(wx.App):
                     %(itry,tn1,tn2,theCROCE.Description(),(theCROCE.Channels()[iche]).Description(),'0x'+hex(data)[2:].rjust(4,'0'),'0x'+hex(txrxdata[iche])[2:].rjust(4,'0'))
                 nfails=nfails+1
                 if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                else: print errmsg
+                else: print(errmsg)
         # Leave all register in default state 
         for iche in theCheckCh:
             theCROCE.Channels()[iche].WriteCommands(SC_Util.CHECmds['ClearStatus']+SC_Util.CHECmds['ClearRDFECounter'])
@@ -1181,7 +1181,7 @@ class SCApp(wx.App):
                       hex(config)[2:].rjust(4,'0'),hex(theREGHeader)[2:].rjust(4,'0'))
                 nfails=nfails+1
                 if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                else: print errmsg
+                else: print(errmsg)
                 if quitFirstError==True: return nfails
             #4. Write the message to SndMem in FIFO mode
             for data in msgsnd: theCROCEChannelE.WriteSendMemory(data)
@@ -1195,7 +1195,7 @@ class SCApp(wx.App):
                       hex(config)[2:].rjust(4,'0'),hex(theREGHeader)[2:].rjust(4,'0'))
                 nfails=nfails+1
                 if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                else: print errmsg
+                else: print(errmsg)
                 if quitFirstError==True: return nfails
             #6. Send the message, nsend times
             for isend in range(nsend):
@@ -1218,7 +1218,7 @@ class SCApp(wx.App):
                         %(itry,tn,theCROCE.Description(),theCROCEChannelE.Description(),isend,hex(status)[2:].rjust(4,'0'))
                     nfails=nfails+1
                     if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                    else: print errmsg
+                    else: print(errmsg)
                     status=theCROCEChannelE.ReadStatusTXRX()
                     if status!=0x2410:
                         #print '6.3.2'
@@ -1226,7 +1226,7 @@ class SCApp(wx.App):
                             %(itry,tn,theCROCE.Description(),theCROCEChannelE.Description(),isend,hex(status)[2:].rjust(4,'0'))
                         nfails=nfails+1
                         if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                        else: print errmsg
+                        else: print(errmsg)
                     if quitFirstError==True: return nfails
             # After sending nsend times, Check FramesCounter==nsend
             frmsCounter=theCROCEChannelE.ReadRcvMemFramesCounter()
@@ -1236,7 +1236,7 @@ class SCApp(wx.App):
                     %(itry,tn,theCROCE.Description(),theCROCEChannelE.Description(),frmsCounter,nsend)
                 nfails=nfails+1
                 if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                else: print errmsg
+                else: print(errmsg)
                 if quitFirstError==True: return nfails
             # After sending nsend times, Check RcvMemWPointe==nsend*rcvBlockLengthBytes
             rcvMemWPointer=theCROCEChannelE.ReadRcvMemWPointer()
@@ -1246,7 +1246,7 @@ class SCApp(wx.App):
                     %(itry,tn,theCROCE.Description(),theCROCEChannelE.Description(),rcvMemWPointer,nsend*rcvBlockLengthBytes)
                 nfails=nfails+1
                 if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                else: print errmsg
+                else: print(errmsg)
                 if quitFirstError==True: return nfails
             #7.n Repeat READ/CHECK loop BEGIN   
             for repeat in range(repeatRead):
@@ -1263,7 +1263,7 @@ class SCApp(wx.App):
                                 %(itry,tn,theCROCE.Description(),theCROCEChannelE.Description(),isend,rcvfrmDataLengthBytes,rcvBlockLengthBytes)
                             nfails=nfails+1
                             if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                            else: print errmsg
+                            else: print(errmsg)
                             #FORCING correct value
                             if forceCorrectValues==True: rcvfrmDataLengthBytes=rcvBlockLengthBytes
                             if quitFirstError==True: return nfails
@@ -1294,7 +1294,7 @@ class SCApp(wx.App):
                                 %(itry,tn,theCROCE.Description(),theCROCEChannelE.Description(),isend,rcvfrmDataLengthBytes,rcvBlockLengthBytes)
                             nfails=nfails+1
                             if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                            else: print errmsg
+                            else: print(errmsg)
                             #FORCING correct value
                             if forceCorrectValues==True: rcvfrmDataLengthBytes=rcvBlockLengthBytes
                             if quitFirstError==True: return nfails
@@ -1342,21 +1342,21 @@ class SCApp(wx.App):
                               rcvfrmDataLengthBytes,rcvBlockLengthBytes)
                         nfails=nfails+1
                         if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                        else: print errmsg
+                        else: print(errmsg)
                     if rcvfrmStatus!=0x1010:
                         errmsg='TRY#%s.%s, TEST#%s.5 TestWSRfrms, %s:%s: HeaderError FrameNumber=%s, word1==RcvFrameStatus=%s, should be 0x1010'\
                             %(itry,repeat,tn,theCROCE.Description(),theCROCEChannelE.Description(),isend,
                               hex(rcvfrmStatus))
                         nfails=nfails+1
                         if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                        else: print errmsg
+                        else: print(errmsg)
                     if rcvfrmFirmwareDevFunc!=((febvers<<8)+(devfunc)):
                         errmsg='TRY#%s.%s, TEST#%s.6 TestWSRfrms, %s:%s: HeaderError FrameNumber=%s, word2==RcvFrameFirmwareDevFunc=%s, should be %s'\
                             %(itry,repeat,tn,theCROCE.Description(),theCROCEChannelE.Description(),isend,
                               hex(rcvfrmFirmwareDevFunc),hex((febvers<<8)+(devfunc)))
                         nfails=nfails+1
                         if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                        else: print errmsg
+                        else: print(errmsg)
 ##                    #Can't check rcvfrmSourceID because of random data in msgsnd
 ##                    #some bits come from random data, some bits come from header register...
 ##                    if rcvfrmSourceID!=sourceid:
@@ -1372,7 +1372,7 @@ class SCApp(wx.App):
                               rcvfrmDataLengthBytes2,rcvBlockLengthBytes)
                         nfails=nfails+1
                         if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                        else: print errmsg
+                        else: print(errmsg)
                     #7.4. Checking data bytes of frame number "isend"
                     if isend==0:
                         if rcvfrmData!=msgsnd:
@@ -1381,7 +1381,7 @@ class SCApp(wx.App):
                                   [hex(d)[2:].rjust(4,'0') for d in msgsnd],
                                   [hex(d)[2:].rjust(4,'0') for d in rcvfrmData],rcvfrmDataIndex)
                             if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                            else: print errmsg
+                            else: print(errmsg)
 ##                            for i in range(len(rcvfrmData)):
 ##                                if rcvfrmData[i]!=msgsnd[i]:
 ##                                    #print '7.4.2'
@@ -1401,7 +1401,7 @@ class SCApp(wx.App):
                                   [hex(d)[2:].rjust(4,'0') for d in msgsnd],
                                   [hex(d)[2:].rjust(4,'0') for d in rcvfrmData],rcvfrmDataIndex)
                             if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                            else: print errmsg
+                            else: print(errmsg)
 ##                            for i in range(len(rcvfrmData)):
 ##                                if i==isend and useRAMMode==True and rcvfrmData[i]!=theRAMData:
 ##                                    #print '7.4.4'
@@ -1438,7 +1438,7 @@ class SCApp(wx.App):
                                   [hex(d)[2:].rjust(4,'0') for d in rcvfrmCRCs],
                                   [hex(theCRCs)[2:].rjust(4,'0')])
                             if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                            else: print errmsg
+                            else: print(errmsg)
                             if quitFirstError==True: return nfails
                     #7.6. Update pointer ibyte for next frame isend+1
                     ibyte=ibyte+rcvBlockLengthBytes
@@ -1484,7 +1484,7 @@ class SCApp(wx.App):
                         errmsg='\tindex=%s, FramePointersMemoryData=%s, expected=%s'\
                             %(ifrmPointer,hex(frmPointersData[ifrmPointer]),hex(ifrmPointer*rcvBlockLengthBytes))
                         if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                        else: print errmsg
+                        else: print(errmsg)
                         nfails=nfails+1
                         if quitFirstError==True: return nfails
                     else:
@@ -1501,7 +1501,7 @@ class SCApp(wx.App):
                                 errmsg='\tindex=%s, FramePointersMemoryData=%s, expected=%s'\
                                     %(ifrmPointer,hex(frmPointersData[ifrmPointer]),hex(ifrmPointer*rcvBlockLengthBytes))
                                 if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                                else: print errmsg
+                                else: print(errmsg)
                                 nfails=nfails+1
                                 if quitFirstError==True: return nfails
                         else:
@@ -1517,7 +1517,7 @@ class SCApp(wx.App):
                                 errmsg='\tindex=%s, FramePointersMemoryData=%s, expected=%s'\
                                     %(ifrmPointer,hex(frmPointersData[ifrmPointer]),hex(ifrmPointer*rcvBlockLengthBytes))
                                 if daqWFile!=None: daqWFile.write('\n'+errmsg)
-                                else: print errmsg
+                                else: print(errmsg)
                                 nfails=nfails+1
                                 if quitFirstError==True: return nfails
             #7.n Repeat READ/CHECK loop END
@@ -1553,7 +1553,7 @@ class SCApp(wx.App):
                         UpdateBitErrorFrequency(bitErrFreqCHXTest8[iche],rdata,theREGTestData,self.daqWFile)
                         nfails=nfails+1
                         if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-                        else: print errmsg                                        
+                        else: print(errmsg)                                        
         else:
             wRndData=int(random.Random().uniform(0,65536))
             for iche in theCheckCh:                         
@@ -1567,7 +1567,7 @@ class SCApp(wx.App):
                         UpdateBitErrorFrequency(bitErrFreqCHXTest8[iche],rdata,wRndData,self.daqWFile)
                         nfails=nfails+1
                         if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-                        else: print errmsg
+                        else: print(errmsg)
         # Leave this register in default state
         for iche in theCheckCh:
             theCROCE.Channels()[iche].WriteHeaderData(theREGHeader)
@@ -1596,7 +1596,7 @@ class SCApp(wx.App):
                     %(itry,theCROCE.Description(),theCROCE.Channels()[iche].Description())
                 nfails=nfails+1
                 if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-                else: print errmsg
+                else: print(errmsg)
             rcvmem=theCROCE.Channels()[iche].ReadFullDPMBLT() # BLT D32, returns a multiple of four bytes
             #print 'itry=%d: %s:%s: len(rcvmem)=%s, rcvmem=%s'%\
             #      (itry,theCROCE.Description(),theCROCE.Channels()[iche].Description(),\
@@ -1786,7 +1786,7 @@ class SCApp(wx.App):
              testerrorstring,hex(val1)[2:].rjust(4,'0'),hex(val2)[2:].rjust(4,'0'))
         nfails=nfails+1
         if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-        else: print errmsg
+        else: print(errmsg)
         return nfails
     def TestSequencerReportError2(self,itry,theCROCE,iche,rcvmem,nfails,testnumberstring,testerrorstring):
         errmsg='TRY#%s, TEST#%s, %s:%s: ERROR %s, found %s'%\
@@ -1794,7 +1794,7 @@ class SCApp(wx.App):
              testerrorstring,''.join([hex(w8)[2:].rjust(2,'0') for w8 in rcvmem]))
         nfails=nfails+1
         if self.daqWFile!=None: self.daqWFile.write('\n'+errmsg)
-        else: print errmsg
+        else: print(errmsg)
         return nfails
 
     # CRIM Timing pannel events ##########################################################
@@ -1810,10 +1810,10 @@ class SCApp(wx.App):
         try:
             theCRIM=FindVMEdev(self.scs[self.frame.crim.crateNumber].vmeCRIMs, self.frame.crim.crimNumber<<16)
             data=theCRIM.TimingModule.ReadTimingSetup()
-            for k in SC_Util.CRIMTimingModes.keys():
+            for k in list(SC_Util.CRIMTimingModes.keys()):
                 if SC_Util.CRIMTimingModes[k]==(data & 0xF000):
                     self.frame.crim.TimingModule.TimingSetupRegister.choiceMode.SetStringSelection(k)
-            for k in SC_Util.CRIMTimingFrequencies.keys():
+            for k in list(SC_Util.CRIMTimingFrequencies.keys()):
                 if SC_Util.CRIMTimingFrequencies[k]==(data&0x0FFF):
                     self.frame.crim.TimingModule.TimingSetupRegister.choiceFrequency.SetStringSelection(k)
         except: ReportException('OnCRIMTimingbtnReadTimingSetup', self.reportErrorChoice)
@@ -2073,14 +2073,14 @@ class SCApp(wx.App):
         try:
             theCROC=FindVMEdev(self.scs[self.frame.croc.crateNumber].vmeCROCs, self.frame.croc.crocNumber<<16)
             fcmd=self.frame.croc.FastCmd.choiceFastCmd.GetStringSelection()
-            if (SC_Util.FastCmds.has_key(fcmd)):                
+            if (fcmd in SC_Util.FastCmds):                
                 theCROC.SendFastCommand(SC_Util.FastCmds[fcmd])
             else: wx.MessageBox('Please select a Fast Command')
         except: ReportException('OnCROCbtnSendFastCmd', self.reportErrorChoice)
     def OnCROCbtnSendFastCmdAll(self, event):
         try:
             fcmd=self.frame.croc.FastCmd.choiceFastCmd.GetStringSelection()
-            if (SC_Util.FastCmds.has_key(fcmd)):
+            if (fcmd in SC_Util.FastCmds):
                 for sc in self.scs:
                     for theCROC in sc.vmeCROCs:
                         theCROC.SendFastCommand(SC_Util.FastCmds[fcmd])
@@ -2360,8 +2360,8 @@ class SCApp(wx.App):
             TPMeas[iche]/=theNumberOfMeas
             self.frame.croce.LoopDelays.txtLoopDelayValues[iche].SetValue(str(TPMeas[iche]))
             theCROCEsConfigREFE[iche]=(theCROCE.Channels()[iche].ReadConfiguration()&0x0800)>>11
-        print '%s:%s ConfigREFE=%s  Loop Delays=%s'%(theSC.Description(), theCROCE.Description(), \
-            theCROCEsConfigREFE, ['%09.5f'%x for x in TPMeas])            
+        print('%s:%s ConfigREFE=%s  Loop Delays=%s'%(theSC.Description(), theCROCE.Description(), \
+            theCROCEsConfigREFE, ['%09.5f'%x for x in TPMeas]))            
         theCROCE.WriteRSTTP(0x0000)                     #Disable TP on CROCE
         for theCROCEChannelE in theCROCE.Channels():    #Disable TP on all four CROCEChannelE
             theCROCEChannelE.WriteConfiguration(theCROCEChannelE.ReadConfiguration()&0xFFDF)        
@@ -2423,7 +2423,7 @@ class SCApp(wx.App):
             dlg = wx.FileDialog(self.frame, message='SAVE CTRL Flash Configuration', defaultDir='', defaultFile='',
                 wildcard='CTRL Flash Config (*.spidata)|*.spidata|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
-                print 'OnCROCEbtnReadFlashToFile START: %s'%time.ctime()
+                print('OnCROCEbtnReadFlashToFile START: %s'%time.ctime())
                 filename=dlg.GetFilename()
                 dirname=dlg.GetDirectory()
                 self.frame.SetStatusText('ReadFLASH WriteFILE %s'%filename, 1)
@@ -2442,7 +2442,7 @@ class SCApp(wx.App):
                     iPage,theCROCE.baseAddr>>24,theCROCE.controller.boardNum)
                 self.frame.SetStatusText('%s...done'%(source), 0)
                 f.close()
-                print 'OnCROCEbtnReadFlashToFile STOP : %s'%time.ctime()
+                print('OnCROCEbtnReadFlashToFile STOP : %s'%time.ctime())
             dlg.Destroy()
             #4.Set back default values
             theCROCE.WriteStatusAndVersion(0x0000)
@@ -2462,7 +2462,7 @@ class SCApp(wx.App):
             dlg = wx.FileDialog(self.frame, message='READ CTRL Flash Configuration from File', defaultDir='', defaultFile='',
                 wildcard='CTRL FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
-                print 'OnCROCEbtnCompareFileToFlash START: %s'%time.ctime()
+                print('OnCROCEbtnCompareFileToFlash START: %s'%time.ctime())
                 filename=dlg.GetFilename()
                 dirname=dlg.GetDirectory()
                 self.frame.SetStatusText('ReadFLASH CompFILE %s'%filename, 1)
@@ -2475,8 +2475,8 @@ class SCApp(wx.App):
                     #3.CompareFileToFlash one page at a time 
                     msgrcvstr=theCROCE.FlashREAD(iPage*nbytesperpage, nbytesperpage, dw='D32')
                     if msgrcvstr[8:]+'\n'!=pagesBytesFile[iPage]:
-                        print 'msgrcvstr[8:]     =%s'%msgrcvstr[8:]
-                        print 'pagesBytesFile[%s]=%s'%(iPage,pagesBytesFile[iPage])
+                        print('msgrcvstr[8:]     =%s'%msgrcvstr[8:])
+                        print('pagesBytesFile[%s]=%s'%(iPage,pagesBytesFile[iPage]))
                         errPages += '%s '%(str(iPage).rjust(5,'0'))
                     if iPage%500==0:
                         source='FLASH:CTRL:%d,%d,%d'%(
@@ -2488,7 +2488,7 @@ class SCApp(wx.App):
                 self.frame.SetStatusText('%s...done'%(source), 0)
                 if errPages!='':
                     raise Exception('ReadFLASH CompFILE Error on page %s'%errPages)
-                print 'OnCROCEbtnCompareFileToFlash STOP : %s'%time.ctime()
+                print('OnCROCEbtnCompareFileToFlash STOP : %s'%time.ctime())
             dlg.Destroy()
             #4.Set back default values
             theCROCE.WriteStatusAndVersion(0x0000)
@@ -2554,7 +2554,7 @@ class SCApp(wx.App):
             source='FLASH:CTRL:%d,%d'%(theCROCE.baseAddr>>24,theCROCE.controller.boardNum)
         else:
             source='FLASH:CHE:%d,%d,%d'%(theCROCEChannelE.cheNumber,theCROCE.baseAddr>>24,theCROCE.controller.boardNum)
-        print 'CROCE_CHE_WriteFileToFlash START: %s %s'%(time.ctime(),source)
+        print('CROCE_CHE_WriteFileToFlash START: %s %s'%(time.ctime(),source))
         #1. Read the File.
         filename=dlg.GetFilename()
         dirname=dlg.GetDirectory()
@@ -2652,8 +2652,8 @@ class SCApp(wx.App):
             else:
                 msgrcvstr=theCROCEChannelE.FlashREAD(iPage*nbytesperpage, nbytesperpage, dw='D32')
             if msgrcvstr[8:]!=wordsStr:
-                print 'msgrcvstr[8:]     =%s'%msgrcvstr[8:]
-                print 'pagesBytesFile[%s]=%s'%(iPage,pagesBytesFile[iPage])
+                print('msgrcvstr[8:]     =%s'%msgrcvstr[8:])
+                print('pagesBytesFile[%s]=%s'%(iPage,pagesBytesFile[iPage]))
                 errPages += '%s '%(str(iPage).rjust(5,'0'))
             if iPage%500==0:
                 if theCROCEChannelE==None:
@@ -2675,7 +2675,7 @@ class SCApp(wx.App):
             source='FLASH:CTRL:%d,%d'%(theCROCE.baseAddr>>24,theCROCE.controller.boardNum)
         else:
             source='FLASH:CHE:%d,%d,%d'%(theCROCEChannelE.cheNumber,theCROCE.baseAddr>>24,theCROCE.controller.boardNum)
-        print 'CROCE_CHE_WriteFileToFlash STOP : %s %s'%(time.ctime(),source)
+        print('CROCE_CHE_WriteFileToFlash STOP : %s %s'%(time.ctime(),source))
         
         
     # CHE REGISTERS pannel events ##########################################################
@@ -2791,8 +2791,8 @@ class SCApp(wx.App):
             theCROCEChannelE.WriteCommands(SC_Util.CHECmds['ClearStatus'])
             theRXTXStatus=theCROCEChannelE.ReadStatusTXRX()
             if theRXTXStatus!=0x2410:
-                print '%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
-                    %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0'))
+                print('%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
+                    %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0')))
         except: ReportException('OnCHEbtnResetThisCHE', self.reportErrorChoice)  
     def OnCHEbtnResetThisCROCE(self, event):
         try:
@@ -2808,8 +2808,8 @@ class SCApp(wx.App):
                 theCROCEChannelE.WriteCommands(SC_Util.CHECmds['ClearStatus'])
                 theRXTXStatus=theCROCEChannelE.ReadStatusTXRX()
                 if theRXTXStatus!=0x2410:
-                    print '%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
-                        %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0'))
+                    print('%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
+                        %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0')))
         except: ReportException('OnCHEbtnResetThisCROCE', self.reportErrorChoice)  
     def OnCHEbtnResetThisCRATE(self, event):
         try:
@@ -2826,8 +2826,8 @@ class SCApp(wx.App):
                     theCROCEChannelE.WriteCommands(SC_Util.CHECmds['ClearStatus'])
                     theRXTXStatus=theCROCEChannelE.ReadStatusTXRX()
                     if theRXTXStatus!=0x2410:
-                        print '%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
-                            %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0'))            
+                        print('%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
+                            %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0')))            
         except: ReportException('OnCHEbtnResetThisCRATE', self.reportErrorChoice)  
     def OnCHEbtnResetAllCRATEs(self, event):
         try:
@@ -2846,8 +2846,8 @@ class SCApp(wx.App):
                         theCROCEChannelE.WriteCommands(SC_Util.CHECmds['ClearStatus'])
                         theRXTXStatus=theCROCEChannelE.ReadStatusTXRX()
                         if theRXTXStatus!=0x2410:
-                            print '%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
-                                %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0'))
+                            print('%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
+                                %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0')))
         except: ReportException('OnCHEbtnResetAllCRATEs', self.reportErrorChoice)
     def OnCHEbtnClearStatusThisCHE(self, event):
         try:
@@ -2856,8 +2856,8 @@ class SCApp(wx.App):
             theCROCEChannelE.WriteCommands(SC_Util.CHECmds['ClearStatus'])
             theRXTXStatus=theCROCEChannelE.ReadStatusTXRX()
             if theRXTXStatus!=0x2410:
-                print '%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
-                    %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0'))
+                print('%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
+                    %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0')))
         except: ReportException('ClearStatus', self.reportErrorChoice)  
     def OnCHEbtnClearStatusThisCROCE(self, event):
         try:
@@ -2866,8 +2866,8 @@ class SCApp(wx.App):
                 theCROCEChannelE.WriteCommands(SC_Util.CHECmds['ClearStatus'])
                 theRXTXStatus=theCROCEChannelE.ReadStatusTXRX()
                 if theRXTXStatus!=0x2410:
-                    print '%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
-                        %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0'))
+                    print('%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
+                        %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0')))
         except: ReportException('OnCHEbtnClearStatusThisCROCE', self.reportErrorChoice)  
     def OnCHEbtnClearStatusThisCRATE(self, event):
         try:
@@ -2876,8 +2876,8 @@ class SCApp(wx.App):
                     theCROCEChannelE.WriteCommands(SC_Util.CHECmds['ClearStatus'])
                     theRXTXStatus=theCROCEChannelE.ReadStatusTXRX()
                     if theRXTXStatus!=0x2410:
-                        print '%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
-                            %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0'))
+                        print('%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
+                            %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0')))
         except: ReportException('OnCHEbtnClearStatusThisCRATE', self.reportErrorChoice)  
     def OnCHEbtnClearStatusAllCRATEs(self, event):
         try:
@@ -2887,8 +2887,8 @@ class SCApp(wx.App):
                         theCROCEChannelE.WriteCommands(SC_Util.CHECmds['ClearStatus'])
                         theRXTXStatus=theCROCEChannelE.ReadStatusTXRX()
                         if theRXTXStatus!=0x2410:
-                            print '%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
-                                %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0'))
+                            print('%s:%s: Error TXRXStatusRegisters=%s, should be 0x2410'\
+                                %(theCROCE.Description(),theCROCEChannelE.Description(),hex(theRXTXStatus)[2:].rjust(4,'0')))
         except: ReportException('OnCHEbtnClearStatusAllCRATEs', self.reportErrorChoice)
 
     # CHE MEMORIES pannel events ##########################################################
@@ -3003,7 +3003,7 @@ class SCApp(wx.App):
             dlg = wx.FileDialog(self.frame, message='SAVE CHE Flash Configuration', defaultDir='', defaultFile='',
                 wildcard='CHE FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
-                print 'OnCHEbtnReadFlashToFile START: %s'%time.ctime()
+                print('OnCHEbtnReadFlashToFile START: %s'%time.ctime())
                 filename=dlg.GetFilename()
                 dirname=dlg.GetDirectory()
                 self.frame.SetStatusText('ReadFLASH WriteFILE %s'%filename, 1)
@@ -3021,7 +3021,7 @@ class SCApp(wx.App):
                     iPage,theCROCEChannelE.cheNumber,theCROCE.baseAddr>>24,theCROCE.controller.boardNum)
                 self.frame.SetStatusText('%s...done'%(source), 0)
                 f.close()
-                print 'OnCHEbtnReadFlashToFile STOP : %s'%time.ctime()
+                print('OnCHEbtnReadFlashToFile STOP : %s'%time.ctime())
             dlg.Destroy()              
         except: ReportException('OnCHEbtnReadFlashToFile', self.reportErrorChoice)
     def OnCHEbtnCompareFileToFlash(self, event):
@@ -3036,7 +3036,7 @@ class SCApp(wx.App):
             dlg = wx.FileDialog(self.frame, message='READ CHE Flash Configuration from File', defaultDir='', defaultFile='',
                 wildcard='CHE FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
-                print 'OnCHEbtnCompareFileToFlash START: %s'%time.ctime()
+                print('OnCHEbtnCompareFileToFlash START: %s'%time.ctime())
                 filename=dlg.GetFilename()
                 dirname=dlg.GetDirectory()
                 self.frame.SetStatusText('ReadFLASH CompFILE %s'%filename, 1)
@@ -3048,8 +3048,8 @@ class SCApp(wx.App):
                 for iPage in range(CROCEFlash.NPages):
                     msgrcvstr=theCROCEChannelE.FlashREAD(iPage*nbytesperpage, nbytesperpage, dw='D32')
                     if msgrcvstr[8:]+'\n'!=pagesBytesFile[iPage]:
-                        print 'msgrcvstr[8:]     =%s'%msgrcvstr[8:]
-                        print 'pagesBytesFile[%s]=%s'%(iPage,pagesBytesFile[iPage])
+                        print('msgrcvstr[8:]     =%s'%msgrcvstr[8:])
+                        print('pagesBytesFile[%s]=%s'%(iPage,pagesBytesFile[iPage]))
                         errPages += '%s '%(str(iPage).rjust(5,'0'))
                     if iPage%500==0:
                         source='FLASH:CHE:%d,%d,%d,%d'%(
@@ -3061,7 +3061,7 @@ class SCApp(wx.App):
                 self.frame.SetStatusText('%s...done'%(source), 0)
                 if errPages!='':
                     raise Exception('ReadFLASH CompFILE Error on page %s'%errPages)
-                print 'OnCHEbtnCompareFileToFlash STOP : %s'%time.ctime()
+                print('OnCHEbtnCompareFileToFlash STOP : %s'%time.ctime())
             dlg.Destroy()              
         except: ReportException('OnCHEbtnCompareFileToFlash', self.reportErrorChoice)        
 ##    def CHEWriteFileToFlash(self, dlg, theCROCEChannelE, theCROCE):
@@ -3249,7 +3249,7 @@ class SCApp(wx.App):
             dlg = wx.TextEntryDialog(self.frame, message='Enter how many times to ReadStatus, in decimal',
                 caption=self.frame.GetTitle(), defaultValue='0')
             if dlg.ShowModal()==wx.ID_OK:
-                print 'OnCHEbtnFlashCmdReadStatus=%s'%theCROCEChannelE.FlashRDSR(int(dlg.GetValue(),10))
+                print('OnCHEbtnFlashCmdReadStatus=%s'%theCROCEChannelE.FlashRDSR(int(dlg.GetValue(),10)))
             dlg.Destroy()
         except: ReportException('OnCHEbtnFlashCmdReadStatus', self.reportErrorChoice)
     def OnCHEbtnFlashCmdWriteStatus(self, event):
@@ -3279,7 +3279,7 @@ class SCApp(wx.App):
             dlg2 = wx.TextEntryDialog(self.frame, message='Enter Even Number of Bytes to Read, in decimal',
                 caption=self.frame.GetTitle(), defaultValue='0')
             if dlg1.ShowModal()==wx.ID_OK and dlg2.ShowModal()==wx.ID_OK:
-                print 'OnCHEbtnFlashCmdReadData=%s'%theCROCEChannelE.FlashREAD(int(dlg1.GetValue(),16),int(dlg2.GetValue(),10))
+                print('OnCHEbtnFlashCmdReadData=%s'%theCROCEChannelE.FlashREAD(int(dlg1.GetValue(),16),int(dlg2.GetValue(),10)))
             dlg1.Destroy()
             dlg2.Destroy()
         except: ReportException('OnCHEbtnFlashCmdReadData', self.reportErrorChoice)
@@ -3383,7 +3383,7 @@ class SCApp(wx.App):
             theCROCEChannelE=theCROCE.Channels()[self.frame.che.cheNumber]
             theConfig=theCROCEChannelE.ReadConfiguration()
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
-            print 'OnCHEbtnFlashCmdReadID=%s'%theCROCEChannelE.FlashRDID()
+            print('OnCHEbtnFlashCmdReadID=%s'%theCROCEChannelE.FlashRDID())
         except: ReportException('OnCHEbtnFlashCmdReadID', self.reportErrorChoice)
     def OnCHEbtnFlashCmdReadEMandID(self, event):
         try:
@@ -3393,7 +3393,7 @@ class SCApp(wx.App):
             theCROCEChannelE=theCROCE.Channels()[self.frame.che.cheNumber]
             theConfig=theCROCEChannelE.ReadConfiguration()
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
-            print 'OnCHEbtnFlashCmdReadElectronicManufacturerAndID=%s'%theCROCEChannelE.FlashREMS()
+            print('OnCHEbtnFlashCmdReadElectronicManufacturerAndID=%s'%theCROCEChannelE.FlashREMS())
         except: ReportException('OnCHEbtnFlashCmdReadEMandID', self.reportErrorChoice)
     def OnCHEbtnFlashCmdReadSecurity(self, event):
         try:
@@ -3403,7 +3403,7 @@ class SCApp(wx.App):
             theCROCEChannelE=theCROCE.Channels()[self.frame.che.cheNumber]
             theConfig=theCROCEChannelE.ReadConfiguration()
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
-            print 'OnCHEbtnFlashCmdReadSecurity=%s'%theCROCEChannelE.FlashRDSCUR()
+            print('OnCHEbtnFlashCmdReadSecurity=%s'%theCROCEChannelE.FlashRDSCUR())
         except: ReportException('OnCHEbtnFlashCmdReadSecurity', self.reportErrorChoice)
     def OnCHEbtnFlashCmdWriteSecurity(self, event):
         try:raise Exception('Not implemented, CAUTION!')
@@ -3733,19 +3733,19 @@ class SCApp(wx.App):
                 dirname=dlg.GetDirectory()
                 self.frame.SetStatusText('ReadFLASH WriteFILE %s'%filename, 1)
                 f=open(filename,'w')
-                print 'OnFEFLASHbtnReadFlashToFile START: %s'%time.ctime()
+                print('OnFEFLASHbtnReadFlashToFile START: %s'%time.ctime())
                 for iPage in range(Flash.NPages):
                     pageBytes=theFEB.FLASHMainMemPageRead(theCROCXChannelX, iPage, theType, theIncludeCRC, dw, useBLT)
                     for iread in range(10):
                         pageBytesIRead=theFEB.FLASHMainMemPageRead(theCROCXChannelX, iPage, theType, theIncludeCRC, dw, useBLT)
                         if pageBytes!=pageBytesIRead:
-                            print 'OnFEFLASHbtnReadFlashToFile ERROR: iPage=%d, iread=%d'%(iPage,iread)
-                            print 'CORRECT: %s'%(''.join([hex(b)[2:].rjust(2,'0') for b in pageBytes]))
-                            print 'ERROR  : %s'%(''.join([hex(b)[2:].rjust(2,'0') for b in pageBytesIRead]))
+                            print('OnFEFLASHbtnReadFlashToFile ERROR: iPage=%d, iread=%d'%(iPage,iread))
+                            print('CORRECT: %s'%(''.join([hex(b)[2:].rjust(2,'0') for b in pageBytes])))
+                            print('ERROR  : %s'%(''.join([hex(b)[2:].rjust(2,'0') for b in pageBytesIRead])))
                             for index in range(len(pageBytes)):
                                 if pageBytes[index]!=pageBytesIRead[index]:
-                                    print'@ index=0x%d, read1=%s, read%s=0x%s'%(
-                                        index,hex(pageBytes[index])[2:].rjust(2,'0'),iread,hex(pageBytesIRead[index])[2:].rjust(2,'0'))
+                                    print('@ index=0x%d, read1=%s, read%s=0x%s'%(
+                                        index,hex(pageBytes[index])[2:].rjust(2,'0'),iread,hex(pageBytesIRead[index])[2:].rjust(2,'0')))
                     f.write('%s '%str(iPage).rjust(4,'0').upper())
                     for iByte in pageBytes:
                         f.write('%s'%hex(iByte)[2:].rjust(2,'0').upper())
@@ -3753,7 +3753,7 @@ class SCApp(wx.App):
                     if iPage%100==0:
                         self.frame.Refresh(); self.frame.Update()
                         self.frame.SetStatusText('%s...'%theFEB.FLASHDescription(iPage, theCROCXChannelX, theCROCX, theType), 0)
-                print 'OnFEFLASHbtnReadFlashToFile STOP : %s'%time.ctime()
+                print('OnFEFLASHbtnReadFlashToFile STOP : %s'%time.ctime())
                 self.frame.SetStatusText('%s...done'%theFEB.FLASHDescription(iPage, theCROCXChannelX, theCROCX, theType), 0)
                 f.close()
             dlg.Destroy()              
@@ -4124,7 +4124,7 @@ class SCApp(wx.App):
             #7. Disable RDFE bit in Channel's Configuration Register
             if theReadType==0 or theReadType==1:
                 # RO one FEB | RO one CH
-                print 'OnFEDAQbtnSoftRDFEWrite START: %s'%time.ctime()
+                print('OnFEDAQbtnSoftRDFEWrite START: %s'%time.ctime())
                 theCROCX.SendFastCommand(SC_Util.FastCmds['OpenGate'])
                 # Wait for serial adc digitization to finish BEFORE enabling sequencer and sending RDFE.
                 # Puling one FEB is enough if gate is aligned, wait for 'Digitization Done'. Do it HERE because
@@ -4145,10 +4145,10 @@ class SCApp(wx.App):
                 SC_MainMethods.DAQReadRcvMemory(rdfeCounters[0]+1, theCROCX, theCROCXChannelX, theType, vmeCROCXs,             
                     vmeCROCXsAllCRATEs, theReadType, theWriteType, self.daqWFile, self.frame, theDataType23Hits)    #6
                 theCROCXChannelX.WriteConfiguration(0x0BFF&theConfigs[0])                                           #7
-                print 'OnFEDAQbtnSoftRDFEWrite END  : %s'%time.ctime()
+                print('OnFEDAQbtnSoftRDFEWrite END  : %s'%time.ctime())
             elif theReadType==2:
                 # RO one CTRL
-                print 'OnFEDAQbtnSoftRDFEWrite START: %s'%time.ctime()
+                print('OnFEDAQbtnSoftRDFEWrite START: %s'%time.ctime())
                 theCROCX.SendFastCommand(SC_Util.FastCmds['OpenGate'])                                              #1
                 # Wait for serial adc digitization to finish BEFORE enabling sequencer and sending RDFE.
                 # Puling one FEB is enough if gate is aligned, wait for 'Digitization Done'. Do it HERE because
@@ -4171,10 +4171,10 @@ class SCApp(wx.App):
                     SC_MainMethods.DAQReadRcvMemory(rdfeCounters[ich]+1, theCROCX, theCROCX.Channels()[ich], theType, vmeCROCXs, 
                         vmeCROCXsAllCRATEs, 1, theWriteType, self.daqWFile, self.frame, theDataType23Hits)          #6
                     theCROCX.Channels()[ich].WriteConfiguration(0x0BFF&theConfigs[ich])                             #7
-                print 'OnFEDAQbtnSoftRDFEWrite END  : %s'%time.ctime()
+                print('OnFEDAQbtnSoftRDFEWrite END  : %s'%time.ctime())
             elif theReadType==3:
                 # RO all CTRLs this CRATE
-                print 'OnFEDAQbtnSoftRDFEWrite START: %s'%time.ctime()
+                print('OnFEDAQbtnSoftRDFEWrite START: %s'%time.ctime())
                 for theCTRLX in self.scs[self.frame.fe.crateNumber].vmeCROCEs:
                     theCTRLX.SendFastCommand(SC_Util.FastCmds['OpenGate'])                                          #1
                 # Wait for serial adc digitization to finish BEFORE enabling sequencer and sending RDFE.
@@ -4199,10 +4199,10 @@ class SCApp(wx.App):
                         SC_MainMethods.DAQReadRcvMemory(rdfeCounters[ich]+1, theCTRLX, theCTRLX.Channels()[ich], theType, vmeCROCXs,
                             vmeCROCXsAllCRATEs, 1, theWriteType, self.daqWFile, self.frame, theDataType23Hits)      #6
                         theCTRLX.Channels()[ich].WriteConfiguration(0x0BFF&theConfigs[ich])                         #7
-                print 'OnFEDAQbtnSoftRDFEWrite END  : %s'%time.ctime()
+                print('OnFEDAQbtnSoftRDFEWrite END  : %s'%time.ctime())
             elif theReadType==4:
                 # RO all CTRLs all CRATEs
-                print 'OnFEDAQbtnSoftRDFEWrite START: %s'%time.ctime()
+                print('OnFEDAQbtnSoftRDFEWrite START: %s'%time.ctime())
                 for theCTRLX in vmeCROCXsAllCRATEs:
                     theCTRLX.SendFastCommand(SC_Util.FastCmds['OpenGate'])                                          #1
                 # Wait for serial adc digitization to finish BEFORE enabling sequencer and sending RDFE.
@@ -4229,7 +4229,7 @@ class SCApp(wx.App):
                         SC_MainMethods.DAQReadRcvMemory(rdfeCounters[ich]+1, theCTRLX, theCTRLX.Channels()[ich], theType, vmeCROCXs, 
                             vmeCROCXsAllCRATEs, 1, theWriteType, self.daqWFile, self.frame, theDataType23Hits)      #6
                         theCTRLX.Channels()[ich].WriteConfiguration(0x0BFF&theConfigs[ich])                         #7
-                print 'OnFEDAQbtnSoftRDFEWrite END  : %s'%time.ctime()
+                print('OnFEDAQbtnSoftRDFEWrite END  : %s'%time.ctime())
             if self.daqWFile!=None: self.daqWFile.flush() 
         except: ReportException('OnFEDAQbtnSoftRDFEWrite', self.reportErrorChoice)
     def OnFEDAQbtnDiscrimBRAMRead(self, event):
@@ -4277,7 +4277,7 @@ class SCApp(wx.App):
             theTripNumber=int(self.frame.fe.daq.txtDataTypeTripNumber.GetValue())
             if not(theTripNumber in range(len(Frame.FuncBRAMReadTripx))) and theTripNumber!=-1:
                 raise Exception('Trip number %d is out of range. Select %s or -1 to read all'% \
-                    (theTripNumber, range(len(Frame.FuncBRAMReadTripx))))
+                    (theTripNumber, list(range(len(Frame.FuncBRAMReadTripx)))))
             SC_MainMethods.DAQBRAMReadTrip(0, theCROCX, theCROCXChannelX, theType, self.frame.fe.febNumber, theTripNumber,
                 vmeCROCXs, vmeCROCXsAllCRATEs, theReadType, theWriteType, self.daqWFile, self.frame, theDataType23Hits)
             if self.daqWFile!=None: self.daqWFile.flush()
@@ -4305,11 +4305,11 @@ class SCApp(wx.App):
             if theDataType23Hits==False:
                 if not(theHitNumber in range(len(Frame.FuncBRAMReadHitx))) and theHitNumber!=-1:
                     raise Exception('Hit number %d is out of range. Select %s or -1 to read all'% \
-                        (theHitNumber, range(len(Frame.FuncBRAMReadHitx))))
+                        (theHitNumber, list(range(len(Frame.FuncBRAMReadHitx)))))
             if theDataType23Hits==True:
                 if not(theHitNumber in range(len(Frame.FuncBRAM2ReadHitx))) and theHitNumber!=-1:
                     raise Exception('Hit number %d is out of range. Select %s or -1 to read all'% \
-                        (theHitNumber, range(len(Frame.FuncBRAM2ReadHitx))))
+                        (theHitNumber, list(range(len(Frame.FuncBRAM2ReadHitx)))))
             SC_MainMethods.DAQBRAMReadHit(0, theCROCX, theCROCXChannelX, theType, self.frame.fe.febNumber, theHitNumber,
                 vmeCROCXs, vmeCROCXsAllCRATEs, theReadType, theWriteType, self.daqWFile, self.frame, theDataType23Hits)
             if self.daqWFile!=None: self.daqWFile.flush()
@@ -4450,7 +4450,7 @@ class SCApp(wx.App):
 
 def ReportException(comment, choice):
     msg = comment + ' : ' + str(sys.exc_info()[0]) + ", " + str(sys.exc_info()[1])
-    if (choice['display']): print msg
+    if (choice['display']): print(msg)
     if (choice['msgBox']): wx.MessageBox(msg)
 def ParseDataToListLabels(data, ListLabels, reverse=False):
     if reverse==False:
@@ -4471,7 +4471,7 @@ def UpdateBitErrorFrequency(bitErrorFrequency,word1,word2,daqWFile):
         index=index<<1
     errmsg='bitErrorFrequency=%s, word1=0x%s, word2=0x%s'%(bitErrorFrequency,hex(word1)[2:].rjust(4,'0'),hex(word2)[2:].rjust(4,'0'))
     if daqWFile!=None: daqWFile.write('\n'+errmsg)
-    else: print errmsg
+    else: print(errmsg)
 
 def newCRC(newDataByte,oldCRCbits):
     newDataBits=[0,0,0,0,0,0,0,0]
@@ -4519,7 +4519,7 @@ def main():
         app = SCApp(theArgs) 
         app.MainLoop()
     except:
-        print "Unexpected error:", sys.exc_info()[0], sys.exc_info()[1]
+        print("Unexpected error:", sys.exc_info()[0], sys.exc_info()[1])
 
 if __name__ == "__main__":
     main()

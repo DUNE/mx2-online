@@ -1,27 +1,27 @@
-import SC_MainApp as SC
+from . import SC_MainApp as SC
 
 class TestClass():
     def Setup(self):
-        print 'Setup - Begin'
+        print('Setup - Begin')
 
         #first get a controller
         theController=SC.CAENVMEwrapper.Controller()
         theController.Init(SC.CAENVMEwrapper.CAENVMETypes.CVBoardTypes.cvV2718, 0, 0) 
-        print 'handle=%s, SWrelease=%s, FWRelease=%s'% \
-            (theController.handle, theController.SWRelease(), theController.BoardFWRelease())
+        print('handle=%s, SWrelease=%s, FWRelease=%s'% \
+            (theController.handle, theController.SWRelease(), theController.BoardFWRelease()))
 
         #and hardcode some CROCs...
         addrListCROCs=[1,6]
         vmeCROCs=[] 
         for addr in addrListCROCs:
             vmeCROCs.append(SC.CROC(theController, addr<<16))
-        print [c.Description() for c in vmeCROCs]
+        print([c.Description() for c in vmeCROCs])
 
         #then take each CROC CH and find the FEBs attached
         for theCROC in vmeCROCs:
             for theCROCChannel in theCROC.Channels():
                 SC.FindFEBs(theCROCChannel)
-                print 'Found FEBs at %s %s %s'%(theCROC.Description(),theCROCChannel.Description(),theCROCChannel.FEBs)
+                print('Found FEBs at %s %s %s'%(theCROC.Description(),theCROCChannel.Description(),theCROCChannel.FEBs))
 
         #and hardcode some devices you need..
         theCROC=vmeCROCs[0]                     #; print theCROC.Description()
@@ -29,7 +29,7 @@ class TestClass():
         theFEB=SC.FEB(theCROCChannel.FEBs[0])   #; print theFEB.FPGADescription(theCROCChannel, theCROC)
                                                 #print theFEB.FPGARead(theCROCChannel)
                                                 #print '\n'.join(theFEB.GetAllHVActual(vmeCROCs))
-        print 'Setup - End'
+        print('Setup - End')
         return theFEB, theCROCChannel, vmeCROCs
 
     #define the method for timing performance
@@ -56,12 +56,12 @@ if __name__=='__main__':
     myStatement='tc.TestFPGARead(theFEB, theCROCChannel)'         
     nTimes=3
     nCalls=1000
-    print 'Runing timeit.Timer(%s)... \n%s times, %s calls each'%(myStatement,nTimes,nCalls)
+    print('Runing timeit.Timer(%s)... \n%s times, %s calls each'%(myStatement,nTimes,nCalls))
     t=timeit.Timer(myStatement, 'from __main__ import tc, theFEB, theCROCChannel, vmeCROCs')
 
     results=t.repeat(nTimes, nCalls)
-    print 'Results=%s'%results
-    print 'Execution time < %s seconds'%min(results)
+    print('Results=%s'%results)
+    print('Execution time < %s seconds'%min(results))
     
 
 
