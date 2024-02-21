@@ -25,12 +25,13 @@ import socket
 import subprocess
 import sys
 import time
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import wx
 from requests import get
 from wx import xrc
+from wx import adv
 
-print sys.path
+print(sys.path)
 
 import mnvruncontrol
 from mnvruncontrol.configuration import Logging
@@ -78,10 +79,14 @@ class MainApp(wx.App, MessageTerminus):
 		self.logger.info("Starting up.")
 		
 		# load and show the graphics
-		print 'resource location =', Configuration.params["frnt_resourceLocation"]
+		print('resource location =', Configuration.params["frnt_resourceLocation"])
 		self.res = xrc.XmlResource('%s/frontend.xrc' % Configuration.params["frnt_resourceLocation"])
+		print('xrc resource location = %s/frontend.xrc' % Configuration.params["frnt_resourceLocation"])
+
 		self.frame = self.res.LoadFrame(None, 'main_frame')
-		self.frame.SetDimensions(0, 0, 1000, 1000)
+		# self.frame.SetDimensions(0, 0, 1000, 1000)
+		self.frame.SetPosition(wx.Point(0,0))
+		self.frame.SetSize(wx.Size(1000, 1000))
 		self.SetTopWindow(self.frame)
 		self.frame.SetIcon( wx.Icon(Configuration.params["frnt_resourceLocation"]+"/minerva-small.png", wx.BITMAP_TYPE_PNG) )
 		self.frame.Show()
@@ -127,8 +132,8 @@ class MainApp(wx.App, MessageTerminus):
 		
 		# other resources that can't be stored in the resource file
 		path_template = Configuration.params["frnt_resourceLocation"] + "/%s"
-		self.audio_resources = { Alert.ERROR:  wx.Sound(path_template % "error.wav"),
-		                         Alert.WARNING: wx.Sound(path_template % "alert.wav") }
+		self.audio_resources = { Alert.ERROR:  wx.adv.Sound(path_template % "error.wav"),
+		                         Alert.WARNING: wx.adv.Sound(path_template % "alert.wav") }
 		self.image_resources = { "LED on":    wx.Bitmap(path_template % "LED_on.png", type=wx.BITMAP_TYPE_PNG),
 		                         "LED off":   wx.Bitmap(path_template % "LED_off.png", type=wx.BITMAP_TYPE_PNG),
 		                         "LED error": wx.Bitmap(path_template % "LED_error.png", type=wx.BITMAP_TYPE_PNG) }
@@ -142,9 +147,9 @@ class MainApp(wx.App, MessageTerminus):
 
 		# try to figure out what my externally-visible IP address is
 		try:
-			self.ip_addr = urllib2.urlopen("http://automation.whatismyip.com/n09230945.asp").read()
+			self.ip_addr = get('https://api.ipify.org').content.decode('utf8')
 			xrc.XRCCTRL(self.frame, "main_statusbar").SetStatusText( "Running from IP: " + self.ip_addr)
-		except urllib2.URLError:
+		except urllib.error.URLError:
 			self.logger.exception("Couldn't guess IP address...")
 			self.ip_addr = "??"
 
@@ -226,7 +231,7 @@ class MainApp(wx.App, MessageTerminus):
 		controls = (xrc.XRCCTRL(self.frame, "status_daq_series_list"), xrc.XRCCTRL(self.frame, "config_runseries_details"))
 		for series_ctrl in controls:
 			if series_ctrl == xrc.XRCCTRL(self.frame, "status_daq_series_list"):
-				series_ctrl.InsertColumn(0, u"\u00a0", width=30)		# which subrun is currently being executed
+				series_ctrl.InsertColumn(0, "\u00a0", width=30)		# which subrun is currently being executed
 			
 			for column_name in ("Subrun", "# gates", "Configuration"):
 				series_ctrl.InsertColumn(series_ctrl.GetColumnCount(), column_name, width=100)
@@ -417,9 +422,9 @@ class MainApp(wx.App, MessageTerminus):
 		""" Shows the 'about' box. """
 		
 		about_info = wx.AboutDialogInfo()
-		about_info.SetName(u"MINER\u03bdA Run Control")
+		about_info.SetName("MINER\u03bdA Run Control")
 		about_info.SetVersion(VERSION)
-		about_info.SetDescription(u"The MINER\u03bdA Run Control provides a user-friendly interface to the DAQ software.  It starts & stops the DAQ and provides means for automating its running with run series.")
+		about_info.SetDescription("The MINER\u03bdA Run Control provides a user-friendly interface to the DAQ software.  It starts & stops the DAQ and provides means for automating its running with run series.")
 		about_info.AddDeveloper("Jeremy Wolcott <jwolcott@fnal.gov>")
 		about_info.AddDeveloper("Aaron Mislivec (run series configurator) <mislivec@pas.rochester.edu>")
 		about_info.SetWebSite( ("https://cdcvs.fnal.gov/redmine/projects/minerva-ops/wiki/Running_the_DAQ_system", "Online documentation") )
@@ -455,7 +460,7 @@ class MainApp(wx.App, MessageTerminus):
 			if hasattr(evt, "bell") and evt.bell:
 				if evt.alert.severity in self.audio_resources:
 					self.logger.debug("Playing bell.")
-					self.audio_resources[evt.alert.severity].Play(wx.SOUND_ASYNC)
+					self.audio_resources[evt.alert.severity].Play(wx.adv.SOUND_ASYNC)
 		
 			# only errors blink the window.
 			if evt.alert.severity == Alert.ERROR and hasattr(evt, "blink") and evt.blink:
@@ -487,8 +492,8 @@ class MainApp(wx.App, MessageTerminus):
 		if self.current_alert is None:
 			self.ShowPanel("notebook")
 			self.logger.warning("Alert acknowledged with no current alert??")
-			print evt
-			print "Alert acknowledged with no current alert??"
+			print(evt)
+			print("Alert acknowledged with no current alert??")
 			return
 
 		alert_id = self.current_alert.id		    
@@ -740,7 +745,7 @@ class MainApp(wx.App, MessageTerminus):
 			self.logger.debug("Re-raising alert: %s", tmp_alert)
 			wx.PostEvent( self, Events.AlertEvent(alert=tmp_alert) )
 		
-		self.Redraw()
+		#self.Redraw()
 
 	def OnControlTransferProposal(self, evt):
 		""" Control transfers require a new dialog
@@ -809,12 +814,12 @@ class MainApp(wx.App, MessageTerminus):
 		
 		# eventually we'll want to do some sorting, but for now ...
 		for board in evt.pmt_info:
-			index = pmt_list.InsertStringItem(sys.maxint, board["node"])
-			pmt_list.SetStringItem(index, 1, str(board["croc"]))
-			pmt_list.SetStringItem(index, 2, str(board["chain"]))
-			pmt_list.SetStringItem(index, 3, str(board["board"]))
-			pmt_list.SetStringItem(index, 4, str(board["hv_deviation"]))
-			pmt_list.SetStringItem(index, 5, str(board["period"]))
+			index = pmt_list.InsertItem(sys.maxsize, board["node"])
+			pmt_list.SetItem(index, 1, str(board["croc"]))
+			pmt_list.SetItem(index, 2, str(board["chain"]))
+			pmt_list.SetItem(index, 3, str(board["board"]))
+			pmt_list.SetItem(index, 4, str(board["hv_deviation"]))
+			pmt_list.SetItem(index, 5, str(board["period"]))
 			
 			# low-HV period boards will probably show up at the top this way.
 			if board["failure"] == "period":
@@ -835,7 +840,7 @@ class MainApp(wx.App, MessageTerminus):
 			listitem = pmt_list.GetItem(index, 4)
 			dev = int(listitem.GetText())
 			
-			pmt_list.SetStringItem(index, 4, str(int(dev / 60)))
+			pmt_list.SetItem(index, 4, str(int(dev / 60)))
 
 			index = pmt_list.GetNextItem(index)
 	
@@ -943,7 +948,7 @@ class MainApp(wx.App, MessageTerminus):
 
 		series_ctrl = xrc.XRCCTRL(self.frame, "config_runseries_details")
 		series_ctrl.DeleteAllItems()
-		series_ctrl.InsertStringItem(sys.maxint, "Please wait while the '%s' series description is downloaded..." % series.description)
+		series_ctrl.InsertItem(sys.maxsize, "Please wait while the '%s' series description is downloaded..." % series.description)
 		series_ctrl.SetColumnWidth(0, series_ctrl.GetClientSize().width)
 		
 		self.postoffice.Publish( Message(subject="mgr_directive", directive="series_info", client_id=self.id, series=series) )
@@ -964,10 +969,10 @@ class MainApp(wx.App, MessageTerminus):
 		series_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 #		
 		for runinfo in evt.details.Runs:
-			index = series_ctrl.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
-			series_ctrl.SetStringItem( index, 0, str(evt.details.Runs.index(runinfo)+1) )
-			series_ctrl.SetStringItem( index, 1, str(runinfo.gates))
-			series_ctrl.SetStringItem( index, 2, MetaData.RunningModes.description(runinfo.runMode) )
+			index = series_ctrl.InsertItem(sys.maxsize, "")         # first column is which subrun is currently being executed
+			series_ctrl.SetItem( index, 0, str(evt.details.Runs.index(runinfo)+1) )
+			series_ctrl.SetItem( index, 1, str(runinfo.gates))
+			series_ctrl.SetItem( index, 2, MetaData.RunningModes.description(runinfo.runMode) )
 			if runinfo.runMode in (MetaData.RunningModes.LI, MetaData.RunningModes.MIXED_NUMI_LI):
 				li_level = MetaData.LILevels.description(runinfo.ledLevel)
 				led_groups = MetaData.LEDGroups.description(runinfo.ledGroup)
@@ -975,8 +980,8 @@ class MainApp(wx.App, MessageTerminus):
 				li_level = "--"
 				led_groups = "--"
 			
-			series_ctrl.SetStringItem( index, 3, led_groups )
-			series_ctrl.SetStringItem( index, 4, li_level )
+			series_ctrl.SetItem( index, 3, led_groups )
+			series_ctrl.SetItem( index, 4, li_level )
 
 		
 		
@@ -1086,7 +1091,7 @@ class MainApp(wx.App, MessageTerminus):
 			# delete them all and replace them every time.
 			node_panel = xrc.XRCCTRL(self.frame, "status_daq_hw_panel")
 			node_sizer = node_panel.GetSizer()
-			node_sizer.Clear(deleteWindows=True)
+			node_sizer.Clear(delete_windows=True)
 			node_sizer.AddStretchSpacer(prop=1)
 			for node in status["remote_nodes"]:
 				node_obj = status["remote_nodes"][node]
@@ -1129,7 +1134,7 @@ class MainApp(wx.App, MessageTerminus):
 			
 			# a right-facing triangle (like a "play" symbol)
 			# or a square (like a "stop" symbol), respectively
-			status_symbol = u"\u25b7" if status["running"] else u"\u25a1"
+			status_symbol = "\u25b7" if status["running"] else "\u25a1"
 			
 			xrc.XRCCTRL(self.frame, "status_daq_status").SetLabel(status_text)
 			xrc.XRCCTRL(self.frame, "status_text").SetLabel(status_text)
@@ -1156,10 +1161,10 @@ class MainApp(wx.App, MessageTerminus):
 			series_ctrl.DeleteAllItems()
 			
 			for runinfo in status["run_series"].Runs:
-				index = series_ctrl.InsertStringItem(sys.maxint, "")         # first column is which subrun is currently being executed
-				series_ctrl.SetStringItem( index, 1, str(status["run_series"].Runs.index(runinfo) + status["first_subrun"]) )
-				series_ctrl.SetStringItem( index, 2, str(runinfo.gates) )
-				series_ctrl.SetStringItem( index, 3, MetaData.RunningModes.description(runinfo.runMode) )
+				index = series_ctrl.InsertItem(sys.maxsize, "")         # first column is which subrun is currently being executed
+				series_ctrl.SetItem( index, 1, str(status["run_series"].Runs.index(runinfo) + status["first_subrun"]) )
+				series_ctrl.SetItem( index, 2, str(runinfo.gates) )
+				series_ctrl.SetItem( index, 3, MetaData.RunningModes.description(runinfo.runMode) )
 
 		# now get the configuration and fill the appropriate boxes
 		if "configuration" in status:
@@ -1184,11 +1189,11 @@ class MainApp(wx.App, MessageTerminus):
 
 
 			if not "running" in self.status or not self.status["running"]:
-				symbol = u"\u25a1"		# a square: like a "stop" symbol
-				color = wx.NamedColour("yellow")
+				symbol = "\u25a1"		# a square: like a "stop" symbol
+				color = wx.Colour(255,255,0) #Yellow
 			else:
-				symbol = u"\u25b7"		# a right-facing triangle: like a "play" symbol
-				color = wx.NamedColour("green")
+				symbol = "\u25b7"		# a right-facing triangle: like a "play" symbol
+				color = wx.Colour(0,255,0) #Green
 
 			index = -1
 			while True:
@@ -1198,11 +1203,11 @@ class MainApp(wx.App, MessageTerminus):
 					break
 		
 				if index == status["configuration"].subrun - self.status["first_subrun"]:
-					series_ctrl.SetStringItem(index, 0, symbol)
+					series_ctrl.SetItem(index, 0, symbol)
 					series_ctrl.SetItemBackgroundColour(index, color)
 					series_ctrl.EnsureVisible(index)
 				else:
-					series_ctrl.SetStringItem(index, 0, "")
+					series_ctrl.SetItem(index, 0, "")
 					series_ctrl.SetItemBackgroundColour(index, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
 		
 		# who's in control?
@@ -1271,7 +1276,7 @@ class MainApp(wx.App, MessageTerminus):
 		if evt.warning_level is None:
 			prev_color = status_panel.GetBackgroundColour()
 			color = ok_colors[1 if prev_color == ok_colors[0] else 0]
-			time_entry.SetForegroundColour(wx.NullColor)
+			time_entry.SetForegroundColour('')
 		elif evt.warning_level in warning_colors:
 			color = warning_colors[evt.warning_level]
 			time_entry.SetForegroundColour("white")
@@ -1788,7 +1793,7 @@ if __name__ == '__main__':		# make sure that this file isn't being included some
 		sys.stdout.write("Shutting down.  Bye.\n")
 	except Exception as e:
 		try:
-			print "Unhandled exception!  Trying close down in an orderly fashion...."
+			print("Unhandled exception!  Trying close down in an orderly fashion....")
 			if app:
 				app.OnClose()
 		except:

@@ -4,8 +4,8 @@
    or requests from a remote client using the PostOffice mechanism.
   
    Original author: J. Wolcott (jwolcott@fnal.gov)
-                    July-Aug. 2010
-                    
+					July-Aug. 2010
+					
    Address all complaints to the management.
 """
 
@@ -21,7 +21,7 @@ import re
 import logging
 import logging.handlers
 import threading
-from Queue import Queue
+from queue import Queue
 
 import mnvruncontrol.configuration.Logging
 
@@ -84,7 +84,7 @@ class Dispatcher(MessageTerminus):
 	def _ReloadConfig(self, signum=None, sigframe=None):
 		""" Reloads the configuration.
 		
-		    The extra parameters are because this is a signal handler. """
+			The extra parameters are because this is a signal handler. """
 		
 		self.__logger.info("Received SIGHUP.  Reloading configuration...")
 		Configuration.LoadFromDB()
@@ -100,11 +100,11 @@ class Dispatcher(MessageTerminus):
 
 			server_socket.setblocking(0)			# need to be able to handle messages.  don't block!
 			server_socket.listen(3)				# allow it to keep a few backlogged connections (that way if we're trying to talk to it too fast it'll catch up)
-		except socket.error, e:
+		except socket.error as e:
 			self.__logger.exception("Error trying to bind my listening socket:")
 			self.__logger.fatal("Can't get a socket.")
 			self._Shutdown()
-		except Exception, e:
+		except Exception as e:
 			self.__logger.exception("An error occurred while trying to bind the socket:")
 			self.__logger.fatal("Quitting.")		
 			self._Shutdown()
@@ -115,9 +115,9 @@ class Dispatcher(MessageTerminus):
 			
 	def _Start(self):
 		""" Starts the listener.  If you want to run it as a background
-		    service, make sure the attribute 'interactive' is False. 
-		    This is normally accomplished by not setting the "-i" flag
-		    on the command line (i.e., it's the default behavior).  """
+			service, make sure the attribute 'interactive' is False. 
+			This is normally accomplished by not setting the "-i" flag
+			on the command line (i.e., it's the default behavior).  """
 		
 		if self.pidfilename is None:
 			raise Exception("Derived dispatcher classes must specify where the PID file is to be kept!")
@@ -138,7 +138,7 @@ class Dispatcher(MessageTerminus):
 		# don't daemonize or make a PID file if we're quitting anyway
 		if not self.quit:
 			# make sure this thing is a daemon if it needs to be
- 			if not self.interactive:
+			if not self.interactive:
 				self._Daemonize()
 		
 			self.__logger.info("Creating new PID file.  My PID: " + str(os.getpid()) + "")
@@ -219,8 +219,8 @@ class Dispatcher(MessageTerminus):
 
 	def _Daemonize(self):
 		""" Starts the listener as a background service.
-		    Modified mostly from code.activestate.com, recipe 278731. """
-		    
+			Modified mostly from code.activestate.com, recipe 278731. """
+			
 		# The standard procedure in UNIX to create a daemon is to use the fork()
 		# system call twice in succession.  After the first fork(), the first
 		# child process uses the setsid() system call to create a new session and
@@ -251,16 +251,16 @@ class Dispatcher(MessageTerminus):
 
 		try:
 			pid = os.fork()	# returns 0 in the child process
-		except OSError, e:
-			raise Exception, "%s [%d]" % (e.strerror, e.errno)
+		except OSError as e:
+			raise Exception("%s [%d]" % (e.strerror, e.errno))
 
 		if (pid == 0):			# i.e., if this is the first child process
 			os.setsid()
 
 			try:
 				pid = os.fork()
-			except OSError, e:
-				raise Exception, "%s [%d]" % (e.strerror, e.errno)
+			except OSError as e:
+				raise Exception("%s [%d]" % (e.strerror, e.errno))
 
 			if (pid == 0):	# The second child.
 				os.chdir("/")		# don't want to be stuck in a mounted file system
@@ -357,12 +357,12 @@ class Dispatcher(MessageTerminus):
 	
 	def DAQMgrStatusUpdate(self, message, additional_notification_requests = []):
 		""" Method to respond to changes in status of the
-		    DAQ manager (books subscriptions, etc.). 
-		    
-		    Not all dispatchers will want this behavior,
-		    so this function must be called explicitly
-		    by derived class handlers.  """
-		self.logger.info("Dispatcher recieved messagec %s" , additional_notification_requests)
+			DAQ manager (books subscriptions, etc.). 
+			
+			Not all dispatchers will want this behavior,
+			so this function must be called explicitly
+			by derived class handlers.  """
+			
 		# if it's not properly formatted, ignore it!
 		if not ( hasattr(message, "status") and hasattr(message, "mgr_id") ):
 			self.logger.info("DAQ manager status message is improperly formatted.  Ignoring...")
@@ -401,10 +401,10 @@ class Dispatcher(MessageTerminus):
 	def _LockHandler(self, message):
 		""" Handles incoming requests for lock status changes/information.
 		
-		    Messages must contain at least the attributes 'request'
-		    (which can be 'get', 'release', or 'info') and 
-		    'requester_id' (which must be the ID of the node making
-		    the request).  """
+			Messages must contain at least the attributes 'request'
+			(which can be 'get', 'release', or 'info') and 
+			'requester_id' (which must be the ID of the node making
+			the request).  """
 
 		# NOTICE: session management has been disabled.
 		# This method has been modified to ALWAYS allow
@@ -473,7 +473,7 @@ class Dispatcher(MessageTerminus):
 	
 	def ClientAllowed(self, client_id):
 		""" Checks if a client is allowed to issue commands
-		    based on the current state of this node's lock. """
+			based on the current state of this node's lock. """
 
 		# NOTICE: session management has been disabled.
 		# This method is therefore unnecessary.
@@ -481,7 +481,7 @@ class Dispatcher(MessageTerminus):
 		# is left here, and the method simply always returns True.
 		
 		return True
-		    
+			
 #		if self.lock_id is None:
 #			return False
 #		
@@ -490,9 +490,9 @@ class Dispatcher(MessageTerminus):
 		
 	def Bootstrap(self):
 		""" Handles the processing of command-line arguments
-		    and starts the dispatcher processes.
-		    Derived classes should call this in a 
-		    if __name__=="__main__"  block.  """
+			and starts the dispatcher processes.
+			Derived classes should call this in a 
+			if __name__=="__main__"  block.  """
 		import optparse
 	
 		parser = optparse.OptionParser(usage="usage: %prog [options] command\n  where 'command' is 'start' or 'stop'")
@@ -514,13 +514,13 @@ class Dispatcher(MessageTerminus):
 #			self.master_address = options.masterAddress
 		
 			if self.interactive:
-				print "Running in interactive mode."
-				print "All log information will be echoed to the screen."
-				print "Enter 'Ctrl-C' to exit.\n\n"
+				print("Running in interactive mode.")
+				print("All log information will be echoed to the screen.")
+				print("Enter 'Ctrl-C' to exit.\n\n")
 			else:
-				print "Dispatcher starting in daemon mode."
-				print "Run this program with the keyword 'stop' to stop it."
-				print "Also see the log file.\n"
+				print("Dispatcher starting in daemon mode.")
+				print("Run this program with the keyword 'stop' to stop it.")
+				print("Also see the log file.\n")
 
 			try:
 				self._Start()
@@ -534,12 +534,12 @@ class Dispatcher(MessageTerminus):
 			
 	def BookSubscriptions(self):
 		""" Books any subscriptions this dispatcher
-		    should be respecting.
-		    
-		    This is a placeholder method intended for
-		    derived classes to override.  Its utility
-		    is that it is not called until the PostOffice
-		    and MessageTerminus are correctly set up. """
+			should be respecting.
+			
+			This is a placeholder method intended for
+			derived classes to override.  Its utility
+			is that it is not called until the PostOffice
+			and MessageTerminus are correctly set up. """
 		
 		pass
 			

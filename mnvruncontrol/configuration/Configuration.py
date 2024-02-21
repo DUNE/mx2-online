@@ -1,27 +1,29 @@
 """
    Configuration.py:
-    A module that handles the configuration of the run control.
+	A module that handles the configuration of the run control.
 
-    It's basically just a mapping from the constants in the
-    Defaults module to some nice names that are overridden
-    by the values stored in the config database.  This loading
-    is done transparently to the user.
+	It's basically just a mapping from the constants in the
+	Defaults module to some nice names that are overridden
+	by the values stored in the config database.  This loading
+	is done transparently to the user.
 
-    The module also specifies succinct text descriptions of each of the elements
-    (used, for example, in the RunControlConfiguration script).
+	The module also specifies succinct text descriptions of each of the elements
+	(used, for example, in the RunControlConfiguration script).
    
-    Original author: J. Wolcott (jwolcott@fnal.gov)
-                     Apr. 2010
-                    
-    Address all complaints to the management.
+	Original author: J. Wolcott (jwolcott@fnal.gov)
+					 Apr. 2010
+					
+	Address all complaints to the management.
 """
 
 # n.b. this file is much easier to look at and/or edit on a wide-ish screen (>150 character width) ...
 
 import sys
 import shelve
-import anydbm
+import dbm
 import os.path
+
+import pickle
 
 from mnvruncontrol.configuration import Defaults
 
@@ -68,7 +70,7 @@ configuration = {
 	"sock_maxConnectionAttempts"  : ( Defaults.MAX_CONNECTION_ATTEMPTS,              "Max number of consecutive connection attempts",       int   ),
 	"sock_connAttemptInterval"    : ( Defaults.CONNECTION_ATTEMPT_INTERVAL,          "Interval between connection attempts (s)",            float ),
 	"sock_messageTimeout"         : ( Defaults.MESSAGE_TIMEOUT,                      "Message timeout (s)",                                 float ),
-		                
+						
 	# log files
 	"log_OM"                      : ( Defaults.OM_DISPATCHER_LOGFILE,                "OM dispatcher log file name",                         str   ),
 	"log_readout"                 : ( Defaults.READOUT_DISPATCHER_LOGFILE,           "Readout log file name",                               str   ),
@@ -131,14 +133,14 @@ configuration = {
 
 # mapping from the variable prefixes to the categories they belong in
 prefixes = { "frnt": "Front end",
-             "gen" : "General",
-             "hw"  : "Hardware",
-             "log" : "Log file locations",
-             "mstr": "Master node",
-             "mon" : "Monitoring nodes",
-             "read": "Readout nodes",
-             "sock": "Socket setup",
-             "mtst": "MTest beam nodes"  }
+			 "gen" : "General",
+			 "hw"  : "Hardware",
+			 "log" : "Log file locations",
+			 "mstr": "Master node",
+			 "mon" : "Monitoring nodes",
+			 "read": "Readout nodes",
+			 "sock": "Socket setup",
+			 "mtst": "MTest beam nodes"  }
 
 categories = {}
 for prefix in prefixes:
@@ -159,16 +161,16 @@ def SaveToDB():
 			
 	db.close()
 
-	print "Wrote configuration to '%s'." % config_file_location
+	print("Wrote configuration to '%s'." % config_file_location)
 
 def LoadFromDB():
 	""" Load the configuration from the specified DB.
 	
-	    This is used when the module is first loaded,
-	    but also can be called to reload the configuration
-	    later on.  Helpful if you don't want to restart
-	    your program but want to take advantage of new
-	    configuration options in the config file. """
+		This is used when the module is first loaded,
+		but also can be called to reload the configuration
+		later on.  Helpful if you don't want to restart
+		your program but want to take advantage of new
+		configuration options in the config file. """
 	
 	# need to specify that 'params' is global,
 	# otherwise we'll be setting a local version of it
@@ -185,7 +187,7 @@ def LoadFromDB():
 				pass		# the default is already set
 		db.close()
 	else:
-		print "Note: configuration file is empty or inaccessible.  Defaults are in use..."
+		print("Note: configuration file is empty or inaccessible.  Defaults are in use...")
 
 ##################################################################################################
 
@@ -228,16 +230,23 @@ locations_to_try = ["%s/%s" % (Defaults.CONFIG_DB_LOCATION, Defaults.CONFIG_DB_N
 if user_specified_db is not None:
 #	print "trying user-specified DB: ", user_specified_db
 	locations_to_try = [user_specified_db,] + locations_to_try
-
+print("Tying locations:")
+print(locations_to_try)
 for location in locations_to_try:
+	if os.path.isfile(location):
+		print(location, " file exists")
 	try:
-		db = shelve.open(location, "r")
+		db = shelve.open(location, "r", protocol=2)
 		db.close()
-	except anydbm.error:
+	except dbm.error as e:
+		print(e)
+		print("Failing loc: %s", location)
 		try:
 			db = shelve.open(location, "c")
 			db.close()
-		except anydbm.error as e:
+		except dbm.error as e:
+			print("DBM error\n", e, "\non file: ", location)
+			print("Pickle protocol: ", pickle.DEFAULT_PROTOCOL)
 			pass
 		else:
 			config_file_location = location
@@ -246,8 +255,8 @@ for location in locations_to_try:
 			break
 	else:
 #		print "using location: ", location
-                print 'config db locations =', locations_to_try
-                print 'config db =', location
+		print('config db locations =', locations_to_try)
+		print('config db =', location)
 		config_file_location = location
 		config_file_inaccessible = False
 		break

@@ -9,10 +9,10 @@
 """
 
 import copy
-import cPickle
+import pickle
 import errno
 import pprint
-import Queue
+import queue
 import select
 import socket
 import ssl
@@ -65,7 +65,7 @@ class MessageTerminus(object):
 		self.id = obj_id
 		logger().debug("Created MessageTerminus with id %s" % self.id)
 		
-		self.mailbox = Queue.Queue()
+		self.mailbox = queue.Queue()
 		self.handlers = {}
 		self.handler_lock = threading.Lock()
 		
@@ -108,7 +108,7 @@ class MessageTerminus(object):
 			time.sleep(Configuration.NON_BUSY_WAIT_INTERVAL)	# avoid busy-waiting
 			try:
 				message = self.mailbox.get_nowait()
-			except Queue.Empty:
+			except queue.Empty:
 				continue
 			
 			logger().debug("MessageTerminus %s handling message %s.", self.id, message.id)
@@ -300,7 +300,8 @@ class _PostOfficeSocketManager(object):
 			for sock in socks_ready:
 				try:
 					finished = self._ReadSocket(sock)
-				except (socket.error, select.error), (errnum, msg):
+				except (socket.error, select.error) as xxx_todo_changeme:
+					(errnum, msg) = xxx_todo_changeme.args
 					if errnum == errno.EINTR:		# the code for an interrupted system call
 						logger().warning("Recv was interrupted by system call.  Will try again.")
 					else:
@@ -325,7 +326,7 @@ class _PostOfficeSocketManager(object):
 					logger().info("Ignoring garbage message with appropriate magic from %s.  Text received:\n%s", session.conn_info, msg_text)
 					continue
 
-				session.send(_PostOfficeSocketManager.ACKNOWLEDGEMENT_TEXT.format(message.id))
+				session.send(_PostOfficeSocketManager.ACKNOWLEDGEMENT_TEXT.format(message.id).encode("utf-8"))
 
 				logger().info("RECEIVED:\n%s", str(message))
 				logger().info(" ... from client at address '%s'", session.conn_info)
@@ -346,7 +347,7 @@ class _PostOfficeSocketManager(object):
 	
 		assert hasattr(session, "data_buffer")
 	
-		logger().debug("Reading from session: %s", session)
+		logger().warning("Reading from session: %s", session)
 	
 		# non-blocking read.  read only what's there!
 		data = session.recv(Configuration.SOCKET_DATA_CHUNK_SIZE, socket.MSG_DONTWAIT)
@@ -407,8 +408,8 @@ class _PostOfficeSocketManager(object):
 		msg = msg[Configuration.CHECKSUM_BYTES:]
 
 		try:
-			message =  cPickle.loads(msg)
-		except (cPickle.UnpicklingError, TypeError, EOFError):
+			message =  pickle.loads(msg.encode())
+		except (pickle.UnpicklingError, TypeError, EOFError):
 			return None
 
 		if hasattr(message, "subject") and hasattr(message, "id") and hasattr(message, "return_path") and len(message.return_path) > 0:
@@ -508,7 +509,7 @@ class _PostOfficeSocketManager(object):
 		# ah, the beauty of pickle.
 		# we just send the entire message *object*
 		# and pickle will rebuild it on the other side!
-		message_text = cPickle.dumps(message)	# doesn't include the magic or checksum
+		message_text = pickle.dumps(message, 0).decode("utf-8")	# doesn't include the magic or checksum
 
 		# use a checksum so that the receiving end knows that they've gotten the whole thing.
 		message_length = len(message_text)
@@ -562,8 +563,8 @@ class _PostOfficeSocketManager(object):
 				# it's our responsibility to make sure everything
 				# is transmitted.
 				bytes_sent = 0
-				while bytes_sent < len(message_string):
-					bytes_sent += session.send(message_string[bytes_sent:])
+				while bytes_sent < len(message_string.encode("utf-8")):
+					bytes_sent += session.send(message_string[bytes_sent:].encode("utf-8"))
 				response = session.recv(Configuration.SOCKET_DATA_CHUNK_SIZE)
 
 				if response == _PostOfficeSocketManager.ACKNOWLEDGEMENT_TEXT.format(message.id):
@@ -636,7 +637,7 @@ class PostOffice(MessageTerminus):
 		logger().debug("Created PostOffice with id %s", self.id)
 
 		# now the message holders
-		self.message_queue        = Queue.Queue()  # "inbox" for messages which need to be delivered or forwarded.  processed in _Schedule()
+		self.message_queue        = queue.Queue()  # "inbox" for messages which need to be delivered or forwarded.  processed in _Schedule()
 		self.pending_messages     = {}  # messages waiting for further information (delivery confirmation, etc.).  used by _Schedule().
 		self.unconfirmed_messages = {}  # countdown collections of which messages are still awaiting confirmation.  messages are cleared from SendWithConfirmation when they disappear from this list
 		self.unanswered_messages  = {}  # countdown collections of which messages are still awaiting responses.  messages are cleared by SnedAndWaitForResponse when they disappear from this list
@@ -764,7 +765,7 @@ class PostOffice(MessageTerminus):
 		
 		# mark the message as "for direct delivery only"
 		message._direct_delivery = True
-		
+
 		# make one subscription for each recipient.
 		# these subscriptions will only match this message,
 		# and will expire after delivering it once.
@@ -813,11 +814,11 @@ class PostOffice(MessageTerminus):
 			raise Errors.AlreadyWaitingError("SendWithConfirmation can't wait for multiple messages simultaneously.")
 
 		self._wait_for_confirmation_count += 1
-			
+
 		message.status_reports = True
 		self.unconfirmed_messages[message.id] = {"deliveries": None, "time_started": time.time()}
 		self.Publish(message)
-		
+
 		#threading.enumerate()
 		
 		while True:
@@ -874,7 +875,7 @@ class PostOffice(MessageTerminus):
 			try:
 				messages += [self.message_queue.get_nowait(),]
 				msg_from_queue = True
-			except Queue.Empty:
+			except queue.Empty:
 				pass
 			
 #			logger().debug("Handling messages.  Message count: %d", len(messages))
@@ -1584,7 +1585,7 @@ class DeliveryThread(threading.Thread):
 	def __init__(self, postoffice):
 		threading.Thread.__init__(self, name="postoffice/delivery")
 		
-		self.deliveries = Queue.Queue()
+		self.deliveries = queue.Queue()
 		self.daemon = True
 		
 		self.postoffice = postoffice
@@ -1828,8 +1829,10 @@ class _SocketSession(NetworkTypes.SerializedSocket):
 		""" Pass the recv on to the socket, updating our time now """
 		
 		self.last_read_time = time.time()
-		return self._socket.recv(*args, **kwargs)
+		return self._socket.recv(*args, **kwargs).decode()
+
 	
 	def send(self, *args, **kwargs):
 		self.last_read_time = time.time()
-		return self._socket.send(*args, **kwargs)
+		sendobj = self._socket.send(*args, **kwargs)
+		return sendobj

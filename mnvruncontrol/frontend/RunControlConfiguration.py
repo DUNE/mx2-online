@@ -15,7 +15,7 @@
 import os
 import sys
 import shelve
-import anydbm
+import dbm
 import os.path
 
 from mnvruncontrol.configuration import Defaults
@@ -101,9 +101,10 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 				self.entries[param_set] = {}
 
 				for param_name in sorted(Configuration.categories[param_set]):
-					# any iterable types will need to be added by hand.
-					if hasattr(Configuration.params[param_name], '__iter__') \
-					  or param_name in metadata_ctrls:
+					# any iterable types will need to be added by hand, except strings
+					if (hasattr(Configuration.params[param_name], '__iter__') and \
+					type (Configuration.params[param_name])!=str) \
+					or param_name in metadata_ctrls:
 						continue
 
 					labels[param_set][param_name] = wx.StaticText(self.pages[param_set], -1, Configuration.names[param_name])
@@ -114,7 +115,7 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 					else:
 						self.entries[param_set][param_name] = wx.TextCtrl(self.pages[param_set], -1, str(Configuration.params[param_name]))
 					
-				gridSizers[param_set] = wx.FlexGridSizer(len(labels), 2, 5, 5)
+				gridSizers[param_set] = wx.FlexGridSizer(0, 2, 5, 5)
 				gridSizers[param_set].SetFlexibleDirection(wx.HORIZONTAL)
 				gridSizers[param_set].AddGrowableCol(1)
 				for param_name in labels[param_set]:
@@ -147,9 +148,9 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			self.entries["Master node"]["mstr_nodeAddresses"].InsertColumn(2, "Address (IPv4/DNS)")
 		
 			for node in Configuration.params["mstr_nodeAddresses"]:
-				index = self.entries["Master node"]["mstr_nodeAddresses"].InsertStringItem(sys.maxint, str(node["type"]))
-				self.entries["Master node"]["mstr_nodeAddresses"].SetStringItem(index, 1, node["name"])
-				self.entries["Master node"]["mstr_nodeAddresses"].SetStringItem(index, 2, node["address"])
+				index = self.entries["Master node"]["mstr_nodeAddresses"].InsertItem(sys.maxsize, str(node["type"]))
+				self.entries["Master node"]["mstr_nodeAddresses"].SetItem(index, 1, node["name"])
+				self.entries["Master node"]["mstr_nodeAddresses"].SetItem(index, 2, node["address"])
 
 			self.AddButtons["mstr_nodeAddresses"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
 			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["mstr_nodeAddresses"])
@@ -161,7 +162,7 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			buttonSizer.AddMany ( ( (self.AddButtons["mstr_nodeAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["mstr_nodeAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
 		
 			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-			entrySizer.AddMany( ( (self.entries["Master node"]["mstr_nodeAddresses"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
+			entrySizer.AddMany( ( (self.entries["Master node"]["mstr_nodeAddresses"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND) ) )
 		
 			gridSizers["Master node"].Add(labels["Master node"]["mstr_nodeAddresses"], flag=wx.ALIGN_CENTER_VERTICAL)
 			gridSizers["Master node"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
@@ -175,8 +176,8 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			self.entries["Master node"]["mstr_HVthresholds"].InsertColumn(1, "# PMTs allowed above threshold")
 		
 			for thresh in Configuration.params["mstr_HVthresholds"]:
-				index = self.entries["Master node"]["mstr_HVthresholds"].InsertStringItem(sys.maxint, str(thresh))
-				self.entries["Master node"]["mstr_HVthresholds"].SetStringItem(index, 1, str(Configuration.params["mstr_HVthresholds"][thresh]))
+				index = self.entries["Master node"]["mstr_HVthresholds"].InsertItem(sys.maxsize, str(thresh))
+				self.entries["Master node"]["mstr_HVthresholds"].SetItem(index, 1, str(Configuration.params["mstr_HVthresholds"][thresh]))
 
 			self.AddButtons["mstr_HVthresholds"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
 			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["mstr_HVthresholds"])
@@ -188,7 +189,7 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			buttonSizer.AddMany ( ( (self.AddButtons["mstr_HVthresholds"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["mstr_HVthresholds"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
 		
 			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-			entrySizer.AddMany( ( (self.entries["Master node"]["mstr_HVthresholds"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL) ) )
+			entrySizer.AddMany( ( (self.entries["Master node"]["mstr_HVthresholds"], 1, wx.EXPAND), (buttonSizer, 0, wx.EXPAND) ) )
 		
 			gridSizers["Master node"].Add(labels["Master node"]["mstr_HVthresholds"], flag=wx.ALIGN_CENTER_VERTICAL)
 			gridSizers["Master node"].Add(entrySizer, proportion=0, flag=wx.EXPAND)
@@ -204,10 +205,10 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			self.entries["Master node"]["mstr_HVignoreFEBs"].InsertColumn(3, "Board")
 		
 			for addr in Configuration.params["mstr_HVignoreFEBs"]:
-				index = self.entries["Master node"]["mstr_HVignoreFEBs"].InsertStringItem(sys.maxint, addr["node"])
-				self.entries["Master node"]["mstr_HVignoreFEBs"].SetStringItem(index, 1, str(addr["croc"]))
-				self.entries["Master node"]["mstr_HVignoreFEBs"].SetStringItem(index, 2, str(addr["chain"]))
-				self.entries["Master node"]["mstr_HVignoreFEBs"].SetStringItem(index, 3, str(addr["board"]))
+				index = self.entries["Master node"]["mstr_HVignoreFEBs"].InsertItem(sys.maxsize, addr["node"])
+				self.entries["Master node"]["mstr_HVignoreFEBs"].SetItem(index, 1, str(addr["croc"]))
+				self.entries["Master node"]["mstr_HVignoreFEBs"].SetItem(index, 2, str(addr["chain"]))
+				self.entries["Master node"]["mstr_HVignoreFEBs"].SetItem(index, 3, str(addr["board"]))
 
 			self.AddButtons["mstr_HVignoreFEBs"] = wx.Button(self.pages["Master node"], wx.ID_ADD, style=wx.BU_EXACTFIT)
 			self.pages["Master node"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["mstr_HVignoreFEBs"])
@@ -219,7 +220,7 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			buttonSizer.AddMany ( ( (self.AddButtons["mstr_HVignoreFEBs"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["mstr_HVignoreFEBs"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
 		
 			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-			entrySizer.Add(self.entries["Master node"]["mstr_HVignoreFEBs"], proportion=1, flag=wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
+			entrySizer.Add(self.entries["Master node"]["mstr_HVignoreFEBs"], proportion=1, flag=wx.EXPAND)
 			entrySizer.Add(buttonSizer, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL)
 		
 			gridSizers["Master node"].Add(labels["Master node"]["mstr_HVignoreFEBs"], flag=wx.ALIGN_CENTER_VERTICAL, proportion=0)
@@ -234,7 +235,7 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			self.entries["General"]["gen_notifyAddresses"].InsertColumn(0, "Address")
 		
 			for addr in Configuration.params["gen_notifyAddresses"]:
-				self.entries["General"]["gen_notifyAddresses"].InsertStringItem(sys.maxint, addr)
+				self.entries["General"]["gen_notifyAddresses"].InsertItem(sys.maxsize, addr)
 
 			self.AddButtons["gen_notifyAddresses"] = wx.Button(self.pages["General"], wx.ID_ADD, style=wx.BU_EXACTFIT)
 			self.pages["General"].Bind(wx.EVT_BUTTON, self.AddNode, self.AddButtons["gen_notifyAddresses"])
@@ -246,7 +247,7 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 			buttonSizer.AddMany ( ( (self.AddButtons["gen_notifyAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL), (self.DeleteButtons["gen_notifyAddresses"], 0, wx.ALIGN_CENTER_HORIZONTAL) ) )
 		
 			entrySizer = wx.BoxSizer(wx.HORIZONTAL)
-			entrySizer.Add(self.entries["General"]["gen_notifyAddresses"], proportion=1, flag=wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
+			entrySizer.Add(self.entries["General"]["gen_notifyAddresses"], proportion=1, flag=wx.EXPAND)
 			entrySizer.Add(buttonSizer, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL)
 		
 			gridSizers["General"].Add(labels["General"]["gen_notifyAddresses"], flag=wx.ALIGN_CENTER_VERTICAL, proportion=0)
@@ -292,9 +293,9 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 							itemlocation = self.entries[page]
 							break
 				
-					index = itemlocation[itemname].InsertStringItem(sys.maxint, "[text]")
+					index = itemlocation[itemname].InsertItem(sys.maxsize, "[text]")
 					for col in range(1, itemlocation[itemname].GetColumnCount()):
-						itemlocation[itemname].SetStringItem(index, col, "[text]")
+						itemlocation[itemname].SetItem(index, col, "[text]")
 	
 		def DeleteNodes(self, evt):
 			""" Delete all selected nodes from the list. """
@@ -522,7 +523,7 @@ else:
 			while not quit:
 				current_section = None
 				while current_section is None:
-					current_section = self.MenuSelection(Configuration.categories.keys())
+					current_section = self.MenuSelection(list(Configuration.categories.keys()))
 					
 					# user just pushed 'enter'
 					if current_section is None:
@@ -530,8 +531,8 @@ else:
 						break
 				
 					while current_section is not None:
-						print "Section '%s'" % current_section
-						print "==========================================================="
+						print("Section '%s'" % current_section)
+						print("===========================================================")
 						params = []
 						for key in Configuration.categories[current_section]:
 							params.append(key)
@@ -543,12 +544,12 @@ else:
 						
 						# lists are trickier.  not supported...
 						if Configuration.types[param] not in (list, dict):
-							print "Changing value for '%s'." % param
-							print "Old value: ", Configuration.params[param]
-							print "Enter new value (just press 'Enter' to cancel):"
+							print("Changing value for '%s'." % param)
+							print("Old value: ", Configuration.params[param])
+							print("Enter new value (just press 'Enter' to cancel):")
 							
 							try:
-								v = raw_input(">>> ")
+								v = input(">>> ")
 							except EOFError:
 								return
 							
@@ -557,18 +558,18 @@ else:
 							
 							try:
 								# beware.  bool(<string>) = len(<string>) > 0!
-								if Configuration.types[param] == bool and isinstance(v, basestring):
+								if Configuration.types[param] == bool and isinstance(v, str):
 									Configuration.params[param] = v in ("True", "true", "1")
 								else:
 									Configuration.params[param] = Configuration.types[param](v)
 							except ValueError:
-								print "Invalid input!"
+								print("Invalid input!")
 								continue
 					
 						else:
-							print "List/dictionary editing doesn't work yet in text-only mode."
-							print "Either use the GUI editor or edit the Configuration by hand"
-							print "in a Python shell and use its SaveToDB() function.\n"
+							print("List/dictionary editing doesn't work yet in text-only mode.")
+							print("Either use the GUI editor or edit the Configuration by hand")
+							print("in a Python shell and use its SaveToDB() function.\n")
 			### while not quit
 			
 			Configuration.SaveToDB()
@@ -577,19 +578,19 @@ else:
 			""" Displays a menu to the user and requests
 			    that s/he pick one of the options. """
 			
-			print "Choices:"
-			print "--------"
+			print("Choices:")
+			print("--------")
 			
 			for i in range(len(choices)):
 				descr = " " if descriptions is None else (" (%s)" % descriptions[i])
-				print "[%d] %-25s%s" % (i+1, choices[i], descr)
+				print("[%d] %-25s%s" % (i+1, choices[i], descr))
 			
 			while True:
-				print "\nPlease enter the number of the menu item you want"
-				print "(just press 'Enter' to go back/quit)"
+				print("\nPlease enter the number of the menu item you want")
+				print("(just press 'Enter' to go back/quit)")
 
 				try:
-					r = raw_input(">>> ")
+					r = input(">>> ")
 				except EOFError:
 					return None
 
@@ -602,7 +603,7 @@ else:
 					else:
 						raise ValueError()
 				except ValueError:
-					print "Invalid entry."
+					print("Invalid entry.")
 		
 
 #########################################################

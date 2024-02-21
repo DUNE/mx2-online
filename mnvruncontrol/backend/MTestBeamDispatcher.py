@@ -287,7 +287,7 @@ class MTestBeamDispatcher(Dispatcher):
 				self.logger.info("   ==> Attempting to stop the %s DAQ thread." % thread)
 				try:
 					self.daq_threads[thread].terminate_and_join()
-				except Exception, excpt:
+				except Exception as excpt:
 					self.logger.error("   ==> DAQ process %s couldn't be stopped!" % thread)
 					self.logger.exception("   ==> Error message:")
 					return excpt
@@ -339,7 +339,8 @@ class DAQThread(threading.Thread):
 					data = None
 					try:
 						ready = select.select([self.process.stdout], [], [], 0)
-					except select.error, (errnum, msg):
+					except select.error as xxx_todo_changeme:
+						(errnum, msg) = xxx_todo_changeme.args
 						if errnum == errno.EINTR: continue
 						else: raise
 					if ready:

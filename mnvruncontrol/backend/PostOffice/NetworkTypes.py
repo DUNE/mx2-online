@@ -70,7 +70,7 @@ class IPv4Address(object):
 			self.host = None
 			return
 			
-		if not isinstance(host, basestring):
+		if not isinstance(host, str):
 			raise TypeError("Host must be str or unicode, not %s", type(host))
 		
 		try:
@@ -98,7 +98,7 @@ class IPv4Address(object):
 	def from_iter(lst):
 		""" Get an IPv4Address from an iterable."""
 		
-		if isinstance(lst, basestring):
+		if isinstance(lst, str):
 			raise TypeError("lst must not be a string!")
 		
 		if not hasattr(lst, "__iter__"):

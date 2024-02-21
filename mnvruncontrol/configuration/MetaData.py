@@ -58,7 +58,7 @@ class MetaData:
 				omittedCodes += 1
 			
 			if omittedHashes > 0 and omittedCodes > 0 and not warned:
-				print "Warning: you omitted a code in one entry of this metadata and a hash in another.  Did you really mean to do that?..."
+				print("Warning: you omitted a code in one entry of this metadata and a hash in another.  Did you really mean to do that?...")
 				warned = True
 			
 			datum = MetaDatum(self, identifier, description, hashitem, code)	

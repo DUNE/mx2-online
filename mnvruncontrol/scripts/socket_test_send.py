@@ -14,8 +14,8 @@ po.Startup()
 host = ""
 port = 0
 while True:
-	h = raw_input("Hostname to send test message to (leave blank for default = '%s'): " % host)
-	p = raw_input("Port to send test message to (leave blank for default = %s): " % port)
+	h = input("Hostname to send test message to (leave blank for default = '%s'): " % host)
+	p = input("Port to send test message to (leave blank for default = %s): " % port)
 	
 	host = h or host
 	port = int(p) if p else port

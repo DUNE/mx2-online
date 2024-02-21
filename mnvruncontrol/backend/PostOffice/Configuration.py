@@ -15,8 +15,8 @@
 # accidental reconstruction of a socket communication
 # that was sent by some other service -- e.g., a port scanner.)
 MESSAGE_MAGIC = {
-	"begin": u"%PO_BEGIN_MSG%",
-	"end": u"%PO_END_MSG%",
+	"begin": "%PO_BEGIN_MSG%",
+	"end": "%PO_END_MSG%",
 }
 CHECKSUM_BYTES = 8
 

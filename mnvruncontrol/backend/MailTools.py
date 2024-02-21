@@ -1,6 +1,6 @@
 import smtplib
 import email.mime
-from email.Utils import COMMASPACE, formatdate
+from email.utils import COMMASPACE, formatdate
 import os
 
 from mnvruncontrol.configuration import Configuration

@@ -246,10 +246,10 @@ class MainApp(wx.App, MessageTerminus):
 		control.DeleteAllItems()
 		for i in range(len(self.client_list)):
 			client = self.client_list[i]
-			index = control.InsertStringItem(sys.maxint, client["client_identity"])
+			index = control.InsertStringItem(sys.maxsize, client["client_identity"])
 			control.SetStringItem(index, 1, client["client_ip"])
 			if client["in_control"]:
-				control.SetStringItem(index, 2, u"\u2714")	# a check mark
+				control.SetStringItem(index, 2, "\u2714")	# a check mark
 			control.SetItemData(index, i)
 
 		# re-enable the buttons, etc.
@@ -637,7 +637,7 @@ if __name__ == '__main__':		# make sure that this file isn't being included some
 		app.MainLoop()
 	except Exception as e:
 		try:
-			print "Unhandled exception!  Trying close down in an orderly fashion...."
+			print("Unhandled exception!  Trying close down in an orderly fashion....")
 			if app:
 				app.OnClose()
 		except:

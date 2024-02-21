@@ -38,7 +38,7 @@ from mnvruncontrol.backend import LIBox
 
 from mnvruncontrol.backend.PostOffice.Envelope import Message, Subscription
 
-from mnvconfigurator.SlowControlE2cr2CRC.SC_MainMethods import SC as SlowControl
+from mnvconfigurator.SlowControlE2cr2CRC_py3.SC_MainMethods import SC as SlowControl
 
 #################################################
 #  these are the return codes used by the DAQ
@@ -228,7 +228,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 			pass
 		
 		try:
-		        time.sleep(10) # mtest only, give the camac daq time to set the veto
+			time.sleep(10) # mtest only, give the camac daq time to set the veto
 			executable = ( 
 			environment["DAQROOT"] + "/bin/minervadaq", 
 				          "-et", str(configuration.et_filename),
@@ -248,7 +248,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 			self.daq_thread = DAQThread(owner_process=self, daq_command=executable,
 			                            etfile=configuration.et_filename, identity=identity, 
 			                            runinfo={"run": configuration.run, "subrun": configuration.subrun})
-		except Exception, e:
+		except Exception as e:
 			self.logger.exception("   ==> DAQ process can't be started! Error message: ")
 			return e
 		else:
@@ -269,7 +269,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 				self.daq_thread.daq_process.terminate()
 				self.daq_thread.join()		# 'merges' this thread with the other one so that we wait until it's done.
 				code = self.daq_thread.returncode
-			except Exception, excpt:
+			except Exception as excpt:
 				self.logger.exception("   ==> DAQ process couldn't be stopped! Error message:")
 				return excpt
 		else:		# if there's a process but it's already finished
@@ -354,7 +354,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 
 		try:			
 			self.sc_init()
-		except Exception, e:
+		except Exception as e:
 			self.logger.exception("Hardware error while initializing:")
 			return e
 		
@@ -400,7 +400,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 				]
 				formatted_feblist += reformat
 
-		except Exception, e:
+		except Exception as e:
 			self.logger.exception("Error trying to read the voltages:")
 			self.logger.warning("No read performed.")
 			return e
@@ -589,7 +589,7 @@ class SCHWSetupThread(threading.Thread):
 					sc.HWcfgFileLoad(hwfile, scsNumbers=len(self.slow_controls))
 					hwfile.seek(0)  # the file will be used again for the next slow control...
 				
-			except Exception, e:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
+			except Exception as e:		# i hate leaving 'catch-all' exception blocks, but the slow control only uses generic Exceptions...
 				self.dispatcher.logger.exception("Error trying to load the hardware config file for the crate %d slow control" % sc.boardNum)
 				self.dispatcher.logger.warning("Hardware was not configured...")
 				self.dispatcher.postoffice.Publish(Message(subject="daq_status", sender=self.identity, error=e, state="hw_error"))

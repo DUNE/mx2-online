@@ -14,7 +14,7 @@ from mnvruncontrol.configuration import MetaData
 # general stuff
 NOTIFY_ADDRESSES = ["savage@fnal.gov",]
 
-CONFIG_DB_NAME = "run_control_config.db"
+CONFIG_DB_NAME = "run_control_config_py3.db"
 CONFIG_DB_LOCATION = "/work/conditions"
 
 LOGFILE_GATE_COUNT_INTERVAL = 50	# the master log file will get a notice every this many gates

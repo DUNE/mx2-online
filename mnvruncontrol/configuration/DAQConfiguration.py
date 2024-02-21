@@ -13,7 +13,7 @@
 """
 
 import shelve
-import anydbm		# if a shelve database doesn't exist, this module contains the error raised
+import dbm		# if a shelve database doesn't exist, this module contains the error raised
 
 from mnvruncontrol.configuration import Configuration
 from mnvruncontrol.configuration import Defaults
@@ -133,11 +133,11 @@ class DAQConfiguration:
 	
 		try:
 			db = shelve.open(run_info_file, 'r')
-		except anydbm.error:
+		except dbm.error:
 			pass
 			
 		has_all_keys = True
-		for key in DAQConfiguration.default_config.keys():
+		for key in list(DAQConfiguration.default_config.keys()):
 	
 			if key in _exceptions:
 				self.__dict__[key] = _exceptions[key]
@@ -145,21 +145,21 @@ class DAQConfiguration:
 				try:
 					#if db is not None and db.has_key(key) and type(db[key]) == type(DAQConfiguration.default_config[key]):
 					if db is None: raise KeyError()
-					if not db.has_key(key): raise KeyError()
+					if key not in db: raise KeyError()
 					if type(db[key]) != type(DAQConfiguration.default_config[key]): raise KeyError()
 					self.__dict__[key] = db[key]
 				except (KeyError, Exception) as e:
 					if type(e) != KeyError:
 						import pprint
-						print "Got exception,"
+						print("Got exception,")
 						pprint.pprint(e)
-						print "For key,"
+						print("For key,")
 						pprint.pprint(key)
 					self.__dict__[key] = DAQConfiguration.default_config[key]
 					has_all_keys = False
 		
 		if not has_all_keys:
-			print "The database storing the last run configuration data appears to be missing or corrupted.  Default configuration will be used for any unreadable values..."
+			print("The database storing the last run configuration data appears to be missing or corrupted.  Default configuration will be used for any unreadable values...")
 		#	print 'load: key=',key
 		#	print 'run_info_file =', run_info_file
 		if db is not None:
@@ -173,7 +173,7 @@ class DAQConfiguration:
 		   
 		try:
 			db = shelve.open(run_info_file)
-			for key in DAQConfiguration.default_config.keys():
+			for key in list(DAQConfiguration.default_config.keys()):
 				db[key] = self.__dict__[key]
 			db.close()
 		except:

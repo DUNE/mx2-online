@@ -12,7 +12,7 @@ PO_logger.setLevel(logging.DEBUG)
 PO_logger.addHandler(logging.StreamHandler())
 
 def handler(msg):
-	print msg
+	print(msg)
 
 tm = Routing.MessageTerminus()
 sub = Envelope.Subscription(action=Envelope.Subscription.DELIVER, delivery_address=tm)
@@ -27,9 +27,9 @@ while n_attempts < 10:
 		po.AddSubscription(sub)
 		po.Startup()
 	except Exception as e:
-		print e
+		print(e)
 		n_attempts += 1
 		continue
 	
-	print "Listening on port", port_num
+	print("Listening on port", port_num)
 	break

@@ -16,13 +16,13 @@
    frontend client(s) and the dispatcher(s).
   
   Original author: J. Wolcott (jwolcott@fnal.gov)
-                   first version,  Feb.-Aug. 2010
-                   second version, Aug.-Oct. 2010
-                    
+				   first version,  Feb.-Aug. 2010
+				   second version, Aug.-Oct. 2010
+					
   Address all complaints to the management.
 """
 
-import anydbm
+import dbm
 import copy
 import datetime
 import hashlib
@@ -65,7 +65,7 @@ def cleanup_tokens(f):
 			raise TypeError("Can only use @cleanup_tokens on DataAcquisitionManager methods...")
 
 		# note that we COPY the key list so we can delete on the fly.
-		for token in self.authorization_tokens.keys()[:]:
+		for token in list(self.authorization_tokens.keys())[:]:
 			# you get 15 seconds to use a token.  no more.
 			if time.time() - self.authorization_tokens[token] > 15:
 				del self.authorization_tokens[token]
@@ -83,8 +83,8 @@ class SpecialThread(Threads.DAQthread):
 			"pattern": etpattern,
 			"port": etport
 		}
-                self.et_config["evbfile"] = "%s/%s_RawData.dat" % ( Configuration.params["mon_rawdataLocation"], self.et_config["pattern"] )
-                self.et_config["etfile"] = "%s/%s_RawData" % (self.et_config["sys_location"], self.et_config["pattern"])
+		self.et_config["evbfile"] = "%s/%s_RawData.dat" % ( Configuration.params["mon_rawdataLocation"], self.et_config["pattern"] )
+		self.et_config["etfile"] = "%s/%s_RawData" % (self.et_config["sys_location"], self.et_config["pattern"])
 		
 		Threads.DAQthread.__init__(self, process_info, process_identity, postoffice, env, is_essential_service)
 
@@ -93,14 +93,14 @@ class SpecialThread(Threads.DAQthread):
 		# This is a kludge. Since we're already running an event builder, we just need to inform the monitoring that the building is done.
 		# Then the full DSTs will be made.
 		self.postoffice.Publish(Message(subject="om_internal",
-                        event="eb_finished",
-                        eb_ok=True,
-                        et_config=self.et_config
-                ))
+						event="eb_finished",
+						eb_ok=True,
+						et_config=self.et_config
+				))
 
 class DataAcquisitionManager(Dispatcher.Dispatcher):
 	""" Object that does the actual coordination of data acquisition.
-	    You should only ever make one of these at a time. """
+		You should only ever make one of these at a time. """
 	
 	### Notice: like the run control front end, this class is
 	### pretty large, so its methods are also grouped by category.
@@ -131,15 +131,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# methods that will be started sequentially
 		# by various processes and accompanying messages
 		self.SubrunStartTasks = [ { "method": self.RunInfoAndConnectionSetup, "message": "Testing connections" },
-		                          { "method": self.LIBoxSetup,                "message": "Initializing light injection..." },
-		                          { "method": self.ReadoutNodeHWConfig,       "message": "Loading hardware..." },
-		                          { "method": self.ReadoutNodeHVCheck,        "message": "Checking hardware..." } ]
+								  { "method": self.LIBoxSetup,                "message": "Initializing light injection..." },
+								  { "method": self.ReadoutNodeHWConfig,       "message": "Loading hardware..." },
+								  { "method": self.ReadoutNodeHVCheck,        "message": "Checking hardware..." } ]
 		self.DAQStartTasks = [ { "method": self.StartETSys,          "message": "Starting ET system..." },
-		                       { "method": self.StartEBSvc,          "message": "Starting event builder..." },
-		                       { "method": self.StartOM,             "message": "Starting online monitoring..." },
+							   { "method": self.StartEBSvc,          "message": "Starting event builder..." },
+							   { "method": self.StartOM,             "message": "Starting online monitoring..." },
 #		                       { "method": self.StartETMon,          "message": "Starting ET monitor..." },
-		                       { "method": self.StartRemoteServices, "message": "Starting remote services..."},
-		                      ]
+							   { "method": self.StartRemoteServices, "message": "Starting remote services..."},
+							  ]
 
 		# will be filled by the session creator.
 		self.remote_nodes = {}
@@ -200,11 +200,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 	def BeginSession(self):
 		""" Checks if there's a session that was already open.
-		    If so, cleans up (stops the remote nodes), etc.
-		    
-		    Otherwise, starts a new session: contacts nodes
-		    to inform them that the manager is up and running, etc. """
-		    
+			If so, cleans up (stops the remote nodes), etc.
+			
+			Otherwise, starts a new session: contacts nodes
+			to inform them that the manager is up and running, etc. """
+			
 		self.logger.info("Old session resumption is disabled for now.")
 		self.logger.info("Starting a fresh session.")
 
@@ -236,10 +236,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.logger.info("   ... success.  Asking for forward subscriptions...")
 			
 				subject_map = { RemoteNode.READOUT:    "daq_status",
-				                RemoteNode.MONITORING: "om_status",
-				                RemoteNode.MTEST:      "beamdaq_status",
-				                RemoteNode.PERIPHERAL: "device_status" }
+								RemoteNode.MONITORING: "om_status",
+								RemoteNode.MTEST:      "beamdaq_status",
+								RemoteNode.PERIPHERAL: "device_status" }
 
+				self.logger.warning("TEST: PORT %s", self.socket_port)
 				subscr = Subscription(subject=subject_map[node.type], action=Subscription.FORWARD, delivery_address=(None, self.socket_port))
 				self.postoffice.ForwardRequest( node.address, [subscr,] )
 				self.logger.info("   ... done.")
@@ -249,7 +250,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 	def BookSubscriptions(self):
 		""" Books all the standing subscriptions the DAQMgr will want
-		    and assigns handlers for those messages. """
+			and assigns handlers for those messages. """
 		
 		# control_request: from frontend clients
 		# client_admin:    from the client manager app
@@ -258,24 +259,24 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# mgr_internal:    from this DAQ manager to itself
 		# mgr_directive:   from front-end client (tells the DAQ manager what to do)
 		subscription_handlers = { "control_request": self.ControlRequestHandler,
-		                          "client_admin":    self.ClientAdminHandler,
-		                          "daq_status":      self.DAQStatusHandler,
-		                          "om_status":       self.OMStatusHandler,
-		                          "beamdaq_status":  self.BeamDAQStatusHandler,
-		                          "device_status":   self.DeviceStatusHandler,
-		                          "mgr_internal":    self.MgrInternalHandler,
-		                          "mgr_directive":   self.MgrDirectiveHandler }
+								  "client_admin":    self.ClientAdminHandler,
+								  "daq_status":      self.DAQStatusHandler,
+								  "om_status":       self.OMStatusHandler,
+								  "beamdaq_status":  self.BeamDAQStatusHandler,
+								  "device_status":   self.DeviceStatusHandler,
+								  "mgr_internal":    self.MgrInternalHandler,
+								  "mgr_directive":   self.MgrDirectiveHandler }
 	
 		for subject in subscription_handlers:
 			subscr = Subscription(subject=subject,
-		                                      action=Subscription.DELIVER,
-		                                      delivery_address=self)
+											  action=Subscription.DELIVER,
+											  delivery_address=self)
 			self.postoffice.AddSubscription(subscr)
 			self.AddHandler(subscr, subscription_handlers[subject])
 		
 	def Cleanup(self):
 		""" Any clean-up actions that need to be taken before shutdown.  """
-		    
+			
 		self.logger.info("Informing nodes I'm going down...")
 		self.postoffice.Publish( Message(subject="mgr_status", status="offline", mgr_id=self.id) )
 		
@@ -291,7 +292,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	@cleanup_tokens
 	def AdminAllowed(self, token, password_hash):
 		""" Determines if a client admin message
-		    is authorized based on its token & password hash. """
+			is authorized based on its token & password hash. """
 		
 		if token not in self.authorization_tokens:
 			self.logger.info("Denied attempt to authenticate with invalid token.")
@@ -312,7 +313,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	
 	def BeamDAQStatusHandler(self, message):
 		""" Handles updates from the MTest beam DAQ
-		    about changes in its state. """
+			about changes in its state. """
 		
 		if not hasattr(message, "state"):
 			self.logger.info("OM status message from '%s' node is badly formed.  Ignoring.  Message:\n%s", message.sender, message)
@@ -323,7 +324,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 	def ClientAdminHandler(self, message):
 		""" Handles messages from the client manager
-		    application. """
+			application. """
 		
 		if not hasattr(message, "action"):
 			self.logger.warning("client_admin message is improperly formatted.  Ignoring.\n%s", message)
@@ -368,24 +369,24 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 	def ClientAllowed(self, client_id):
 		""" Overridden from Dispatcher -- checks if a client is
-		    allowed to give instructions. """
-		    
+			allowed to give instructions. """
+			
 		return self.control_info is not None and self.control_info["client_id"] == client_id
 
 	def ControlRequestHandler(self, message):
 		""" Handles requests from clients for control of the DAQ.
 		
-		    Note: locks on the DAQManager work differently than in
-		    other dispatchers: anybody can request control
-		    at any time (even if somebody else already has
-		    control).  (If a client already has control, s/he
-		    is given a timeout, defaulting to 15 seconds, during
-		    which s/he can refuse to transfer control.  If no
-		    response is received during that time, the new client
-		    is granted control.  The timeout is enforced to avoid
-		    the situation where somebody has a lock then their
-		    connection gets broken, preventing anybody else
-		    from controlling the DAQ until the DAQ manager is reset.) """
+			Note: locks on the DAQManager work differently than in
+			other dispatchers: anybody can request control
+			at any time (even if somebody else already has
+			control).  (If a client already has control, s/he
+			is given a timeout, defaulting to 15 seconds, during
+			which s/he can refuse to transfer control.  If no
+			response is received during that time, the new client
+			is granted control.  The timeout is enforced to avoid
+			the situation where somebody has a lock then their
+			connection gets broken, preventing anybody else
+			from controlling the DAQ until the DAQ manager is reset.) """
 
 		response_msg = message.ResponseMessage()
 
@@ -401,7 +402,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			response_msg.subject = "request_response"
 			if message.request == "get":
 				if not ( hasattr(message, "requester_name") and hasattr(message, "requester_ip")
-				         and hasattr(message, "requester_location") and hasattr(message, "requester_phone") ):
+						 and hasattr(message, "requester_location") and hasattr(message, "requester_phone") ):
 					self.logger.info("Request from client is invalid (missing parameters).")
 					response_msg.subject = "invalid_request"
 					response_msg.success = False
@@ -409,10 +410,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				elif self.control_info is None:
 					self.logger.info("Granted control to client %s (reporting identity '%s') located at %s.", message.requester_id, message.requester_name, message.requester_ip)
 					self.control_info = { "client_id": message.requester_id,
-					                      "client_identity": message.requester_name,
-					                      "client_ip": message.requester_ip,
-					                      "client_location": message.requester_location,
-					                      "client_phone": message.requester_phone }
+										  "client_identity": message.requester_name,
+										  "client_ip": message.requester_ip,
+										  "client_location": message.requester_location,
+										  "client_phone": message.requester_phone }
 					response_msg.success = True
 				elif message.requester_id == self.control_info["client_id"]:
 					self.logger.info("Client %s is already in control.  No action taken." % message.requester_id)
@@ -428,24 +429,24 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 					msg += "Client %s has %d seconds to veto control transfer..." % (self.control_info["client_id"], Configuration.params["mstr_controlXferWait"])
 					self.logger.info(msg)
 					self.control_pending = { "client_id": message.requester_id,
-					                         "client_identity": message.requester_name,
-					                         "client_ip": message.requester_ip,
-					                         "client_location": message.requester_location,
-					                         "client_phone": message.requester_phone }
+											 "client_identity": message.requester_name,
+											 "client_ip": message.requester_ip,
+											 "client_location": message.requester_location,
+											 "client_phone": message.requester_phone }
 					response_msg.success = None
 					
 					# send out message soliciting objections if there are any
 					self.postoffice.Publish( Message(subject="frontend_info",
-					                                         info="control_transfer_proposal",
-					                                         who={"identity": message.requester_name, 
-					                                              "ip": message.requester_ip,
-					                                              "location": message.requester_location,
-					                                              "phone": message.requester_phone }) )
+															 info="control_transfer_proposal",
+															 who={"identity": message.requester_name, 
+																  "ip": message.requester_ip,
+																  "location": message.requester_location,
+																  "phone": message.requester_phone }) )
 					
 					# set up a timer to check after the appropriate interval
 					self.transfer_timer = threading.Timer(Configuration.params["mstr_controlXferWait"],
-					                                      self.ControlTransfer,
-					                                      kwargs={"do_transfer": True})
+														  self.ControlTransfer,
+														  kwargs={"do_transfer": True})
 					self.transfer_timer.start()
 
 			elif message.request == "release":
@@ -494,11 +495,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	
 	def DAQStatusHandler(self, message):
 		""" Handles updates from the readout nodes regarding
-		    the status of the DAQ on their own nodes.
-		    
-		    This includes readiness for data taking, the end
-		    of data taking, errors, etc. """
-		    
+			the status of the DAQ on their own nodes.
+			
+			This includes readiness for data taking, the end
+			of data taking, errors, etc. """
+			
 		if not hasattr(message, "state"):
 			self.logger.info("DAQ status message from '%s' node is badly formed.  Ignoring.  Message:\n%s", message.sender, message)
 			return
@@ -530,8 +531,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				fmt = (message.run, message.subrun, message.sender, message.code)
 				messagebody = "The DAQ process for run %d/%d on the %s node returned exit code %d... (expected: 2 or 3)" % fmt
 				MailTools.sendMail(fro=sender, to=Configuration.params["gen_notifyAddresses"],
-				                   subject=subject, text=messagebody)
-				                   
+								   subject=subject, text=messagebody)
+								   
 				if not currently_running:
 					message = "Not running,"
 				else:
@@ -625,7 +626,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 	def DeviceStatusHandler(self, message):
 		""" Handles updates from various peripherals about
-		    changes in their state. """
+			changes in their state. """
 		
 		pass	
 	
@@ -633,8 +634,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	def GetNewToken(self):
 		""" Gets a new authorization token. 
 		
-		    Exists only because I want to 
-		    apply the decorator to it. """
+			Exists only because I want to 
+			apply the decorator to it. """
 		
 		token = str(uuid.uuid4())
 		self.authorization_tokens[token] = time.time()
@@ -643,8 +644,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	
 	def MgrDirectiveHandler(self, message):
 		""" Handles messages from front-end clients: requests
-		    for status updates, instructions for starting/stopping,
-		    requests for control, etc. """
+			for status updates, instructions for starting/stopping,
+			requests for control, etc. """
 		
 		# ignore ill-formed messages
 		if not hasattr(message, "directive") or not hasattr(message, "client_id"):
@@ -755,9 +756,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	
 	def MgrInternalHandler(self, message):
 		""" Handles messages that are passed around internally
-		    by the DAQMgr.  Always insists that the messages
-		    have no return_path (i.e., haven't been transmitted
-		    over the network). """	
+			by the DAQMgr.  Always insists that the messages
+			have no return_path (i.e., haven't been transmitted
+			over the network). """	
 
 		# ignore ill-formed messages
 		if not hasattr(message, "event"):
@@ -804,8 +805,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	
 	def StartDataAcquisition(self, configuration):
 		""" Starts the data acquisition process.
-		    Called only for the first subrun in a series. """
-		    
+			Called only for the first subrun in a series. """
+			
 		if len(self.errors) > 0:
 			self.NewAlert(notice="There are outstanding errors.  Acknowledge them before starting a run.", severity=Alert.NOTICE)
 			return False
@@ -969,10 +970,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 	def StartNextSubrun(self):
 		""" Prepares to start the next subrun: waits for
-		    the DAQ system to be ready, notifies the main 
-		    window what run we're in, prepares the LI box
-		    and slow controls, and finally initiates the
-		    acquisition sequence. """
+			the DAQ system to be ready, notifies the main 
+			window what run we're in, prepares the LI box
+			and slow controls, and finally initiates the
+			acquisition sequence. """
 	
 		self.logger.debug("StartNextSubrun() called.")
 		
@@ -1066,15 +1067,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# all other data file names are based on it.
 		self.configuration.et_filename = "%(det)s_%(run)08d_%(subrun)04d_%(mode)s_%(ver)s_%(year)02d%(month)02d%(day)02d%(hour)02d%(minute)02d"
 		values = { "det":    self.configuration.detector.code,
-		           "run":    self.configuration.run,
-		           "subrun": self.configuration.subrun,
-		           "mode":   self.configuration.run_mode.code,
-		           "ver":    Defaults.DAQ_HEADER_VERSION_STRING,
-		           "year":   now.year % 100,
-		           "month":  now.month,
-		           "day":    now.day,
-		           "hour":   now.hour,
-		           "minute": now.minute }
+				   "run":    self.configuration.run,
+				   "subrun": self.configuration.subrun,
+				   "mode":   self.configuration.run_mode.code,
+				   "ver":    Defaults.DAQ_HEADER_VERSION_STRING,
+				   "year":   now.year % 100,
+				   "month":  now.month,
+				   "day":    now.day,
+				   "hour":   now.hour,
+				   "minute": now.minute }
 		self.configuration.et_filename %= values
 
 		
@@ -1095,8 +1096,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	def EndSubrun(self, sentinel=False):
 		""" Performs the jobs that need to be done when a subrun ends. 
 		
-		    Generally it is only executed as the handler for a
-		    'subrun_end' message."""
+			Generally it is only executed as the handler for a
+			'subrun_end' message."""
 		
 		# block from trying to shut down twice simultaneously
 		if not self.can_shutdown:
@@ -1170,12 +1171,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		all_completed = True
 		for node_name in self.remote_nodes:
 			node = self.remote_nodes[node_name]
-                        if not hasattr(node, "completed"):
-                                self.logger.warning("EndSubrun: skipping the following node because it lacks the completed attribute: \n%s" % node)
-                                continue
-                        if node.type != RemoteNode.READOUT:
-                                self.logger.warning("EndSubrun: skipping a node because it's not a readout node")
-                                continue
+			if not hasattr(node, "completed"):
+					self.logger.warning("EndSubrun: skipping the following node because it lacks the completed attribute: \n%s" % node)
+					continue
+			if node.type != RemoteNode.READOUT:
+					self.logger.warning("EndSubrun: skipping a node because it's not a readout node")
+					continue
 			all_completed = all_completed and (node.type == RemoteNode.READOUT and node.completed)
 			
 		if wait_for_DAQ and not all_completed:
@@ -1184,7 +1185,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			return
 		
 		self.waiting = False
-                self.logger.info("Oh see how far we've come")
+		self.logger.info("Oh see how far we've come")
 		
 		unstopped_nodes = []
 		for node_name in self.remote_nodes:
@@ -1253,9 +1254,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		# panic on the startup end if need be.
 		self.logger.info("Resetting the light injection box(es)...")
 		message = Message(subject="readout_directive", mgr_id=self.id,
-		                             directive="li_configure",
-		                             li_level=MetaData.LILevels.ZERO_PE,
-		                             led_groups=MetaData.LEDGroups.ABCD)
+									 directive="li_configure",
+									 li_level=MetaData.LILevels.ZERO_PE,
+									 led_groups=MetaData.LEDGroups.ABCD)
 		responses = self.postoffice.Publish(message)
 		step += 1
 		
@@ -1344,10 +1345,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	
 	def ReadoutNodeHWConfig(self):
 		""" Initializes the hardware configuration on the readout nodes.
-		    This process takes some time on the full detector, so this
-		    method exits after starting the process.  When the SocketThread
-		    receives the appropriate message from all readout nodes then
-		    we will continue. """
+			This process takes some time on the full detector, so this
+			method exits after starting the process.  When the SocketThread
+			receives the appropriate message from all readout nodes then
+			we will continue. """
 		
 		self.logger.info("  Using hardware configuration: %s", self.configuration.hw_config.description)
 		
@@ -1450,7 +1451,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			led_groups = MetaData.LEDGroups.ABCD
 		
 		message = Message(subject="readout_directive", mgr_id=self.id, directive="li_configure",
-		                             li_level=li_level, led_groups=led_groups)
+									 li_level=li_level, led_groups=led_groups)
 		
 		skip = False
 		
@@ -1496,7 +1497,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			self.problem_pmt_list = None
 
 			problem_boards = self.GetProblemPMTs()
-			thresholds = sorted(Configuration.params["mstr_HVthresholds"].keys(), reverse=True)
+			thresholds = sorted(list(Configuration.params["mstr_HVthresholds"].keys()), reverse=True)
 			ranges = {}
 			for i in range(len(thresholds)):
 				ranges[i+1] = Configuration.params["mstr_HVthresholds"][thresholds[i]]
@@ -1542,9 +1543,9 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 	def StartNextThread(self, signum=None, sigframe=None):
 		""" Starts the next thread in the sequence.
-		    This method should ONLY be called
-		    as the signal handler for SIGUSR1
-		    (otherwise race conditions will result)! """
+			This method should ONLY be called
+			as the signal handler for SIGUSR1
+			(otherwise race conditions will result)! """
 		
 		if not self.running:
 			return    
@@ -1585,8 +1586,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			"et_event_size": Configuration.params["hw_etEventSize"],
 			"master_process_pid": os.getpid(),
 			"et_port": self.configuration.et_port,
-          }
-		etsys_command = "%(et_home)s/Linux-x86_64-64/bin/et_start -v -f %(et_file_location)s/%(et_file_name)s -n %(n_et_events)d -s %(et_event_size)d -c %(master_process_pid)d -p %(et_port)d"
+		  }
+		#etsys_command = "%(et_home)s/Linux-x86_64-64/bin/et_start -v -f %(et_file_location)s/%(et_file_name)s -n %(n_et_events)d -s %(et_event_size)d -c %(master_process_pid)d -p %(et_port)d"
+		
+		#Newer ET versions have different directory structure
+		etsys_command = "%(et_home)s/bin/et_start -v -f %(et_file_location)s/%(et_file_name)s -n %(n_et_events)d -s %(et_event_size)d -c %(master_process_pid)d -p %(et_port)d"
 		etsys_command %= args
 		self.logger.debug("   et_start command: '%s'", etsys_command)
 
@@ -1595,30 +1599,34 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	def StartETMon(self):
 		""" Start the ET monitor process.
 		
-		    Not strictly necessary for data aquisition, but
-		    is sometimes helpful for troubleshooting. """
-		    
+			Not strictly necessary for data aquisition, but
+			is sometimes helpful for troubleshooting. """
+			
 		self.logger.info("  starting the ET monitor...")
-		etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s -c %d -p %d" % ( os.environ["ET_HOME"], 
-		                                                                             Configuration.params["mstr_etSystemFileLocation"],
-		                                                                             self.configuration.et_filename + "_RawData",
-		                                                                             os.getpid(),
-		                                                                             self.configuration.et_port )
+
+		#etmon_command = "%s/Linux-x86_64-64/bin/et_monitor -f %s/%s -c %d -p %d" % ( os.environ["ET_HOME"], 
+
+		#Newer ET versions have different directory structure
+		etmon_command = "%s/bin/et_monitor -f %s/%s -c %d -p %d" % ( os.environ["ET_HOME"], 
+																					 Configuration.params["mstr_etSystemFileLocation"],
+																					 self.configuration.et_filename + "_RawData",
+																					 os.getpid(),
+																					 self.configuration.et_port )
 		self.DAQ_threads["et monitor"] = Threads.DAQthread(process_info=etmon_command, process_identity="ET monitor", postoffice=self.postoffice, env=os.environ)
 
 	def StartEBSvc(self):
 		""" Start the event builder service.
 		
-		    (This does the work of stitching together the frames from the readout nodes.) """
+			(This does the work of stitching together the frames from the readout nodes.) """
 
 		self.logger.info("  starting the event builder...")
-		    
+			
 		eb_command = '%s/bin/event_builder %s/%s %s/%s %d %d' % ( os.environ['DAQROOT'],
-		                                                          Configuration.params["mstr_etSystemFileLocation"],
-		                                                          self.configuration.et_filename + "_RawData",
-		                                                          Configuration.params["mstr_rawdataLocation"],
-		                                                          self.raw_data_filename,
-		                                                          self.configuration.et_port, os.getpid())
+																  Configuration.params["mstr_etSystemFileLocation"],
+																  self.configuration.et_filename + "_RawData",
+																  Configuration.params["mstr_rawdataLocation"],
+																  self.raw_data_filename,
+																  self.configuration.et_port, os.getpid())
 
 		self.DAQ_threads["event builder"] = SpecialThread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, 
 			etpattern=self.configuration.et_filename,
@@ -1631,13 +1639,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	def StartOM(self):
 		""" Start the online monitoring services on the OM node.
 		
-		    This needs to be done BEFORE the DAQ is started on the
-		    readout nodes because otherwise there is a race condition
-		    between the startup of the event builder on the OM node
-		    and the startup of the DAQ -- and if the DAQ starts up first,
-		    the EB on the OM node might miss some of the frames from
-		    the first event. """
-		    
+			This needs to be done BEFORE the DAQ is started on the
+			readout nodes because otherwise there is a race condition
+			between the startup of the event builder on the OM node
+			and the startup of the DAQ -- and if the DAQ starts up first,
+			the EB on the OM node might miss some of the frames from
+			the first event. """
+			
 		num_remote_nodes = 0
 		for node in self.remote_nodes:
 			if self.remote_nodes[node].type == RemoteNode.MONITORING:
@@ -1690,10 +1698,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 	def StartRemoteServices(self):
 		""" Notify all the remote services that we're ready to go.
-		    Currently this includes the online monitoring system
-		    as well as the DAQs on the MTest beamline node (if
-		    configured) and the readout node(s). """
-		    
+			Currently this includes the online monitoring system
+			as well as the DAQs on the MTest beamline node (if
+			configured) and the readout node(s). """
+			
 # TODO: someday this needs to be updated for v5 series run control
 #		if self.mtest_useBeamDAQ:
 #			for node in self.mtestBeamDAQNodes:
@@ -1801,10 +1809,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	
 	def GetProblemPMTs(self, send_results=False):
 		""" Requests PMT high voltage and period information
-		    from the readout nodes and returns any that are
-		    over the specified thresholds. """
+			from the readout nodes and returns any that are
+			over the specified thresholds. """
 
-		thresholds = sorted(Configuration.params["mstr_HVthresholds"].keys(), reverse=True)
+		thresholds = sorted(list(Configuration.params["mstr_HVthresholds"].keys()), reverse=True)
 
 		responses = []
 		try:		
@@ -1876,10 +1884,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 	def NodeSendWithResponse(self, message, node_type=None, timeout=None, with_exception=False):
 		""" Utility method to send a message to the readout nodes.
-		    It verifies that the senders of response messages are
-		    actually within the node list.  It can also optionally
-		    verify that a response was received from each node
-		    of a certain type (or every node in the list). """
+			It verifies that the senders of response messages are
+			actually within the node list.  It can also optionally
+			verify that a response was received from each node
+			of a certain type (or every node in the list). """
 
 		timeout=30
 		self.logger.info('Sending message = %s, timeout = %i'% (message,timeout))		    
@@ -1916,10 +1924,10 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 	def NewAlert(self, notice, severity):
 		""" Adds a new alert to the stack and sends a message
-		    out to clients indicating there's a notice waiting.
-		    
-		    In addition, if the alert is an ERROR, running is
-		    halted. """
+			out to clients indicating there's a notice waiting.
+			
+			In addition, if the alert is an ERROR, running is
+			halted. """
 		
 		alert = Alert.Alert(notice, severity, manager=True)
 		
@@ -1935,7 +1943,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 	def OMStatusHandler(self, message):
 		""" Handles updates from an online monitoring node
-		    about changes in its state. """
+			about changes in its state. """
 		
 		if not hasattr(message, "state"):
 			self.logger.info("OM status message from '%s' node is badly formed.  Ignoring.  Message:\n%s", message.sender, message)
@@ -1966,15 +1974,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				
 	def PrepareRunSeries(self):
 		""" Prepares a run series based on the values
-		    found in the current configuration.  """
-		    
+			found in the current configuration.  """
+			
 		if self.configuration.is_single_run:
 			self.run_series = RunSeries.RunSeries()
 			run = RunSeries.RunInfo( gates=self.configuration.num_gates, \
-			                         runMode=self.configuration.run_mode.hash,\
-			                         hwcfg=self.configuration.hw_config.hash,\
-			                         ledLevel=self.configuration.li_level.hash,\
-			                         ledGroup=self.configuration.led_groups.hash ) 
+									 runMode=self.configuration.run_mode.hash,\
+									 hwcfg=self.configuration.hw_config.hash,\
+									 ledLevel=self.configuration.li_level.hash,\
+									 ledGroup=self.configuration.led_groups.hash ) 
 			self.run_series.AppendRun(run)
 		else:
 			try:
@@ -1982,7 +1990,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				db = shelve.open(dblocation)
 				self.run_series = db["series"]
 				db.close()
-			except (anydbm.error, KeyError):
+			except (dbm.error, KeyError):
 				self.logger.error("Cannot load run series file '%s'!", dblocation)
 				return DAQErrors.FileError("Run series file '%s' cannot be loaded..." % self.configuration.run_series.code)
 		
@@ -1993,7 +2001,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		
 	def SendClientInfo(self):
 		""" Sends out a message containing a list
-		    of all currently active clients. """
+			of all currently active clients. """
 		
 		self.logger.info("Generating client list.")
 		
@@ -2004,7 +2012,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		for response in responses:
 			info = response.my_info
 			info["in_control"] = self.control_info is not None \
-			                     and self.control_info["client_id"] == info["client_id"]
+								 and self.control_info["client_id"] == info["client_id"]
 				
 			client_info.append(info)
 		
@@ -2015,7 +2023,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 	def SeriesInfo(self, series):
 		""" Answers inquiries from clients asking about
-		    the details of particular run series. """
+			the details of particular run series. """
 		
 		self.logger.info("Client wants info about run series '%s'.", series.description)
 		message = Message(subject="frontend_info", info="series_update", series=series)
@@ -2025,7 +2033,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			db = shelve.open(dblocation)
 			message.series_details = db["series"]
 			db.close()
-		except (anydbm.error, KeyError):
+		except (dbm.error, KeyError):
 			# if we can't load it, we'll send them a blank run series
 			self.logger.warning("Couldn't open file for run series '%s' (tried: '%s')!  Returning a blank series...", series.description, dblocation)
 			message.series_details = RunSeries.RunSeries()
@@ -2035,15 +2043,15 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 	def StatusReport(self, message=None, items=[], do_log=True):
 		""" Fills a message with a bunch of status information.
 		
-		    It is only all given when a client
-		    specifically requests it or a subrun is beginning
-		    (it generates a fair bit of information and sending
-		    it over the network unasked-for would probably
-		    slow things down). 
-		    
-		    Otherwise, methods throughout the DAQ manager
-		    use the items[] list to specify which pieces of
-		    information should be given."""
+			It is only all given when a client
+			specifically requests it or a subrun is beginning
+			(it generates a fair bit of information and sending
+			it over the network unasked-for would probably
+			slow things down). 
+			
+			Otherwise, methods throughout the DAQ manager
+			use the items[] list to specify which pieces of
+			information should be given."""
 		
 		
 		# some defaults
@@ -2051,8 +2059,8 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			message = Message( subject="frontend_info", info="status_update" )
 		if len(items) == 0:
 			items = ( "configuration", "current_state", "current_progress", "current_gate", "first_subrun",
-			          "errors", "warnings", "problem_pmt_list", "remote_nodes", "running", "run_series",
-			          "control_info", "waiting" )
+					  "errors", "warnings", "problem_pmt_list", "remote_nodes", "running", "run_series",
+					  "control_info", "waiting" )
 
 		if do_log:
 			self.logger.debug("Generating status report with the following items: %s", items)

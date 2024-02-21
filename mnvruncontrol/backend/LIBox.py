@@ -66,7 +66,7 @@ class LIBox:
 
 			self.port.writeTimeout = 0.1
 		else:
-			print "Warning: LI box communication is disabled..."
+			print("Warning: LI box communication is disabled...")
 		
 	def reset(self):
 		self.command_stack = ["_X"]
@@ -86,7 +86,7 @@ class LIBox:
 			if not self.disable:
 				try:
 					if self.echocmds:
-						print "Sending command:   '" + command + "'"
+						print("Sending command:   '" + command + "'")
 					self.port.write(command + "\n")
 				except serial.SerialTimeoutException:
 					raise Error("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
@@ -94,7 +94,7 @@ class LIBox:
 				if self.wait_response and command != "_X":		# box won't respond after reset command.
 					char = self.port.read(1)
 					if self.echocmds:
-						print "Received from box: '" + char + "'"
+						print("Received from box: '" + char + "'")
 		
 					if char != "K":
 						raise Error("The LI box didn't respond affirmatively to the command: '" + command + "'.")
