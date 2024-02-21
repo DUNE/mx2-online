@@ -27,6 +27,7 @@
 
 #include "et_private.h"
 
+void flush_and_exit(int code);
 
 void printHelp(char *program) {
     fprintf(stderr,
@@ -408,3 +409,15 @@ int main(int argc, char **argv) {
     exit(0);
 }
 
+
+/* this function flushes all buffers before exiting
+   so that any parent process is guaranteed to get
+   its output. */
+   
+void flush_and_exit(int code)
+{
+	fflush(stdout);
+	fflush(stderr);
+	
+	exit(code);
+}
