@@ -35,7 +35,8 @@ class SCApp(wx.App):
 ##            for x in theArgs:
 ##                if x=='d': self.debug=True
 ##                if x=='v': self.verbose=True
-            self.ncrates=2
+            self.ncrates=1
+##            self.ncrates=2  Smedley 10/6/2023, Number of crates modified to match the 2x2 hardware
             self.scs=[]
             self.daqWFile=None
             self.descriptionWFile=None
