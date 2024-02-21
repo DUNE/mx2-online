@@ -4,13 +4,13 @@ echo "PYTHONPATH =" $PYTHONPATH
 
 # Use this script to restart the RunControl GUI on a UROC.
 
-. $DAQROOT/mnvdaqrunscripts/defs_mx2paths
+. $DAQROOT/../mnvdaqrunscripts/defs_mx2paths
 
 # Need to kerberize first. 
-. $DAQROOT/mnvdaqrunscripts/Kerberize
+. $DAQROOT/../mnvdaqrunscripts/Kerberize
 
 # First, clear any old RC clients...
-$DAQROOT/mnvdaqrunscripts/proc_kill_RunCo.pl
+$DAQROOT/../mnvdaqrunscripts/proc_kill_RunCo.pl
 
 # Now, start the RC
 pushd ${RCROOT}/frontend
