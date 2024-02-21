@@ -16,6 +16,8 @@
 # 4. FNAL2 - SLF6 underground and test beam DAQ computers
 # 5. D0TESTSTAND - SLF6 DAQ development
 # 6. WHTESTSTAND - SLF5 DAQ and electronics development 
+# 7. LabF - Lab F Test Stand
+# 8. Mx2 - MINERvA for 2x2 development
 #
 
 echo ---------------------------------------------------------------------------
@@ -118,6 +120,31 @@ elif [ $LOCALE == "WH14TESTSTAND" ]; then
   export PATH=$DAQROOT/sqlite/bin:$PATH
   # Add /usr/local/lib for log4cpp support.
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
+elif [ $LOCALE == "LabF" ]; then
+  #Locale for Lab F minerva acd-mnv03 test stand 
+  export DAQROOT=/work/software/mx2daq/minervadaq
+  export CAEN_DIR=/work/software/CAENVMELib-v4.0.2
+  export CAEN_VERSION=CAEN_3_4_4 # Unnecessary
+  export CODA_VERSION=et_16.5
+  export CODA_HOME=${DAQROOT}/${CODA_VERSION}
+  export ET_HOME=${CODA_HOME}/build
+  export ET_FILES=$ET_HOME
+  export ET_LIBROOT=$ET_HOME
+  export INSTALL_DIR=$ET_HOME
+  # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries and log4cpp support
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DAQROOT/lib:$ET_LIBROOT:/usr/local/lib:$ET_LIBROOT/lib
+elif [ $LOCALE == "Mx2" ]; then
+  #Locale for MINERvA operations for 2x2
+  export DAQROOT=/root/minervadaq/minervadaq
+  export CAEN_DIR=/work/software/CAENVMElib
+  export CAEN_VERSION=CAEN_3_4_4
+  export CODA_VERSION=et_16.5
+  export CODA_HOME=${DAQROOT}/${CODA_VERSION}
+  export ET_HOME=${CODA_HOME}/build
+  export ET_LIBROOT=$ET_HOME
+  export INSTALL_DIR=$ET_HOME
+  # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries and log4cpp support
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DAQROOT/lib:$ET_LIBROOT:/usr/local/lib:$ET_LIBROOT/lib
 else
   echo Unsupported LOCALE!$  LOCALE is not recognized in this script. 
 fi
@@ -127,7 +154,9 @@ export ET_USE64BITS=1
 
 echo Your DAQROOT is $DAQROOT
 echo Your CAEN_DIR is $CAEN_DIR
-echo Your BMS_HOME is $BMS_HOME
+if !([ -z "$BMS_HOME" ]); then
+  echo Your BMS_HOME is $BMS_HOME
+fi #BMS not needed in locales that use later versions of ET
 echo Your ET INSTALL_DIR is $INSTALL_DIR
 echo Your ET_HOME is $ET_HOME
 echo Your ET_LIBROOT is $ET_LIBROOT
