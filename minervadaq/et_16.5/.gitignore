@@ -1,0 +1,22 @@
+# ignore all files/dirs beginning with .
+.*
+# ignore all files/dirs beginning with _
+_*
+
+# except this one
+!.gitignore
+!.github
+
+# ignore generated files/dirs
+cmake-*
+cmake_install.cmake
+coda.pyc
+jbuild/
+build/
+doxyerrors.log
+/target/
+doc/javadoc
+doc/doxygen/CC
+doc/doxygen/C
+doc/source/
+config.log
