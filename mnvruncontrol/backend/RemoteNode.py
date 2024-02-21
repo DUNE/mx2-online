@@ -96,9 +96,6 @@ class RemoteNode:
 		
 		message = Message(subject="mgr_status", status="online", mgr_id=mgr_id, node_identity=self.name)
 		
-		from mnvruncontrol.backend.PostOffice.Logging import logger
-
-		logger().warning("TEST - REACHED INITIAL CONTACT")
 		try:
 			deliveries = postoffice.SendTo(message=message, recipient_list=[self.address,], timeout=Configuration.params["sock_messageTimeout"])
 		except TimeoutError:
