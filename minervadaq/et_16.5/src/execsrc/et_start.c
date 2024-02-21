@@ -23,6 +23,7 @@
 #include <string.h>
 #include <signal.h>
 #include <getopt.h>
+#include <errno.h>
 
 #include "et_private.h"
 
@@ -74,6 +75,7 @@ int main(int argc, char **argv) {
     sigset_t sigblockset, sigwaitset;
     et_sysconfig config;
     et_sys_id id;
+    int callback_pid;
 
     /************************************/
     /* default configuration parameters */
@@ -96,7 +98,8 @@ int main(int argc, char **argv) {
     /* Use default multicast address */
     memset(mcastAddr, 0, ET_IPADDRSTRLEN);
 
-    while ((c = getopt_long_only(argc, argv, "vhdn:s:p:u:m:a:f:g:", long_options, 0)) != EOF) {
+    //Added -c option - Akeem, needed for signalling with DAQ manager
+    while ((c = getopt_long_only(argc, argv, "vhdn:s:p:u:m:a:f:g:c:", long_options, 0)) != EOF) {
 
         if (c == -1)
             break;
@@ -213,6 +216,22 @@ int main(int argc, char **argv) {
             case 'h':
                 printHelp(argv[0]);
                 exit(1);
+
+            case 'c': 
+                //Added -c option - Akeem, needed for signalling with DAQ manager
+                //Code taken from older ET version used in MnvDAQ
+                callback_pid = atoi(optarg);
+                if (callback_pid <= 1)
+                {
+                    printf("Invalid argument to -c.  Process must have id >= 2.\n");
+                    flush_and_exit(-1);
+                }
+                if (kill(callback_pid, 0) == ESRCH)
+                {
+                    printf("Invalid argument to -c: process does not exist.\n");
+                    flush_and_exit(-1);
+                }
+                break;
 
             case ':':
             case '?':
@@ -372,6 +391,13 @@ int main(int argc, char **argv) {
 
     et_system_setdebug(id, et_verbose);
 
+    //Akeem - Dec/23
+    if (callback_pid){
+        kill(callback_pid, SIGUSR1);
+        printf("Sent ready signal to callback pid");
+    }
+    //Akeem - Dec/23
+        
     /* turn this thread into a signal handler */
     sigwait(&sigwaitset, &sig_num);
 
