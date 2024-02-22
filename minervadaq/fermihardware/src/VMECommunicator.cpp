@@ -189,7 +189,7 @@ void VMECommunicator::throwIfError( int error, const std::string& msg ) const
     ss << "; ";
     ss << msg;
     ss << this->GetController()->ReportError(error);
-    commLog.fatalStream() << ss; 
+    commLog.fatalStream() << ss.str(); 
     VMEThrow( ss.str() );
   }
 }
