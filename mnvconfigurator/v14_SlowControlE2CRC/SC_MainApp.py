@@ -335,7 +335,7 @@ class SCApp(wx.App):
         try:
             fileCRIMs=[];fileCROCs=[];fileFPGAs=[];fileTRIPs=[]
             dlg = wx.FileDialog(self.frame, message='READ Hardware Configuration', defaultDir='', defaultFile='',
-                wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 matchError=[]
                 theFile=open(wx.FileDialog.GetPath(dlg),'r')
@@ -351,7 +351,7 @@ class SCApp(wx.App):
     def OnMenuSaveFile(self, event):
         try:
             dlg = wx.FileDialog(self.frame, message='SAVE Hardware Configuration', defaultDir='', defaultFile='',
-                wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                wildcard='HW Config (*.hwcfg)|*.hwcfg|All files (*)|*', style=wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 #filename=dlg.GetFilename()+'.hwcfg'; dirname=dlg.GetDirectory(); fullpath=wx.FileDialog.GetPath(dlg)
                 theFile=open(wx.FileDialog.GetPath(dlg),'w')
@@ -363,7 +363,7 @@ class SCApp(wx.App):
     def OnMenuGetHierFromFile(self, event):
         try:
             dlg = wx.FileDialog(self.frame, message='READ Hierarcy Configuration from File', defaultDir='', defaultFile='',
-                wildcard='Hierarchy (*.hier)|*.hier|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                wildcard='Hierarchy (*.hier)|*.hier|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 theFile=open(wx.FileDialog.GetPath(dlg),'r')
                 #1. Find all controller objects
@@ -413,7 +413,7 @@ class SCApp(wx.App):
     def OnMenuUpdateHierToFile(self, event):
         try:
             dlg = wx.FileDialog(self.frame, message='SAVE Hierarchy Configuration to File', defaultDir='', defaultFile='',
-                wildcard='Hierarchy (*.hier)|*.hier|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                wildcard='Hierarchy (*.hier)|*.hier|All files (*)|*', style=wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 #filename=dlg.GetFilename()+'.hwcfg'; dirname=dlg.GetDirectory(); fullpath=wx.FileDialog.GetPath(dlg)
                 theFile=open(wx.FileDialog.GetPath(dlg),'w')
@@ -426,7 +426,7 @@ class SCApp(wx.App):
     def OnMenuConfigREFE(self, event):
         try:
             dlg = wx.TextEntryDialog(self.frame, message='Enter a large number for RE/FE FastCmds measurements statistic:',
-                caption=self.frame.GetTitle(), defaultValue='5000')
+                caption=self.frame.GetTitle(), value='5000')
             if dlg.ShowModal()==wx.ID_OK:
                 theNumberOfMeas=int(dlg.GetValue())
                 self.frame.nb.ChangeSelection(0)
@@ -445,7 +445,7 @@ class SCApp(wx.App):
     def OnMenuActionsReadAllHV(self, event):
         try:
             dlg = wx.TextEntryDialog(self.frame, message='Enter HV Deviation from Target Value in ADC counts',
-                caption=self.frame.GetTitle(), defaultValue='0')
+                caption=self.frame.GetTitle(), value='0')
             if dlg.ShowModal()==wx.ID_OK:
                 self.frame.nb.ChangeSelection(0)
                 hvsCROCs=[]
@@ -469,7 +469,7 @@ class SCApp(wx.App):
     def OnMenuActionsSetAllHV(self, event):
         try:
             dlg = wx.TextEntryDialog(self.frame, message='Enter HV Value in ADC counts',
-                caption=self.frame.GetTitle(), defaultValue='0')
+                caption=self.frame.GetTitle(), value='0')
             if dlg.ShowModal()==wx.ID_OK:
                 self.frame.nb.ChangeSelection(0)
                 for sc in self.scs:
@@ -479,9 +479,9 @@ class SCApp(wx.App):
     def OnMenuActionsSTARTMonitorAllHV(self, event):
         try:
             dlgADC = wx.TextEntryDialog(self.frame, message='Enter HV Deviation from Target Value in ADC counts',
-                caption=self.frame.GetTitle(), defaultValue='100')
+                caption=self.frame.GetTitle(), value='100')
             dlgTime = wx.TextEntryDialog(self.frame, message='Enter Monitor interval in seconds',
-                caption=self.frame.GetTitle(), defaultValue='1')
+                caption=self.frame.GetTitle(), value='1')
             if dlgADC.ShowModal()==wx.ID_OK:
                 if dlgTime.ShowModal()==wx.ID_OK:
                     allCROCs=[];allCROCEs=[]
@@ -491,9 +491,9 @@ class SCApp(wx.App):
                     self.frame.nb.ChangeSelection(0)
                     self.monitor=wx.Timer()
                     self.monitor.Start(max(1000, float(dlgTime.GetValue())*1000))
-                    self.monitorFunc=FEB.GetAllHVParams
-                    self.monitorArgs=FEB(0), allCROCs, 'CROC', int(dlgADC.GetValue())
-                    self.monitorArgEs=FEB(0), allCROCEs, 'CROCE', int(dlgADC.GetValue())
+                    self.monitorFunc=SC_MainObjects.FEB.GetAllHVParams
+                    self.monitorArgs=SC_MainObjects.FEB(0), allCROCs, 'CROC', int(dlgADC.GetValue())
+                    self.monitorArgEs=SC_MainObjects.FEB(0), allCROCEs, 'CROCE', int(dlgADC.GetValue())
                     self.monitorTitle='Monitor ALL FEBs HV Actual outside the Target with more than %s counts'%(int(dlgADC.GetValue()))
                 dlgTime.Destroy()
             dlgADC.Destroy()            
@@ -518,7 +518,7 @@ class SCApp(wx.App):
     def OnMenuActionsSaveDescription(self, event):
         try:
             dlg = wx.FileDialog(self.frame, message='SAVE Current Description Tab', defaultDir='', defaultFile='',
-                wildcard='Description text (*.txt)|*.txt|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                wildcard='Description text (*.txt)|*.txt|All files (*)|*', style=wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 #filename=dlg.GetFilename()+'.hwcfg'; dirname=dlg.GetDirectory(); fullpath=wx.FileDialog.GetPath(dlg)
                 theFile=open(wx.FileDialog.GetPath(dlg),'w')
@@ -531,7 +531,7 @@ class SCApp(wx.App):
             if self.descriptionWFile!=None: self.descriptionWFile.close()
             self.descriptionWFile=None; self.frame.description.SetWriteFile(self.descriptionWFile)
             dlg = wx.FileDialog(self.frame, message='Write Description to File', defaultDir='', defaultFile='',
-                wildcard='Description text (*.txt)|*.txt|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                wildcard='Description text (*.txt)|*.txt|All files (*)|*', style=wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 filename=dlg.GetFilename()+'.txt'; dirname=dlg.GetDirectory(); fullpath=wx.FileDialog.GetPath(dlg)
                 self.descriptionWFile=open(wx.FileDialog.GetPath(dlg),'w')
@@ -803,7 +803,7 @@ class SCApp(wx.App):
                     return
             if self.frame.vme.BoardTest.chkWriteToFile.IsChecked():
                 dlg = wx.FileDialog(self.frame, message='SAVE DAQ Data', defaultDir='', defaultFile='',
-                        wildcard='DAQ Data (*.btest)|*.btest|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                        wildcard='DAQ Data (*.btest)|*.btest|All files (*)|*', style=wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
                 if dlg.ShowModal()==wx.ID_OK:
                     filename=dlg.GetFilename()+'.btest'; dirname=dlg.GetDirectory(); fullpath=wx.FileDialog.GetPath(dlg)
                     self.daqWFile=open(wx.FileDialog.GetPath(dlg),'w')
@@ -2421,7 +2421,7 @@ class SCApp(wx.App):
             theCROCE.WriteStatusAndVersion(0x1000)
             nbytesperpage=CROCEFlash.NBytesPerPage
             dlg = wx.FileDialog(self.frame, message='SAVE CTRL Flash Configuration', defaultDir='', defaultFile='',
-                wildcard='CTRL Flash Config (*.spidata)|*.spidata|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                wildcard='CTRL Flash Config (*.spidata)|*.spidata|All files (*)|*', style=wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 print('OnCROCEbtnReadFlashToFile START: %s'%time.ctime())
                 filename=dlg.GetFilename()
@@ -2460,7 +2460,7 @@ class SCApp(wx.App):
             theCROCE.WriteStatusAndVersion(0x1000)
             nbytesperpage=CROCEFlash.NBytesPerPage
             dlg = wx.FileDialog(self.frame, message='READ CTRL Flash Configuration from File', defaultDir='', defaultFile='',
-                wildcard='CTRL FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                wildcard='CTRL FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 print('OnCROCEbtnCompareFileToFlash START: %s'%time.ctime())
                 filename=dlg.GetFilename()
@@ -2501,7 +2501,7 @@ class SCApp(wx.App):
             if dlgYes.ShowModal() == wx.ID_YES:
                 theCROCE=FindVMEdev(self.scs[self.frame.croce.crateNumber].vmeCROCEs, self.frame.croce.croceNumber<<24)
                 dlg = wx.FileDialog(self.frame, message='READ Flash Configuration from File', defaultDir='', defaultFile='',
-                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
                 if dlg.ShowModal()==wx.ID_OK:
                     self.CROCE_WriteFileToFlash(dlg, theCROCE)
                 dlg.Destroy()
@@ -2514,7 +2514,7 @@ class SCApp(wx.App):
             dlgYes = wx.MessageDialog(self.frame, message, caption, wx.YES_NO | wx.ICON_QUESTION)
             if dlgYes.ShowModal() == wx.ID_YES:
                 dlg = wx.FileDialog(self.frame, message='READ Flash Configuration from File', defaultDir='', defaultFile='',
-                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
                 if dlg.ShowModal()==wx.ID_OK:
                     for theCROCE in self.scs[self.frame.croce.crateNumber].vmeCROCEs:
                         self.CROCE_WriteFileToFlash(dlg, theCROCE)
@@ -2528,7 +2528,7 @@ class SCApp(wx.App):
             dlgYes = wx.MessageDialog(self.frame, message, caption, wx.YES_NO | wx.ICON_QUESTION)
             if dlgYes.ShowModal() == wx.ID_YES:
                 dlg = wx.FileDialog(self.frame, message='READ Flash Configuration from File', defaultDir='', defaultFile='',
-                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
                 if dlg.ShowModal()==wx.ID_OK:
                     for sc in self.scs:
                         for theCROCE in sc.vmeCROCEs:
@@ -3001,7 +3001,7 @@ class SCApp(wx.App):
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
             nbytesperpage=CROCEFlash.NBytesPerPage
             dlg = wx.FileDialog(self.frame, message='SAVE CHE Flash Configuration', defaultDir='', defaultFile='',
-                wildcard='CHE FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                wildcard='CHE FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 print('OnCHEbtnReadFlashToFile START: %s'%time.ctime())
                 filename=dlg.GetFilename()
@@ -3034,7 +3034,7 @@ class SCApp(wx.App):
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
             nbytesperpage=CROCEFlash.NBytesPerPage
             dlg = wx.FileDialog(self.frame, message='READ CHE Flash Configuration from File', defaultDir='', defaultFile='',
-                wildcard='CHE FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                wildcard='CHE FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 print('OnCHEbtnCompareFileToFlash START: %s'%time.ctime())
                 filename=dlg.GetFilename()
@@ -3167,7 +3167,7 @@ class SCApp(wx.App):
                 theConfig=theCROCEChannelE.ReadConfiguration()
                 theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
                 dlg = wx.FileDialog(self.frame, message='READ Flash Configuration from File', defaultDir='', defaultFile='',
-                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
                 if dlg.ShowModal()==wx.ID_OK:
                     #self.CHEWriteFileToFlash(dlg, theCROCEChannelE, theCROCE)
                     self.CROCE_CHE_WriteFileToFlash(dlg, theCROCEChannelE, theCROCE)
@@ -3184,7 +3184,7 @@ class SCApp(wx.App):
             dlgYes = wx.MessageDialog(self.frame, message, caption, wx.YES_NO | wx.ICON_QUESTION)
             if dlgYes.ShowModal() == wx.ID_YES:
                 dlg = wx.FileDialog(self.frame, message='READ Flash Configuration from File', defaultDir='', defaultFile='',
-                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
                 if dlg.ShowModal()==wx.ID_OK:
                     for theCROCE in self.scs[self.frame.che.crateNumber].vmeCROCEs:
                         theCROCEChannelE=theCROCE.Channels()[3]
@@ -3205,7 +3205,7 @@ class SCApp(wx.App):
             dlgYes = wx.MessageDialog(self.frame, message, caption, wx.YES_NO | wx.ICON_QUESTION)
             if dlgYes.ShowModal() == wx.ID_YES:
                 dlg = wx.FileDialog(self.frame, message='READ Flash Configuration from File', defaultDir='', defaultFile='',
-                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                    wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
                 if dlg.ShowModal()==wx.ID_OK:
                     for sc in self.scs:
                         for theCROCE in sc.vmeCROCEs:
@@ -3247,7 +3247,7 @@ class SCApp(wx.App):
             theConfig=theCROCEChannelE.ReadConfiguration()
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
             dlg = wx.TextEntryDialog(self.frame, message='Enter how many times to ReadStatus, in decimal',
-                caption=self.frame.GetTitle(), defaultValue='0')
+                caption=self.frame.GetTitle(), value='0')
             if dlg.ShowModal()==wx.ID_OK:
                 print('OnCHEbtnFlashCmdReadStatus=%s'%theCROCEChannelE.FlashRDSR(int(dlg.GetValue(),10)))
             dlg.Destroy()
@@ -3261,7 +3261,7 @@ class SCApp(wx.App):
             theConfig=theCROCEChannelE.ReadConfiguration()
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
             dlg = wx.TextEntryDialog(self.frame, message='Enter StatusRegister Byte, in hex (bit#7 SRWP ignored!)',
-                caption=self.frame.GetTitle(), defaultValue='0')
+                caption=self.frame.GetTitle(), value='0')
             if dlg.ShowModal()==wx.ID_OK:
                 theCROCEChannelE.FlashWRSR(int(dlg.GetValue(),16) & 0x7F)
             dlg.Destroy()
@@ -3275,9 +3275,9 @@ class SCApp(wx.App):
             theConfig=theCROCEChannelE.ReadConfiguration()
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
             dlg1 = wx.TextEntryDialog(self.frame, message='Enter Start Address (23bits), in hex',
-                caption=self.frame.GetTitle(), defaultValue='0')
+                caption=self.frame.GetTitle(), value='0')
             dlg2 = wx.TextEntryDialog(self.frame, message='Enter Even Number of Bytes to Read, in decimal',
-                caption=self.frame.GetTitle(), defaultValue='0')
+                caption=self.frame.GetTitle(), value='0')
             if dlg1.ShowModal()==wx.ID_OK and dlg2.ShowModal()==wx.ID_OK:
                 print('OnCHEbtnFlashCmdReadData=%s'%theCROCEChannelE.FlashREAD(int(dlg1.GetValue(),16),int(dlg2.GetValue(),10)))
             dlg1.Destroy()
@@ -3293,7 +3293,7 @@ class SCApp(wx.App):
             theConfig=theCROCEChannelE.ReadConfiguration()
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
             dlg = wx.TextEntryDialog(self.frame, message='CAUTION! Enter SectorErase number, dec 0 to 2047',\
-                caption=self.frame.GetTitle(), defaultValue='0')
+                caption=self.frame.GetTitle(), value='0')
             if dlg.ShowModal()==wx.ID_OK:
                 #1Sector=16pages*256bytes/page=4096Bytes
                 addr24bits=(int(dlg.GetValue(),10) & 0x7FF)<<12
@@ -3310,7 +3310,7 @@ class SCApp(wx.App):
             theConfig=theCROCEChannelE.ReadConfiguration()
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
             dlg = wx.TextEntryDialog(self.frame, message='CAUTION! Enter BlockErase number, dec, 0 to 127',\
-                caption=self.frame.GetTitle(), defaultValue='0')  
+                caption=self.frame.GetTitle(), value='0')  
             if dlg.ShowModal()==wx.ID_OK:
                 #1Block=16Sectors=65536Bytes
                 addr24bits=(int(dlg.GetValue(),10) & 0x7F)<<16
@@ -3327,7 +3327,7 @@ class SCApp(wx.App):
             theConfig=theCROCEChannelE.ReadConfiguration()
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
             dlg = wx.TextEntryDialog(self.frame, message='CAUTION! ChipErase',
-                caption=self.frame.GetTitle(), defaultValue='0')
+                caption=self.frame.GetTitle(), value='0')
             if dlg.ShowModal()==wx.ID_OK:
                 theCROCEChannelE.FlashCE()                                      #1Chip=128Blocks=8388608Bytes
             dlg.Destroy()
@@ -3341,9 +3341,9 @@ class SCApp(wx.App):
             theConfig=theCROCEChannelE.ReadConfiguration()
             theCROCEChannelE.WriteConfiguration((theConfig&0x0BFF)+0x0400)
             dlg1 = wx.TextEntryDialog(self.frame, message='Enter Start Address (23bits), in hex',
-                caption=self.frame.GetTitle(), defaultValue='0')
+                caption=self.frame.GetTitle(), value='0')
             dlg2 = wx.TextEntryDialog(self.frame, message='Enter Values, in hex, for an Even number of Bytes',
-                caption=self.frame.GetTitle(), defaultValue='0')
+                caption=self.frame.GetTitle(), value='0')
             if dlg1.ShowModal()==wx.ID_OK and dlg2.ShowModal()==wx.ID_OK:
                 addr24bits=int(dlg1.GetValue(),16)
                 wordsStr=dlg2.GetValue()
@@ -3727,7 +3727,7 @@ class SCApp(wx.App):
             theFEB=FEB(self.frame.fe.febNumber)
             theCROCXChannelX=theCROCX.Channels()[self.frame.fe.chNumber]
             dlg = wx.FileDialog(self.frame, message='SAVE Flash Configuration', defaultDir='', defaultFile='',
-                wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 filename=dlg.GetFilename()
                 dirname=dlg.GetDirectory()
@@ -3769,7 +3769,7 @@ class SCApp(wx.App):
             theFEB=FEB(self.frame.fe.febNumber)
             theCROCXChannelX=theCROCX.Channels()[self.frame.fe.chNumber]
             dlg = wx.FileDialog(self.frame, message='READ Flash Configuration', defaultDir='', defaultFile='',
-                wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 filename=dlg.GetFilename()
                 dirname=dlg.GetDirectory()
@@ -3893,7 +3893,7 @@ class SCApp(wx.App):
             else:
                 if self.daqWFile!=None: self.daqWFile.close()
                 dlg = wx.FileDialog(self.frame, message='SAVE DAQ Data', defaultDir='', defaultFile='',
-                    wildcard='DAQ Data (*.daq)|*.daq|All files (*)|*', style=wx.SAVE|wx.OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                    wildcard='DAQ Data (*.daq)|*.daq|All files (*)|*', style=wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
                 if dlg.ShowModal()==wx.ID_OK:
                     filename=dlg.GetFilename()+'.daq'; dirname=dlg.GetDirectory(); fullpath=wx.FileDialog.GetPath(dlg)
                     self.daqWFile=open(wx.FileDialog.GetPath(dlg),'w')
@@ -4343,7 +4343,7 @@ class SCApp(wx.App):
         try:            
             thisDIG=FindVMEdev(self.scs[self.frame.dig.crateNumber].vmeDIGs, self.frame.dig.digNumber<<16)
             dlg = wx.FileDialog(self.frame, message='READ V1720 Configuration', defaultDir='', defaultFile='',
-                wildcard='DIG Config (*.digcfg)|*.digcfg|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+                wildcard='DIG Config (*.digcfg)|*.digcfg|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
             if dlg.ShowModal()==wx.ID_OK:
                 flags, lines = self.scs[self.frame.dig.crateNumber].DIGcfgFileLoad(wx.FileDialog.GetPath(dlg), thisDIG)
                 self.frame.dig.display.WriteText('\n'.join(lines)+'\n')
@@ -4376,7 +4376,7 @@ class SCApp(wx.App):
             f=None
             if self.frame.dig.choiceWriteToFile.GetStringSelection()!=V1720Config.WriteToFile[0]:
                 dlg = wx.FileDialog(self.frame, message='Write Event to File', defaultDir='', defaultFile='',
-                    wildcard='Event File (*.evt)|*.evt|All files (*)|*', style=wx.SAVE|wx.CHANGE_DIR)
+                    wildcard='Event File (*.evt)|*.evt|All files (*)|*', style=wx.SAVE|wx.FD_CHANGE_DIR)
                 if dlg.ShowModal()==wx.ID_OK:
                     OutputFilePath=wx.FileDialog.GetPath(dlg)#+'.evt'
                     if OutputFilePath[-4:]!='.evt': OutputFilePath+='.evt'

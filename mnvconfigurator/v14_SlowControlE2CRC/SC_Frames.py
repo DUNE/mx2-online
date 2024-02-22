@@ -29,7 +29,7 @@ class SCMainFrame(wx.Frame):
         self.menuFileUpdateHierToFile = menuFile.Append(wx.NewId(), "Update Hierarchy to File\tCTRL+U", " Update the VME crate hardware hierarchy to file")
         self.menuConfigREFE           = menuFile.Append(wx.NewId(), "Config REFE\tCTRL+F", " Config REFE bit for FCMD monitoring")
         menuFile.AppendSeparator()
-        self.menuFileLoadHardwareWithChReset = menuFile.Append(wx.NewId(), text="Find Hardware ChRST", help=" Finds the VME crate hardware")
+        self.menuFileLoadHardwareWithChReset = menuFile.Append(wx.NewId(), item="Find Hardware ChRST", helpString=" Finds the VME crate hardware")
         self.menuFileReset          = menuFile.Append(wx.NewId(), "System Reset\tCTRL+R", " V2718/VME System Reset")
         self.menuFileQuit           = menuFile.Append(wx.NewId(), "Quit\tCTRL+Q", " Quit the application")
         menuShow = wx.Menu()

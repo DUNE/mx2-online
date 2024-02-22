@@ -1088,7 +1088,7 @@ class FEB():
             toThisCHX=False, toThisCROCX=False, toAllCROCXs=False, theFrame=None,
             theType=None, dw='D16', useBLT=False):
         dlg = wx.FileDialog(theFrame, message='READ Flash Configuration', defaultDir='', defaultFile='',
-            wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.OPEN|wx.CHANGE_DIR)
+            wildcard='FLASH Config (*.spidata)|*.spidata|All files (*)|*', style=wx.FD_OPEN|wx.FD_CHANGE_DIR)
         if dlg.ShowModal()==wx.ID_OK:
             filename=dlg.GetFilename()
             dirname=dlg.GetDirectory()
