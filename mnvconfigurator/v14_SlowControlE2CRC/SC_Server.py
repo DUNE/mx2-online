@@ -1,5 +1,5 @@
 import sys
-from . import ChrSocket
+import ChrSocket
 
 server = ChrSocket.ChrSocket()
 hostname = ChrSocket.socket.gethostname()

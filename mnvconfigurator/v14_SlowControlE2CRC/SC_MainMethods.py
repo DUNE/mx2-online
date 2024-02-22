@@ -1,7 +1,7 @@
-from . import SC_MainObjects
-from . import SC_Util
-from . import CAENVMEwrapper
-from . import V1720Config
+import SC_MainObjects
+import SC_Util
+import CAENVMEwrapper
+import V1720Config
 import time
 import sys
 

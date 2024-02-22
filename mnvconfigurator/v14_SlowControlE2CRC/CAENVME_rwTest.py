@@ -4,7 +4,7 @@ from ctypes import *
 vme = windll.CAENVMElib
 
 from random import *
-from .CAENVMEwrapper import *
+import CAENVMEwrapper
 
 
 if __name__ == '__main__':

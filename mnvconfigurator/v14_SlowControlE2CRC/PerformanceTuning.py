@@ -1,4 +1,4 @@
-from . import SC_MainApp as SC
+import SC_MainApp as SC
 
 class TestClass():
     def Setup(self):

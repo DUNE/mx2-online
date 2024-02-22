@@ -1,9 +1,9 @@
-from . import SC_Util
-from . import CAENVMEwrapper
+import SC_Util
+import CAENVMEwrapper
 import wx
 import time
 import threading
-from . import SC_MainMethods
+import SC_MainMethods
 
 def FindVMEdev(vmeDevList, devAddr):
     for dev in vmeDevList:

@@ -6,8 +6,8 @@ Started October 21 2009
 
 import wx
 import sys
-from . import SC_Util
-from . import V1720Config
+import SC_Util
+import V1720Config
 from wx.py.shell import ShellFrame
 from wx.py.filling import FillingFrame
 

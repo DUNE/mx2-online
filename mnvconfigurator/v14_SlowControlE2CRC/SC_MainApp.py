@@ -17,12 +17,12 @@ import random
 import time
 import threading
 
-from . import CAENVMEwrapper
-from . import SC_Frames
-from . import SC_Util
-from .SC_MainObjects import *
-from . import SC_MainMethods
-from . import V1720Config
+import CAENVMEwrapper
+import SC_Frames
+import SC_Util
+import SC_MainObjects
+import SC_MainMethods
+import V1720Config
 
 class SCApp(wx.App):
     """SlowControl application. Subclass of wx.App"""

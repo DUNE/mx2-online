@@ -7,7 +7,7 @@ Started November 2009
 import wx
 import sys
 import random
-from .CAENVMEwrapper import CAENVMETypes
+from  CAENVMEwrapper import CAENVMETypes
 
 colorButton='coral'     #wx.Color(255,0,0)      #'red'
 colorLabel='coral'      #wx.Color(0,255,0)      #'green'
