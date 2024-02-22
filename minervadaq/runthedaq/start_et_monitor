@@ -23,5 +23,5 @@ fi
 
 # Pass the full path to the ET system!
 echo ETMONITOR ETSYS = $ETSYS
-$ET_HOME/Linux-x86_64-64/bin/et_monitor -f $ETSYS 
+$ET_HOME/bin/et_monitor -f $ETSYS 
 

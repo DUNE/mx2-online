@@ -18,8 +18,8 @@ LDLIBS += -L$(CAEN_DIR)/lib/x86_64 -lCAENVME
 
 # log4cpp Classes and Libraries
 ifeq ($(LOCALE),NEARLINE)
-	INCLUDE += -I/scratch/nearonline/mirror/log4cpp/include
-	LDLIBS += -L/scratch/nearonline/mirror/log4cpp/lib -llog4cpp -L/usr/lib64 -lpthread 
+	INCLUDE += -I/usr/local/include
+	LDLIBS += -L/usr/local/lib -llog4cpp -L/usr/lib64 -lpthread 
 else
 	INCLUDE += -I/usr/local/include
 	LDLIBS += -L/usr/local/lib -llog4cpp -L/usr/lib64 -lpthread 

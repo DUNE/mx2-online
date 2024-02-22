@@ -31,5 +31,5 @@ echo ETSYSTEM ETSYS      = $ETSYS
 echo ETSYSTEM EVENTS     = $EVENTS
 echo ETSYSTEM EVENT_SIZE = $EVENT_SIZE
 echo ETSYSTEM PORT       = $PORT
-$ET_HOME/Linux-x86_64-64/bin/et_start -v -f $ETSYS -n $EVENTS -s $EVENT_SIZE -p $PORT 
+$ET_HOME/bin/et_start -v -f $ETSYS -n $EVENTS -s $EVENT_SIZE -p $PORT 
 

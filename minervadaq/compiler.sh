@@ -33,7 +33,7 @@ fi
 # First build et.
 # 11/01/2014 Geoff Savage  This is not correct.
 # The version of ET to build should be by LOCALE.
-pushd ${DAQROOT}/et_9.0/
+pushd ${DAQROOT}/et_16.5/
 gmake install
 popd
 
