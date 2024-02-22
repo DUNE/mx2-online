@@ -1,3 +1,5 @@
 SINGLEDAQ=/work/software/mx2daq/
 MULTIDAQ=/work/software/mx2daq/
 RCROOT=/work/software/mx2daq/mnvruncontrol
+#PYTHONPATH=/work/software:/home/nfs/minerva:
+PYTHONPATH=/work/software
