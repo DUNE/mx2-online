@@ -99,18 +99,18 @@ class Controller(CAENVMETypes):
         self.handle = h.value
 
     def SWRelease(self):
-        sw = c_char_p('')    
+        sw = c_char_p(''.encode())  
         cvRetError = vme.CAENVME_SWRelease(sw)
         if cvRetError!=CAENVMETypes.CVErrors.cvSuccess:
             raise CAENErr(cvRetError)
-        return(sw.value)
+        return(sw.value.decode())
 
     def BoardFWRelease(self):
-        fw = c_char_p('') 
+        fw = c_char_p(''.encode()) 
         cvRetError = vme.CAENVME_BoardFWRelease(c_long(self.handle), fw)
         if cvRetError!=CAENVMETypes.CVErrors.cvSuccess:
             raise CAENErr(cvRetError)
-        return(fw.value)
+        return(fw.value.decode())
 
     def End(self):
         cvRetError = vme.CAENVME_End(c_long(self.handle))
