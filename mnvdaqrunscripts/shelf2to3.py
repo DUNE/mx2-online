@@ -10,17 +10,17 @@
                     Feb. 2024
 """
 import shelve
-import gdbm
+import dbm.gnu
 import sys
 
 def gdbm_shelve(filename,flag="c"):
-    return shelve.Shelf(gdbm.open(filename,flag))
+    return shelve.Shelf(dbm.gnu.open(filename,flag))
 
 def main(argv):
     out_shelf=gdbm_shelve(argv[1])
     in_shelf=shelve.open(argv[0])
 
-    key_list=in_shelf.keys()
+    key_list=list(in_shelf.keys())
     print(key_list)
     for key in key_list:
         out_shelf[key]=in_shelf[key]
