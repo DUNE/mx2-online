@@ -4,20 +4,32 @@
   into a db file compatible with python3
 
   Usage:
+  To write to new file:
   python shelf2to3.py <python2 .db file> <new .db file>
-  
+  To overwrite original file:
+  python shelf2to3.py <python2 .db file>
    Original author: A. Hart (alhart@fnal.gov)
                     Feb. 2024
 """
 import shelve
 import dbm.gnu
 import sys
+import os
 
 def gdbm_shelve(filename,flag="c"):
     return shelve.Shelf(dbm.gnu.open(filename,flag))
 
 def main(argv):
-    out_shelf=gdbm_shelve(argv[1])
+    outpath = ""
+    if(len(argv)==1):
+        outpath = argv[0]+"_tmp"
+    elif (len(argv==2)):
+        outpath = argv[1]
+    else:
+        print("Requires 1 or 2 arguments!")
+        return
+
+    out_shelf=gdbm_shelve(outpath)
     in_shelf=shelve.open(argv[0])
 
     key_list=list(in_shelf.keys())
@@ -27,6 +39,8 @@ def main(argv):
 
     out_shelf.close()
     in_shelf.close()
+    if(len(argv)==1):
+        os.replace(outpath, argv[0])
 
 if __name__ == "__main__":
    main(sys.argv[1:])
