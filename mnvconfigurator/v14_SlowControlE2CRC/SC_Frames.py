@@ -713,7 +713,7 @@ class CHE(wx.Panel):
         self.mems.Fit()
     def SetAddress(self, cheNumber, croceNumber, crateNumber):
         '''Sets cheNumber and croceNumber variables and GUI labels'''
-        self.cheNumber=int(cheNumber)
+        self.cheNumber=int(float(cheNumber))
         self.croceNumber=int(croceNumber)
         self.crateNumber=int(crateNumber)
         self.FindWindowByName('cheID').SetValue(cheNumber)
@@ -908,7 +908,7 @@ class FE(wx.Panel):
     def SetAddress(self, febNumber, chNumber, crocNumber, crateNumber, chLabel, crocLabel):
         '''Sets febNumber, chNumber, crocNumber, crateNumber variables and GUI labels'''
         self.febNumber=int(febNumber)
-        self.chNumber=int(chNumber)
+        self.chNumber=int(float(chNumber))
         self.crocNumber=int(crocNumber)
         self.crateNumber=int(crateNumber)
         self.FindWindowByName('febID').SetValue(febNumber)

@@ -20,7 +20,7 @@ import threading
 import CAENVMEwrapper
 import SC_Frames
 import SC_Util
-import SC_MainObjects
+from SC_MainObjects import *
 import SC_MainMethods
 import V1720Config
 
@@ -491,9 +491,9 @@ class SCApp(wx.App):
                     self.frame.nb.ChangeSelection(0)
                     self.monitor=wx.Timer()
                     self.monitor.Start(max(1000, float(dlgTime.GetValue())*1000))
-                    self.monitorFunc=SC_MainObjects.FEB.GetAllHVParams
-                    self.monitorArgs=SC_MainObjects.FEB(0), allCROCs, 'CROC', int(dlgADC.GetValue())
-                    self.monitorArgEs=SC_MainObjects.FEB(0), allCROCEs, 'CROCE', int(dlgADC.GetValue())
+                    self.monitorFunc=FEB.GetAllHVParams
+                    self.monitorArgs=FEB(0), allCROCs, 'CROC', int(dlgADC.GetValue())
+                    self.monitorArgEs=FEB(0), allCROCEs, 'CROCE', int(dlgADC.GetValue())
                     self.monitorTitle='Monitor ALL FEBs HV Actual outside the Target with more than %s counts'%(int(dlgADC.GetValue()))
                 dlgTime.Destroy()
             dlgADC.Destroy()            
@@ -3412,10 +3412,10 @@ class SCApp(wx.App):
     # FE FPGA pannel events ##########################################################
     def OnFEFPGAbtnRead(self, event):
         try:
-            if self.frame.fe.TopLabels[2].GetValue()=='CH' and self.frame.fe.TopLabels[4].GetValue()=='CROC':
+            if self.frame.fe.TopLabels[2].GetValue().strip()=='CH' and self.frame.fe.TopLabels[4].GetValue()=='CROC':
                 theCROCX=FindVMEdev(self.scs[self.frame.fe.crateNumber].vmeCROCs, self.frame.fe.crocNumber<<16)
                 theType='CROC'; theIncludeCRC='Unknown'
-            if self.frame.fe.TopLabels[2].GetValue()=='CHE' and self.frame.fe.TopLabels[4].GetValue()=='CROCE':
+            if self.frame.fe.TopLabels[2].GetValue().strip()=='CHE' and self.frame.fe.TopLabels[4].GetValue()=='CROCE':
                 theCROCX=FindVMEdev(self.scs[self.frame.fe.crateNumber].vmeCROCEs, self.frame.fe.crocNumber<<24)
                 theType='CROCE'; theIncludeCRC=theCROCX.includeCRC
             theCROCXChannelX=theCROCX.Channels()[self.frame.fe.chNumber]
