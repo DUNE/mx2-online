@@ -43,7 +43,7 @@ def main(argv):
     out_shelf.close()
     in_shelf.close()
     if(len(argv)==1):
-        os.replace(outpath, argv[0])
+        os.rename(outpath, argv[0])
 
 
 if __name__ == "__main__":
