@@ -378,6 +378,7 @@ int main(int argc, char **argv) {
      * following line allows the JVM to kill it. */
     sigaddset(&sigwaitset, SIGTERM);
     sigaddset(&sigwaitset, SIGINT);
+    sigaddset(&sigwaitset, SIGHUP);
 
     /*************************/
     /*    start ET system    */
@@ -398,9 +399,22 @@ int main(int argc, char **argv) {
         printf("Sent ready signal to callback pid");
     }
     //Akeem - Dec/23
-        
-    /* turn this thread into a signal handler */
-    sigwait(&sigwaitset, &sig_num);
+    
+    while (1){
+        /* turn this thread into a signal handler */
+        int sig = sigwait(&sigwaitset, &sig_num);
+        int nattachments;
+        int status_attachments = et_system_getattachments(id, &nattachments);
+        if (sig==SIGHUP && nattachments>0)
+        {
+            continue;
+        }
+        else
+        {
+            break;
+        }
+
+    }
 
     printf("Interrupted by CONTROL-C or SIGTERM\n");
     printf("ET is exiting\n");
