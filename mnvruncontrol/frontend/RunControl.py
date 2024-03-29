@@ -428,7 +428,9 @@ class MainApp(wx.App, MessageTerminus):
 		about_info.SetDescription("The MINER\u03bdA Run Control provides a user-friendly interface to the DAQ software.  It starts & stops the DAQ and provides means for automating its running with run series.")
 		about_info.AddDeveloper("Jeremy Wolcott <jwolcott@fnal.gov>")
 		about_info.AddDeveloper("Aaron Mislivec (run series configurator) <mislivec@pas.rochester.edu>")
+		about_info.AddDeveloper("Akeem Hart (MINERvA DAQ for 2x2 prototype) <a.l.hart@qmul.ac.uk>")
 		about_info.SetWebSite("https://cdcvs.fnal.gov/redmine/projects/minerva-ops/wiki/Running_the_DAQ_system", "Online documentation")
+		about_info.SetWebSite("https://github.com/DUNE/mx2-online", "GitHub repository for Mx2 DAQ")
 		about_info.AddDocWriter("Jeremy Wolcott <jwolcott@fnal.gov>")
 		about_info.SetIcon(wx.Icon(Configuration.params["frnt_resourceLocation"]+"/minerva-small.png", wx.BITMAP_TYPE_PNG))
 		
