@@ -35,11 +35,11 @@ if "DISPLAY" in os.environ and len(os.environ["DISPLAY"]) > 0:
 	metadata_ctrls = { "mstr_detectorType" : MetaData.DetectorTypes,
 	                   "mstr_hwInitLevel"  : MetaData.HardwareInitLevels }
 
-	ID_FRONTEND = wx.NewId()
-	ID_MASTER   = wx.NewId()
-	ID_READOUT  = wx.NewId()
-	ID_OM       = wx.NewId()
-	ID_MTEST    = wx.NewId()
+	ID_FRONTEND = wx.NewIdRef()
+	ID_MASTER   = wx.NewIdRef()
+	ID_READOUT  = wx.NewIdRef()
+	ID_OM       = wx.NewIdRef()
+	ID_MTEST    = wx.NewIdRef()
 	option_collections = { ID_FRONTEND : "Front end client",
 	                       ID_MASTER   : "Master node",
 	                       ID_READOUT  : "Readout node",

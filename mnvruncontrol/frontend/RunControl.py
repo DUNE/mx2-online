@@ -30,6 +30,7 @@ import wx
 from requests import get
 from wx import xrc
 from wx import adv
+from wx import ColourDatabase
 
 print(sys.path)
 
@@ -421,17 +422,17 @@ class MainApp(wx.App, MessageTerminus):
 	def OnAbout(self, evt):
 		""" Shows the 'about' box. """
 		
-		about_info = wx.AboutDialogInfo()
+		about_info = wx.adv.AboutDialogInfo()
 		about_info.SetName("MINER\u03bdA Run Control")
 		about_info.SetVersion(VERSION)
 		about_info.SetDescription("The MINER\u03bdA Run Control provides a user-friendly interface to the DAQ software.  It starts & stops the DAQ and provides means for automating its running with run series.")
 		about_info.AddDeveloper("Jeremy Wolcott <jwolcott@fnal.gov>")
 		about_info.AddDeveloper("Aaron Mislivec (run series configurator) <mislivec@pas.rochester.edu>")
-		about_info.SetWebSite( ("https://cdcvs.fnal.gov/redmine/projects/minerva-ops/wiki/Running_the_DAQ_system", "Online documentation") )
+		about_info.SetWebSite("https://cdcvs.fnal.gov/redmine/projects/minerva-ops/wiki/Running_the_DAQ_system", "Online documentation")
 		about_info.AddDocWriter("Jeremy Wolcott <jwolcott@fnal.gov>")
 		about_info.SetIcon(wx.Icon(Configuration.params["frnt_resourceLocation"]+"/minerva-small.png", wx.BITMAP_TYPE_PNG))
 		
-		wx.AboutBox(about_info)
+		wx.adv.AboutBox(about_info)
 
 	def OnAlert(self, evt):
 		""" Makes sure the appropriate things happen
@@ -821,15 +822,16 @@ class MainApp(wx.App, MessageTerminus):
 			pmt_list.SetItem(index, 4, str(board["hv_deviation"]))
 			pmt_list.SetItem(index, 5, str(board["period"]))
 			
+			colourdb = wx.ColourDatabase()
 			# low-HV period boards will probably show up at the top this way.
 			if board["failure"] == "period":
 				pmt_list.SetItemData(index, int(board["period"]))
-				pmt_list.SetItemBackgroundColour(index, wx.NamedColour("blue"))
+				pmt_list.SetItemBackgroundColour(index, wx.Colour(colourdb.Find("blue")))
 			elif board["failure"] == "hv_range":
 				data = abs(int(board["hv_deviation"]))
 				pmt_list.SetItemData(index, data)
 				color = color_norange if board["range"] not in colors else colors[board["range"]]
-				pmt_list.SetItemBackgroundColour(index, wx.NamedColour(color))
+				pmt_list.SetItemBackgroundColour(index, wx.Colour( colourdb.Find(color)))
 
 		# sort them in DESCENDING order.
 		pmt_list.SortItems(lambda a,b : 0 if a == b else (-1 if a > b else 1))
