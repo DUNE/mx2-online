@@ -312,7 +312,9 @@ bool DAQWorker::CloseDownET()
   }
 
   daqWorker.infoStream() << "Calling et_station_detach(sys_id, attach)..."; //SMEDLEY 3/9/23 Take 2
-  if (et_station_detach(sys_id, attach) < 0) {
+  int error = et_station_detach(sys_id, attach);
+  daqWorker.errorStream() << "et_station_detach returned error code: " << error ;
+  if (error < 0) {
     daqWorker.fatal("et_producer: error in station detach\n");
     return false;
   }     
