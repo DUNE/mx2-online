@@ -12,9 +12,37 @@ each time we created a new DAQ version.
 #include "exit_codes.h"
 #include <unistd.h>
 
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <ctime>
+#include <limits>
+#include <string.h>
+#include <sys/stat.h>
+#include <chrono>
+#include <cmath>
+
 log4cpp::Category& stateRecorderLogger = log4cpp::Category::getInstance(std::string("stateRecorderLogger"));
 
 const int ReadoutStateRecorder::DAQHeaderVersion = 9;
+
+//Generate integer adler32 checksum
+uint32_t adler32(unsigned char *data, size_t len) 
+/* 
+    len is data length in bytes
+*/
+{
+    uint32_t a = 1, b = 0;
+    size_t index;
+    
+    for (index = 0; index < len; ++index)
+    {
+        a = (a + data[index]) % 65521;
+        b = (b + a) % 65521;
+    }
+    
+    return (b << 16) | a;
+}
 
 //---------------------------
 ReadoutStateRecorder::ReadoutStateRecorder( const DAQWorkerArgs* theArgs, 
@@ -102,8 +130,8 @@ bool ReadoutStateRecorder::FinishGate()
   stateRecorderLogger.debugStream() << "ReadoutStateRecorder::FinishGate...";
   subRunFinishTime = daqUtils->GetTimeInMicrosec();
   this->WriteGlobalGateToFile();
-  this->WriteToSAMPYFile();
-  this->WriteToSAMJSONFile();
+  this->WriteToSAMPYFile(); //SAM metadata is no longer needed with Mx2 DAQ
+  //this->WriteToSAMJSONFile(); //SAM metadata is no longer needed with Mx2 DAQ
   this->WriteLastTriggerDataToFile();
   this->WriteLastTriggerDataToFileMTest();
   return true;
@@ -485,6 +513,147 @@ void ReadoutStateRecorder::WriteToSAMJSONFile()
   fprintf(file,"}\n");
 
   fclose(file);
+}
+
+//---------------------------------------------------------
+void ReadoutStateRecorder::WriteToMETACATFile()
+{
+  stateRecorderLogger.debugStream() << "Writing metacat metadata File...";
+
+  FILE *file;
+
+  if ( (file=fopen((args->metadataFileName).c_str(), "w")) == NULL ) {
+    stateRecorderLogger.errorStream() << "Error opening metacat metadata file for writing!";
+    return;
+  }
+  fprintf(file,"{\n");
+
+
+
+  fprintf(file,"\t\"checksums\": {\n");
+
+  //Opening rawDataFile to extract size and calculate Adler32 checksum
+  std::ifstream rawDataFile;
+  rawDataFile.open(args->dataFileName,std::ios::in|std::ios::binary);
+  std::ifstream dataFile (args->dataFileName, std::ifstream::binary);
+  if (!dataFile) 
+  {
+    stateRecorderLogger.errorStream() << "Error opening raw data file for metadata generation!";
+    return;
+  }
+  rawDataFile.ignore( std::numeric_limits<std::streamsize>::max() );
+  std::streamsize filesize = rawDataFile.gcount();
+  rawDataFile.clear(); 
+  rawDataFile.seekg( 0, std::ios_base::beg );
+  char * buffer = new char [filesize];
+  dataFile.read( buffer, filesize );
+  unsigned char* bufferBytes = reinterpret_cast<unsigned char*>(buffer);
+  uint32_t checksum = adler32(bufferBytes, filesize);
+  //Converting adler32 integer checksum into a hexadecimal string
+  std::stringstream hexencoding;
+  hexencoding << std::hex << checksum;
+  std::string adler32checksum = hexencoding.str();
+  fprintf(file,"\t\t\"adler32\": \"%s\"\n", adler32checksum.c_str());
+  fprintf(file,"\t},\n");
+  //Getting data file creation time
+  struct stat result;
+  if (stat(args->dataFileName.c_str(), &result) != 0){
+    stateRecorderLogger.errorStream() << "Error opening raw data file for metadata generation!";
+    return;
+  }
+  int millisecs = std::round((result.st_ctim.tv_nsec/1000));
+  fprintf(file,"\t\"created_timestamp\": \"%llu.%llu\",\n", (int)result.st_ctim.tv_sec, millisecs);
+  fprintf(file,"\t\"metadata\": {\n");
+  switch ((int)args->runMode) {
+    case 0: //OneShot:
+      fprintf(file,"\t\t\"core.data_stream\": \"pdstl\",\n");
+      break;
+    case 1: //NuMIBeam:
+      fprintf(file,"\t\t\"core.data_stream\": \"numib\" ,\n");
+      break;
+    case 2: //Cosmics:
+      fprintf(file,"\t\t\"core.data_stream\": \"cosmc\",\n");
+      break;
+    case 3: //PureLightInjection:
+      fprintf(file,"\t\t\"core.data_stream\": \"linjc\",\n");
+      break;
+    case 4: //MixedBeamPedestal:
+      fprintf(file,"\t\t\"core.data_stream\": \"numip\",\n");
+      break;
+    case 5: //MixedBeamLightInjection:
+      fprintf(file,"\t\t\"core.data_stream\": \"numil\",\n");
+      break;
+    case 6: //MTBFBeamMuon:
+      fprintf(file,"\t\t\"core.data_stream\": \"bmuon\",\n");
+      break;
+    case 7: //MTBFBeamOnly:
+      fprintf(file,"\"online.triggertype\": \"mtbfbeamonly\",\n");
+      fprintf(file,"\t\t\"core.data_stream\": \"bonly\",\n");
+      break;
+    default:
+      fprintf(file,"\t\t\"core.data_stream\": \"errorstream\",\n");
+  }
+  fprintf(file,"\t\t\"core.data_tier\": \"binary-raw\",\n");
+  fprintf(file,"\t\t\"core.end_time\": %llu,\n", (subRunFinishTime/1000000L));
+  fprintf(file,"\t\t\"core.event_count\": %d,\n", gate);
+  fprintf(file,"\t\t\"core.file_format\": \"binary\",\n");
+  fprintf(file,"\t\t\"core.file_type\": \"importedDetector\",\n");
+  fprintf(file,"\t\t\"core.first_event_number\": %llu,\n", firstGate);
+  fprintf(file,"\t\t\"core.group\": \"minerva\",\n");
+  fprintf(file,"\t\t\"core.last_event_number\": %llu,\n", globalGate);
+  fprintf(file,"\t\t\"core.lum_block_ranges\": [\n");
+  fprintf(file,"\t\t\t [\n\t\t\t\t%d,\n\t\t\t\t%d\n\t\t\t]\n", firstGate, globalGate);
+  fprintf(file,"\t\t],\n");
+  char runType[50];
+  switch (args->detector) { // Enumerations set by the DAQHeader class.
+    case 0:
+      sprintf(runType, "unknowndetector");
+      break;
+    case 1: 
+      sprintf(runType, "pmtteststand");
+      break;
+    case 2:
+      sprintf(runType, "trackingprototype");
+      break;
+    case 4:
+      sprintf(runType, "testbeam");
+      break;
+    case 8:
+      sprintf(runType, "frozendetector");
+      break;
+    case 16:
+      sprintf(runType, "upstreamdetector");
+      break;
+    case 32:
+      sprintf(runType, "minerva");
+      break;
+    case 64:
+      sprintf(runType, "teststand");
+      break;
+    default:
+      sprintf(runType, "errordetector");
+  }
+  fprintf(file,"\t\t\"core.run_type\": \"%s\",\n", runType);
+  fprintf(file,"\t\t\"core.runs\": [\n");
+  fprintf(file,"\t\t\t [%d, %d]\n", args->runNumber, args->subRunNumber);
+  fprintf(file,"\t\t],\n");
+  fprintf(file,"\t\t\"core.runs_subruns\": [\n");
+  fprintf(file,"\t\t\t%i\n", ( args->runNumber*100000+args->subRunNumber));
+  fprintf(file,"\t\t],\n");
+  fprintf(file,"\t\t\"core.start_time\": %llu,\n", (subRunStartTime/1000000L));
+  fprintf(file,"\t\t\"dune.daq_test\": \"True\",\n");
+  fprintf(file,"\t\t\"misc.file_partition\": 1,\n");
+  fprintf(file,"\t\t\"online.triggerconfig\": \"NOFILE\",\n");
+  fprintf(file,"\t\t\"online.triggertype\": \"oneshot\",\n");
+  fprintf(file,"\t\t\"retention.status\": \"active\",\n");
+  fprintf(file,"\t\t\"retention.class\": \"commissioning\"\n");
+  fprintf(file,"\t},\n");
+  fprintf(file,"\t\"name\": \"%s\",\n", (args->dataFileBaseName).c_str());
+  fprintf(file,"\t\"namespace\": \"neardet-2x2-minerva\",\n");
+  fprintf(file,"\t\"size\": %i\n", filesize);
+  fprintf(file,"}");
+  fclose(file);
+
 }
 
 //---------------------------------------------------------

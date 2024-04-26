@@ -40,6 +40,7 @@ class DAQArgs {
       args->logFileName = fileRoot + "logs/MinervaDAQ_Log.txt";
       args->samPyFileName = fileRoot + "sam/MinervaDAQ_SAM.metadata.py";
       args->samJSONFileName = fileRoot + "sam/MinervaDAQ_SAM.metadata.json";
+      args->metadataFileName = fileRoot + "rawdata/MinervaDAQ.metadata.json"; //Needs to be in same directory as rawdata per DUNE requirements
       args->dataFileName = fileRoot + "rawdata/MinervaDAQ_RawData.dat";
       args->dataFileBaseName = "MinervaDAQ_RawData.dat";
       args->hardwareConfigFileName = "unknown"; 
@@ -88,6 +89,7 @@ class DAQArgs {
           args->samJSONFileName  = fileRoot + "sam/" + fileBaseName + "_SAM.metadata.json";
           args->dataFileBaseName = fileBaseName + "_RawData.dat";
           args->dataFileName = fileRoot + "rawdata/" + args->dataFileBaseName;
+          args->metadataFileName = fileRoot + "rawdata/" + fileBaseName + ".metadata.json"; //Needs to be in same directory as rawdata per DUNE requirements
         }
         else if (sw=="-cf") {
           optind++;

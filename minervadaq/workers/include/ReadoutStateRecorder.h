@@ -65,6 +65,8 @@ class ReadoutStateRecorder {
   bool FinishGate();
   bool MoreGates();
 
+  void WriteToMETACATFile();
+
   Triggers::TriggerType GetNextTriggerType(); // Get and set...
   Modes::RunningModes GetRunMode() const;
 

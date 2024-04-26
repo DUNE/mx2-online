@@ -39,6 +39,7 @@ DAQWorker::DAQWorker( const DAQWorkerArgs* theArgs,
   daqWorker.infoStream() << "  ET Filename            = " << args->etFileName;
   daqWorker.infoStream() << "  SAM Py Filename        = " << args->samPyFileName;
   daqWorker.infoStream() << "  SAM JSON Filename      = " << args->samJSONFileName;
+  daqWorker.infoStream() << "  DUNE Metadata Filename = " << args->metadataFileName;
   daqWorker.infoStream() << "  LOG Filename           = " << args->logFileName;
   daqWorker.infoStream() << "  Configuration File     = " << args->hardwareConfigFileName;
   daqWorker.infoStream() << "  VME Card Init. Level   = " << args->hardwareInitLevel;	
@@ -505,6 +506,12 @@ int DAQWorker::WriteRunDataToDB() const
       (int)args->runMode,
       args->logFileName
       );
+}
+
+void DAQWorker::WriteMetadataToFile()
+{
+  daqWorker.debugStream() << "DAQWorker::WriteMetadataToFile...";
+  stateRecorder->WriteToMETACATFile();
 }
 
 #endif

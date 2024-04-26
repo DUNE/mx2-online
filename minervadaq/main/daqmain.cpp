@@ -82,6 +82,8 @@ int main( int argc, char * argv[] )
 
   daqmain.infoStream() << "Finished MinervaDAQ...";
   worker->WriteRunDataToDB();
+  //Producing metadata after rawdata file creation
+  worker->WriteMetadataToFile();
 
   delete worker;
   delete args;

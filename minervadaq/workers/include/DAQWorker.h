@@ -64,6 +64,7 @@ class DAQWorker {
     bool SendSentinel();
     int WriteExceptionToDB( const FHWException & ex ) const;
     int WriteRunDataToDB() const;
+    void WriteMetadataToFile();
 };
 
 #endif
