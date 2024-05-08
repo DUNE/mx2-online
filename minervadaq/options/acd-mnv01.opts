@@ -1,4 +1,4 @@
-# Build for mnv03 - The AL9 LabF test machine
+# Build for mnv03 - The AL9 underground DAQ machine
 #--DETECTOR FLAGS--
 #COMPILE_OPTIONS += -DNUMI
 #COMPILE_OPTIONS += -DDZERO
