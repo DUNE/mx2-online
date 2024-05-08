@@ -135,12 +135,14 @@ elif [ $LOCALE == "LabF" ]; then
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DAQROOT/lib:$ET_LIBROOT:/usr/local/lib:$ET_LIBROOT/lib
 elif [ $LOCALE == "Mx2" ]; then
   #Locale for MINERvA operations for 2x2
-  export DAQROOT=/root/minervadaq/minervadaq
-  export CAEN_DIR=/work/software/CAENVMElib
-  export CAEN_VERSION=CAEN_3_4_4
+  #Currently (8th May 2024) the same as LabF, but may change
+  export DAQROOT=/work/software/mx2daq/minervadaq
+  export CAEN_DIR=/work/software/CAENVMELib-v4.0.2
+  export CAEN_VERSION=CAEN_3_4_4 # Unnecessary
   export CODA_VERSION=et_16.5
   export CODA_HOME=${DAQROOT}/${CODA_VERSION}
   export ET_HOME=${CODA_HOME}/build
+  export ET_FILES=$ET_HOME
   export ET_LIBROOT=$ET_HOME
   export INSTALL_DIR=$ET_HOME
   # Add $ET_LIBROOT/lib & $CAEN_DIR/lib for ET & CAEN libraries and log4cpp support
