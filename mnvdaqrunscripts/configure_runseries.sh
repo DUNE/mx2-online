@@ -1,8 +1,15 @@
 #!/bin/sh
 
-. $HOME/mnvdaqrunscripts/defs_standardpaths
+echo "PYTHONPATH =" $PYTHONPATH
+echo "RCROOT =" $RCROOT
 
-which python2.6 >& /tmp/pytest.txt
-PYV=`perl -ne 'if (/no/) { print "python"; } else { print "python2.6"; }' /tmp/pytest.txt`
+# Use this script to start the Run Series Configurator GUI.
 
-$PYV  ${RCROOT}/frontend/RunSeriesConfigurator.py &
+. $DAQROOT/../mnvdaqrunscripts/defs_mx2paths
+
+# Now, start the Configurator
+pushd ${RCROOT}/frontend
+echo "PYTHONPATH =" $PYTHONPATH
+which python
+python  ${RCROOT}/frontend/RunSeriesConfigurator.py &
+popd
