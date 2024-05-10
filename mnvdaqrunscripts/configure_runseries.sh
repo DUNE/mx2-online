@@ -7,7 +7,6 @@ echo "RCROOT =" $RCROOT
 
 # Now, start the Configurator
 pushd ${RCROOT}/frontend
-echo "PYTHONPATH =" $PYTHONPATH
 which python
 python ${RCROOT}/frontend/RunSeriesConfigurator.py &
 popd
