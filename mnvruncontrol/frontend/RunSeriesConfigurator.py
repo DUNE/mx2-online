@@ -49,7 +49,7 @@ class MyFrame(wx.Frame):
 		self.ledLevelEntry = wx.Choice(self.mainPage, -1, choices=MetaData.LILevels.descriptions())
 
 		ledGroupLabel = wx.StaticText(self.mainPage, -1, "LED Group")
-		ledGroupSizer = wx.GridSizer(2, 2)
+		ledGroupSizer = wx.GridSizer(2, 2, wx.Size(0,0))
 		self.ledGroups = []
 		for letter in "ABCD":
 			cb = wx.CheckBox(self.mainPage, -1, letter)
@@ -122,7 +122,7 @@ class MyFrame(wx.Frame):
 		seriesBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Run Series"), wx.VERTICAL)
 		seriesBoxSizer.Add(seriesHWConfigSizer, 1, flag=wx.EXPAND)
 
-		runParameterSizer = wx.GridSizer(2, 2, 10, 10)
+		runParameterSizer = wx.GridSizer(2, 10, 10)
 		runParameterSizer.AddMany([     (runModeLabel, 0, wx.ALIGN_CENTER_VERTICAL),             (self.runModeEntry, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL),
 			(gatesLabel, 0, wx.ALIGN_CENTER_VERTICAL),		 (self.gatesEntry, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL),
 				          (ledLevelLabel, 0, wx.ALIGN_CENTER_VERTICAL),            (self.ledLevelEntry, 1, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL),  
@@ -147,7 +147,7 @@ class MyFrame(wx.Frame):
 		actionsConfigureSizer.InsertSpacer(1,10)
 
 		runSelectGridSizer = wx.GridSizer(cols=2, vgap=10, hgap=10)
-		runSelectGridSizer.AddMany([ (self.b_editSelectedRun, 1, wx.EXPAND | wx.ALIGN_CENTER), (self.b_deleteSelectedRun, 1, wx.EXPAND | wx.ALIGN_CENTER) ])
+		runSelectGridSizer.AddMany([ (self.b_editSelectedRun, 1, wx.ALIGN_CENTER), (self.b_deleteSelectedRun, 1, wx.ALIGN_CENTER) ])
 
 		runListBoxSizer = wx.StaticBoxSizer(wx.StaticBox(self.mainPage, -1, "Run List"), orient=wx.VERTICAL)
 		runListBoxSizer.Add(runSelectGridSizer, flag=wx.EXPAND)
@@ -174,7 +174,7 @@ class MyFrame(wx.Frame):
 		                        defaultDir=os.getcwd(),
 		                        defaultFile="",
 		                        wildcard="*.db",
-		                        style=wx.OPEN | wx.CHANGE_DIR)
+		                        style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
 
 		if dlg.ShowModal() == wx.ID_OK:
 
@@ -203,11 +203,13 @@ class MyFrame(wx.Frame):
 		                        defaultDir=os.getcwd(), 
 		                        defaultFile="",
 		                        wildcard="*.db",
-		                        style=wx.SAVE)
+		                        style=wx.FD_SAVE)
 
 		if dlg.ShowModal() == wx.ID_OK:
 			path = dlg.GetPath()
-			d = shelve.open(path+".db", 'c')
+			if not path.endswith(".db"):
+				path+=".db"
+			d = shelve.open(path, 'c')
 			d['series'] = self.runSeries
 			d.close()
 		
@@ -279,16 +281,18 @@ class MyFrame(wx.Frame):
 		return runModeHash == MetaData.RunningModes.LI.hash or runModeHash == MetaData.RunningModes.MIXED_NUMI_LI.hash
 
 	def UpdateLIFields(self, evt=None):
-		runModeHash = MetaData.RunningModes.hash(self.runModeEntry.GetStringSelection())
+		selected = self.runModeEntry.GetStringSelection()
+		if selected:
+			runModeHash = MetaData.RunningModes.hash(selected)
 
-		if self.isLIRunMode(runModeHash):
-			for cb in self.ledGroups:
-				cb.Enable()
-			self.ledLevelEntry.Enable()
-		else:
-			for cb in self.ledGroups:
-				cb.Disable()
-			self.ledLevelEntry.Disable()
+			if self.isLIRunMode(runModeHash):
+				for cb in self.ledGroups:
+					cb.Enable()
+				self.ledLevelEntry.Enable()
+			else:
+				for cb in self.ledGroups:
+					cb.Disable()
+				self.ledLevelEntry.Disable()
 
 	def ReadLEDGroups(self):
 		leds = ""
@@ -326,20 +330,20 @@ class MyFrame(wx.Frame):
 			self.AppendRunToList(num_items,run)
 
 	def AppendRunToList(self,index,run):
-		self.runList.InsertStringItem(index, str(index))
+		self.runList.InsertItem(index, str(index))
 		self.WriteRunToList(index,run)
 
 	def WriteRunToList(self,index,run):
-		self.runList.SetStringItem(index, 1, MetaData.RunningModes.description(run.runMode))
-		self.runList.SetStringItem(index, 2, str(run.gates))
-		self.runList.SetStringItem(index, 3, MetaData.HardwareConfigurations.description(run.hwConfig))
+		self.runList.SetItem(index, 1, MetaData.RunningModes.description(run.runMode))
+		self.runList.SetItem(index, 2, str(run.gates))
+		self.runList.SetItem(index, 3, MetaData.HardwareConfigurations.description(run.hwConfig))
 
 		if self.isLIRunMode(run.runMode):
-			self.runList.SetStringItem(index, 4, MetaData.LILevels.description(run.ledLevel))
-			self.runList.SetStringItem(index, 5, MetaData.LEDGroups.description(run.ledGroup))
+			self.runList.SetItem(index, 4, MetaData.LILevels.description(run.ledLevel))
+			self.runList.SetItem(index, 5, MetaData.LEDGroups.description(run.ledGroup))
 		else:
-			self.runList.SetStringItem(index, 4, "--")
-			self.runList.SetStringItem(index, 5, "--")
+			self.runList.SetItem(index, 4, "--")
+			self.runList.SetItem(index, 5, "--")
 
 	def GetRunFromGUI(self):
 		gates    = self.gatesEntry.GetValue()
