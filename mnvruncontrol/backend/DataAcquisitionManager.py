@@ -513,6 +513,11 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 			self.logger.warning("The '%s' node reports that the DAQ process for run %d/%d exited with an error (code: %d)...", message.sender, message.run, message.subrun, message.code)
 			
+			# For error codes <0 the number indicates the signal that stopped it (e.g -15 means it was stopped by a SIGTERM(15) )
+			# This is desired behaviour
+			if (message.code==-15):
+				self.logger.info("The DAQ reports it was terminated by a SIGTERM")
+				#return
 			# skip the alert part if it's already been given once this subrun
 			if self.daq_exit_error_this_subrun:
 				return
@@ -1226,7 +1231,23 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				# if there isn't, send the process a SIGTERM.
 				if not sentinel:
 					try:
-						thread.process.terminate()
+						#Event builder can be sticky, try to kill it 5 times before giving up
+						killAttemptCount = 5
+						killed = False
+						for count in range(killAttemptCount):
+							thread.process.terminate()
+							time.sleep(1)
+							# check if process is up
+							try:
+								os.kill(thread.pid, 0)
+							except OSError:
+								killed = True
+								break
+							else:
+								#Process still alive
+								self.logger.info("Attempt number: %s of %s to terminate EventBuilder but it's still up", count, killAttemptCount)	
+						if not killed:
+							self.logger.warning("Tried %s times to terminate EventBuilder but it's still up, may need to kill it manually", killAttemptCount)	
 					# the process might have crashed.
 					except OSError:
 						pass
@@ -1891,7 +1912,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		timeout=30
 		self.logger.info('Sending message = %s, timeout = %i'% (message,timeout))		    
-		responses = self.postoffice.SendAndWaitForResponse( message, timeout=timeout, with_exception=with_exception )
+		responses = self.postoffice.SendAndWaitForResponse( message, timeout=timeout, with_exception=with_exception, force=True)
 
 		out_responses = []
 		responses_received = dict( [ (node_name, False) for node_name in self.remote_nodes ] )
@@ -1903,7 +1924,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				self.logger.warning("Got response from a node I don't have in my list.  Who are you?? (name: %s, address: %s)", response.sender, response.return_path[0])
 				continue
 			
-			response.success = True
+			#response.success = True
 			responses_received[response.sender] = True
 			out_responses.append(response)
 

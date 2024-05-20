@@ -109,7 +109,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		""" Handles incoming directives for a readout node. """
 		
 		self.logger.log(5, "Manager directive message:\n%s", message)
-		
+		self.logger.info("Message received: \n%s", message)
 		if not ( hasattr(message, "directive") ):
 			self.logger.info("Readout directive message is improperly formatted.  Ignoring...")
 			return

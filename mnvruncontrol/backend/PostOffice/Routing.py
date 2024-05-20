@@ -1131,6 +1131,7 @@ class PostOffice(MessageTerminus):
 		""" Sends a message and waits for a response from the
 		    remote end, with optional timeout. """
 		
+		logger().debug("Sending message and waiting for repsonse, message: \n%s", message)
 		if not hasattr(message, "subject") and hasattr(message, "id"):
 			raise Errors.MessageError("Message is badly formed.  Won't be sent...")
 

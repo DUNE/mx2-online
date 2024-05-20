@@ -199,7 +199,8 @@ int main(int argc, char *argv[])
   eventbuilder.infoStream() << " Starting!";
   int evt_counter = 0;
   bool continueRunning = true;
-  while ((et_alive(sys_id)) && continueRunning) {
+  if (waiting_to_quit) eventbuilder.infoStream() << " Aborting start, recieved quit signal before start of main loop!";
+  while ((et_alive(sys_id)) && continueRunning && !waiting_to_quit) {
     struct timespec time;
 
     // there are two different circumstances under which we will acquire events.
