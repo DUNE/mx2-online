@@ -602,7 +602,7 @@ void ReadoutStateRecorder::WriteToMETACATFile()
   fprintf(file,"\t\t\"core.group\": \"minerva\",\n");
   fprintf(file,"\t\t\"core.last_event_number\": %llu,\n", globalGate);
   fprintf(file,"\t\t\"core.lum_block_ranges\": [\n");
-  fprintf(file,"\t\t\t [\n\t\t\t\t%d,\n\t\t\t\t%d\n\t\t\t]\n", firstGate, globalGate);
+  fprintf(file,"\t\t\t[\n\t\t\t\t%d,\n\t\t\t\t%d\n\t\t\t]\n", firstGate, globalGate);
   fprintf(file,"\t\t],\n");
   char runType[50];
   switch (args->detector) { // Enumerations set by the DAQHeader class.
