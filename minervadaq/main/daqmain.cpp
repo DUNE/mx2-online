@@ -55,7 +55,7 @@ int main( int argc, char * argv[] )
       }
       //SMEDLEY 3/9/2023
       else {
-        daqmain.debugStream() << "DAQMain faield to detach from ET station...";
+        daqmain.debugStream() << "DAQMain field to detach from ET station...";
       }
       worker->CleanupHardware();
     }
@@ -75,7 +75,7 @@ int main( int argc, char * argv[] )
       if (!sentSentinel)
         sentSentinel = worker->SendSentinel();
     }
- }
+  }
   else {
     daqmain.fatalStream() << "Failed to establish ET connection!";
   }

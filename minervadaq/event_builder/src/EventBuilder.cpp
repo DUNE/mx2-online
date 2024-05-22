@@ -17,7 +17,7 @@ using namespace std;
 // How long the event builder will wait for new frames before declaring no more are coming.
 // Only relevant after receiving SIGTERM/SIGINT (otherwise we just wait until we get the
 // sentinel gate instead).
-const int SECONDS_BEFORE_TIMEOUT = 60; 
+const int SECONDS_BEFORE_TIMEOUT = 15; 
 
 DAQHeader *daqHeader;
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   #ifdef NEARLINE
   sprintf(log_filename, "/scratch/nearonline/var/logs/EventBuilderLog_%s.txt", basename(argv[1])); 
   #else
-  sprintf(log_filename, "/work/data/logs/EventBuilderLog.txt"); 
+  sprintf(log_filename, "/work/data/logs/EventBuilderLog_%s.txt", basename(argv[1])); 
   #endif
  
   std::cout << "Writing log file to: " << log_filename << std::endl;
@@ -149,20 +149,22 @@ int main(int argc, char *argv[])
     // For modern DAQ operations, we take care of this beforehand.
     // So set this check to use a very short sleep period!
     eventbuilder.infoStream() << "  Synching heartbeat...";
-    system("sleep 5s"); 
+    usleep(2000000);
     if (!counter) {
       newheartbeat = id->sys->heartbeat;
     } else {
       oldheartbeat = newheartbeat;
       newheartbeat = id->sys->heartbeat;
     }
+    eventbuilder.infoStream() << "Test2";
     counter++;  
   } while ((newheartbeat==oldheartbeat)&&(counter!=60));
-  if (counter==60) {
-    eventbuilder.fatalStream() << "Error in EventBuilder::main()!";
-    eventbuilder.fatalStream() << "ET System did not start properly!  Exiting...";
+  if (counter==10) {
+    eventbuilder.infoStream() << "Error in EventBuilder::main()!";
+    eventbuilder.infoStream() << "ET System did not start properly!  Exiting...";
     exit(EXIT_ETSTARTUP_ERROR);
   } 
+  eventbuilder.infoStream() << "Test3";
 #else
   // prevents compiler warnings.
   id = NULL;
@@ -170,20 +172,29 @@ int main(int argc, char *argv[])
 
   // Set the level of debug output that we want (everything).
   et_system_setdebug(sys_id, ET_DEBUG_INFO);
+  eventbuilder.infoStream() << "Test4";
 
   // Create & attach to a new station for making the final output file.
 #if NEARLINE
   et_station_create(sys_id,&cu_station,"RIODEJANEIRO",sconfig);
+  eventbuilder.infoStream() << "Test4.a";
   eventbuilder.infoStream() << "Creating new station RIODEJANEIRO for output...";
 #else
+  eventbuilder.infoStream() << "Test4.b";
+  eventbuilder.infoStream()<<"et system status: " << (int)et_alive(sys_id);
   et_station_create(sys_id,&cu_station,"CHICAGO_UNION",sconfig);
+  eventbuilder.infoStream() << "Test4.ba";
   eventbuilder.infoStream() << "Creating new station CHICAGO_UNION for output...";
 #endif
+  eventbuilder.infoStream() << "Test5";
+
   if (et_station_attach(sys_id, cu_station, &attach) < 0) {
+    eventbuilder.infoStream() << "Error in station attach!";
     eventbuilder.fatal("EventBuilder::main(): et_producer: error in station attach!");
-    system("sleep 10s");
+    usleep(2000000);
     exit(EXIT_ETSTARTUP_ERROR);
   }
+  eventbuilder.infoStream() << "Test6";
 
   // send the SIGUSR1 signal to the specified process signalling that ET is ready
   eventbuilder.infoStream() << "Sending ready signal to ET system...";
@@ -199,8 +210,12 @@ int main(int argc, char *argv[])
   eventbuilder.infoStream() << " Starting!";
   int evt_counter = 0;
   bool continueRunning = true;
-  if (waiting_to_quit) eventbuilder.infoStream() << " Aborting start, recieved quit signal before start of main loop!";
-  while ((et_alive(sys_id)) && continueRunning && !waiting_to_quit) {
+  if (waiting_to_quit)
+  {
+    eventbuilder.infoStream() << " Aborting start, recieved quit signal before start of main loop!";
+    continueRunning==false;
+  }
+  while ((et_alive(sys_id)) && continueRunning) {
     struct timespec time;
 
     // there are two different circumstances under which we will acquire events.
@@ -255,6 +270,7 @@ int main(int argc, char *argv[])
     else
     {
       // the user wants to shut down ASAP.
+      eventbuilder.infoStream() << " Shutting down now";
       break;
     }
 
@@ -305,15 +321,6 @@ int main(int argc, char *argv[])
     void *pdata;
     et_event_getdata(pe, &pdata); 
 
-    evt_counter++;
-    eventbuilder.debugStream() << "Now write the event to the binary output file...";
-    eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
-    binary_outputfile.write((char *) evt->data, evt->dataLength);  
-    binary_outputfile.flush();
-
-    if (HeaderData::SentinelBank == (HeaderData::BankType)evt->leadBankType())
-        continueRunning = false;
-
     #ifndef NEARLINE
     // Geoff Savage 14Dec21 - Return event to ET after writing event to file..
     // for whatever reason, the nearline event builder gets
@@ -330,13 +337,25 @@ int main(int argc, char *argv[])
     eventbuilder.debugStream() << "Put the event back into the ET system...";
     status = et_event_put(sys_id, attach, pe); 
     #endif
+
+    evt_counter++;
+    eventbuilder.debugStream() << "Now write the event to the binary output file...";
+    eventbuilder.debugStream() << " Writing " << evt->dataLength << " bytes...";
+    binary_outputfile.write((char *) evt->data, evt->dataLength);  
+    binary_outputfile.flush();
+
+    if (HeaderData::SentinelBank == (HeaderData::BankType)evt->leadBankType())
+        continueRunning = false;
+
   }
+  //usleep(100000); // 0.1 second sleep, we're seeing some annoying race conditions with et_station_detach
+  //this should be enough to get rid of them
 
   eventbuilder.infoStream() << "Exited data collection loop, detaching..."; /* Smedley */
   // Detach from the station.
   if (et_station_detach(sys_id, attach) < 0) {
     eventbuilder.fatal("et_producer: error in station detach\n");
-    system("sleep 10s");
+    usleep(2000000); // 2 second sleep
     exit(EXIT_ETSTARTUP_ERROR);
   }
 
@@ -344,7 +363,7 @@ int main(int argc, char *argv[])
   // Close ET
   if (et_close(sys_id) < 0) {
     eventbuilder.fatal("et_producer: error in ET close\n");
-    system("sleep 10s");
+    usleep(2000000); // 2 second sleep
     exit(EXIT_ETSTARTUP_ERROR);
   }
 
@@ -367,6 +386,7 @@ void quitsignal_handler(int signum)
   {
     fflush(stderr);
     fprintf(stderr, "\n\nShutdown request acknowledged.  Will close down as soon as possible.\n\n");
+    eventbuilder.infoStream() << "\n\nShutdown request acknowledged.  Will close down as soon as possible.\n\n";
     fflush(stderr);
 
     quit_now = true;
@@ -375,6 +395,7 @@ void quitsignal_handler(int signum)
   {
     fflush(stderr);
     fprintf(stderr, "\n\nInstructed to close.\nNote that any events remaining in the buffer will first be cleared, and then we will wait 60 seconds to be sure there are no more.\nIf you really MUST close down NOW, issue the signal again (ctrl-C or 'kill <this process's PID>').\n\n");
+    eventbuilder.infoStream() << "\n\nInstructed to close.\nNote that any events remaining in the buffer will first be cleared, and then we will wait 60 seconds to be sure there are no more.\nIf you really MUST close down NOW, issue the signal again (ctrl-C or 'kill <this process's PID>').\n\n";
     fflush(stderr);
 
     waiting_to_quit = true;

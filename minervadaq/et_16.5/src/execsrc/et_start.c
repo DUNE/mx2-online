@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
                     nevents = i_tmp;
                 } else {
                     printf("Invalid argument to -n. Must be a positive integer.\n");
-                    exit(-1);
+                    flush_and_exit(-1);
                 }
                 break;
 
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
                     event_size = i_tmp;
                 } else {
                     printf("Invalid argument to -s. Must be a positive integer.\n");
-                    exit(-1);
+                    flush_and_exit(-1);
                 }
                 break;
 
@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
                     serverPort = i_tmp;
                 } else {
                     printf("Invalid argument to -p. Must be < 65535 & > 1023.\n");
-                    exit(-1);
+                    flush_and_exit(-1);
                 }
                 break;
 
@@ -142,14 +142,14 @@ int main(int argc, char **argv) {
                     udpPort = i_tmp;
                 } else {
                     printf("Invalid argument to -u. Must be < 65535 & > 1023.\n");
-                    exit(-1);
+                    flush_and_exit(-1);
                 }
                 break;
 
             case 'a':
                 if (strlen(optarg) >= 16) {
                     fprintf(stderr, "Multicast address is too long\n");
-                    exit(-1);
+                    flush_and_exit(-1);
                 }
                 if (mcastAddrCount >= mcastAddrMax) break;
                 strcpy(mcastAddr[mcastAddrCount++], optarg);
@@ -161,14 +161,14 @@ int main(int argc, char **argv) {
                     nGroups = i_tmp;
                 } else {
                     printf("Invalid argument to -g. Must be 501 > g > 0.\n");
-                    exit(-1);
+                    flush_and_exit(-1);
                 }
                 break;
 
             case 'f':
                 if (strlen(optarg) >= ET_FILENAME_LENGTH) {
                     fprintf(stderr, "ET file name is too long\n");
-                    exit(-1);
+                    flush_and_exit(-1);
                 }
                 strcpy(et_name, optarg);
                 et_filename = et_name;
@@ -187,7 +187,7 @@ int main(int argc, char **argv) {
                 i_tmp = atoi(optarg);
                 if (i_tmp < 1) {
                     printf("Invalid argument to -rb. Recv buffer size must be > 0.\n");
-                    exit(-1);
+                    flush_and_exit(-1);
                 }
                 recvBufSize = i_tmp;
                 break;
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
                 i_tmp = atoi(optarg);
                 if (i_tmp < 1) {
                     printf("Invalid argument to -rb. Send buffer size must be > 0.\n");
-                    exit(-1);
+                    flush_and_exit(-1);
                 }
                 sendBufSize = i_tmp;
                 break;
@@ -209,14 +209,14 @@ int main(int argc, char **argv) {
                 i_tmp = atoi(optarg);
                 if (i_tmp < 2) {
                     printf("Invalid argument to -stats. Must allow at least 2 stations.\n");
-                    exit(-1);
+                    flush_and_exit(-1);
                 }
                 maxNumStations = i_tmp;
                 break;
 
             case 'h':
                 printHelp(argv[0]);
-                exit(1);
+                flush_and_exit(1);
 
             case 'c': 
                 //Added -c option - Akeem, needed for signalling with DAQ manager
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
     /* Error of some kind */
     if (optind < argc || errflg) {
         printHelp(argv[0]);
-        exit(2);
+        flush_and_exit(2);
     }
 
     /* Check et_filename */
@@ -258,12 +258,12 @@ int main(int argc, char **argv) {
         /* see if env variable SESSION is defined */
         if ((et_filename = getenv("SESSION")) == NULL) {
             fprintf(stderr, "No ET file name given and SESSION env variable not defined\n");
-            exit(-1);
+            flush_and_exit(-1);
         }
         /* check length of name */
         if ((strlen(et_filename) + 12) >= ET_FILENAME_LENGTH) {
             fprintf(stderr, "ET file name is too long\n");
-            exit(-1);
+            flush_and_exit(-1);
         }
         sprintf(et_name, "%s%s", "/tmp/et_sys_", et_filename);
     }
@@ -286,7 +286,7 @@ int main(int argc, char **argv) {
 
     if (et_system_config_init(&config) == ET_ERROR) {
         printf("et_start: no more memory\n");
-        exit(1);
+        flush_and_exit(1);
     }
 
     /* divide events into equal groups and any leftovers into another group */
@@ -302,7 +302,7 @@ int main(int argc, char **argv) {
         groups = calloc(nGroups + addgroup, sizeof(int));
         if (groups == NULL) {
             printf("et_start: out of memory\n");
-            exit(1);
+            flush_and_exit(1);
         }
 
         for (i = 0; i < nGroups; i++) {
@@ -351,7 +351,7 @@ int main(int argc, char **argv) {
             status = et_system_config_addmulticast(config, mcastAddr[j]);
             if (status != ET_OK) {
                 printf("et_start: bad multicast address argument\n");
-                exit(1);
+                flush_and_exit(1);
             }
             printf("et_start: adding multicast address %s\n",mcastAddr[j]);
         }
@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
     /* Make sure filename is null-terminated string */
     if (et_system_config_setfile(config, et_name) == ET_ERROR) {
         printf("et_start: bad filename argument\n");
-        exit(1);
+        flush_and_exit(1);
     }
 
     /*************************/
@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
     status = pthread_sigmask(SIG_BLOCK, &sigblockset, NULL);
     if (status != 0) {
         printf("et_start: pthread_sigmask failure\n");
-        exit(1);
+        flush_and_exit(1);
     }
     sigemptyset(&sigwaitset);
     /* Java uses SIGTERM to end processes it spawns.
@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
     }
     if (et_system_start(&id, config) != ET_OK) {
         printf("et_start: error in starting ET system\n");
-        exit(1);
+        flush_and_exit(1);
     }
 
     et_system_setdebug(id, et_verbose);
@@ -405,11 +405,7 @@ int main(int argc, char **argv) {
         int sig = sigwait(&sigwaitset, &sig_num);
         int nattachments;
         int status_attachments = et_system_getattachments(id, &nattachments);
-        if (sig==SIGHUP && nattachments>0)
-        {
-            continue;
-        }
-        else
+        if (sig!=SIGHUP || nattachments<=0 || status != ET_OK)
         {
             break;
         }
@@ -420,7 +416,7 @@ int main(int argc, char **argv) {
     printf("ET is exiting\n");
     et_system_close(id);
 
-    exit(0);
+    flush_and_exit(0);
 }
 
 

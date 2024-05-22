@@ -838,7 +838,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.debug("   locking remote nodes...")
 		# lock each of the remote nodes that's currently taking orders from this manager.
 		try:
-			responses = self.NodeSendWithResponse(Message(subject="lock_request", request="get", requester_id=self.id), timeout=10)
+			responses = self.NodeSendWithResponse(Message(subject="lock_request", request="get", requester_id=self.id), timeout=30)
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			return False
@@ -920,7 +920,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.info("Unlocking remote nodes...")
 		# release locks from the remote nodes
 		try:
-			responses = self.NodeSendWithResponse(Message(subject="lock_request", request="release", requester_id=self.id), timeout=10)
+			responses = self.NodeSendWithResponse(Message(subject="lock_request", request="release", requester_id=self.id), timeout=30)
 		except DAQErrors.NodeError:
 			pass
 
@@ -1136,13 +1136,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		try:
 			if stop_readout:
-				responses += self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+				responses += self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=60 )
 		except DAQErrors.NodeError as e:
 			self.logger.warning("EndSubrun got DAQErrors.NodeError: \n%s" % e)
 			self.NewAlert(notice="Couldn't contact all the nodes to stop them.  The next subrun could be problematic...", severity=Alert.ERROR)
 		try:
 			if stop_mtest:
-				responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=10 )
+				responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=60 )
 		except DAQErrors.NodeError as e:
 			self.logger.warning("EndSubrun got DAQErrors.NodeError: \n%s" % e)
 			self.NewAlert(notice="Couldn't contact all the nodes to stop them.  The next subrun could be problematic...", severity=Alert.ERROR)
@@ -1232,11 +1232,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 				if not sentinel:
 					try:
 						#Event builder can be sticky, try to kill it 5 times before giving up
-						killAttemptCount = 5
+						#Event builder has a 15 second timeout, so 15 kill attempts should suffice
+						#This loop is really just to check over a 15 second window to see if EB has
+						#died yet but since we're looping I figured why not send it some more SIGTERMs for good luck
+						killAttemptCount = 15
 						killed = False
 						for count in range(killAttemptCount):
 							thread.process.terminate()
-							time.sleep(1)
 							# check if process is up
 							try:
 								os.kill(thread.pid, 0)
@@ -1246,8 +1248,17 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 							else:
 								#Process still alive
 								self.logger.info("Attempt number: %s of %s to terminate EventBuilder but it's still up", count, killAttemptCount)	
+								time.sleep(1)
 						if not killed:
-							self.logger.warning("Tried %s times to terminate EventBuilder but it's still up, may need to kill it manually", killAttemptCount)	
+							self.logger.warning("Tried %s times to terminate EventBuilder but it's still up, now we're going nuclear", killAttemptCount)	
+							thread.process.kill()
+							time.sleep(1)
+							try:
+								os.kill(thread.pid, 0)
+							except OSError:
+								self.logger.warning("EventBuilder is invincible, you will need to kill it by hand")	
+							else:
+								self.logger.info("EventBuilder is finally dead")	
 					# the process might have crashed.
 					except OSError:
 						pass
@@ -1397,7 +1408,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			
 			try:
 				self.logger.info("Instructing readout nodes to initialize hardware...")
-				responses = self.NodeSendWithResponse(Message(subject="readout_directive", directive="hw_config", hw_config=self.configuration.hw_config, mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10)
+				responses = self.NodeSendWithResponse(Message(subject="readout_directive", directive="hw_config", hw_config=self.configuration.hw_config, mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=30)
 			except DAQErrors.NodeError:
 				self.NewAlert(notice="At least one of the remote node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 				return False
@@ -1477,7 +1488,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		skip = False
 		
 		try:
-			responses = self.NodeSendWithResponse(message, node_type=RemoteNode.READOUT, timeout=10)
+			responses = self.NodeSendWithResponse(message, node_type=RemoteNode.READOUT, timeout=30)
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive during LI box setup.  Please document this in CRL (with run, subrun, and this message) and notify the expert shifter.  I will skip to the next subrun and try again...", severity=Alert.WARNING)
 			skip = True
@@ -1648,6 +1659,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 																  Configuration.params["mstr_rawdataLocation"],
 																  self.raw_data_filename,
 																  self.configuration.et_port, os.getpid())
+		self.logger.debug("   event_builder command: '%s'", eb_command)
 
 		self.DAQ_threads["event builder"] = SpecialThread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, 
 			etpattern=self.configuration.et_filename,
@@ -1655,6 +1667,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 			etport=self.configuration.et_port, is_essential_service=True)
 		#self.DAQ_threads["event builder"] = Threads.DAQthread(process_info=eb_command, process_identity="event builder", postoffice=self.postoffice, env=os.environ, is_essential_service=True)
 		self.started_et = True
+		self.logger.info("  Event builder started")
 
 
 	def StartOM(self):
@@ -1693,7 +1706,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		ok_node = False
 		with self.om_startup_lock:
 			try:
-				responses = self.NodeSendWithResponse(message, node_type=RemoteNode.MONITORING, timeout=10)
+				responses = self.NodeSendWithResponse(message, node_type=RemoteNode.MONITORING, timeout=30)
 			except DAQErrors.NodeError:
 				self.waiting_for_om_startup = False
 				self.NewAlert(notice="At least one of the monitoring node(s) has become unresponsive.  Check the logs for more details.  The run will be allowed to continue, but you will not have online monitoring...", severity=Alert.ERROR)
@@ -1743,13 +1756,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		self.logger.info("  clearing the DAQ to make sure it's ready...")
 		
 		try:
-			responses = self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+			responses = self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_stop", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=60 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(auto_start_ok=False)
 			return
 		try: 
-			responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=10 )
+			responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_stop", mgr_id=self.id), node_type=RemoteNode.MTEST, timeout=60 )
 			pass
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="The MTest dispatcher is unresponsive. It may not be working", severity=Alert.WARNING)
@@ -1773,12 +1786,12 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		try: 
 			responses += self.NodeSendWithResponse( Message(subject="mtest_directive", directive="beamdaq_start", mgr_id=self.id, 
 				et_filename=self.configuration.et_filename, num_gates=self.configuration.num_gates, run_mode=self.configuration.run_mode.code), 
-				node_type=RemoteNode.MTEST, timeout=10 )
+				node_type=RemoteNode.MTEST, timeout=30 )
 			pass
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="The MTest dispatcher is unresponsive. It may not be working", severity=Alert.WARNING)
 		try:
-			responses += self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=10 )
+			responses += self.NodeSendWithResponse( Message(subject="readout_directive", directive="daq_start", mgr_id=self.id, configuration=self.configuration), node_type=RemoteNode.READOUT, timeout=30 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(auto_start_ok=False)
@@ -1837,7 +1850,7 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 
 		responses = []
 		try:		
-			responses = self.NodeSendWithResponse( Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=10 )
+			responses = self.NodeSendWithResponse( Message(subject="readout_directive", directive="sc_read_boards", mgr_id=self.id), node_type=RemoteNode.READOUT, timeout=30 )
 		except DAQErrors.NodeError:
 			self.NewAlert(notice="At least one of the readout node(s) has become unresponsive.  Check the logs for more details.  Running will be halted...", severity=Alert.ERROR)
 			self.StopDataAcquisition(auto_start_ok=False)
@@ -1903,14 +1916,13 @@ class DataAcquisitionManager(Dispatcher.Dispatcher):
 		else:
 			return problem_boards
 
-	def NodeSendWithResponse(self, message, node_type=None, timeout=None, with_exception=False):
+	def NodeSendWithResponse(self, message, node_type=None, timeout=30, with_exception=False):
 		""" Utility method to send a message to the readout nodes.
 			It verifies that the senders of response messages are
 			actually within the node list.  It can also optionally
 			verify that a response was received from each node
 			of a certain type (or every node in the list). """
 
-		timeout=30
 		self.logger.info('Sending message = %s, timeout = %i'% (message,timeout))		    
 		responses = self.postoffice.SendAndWaitForResponse( message, timeout=timeout, with_exception=with_exception, force=True)
 
