@@ -298,7 +298,9 @@ RunSeriesTypes          = MetaData(( ("BEAM",           "Beam",                0
 #				                 ("MIXED_BEAM_PED", "Mixed Beam-Pedestal", 4, "mix_beam_ped_series.db"),
 #				                 ("MIXED_BEAM_LI",  "Mixed Beam-LI",       5, "mix_beam_li_series.db"),
 				                 ("CUSTOM",         "Custom Series",       6, "custom_series.db"),
-				                 ("COSMICS",         "Cosmics",       7, "cosmics_series.db") ))
+				                 ("COSMICS",         "Cosmics",       7, "cosmics_series.db"),
+								("Test",         "test",       8, "test_series.db") ))
+
 				                 
 TriggerTypes       = MetaData(( ("UNKNOWN",   "Unknown",          0,   None),
                                 ("PEDESTAL",  "Pedestal",         1,   None),
