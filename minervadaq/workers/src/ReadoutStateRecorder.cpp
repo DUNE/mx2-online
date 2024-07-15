@@ -550,7 +550,7 @@ void ReadoutStateRecorder::WriteToMETACATFile()
   uint32_t checksum = adler32(bufferBytes, filesize);
   //Converting adler32 integer checksum into a hexadecimal string
   std::stringstream hexencoding;
-  hexencoding << std::hex << checksum;
+  hexencoding << std::hex << std::setw(8) << std::setfill('0') << checksum;
   std::string adler32checksum = hexencoding.str();
   fprintf(file,"\t\t\"adler32\": \"%s\"\n", adler32checksum.c_str());
   fprintf(file,"\t},\n");
