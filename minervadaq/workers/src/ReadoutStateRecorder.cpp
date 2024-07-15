@@ -587,6 +587,7 @@ void ReadoutStateRecorder::WriteToMETACATFile()
   fprintf(file,"\t\t\"core.data_tier\": \"binary-raw\",\n");
   fprintf(file,"\t\t\"core.end_time\": %llu,\n", (subRunFinishTime/1000000L));
   fprintf(file,"\t\t\"core.event_count\": %d,\n", gate);
+  fprintf(file,"\t\t\"core.file_content_status\": \"good\",\n");
   fprintf(file,"\t\t\"core.file_format\": \"binary\",\n");
   fprintf(file,"\t\t\"core.file_type\": \"importedDetector\",\n");
   fprintf(file,"\t\t\"core.first_event_number\": %llu,\n", firstGate);
