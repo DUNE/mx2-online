@@ -18,7 +18,6 @@ each time we created a new DAQ version.
 #include <ctime>
 #include <limits>
 #include <string.h>
-#include <sys/stat.h>
 #include <chrono>
 #include <cmath>
 
@@ -555,14 +554,6 @@ void ReadoutStateRecorder::WriteToMETACATFile()
   std::string adler32checksum = hexencoding.str();
   fprintf(file,"\t\t\"adler32\": \"%s\"\n", adler32checksum.c_str());
   fprintf(file,"\t},\n");
-  //Getting data file creation time
-  struct stat result;
-  if (stat(args->dataFileName.c_str(), &result) != 0){
-    stateRecorderLogger.errorStream() << "Error opening raw data file for metadata generation!";
-    return;
-  }
-  int millisecs = std::round((result.st_ctim.tv_nsec/1000));
-  fprintf(file,"\t\"created_timestamp\": \"%llu.%llu\",\n", (int)result.st_ctim.tv_sec, millisecs);
   fprintf(file,"\t\"metadata\": {\n");
   switch ((int)args->runMode) {
     case 0: //OneShot:
