@@ -18,7 +18,6 @@ each time we created a new DAQ version.
 #include <ctime>
 #include <limits>
 #include <string.h>
-#include <sys/stat.h>
 #include <chrono>
 #include <cmath>
 
@@ -551,18 +550,10 @@ void ReadoutStateRecorder::WriteToMETACATFile()
   uint32_t checksum = adler32(bufferBytes, filesize);
   //Converting adler32 integer checksum into a hexadecimal string
   std::stringstream hexencoding;
-  hexencoding << std::hex << checksum;
+  hexencoding << std::hex << std::setw(8) << std::setfill('0') << checksum;
   std::string adler32checksum = hexencoding.str();
   fprintf(file,"\t\t\"adler32\": \"%s\"\n", adler32checksum.c_str());
   fprintf(file,"\t},\n");
-  //Getting data file creation time
-  struct stat result;
-  if (stat(args->dataFileName.c_str(), &result) != 0){
-    stateRecorderLogger.errorStream() << "Error opening raw data file for metadata generation!";
-    return;
-  }
-  int millisecs = std::round((result.st_ctim.tv_nsec/1000));
-  fprintf(file,"\t\"created_timestamp\": \"%llu.%llu\",\n", (int)result.st_ctim.tv_sec, millisecs);
   fprintf(file,"\t\"metadata\": {\n");
   switch ((int)args->runMode) {
     case 0: //OneShot:
@@ -596,6 +587,7 @@ void ReadoutStateRecorder::WriteToMETACATFile()
   fprintf(file,"\t\t\"core.data_tier\": \"binary-raw\",\n");
   fprintf(file,"\t\t\"core.end_time\": %llu,\n", (subRunFinishTime/1000000L));
   fprintf(file,"\t\t\"core.event_count\": %d,\n", gate);
+  fprintf(file,"\t\t\"core.file_content_status\": \"good\",\n");
   fprintf(file,"\t\t\"core.file_format\": \"binary\",\n");
   fprintf(file,"\t\t\"core.file_type\": \"importedDetector\",\n");
   fprintf(file,"\t\t\"core.first_event_number\": %llu,\n", firstGate);
@@ -604,41 +596,12 @@ void ReadoutStateRecorder::WriteToMETACATFile()
   fprintf(file,"\t\t\"core.lum_block_ranges\": [\n");
   fprintf(file,"\t\t\t[\n\t\t\t\t%d,\n\t\t\t\t%d\n\t\t\t]\n", firstGate, globalGate);
   fprintf(file,"\t\t],\n");
-  char runType[50];
-  switch (args->detector) { // Enumerations set by the DAQHeader class.
-    case 0:
-      sprintf(runType, "unknowndetector");
-      break;
-    case 1: 
-      sprintf(runType, "pmtteststand");
-      break;
-    case 2:
-      sprintf(runType, "trackingprototype");
-      break;
-    case 4:
-      sprintf(runType, "testbeam");
-      break;
-    case 8:
-      sprintf(runType, "frozendetector");
-      break;
-    case 16:
-      sprintf(runType, "upstreamdetector");
-      break;
-    case 32:
-      sprintf(runType, "minerva");
-      break;
-    case 64:
-      sprintf(runType, "teststand");
-      break;
-    default:
-      sprintf(runType, "errordetector");
-  }
-  fprintf(file,"\t\t\"core.run_type\": \"%s\",\n", runType);
+  fprintf(file,"\t\t\"core.run_type\": \"neardet-2x2-minerva\",\n");
   fprintf(file,"\t\t\"core.runs\": [\n");
-  fprintf(file,"\t\t\t [%d, %d]\n", args->runNumber, args->subRunNumber);
+  fprintf(file,"\t\t\t %d\n", args->runNumber);
   fprintf(file,"\t\t],\n");
   fprintf(file,"\t\t\"core.runs_subruns\": [\n");
-  fprintf(file,"\t\t\t%i\n", ( args->runNumber*100000+args->subRunNumber));
+  fprintf(file,"\t\t\t%lu\n", long( args->runNumber*100000+args->subRunNumber));
   fprintf(file,"\t\t],\n");
   fprintf(file,"\t\t\"core.start_time\": %llu,\n", (subRunStartTime/1000000L));
   fprintf(file,"\t\t\"dune.daq_test\": \"True\",\n");
