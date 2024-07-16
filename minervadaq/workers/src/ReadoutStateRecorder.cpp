@@ -627,10 +627,10 @@ void ReadoutStateRecorder::WriteToMETACATFile()
   }
   fprintf(file,"\t\t\"core.run_type\": \"%s\",\n", runType);
   fprintf(file,"\t\t\"core.runs\": [\n");
-  fprintf(file,"\t\t\t [%d, %d]\n", args->runNumber, args->subRunNumber);
+  fprintf(file,"\t\t\t %d\n", args->runNumber);
   fprintf(file,"\t\t],\n");
   fprintf(file,"\t\t\"core.runs_subruns\": [\n");
-  fprintf(file,"\t\t\t%i\n", ( args->runNumber*100000+args->subRunNumber));
+  fprintf(file,"\t\t\t%lu\n", long( args->runNumber*100000+args->subRunNumber));
   fprintf(file,"\t\t],\n");
   fprintf(file,"\t\t\"core.start_time\": %llu,\n", (subRunStartTime/1000000L));
   fprintf(file,"\t\t\"dune.daq_test\": \"True\",\n");
