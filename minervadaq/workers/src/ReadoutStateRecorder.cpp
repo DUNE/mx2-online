@@ -596,36 +596,7 @@ void ReadoutStateRecorder::WriteToMETACATFile()
   fprintf(file,"\t\t\"core.lum_block_ranges\": [\n");
   fprintf(file,"\t\t\t[\n\t\t\t\t%d,\n\t\t\t\t%d\n\t\t\t]\n", firstGate, globalGate);
   fprintf(file,"\t\t],\n");
-  char runType[50];
-  switch (args->detector) { // Enumerations set by the DAQHeader class.
-    case 0:
-      sprintf(runType, "unknowndetector");
-      break;
-    case 1: 
-      sprintf(runType, "pmtteststand");
-      break;
-    case 2:
-      sprintf(runType, "trackingprototype");
-      break;
-    case 4:
-      sprintf(runType, "testbeam");
-      break;
-    case 8:
-      sprintf(runType, "frozendetector");
-      break;
-    case 16:
-      sprintf(runType, "upstreamdetector");
-      break;
-    case 32:
-      sprintf(runType, "minerva");
-      break;
-    case 64:
-      sprintf(runType, "teststand");
-      break;
-    default:
-      sprintf(runType, "errordetector");
-  }
-  fprintf(file,"\t\t\"core.run_type\": \"%s\",\n", runType);
+  fprintf(file,"\t\t\"core.run_type\": \"neardet-2x2-minerva\",\n");
   fprintf(file,"\t\t\"core.runs\": [\n");
   fprintf(file,"\t\t\t %d\n", args->runNumber);
   fprintf(file,"\t\t],\n");
