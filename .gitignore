@@ -2,6 +2,7 @@
 *.o
 .*.swp
 *~
+*.pyc
 
 # LaTeX detritus.
 minervadaq/doc/*.aux
