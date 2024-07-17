@@ -75,7 +75,6 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		# PySerial module.
 		# again we wait to initialize it until it's needed.
 		self.li_box = None
-
 		self.logger = logging.getLogger("Dispatcher.Readout")
 
 		self.cleanup_methods += [self.daq_stop]
@@ -290,7 +289,7 @@ class ReadoutDispatcher(Dispatcher.Dispatcher):
 		
 		if self.li_box is None:
 			self.li_box = LIBox.LIBox(disable_LI=not(Configuration.params["hw_LIBoxEnabled"]), wait_response=Configuration.params["hw_LIBoxWaitForResponse"], echocmds=True)
-		
+
 		need_LI = True
 		if li_level == MetaData.LILevels.ONE_PE:
 			self.li_box.pulse_height = Defaults.LI_ONE_PE_VOLTAGE                                        

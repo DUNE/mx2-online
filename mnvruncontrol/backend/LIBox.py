@@ -18,7 +18,9 @@ import sys
 # Geoff Savage 10/23/2014 update for mnvtb04
 #LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS3"   # mnvtb04
 # Geoff Savage 15Jul22 update for acd-srv03
-LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS3"   # acd-srv03
+#LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS3"   # acd-srv03
+# Jack Smedley May 25 2024 updated for acd-mnv01
+LIBOX_SERIAL_PORT_DEVICE         = "/dev/ttyS0"
 LIBOX_SERIAL_PORT_BAUD           = 9600
 LIBOX_SERIAL_PORT_PARITY         = serial.PARITY_NONE
 LIBOX_SERIAL_PORT_SW_FLOWCONTROL = False
@@ -87,12 +89,12 @@ class LIBox:
 				try:
 					if self.echocmds:
 						print("Sending command:   '" + command + "'")
-					self.port.write(command + "\n")
+					self.port.write( str(command + "\n").encode() ) # encode() added by Jack 6/20/2024 to accomodate modern pySerial
 				except serial.SerialTimeoutException:
 					raise Error("The LI box isn't responding.  Are you sure you have the correct port setting and that the LI box is on?")
 
 				if self.wait_response and command != "_X":		# box won't respond after reset command.
-					char = self.port.read(1)
+					char = self.port.read(1).decode('ascii') # decode() added by Jack 6/20/2024 to accomodate modern pySerial
 					if self.echocmds:
 						print("Received from box: '" + char + "'")
 		
@@ -161,7 +163,7 @@ class LIBox:
 		highBit = int( (self.pulse_height - 4.0429) / 2.01 )
 
 		lowBit  = int( (self.pulse_height - highBit * 2.01 - 4.0429) / .00783 )
-		lowBit1 = lowBit / 16;		# note: INTEGER division.
+		lowBit1 = lowBit // 16;		# note: INTEGER division.
 		lowBit2 = lowBit % 16;
 
 		highBit = "%x" % highBit
@@ -190,15 +192,15 @@ class LIBox:
 			
 			trigger_rate = self.trigger_rate
 			
-			highNum1 = trigger_rate / 0x1000
-			highNum2 = (trigger_rate - highNum1 * 0x1000) / 0x100
+			highNum1 = trigger_rate // 0x1000
+			highNum2 = (trigger_rate - highNum1 * 0x1000) // 0x100
 			trigger_rate -= highNum1 * 0x1000 + highNum2 * 0x100
 			
 			highNum1 = "%x" % highNum1
 			highNum2 = "%x" % highNum2
 			self.command_stack.append("aH" + highNum1 + highNum2)
 			
-			lowNum1 = trigger_rate / 0x10
+			lowNum1 = trigger_rate // 0x10
 			lowNum2 = trigger_rate - lowNum1 * 0x10
 			lowNum1 = "%x" % lowNum1
 			lowNum2 = "%x" % lowNum2
