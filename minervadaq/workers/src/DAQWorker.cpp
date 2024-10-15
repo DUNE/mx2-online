@@ -85,7 +85,7 @@ void DAQWorker::InitializeHardware()
   readoutWorker->AddCrate(0);
 //  readoutWorker->GetVMECrateVector(0)->AddECROC( 6,  0,  0,  1,  0 ); // Modified CROCE name -- Nur 08/29/2016
 //  readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  10,  5,  0,  0 ); 
-  readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  10,  5,  5,  5 );  // Added more FEBs -- Nur 07/201/2017
+  readoutWorker->GetVMECrateVector(0)->AddECROC( 1,  10,  5,  5,  2 );  // Added more FEBs -- Nur 07/201/2017
   readoutWorker->GetVMECrateVector(0)->AddECROC( 2,  0,  0,  0,  0 ); 
   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
 #endif
@@ -99,6 +99,7 @@ void DAQWorker::InitializeHardware()
   //readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  0,  0,  2,  0 ); // reading 2 FEBs in Channel 2
   //readoutWorker->GetVMECrateVector(0)->AddECROC( 3,  0,  2,  0,  0 ); // reading 2 FEBs in Channel 1
   readoutWorker->GetVMECrateVector(0)->AddCRIM( 224 );
+  readoutWorker->GetVMECrateVector(0)->AddCRIM( 240 );
 #endif
 #if NUMI
 
