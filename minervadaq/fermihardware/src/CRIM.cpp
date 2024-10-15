@@ -111,12 +111,12 @@ void CRIM::Initialize( Modes::RunningModes runningMode )
   unsigned short SequencerEnable   = 0x1;      // Sequencer control (0 means always send gates, 1 for rearms).
   VMEModuleTypes::CRIMTimingFrequencies Frequency = 
     VMEModuleTypes::ZeroFreq; // Used to set ONE frequency bit!  ZeroFreq ~no Frequency.
-#ifdef MTEST
-  VMEModuleTypes::CRIMTimingModes TimingMode = VMEModuleTypes::CRIMInternal;
-#else
+//#ifdef MTEST
+//  VMEModuleTypes::CRIMTimingModes TimingMode = VMEModuleTypes::CRIMInternal;
+//#else
   VMEModuleTypes::CRIMTimingModes TimingMode = 
     VMEModuleTypes::MTM;      // Default to MTM.
-#endif
+//#endif
 
   switch (runningMode) {
     case OneShot:
