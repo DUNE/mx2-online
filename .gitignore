@@ -3,6 +3,9 @@
 .*.swp
 *~
 *.pyc
+*.bak
+*.dat
+*.dir
 
 # LaTeX detritus.
 minervadaq/doc/*.aux
